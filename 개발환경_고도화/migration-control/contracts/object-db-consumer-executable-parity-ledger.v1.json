@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "e7cb24a77fef4727c396d1c7a728dc5e79686ce9",
+  "evidenceCommit": "e22cfdf87f24f3e41b1ce3584749b4a99438adc3",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "b11b60649e12bb63bc7cb6ab5d58f2c1bb260e3b786ca4eb736822e20118483e"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave8-v1.json",
-      "sha256": "a81cfd067707cb17c4c178a6ffdd9f2ce2df852fe08bcb8051809bbfb8beaf56"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave9-v1.json",
+      "sha256": "42d1a445a295a15a57b77003c08476bade3d2208473933bbcceeb0b8b9b10525"
     },
     "classificationSources": [
       {
@@ -63,16 +63,16 @@
     "registrySourceMismatchCount": 8,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 8,
-    "provenConsumers": 18,
-    "unprovenConsumers": 1093,
-    "directPassConsumers": 18,
+    "provenConsumers": 23,
+    "unprovenConsumers": 1088,
+    "directPassConsumers": 23,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 541,
+      "STATIC_ONLY": 536,
       "BLOCKED_DYNAMIC": 552,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 18,
+      "DIRECT_PASS": 23,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -81418,22 +81418,22 @@
         "sourceSpanSha256": "ed76bf91da2d454ebb6ea25ad97b295585e1b601340d260fdbd334ad87c26172",
         "classificationSha256": "4ad46995be66745df67df120807c82783fa6473abc4f9c7d03ce0b30e3594fb9"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+        "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+        "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+        "targetSourceSha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d",
+        "exportName": "executeWave9RankChain"
       },
       "scenarioRequirements": [
         {
@@ -81482,11 +81482,371 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:rank-cumulative-level",
+          "attributedConsumerIds": [
+            "runtime-dispatch-465e4b3a15c003dc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "actualSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "902961a3391415b7c605f85983597122f6368637110a4a28a58fed0faeace801",
+              "actualSha256": "902961a3391415b7c605f85983597122f6368637110a4a28a58fed0faeace801",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e4c6eaa620d940cf8ab207bf483a3847f62351474081ec325020f5597611ef9b",
+              "actualSha256": "e4c6eaa620d940cf8ab207bf483a3847f62351474081ec325020f5597611ef9b",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:rank-cumulative-level",
+          "attributedConsumerIds": [
+            "runtime-dispatch-465e4b3a15c003dc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:rank-cumulative-level",
+          "attributedConsumerIds": [
+            "runtime-dispatch-465e4b3a15c003dc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "actualSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "902961a3391415b7c605f85983597122f6368637110a4a28a58fed0faeace801",
+              "actualSha256": "902961a3391415b7c605f85983597122f6368637110a4a28a58fed0faeace801",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e4c6eaa620d940cf8ab207bf483a3847f62351474081ec325020f5597611ef9b",
+              "actualSha256": "e4c6eaa620d940cf8ab207bf483a3847f62351474081ec325020f5597611ef9b",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:rank-cumulative-level",
+          "attributedConsumerIds": [
+            "runtime-dispatch-465e4b3a15c003dc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "actualSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "395230fd8df30e48ae5e4d2b8d9d705c2fb7b3694fb4f7ee43ffd3e7faf0b31f",
+              "actualSha256": "395230fd8df30e48ae5e4d2b8d9d705c2fb7b3694fb4f7ee43ffd3e7faf0b31f",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "9b776fe3c28a81a08288a27fa591a17be57f5acfce9214f7baf7af4aea624ebd",
+              "actualSha256": "9b776fe3c28a81a08288a27fa591a17be57f5acfce9214f7baf7af4aea624ebd",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:rank-cumulative-level",
+          "attributedConsumerIds": [
+            "runtime-dispatch-465e4b3a15c003dc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "actualSha256": "0bb3f2dffae784ceccdb78a26f78e1be7e86d6e3f81e98794440141e05720856",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "902961a3391415b7c605f85983597122f6368637110a4a28a58fed0faeace801",
+              "actualSha256": "902961a3391415b7c605f85983597122f6368637110a4a28a58fed0faeace801",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e4c6eaa620d940cf8ab207bf483a3847f62351474081ec325020f5597611ef9b",
+              "actualSha256": "e4c6eaa620d940cf8ab207bf483a3847f62351474081ec325020f5597611ef9b",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_level_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LEVEL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_level_rank_read','success','Iris /누렙순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:exact_output",
+          "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:negative_guard",
+          "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:read_positive",
+          "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:restart_consistency",
+          "receipt:wave9:runtime-dispatch-465e4b3a15c003dc:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-465e4b3a15c003dc"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+            "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+            "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+            "sha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -87462,22 +87822,22 @@
         "sourceSpanSha256": "a34298f00b3bcc914f5d4482fc139a1f0d67a80437518b86d5ebb3a3f9465fba",
         "classificationSha256": "86f0043bc450b734aef55f60e4f97f0d80fb300f00a85bbb4d02ebcf3d75af9a"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+        "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+        "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+        "targetSourceSha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d",
+        "exportName": "executeWave9RankChain"
       },
       "scenarioRequirements": [
         {
@@ -87526,11 +87886,379 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:rank-cumulative-like",
+          "attributedConsumerIds": [
+            "runtime-dispatch-9db5e3e6c256b5fa"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "actualSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "37c3b5467c8bbab016c79714242b56f04413d2418673a6b1d58ca3b97bca3f46",
+              "actualSha256": "37c3b5467c8bbab016c79714242b56f04413d2418673a6b1d58ca3b97bca3f46",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "8ea3316cf39e480f830ce8ea46332318d401bdbee6317e3b37ea1cbcd940c62d",
+              "actualSha256": "8ea3316cf39e480f830ce8ea46332318d401bdbee6317e3b37ea1cbcd940c62d",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:rank-cumulative-like",
+          "attributedConsumerIds": [
+            "runtime-dispatch-9db5e3e6c256b5fa"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:rank-cumulative-like",
+          "attributedConsumerIds": [
+            "runtime-dispatch-9db5e3e6c256b5fa"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "actualSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "37c3b5467c8bbab016c79714242b56f04413d2418673a6b1d58ca3b97bca3f46",
+              "actualSha256": "37c3b5467c8bbab016c79714242b56f04413d2418673a6b1d58ca3b97bca3f46",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "8ea3316cf39e480f830ce8ea46332318d401bdbee6317e3b37ea1cbcd940c62d",
+              "actualSha256": "8ea3316cf39e480f830ce8ea46332318d401bdbee6317e3b37ea1cbcd940c62d",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:rank-cumulative-like",
+          "attributedConsumerIds": [
+            "runtime-dispatch-9db5e3e6c256b5fa"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "actualSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "d433876a970b7207a7ac3c9964673702bf32f780928d9f2f2fc7a5e2a4a523a9",
+              "actualSha256": "d433876a970b7207a7ac3c9964673702bf32f780928d9f2f2fc7a5e2a4a523a9",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "5b221aca1bee371259a6c0610b6d63924dc57d4627c9d41878b931d46aa05a9c",
+              "actualSha256": "5b221aca1bee371259a6c0610b6d63924dc57d4627c9d41878b931d46aa05a9c",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:rank-cumulative-like",
+          "attributedConsumerIds": [
+            "runtime-dispatch-9db5e3e6c256b5fa"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "actualSha256": "b896cf0ea52bd531bf1f90198a2413ee091ba020bca1bd344f61e0faf33093c9",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "37c3b5467c8bbab016c79714242b56f04413d2418673a6b1d58ca3b97bca3f46",
+              "actualSha256": "37c3b5467c8bbab016c79714242b56f04413d2418673a6b1d58ca3b97bca3f46",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "8ea3316cf39e480f830ce8ea46332318d401bdbee6317e3b37ea1cbcd940c62d",
+              "actualSha256": "8ea3316cf39e480f830ce8ea46332318d401bdbee6317e3b37ea1cbcd940c62d",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.cumulative_like_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_CUMULATIVE_LIKE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'player.cumulative_like_rank_read','success','Iris /누좋순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "player_counters"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:exact_output",
+          "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:negative_guard",
+          "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:read_positive",
+          "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:restart_consistency",
+          "receipt:wave9:runtime-dispatch-9db5e3e6c256b5fa:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-9db5e3e6c256b5fa"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+            "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+            "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+            "sha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -91972,22 +92700,22 @@
         "sourceSpanSha256": "48af8aa9231dbc79482411d4665da34f032a7f72b5d07ab339ee55b788a0aefa",
         "classificationSha256": "eadae5b97caa522324e0658e6952111b9e46f7c268a89c837496a9469c8be9e1"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+        "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+        "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+        "targetSourceSha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d",
+        "exportName": "executeWave9RankChain"
       },
       "scenarioRequirements": [
         {
@@ -92036,11 +92764,379 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:rank-home",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e02f58bf27070ab0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "actualSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "dc6f3b94bcfb712d0ff928dfc21ba5899865d49a40b8e3eb8de63480239c2ba7",
+              "actualSha256": "dc6f3b94bcfb712d0ff928dfc21ba5899865d49a40b8e3eb8de63480239c2ba7",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "c4f66114e05f1aba413ecc85f1634213837b90ebae5e650303b9c705a44c2c35",
+              "actualSha256": "c4f66114e05f1aba413ecc85f1634213837b90ebae5e650303b9c705a44c2c35",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:rank-home",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e02f58bf27070ab0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:rank-home",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e02f58bf27070ab0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "actualSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "dc6f3b94bcfb712d0ff928dfc21ba5899865d49a40b8e3eb8de63480239c2ba7",
+              "actualSha256": "dc6f3b94bcfb712d0ff928dfc21ba5899865d49a40b8e3eb8de63480239c2ba7",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "c4f66114e05f1aba413ecc85f1634213837b90ebae5e650303b9c705a44c2c35",
+              "actualSha256": "c4f66114e05f1aba413ecc85f1634213837b90ebae5e650303b9c705a44c2c35",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:rank-home",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e02f58bf27070ab0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "actualSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "cbb1ddf7d8df6629ed7ab939363f9248273c737f2980ae7d0be49ede33740a0f",
+              "actualSha256": "cbb1ddf7d8df6629ed7ab939363f9248273c737f2980ae7d0be49ede33740a0f",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f669f610c511fdca1eb18d25c6a23d3bb89ab434df6f3e60caef997bb762bf05",
+              "actualSha256": "f669f610c511fdca1eb18d25c6a23d3bb89ab434df6f3e60caef997bb762bf05",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:rank-home",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e02f58bf27070ab0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "actualSha256": "fda79a4412b3e8191d0ccf2d871d0c8f122a2eb11df50cfca18c35d8739b503e",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "dc6f3b94bcfb712d0ff928dfc21ba5899865d49a40b8e3eb8de63480239c2ba7",
+              "actualSha256": "dc6f3b94bcfb712d0ff928dfc21ba5899865d49a40b8e3eb8de63480239c2ba7",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "c4f66114e05f1aba413ecc85f1634213837b90ebae5e650303b9c705a44c2c35",
+              "actualSha256": "c4f66114e05f1aba413ecc85f1634213837b90ebae5e650303b9c705a44c2c35",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.ranking_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_RANKING_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.ranking_read','success','Iris /펫홈순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "player_homes",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:exact_output",
+          "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:negative_guard",
+          "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:read_positive",
+          "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:restart_consistency",
+          "receipt:wave9:runtime-dispatch-e02f58bf27070ab0:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-e02f58bf27070ab0"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+            "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+            "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+            "sha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -92878,22 +93974,22 @@
         "sourceSpanSha256": "97be1ce53afa236f3ebb0d2c8d2d40aa93acb8eff42eda718b20e2c6e63e49b4",
         "classificationSha256": "b31964c9d9038b1def721a1021d7eb97897b527e9dd9b800008f3209582f578e"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+        "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+        "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+        "targetSourceSha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d",
+        "exportName": "executeWave9RankChain"
       },
       "scenarioRequirements": [
         {
@@ -92942,11 +94038,387 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:rank-furniture",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e54fc7fbded287c6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "actualSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f0fda84cd5d8817837995a83f135f0b60ada47e38305903b9a5ba4415fcdcf33",
+              "actualSha256": "f0fda84cd5d8817837995a83f135f0b60ada47e38305903b9a5ba4415fcdcf33",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "550af7e14f4c39f27d9603ff8384d1daa29ac71b1bbd8f379d3d502dc4a4e6f4",
+              "actualSha256": "550af7e14f4c39f27d9603ff8384d1daa29ac71b1bbd8f379d3d502dc4a4e6f4",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:rank-furniture",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e54fc7fbded287c6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:rank-furniture",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e54fc7fbded287c6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "actualSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f0fda84cd5d8817837995a83f135f0b60ada47e38305903b9a5ba4415fcdcf33",
+              "actualSha256": "f0fda84cd5d8817837995a83f135f0b60ada47e38305903b9a5ba4415fcdcf33",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "550af7e14f4c39f27d9603ff8384d1daa29ac71b1bbd8f379d3d502dc4a4e6f4",
+              "actualSha256": "550af7e14f4c39f27d9603ff8384d1daa29ac71b1bbd8f379d3d502dc4a4e6f4",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:rank-furniture",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e54fc7fbded287c6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "actualSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "6402b3ea82f384d03fb4a2b1c08f7ad2a322b68865edcfb4990d05c365505249",
+              "actualSha256": "6402b3ea82f384d03fb4a2b1c08f7ad2a322b68865edcfb4990d05c365505249",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "a1b4a427d0a4fe9c7afc585ed7fe1820a434751d6a661f3724cd9fb925c8156d",
+              "actualSha256": "a1b4a427d0a4fe9c7afc585ed7fe1820a434751d6a661f3724cd9fb925c8156d",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:rank-furniture",
+          "attributedConsumerIds": [
+            "runtime-dispatch-e54fc7fbded287c6"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "actualSha256": "13b7fe92db894468f7d3af0008f5e13063d95303be95eb3a5e0f425353760504",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f0fda84cd5d8817837995a83f135f0b60ada47e38305903b9a5ba4415fcdcf33",
+              "actualSha256": "f0fda84cd5d8817837995a83f135f0b60ada47e38305903b9a5ba4415fcdcf33",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "550af7e14f4c39f27d9603ff8384d1daa29ac71b1bbd8f379d3d502dc4a4e6f4",
+              "actualSha256": "550af7e14f4c39f27d9603ff8384d1daa29ac71b1bbd8f379d3d502dc4a4e6f4",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'home.furniture_rank_read',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'HOME_FURNITURE_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',NULL,'leaderboard',NULL,'home.furniture_rank_read','success','Iris /가구순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "furniture_inventory_instances",
+                "furniture_definitions",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:exact_output",
+          "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:negative_guard",
+          "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:read_positive",
+          "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:restart_consistency",
+          "receipt:wave9:runtime-dispatch-e54fc7fbded287c6:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-e54fc7fbded287c6"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+            "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+            "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+            "sha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -93057,22 +94529,22 @@
         "sourceSpanSha256": "9ac162924da16d56281691e2e30e950a4b7c544ab39cc77d4d216a9e4d4559ba",
         "classificationSha256": "d65cab3e97e043f17d568ef845fbba7b22467b186454ed1586a5680756f2f0c5"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave9",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+        "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave9:rank-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+        "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+        "targetSourceSha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d",
+        "exportName": "executeWave9RankChain"
       },
       "scenarioRequirements": [
         {
@@ -93121,11 +94593,355 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-eaa906ea249408a5:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:rank-overall",
+          "attributedConsumerIds": [
+            "runtime-dispatch-eaa906ea249408a5"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "actualSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "89f423f49f8e6d3ef232e0cb2c4bb42989ea0c21c9ca6262f92d6f6266819c59",
+              "actualSha256": "89f423f49f8e6d3ef232e0cb2c4bb42989ea0c21c9ca6262f92d6f6266819c59",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "c4dd75718e3b3ab2b1967f10a2f54935e82676be4470b468462b54b43203adf5",
+              "actualSha256": "c4dd75718e3b3ab2b1967f10a2f54935e82676be4470b468462b54b43203adf5",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-eaa906ea249408a5:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:rank-overall",
+          "attributedConsumerIds": [
+            "runtime-dispatch-eaa906ea249408a5"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-eaa906ea249408a5:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:rank-overall",
+          "attributedConsumerIds": [
+            "runtime-dispatch-eaa906ea249408a5"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "actualSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "89f423f49f8e6d3ef232e0cb2c4bb42989ea0c21c9ca6262f92d6f6266819c59",
+              "actualSha256": "89f423f49f8e6d3ef232e0cb2c4bb42989ea0c21c9ca6262f92d6f6266819c59",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "c4dd75718e3b3ab2b1967f10a2f54935e82676be4470b468462b54b43203adf5",
+              "actualSha256": "c4dd75718e3b3ab2b1967f10a2f54935e82676be4470b468462b54b43203adf5",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-eaa906ea249408a5:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:rank-overall",
+          "attributedConsumerIds": [
+            "runtime-dispatch-eaa906ea249408a5"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "actualSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "1e5f4eeac96afe1b60f987d4d19db670d5214bd1c62c5eb59cc8297d121f2937",
+              "actualSha256": "1e5f4eeac96afe1b60f987d4d19db670d5214bd1c62c5eb59cc8297d121f2937",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "2925174cd025f0af98caaf7718f963156877205d27d0409a88babf8ef78ed0e3",
+              "actualSha256": "2925174cd025f0af98caaf7718f963156877205d27d0409a88babf8ef78ed0e3",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave9:runtime-dispatch-eaa906ea249408a5:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:rank-overall",
+          "attributedConsumerIds": [
+            "runtime-dispatch-eaa906ea249408a5"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "actualSha256": "e018f3739b2752c4ae4ec37d3bbe8a241b0bda566e374159b86e4ce525f58b6d",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "89f423f49f8e6d3ef232e0cb2c4bb42989ea0c21c9ca6262f92d6f6266819c59",
+              "actualSha256": "89f423f49f8e6d3ef232e0cb2c4bb42989ea0c21c9ca6262f92d6f6266819c59",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "c4dd75718e3b3ab2b1967f10a2f54935e82676be4470b468462b54b43203adf5",
+              "actualSha256": "c4dd75718e3b3ab2b1967f10a2f54935e82676be4470b468462b54b43203adf5",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'player.overall_rank_read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PLAYER_OVERALL_RANK_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'leaderboard',NULL,'player.overall_rank_read','success','Iris /종합순위',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 5,
+              "actualRowCount": 5
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "operations"
+              ],
+              "actual": [
+                "external_identities",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave9:runtime-dispatch-eaa906ea249408a5:exact_output",
+          "receipt:wave9:runtime-dispatch-eaa906ea249408a5:negative_guard",
+          "receipt:wave9:runtime-dispatch-eaa906ea249408a5:read_positive",
+          "receipt:wave9:runtime-dispatch-eaa906ea249408a5:restart_consistency",
+          "receipt:wave9:runtime-dispatch-eaa906ea249408a5:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-eaa906ea249408a5"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave9-rank-chain-v1.json",
+            "sha256": "59c575fb5756313012be6f4bf67b0473d88f69538f213168513a88019fdb7513"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-harness.mjs",
+            "sha256": "23e16bb8455e2a767e886a3903db7c649b1615ab8c09812b3380af189abe5674"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave9-rank-chain.mjs",
+            "sha256": "c5d69c5190872c087bff8666163c97acc878d992d3c37e15d48138b21889c72d"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -103433,5 +105249,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "c19beddff9201dc23242e985a0bf7228025fc6791e90b041b4f14cbbc3262236"
+  "entrySetSha256": "7a955fff591285d0c087f6884f50e89f1d40108fbe69a0780834be0585c7a2e9"
 }
