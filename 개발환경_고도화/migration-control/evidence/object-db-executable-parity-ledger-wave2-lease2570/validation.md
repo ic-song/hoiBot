@@ -7,5 +7,5 @@
 - Wave1 receipt semantic comparison: `15/15 PASS`; only `harness.sourceSha256` and its dependent `receiptSha256` changed.
 - `npm run typecheck -- --pretty false`: PASS.
 - `npm run build -- --pretty false`: PASS.
-- Artifact SHA-256: ledger `54c6cb4ae65c084a6efbd0fd236853539edbdff30b5fc974367935f1df2e3480`; combined receipts `920aec2597dcd09d2de1c399873cdf8fb628e2c5ebf87a97ebd74e51080b8d5c`; Wave2 fixture `2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954`; runner `dbdf1b1c16aa008ae21972c6e8bddd7487046c5f6a2a20d64ec6cf6ce62bbdb6`; Wave2 target `d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba`.
+- Artifact SHA-256: ledger `54c6cb4ae65c084a6efbd0fd236853539edbdff30b5fc974367935f1df2e3480`; combined receipts `920aec2597dcd09d2de1c399873cdf8fb628e2c5ebf87a97ebd74e51080b8d5c`; Wave2 fixture `2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954`; canonical runner `186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086`; Wave2 target `d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba`.
 - Full suite/T3 was not run by lease instruction.
