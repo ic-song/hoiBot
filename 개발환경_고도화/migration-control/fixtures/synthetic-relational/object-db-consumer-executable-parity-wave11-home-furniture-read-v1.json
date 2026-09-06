@@ -110,9 +110,9 @@
             "consumerId": "runtime-dispatch-722afb15e9cbd92c",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 175126,
-              "end": 175971,
-              "sha256": "e9ff2007e8ce47f8a6b19749913536f0dcb6770b322c2cfd812a76f114a38ad3",
+              "start": 175718,
+              "end": 176513,
+              "sha256": "4c7b3abc90379e5077a71f94cd022995f77deeae506e26143167b8ea23c036a9",
               "needle": "home_furniture_info_read",
               "symbol": "handlerKey=home_furniture_info_read",
               "triggerOrPredicate": "handlerKey=home_furniture_info_read",
@@ -125,8 +125,8 @@
               {
                 "file": "개발환경_고도화/runtime/src/app.ts",
                 "start": 0,
-                "end": 265501,
-                "sha256": "a71e0811c1cf4f9a35d0465b06eb03b0ad5d715c2385073a14adc5538f9a00d8",
+                "end": 265992,
+                "sha256": "6dd1af6127a96382bf19e211c8963506d734c169166447230e54dc134b2e4a97",
                 "needle": "/api/v1/integrations/iris/events"
               },
               {
@@ -3671,9 +3671,9 @@
             "consumerId": "runtime-dispatch-c3cb8d18613c2358",
             "sourceLocator": {
               "file": "개발환경_고도화/runtime/src/app.ts",
-              "start": 200239,
-              "end": 200995,
-              "sha256": "4d1396ab08827f7b02f7d6172fec6cb8fa5b7940a45642c92ec28fbe45c34bdf",
+              "start": 200781,
+              "end": 201486,
+              "sha256": "97f618e936b5424519071b34b165e5cc19ee7b787f830936522c900995086471",
               "needle": "home_furniture_stats_read",
               "symbol": "handlerKey=home_furniture_stats_read",
               "triggerOrPredicate": "handlerKey=home_furniture_stats_read",
@@ -3686,8 +3686,8 @@
               {
                 "file": "개발환경_고도화/runtime/src/app.ts",
                 "start": 0,
-                "end": 265501,
-                "sha256": "a71e0811c1cf4f9a35d0465b06eb03b0ad5d715c2385073a14adc5538f9a00d8",
+                "end": 265992,
+                "sha256": "6dd1af6127a96382bf19e211c8963506d734c169166447230e54dc134b2e4a97",
                 "needle": "/api/v1/integrations/iris/events"
               },
               {

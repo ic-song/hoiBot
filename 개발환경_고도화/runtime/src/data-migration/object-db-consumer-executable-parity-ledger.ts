@@ -649,8 +649,8 @@ export function assertTrustedWave10ExecutableHashes(harnessSha256:unknown,target
 export function assertTrustedWave10ConsumerFixtureMapping(consumerId:string,consumer:Record<string,unknown>,manifestConsumer:ConsumerManifestInput["consumers"][number]):void{const trusted=TRUSTED_WAVE10_PENDANT_READS[consumerId as keyof typeof TRUSTED_WAVE10_PENDANT_READS];if(!trusted)return;const locator=consumer.sourceLocator;if(consumer.consumerId!==consumerId||consumer.frozenSourceCommit!=="15abb95203e7eb375c9f0bd4294a0ec7100aa1a6"||sha256CanonicalJson(consumer)!==trusted.hash||!isRecord(locator)||locator.file!==manifestConsumer.file||locator.symbol!==manifestConsumer.symbol||locator.triggerOrPredicate!==manifestConsumer.triggerOrPredicate||locator.interfaceId!==manifestConsumer.interfaceId||locator.catalogSourceSpanSha256!==manifestConsumer.sourceSpan.sha256||locator.catalogSourceSpanStatus!=="STALE_RELOCATED_AT_WAVE10"||locator.needle!==trusted.handlerKey)throw new Error(`${consumerId} trusted Wave10 pendant-read contract drift`);}
 
 const TRUSTED_WAVE11_HOME_FURNITURE_READS={
-  "runtime-dispatch-722afb15e9cbd92c":{caseId:"case:home-furniture-info",handlerKey:"home_furniture_info_read",hash:"7187481ec9bde6097e9f55fefffaf01649dc946e943c1ae17b2312811a568434"},
-  "runtime-dispatch-c3cb8d18613c2358":{caseId:"case:home-furniture-stats",handlerKey:"home_furniture_stats_read",hash:"ae4805bf62f06921e493bfb54fc9730490c82dff080ae080bee3a789aebb916f"},
+  "runtime-dispatch-722afb15e9cbd92c":{caseId:"case:home-furniture-info",handlerKey:"home_furniture_info_read",hash:"51d241ef2b372ca63e43e71aa53c48b319d0f6b42013e3f55f2146e1e534edd8"},
+  "runtime-dispatch-c3cb8d18613c2358":{caseId:"case:home-furniture-stats",handlerKey:"home_furniture_stats_read",hash:"45962fd364209223950beb7a71cbd6a17dfece73a95a73475f6cb0be95b213bf"},
 } as const;
 const TRUSTED_WAVE11_HARNESS_SHA256="6e8ba3bc5494b1ab7592d9846f744698cd6f23a1916e138a4ac0e8eedca21dd0" as const;
 const TRUSTED_WAVE11_TARGET_SHA256="6505aa02478088fe1faabbc88fe54f9a032e2d56b2d1b23dd14488629a4c5579" as const;

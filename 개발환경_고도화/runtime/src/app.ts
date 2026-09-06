@@ -450,6 +450,16 @@ function normalizeHomeFurnitureMutationDispatchMessage(message: string): string 
   return message;
 }
 
+async function invokeHomeFurnitureInfoRead(database: DatabaseClient, observe: AppDependencies["observeServiceInvocation"], input: Parameters<HomeFurnitureInfoReadService["read"]>[0]) {
+  observe?.("home_furniture_info_read");
+  return new HomeFurnitureInfoReadService(database).read(input);
+}
+
+async function invokeHomeFurnitureStatsRead(database: DatabaseClient, observe: AppDependencies["observeServiceInvocation"], input: Parameters<HomeFurnitureStatsReadService["read"]>[0]) {
+  observe?.("home_furniture_stats_read");
+  return new HomeFurnitureStatsReadService(database).read(input);
+}
+
 function createTokenGuard(config: AppConfig) {
   return async function tokenGuard(
     request: FastifyRequest,
@@ -2780,8 +2790,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_info_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        dependencies.observeServiceInvocation?.("home_furniture_info_read");
-        const result=await new HomeFurnitureInfoReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
+        const result=await invokeHomeFurnitureInfoRead(database!,dependencies.observeServiceInvocation,{eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
         if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
 
@@ -3100,8 +3109,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFurnitureStatsReadCommand(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_stats_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        dependencies.observeServiceInvocation?.("home_furniture_stats_read");
-        const result=await new HomeFurnitureStatsReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
+        const result=await invokeHomeFurnitureStatsRead(database!,dependencies.observeServiceInvocation,{eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
       }
 
