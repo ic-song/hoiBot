@@ -79,7 +79,7 @@ export async function executeWave10PendantRead(args) {
       DATABASE_HOST: "127.0.0.1", DATABASE_PORT: "3306", DATABASE_USER: "unused",
       DATABASE_PASSWORD: "unused", DATABASE_NAME: "unused",
     });
-    const rejectedByChannel = args.scenarioKind === "NEGATIVE_GUARD" || args.scenarioKind === "WRONG_OPERATIONAL_CHANNEL";
+    const rejectedByChannel = args.scenarioKind === "WRONG_OPERATIONAL_CHANNEL";
     const app = appModule.buildApp(config, {
       database: args.database,
       inspectIrisChannel: async () => rejectedByChannel

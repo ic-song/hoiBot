@@ -379,7 +379,35 @@
                   ]
                 }
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "pendant-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                }
+              ],
               "EXACT_OUTPUT": [
                 {
                   "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
@@ -1246,7 +1274,82 @@
                   "insertId": "901"
                 }
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "pendant-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-36d6721ade0707a6-negative_guard",
+                    "iris",
+                    "wave10-runtime-dispatch-36d6721ade0707a6-negative_guard",
+                    "pendant-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "pendant-user",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "e881394ce0427ed86b7e613b722ed3d4e4916f85f6779f9f8f581343d42e8add"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-36d6721ade0707a6-negative_guard",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-36d6721ade0707a6-negative_guard"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
               "EXACT_OUTPUT": [
                 {
                   "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
@@ -2317,7 +2420,7 @@
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
-              "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":true,\"channelMode\":null,\"duplicate\":false,\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"sentReplies\":[]}",
+              "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"sentReplies\":[]}",
               "EXACT_OUTPUT": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
               "SOURCE_DOMAIN_DML_ZERO": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
               "RESTART_CONSISTENCY": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
@@ -2372,8 +2475,8 @@
               "NEGATIVE_GUARD": {
                 "statusCode": 202,
                 "accepted": true,
-                "ignored": true,
-                "channelMode": null,
+                "ignored": false,
+                "channelMode": "operational",
                 "duplicate": false,
                 "serviceInvocationCount": 0,
                 "evidenceRowsBefore": {
@@ -2624,7 +2727,10 @@
                 "BEGIN",
                 "COMMIT"
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                "BEGIN",
+                "COMMIT"
+              ],
               "EXACT_OUTPUT": [
                 "BEGIN",
                 "COMMIT",
@@ -2952,7 +3058,35 @@
                   ]
                 }
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "pendant-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                }
+              ],
               "EXACT_OUTPUT": [
                 {
                   "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
@@ -3875,7 +4009,82 @@
                   "insertId": "901"
                 }
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "pendant-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-8c6c3c3d598fe078-negative_guard",
+                    "iris",
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-negative_guard",
+                    "pendant-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "pendant-user",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "3a267504caa93008b908ed1687fb007ca395eb94da52ab21866d595f8422b208"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-8c6c3c3d598fe078-negative_guard",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-8c6c3c3d598fe078-negative_guard"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
               "EXACT_OUTPUT": [
                 {
                   "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
@@ -4952,7 +5161,7 @@
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
-              "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":true,\"channelMode\":null,\"duplicate\":false,\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"sentReplies\":[]}",
+              "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"sentReplies\":[]}",
               "EXACT_OUTPUT": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
               "SOURCE_DOMAIN_DML_ZERO": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
               "RESTART_CONSISTENCY": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}]}",
@@ -5007,8 +5216,8 @@
               "NEGATIVE_GUARD": {
                 "statusCode": 202,
                 "accepted": true,
-                "ignored": true,
-                "channelMode": null,
+                "ignored": false,
+                "channelMode": "operational",
                 "duplicate": false,
                 "serviceInvocationCount": 0,
                 "evidenceRowsBefore": {
@@ -5259,7 +5468,10 @@
                 "BEGIN",
                 "COMMIT"
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                "BEGIN",
+                "COMMIT"
+              ],
               "EXACT_OUTPUT": [
                 "BEGIN",
                 "COMMIT",
@@ -5642,7 +5854,35 @@
                   ]
                 }
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "pendant-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                }
+              ],
               "EXACT_OUTPUT": [
                 {
                   "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
@@ -6768,7 +7008,82 @@
                   "insertId": "901"
                 }
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "pendant-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-19076db78c2eefb9-negative_guard",
+                    "iris",
+                    "wave10-runtime-dispatch-19076db78c2eefb9-negative_guard",
+                    "pendant-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "pendant-user",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "d734a026d2955cb80d8aa8fa3ba9248fda3147987bad7e9dbb473c07546027f0"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-19076db78c2eefb9-negative_guard",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave10-runtime-dispatch-19076db78c2eefb9-negative_guard"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
               "EXACT_OUTPUT": [
                 {
                   "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
@@ -7829,7 +8144,7 @@
             },
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}]}",
-              "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":true,\"channelMode\":null,\"duplicate\":false,\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"sentReplies\":[]}",
+              "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"sentReplies\":[]}",
               "EXACT_OUTPUT": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}]}",
               "SOURCE_DOMAIN_DML_ZERO": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}]}",
               "RESTART_CONSISTENCY": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"duplicate\":false,\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0},\"evidenceRowsAfter\":{\"operations\":1,\"outbox_messages\":1,\"command_executions\":1,\"command_audit\":1},\"sentReplies\":[{\"room\":\"pendant-room\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}]}",
@@ -7884,8 +8199,8 @@
               "NEGATIVE_GUARD": {
                 "statusCode": 202,
                 "accepted": true,
-                "ignored": true,
-                "channelMode": null,
+                "ignored": false,
+                "channelMode": "operational",
                 "duplicate": false,
                 "serviceInvocationCount": 0,
                 "evidenceRowsBefore": {
@@ -8136,7 +8451,10 @@
                 "BEGIN",
                 "COMMIT"
               ],
-              "NEGATIVE_GUARD": [],
+              "NEGATIVE_GUARD": [
+                "BEGIN",
+                "COMMIT"
+              ],
               "EXACT_OUTPUT": [
                 "BEGIN",
                 "COMMIT",

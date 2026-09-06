@@ -75,7 +75,7 @@ async function capture(def: Definition, scenario: string) {
   const originalHandle = def.service.prototype.handle;
   def.service.prototype.handle = async function (...args: any[]) { serviceInvocationCount += 1; return originalHandle.apply(this, args as never); };
   const token = "wave10-in-memory-token";
-  const rejectedByChannel = scenario === "NEGATIVE_GUARD" || scenario === "WRONG_OPERATIONAL_CHANNEL";
+  const rejectedByChannel = scenario === "WRONG_OPERATIONAL_CHANNEL";
   const app = buildApp(loadConfig({ NODE_ENV: "test", HOIBOT_ENVIRONMENT_CODE: "dev", IRIS_SHARED_TOKEN: token, USER_VERIFICATION_PEPPER: "wave10-in-memory-pepper", DATABASE_ENABLED: "true", DATABASE_HOST: "127.0.0.1", DATABASE_PORT: "3306", DATABASE_USER: "unused", DATABASE_PASSWORD: "unused", DATABASE_NAME: "unused" }), {
     database: db,
     inspectIrisChannel: async () => rejectedByChannel ? { mode: "denied", channelClass: "open_group", reason: "not_designated", evidence: { roomType: "OM", openLinkActive: true, openLinkExpired: false } } : { mode: "operational", channelClass: "open_group", reason: "allowed", evidence: { roomType: "OM", openLinkActive: true, openLinkExpired: false } },
