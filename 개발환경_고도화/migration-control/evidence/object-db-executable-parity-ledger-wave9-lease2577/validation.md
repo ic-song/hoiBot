@@ -11,7 +11,7 @@
 - isolation safety: port 3330 임시 datadir 정리, 운영 3306 listener 불변
 - prior preservation: 94 → 119, hash/count/ID uniqueness/prefix PASS
 - strict AJV/receipt/ancestry/blob/hash validation: PASS
-- combined focused Wave0~9 + runner defense (concurrency 1): 34/34 PASS
+- combined focused Wave0~9 + runner defense (concurrency 1): 36/36 PASS
 - object data model validation: 103 PASS
 - typecheck: PASS
 - build: PASS
