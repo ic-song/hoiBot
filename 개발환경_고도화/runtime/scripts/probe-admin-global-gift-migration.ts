@@ -14,7 +14,11 @@ try{
   await connection.query("INSERT INTO canonical_players(player_id,source_system,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES ('prvplyr1','LEGACY_DB',?,'wbs752-probe','2026-09-06 12:00:00','wbs752-probe','2026-09-06 12:00:00')",[probeLegacy.toString()]);
   await connection.query("INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES ('prvstak1','prvplyr1','j7uyw6vc',1,'wbs752-probe','2026-09-06 12:00:00','wbs752-probe','2026-09-06 12:00:00')");
   try{await connection.query(rollback);throw new Error("OWNERSHIP_ROLLBACK_GUARD_MISSING");}catch(error){if(!String((error as Error).message).includes("ADMIN_GLOBAL_GIFT_DURABLE_STATE_EXISTS"))throw error;}
-  await connection.query("DELETE FROM canonical_owned_item_stacks WHERE owned_item_stack_id='prvstak1';DELETE FROM canonical_players WHERE player_id='prvplyr1';DELETE FROM players WHERE id=?",[probeLegacy]);
+  await connection.query("DELETE FROM canonical_owned_item_stacks WHERE owned_item_stack_id='prvstak1';INSERT INTO canonical_owned_item_instances(owned_item_id,player_id,item_id,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES ('prvinst1','prvplyr1','j7uyw6vc','owned','wbs752-probe','2026-09-06 12:00:00','wbs752-probe','2026-09-06 12:00:00')");
+  try{await connection.query(rollback);throw new Error("EXTERNAL_FK_ROLLBACK_GUARD_MISSING");}catch(error){if(!String((error as Error).message).includes("ADMIN_GLOBAL_GIFT_DURABLE_STATE_EXISTS"))throw error;}
+  const guarded=await connection.query<Array<{table_count:bigint;instance_count:bigint;item_count:bigint}>>("SELECT (SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'canonical_admin_global_gift_%') table_count,(SELECT COUNT(*) FROM canonical_owned_item_instances WHERE owned_item_id='prvinst1') instance_count,(SELECT COUNT(*) FROM canonical_item_definitions WHERE item_id='j7uyw6vc') item_count");
+  if(guarded[0]!.table_count!==5n||guarded[0]!.instance_count!==1n||guarded[0]!.item_count!==1n)throw new Error("EXTERNAL_FK_GUARD_MUTATED_STATE");
+  await connection.query("DELETE FROM canonical_owned_item_instances WHERE owned_item_id='prvinst1';DELETE FROM canonical_players WHERE player_id='prvplyr1';DELETE FROM players WHERE id=?",[probeLegacy]);
   await connection.query(rollback);
   const removed=await connection.query<Array<{count_value:bigint}>>("SELECT COUNT(*) count_value FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'canonical_admin_global_gift_%'");
   if(removed[0]!.count_value!==0n)throw new Error("ROLLBACK_TABLES_REMAIN");
@@ -35,5 +39,5 @@ try{
   await connection.query("INSERT INTO schema_migrations(version,checksum,applied_at) VALUES ('479_admin_global_gift_object_db.sql',?,UTC_TIMESTAMP(3))",[createHash("sha256").update(forward).digest("hex")]);
   const restored=await connection.query<Array<{count_value:bigint}>>("SELECT COUNT(*) count_value FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name LIKE 'canonical_admin_global_gift_%'");
   if(restored[0]!.count_value!==5n)throw new Error("REFORWARD_TABLES_MISSING");
-  process.stdout.write(`receipt-guard=${receipts[0]!.count_value>0n?"PASS":"PREVIOUSLY_PROVED"} ownership-guard=PASS source-drift=PASS reserved-id-preexisting-preserved=PASS rollback=PASS reapply=PASS tables=5\n`);
+  process.stdout.write(`receipt-guard=${receipts[0]!.count_value>0n?"PASS":"PREVIOUSLY_PROVED"} ownership-guard=PASS external-fk-ddl0=PASS source-drift=PASS reserved-id-preexisting-preserved=PASS rollback=PASS reapply=PASS tables=5\n`);
 }finally{await connection.end();}

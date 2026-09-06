@@ -32,11 +32,14 @@ describe("admin global gift canonical reintegration",()=>{
     assert.doesNotMatch(service,/ITEM-FREE-HOI-SUPPORT-02/);
     assert.match(service,/sourceChannelId:input\.channelId/);
     assert.match(service,/ADMIN_GLOBAL_GIFT_MEMBER_IMPORT_INCOMPLETE/);
-    assert.match(service,/readVerifiedTerminal\(this\.database,requestKey,false\)/);
+    assert.match(service,/withTransaction\(async tx=>\(await this\.readVerifiedTerminal\(tx,requestKey,false\)\)/);
+    assert.doesNotMatch(service,/readVerifiedTerminal\(this\.database,requestKey,false\)/);
     assert.match(service,/recipientFingerprint=sha256\(JSON\.stringify\(recipientEvidence\)\)/);
     assert.match(migration,/canonical_admin_global_gift_migration_provenance/);
     assert.match(migration,/VALUES\('n89yb2ye',@migration_479_existing_item_id IS NULL/);
     assert.match(rollback,/@rollback_479_created_seed=TRUE/);
+    assert.match(rollback,/INFORMATION_SCHEMA\.KEY_COLUMN_USAGE/);
+    assert.match(rollback,/@rollback_479_external_reference_exists/);
     assert.match(migration,/SELECT 'j7uyw6vc'.*호이응원패키지/s);
     assert.match(migration,/SELECT 'phk8c656','j7uyw6vc','LEGACY_JS'/);
     assert.doesNotMatch(migration,/ON DUPLICATE KEY UPDATE item_id/);

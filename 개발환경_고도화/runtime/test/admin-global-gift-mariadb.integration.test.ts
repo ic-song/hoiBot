@@ -91,12 +91,16 @@ describe("admin global gift isolated MariaDB",{skip:!enabled},()=>{
 
   it("reconciles an ambiguous commit only after the same complete receipt and eleven outboxes verify",async()=>{
     const root=database as RootTransactionDatabaseClient;
+    let recoveryPhase=false,recoveryTransactions=0,recoveryQueries=0,concurrentDriftApplied=false;
     const ambiguous:DatabaseClient&RootTransactionDatabaseClient={
-      ping:()=>database.ping(),verifyRollback:()=>database.verifyRollback(),query:<T>(sql:string,values?:readonly unknown[])=>database.query<T>(sql,values),execute:(sql:string,values?:readonly unknown[])=>database.execute(sql,values),withTransaction:<T>(work:(transaction:DatabaseTransaction)=>Promise<T>)=>database.withTransaction(work),close:async()=>undefined,
-      withRootTransaction:async<T>(work:(transaction:DatabaseTransaction)=>Promise<T>)=>{await root.withRootTransaction(work);throw new TransactionCommitAckAmbiguousError();}
+      ping:()=>database.ping(),verifyRollback:()=>database.verifyRollback(),query:<T>(sql:string,values?:readonly unknown[])=>{if(recoveryPhase)throw new Error("RECOVERY_POOL_AUTOCOMMIT_READ");return database.query<T>(sql,values);},execute:(sql:string,values?:readonly unknown[])=>{if(recoveryPhase)throw new Error("RECOVERY_POOL_AUTOCOMMIT_WRITE");return database.execute(sql,values);},
+      withTransaction:<T>(work:(transaction:DatabaseTransaction)=>Promise<T>)=>database.withTransaction(async tx=>{if(!recoveryPhase)return work(tx);recoveryTransactions+=1;const traced:DatabaseTransaction={query:async<R>(sql:string,values?:readonly unknown[])=>{recoveryQueries+=1;const result=await tx.query<R>(sql,values);if(!concurrentDriftApplied&&sql.includes("FROM canonical_admin_global_gift_operations WHERE request_key=")){concurrentDriftApplied=true;await database.execute("UPDATE canonical_admin_global_gift_recipients recipient JOIN canonical_admin_global_gift_operations gift ON gift.admin_global_gift_operation_id=recipient.admin_global_gift_operation_id SET recipient.quantity_before=recipient.quantity_before+1,recipient.quantity_after=recipient.quantity_after+1 WHERE gift.request_key='wbs752-ambiguous' AND recipient.recipient_sequence=1");}return result;},execute:(sql:string,values?:readonly unknown[])=>tx.execute(sql,values)};return work(traced);}),close:async()=>undefined,
+      withRootTransaction:async<T>(work:(transaction:DatabaseTransaction)=>Promise<T>)=>{await root.withRootTransaction(work);recoveryPhase=true;throw new TransactionCommitAckAmbiguousError();}
     };
     const result=await new AdminGlobalGiftService(ambiguous).handle({eventId:"wbs752-ambiguous",externalUserId:"wbs752-admin",channelId:"synthetic-command-room",message:ADMIN_GLOBAL_GIFT_COMMAND});
     assert.equal(result.replayed,false);assert.equal(result.replies.length,11);
+    assert.equal(recoveryTransactions,1);assert.ok(recoveryQueries>=4);assert.equal(concurrentDriftApplied,true);
+    await database.execute("UPDATE canonical_admin_global_gift_recipients recipient JOIN canonical_admin_global_gift_operations gift ON gift.admin_global_gift_operation_id=recipient.admin_global_gift_operation_id SET recipient.quantity_before=recipient.quantity_before-1,recipient.quantity_after=recipient.quantity_after-1 WHERE gift.request_key='wbs752-ambiguous' AND recipient.recipient_sequence=1");
     const count=(await database.query<Array<{count_value:bigint}>>("SELECT COUNT(*) count_value FROM canonical_admin_global_gift_operations WHERE request_key='wbs752-ambiguous'"))[0]!.count_value;assert.equal(count,1n);
   });
 
