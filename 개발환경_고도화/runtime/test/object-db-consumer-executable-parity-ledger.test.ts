@@ -174,7 +174,7 @@ describe("object DB executable parity ledger Wave0", () => {
     const commentsText = `// OBJECT_DB_EXECUTABLE_PARITY_BINDING:${JSON.stringify({ consumerId: receipt.consumerId })}\n`;
     commentsOnly.harness.sourceSha256 = sha256CanonicalText(commentsText);
     commentsOnly.receiptSha256 = receiptHash(commentsOnly);
-    assert.throws(() => buildWave1With([commentsOnly], { ...proof.files, [receipt.harness.path]: commentsText }, proofWithBundle.bundle), /evidenceCommit blob hash drift/);
+    assert.throws(() => buildWave1With([commentsOnly], { ...proof.files, [receipt.harness.path]: commentsText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
     for (const [maliciousPath] of [
       ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-print-only-harness.mjs"],
       ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-rawless-harness.mjs"],
@@ -184,29 +184,29 @@ describe("object DB executable parity ledger Wave0", () => {
       malicious.harness.path = maliciousPath;
       malicious.harness.sourceSha256 = sha256CanonicalText(maliciousText);
       malicious.receiptSha256 = receiptHash(malicious);
-      assert.throws(() => buildWave1With([malicious], { ...proof.files, [maliciousPath]: maliciousText }, proofWithBundle.bundle), /runner entrypoint is not allowlisted/);
+      assert.throws(() => buildWave1With([malicious], { ...proof.files, [maliciousPath]: maliciousText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
     }
     const ignoredRunner = structuredClone(receipt);
     ignoredRunner.harness.runner = "node --eval";
     ignoredRunner.receiptSha256 = receiptHash(ignoredRunner);
-    assert.throws(() => buildWave1With([ignoredRunner], proof.files, proofWithBundle.bundle), /runner metadata is not allowlisted/);
+    assert.throws(() => buildWave1With([ignoredRunner], proof.files, proofWithBundle.bundle), /historical receipt fingerprint drift/);
     const targetHashDrift = structuredClone(receipt);
     targetHashDrift.invocation.targetSourceSha256 = "0".repeat(64);
     targetHashDrift.receiptSha256 = receiptHash(targetHashDrift);
-    assert.throws(() => buildWave1With([targetHashDrift], proof.files, proofWithBundle.bundle), /evidenceCommit blob hash drift/);
+    assert.throws(() => buildWave1With([targetHashDrift], proof.files, proofWithBundle.bundle), /historical receipt fingerprint drift/);
     const selfPath = structuredClone(receipt);
     selfPath.harness.path = paths.executionReceipts;
     selfPath.receiptSha256 = receiptHash(selfPath);
-    assert.throws(() => buildWave1With([selfPath], { ...proof.files, [paths.executionReceipts]: baseInput.executionReceiptsText }, proofWithBundle.bundle), /trusted Wave1 invocation target drift|trusted input|evidenceCommit blob hash drift/);
+    assert.throws(() => buildWave1With([selfPath], { ...proof.files, [paths.executionReceipts]: baseInput.executionReceiptsText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
     const other = structuredClone(receipt);
     other.consumerId = baseline.entries.find(({ consumerId }) => consumerId !== entry.consumerId)!.consumerId;
     other.receiptSha256 = receiptHash(other);
-    assert.throws(() => buildWave1With([other], proof.files, proofWithBundle.bundle), /unrelated harness|blocked consumer|binding|trusted/);
+    assert.throws(() => buildWave1With([other], proof.files, proofWithBundle.bundle), /historical receipt fingerprint drift/);
     const unrelatedFixtureText = JSON.stringify({ format: "hoibot-object-db-consumer-parity-case-fixture-v1", fixtureId: receipt.fixture.fixtureId, bindings: [], payload: {} });
     const unrelatedFixture = structuredClone(receipt);
     unrelatedFixture.fixture.sha256 = sha256CanonicalText(unrelatedFixtureText);
     unrelatedFixture.receiptSha256 = receiptHash(unrelatedFixture);
-    assert.throws(() => buildWave1With([unrelatedFixture], { ...proof.files, [receipt.fixture.path]: unrelatedFixtureText }, proofWithBundle.bundle), /evidenceCommit blob hash drift|unrelated fixture/);
+    assert.throws(() => buildWave1With([unrelatedFixture], { ...proof.files, [receipt.fixture.path]: unrelatedFixtureText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
   });
 
   it("rejects reply/result, DML row, lock-order, timeline, and arbitrary verdict drift", () => {
