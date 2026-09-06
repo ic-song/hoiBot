@@ -8,4 +8,3 @@
 - Both invalid-input scenarios fail before query (`queryTrace=[]`, DML0, `GUARD_REJECTED`). All positive, alternative, DML-zero and restart scenarios remain `READ_ONLY`, lock order empty, and DML row count `0`.
 - Restart scenarios execute the complete ordered query plan twice in fresh child processes; process IDs and module UUIDs must both differ while results remain identical.
 - Drift defenses cover locator, input, exact SQL, parameters, query order/count, row payload and result; trusted mapping and runner both fail closed.
-

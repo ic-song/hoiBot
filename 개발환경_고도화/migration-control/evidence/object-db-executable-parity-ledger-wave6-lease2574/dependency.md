@@ -6,4 +6,3 @@
 - Fixture, runner, target, provider source spans, exact SQL/parameters/rows/results, Git ancestry, blobs and hashes are attested by the strict validator.
 - Prior `45` receipts retain their semantics; only the additive shared-runner `sourceSha256` and dependent `receiptSha256` were refreshed (`45/45`, semantic drift `0`).
 - No schema, migration, shared production provider, `main.js`, `Info.js`, data snapshot, feature/prod, Gate, or operational DB change.
-
