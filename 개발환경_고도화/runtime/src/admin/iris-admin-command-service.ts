@@ -21,7 +21,7 @@ import { LordIncomeService } from "./lord-income-service.js";
 import { isOperationIntervalResetCommand, OperationIntervalResetService } from "./operation-interval-reset-service.js";
 import { isPetDataCompareCommand, PetDataCompareService } from "./pet-data-compare-service.js";
 import { isMemberCharacterCountCommand, MemberCharacterCountService } from "./member-character-count-service.js";
-import { CharacterCountStatsService, isCharacterCountStatsCommand } from "./character-count-stats-service.js";
+import { CharacterCountStatsService, isCharacterCountStatsCommand, type CharacterCountRuntimeContext } from "./character-count-stats-service.js";
 import { isServerStatsCommand, ServerStatsService } from "./server-stats-service.js";
 import { isStatusAllCommand, StatusAllService } from "./status-all-service.js";
 import { isDataStatusCommand, DataStatusService } from "./data-status-service.js";
@@ -102,6 +102,7 @@ export class IrisAdminCommandService {
     private readonly database: DatabaseClient,
     private readonly broadcastIds: string[] = [],
     private readonly petTitleAdminAppWiringIngress?: Pick<PetTitleAdminAppWiringIngress,"add"|"sync"|"reset">,
+    private readonly diagnosticRuntime?: CharacterCountRuntimeContext & { now?:()=>number },
   ) {}
 
   async changePlayerServer(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<{ data: string; outboxId: string }> {
@@ -152,7 +153,7 @@ export class IrisAdminCommandService {
     | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
     if (isMatzangSessionCommand(input.message)) return new MatzangSessionCommandService(this.database).handleIris(input);
-    if (isMatzangTimeCheckCommandCandidate(input.message)) return new MatzangTimeCheckService(this.database).handleIris(input);
+    if (isMatzangTimeCheckCommandCandidate(input.message)) return new MatzangTimeCheckService(this.database,this.diagnosticRuntime).handleIris(input);
     if (isMiniPetDuelResetGrantCommandCandidate(input.message)) return this.handleMiniPetDuelResetGrant(input);
     if (isPetDungeonEntryGrantCommandCandidate(input.message)) return this.handlePetDungeonEntryGrant(input);
     if (isMiniPetDrawGrantCommandCandidate(input.message)) return this.handleMiniPetDrawGrant(input);
@@ -225,7 +226,7 @@ export class IrisAdminCommandService {
     if (isDataStatusCommand(input.message)) return new DataStatusService(this.database).handleIris(input);
     if (isStatusAllCommand(input.message)) return new StatusAllService(this.database).handleIris(input);
     if (isMemberCharacterCountCommand(input.message)) return this.handleMemberCharacterCount(input);
-    if (isCharacterCountStatsCommand(input.message)) return new CharacterCountStatsService(this.database).handleIris(input);
+    if (isCharacterCountStatsCommand(input.message)) return new CharacterCountStatsService(this.database,this.diagnosticRuntime).handleIris(input);
     if (isServerStatsCommand(input.message)) return new ServerStatsService(this.database).handleIris(input);
     if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
     if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
@@ -1330,7 +1331,8 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isManagedBackupCommand(message)
     || isDataBackupCommand(message)
     || isDataStatusCommand(message)
-    || isStatusAllCommand(message)
+    || isCharacterCountStatsCommand(message)
+    || isMatzangTimeCheckCommandCandidate(message)
     || isMemberCharacterCountCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
     || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)
