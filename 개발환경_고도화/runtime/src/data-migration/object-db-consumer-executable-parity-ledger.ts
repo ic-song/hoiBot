@@ -22,6 +22,7 @@ const OBJECT_DB_PARITY_WAVE2_COMPATIBILITY_TARGET_PATH = "개발환경_고도화
 const OBJECT_DB_PARITY_WAVE3_PLAYER_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs" as const;
 const OBJECT_DB_PARITY_WAVE4_PET_TITLE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs" as const;
 const OBJECT_DB_PARITY_WAVE5_PLACED_FURNITURE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs" as const;
+const OBJECT_DB_PARITY_WAVE6_MULTI_QUERY_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave6-multi-query.mjs" as const;
 const TRUSTED_WAVE1_TITLE_READS = {
   "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
   "sql-repository-a0a5f5d8f3338d7b": { domain: "pet", symbol: "pet.listOwned", triggerOrPredicate: "SQL_METHOD:pet:listOwned", interfaceId: "pet-title.repository.maria-canonical-title-repository.pet.listOwned", definitionTable: "canonical_pet_title_definitions", definitionId: "pet_title_id", ownershipTable: "canonical_owned_pet_title_instances", ownedId: "owned_pet_title_id", selectionTable: "canonical_pet_title_selections" },
@@ -573,6 +574,13 @@ export function assertTrustedWave5ConsumerFixtureMapping(consumerId:string,consu
   if(typeof consumer.expectedNormalizedSql!=="string"||sha256CanonicalText(consumer.expectedNormalizedSql)!=="ac7ac01398e26961966409cab77ef8987e8b4e4dd85152d52369e903965a3825"||JSON.stringify(consumer.mockRows)!==JSON.stringify([{ownedFurnitureId:"ownfur01",playerId:"player01",furnitureId:"furnit01",enhancementLevel:"2",baseCharm:"100",charmPerEnhancement:"20"}])||JSON.stringify(consumer.expectedRow)!==JSON.stringify({ownedFurnitureId:"ownfur01",playerId:"player01",furnitureId:"furnit01",enhancementLevel:"2",finalCharm:"140",ownershipStatus:"placed"}))throw new Error(`${consumerId} trusted Wave5 SQL/result drift`);
 }
 
+export function assertTrustedWave6ConsumerFixtureMapping(consumerId:string,consumer:Record<string,unknown>,manifestConsumer:ConsumerManifestInput["consumers"][number]):void{
+  const trusted=consumerId==="sql-repository-7367fce7053551f3"?{input:{identityProviderCode:"kakao",externalUserId:"user-1",externalContextId:"room-1"},negative:{identityProviderCode:"unknown",externalUserId:"user-1",externalContextId:"room-1"},guard:"PLAYER_CONTEXT_PROVIDER_UNSUPPORTED",sql:["78f0fb1fcc4adeae026ebdbd9d5534613c1b2aa343e7643062a983c3d7ed1c4a","96b03ba1349efe09bd158509b6337de530dbdc6fa0a6ecc093d94bf82537b714"],values:[["kakao","user-1","KAKAO","room-1","user-1","ROOM","room-1"],["kakao","user-1"]],shapes:["player-context-row","player-context-row"],rows:"f076e71f80a819e60caf7fdf268b14a3c0e58ffd65734c7340daf636303cd275",results:"7ed8cb8ab4788e864680dc4bac24edeb483ac557a640f0ef58608aa3b6616967"}:consumerId==="sql-repository-3001ad9fc2f36d01"?{input:{providerCode:"kakao",externalUserId:"user-1"},negative:{providerCode:"",externalUserId:"user-1"},guard:"BAG_SHADOW_IDENTITY_INPUT_INVALID",sql:["5f0e15d00eaead00e73b4a7159205416eb77c0d3d28d816049406b90acc3157e","aa51085ad4ea85c9e296a4e078e3b8f04768cdaf7b8766e6ec05e9aa6740f3df","6f4fc469f1f068f84e45e6b71929bf8c07f03f183464f1305b5e2483c16e245d","31b40fd07562c85df23240bead76343d56f9cffc4db7caef52c24483ab4c918e"],values:[["kakao","user-1"],["42"],["player01"],["player01"]],shapes:["bag-identity-row","legacy-stack-row","canonical-stack-row","canonical-instance-row"],rows:"3dcbb6b230293165717a15304f9f31c46eb2b3d6557f87df532e3e617b90412f",results:"79b946aa4a8d2799a0bf714c3c29332136a6d85a713c17461b905dd2f10cf133"}:undefined;if(!trusted)return;
+  const locator=consumer.sourceLocator as Record<string,unknown>|undefined,exact={file:manifestConsumer.file,symbol:manifestConsumer.symbol,triggerOrPredicate:manifestConsumer.triggerOrPredicate,interfaceId:manifestConsumer.interfaceId,start:manifestConsumer.sourceSpan.start,end:manifestConsumer.sourceSpan.end,sha256:manifestConsumer.sourceSpan.sha256},queries=consumer.orderedQueries as Array<Record<string,unknown>>|undefined;
+  if(!locator||JSON.stringify(locator)!==JSON.stringify(exact)||consumer.consumerId!==consumerId||JSON.stringify(consumer.input)!==JSON.stringify(trusted.input)||JSON.stringify(consumer.negativeInput)!==JSON.stringify(trusted.negative)||consumer.expectedGuardError!==trusted.guard||!queries||JSON.stringify(queries.map(query=>query.expectedQueryValues))!==JSON.stringify(trusted.values)||JSON.stringify(queries.map(query=>query.rowShape))!==JSON.stringify(trusted.shapes)||JSON.stringify(queries.map(query=>sha256CanonicalText(String(query.expectedNormalizedSql))))!==JSON.stringify(trusted.sql))throw new Error(`${consumerId} trusted Wave6 query contract drift`);
+  if(sha256CanonicalJson(consumer.queryRowsByScenario)!==trusted.rows||sha256CanonicalJson(consumer.expectedResultsByScenario)!==trusted.results)throw new Error(`${consumerId} trusted Wave6 rows/result drift`);
+}
+
 function assertTrustedWave1FixtureBinding(
   receipt: ObjectDbConsumerExecutionReceipt,
   fixtureText: string,
@@ -584,6 +592,9 @@ function assertTrustedWave1FixtureBinding(
   if (trusted === undefined) {
     const wave2 = TRUSTED_WAVE2_COMPATIBILITY_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE2_COMPATIBILITY_READS];
     if (wave2 === undefined) {
+      if(receipt.consumerId==="sql-repository-7367fce7053551f3"||receipt.consumerId==="sql-repository-3001ad9fc2f36d01"){
+        const expectedExport=receipt.consumerId==="sql-repository-7367fce7053551f3"?"executeWave6ResolveSelf":"executeWave6BagCompare",expectedCase=receipt.consumerId==="sql-repository-7367fce7053551f3"?"MariaPlayerContextProvider.resolveSelf":"BagShadowParityProvider.compare";if(receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE6_MULTI_QUERY_TARGET_PATH||receipt.invocation.exportName!==expectedExport)throw new Error(`${receipt.receiptId} trusted Wave6 invocation target drift`);const fixture=JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as {payload?:{cases?:Array<{caseId?:string;executablePath?:string;transactionPath?:string;consumers?:Array<Record<string,unknown>>}>}},parityCase=fixture.payload?.cases?.find(({caseId})=>caseId===receipt.harness.harnessCaseId),consumer=parityCase?.consumers?.find(candidate=>candidate.consumerId===receipt.consumerId);if(parityCase?.executablePath!==expectedCase||parityCase.transactionPath!=="DatabaseClient.query:READ_ONLY"||!consumer)throw new Error(`${receipt.receiptId} trusted Wave6 case/path binding drift`);assertTrustedWave6ConsumerFixtureMapping(receipt.consumerId,consumer,manifestConsumer);const locator=consumer.sourceLocator as Record<string,unknown>,sourceBlob=readCommitBlob(repositoryRoot,evidenceCommit,locator.file as string);if(sha256CanonicalText(canonicalizeObjectDbConsumerSourceText(sourceBlob).slice(locator.start as number,locator.end as number))!==locator.sha256)throw new Error(`${receipt.receiptId} evidenceCommit source span hash drift`);return;
+      }
       if(receipt.consumerId==="sql-repository-13888c58966b6d56"){
         if(receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE5_PLACED_FURNITURE_TARGET_PATH||receipt.invocation.exportName!=="executeWave5PlacedFurnitureRead")throw new Error(`${receipt.receiptId} trusted Wave5 invocation target drift`);const fixture=JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as {payload?:{cases?:Array<{caseId?:string;executablePath?:string;transactionPath?:string;consumers?:Array<Record<string,unknown>>}>}},parityCase=fixture.payload?.cases?.find(({caseId})=>caseId===receipt.harness.harnessCaseId),consumer=parityCase?.consumers?.find(candidate=>candidate.consumerId===receipt.consumerId);if(parityCase?.executablePath!=="MariaCanonicalFurnitureHomeRepository.listPlacedFurniture"||parityCase.transactionPath!=="DatabaseClient.query:READ_ONLY"||!consumer)throw new Error(`${receipt.receiptId} trusted Wave5 case/path binding drift`);assertTrustedWave5ConsumerFixtureMapping(receipt.consumerId,consumer,manifestConsumer);const locator=consumer.sourceLocator as Record<string,unknown>,sourceBlob=readCommitBlob(repositoryRoot,evidenceCommit,locator.file as string);if(sha256CanonicalText(canonicalizeObjectDbConsumerSourceText(sourceBlob).slice(locator.start as number,locator.end as number))!==locator.sha256)throw new Error(`${receipt.receiptId} evidenceCommit source span hash drift`);return;
       }
@@ -698,7 +709,31 @@ function assertReceiptExecutableBinding(
     if (replyHash !== receipt.expectedActual.reply.actualSha256 || resultHash !== receipt.expectedActual.result.actualSha256) throw new Error(`${receipt.receiptId} raw reply/result capture hash mismatch`);
     const trace = JSON.parse(readFileSync(artifactPath(caseResult.artifacts.tracePath), "utf8")) as unknown;
     if (!isRecord(trace)) throw new Error(`${receipt.receiptId} raw execution trace invalid`);
-    assertExactKeys(trace, ["normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
+    assertExactKeys(trace, ["queryTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
+    if (!Array.isArray(trace.queryTrace)) throw new Error(`${receipt.receiptId} trace queryTrace invalid`);
+    for (const [index, query] of trace.queryTrace.entries()) {
+      if (!isRecord(query)) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
+      assertExactKeys(query, ["channel", "normalizedSql", "values", "rowCount"], `${receipt.receiptId}.trace.queryTrace[${index}]`);
+      if (query.channel !== "query" || typeof query.normalizedSql !== "string" || !Array.isArray(query.values) || !Number.isSafeInteger(query.rowCount) || (query.rowCount as number) < 0) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
+    }
+    if (receipt.consumerId === "sql-repository-7367fce7053551f3" || receipt.consumerId === "sql-repository-3001ad9fc2f36d01") {
+      const fixturePayload = isRecord(fixture.payload) ? fixture.payload : undefined;
+      const cases = fixturePayload !== undefined && Array.isArray(fixturePayload.cases) ? fixturePayload.cases : [];
+      const parityCase = cases.find((candidate) => isRecord(candidate) && candidate.caseId === receipt.harness.harnessCaseId);
+      const consumers = isRecord(parityCase) && Array.isArray(parityCase.consumers) ? parityCase.consumers : [];
+      const consumer = consumers.find((candidate) => isRecord(candidate) && candidate.consumerId === receipt.consumerId);
+      if (!isRecord(consumer) || !Array.isArray(consumer.orderedQueries) || !isRecord(consumer.queryRowsByScenario)) throw new Error(`${receipt.receiptId} trusted Wave6 query trace fixture invalid`);
+      const orderedQueries = consumer.orderedQueries;
+      const scenarioRows = consumer.queryRowsByScenario[receipt.scenario.scenarioKind];
+      if (!Array.isArray(scenarioRows)) throw new Error(`${receipt.receiptId} trusted Wave6 scenario rows invalid`);
+      const oneExecution = scenarioRows.map((rows, index) => {
+        const query = orderedQueries[index];
+        if (!Array.isArray(rows) || !isRecord(query) || typeof query.expectedNormalizedSql !== "string" || !Array.isArray(query.expectedQueryValues)) throw new Error(`${receipt.receiptId} trusted Wave6 query trace plan invalid`);
+        return { channel: "query", normalizedSql: query.expectedNormalizedSql, values: query.expectedQueryValues, rowCount: rows.length };
+      });
+      const expectedTrace = receipt.scenario.scenarioKind === "RESTART_CONSISTENCY" ? [...oneExecution, ...oneExecution] : oneExecution;
+      if (JSON.stringify(trace.queryTrace) !== JSON.stringify(expectedTrace)) throw new Error(`${receipt.receiptId} trusted Wave6 exact query trace mismatch`);
+    }
     assertStringArray(trace.normalizedStatements, `${receipt.receiptId}.trace.normalizedStatements`);
     if (!Number.isSafeInteger(trace.rowCount) || (trace.rowCount as number) < 0) throw new Error(`${receipt.receiptId} trace rowCount invalid`);
     assertUniqueStrings(trace.lockOrder, `${receipt.receiptId}.trace.lockOrder`);

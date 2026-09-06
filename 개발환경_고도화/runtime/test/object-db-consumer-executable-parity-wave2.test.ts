@@ -18,9 +18,9 @@ describe("object DB executable parity Wave2 compatibility resolver cohort", () =
     const receipts = readJson("개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave2-v1.json");
     assert.equal(ledger.coverage.manifestConsumers, 1111);
     assert.equal(ledger.coverage.ledgerEntries, 1111);
-    assert.equal(ledger.coverage.provenConsumers, 9);
-    assert.equal(ledger.coverage.unprovenConsumers, 1102);
-    assert.equal(ledger.coverage.directPassConsumers, 9);
+    assert.equal(ledger.coverage.provenConsumers, 11);
+    assert.equal(ledger.coverage.unprovenConsumers, 1100);
+    assert.equal(ledger.coverage.directPassConsumers, 11);
     assert.equal(ledger.coverage.registrySourceMismatchCount, 8);
     assert.equal(receipts.receipts.length, 30);
     assert.deepEqual(ledger.entries.filter((entry: any) => cohort.includes(entry.consumerId) && entry.verdict === "DIRECT_PASS").map((entry: any) => entry.consumerId).sort(), cohort);
