@@ -11,7 +11,7 @@ const paths = {
   consumerManifest: "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
   consumerIdRegistry: "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
   transitionContract: "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
-  executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave5-v1.json",
+  executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave6-v1.json",
 } as const;
 const output = resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json");
 const consumerManifestText = readFileSync(resolve(repoRoot, paths.consumerManifest), "utf8");
