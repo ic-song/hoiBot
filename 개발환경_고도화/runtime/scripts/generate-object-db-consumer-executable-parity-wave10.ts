@@ -40,7 +40,7 @@ for (const binding of fixture.bindings) {
       proofMode: "DIRECT",
       harness: { harnessId: binding.harnessId, harnessCaseId: binding.harnessCaseId, runner: "NODE_OBJECT_DB_PARITY_V1", path: harnessPath, sourceSha256: hashes.harness },
       fixture: { fixtureId: fixture.fixtureId, path: fixturePath, sha256: hashes.fixture },
-      invocation: { targetPath, targetSourceSha256: hashes.target, exportName: "executeWave9RankChain" },
+      invocation: { targetPath, targetSourceSha256: hashes.target, exportName: "executeWave10PendantRead" },
       scenario: { scenarioId: binding.scenarioId, scenarioKind: binding.scenarioKind },
       expectedActual: {
         reply: { expectedSha256: sha256CanonicalText(reply), actualSha256: sha256CanonicalText(reply), match: true },
