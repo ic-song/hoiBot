@@ -72,6 +72,11 @@ function createRunnerDatabase(consumer) {
         acquisition_price: row.acquisitionPrice === null ? null : BigInt(row.acquisitionPrice),
         base_sale_price: BigInt(row.baseSalePrice), selected_flag: row.equipped ? 1 : 0,
       }));
+      if (consumer.databaseRowShape === "placed-furniture-read-row") return consumer.mockRows.map((row) => ({
+        owned_furniture_id: row.ownedFurnitureId, player_id: row.playerId, furniture_id: row.furnitureId,
+        enhancement_level: BigInt(row.enhancementLevel), base_charm: BigInt(row.baseCharm),
+        charm_per_enhancement: BigInt(row.charmPerEnhancement),
+      }));
       return consumer.mockRows.map((row) => ({
         owned_title_id: row.ownedTitleId,
         title_definition_id: row.titleDefinitionId,
