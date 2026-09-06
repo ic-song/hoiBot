@@ -25,6 +25,7 @@ function Start-Isolated {
 }
 function Stop-Isolated { if ($null -eq $script:serverProcess) { return }; if (-not $script:serverProcess.HasExited) { Stop-Process -Id $script:serverProcess.Id; $script:serverProcess.WaitForExit(10000) | Out-Null }; for ($attempt = 0; $attempt -lt 50; $attempt += 1) { if ($null -eq (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue)) { return }; Start-Sleep -Milliseconds 200 }; throw "Wave12 listener did not clear" }
 function Invoke-Checked([scriptblock]$command) { & $command; if ($LASTEXITCODE -ne 0) { throw "Wave12 child command failed: $LASTEXITCODE" } }
+function Assert-StatusAll([string]$expected) { $actual = (& $clientBinary --protocol=TCP --host=127.0.0.1 "--port=$port" --user=root "--password=$password" --skip-column-names --batch "--execute=SELECT CONCAT(rollout_state,':',enabled) FROM $databaseName.command_registry WHERE command_code='ADMIN_STATUS_ALL'").Trim(); if ($LASTEXITCODE -ne 0 -or $actual -ne $expected) { throw "ADMIN_STATUS_ALL expected $expected, got $actual" } }
 try {
   Assert-SafeRoot
   if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { throw "Wave12 port already in use" }
@@ -38,7 +39,15 @@ try {
   Push-Location $runtimeRoot
   try {
     Invoke-Checked { & node --import tsx scripts/migrate.ts }
+    Assert-StatusAll "LEGACY_ONLY:1"
+    $rollbackSql = Get-Content -Raw -Encoding utf8 (Join-Path $runtimeRoot "migrations\rollback\480_admin_diagnostic_ingress_correction.rollback.sql")
+    Invoke-Checked { & $clientBinary --protocol=TCP --host=127.0.0.1 "--port=$port" --user=root "--password=$password" "--database=$databaseName" "--execute=$rollbackSql" }
+    Assert-StatusAll "SHADOW:1"
+    $forwardSql = Get-Content -Raw -Encoding utf8 (Join-Path $runtimeRoot "migrations\480_admin_diagnostic_ingress_correction.sql")
+    Invoke-Checked { & $clientBinary --protocol=TCP --host=127.0.0.1 "--port=$port" --user=root "--password=$password" "--database=$databaseName" "--execute=$forwardSql" }
+    Assert-StatusAll "LEGACY_ONLY:1"
     Invoke-Checked { & node --import tsx --test test/character-count-stats-mariadb.integration.test.ts }
+    Invoke-Checked { & node --import tsx --test test/status-all-mariadb.integration.test.ts }
     Invoke-Checked { & node --import tsx --test test/admin-diagnostics-wave12-http-mariadb.integration.test.ts }
     $env:MATZZANG_TIME_CHECK_EVENT_ID="wave12-matzang-probe"
     Invoke-Checked { & node --import tsx scripts/probe-matzang-time-check-synthetic.ts }

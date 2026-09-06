@@ -118,9 +118,6 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
-- `개발환경_고도화/runtime/src/admin/character-count-stats-service.ts`
-- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
-- `개발환경_고도화/runtime/src/app.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-command.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-service.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-iris-handler.ts`
@@ -278,6 +275,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/admin/character-count-stats-service.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/src/app.ts`
 
 ## Data Usage
 
