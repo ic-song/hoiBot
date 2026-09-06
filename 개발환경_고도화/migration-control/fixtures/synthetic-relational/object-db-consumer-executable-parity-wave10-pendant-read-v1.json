@@ -1,0 +1,3556 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+  "bindings": [
+    {
+      "consumerId": "runtime-dispatch-36d6721ade0707a6",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-market-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:read-positive",
+      "scenarioKind": "READ_POSITIVE"
+    },
+    {
+      "consumerId": "runtime-dispatch-36d6721ade0707a6",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-market-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD"
+    },
+    {
+      "consumerId": "runtime-dispatch-36d6721ade0707a6",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-market-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:exact-output",
+      "scenarioKind": "EXACT_OUTPUT"
+    },
+    {
+      "consumerId": "runtime-dispatch-36d6721ade0707a6",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-market-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:source-domain-dml-zero",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+    },
+    {
+      "consumerId": "runtime-dispatch-36d6721ade0707a6",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-market-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:restart-consistency",
+      "scenarioKind": "RESTART_CONSISTENCY"
+    },
+    {
+      "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:read-positive",
+      "scenarioKind": "READ_POSITIVE"
+    },
+    {
+      "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD"
+    },
+    {
+      "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:exact-output",
+      "scenarioKind": "EXACT_OUTPUT"
+    },
+    {
+      "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:source-domain-dml-zero",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+    },
+    {
+      "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-info",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:restart-consistency",
+      "scenarioKind": "RESTART_CONSISTENCY"
+    },
+    {
+      "consumerId": "runtime-dispatch-19076db78c2eefb9",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-probability",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:read-positive",
+      "scenarioKind": "READ_POSITIVE"
+    },
+    {
+      "consumerId": "runtime-dispatch-19076db78c2eefb9",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-probability",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD"
+    },
+    {
+      "consumerId": "runtime-dispatch-19076db78c2eefb9",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-probability",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:exact-output",
+      "scenarioKind": "EXACT_OUTPUT"
+    },
+    {
+      "consumerId": "runtime-dispatch-19076db78c2eefb9",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-probability",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:source-domain-dml-zero",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+    },
+    {
+      "consumerId": "runtime-dispatch-19076db78c2eefb9",
+      "harnessId": "harness:object-db-executable-parity:wave10",
+      "harnessCaseId": "case:pendant-probability",
+      "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+      "scenarioId": "scenario:restart-consistency",
+      "scenarioKind": "RESTART_CONSISTENCY"
+    }
+  ],
+  "payload": {
+    "cases": [
+      {
+        "caseId": "case:pendant-market-info",
+        "executablePath": "Iris HTTP event→normalize/process inbox→app outer gates→partial dispatch→CommandDispatcher→production pendant read service→processing.replies",
+        "transactionPath": "actual pendant read service transaction/outbox; external sender/network excluded",
+        "requiredScenarios": [
+          "READ_POSITIVE",
+          "NEGATIVE_GUARD",
+          "EXACT_OUTPUT",
+          "SOURCE_DOMAIN_DML_ZERO",
+          "RESTART_CONSISTENCY"
+        ],
+        "riskScenarios": [
+          "ROLLBACK",
+          "SAME_EVENT_REPLAY",
+          "APP_INBOX_DUPLICATE",
+          "MISSING_IDENTITY",
+          "WRONG_OPERATIONAL_CHANNEL",
+          "PAYLOAD_DESTINATION_DRIFT"
+        ],
+        "consumers": [
+          {
+            "consumerId": "runtime-dispatch-36d6721ade0707a6",
+            "sourceLocator": {
+              "file": "개발환경_고도화/runtime/src/app.ts",
+              "start": 218921,
+              "end": 219697,
+              "sha256": "1e15cd65444d321707abf55fed7203a01edb8692d5c7bb22fdb2b0c5e9287ccb",
+              "needle": "pendant_market_info",
+              "symbol": "handlerKey=pendant_market_info",
+              "triggerOrPredicate": "handlerKey=pendant_market_info",
+              "interfaceId": "market-orchestrator.pendant-market-info.read",
+              "catalogSourceSpanSha256": "226be8e3cc0cf28907c0432137aaec9ba917462a9efb7c582837711879fbff62",
+              "catalogSourceSpanStatus": "STALE_RELOCATED_AT_WAVE10"
+            },
+            "frozenSourceCommit": "15abb95203e7eb375c9f0bd4294a0ec7100aa1a6",
+            "chainLocators": [
+              {
+                "file": "개발환경_고도화/runtime/src/app.ts",
+                "start": 0,
+                "end": 265287,
+                "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+                "needle": "/api/v1/integrations/iris/events"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/integration/event-processing-service.ts",
+                "start": 0,
+                "end": 18416,
+                "sha256": "b2200d2e02b70ee2bad8fecb2b93e4dce6a9b547bcff0affb7ad7d703955a171",
+                "needle": "export class ProcessIrisEventService"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts",
+                "start": 0,
+                "end": 7510,
+                "sha256": "3d670c2fa2ace1269a124a4c80726a1f8beafe8cc889c423fdf9824d3ea3be40",
+                "needle": "async resolveReadOnly("
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/market/pendant-market-info-service.ts",
+                "start": 0,
+                "end": 10925,
+                "sha256": "f4bfd084a9caa8fb5bbb06884b2ee83c24625efee83db4db66c8ce4a761e8ace",
+                "needle": "withTransaction"
+              }
+            ],
+            "errorScenarios": [
+              "ROLLBACK"
+            ],
+            "scenarioInputsByScenario": {
+              "READ_POSITIVE": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-read_positive",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3"
+              },
+              "NEGATIVE_GUARD": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-negative_guard",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보3"
+              },
+              "EXACT_OUTPUT": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-exact_output",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3"
+              },
+              "SOURCE_DOMAIN_DML_ZERO": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-source_domain_dml_zero",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3"
+              },
+              "RESTART_CONSISTENCY": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-restart_consistency",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3"
+              },
+              "ROLLBACK": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-rollback",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3"
+              },
+              "SAME_EVENT_REPLAY": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-same_event_replay",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3"
+              },
+              "APP_INBOX_DUPLICATE": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-app_inbox_duplicate",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3",
+                "duplicate": true
+              },
+              "MISSING_IDENTITY": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-missing_identity",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3"
+              },
+              "WRONG_OPERATIONAL_CHANNEL": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-wrong_operational_channel",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트거래정보 3",
+                "isOperationalChannel": false
+              },
+              "PAYLOAD_DESTINATION_DRIFT": {
+                "eventId": "wave10-runtime-dispatch-36d6721ade0707a6-payload_destination_drift",
+                "externalUserId": "pendant-user",
+                "destinationId": "changed-room",
+                "message": "/펜던트거래정보 3"
+              }
+            },
+            "queryPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='market.pendant.info' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-read_positive"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT listing.id listing_id,listing.asset_type_code,listing.inventory_instance_id, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType'))) object_type, item.display_name item_name,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM market_listings listing LEFT JOIN inventory_instances instance ON instance.id=listing.inventory_instance_id LEFT JOIN item_definitions item ON item.id=listing.item_id WHERE listing.status='open' AND (listing.expires_at IS NULL OR listing.expires_at>UTC_TIMESTAMP(3)) ORDER BY listing.created_at DESC,listing.id DESC LIMIT 1 OFFSET ?",
+                  "expectedValues": [
+                    {
+                      "$bigint": "2"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "listing_id": {
+                        "$bigint": "9223372036854775806"
+                      },
+                      "asset_type_code": "ITEM",
+                      "inventory_instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "object_type": "pendant",
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    }
+                  ]
+                }
+              ],
+              "NEGATIVE_GUARD": [],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='market.pendant.info' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-exact_output"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT listing.id listing_id,listing.asset_type_code,listing.inventory_instance_id, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType'))) object_type, item.display_name item_name,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM market_listings listing LEFT JOIN inventory_instances instance ON instance.id=listing.inventory_instance_id LEFT JOIN item_definitions item ON item.id=listing.item_id WHERE listing.status='open' AND (listing.expires_at IS NULL OR listing.expires_at>UTC_TIMESTAMP(3)) ORDER BY listing.created_at DESC,listing.id DESC LIMIT 1 OFFSET ?",
+                  "expectedValues": [
+                    {
+                      "$bigint": "2"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "listing_id": {
+                        "$bigint": "9223372036854775806"
+                      },
+                      "asset_type_code": "ITEM",
+                      "inventory_instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "object_type": "pendant",
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    }
+                  ]
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='market.pendant.info' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-source_domain_dml_zero"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT listing.id listing_id,listing.asset_type_code,listing.inventory_instance_id, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType'))) object_type, item.display_name item_name,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM market_listings listing LEFT JOIN inventory_instances instance ON instance.id=listing.inventory_instance_id LEFT JOIN item_definitions item ON item.id=listing.item_id WHERE listing.status='open' AND (listing.expires_at IS NULL OR listing.expires_at>UTC_TIMESTAMP(3)) ORDER BY listing.created_at DESC,listing.id DESC LIMIT 1 OFFSET ?",
+                  "expectedValues": [
+                    {
+                      "$bigint": "2"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "listing_id": {
+                        "$bigint": "9223372036854775806"
+                      },
+                      "asset_type_code": "ITEM",
+                      "inventory_instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "object_type": "pendant",
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    }
+                  ]
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='market.pendant.info' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-restart_consistency"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT listing.id listing_id,listing.asset_type_code,listing.inventory_instance_id, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType'))) object_type, item.display_name item_name,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM market_listings listing LEFT JOIN inventory_instances instance ON instance.id=listing.inventory_instance_id LEFT JOIN item_definitions item ON item.id=listing.item_id WHERE listing.status='open' AND (listing.expires_at IS NULL OR listing.expires_at>UTC_TIMESTAMP(3)) ORDER BY listing.created_at DESC,listing.id DESC LIMIT 1 OFFSET ?",
+                  "expectedValues": [
+                    {
+                      "$bigint": "2"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "listing_id": {
+                        "$bigint": "9223372036854775806"
+                      },
+                      "asset_type_code": "ITEM",
+                      "inventory_instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "object_type": "pendant",
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    }
+                  ]
+                }
+              ],
+              "ROLLBACK": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='market.pendant.info' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-rollback"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT listing.id listing_id,listing.asset_type_code,listing.inventory_instance_id, COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType'))) object_type, item.display_name item_name,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM market_listings listing LEFT JOIN inventory_instances instance ON instance.id=listing.inventory_instance_id LEFT JOIN item_definitions item ON item.id=listing.item_id WHERE listing.status='open' AND (listing.expires_at IS NULL OR listing.expires_at>UTC_TIMESTAMP(3)) ORDER BY listing.created_at DESC,listing.id DESC LIMIT 1 OFFSET ?",
+                  "expectedValues": [
+                    {
+                      "$bigint": "2"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "listing_id": {
+                        "$bigint": "9223372036854775806"
+                      },
+                      "asset_type_code": "ITEM",
+                      "inventory_instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "object_type": "pendant",
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    }
+                  ]
+                }
+              ],
+              "SAME_EVENT_REPLAY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='market.pendant.info' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-same_event_replay"
+                  ],
+                  "rows": [
+                    {
+                      "result_json": {
+                        "status": "found",
+                        "data": "저장된 펜던트 정보",
+                        "outboxId": "601",
+                        "listingId": "9223372036854775806",
+                        "instanceId": "9223372036854775805"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "APP_INBOX_DUPLICATE": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                }
+              ],
+              "MISSING_IDENTITY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": []
+                }
+              ],
+              "WRONG_OPERATIONAL_CHANNEL": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                }
+              ],
+              "PAYLOAD_DESTINATION_DRIFT": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트거래정보 3"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_MARKET_INFO",
+                      "handler_key": "pendant_market_info",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,identity.player_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='market.pendant.info' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-payload_destination_drift"
+                  ],
+                  "rows": [
+                    {
+                      "result_json": {
+                        "status": "found",
+                        "data": "저장된 펜던트 정보",
+                        "outboxId": "601",
+                        "listingId": "9223372036854775806",
+                        "instanceId": "9223372036854775805"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "mutationPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-36d6721ade0707a6-read_positive",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-read_positive",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "9223372036854775806",
+                    "found",
+                    "{\"displayNo\":\"3\",\"listingId\":\"9223372036854775806\",\"mutation\":false}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "NEGATIVE_GUARD": [],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-36d6721ade0707a6-exact_output",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-exact_output",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "9223372036854775806",
+                    "found",
+                    "{\"displayNo\":\"3\",\"listingId\":\"9223372036854775806\",\"mutation\":false}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-36d6721ade0707a6-source_domain_dml_zero",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-source_domain_dml_zero",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "9223372036854775806",
+                    "found",
+                    "{\"displayNo\":\"3\",\"listingId\":\"9223372036854775806\",\"mutation\":false}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-36d6721ade0707a6-restart_consistency",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-restart_consistency",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "9223372036854775806",
+                    "found",
+                    "{\"displayNo\":\"3\",\"listingId\":\"9223372036854775806\",\"mutation\":false}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "ROLLBACK": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-36d6721ade0707a6-rollback",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-36d6721ade0707a6-rollback",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701",
+                  "error": {
+                    "message": "wave10 forced middle-DML rollback",
+                    "code": "ER_SIGNAL_EXCEPTION",
+                    "errno": 1644
+                  }
+                }
+              ],
+              "SAME_EVENT_REPLAY": [],
+              "APP_INBOX_DUPLICATE": [],
+              "MISSING_IDENTITY": [],
+              "WRONG_OPERATIONAL_CHANNEL": [],
+              "PAYLOAD_DESTINATION_DRIFT": []
+            },
+            "expectedResultsByScenario": {
+              "READ_POSITIVE": "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "NEGATIVE_GUARD": "INVALID_COMMAND_NO_CALL",
+              "EXACT_OUTPUT": "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "SOURCE_DOMAIN_DML_ZERO": "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "RESTART_CONSISTENCY": "{\"status\":\"found\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 거래정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
+              "SAME_EVENT_REPLAY": "{\"status\":\"found\",\"data\":\"저장된 펜던트 정보\",\"outboxId\":\"601\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\"}",
+              "APP_INBOX_DUPLICATE": "APP_GATE_REJECTED_NO_CALL",
+              "MISSING_IDENTITY": "{\"status\":\"silent\"}",
+              "WRONG_OPERATIONAL_CHANNEL": "APP_GATE_REJECTED_NO_CALL",
+              "PAYLOAD_DESTINATION_DRIFT": "{\"status\":\"found\",\"data\":\"저장된 펜던트 정보\",\"outboxId\":\"601\",\"listingId\":\"9223372036854775806\",\"instanceId\":\"9223372036854775805\"}"
+            }
+          }
+        ]
+      },
+      {
+        "caseId": "case:pendant-info",
+        "executablePath": "Iris HTTP event→normalize/process inbox→app outer gates→partial dispatch→CommandDispatcher→production pendant read service→processing.replies",
+        "transactionPath": "actual pendant read service transaction/outbox; external sender/network excluded",
+        "requiredScenarios": [
+          "READ_POSITIVE",
+          "NEGATIVE_GUARD",
+          "EXACT_OUTPUT",
+          "SOURCE_DOMAIN_DML_ZERO",
+          "RESTART_CONSISTENCY"
+        ],
+        "riskScenarios": [
+          "ROLLBACK",
+          "SAME_EVENT_REPLAY",
+          "APP_INBOX_DUPLICATE",
+          "MISSING_IDENTITY",
+          "WRONG_OPERATIONAL_CHANNEL",
+          "PAYLOAD_DESTINATION_DRIFT"
+        ],
+        "consumers": [
+          {
+            "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+            "sourceLocator": {
+              "file": "개발환경_고도화/runtime/src/app.ts",
+              "start": 224564,
+              "end": 228331,
+              "sha256": "31368743bc6c3f036f3fa405e0d17ec146bc03a73d5d946e565432e7cf8516a7",
+              "needle": "pendant_info_read",
+              "symbol": "handlerKey=pendant_info_read",
+              "triggerOrPredicate": "handlerKey=pendant_info_read",
+              "interfaceId": "pet-equipment.pendant-info-read.read",
+              "catalogSourceSpanSha256": "6fa942e55a7bc77355edec1459e824b7c2820b1bd79e379a2914402ba01505d4",
+              "catalogSourceSpanStatus": "STALE_RELOCATED_AT_WAVE10"
+            },
+            "frozenSourceCommit": "15abb95203e7eb375c9f0bd4294a0ec7100aa1a6",
+            "chainLocators": [
+              {
+                "file": "개발환경_고도화/runtime/src/app.ts",
+                "start": 0,
+                "end": 265287,
+                "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+                "needle": "/api/v1/integrations/iris/events"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/integration/event-processing-service.ts",
+                "start": 0,
+                "end": 18416,
+                "sha256": "b2200d2e02b70ee2bad8fecb2b93e4dce6a9b547bcff0affb7ad7d703955a171",
+                "needle": "export class ProcessIrisEventService"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts",
+                "start": 0,
+                "end": 7510,
+                "sha256": "3d670c2fa2ace1269a124a4c80726a1f8beafe8cc889c423fdf9824d3ea3be40",
+                "needle": "async resolveReadOnly("
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/pet/pendant-info-service.ts",
+                "start": 0,
+                "end": 8659,
+                "sha256": "b5496dcff7412c275e1b04dbc37b5b2d17f7e1a8498b6cd6be72608e778b4dc6",
+                "needle": "withTransaction"
+              }
+            ],
+            "errorScenarios": [
+              "ROLLBACK"
+            ],
+            "scenarioInputsByScenario": {
+              "READ_POSITIVE": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-read_positive",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1"
+              },
+              "NEGATIVE_GUARD": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-negative_guard",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보1"
+              },
+              "EXACT_OUTPUT": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-exact_output",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1"
+              },
+              "SOURCE_DOMAIN_DML_ZERO": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-source_domain_dml_zero",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1"
+              },
+              "RESTART_CONSISTENCY": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-restart_consistency",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1"
+              },
+              "ROLLBACK": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-rollback",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1"
+              },
+              "SAME_EVENT_REPLAY": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-same_event_replay",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1"
+              },
+              "APP_INBOX_DUPLICATE": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-app_inbox_duplicate",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1",
+                "duplicate": true
+              },
+              "MISSING_IDENTITY": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-missing_identity",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1"
+              },
+              "WRONG_OPERATIONAL_CHANNEL": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-wrong_operational_channel",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트정보 1",
+                "isOperationalChannel": false
+              },
+              "PAYLOAD_DESTINATION_DRIFT": {
+                "eventId": "wave10-runtime-dispatch-8c6c3c3d598fe078-payload_destination_drift",
+                "externalUserId": "pendant-user",
+                "destinationId": "changed-room",
+                "message": "/펜던트정보 1"
+              }
+            },
+            "queryPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      },
+                      "pet_id": {
+                        "$bigint": "2"
+                      },
+                      "rank_display": "🥇호이"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.info.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-read_positive"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT instance.id instance_id,item.display_name item_name, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM inventory_instances instance JOIN item_definitions item ON item.id=instance.item_id AND item.active=TRUE WHERE instance.player_id=? AND instance.status=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType')))='pendant' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "1"
+                    },
+                    "owned"
+                  ],
+                  "rows": [
+                    {
+                      "instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    },
+                    {
+                      "instance_id": {
+                        "$bigint": "11"
+                      },
+                      "item_name": "조약돌 펜던트🪨",
+                      "name_value": "조약돌 펜던트",
+                      "icon_value": "🪨",
+                      "grade_value": "최하급",
+                      "durability_value": "5",
+                      "max_durability_value": "5",
+                      "upgrade_value": "0"
+                    }
+                  ]
+                }
+              ],
+              "NEGATIVE_GUARD": [],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      },
+                      "pet_id": {
+                        "$bigint": "2"
+                      },
+                      "rank_display": "🥇호이"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.info.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-exact_output"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT instance.id instance_id,item.display_name item_name, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM inventory_instances instance JOIN item_definitions item ON item.id=instance.item_id AND item.active=TRUE WHERE instance.player_id=? AND instance.status=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType')))='pendant' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "1"
+                    },
+                    "owned"
+                  ],
+                  "rows": [
+                    {
+                      "instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    },
+                    {
+                      "instance_id": {
+                        "$bigint": "11"
+                      },
+                      "item_name": "조약돌 펜던트🪨",
+                      "name_value": "조약돌 펜던트",
+                      "icon_value": "🪨",
+                      "grade_value": "최하급",
+                      "durability_value": "5",
+                      "max_durability_value": "5",
+                      "upgrade_value": "0"
+                    }
+                  ]
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      },
+                      "pet_id": {
+                        "$bigint": "2"
+                      },
+                      "rank_display": "🥇호이"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.info.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-source_domain_dml_zero"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT instance.id instance_id,item.display_name item_name, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM inventory_instances instance JOIN item_definitions item ON item.id=instance.item_id AND item.active=TRUE WHERE instance.player_id=? AND instance.status=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType')))='pendant' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "1"
+                    },
+                    "owned"
+                  ],
+                  "rows": [
+                    {
+                      "instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    },
+                    {
+                      "instance_id": {
+                        "$bigint": "11"
+                      },
+                      "item_name": "조약돌 펜던트🪨",
+                      "name_value": "조약돌 펜던트",
+                      "icon_value": "🪨",
+                      "grade_value": "최하급",
+                      "durability_value": "5",
+                      "max_durability_value": "5",
+                      "upgrade_value": "0"
+                    }
+                  ]
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      },
+                      "pet_id": {
+                        "$bigint": "2"
+                      },
+                      "rank_display": "🥇호이"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.info.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-restart_consistency"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT instance.id instance_id,item.display_name item_name, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM inventory_instances instance JOIN item_definitions item ON item.id=instance.item_id AND item.active=TRUE WHERE instance.player_id=? AND instance.status=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType')))='pendant' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "1"
+                    },
+                    "owned"
+                  ],
+                  "rows": [
+                    {
+                      "instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    },
+                    {
+                      "instance_id": {
+                        "$bigint": "11"
+                      },
+                      "item_name": "조약돌 펜던트🪨",
+                      "name_value": "조약돌 펜던트",
+                      "icon_value": "🪨",
+                      "grade_value": "최하급",
+                      "durability_value": "5",
+                      "max_durability_value": "5",
+                      "upgrade_value": "0"
+                    }
+                  ]
+                }
+              ],
+              "ROLLBACK": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      },
+                      "pet_id": {
+                        "$bigint": "2"
+                      },
+                      "rank_display": "🥇호이"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.info.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-rollback"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT instance.id instance_id,item.display_name item_name, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.name')) name_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.icon')) icon_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.grade')) grade_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.durability')) durability_value, JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.maxDurability')) max_durability_value,JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.upgrade')) upgrade_value FROM inventory_instances instance JOIN item_definitions item ON item.id=instance.item_id AND item.active=TRUE WHERE instance.player_id=? AND instance.status=? AND COALESCE(JSON_UNQUOTE(JSON_EXTRACT(instance.attributes_json,'$.objectType')),JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType')))='pendant' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "1"
+                    },
+                    "owned"
+                  ],
+                  "rows": [
+                    {
+                      "instance_id": {
+                        "$bigint": "9223372036854775805"
+                      },
+                      "item_name": "별빛 펜던트⭐",
+                      "name_value": "별빛 펜던트",
+                      "icon_value": "⭐",
+                      "grade_value": "창조",
+                      "durability_value": "4",
+                      "max_durability_value": "5",
+                      "upgrade_value": "30"
+                    },
+                    {
+                      "instance_id": {
+                        "$bigint": "11"
+                      },
+                      "item_name": "조약돌 펜던트🪨",
+                      "name_value": "조약돌 펜던트",
+                      "icon_value": "🪨",
+                      "grade_value": "최하급",
+                      "durability_value": "5",
+                      "max_durability_value": "5",
+                      "upgrade_value": "0"
+                    }
+                  ]
+                }
+              ],
+              "SAME_EVENT_REPLAY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      },
+                      "pet_id": {
+                        "$bigint": "2"
+                      },
+                      "rank_display": "🥇호이"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.info.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-same_event_replay"
+                  ],
+                  "rows": [
+                    {
+                      "result_json": {
+                        "status": "found",
+                        "data": "저장된 펜던트 정보",
+                        "outboxId": "601",
+                        "instanceId": "9223372036854775805"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "APP_INBOX_DUPLICATE": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                }
+              ],
+              "MISSING_IDENTITY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": []
+                }
+              ],
+              "WRONG_OPERATIONAL_CHANNEL": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                }
+              ],
+              "PAYLOAD_DESTINATION_DRIFT": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트정보 1"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_INFO_READ",
+                      "handler_key": "pendant_info_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id,profile.player_id,pet.id pet_id,CONCAT(COALESCE(rank_profile.rank_emoji,''),profile.current_display_name) rank_display FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' JOIN player_profiles profile ON profile.player_id=player.id LEFT JOIN player_pets pet ON pet.player_id=player.id LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      },
+                      "player_id": {
+                        "$bigint": "1"
+                      },
+                      "pet_id": {
+                        "$bigint": "2"
+                      },
+                      "rank_display": "🥇호이"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.info.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-payload_destination_drift"
+                  ],
+                  "rows": [
+                    {
+                      "result_json": {
+                        "status": "found",
+                        "data": "저장된 펜던트 정보",
+                        "outboxId": "601",
+                        "instanceId": "9223372036854775805"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "mutationPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-read_positive",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-read_positive",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    {
+                      "$bigint": "1"
+                    },
+                    "found",
+                    "{\"index\":\"1\",\"instanceId\":\"9223372036854775805\",\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "NEGATIVE_GUARD": [],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-exact_output",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-exact_output",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    {
+                      "$bigint": "1"
+                    },
+                    "found",
+                    "{\"index\":\"1\",\"instanceId\":\"9223372036854775805\",\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-source_domain_dml_zero",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-source_domain_dml_zero",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    {
+                      "$bigint": "1"
+                    },
+                    "found",
+                    "{\"index\":\"1\",\"instanceId\":\"9223372036854775805\",\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-restart_consistency",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-restart_consistency",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    {
+                      "$bigint": "1"
+                    },
+                    "found",
+                    "{\"index\":\"1\",\"instanceId\":\"9223372036854775805\",\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "ROLLBACK": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-rollback",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-8c6c3c3d598fe078-rollback",
+                    {
+                      "$bigint": "501"
+                    },
+                    "found"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701",
+                  "error": {
+                    "message": "wave10 forced middle-DML rollback",
+                    "code": "ER_SIGNAL_EXCEPTION",
+                    "errno": 1644
+                  }
+                }
+              ],
+              "SAME_EVENT_REPLAY": [],
+              "APP_INBOX_DUPLICATE": [],
+              "MISSING_IDENTITY": [],
+              "WRONG_OPERATIONAL_CHANNEL": [],
+              "PAYLOAD_DESTINATION_DRIFT": []
+            },
+            "expectedResultsByScenario": {
+              "READ_POSITIVE": "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "NEGATIVE_GUARD": "INVALID_COMMAND_NO_CALL",
+              "EXACT_OUTPUT": "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "SOURCE_DOMAIN_DML_ZERO": "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "RESTART_CONSISTENCY": "{\"status\":\"found\",\"instanceId\":\"9223372036854775805\",\"data\":\"펜던트 정보:\\n별빛 펜던트⭐[창조][⚒️4/5](+30)\\n━━━━━━━━━━━━━\\n기본 종합매력👑: 20,000,000💞\\n강화 종합매력👑: +170,230,000💞\\n총 종합매력👑: 190,230,000💞\\n\\n기본 펫탐험성공확률⛰️: +2.5%\\n강화 펫탐험성공확률⛰️: +3%\\n총 펫탐험성공확률⛰️: +5.5%\\n\\n남은 내구도⚒️: 4회\\n이미 최대 강화 단계입니다.\",\"outboxId\":\"601\"}",
+              "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
+              "SAME_EVENT_REPLAY": "{\"status\":\"found\",\"data\":\"저장된 펜던트 정보\",\"outboxId\":\"601\",\"instanceId\":\"9223372036854775805\"}",
+              "APP_INBOX_DUPLICATE": "APP_GATE_REJECTED_NO_CALL",
+              "MISSING_IDENTITY": "{\"status\":\"silent\"}",
+              "WRONG_OPERATIONAL_CHANNEL": "APP_GATE_REJECTED_NO_CALL",
+              "PAYLOAD_DESTINATION_DRIFT": "{\"status\":\"found\",\"data\":\"저장된 펜던트 정보\",\"outboxId\":\"601\",\"instanceId\":\"9223372036854775805\"}"
+            }
+          }
+        ]
+      },
+      {
+        "caseId": "case:pendant-probability",
+        "executablePath": "Iris HTTP event→normalize/process inbox→app outer gates→partial dispatch→CommandDispatcher→production pendant read service→processing.replies",
+        "transactionPath": "actual pendant read service transaction/outbox; external sender/network excluded",
+        "requiredScenarios": [
+          "READ_POSITIVE",
+          "NEGATIVE_GUARD",
+          "EXACT_OUTPUT",
+          "SOURCE_DOMAIN_DML_ZERO",
+          "RESTART_CONSISTENCY"
+        ],
+        "riskScenarios": [
+          "ROLLBACK",
+          "SAME_EVENT_REPLAY",
+          "APP_INBOX_DUPLICATE",
+          "MISSING_IDENTITY",
+          "WRONG_OPERATIONAL_CHANNEL",
+          "PAYLOAD_DESTINATION_DRIFT"
+        ],
+        "consumers": [
+          {
+            "consumerId": "runtime-dispatch-19076db78c2eefb9",
+            "sourceLocator": {
+              "file": "개발환경_고도화/runtime/src/app.ts",
+              "start": 226504,
+              "end": 228331,
+              "sha256": "33e1cb8032eb8f29d32d30190487b017fa0ebc731f51c7ca7669d582c7749666",
+              "needle": "pendant_probability_read",
+              "symbol": "handlerKey=pendant_probability_read",
+              "triggerOrPredicate": "handlerKey=pendant_probability_read",
+              "interfaceId": "pet-equipment.pendant-probability-read.read",
+              "catalogSourceSpanSha256": "6b87546eb5fbf51168d5e1576658c286b47aa7635709ee60ccea5cbe08d3543d",
+              "catalogSourceSpanStatus": "STALE_RELOCATED_AT_WAVE10"
+            },
+            "frozenSourceCommit": "15abb95203e7eb375c9f0bd4294a0ec7100aa1a6",
+            "chainLocators": [
+              {
+                "file": "개발환경_고도화/runtime/src/app.ts",
+                "start": 0,
+                "end": 265287,
+                "sha256": "77342838e175259af846ff031011eab2ea6144205ba26bca7685eea4c37ccb9b",
+                "needle": "/api/v1/integrations/iris/events"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/integration/event-processing-service.ts",
+                "start": 0,
+                "end": 18416,
+                "sha256": "b2200d2e02b70ee2bad8fecb2b93e4dce6a9b547bcff0affb7ad7d703955a171",
+                "needle": "export class ProcessIrisEventService"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts",
+                "start": 0,
+                "end": 7510,
+                "sha256": "3d670c2fa2ace1269a124a4c80726a1f8beafe8cc889c423fdf9824d3ea3be40",
+                "needle": "async resolveReadOnly("
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/pet/pendant-probability-service.ts",
+                "start": 0,
+                "end": 4472,
+                "sha256": "5d5d10a23fe4cf618381f6fab55f9e6ae5692fc537056e5c1b325770eaa52127",
+                "needle": "withTransaction"
+              }
+            ],
+            "errorScenarios": [
+              "ROLLBACK"
+            ],
+            "scenarioInputsByScenario": {
+              "READ_POSITIVE": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-read_positive",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률"
+              },
+              "NEGATIVE_GUARD": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-negative_guard",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률 안내"
+              },
+              "EXACT_OUTPUT": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-exact_output",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률"
+              },
+              "SOURCE_DOMAIN_DML_ZERO": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-source_domain_dml_zero",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률"
+              },
+              "RESTART_CONSISTENCY": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-restart_consistency",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률"
+              },
+              "ROLLBACK": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-rollback",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률"
+              },
+              "SAME_EVENT_REPLAY": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-same_event_replay",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률"
+              },
+              "APP_INBOX_DUPLICATE": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-app_inbox_duplicate",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률",
+                "duplicate": true
+              },
+              "MISSING_IDENTITY": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-missing_identity",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률"
+              },
+              "WRONG_OPERATIONAL_CHANNEL": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-wrong_operational_channel",
+                "externalUserId": "pendant-user",
+                "destinationId": "pendant-room",
+                "message": "/펜던트확률",
+                "isOperationalChannel": false
+              },
+              "PAYLOAD_DESTINATION_DRIFT": {
+                "eventId": "wave10-runtime-dispatch-19076db78c2eefb9-payload_destination_drift",
+                "externalUserId": "pendant-user",
+                "destinationId": "changed-room",
+                "message": "/펜던트확률"
+              }
+            },
+            "queryPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.probability.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-read_positive"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.name')),display_name) name,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.icon')),'') icon,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.grade')) grade,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.rate')) rate,CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.drawOrder')) AS UNSIGNED) drawOrder FROM item_definitions WHERE code LIKE 'ITEM-PENDANT-DRAW-%' AND code<>'ITEM-PENDANT-DRAW-TICKET' AND active=TRUE AND stackable=FALSE ORDER BY drawOrder",
+                  "expectedValues": [],
+                  "rows": [
+                    {
+                      "name": "조약돌",
+                      "icon": "🪨",
+                      "grade": "최하급",
+                      "rate": "31",
+                      "drawOrder": 1
+                    },
+                    {
+                      "name": "동빛",
+                      "icon": "🔸",
+                      "grade": "하급",
+                      "rate": "20",
+                      "drawOrder": 2
+                    },
+                    {
+                      "name": "은빛",
+                      "icon": "⚪",
+                      "grade": "하급+",
+                      "rate": "15",
+                      "drawOrder": 3
+                    },
+                    {
+                      "name": "금빛",
+                      "icon": "🟡",
+                      "grade": "중급",
+                      "rate": "10",
+                      "drawOrder": 4
+                    },
+                    {
+                      "name": "청옥",
+                      "icon": "🔹",
+                      "grade": "중급+",
+                      "rate": "7",
+                      "drawOrder": 5
+                    },
+                    {
+                      "name": "홍옥",
+                      "icon": "🔴",
+                      "grade": "상급",
+                      "rate": "5",
+                      "drawOrder": 6
+                    },
+                    {
+                      "name": "별빛",
+                      "icon": "⭐",
+                      "grade": "상급+",
+                      "rate": "4",
+                      "drawOrder": 7
+                    },
+                    {
+                      "name": "달빛",
+                      "icon": "🌙",
+                      "grade": "최상급",
+                      "rate": "3",
+                      "drawOrder": 8
+                    },
+                    {
+                      "name": "햇빛",
+                      "icon": "☀️",
+                      "grade": "최상급+",
+                      "rate": "2",
+                      "drawOrder": 9
+                    },
+                    {
+                      "name": "신화",
+                      "icon": "🌀",
+                      "grade": "신화",
+                      "rate": "1.5",
+                      "drawOrder": 10
+                    },
+                    {
+                      "name": "초월",
+                      "icon": "🌌",
+                      "grade": "초월",
+                      "rate": "1",
+                      "drawOrder": 11
+                    },
+                    {
+                      "name": "창세",
+                      "icon": "🌠",
+                      "grade": "창세",
+                      "rate": "0.4",
+                      "drawOrder": 12
+                    },
+                    {
+                      "name": "창조",
+                      "icon": "✨",
+                      "grade": "창조",
+                      "rate": "0.1",
+                      "drawOrder": 13
+                    }
+                  ]
+                }
+              ],
+              "NEGATIVE_GUARD": [],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.probability.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-exact_output"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.name')),display_name) name,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.icon')),'') icon,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.grade')) grade,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.rate')) rate,CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.drawOrder')) AS UNSIGNED) drawOrder FROM item_definitions WHERE code LIKE 'ITEM-PENDANT-DRAW-%' AND code<>'ITEM-PENDANT-DRAW-TICKET' AND active=TRUE AND stackable=FALSE ORDER BY drawOrder",
+                  "expectedValues": [],
+                  "rows": [
+                    {
+                      "name": "조약돌",
+                      "icon": "🪨",
+                      "grade": "최하급",
+                      "rate": "31",
+                      "drawOrder": 1
+                    },
+                    {
+                      "name": "동빛",
+                      "icon": "🔸",
+                      "grade": "하급",
+                      "rate": "20",
+                      "drawOrder": 2
+                    },
+                    {
+                      "name": "은빛",
+                      "icon": "⚪",
+                      "grade": "하급+",
+                      "rate": "15",
+                      "drawOrder": 3
+                    },
+                    {
+                      "name": "금빛",
+                      "icon": "🟡",
+                      "grade": "중급",
+                      "rate": "10",
+                      "drawOrder": 4
+                    },
+                    {
+                      "name": "청옥",
+                      "icon": "🔹",
+                      "grade": "중급+",
+                      "rate": "7",
+                      "drawOrder": 5
+                    },
+                    {
+                      "name": "홍옥",
+                      "icon": "🔴",
+                      "grade": "상급",
+                      "rate": "5",
+                      "drawOrder": 6
+                    },
+                    {
+                      "name": "별빛",
+                      "icon": "⭐",
+                      "grade": "상급+",
+                      "rate": "4",
+                      "drawOrder": 7
+                    },
+                    {
+                      "name": "달빛",
+                      "icon": "🌙",
+                      "grade": "최상급",
+                      "rate": "3",
+                      "drawOrder": 8
+                    },
+                    {
+                      "name": "햇빛",
+                      "icon": "☀️",
+                      "grade": "최상급+",
+                      "rate": "2",
+                      "drawOrder": 9
+                    },
+                    {
+                      "name": "신화",
+                      "icon": "🌀",
+                      "grade": "신화",
+                      "rate": "1.5",
+                      "drawOrder": 10
+                    },
+                    {
+                      "name": "초월",
+                      "icon": "🌌",
+                      "grade": "초월",
+                      "rate": "1",
+                      "drawOrder": 11
+                    },
+                    {
+                      "name": "창세",
+                      "icon": "🌠",
+                      "grade": "창세",
+                      "rate": "0.4",
+                      "drawOrder": 12
+                    },
+                    {
+                      "name": "창조",
+                      "icon": "✨",
+                      "grade": "창조",
+                      "rate": "0.1",
+                      "drawOrder": 13
+                    }
+                  ]
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.probability.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-source_domain_dml_zero"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.name')),display_name) name,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.icon')),'') icon,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.grade')) grade,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.rate')) rate,CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.drawOrder')) AS UNSIGNED) drawOrder FROM item_definitions WHERE code LIKE 'ITEM-PENDANT-DRAW-%' AND code<>'ITEM-PENDANT-DRAW-TICKET' AND active=TRUE AND stackable=FALSE ORDER BY drawOrder",
+                  "expectedValues": [],
+                  "rows": [
+                    {
+                      "name": "조약돌",
+                      "icon": "🪨",
+                      "grade": "최하급",
+                      "rate": "31",
+                      "drawOrder": 1
+                    },
+                    {
+                      "name": "동빛",
+                      "icon": "🔸",
+                      "grade": "하급",
+                      "rate": "20",
+                      "drawOrder": 2
+                    },
+                    {
+                      "name": "은빛",
+                      "icon": "⚪",
+                      "grade": "하급+",
+                      "rate": "15",
+                      "drawOrder": 3
+                    },
+                    {
+                      "name": "금빛",
+                      "icon": "🟡",
+                      "grade": "중급",
+                      "rate": "10",
+                      "drawOrder": 4
+                    },
+                    {
+                      "name": "청옥",
+                      "icon": "🔹",
+                      "grade": "중급+",
+                      "rate": "7",
+                      "drawOrder": 5
+                    },
+                    {
+                      "name": "홍옥",
+                      "icon": "🔴",
+                      "grade": "상급",
+                      "rate": "5",
+                      "drawOrder": 6
+                    },
+                    {
+                      "name": "별빛",
+                      "icon": "⭐",
+                      "grade": "상급+",
+                      "rate": "4",
+                      "drawOrder": 7
+                    },
+                    {
+                      "name": "달빛",
+                      "icon": "🌙",
+                      "grade": "최상급",
+                      "rate": "3",
+                      "drawOrder": 8
+                    },
+                    {
+                      "name": "햇빛",
+                      "icon": "☀️",
+                      "grade": "최상급+",
+                      "rate": "2",
+                      "drawOrder": 9
+                    },
+                    {
+                      "name": "신화",
+                      "icon": "🌀",
+                      "grade": "신화",
+                      "rate": "1.5",
+                      "drawOrder": 10
+                    },
+                    {
+                      "name": "초월",
+                      "icon": "🌌",
+                      "grade": "초월",
+                      "rate": "1",
+                      "drawOrder": 11
+                    },
+                    {
+                      "name": "창세",
+                      "icon": "🌠",
+                      "grade": "창세",
+                      "rate": "0.4",
+                      "drawOrder": 12
+                    },
+                    {
+                      "name": "창조",
+                      "icon": "✨",
+                      "grade": "창조",
+                      "rate": "0.1",
+                      "drawOrder": 13
+                    }
+                  ]
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.probability.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-restart_consistency"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.name')),display_name) name,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.icon')),'') icon,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.grade')) grade,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.rate')) rate,CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.drawOrder')) AS UNSIGNED) drawOrder FROM item_definitions WHERE code LIKE 'ITEM-PENDANT-DRAW-%' AND code<>'ITEM-PENDANT-DRAW-TICKET' AND active=TRUE AND stackable=FALSE ORDER BY drawOrder",
+                  "expectedValues": [],
+                  "rows": [
+                    {
+                      "name": "조약돌",
+                      "icon": "🪨",
+                      "grade": "최하급",
+                      "rate": "31",
+                      "drawOrder": 1
+                    },
+                    {
+                      "name": "동빛",
+                      "icon": "🔸",
+                      "grade": "하급",
+                      "rate": "20",
+                      "drawOrder": 2
+                    },
+                    {
+                      "name": "은빛",
+                      "icon": "⚪",
+                      "grade": "하급+",
+                      "rate": "15",
+                      "drawOrder": 3
+                    },
+                    {
+                      "name": "금빛",
+                      "icon": "🟡",
+                      "grade": "중급",
+                      "rate": "10",
+                      "drawOrder": 4
+                    },
+                    {
+                      "name": "청옥",
+                      "icon": "🔹",
+                      "grade": "중급+",
+                      "rate": "7",
+                      "drawOrder": 5
+                    },
+                    {
+                      "name": "홍옥",
+                      "icon": "🔴",
+                      "grade": "상급",
+                      "rate": "5",
+                      "drawOrder": 6
+                    },
+                    {
+                      "name": "별빛",
+                      "icon": "⭐",
+                      "grade": "상급+",
+                      "rate": "4",
+                      "drawOrder": 7
+                    },
+                    {
+                      "name": "달빛",
+                      "icon": "🌙",
+                      "grade": "최상급",
+                      "rate": "3",
+                      "drawOrder": 8
+                    },
+                    {
+                      "name": "햇빛",
+                      "icon": "☀️",
+                      "grade": "최상급+",
+                      "rate": "2",
+                      "drawOrder": 9
+                    },
+                    {
+                      "name": "신화",
+                      "icon": "🌀",
+                      "grade": "신화",
+                      "rate": "1.5",
+                      "drawOrder": 10
+                    },
+                    {
+                      "name": "초월",
+                      "icon": "🌌",
+                      "grade": "초월",
+                      "rate": "1",
+                      "drawOrder": 11
+                    },
+                    {
+                      "name": "창세",
+                      "icon": "🌠",
+                      "grade": "창세",
+                      "rate": "0.4",
+                      "drawOrder": 12
+                    },
+                    {
+                      "name": "창조",
+                      "icon": "✨",
+                      "grade": "창조",
+                      "rate": "0.1",
+                      "drawOrder": 13
+                    }
+                  ]
+                }
+              ],
+              "ROLLBACK": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.probability.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-rollback"
+                  ],
+                  "rows": []
+                },
+                {
+                  "expectedNormalizedSql": "SELECT COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.name')),display_name) name,COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.icon')),'') icon,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.grade')) grade,JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.rate')) rate,CAST(JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.drawOrder')) AS UNSIGNED) drawOrder FROM item_definitions WHERE code LIKE 'ITEM-PENDANT-DRAW-%' AND code<>'ITEM-PENDANT-DRAW-TICKET' AND active=TRUE AND stackable=FALSE ORDER BY drawOrder",
+                  "expectedValues": [],
+                  "rows": [
+                    {
+                      "name": "조약돌",
+                      "icon": "🪨",
+                      "grade": "최하급",
+                      "rate": "31",
+                      "drawOrder": 1
+                    },
+                    {
+                      "name": "동빛",
+                      "icon": "🔸",
+                      "grade": "하급",
+                      "rate": "20",
+                      "drawOrder": 2
+                    },
+                    {
+                      "name": "은빛",
+                      "icon": "⚪",
+                      "grade": "하급+",
+                      "rate": "15",
+                      "drawOrder": 3
+                    },
+                    {
+                      "name": "금빛",
+                      "icon": "🟡",
+                      "grade": "중급",
+                      "rate": "10",
+                      "drawOrder": 4
+                    },
+                    {
+                      "name": "청옥",
+                      "icon": "🔹",
+                      "grade": "중급+",
+                      "rate": "7",
+                      "drawOrder": 5
+                    },
+                    {
+                      "name": "홍옥",
+                      "icon": "🔴",
+                      "grade": "상급",
+                      "rate": "5",
+                      "drawOrder": 6
+                    },
+                    {
+                      "name": "별빛",
+                      "icon": "⭐",
+                      "grade": "상급+",
+                      "rate": "4",
+                      "drawOrder": 7
+                    },
+                    {
+                      "name": "달빛",
+                      "icon": "🌙",
+                      "grade": "최상급",
+                      "rate": "3",
+                      "drawOrder": 8
+                    },
+                    {
+                      "name": "햇빛",
+                      "icon": "☀️",
+                      "grade": "최상급+",
+                      "rate": "2",
+                      "drawOrder": 9
+                    },
+                    {
+                      "name": "신화",
+                      "icon": "🌀",
+                      "grade": "신화",
+                      "rate": "1.5",
+                      "drawOrder": 10
+                    },
+                    {
+                      "name": "초월",
+                      "icon": "🌌",
+                      "grade": "초월",
+                      "rate": "1",
+                      "drawOrder": 11
+                    },
+                    {
+                      "name": "창세",
+                      "icon": "🌠",
+                      "grade": "창세",
+                      "rate": "0.4",
+                      "drawOrder": 12
+                    },
+                    {
+                      "name": "창조",
+                      "icon": "✨",
+                      "grade": "창조",
+                      "rate": "0.1",
+                      "drawOrder": 13
+                    }
+                  ]
+                }
+              ],
+              "SAME_EVENT_REPLAY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.probability.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-same_event_replay"
+                  ],
+                  "rows": [
+                    {
+                      "result_json": {
+                        "status": "replied",
+                        "data": "저장된 펜던트 확률",
+                        "outboxId": "601",
+                        "rowCount": 13,
+                        "rateTotal": 100
+                      }
+                    }
+                  ]
+                }
+              ],
+              "APP_INBOX_DUPLICATE": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                }
+              ],
+              "MISSING_IDENTITY": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": []
+                }
+              ],
+              "WRONG_OPERATIONAL_CHANNEL": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                }
+              ],
+              "PAYLOAD_DESTINATION_DRIFT": [
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/펜던트확률"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "PENDANT_PROBABILITY_READ",
+                      "handler_key": "pendant_probability_read",
+                      "auth_scope": "VERIFIED_USER",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedValues": [
+                    "pendant-user"
+                  ],
+                  "rows": [
+                    {
+                      "identity_id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT result_json FROM operations WHERE idempotency_scope='pendant.probability.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-payload_destination_drift"
+                  ],
+                  "rows": [
+                    {
+                      "result_json": {
+                        "status": "replied",
+                        "data": "저장된 펜던트 확률",
+                        "outboxId": "601",
+                        "rowCount": 13,
+                        "rateTotal": 100
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "mutationPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-19076db78c2eefb9-read_positive",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-read_positive",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "{\"rowCount\":13,\"rateTotal\":100,\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "NEGATIVE_GUARD": [],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-19076db78c2eefb9-exact_output",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-exact_output",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "{\"rowCount\":13,\"rateTotal\":100,\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-19076db78c2eefb9-source_domain_dml_zero",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-source_domain_dml_zero",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "{\"rowCount\":13,\"rateTotal\":100,\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-19076db78c2eefb9-restart_consistency",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-restart_consistency",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "42"
+                    },
+                    "{\"rowCount\":13,\"rateTotal\":100,\"readOnly\":true}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "ROLLBACK": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "wave10-runtime-dispatch-19076db78c2eefb9-rollback",
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "pendant-room",
+                    "{\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "wave10-runtime-dispatch-19076db78c2eefb9-rollback",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "701",
+                  "error": {
+                    "message": "wave10 forced middle-DML rollback",
+                    "code": "ER_SIGNAL_EXCEPTION",
+                    "errno": 1644
+                  }
+                }
+              ],
+              "SAME_EVENT_REPLAY": [],
+              "APP_INBOX_DUPLICATE": [],
+              "MISSING_IDENTITY": [],
+              "WRONG_OPERATIONAL_CHANNEL": [],
+              "PAYLOAD_DESTINATION_DRIFT": []
+            },
+            "expectedResultsByScenario": {
+              "READ_POSITIVE": "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+              "NEGATIVE_GUARD": "INVALID_COMMAND_NO_CALL",
+              "EXACT_OUTPUT": "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+              "SOURCE_DOMAIN_DML_ZERO": "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+              "RESTART_CONSISTENCY": "{\"status\":\"replied\",\"data\":\"💎 펜던트 확률\\n━━━━━━━━━━━━\\n조약돌🪨[최하급] 31%\\n동빛🔸[하급] 20%\\n은빛⚪[하급+] 15%\\n금빛🟡[중급] 10%\\n청옥🔹[중급+] 7%\\n홍옥🔴[상급] 5%\\n별빛⭐[상급+] 4%\\n달빛🌙[최상급] 3%\\n햇빛☀️[최상급+] 2%\\n신화🌀[신화] 1.5%\\n초월🌌[초월] 1%\\n창세🌠[창세] 0.4%\\n창조✨[창조] 0.1%\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+              "ROLLBACK": "ERROR:ER_SIGNAL_EXCEPTION",
+              "SAME_EVENT_REPLAY": "{\"status\":\"replied\",\"data\":\"저장된 펜던트 확률\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}",
+              "APP_INBOX_DUPLICATE": "APP_GATE_REJECTED_NO_CALL",
+              "MISSING_IDENTITY": "{\"status\":\"silent\"}",
+              "WRONG_OPERATIONAL_CHANNEL": "APP_GATE_REJECTED_NO_CALL",
+              "PAYLOAD_DESTINATION_DRIFT": "{\"status\":\"replied\",\"data\":\"저장된 펜던트 확률\",\"outboxId\":\"601\",\"rowCount\":13,\"rateTotal\":100}"
+            }
+          }
+        ]
+      }
+    ],
+    "riskBindings": [
+      {
+        "consumerId": "runtime-dispatch-36d6721ade0707a6",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-market-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:rollback",
+        "scenarioKind": "ROLLBACK"
+      },
+      {
+        "consumerId": "runtime-dispatch-36d6721ade0707a6",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-market-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:same-event-replay",
+        "scenarioKind": "SAME_EVENT_REPLAY"
+      },
+      {
+        "consumerId": "runtime-dispatch-36d6721ade0707a6",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-market-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:app-inbox-duplicate",
+        "scenarioKind": "APP_INBOX_DUPLICATE"
+      },
+      {
+        "consumerId": "runtime-dispatch-36d6721ade0707a6",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-market-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:missing-identity",
+        "scenarioKind": "MISSING_IDENTITY"
+      },
+      {
+        "consumerId": "runtime-dispatch-36d6721ade0707a6",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-market-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:wrong-operational-channel",
+        "scenarioKind": "WRONG_OPERATIONAL_CHANNEL"
+      },
+      {
+        "consumerId": "runtime-dispatch-36d6721ade0707a6",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-market-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:payload-destination-drift",
+        "scenarioKind": "PAYLOAD_DESTINATION_DRIFT"
+      },
+      {
+        "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:rollback",
+        "scenarioKind": "ROLLBACK"
+      },
+      {
+        "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:same-event-replay",
+        "scenarioKind": "SAME_EVENT_REPLAY"
+      },
+      {
+        "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:app-inbox-duplicate",
+        "scenarioKind": "APP_INBOX_DUPLICATE"
+      },
+      {
+        "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:missing-identity",
+        "scenarioKind": "MISSING_IDENTITY"
+      },
+      {
+        "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:wrong-operational-channel",
+        "scenarioKind": "WRONG_OPERATIONAL_CHANNEL"
+      },
+      {
+        "consumerId": "runtime-dispatch-8c6c3c3d598fe078",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-info",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:payload-destination-drift",
+        "scenarioKind": "PAYLOAD_DESTINATION_DRIFT"
+      },
+      {
+        "consumerId": "runtime-dispatch-19076db78c2eefb9",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-probability",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:rollback",
+        "scenarioKind": "ROLLBACK"
+      },
+      {
+        "consumerId": "runtime-dispatch-19076db78c2eefb9",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-probability",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:same-event-replay",
+        "scenarioKind": "SAME_EVENT_REPLAY"
+      },
+      {
+        "consumerId": "runtime-dispatch-19076db78c2eefb9",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-probability",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:app-inbox-duplicate",
+        "scenarioKind": "APP_INBOX_DUPLICATE"
+      },
+      {
+        "consumerId": "runtime-dispatch-19076db78c2eefb9",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-probability",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:missing-identity",
+        "scenarioKind": "MISSING_IDENTITY"
+      },
+      {
+        "consumerId": "runtime-dispatch-19076db78c2eefb9",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-probability",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:wrong-operational-channel",
+        "scenarioKind": "WRONG_OPERATIONAL_CHANNEL"
+      },
+      {
+        "consumerId": "runtime-dispatch-19076db78c2eefb9",
+        "harnessId": "harness:object-db-executable-parity:wave10",
+        "harnessCaseId": "case:pendant-probability",
+        "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
+        "scenarioId": "scenario:payload-destination-drift",
+        "scenarioKind": "PAYLOAD_DESTINATION_DRIFT"
+      }
+    ],
+    "riskNotes": [
+      "펜던트 상세 계산의 등급·강화 수치가 서비스에 하드코딩되어 정의 DB 변경과 불일치할 위험이 있습니다.",
+      "펜던트 확률 조회는 기존 item_definitions.code에 의존합니다. 이미 적용된 migration/provider는 Wave10에서 수정하지 않습니다.",
+      "세 서비스 모두 재시도 정책 없이 FOR UPDATE를 사용하며 lock 순서를 변경하지 않습니다.",
+      "eventId만 멱등성 키이므로 payload·destination 변경은 기존 결과를 재사용합니다.",
+      "오픈톡 identity 누락과 비운영 채널은 app/service 경계에서 reply와 DML 없이 종료합니다."
+    ]
+  }
+}
