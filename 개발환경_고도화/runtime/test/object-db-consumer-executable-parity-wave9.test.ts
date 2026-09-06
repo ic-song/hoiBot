@@ -10,6 +10,7 @@ import { PlayerCumulativeLikeRankReadService } from "../src/player/player-cumula
 import { PlayerOverallRankReadService } from "../src/player/player-overall-rank-read-service.js";
 import { HomeRankingReadService } from "../src/home/home-ranking-read-service.js";
 import { HomeFurnitureRankReadService } from "../src/home/home-furniture-rank-read-service.js";
+import { assertTrustedWave9ConsumerFixtureMapping, assertTrustedWave9ExecutableHashes } from "../src/data-migration/object-db-consumer-executable-parity-ledger.js";
 
 const runtimeRoot = resolve(import.meta.dirname, "..");
 const repositoryRoot = resolve(runtimeRoot, "../..");
@@ -46,17 +47,17 @@ describe("object DB executable parity Wave9 rank chain", () => {
           assert.deepEqual(trace.timeline, ["GUARD_REJECTED"]);
           continue;
         }
+        if (binding.scenarioKind === "APP_GATE_REJECTED") {
+          assert.equal(trace.transaction, "READ_ONLY");
+          assert.equal(trace.queryTrace.length, 1);
+          assert.deepEqual(trace.dmlTrace, []);
+          continue;
+        }
         assert.ok(trace.queryTrace.length >= 2);
         if (binding.scenarioKind === "SAME_EVENT_REPLAY") {
           assert.equal(trace.transaction, "COMMIT");
           assert.deepEqual(trace.dmlTrace, []);
           assert.deepEqual(trace.timeline, ["BEGIN", "COMMIT"]);
-          continue;
-        }
-        if (binding.scenarioKind === "APP_GATE_REJECTED") {
-          assert.equal(trace.transaction, "READ_ONLY");
-          assert.equal(trace.queryTrace.length, 1);
-          assert.deepEqual(trace.dmlTrace, []);
           continue;
         }
         if (binding.scenarioKind === "ROLLBACK") {
@@ -126,7 +127,7 @@ describe("object DB executable parity Wave9 rank chain", () => {
                 return { affectedRows: 1n, insertId: normalized.startsWith("INSERT INTO operations") ? 501n : normalized.startsWith("INSERT INTO outbox_messages") ? 601n : 1n };
               },
             };
-            return work(transaction);
+            return await work(transaction);
           } finally {
             if (lockAcquired) releaseLock?.();
           }
@@ -192,6 +193,32 @@ describe("object DB executable parity Wave9 rank chain", () => {
     assert.equal(current.receipts.length, 119);
     assert.deepEqual(current.receipts.slice(0, 94), prior.receipts);
     assert.equal(new Set(current.receipts.map((receipt: any) => receipt.receiptId)).size, 119);
+  });
+
+  it("pins each trusted consumer plan and rejects fixture semantic tampering", () => {
+    const manifest = JSON.parse(readFileSync(resolve(repositoryRoot, "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json"), "utf8"));
+    for (const consumer of allConsumers()) {
+      const source = manifest.consumers.find((entry: any) => entry.consumerId === consumer.consumerId);
+      assert.doesNotThrow(() => assertTrustedWave9ConsumerFixtureMapping(consumer.consumerId, consumer, source));
+      for (const mutate of [
+        (value: any) => value.queryPlanByScenario.READ_POSITIVE.find((step: any) => step.rows.length > 0).rows[0] = { drift: true },
+        (value: any) => value.mutationPlanByScenario.READ_POSITIVE[0].expectedNormalizedSql += " ",
+        (value: any) => value.expectedResultsByScenario.EXACT_OUTPUT = "{}",
+        (value: any) => value.sourceLocator.start += 1,
+      ]) {
+        const changed = structuredClone(consumer);
+        mutate(changed);
+        assert.throws(() => assertTrustedWave9ConsumerFixtureMapping(consumer.consumerId, changed, source), /contract drift/);
+      }
+    }
+  });
+
+  it("fails closed when the trusted Wave9 harness or target hash drifts", () => {
+    const harnessSha256 = hash(harnessPath);
+    const targetSha256 = hash(targetPath);
+    assert.doesNotThrow(() => assertTrustedWave9ExecutableHashes(harnessSha256, targetSha256));
+    assert.throws(() => assertTrustedWave9ExecutableHashes("0".repeat(64), targetSha256), /trusted Wave9 executable source hash drift/);
+    assert.throws(() => assertTrustedWave9ExecutableHashes(harnessSha256, "0".repeat(64)), /trusted Wave9 executable source hash drift/);
   });
 
   it("fails closed on app span, SQL, parameters, rows and output drift", () => {
