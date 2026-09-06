@@ -314,7 +314,7 @@ Status: VERIFIED
 | --- | --- | --- |
 | Inventory / bag / trade | `main.js`, `Info.js` | `/가방`, `generateBagOutput`, `/당근`, `/구매` |
 | Guild / territory / warehouse | `main.js`, `Info.js` | `/길드정보`, `/길드목록`, `/길드영지시작`, `ensureGuildTerritoryWar` |
-| Mini-pet / collection | `main.js`, `Info.js` | `/미니펫가방`, `buildMiniPetBagMessage`, `/컬렉션등록`, `/미니펫컬렉션` |
+| Mini-pet / collection | `main.js`, `Info.js` | `/미니펫가방`, `buildMiniPetBagMessage`, `/미니펫컬렉션등록`, `/미니펫컬렉션만능` |
 | Pet skill | `main.js`, `Info.js` | `/펫스정보`, `initPetSkillUser`, `getPetSkillSlotCount`, `/펫스장착` |
 | Sweet home / furniture | `main.js`, `Info.js` | `/가구가방`, `initSweetHomeUser`, `getHomeTotalExp`, `/가구순위` |
 | Ranking / profile / info | `Info.js`, `main.js` | `/내정보`, `/정보 [닉네임]`, `/펫정보`, `calculateTotalExp` |
@@ -4087,10 +4087,10 @@ Status: VERIFIED
 
 ---
 
-# /컬렉션등록 [번호...]
+# /미니펫컬렉션등록 [번호...]
 Status: VERIFIED
 ## Command Anchors
-- Search in main.js: `/컬렉션등록`
+- Search in main.js: `/미니펫컬렉션등록`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -4105,7 +4105,7 @@ Status: VERIFIED
 ## Save Flow
 - Registers selected mini-pets, mutates collection/title/member/pet data, saves all touched stores
 ## Related Commands
-- `/미니펫컬렉션`
+- `/미니펫컬렉션만능`
 - `/미니펫컬렉션순위`
 
 ## AI Notes
@@ -4114,10 +4114,10 @@ Status: VERIFIED
 
 ---
 
-# /미니펫컬렉션|/미니펫컬렉션 [미니펫컬렉션번호]
+# /미니펫컬렉션|/미니펫컬렉션만능 [미니펫컬렉션번호]
 Status: VERIFIED
 ## Command Anchors
-- Search in main.js: `/미니펫컬렉션`
+- Search in main.js: `/미니펫컬렉션`, `/미니펫컬렉션만능`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -4129,14 +4129,14 @@ Status: VERIFIED
 - `miniPetCollectionData.member[sender]`
 - `miniPetCollectionInfo.stageReward`
 - `petData[sender].miniPetBag`
-- `data.member[sender].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션 번호)"]`
+- `data.member[sender].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)"]`
 ## Save Flow
 - 인자 없는 명령은 현황을 조회하며 필요하면 컬렉션 데이터를 정리해 저장한다.
-- 번호 명령은 같은 등급의 등록 가능한 미니펫을 먼저 선택하고, 없을 때만 만능 열쇠를 선택해 `등록` 확인 상태를 만든다.
-- 현황 UI는 단계 보상 다음에 `🗝️ 만능열쇠 등록`과 `/미니펫컬렉션 [미니펫컬렉션번호]`를 먼저 안내한 뒤 상세 컬렉션을 표시한다.
+- `/미니펫컬렉션만능 [번호]`는 일반 미니펫 보유 여부와 관계없이 만능 열쇠만 선택해 `등록` 확인 상태를 만든다.
+- 현황 UI는 단계 보상 다음에 만능열쇠 등록 `/미니펫컬렉션만능`과 등급 등록 `/미니펫컬렉션등록`을 안내한 뒤 상세 컬렉션을 표시한다.
 - `등록` 성공 시 기존 컬렉션·타이틀·회원·미니펫 저장 흐름을 재사용한다.
 ## Related Commands
-- `/컬렉션등록`
+- `/미니펫컬렉션등록`
 - `/미니펫컬렉션순위`
 
 ---
@@ -5568,12 +5568,12 @@ Status: VERIFIED
 
 ---
 
-# /펫스킬컬렉션|/펫스킬컬렉션등록 [번호] ...
+# /펫스킬컬렉션|/펫스킬컬렉션만능 [번호]|/펫스킬컬렉션등록 [번호] ...
 
 Status: VERIFIED
 
 ## Command Anchors
-- Search in `main.js`: `/펫스킬컬렉션`, `/펫스킬컬렉션등록`
+- Search in `main.js`: `/펫스킬컬렉션`, `/펫스킬컬렉션만능`, `/펫스킬컬렉션등록`
 
 ## Files
 - `main.js`
@@ -5593,15 +5593,15 @@ Status: VERIFIED
 - `petSkillData.json -> [user].petSkillCollection[skillName]`
 - `petSkillData.json -> [user].petSkills.bag[skillName]`
 - `member.json -> member[user].bag["홈뱃지 큐브💟"]`
-- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션 번호)"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)"]`
 
 ## Save Flow
 - `/펫스킬컬렉션`은 SS~D 현황과 통합 컬렉션 번호를 출력한다.
-- `/펫스킬컬렉션 [번호]`는 일반 펫스킬북 보유 여부와 관계없이 만능 열쇠 1개로 해당 컬렉션을 등록한다.
+- `/펫스킬컬렉션만능 [번호]`는 일반 펫스킬북 보유 여부와 관계없이 만능 열쇠 1개로 해당 컬렉션을 등록한다.
 - `/펫스킬컬렉션등록`은 `/펫스킬가방` 기준 최대 10개의 서로 다른 가방 번호를 받는다.
 - 선택한 가방 번호의 펫스킬북을 등록 재료로 사용한다.
 - `한정판` 펫스킬은 종류별 최대 10개까지 등록할 수 있고, 등록 1개당 `홈뱃지 큐브💟` 300개를 지급한다.
-- 현황 UI는 컬렉션 보상표 앞에 `🗝️ 만능열쇠 등록`과 `/펫스킬컬렉션 [펫스킬컬렉션번호]`를 표시하고, 보상표는 SS~D 다음 한정판 순서를 유지한다.
+- 현황 UI는 컬렉션 보상표 앞에 `🗝️ 만능열쇠 등록`과 `/펫스킬컬렉션만능 [펫스킬컬렉션번호]`를 표시하고, 보상표는 SS~D 다음 한정판 순서를 유지한다.
 - 이전 표기 형태로 저장된 펫스킬북은 등록 재료 확인과 소모 전에 현재 표준 이름으로 병합한다.
 - `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상·만능 열쇠를 `member.json`에 저장한다.
 - 등록 완료 결과는 `allsee` 접기 없이 등록 성공 상세를 바로 이어서 표시한다.
@@ -5633,8 +5633,8 @@ Status: VERIFIED
 ## Data Usage
 - `member.json -> member[user].bag["만능상자🔐(/만능상자오픈 숫자)"]`
 - `member.json -> member[user].bag["펫스킬북📙(/펫스킬오픈)"]`
-- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션 번호)"]`
-- `member.json -> member[user].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션 번호)"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)"]`
+- `member.json -> member[user].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)"]`
 
 ## Save Flow
 - 상자마다 70%·25%·5%를 독립 추첨한 뒤 보상을 합산하고, 상자 차감과 보상 지급을 한 번 저장한다.
