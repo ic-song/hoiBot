@@ -636,7 +636,7 @@ export function assertTrustedWave9ExecutableHashes(harnessSha256:unknown,targetS
 const TRUSTED_WAVE10_PENDANT_READS={
   "runtime-dispatch-36d6721ade0707a6":{caseId:"case:pendant-market-info",handlerKey:"pendant_market_info",hash:"1db03bb735f6ba71c85f781d5dbf26bceb42dc44e8fee32bb24998b37ee5498c"},
   "runtime-dispatch-8c6c3c3d598fe078":{caseId:"case:pendant-info",handlerKey:"pendant_info_read",hash:"5776da6d93309dbb6f2f406fca0fcc9673387973d55cd9178ff5c66d5cc920df"},
-  "runtime-dispatch-19076db78c2eefb9":{caseId:"case:pendant-probability",handlerKey:"pendant_probability_read",hash:"a75110d0c47797969a88667f4a28334358afad2fddf76f5d194e0a874f4fadcf"},
+  "runtime-dispatch-19076db78c2eefb9":{caseId:"case:pendant-probability",handlerKey:"pendant_probability_read",hash:"9c5f9328115f39454fbf92bf571bf09816db4e9697405414df4c4a413063892a"},
 } as const;
 const TRUSTED_WAVE10_HARNESS_SHA256="9a214f1f84fbc8f7b3fc87da8fa224e1255d6e82f8e2284aafc32a32ee319950" as const;
 const TRUSTED_WAVE10_TARGET_SHA256="2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b" as const;

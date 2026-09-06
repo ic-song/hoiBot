@@ -5593,8 +5593,8 @@
               {
                 "file": "개발환경_고도화/runtime/src/pet/pendant-probability-service.ts",
                 "start": 0,
-                "end": 4472,
-                "sha256": "5d5d10a23fe4cf618381f6fab55f9e6ae5692fc537056e5c1b325770eaa52127",
+                "end": 4483,
+                "sha256": "d06949f22c86d61175024a1630267d6a9a397e996d4c2e5a9a80f0ede96b1020",
                 "needle": "withTransaction"
               }
             ],
@@ -5724,7 +5724,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "pendant-user"
                   ],
@@ -5926,7 +5926,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "pendant-user"
                   ],
@@ -6099,7 +6099,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "pendant-user"
                   ],
@@ -6272,7 +6272,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "pendant-user"
                   ],
@@ -6445,7 +6445,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "pendant-user"
                   ],
@@ -6605,7 +6605,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "pendant-user"
                   ],
@@ -6734,7 +6734,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "missing-pendant-user"
                   ],
@@ -6785,7 +6785,7 @@
                   ]
                 },
                 {
-                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1",
+                  "expectedNormalizedSql": "SELECT identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.status='active' WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' LIMIT 1 FOR UPDATE",
                   "expectedValues": [
                     "pendant-user"
                   ],
