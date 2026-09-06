@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "2a32cf0c3d3158f98aedf102ba7bf4811edcf218",
+  "evidenceCommit": "e18dd723fd222fa387b094cd2f656bfd9073468f",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "b11b60649e12bb63bc7cb6ab5d58f2c1bb260e3b786ca4eb736822e20118483e"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave2-v1.json",
-      "sha256": "920aec2597dcd09d2de1c399873cdf8fb628e2c5ebf87a97ebd74e51080b8d5c"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave3-v1.json",
+      "sha256": "b240c1d386b2ab644967c62aeffa18bba154058def383ca85579b9bd25953913"
     },
     "classificationSources": [
       {
@@ -63,16 +63,16 @@
     "registrySourceMismatchCount": 8,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 8,
-    "provenConsumers": 6,
-    "unprovenConsumers": 1105,
-    "directPassConsumers": 6,
+    "provenConsumers": 7,
+    "unprovenConsumers": 1104,
+    "directPassConsumers": 7,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 553,
+      "STATIC_ONLY": 552,
       "BLOCKED_DYNAMIC": 552,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 6,
+      "DIRECT_PASS": 7,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -93010,7 +93010,7 @@
         "harnessId": "harness:object-db-executable-parity:wave1",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+        "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -93323,7 +93323,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+            "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
@@ -93435,22 +93435,22 @@
         "sourceSpanSha256": "5356bb4b337ca031c50622ce7a658fe98b42014bc5da5ca58c254a2e2e59a4e7",
         "classificationSha256": "b85035787c6009361494ee06f8e64901b4fe4e48ef39e3048cb4953186a626c2"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave3",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json",
+        "sha256": "982404acd026928b00c3e965d4f7b6bd0fe52d3320bc306d4abf5f46fb5495b0"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
+        "targetSourceSha256": "ba0af2eaac32ab1d15900945ac0f68c1a621385b4512738463638dc211a437cf",
+        "exportName": "executeWave3PlayerTarget"
       },
       "scenarioRequirements": [
         {
@@ -93499,11 +93499,267 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:player-target",
+          "attributedConsumerIds": [
+            "sql-repository-261eb97022941f77"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ"
+              ],
+              "actualTimeline": [
+                "READ"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:player-target",
+          "attributedConsumerIds": [
+            "sql-repository-261eb97022941f77"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "ce4daa29d40adb4ed28da6deaa5cdb70b248b71331047cb5bcf2290da891c60c",
+              "actualSha256": "ce4daa29d40adb4ed28da6deaa5cdb70b248b71331047cb5bcf2290da891c60c",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b8b176fac12a74e1f72ee8c78b82daa9198435484d8864262c49d86e370b7087",
+              "actualSha256": "b8b176fac12a74e1f72ee8c78b82daa9198435484d8864262c49d86e370b7087",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:player-target",
+          "attributedConsumerIds": [
+            "sql-repository-261eb97022941f77"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ"
+              ],
+              "actualTimeline": [
+                "READ"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:player-target",
+          "attributedConsumerIds": [
+            "sql-repository-261eb97022941f77"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "d615548e527179d0b18aab739e69a1281be5a1326f58da0b0790a23c880a9f61",
+              "actualSha256": "d615548e527179d0b18aab739e69a1281be5a1326f58da0b0790a23c880a9f61",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:READ",
+                "RESTART",
+                "CHILD_PROCESS_2:READ"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:READ",
+                "RESTART",
+                "CHILD_PROCESS_2:READ"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:player-target",
+          "attributedConsumerIds": [
+            "sql-repository-261eb97022941f77"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ"
+              ],
+              "actualTimeline": [
+                "READ"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave3:sql-repository-261eb97022941f77:exact_output",
+          "receipt:wave3:sql-repository-261eb97022941f77:negative_guard",
+          "receipt:wave3:sql-repository-261eb97022941f77:read_positive",
+          "receipt:wave3:sql-repository-261eb97022941f77:restart_consistency",
+          "receipt:wave3:sql-repository-261eb97022941f77:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-261eb97022941f77"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json",
+            "sha256": "982404acd026928b00c3e965d4f7b6bd0fe52d3320bc306d4abf5f46fb5495b0"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+            "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
+            "sha256": "ba0af2eaac32ab1d15900945ac0f68c1a621385b4512738463638dc211a437cf"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -94442,7 +94698,7 @@
         "harnessId": "harness:object-db-executable-parity:wave2",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+        "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -94755,7 +95011,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+            "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
@@ -95245,7 +95501,7 @@
         "harnessId": "harness:object-db-executable-parity:wave1",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+        "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -95558,7 +95814,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+            "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
@@ -97035,7 +97291,7 @@
         "harnessId": "harness:object-db-executable-parity:wave1",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+        "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -97348,7 +97604,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+            "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
@@ -97378,7 +97634,7 @@
         "harnessId": "harness:object-db-executable-parity:wave2",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+        "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -97691,7 +97947,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+            "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
@@ -99183,7 +99439,7 @@
         "harnessId": "harness:object-db-executable-parity:wave2",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+        "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -99496,7 +99752,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-            "sha256": "186b0fe1eaa7d8a247051dbf6abb30a402d18f2a101917d7d9913eb780eb0086"
+            "sha256": "88ca07e44a884401b63b07c75e020970f3a678e654375bb9c017e91c5a304e87"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
@@ -99691,5 +99947,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "e60cff4e3a177321842defab587f1ed4d5dfb74662e01ce9f662217c9b483943"
+  "entrySetSha256": "3e4e95269e05fc26437a1990a3a657501414115b5e24aa1b9033f78485dc8bae"
 }
