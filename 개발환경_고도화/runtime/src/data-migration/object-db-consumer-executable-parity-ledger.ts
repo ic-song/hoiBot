@@ -517,19 +517,24 @@ function gitRepositoryRoot(): string {
   return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 }
 
+const commitBlobCache=new Map<string,string>();
 function readCommitBlob(repositoryRoot: string, commit: string, path: string): string {
+  const cacheKey=`${repositoryRoot}\0${commit}\0${path}`,cached=commitBlobCache.get(cacheKey);if(cached!==undefined)return cached;
   try {
-    return execFileSync("git", ["-c", "core.longpaths=true", "show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
+    const blob=execFileSync("git", ["-c", "core.longpaths=true", "show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });commitBlobCache.set(cacheKey,blob);return blob;
   } catch {
     throw new Error(`evidenceCommit does not contain trusted input: ${path}`);
   }
 }
 
+const verifiedEvidenceCommits=new Set<string>();
 function assertEvidenceCommitAncestry(repositoryRoot: string, evidenceCommit: string): void {
+  const cacheKey=`${repositoryRoot}\0${evidenceCommit}`;if(verifiedEvidenceCommits.has(cacheKey))return;
   try { execFileSync("git", ["cat-file", "-e", `${evidenceCommit}^{commit}`], { cwd: repositoryRoot, stdio: "ignore" }); }
   catch { throw new Error(`evidenceCommit does not exist: ${evidenceCommit}`); }
   try { execFileSync("git", ["merge-base", "--is-ancestor", evidenceCommit, "HEAD"], { cwd: repositoryRoot, stdio: "ignore" }); }
   catch { throw new Error(`evidenceCommit is not an ancestor of current HEAD: ${evidenceCommit}`); }
+  verifiedEvidenceCommits.add(cacheKey);
 }
 
 export function assertTrustedWave1ConsumerFixtureMapping(
