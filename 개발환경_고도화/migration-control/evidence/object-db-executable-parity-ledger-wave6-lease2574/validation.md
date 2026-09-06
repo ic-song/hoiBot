@@ -7,4 +7,3 @@
 - Focused ledger/Wave1~6/runner tests: `24/24 PASS`; typecheck, build, and object-data contract (`103` registered targets) PASS.
 - Prior Wave1~5 receipt comparison: `45/45 PASS`; semantic drift `0`, only runner hash and dependent receipt hash refreshed.
 - `git diff --check`: PASS. Full suite/T3 remains deferred by lease instruction.
-
