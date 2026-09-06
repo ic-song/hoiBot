@@ -52,8 +52,15 @@ function createRunnerDatabase(consumer) {
         return { affectedRows: 1n };
       }
       assert(normalizedSql === consumer.expectedNormalizedSql, `${consumer.consumerId}: unexpected SELECT SQL`);
-      assert(JSON.stringify(jsonSafe(values)) === JSON.stringify([consumer.input.playerId]), `${consumer.consumerId}: unexpected SELECT values`);
+      const expectedValues = consumer.expectedQueryValues ?? [consumer.input.playerId];
+      assert(JSON.stringify(jsonSafe(values)) === JSON.stringify(expectedValues), `${consumer.consumerId}: unexpected SELECT values`);
       record("query", sql, values, consumer.mockRows.length);
+      if (consumer.databaseRowShape === "legacy-object-row") return consumer.mockRows.map((row) => ({
+        legacy_object_id: BigInt(row.legacyObjectId),
+        legacy_object_key: row.legacyObjectKey,
+        object_type: row.objectType,
+        object_identity_id: row.canonicalObjectIdentityId,
+      }));
       return consumer.mockRows.map((row) => ({
         owned_title_id: row.ownedTitleId,
         title_definition_id: row.titleDefinitionId,
