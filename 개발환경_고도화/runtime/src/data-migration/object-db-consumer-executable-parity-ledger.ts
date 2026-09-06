@@ -784,6 +784,7 @@ function assertReceiptExecutableBinding(
         const expectedMutations=receipt.scenario.scenarioKind==="RESTART_CONSISTENCY"?[...oneMutation,...oneMutation]:oneMutation;
         if(trace.dmlTrace.length!==expectedMutations.length)throw new Error(`${receipt.receiptId} trusted Wave7 exact mutation count mismatch`);
         for(let index=0;index<expectedMutations.length;index++){const actual=trace.dmlTrace[index] as Record<string,unknown>,expected=expectedMutations[index]!;if(actual.channel!==expected.channel||actual.normalizedSql!==expected.normalizedSql||actual.rowCount!==expected.rowCount||!Array.isArray(actual.values)||actual.values.length!==expected.values.length||!actual.values.every((value,valueIndex)=>matchesTrustedTraceValue(value,expected.values[valueIndex])))throw new Error(`${receipt.receiptId} trusted Wave7 exact mutation trace mismatch`);}
+        if(queue&&receipt.scenario.scenarioKind==="RESTART_CONSISTENCY"){const first=trace.dmlTrace[0] as Record<string,unknown>,second=trace.dmlTrace[3] as Record<string,unknown>,firstValues=first.values as unknown[],secondValues=second.values as unknown[];if(firstValues[0]===secondValues[0])throw new Error(`${receipt.receiptId} trusted Wave7 restart reused operation UUID`);}
       }
     }
     assertStringArray(trace.normalizedStatements, `${receipt.receiptId}.trace.normalizedStatements`);

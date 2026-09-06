@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "ab606ad154cb5ac26c6045ba36cc5263ec74c046",
+  "evidenceCommit": "265b95f38a265ff7163f14243c4d723c222539f3",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -13,7 +13,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -68,7 +68,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "587818923f42b9948723341cf6cdc906c3a8e8e127c7b19d1eb8fc3fd3878674"
+      "receiptSha256": "9919260e9720162a50e00066e64674609c40fce4a1c5b5e9af2083b8f34ee842"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:negative_guard",
@@ -79,7 +79,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -134,7 +134,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "848a9e413b0103fd3c8f68e370fc8250d1e6d04b58e50381c21317418bc4c585"
+      "receiptSha256": "ada9ced70dbe455a88210fea3d42131cab3cd326bc0f801d3e0ef1b82a76fbbd"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:read_positive",
@@ -145,7 +145,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -200,7 +200,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "e02236a732c4743a500088e5debfa957d5730906d5d7567cc84c4f8ce2c414bb"
+      "receiptSha256": "7d0b54c21980d2c6ee9584437aeda78b9c960f73d8bcc4a183a4b2c9b7f7cb76"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:restart_consistency",
@@ -211,7 +211,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -270,7 +270,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f84780faf53ac7d11e5fdd6264c3d9777cffaf0a0393c446320781424043ab7e"
+      "receiptSha256": "efba8e493c89a19f0d6648dbf7da8ddda613480ae36bca84b2f0889e5b81e333"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:source_domain_dml_zero",
@@ -281,7 +281,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -336,7 +336,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "26c6c1e94412c8911050c7baf1cbc14e06f35891614d6bdfb2b1da2f337c3cf8"
+      "receiptSha256": "f091d6eecf1d0cbc3022f292d6ff8d99850467fa47b5a4922ace7c69996dc373"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:exact_output",
@@ -347,7 +347,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -402,7 +402,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "8fd5424793c6b6953a66cc54bf1d0a2ec11ecd7508870905b4d7afcb331d9198"
+      "receiptSha256": "bd9d74079f34245b7e7199fe6760884601ecb3ee5acc5ab6217d060e14b33255"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:negative_guard",
@@ -413,7 +413,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -468,7 +468,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "9b79ce239eb41acca2350fd34bbfd54195ab1db762c3a6a13d307a766c2ac786"
+      "receiptSha256": "6becc7e917bba178e6cd60da61e8dcdb60807290bd6cd980d21c6bd7bd546280"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:read_positive",
@@ -479,7 +479,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -534,7 +534,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "422b7cbbca87f40e81c5ba08f61f1af420a8e8d7f483808be271d92a7e0863a7"
+      "receiptSha256": "2872306fe55369bf4b99c04eda1fed0fb878b3598ad7663fddc165378764596e"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:restart_consistency",
@@ -545,7 +545,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -604,7 +604,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "50374efe85eeb16004a35d933e4507679f04366fbcfa7739ac23bcf355740490"
+      "receiptSha256": "21e8dfb9a001253f3fc6b6cdc2ec46bc0157e30c6fa7a929fc9cb06838a74177"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:source_domain_dml_zero",
@@ -615,7 +615,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -670,7 +670,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "8210bdabf208de2ef0036fa6bb0907cb43b3c942a55208df8f592ff6922572bc"
+      "receiptSha256": "84e5acacfb7eb8b5ccb1252c294cd36b6ccf3834609193e87cc61ba7dba8e922"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:exact_output",
@@ -681,7 +681,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -736,7 +736,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "86fc88d7f5212f27f614adda0be6448d376d09d569f0731983f39e2516b60743"
+      "receiptSha256": "cc16251b0a57220ec664799d483afe2f7a9f7247c80506604db6e5596d2063bb"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:negative_guard",
@@ -747,7 +747,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -802,7 +802,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "06c1973f3cdfc124c0474d730a82d64088b9ea57c0d7d6ee54d3b4b237f5230b"
+      "receiptSha256": "09e60d2de77c4d5317a469149c4fcdee18344f8ab7ea0406e06cf0e153b9a2bb"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:read_positive",
@@ -813,7 +813,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -868,7 +868,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "8d1ac2df606c4f21ebf87aec1dbae68ccf6bf99bd2217879a2d9040dcb3d8b75"
+      "receiptSha256": "0f8745b2d369fe19858967b20e1ed609d1f90c7fa23c401e416c42c750d76f0a"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:restart_consistency",
@@ -879,7 +879,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -938,7 +938,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f536026cf9cb5687eeae08e948c539478e9b99ce2d4648616d5caeaa0fee324f"
+      "receiptSha256": "df3d8836aca00d0639ae24edc27a3af3ee2a7e9f99bdf81e530452b5b3935270"
     },
     {
       "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:source_domain_dml_zero",
@@ -949,7 +949,7 @@
         "harnessCaseId": "case:canonical-title-list-owned",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
@@ -1004,7 +1004,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "c144e70e9a5d50be5c068e580dbcbc5c12fdc214409c0bb5e95430fdc3190a57"
+      "receiptSha256": "0e092f284e1ff603f8c35e31d25069ce53ad1e9bb682267b4d67dfa32041d841"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:exact_output",
@@ -1015,7 +1015,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1070,7 +1070,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "0b6e633977be1396ca80876c6c61b6d8b33fe1fe48351e4f1604f9843e8ba5d3"
+      "receiptSha256": "375a3f7ec863d347ccb8464f9ee902c8eb389dba9736e92db8119e3a3ef2c10f"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:negative_guard",
@@ -1081,7 +1081,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1136,7 +1136,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "ba2a0024125b1b9a6f8b0dc4453df2496f26619e6a925d07fdd337fc4a576ddb"
+      "receiptSha256": "64096ac327929f559bd74abeaa48dec3dd34e37892ac4f1c3621f9bfd8fe24f4"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:read_positive",
@@ -1147,7 +1147,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1202,7 +1202,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "6907453d59654e868be1256532e5e1ceb9cd7481782a9b000bb74d87733f4543"
+      "receiptSha256": "06cfb51d61eac8d521d90ed35bd7dbfec569c5e98836985cc05d22ce2a0de239"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:restart_consistency",
@@ -1213,7 +1213,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1272,7 +1272,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "bf558b6c93fdcc90e4e10100272f77b2db6cbb774c9e62eb4db293c40271b1e0"
+      "receiptSha256": "b387e0d4d4940caefcfb73163d0daf680506d596799c4a32dfd15b2fe4229119"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:source_domain_dml_zero",
@@ -1283,7 +1283,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1338,7 +1338,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "7a9a6b72ddcbaeb98baa1d3693a71cd4b872dab14fedf287bd6374d27baa89fe"
+      "receiptSha256": "860ac9abf0bfbe2d60ddebae21ba7a4c52507bad684a510f73738f3650e8e5d9"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:exact_output",
@@ -1349,7 +1349,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1404,7 +1404,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "51e1f50dad28db2fdf41dd8d7474a0618b3a40709800000b1e01989b0acf3b88"
+      "receiptSha256": "8dbc90789472cf506ca0c9573567fca40252dd6e18ea30b8465a0c8af4371b42"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:negative_guard",
@@ -1415,7 +1415,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1470,7 +1470,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "76b06b0e70d8dbf07677e715836260452e9caec92a7b75510e5b6e3a760d906d"
+      "receiptSha256": "dc51c91dce51b8740411e6a936dca27ab61aa2b10e78d8ed5444e4bb9ed0009c"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:read_positive",
@@ -1481,7 +1481,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1536,7 +1536,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "fca61de813b7d54a687f5c4cc43eab57b813364ce7de7ce944d6f9c7ddc4e321"
+      "receiptSha256": "9cf49ab57eb5c1e6b101e0916a5cb3704b042aee22f47dfbd3edd35545b13374"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:restart_consistency",
@@ -1547,7 +1547,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1606,7 +1606,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "b50ebb10fb11d69b4e838533e907e886edcc954092d99e501497f38ee8d81f90"
+      "receiptSha256": "ba8892b6aac95f67b11417916f399c9f14c6534f47f265a073e6ee4cddc22db9"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:source_domain_dml_zero",
@@ -1617,7 +1617,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1672,7 +1672,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "0e81800792ee9b1c30778ad3015951049e7aec4bbd3ff30022a80b58c2cb9200"
+      "receiptSha256": "2a7adeac492d2678c0697f7d6cd19679e1f338f297e2351f6b9223569830ecd6"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:exact_output",
@@ -1683,7 +1683,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1738,7 +1738,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "acdfaa8f4d41a33413e2376b8a97c78954f8558bf9924150f7c629d5932ef329"
+      "receiptSha256": "9a6897c045ea6857f66c38f412e8a78126824d25ae33dd7172050916ae143914"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:negative_guard",
@@ -1749,7 +1749,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1804,7 +1804,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5bce9745ecdc00bf74ea7e95680aa8487b18e52bf868517550ad766b35a69a76"
+      "receiptSha256": "4db758feec67841ee5de7255541e9962e3eca04d45932b66c8e0b1973a11a8f1"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:read_positive",
@@ -1815,7 +1815,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1870,7 +1870,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "54e967fa357e24d24455759b2622e1f46f2bb0633309c01d01eb52a74f6e3f1a"
+      "receiptSha256": "54605ad3ba75db565a5162b7d46ee9998ff2629dccb3a35cc5d519b1f4902a65"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:restart_consistency",
@@ -1881,7 +1881,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -1940,7 +1940,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "db2ac5e14ef54a49151d0f4bc1a1a44d576f7456f5da7e77eeefe036a94c4325"
+      "receiptSha256": "e5191e7da8805456f40c7658ce826da6cb96a0d0cf12aa9de351588a5973fd72"
     },
     {
       "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:source_domain_dml_zero",
@@ -1951,7 +1951,7 @@
         "harnessCaseId": "case:object-catalog-compatibility-resolver",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
@@ -2006,7 +2006,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "085ef59eb60d9cc575c7e777d465443a708ed7565bae23f96d9d461d8cb24980"
+      "receiptSha256": "8b933e84f3573c3fc90a7abc5b37b0e493576ceffdcb1d0680aac3317675d1d6"
     },
     {
       "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:exact_output",
@@ -2017,7 +2017,7 @@
         "harnessCaseId": "case:player-target",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
@@ -2072,7 +2072,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "4a0b59ed3a2dbeedaf7318209bef9f9022d2f33f30a11b4ce93464af12ed46ee"
+      "receiptSha256": "728de829ecf24d8c2955bc5cb3929d467c92c6beb28931ce293b1a07e35b5c2e"
     },
     {
       "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:negative_guard",
@@ -2083,7 +2083,7 @@
         "harnessCaseId": "case:player-target",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
@@ -2138,7 +2138,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "1ba86c9622216bb482ea833ba4715f0f137177cd112c74838403866f092f40b6"
+      "receiptSha256": "28fb76ffcc737b39ea74712c7b8fa31812fabd76e7f09fdd9b99cbb5b523bdd9"
     },
     {
       "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:read_positive",
@@ -2149,7 +2149,7 @@
         "harnessCaseId": "case:player-target",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
@@ -2204,7 +2204,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5a314dc3fe3ebd7b3bec8649e0432fa2836a78b6e7ce27ac28f32a424449b14c"
+      "receiptSha256": "defaa9e27ba35a009eb966abc30f134c8357a32ac98a897a3ea6bc16a69c151b"
     },
     {
       "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:restart_consistency",
@@ -2215,7 +2215,7 @@
         "harnessCaseId": "case:player-target",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
@@ -2274,7 +2274,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "c17a19122dc3d3031748e1a15e5e72f86603a0cafe4fdc087cebeb5f654c628a"
+      "receiptSha256": "e97dab1d9729e4eaaf6f309d3487f161bf4c2425ec4d7a5c003d634b0b2ef6ae"
     },
     {
       "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:source_domain_dml_zero",
@@ -2285,7 +2285,7 @@
         "harnessCaseId": "case:player-target",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
@@ -2340,7 +2340,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "fb94a2ae9df29bc08ed46eb1736d662bcd4aec78dfdbad8f205fd27a534fe801"
+      "receiptSha256": "e7069fe1a992c77b6fda2858031fa1fcf4341ad6c49cf7fa7afea6bee5c96219"
     },
     {
       "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:exact_output",
@@ -2351,7 +2351,7 @@
         "harnessCaseId": "case:pet-title-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
@@ -2406,7 +2406,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "42bb1be92b8f5ac96ff108cc83e20efbfc97080db20e1bb66a17ac5419253af1"
+      "receiptSha256": "4b908d57635623e08a5ce01094143b047cb387dbaa33cfa1118bc26a6f2e1bf7"
     },
     {
       "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:negative_guard",
@@ -2417,7 +2417,7 @@
         "harnessCaseId": "case:pet-title-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
@@ -2472,7 +2472,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "a678c4a57d6f60f78fbd4458fe0a16e2170d7971a121d6c004395129559d8d71"
+      "receiptSha256": "8c6079e3865068245b3fc668f4446fd131c3d398029a53e918b38a64d9e8499a"
     },
     {
       "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:read_positive",
@@ -2483,7 +2483,7 @@
         "harnessCaseId": "case:pet-title-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
@@ -2538,7 +2538,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "1e110a44f65d4949dc0f126be0ee0214c8fba23d262d3567b195a75584b95b69"
+      "receiptSha256": "1255766c843a0c3f93516cbce4e9cc19b22b86098abde80a678f09489ac5d6d7"
     },
     {
       "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:restart_consistency",
@@ -2549,7 +2549,7 @@
         "harnessCaseId": "case:pet-title-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
@@ -2608,7 +2608,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5aaf155a6df780b6c048af021fd9d5a22bada5d010ffe9f79c1af316142092c3"
+      "receiptSha256": "a957ee918912779450ba4ae98d9027682ade95119a972241425fdf1d548bb985"
     },
     {
       "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:source_domain_dml_zero",
@@ -2619,7 +2619,7 @@
         "harnessCaseId": "case:pet-title-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
@@ -2674,7 +2674,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f580c58d6dadfe1febcff6116afdd843eb230c8949a9c5bc4bf335cecb52f9da"
+      "receiptSha256": "379f5a2b9c9ac2c0b964bc2c5ebe1add82402bbd4a0a769772c38c67b8210ba4"
     },
     {
       "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:exact_output",
@@ -2685,7 +2685,7 @@
         "harnessCaseId": "case:placed-furniture-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
@@ -2740,7 +2740,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "04bb4f135dbf5bd58b4c97eaacf27fec95c925a9497ccae1a7235bd9f35d777f"
+      "receiptSha256": "cdc85db67c2ffdb0f331680c83336255ec36b56f1682818405cef2c596c451c2"
     },
     {
       "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:negative_guard",
@@ -2751,7 +2751,7 @@
         "harnessCaseId": "case:placed-furniture-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
@@ -2806,7 +2806,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "71e6bf9cf658ee66c4d58c053c719942fdaea643d1eeb12547bca2fc7594bf13"
+      "receiptSha256": "c1687d33a45e94060d271f5a3f166124a20252976e697ef89326b6d642f7c5c9"
     },
     {
       "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:read_positive",
@@ -2817,7 +2817,7 @@
         "harnessCaseId": "case:placed-furniture-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
@@ -2872,7 +2872,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "ab9e8557ba3b50d563c90b4f7eae3947f6db61d09e9dcc7c3381a788acd39db7"
+      "receiptSha256": "4220e736d15e768dde06185befe858b746341f554ff27790bb09e679fb0104a9"
     },
     {
       "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:restart_consistency",
@@ -2883,7 +2883,7 @@
         "harnessCaseId": "case:placed-furniture-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
@@ -2942,7 +2942,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "68a4b7e2b2666bc71bb8a2ff50d969491b8386bce3baf5cf5b60c681e1516fe4"
+      "receiptSha256": "edaf33c9270dcc89c06bf30dce42d2b631ca29c0542e630dbb5ed75e14bb92c9"
     },
     {
       "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:source_domain_dml_zero",
@@ -2953,7 +2953,7 @@
         "harnessCaseId": "case:placed-furniture-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
@@ -3008,7 +3008,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "aaca73c1bbf4f6023df41fd1ce2aa4146c1754b87ac093c3d4ee0c3be13d6084"
+      "receiptSha256": "628260f777bcfe2a6f19c278e7e53a5820d4f0b80d2e074621e03490181cdda2"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-7367fce7053551f3:read_positive",
@@ -3019,7 +3019,7 @@
         "harnessCaseId": "case:resolve-self",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3074,7 +3074,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f6f9c939ba4f28ef102c04ee7d6f67d07135c0927b8466e0355e86fc7efe5e61"
+      "receiptSha256": "0c7ad99d8fc67784c5d2c4a40cc65d1025cc4e81ea5da82508260993cd9cdcac"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-7367fce7053551f3:negative_guard",
@@ -3085,7 +3085,7 @@
         "harnessCaseId": "case:resolve-self",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3140,7 +3140,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "fe80c5e98db73faa81e32691eaa0b23d981374ee2147183778b4f3ba7af27ff2"
+      "receiptSha256": "7aa0d0112e1c4242839a572710cafea3896d3f5a9e52b7417d937758acd91e2f"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-7367fce7053551f3:exact_output",
@@ -3151,7 +3151,7 @@
         "harnessCaseId": "case:resolve-self",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3208,7 +3208,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "9076cff4fc6fd8cb07166de283ab9d7d30a5fbd65d133f8aa9d212cc295e6895"
+      "receiptSha256": "33071ae06bf3537a066229717697e03be6812c3943e2bd14ee6f3a26ca5b2530"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-7367fce7053551f3:source_domain_dml_zero",
@@ -3219,7 +3219,7 @@
         "harnessCaseId": "case:resolve-self",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3274,7 +3274,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d09bad66d79d3b3275d7beb81e51731601307676eea6f8b9d3b693b962d0bc96"
+      "receiptSha256": "0905aadfc032b9098bfc487b0e17e71efe6589bcd26e3cecb86e87c123bd74ec"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-7367fce7053551f3:restart_consistency",
@@ -3285,7 +3285,7 @@
         "harnessCaseId": "case:resolve-self",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3344,7 +3344,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "9fbc4bb38df351500b51f0a1c16b20ad44b27edd92fae91b2402be60196f8fd6"
+      "receiptSha256": "cbd00db1e1feb69e2177265b82f245162f9eca29ec101f8c9df853a3a01274d0"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-3001ad9fc2f36d01:read_positive",
@@ -3355,7 +3355,7 @@
         "harnessCaseId": "case:bag-compare",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3416,7 +3416,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "726d3e407e0ee922b54d930f6a9dc648d6ba9d94f9af4d08c0af1ee2bf74b152"
+      "receiptSha256": "d5d75aad8295f777b33b82c73a1f530b2f23b41fdbd6ba2d2a880e40735c21ee"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-3001ad9fc2f36d01:negative_guard",
@@ -3427,7 +3427,7 @@
         "harnessCaseId": "case:bag-compare",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3482,7 +3482,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "dfef43f9eb9d6868964badfcbcfb366ffa92e8d15cc750143e6f3c9046399e91"
+      "receiptSha256": "b6dbce43fc8e0f8ebfcd9310d90460e09af4480b0ca9aa0eb7ece2788285be26"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-3001ad9fc2f36d01:exact_output",
@@ -3493,7 +3493,7 @@
         "harnessCaseId": "case:bag-compare",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3554,7 +3554,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "a910a7a9702c93a860bc44307218d0e50f805722594e6dbdb24956cb0dd81f8c"
+      "receiptSha256": "86196af015f156299abaa6a70f541e3cec87673da643f1bc113e9e97c11b581d"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-3001ad9fc2f36d01:source_domain_dml_zero",
@@ -3565,7 +3565,7 @@
         "harnessCaseId": "case:bag-compare",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3626,7 +3626,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "380017ba88102f855f3bbb6539b002c46b591fe0d8ea3912ad13c5b3507832db"
+      "receiptSha256": "84af91b41a1387e34726b629ca7aa43443151d03363d292da6713b3cfb1f1aef"
     },
     {
       "receiptId": "receipt:wave6:sql-repository-3001ad9fc2f36d01:restart_consistency",
@@ -3637,7 +3637,7 @@
         "harnessCaseId": "case:bag-compare",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave6:multi-query:v1",
@@ -3696,7 +3696,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "b52dad228902f7b018342d6e7e79c3abcb1b9017f6075255b54b571ef50b6e95"
+      "receiptSha256": "7d4d54bb88da1b6665eb31d8edf7daba6173c20d71add4ff5488a2c905242ecd"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f53934feccdd6d39:read_positive",
@@ -3707,7 +3707,7 @@
         "harnessCaseId": "case:point-shop-catalog-read-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -3772,7 +3772,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "0bfb841709b9032b97d52dae30b662e345d4d3af8049dc32f75218dd1979483f"
+      "receiptSha256": "34ff1a23b81e3f06a7512ca9835152b53d050d15bfa6aaa3b0aa0f879dd1e2a0"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f53934feccdd6d39:negative_guard",
@@ -3783,7 +3783,7 @@
         "harnessCaseId": "case:point-shop-catalog-read-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -3838,7 +3838,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "39344d7b17baf9a53d6c7a7c848c652ff64510891c78b0a1eab06c2957156aed"
+      "receiptSha256": "8b189ce1a19cba117c66dcff469ac33de51257bb63d8dca68d1584922f914ba8"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f53934feccdd6d39:exact_output",
@@ -3849,7 +3849,7 @@
         "harnessCaseId": "case:point-shop-catalog-read-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -3914,7 +3914,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5cf53d04c28a4eea5df46474263c03b022f95bfb7a1b587f199c9e87f49d3d5c"
+      "receiptSha256": "55e808ab61664ed7203aaab57386058546de1b60a83b7ee9a86914588fa24a1a"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f53934feccdd6d39:source_domain_dml_zero",
@@ -3925,7 +3925,7 @@
         "harnessCaseId": "case:point-shop-catalog-read-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -3990,7 +3990,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "93e6ef1a9d0eb88be42ad3a55fc1fad3b5b70fe764eee015fb4cac6f1c4deb79"
+      "receiptSha256": "dc824257c30ff9f3fffafa352e4d234b020706c4df1a0fc803a6af24dcc743aa"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f53934feccdd6d39:restart_consistency",
@@ -4001,7 +4001,7 @@
         "harnessCaseId": "case:point-shop-catalog-read-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4024,8 +4024,8 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "61bcbf74ce9c65b0c23bc6d02ab14152cc4a39b8a3c35ff17fa0401dc0649da5",
-          "actualSha256": "61bcbf74ce9c65b0c23bc6d02ab14152cc4a39b8a3c35ff17fa0401dc0649da5",
+          "expectedSha256": "9d499f900cc83157d9327473ebaabaf42060a25114036307d8b395816a20e15a",
+          "actualSha256": "9d499f900cc83157d9327473ebaabaf42060a25114036307d8b395816a20e15a",
           "match": true
         },
         "dml": {
@@ -4074,7 +4074,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "56663954a79e36cfaf10cab5e05345e688be912cdbf45cade7fde5c5eab35254"
+      "receiptSha256": "4af6782fd3594317957cf72afc34b4e78139fb21778980d5d33ea435be3d0703"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f024a0ae45b58a2a:read_positive",
@@ -4085,7 +4085,7 @@
         "harnessCaseId": "case:package-bag-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4150,7 +4150,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "671ad0b2822d47d21747be624844105b5cb9a70ad4fcfc05b527199c83796fc5"
+      "receiptSha256": "7d9da0ea9af0f2d3adf017ecb6e3afcf8f945dd0278befea9310b5f2cde278ee"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f024a0ae45b58a2a:negative_guard",
@@ -4161,7 +4161,7 @@
         "harnessCaseId": "case:package-bag-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4216,7 +4216,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "53b19fdbe65d828b431684e15e347be5e0eb0e75a983b38f85861493910ce76d"
+      "receiptSha256": "27a722b58ba16767f8abf4d4359026995816a60faa28dd367bdd9e0cf6b7fe8b"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f024a0ae45b58a2a:exact_output",
@@ -4227,7 +4227,7 @@
         "harnessCaseId": "case:package-bag-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4292,7 +4292,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "528a759416abdcc9cf9bb9c3497ec99ea63b618b21763a756d6c34c26c191281"
+      "receiptSha256": "f1ab1e58590464dcb84d87c6f3dc11150a06aed924f970584c947181510593c0"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f024a0ae45b58a2a:source_domain_dml_zero",
@@ -4303,7 +4303,7 @@
         "harnessCaseId": "case:package-bag-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4368,7 +4368,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "82c872f6b2a2f0f11deda7f420b54879204ca4e393507e89f0e8ca18205fadc4"
+      "receiptSha256": "184416d914c40a6705e93fc5a15ae599e1844277484e03e52a0e55e59bde7920"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-f024a0ae45b58a2a:restart_consistency",
@@ -4379,7 +4379,7 @@
         "harnessCaseId": "case:package-bag-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4402,8 +4402,8 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "da554a9363de0e7f3dfd35f34e32ee0ec2a41a9c04a647c5223c908fda30c4ae",
-          "actualSha256": "da554a9363de0e7f3dfd35f34e32ee0ec2a41a9c04a647c5223c908fda30c4ae",
+          "expectedSha256": "b2bea4489bb67f2b49e69e426fa23129b9efdbdf33b8195c1bf94686b4f17e19",
+          "actualSha256": "b2bea4489bb67f2b49e69e426fa23129b9efdbdf33b8195c1bf94686b4f17e19",
           "match": true
         },
         "dml": {
@@ -4452,7 +4452,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d021077805eb48d47a0a5fc5ea81b4c77f836f1cd99b5883253742ca17ed5df4"
+      "receiptSha256": "e708a038bd80625f77d272a15251030d252312fb79f7dfe40e90e57147704180"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-e45c1c15e08c165a:read_positive",
@@ -4463,7 +4463,7 @@
         "harnessCaseId": "case:package-wizard-guide-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4528,7 +4528,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "7f0971a0f3f2296a4d99b75022e700d6bbef3a73a775c62b9eb7651e8279310e"
+      "receiptSha256": "c9960f33f65005ab9718bcd2503e0e1c71d669e2028606ac5817242f1cfda949"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-e45c1c15e08c165a:negative_guard",
@@ -4539,7 +4539,7 @@
         "harnessCaseId": "case:package-wizard-guide-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4594,7 +4594,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "1b4ffe24831cf04cb591b1a214588430183013850c83fbbafa85544b979f1fb8"
+      "receiptSha256": "93aa10dd41e0be364bda863c406efd5e5d9445d8b69320a112f9499ea709a5c1"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-e45c1c15e08c165a:exact_output",
@@ -4605,7 +4605,7 @@
         "harnessCaseId": "case:package-wizard-guide-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4662,7 +4662,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "804d3a9ddbec5f0a8eabaf6e8d09eb38e6938569cccbc0740f3c28bc45094f09"
+      "receiptSha256": "4c8b7a1d41fbe7c571faabc997e4854b32e7a3878ae999a933dfaf2f38cf65aa"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-e45c1c15e08c165a:source_domain_dml_zero",
@@ -4673,7 +4673,7 @@
         "harnessCaseId": "case:package-wizard-guide-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4738,7 +4738,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "c479c5a5d67a0f8fd116b4ce24667aa94275e2847b6a2fce21cd4f204a03b4de"
+      "receiptSha256": "739c12f75e15f9cf4718f2ccdde8913a6ee8a0b69e8f574e45589ba30650882c"
     },
     {
       "receiptId": "receipt:wave7:runtime-dispatch-e45c1c15e08c165a:restart_consistency",
@@ -4749,7 +4749,7 @@
         "harnessCaseId": "case:package-wizard-guide-chain",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
-        "sourceSha256": "7b868dbf565f5d113fa22e39e3cf1fff5ca89b524faa5db419601eafd6548dcf"
+        "sourceSha256": "1f6d63bb5029b3f650b879f5c809c93e059d40ebf8eaa5dd1bcf73ac095b04a6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave7:service-chain:v1",
@@ -4772,8 +4772,8 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "ea9d7e532b5b97a1a6a799549192b4d71930cd3c8da908ac7e8e02568ecc210f",
-          "actualSha256": "ea9d7e532b5b97a1a6a799549192b4d71930cd3c8da908ac7e8e02568ecc210f",
+          "expectedSha256": "a7da773282d5882689303fc408cc67b3f54503606d3851899198c6151d1a633f",
+          "actualSha256": "a7da773282d5882689303fc408cc67b3f54503606d3851899198c6151d1a633f",
           "match": true
         },
         "dml": {
@@ -4822,7 +4822,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "c26fa94f476e17f7065ef5406c7e1c4225bdcfcc58d3644f4b6d2646de7a492b"
+      "receiptSha256": "d8a4cc4eacd01df3038e688edeb8a8a36558858ec99fe98b823b1c3ffafd2ee1"
     }
   ]
 }
