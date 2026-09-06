@@ -296,6 +296,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function matchesTrustedTraceValue(actual:unknown,expected:unknown):boolean{
+  if(isRecord(expected)&&expected.matcher==="UUID_V4")return typeof actual==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actual);
+  return JSON.stringify(actual)===JSON.stringify(expected);
+}
+
 function assertExactKeys(value: Record<string, unknown>, keys: readonly string[], label: string): void {
   const actual = Object.keys(value).sort();
   const expected = [...keys].sort();
@@ -583,9 +588,9 @@ export function assertTrustedWave6ConsumerFixtureMapping(consumerId:string,consu
 }
 
 const TRUSTED_WAVE7_SERVICE_CHAINS = {
-  "runtime-dispatch-f53934feccdd6d39": { caseId:"case:point-shop-catalog-read-chain", executablePath:"PointShopCatalogIrisHandler.execute→PointShopCatalogService.read→MariaPointShopCatalogRepository.readSnapshot", hash:"bb9ac2a46f058c6d176c55bfee0d49752dec4fd8b6e3531750489c9db1ae4ae3" },
-  "runtime-dispatch-f024a0ae45b58a2a": { caseId:"case:package-bag-chain", executablePath:"PackageIrisCommandHandler.execute→PackageCommandService.execute→CurrentPackageHubApplication.listBag", hash:"0f74e8f8d9e5ff1a184711947e4e9d98cf45c5a2250e291cae6ffcd5d18eb1fb" },
-  "runtime-dispatch-e45c1c15e08c165a": { caseId:"case:package-wizard-guide-chain", executablePath:"PackageCatalogAddWizardIrisHandler.execute→PackageCatalogAddWizardService.execute→MariaDbPackageCatalogAddWizardRepository.findReplay", hash:"dfaae37f4513d77aa4e1e88275648ed2ce4b5f8a798b0cb40a928cfee5c5f5aa" },
+  "runtime-dispatch-f53934feccdd6d39": { caseId:"case:point-shop-catalog-read-chain", executablePath:"app dispatch→PointShopCatalogIrisHandler.execute→PointShopCatalogService.read→MariaPointShopCatalogRepository.readSnapshot→ProcessIrisEventService.queueCommandReply", transactionPath:"handler queries→queueCommandReply:COMMIT", hash:"9dc208c27bb91e48b945d9e2ec02c7378925596f8e86a0f9fe2215840873c294" },
+  "runtime-dispatch-f024a0ae45b58a2a": { caseId:"case:package-bag-chain", executablePath:"app dispatch→PackageIrisCommandHandler.execute→PackageCommandService.execute→CurrentPackageHubApplication.listBag→ProcessIrisEventService.queueCommandReply", transactionPath:"handler queries→queueCommandReply:COMMIT", hash:"e24fcd99de44ebb03cb333e979c66710320475344f801d2b48ff6fce0a4a4468" },
+  "runtime-dispatch-e45c1c15e08c165a": { caseId:"case:package-wizard-guide-chain", executablePath:"app dispatch→PackageCatalogAddWizardIrisHandler.execute→PackageCatalogAddWizardService.execute→MariaDbPackageCatalogAddWizardRepository.findReplay→ProcessIrisEventService.queueCommandReply-or-replay", transactionPath:"handler queries→queueCommandReply:COMMIT-or-existing-outbox:READ_ONLY", hash:"eb9405fb683f88c81f3e02869dcc379d453e228dee52923512fcb54d0fc6082b" },
 } as const;
 
 export function assertTrustedWave7ConsumerFixtureMapping(consumerId:string,consumer:Record<string,unknown>,manifestConsumer:ConsumerManifestInput["consumers"][number]):void{
@@ -612,7 +617,7 @@ function assertTrustedWave1FixtureBinding(
         if(receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE7_SERVICE_CHAIN_TARGET_PATH||receipt.invocation.exportName!=="executeWave7ServiceChain")throw new Error(`${receipt.receiptId} trusted Wave7 invocation target drift`);
         const fixture=JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as {payload?:{cases?:Array<{caseId?:string;executablePath?:string;transactionPath?:string;consumers?:Array<Record<string,unknown>>}>}};
         const parityCase=fixture.payload?.cases?.find(({caseId})=>caseId===receipt.harness.harnessCaseId),consumer=parityCase?.consumers?.find(candidate=>candidate.consumerId===receipt.consumerId);
-        if(parityCase?.caseId!==wave7.caseId||parityCase.executablePath!==wave7.executablePath||parityCase.transactionPath!=="DatabaseClient.query:READ_ONLY"||!consumer)throw new Error(`${receipt.receiptId} trusted Wave7 case/path binding drift`);
+        if(parityCase?.caseId!==wave7.caseId||parityCase.executablePath!==wave7.executablePath||parityCase.transactionPath!==wave7.transactionPath||!consumer)throw new Error(`${receipt.receiptId} trusted Wave7 case/path binding drift`);
         assertTrustedWave7ConsumerFixtureMapping(receipt.consumerId,consumer,manifestConsumer);
         const frozenCommit=consumer.frozenSourceCommit as string,locator=consumer.sourceLocator as Record<string,unknown>,current=consumer.currentDispatchLocator as Record<string,unknown>,chains=consumer.chainLocators as Array<Record<string,unknown>>;
         try{execFileSync("git",["merge-base","--is-ancestor",frozenCommit,evidenceCommit],{cwd:repositoryRoot,stdio:"ignore"});}catch{throw new Error(`${receipt.receiptId} frozen source commit is not evidence ancestor`);}
@@ -740,13 +745,15 @@ function assertReceiptExecutableBinding(
     if (replyHash !== receipt.expectedActual.reply.actualSha256 || resultHash !== receipt.expectedActual.result.actualSha256) throw new Error(`${receipt.receiptId} raw reply/result capture hash mismatch`);
     const trace = JSON.parse(readFileSync(artifactPath(caseResult.artifacts.tracePath), "utf8")) as unknown;
     if (!isRecord(trace)) throw new Error(`${receipt.receiptId} raw execution trace invalid`);
-    assertExactKeys(trace, ["queryTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
+    assertExactKeys(trace, ["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
     if (!Array.isArray(trace.queryTrace)) throw new Error(`${receipt.receiptId} trace queryTrace invalid`);
     for (const [index, query] of trace.queryTrace.entries()) {
       if (!isRecord(query)) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
       assertExactKeys(query, ["channel", "normalizedSql", "values", "rowCount"], `${receipt.receiptId}.trace.queryTrace[${index}]`);
       if (query.channel !== "query" || typeof query.normalizedSql !== "string" || !Array.isArray(query.values) || !Number.isSafeInteger(query.rowCount) || (query.rowCount as number) < 0) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
     }
+    if(!Array.isArray(trace.dmlTrace))throw new Error(`${receipt.receiptId} trace dmlTrace invalid`);
+    for(const[index,mutation]of trace.dmlTrace.entries()){if(!isRecord(mutation))throw new Error(`${receipt.receiptId} trace dmlTrace[${index}] invalid`);assertExactKeys(mutation,["channel","normalizedSql","values","rowCount"],`${receipt.receiptId}.trace.dmlTrace[${index}]`);if(mutation.channel!=="execute"||typeof mutation.normalizedSql!=="string"||!Array.isArray(mutation.values)||!Number.isSafeInteger(mutation.rowCount)||(mutation.rowCount as number)<0)throw new Error(`${receipt.receiptId} trace dmlTrace[${index}] invalid`);}
     if (receipt.consumerId === "sql-repository-7367fce7053551f3" || receipt.consumerId === "sql-repository-3001ad9fc2f36d01" || receipt.consumerId in TRUSTED_WAVE7_SERVICE_CHAINS) {
       const fixturePayload = isRecord(fixture.payload) ? fixture.payload : undefined;
       const cases = fixturePayload !== undefined && Array.isArray(fixturePayload.cases) ? fixturePayload.cases : [];
@@ -764,6 +771,20 @@ function assertReceiptExecutableBinding(
       });
       const expectedTrace = receipt.scenario.scenarioKind === "RESTART_CONSISTENCY" ? [...oneExecution, ...oneExecution] : oneExecution;
       if (JSON.stringify(trace.queryTrace) !== JSON.stringify(expectedTrace)) throw new Error(`${receipt.receiptId} trusted ordered-query exact query trace mismatch`);
+      if(receipt.consumerId in TRUSTED_WAVE7_SERVICE_CHAINS){
+        const contract=consumer.queueReplyContract,handlerResults=consumer.expectedResultsByScenario,input=consumer.input;
+        if(!isRecord(contract)||!Array.isArray(contract.queueScenarios)||!isRecord(handlerResults)||!isRecord(input))throw new Error(`${receipt.receiptId} trusted Wave7 queue contract invalid`);
+        const handlerResult=handlerResults[receipt.scenario.scenarioKind],queue=contract.queueScenarios.includes(receipt.scenario.scenarioKind);
+        let oneMutation:Array<{channel:string;normalizedSql:unknown;values:unknown[];rowCount:number}>=[];
+        if(queue){if(!isRecord(handlerResult)||typeof handlerResult.commandCode!=="string"||typeof handlerResult.message!=="string")throw new Error(`${receipt.receiptId} trusted Wave7 handler result invalid`);oneMutation=[
+          {channel:"execute",normalizedSql:contract.operationSql,values:[{matcher:contract.operationKeyMatcher}],rowCount:1},
+          {channel:"execute",normalizedSql:contract.commandExecutionSql,values:[input.eventId,handlerResult.commandCode,contract.operationInsertId],rowCount:1},
+          {channel:"execute",normalizedSql:contract.outboxSql,values:[contract.operationInsertId,input.channelId,JSON.stringify({data:handlerResult.message})],rowCount:1},
+        ];}
+        const expectedMutations=receipt.scenario.scenarioKind==="RESTART_CONSISTENCY"?[...oneMutation,...oneMutation]:oneMutation;
+        if(trace.dmlTrace.length!==expectedMutations.length)throw new Error(`${receipt.receiptId} trusted Wave7 exact mutation count mismatch`);
+        for(let index=0;index<expectedMutations.length;index++){const actual=trace.dmlTrace[index] as Record<string,unknown>,expected=expectedMutations[index]!;if(actual.channel!==expected.channel||actual.normalizedSql!==expected.normalizedSql||actual.rowCount!==expected.rowCount||!Array.isArray(actual.values)||actual.values.length!==expected.values.length||!actual.values.every((value,valueIndex)=>matchesTrustedTraceValue(value,expected.values[valueIndex])))throw new Error(`${receipt.receiptId} trusted Wave7 exact mutation trace mismatch`);}
+      }
     }
     assertStringArray(trace.normalizedStatements, `${receipt.receiptId}.trace.normalizedStatements`);
     if (!Number.isSafeInteger(trace.rowCount) || (trace.rowCount as number) < 0) throw new Error(`${receipt.receiptId} trace rowCount invalid`);
@@ -822,14 +843,17 @@ function validateExecutionReceipt(
   if (receipt.scenario.scenarioKind === "DOMAIN_FAILURE_ROLLBACK" || receipt.scenario.scenarioKind === "PAYLOAD_DRIFT_FAIL_CLOSED") {
     if (transaction.actual !== "ROLLBACK") throw new Error(`${receipt.receiptId} failure scenario must rollback`);
   }
+  const trustedWave7InfrastructureDml=receipt.consumerId in TRUSTED_WAVE7_SERVICE_CHAINS;
+  const wave7InfrastructureStatements=new Set(["INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"]);
+  const onlyTrustedWave7Infrastructure=dml.actualNormalizedStatements.every(statement=>wave7InfrastructureStatements.has(statement));
   if (receipt.scenario.scenarioKind === "DUPLICATE_REPLAY_DML_ZERO" || receipt.scenario.scenarioKind === "SOURCE_DOMAIN_DML_ZERO") {
-    if (dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0) throw new Error(`${receipt.receiptId} DML-zero scenario mutated source domain`);
+    if ((!trustedWave7InfrastructureDml||!onlyTrustedWave7Infrastructure)&&(dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0)) throw new Error(`${receipt.receiptId} DML-zero scenario mutated source domain`);
   }
   const zeroDmlMutationKinds = new Set<ObjectDbParityScenarioKind>(["AUTH_DENIED", "WRONG_ROOM_REJECTED", "PAYLOAD_DRIFT_FAIL_CLOSED", "DUPLICATE_REPLAY_DML_ZERO", "RESTART_REPLAY"]);
   const accessClass: AccessClass = manifestConsumer.access === "READ" ? "READ" : "MUTATION";
   if (accessClass === "READ") {
-    if (transaction.actual !== "READ_ONLY") throw new Error(`${receipt.receiptId} READ scenario must be READ_ONLY`);
-    if (dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0) throw new Error(`${receipt.receiptId} READ scenario must have business DML0`);
+    if(trustedWave7InfrastructureDml){if(!onlyTrustedWave7Infrastructure||!(["READ_ONLY","COMMIT"] as const).includes(transaction.actual as "READ_ONLY"|"COMMIT"))throw new Error(`${receipt.receiptId} Wave7 READ dispatch infrastructure mutation invalid`);if(transaction.actual==="READ_ONLY"&&(dml.actualRowCount!==0||dml.actualNormalizedStatements.length!==0))throw new Error(`${receipt.receiptId} Wave7 READ_ONLY dispatch mutated infrastructure`);if(transaction.actual==="COMMIT"&&dml.actualNormalizedStatements.length===0)throw new Error(`${receipt.receiptId} Wave7 COMMIT dispatch missing infrastructure mutation`);}
+    else{if (transaction.actual !== "READ_ONLY") throw new Error(`${receipt.receiptId} READ scenario must be READ_ONLY`);if (dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0) throw new Error(`${receipt.receiptId} READ scenario must have business DML0`);}
   } else if (zeroDmlMutationKinds.has(receipt.scenario.scenarioKind) && (dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0)) {
     throw new Error(`${receipt.receiptId} ${receipt.scenario.scenarioKind} must have business DML0`);
   }

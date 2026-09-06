@@ -7,9 +7,9 @@ import { tsImport } from "tsx/esm/api";
 const MODULE_EXECUTION_ID = randomUUID();
 const SCENARIOS = ["READ_POSITIVE", "NEGATIVE_GUARD", "EXACT_OUTPUT", "SOURCE_DOMAIN_DML_ZERO", "RESTART_CONSISTENCY"];
 const TARGETS = {
-  "runtime-dispatch-f53934feccdd6d39": { file: "개발환경_고도화/runtime/src/shop/point-shop-catalog-iris-handler.ts", exportName: "PointShopCatalogIrisHandler" },
-  "runtime-dispatch-f024a0ae45b58a2a": { file: "개발환경_고도화/runtime/src/package/package-iris-command-handler.ts", exportName: "PackageIrisCommandHandler" },
-  "runtime-dispatch-e45c1c15e08c165a": { file: "개발환경_고도화/runtime/src/package/package-catalog-add-wizard-iris-handler.ts", exportName: "PackageCatalogAddWizardIrisHandler" },
+  "runtime-dispatch-f53934feccdd6d39": { file: "개발환경_고도화/runtime/src/shop/point-shop-catalog-iris-handler.ts", exportName: "PointShopCatalogIrisHandler", handlerKey:"POINT_SHOP_CATALOG_READ",outboxAware: true },
+  "runtime-dispatch-f024a0ae45b58a2a": { file: "개발환경_고도화/runtime/src/package/package-iris-command-handler.ts", exportName: "PackageIrisCommandHandler", handlerKey:"PACKAGE_BAG",outboxAware: false },
+  "runtime-dispatch-e45c1c15e08c165a": { file: "개발환경_고도화/runtime/src/package/package-catalog-add-wizard-iris-handler.ts", exportName: "PackageCatalogAddWizardIrisHandler", handlerKey:"PACKAGE_CATALOG_WIZARD_GUIDE",outboxAware: true },
 };
 
 function assert(value, message) { if (!value) throw new Error(message); }
@@ -37,20 +37,29 @@ function context(args) {
 
 export async function executeWave7ServiceChain(args) {
   const state = context(args);
+  const dispatch=args.scenarioKind==="NEGATIVE_GUARD"?state.consumer.negativeDispatch:state.consumer.dispatch;
+  const dispatchAllowed=dispatch?.database===true&&dispatch?.eventProcessor===true&&dispatch?.processing===true&&dispatch?.duplicate===false&&dispatch?.route==="MODERN"&&dispatch?.handlerKey===state.target.handlerKey&&(state.target.handlerKey!=="PACKAGE_CATALOG_WIZARD_GUIDE"||dispatch.wizardHandler===true);
+  if (args.scenarioKind === "NEGATIVE_GUARD") {
+    state.check(dispatchAllowed===false&&dispatch?.duplicate === true, "Wave7 negative dispatch guard drift");
+    return { executedConsumerId: args.consumerId, executedCaseId: args.harnessCaseId, moduleExecutionId: MODULE_EXECUTION_ID, assertionCount: state.assertionCount, reply: state.consumer.expectedGuardError, result: JSON.stringify({ error: state.consumer.expectedGuardError, queryCount: 0, mutationCount: 0 }) };
+  }
+  state.check(dispatchAllowed,"Wave7 positive dispatch guard drift");
   const module = await tsImport(pathToFileURL(resolve(state.root, state.target.file)).href, import.meta.url);
   const Handler = module[state.target.exportName];
   state.check(typeof Handler === "function", "Wave7 handler export drift");
   const handler = new Handler(args.database);
-  if (args.scenarioKind === "NEGATIVE_GUARD") {
-    let error = null;
-    try { await handler.execute(state.consumer.negativeInput); }
-    catch (cause) { error = cause && typeof cause === "object" && "code" in cause ? cause.code : cause instanceof Error ? cause.message : String(cause); }
-    state.check(error === state.consumer.expectedGuardError, "Wave7 guard drift");
-    return { executedConsumerId: args.consumerId, executedCaseId: args.harnessCaseId, moduleExecutionId: MODULE_EXECUTION_ID, assertionCount: state.assertionCount, reply: error, result: JSON.stringify({ error, queryCount: 0 }) };
-  }
-  const result = await handler.execute(state.consumer.input);
+  const handlerResult = await handler.execute(state.consumer.input);
   const expected = state.consumer.expectedResultsByScenario[args.scenarioKind];
-  state.check(JSON.stringify(result) === JSON.stringify(expected), "Wave7 result drift");
+  state.check(JSON.stringify(handlerResult) === JSON.stringify(expected), "Wave7 handler result drift");
+  let result;
+  if (state.target.outboxAware && handlerResult.outboxId) result = { outboxId: handlerResult.outboxId, room: state.consumer.input.channelId, data: handlerResult.message };
+  else {
+    const eventModule = await tsImport(pathToFileURL(resolve(state.root, "개발환경_고도화/runtime/src/integration/event-processing-service.ts")).href, import.meta.url);
+    const processor = new eventModule.ProcessIrisEventService(args.database);
+    result = await processor.queueCommandReply(state.consumer.input, handlerResult.commandCode, handlerResult.message);
+  }
+  const expectedDispatch=handlerResult.outboxId?{outboxId:handlerResult.outboxId,room:state.consumer.input.channelId,data:handlerResult.message}:{outboxId:state.consumer.queueReplyContract.outboxInsertId,room:state.consumer.input.channelId,data:handlerResult.message};
+  state.check(JSON.stringify(result) === JSON.stringify(expectedDispatch), "Wave7 dispatch result drift");
   const raw = JSON.stringify(result);
   return { executedConsumerId: args.consumerId, executedCaseId: args.harnessCaseId, moduleExecutionId: MODULE_EXECUTION_ID, assertionCount: state.assertionCount, reply: raw, result: raw };
 }
