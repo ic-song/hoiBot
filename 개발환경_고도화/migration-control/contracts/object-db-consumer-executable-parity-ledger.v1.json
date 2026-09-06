@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "0989c1b2132ad35682eac73925be96fcc4297964",
+  "evidenceCommit": "5cfe0ae785628adec9b278b301ad170c5e98f599",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -28,7 +28,7 @@
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave10-v1.json",
-      "sha256": "0f57907ede3028e2d6ca543335c89ed5d467d6bf51065d3194154ae6d99264ed"
+      "sha256": "4e137b9304669bd5bca45296cfd5ecf366afb2607e1aeab3698e5789209a68a1"
     },
     "classificationSources": [
       {
@@ -78544,7 +78544,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -78659,10 +78659,14 @@
             },
             "lockOrder": {
               "expected": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
               "actual": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
@@ -78813,10 +78817,14 @@
             },
             "lockOrder": {
               "expected": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
               "actual": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
@@ -78933,10 +78941,14 @@
             },
             "lockOrder": {
               "expected": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
               "actual": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
@@ -79019,10 +79031,14 @@
             },
             "lockOrder": {
               "expected": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
               "actual": [
+                "external_identities",
+                "players",
                 "operations",
                 "outbox_messages"
               ],
@@ -79066,7 +79082,7 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-            "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+            "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
@@ -80915,7 +80931,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -81453,7 +81469,7 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-            "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+            "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
@@ -87446,7 +87462,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -88024,7 +88040,7 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-            "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+            "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-harness.mjs",
@@ -106743,5 +106759,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "ce23ee41caa463e84d727a8a2e427206068a309d848e95eee385e16d1f19cc3f"
+  "entrySetSha256": "11541a3b618a331354adeb4d13685462bda04f683fdca546d1953f2c6500bef9"
 }

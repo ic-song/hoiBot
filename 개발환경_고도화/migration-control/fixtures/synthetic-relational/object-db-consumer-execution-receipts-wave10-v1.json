@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "0989c1b2132ad35682eac73925be96fcc4297964",
+  "evidenceCommit": "5cfe0ae785628adec9b278b301ad170c5e98f599",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -8982,7 +8982,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9082,7 +9082,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f2d9d9da56c55786762933da1c36049c3a1eb36e8941f975ca3e4fb575416896"
+      "receiptSha256": "fe227896719a104fdc35eef6cc8c0512fd565024f035bdaec306e85f1814ff75"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:negative_guard",
@@ -9098,7 +9098,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9164,7 +9164,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "bca4d035290e3f758ec4ad6e6f1c42a02006ad2f89f593f8627cde91d9cc57be"
+      "receiptSha256": "c9dd94bdbf29d26ebd494cf1de1e01fb9fe1868075d006b8eee732ca3bd7c968"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:exact_output",
@@ -9180,7 +9180,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9280,7 +9280,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "bfd9eb472740f8624559adba626a5aa3f8f93d7dd6e37cf9200f7497b5e66319"
+      "receiptSha256": "a12a8471120f0eabd34c8a365db6767e7ccdffdcd1d966bd702a4d46f19d6493"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:source_domain_dml_zero",
@@ -9296,7 +9296,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9396,7 +9396,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "68f962392fa435b65df945fbb642320bd290ddf2022252ac4adfaa9fc30a178c"
+      "receiptSha256": "771fd6a37ad0cc3b49e8604abcd0309b6e358103b3268c71e0a512fdca103aad"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:restart_consistency",
@@ -9412,7 +9412,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9534,7 +9534,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5d4fe422cce4a4013da645c1ec2e82753128ab3faebf08304b0c19b8f65e887c"
+      "receiptSha256": "5b3ebeaf74551d25f5b2265e1087c25da9df1cbc746fabcee7fbdb82e68ba7d7"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:read_positive",
@@ -9550,7 +9550,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9660,7 +9660,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d294d5afd648cc1daa0e2581813208c41b64d3f0ed967467c9676555c094510e"
+      "receiptSha256": "b9b9318b7eee9f2f6ba6b6fe169deb5f49b6f29505734b7b3bd6d7fc77dbdf67"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:negative_guard",
@@ -9676,7 +9676,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9742,7 +9742,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "fe1b245287d3b037b698b01547ebac2f0cd5abf41490b2efb5357e5d3de90010"
+      "receiptSha256": "1125569cee5a4ee586a995aea68ef80b008ec78252bd153883f777b256ee33f8"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:exact_output",
@@ -9758,7 +9758,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9868,7 +9868,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "fa3cb02b08f671f5cbe9ea9fd1f18c6bb232817d85fc217f993da1d29bf13fd2"
+      "receiptSha256": "83bb74bb431c77971e5edd0a1e406d2fd8c998027daeb15844bbf141c056f0a1"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:source_domain_dml_zero",
@@ -9884,7 +9884,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -9994,7 +9994,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "c38b12d192b54f7c0331e724dfcd18cc787c6d75727f63b6c3e15b2aeb5a716b"
+      "receiptSha256": "4b8eba36c1644070e796df1c52af5244059afe21bea0a838785a6597e9ef64d0"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:restart_consistency",
@@ -10010,7 +10010,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -10142,7 +10142,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "e73a492d9924da5976a0f2ae7caf18b2f512f4501b7de72bebb57f3f0e319a13"
+      "receiptSha256": "aeacb6e2f4926fc672c8cd309b14b7751cdbacd5d0501eed8de4054b5d717087"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:read_positive",
@@ -10158,7 +10158,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -10221,10 +10221,14 @@
         },
         "lockOrder": {
           "expected": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
           "actual": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
@@ -10254,7 +10258,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "4c76fa3b375821ae21973fd2b57555e3a290cdf828f822d922c693fa8a606dd4"
+      "receiptSha256": "677b0501ff934204bec064710e57922818fa538b35ad9418cd7ac5939bd85bd1"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:negative_guard",
@@ -10270,7 +10274,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -10336,7 +10340,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "53357fa2e1c5d4f61bb1db1c85bd0ceadf4edfc530504d8d8b3cd96c910cce5b"
+      "receiptSha256": "134ed9077baafcc928b201ccbceb3df4cbe55beeb938580f9502dfca2ba64ee3"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:exact_output",
@@ -10352,7 +10356,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -10415,10 +10419,14 @@
         },
         "lockOrder": {
           "expected": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
           "actual": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
@@ -10448,7 +10456,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5407b0bea1f6bd7a0d242f127358eeeb09ae675bb229cbc81f29f8b6895b9e75"
+      "receiptSha256": "969e96db945ac42f33554974611db9bc0f52c2e882eb4039d926e46b4762774d"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:source_domain_dml_zero",
@@ -10464,7 +10472,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -10527,10 +10535,14 @@
         },
         "lockOrder": {
           "expected": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
           "actual": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
@@ -10560,7 +10572,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "adeee2a80147b08abb54e4f8949998834ab35e1d2b471386eb20c659663149b9"
+      "receiptSha256": "262aa4f043e8c168abfbcf3c4025d019263335a20f53e1eb6775c709f190e0ad"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:restart_consistency",
@@ -10576,7 +10588,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
+        "sha256": "2472418750193c095dc2c86e0047112649e91d49cc62540891a25380819448ff"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
@@ -10667,10 +10679,14 @@
         },
         "lockOrder": {
           "expected": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
           "actual": [
+            "external_identities",
+            "players",
             "operations",
             "outbox_messages"
           ],
@@ -10694,7 +10710,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "324e4af6e4e54d9e51a555538813a7d27e55bfa419a83cdafc913747bb461fc6"
+      "receiptSha256": "9e7a231effbd530032095d832eaa5f9b515e62101b1b731ed5912140916b8efe"
     }
   ]
 }

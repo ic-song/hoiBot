@@ -9,5 +9,6 @@
 - actual HTTP source provenance: `4e3d5588dd16230e4b8800e33c2a097c5582436c`
 - timeout correction provenance: `925b96a6e92e330b657a2e892c4c0f2c627768f0`
 - operational negative-guard provenance: `0989c1b2132ad35682eac73925be96fcc4297964`
+- probability concurrency provenance: `5cfe0ae785628adec9b278b301ad170c5e98f599`
 - receipts: prior 119 + Wave10 15 = 134
 - Gate 1~7 개발 증거만 작성하며 Gate8·운영 데이터 이관·운영 반영은 범위 밖이다.
