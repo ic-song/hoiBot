@@ -10,7 +10,7 @@ const fixturePath="개발환경_고도화/migration-control/fixtures/synthetic-r
 const harnessPath="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs", targetPath="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs";
 const evidenceCommit=process.argv[2]??execFileSync("git",["rev-parse","HEAD"],{cwd:root,encoding:"utf8"}).trim(), c=fixture.payload.cases[0], consumer=c.consumers[0], id=consumer.consumerId;
 const source=manifest.consumers.find((x:any)=>x.consumerId===id), entry=ledger.entries.find((x:any)=>x.consumerId===id);
-if(!source||source.access!=="READ"||source.unresolvedDynamicCallCount!==0||entry.verdict!=="STATIC_ONLY")throw new Error("Wave3 source cohort drift");
+if(!source||source.access!=="READ"||source.unresolvedDynamicCallCount!==0||!["STATIC_ONLY","DIRECT_PASS"].includes(entry.verdict))throw new Error("Wave3 source cohort drift");
 const locator={file:source.file,symbol:source.symbol,triggerOrPredicate:source.triggerOrPredicate,interfaceId:source.interfaceId,start:source.sourceSpan.start,end:source.sourceSpan.end,sha256:source.sourceSpan.sha256};if(JSON.stringify(locator)!==JSON.stringify(consumer.sourceLocator))throw new Error("Wave3 locator drift");
 const harnessSha=sha256CanonicalText(read(harnessPath)), fixtureSha=sha256CanonicalText(read(fixturePath)), targetSha=sha256CanonicalText(read(targetPath)), dmlSha=sha256CanonicalJson({normalizedStatements:[],rowCount:0});
 const refreshed:ObjectDbConsumerExecutionReceipt[]=prior.receipts.map((r:ObjectDbConsumerExecutionReceipt)=>{const{receiptSha256:_,...p}=r;const q={...p,harness:{...p.harness,sourceSha256:harnessSha}};return{...q,receiptSha256:sha256CanonicalJson(q)}});
