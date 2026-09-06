@@ -21,8 +21,8 @@
   "payload": {"cases": [
     {
       "caseId": "case:point-shop-catalog-read-chain",
-      "executablePath": "PointShopCatalogIrisHandler.execute→PointShopCatalogService.read→MariaPointShopCatalogRepository.readSnapshot",
-      "transactionPath": "DatabaseClient.query:READ_ONLY",
+      "executablePath": "app dispatch→PointShopCatalogIrisHandler.execute→PointShopCatalogService.read→MariaPointShopCatalogRepository.readSnapshot→ProcessIrisEventService.queueCommandReply",
+      "transactionPath": "handler queries→queueCommandReply:COMMIT",
       "requiredScenarios": ["READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],
       "consumers": [{
         "consumerId": "runtime-dispatch-f53934feccdd6d39",
@@ -32,11 +32,14 @@
         "chainLocators": [
           {"file":"개발환경_고도화/runtime/src/shop/point-shop-catalog-iris-handler.ts","start":0,"end":3578,"sha256":"d7e7ef44450cad1a2ee8b017f9e100006dda9c504c5d8ecd605702defe332a63","needle":"new PointShopCatalogService"},
           {"file":"개발환경_고도화/runtime/src/shop/point-shop-catalog-service.ts","start":0,"end":3802,"sha256":"2efc05a149e6412c5567e9889e23a884b54d7deeee133952b682db8ba3a9717e","needle":"repository.readSnapshot()"},
-          {"file":"개발환경_고도화/runtime/src/shop/maria-point-shop-catalog-repository.ts","start":0,"end":11077,"sha256":"3d39e52046ac6aee3bf3060d53beb511c9dc0fd9321a40fa00c8b63197990d9b","needle":"public async readSnapshot()"}
+          {"file":"개발환경_고도화/runtime/src/shop/maria-point-shop-catalog-repository.ts","start":0,"end":11077,"sha256":"3d39e52046ac6aee3bf3060d53beb511c9dc0fd9321a40fa00c8b63197990d9b","needle":"public async readSnapshot()"},
+          {"file":"개발환경_고도화/runtime/src/integration/event-processing-service.ts","start":0,"end":18416,"sha256":"b2200d2e02b70ee2bad8fecb2b93e4dce6a9b547bcff0affb7ad7d703955a171","needle":"async queueCommandReply("}
         ],
         "input": {"eventId":"event-point-1","userId":"user-1","channelId":"room-1","message":"/상점"},
         "negativeInput": {"eventId":"event-point-negative","channelId":"room-1","message":"/상점"},
-        "expectedGuardError": "POINT_SHOP_IDENTITY_REQUIRED",
+        "negativeDispatch": {"duplicate":true,"route":"MODERN","handlerKey":"POINT_SHOP_CATALOG_READ"},
+        "expectedGuardError": "DISPATCH_SKIPPED_DUPLICATE",
+        "queueReplyContract": {"queueScenarios":["READ_POSITIVE","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],"operationInsertId":"501","outboxInsertId":"601","operationKeyMatcher":"UUID_V4","operationSql":"INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","commandExecutionSql":"INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","outboxSql":"INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"},
         "orderedQueries": [
           {"rowShape":"point-shop-head-row","expectedQueryValues":[],"expectedNormalizedSql":"SELECT version FROM point_shop_catalog_heads WHERE catalog_key='POINT_SHOP'"},
           {"rowShape":"point-shop-entry-row","expectedQueryValues":[],"expectedNormalizedSql":"SELECT product_id,product_key,display_name,display_order,price,row_version FROM point_shop_catalog WHERE enabled=1 AND deleted_at IS NULL ORDER BY display_order,product_id"},
@@ -59,8 +62,8 @@
     },
     {
       "caseId": "case:package-bag-chain",
-      "executablePath": "PackageIrisCommandHandler.execute→PackageCommandService.execute→CurrentPackageHubApplication.listBag",
-      "transactionPath": "DatabaseClient.query:READ_ONLY",
+      "executablePath": "app dispatch→PackageIrisCommandHandler.execute→PackageCommandService.execute→CurrentPackageHubApplication.listBag→ProcessIrisEventService.queueCommandReply",
+      "transactionPath": "handler queries→queueCommandReply:COMMIT",
       "requiredScenarios": ["READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],
       "consumers": [{
         "consumerId": "runtime-dispatch-f024a0ae45b58a2a",
@@ -69,11 +72,14 @@
         "currentDispatchLocator": {"file":"개발환경_고도화/runtime/src/app.ts","start":111493,"end":112115,"sha256":"501a9eb3d07bb3985e72d2213447ccbca34881991d651392291103c2603eadfb"},
         "chainLocators": [
           {"file":"개발환경_고도화/runtime/src/package/package-iris-command-handler.ts","start":0,"end":4927,"sha256":"42b7c7fab79a2239a2081a30673c2de44854c52d2fa28a2276ec5d870df248f1","needle":"this.commands.execute"},
-          {"file":"개발환경_고도화/runtime/src/package/package-command-service.ts","start":0,"end":3655,"sha256":"3de2b2ffb6d598291c01f3b2a26fab58ed5f43d12e992d69785101e0f7e546ab","needle":"this.packageHub.listBag"}
+          {"file":"개발환경_고도화/runtime/src/package/package-command-service.ts","start":0,"end":3655,"sha256":"3de2b2ffb6d598291c01f3b2a26fab58ed5f43d12e992d69785101e0f7e546ab","needle":"this.packageHub.listBag"},
+          {"file":"개발환경_고도화/runtime/src/integration/event-processing-service.ts","start":0,"end":18416,"sha256":"b2200d2e02b70ee2bad8fecb2b93e4dce6a9b547bcff0affb7ad7d703955a171","needle":"async queueCommandReply("}
         ],
         "input": {"eventId":"event-package-1","userId":"user-1","channelId":"room-1","message":"/패키지가방"},
         "negativeInput": {"eventId":"event-package-negative","channelId":"room-1","message":"/패키지가방"},
-        "expectedGuardError": "PACKAGE_IRIS_IDENTITY_REQUIRED",
+        "negativeDispatch": {"duplicate":true,"route":"MODERN","handlerKey":"PACKAGE_BAG"},
+        "expectedGuardError": "DISPATCH_SKIPPED_DUPLICATE",
+        "queueReplyContract": {"queueScenarios":["READ_POSITIVE","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],"operationInsertId":"501","outboxInsertId":"601","operationKeyMatcher":"UUID_V4","operationSql":"INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","commandExecutionSql":"INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","outboxSql":"INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"},
         "orderedQueries": [
           {"rowShape":"package-player-row","expectedQueryValues":["user-1"],"expectedNormalizedSql":"SELECT external_identities.player_id FROM external_identities JOIN players ON players.id = external_identities.player_id AND players.status = 'active' WHERE external_identities.provider_code = 'kakao' AND external_identities.external_user_id = ? AND external_identities.status = 'linked' LIMIT 1"},
           {"rowShape":"package-bag-row","expectedQueryValues":["42"],"expectedNormalizedSql":"SELECT package_catalog.package_id,package_catalog.display_name, inventory_stacks.quantity,package_catalog.max_open_count FROM package_catalog JOIN item_definitions ON item_definitions.code = package_catalog.consume_item_id AND item_definitions.active = 1 JOIN inventory_stacks ON inventory_stacks.item_id = item_definitions.id AND inventory_stacks.player_id = ? AND inventory_stacks.quantity > 0 WHERE package_catalog.definition_status = 'READY' AND package_catalog.enabled = 1 ORDER BY package_catalog.display_name,package_catalog.package_id"}
@@ -95,8 +101,8 @@
     },
     {
       "caseId": "case:package-wizard-guide-chain",
-      "executablePath": "PackageCatalogAddWizardIrisHandler.execute→PackageCatalogAddWizardService.execute→MariaDbPackageCatalogAddWizardRepository.findReplay",
-      "transactionPath": "DatabaseClient.query:READ_ONLY",
+      "executablePath": "app dispatch→PackageCatalogAddWizardIrisHandler.execute→PackageCatalogAddWizardService.execute→MariaDbPackageCatalogAddWizardRepository.findReplay→ProcessIrisEventService.queueCommandReply-or-replay",
+      "transactionPath": "handler queries→queueCommandReply:COMMIT-or-existing-outbox:READ_ONLY",
       "requiredScenarios": ["READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],
       "consumers": [{
         "consumerId": "runtime-dispatch-e45c1c15e08c165a",
@@ -106,11 +112,14 @@
         "chainLocators": [
           {"file":"개발환경_고도화/runtime/src/package/package-catalog-add-wizard-iris-handler.ts","start":0,"end":2950,"sha256":"7aad5d6ec3b013f765827f01b89fcdceebcbde593ca3eff5e2f4163f465c961c","needle":"PackageCatalogAddWizardService"},
           {"file":"개발환경_고도화/runtime/src/package/package-catalog-add-wizard-service.ts","start":0,"end":7597,"sha256":"beff3920e226e7ca428ffdcab0a05f7ba1912ff7bdf48a3ff6edf32b92eaa59b","needle":"repository.findReplay"},
-          {"file":"개발환경_고도화/runtime/src/package/mariadb-package-catalog-add-wizard.ts","start":0,"end":10094,"sha256":"b8f0b076d47358eb307660680936ebeb760de0fbccf2ff029dd9c296ee8af4a1","needle":"public async findReplay"}
+          {"file":"개발환경_고도화/runtime/src/package/mariadb-package-catalog-add-wizard.ts","start":0,"end":10094,"sha256":"b8f0b076d47358eb307660680936ebeb760de0fbccf2ff029dd9c296ee8af4a1","needle":"public async findReplay"},
+          {"file":"개발환경_고도화/runtime/src/integration/event-processing-service.ts","start":0,"end":18416,"sha256":"b2200d2e02b70ee2bad8fecb2b93e4dce6a9b547bcff0affb7ad7d703955a171","needle":"async queueCommandReply("}
         ],
         "input": {"eventId":"event-wizard-1","userId":"admin-1","channelId":"room-1","message":"/패키지추가방법"},
         "negativeInput": {"eventId":"event-wizard-negative","channelId":"room-1","message":"/패키지추가방법"},
-        "expectedGuardError": "PACKAGE_WIZARD_IDENTITY_REQUIRED",
+        "negativeDispatch": {"duplicate":true,"route":"MODERN","handlerKey":"PACKAGE_CATALOG_WIZARD_GUIDE"},
+        "expectedGuardError": "DISPATCH_SKIPPED_DUPLICATE",
+        "queueReplyContract": {"queueScenarios":["READ_POSITIVE","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],"operationInsertId":"501","outboxInsertId":"601","operationKeyMatcher":"UUID_V4","operationSql":"INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","commandExecutionSql":"INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","outboxSql":"INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"},
         "orderedQueries": [
           {"rowShape":"wizard-operator-row","expectedQueryValues":["admin-1"],"expectedNormalizedSql":"SELECT mapping.operator_id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' ORDER BY mapping.operator_id LIMIT 2"},
           {"rowShape":"wizard-replay-row","expectedQueryValues":["event-wizard-1"],"expectedNormalizedSql":"SELECT result_json FROM package_catalog_wizard_results WHERE request_key=?"}

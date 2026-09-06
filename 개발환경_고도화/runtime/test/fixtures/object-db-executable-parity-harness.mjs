@@ -21,12 +21,26 @@ function jsonSafe(value) {
   return value;
 }
 
+function matchesExpectedValue(actual, expected) {
+  if (expected && typeof expected === "object" && !Array.isArray(expected) && expected.matcher === "UUID_V4") {
+    return typeof actual === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actual);
+  }
+  return JSON.stringify(jsonSafe(actual)) === JSON.stringify(expected);
+}
+
 function createRunnerDatabase(consumer, scenarioKind) {
   const calls = [];
   const transactionEvents = [];
   const orderedRows = consumer.queryRowsByScenario?.[scenarioKind];
   const orderedPlan = Array.isArray(orderedRows) ? orderedRows.map((mockRows, index) => ({ ...consumer.orderedQueries[index], mockRows })) : undefined;
+  const queueContract=consumer.queueReplyContract,handlerResult=consumer.expectedResultsByScenario?.[scenarioKind];
+  const mutationPlan=queueContract?.queueScenarios?.includes(scenarioKind)?[
+    {expectedNormalizedSql:queueContract.operationSql,expectedValues:[{matcher:queueContract.operationKeyMatcher}],affectedRows:1,insertId:queueContract.operationInsertId},
+    {expectedNormalizedSql:queueContract.commandExecutionSql,expectedValues:[consumer.input.eventId,handlerResult.commandCode,queueContract.operationInsertId],affectedRows:1,insertId:"0"},
+    {expectedNormalizedSql:queueContract.outboxSql,expectedValues:[queueContract.operationInsertId,consumer.input.channelId,JSON.stringify({data:handlerResult.message})],affectedRows:1,insertId:queueContract.outboxInsertId},
+  ]:queueContract?[]:undefined;
   let orderedQueryIndex = 0;
+  let orderedMutationIndex = 0;
   const record = (channel, sql, values, rowCount) => {
     const normalizedSql = normalizeSql(sql);
     calls.push({ channel, normalizedSql, values: jsonSafe(values), rowCount });
@@ -100,11 +114,16 @@ function createRunnerDatabase(consumer, scenarioKind) {
       }));
     },
     async execute(sql, values = []) {
-      record("execute", sql, values, 1);
-      return { affectedRows: 1n, insertId: 0n };
+      const step = Array.isArray(mutationPlan) ? mutationPlan[orderedMutationIndex++] : undefined;
+      assert(step !== undefined, `${consumer.consumerId}: unexpected mutation`);
+      const normalizedSql = normalizeSql(sql);
+      assert(normalizedSql === step.expectedNormalizedSql, `${consumer.consumerId}: ordered mutation SQL drift`);
+      assert(values.length === step.expectedValues.length && values.every((value, index) => matchesExpectedValue(value, step.expectedValues[index])), `${consumer.consumerId}: ordered mutation values drift`);
+      record("execute", sql, values, step.affectedRows);
+      return { affectedRows: BigInt(step.affectedRows), insertId: BigInt(step.insertId) };
     },
   };
-  return { database, transcript: { calls, transactionEvents }, assertComplete() { if (Array.isArray(orderedPlan)) assert(orderedQueryIndex === orderedPlan.length, `${consumer.consumerId}: ordered SELECT count drift`); } };
+  return { database, transcript: { calls, transactionEvents }, assertComplete() { if (Array.isArray(orderedPlan)) assert(orderedQueryIndex === orderedPlan.length, `${consumer.consumerId}: ordered SELECT count drift`);if(Array.isArray(mutationPlan))assert(orderedMutationIndex===mutationPlan.length,`${consumer.consumerId}: ordered mutation count drift`); } };
 }
 
 function mapOrderedRows(shape, rows) {
@@ -155,6 +174,7 @@ function deriveTrace(workerResults, scenarioKind) {
   const allCalls = workerResults.flatMap(({ transcript }) => transcript.calls);
   const queryTrace = allCalls.filter(({ normalizedSql }) => !DML_KEYWORDS.has(normalizedSql.split(" ", 1)[0].toUpperCase())).map(({ channel, normalizedSql, values, rowCount }) => ({ channel, normalizedSql, values, rowCount }));
   const dmlCalls = allCalls.filter(({ normalizedSql }) => DML_KEYWORDS.has(normalizedSql.split(" ", 1)[0].toUpperCase()));
+  const dmlTrace = dmlCalls.map(({ channel, normalizedSql, values, rowCount }) => ({ channel, normalizedSql, values, rowCount }));
   const normalizedStatements = dmlCalls.map(({ normalizedSql }) => normalizedSql);
   const rowCount = dmlCalls.reduce((sum, { rowCount: rows }) => sum + rows, 0);
   const lockOrder = [];
@@ -166,10 +186,10 @@ function deriveTrace(workerResults, scenarioKind) {
   const transaction = transactionEvents.includes("ROLLBACK") ? "ROLLBACK" : transactionEvents.includes("BEGIN") || dmlCalls.length > 0 ? "COMMIT" : "READ_ONLY";
   let timeline;
   if (scenarioKind === "NEGATIVE_GUARD" && allCalls.length === 0) timeline = ["GUARD_REJECTED"];
-  else if (scenarioKind === "RESTART_CONSISTENCY") timeline = ["CHILD_PROCESS_1:READ", "RESTART", "CHILD_PROCESS_2:READ"];
+  else if (scenarioKind === "RESTART_CONSISTENCY") timeline = dmlCalls.length > 0 ? ["CHILD_PROCESS_1:COMMIT", "RESTART", "CHILD_PROCESS_2:COMMIT"] : ["CHILD_PROCESS_1:READ", "RESTART", "CHILD_PROCESS_2:READ"];
   else if (transactionEvents.length > 0) timeline = transactionEvents.slice();
   else timeline = allCalls.map(({ normalizedSql }) => DML_KEYWORDS.has(normalizedSql.split(" ", 1)[0].toUpperCase()) ? "DML" : "READ");
-  return { queryTrace, normalizedStatements, rowCount, lockOrder, transaction, timeline };
+  return { queryTrace, dmlTrace, normalizedStatements, rowCount, lockOrder, transaction, timeline };
 }
 
 function invokeWorker(harnessPath, workerInputPath, targetPath) {
