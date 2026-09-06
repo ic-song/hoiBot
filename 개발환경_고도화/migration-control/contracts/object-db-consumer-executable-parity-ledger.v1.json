@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "265b95f38a265ff7163f14243c4d723c222539f3",
+  "evidenceCommit": "e7cb24a77fef4727c396d1c7a728dc5e79686ce9",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "b11b60649e12bb63bc7cb6ab5d58f2c1bb260e3b786ca4eb736822e20118483e"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave7-v1.json",
-      "sha256": "dbcf4ad0f4b031c82c40c12d5182f835261dc9780dee5273b4901955b15c9b94"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave8-v1.json",
+      "sha256": "a81cfd067707cb17c4c178a6ffdd9f2ce2df852fe08bcb8051809bbfb8beaf56"
     },
     "classificationSources": [
       {
@@ -63,16 +63,16 @@
     "registrySourceMismatchCount": 8,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 8,
-    "provenConsumers": 14,
-    "unprovenConsumers": 1097,
-    "directPassConsumers": 14,
+    "provenConsumers": 18,
+    "unprovenConsumers": 1093,
+    "directPassConsumers": 18,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 545,
+      "STATIC_ONLY": 541,
       "BLOCKED_DYNAMIC": 552,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 14,
+      "DIRECT_PASS": 18,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -527,22 +527,22 @@
         "sourceSpanSha256": "60a4791085c0c763c6133a77f8757bc546ab098124acdee7da04a4f34db344b5",
         "classificationSha256": "b863419422337edf488c6a812d8a23184f7d0eaa51012224466a1ac36757d6aa"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave8",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+        "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave8:admin-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+        "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+        "targetSourceSha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e",
+        "exportName": "executeWave8AdminChain"
       },
       "scenarioRequirements": [
         {
@@ -586,11 +586,388 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave8:admin-command-0ab0acb6f570d48c:auth_denied",
+          "scenarioId": "scenario:auth-denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:admin-data-status-chain",
+          "attributedConsumerIds": [
+            "admin-command-0ab0acb6f570d48c"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "DML",
+                "READ"
+              ],
+              "actualTimeline": [
+                "READ",
+                "DML",
+                "READ"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-0ab0acb6f570d48c:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:admin-data-status-chain",
+          "attributedConsumerIds": [
+            "admin-command-0ab0acb6f570d48c"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "c43d48ef794b5596b5f76873eb45aca9ac2c0ade23fe78080bd32601a017489b",
+              "actualSha256": "c43d48ef794b5596b5f76873eb45aca9ac2c0ade23fe78080bd32601a017489b",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c43d48ef794b5596b5f76873eb45aca9ac2c0ade23fe78080bd32601a017489b",
+              "actualSha256": "c43d48ef794b5596b5f76873eb45aca9ac2c0ade23fe78080bd32601a017489b",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-0ab0acb6f570d48c:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:admin-data-status-chain",
+          "attributedConsumerIds": [
+            "admin-command-0ab0acb6f570d48c"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-0ab0acb6f570d48c:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:admin-data-status-chain",
+          "attributedConsumerIds": [
+            "admin-command-0ab0acb6f570d48c"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "a0a4c9f3b306a7318c8769e3f766f5dc0ca742b13e7cb01b83f6af4bfb4a0aeb",
+              "actualSha256": "a0a4c9f3b306a7318c8769e3f766f5dc0ca742b13e7cb01b83f6af4bfb4a0aeb",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "a0a4c9f3b306a7318c8769e3f766f5dc0ca742b13e7cb01b83f6af4bfb4a0aeb",
+              "actualSha256": "a0a4c9f3b306a7318c8769e3f766f5dc0ca742b13e7cb01b83f6af4bfb4a0aeb",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "903230d8cf8ed491f3bc0cb6fc494e1b3ac41d722703b98761e5c5c26c9353ea",
+              "actualSha256": "903230d8cf8ed491f3bc0cb6fc494e1b3ac41d722703b98761e5c5c26c9353ea",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'backup_status.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_STATUS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_revision',?,'backup_status.read','success','Iris /데이터상태',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'backup_status.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_STATUS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_revision',?,'backup_status.read','success','Iris /데이터상태',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 6,
+              "actualRowCount": 6
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-0ab0acb6f570d48c:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:admin-data-status-chain",
+          "attributedConsumerIds": [
+            "admin-command-0ab0acb6f570d48c"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "a0a4c9f3b306a7318c8769e3f766f5dc0ca742b13e7cb01b83f6af4bfb4a0aeb",
+              "actualSha256": "a0a4c9f3b306a7318c8769e3f766f5dc0ca742b13e7cb01b83f6af4bfb4a0aeb",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f9ebfa3221876c8841a88203e5c37a067d20cb9881f8db63e45b10bac44bf033",
+              "actualSha256": "f9ebfa3221876c8841a88203e5c37a067d20cb9881f8db63e45b10bac44bf033",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f0a099f030ca42d1adcc9133e1dcc2e7494cc37f8498fc5b8ea4c24d905359eb",
+              "actualSha256": "f0a099f030ca42d1adcc9133e1dcc2e7494cc37f8498fc5b8ea4c24d905359eb",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'backup_status.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_STATUS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_revision',?,'backup_status.read','success','Iris /데이터상태',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'backup_status.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_STATUS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_revision',?,'backup_status.read','success','Iris /데이터상태',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'backup_status.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_STATUS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_revision',?,'backup_status.read','success','Iris /데이터상태',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'backup_status.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_DATA_STATUS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'backup_revision',?,'backup_status.read','success','Iris /데이터상태',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 12,
+              "actualRowCount": 12
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-0ab0acb6f570d48c:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:admin-data-status-chain",
+          "attributedConsumerIds": [
+            "admin-command-0ab0acb6f570d48c"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "DML"
+              ],
+              "actualTimeline": [
+                "READ",
+                "DML"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave8:admin-command-0ab0acb6f570d48c:auth_denied",
+          "receipt:wave8:admin-command-0ab0acb6f570d48c:exact_output",
+          "receipt:wave8:admin-command-0ab0acb6f570d48c:negative_guard",
+          "receipt:wave8:admin-command-0ab0acb6f570d48c:read_positive",
+          "receipt:wave8:admin-command-0ab0acb6f570d48c:restart_consistency",
+          "receipt:wave8:admin-command-0ab0acb6f570d48c:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "admin-command-0ab0acb6f570d48c"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+            "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+            "sha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+            "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -952,22 +1329,22 @@
         "sourceSpanSha256": "75ea25ddd3e09d3abdc81f2f07b1e718d327c81d646998efd15e8f631131a6bf",
         "classificationSha256": "6a98f40ba8b94efb06fb574c9a0b49d860e62ebbd93ce367f2c2799df597aa26"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave8",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+        "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave8:admin-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+        "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+        "targetSourceSha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e",
+        "exportName": "executeWave8AdminChain"
       },
       "scenarioRequirements": [
         {
@@ -1011,11 +1388,400 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave8:admin-command-115e33dcf567dd08:auth_denied",
+          "scenarioId": "scenario:auth-denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:admin-pet-owner-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-115e33dcf567dd08"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "READ"
+              ],
+              "actualTimeline": [
+                "READ",
+                "READ"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-115e33dcf567dd08:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:admin-pet-owner-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-115e33dcf567dd08"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "4b5fe9d673ac27fb12dbed927e998db784dd59d1665f05f74bcb4f2644583422",
+              "actualSha256": "4b5fe9d673ac27fb12dbed927e998db784dd59d1665f05f74bcb4f2644583422",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "4b5fe9d673ac27fb12dbed927e998db784dd59d1665f05f74bcb4f2644583422",
+              "actualSha256": "4b5fe9d673ac27fb12dbed927e998db784dd59d1665f05f74bcb4f2644583422",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "4dd74b981b9d712fa3edfa4979f6f606cea0b1006189e2f204a924951e0c3ebf",
+              "actualSha256": "4dd74b981b9d712fa3edfa4979f6f606cea0b1006189e2f204a924951e0c3ebf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-115e33dcf567dd08:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:admin-pet-owner-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-115e33dcf567dd08"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-115e33dcf567dd08:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:admin-pet-owner-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-115e33dcf567dd08"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "32e19166cfe7f8a54a58b798a2f184cd24ea09fd76b8c72c5d008cfd835cfa93",
+              "actualSha256": "32e19166cfe7f8a54a58b798a2f184cd24ea09fd76b8c72c5d008cfd835cfa93",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "32e19166cfe7f8a54a58b798a2f184cd24ea09fd76b8c72c5d008cfd835cfa93",
+              "actualSha256": "32e19166cfe7f8a54a58b798a2f184cd24ea09fd76b8c72c5d008cfd835cfa93",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "e7f8522fceb39d50aa480d4f487ce1d9de88346dac88c7a8d10d63c96450a54e",
+              "actualSha256": "e7f8522fceb39d50aa480d4f487ce1d9de88346dac88c7a8d10d63c96450a54e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PET_OWNER_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'pet_owner_list',NULL,'pet.owner.read','success','Iris /펫주인',?,UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PET_OWNER_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'pet_owner_list',NULL,'pet.owner.read','success','Iris /펫주인',?,UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 6,
+              "actualRowCount": 6
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-115e33dcf567dd08:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:admin-pet-owner-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-115e33dcf567dd08"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "32e19166cfe7f8a54a58b798a2f184cd24ea09fd76b8c72c5d008cfd835cfa93",
+              "actualSha256": "32e19166cfe7f8a54a58b798a2f184cd24ea09fd76b8c72c5d008cfd835cfa93",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b6598a5a45e852f59587714cf0a2a039c8703c8fc5d4d146b12ea2353d42310b",
+              "actualSha256": "b6598a5a45e852f59587714cf0a2a039c8703c8fc5d4d146b12ea2353d42310b",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "d41a434364c20a333a03f2ac2ffabcfe39745b3870dfe3acff2b846b1bf1018c",
+              "actualSha256": "d41a434364c20a333a03f2ac2ffabcfe39745b3870dfe3acff2b846b1bf1018c",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PET_OWNER_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'pet_owner_list',NULL,'pet.owner.read','success','Iris /펫주인',?,UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PET_OWNER_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'pet_owner_list',NULL,'pet.owner.read','success','Iris /펫주인',?,UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PET_OWNER_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'pet_owner_list',NULL,'pet.owner.read','success','Iris /펫주인',?,UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PET_OWNER_READ',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'pet_owner_list',NULL,'pet.owner.read','success','Iris /펫주인',?,UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 12,
+              "actualRowCount": 12
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles"
+              ],
+              "actual": [
+                "operations",
+                "players",
+                "player_profiles",
+                "player_pets",
+                "player_legacy_rank_profiles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-115e33dcf567dd08:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:admin-pet-owner-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-115e33dcf567dd08"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "DML"
+              ],
+              "actualTimeline": [
+                "READ",
+                "DML"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave8:admin-command-115e33dcf567dd08:auth_denied",
+          "receipt:wave8:admin-command-115e33dcf567dd08:exact_output",
+          "receipt:wave8:admin-command-115e33dcf567dd08:negative_guard",
+          "receipt:wave8:admin-command-115e33dcf567dd08:read_positive",
+          "receipt:wave8:admin-command-115e33dcf567dd08:restart_consistency",
+          "receipt:wave8:admin-command-115e33dcf567dd08:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "admin-command-115e33dcf567dd08"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+            "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+            "sha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+            "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -1899,22 +2665,22 @@
         "sourceSpanSha256": "0a7364d5f4885e34f1c483f9b4763dcec40eb2003d8bce20bab6ead2a7b745b7",
         "classificationSha256": "68a9b8cfb725ba697198260dec9a16a2d7b0b62ec56b6541402936f2263eb09c"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave8",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+        "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave8:admin-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+        "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+        "targetSourceSha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e",
+        "exportName": "executeWave8AdminChain"
       },
       "scenarioRequirements": [
         {
@@ -1958,11 +2724,390 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave8:admin-command-3a76b9ad462b6143:auth_denied",
+          "scenarioId": "scenario:auth-denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:admin-ring-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-3a76b9ad462b6143"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "READ",
+                "DML",
+                "READ"
+              ],
+              "actualTimeline": [
+                "READ",
+                "READ",
+                "DML",
+                "READ"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-3a76b9ad462b6143:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:admin-ring-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-3a76b9ad462b6143"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "9b9f5392a90807766acb6617cfdb4361e4ee10a9fee9c351e112723df15b4d40",
+              "actualSha256": "9b9f5392a90807766acb6617cfdb4361e4ee10a9fee9c351e112723df15b4d40",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "9b9f5392a90807766acb6617cfdb4361e4ee10a9fee9c351e112723df15b4d40",
+              "actualSha256": "9b9f5392a90807766acb6617cfdb4361e4ee10a9fee9c351e112723df15b4d40",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-3a76b9ad462b6143:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:admin-ring-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-3a76b9ad462b6143"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-3a76b9ad462b6143:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:admin-ring-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-3a76b9ad462b6143"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "1649ca2e122c75e577c170d4b8ded207229cca9093f2ac7898a727e532832feb",
+              "actualSha256": "1649ca2e122c75e577c170d4b8ded207229cca9093f2ac7898a727e532832feb",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "1649ca2e122c75e577c170d4b8ded207229cca9093f2ac7898a727e532832feb",
+              "actualSha256": "1649ca2e122c75e577c170d4b8ded207229cca9093f2ac7898a727e532832feb",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "da84a760d81f88654d4cefe1928a65c5f15b81aba859e8048712759e6b62d9dc",
+              "actualSha256": "da84a760d81f88654d4cefe1928a65c5f15b81aba859e8048712759e6b62d9dc",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?, ?, ?, 'external_identity', ?, 'iris', 'processing', UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'ring_projection',NULL,?,'reply_queued','Iris 반지 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?, ?, ?, 'external_identity', ?, 'iris', 'processing', UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'ring_projection',NULL,?,'reply_queued','Iris 반지 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 6,
+              "actualRowCount": 6
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-3a76b9ad462b6143:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:admin-ring-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-3a76b9ad462b6143"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "1649ca2e122c75e577c170d4b8ded207229cca9093f2ac7898a727e532832feb",
+              "actualSha256": "1649ca2e122c75e577c170d4b8ded207229cca9093f2ac7898a727e532832feb",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "8b89579b8fd23c7f86ff5952166fcf3f1345b24bc56c778f82cc00aa74d36f4b",
+              "actualSha256": "8b89579b8fd23c7f86ff5952166fcf3f1345b24bc56c778f82cc00aa74d36f4b",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "05cd2404af1a819805e6ce9ab9c6c063eb6623a37facd76903930140799f1d34",
+              "actualSha256": "05cd2404af1a819805e6ce9ab9c6c063eb6623a37facd76903930140799f1d34",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?, ?, ?, 'external_identity', ?, 'iris', 'processing', UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'ring_projection',NULL,?,'reply_queued','Iris 반지 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?, ?, ?, 'external_identity', ?, 'iris', 'processing', UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'ring_projection',NULL,?,'reply_queued','Iris 반지 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?, ?, ?, 'external_identity', ?, 'iris', 'processing', UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'ring_projection',NULL,?,'reply_queued','Iris 반지 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?, ?, ?, 'external_identity', ?, 'iris', 'processing', UTC_TIMESTAMP(3))",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'ring_projection',NULL,?,'reply_queued','Iris 반지 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 12,
+              "actualRowCount": 12
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-3a76b9ad462b6143:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:admin-ring-read-chain",
+          "attributedConsumerIds": [
+            "admin-command-3a76b9ad462b6143"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "DML"
+              ],
+              "actualTimeline": [
+                "READ",
+                "DML"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave8:admin-command-3a76b9ad462b6143:auth_denied",
+          "receipt:wave8:admin-command-3a76b9ad462b6143:exact_output",
+          "receipt:wave8:admin-command-3a76b9ad462b6143:negative_guard",
+          "receipt:wave8:admin-command-3a76b9ad462b6143:read_positive",
+          "receipt:wave8:admin-command-3a76b9ad462b6143:restart_consistency",
+          "receipt:wave8:admin-command-3a76b9ad462b6143:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "admin-command-3a76b9ad462b6143"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+            "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+            "sha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+            "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -2585,22 +3730,22 @@
         "sourceSpanSha256": "93156fad6277bda8537ed8dc8c8c6fd14804e41fd3988a0516d6b56929f12b12",
         "classificationSha256": "cfa326faa6f53278feb067a86d27904bff5369464daefcb16e2691f556ded136"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:object-db-executable-parity:wave8",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+        "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave8:admin-chain:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+        "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+        "targetSourceSha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e",
+        "exportName": "executeWave8AdminChain"
       },
       "scenarioRequirements": [
         {
@@ -2644,11 +3789,416 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave8:admin-command-5e04d0767d4c2abc:auth_denied",
+          "scenarioId": "scenario:auth-denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:admin-server-stats-chain",
+          "attributedConsumerIds": [
+            "admin-command-5e04d0767d4c2abc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "actualSha256": "b129464fffee009ad9a57b6e4c2b194b8d31380d7622c4513c0137921ef13058",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "DML",
+                "READ"
+              ],
+              "actualTimeline": [
+                "READ",
+                "DML",
+                "READ"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-5e04d0767d4c2abc:exact_output",
+          "scenarioId": "scenario:exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:admin-server-stats-chain",
+          "attributedConsumerIds": [
+            "admin-command-5e04d0767d4c2abc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "43e22b43167718040d551d22c631f3fb4b6b3ec54c2b6f2af3b36c10b53b6680",
+              "actualSha256": "43e22b43167718040d551d22c631f3fb4b6b3ec54c2b6f2af3b36c10b53b6680",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "43e22b43167718040d551d22c631f3fb4b6b3ec54c2b6f2af3b36c10b53b6680",
+              "actualSha256": "43e22b43167718040d551d22c631f3fb4b6b3ec54c2b6f2af3b36c10b53b6680",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-5e04d0767d4c2abc:negative_guard",
+          "scenarioId": "scenario:negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:admin-server-stats-chain",
+          "attributedConsumerIds": [
+            "admin-command-5e04d0767d4c2abc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "GUARD_REJECTED"
+              ],
+              "actualTimeline": [
+                "GUARD_REJECTED"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-5e04d0767d4c2abc:read_positive",
+          "scenarioId": "scenario:read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:admin-server-stats-chain",
+          "attributedConsumerIds": [
+            "admin-command-5e04d0767d4c2abc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "42d91c1ffbd076e309b873b99cbd0854608701e2881f91898a4a504c304ce8d4",
+              "actualSha256": "42d91c1ffbd076e309b873b99cbd0854608701e2881f91898a4a504c304ce8d4",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "42d91c1ffbd076e309b873b99cbd0854608701e2881f91898a4a504c304ce8d4",
+              "actualSha256": "42d91c1ffbd076e309b873b99cbd0854608701e2881f91898a4a504c304ce8d4",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "de0e20e358093b54b3109421fdd1f2987727cc42e785a735a019d21912cf7aba",
+              "actualSha256": "de0e20e358093b54b3109421fdd1f2987727cc42e785a735a019d21912cf7aba",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 10,
+              "actualRowCount": 10
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "legacy_snapshot_environments"
+              ],
+              "actual": [
+                "operations",
+                "legacy_snapshot_environments"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-5e04d0767d4c2abc:restart_consistency",
+          "scenarioId": "scenario:restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:admin-server-stats-chain",
+          "attributedConsumerIds": [
+            "admin-command-5e04d0767d4c2abc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "42d91c1ffbd076e309b873b99cbd0854608701e2881f91898a4a504c304ce8d4",
+              "actualSha256": "42d91c1ffbd076e309b873b99cbd0854608701e2881f91898a4a504c304ce8d4",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "36221bf0bd1b655518bfe1cf20186147099ec3675d3daf6cb63b4088c3332c99",
+              "actualSha256": "36221bf0bd1b655518bfe1cf20186147099ec3675d3daf6cb63b4088c3332c99",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "99a964e2438b1ab247418654c51024ea0be56e88735422f8d4951ee0eb6195bf",
+              "actualSha256": "99a964e2438b1ab247418654c51024ea0be56e88735422f8d4951ee0eb6195bf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 20,
+              "actualRowCount": 20
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "legacy_snapshot_environments"
+              ],
+              "actual": [
+                "operations",
+                "legacy_snapshot_environments"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ],
+              "actualTimeline": [
+                "CHILD_PROCESS_1:COMMIT",
+                "RESTART",
+                "CHILD_PROCESS_2:COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave8:admin-command-5e04d0767d4c2abc:source_domain_dml_zero",
+          "scenarioId": "scenario:source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:admin-server-stats-chain",
+          "attributedConsumerIds": [
+            "admin-command-5e04d0767d4c2abc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "actualSha256": "b68689f45efc41d707349b402f7d6bef817c86d0b59d44cc8375effdee347193",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "actualSha256": "3fe155e26b75aee5b8627c7845cf38664445a640bc12c6ac72aa1bf7efe49dc2",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 1,
+              "actualRowCount": 1
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "READ",
+                "DML"
+              ],
+              "actualTimeline": [
+                "READ",
+                "DML"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave8:admin-command-5e04d0767d4c2abc:auth_denied",
+          "receipt:wave8:admin-command-5e04d0767d4c2abc:exact_output",
+          "receipt:wave8:admin-command-5e04d0767d4c2abc:negative_guard",
+          "receipt:wave8:admin-command-5e04d0767d4c2abc:read_positive",
+          "receipt:wave8:admin-command-5e04d0767d4c2abc:restart_consistency",
+          "receipt:wave8:admin-command-5e04d0767d4c2abc:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "admin-command-5e04d0767d4c2abc"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave8-admin-chain-v1.json",
+            "sha256": "3f1961f3adcdc2fc975d0100cf391f8cad2981a75736b7ca746e3ea3e855e6db"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-admin-chain.mjs",
+            "sha256": "acf1c53420045c21232f8b64fc3fd10da8528117e5730ada8418a52577fe791e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs",
+            "sha256": "6ad5f027d539479ddd3eb79a3fe58562ba8750c7cc31d7839bb291cc1e1ebb7a"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -101883,5 +103433,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "461e09ceb26c929bceb169895d88f3d218981b907f6b99c5e75450c6e49e6736"
+  "entrySetSha256": "c19beddff9201dc23242e985a0bf7228025fc6791e90b041b4f14cbbc3262236"
 }
