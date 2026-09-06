@@ -6,4 +6,3 @@
 - `/맞짱시간체크`는 `checkRank` 전체 장식과 실제 공통/세부 시간 측정 동등성이 아직 고정되지 않아 DIRECT 승격하지 않았다.
 - `/상태전체`는 production `sharedTransientCommandStateStore` writer가 없으므로 `LEGACY_ONLY`를 유지한다.
 - 외부 네트워크, 실제 방, 운영 DB와 운영 데이터는 사용하지 않았다.
-

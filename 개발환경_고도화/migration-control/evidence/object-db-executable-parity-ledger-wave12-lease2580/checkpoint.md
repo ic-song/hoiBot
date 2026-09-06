@@ -5,4 +5,3 @@
 - receipts: prior 144 + Wave12 5 = 149, 중복 0
 - ledger: 1,111/1,111, proven 29, direct 29, equivalent 0, unproven 1,082
 - `/맞짱시간체크`, `/상태전체`의 ledger 상태는 변경하지 않았다.
-

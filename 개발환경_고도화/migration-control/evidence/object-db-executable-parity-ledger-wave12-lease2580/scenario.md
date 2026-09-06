@@ -5,4 +5,3 @@
 - fingerprint drift: environment/message/actor/channel 각각 fail closed
 - DEV/PROD 환경은 같은 독립 oracle로 byte-exact 비교한다.
 - source-domain DML은 0이며 허용 DML은 ingress/operation/outbox/audit와 `admin_character_count_stat_executions`에 한정한다.
-

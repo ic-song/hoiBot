@@ -6,4 +6,3 @@
 - 실행 harness: `object-db-executable-parity-wave12-harness.mjs`
 - 실행 target: `object-db-executable-parity-wave12-character-count.mjs`
 - 이전 144 receipts는 각 Wave의 원래 evidenceCommit과 자체 해시를 검증하며 바이트 순서를 보존한다.
-
