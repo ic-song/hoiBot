@@ -61,6 +61,11 @@ function createRunnerDatabase(consumer) {
         object_type: row.objectType,
         object_identity_id: row.canonicalObjectIdentityId,
       }));
+      if (consumer.databaseRowShape === "player-target-row") return consumer.mockRows.map((row) => ({
+        legacy_player_id: BigInt(row.legacyPlayerId), canonical_player_id: row.canonicalPlayerId,
+        external_identity_id: BigInt(row.externalIdentityId), display_name: row.displayName,
+        rank_emoji: row.rankEmoji, provider_code: row.providerCode,
+      }));
       return consumer.mockRows.map((row) => ({
         owned_title_id: row.ownedTitleId,
         title_definition_id: row.titleDefinitionId,
