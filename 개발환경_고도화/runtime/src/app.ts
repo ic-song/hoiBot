@@ -388,6 +388,7 @@ export interface AppDependencies {
     deleted: { processed: number; failed: number };
   }>;
   purgeRetainedEventContent?: () => Promise<number>;
+  observeServiceInvocation?: (handlerKey: string) => void;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -2779,6 +2780,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFurnitureInfoReadCandidate(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_info_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        dependencies.observeServiceInvocation?.("home_furniture_info_read");
         const result=await new HomeFurnitureInfoReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId,message:normalizedEvent.message!});
         if(result.reply!==undefined&&result.outboxId!==undefined)processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.reply});
       }
@@ -3098,6 +3100,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && isHomeFurnitureStatsReadCommand(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "home_furniture_stats_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
+        dependencies.observeServiceInvocation?.("home_furniture_stats_read");
         const result=await new HomeFurnitureStatsReadService(database!).read({eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,destinationId:normalizedEvent.channelId});
         processing.replies.push({outboxId:result.outboxId,room:normalizedEvent.channelId,data:result.data});
       }
