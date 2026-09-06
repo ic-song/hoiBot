@@ -18,10 +18,16 @@ export const OBJECT_DB_EXECUTABLE_PARITY_WAVE0_EVIDENCE_COMMIT = "f07021701d2f05
 const OBJECT_DB_PARITY_RUNNER = "NODE_OBJECT_DB_PARITY_V1" as const;
 const OBJECT_DB_PARITY_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE1_TITLE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs" as const;
+const OBJECT_DB_PARITY_WAVE2_COMPATIBILITY_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs" as const;
 const TRUSTED_WAVE1_TITLE_READS = {
   "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
   "sql-repository-a0a5f5d8f3338d7b": { domain: "pet", symbol: "pet.listOwned", triggerOrPredicate: "SQL_METHOD:pet:listOwned", interfaceId: "pet-title.repository.maria-canonical-title-repository.pet.listOwned", definitionTable: "canonical_pet_title_definitions", definitionId: "pet_title_id", ownershipTable: "canonical_owned_pet_title_instances", ownedId: "owned_pet_title_id", selectionTable: "canonical_pet_title_selections" },
   "sql-repository-6a1bdfaafba10749": { domain: "mini_pet", symbol: "mini-pet.listOwned", triggerOrPredicate: "SQL_METHOD:mini-pet:listOwned", interfaceId: "mini-pet-title-collection.repository.maria-canonical-title-repository.mini-pet.listOwned", definitionTable: "canonical_mini_pet_title_definitions", definitionId: "mini_pet_title_id", ownershipTable: "canonical_owned_mini_pet_title_instances", ownedId: "owned_mini_pet_title_id", selectionTable: "canonical_mini_pet_title_selections" },
+} as const;
+const TRUSTED_WAVE2_COMPATIBILITY_READS = {
+  "sql-repository-aa5b2d6d12d1268b": { method: "resolveLegacyObjectId", symbol: "resolveLegacyObjectId", triggerOrPredicate: "SQL_METHOD:resolveLegacyObjectId", interfaceId: "context-bridge.repository.object-catalog-compatibility-resolver.resolveLegacyObjectId", input: ["42", { expectedObjectType: "ITEM" }], negativeInput: ["0", { expectedObjectType: "ITEM" }], expectedQueryValues: ["42"], expectedGuardReason: "LEGACY_OBJECT_ID_INVALID", sqlSuffix: "WHERE registry.id = ?" },
+  "sql-repository-fd1e8659cff045f9": { method: "resolveAlias", symbol: "resolveAlias", triggerOrPredicate: "SQL_METHOD:resolveAlias", interfaceId: "context-bridge.repository.object-catalog-compatibility-resolver.resolveAlias", input: ["ITEM", "legacy_name", "diamond-box", {}], negativeInput: ["ITEM", "invalid_alias_type", "diamond-box", {}], expectedQueryValues: ["ITEM", "legacy_name", "diamond-box"], expectedGuardReason: "LEGACY_OBJECT_ALIAS_INVALID", sqlSuffix: "JOIN object_aliases alias ON alias.object_id = registry.id AND alias.object_type = registry.object_type WHERE alias.object_type = ? AND alias.alias_type = ? AND alias.alias_value = ?" },
+  "sql-repository-520566e376bf7ee8": { method: "resolveSource", symbol: "resolveSource", triggerOrPredicate: "SQL_METHOD:resolveSource", interfaceId: "context-bridge.repository.object-catalog-compatibility-resolver.resolveSource", input: [{ system: "LEGACY_JSON", table: "data/itemList.json", key: "diamond-box" }, { expectedObjectType: "ITEM" }], negativeInput: [{ system: "LEGACY_JSON", table: "not-allowlisted", key: "diamond-box" }, {}], expectedQueryValues: ["LEGACY_JSON", "data/itemList.json", "diamond-box"], expectedGuardReason: "LEGACY_OBJECT_SOURCE_INVALID", sqlSuffix: "JOIN object_source_bindings source ON source.object_id = registry.id AND source.object_type = registry.object_type WHERE source.source_system = ? AND source.source_table = ? AND source.source_key = ?" },
 } as const;
 
 export const OBJECT_DB_EXECUTABLE_PARITY_VERDICTS = [
@@ -473,7 +479,7 @@ function gitRepositoryRoot(): string {
 
 function readCommitBlob(repositoryRoot: string, commit: string, path: string): string {
   try {
-    return execFileSync("git", ["show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
+    return execFileSync("git", ["-c", "core.longpaths=true", "show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
   } catch {
     throw new Error(`evidenceCommit does not contain trusted input: ${path}`);
   }
@@ -509,6 +515,32 @@ export function assertTrustedWave1ConsumerFixtureMapping(
   for (const token of [trusted.ownershipTable, trusted.definitionTable, trusted.selectionTable, `definition_row.${trusted.definitionId}=owned.${trusted.definitionId}`, `selection_row.${trusted.ownedId}=owned.${trusted.ownedId}`, "owned.player_id=?", "owned.ownership_status='owned'", `ORDER BY owned.acquisition_sequence,owned.${trusted.ownedId}`]) if (typeof expectedSql !== "string" || !expectedSql.includes(token)) throw new Error(`${consumerId} exact normalized SQL/AST semantics drift`);
 }
 
+export function assertTrustedWave2ConsumerFixtureMapping(
+  consumerId: string,
+  consumer: Record<string, unknown>,
+  manifestConsumer: ConsumerManifestInput["consumers"][number],
+): void {
+  const trusted = TRUSTED_WAVE2_COMPATIBILITY_READS[consumerId as keyof typeof TRUSTED_WAVE2_COMPATIBILITY_READS];
+  if (trusted === undefined) return;
+  const locator = consumer.sourceLocator as Record<string, unknown> | undefined;
+  if (locator === undefined || consumer.consumerId !== consumerId) throw new Error(`${consumerId} trusted Wave2 source locator/consumer binding missing`);
+  const exactLocator = { file: manifestConsumer.file, symbol: manifestConsumer.symbol, triggerOrPredicate: manifestConsumer.triggerOrPredicate, interfaceId: manifestConsumer.interfaceId, start: manifestConsumer.sourceSpan.start, end: manifestConsumer.sourceSpan.end, sha256: manifestConsumer.sourceSpan.sha256 };
+  if (JSON.stringify(locator) !== JSON.stringify(exactLocator)) throw new Error(`${consumerId} exact manifest locator drift`);
+  if (locator.symbol !== trusted.symbol || locator.triggerOrPredicate !== trusted.triggerOrPredicate || locator.interfaceId !== trusted.interfaceId || consumer.method !== trusted.method) throw new Error(`${consumerId} trusted Wave2 method/symbol/trigger/interface drift`);
+  if (JSON.stringify(consumer.input) !== JSON.stringify(trusted.input) || JSON.stringify(consumer.negativeInput) !== JSON.stringify(trusted.negativeInput) || JSON.stringify(consumer.expectedQueryValues) !== JSON.stringify(trusted.expectedQueryValues) || consumer.expectedGuardReason !== trusted.expectedGuardReason) throw new Error(`${consumerId} trusted Wave2 input/guard drift`);
+  if (consumer.databaseRowShape !== "legacy-object-row" || !Array.isArray(consumer.mockRows) || consumer.mockRows.length !== 1) throw new Error(`${consumerId} trusted Wave2 database row contract drift`);
+  const assertions = consumer.assertions;
+  if (!Array.isArray(assertions) || JSON.stringify(assertions) !== JSON.stringify(["object_registry registry", "object_identity_crosswalks crosswalk", "crosswalk.source_system = 'LEGACY_DB'", "crosswalk.source_namespace = 'object_registry.id'"])) throw new Error(`${consumerId} exact SQL semantics assertion drift`);
+  const expectedSql = consumer.expectedNormalizedSql;
+  if (typeof expectedSql !== "string") throw new Error(`${consumerId} exact normalized SQL semantics drift`);
+  const sqlPrefix = "SELECT registry.id legacy_object_id,registry.object_key legacy_object_key,registry.object_type,crosswalk.object_identity_id FROM object_registry registry LEFT JOIN object_identity_crosswalks crosswalk ON crosswalk.source_system = 'LEGACY_DB' AND crosswalk.source_namespace = 'object_registry.id' AND crosswalk.source_identifier = CAST(registry.id AS CHAR) ";
+  if (expectedSql !== sqlPrefix + trusted.sqlSuffix) throw new Error(`${consumerId} exact normalized SQL semantics drift`);
+  for (const token of assertions) if (typeof token !== "string" || !expectedSql.includes(token)) throw new Error(`${consumerId} exact normalized SQL semantics drift`);
+  const expectedMock = [{ legacyObjectId: "42", legacyObjectKey: "diamond-box", objectType: "ITEM", canonicalObjectIdentityId: "objid001" }];
+  const expectedRow = { status: "RESOLVED", canonicalObjectIdentityId: "objid001", legacyObjectId: "42", legacyObjectKey: "diamond-box", objectType: "ITEM", quarantineReason: null };
+  if (JSON.stringify(consumer.mockRows) !== JSON.stringify(expectedMock) || JSON.stringify(consumer.expectedRow) !== JSON.stringify(expectedRow)) throw new Error(`${consumerId} trusted Wave2 result fixture drift`);
+}
+
 function assertTrustedWave1FixtureBinding(
   receipt: ObjectDbConsumerExecutionReceipt,
   fixtureText: string,
@@ -517,7 +549,21 @@ function assertTrustedWave1FixtureBinding(
   evidenceCommit: string,
 ): void {
   const trusted = TRUSTED_WAVE1_TITLE_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE1_TITLE_READS];
-  if (trusted === undefined) return;
+  if (trusted === undefined) {
+    const wave2 = TRUSTED_WAVE2_COMPATIBILITY_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE2_COMPATIBILITY_READS];
+    if (wave2 === undefined) return;
+    if (receipt.invocation.targetPath !== OBJECT_DB_PARITY_WAVE2_COMPATIBILITY_TARGET_PATH || receipt.invocation.exportName !== "executeWave2CompatibilityResolver") throw new Error(`${receipt.receiptId} trusted Wave2 invocation target drift`);
+    const fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as { payload?: { cases?: Array<{ caseId?: string; executablePath?: string; transactionPath?: string; consumers?: Array<Record<string, unknown>> }> } };
+    const parityCase = fixture.payload?.cases?.find(({ caseId }) => caseId === receipt.harness.harnessCaseId);
+    const consumer = parityCase?.consumers?.find((candidate) => candidate.consumerId === receipt.consumerId);
+    if (parityCase?.executablePath !== "ObjectCatalogCompatibilityResolver" || parityCase.transactionPath !== "DatabaseClient.query:READ_ONLY" || consumer === undefined) throw new Error(`${receipt.receiptId} trusted Wave2 case/path binding drift`);
+    assertTrustedWave2ConsumerFixtureMapping(receipt.consumerId, consumer, manifestConsumer);
+    const locator = consumer.sourceLocator as Record<string, unknown>;
+    const sourceBlob = readCommitBlob(repositoryRoot, evidenceCommit, locator.file as string);
+    const sourceSpan = canonicalizeObjectDbConsumerSourceText(sourceBlob).slice(locator.start as number, locator.end as number);
+    if (sha256CanonicalText(sourceSpan) !== locator.sha256) throw new Error(`${receipt.receiptId} evidenceCommit source span hash drift`);
+    return;
+  }
   if (receipt.invocation.targetPath !== OBJECT_DB_PARITY_WAVE1_TITLE_TARGET_PATH || receipt.invocation.exportName !== "executeWave1TitleListOwned") throw new Error(`${receipt.receiptId} trusted Wave1 invocation target drift`);
   const fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)) as { payload?: { cases?: Array<{ caseId?: string; executablePath?: string; transactionPath?: string; consumers?: Array<Record<string, unknown>> }> } };
   const parityCase = fixture.payload?.cases?.find(({ caseId }) => caseId === receipt.harness.harnessCaseId);

@@ -17,10 +17,10 @@ describe("object DB executable parity Wave1 title list-owned cohort", () => {
       manifestConsumers: 1111, ledgerEntries: 1111, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
       readConsumers: 499, mutationConsumers: 612, unresolvedDynamicConsumers: 552, unresolvedDynamicCallCount: 790,
       registrySourceMismatchCount: 8, registrySourceMismatchAttributedCount: 0, registrySourceMismatchUnattributedCount: 8,
-      provenConsumers: 3, unprovenConsumers: 1108, directPassConsumers: 3, equivalentPassConsumers: 0,
-      verdicts: { STATIC_ONLY: 556, BLOCKED_DYNAMIC: 552, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 3, EQUIVALENT_PASS: 0 },
+      provenConsumers: 6, unprovenConsumers: 1105, directPassConsumers: 6, equivalentPassConsumers: 0,
+      verdicts: { STATIC_ONLY: 553, BLOCKED_DYNAMIC: 552, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 6, EQUIVALENT_PASS: 0 },
     });
-    assert.deepEqual(ledger.entries.filter((entry: any) => entry.verdict === "DIRECT_PASS").map((entry: any) => entry.consumerId).sort(), cohort);
+    assert.deepEqual(ledger.entries.filter((entry: any) => entry.verdict === "DIRECT_PASS" && cohort.includes(entry.consumerId)).map((entry: any) => entry.consumerId).sort(), cohort);
     assert.equal(receipts.receipts.length, 15);
     assert.equal(fixture.payload.cases.length, 1);
     assert.deepEqual(fixture.payload.cases[0].consumers.map((consumer: any) => consumer.consumerId).sort(), cohort);
