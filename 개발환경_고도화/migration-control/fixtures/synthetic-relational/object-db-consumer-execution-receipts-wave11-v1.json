@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "4804038553d685389332f965fdfabd0296210f1a",
+  "evidenceCommit": "28a04f25af5d29f1abe957b8b9886746bb1481f9",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -10726,11 +10726,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -10850,7 +10850,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d1904b2d9c62fd8b8f7664915f49f5c591ebec477ec072449e1d4ccbd0a9d920"
+      "receiptSha256": "6fe54bb37fb5c5db6af017d2acebba552f8cb79de47156198f18c51751e81906"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-722afb15e9cbd92c:negative_guard",
@@ -10866,11 +10866,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -10932,7 +10932,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "3fcee15b961792ea372bffaf07508b9bbf068842b6927b253b3bedb5c7958324"
+      "receiptSha256": "0c07c47379dcde880939297ab452be1aa3a54d53373ea17e3d14cd8793d710be"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-722afb15e9cbd92c:exact_output",
@@ -10948,11 +10948,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11072,7 +11072,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "05968b1abab579054dbae8ecf0fa6cb35dcb9ec5b603b6ff784a65790be82af1"
+      "receiptSha256": "9a873019ae894c5c892ec1f4b236c8bd2f7b606d62e58a1dc0e37f3309af0988"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-722afb15e9cbd92c:source_domain_dml_zero",
@@ -11088,11 +11088,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11212,7 +11212,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "1c79fa98378a8509a122f8b484a5cc674a695c4030507f4ab4aa91f182850ee4"
+      "receiptSha256": "20bdef2c6afb8a66f8321376d95c816e980e46b6db1068464814b767a0281ab2"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-722afb15e9cbd92c:restart_consistency",
@@ -11228,11 +11228,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11374,7 +11374,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f3efb12631c183174b88d187004a07658b5b1acb45b7089f7f9b5498776534ac"
+      "receiptSha256": "6efacc1b69c14e10c82a7297bc49c49329e951389f5113a6bd3abc33cacab918"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-c3cb8d18613c2358:read_positive",
@@ -11390,11 +11390,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11486,7 +11486,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "75812ed201eb767dfe695d7369908a118f42d19f18258d768a36954cfdc4abf6"
+      "receiptSha256": "bd3ca7cd3dfeada07f7952b0ec32ba72bbe2880bd92685a709e501be405c2aff"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-c3cb8d18613c2358:negative_guard",
@@ -11502,11 +11502,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11568,7 +11568,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "2fae966f8b5a516313d8e77062383e66ea9fe0fb9e143bbcbded4fa639225e9e"
+      "receiptSha256": "8280831fe26c84878a6f85247895c629aad8c0f9275d643f4a563026b5882680"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-c3cb8d18613c2358:exact_output",
@@ -11584,11 +11584,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11680,7 +11680,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5e1f84cef2a816339782dd07f7b7d96e3d2bcde049b4a1751cf2555b4aa12e8f"
+      "receiptSha256": "8614b448bc58bca7faa3ef58828b5af9c915f3880bcdd4751989aac3d4e9c2ce"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-c3cb8d18613c2358:source_domain_dml_zero",
@@ -11696,11 +11696,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11792,7 +11792,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "8aca85e6431973a87794129ef8677aae27cde4fb2507691e961ea3e861c108cd"
+      "receiptSha256": "9adda9649ac75ca3bb4523f80778de08803b81d609d618475b3ee563b7261243"
     },
     {
       "receiptId": "receipt:wave11:runtime-dispatch-c3cb8d18613c2358:restart_consistency",
@@ -11808,11 +11808,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave11:home-furniture-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave11-home-furniture-read-v1.json",
-        "sha256": "e9564a10af85f9fdd5868d825a294039869e30b059eca7aacb873fd37d6e1eec"
+        "sha256": "4adfe55f295f6bf323617feb0da1be8df53bfd5b70aff4e184289521520f4a15"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave11-home-furniture-read.mjs",
-        "targetSourceSha256": "a7b20fc89a32af6dc6d5a9d8df846325fa7f06ef64065f24bfa74b9053a045d7",
+        "targetSourceSha256": "65ba70e72501216e9390fbe0f2e1ac16f93140cce77f950dc46e3b5ee527e5d2",
         "exportName": "executeWave11HomeFurnitureRead"
       },
       "scenario": {
@@ -11926,7 +11926,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "832c42a0607c8a48143da4d570d74c64f36052ce5565062e94e8a7be542aef64"
+      "receiptSha256": "fca8459d5981d13117b8ecb228ebf0b6d925f49e12cacfeb45cbdcac85317a45"
     }
   ]
 }
