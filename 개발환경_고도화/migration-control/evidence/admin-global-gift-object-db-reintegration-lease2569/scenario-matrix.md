@@ -21,9 +21,11 @@
 | ambiguous ACK 재조회 첫 SELECT 직후 별도 connection recipient drift commit | 단일 fresh transaction의 일관된 snapshot만 검산, pool autocommit read 0 | Maria PASS |
 | 수량 overflow | recipient/stack/outbox/receipt 전량 rollback | Maria PASS |
 | 적용된 receipt 존재 시 rollback | fail closed | Maria PASS |
-| provenance=true + 무관 owned instance FK 참조 | rollback 시작 전 fail closed, table/item/instance DDL·DML 0 | Maria PASS |
-| empty-state rollback/reapply | 5개 전용 table 제거/재생성 | Maria PASS |
-| 선재 exact source binding(예약 ID 포함) | provenance=false, 재귀속 0, rollback 후에도 원행 불변 | Maria PASS |
+| local stack/instance가 shared item 참조 | feature rollback 성공, ownership/item/import 불변 | Maria PASS |
+| 외부 schema의 동일 table명 FK 참조 | feature rollback 성공, 양 schema 참조와 shared catalog 불변 | Maria PASS |
+| 외부 schema FK가 권한 0으로 KCU에서도 숨겨짐 | 탐색·seed DELETE 없이 feature rollback 성공, 외부 row와 shared catalog 불변 | Maria PASS |
+| empty-state rollback/reapply | 전용 table 4개·registry 제거, shared item/import 보존, reapply no-op 재사용 | Maria PASS |
+| 선재 exact source binding(예약 ID 포함) | 재귀속 0, rollback 후에도 원행 불변 | Maria PASS |
 | 선재 source binding drift | migration 전 fail closed | Maria PASS |
 
 채널 설정은 합성 `synthetic-room-1..11`만 사용했다. 실제 room ID는 읽거나 기록하지 않았다.
