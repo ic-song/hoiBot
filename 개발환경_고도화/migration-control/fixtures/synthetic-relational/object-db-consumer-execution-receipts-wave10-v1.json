@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "bcaedf23af156cb4d26f3983d2e7eca15ed573e2",
+  "evidenceCommit": "0989c1b2132ad35682eac73925be96fcc4297964",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -8982,11 +8982,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9000,41 +9000,61 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
-          "actualSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+          "expectedSha256": "1d014de77634dca5acdab5613b1f6a90dab16dd004d5359e704859f411b8af18",
+          "actualSha256": "1d014de77634dca5acdab5613b1f6a90dab16dd004d5359e704859f411b8af18",
           "match": true
         },
         "dml": {
-          "expectedSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
-          "actualSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+          "expectedSha256": "af669f8ea1f619cf0ee44cbb6251a78ca411e30dec70c9fd6344e989f0c955d6",
+          "actualSha256": "af669f8ea1f619cf0ee44cbb6251a78ca411e30dec70c9fd6344e989f0c955d6",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9044,9 +9064,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -9054,7 +9082,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "7382393f437f0569f6be7f61b5f48047cc8a0eb13a8eaddcfd707ed0a907076b"
+      "receiptSha256": "f2d9d9da56c55786762933da1c36049c3a1eb36e8941f975ca3e4fb575416896"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:negative_guard",
@@ -9070,11 +9098,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9088,18 +9116,32 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
-          "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+          "expectedSha256": "fc8d6ffd57ac607b279f37edded24ee9d19a3e227d1161a524888962a346a50e",
+          "actualSha256": "fc8d6ffd57ac607b279f37edded24ee9d19a3e227d1161a524888962a346a50e",
           "match": true
         },
         "dml": {
-          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "expectedSha256": "1df2a8e51aae23366ac7f21c4936d333c63aa33562854dd6a48902d6ced1613b",
+          "actualSha256": "1df2a8e51aae23366ac7f21c4936d333c63aa33562854dd6a48902d6ced1613b",
           "match": true,
-          "expectedNormalizedStatements": [],
-          "actualNormalizedStatements": [],
-          "expectedRowCount": 0,
-          "actualRowCount": 0
+          "expectedNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+          ],
+          "actualNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+          ],
+          "expectedRowCount": 6,
+          "actualRowCount": 6
         },
         "lockOrder": {
           "expected": [],
@@ -9107,20 +9149,22 @@
           "match": true
         },
         "transaction": {
-          "expected": "READ_ONLY",
-          "actual": "READ_ONLY",
+          "expected": "COMMIT",
+          "actual": "COMMIT",
           "match": true,
           "expectedTimeline": [
-            "GUARD_REJECTED"
+            "BEGIN",
+            "COMMIT"
           ],
           "actualTimeline": [
-            "GUARD_REJECTED"
+            "BEGIN",
+            "COMMIT"
           ]
         }
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "8d78a1c773101008a37b05ba8ec66848c2ad899b499d242ce2b654477f6db773"
+      "receiptSha256": "bca4d035290e3f758ec4ad6e6f1c42a02006ad2f89f593f8627cde91d9cc57be"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:exact_output",
@@ -9136,11 +9180,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9154,41 +9198,61 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
-          "actualSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+          "expectedSha256": "1d014de77634dca5acdab5613b1f6a90dab16dd004d5359e704859f411b8af18",
+          "actualSha256": "1d014de77634dca5acdab5613b1f6a90dab16dd004d5359e704859f411b8af18",
           "match": true
         },
         "dml": {
-          "expectedSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
-          "actualSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+          "expectedSha256": "af669f8ea1f619cf0ee44cbb6251a78ca411e30dec70c9fd6344e989f0c955d6",
+          "actualSha256": "af669f8ea1f619cf0ee44cbb6251a78ca411e30dec70c9fd6344e989f0c955d6",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9198,9 +9262,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -9208,7 +9280,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "0b0cf63035daa1644db78882f6024afbe04982129dd1cb7769af969399aab2d7"
+      "receiptSha256": "bfd9eb472740f8624559adba626a5aa3f8f93d7dd6e37cf9200f7497b5e66319"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:source_domain_dml_zero",
@@ -9224,11 +9296,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9242,41 +9314,61 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
-          "actualSha256": "e360c21ecbcda0ee041c6d88b7b95d0360e5b730f5357a8a4a27ffc12e04459c",
+          "expectedSha256": "1d014de77634dca5acdab5613b1f6a90dab16dd004d5359e704859f411b8af18",
+          "actualSha256": "1d014de77634dca5acdab5613b1f6a90dab16dd004d5359e704859f411b8af18",
           "match": true
         },
         "dml": {
-          "expectedSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
-          "actualSha256": "e638e17163f3c9c4b8ce82c7a540f2ba17c899a39d4067235116ea2fcacf1adf",
+          "expectedSha256": "af669f8ea1f619cf0ee44cbb6251a78ca411e30dec70c9fd6344e989f0c955d6",
+          "actualSha256": "af669f8ea1f619cf0ee44cbb6251a78ca411e30dec70c9fd6344e989f0c955d6",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9286,9 +9378,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -9296,7 +9396,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "aaeb5890ec023d2dab9de1493b1355e717352af28df54835a4b892115df0a233"
+      "receiptSha256": "68f962392fa435b65df945fbb642320bd290ddf2022252ac4adfaa9fc30a178c"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-36d6721ade0707a6:restart_consistency",
@@ -9312,11 +9412,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9330,51 +9430,89 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "16680d8a60ab24258d60236e007e83c60b3f4649ceaaa56bf2b8fee7d7373cc3",
-          "actualSha256": "16680d8a60ab24258d60236e007e83c60b3f4649ceaaa56bf2b8fee7d7373cc3",
+          "expectedSha256": "c281e6d079a1efab4f3a140e3852657b3d7120fbad1ed7b8b5912cc7e0418267",
+          "actualSha256": "c281e6d079a1efab4f3a140e3852657b3d7120fbad1ed7b8b5912cc7e0418267",
           "match": true
         },
         "dml": {
-          "expectedSha256": "8f4c441dbd1e72697f60bf896f053771c1c8999f5bb738eb820dfb3da08fcd05",
-          "actualSha256": "8f4c441dbd1e72697f60bf896f053771c1c8999f5bb738eb820dfb3da08fcd05",
+          "expectedSha256": "a99be6f694a3ffbbdbf5d4949c1cf7a9df7be25cbc2bd02acc8318f67d1fb674",
+          "actualSha256": "a99be6f694a3ffbbdbf5d4949c1cf7a9df7be25cbc2bd02acc8318f67d1fb674",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
             "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
             "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'market.pendant.info',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_MARKET_INFO',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'market_listing',?,'market.pendant.info',?,'Iris /펜던트거래정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 10,
-          "actualRowCount": 10
+          "expectedRowCount": 28,
+          "actualRowCount": 28
         },
         "lockOrder": {
           "expected": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
             "players",
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9396,7 +9534,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "4efd4f9933e4c68e699d2cd14f607959ebfd8761e4fe7a3e9356eeecb0388561"
+      "receiptSha256": "5d4fe422cce4a4013da645c1ec2e82753128ab3faebf08304b0c19b8f65e887c"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:read_positive",
@@ -9412,11 +9550,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9430,30 +9568,48 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
-          "actualSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+          "expectedSha256": "3e582c751929a1b0a69eedf8a87f600fe77c22262f13e245f008fa0900b1a2fc",
+          "actualSha256": "3e582c751929a1b0a69eedf8a87f600fe77c22262f13e245f008fa0900b1a2fc",
           "match": true
         },
         "dml": {
-          "expectedSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
-          "actualSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+          "expectedSha256": "9cf13534af507f36aea6743e897e540af0d0d5827e1504820d98faa43b3f5b25",
+          "actualSha256": "9cf13534af507f36aea6743e897e540af0d0d5827e1504820d98faa43b3f5b25",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
@@ -9464,7 +9620,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
@@ -9474,7 +9631,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9484,9 +9642,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -9494,7 +9660,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "a1860f9bce4201bb0efd6be7676583ded9a058edccbb46e6882e796025372214"
+      "receiptSha256": "d294d5afd648cc1daa0e2581813208c41b64d3f0ed967467c9676555c094510e"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:negative_guard",
@@ -9510,11 +9676,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9528,18 +9694,32 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
-          "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+          "expectedSha256": "fc8d6ffd57ac607b279f37edded24ee9d19a3e227d1161a524888962a346a50e",
+          "actualSha256": "fc8d6ffd57ac607b279f37edded24ee9d19a3e227d1161a524888962a346a50e",
           "match": true
         },
         "dml": {
-          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "expectedSha256": "1df2a8e51aae23366ac7f21c4936d333c63aa33562854dd6a48902d6ced1613b",
+          "actualSha256": "1df2a8e51aae23366ac7f21c4936d333c63aa33562854dd6a48902d6ced1613b",
           "match": true,
-          "expectedNormalizedStatements": [],
-          "actualNormalizedStatements": [],
-          "expectedRowCount": 0,
-          "actualRowCount": 0
+          "expectedNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+          ],
+          "actualNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+          ],
+          "expectedRowCount": 6,
+          "actualRowCount": 6
         },
         "lockOrder": {
           "expected": [],
@@ -9547,20 +9727,22 @@
           "match": true
         },
         "transaction": {
-          "expected": "READ_ONLY",
-          "actual": "READ_ONLY",
+          "expected": "COMMIT",
+          "actual": "COMMIT",
           "match": true,
           "expectedTimeline": [
-            "GUARD_REJECTED"
+            "BEGIN",
+            "COMMIT"
           ],
           "actualTimeline": [
-            "GUARD_REJECTED"
+            "BEGIN",
+            "COMMIT"
           ]
         }
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "c8a944036b57c22b8040d06905426bc2d2e231e4bbd7bb76ea2a3983e5c2d8fb"
+      "receiptSha256": "fe1b245287d3b037b698b01547ebac2f0cd5abf41490b2efb5357e5d3de90010"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:exact_output",
@@ -9576,11 +9758,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9594,30 +9776,48 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
-          "actualSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+          "expectedSha256": "3e582c751929a1b0a69eedf8a87f600fe77c22262f13e245f008fa0900b1a2fc",
+          "actualSha256": "3e582c751929a1b0a69eedf8a87f600fe77c22262f13e245f008fa0900b1a2fc",
           "match": true
         },
         "dml": {
-          "expectedSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
-          "actualSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+          "expectedSha256": "9cf13534af507f36aea6743e897e540af0d0d5827e1504820d98faa43b3f5b25",
+          "actualSha256": "9cf13534af507f36aea6743e897e540af0d0d5827e1504820d98faa43b3f5b25",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
@@ -9628,7 +9828,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
@@ -9638,7 +9839,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9648,9 +9850,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -9658,7 +9868,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "de105d3fded4ac3de39e23caa0fceff1da3bc20558725ce5dcdca2513f949f09"
+      "receiptSha256": "fa3cb02b08f671f5cbe9ea9fd1f18c6bb232817d85fc217f993da1d29bf13fd2"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:source_domain_dml_zero",
@@ -9674,11 +9884,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9692,30 +9902,48 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
-          "actualSha256": "9851c54c3e00a85374ddde2f79cfbad0cb80dc255bbec57c5e42f8d87e1fa250",
+          "expectedSha256": "3e582c751929a1b0a69eedf8a87f600fe77c22262f13e245f008fa0900b1a2fc",
+          "actualSha256": "3e582c751929a1b0a69eedf8a87f600fe77c22262f13e245f008fa0900b1a2fc",
           "match": true
         },
         "dml": {
-          "expectedSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
-          "actualSha256": "eb30cb91fda3260d95ba001be8e2b36e899950aba88344942d3618d93e63faeb",
+          "expectedSha256": "9cf13534af507f36aea6743e897e540af0d0d5827e1504820d98faa43b3f5b25",
+          "actualSha256": "9cf13534af507f36aea6743e897e540af0d0d5827e1504820d98faa43b3f5b25",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
@@ -9726,7 +9954,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
@@ -9736,7 +9965,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9746,9 +9976,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -9756,7 +9994,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "f4270fc71e6de92bd7659769ee0ab295d68c07013bd0fc312225e1c9ea0af675"
+      "receiptSha256": "c38b12d192b54f7c0331e724dfcd18cc787c6d75727f63b6c3e15b2aeb5a716b"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-8c6c3c3d598fe078:restart_consistency",
@@ -9772,11 +10010,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9790,40 +10028,76 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "6d826a5614eb90c637719d10fe926d3974a8d041bd70cf18aa1aa0df94f472f9",
-          "actualSha256": "6d826a5614eb90c637719d10fe926d3974a8d041bd70cf18aa1aa0df94f472f9",
+          "expectedSha256": "294e6b42fe776581b6b8787911cb75b5903caecff3e66b7d7073cfde3965b673",
+          "actualSha256": "294e6b42fe776581b6b8787911cb75b5903caecff3e66b7d7073cfde3965b673",
           "match": true
         },
         "dml": {
-          "expectedSha256": "9497c21d7bb92602e03482a7ff9235e04d555ee18981a4c12508c13835d71d9c",
-          "actualSha256": "9497c21d7bb92602e03482a7ff9235e04d555ee18981a4c12508c13835d71d9c",
+          "expectedSha256": "5fa99fbf49cabaf7734660ddec4d9781d915c74c58459da8be8d90db90482f47",
+          "actualSha256": "5fa99fbf49cabaf7734660ddec4d9781d915c74c58459da8be8d90db90482f47",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
             "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
             "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.info.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_INFO_READ',?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pendant.info.read',?,'Iris /펜던트정보',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 10,
-          "actualRowCount": 10
+          "expectedRowCount": 28,
+          "actualRowCount": 28
         },
         "lockOrder": {
           "expected": [
@@ -9834,7 +10108,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "actual": [
             "external_identities",
@@ -9844,7 +10119,8 @@
             "player_legacy_rank_profiles",
             "operations",
             "inventory_instances",
-            "item_definitions"
+            "item_definitions",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9866,7 +10142,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "35ecc7a411e399af04293820c3621b5cb5604e8263d3ef37d49726f6e50fd967"
+      "receiptSha256": "e73a492d9924da5976a0f2ae7caf18b2f512f4501b7de72bebb57f3f0e319a13"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:read_positive",
@@ -9882,11 +10158,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9900,37 +10176,57 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
-          "actualSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+          "expectedSha256": "70d3acc8bdfd23d742a5a5b4b7e0d70a9e4d615ed1bd126a35d531bd624cae6e",
+          "actualSha256": "70d3acc8bdfd23d742a5a5b4b7e0d70a9e4d615ed1bd126a35d531bd624cae6e",
           "match": true
         },
         "dml": {
-          "expectedSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
-          "actualSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+          "expectedSha256": "c8b7cc04c045d7a5fc3654d61e8a7b497e4023fa8d009a6a4f7eb93e97b78bad",
+          "actualSha256": "c8b7cc04c045d7a5fc3654d61e8a7b497e4023fa8d009a6a4f7eb93e97b78bad",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -9940,9 +10236,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -9950,7 +10254,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "2d8ef6968fcf1d1979353b402c8f1e601900bb04105188b93abb2fc3928a02ae"
+      "receiptSha256": "4c76fa3b375821ae21973fd2b57555e3a290cdf828f822d922c693fa8a606dd4"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:negative_guard",
@@ -9966,11 +10270,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -9984,18 +10288,32 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
-          "actualSha256": "163f58c7bcddcd71d2c7873b3430978ef862178cdfe61493ad6dd6ce852a5e65",
+          "expectedSha256": "fc8d6ffd57ac607b279f37edded24ee9d19a3e227d1161a524888962a346a50e",
+          "actualSha256": "fc8d6ffd57ac607b279f37edded24ee9d19a3e227d1161a524888962a346a50e",
           "match": true
         },
         "dml": {
-          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "expectedSha256": "1df2a8e51aae23366ac7f21c4936d333c63aa33562854dd6a48902d6ced1613b",
+          "actualSha256": "1df2a8e51aae23366ac7f21c4936d333c63aa33562854dd6a48902d6ced1613b",
           "match": true,
-          "expectedNormalizedStatements": [],
-          "actualNormalizedStatements": [],
-          "expectedRowCount": 0,
-          "actualRowCount": 0
+          "expectedNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+          ],
+          "actualNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+          ],
+          "expectedRowCount": 6,
+          "actualRowCount": 6
         },
         "lockOrder": {
           "expected": [],
@@ -10003,20 +10321,22 @@
           "match": true
         },
         "transaction": {
-          "expected": "READ_ONLY",
-          "actual": "READ_ONLY",
+          "expected": "COMMIT",
+          "actual": "COMMIT",
           "match": true,
           "expectedTimeline": [
-            "GUARD_REJECTED"
+            "BEGIN",
+            "COMMIT"
           ],
           "actualTimeline": [
-            "GUARD_REJECTED"
+            "BEGIN",
+            "COMMIT"
           ]
         }
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "46366c7613aab1dbc7e6c4ea06cf7e62a4468a5ccff5a93985fbbf375edc69d6"
+      "receiptSha256": "53357fa2e1c5d4f61bb1db1c85bd0ceadf4edfc530504d8d8b3cd96c910cce5b"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:exact_output",
@@ -10032,11 +10352,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -10050,37 +10370,57 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
-          "actualSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+          "expectedSha256": "70d3acc8bdfd23d742a5a5b4b7e0d70a9e4d615ed1bd126a35d531bd624cae6e",
+          "actualSha256": "70d3acc8bdfd23d742a5a5b4b7e0d70a9e4d615ed1bd126a35d531bd624cae6e",
           "match": true
         },
         "dml": {
-          "expectedSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
-          "actualSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+          "expectedSha256": "c8b7cc04c045d7a5fc3654d61e8a7b497e4023fa8d009a6a4f7eb93e97b78bad",
+          "actualSha256": "c8b7cc04c045d7a5fc3654d61e8a7b497e4023fa8d009a6a4f7eb93e97b78bad",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -10090,9 +10430,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -10100,7 +10448,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "3a8684ac64c959546fd85ddc72273183f08283c4c599c81c1a5d485aa03b4e64"
+      "receiptSha256": "5407b0bea1f6bd7a0d242f127358eeeb09ae675bb229cbc81f29f8b6895b9e75"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:source_domain_dml_zero",
@@ -10116,11 +10464,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -10134,37 +10482,57 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
-          "actualSha256": "acbd2d191a7aafc4401ef7fb00e6a28d33c7b471d8600e3722ed97b8a8cec1c3",
+          "expectedSha256": "70d3acc8bdfd23d742a5a5b4b7e0d70a9e4d615ed1bd126a35d531bd624cae6e",
+          "actualSha256": "70d3acc8bdfd23d742a5a5b4b7e0d70a9e4d615ed1bd126a35d531bd624cae6e",
           "match": true
         },
         "dml": {
-          "expectedSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
-          "actualSha256": "e7c8a909044ed86344c35fd193ed59b74ba349967168d39de6441687b238f6e2",
+          "expectedSha256": "c8b7cc04c045d7a5fc3654d61e8a7b497e4023fa8d009a6a4f7eb93e97b78bad",
+          "actualSha256": "c8b7cc04c045d7a5fc3654d61e8a7b497e4023fa8d009a6a4f7eb93e97b78bad",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 5,
-          "actualRowCount": 5
+          "expectedRowCount": 14,
+          "actualRowCount": 14
         },
         "lockOrder": {
           "expected": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -10174,9 +10542,17 @@
           "match": true,
           "expectedTimeline": [
             "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
             "COMMIT"
           ],
           "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT",
             "BEGIN",
             "COMMIT"
           ]
@@ -10184,7 +10560,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "c8d36347c586eff15b2a16bc1abd0b8cb8b321f0c9a42685748c87852afd93dc"
+      "receiptSha256": "adeee2a80147b08abb54e4f8949998834ab35e1d2b471386eb20c659663149b9"
     },
     {
       "receiptId": "receipt:wave10:runtime-dispatch-19076db78c2eefb9:restart_consistency",
@@ -10200,11 +10576,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave10:pendant-read:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave10-pendant-read-v1.json",
-        "sha256": "9741751e75b54c2a9b8af78d3690fa89ee4bd07e9192b5f3acdcb30d4f00dd19"
+        "sha256": "e12bff3c2458c23951cb2e3ee83584fbb49277b690ed361db637c653d37cb673"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave10-pendant-read.mjs",
-        "targetSourceSha256": "49dfd610223bc5c706133d9ebaf23ab75623ad6b27ecd603136bdd9b491692e6",
+        "targetSourceSha256": "2d222b295baeac245e644b3ea06225e4cccdc8016a8c5ae2cf66c6b4cf90949b",
         "exportName": "executeWave10PendantRead"
       },
       "scenario": {
@@ -10218,47 +10594,85 @@
           "match": true
         },
         "result": {
-          "expectedSha256": "b5861fb41b9498d7a99e77b922eba7713699b88aee08d1da542c758f06d64b14",
-          "actualSha256": "b5861fb41b9498d7a99e77b922eba7713699b88aee08d1da542c758f06d64b14",
+          "expectedSha256": "a6395aa8a3af6203c04d2aa171cc7965e15184cda0035efc52dcb78d5f0e19fe",
+          "actualSha256": "a6395aa8a3af6203c04d2aa171cc7965e15184cda0035efc52dcb78d5f0e19fe",
           "match": true
         },
         "dml": {
-          "expectedSha256": "7d9bf525c8b5a05fb2bae8ed96f8f50d0d8db7a74692e98e3247190844cf4bd9",
-          "actualSha256": "7d9bf525c8b5a05fb2bae8ed96f8f50d0d8db7a74692e98e3247190844cf4bd9",
+          "expectedSha256": "224eefcafda9d453d0fa07038e04d3af6285c6937726f48078005a694ceed73d",
+          "actualSha256": "224eefcafda9d453d0fa07038e04d3af6285c6937726f48078005a694ceed73d",
           "match": true,
           "expectedNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
             "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
           "actualNormalizedStatements": [
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
             "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'pendant.probability.read',?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
             "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'PENDANT_PROBABILITY_READ',?,'completed','success',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'item_definition',NULL,'pendant.probability.read','success','Iris /펜던트확률',?,UTC_TIMESTAMP(3))",
-            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+            "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+            "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
           ],
-          "expectedRowCount": 10,
-          "actualRowCount": 10
+          "expectedRowCount": 28,
+          "actualRowCount": 28
         },
         "lockOrder": {
           "expected": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "actual": [
-            "operations"
+            "operations",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -10280,7 +10694,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d89fe37928763f55955482aff999d7921ed15e3fac3446f2b26149ba52489e9b"
+      "receiptSha256": "324e4af6e4e54d9e51a555538813a7d27e55bfa419a83cdafc913747bb461fc6"
     }
   ]
 }

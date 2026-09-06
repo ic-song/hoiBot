@@ -1,21 +1,21 @@
 # Wave10 검증
 
 - fixture generation: PASS (3 consumer, 15 receipt binding, 18 risk binding)
-- focused Wave10: 6/6 PASS
+- focused Wave10: 8/8 PASS (Wave10 전용 30초 child timeout 선택 및 ETIMEDOUT fail-close 포함)
 - strict ledger: AJV 2020-12 schema/receipt strict PASS, 1,111/1,111 ID, missing·duplicate·unknown 0, direct PASS 26
-- strict entry set: `067012414cc94318e9e3ad28eefcc458dc8bc73837cfe6418d52563fba65a48f`
-- combined Wave0~10 (`--test-concurrency=1`): 11 suites, 39/39 PASS
+- strict entry set: `ce23ee41caa463e84d727a8a2e427206068a309d848e95eee385e16d1f19cc3f`
+- combined Wave0~10 (`--test-concurrency=1`): 11 suites, 41/41 PASS
 - prior receipt: 119 exact prefix/hash/identity 보존, total 134 unique
-- transaction: 정상 DML5, restart DML10, BEGIN/COMMIT 및 lockOrder 비교
-- negative: query/DML0, app duplicate·wrong channel은 routing 이후 service DML0
-- rollback: middle DML 실패 후 persisted0 계약
+- transaction: 정상 DML14, restart DML28, processor/service/outbox delivery BEGIN/COMMIT 및 lockOrder 비교
+- negative: 운영 채널 invalid command는 ingress query2/DML6 뒤 service0/business evidence0, 중복·identity 누락·비운영 채널도 service 호출 수와 operations/outbox_messages/command_executions/command_audit 전후 행 스냅샷 직접 비교
+- rollback: processor commit 뒤 service middle DML 실패/ROLLBACK 및 네 evidence table persisted0 계약
 - fixture/harness/target/consumer canonical hash 고정 및 tamper fail-close
 - probability: 13종, 합계 100
 - BIGINT: 64-bit 초과 listing/instance 식별자 보존
 - typecheck: PASS
 - object data model contract: 등록 대상 103개 PASS
 - build / diff check: PASS
-- independent canonical oracle: committed SQL/params/raw rows/result/output vector와 실제 service capture byte-exact PASS
+- independent canonical oracle: 실제 `buildApp().inject`가 기록한 HTTP/SQL/params/raw rows/result/output/transaction vector와 committed canonical byte-exact PASS
 - isolated MariaDB 3330: 실제 Fastify Iris HTTP ingress 및 3 consumer InnoDB concurrency/rollback 7/7 PASS
 - 실제 lock: 첫 transaction audit trigger 보유 중 둘째 동일 event 호출이 완료되지 않음을 관찰, 최종 operation/execution 각 1행
 - 실제 rollback: audit 중간 실패 뒤 operations/outbox/executions/audit 모두 0행, 3306 listener 불변
