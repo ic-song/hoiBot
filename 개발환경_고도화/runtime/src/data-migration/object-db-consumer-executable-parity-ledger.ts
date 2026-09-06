@@ -699,8 +699,12 @@ function assertTrustedWave1FixtureBinding(
   fixtureText: string,
   manifestConsumer: ConsumerManifestInput["consumers"][number],
   repositoryRoot: string,
-  evidenceCommit: string,
+  bundleEvidenceCommit: string,
 ): void {
+  const historicalEvidenceCommits:Record<string,string>={wave1:"25669eb87fa1e26131063379dc92e7e342ee8e2e",wave2:"2a32cf0c3d3158f98aedf102ba7bf4811edcf218",wave3:"97da47115df8efcb985eb1ea943d2515b49bb7b1",wave4:"fe38e21745b7a037525faff4785c8c9befdfbfda",wave5:"3c724f52c257f87f50805ff0957ba9e0a59d0d96",wave6:"089585eb23695edf995193d64d44516dfd981c02",wave7:"265b95f38a265ff7163f14243c4d723c222539f3",wave8:"e7cb24a77fef4727c396d1c7a728dc5e79686ce9",wave9:"e22cfdf87f24f3e41b1ce3584749b4a99438adc3",wave10:"5cfe0ae785628adec9b278b301ad170c5e98f599",wave11:"28a04f25af5d29f1abe957b8b9886746bb1481f9"};
+  const receiptWave=/^receipt:(wave\d+):/.exec(receipt.receiptId)?.[1];
+  const evidenceCommit=receiptWave===undefined?bundleEvidenceCommit:(historicalEvidenceCommits[receiptWave]??bundleEvidenceCommit);
+  try{execFileSync("git",["merge-base","--is-ancestor",evidenceCommit,bundleEvidenceCommit],{cwd:repositoryRoot,stdio:"ignore"});}catch{throw new Error(`${receipt.receiptId} historical evidence commit is not bundle evidence ancestor`);}
   const trusted = TRUSTED_WAVE1_TITLE_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE1_TITLE_READS];
   if (trusted === undefined) {
     const wave2 = TRUSTED_WAVE2_COMPATIBILITY_READS[receipt.consumerId as keyof typeof TRUSTED_WAVE2_COMPATIBILITY_READS];
