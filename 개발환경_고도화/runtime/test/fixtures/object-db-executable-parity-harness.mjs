@@ -66,6 +66,12 @@ function createRunnerDatabase(consumer) {
         external_identity_id: BigInt(row.externalIdentityId), display_name: row.displayName,
         rank_emoji: row.rankEmoji, provider_code: row.providerCode,
       }));
+      if (consumer.databaseRowShape === "pet-title-read-row") return consumer.mockRows.map((row) => ({
+        owned_pet_title_id: row.instanceId, title_name: row.displayName,
+        acquisition_sequence: BigInt(row.acquisitionSequence), acquired_time: row.acquiredAt,
+        acquisition_price: row.acquisitionPrice === null ? null : BigInt(row.acquisitionPrice),
+        base_sale_price: BigInt(row.baseSalePrice), selected_flag: row.equipped ? 1 : 0,
+      }));
       return consumer.mockRows.map((row) => ({
         owned_title_id: row.ownedTitleId,
         title_definition_id: row.titleDefinitionId,
