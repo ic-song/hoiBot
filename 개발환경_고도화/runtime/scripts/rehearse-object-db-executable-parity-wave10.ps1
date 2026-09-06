@@ -53,9 +53,9 @@ function Invoke-Checked([scriptblock]$command) {
 
 try {
   Assert-SafeRoot
-  if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { throw "Wave9 port already in use" }
+  if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) { throw "Wave10 port already in use" }
   foreach ($binary in @($installDatabase, $serverBinary, $clientBinary)) { if (-not (Test-Path -LiteralPath $binary -PathType Leaf)) { throw "Missing MariaDB binary: $binary" } }
-  if (Test-Path -LiteralPath $temporaryRoot) { throw "Wave9 temporary directory exists" }
+  if (Test-Path -LiteralPath $temporaryRoot) { throw "Wave10 temporary directory exists" }
   New-Item -ItemType Directory -Path $temporaryRoot | Out-Null
   Invoke-Checked { & $installDatabase "--datadir=$dataDirectory" "--password=$password" "--port=$port" --allow-remote-root-access --silent }
   Start-Isolated
