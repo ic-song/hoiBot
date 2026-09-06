@@ -15,6 +15,12 @@ import {
 
 export const OBJECT_DB_EXECUTABLE_PARITY_LEDGER_FORMAT = "hoibot-object-db-consumer-executable-parity-ledger-v1" as const;
 export const OBJECT_DB_EXECUTABLE_PARITY_WAVE0_EVIDENCE_COMMIT = "f07021701d2f058531512b0e805dc0d9c4b2a3fb" as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT = "28a04f25af5d29f1abe957b8b9886746bb1481f9" as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_ROOT_COMMIT = "bfa3a1b868b88676cd4ea82b44a6bd22f280ca62" as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PATH = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave11-v1.json" as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT = 144 as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES = 587_926 as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256 = "5988f41608a9d5024f8ff11538b6cb9f7460bce76cb511607d104f5e0142b639" as const;
 const OBJECT_DB_PARITY_RUNNER = "NODE_OBJECT_DB_PARITY_V1" as const;
 const OBJECT_DB_PARITY_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE8_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs" as const;
@@ -457,6 +463,11 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
   assertCommit(value.classificationBaseCommit, "execution receipt bundle classificationBaseCommit");
   assertCommit(value.evidenceCommit, "execution receipt bundle evidenceCommit");
   if (!Array.isArray(value.receipts)) throw new Error("execution receipt bundle receipts must be an array");
+  if(value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave12:"))){
+    if(value.receipts.length!==149)throw new Error("Wave12 receipt bundle cardinality drift");
+    const historicalPrefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT));
+    if(Buffer.byteLength(historicalPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES||sha256CanonicalText(historicalPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT}`);
+  }
   return value as unknown as ObjectDbConsumerExecutionReceiptBundle;
 }
 
@@ -859,6 +870,13 @@ function assertReceiptGitProvenance(
 ): void {
   const repositoryRoot = gitRepositoryRoot();
   assertEvidenceCommitAncestry(repositoryRoot, evidenceCommit);
+  if(/^receipt:wave(?:[1-9]|10|11):/.test(receipt.receiptId)){
+    const pinnedBundle=JSON.parse(readCommitBlob(repositoryRoot,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_ROOT_COMMIT,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PATH)) as ObjectDbConsumerExecutionReceiptBundle;
+    const compactPrefix=JSON.stringify(pinnedBundle.receipts);
+    if(pinnedBundle.evidenceCommit!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT||pinnedBundle.receipts.length!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT||Buffer.byteLength(compactPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES||sha256CanonicalText(compactPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256)throw new Error("pinned Wave11 receipt root drift");
+    const pinned=pinnedBundle.receipts.find(candidate=>candidate.receiptId===receipt.receiptId);
+    if(pinned===undefined||JSON.stringify(pinned)!==JSON.stringify(receipt))throw new Error(`historical receipt fingerprint drift: ${receipt.receiptId}`);
+  }
   for (const evidence of [
     { path: receipt.harness.path, sha256: receipt.harness.sourceSha256 },
     { path: receipt.fixture.path, sha256: receipt.fixture.sha256 },
