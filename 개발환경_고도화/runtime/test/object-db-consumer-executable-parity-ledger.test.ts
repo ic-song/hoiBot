@@ -28,7 +28,7 @@ const paths = {
   transitionContract: "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
   executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave0-v1.json",
 } as const;
-const wave1ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave12-v1.json";
+const wave1ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave13-v1.json";
 const read = (path: string): string => readFileSync(resolve(repoRoot, path), "utf8");
 const manifestText = read(paths.consumerManifest);
 const manifest = JSON.parse(manifestText) as ConsumerManifestInput;
@@ -163,6 +163,10 @@ describe("object DB executable parity ledger Wave0", () => {
     assert.equal(ledger.entries.find((entry) => entry.consumerId === consumerId)?.verdict, "DIRECT_PASS");
     assert.equal(ledger.coverage.provenConsumers, 1);
   });
+
+  it("does not accept the superseded Wave8 direct-service server statistics receipts without Wave13 correction",()=>{const oldPath="개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave12-v1.json",bundle=JSON.parse(read(oldPath))as ObjectDbConsumerExecutionReceiptBundle,files=Object.fromEntries([...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))].map(path=>[path,read(path)])),ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:oldPath},evidenceFileTexts:files});assert.notEqual(ledger.entries.find(entry=>entry.consumerId==="admin-command-5e04d0767d4c2abc")?.verdict,"DIRECT_PASS");});
+
+  it("rejects recomputed Wave12 expected/actual hashes after Wave13 supersedes executable replay",()=>{const bundle=JSON.parse(read(wave1ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,receipt=bundle.receipts.find(candidate=>candidate.receiptId.startsWith("receipt:wave12:"))!;receipt.expectedActual.reply.expectedSha256="0".repeat(64);receipt.expectedActual.reply.actualSha256="0".repeat(64);receipt.receiptSha256=receiptHash(receipt);assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave1ReceiptPath}}),/historical receipt fingerprint drift at 2d1b6a4545d2b8beaaf95d3859b237248c4b648b/);});
 
   it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {
     const baseline = buildObjectDbConsumerExecutableParityLedger(baseInput);

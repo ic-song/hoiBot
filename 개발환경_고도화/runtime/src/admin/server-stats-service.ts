@@ -2,94 +2,60 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
 import { CommandDispatcher, MariaCommandDispatchRepository } from "../dispatch/command-dispatcher.js";
 import { ApplicationError } from "../shared/application-error.js";
-import { MariaServerStatsRepository } from "./maria-server-stats-repository.js";
 import type { ServerStatCount } from "./server-stats-repository.js";
 
 export type ServerStatsEnvironment="prod"|"dev";
-export interface ServerStatsResult {
-  status:"counted";
-  environment:ServerStatsEnvironment;
-  databaseIdentity:string;
-  snapshotVersion:string;
-  snapshotAt:string;
-  activeMemberCount:string;
-  rows:Array<{serverCode:string;serverDisplayName:string;activeMemberCount:string}>;
-  data:string;
-  outboxId:string;
-  auditId:string;
-}
+export interface ServerStatsRuntimeContext { environmentCode:ServerStatsEnvironment; databaseIdentity?:string; }
+export interface ServerStatsResult { status:"counted";requestFingerprint:string;environment:ServerStatsEnvironment;databaseIdentity:string;snapshotVersion:string;snapshotAt:string;memberCount:string;activeMemberCount:string;unregisteredMemberCount:string;rows:Array<{serverCode:string;serverDisplayName:string;activeMemberCount:string}>;data:string;outboxId:string;auditId:string; }
+const LEGACY_ALLSEE="\u200b".repeat(500);
 
-// 인자나 접미 문구가 없는 정확한 서버 통계 명령만 허용합니다.
 export function isServerStatsCommand(message:string|undefined):boolean{return message==="/서버통계";}
-
-// 한국어 서버 표시 순서를 보존하며 빈 결과와 전체 활성 회원 수를 명시합니다.
-export function formatServerStats(rows:ServerStatCount[]):string{
-  const lines=["📊 서버 통계","━━━━━━━━━━━━"];
-  if(rows.length===0)lines.push("활성 서버 회원이 없습니다.");
-  else for(const row of rows)lines.push(`${row.serverDisplayName}: ${formatNumber(row.activeMemberCount)}명`);
+export function formatServerStats(rows:ServerStatCount[],memberCount:number,unregisteredMemberCount:number):string{
+  if(memberCount===0)return "📭 등록된 유저가 없습니다.";
   const total=rows.reduce((sum,row)=>sum+row.activeMemberCount,0n);
-  lines.push("━━━━━━━━━━━━",`전체 활성 회원: ${formatNumber(total)}명`);
-  return lines.join("\n");
+  let output=`📊 서버유저 통계 📊\n\n서버 전체인원: ${total.toString()}명\n\n${LEGACY_ALLSEE}가능 서버:\n`;
+  for(const row of rows)output+=`- ${row.serverDisplayName}: ${row.activeMemberCount.toString()}명\n`;
+  if(unregisteredMemberCount>0)output+=`\n※ 서버 미등록 인원: ${unregisteredMemberCount}명`;
+  return output;
 }
 
-// DB 환경 identity와 한 transaction의 회원 집계를 고정해 감사 가능한 서버 통계 snapshot을 만듭니다.
 export class ServerStatsService{
-  constructor(private readonly database:DatabaseClient){}
-
-  async handleIris(input:{externalUserId:string;channelId:string;message:string;eventId:string}):Promise<
-    {status:"changed";data:string;outboxId:string}|{status:"shadow"|"legacy_fallback"|"handled_no_reply"}
-  >{
+  constructor(private readonly database:DatabaseClient,private readonly runtime?:ServerStatsRuntimeContext){}
+  async handleIris(input:{externalUserId:string;channelId:string;message:string;eventId:string}):Promise<{status:"changed";data:string;outboxId:string}|{status:"shadow"|"legacy_fallback"|"handled_no_reply"}>{
+    if(this.runtime===undefined)return{status:"legacy_fallback"};
     const decision=await new CommandDispatcher(new MariaCommandDispatchRepository(this.database),{enabled:true,allowAllCanaries:false,canaryUserIds:new Set()}).resolve({eventId:input.eventId,message:input.message,userId:input.externalUserId,hasTrustedDisplayName:true});
-    if(decision.route==="SHADOW")return{status:"shadow"};
-    if(decision.route!=="MODERN")return{status:"legacy_fallback"};
-    const result=await this.read({eventId:input.eventId,externalUserId:input.externalUserId,destinationId:input.channelId,environment:"prod",requestText:input.message});
-    if(result===null)return{status:"handled_no_reply"};
-    return{status:"changed",data:result.data,outboxId:result.outboxId};
+    if(decision.route==="SHADOW")return{status:"shadow"};if(decision.route!=="MODERN")return{status:"legacy_fallback"};
+    const result=await this.read({eventId:input.eventId,externalUserId:input.externalUserId,channelId:input.channelId,destinationId:input.channelId,environment:this.runtime.environmentCode,expectedDatabaseIdentity:this.runtime.databaseIdentity,requestText:input.message});
+    return result===null?{status:"handled_no_reply"}:{status:"changed",data:result.data,outboxId:result.outboxId};
   }
-
-  async read(input:{eventId:string;externalUserId:string;destinationId:string;environment:ServerStatsEnvironment;requestText?:string}):Promise<ServerStatsResult|null>{
-    const operator=(await this.database.query<Array<{id:bigint}>>(
-      `SELECT operator.id FROM external_identities identity
-       JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id
-       JOIN admin_operators operator ON operator.id=mapping.operator_id
-       WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active'
-       AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny')
-       AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow')
-         OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id))
-       LIMIT 1`,[input.externalUserId]))[0];
-    if(operator===undefined)return null;
-    const eventKey=input.eventId.length<=191?input.eventId:`sha256:${createHash("sha256").update(input.eventId).digest("hex")}`;
-    const requestHash=createHash("sha256").update(`${input.environment}\n${input.requestText??"/서버통계"}`).digest("hex");
-    return withRetry(()=>this.database.withTransaction(async transaction=>{
-      const previous=(await transaction.query<Array<{id:bigint;status:string;result_json:string|ServerStatsResult|null;age_seconds:bigint}>>("SELECT id,status,result_json,TIMESTAMPDIFF(SECOND,created_at,UTC_TIMESTAMP(3)) age_seconds FROM operations WHERE idempotency_scope='stats.server.read' AND idempotency_key=? FOR UPDATE",[eventKey]))[0];
-      if(previous?.status==="completed"&&previous.result_json!==null){
-        const execution=(await transaction.query<Array<{request_sha256:string}>>("SELECT request_sha256 FROM admin_server_stat_read_executions WHERE operation_id=?",[previous.id]))[0];
-        if(execution===undefined||execution.request_sha256!==requestHash)throw new ApplicationError("SERVER_STATS_REPLAY_MISMATCH","동일 이벤트의 서버 통계 요청 내용이 다릅니다.",409);
-        return parseResult(previous.result_json);
-      }
-      if(previous?.status==="processing"&&BigInt(previous.age_seconds)<300n)throw new ApplicationError("SERVER_STATS_IN_PROGRESS","같은 서버 통계 요청을 처리 중입니다.",409);
-      const environment=(await transaction.query<Array<{database_identity:string}>>("SELECT database_identity FROM legacy_snapshot_environments WHERE environment_code=? FOR UPDATE",[input.environment]))[0];
-      if(environment===undefined)throw new ApplicationError("SERVER_STATS_ENVIRONMENT_MISSING","서버 통계 DB 환경 identity가 없습니다.",409);
-      const clock=(await transaction.query<Array<{snapshot_at:string}>>("SELECT DATE_FORMAT(UTC_TIMESTAMP(3),'%Y-%m-%d %H:%i:%s.%f') snapshot_at"))[0]!;
-      const rows=await new MariaServerStatsRepository(transaction).listActiveMemberCounts();
-      const total=rows.reduce((sum,row)=>sum+row.activeMemberCount,0n),data=formatServerStats(rows);
-      const operation=previous===undefined
-        ?await transaction.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",[randomUUID(),eventKey,operator.id])
-        :{insertId:previous.id};
-      if(previous!==undefined)await transaction.execute("UPDATE operations SET status='processing',result_json=NULL,created_at=UTC_TIMESTAMP(3),completed_at=NULL WHERE id=?",[previous.id]);
+  async read(input:{eventId:string;externalUserId:string;channelId?:string;destinationId:string;environment:ServerStatsEnvironment;expectedDatabaseIdentity?:string;requestText?:string}):Promise<ServerStatsResult|null>{
+    const idempotencyKey=eventKey(input.eventId),channelId=input.channelId??input.destinationId,requestFingerprint=sha256([input.environment,input.eventId,input.requestText??"/서버통계",input.externalUserId,channelId,input.destinationId].join("\n"));
+    return withTransientRetry(()=>this.database.withTransaction(async transaction=>{
+      // 레거시보다 강한 현대 권한(stats.server.read)을 적용하고 deny override를 우선합니다.
+      const operator=(await transaction.query<Array<{id:bigint}>>(`SELECT operator.id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny') AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow') OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id)) ORDER BY operator.id LIMIT 1 FOR UPDATE`,[input.externalUserId]))[0];
+      if(operator===undefined)return null;
+      const reserved=await transaction.execute("INSERT IGNORE INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',?,UTC_TIMESTAMP(3))",[randomUUID(),idempotencyKey,operator.id,JSON.stringify({requestFingerprint})]);
+      const previous=(await transaction.query<Array<{id:bigint;status:string;result_json:string|ServerStatsResult|null;age_seconds:bigint}>>("SELECT id,status,result_json,TIMESTAMPDIFF(SECOND,created_at,UTC_TIMESTAMP(3)) age_seconds FROM operations WHERE idempotency_scope='stats.server.read' AND idempotency_key=? FOR UPDATE",[idempotencyKey]))[0]!;
+      if(reserved.affectedRows===0n){const stored=parseStored(previous.result_json);if(stored.requestFingerprint!==requestFingerprint)throw new ApplicationError("SERVER_STATS_REPLAY_MISMATCH","동일 이벤트의 서버 통계 요청 내용이 다릅니다.",409);if(previous.status==="completed"&&"status"in stored)return stored;if(previous.status==="processing"&&BigInt(previous.age_seconds)<300n)throw new ApplicationError("SERVER_STATS_IN_PROGRESS","같은 서버 통계 요청을 처리 중입니다.",409);await transaction.execute("UPDATE operations SET status='processing',result_json=?,created_at=UTC_TIMESTAMP(3),completed_at=NULL WHERE id=?",[JSON.stringify({requestFingerprint}),previous.id]);}
+      const environment=(await transaction.query<Array<{database_identity:string;active_snapshot_set_id:bigint|null}>>("SELECT database_identity,active_snapshot_set_id FROM legacy_snapshot_environments WHERE environment_code=? FOR UPDATE",[input.environment]))[0];
+      if(environment===undefined||environment.active_snapshot_set_id===null)throw invalidSnapshot(`${input.environment} 활성 snapshot이 없습니다.`);if(input.expectedDatabaseIdentity!==undefined&&environment.database_identity!==input.expectedDatabaseIdentity)throw invalidSnapshot("검증된 DB identity와 snapshot 환경이 일치하지 않습니다.");
+      const snapshotSet=(await transaction.query<Array<{id:bigint;database_identity:string;snapshot_version:bigint;snapshot_at:string}>>("SELECT id,database_identity,snapshot_version,DATE_FORMAT(snapshot_at,'%Y-%m-%d %H:%i:%s') snapshot_at FROM legacy_snapshot_sets WHERE id=? AND environment_code=? AND snapshot_status='ready' FOR UPDATE",[environment.active_snapshot_set_id,input.environment]))[0];
+      if(snapshotSet===undefined||snapshotSet.database_identity!==environment.database_identity)throw invalidSnapshot("DB environment identity와 snapshot이 일치하지 않습니다.");
+      const source=(await transaction.query<Array<{raw_json:string;content_sha256:string;read_status:string}>>("SELECT raw_json,content_sha256,read_status FROM legacy_source_snapshots WHERE snapshot_set_id=? AND source_code='member' FOR UPDATE",[snapshotSet.id]))[0];
+      if(source===undefined||source.read_status!=="valid"||sha256(source.raw_json)!==source.content_sha256)throw invalidSnapshot("member 원본 또는 hash가 올바르지 않습니다.");
+      const projected=projectLegacyMemberStats(source.raw_json),data=formatServerStats(projected.rows,projected.memberCount,projected.unregisteredMemberCount),operationId=previous.id,total=projected.rows.reduce((sum,row)=>sum+row.activeMemberCount,0n);
       const snapshot=await transaction.execute("INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",[input.environment,environment.database_identity,total]);
-      for(let index=0;index<rows.length;index+=1){const row=rows[index]!;await transaction.execute("INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",[snapshot.insertId,row.serverCode,row.serverDisplayName,row.activeMemberCount,index+1]);}
-      const outbox=await transaction.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[operation.insertId,input.destinationId,JSON.stringify({data})]);
-      await transaction.execute("INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[input.eventId,operation.insertId]);
-      await transaction.execute("INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",[operation.insertId,snapshot.insertId,requestHash,createHash("sha256").update(data).digest("hex")]);
-      const audit=await transaction.execute("INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",[operation.insertId,operator.id,snapshot.insertId,JSON.stringify({readOnly:true,environment:input.environment,databaseIdentity:environment.database_identity,snapshotVersion:snapshot.insertId.toString(),activeMemberCount:total.toString(),serverCount:rows.length})]);
-      const result:ServerStatsResult={status:"counted",environment:input.environment,databaseIdentity:environment.database_identity,snapshotVersion:snapshot.insertId.toString(),snapshotAt:clock.snapshot_at,activeMemberCount:total.toString(),rows:rows.map(row=>({serverCode:row.serverCode,serverDisplayName:row.serverDisplayName,activeMemberCount:row.activeMemberCount.toString()})),data,outboxId:outbox.insertId.toString(),auditId:audit.insertId.toString()};
-      await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",[JSON.stringify(result),operation.insertId]);
-      return result;
+      for(let index=0;index<projected.rows.length;index+=1){const row=projected.rows[index]!;await transaction.execute("INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",[snapshot.insertId,row.serverCode,row.serverDisplayName,row.activeMemberCount,index+1]);}
+      const outbox=await transaction.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[operationId,input.destinationId,JSON.stringify({data})]);await transaction.execute("INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[input.eventId,operationId]);await transaction.execute("INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",[operationId,snapshot.insertId,requestFingerprint,sha256(data)]);
+      const audit=await transaction.execute("INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",[operationId,operator.id,snapshot.insertId,JSON.stringify({readOnly:true,securityDivergence:"active role + deny override",requestFingerprint,environment:input.environment,databaseIdentity:environment.database_identity,snapshotVersion:snapshotSet.snapshot_version.toString(),memberCount:projected.memberCount,registeredMemberCount:total.toString(),unregisteredMemberCount:projected.unregisteredMemberCount})]);
+      const result:ServerStatsResult={status:"counted",requestFingerprint,environment:input.environment,databaseIdentity:environment.database_identity,snapshotVersion:snapshotSet.snapshot_version.toString(),snapshotAt:snapshotSet.snapshot_at,memberCount:projected.memberCount.toString(),activeMemberCount:total.toString(),unregisteredMemberCount:projected.unregisteredMemberCount.toString(),rows:projected.rows.map(row=>({...row,activeMemberCount:row.activeMemberCount.toString()})),data,outboxId:outbox.insertId.toString(),auditId:audit.insertId.toString()};await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",[JSON.stringify(result),operationId]);return result;
     }));
   }
 }
 
-function formatNumber(value:bigint):string{return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");}
-function parseResult(value:string|ServerStatsResult):ServerStatsResult{return typeof value==="string"?JSON.parse(value) as ServerStatsResult:value;}
-async function withRetry<T>(work:()=>Promise<T>):Promise<T>{for(let attempt=0;attempt<3;attempt+=1){try{return await work();}catch(error){const e=error as{code?:unknown;errno?:unknown};if(attempt===2||(e.code!=="ER_LOCK_DEADLOCK"&&e.errno!==1213&&e.code!=="ER_DUP_ENTRY"&&e.errno!==1062))throw error;}}throw new Error("Server stats retry exhausted.");}
+export function projectLegacyMemberStats(rawJson:string):{memberCount:number;unregisteredMemberCount:number;rows:ServerStatCount[]}{
+  let parsed:unknown;try{parsed=JSON.parse(rawJson)as unknown;}catch{throw invalidSnapshot("member JSON 파싱에 실패했습니다.");}if(!isRecord(parsed)||!isRecord(parsed.member))throw invalidSnapshot("member 최상위 구조가 올바르지 않습니다.");
+  const names=Object.keys(parsed.member),counts=new Map<string,bigint>();let unregisteredMemberCount=0;for(const name of names){const member=parsed.member[name];if(!isRecord(member)||!member.server||member.server===""){unregisteredMemberCount+=1;continue;}const serverName=String(member.server);counts.set(serverName,(counts.get(serverName)??0n)+1n);}
+  const rows=[...counts].sort(([left],[right])=>left.localeCompare(right,"ko")).map(([serverDisplayName,activeMemberCount])=>({serverCode:`legacy-${sha256(serverDisplayName).slice(0,32)}`,serverDisplayName,activeMemberCount}));return{memberCount:names.length,unregisteredMemberCount,rows};
+}
+function invalidSnapshot(detail:string):ApplicationError{return new ApplicationError("SERVER_STATS_SNAPSHOT_INVALID",`서버 통계 snapshot이 올바르지 않습니다: ${detail}`,409);}function isRecord(value:unknown):value is Record<string,unknown>{return typeof value==="object"&&value!==null&&!Array.isArray(value);}function sha256(value:string):string{return createHash("sha256").update(value).digest("hex");}function eventKey(value:string):string{return value.length<=191?value:`sha256:${sha256(value)}`;}function parseStored(value:string|ServerStatsResult|null):{requestFingerprint:string}|ServerStatsResult{if(value===null)throw new Error("SERVER_STATS_OPERATION_STATE_MISSING");const parsed=typeof value==="string"?JSON.parse(value)as Record<string,unknown>:value;if(typeof parsed.requestFingerprint!=="string")throw new Error("SERVER_STATS_REQUEST_FINGERPRINT_MISSING");return parsed as{requestFingerprint:string}|ServerStatsResult;}async function withTransientRetry<T>(work:()=>Promise<T>):Promise<T>{for(let attempt=0;attempt<3;attempt+=1){try{return await work();}catch(error){const candidate=error as{code?:unknown;errno?:unknown};if(attempt===2||(candidate.code!=="ER_LOCK_DEADLOCK"&&candidate.errno!==1213&&candidate.code!=="ER_LOCK_WAIT_TIMEOUT"&&candidate.errno!==1205))throw error;}}throw new Error("Server stats retry exhausted.");}
