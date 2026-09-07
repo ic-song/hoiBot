@@ -43,6 +43,6 @@ export async function executeWave15PetSkillInfoPrivateDev(args){
   const result=JSON.stringify({statusCode:response.statusCode,accepted,ignored:body.ignored??false,duplicate:body.duplicate??false,
     terminalResult:evidence.terminalResult,handlerInvocationCount:evidence.handlerInvocations,operationCount:evidence.operations,
     commandExecutionCount:evidence.executions,outboxCount:evidence.outboxes,replySha256:evidence.projectedReply===null?null:digest(evidence.projectedReply)});
-  return{executedConsumerId:args.consumerId,executedCaseId:binding.harnessCaseId,moduleExecutionId:MODULE_EXECUTION_ID,
+  return{executedConsumerId:binding.consumerId,executedCaseId:binding.harnessCaseId,moduleExecutionId:MODULE_EXECUTION_ID,
     assertionCount,reply,result,databaseEvidence:evidence};
 }
