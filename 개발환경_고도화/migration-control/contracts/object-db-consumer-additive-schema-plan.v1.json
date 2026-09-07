@@ -83,6 +83,18 @@
       "reentrantDdlRequired": false
     },
     {
+      "migration": "486_private_chat_denial_notice.sql",
+      "rollback": "486_private_chat_denial_notice.rollback.sql",
+      "kind": "ADDITIVE_PRIVATE_CHAT_DENIAL_NOTICE_RECEIPTS",
+      "alters": [],
+      "creates": ["private_chat_denial_counters", "private_chat_denial_attempts", "private_chat_denial_notification_channels"],
+      "inputShape": "MIGRATION_485_ADMIN_BAG_PROVEN_READ_ONLY_PROJECTION",
+      "resultingShape": "MIGRATION_486_PRIVATE_CHAT_DENIAL_NOTICE_RECEIPTS",
+      "operationalDataDependency": "SEPARATE_WBS_REQUIRED: notification destinations must be provisioned per verified environment and database identity; migration 486 seeds no room, nickname, external identity, or other operational value",
+      "createOnly": true,
+      "reentrantDdlRequired": false
+    },
+    {
       "migration": "482_canonical_pet_skill_grade_unicode.sql",
       "rollback": "482_canonical_pet_skill_grade_unicode.rollback.sql",
       "kind": "ADDITIVE_CANONICAL_PET_SKILL_GRADE_UNICODE_CORRECTION",
@@ -129,7 +141,10 @@
     "canonical_pet_skill_draw_grade_policies",
     "pet_skill_info_admin_channel_authorities",
     "player_pet_skill_rank_marker_projections",
-    "player_pet_skill_bag_import_completeness_projections"
+    "player_pet_skill_bag_import_completeness_projections",
+    "private_chat_denial_counters",
+    "private_chat_denial_attempts",
+    "private_chat_denial_notification_channels"
   ],
   "globalPolicies": {
     "newPrimaryKey": { "generator": "CUID2", "length": 8, "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "collisionHandling": "PK_OR_UNIQUE_DETECT_AND_BOUNDED_RETRY_BY_SHARED_PROVIDER" },
@@ -731,6 +746,9 @@
       { "name": "INSERT_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "INSERT_TIME", "type": "CHAR(19)", "nullable": false }, { "name": "UPDATE_USER", "type": "VARCHAR(100)", "nullable": false }, { "name": "UPDATE_TIME", "type": "CHAR(19)", "nullable": false }
     ], "primaryKey": ["player_identity_operation_participant_id"], "uniqueKeys": [["player_identity_operation_id", "player_id", "participant_role"]], "foreignKeys": [
       { "columns": ["player_identity_operation_id"], "referencesTable": "canonical_player_identity_operations", "referencesColumns": ["player_identity_operation_id"], "onDelete": "RESTRICT" }, { "columns": ["player_id"], "referencesTable": "canonical_players", "referencesColumns": ["player_id"], "onDelete": "RESTRICT" }
-    ], "checks": [{ "constraint": "player_identity_participant_role_allowed", "expression": "participant_role IN ('SUBJECT')" }] }
+    ], "checks": [{ "constraint": "player_identity_participant_role_allowed", "expression": "participant_role IN ('SUBJECT')" }] },
+    {"table":"private_chat_denial_counters","kind":"DENIAL_COUNTER","columns":[{"name":"private_chat_denial_counter_id","type":"CHAR(8)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"environment_code","type":"VARCHAR(4)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"database_identity","type":"VARCHAR(64)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"provider_code","type":"VARCHAR(64)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"external_user_id","type":"VARCHAR(191)","nullable":false,"charset":"utf8mb4","collation":"utf8mb4_bin"},{"name":"attempt_count","type":"BIGINT UNSIGNED","nullable":false},{"name":"last_event_id","type":"VARCHAR(128)","nullable":false,"charset":"utf8mb4","collation":"utf8mb4_unicode_ci"},{"name":"INSERT_USER","type":"VARCHAR(100)","nullable":false},{"name":"INSERT_TIME","type":"CHAR(19)","nullable":false},{"name":"UPDATE_USER","type":"VARCHAR(100)","nullable":false},{"name":"UPDATE_TIME","type":"CHAR(19)","nullable":false}],"primaryKey":["private_chat_denial_counter_id"],"uniqueKeys":[["environment_code","database_identity","provider_code","external_user_id"],["private_chat_denial_counter_id","environment_code","database_identity"]],"foreignKeys":[{"columns":["provider_code","external_user_id"],"referencesTable":"external_identities","referencesColumns":["provider_code","external_user_id"],"onDelete":"RESTRICT"}]},
+    {"table":"private_chat_denial_attempts","kind":"DENIAL_ATTEMPT_RECEIPT","columns":[{"name":"private_chat_denial_attempt_id","type":"CHAR(8)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"private_chat_denial_counter_id","type":"CHAR(8)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"environment_code","type":"VARCHAR(4)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"database_identity","type":"VARCHAR(64)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"event_id","type":"VARCHAR(128)","nullable":false,"charset":"utf8mb4","collation":"utf8mb4_unicode_ci"},{"name":"app_wiring_operation_id","type":"CHAR(8)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"command_code","type":"VARCHAR(100)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"attempt_ordinal","type":"BIGINT UNSIGNED","nullable":false},{"name":"denial_reason","type":"VARCHAR(32)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"display_name_snapshot","type":"VARCHAR(191)","nullable":false,"charset":"utf8mb4","collation":"utf8mb4_bin"},{"name":"private_room_name_snapshot","type":"VARCHAR(191)","nullable":false,"charset":"utf8mb4","collation":"utf8mb4_bin"},{"name":"message_preview_snapshot","type":"VARCHAR(103)","nullable":false,"charset":"utf8mb4","collation":"utf8mb4_bin"},{"name":"notification_disposition","type":"VARCHAR(16)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"notification_destination_fingerprint","type":"CHAR(64)","nullable":true,"charset":"ascii","collation":"ascii_bin"},{"name":"result_fingerprint","type":"CHAR(64)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"INSERT_USER","type":"VARCHAR(100)","nullable":false},{"name":"INSERT_TIME","type":"CHAR(19)","nullable":false},{"name":"UPDATE_USER","type":"VARCHAR(100)","nullable":false},{"name":"UPDATE_TIME","type":"CHAR(19)","nullable":false}],"primaryKey":["private_chat_denial_attempt_id"],"uniqueKeys":[["event_id"],["app_wiring_operation_id"],["private_chat_denial_counter_id","attempt_ordinal"]],"foreignKeys":[{"columns":["private_chat_denial_counter_id","environment_code","database_identity"],"referencesTable":"private_chat_denial_counters","referencesColumns":["private_chat_denial_counter_id","environment_code","database_identity"],"onDelete":"RESTRICT"},{"columns":["event_id"],"referencesTable":"event_inbox","referencesColumns":["event_id"],"onDelete":"RESTRICT"},{"columns":["app_wiring_operation_id"],"referencesTable":"canonical_app_wiring_operations","referencesColumns":["app_wiring_operation_id"],"onDelete":"RESTRICT"}]},
+    {"table":"private_chat_denial_notification_channels","kind":"DENIAL_NOTIFICATION_DESTINATION","columns":[{"name":"private_chat_denial_notification_channel_id","type":"CHAR(8)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"environment_code","type":"VARCHAR(4)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"database_identity","type":"VARCHAR(64)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"provider_code","type":"VARCHAR(64)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"external_channel_id","type":"VARCHAR(191)","nullable":false,"charset":"utf8mb4","collation":"utf8mb4_bin"},{"name":"delivery_enabled","type":"BOOLEAN","nullable":false},{"name":"configuration_fingerprint","type":"CHAR(64)","nullable":false,"charset":"ascii","collation":"ascii_bin"},{"name":"INSERT_USER","type":"VARCHAR(100)","nullable":false},{"name":"INSERT_TIME","type":"CHAR(19)","nullable":false},{"name":"UPDATE_USER","type":"VARCHAR(100)","nullable":false},{"name":"UPDATE_TIME","type":"CHAR(19)","nullable":false}],"primaryKey":["private_chat_denial_notification_channel_id"],"uniqueKeys":[["environment_code","database_identity"]],"foreignKeys":[{"columns":["provider_code","external_channel_id"],"referencesTable":"channels","referencesColumns":["provider_code","external_channel_id"],"onDelete":"RESTRICT"}]}
   ]
 }

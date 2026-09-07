@@ -8,6 +8,7 @@ import { RecentEventStore } from "./recent-events.js";
 import { ApplicationError } from "./shared/application-error.js";
 import { normalizeIrisEvent, type IrisPayload, type NormalizedIrisEvent } from "./integration/iris-normalizer.js";
 import { ProcessIrisEventService, recordOutboxDelivery, type ChannelNameObservation, type EventProcessingResult, type PendingReply } from "./integration/event-processing-service.js";
+import { PrivateChatDenialNotificationService } from "./integration/private-chat-denial-notification-service.js";
 import { withMariaTransactionRetry } from "./shared/maria-database-error-policy.js";
 import {
   formatIrisKakaoDiagnostic,
@@ -384,6 +385,7 @@ export interface AppDependencies {
   environmentContext?: VerifiedEnvironmentContext;
   appWiringOperationProvider?: MariaAppWiringOperationProvider;
   petSkillInfoReadOnlyRecoveryProvider?: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  privateChatDenialNotificationService?: Pick<PrivateChatDenialNotificationService,"processEvent">;
   petExploreAppWiringIngress?: Pick<PetExploreAppWiringIngress, "handle">;
   petDataCompareAppWiringIngress?: Pick<PetDataCompareAppWiringIngress, "handle">;
   petTitleAppWiringIngress?: Pick<PetTitleAppWiringIngress, "handle">;
@@ -997,6 +999,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const petSkillInfoReadOnlyRecoveryProvider=dependencies.petSkillInfoReadOnlyRecoveryProvider
     ??(database!==undefined&&appWiringOperationProvider!==undefined
       ?new MariaAppWiringReadOnlyRecoveryProvider(database,appWiringOperationProvider):undefined);
+  const privateChatDenialNotificationService=dependencies.privateChatDenialNotificationService
+    ??(database!==undefined&&dependencies.environmentContext!==undefined
+      ?new PrivateChatDenialNotificationService(database,dependencies.environmentContext):undefined);
   const petExploreAppWiringIngress = dependencies.petExploreAppWiringIngress
     ?? (database !== undefined && appWiringOperationProvider !== undefined
       ? new PetExploreAppWiringIngress(
@@ -1353,6 +1358,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || (normalizedEvent.direction === "incoming" && (normalizedEvent.message === "/ping"
           || verificationCode !== null
           || isSignupCommand(normalizedEvent.message)
+          || isPetSkillInfoPrivateChannel
           || (normalizedEvent.message === "/info" && config.nodeEnv !== "production")
           || shouldCreateEventMonitorMessage));
       const kakaoDatabaseSnapshot = requiresKakaoDatabaseLookup
@@ -1880,7 +1886,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
           })
         :atomicPetSkillInfo
-        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(recovered=>{petSkillInfoRejectedReason=recovered.denialReason;return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
+        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(async recovered=>{petSkillInfoRejectedReason=recovered.denialReason;if(recovered.privateDenialNotificationRequired===true){if(privateChatDenialNotificationService===undefined)throw new Error("PRIVATE_CHAT_DENIAL_NOTIFICATION_SERVICE_REQUIRED");await privateChatDenialNotificationService.processEvent(normalizedEvent.eventId);}return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
         : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership

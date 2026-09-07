@@ -8,6 +8,11 @@ import { isPetSkillInfoShadowCandidate, PetSkillInfoShadowService } from "./pet-
 
 const RECEIPT_VERSION="PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1" as const;
 const DENIAL_RECEIPT_VERSION="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1" as const;
+const DENIAL_RECEIPT_V2_VERSION="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2" as const;
+const PRIVATE_DENIAL_COMMAND_SCOPE="PET_SKILL_INFO_ONLY" as const;
+const PRIVATE_DENIAL_COMMAND_CODE="PET_SKILL_INFO" as const;
+const PRIVATE_DENIAL_NOTIFY_EVERY=3 as const;
+const PRIVATE_DENIAL_PREVIEW_MAX_LENGTH=100 as const;
 const DEV_HEADER="[DEV 테스트환경]\n";
 
 export interface PetSkillInfoIngressCommand{
@@ -30,6 +35,64 @@ type PrivateAccessEvidence={readonly mode:"PRIVATE_PASS";readonly identityId:str
 export type PetSkillInfoPrivateDenialReason="PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED"|"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED";
 type PrivateDenialEvidence={readonly mode:"PRIVATE_DENIED";readonly reasonCode:PetSkillInfoPrivateDenialReason};
 type AccessEvidence=PrivateAccessEvidence|PrivateDenialEvidence|{readonly mode:"OPEN_GROUP"};
+
+export interface PetSkillInfoPrivateDenialReceiptV2{
+  readonly version:typeof DENIAL_RECEIPT_V2_VERSION;
+  readonly binding:{readonly rawMessage:string;readonly effectiveMessage:string;readonly devContext:AppWiringDevContext;readonly environmentCode:"dev"|"prod";readonly databaseIdentity:string;readonly eventId:string;readonly providerEventId:string|null;readonly eventProviderCode:string;readonly identityProviderCode:"kakao";readonly externalUserId:string;readonly displayName:string|null;readonly displayNameSource:string|null;readonly displayNameTrust:string|null;readonly channelType:"open_direct";readonly externalChannelId:string};
+  readonly authorization:PrivateDenialEvidence;
+  readonly value:{readonly status:"denied";readonly reasonCode:PetSkillInfoPrivateDenialReason};
+  readonly notification:{
+    readonly scope:typeof PRIVATE_DENIAL_COMMAND_SCOPE;readonly commandCode:typeof PRIVATE_DENIAL_COMMAND_CODE;
+    readonly environmentCode:"dev"|"prod";readonly databaseIdentity:string;readonly providerCode:"kakao";
+    readonly externalIdentityId:string;readonly externalUserId:string;readonly displayName:string;
+    readonly privateRoomName:string;readonly privateRoomNameSource:ChannelNameObservation["sourceCode"];
+    readonly messagePreview:string;readonly notifyEvery:typeof PRIVATE_DENIAL_NOTIFY_EVERY;readonly previewMaxLength:typeof PRIVATE_DENIAL_PREVIEW_MAX_LENGTH;
+    readonly destinationChannelId:string;readonly deliveryEnabled:boolean;readonly configurationFingerprint:string;
+  };
+}
+
+function record(value:unknown):Record<string,unknown>|undefined{return typeof value==="object"&&value!==null&&!Array.isArray(value)?value as Record<string,unknown>:undefined;}
+function exactKeys(value:Record<string,unknown>,keys:readonly string[]):boolean{return Object.keys(value).length===keys.length&&keys.every(key=>Object.prototype.hasOwnProperty.call(value,key));}
+function legacyPrivateDenialPreview(rawMessage:string):string{
+  const normalized=String(rawMessage||"").replace(/[\r\n]+/g," ").trim();
+  if(normalized.length===0)return"-";
+  return normalized.length>PRIVATE_DENIAL_PREVIEW_MAX_LENGTH?`${normalized.slice(0,PRIVATE_DENIAL_PREVIEW_MAX_LENGTH)}...`:normalized;
+}
+
+// Persisted V2 receipt parser. Any shape, policy, or internal binding mismatch throws and must fail closed.
+export function parsePetSkillInfoPrivateDenialReceiptV2(projection:unknown):PetSkillInfoPrivateDenialReceiptV2{
+  const receipt=record(projection),binding=record(receipt?.binding),authorization=record(receipt?.authorization),value=record(receipt?.value),notification=record(receipt?.notification);
+  const invalid=()=>{throw new Error("PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2_INVALID");};
+  if(receipt===undefined||receipt.version!==DENIAL_RECEIPT_V2_VERSION||!exactKeys(receipt,["version","binding","authorization","value","notification"])
+    ||binding===undefined||!exactKeys(binding,["rawMessage","effectiveMessage","devContext","environmentCode","databaseIdentity","eventId","providerEventId","eventProviderCode","identityProviderCode","externalUserId","displayName","displayNameSource","displayNameTrust","channelType","externalChannelId"])
+    ||typeof binding.rawMessage!=="string"||typeof binding.effectiveMessage!=="string"||(binding.devContext!=="DEFAULT"&&binding.devContext!=="DEV_PREFIX")||(binding.environmentCode!=="dev"&&binding.environmentCode!=="prod")
+    ||typeof binding.databaseIdentity!=="string"||binding.databaseIdentity.length===0||typeof binding.eventId!=="string"||binding.eventId.length===0||(binding.providerEventId!==null&&typeof binding.providerEventId!=="string")
+    ||typeof binding.eventProviderCode!=="string"||binding.identityProviderCode!=="kakao"||typeof binding.externalUserId!=="string"||binding.externalUserId.length===0
+    ||(binding.displayName!==null&&typeof binding.displayName!=="string")||(binding.displayNameSource!==null&&typeof binding.displayNameSource!=="string")||(binding.displayNameTrust!==null&&typeof binding.displayNameTrust!=="string")
+    ||binding.channelType!=="open_direct"||typeof binding.externalChannelId!=="string"||binding.externalChannelId.length===0
+    ||authorization===undefined||!exactKeys(authorization,["mode","reasonCode"])||authorization.mode!=="PRIVATE_DENIED"||!isPrivateDenialReason(authorization.reasonCode)
+    ||value===undefined||!exactKeys(value,["status","reasonCode"])||value.status!=="denied"||value.reasonCode!==authorization.reasonCode
+    ||notification===undefined||!exactKeys(notification,["scope","commandCode","environmentCode","databaseIdentity","providerCode","externalIdentityId","externalUserId","displayName","privateRoomName","privateRoomNameSource","messagePreview","notifyEvery","previewMaxLength","destinationChannelId","deliveryEnabled","configurationFingerprint"])
+    ||notification.scope!==PRIVATE_DENIAL_COMMAND_SCOPE||notification.commandCode!==PRIVATE_DENIAL_COMMAND_CODE||notification.environmentCode!==binding.environmentCode||notification.databaseIdentity!==binding.databaseIdentity||notification.providerCode!=="kakao"||binding.displayNameSource!=="kakao_db"||binding.displayNameTrust!=="trusted"||typeof binding.displayName!=="string"
+    ||typeof notification.externalIdentityId!=="string"||!/^[1-9][0-9]*$/.test(notification.externalIdentityId)||notification.externalUserId!==binding.externalUserId||typeof notification.displayName!=="string"||notification.displayName!==binding.displayName
+    ||typeof notification.privateRoomName!=="string"||notification.privateRoomName.trim().length===0||(notification.privateRoomNameSource!=="kakao_open_link"&&notification.privateRoomNameSource!=="kakao_chat_room_meta")
+    ||typeof notification.messagePreview!=="string"||notification.messagePreview!==legacyPrivateDenialPreview(binding.rawMessage)||notification.notifyEvery!==PRIVATE_DENIAL_NOTIFY_EVERY||notification.previewMaxLength!==PRIVATE_DENIAL_PREVIEW_MAX_LENGTH
+    ||typeof notification.destinationChannelId!=="string"||notification.destinationChannelId.length===0||typeof notification.deliveryEnabled!=="boolean"||typeof notification.configurationFingerprint!=="string"||!/^[0-9a-f]{64}$/.test(notification.configurationFingerprint))invalid();
+  return projection as PetSkillInfoPrivateDenialReceiptV2;
+}
+
+async function resolvePrivateDenialNoticeSnapshot(transaction:AppWiringReadParticipant,input:{externalUserId:string;displayName:string;rawMessage:string;environment:VerifiedEnvironmentContext;channelName?:ChannelNameObservation}):Promise<PetSkillInfoPrivateDenialReceiptV2["notification"]|undefined>{
+  const channelName=input.channelName;
+  if(channelName===undefined||channelName.displayName.trim().length===0||(channelName.sourceCode!=="kakao_open_link"&&channelName.sourceCode!=="kakao_chat_room_meta"))return undefined;
+  const identities=await transaction.query<Array<{external_identity_id:bigint}>>("SELECT id external_identity_id FROM external_identities WHERE provider_code='kakao' AND external_user_id=? ORDER BY id LIMIT 2",[input.externalUserId]);
+  if(identities.length!==1)return undefined;
+  const externalIdentityId=String(identities[0]!.external_identity_id);
+  if(!/^[1-9][0-9]*$/.test(externalIdentityId))return undefined;
+  const configs=await transaction.query<Array<{external_channel_id:string;delivery_enabled:number|boolean;configuration_fingerprint:string}>>("SELECT external_channel_id,delivery_enabled,configuration_fingerprint FROM private_chat_denial_notification_channels WHERE environment_code=? AND database_identity=? AND provider_code='kakao' ORDER BY private_chat_denial_notification_channel_id LIMIT 2",[input.environment.environmentCode,input.environment.databaseIdentity]);
+  const config=configs.length===1?configs[0]:undefined;
+  if(config===undefined||typeof config.external_channel_id!=="string"||config.external_channel_id.length===0||typeof config.configuration_fingerprint!=="string"||!/^[0-9a-f]{64}$/.test(config.configuration_fingerprint))return undefined;
+  return{scope:PRIVATE_DENIAL_COMMAND_SCOPE,commandCode:PRIVATE_DENIAL_COMMAND_CODE,environmentCode:input.environment.environmentCode,databaseIdentity:input.environment.databaseIdentity,providerCode:"kakao",externalIdentityId,externalUserId:input.externalUserId,displayName:input.displayName,privateRoomName:channelName.displayName,privateRoomNameSource:channelName.sourceCode,messagePreview:legacyPrivateDenialPreview(input.rawMessage),notifyEvery:PRIVATE_DENIAL_NOTIFY_EVERY,previewMaxLength:PRIVATE_DENIAL_PREVIEW_MAX_LENGTH,destinationChannelId:config.external_channel_id,deliveryEnabled:Boolean(config.delivery_enabled),configurationFingerprint:config.configuration_fingerprint};
+}
 
 async function resolvePrivatePassAccess(transaction:AppWiringReadParticipant,externalUserId:string):Promise<PrivateAccessEvidence|PrivateDenialEvidence>{
   const actors=await transaction.query<Array<{identity_id:bigint;player_id:bigint;identity_status:string;player_status:string}>>(
@@ -55,10 +118,10 @@ function withDevHeader<T>(value:T,devContext:AppWiringDevContext):T{
   return(record.status==="shadow"&&typeof record.reply==="string"?{...record,reply:`${DEV_HEADER}${record.reply}`}:value)as T;
 }
 
-function assertFormalReceiptProjection(projection:unknown,input:{command:PetSkillInfoIngressCommand;environment:VerifiedEnvironmentContext;event:NormalizedIrisEvent;replyIdentity:NormalizedIrisEvent;channelType:"open_group"|"open_direct"}):void{
+function assertFormalReceiptProjection(projection:unknown,input:{command:PetSkillInfoIngressCommand;environment:VerifiedEnvironmentContext;event:NormalizedIrisEvent;replyIdentity:NormalizedIrisEvent;channelType:"open_group"|"open_direct";channelName?:ChannelNameObservation}):void{
   if(typeof projection!=="object"||projection===null||Array.isArray(projection))throw new Error("PET_SKILL_INFO_RECEIPT_PROJECTION_INVALID");
   const receipt=projection as Record<string,unknown>,binding=receipt.binding;
-  if((receipt.version!==RECEIPT_VERSION&&receipt.version!==DENIAL_RECEIPT_VERSION)||typeof binding!=="object"||binding===null||Array.isArray(binding)||!("value" in receipt)||typeof receipt.authorization!=="object"||receipt.authorization===null)throw new Error("PET_SKILL_INFO_RECEIPT_PROJECTION_INVALID");
+  if((receipt.version!==RECEIPT_VERSION&&receipt.version!==DENIAL_RECEIPT_VERSION&&receipt.version!==DENIAL_RECEIPT_V2_VERSION)||typeof binding!=="object"||binding===null||Array.isArray(binding)||!("value" in receipt)||typeof receipt.authorization!=="object"||receipt.authorization===null)throw new Error("PET_SKILL_INFO_RECEIPT_PROJECTION_INVALID");
   const actual=binding as Record<string,unknown>;
   const expected:Record<string,unknown>={rawMessage:input.command.rawMessage,effectiveMessage:input.command.effectiveMessage,devContext:input.command.devContext,
     environmentCode:input.environment.environmentCode,databaseIdentity:input.environment.databaseIdentity,eventId:input.event.eventId,
@@ -67,6 +130,11 @@ function assertFormalReceiptProjection(projection:unknown,input:{command:PetSkil
     displayNameTrust:input.replyIdentity.displayNameTrust??null,channelType:input.channelType,externalChannelId:input.replyIdentity.channelId??null};
   if(Object.keys(actual).length!==Object.keys(expected).length||Object.entries(expected).some(([key,value])=>actual[key]!==value))throw new Error("PET_SKILL_INFO_RECEIPT_BINDING_DRIFT");
   const authorization=receipt.authorization as Record<string,unknown>;
+  if(receipt.version===DENIAL_RECEIPT_V2_VERSION){
+    const parsed=parsePetSkillInfoPrivateDenialReceiptV2(projection),channelName=input.channelName;
+    if(channelName===undefined||parsed.notification.privateRoomName!==channelName.displayName||parsed.notification.privateRoomNameSource!==channelName.sourceCode)throw new Error("PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2_ROOM_DRIFT");
+    return;
+  }
   if(receipt.version===DENIAL_RECEIPT_VERSION){
     const value=receipt.value;
     if(input.channelType!=="open_direct"||Object.keys(authorization).length!==2||authorization.mode!=="PRIVATE_DENIED"||!isPrivateDenialReason(authorization.reasonCode)
@@ -89,6 +157,7 @@ function isPrivateDenialReason(value:unknown):value is PetSkillInfoPrivateDenial
 export interface PetSkillInfoReadOnlyRecoveryResult{
   readonly processing:EventProcessingResult;
   readonly denialReason?:PetSkillInfoPrivateDenialReason;
+  readonly privateDenialNotificationRequired?:true;
 }
 
 export async function executePetSkillInfoReadOnlyRecovery(input:{
@@ -105,7 +174,7 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
   if(input.replyIdentity.userId===undefined||input.replyIdentity.channelId===undefined||input.event.message===undefined||input.replyIdentity.message!==input.event.message)throw new Error("PET_SKILL_INFO_RECOVERY_BINDING_REQUIRED");
   const command=resolvePetSkillInfoIngressCommand(input.event.message);
   if(command===undefined)throw new Error("PET_SKILL_INFO_COMMAND_NOT_MATCHED");
-  const expected={command,environment:input.environmentContext,event:input.event,replyIdentity:input.replyIdentity,channelType:input.channelType};
+  const expected={command,environment:input.environmentContext,event:input.event,replyIdentity:input.replyIdentity,channelType:input.channelType,...(input.channelName===undefined?{}:{channelName:input.channelName})};
   const recovered=await input.recovery.execute<unknown>({
     event:input.event,replyIdentity:input.replyIdentity,channelType:input.channelType,identityProviderCode:"kakao",
     devContext:command.devContext,actor:"app:pet-skill-info",commandBinding:{rawMessage:command.rawMessage,effectiveMessage:command.effectiveMessage},
@@ -117,11 +186,13 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
       const authorization:AccessEvidence=input.channelType==="open_direct"?await resolvePrivatePassAccess(transaction,input.replyIdentity.userId!):{mode:"OPEN_GROUP"};
       if(authorization.mode==="PRIVATE_DENIED"){
         const value={status:"denied" as const,reasonCode:authorization.reasonCode};
-        return{terminalStatus:"SHADOW_DENIED" as const,value,receiptProjection:{version:DENIAL_RECEIPT_VERSION,binding:{rawMessage:command.rawMessage,effectiveMessage:command.effectiveMessage,devContext:command.devContext,
+        const notification=typeof input.replyIdentity.displayName==="string"&&input.replyIdentity.displayNameTrust==="trusted"&&input.replyIdentity.displayNameSource==="kakao_db"?await resolvePrivateDenialNoticeSnapshot(transaction,{externalUserId:input.replyIdentity.userId!,displayName:input.replyIdentity.displayName,rawMessage:command.rawMessage,environment:input.environmentContext,...(input.channelName===undefined?{}:{channelName:input.channelName})}):undefined;
+        const binding={rawMessage:command.rawMessage,effectiveMessage:command.effectiveMessage,devContext:command.devContext,
           environmentCode:input.environmentContext.environmentCode,databaseIdentity:input.environmentContext.databaseIdentity,eventId:input.event.eventId,
           providerEventId:input.event.providerEventId??null,eventProviderCode:input.event.providerCode,identityProviderCode:"kakao",externalUserId:input.replyIdentity.userId,
           displayName:input.replyIdentity.displayName??null,displayNameSource:input.replyIdentity.displayNameSource??null,displayNameTrust:input.replyIdentity.displayNameTrust??null,
-          channelType:input.channelType,externalChannelId:input.replyIdentity.channelId},authorization,value}};
+          channelType:input.channelType,externalChannelId:input.replyIdentity.channelId};
+        return{terminalStatus:"SHADOW_DENIED" as const,value,receiptProjection:notification===undefined?{version:DENIAL_RECEIPT_VERSION,binding,authorization,value}:{version:DENIAL_RECEIPT_V2_VERSION,binding,authorization,value,notification}};
       }
       const evaluated=await new PetSkillInfoShadowService(input.database).evaluateInSnapshot(transaction,{externalUserId:input.replyIdentity.userId!,externalChannelId:input.replyIdentity.channelId,displayName:input.replyIdentity.displayName,message:command.effectiveMessage});
       const value=withDevHeader(evaluated,command.devContext);
@@ -135,8 +206,8 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
   });
   const projection=recovered.receiptProjection as {version?:unknown;authorization?:{mode?:unknown;reasonCode?:unknown}};
   const projectedReason=projection.authorization?.reasonCode;
-  const denialProjection=projection.version===DENIAL_RECEIPT_VERSION&&projection.authorization?.mode==="PRIVATE_DENIED"&&isPrivateDenialReason(projectedReason);
+  const denialProjection=(projection.version===DENIAL_RECEIPT_VERSION||projection.version===DENIAL_RECEIPT_V2_VERSION)&&projection.authorization?.mode==="PRIVATE_DENIED"&&isPrivateDenialReason(projectedReason);
   if((recovered.terminalStatus==="SHADOW_DENIED")!==denialProjection)throw new Error("PET_SKILL_INFO_RECEIPT_TERMINAL_STATUS_DRIFT");
   const denialReason=denialProjection?projectedReason as PetSkillInfoPrivateDenialReason:undefined;
-  return{processing:recovered.processing,...(denialReason===undefined?{}:{denialReason})};
+  return{processing:recovered.processing,...(denialReason===undefined?{}:{denialReason}),...(projection.version===DENIAL_RECEIPT_V2_VERSION?{privateDenialNotificationRequired:true as const}:{})};
 }

@@ -4,6 +4,7 @@ import { loadConfig, type AppConfig } from "./config.js";
 import { createDatabaseClient, type DatabaseClient } from "./database.js";
 import { GuildTerritoryWarStateStartService } from "./guild/guild-territory-war-state-start-service.js";
 import { OutboxWorker } from "./integration/outbox-worker.js";
+import { PrivateChatDenialNotificationService } from "./integration/private-chat-denial-notification-service.js";
 import {
   assertVerifiedEnvironmentContext,
   createEnvironmentContext,
@@ -14,6 +15,7 @@ import {
 type RuntimeApp = ReturnType<typeof buildApp>;
 type OutboxRunner = Pick<OutboxWorker, "runOnce">;
 type GuildTerritoryTransitionRunner = Pick<GuildTerritoryWarStateStartService, "runDueTransitions">;
+type PrivateChatDenialReconciliationRunner = Pick<PrivateChatDenialNotificationService, "reconcilePending">;
 
 export interface ServerStartupDependencies {
   createDatabase?: (config: AppConfig["database"]) => DatabaseClient;
@@ -21,6 +23,7 @@ export interface ServerStartupDependencies {
   buildRuntimeApp?: typeof buildApp;
   createOutboxRunner?: (database: DatabaseClient, deliver: (message: { room: string; data: string }) => Promise<void>) => OutboxRunner;
   createGuildTerritoryTransitionRunner?: (database: DatabaseClient) => GuildTerritoryTransitionRunner;
+  createPrivateChatDenialReconciliationRunner?: (database: DatabaseClient, environmentContext: VerifiedEnvironmentContext) => PrivateChatDenialReconciliationRunner;
   setRecurring?: (callback: () => void, milliseconds: number) => NodeJS.Timeout;
 }
 
@@ -58,6 +61,8 @@ export async function startServer(
     ?? ((database, deliver) => new OutboxWorker(database, deliver));
   const createGuildTerritoryTransitionRunner = dependencies.createGuildTerritoryTransitionRunner
     ?? ((database) => new GuildTerritoryWarStateStartService(database));
+  const createPrivateChatDenialReconciliationRunner = dependencies.createPrivateChatDenialReconciliationRunner
+    ?? ((database, context) => new PrivateChatDenialNotificationService(database, context));
   const setRecurring = dependencies.setRecurring
     ?? ((callback: () => void, milliseconds: number) => setInterval(callback, milliseconds) as NodeJS.Timeout);
   let database: DatabaseClient | undefined;
@@ -66,6 +71,8 @@ export async function startServer(
   let outboxTimer: NodeJS.Timeout | undefined;
   let guildTerritoryTransitionTimer: NodeJS.Timeout | undefined;
   let guildTerritoryTransitionInFlight: Promise<void> | undefined;
+  let privateChatDenialReconciliationTimer: NodeJS.Timeout | undefined;
+  let privateChatDenialReconciliationInFlight: Promise<void> | undefined;
   let shuttingDown = false;
 
   try {
@@ -88,6 +95,7 @@ export async function startServer(
     if (database !== undefined) {
       const worker = createOutboxRunner(database, (message) => deliverIrisText(config, message));
       const guildTerritoryTransitionWorker = createGuildTerritoryTransitionRunner(database);
+      const privateChatDenialReconciliationWorker = createPrivateChatDenialReconciliationRunner(database, environmentContext!);
       const runGuildTerritoryTransitions = (): Promise<void> => {
         if (guildTerritoryTransitionInFlight !== undefined) return guildTerritoryTransitionInFlight;
         const current = Promise.resolve()
@@ -99,7 +107,19 @@ export async function startServer(
         guildTerritoryTransitionInFlight = current;
         return current;
       };
+      const runPrivateChatDenialReconciliation = (): Promise<void> => {
+        if (privateChatDenialReconciliationInFlight !== undefined) return privateChatDenialReconciliationInFlight;
+        const current = Promise.resolve()
+          .then(() => privateChatDenialReconciliationWorker.reconcilePending())
+          .then(() => undefined)
+          .finally(() => {
+            if (privateChatDenialReconciliationInFlight === current) privateChatDenialReconciliationInFlight = undefined;
+          });
+        privateChatDenialReconciliationInFlight = current;
+        return current;
+      };
       await runGuildTerritoryTransitions();
+      await runPrivateChatDenialReconciliation();
       outboxTimer = setRecurring(() => {
         void worker.runOnce().catch((error) => app!.log.error({ err: error }, "outbox.worker.failed"));
       }, 5_000);
@@ -108,6 +128,10 @@ export async function startServer(
         void runGuildTerritoryTransitions().catch((error) => app!.log.error({ err: error }, "guild-territory.transition-worker.failed"));
       }, 1_000);
       guildTerritoryTransitionTimer.unref();
+      privateChatDenialReconciliationTimer = setRecurring(() => {
+        void runPrivateChatDenialReconciliation().catch((error) => app!.log.error({ err: error }, "private-chat-denial.reconciliation-worker.failed"));
+      }, 5_000);
+      privateChatDenialReconciliationTimer.unref();
     }
     app.log.info({ host: config.host, port: config.port, version: config.version }, "server.started");
   } catch (error) {
@@ -126,12 +150,20 @@ export async function startServer(
       shuttingDown = true;
       if (outboxTimer !== undefined) clearInterval(outboxTimer);
       if (guildTerritoryTransitionTimer !== undefined) clearInterval(guildTerritoryTransitionTimer);
+      if (privateChatDenialReconciliationTimer !== undefined) clearInterval(privateChatDenialReconciliationTimer);
       startedApp.log.info({ signal }, "server.shutdown.started");
       if (guildTerritoryTransitionInFlight !== undefined) {
         try {
           await guildTerritoryTransitionInFlight;
         } catch (error) {
           startedApp.log.error({ err: error }, "guild-territory.transition-worker.drain-failed");
+        }
+      }
+      if (privateChatDenialReconciliationInFlight !== undefined) {
+        try {
+          await privateChatDenialReconciliationInFlight;
+        } catch (error) {
+          startedApp.log.error({ err: error }, "private-chat-denial.reconciliation-worker.drain-failed");
         }
       }
       await startedApp.close();

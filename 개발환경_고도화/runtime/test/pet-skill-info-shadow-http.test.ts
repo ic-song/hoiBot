@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import { buildApp } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult, ReadOnlySnapshotTransaction } from "../src/database.js";
+import type { IrisKakaoDatabaseSnapshot } from "../src/integration/iris-kakao-database-inspector.js";
 import { createEnvironmentContext, verifyStartupDatabaseIdentity } from "../src/runtime/environment-context.js";
 
 const token = "wave14b-shadow-token";
@@ -66,7 +67,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
     const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
-      inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
+      inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
       sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
       const accepted=await send(app,"private-info-1","/펫스킬정보청룡언월도");
@@ -81,7 +82,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-denial-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
     const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
-      inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
+      inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
       sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
       const first=await send(app,"private-denied-1","/펫스킬정보");const firstBody=JSON.parse(first.body);
@@ -97,11 +98,11 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
     const inspectIrisChannel=async()=>({mode:"denied" as const,channelClass:"open_direct" as const,reason:"open_direct_unverified" as const,evidence:{roomType:"DirectChat" as const,linkId:"direct-link"}});
     const trace=createTraceDatabase("pass_duplicate"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{const failed=await send(app,"private-integrity-1","/펫스킬정보");assert.equal(failed.statusCode,500,failed.body);assert.equal(trace.atomicHandlerCount,1);}finally{await app.close();}
     const legacyTrace=createTraceDatabase(),legacyContext=await verifyStartupDatabaseIdentity(legacyTrace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
     const legacyRecovery={execute:async()=>{throw new Error("APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");}};
-    const legacyApp=buildApp(config,{database:legacyTrace.database,environmentContext:legacyContext,petSkillInfoReadOnlyRecoveryProvider:legacyRecovery as never,inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    const legacyApp=buildApp(config,{database:legacyTrace.database,environmentContext:legacyContext,petSkillInfoReadOnlyRecoveryProvider:legacyRecovery as never,inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{const denied=await send(legacyApp,"private-legacy-denied-1","/펫스킬정보");const body=JSON.parse(denied.body);assert.equal(denied.statusCode,202,denied.body);assert.equal(body.ignored,true);assert.equal(body.ignoreReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");}finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await legacyApp.close();}
   });
 
@@ -110,7 +111,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const config=loadConfig({NODE_ENV:"production",HOIBOT_ENVIRONMENT_CODE:"prod",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper-production-32",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;
     const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
-      inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
+      inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
       sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
       const denied=await send(app,"private-disabled-1","/펫스킬정보청룡언월도");
@@ -137,6 +138,8 @@ function send(app: ReturnType<typeof buildApp>, id: string, message: string, sen
     payload: { msg: message, room: "Wave14B 펫스킬방", sender,
       json: { _id: id, chat_id: roomId, user_id: "wave14b-user" } } });
 }
+
+function privateSnapshot():IrisKakaoDatabaseSnapshot{return{nickname:"호이 남",nicknameSource:"open_chat_member",subjectUserId:"wave14b-user",roomName:"Wave14B 펫스킬방",roomNameSource:"chat_room_meta",db2IdentityTables:{rows:[]},chatLog:{rows:[]},targetChatLog:{rows:[]},chatRoom:{rows:[]},openChatMember:{rows:[]},friend:{rows:[]},openLink:{rows:[]}};}
 
 function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_missing"|"pass_duplicate"="allowed") {
   let nextId = 1n;
@@ -170,6 +173,8 @@ function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_mi
     if (sql.includes("identity.status identity_status")) return (privateAccess==="identity_missing"?[]:[{identity_id:12n,player_id:21n,identity_status:"linked",player_status:"active"}]) as T;
     if (sql.includes("SELECT DATE_FORMAT(UTC_TIMESTAMP")) return [{kst_today:"2026-09-07"}] as T;
     if (sql.includes("FROM player_support_passes pass")) return (privateAccess==="pass_missing"?[]:privateAccess==="pass_duplicate"?[{pass_id:31n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1},{pass_id:32n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1}]:[{pass_id:31n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1}]) as T;
+    if (sql.includes("SELECT id external_identity_id FROM external_identities")) return [{external_identity_id:12n}] as T;
+    if (sql.includes("FROM private_chat_denial_notification_channels")) return [] as T;
     if (sql.includes("FROM external_identities identity")) return [{ player_status: "active", identity_id:12n }] as T;
     if (sql.includes("FROM player_profiles profile")) return [] as T;
     if (sql.includes("FROM canonical_pet_skill_aliases")) return [] as T;

@@ -1,0 +1,11 @@
+{
+  "sliceId": "SL-PET-SKILL-INFO-PRIVATE-BLOCK-NOTICE-01",
+  "runId": "펫스킬개인차단알림DB-SL-PET-SKILL-INFO-PRIVATE-BLOCK-NOTICE-01-202609072249",
+  "baselineCommit": "493f5a055d8a0219ddf2c1494a579c56371ad446",
+  "branch": "codex/pet-skill-info-private-block-notice-v1-20260907",
+  "migration": "486_private_chat_denial_notice.sql",
+  "operationalDataTouched": false,
+  "productionDatabaseTouched": false,
+  "externalDeliveryPerformed": false,
+  "gate8Performed": false
+}

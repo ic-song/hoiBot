@@ -43,6 +43,7 @@ describe("server startup database boundary", () => {
   it("verifies the database before building routes and starts outbox only after listen", async () => {
     const events: string[] = [];
     const db = database("hoi_bot", events);
+    let fiveSecondTimerCount=0;
     const started = await startServer(enabledConfig(), {
       createDatabase: () => { events.push("create-database"); return db; },
       buildRuntimeApp: (config, dependencies) => {
@@ -60,22 +61,29 @@ describe("server startup database boundary", () => {
         events.push("create-territory-transition");
         return { runDueTransitions: async () => { events.push("run-territory-transition"); return { processed: 0, skipped: 0 }; } };
       },
+      createPrivateChatDenialReconciliationRunner: () => {
+        events.push("create-private-denial-reconciliation");
+        return { reconcilePending: async () => { events.push("run-private-denial-reconciliation"); return 0; } };
+      },
       setRecurring: (_callback, milliseconds) => {
-        events.push(milliseconds === 5_000 ? "start-outbox" : "start-territory-transition");
+        events.push(milliseconds === 5_000?(fiveSecondTimerCount++===0?"start-outbox":"start-private-denial-reconciliation"):"start-territory-transition");
         return setInterval(() => undefined, 60_000);
       }
     });
 
-    assert.deepEqual(events.slice(0, 9), [
+    assert.deepEqual(events.slice(0, 12), [
       "create-database",
       "query:SELECT DATABASE() AS database_identity",
       "build-routes",
       "listen",
       "create-outbox",
       "create-territory-transition",
+      "create-private-denial-reconciliation",
       "run-territory-transition",
+      "run-private-denial-reconciliation",
       "start-outbox",
-      "start-territory-transition"
+      "start-territory-transition",
+      "start-private-denial-reconciliation"
     ]);
     assert.equal(started.environmentContext?.requestNamespace, "hoibot:dev:hoi_bot");
     await started.shutdown("TEST");
@@ -126,6 +134,7 @@ describe("server startup database boundary", () => {
       createGuildTerritoryTransitionRunner: () => ({
         runDueTransitions: async () => { throw new Error("synthetic territory recovery failure"); }
       }),
+      createPrivateChatDenialReconciliationRunner: () => ({ reconcilePending: async () => 0 }),
       setRecurring: () => {
         recurringStarts += 1;
         return setInterval(() => undefined, 60_000);
@@ -158,6 +167,7 @@ describe("server startup database boundary", () => {
           return { processed: 0, skipped: 0 };
         }
       }),
+      createPrivateChatDenialReconciliationRunner: () => ({ reconcilePending: async () => 0 }),
       setRecurring: (callback, milliseconds) => {
         if (milliseconds === 1_000) territoryCallback = callback;
         return setInterval(() => undefined, 60_000);
@@ -194,6 +204,7 @@ describe("server startup database boundary", () => {
           return { processed: 0, skipped: 0 };
         }
       }),
+      createPrivateChatDenialReconciliationRunner: () => ({ reconcilePending: async () => 0 }),
       setRecurring: (callback, milliseconds) => {
         if (milliseconds === 1_000) territoryCallback = callback;
         return setInterval(() => undefined, 60_000);
