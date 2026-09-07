@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "5ec1c6d8a088074987b5a10c4920efd2a6404833",
+  "evidenceCommit": "ec7144a29c8bcd5066bf21243fc111c873582b1b",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -13998,7 +13998,7 @@
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
-        "targetSourceSha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131",
+        "targetSourceSha256": "cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12",
         "exportName": "executeWave15PetSkillInfoPrivateDev"
       },
       "scenario": {
@@ -14086,7 +14086,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "8ea9b7dd569e4a2e47759aa3e1cf7505b616f23d0cbbea9a387843cbff86b7be"
+      "receiptSha256": "73ff73cd1b3fd717a417b1c89f25af6c54651c52d7fc860c7bf91b4386b4c3cd"
     },
     {
       "receiptId": "receipt:wave15:legacy-0a10ef65ad4b37cd:negative_guard",
@@ -14106,7 +14106,7 @@
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
-        "targetSourceSha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131",
+        "targetSourceSha256": "cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12",
         "exportName": "executeWave15PetSkillInfoPrivateDev"
       },
       "scenario": {
@@ -14168,7 +14168,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "4cef2d78845f04c8013c725f5bec9e9b1ce669da5f615149c6043d45626a0894"
+      "receiptSha256": "b22e3510483ca6643705f86be3668bfceeff9d38123358f438ce91b5dc7fcc60"
     },
     {
       "receiptId": "receipt:wave15:legacy-0a10ef65ad4b37cd:auth_denied",
@@ -14188,7 +14188,7 @@
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
-        "targetSourceSha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131",
+        "targetSourceSha256": "cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12",
         "exportName": "executeWave15PetSkillInfoPrivateDev"
       },
       "scenario": {
@@ -14207,8 +14207,8 @@
           "match": true
         },
         "dml": {
-          "expectedSha256": "3f300ca5ab80ef927db96b0a2a6ae49c74af3e7def906dbbf9828adb4fd777c2",
-          "actualSha256": "3f300ca5ab80ef927db96b0a2a6ae49c74af3e7def906dbbf9828adb4fd777c2",
+          "expectedSha256": "0f709cc5a2e2705574d41a4a4d5f9735a6f5b5c725fe2cb214bae05029ed493f",
+          "actualSha256": "0f709cc5a2e2705574d41a4a4d5f9735a6f5b5c725fe2cb214bae05029ed493f",
           "match": true,
           "expectedNormalizedStatements": [
             "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
@@ -14232,7 +14232,9 @@
             "INSERT INTO canonical_app_wiring_operations(app_wiring_operation_id,request_identity_fingerprint,request_namespace,entrypoint_kind,external_request_id,request_key,payload_fingerprint,environment_code,database_identity,route,reason_code,command_code,handler_key,claim_state,effect_mode,lease_token,lease_generation,lease_expires_time,attempt_count,recovery_status,recovery_code,result_json,error_code,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'FAILED','READ_ONLY',NULL,0,NULL,?,'NONE',NULL,NULL,?,?,?,?,?)",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at,completed_at) VALUES (?,'app-wiring.read-only-no-reply',?,'external_identity',NULL,'iris','failed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'failed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
-            "UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?"
+            "UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO event_inbox ( event_id,provider_code,provider_event_id,external_channel_id,channel_id, external_user_id,external_identity_id,event_kind,event_origin,direction,payload_hash, parse_status,processing_status,received_at,attempt_count,error_code ) VALUES (?,?,?,?,NULL,?,NULL,?,?,?,?, 'parsed','processing',UTC_TIMESTAMP(3),1,?) ON DUPLICATE KEY UPDATE event_id=VALUES(event_id)"
           ],
           "actualNormalizedStatements": [
             "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
@@ -14256,23 +14258,31 @@
             "INSERT INTO canonical_app_wiring_operations(app_wiring_operation_id,request_identity_fingerprint,request_namespace,entrypoint_kind,external_request_id,request_key,payload_fingerprint,environment_code,database_identity,route,reason_code,command_code,handler_key,claim_state,effect_mode,lease_token,lease_generation,lease_expires_time,attempt_count,recovery_status,recovery_code,result_json,error_code,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'FAILED','READ_ONLY',NULL,0,NULL,?,'NONE',NULL,NULL,?,?,?,?,?)",
             "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at,completed_at) VALUES (?,'app-wiring.read-only-no-reply',?,'external_identity',NULL,'iris','failed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
             "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'failed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
-            "UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?"
+            "UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+            "INSERT INTO event_inbox ( event_id,provider_code,provider_event_id,external_channel_id,channel_id, external_user_id,external_identity_id,event_kind,event_origin,direction,payload_hash, parse_status,processing_status,received_at,attempt_count,error_code ) VALUES (?,?,?,?,NULL,?,NULL,?,?,?,?, 'parsed','processing',UTC_TIMESTAMP(3),1,?) ON DUPLICATE KEY UPDATE event_id=VALUES(event_id)"
           ],
-          "expectedRowCount": 22,
-          "actualRowCount": 22
+          "expectedRowCount": 23,
+          "actualRowCount": 23
         },
         "lockOrder": {
           "expected": [
             "event_inbox",
             "external_identities",
             "channels",
-            "canonical_app_wiring_operations"
+            "canonical_app_wiring_operations",
+            "operations",
+            "command_executions",
+            "outbox_messages"
           ],
           "actual": [
             "event_inbox",
             "external_identities",
             "channels",
-            "canonical_app_wiring_operations"
+            "canonical_app_wiring_operations",
+            "operations",
+            "command_executions",
+            "outbox_messages"
           ],
           "match": true
         },
@@ -14284,19 +14294,23 @@
             "BEGIN",
             "ROLLBACK",
             "BEGIN",
-            "COMMIT"
+            "COMMIT",
+            "BEGIN",
+            "ROLLBACK"
           ],
           "actualTimeline": [
             "BEGIN",
             "ROLLBACK",
             "BEGIN",
-            "COMMIT"
+            "COMMIT",
+            "BEGIN",
+            "ROLLBACK"
           ]
         }
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "74457b2681398150a6b5bd967984c147e90cf87f89ba61b4b9cfb618c883e455"
+      "receiptSha256": "5d5d07479af36e84d673df66911a725ba1db2e6c3b37bc876d0f6b6cf653bf38"
     },
     {
       "receiptId": "receipt:wave15:legacy-0a10ef65ad4b37cd:wrong_room_rejected",
@@ -14316,7 +14330,7 @@
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
-        "targetSourceSha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131",
+        "targetSourceSha256": "cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12",
         "exportName": "executeWave15PetSkillInfoPrivateDev"
       },
       "scenario": {
@@ -14358,7 +14372,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "b57dc1c583cc1872ff0a4ae3015a864a688105de5c6f0ec36600415f0515c0b9"
+      "receiptSha256": "ad8132bdfee51c3450f9e086086dedcb36c54341a4f7192a204b4caf3ca069cd"
     },
     {
       "receiptId": "receipt:wave15:legacy-0a10ef65ad4b37cd:exact_output",
@@ -14378,7 +14392,7 @@
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
-        "targetSourceSha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131",
+        "targetSourceSha256": "cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12",
         "exportName": "executeWave15PetSkillInfoPrivateDev"
       },
       "scenario": {
@@ -14466,7 +14480,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "72f0bf5412c662cccb91a8fe32d3da0fd9399bb7fa45ef39c578a76f7a721b8f"
+      "receiptSha256": "3ac077249bca826b02798e7b2d7d480886bdbee20146665c11b1e9975988b318"
     },
     {
       "receiptId": "receipt:wave15:legacy-0a10ef65ad4b37cd:source_domain_dml_zero",
@@ -14486,7 +14500,7 @@
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
-        "targetSourceSha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131",
+        "targetSourceSha256": "cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12",
         "exportName": "executeWave15PetSkillInfoPrivateDev"
       },
       "scenario": {
@@ -14574,7 +14588,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "47d4acbc3768414b1375b74f9c4382d7f4ccef3bcb54fadaa28633e7c9d6c8c5"
+      "receiptSha256": "ced06ca9f4bc637f4909667e8df5124e3177077e5854bc7c01a0da7fc867e5e8"
     },
     {
       "receiptId": "receipt:wave15:legacy-0a10ef65ad4b37cd:restart_consistency",
@@ -14594,7 +14608,7 @@
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
-        "targetSourceSha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131",
+        "targetSourceSha256": "cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12",
         "exportName": "executeWave15PetSkillInfoPrivateDev"
       },
       "scenario": {
@@ -14702,7 +14716,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "92cacda01ceb50abc71729cb6c375d530f1c51c644099df2fb1d4127969765ab"
+      "receiptSha256": "f57204bc4a03a9fad496be8dce24d37b4db55687a2579dbb21cc52cabf75365f"
     }
   ]
 }
