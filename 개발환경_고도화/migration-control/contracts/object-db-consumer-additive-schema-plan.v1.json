@@ -68,6 +68,18 @@
       "rollbackPreflight": "REJECT_WHEN_SLOT_31_TO_40_EXISTS",
       "createOnly": false,
       "reentrantDdlRequired": false
+    },
+    {
+      "migration": "482_canonical_pet_skill_grade_unicode.sql",
+      "rollback": "482_canonical_pet_skill_grade_unicode.rollback.sql",
+      "kind": "ADDITIVE_CANONICAL_PET_SKILL_GRADE_UNICODE_CORRECTION",
+      "alters": ["canonical_pet_skill_definitions"],
+      "creates": [],
+      "inputShape": "MIGRATION_481_CANONICAL_PET_SKILL_READ_PROVIDER",
+      "resultingShape": "MIGRATION_482_CANONICAL_PET_SKILL_UNICODE_GRADE",
+      "rollbackPreflight": "REJECT_WHEN_NON_ASCII_GRADE_EXISTS",
+      "createOnly": false,
+      "reentrantDdlRequired": false
     }
   ],
   "ddlExecution": "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED",

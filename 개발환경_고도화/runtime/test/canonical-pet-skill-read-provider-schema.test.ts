@@ -5,6 +5,8 @@ import { describe,it } from "node:test";
 
 const migration=fs.readFileSync(new URL("../migrations/481_canonical_pet_skill_read_provider.sql",import.meta.url),"utf8");
 const rollback=fs.readFileSync(new URL("../migrations/rollback/481_canonical_pet_skill_read_provider.rollback.sql",import.meta.url),"utf8");
+const unicodeMigration=fs.readFileSync(new URL("../migrations/482_canonical_pet_skill_grade_unicode.sql",import.meta.url),"utf8");
+const unicodeRollback=fs.readFileSync(new URL("../migrations/rollback/482_canonical_pet_skill_grade_unicode.rollback.sql",import.meta.url),"utf8");
 
 describe("canonical pet skill read provider schema",()=>{
   it("adds named CUID identities, matching FKs, audit columns, and declarative metadata only",()=>{
@@ -15,6 +17,10 @@ describe("canonical pet skill read provider schema",()=>{
   it("rolls back only when no live slot 31..40 would violate the restored check",()=>{
     assert.match(rollback,/WHERE slot_number BETWEEN 31 AND 40/);assert.match(rollback,/UNION ALL\s+SELECT 2 WHERE EXISTS/);
     assert.match(rollback,/slot_number BETWEEN 1 AND 30/);assert.ok(rollback.indexOf("rollback_preflight_guard")<rollback.indexOf("ALTER TABLE"));
+  });
+  it("stores Korean legacy grades losslessly and fails closed before ASCII rollback",()=>{
+    assert.match(unicodeMigration,/pet_skill_grade VARCHAR\(50\) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin/);
+    assert.match(unicodeRollback,/pet_skill_grade REGEXP '\[\^ -~\]'/);assert.ok(unicodeRollback.indexOf("rollback_preflight_guard")<unicodeRollback.indexOf("ALTER TABLE"));
   });
   it("does not activate pet-skill commands or alter applied migrations",()=>{
     assert.equal(migration.includes("command_registry"),false);assert.equal(migration.includes("command_aliases"),false);

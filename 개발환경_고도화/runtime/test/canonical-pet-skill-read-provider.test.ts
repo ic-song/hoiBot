@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { describe, it } from "node:test";
 import type { DatabaseClient, DatabaseTransaction, ReadOnlySnapshotTransaction } from "../src/database.js";
 import { MariaCanonicalPetSkillReadProvider, normalizePetSkillLookup, projectCanonicalPetSkillReadCatalog } from "../src/pet/canonical-pet-skill-read-provider.js";
@@ -44,7 +45,10 @@ describe("canonical pet skill read provider",()=>{
   });
 
   it("normalizes the exact legacy book prefix and compact lookup aliases",async()=>{
-    assert.equal(normalizePetSkillLookup("[펏스킬북]✨ 장인의 숨결📙"),normalizePetSkillLookup("장인의숨결"));
+    const legacyMain=fs.readFileSync(new URL("../../../main.js",import.meta.url),"utf8");
+    assert.match(legacyMain,/\.replace\(\/\^\\\[펫스킬북\\\]\/g?,\s*""\)/);
+    assert.equal(normalizePetSkillLookup("[펫스킬북]✨ 장인의 숨결📙"),normalizePetSkillLookup("장인의숨결"));
+    assert.notEqual(normalizePetSkillLookup("[펏스킬북]✨ 장인의 숨결📙"),normalizePetSkillLookup("장인의숨결"));
   });
 
   it("rejects clients without the read-only snapshot capability",async()=>{

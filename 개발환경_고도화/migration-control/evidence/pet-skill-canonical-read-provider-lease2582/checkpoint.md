@@ -9,10 +9,10 @@
 ## Gate state
 
 - Gate 1/2: migration 481, rollback, manifest and additive schema plan synchronized.
-- Gate 3/4: frozen 90 + post-freeze 3 = exact 93 source rows, SHA-256 `435a49512498b33295734e7dc864628792a47409b1e818c047d0051b2f15d176`.
+- Gate 3/4: baseline frozen 90 plus `sourceRef=8f075b4ef249543563e3338e8f3dd32046344880` post-freeze 3 = exact 93 source rows. Legacy source-only SHA-256 is `435a49512498b33295734e7dc864628792a47409b1e818c047d0051b2f15d176`; sourceIndex/sourceKey/definitionCode/display order/full source metadata/handler/options/alias30/policy4 are independently pinned by canonical tuple SHA-256 `b108a0b9d07ccaa40d0a7f85961c6d4bddbb91969dc3f6405a93162fae4517c9`.
 - Gate 5: provider requires one read-only consistent snapshot, performs exactly three SELECTs and exposes no DML transaction capability.
 - Gate 6: focused unit/schema/import tests pass; no command ingress was activated.
-- Gate 7: isolated MariaDB `127.0.0.1:3330` all 469 migrations, rollback/forward, restart and rollback preflight verified. Operational MariaDB `3306` was not accessed.
+- Gate 7: isolated MariaDB `127.0.0.1:3330` fresh database all 470 migrations, explicit seed CLI, semantic import binding for 93 definitions, alias30/policy4 anti-extra counts, transaction rollback, restart persistence, and Unicode-grade rollback preflight verified. Operational MariaDB `3306` was not accessed.
 
 ## Deferred consumer slices
 

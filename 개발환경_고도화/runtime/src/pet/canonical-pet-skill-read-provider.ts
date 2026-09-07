@@ -13,7 +13,7 @@ interface AliasRow { pet_skill_alias_id:string;pet_skill_id:string;alias_value:s
 interface PolicyRow { pet_skill_draw_grade_policy_id:string;pet_skill_grade:string;grade_probability_total:string;display_order:number; }
 const ID=/^[a-z0-9]{8}$/;
 
-export function normalizePetSkillLookup(value:string):string{return value.normalize("NFKC").replace(/^\[펏스킬북\]/,"").replace(/[\s✨📙]/g,"").toLocaleLowerCase("ko-KR");}
+export function normalizePetSkillLookup(value:string):string{return value.normalize("NFKC").replace(/^\[펫스킬북\]/,"").replace(/[\s✨📙]/g,"").toLocaleLowerCase("ko-KR");}
 function fail(code:string):never{throw new Error(code);}
 function flag(value:boolean|number|null,code:string):boolean{if(value===true||value===1)return true;if(value===false||value===0)return false;return fail(code);}
 function finite(value:string|null,code:string):number{const number=Number(value);if(value===null||!Number.isFinite(number)||number<0||number>100)return fail(code);return number;}
