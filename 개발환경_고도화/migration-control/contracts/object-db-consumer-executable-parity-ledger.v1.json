@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "4b07fa45fddc80b0fa2cd9d949cdb6246e3212a5",
+  "evidenceCommit": "3f3416d4ec843db8856540078f9df19ffd5c055d",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -28,7 +28,7 @@
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave14-v1.json",
-      "sha256": "4d59fb703663dae2fbae06e8c684ae25a3cbcc5f7865c7c0e186b856663bcbe8"
+      "sha256": "408e871bd8474255861f2d59fd281a7220014a6a8585436a2abba9823bfc4e14"
     },
     "classificationSources": [
       {
@@ -69575,7 +69575,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-wave14-pet-skill-probability",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
-        "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+        "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs",
@@ -70179,7 +70179,7 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
-            "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+            "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-harness.mjs",
@@ -109213,5 +109213,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "8bc76d0391af7b090c0bf260bc1d444a27ca0577f6d2a6ce3397a626aa965b79"
+  "entrySetSha256": "64c457291fad83a2e0ff18cdd62b4f70034613f85ee9b0a1367b3354d0ad229e"
 }

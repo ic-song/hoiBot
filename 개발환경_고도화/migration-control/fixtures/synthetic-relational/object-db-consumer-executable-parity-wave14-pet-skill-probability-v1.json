@@ -13,6 +13,44 @@
     "utf8ByteCount": 5494,
     "replySha256": "4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"
   },
+  "expectedEvidence": {
+    "dmlTemplates": {
+      "success": [
+        "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+        "INSERT INTO event_inbox ( event_id,provider_code,provider_event_id,external_channel_id,channel_id, external_user_id,external_identity_id,event_kind,event_origin,direction,payload_hash, parse_status,processing_status,received_at,attempt_count,error_code ) VALUES (?,?,?,?,NULL,?,NULL,?,?,?,?, 'parsed','processing',UTC_TIMESTAMP(3),1,?) ON DUPLICATE KEY UPDATE event_id=VALUES(event_id)",
+        "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+        "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+        "INSERT INTO external_identity_names (external_identity_id, display_name, source_code, trust_status, channel_id, provider_event_id, observed_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+        "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+        "UPDATE event_inbox SET channel_id=?,external_identity_id=? WHERE event_id=?",
+        "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+        "UPDATE event_inbox SET processing_status='processed',processed_at=UTC_TIMESTAMP(3),error_code=NULL WHERE event_id=?",
+        "INSERT INTO operations (operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))",
+        "INSERT INTO outbox_messages (operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+        "INSERT INTO command_executions (event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+        "INSERT INTO command_audit (operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,'pet_skill.probability.read',?,'Iris /펫스킬확률',?,UTC_TIMESTAMP(3))",
+        "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+        "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+        "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+      ],
+      "negativeGuard": [
+        "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+        "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+        "INSERT INTO external_identity_names (external_identity_id, display_name, source_code, trust_status, channel_id, provider_event_id, observed_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+        "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+        "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+        "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+        "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+      ]
+    },
+    "scenarios": {
+      "READ_POSITIVE": {"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a","result":{"statusCode":202,"accepted":true,"ignored":false,"duplicate":false,"environment":"dev","replyCount":1,"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"},"dmlTemplate":"success","dmlRepeat":1,"rowCount":16,"lockOrder":["command_executions","operations","event_inbox","external_identities","players","outbox_messages"],"transaction":"COMMIT","timeline":["BEGIN","COMMIT","BEGIN","COMMIT","BEGIN","COMMIT"]},
+      "NEGATIVE_GUARD": {"replySha256":"326cdd19473bb2f21b07a17ad9d92aefd97cc9267f49c4a1694d6c02d6c49a56","result":{"statusCode":202,"accepted":true,"ignored":false,"duplicate":false,"environment":"dev","replyCount":0,"replySha256":null},"dmlTemplate":"negativeGuard","dmlRepeat":1,"rowCount":7,"lockOrder":["command_executions","operations"],"transaction":"COMMIT","timeline":["BEGIN","COMMIT","BEGIN","COMMIT"]},
+      "EXACT_OUTPUT": {"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a","result":{"statusCode":202,"accepted":true,"ignored":false,"duplicate":false,"environment":"prod","replyCount":1,"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"},"dmlTemplate":"success","dmlRepeat":1,"rowCount":16,"lockOrder":["command_executions","operations","event_inbox","external_identities","players","outbox_messages"],"transaction":"COMMIT","timeline":["BEGIN","COMMIT","BEGIN","COMMIT","BEGIN","COMMIT"]},
+      "SOURCE_DOMAIN_DML_ZERO": {"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a","result":{"statusCode":202,"accepted":true,"ignored":false,"duplicate":false,"environment":"dev","replyCount":1,"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"},"dmlTemplate":"success","dmlRepeat":1,"rowCount":16,"lockOrder":["command_executions","operations","event_inbox","external_identities","players","outbox_messages"],"transaction":"COMMIT","timeline":["BEGIN","COMMIT","BEGIN","COMMIT","BEGIN","COMMIT"]},
+      "RESTART_CONSISTENCY": {"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a","result":{"statusCode":202,"accepted":true,"ignored":false,"duplicate":false,"environment":"dev","replyCount":1,"replySha256":"4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"},"dmlTemplate":"success","dmlRepeat":2,"rowCount":32,"lockOrder":["command_executions","operations","event_inbox","external_identities","players","outbox_messages"],"transaction":"COMMIT","timeline":["BEGIN","COMMIT","BEGIN","COMMIT","BEGIN","COMMIT","BEGIN","COMMIT","BEGIN","COMMIT","BEGIN","COMMIT"]}
+    }
+  },
   "runtimeSourceHashes": [
     {"path":"개발환경_고도화/runtime/src/app.ts","sha256":"2bfa4b5571a7fbbfaf43741c31fa812f4914f13fff7fe4054db49146e1594d89"},
     {"path":"개발환경_고도화/runtime/src/integration/event-processing-service.ts","sha256":"2bc7040542e6be8e33e65ca472587574c84bd0ee505794219d2f136082d218aa"},
