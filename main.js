@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.464"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.465"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -943,6 +943,7 @@ const GLOBAL_CONFIG = {
         legacyMiniPetKeyItemName: "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션 번호)",
         oldPetSkillKeyItemName: "펫스킬컬렉션 만능 열쇠📚",
         oldMiniPetKeyItemName: "미니펫컬렉션 만능 열쇠🗝️",
+        maxCollectionSelectionCount: 10,
         petSkillBookRate: 0.70,
         petSkillKeyRate: 0.25,
         miniPetKeyRate: 0.05
@@ -27671,38 +27672,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (/^\/펫스킬컬렉션만능\s+\d+$/.test(msg)) {
+                if (/^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var petSkillUniversalNumber = parseInt(msg.replace("/펫스킬컬렉션만능", "").trim(), 10);
+                    var petSkillUniversalArgs = msg.replace("/펫스킬컬렉션만능", "").trim().split(/\s+/);
+                    var universalCollectionMaxSelectionCount = GLOBAL_CONFIG.universalBox.maxCollectionSelectionCount;
+                    if (petSkillUniversalArgs.length > universalCollectionMaxSelectionCount) {
+                        replier.reply("❌ 한 번에 최대 " + universalCollectionMaxSelectionCount + "개까지 등록할 수 있습니다.");
+                        return;
+                    }
+
                     var petSkillUniversalTargetList = getPetSkillCollectionTargetList();
-                    var petSkillUniversalSkillData = petSkillUniversalTargetList[petSkillUniversalNumber - 1];
-                    if (!petSkillUniversalSkillData) {
-                        replier.reply("⚠️ 컬렉션 번호를 확인해 주세요.\n\n사용 방법: /펫스킬컬렉션만능 [펫스킬컬렉션번호]");
-                        return;
-                    }
-
                     var petSkillUniversalCollection = ensurePetSkillCollection(petSkillData, sender);
-                    var petSkillUniversalMaxCount = GLOBAL_CONFIG.petSkillCollection.maxCounts[petSkillUniversalSkillData.grade];
-                    var petSkillUniversalCurrentCount = getPetSkillCollectionCount(petSkillUniversalCollection, petSkillUniversalSkillData.name);
-                    if (petSkillUniversalCurrentCount >= petSkillUniversalMaxCount) {
-                        replier.reply("⚠️ 이미 최대 수량까지 완성된 펫스킬 컬렉션입니다: " + petSkillUniversalNumber + "번 " + formatPetSkillName(petSkillUniversalSkillData.name));
-                        return;
-                    }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.universalBox.petSkillKeyItemName, 1)) {
-                        replier.reply("⚠️ " + GLOBAL_CONFIG.universalBox.petSkillKeyItemName + "가 부족합니다.");
-                        return;
+                    var petSkillUniversalSelected = [];
+                    var petSkillUniversalPlannedCounts = {};
+                    for (var petSkillUniversalIndex = 0; petSkillUniversalIndex < petSkillUniversalArgs.length; petSkillUniversalIndex++) {
+                        var petSkillUniversalNumber = parseInt(petSkillUniversalArgs[petSkillUniversalIndex], 10);
+                        var petSkillUniversalSkillData = petSkillUniversalTargetList[petSkillUniversalNumber - 1];
+                        if (!petSkillUniversalSkillData) {
+                            replier.reply("⚠️ 컬렉션 번호를 확인해 주세요: " + petSkillUniversalArgs[petSkillUniversalIndex] + "번\n\n사용 방법: /펫스킬컬렉션만능 [펫스킬컬렉션번호] ...");
+                            return;
+                        }
+
+                        var petSkillUniversalMaxCount = GLOBAL_CONFIG.petSkillCollection.maxCounts[petSkillUniversalSkillData.grade];
+                        var petSkillUniversalCurrentCount = getPetSkillCollectionCount(petSkillUniversalCollection, petSkillUniversalSkillData.name);
+                        if (petSkillUniversalPlannedCounts[petSkillUniversalSkillData.name] !== undefined) petSkillUniversalCurrentCount = petSkillUniversalPlannedCounts[petSkillUniversalSkillData.name];
+                        if (petSkillUniversalCurrentCount >= petSkillUniversalMaxCount) {
+                            replier.reply("⚠️ 이미 최대 수량까지 완성됐거나 선택 수량이 남은 등록 칸을 초과했습니다: " + petSkillUniversalNumber + "번 " + formatPetSkillName(petSkillUniversalSkillData.name));
+                            return;
+                        }
+
+                        var petSkillUniversalAfterCount = petSkillUniversalCurrentCount + 1;
+                        petSkillUniversalPlannedCounts[petSkillUniversalSkillData.name] = petSkillUniversalAfterCount;
+                        petSkillUniversalSelected.push({
+                            collectionNumber: petSkillUniversalNumber,
+                            name: petSkillUniversalSkillData.name,
+                            grade: petSkillUniversalSkillData.grade,
+                            beforeCount: petSkillUniversalCurrentCount,
+                            afterCount: petSkillUniversalAfterCount,
+                            maxCount: petSkillUniversalMaxCount,
+                            canRegister: true,
+                            useUniversalKey: true
+                        });
                     }
 
-                    var petSkillUniversalSelected = [{
-                        collectionNumber: petSkillUniversalNumber,
-                        name: petSkillUniversalSkillData.name,
-                        grade: petSkillUniversalSkillData.grade,
-                        beforeCount: petSkillUniversalCurrentCount,
-                        afterCount: petSkillUniversalCurrentCount + 1,
-                        maxCount: petSkillUniversalMaxCount,
-                        canRegister: true,
-                        useUniversalKey: true
-                    }];
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.universalBox.petSkillKeyItemName, petSkillUniversalSelected.length)) {
+                        replier.reply("⚠️ " + GLOBAL_CONFIG.universalBox.petSkillKeyItemName + "가 부족합니다.\n필요 수량: " + petSkillUniversalSelected.length + "개");
+                        return;
+                    }
                     if (!userState[sender]) userState[sender] = {};
                     userState[sender].petSkillCollection = { selectedList: petSkillUniversalSelected };
                     replier.reply(buildPetSkillCollectionConfirmMessage(data, petData, guildData, sender, petSkillUniversalSelected, petSkillUniversalCollection));
@@ -27710,12 +27726,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if (/^\/펫스킬컬렉션만능(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("사용법: /펫스킬컬렉션만능 [펫스킬컬렉션번호]\n※ 만능열쇠 1개를 사용해 선택한 컬렉션 1칸을 등록합니다.");
+                    replier.reply("사용법: /펫스킬컬렉션만능 [펫스킬컬렉션번호] ...\n※ 만능열쇠로 한 번에 최대 10개까지 등록할 수 있습니다.");
                     return;
                 }
 
                 if (/^\/펫스킬컬렉션\s+.*$/.test(msg)) {
-                    replier.reply("펫스킬 컬렉션 현황: /펫스킬컬렉션\n만능열쇠 등록: /펫스킬컬렉션만능 [펫스킬컬렉션번호]");
+                    replier.reply("펫스킬 컬렉션 현황: /펫스킬컬렉션\n만능열쇠 등록: /펫스킬컬렉션만능 [펫스킬컬렉션번호] ...");
                     return;
                 }
 
@@ -28252,46 +28268,80 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 컬렉션 등록이 취소되었습니다.");
                 }
 
-                if (/^\/미니펫컬렉션만능\s+\d+$/.test(msg)) {
+                if (/^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var miniPetUniversalNumber = parseInt(msg.replace("/미니펫컬렉션만능", "").trim(), 10);
-                    var miniPetUniversalGrade = MINI_PET_COLLECTION_ALLOWED_GRADES[miniPetUniversalNumber - 1];
-                    if (!miniPetUniversalGrade) {
-                        replier.reply("⚠️ 컬렉션 번호를 확인해 주세요.\n\n사용 방법: /미니펫컬렉션만능 [미니펫컬렉션번호]");
+                    var miniPetUniversalArgs = msg.replace("/미니펫컬렉션만능", "").trim().split(/\s+/);
+                    var miniPetUniversalMaxSelectionCount = GLOBAL_CONFIG.universalBox.maxCollectionSelectionCount;
+                    if (miniPetUniversalArgs.length > miniPetUniversalMaxSelectionCount) {
+                        replier.reply("❌ 한 번에 최대 " + miniPetUniversalMaxSelectionCount + "개까지 등록할 수 있습니다.");
                         return;
                     }
 
                     var miniPetUniversalCollectionData = loadJsonFile(miniPetCollectionPath);
                     if (sanitizeMiniPetCollectionData(miniPetUniversalCollectionData)) saveJsonFile(miniPetUniversalCollectionData, miniPetCollectionPath);
                     var miniPetUniversalCollection = ensureMiniPetCollection(miniPetUniversalCollectionData, sender);
-                    if (miniPetUniversalCollection.registered[miniPetUniversalGrade]) {
-                        replier.reply("⚠️ 이미 등록된 미니펫 컬렉션입니다.\n[" + miniPetUniversalNumber + "] " + miniPetUniversalGrade + " [✅등록]");
-                        return;
+                    var miniPetUniversalPlannedRegistered = {};
+                    for (var miniPetUniversalGradeIndex = 0; miniPetUniversalGradeIndex < MINI_PET_COLLECTION_ALLOWED_GRADES.length; miniPetUniversalGradeIndex++) {
+                        var miniPetUniversalInitialGrade = MINI_PET_COLLECTION_ALLOWED_GRADES[miniPetUniversalGradeIndex];
+                        miniPetUniversalPlannedRegistered[miniPetUniversalInitialGrade] = miniPetUniversalCollection.registered[miniPetUniversalInitialGrade] === true;
+                    }
+                    var miniPetUniversalStage = parseInt(miniPetUniversalCollection.stage || 1, 10);
+                    var miniPetUniversalSelected = [];
+                    for (var miniPetUniversalIndex = 0; miniPetUniversalIndex < miniPetUniversalArgs.length; miniPetUniversalIndex++) {
+                        var miniPetUniversalNumber = parseInt(miniPetUniversalArgs[miniPetUniversalIndex], 10);
+                        var miniPetUniversalGrade = MINI_PET_COLLECTION_ALLOWED_GRADES[miniPetUniversalNumber - 1];
+                        if (!miniPetUniversalGrade) {
+                            replier.reply("⚠️ 컬렉션 번호를 확인해 주세요: " + miniPetUniversalArgs[miniPetUniversalIndex] + "번\n\n사용 방법: /미니펫컬렉션만능 [미니펫컬렉션번호] ...");
+                            return;
+                        }
+                        if (miniPetUniversalPlannedRegistered[miniPetUniversalGrade]) {
+                            replier.reply("⚠️ 현재 단계에서 이미 등록됐거나 중복 선택한 미니펫 컬렉션입니다.\n[" + miniPetUniversalNumber + "] " + miniPetUniversalGrade + " [✅등록]");
+                            return;
+                        }
+
+                        miniPetUniversalPlannedRegistered[miniPetUniversalGrade] = true;
+                        miniPetUniversalSelected.push({
+                            index: 0,
+                            name: GLOBAL_CONFIG.universalBox.miniPetKeyItemName,
+                            grade: miniPetUniversalGrade,
+                            upgrade: miniPetUniversalStage,
+                            collectionNumber: miniPetUniversalNumber,
+                            plannedStage: miniPetUniversalStage,
+                            useUniversalKey: true
+                        });
+
+                        var miniPetUniversalStageComplete = true;
+                        for (var miniPetUniversalCheckIndex = 0; miniPetUniversalCheckIndex < MINI_PET_COLLECTION_ALLOWED_GRADES.length; miniPetUniversalCheckIndex++) {
+                            if (!miniPetUniversalPlannedRegistered[MINI_PET_COLLECTION_ALLOWED_GRADES[miniPetUniversalCheckIndex]]) {
+                                miniPetUniversalStageComplete = false;
+                                break;
+                            }
+                        }
+                        if (miniPetUniversalStageComplete) {
+                            miniPetUniversalStage++;
+                            for (var miniPetUniversalResetIndex = 0; miniPetUniversalResetIndex < MINI_PET_COLLECTION_ALLOWED_GRADES.length; miniPetUniversalResetIndex++) {
+                                miniPetUniversalPlannedRegistered[MINI_PET_COLLECTION_ALLOWED_GRADES[miniPetUniversalResetIndex]] = false;
+                            }
+                        }
                     }
 
-                    var miniPetUniversalStage = parseInt(miniPetUniversalCollection.stage || 1, 10);
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.universalBox.miniPetKeyItemName, 1)) {
-                        replier.reply("⚠️ " + GLOBAL_CONFIG.universalBox.miniPetKeyItemName + "가 부족합니다.");
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.universalBox.miniPetKeyItemName, miniPetUniversalSelected.length)) {
+                        replier.reply("⚠️ " + GLOBAL_CONFIG.universalBox.miniPetKeyItemName + "가 부족합니다.\n필요 수량: " + miniPetUniversalSelected.length + "개");
                         return;
                     }
-                    var miniPetUniversalSelected = {
-                        index: 0,
-                        name: GLOBAL_CONFIG.universalBox.miniPetKeyItemName,
-                        grade: miniPetUniversalGrade,
-                        upgrade: miniPetUniversalStage,
-                        collectionNumber: miniPetUniversalNumber,
-                        useUniversalKey: true
-                    };
 
                     if (!userState[sender]) userState[sender] = {};
-                    userState[sender].miniPetCollection = { selectedList: [miniPetUniversalSelected] };
-                    replier.reply(
-                        "✅ [" + checkRank(data, petData, guildData, sender) + "] 님\n" +
-                        "🐹 미니펫 컬렉션 등록 확인\n\n" +
-                        "[" + miniPetUniversalNumber + "] " + miniPetUniversalGrade + " 컬렉션\n" +
-                        "사용 재료: " + GLOBAL_CONFIG.universalBox.miniPetKeyItemName + "\n\n" +
-                        "👉 [등록] / [ㄴㄴ]"
-                    );
+                    userState[sender].miniPetCollection = { selectedList: miniPetUniversalSelected };
+                    var miniPetUniversalConfirm = "✅ [" + checkRank(data, petData, guildData, sender) + "] 님\n";
+                    miniPetUniversalConfirm += "🐹 미니펫 컬렉션 등록 확인\n\n";
+                    miniPetUniversalConfirm += "선택 목록[" + miniPetUniversalSelected.length + "개]\n";
+                    for (var miniPetUniversalSelectedIndex = 0; miniPetUniversalSelectedIndex < miniPetUniversalSelected.length; miniPetUniversalSelectedIndex++) {
+                        var miniPetUniversalPicked = miniPetUniversalSelected[miniPetUniversalSelectedIndex];
+                        miniPetUniversalConfirm += "[" + miniPetUniversalPicked.collectionNumber + "] " + miniPetUniversalPicked.grade + " 컬렉션 (+" + miniPetUniversalPicked.plannedStage + "💫 단계)\n";
+                    }
+                    miniPetUniversalConfirm += "\n사용 재료: " + GLOBAL_CONFIG.universalBox.miniPetKeyItemName + " " + miniPetUniversalSelected.length + "개\n\n";
+                    miniPetUniversalConfirm += "👉 [등록] / [ㄴㄴ]";
+                    replier.reply(miniPetUniversalConfirm);
                     return;
                 }
 
@@ -28324,7 +28374,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         out += "보상: 없음\n\n";
                     }
                     out += "🗝️ 만능열쇠 등록\n";
-                    out += "/미니펫컬렉션만능 [미니펫컬렉션번호]\n\n";
+                    out += "/미니펫컬렉션만능 [미니펫컬렉션번호] ...\n";
+                    out += "※ 한 번에 최대 10개\n\n";
                     out += "🐹 미니펫 등급 등록\n";
                     out += "/미니펫컬렉션등록 [미니펫가방번호] ...\n\n";
                     out += "※ [등급]+미니펫강화+" + stage + "💫 를 등록해주세요.\n";
@@ -28346,11 +28397,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (/^\/미니펫컬렉션(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("미니펫 컬렉션 현황: /미니펫컬렉션\n만능열쇠 등록: /미니펫컬렉션만능 [미니펫컬렉션번호]");
+                    replier.reply("미니펫 컬렉션 현황: /미니펫컬렉션\n만능열쇠 등록: /미니펫컬렉션만능 [미니펫컬렉션번호] ...");
                     return;
                 }
                 if (/^\/미니펫컬렉션만능(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("사용 방법: /미니펫컬렉션만능 [미니펫컬렉션번호]\n※ 만능열쇠 1개를 사용해 선택한 컬렉션 1칸을 등록합니다.");
+                    replier.reply("사용 방법: /미니펫컬렉션만능 [미니펫컬렉션번호] ...\n※ 만능열쇠로 한 번에 최대 10개까지 등록할 수 있습니다.");
                     return;
                 }
                 if (msg === "/미니펫컬렉션순위") {
@@ -29421,8 +29472,8 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        /^\/미니펫컬렉션만능\s+\d+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
-        /^\/펫스킬컬렉션만능\s+\d+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
+        /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
+        /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
@@ -42067,7 +42118,8 @@ function buildPetSkillCollectionMessage(data, petData, guildData, user, collecti
     lines.push(config.rewardItemName + "가 즉시 지급됩니다.");
     lines.push("");
     lines.push("🗝️ 만능열쇠 등록");
-    lines.push("/펫스킬컬렉션만능 [펫스킬컬렉션번호]");
+    lines.push("/펫스킬컬렉션만능 [펫스킬컬렉션번호] ...");
+    lines.push("※ 한 번에 최대 10개");
     lines.push("");
     lines.push("━━━컬렉션 등록 보상━━━");
     for (var gradeIndex = 0; gradeIndex < config.gradeOrder.length; gradeIndex++) {
@@ -42114,7 +42166,7 @@ function buildPetSkillCollectionConfirmMessage(data, petData, guildData, user, s
     lines.push("");
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("※ [등록]을 입력하면 등록 가능한 펫스킬들만 한 번에 등록합니다.");
-    lines.push("※ 등록 제외된 펫스킬북📙은 소모되지 않습니다.");
+    lines.push("※ 등록 제외된 재료는 소모되지 않습니다.");
     lines.push("※ 현재 펫스킬 컬렉션 목록📊:");
     lines.push(allsee);
     lines.push("");
@@ -48788,7 +48840,7 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
             lines.push("펫스킬 등급과 상관없이 원하는\n펫스킬 컬렉션 1칸을 등록할 수 있습니다!");
             lines.push("");
             lines.push("📌 사용 방법");
-            lines.push("/펫스킬컬렉션만능 [펫스킬컬렉션번호]");
+            lines.push("/펫스킬컬렉션만능 [펫스킬컬렉션번호] ...");
         } else {
             lines.push("🔒 철컥…!\n🌈 눈부신 황금빛과 함께 특별한 보물이 나타납니다!");
             lines.push("━━━━━━━━━━━━━━");
@@ -48799,7 +48851,7 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
             lines.push("미니펫 등급과 상관없이 원하는\n미니펫 컬렉션 1칸을 등록할 수 있습니다!");
             lines.push("");
             lines.push("📌 사용 방법");
-            lines.push("/미니펫컬렉션만능 [미니펫컬렉션번호]");
+            lines.push("/미니펫컬렉션만능 [미니펫컬렉션번호] ...");
         }
         lines.push("");
     } else {
@@ -48816,8 +48868,8 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
         lines.push("📌 아이템 사용 방법");
         lines.push("");
         if (petSkillBookCount > 0) lines.push("📙 /펫스킬오픈");
-        if (petSkillKeyCount > 0) lines.push("📚 /펫스킬컬렉션만능 [펫스킬컬렉션번호]");
-        if (miniPetKeyCount > 0) lines.push("🗝️ /미니펫컬렉션만능 [미니펫컬렉션번호]");
+        if (petSkillKeyCount > 0) lines.push("📚 /펫스킬컬렉션만능 [펫스킬컬렉션번호] ...");
+        if (miniPetKeyCount > 0) lines.push("🗝️ /미니펫컬렉션만능 [미니펫컬렉션번호] ...");
         lines.push("");
     }
     lines.push("━━━━━━━━━━━━━━");
@@ -48832,7 +48884,7 @@ function runUniversalBoxOpen(sender, data, petData, guildData, msg) {
             miniPetKeyDisplayName + " x" + numberWithCommas(miniPetKeyCount) + "\n\n" +
             (miniPetKeyCount === 1 ? "단 5%의 확률을 뚫고 희귀 보상을 획득했습니다!" : "단 5%의 희귀 보상을 여러 개 획득했습니다!") + "\n\n" +
             "미니펫 등급과 상관없이 원하는\n미니펫 컬렉션 1칸을 등록할 수 있습니다!\n\n" +
-            "📌 사용 방법\n/미니펫컬렉션만능 [미니펫컬렉션번호]\n\n" +
+            "📌 사용 방법\n/미니펫컬렉션만능 [미니펫컬렉션번호] ...\n\n" +
             (miniPetKeyCount === 1 ? "🎊 진심으로 축하드립니다! 🎊" : "🎊 놀라운 행운을 축하드립니다! 🎊") + "\n" +
             "━━━━━━━━━━━━━━";
     }
