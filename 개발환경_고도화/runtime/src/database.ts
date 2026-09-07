@@ -238,12 +238,12 @@ function createQueryExecutor(connection: Pick<PoolConnection, "query">): Databas
 }
 
 // MariaDB 연결 풀을 통해 서버 데이터베이스 접근을 관리합니다.
-class MariaDatabaseClient implements CapableDatabaseClient, RootTransactionDatabaseClient {
+export class MariaDatabaseClient implements CapableDatabaseClient, RootTransactionDatabaseClient {
   readonly #pool: Pool;
   readonly #transactionCapabilities: DatabaseTransactionCapabilities;
 
-  constructor(config: DatabaseConfig) {
-    this.#pool = mariadb.createPool({
+  constructor(config: DatabaseConfig, pool?: Pool) {
+    this.#pool = pool ?? mariadb.createPool({
       host: config.host,
       port: config.port,
       user: config.user,

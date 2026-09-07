@@ -4,9 +4,11 @@ import {
   createConnectionBoundDatabaseCapabilities,
   createScopedDatabaseClient,
   hasDatabaseTransactionCapabilities,
+  MariaDatabaseClient,
   type DatabaseClient,
   type DatabaseTransactionCapabilities
 } from "../src/database.js";
+import type { Pool } from "mariadb";
 
 class SyntheticConnection {
   readonly events: string[] = [];
@@ -54,6 +56,39 @@ function capabilities(connection: SyntheticConnection): DatabaseTransactionCapab
 }
 
 describe("database transaction capabilities", () => {
+  function productionAdapter(connection:SyntheticConnection):MariaDatabaseClient{
+    const pool={getConnection:async()=>connection} as unknown as Pool;
+    return new MariaDatabaseClient({enabled:true,host:"synthetic",port:3306,user:"test",password:"test",name:"test",connectionLimit:1,connectTimeoutMs:1_000},pool);
+  }
+
+  it("runs the production consistent root adapter in exact setup, work, commit and release order",async()=>{
+    const connection=new SyntheticConnection();
+    const result=await productionAdapter(connection).withConsistentRootTransaction(async transaction=>{
+      await transaction.query("SELECT value FROM aggregate WHERE id=?",[7]);
+      return"ok";
+    });
+    assert.equal(result,"ok");
+    assert.deepEqual(connection.events,[
+      "query:SET TRANSACTION ISOLATION LEVEL REPEATABLE READ:[]",
+      "query:START TRANSACTION WITH CONSISTENT SNAPSHOT:[]",
+      "query:SELECT value FROM aggregate WHERE id=?:[7]",
+      "commit",
+      "release"
+    ]);
+  });
+
+  for(const failure of ["SET TRANSACTION ISOLATION LEVEL REPEATABLE READ","START TRANSACTION WITH CONSISTENT SNAPSHOT","work","commit"] as const){
+    it(`rolls back and releases the production consistent root adapter after ${failure} failure`,async()=>{
+      const connection=new SyntheticConnection();
+      if(failure!=="work")connection.failAt=failure;
+      await assert.rejects(()=>productionAdapter(connection).withConsistentRootTransaction(async()=>{
+        if(failure==="work")throw new Error("synthetic failure: work");
+      }),/synthetic failure/);
+      assert.deepEqual(connection.events.slice(-2),["rollback","release"]);
+      if(failure!=="commit")assert.equal(connection.events.includes("commit"),false);
+    });
+  }
+
   it("keeps legacy DatabaseClient fakes valid and detects only the opt-in capability", () => {
     const legacy = {
       ping: async () => undefined,

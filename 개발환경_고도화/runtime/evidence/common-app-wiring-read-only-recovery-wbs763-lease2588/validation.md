@@ -21,7 +21,7 @@
 
 - `node --import tsx --test test/app-wiring-read-only-recovery-provider.test.ts` — 13/13 PASS
 - `node --import tsx --test test/maria-database-error-policy.test.ts` — 8/8 PASS
-- `node --import tsx --test test/database-capabilities.test.ts` — 16/16 PASS
+- `node --import tsx --test test/database-capabilities.test.ts` — production adapter SQL/cleanup 포함 21/21 PASS
 - `npm.cmd run typecheck` — PASS
 - `npm.cmd run build` — PASS
 - `npm.cmd run object-data:validate` — PASS, 등록 대상 105개
