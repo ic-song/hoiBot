@@ -75,6 +75,32 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       assert.equal(denied.statusCode,202);assert.equal(JSON.parse(denied.body).ignored,true);assert.equal(trace.atomicHandlerCount,1);
     }finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
   });
+
+  it("restores the generic DirectChat deny when the exact SHADOW route is not enabled",async()=>{
+    const trace=createTraceDatabase(),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"prod",databaseIdentity:"wave14b_shadow"}));
+    const config=loadConfig({NODE_ENV:"production",HOIBOT_ENVIRONMENT_CODE:"prod",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper-production-32",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
+    delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+      inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
+      sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    try{
+      const denied=await send(app,"private-disabled-1","/펫스킬정보청룡언월도");
+      assert.equal(denied.statusCode,202,denied.body);assert.equal(JSON.parse(denied.body).ignored,true);assert.equal(JSON.parse(denied.body).ignoreReason,"open_direct_unverified");assert.equal(trace.atomicHandlerCount,0);
+    }finally{await app.close();}
+  });
+
+  it("rejects a DEV prefix in prod before creating a durable command receipt",async()=>{
+    const trace=createTraceDatabase(),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"prod",databaseIdentity:"wave14b_shadow"}));
+    const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"prod",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
+    process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+      inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),
+      sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    try{
+      const denied=await send(app,"prod-dev-prefix-1","dev/펫스킬정보");
+      assert.equal(denied.statusCode,202,denied.body);assert.equal(JSON.parse(denied.body).ignored,true);assert.equal(JSON.parse(denied.body).ignoreReason,"PET_SKILL_INFO_DEV_ENVIRONMENT_REQUIRED");assert.equal(trace.atomicHandlerCount,0);
+    }finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
+  });
 });
 
 function send(app: ReturnType<typeof buildApp>, id: string, message: string, sender = "호이 남") {

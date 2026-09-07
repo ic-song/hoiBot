@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { buildApp } from "../../src/app.js";
 import { loadConfig } from "../../src/config.js";
+import { resolvePetSkillInfoIngressCommand } from "../../src/pet/pet-skill-info-read-only-recovery-ingress.js";
 import { createEnvironmentContext,verifyStartupDatabaseIdentity } from "../../src/runtime/environment-context.js";
 
 const MODULE_EXECUTION_ID=randomUUID();
@@ -20,7 +21,7 @@ export async function executeWave15PetSkillInfoPrivateDev(args){
     ?{mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}
     :input.channelType==="open_direct"
       ?{mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"wave15-direct"}}
-      :{mode:"denied",channelClass:"open_group",reason:"not_designated",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}};
+      :{mode:"denied",channelClass:"open_group",reason:"CHANNEL_NOT_ALLOWED",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}};
   const environmentContext=await verifyStartupDatabaseIdentity(database,createEnvironmentContext({environmentCode:input.environmentCode,databaseIdentity:"wave15_formal"}));
   const app=buildApp(config,{database,environmentContext,
     inspectIrisChannel:async()=>channelDecision,sendIrisTextReply:async reply=>replies.push(reply)});
@@ -30,13 +31,15 @@ export async function executeWave15PetSkillInfoPrivateDev(args){
       chat_id:"wave15-channel",user_id:binding.scenarioKind==="AUTH_DENIED"?"wave15-no-pass":"wave15-user"}}});}
   finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
   const body=JSON.parse(response.body),evidence=database.evidence(),expected=binding.expected;
-  const accepted=response.statusCode===202&&!body.ignored;
+  const resolvedCommand=resolvePetSkillInfoIngressCommand(input.rawMessage);
+  const observedReason=resolvedCommand===undefined?"PET_SKILL_INFO_COMMAND_NOT_MATCHED":typeof body.ignoreReason==="string"?body.ignoreReason:null;
+  const accepted=resolvedCommand!==undefined&&response.statusCode===202&&!body.ignored;
   check(replies.length===0,"Wave15 SHADOW emitted an external reply");
   if(typeof expected.accepted==="boolean")check(accepted===expected.accepted,`Wave15 ${binding.scenarioKind} acceptance drift`);
   if(typeof expected.handlerInvocationCount==="number")check(evidence.handlerInvocations===expected.handlerInvocationCount,`Wave15 ${binding.scenarioKind} handler count drift`);
   if(expected.terminalResult==="NO_REPLY"&&accepted)check(evidence.outboxes===0,"Wave15 NO_REPLY created outbox");
-  if(expected.terminalResult==="FAILED")check(response.statusCode===500&&evidence.failureCode===expected.errorCode,`Wave15 durable failure drift: ${response.statusCode}/${evidence.failureCode}`);
-  if(expected.reason!==undefined)check(evidence.reason===expected.reason,"Wave15 guard reason drift");
+  if(expected.terminalResult==="FAILED")check(response.statusCode===202&&body.ignored===true&&body.ignoreReason===expected.errorCode&&evidence.failureCode===expected.errorCode,`Wave15 durable rejection drift: ${response.statusCode}/${body.ignoreReason}/${evidence.failureCode}`);
+  if(expected.reason!==undefined)check(observedReason===expected.reason,`Wave15 guard reason drift: ${observedReason}`);
   const reply=evidence.projectedReply??"NO_REPLY";
   if(expected.reply!==undefined)check(reply===expected.reply,"Wave15 independent expected reply drift");
   if(binding.scenarioKind==="SOURCE_DOMAIN_DML_ZERO")check(evidence.sourceDomainDmlCount===0,"Wave15 canonical/source DML detected");
