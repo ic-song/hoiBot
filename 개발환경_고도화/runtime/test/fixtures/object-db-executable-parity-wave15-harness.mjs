@@ -20,7 +20,7 @@ function initialState(value){return value===undefined?{inbox:new Map(),claims:ne
 function exported(state){return{inbox:[...state.inbox],claims:[...state.claims],operations:[...state.operations],executions:[...state.executions],outboxes:[...state.outboxes],next:String(state.next)};}
 
 async function createDatabase(initial,binding){
-  let state=initialState(initial),calls=[],transactions=[],handlerInvocations=0,reason=null;const attempts=[];
+  let state=initialState(initial),calls=[],transactions=[],handlerInvocations=0;const attempts=[];
   const input=binding.input,expected=binding.expected;
   const record=(channel,sql,values=[],rowCount=0)=>{const normalizedSql=normalize(sql);calls.push({channel,normalizedSql,values:safe(values),rowCount});return normalizedSql;};
   const query=async(sql,values=[])=>{const n=record("query",sql,values);
@@ -67,8 +67,7 @@ async function createDatabase(initial,binding){
   const database={query,execute,withTransaction:run,withRootTransaction:run,withConsistentRootTransaction:run,withControlledTransaction:run,withReadOnlySnapshot:async work=>work({query}),ping:async()=>{},verifyRollback:async()=>true,close:async()=>{},
     evidence:()=>{const dml=calls.filter(call=>DML.test(call.normalizedSql)),latest=[...state.operations.values()].at(-1),projection=latest?.operation_result_json==null?null:JSON.parse(String(latest.operation_result_json)).receiptProjection,
       failure=[...state.executions.values()].find(row=>row.execution_status==="failed");
-      if(binding.scenarioKind==="NEGATIVE_GUARD")reason="PET_SKILL_INFO_COMMAND_NOT_MATCHED";else if(binding.scenarioKind==="WRONG_ROOM_REJECTED")reason="CHANNEL_NOT_ALLOWED";
-      return{calls,transactions,transactionAttempts:attempts,state:exported(state),handlerInvocations,reason,projectedReply:projection?.value?.reply??null,
+      return{calls,transactions,transactionAttempts:attempts,state:exported(state),handlerInvocations,projectedReply:projection?.value?.reply??null,
         terminalResult:failure?"FAILED":latest?"NO_REPLY":null,failureCode:failure?.result_code??null,operations:state.operations.size,executions:state.executions.size,
         outboxes:state.outboxes.size,sourceDomainDmlCount:dml.filter(call=>SOURCE_TABLES.has(dmlTable(call.normalizedSql))).length};}
   };

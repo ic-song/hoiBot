@@ -1866,9 +1866,12 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const atomicPetSkillInfo=database!==undefined&&petSkillInfoReadOnlyRecoveryProvider!==undefined&&(isOperationalChannel||isPetSkillInfoPrivateChannel)
         &&partialDispatchDecision?.route==="SHADOW"&&partialDispatchDecision.handlerKey==="pet_skill_info"
         &&petSkillInfoIngressCommand!==undefined&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
+      if(isPetSkillInfoPrivateChannel&&!atomicPetSkillInfo)return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:channelAccess.reason,requestId:request.id});
       if ((atomicPetSkillProbability||atomicPetSkillInfo) && dependencies.environmentContext === undefined) {
         throw new Error(atomicPetSkillProbability?"PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED":"PET_SKILL_INFO_VERIFIED_ENVIRONMENT_REQUIRED");
       }
+      if(atomicPetSkillInfo&&petSkillInfoIngressCommand!.devContext==="DEV_PREFIX"&&dependencies.environmentContext!.environmentCode!=="dev")return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:"PET_SKILL_INFO_DEV_ENVIRONMENT_REQUIRED",requestId:request.id});
+      let petSkillInfoRejectedReason:string|undefined;
       const processing = atomicPetSkillProbability
         ? await processPetSkillProbabilityAtomicIngress({
             database: database!, event: normalizedEvent, replyIdentity: commandEvent,
@@ -1877,7 +1880,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
           })
         :atomicPetSkillInfo
-        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})})
+        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).catch(error=>{const reason=error instanceof Error?error.message:"";if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_DUPLICATE","PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_CLOCK_INVALID","PET_SKILL_INFO_PRIVATE_PASS_DUPLICATE","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_INVALID"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
         : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership
@@ -1888,6 +1891,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
               ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
             })
           : await eventProcessor.executeDiagnosticModeration(normalizedEvent);
+      if(petSkillInfoRejectedReason!==undefined)return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:petSkillInfoRejectedReason,requestId:request.id});
       await dispatchAccountSwitchCommand(
         accountPlatformIrisContextProvider,
         eventProcessor,
