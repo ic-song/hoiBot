@@ -722,7 +722,7 @@ Status: VERIFIED
 - Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
-- `/홈뱃지` shows general guides first, keeps the cube guide behind `allsee`, then shows the representative badge, collection summary, and four one-option lines for every owned badge.
+- `/홈뱃지` shows both equipped badge slots and the final applied-effect summary first, inserts `allsee` immediately after that summary, then keeps command guides, cube guides, collection summary, and the owned-badge list folded.
 - Standalone full/special badge lists, badge details, pet-home feed output, and follower/heart/badge ranking output identify the requesting or target user with `[checkRank] 님`.
 - `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.
 - `/특별뱃지목록 [코드]` shows one special badge by `S01` or `[S01]`, while the no-argument command keeps showing all S01–S10 badges.

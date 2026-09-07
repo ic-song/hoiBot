@@ -44939,7 +44939,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         (representativeBadge ? buildHomeBadgeCubeOptionLines(data, user, representativeBadge) + "\n" : "") +
         "\n[2번] 보조 뱃지\n" + getPetHomeEquippedBadgeSlotText(activityData, user, 1) + "\n" +
         (supportBadge ? buildHomeBadgeCubeOptionLines(data, user, supportBadge) + "\n" : "") +
-        "\n💟 최종 적용 효과\n" + buildHomeBadgeCubeEffectSummary(data, user) + "\n" +
+        "\n💟 최종 적용 효과\n" + buildHomeBadgeCubeEffectSummary(data, user) + "\n" + allsee + "\n" +
         "━━━━━━━━━━━━\n" +
         "장착: /홈뱃지장착 [대표뱃지번호] [보조뱃지번호]\n" +
         "해제: /홈뱃지해제 [대표뱃지번호] [보조뱃지번호]\n" +
@@ -44948,7 +44948,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         "삭제: /홈뱃지삭제 [번호 또는 ID]\n" +
         "전체: /홈뱃지전체\n\n" +
         "💟 홈뱃지 큐브\n" +
-        "━━━━━━━━━━━━\n" + allsee + "\n" +
+        "━━━━━━━━━━━━\n" +
         "사용: /홈뱃지큐브 [장착슬롯 1|2] [옵션번호] [횟수]\n" +
         "예시: /홈뱃지큐브 1 2 1000\n" +
         "옵션 1 ⚔️ 캐슬 매력 (큐브 1개)\n" +
