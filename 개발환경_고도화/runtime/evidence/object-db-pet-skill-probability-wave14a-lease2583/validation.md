@@ -13,6 +13,7 @@
 - `node --import tsx --test test/pet-skill-probability-service.test.ts test/pet-skill-probability-migration.test.ts test/canonical-pet-skill-read-provider.test.ts` — 12/12 PASS
 - `WAVE14A_ISOLATED_MARIADB_TEST=true node --import tsx --test test/pet-skill-probability-http-mariadb.integration.test.ts` — 1/1 PASS
 - isolated MariaDB `127.0.0.1:3330` fresh all migrations — 471/471, canonical seed 93/93 + aliases 30 + policies 4
+- migration 483 rollback → forward — 기존 routing FK가 있을 때 registry를 `LEGACY_ONLY`/disabled로 보존하고 alias 복구 후, forward에서 전용 alias `SHADOW` 재구성 PASS
 - `node --import tsx --test test/object-data-model-contract.test.ts` — 24/24 PASS
 - `npm run typecheck` — PASS
 - `npm run build` — PASS
