@@ -38,14 +38,17 @@ async function canonicalRows(root,evidenceCommit) {
 function exportState(state){return{inbox:[...state.inbox],executions:[...state.executions],operations:[...state.operations],outboxes:[...state.outboxes],audits:state.audits??0,next:String(state.next)};}
 function importState(value){return value===undefined?{inbox:new Map(),executions:new Map(),operations:new Map(),outboxes:new Map(),audits:0,next:100n}:{inbox:new Map(value.inbox),executions:new Map(value.executions),operations:new Map(value.operations),outboxes:new Map(value.outboxes),audits:value.audits??0,next:BigInt(value.next)};}
 function dmlTable(statement){const match=statement.match(/^(?:INSERT(?:\s+IGNORE)?\s+INTO|REPLACE\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|TRUNCATE(?:\s+TABLE)?)\s+([A-Za-z0-9_]+)/i);if(DML.test(statement)&&match===null)throw new Error(`Wave14 unparsed DML: ${statement}`);return match?.[1];}
-async function createStatefulDatabase(root,evidenceCommit,initialState) {
+async function createStatefulDatabase(root,evidenceCommit,initialState,options={}) {
   const catalog=await canonicalRows(root,evidenceCommit),calls=[],transactions=[];
   let state=importState(initialState);state.audits=state.audits??0;const attempts=[];
+  const faults=(options.faults??[]).map(fault=>({...fault,remaining:fault.times??1}));
+  const injectFault=statement=>{const fault=faults.find(candidate=>candidate.remaining>0&&statement.includes(candidate.fragment));if(fault===undefined)return;fault.remaining-=1;const error=new Error(fault.message??"Wave14 injected database fault");if(fault.code!==undefined)Object.defineProperty(error,"code",{value:fault.code,enumerable:true});if(fault.errno!==undefined)Object.defineProperty(error,"errno",{value:fault.errno,enumerable:true});throw error;};
   let queue=Promise.resolve();
   const record=(channel,sql,values,rowCount)=>{const normalizedSql=normalize(sql);calls.push({channel,normalizedSql,values:safe(values),rowCount});return normalizedSql;};
   const clone=source=>structuredClone(source);
   const transaction={
     async query(sql,values=[]){const n=record("query",sql,values,0);
+      injectFault(n);
       if(n.includes("FROM command_aliases a"))return values[0]==="/펫스킬확률"?[{command_code:"PET_SKILL_PROBABILITY",handler_key:"pet_skill_probability",auth_scope:"VERIFIED_USER",rollout_state:"ACTIVE"}]:[];
       if(n.includes("FROM command_executions execution")&&n.includes("JOIN operations operation")){const row=state.executions.get(values[0]);return row?[{result_json:state.operations.get(row.operationId).result_json}]:[];}
       if(n==="SELECT error_code FROM event_inbox WHERE event_id=? FOR UPDATE"){const row=state.inbox.get(values[0]);return row?[{error_code:row.error_code}]:[];}
@@ -61,6 +64,7 @@ async function createStatefulDatabase(root,evidenceCommit,initialState) {
       throw new Error(`Wave14 unexpected SELECT: ${n}`);
     },
     async execute(sql,values=[]){const n=normalize(sql);let insertId=0n,affectedRows=1n;
+      injectFault(n);
       if(n.startsWith("INSERT INTO event_inbox")){const eventId=values[0];if(!state.inbox.has(eventId))state.inbox.set(eventId,{provider_code:values[1],provider_event_id:values[2],external_channel_id:values[3],external_user_id:values[4],payload_hash:values[8],error_code:values[9]});else affectedRows=0n;}
       else if(n.startsWith("UPDATE event_inbox SET channel_id=")){}
       else if(n.startsWith("UPDATE event_inbox SET processing_status='processed'")||n.startsWith("UPDATE event_inbox SET processing_status = 'processed'")){const row=state.inbox.get(values[0]);if(row)row.error_code=null;}
@@ -88,7 +92,7 @@ async function runWorker(inputPath,targetPath){const input=JSON.parse(readFileSy
   const normalizedTarget=readFileSync(targetPath,"utf8").replace(/\r\n?/g,"\n"),targetHash=createHash("sha256").update(normalizedTarget).digest("hex");assert(targetHash===input.invocation.targetSourceSha256,"Wave14 target hash drift");
   const target=await import(`${pathToFileURL(targetPath).href}?worker=${process.pid}-${randomUUID()}`),root=resolve(dirname(fileURLToPath(import.meta.url)),"../../../..");
   assert(Array.isArray(input.runtimeSourceHashes)&&input.runtimeSourceHashes.length===10,"Wave14 runtime source manifest drift");for(const source of input.runtimeSourceHashes){const committed=gitBlob(root,input.evidenceCommit,source.path).replace(/\r\n?/g,"\n"),disk=readFileSync(resolve(root,source.path),"utf8").replace(/\r\n?/g,"\n");assert(createHash("sha256").update(committed).digest("hex")===source.sha256&&createHash("sha256").update(disk).digest("hex")===source.sha256,`Wave14 runtime import-chain drift: ${source.path}`);}
-  const oracle=await canonicalRows(root,input.evidenceCommit);const execution=await target[input.invocation.exportName]({...input.binding,fixturePayload:input.fixturePayload,legacyExpectedReply:oracle.expectedReply,createDatabase:()=>createStatefulDatabase(root,input.evidenceCommit,input.initialState)});
+  const oracle=await canonicalRows(root,input.evidenceCommit);const execution=await target[input.invocation.exportName]({...input.binding,fixturePayload:input.fixturePayload,legacyExpectedReply:oracle.expectedReply,createDatabase:(options={})=>createStatefulDatabase(root,input.evidenceCommit,input.initialState,options)});
   process.stdout.write(JSON.stringify({execution:safe(execution),processId:process.pid}));}
 
 function worker(harness,input,target){return JSON.parse(execFileSync(process.execPath,[harness,"--worker",input,target],{encoding:"utf8",timeout:30000,maxBuffer:4*1024*1024}));}
