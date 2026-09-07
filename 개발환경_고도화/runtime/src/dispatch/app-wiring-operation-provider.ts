@@ -388,13 +388,13 @@ export class MariaAppWiringOperationProvider {
   // app-wiring provider가 자기 verified DB의 exact transient root retry를 소유합니다.
   withAtomicReadOnlyRootRetry<T>(work:(transaction:DatabaseTransaction,attemptNumber:number)=>Promise<T>):Promise<T>{
     if(!hasConsistentRootTransactionCapability(this.database))throw new Error("APP_WIRING_RECOVERY_ROOT_TRANSACTION_REQUIRED");
-    return withMariaTransactionRetry(this.database,{maxAttempts:3,allowRetry:kind=>kind==="TRANSACTION_DEADLOCK"||kind==="TRANSACTION_LOCK_WAIT_TIMEOUT",exhaustedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",rootTransaction:this.database.withConsistentRootTransaction.bind(this.database)},work);
+    return withMariaTransactionRetry(this.database,{maxAttempts:3,allowCheckReadConflict:true,allowRetry:kind=>kind==="TRANSACTION_DEADLOCK"||kind==="TRANSACTION_LOCK_WAIT_TIMEOUT"||kind==="TRANSACTION_CHECK_READ_CONFLICT",exhaustedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",rootTransaction:this.database.withConsistentRootTransaction.bind(this.database)},work);
   }
 
   // 실패 terminal 기록도 같은 verified DB에서 exact transient만 제한 재시도합니다.
   withAtomicReadOnlyFailureRetry<T>(work:(transaction:DatabaseTransaction,attemptNumber:number)=>Promise<T>):Promise<T>{
     if(!hasConsistentRootTransactionCapability(this.database))throw new Error("APP_WIRING_RECOVERY_ROOT_TRANSACTION_REQUIRED");
-    return withMariaTransactionRetry(this.database,{maxAttempts:3,allowRetry:kind=>kind==="TRANSACTION_DEADLOCK"||kind==="TRANSACTION_LOCK_WAIT_TIMEOUT",exhaustedErrorCode:"APP_WIRING_READ_ONLY_FAILURE_PERSIST_RETRY_EXHAUSTED",rootTransaction:this.database.withConsistentRootTransaction.bind(this.database)},work);
+    return withMariaTransactionRetry(this.database,{maxAttempts:3,allowCheckReadConflict:true,allowRetry:kind=>kind==="TRANSACTION_DEADLOCK"||kind==="TRANSACTION_LOCK_WAIT_TIMEOUT"||kind==="TRANSACTION_CHECK_READ_CONFLICT",exhaustedErrorCode:"APP_WIRING_READ_ONLY_FAILURE_PERSIST_RETRY_EXHAUSTED",rootTransaction:this.database.withConsistentRootTransaction.bind(this.database)},work);
   }
 
   // 상위 event transaction 안에서 SHADOW 조회와 NO_REPLY terminal receipt를 원자 확정합니다.

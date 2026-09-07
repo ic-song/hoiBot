@@ -10,6 +10,7 @@ export type MariaDatabaseErrorKind =
   | "FOREIGN_KEY_CONFLICT"
   | "TRANSACTION_DEADLOCK"
   | "TRANSACTION_LOCK_WAIT_TIMEOUT"
+  | "TRANSACTION_CHECK_READ_CONFLICT"
   | "OTHER";
 
 export interface Cuid8CollisionContext {
@@ -63,6 +64,7 @@ export function classifyMariaDatabaseError(error: unknown, context?: Cuid8Collis
   let kind: MariaDatabaseErrorKind = "OTHER";
   if (exactMariaError(fields, "ER_LOCK_DEADLOCK", 1213)) kind = "TRANSACTION_DEADLOCK";
   else if (exactMariaError(fields, "ER_LOCK_WAIT_TIMEOUT", 1205)) kind = "TRANSACTION_LOCK_WAIT_TIMEOUT";
+  else if (exactMariaError(fields, "ER_CHECKREAD", 1020)) kind = "TRANSACTION_CHECK_READ_CONFLICT";
   else if (exactMariaError(fields, "ER_ROW_IS_REFERENCED_2", 1451) || exactMariaError(fields, "ER_NO_REFERENCED_ROW_2", 1452)) kind = "FOREIGN_KEY_CONFLICT";
   else if (exactMariaError(fields, "ER_DUP_ENTRY", 1062)) {
     kind = context !== undefined && validCuid8(context.candidate) && constraintName?.toLowerCase() === "primary"
@@ -111,7 +113,8 @@ export async function insertWithCuid8CollisionRetry(
 
 export interface MariaTransactionRetryOptions {
   readonly maxAttempts: number;
-  readonly allowRetry: (kind: "TRANSACTION_DEADLOCK" | "TRANSACTION_LOCK_WAIT_TIMEOUT") => boolean;
+  readonly allowRetry: (kind: "TRANSACTION_DEADLOCK" | "TRANSACTION_LOCK_WAIT_TIMEOUT" | "TRANSACTION_CHECK_READ_CONFLICT") => boolean;
+  readonly allowCheckReadConflict?: boolean;
   readonly exhaustedErrorCode?: string;
   readonly rootTransaction?: <T>(work:(transaction:DatabaseTransaction)=>Promise<T>)=>Promise<T>;
 }
@@ -120,7 +123,7 @@ const brandedTransactionRetryExhaustions=new WeakSet<object>();
 function exhausted(errorCode:string,cause?:unknown):Error{const error=new Error(errorCode,{cause});brandedTransactionRetryExhaustions.add(error);return error;}
 export function isMariaTransactionRetryExhaustion(error:unknown,errorCode:string):boolean{return error instanceof Error&&error.message===errorCode&&brandedTransactionRetryExhaustions.has(error);}
 
-// 매 시도마다 새 transaction을 시작하며, 도메인이 허용한 1213/1205만 transaction 전체에서 재시도합니다.
+// 매 시도마다 새 transaction을 시작하며, 도메인이 허용한 exact transient conflict만 transaction 전체에서 재시도합니다.
 export async function withMariaTransactionRetry<T>(
   database: DatabaseClient,
   options: MariaTransactionRetryOptions,
@@ -138,9 +141,9 @@ export async function withMariaTransactionRetry<T>(
       return await root(transaction => work(transaction, attempt + 1));
     } catch (error) {
       const kind = classifyMariaDatabaseError(error).kind;
-      const transactionKind = kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT" ? kind : undefined;
+      const transactionKind = kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT" || kind === "TRANSACTION_CHECK_READ_CONFLICT" ? kind : undefined;
       // root transaction에서도 도메인이 허용한 transient conflict만 재시도합니다.
-      if (transactionKind === undefined || !options.allowRetry(transactionKind)) throw error;
+      if (transactionKind === undefined || (transactionKind === "TRANSACTION_CHECK_READ_CONFLICT" && options.allowCheckReadConflict !== true) || !options.allowRetry(transactionKind)) throw error;
       if (attempt + 1 === options.maxAttempts) throw exhausted(options.exhaustedErrorCode ?? "RFA03_TRANSACTION_RETRY_EXHAUSTED",error);
     }
   }
