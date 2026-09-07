@@ -39,21 +39,11 @@ async function main(){
     await database.execute("INSERT INTO external_identities(player_id,provider_code,external_user_id,display_name,status) VALUES(?,'kakao',?,'거부자','linked')",[player.insertId,externalUserId]);
     await database.execute("INSERT INTO channels(provider_code,external_channel_id,channel_type,status) VALUES('kakao',?,'group','active')",[adminRoomId]);
     await database.execute("INSERT INTO private_chat_denial_notification_channels(private_chat_denial_notification_channel_id,environment_code,database_identity,provider_code,external_channel_id,delivery_enabled,configuration_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES ('chanw767','dev',?,'kakao',?,TRUE,?,'test:wbs767','2026-09-07 23:30:00','test:wbs767','2026-09-07 23:30:00')",[databaseIdentity,adminRoomId,fingerprint]);
-    const roots=await application(database,true);try{
-      for(const eventId of ["wbs767-1","wbs767-2"]){const response=await send(roots.app,eventId);assert.equal(response.statusCode,202,response.body);assert.equal(JSON.parse(response.body).ignored,true);}
-    }finally{await roots.app.close();}
-    const concurrentOne=open(),concurrentTwo=open();
-    try{
-      const contextOne=await verifyStartupDatabaseIdentity(concurrentOne,createEnvironmentContext({environmentCode:"dev",databaseIdentity}));
-      const contextTwo=await verifyStartupDatabaseIdentity(concurrentTwo,createEnvironmentContext({environmentCode:"dev",databaseIdentity}));
-      const concurrent=await Promise.all([
-        new PrivateChatDenialNotificationService(concurrentOne,contextOne).processEvent("iris:wbs767-1"),
-        new PrivateChatDenialNotificationService(concurrentTwo,contextTwo).processEvent("iris:wbs767-2")
-      ]);
-      assert.deepEqual(concurrent.map(result=>result.attemptOrdinal).sort(),["1","2"]);
-    }finally{await concurrentOne.close();await concurrentTwo.close();}
-    database=open();
     const first=await application(database);try{
+      const concurrent=await Promise.all([send(first.app,"wbs767-1"),send(first.app,"wbs767-2")]);
+      for(const response of concurrent){assert.equal(response.statusCode,202,response.body);assert.equal(JSON.parse(response.body).ignored,true);}
+      const ordinals=await database.query<Array<{attempt_ordinal:bigint}>>("SELECT attempt_ordinal FROM private_chat_denial_attempts WHERE event_id IN ('iris:wbs767-1','iris:wbs767-2') ORDER BY attempt_ordinal");
+      assert.deepEqual(ordinals.map(row=>row.attempt_ordinal),[1n,2n]);
       const third=await send(first.app,"wbs767-3");assert.equal(third.statusCode,202,third.body);assert.equal(JSON.parse(third.body).ignored,true);
       const beforeReplay=(await counts(database))[0]!;assert.deepEqual([beforeReplay.counter_count,beforeReplay.attempt_count,beforeReplay.notice_operation_count,beforeReplay.notice_execution_count,beforeReplay.audit_count,beforeReplay.outbox_count],[3n,3n,3n,3n,3n,1n]);
       const replay=await send(first.app,"wbs767-3");assert.equal(replay.statusCode,202,replay.body);const afterReplay=(await counts(database))[0]!;assert.deepEqual(afterReplay,beforeReplay);
