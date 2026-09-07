@@ -29,6 +29,47 @@ function isDuplicateKey(error: unknown): boolean {
 export class ProcessIrisEventService {
   constructor(private readonly database: DatabaseClient) {}
 
+  // 전용 원자 read 명령은 inbox를 먼저 선점하고 같은 root transaction에서 관찰 이력을 완성합니다.
+  async executeAtomicCommandInTransaction(
+    transaction: DatabaseTransaction,
+    event: NormalizedIrisEvent,
+    replyIdentity: NormalizedIrisEvent,
+    channelType: "open_group" | "open_direct",
+    options: { channelName?: ChannelNameObservation } = {}
+  ): Promise<EventProcessingResult> {
+    const claimToken = randomUUID();
+    await transaction.execute(
+      `INSERT INTO event_inbox (
+         event_id,provider_code,provider_event_id,external_channel_id,channel_id,
+         external_user_id,external_identity_id,event_kind,event_origin,direction,payload_hash,
+         parse_status,processing_status,received_at,attempt_count,error_code
+       ) VALUES (?,?,?,?,NULL,?,NULL,?,?,?,?, 'parsed','processing',UTC_TIMESTAMP(3),1,?)
+       ON DUPLICATE KEY UPDATE event_id=VALUES(event_id)`,
+      [event.eventId,event.providerCode,event.providerEventId,event.channelId ?? null,replyIdentity.userId ?? null,
+        event.eventKind,event.origin ?? null,event.direction,event.payloadHash,claimToken]
+    );
+    const claimed = await transaction.query<Array<{ error_code:string|null }>>(
+      "SELECT error_code FROM event_inbox WHERE event_id=? FOR UPDATE", [event.eventId]
+    );
+    if (claimed.length !== 1) throw new Error("ATOMIC_EVENT_INBOX_CLAIM_RESULT_INVALID");
+    if (claimed[0]!.error_code !== claimToken) return { duplicate: true, replies: [] };
+    const identity = await observeEventIdentity(transaction, replyIdentity, channelType);
+    await transaction.execute(
+      "UPDATE event_inbox SET channel_id=?,external_identity_id=? WHERE event_id=?",
+      [identity.channelId,identity.externalIdentityId,event.eventId]
+    );
+    await recordChannelNameObservation(transaction,event,identity.channelId,options.channelName);
+    await recordNormalizedEvent(transaction,event);
+    await recordMembershipEvent(transaction,event,identity);
+    const incidentId = await recordModerationIncident(transaction,event,identity);
+    await recordChannelActivity(transaction,event,identity);
+    await transaction.execute(
+      "UPDATE event_inbox SET processing_status='processed',processed_at=UTC_TIMESTAMP(3),error_code=NULL WHERE event_id=?",
+      [event.eventId]
+    );
+    return { duplicate: false, replies: [], incidentId: incidentId?.toString() };
+  }
+
   // 진단방의 삭제·가리기 사건은 원문·identity·활동 없이 최소 상관 메타데이터만 기록합니다.
   async executeDiagnosticModeration(event: NormalizedIrisEvent): Promise<EventProcessingResult> {
     if (event.eventCode !== "message.deleted" && event.eventCode !== "message.hidden_by_host") {

@@ -1,0 +1,17 @@
+{
+  "runId": "펫스킬확률원자성DB-SL-PET-SKILL-PROBABILITY-ATOMIC-RECEIPT-01-202609071203",
+  "sliceId": "SL-PET-SKILL-PROBABILITY-ATOMIC-RECEIPT-01",
+  "wbsId": 759,
+  "leaseId": 2584,
+  "baselineCommit": "e36a1bf174b02af777b63ffd2494eb017733aba4",
+  "sourceCommit": "fe502370",
+  "sourceTree": "55373a58b3d58df4490aca55cccffd3e9f7b17bc",
+  "byteSource": "git cat-file blob <sourceCommit>:<path>",
+  "orderedSources": [
+    {"path":"COMMAND_INDEX.md","byteCount":274654,"sha256":"119ee825ad34a432df6000537d258ffbcf74d24ffed14319800a821d34de24f4"},
+    {"path":"개발환경_고도화/runtime/src/app.ts","byteCount":272417,"sha256":"2bfa4b5571a7fbbfaf43741c31fa812f4914f13fff7fe4054db49146e1594d89"},
+    {"path":"개발환경_고도화/runtime/src/integration/event-processing-service.ts","byteCount":21317,"sha256":"2bc7040542e6be8e33e65ca472587574c84bd0ee505794219d2f136082d218aa"},
+    {"path":"개발환경_고도화/runtime/src/pet/pet-skill-probability-atomic-service.ts","byteCount":9158,"sha256":"cc3b30ac18fad1b02d861b79fd0bc70bf15ab0ebb05c0a34edded0da1e461b1a"},
+    {"path":"개발환경_고도화/runtime/test/pet-skill-probability-http-mariadb.integration.test.ts","byteCount":15832,"sha256":"445a3068bc6cbd46eb6ff9e3bcb7fc9db796c4f81239e2bc851a27506a5c7853"}
+  ]
+}
