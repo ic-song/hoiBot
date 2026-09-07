@@ -8,6 +8,7 @@ import { AccountSwitchCommandService } from "../src/account-platform/account-swi
 import { AccountPlatformService } from "../src/account-platform/account-platform-service.js";
 import { MariaAccountPlatformRepository } from "../src/account-platform/maria-account-platform-repository.js";
 import { MariaPlayerContextProvider } from "../src/account-platform/player-context-provider.js";
+import { MariaPetSkillInfoActorContextProvider } from "../src/pet/pet-skill-info-actor-context-provider.js";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, createScopedDatabaseClient, type DatabaseClient } from "../src/database.js";
 import { normalizeIrisEvent } from "../src/integration/iris-normalizer.js";
@@ -132,6 +133,18 @@ describe("WBS746 account platform MariaDB", { skip: !enabled }, () => {
           canonicalPlayerId: subCanonicalId, legacyPlayerId: sub.playerId,
           externalIdentityId: representativeIdentity.insertId.toString(), displayName: `신규 부계정 ${suffix}`,
           rankEmoji: null, platformCode: "kakao", externalContextId: `room-a-${suffix}`, selectionSource: "ACTIVE_CONTEXT"
+        }
+      );
+      assert.deepEqual(
+        await new MariaPetSkillInfoActorContextProvider(playerContexts).resolve(transaction, {
+          identityProviderCode: "kakao", externalUserId: `user-a-${suffix}`, externalContextId: `room-a-${suffix}`
+        }),
+        {
+          selectionSource: "ACTIVE_CONTEXT", platformCode: "kakao", externalContextId: `room-a-${suffix}`,
+          externalIdentityId: representativeIdentity.insertId.toString(), selectedLegacyPlayerId: sub.playerId,
+          selectedCanonicalPlayerId: subCanonicalId, entitlementLegacyPlayerId: representative.playerId,
+          portalAccountId: representative.portalAccountId, platformContextMembershipId: representative.platformContextMembershipId,
+          selectionVersion: "2"
         }
       );
       await assert.rejects(

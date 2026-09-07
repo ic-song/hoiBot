@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { hasDatabaseTransactionCapabilities, type DatabaseClient, type ReadOnlySnapshotTransaction } from "../database.js";
 import type { AppWiringReadParticipant } from "../dispatch/app-wiring-operation-provider.js";
 import { MariaCanonicalPetSkillReadProvider, type CanonicalPetSkillReadDefinition } from "./canonical-pet-skill-read-provider.js";
+import type { PetSkillInfoActorContext } from "./pet-skill-info-actor-context-provider.js";
 type PetSkillInfoDefinition=CanonicalPetSkillReadDefinition&{raidCharmBonus:number;castleCharmBonus:number};
 
 export interface PetSkillInfoCommand { readonly query: string | null; }
@@ -63,6 +64,7 @@ export function fingerprintPetSkillInfoBagStacks(rows:readonly BagStackFingerpri
 
 export interface PetSkillAdminBagProjection {readonly status:"shadow";readonly reply:string;readonly projectionVersion:"PET_SKILL_ADMIN_BAG_V1";readonly targetPlayerId:string;readonly total:string;readonly visibleCount:number;readonly premium:boolean;readonly rankDisplay:string}
 type ShadowResult={status:"shadow";reply:string}|{status:"legacy_fallback";reason:"ADMIN_PLAYER_BAG_PROJECTION_UNPROVEN"}|null;
+type PetSkillInfoEvaluationInput={externalUserId:string;externalChannelId?:string;displayName:string|undefined;message:string;actorContext?:PetSkillInfoActorContext};
 
 export function formatLegacyPetSkillAdminBag(input:{displayName:string;rankDisplay:string;premium:boolean;total:bigint;skills:readonly {name:string;grade:string;quantity:bigint}[]}):string{
   let message=`${input.premium?"[👑호이패스 프리미엄👑]\n":""}[${input.rankDisplay}] 보유 스킬가방📙[${commasBigInt(input.total)}/100]\n${BAG_GUIDE}`;
@@ -89,22 +91,30 @@ export function formatLegacyPetSkillInfo(definition:PetSkillInfoDefinition):stri
 
 export class PetSkillInfoShadowService {
   public constructor(private readonly database:DatabaseClient){}
-  public async evaluate(input:{externalUserId:string;externalChannelId?:string;displayName:string|undefined;message:string}):Promise<ShadowResult>{
+  public async evaluate(input:PetSkillInfoEvaluationInput):Promise<ShadowResult>{
     const command=parsePetSkillInfoShadowCommand(input.message);
     if(command===undefined||input.displayName===undefined||(input.displayName.length>4&&input.displayName!=="오픈채팅봇"))return null;
     if(!hasDatabaseTransactionCapabilities(this.database))throw new Error("PET_SKILL_INFO_SNAPSHOT_CAPABILITY_REQUIRED");
     return this.database.withReadOnlySnapshot(transaction=>this.evaluateInSnapshot(transaction,input));
   }
-  public async evaluateInSnapshot(transaction:ReadOnlySnapshotTransaction|AppWiringReadParticipant,input:{externalUserId:string;externalChannelId?:string;displayName:string|undefined;message:string}):Promise<ShadowResult>{
+  public async evaluateInSnapshot(transaction:ReadOnlySnapshotTransaction|AppWiringReadParticipant,input:PetSkillInfoEvaluationInput):Promise<ShadowResult>{
       const command=parsePetSkillInfoShadowCommand(input.message);
       if(command===undefined||input.displayName===undefined||(input.displayName.length>4&&input.displayName!=="오픈채팅봇"))return null;
-      const actors=await transaction.query<Array<{player_status:string;identity_id:bigint}>>(`SELECT player.status player_status,identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.deleted_at IS NULL WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' ORDER BY identity.id LIMIT 2`,[input.externalUserId]);
-      if(actors.length>1)throw new Error("PET_SKILL_INFO_IDENTITY_DUPLICATE");
-      if(actors.length===0||actors[0]!.player_status!=="active")return null;
+      const actorIdentityId=input.actorContext?.externalIdentityId;
+      let resolvedActorIdentityId:bigint;
+      if(actorIdentityId===undefined){
+        const actors=await transaction.query<Array<{player_status:string;identity_id:bigint}>>(`SELECT player.status player_status,identity.id identity_id FROM external_identities identity JOIN players player ON player.id=identity.player_id AND player.deleted_at IS NULL WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' ORDER BY identity.id LIMIT 2`,[input.externalUserId]);
+        if(actors.length>1)throw new Error("PET_SKILL_INFO_IDENTITY_DUPLICATE");
+        if(actors.length===0||actors[0]!.player_status!=="active")return null;
+        resolvedActorIdentityId=actors[0]!.identity_id;
+      }else{
+        try{resolvedActorIdentityId=BigInt(actorIdentityId);}catch{throw new Error("PET_SKILL_INFO_ACTOR_CONTEXT_DRIFT");}
+        if(resolvedActorIdentityId<=0n)throw new Error("PET_SKILL_INFO_ACTOR_CONTEXT_DRIFT");
+      }
       if(command.query===null)return{status:"shadow",reply:"사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)"};
       const targets=await transaction.query<Array<{player_id:bigint}>>("SELECT profile.player_id FROM player_profiles profile JOIN players player ON player.id=profile.player_id AND player.deleted_at IS NULL WHERE profile.current_display_name=? ORDER BY profile.player_id LIMIT 2",[command.query]);
       if(targets.length>1)throw new Error("PET_SKILL_INFO_PLAYER_NAME_AMBIGUOUS");
-      const actorScopes=targets.length===1?await this.readActorScopes(transaction,actors[0]!.identity_id):[];
+      const actorScopes=targets.length===1?await this.readActorScopes(transaction,resolvedActorIdentityId):[];
       if(targets.length===1&&actorScopes.length>0){
         const projection=await this.readAdminBagProjection(transaction,{actorScopes,externalChannelId:input.externalChannelId,targetPlayerId:targets[0]!.player_id,displayName:command.query});
         return projection??{status:"legacy_fallback",reason:"ADMIN_PLAYER_BAG_PROJECTION_UNPROVEN"};

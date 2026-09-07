@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {it} from "node:test";
 import type {DatabaseClient} from "../src/database.js";
-import {executePetSkillInfoReadOnlyRecovery,resolvePetSkillInfoIngressCommand} from "../src/pet/pet-skill-info-read-only-recovery-ingress.js";
+import {executePetSkillInfoReadOnlyRecovery as executeRecovery,resolvePetSkillInfoIngressCommand} from "../src/pet/pet-skill-info-read-only-recovery-ingress.js";
 import {fingerprintPetSkillInfoBagStacks,fingerprintPetSkillInfoCatalog} from "../src/pet/pet-skill-info-shadow-service.js";
 import {projectCanonicalPetSkillReadCatalog} from "../src/pet/canonical-pet-skill-read-provider.js";
 import type {NormalizedIrisEvent} from "../src/integration/iris-normalizer.js";
@@ -9,6 +9,9 @@ import {createEnvironmentContext,verifyStartupDatabaseIdentity} from "../src/run
 
 const event=(message:string):NormalizedIrisEvent=>({eventId:"event-admin-bag-1",providerEventId:"provider-1",providerCode:"iris",eventKind:"message",origin:"kakao",direction:"incoming",channelId:"room-1",userId:"admin-1",displayName:"호이 남",displayNameSource:"kakao_db",displayNameTrust:"trusted",message,eventCode:"MESSAGE",eventCategory:"command",monitoringGroup:"text",eventMetadata:{},payloadHash:"a".repeat(64)});
 const exactCatalogRows=()=>Array.from({length:93},(_,index)=>({pet_skill_id:index===0?"skill001":`s${String(index).padStart(7,"0")}`,pet_skill_name:index===0?"하느님위에갓물주":`합성스킬${index}`,pet_skill_description:"효과",pet_skill_grade:index===0?"SS":"S",legacy_source_key:`skill_${String(index).padStart(3,"0")}`,display_order:index+1,base_draw_rate:index===0?"100":"0",fixed_draw_rate_flag:1,openable_flag:index===0?1:0,pet_skill_grade_emoji:"📙",required_tier_name:null,tier_exclusive_flag:0,equip_description:null,handler_key:"presentation_only",options_json:{},active_flag:1}));
+const actorContext=Object.freeze({selectionSource:"ACTIVE_CONTEXT" as const,platformCode:"kakao" as const,externalContextId:"room-1",externalIdentityId:"1",selectedLegacyPlayerId:"2",selectedCanonicalPlayerId:"player02",entitlementLegacyPlayerId:"2",portalAccountId:"portal01",platformContextMembershipId:"member01",selectionVersion:"1"});
+const actorContextProvider={resolve:async()=>actorContext};
+const executePetSkillInfoReadOnlyRecovery=(input:Parameters<typeof executeRecovery>[0])=>executeRecovery({...input,actorContext:input.actorContext??actorContextProvider});
 
 it("matches the legacy lowercase index-zero dev parser exactly",()=>{
   assert.deepEqual(resolvePetSkillInfoIngressCommand("dev/  펫스킬정보"),{rawMessage:"dev/  펫스킬정보",effectiveMessage:"/펫스킬정보",devContext:"DEV_PREFIX"});
@@ -28,7 +31,7 @@ it("consumes common READ_ONLY recovery and binds the complete synthetic admin pr
   const catalogRows=exactCatalogRows(),catalog=projectCanonicalPetSkillReadCatalog(catalogRows,[],[]);
   const stacks=[{owned_pet_skill_id:"stack001",pet_skill_id:"skill001",legacy_source_key:"skill_000",pet_skill_name:"하느님위에갓물주",pet_skill_grade:"SS",display_order:1,quantity:3n}];
   const rows:unknown[]=[
-    [{player_status:"active",identity_id:1n}],[{player_id:2n}],[{operator_id:4n,role_code:"manager"}],
+    [{player_id:2n}],[{operator_id:4n,role_code:"manager"}],
     [{authority_decision:"ALLOW",source_fingerprint:"a".repeat(64),revision:1n}],
     [{player_id:2n,rank_emoji:"🐣",canonical_player_id:"player02"}],
     kinds.map((marker_kind,index)=>({marker_kind,marker_priority:index+1,assignment_status:index===0?"UNASSIGNED":"ASSIGNED",player_id:index===0?null:index===1?"player02":`player${index+20}`,legacy_player_id:index===0?null:BigInt(index+20),source_fingerprint:"b".repeat(64),revision:1n})),
@@ -46,7 +49,7 @@ it("consumes common READ_ONLY recovery and binds the complete synthetic admin pr
     const evaluated=await input.evaluateInSnapshot(readParticipant);evaluations+=1;
     input.validateReceiptProjection?.(evaluated.receiptProjection);
     const projection=evaluated.receiptProjection as {version:string;binding:{rawMessage:string;effectiveMessage:string;devContext:string;environmentCode:string;databaseIdentity:string};value:{reply:string}};
-    assert.equal(projection.version,"PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1");assert.match(projection.value.reply,/^\[💞대상\] 보유 스킬가방📙\[3\/100\]/);
+    assert.equal(projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_RECEIPT_V1");assert.match(projection.value.reply,/^\[💞대상\] 보유 스킬가방📙\[3\/100\]/);
     assert.deepEqual(projection.binding,{rawMessage:"/펫스킬정보 대상",effectiveMessage:"/펫스킬정보 대상",devContext:"DEFAULT",environmentCode:"dev",databaseIdentity:"pet_skill_info_ingress",eventId:"event-admin-bag-1",providerEventId:"provider-1",eventProviderCode:"iris",identityProviderCode:"kakao",externalUserId:"admin-1",displayName:"호이 남",displayNameSource:"kakao_db",displayNameTrust:"trusted",channelType:"open_group",externalChannelId:"room-1"});
     return{status:"completed",replayed:false,terminalStatus:"SHADOW_EVALUATED",resultFingerprint:"c".repeat(64),receiptProjection:evaluated.receiptProjection,value:evaluated.value,processing};
   }};
@@ -70,12 +73,12 @@ it("adds the exact DEV header and rejects DEV_PREFIX in a verified prod environm
 it("stores exact UNREADY and PARTIAL DEV replies without invoking the catalog evaluator",async()=>{
   const run=async(status:"UNREADY"|"PARTIAL",counts:{definitions:number;imports:number;aliases:number;policies:number},reasonCode:"EMPTY"|"COUNT_MISMATCH"|"SEMANTIC_DRIFT"=status==="UNREADY"?"EMPTY":"COUNT_MISMATCH")=>{
     const {database,environmentContext}=await verified("pet_skill_info_readiness"),normalized=event("dev/펫스킬정보 청룡언월도");
-    const rows:unknown[]=[[{player_status:"active",identity_id:1n}]];let projection:unknown,evaluations=0,validate:(projection:unknown)=>void=()=>{throw new Error("VALIDATOR_NOT_CAPTURED");};
+    const rows:unknown[]=[];let projection:unknown,evaluations=0,validate:(projection:unknown)=>void=()=>{throw new Error("VALIDATOR_NOT_CAPTURED");};
     const recovery={execute:async(input:any)=>{const evaluated=await input.evaluateInSnapshot({query:async<T>()=>rows.shift()as T});evaluations+=1;projection=evaluated.receiptProjection;validate=input.validateReceiptProjection;validate(projection);return{status:"completed",replayed:false,terminalStatus:"SHADOW_EVALUATED",resultFingerprint:"a".repeat(64),receiptProjection:projection,value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
     const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_group",reasonCode:"ROLLOUT_SHADOW",readiness:{inspect:async()=>({status,reasonCode,counts} as never)}});
     return{result,projection:projection as {version:string;binding:unknown;authorization:unknown;readiness:{status:string;reasonCode:string;counts:{definitions:number;imports:number;aliases:number;policies:number}};value:{status:string;reply:string}},validate,evaluations,remaining:rows.length};
   };
-  const empty=await run("UNREADY",{definitions:0,imports:0,aliases:0,policies:0});assert.equal(empty.projection.version,"PET_SKILL_INFO_DEV_READINESS_RECEIPT_V1");assert.deepEqual(empty.projection.readiness,{status:"UNREADY",reasonCode:"EMPTY",counts:{definitions:0,imports:0,aliases:0,policies:0}});assert.match(empty.projection.value.reply,/준비되지 않았습니다/);assert.equal(empty.remaining,1);assert.equal(empty.result.processing.replies.length,0);
+  const empty=await run("UNREADY",{definitions:0,imports:0,aliases:0,policies:0});assert.equal(empty.projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_READINESS_RECEIPT_V1");assert.deepEqual(empty.projection.readiness,{status:"UNREADY",reasonCode:"EMPTY",counts:{definitions:0,imports:0,aliases:0,policies:0}});assert.match(empty.projection.value.reply,/준비되지 않았습니다/);assert.equal(empty.remaining,0);assert.equal(empty.result.processing.replies.length,0);
   for(const tampered of[
     {...empty.projection,readiness:{...empty.projection.readiness,status:"PARTIAL"}},
     {...empty.projection,readiness:{...empty.projection.readiness,status:"PARTIAL"},value:{...empty.projection.value,reply:empty.projection.value.reply.replace("❌ DEV 펫스킬 카탈로그가 준비되지 않았습니다.","⚠️ DEV 펫스킬 카탈로그가 일부만 준비되었습니다.")}},
@@ -83,8 +86,8 @@ it("stores exact UNREADY and PARTIAL DEV replies without invoking the catalog ev
     {...empty.projection,value:{...empty.projection.value,status:"denied"}},
     {...empty.projection,value:{...empty.projection.value,reply:`${empty.projection.value.reply} 변조`}}
   ])assert.throws(()=>empty.validate(tampered),/PET_SKILL_INFO_DEV_READINESS_RECEIPT_INVALID/);
-  const {readiness:discardedReadiness,...downgraded}=empty.projection;void discardedReadiness;assert.throws(()=>empty.validate({...downgraded,version:"PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1"}),/PET_SKILL_INFO_DEV_READINESS_RECEIPT_DOWNGRADE/);
-  const partial=await run("PARTIAL",{definitions:92,imports:92,aliases:29,policies:3});assert.match(partial.projection.value.reply,/일부만 준비되었습니다/);assert.equal(partial.remaining,1);assert.equal(partial.evaluations,1);
+  const {readiness:discardedReadiness,...downgraded}=empty.projection;void discardedReadiness;assert.throws(()=>empty.validate({...downgraded,version:"PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1"}),/PET_SKILL_INFO_/);
+  const partial=await run("PARTIAL",{definitions:92,imports:92,aliases:29,policies:3});assert.match(partial.projection.value.reply,/일부만 준비되었습니다/);assert.equal(partial.remaining,0);assert.equal(partial.evaluations,1);
   const semantic=await run("PARTIAL",{definitions:93,imports:93,aliases:30,policies:4},"SEMANTIC_DRIFT");assert.match(semantic.projection.value.reply,/정의: 93\/93/);assert.equal(semantic.projection.readiness.reasonCode,"SEMANTIC_DRIFT");
 });
 
@@ -93,13 +96,12 @@ it("persists expected private identity/pass denials without invoking the skill r
     const {database,environmentContext}=await verified("pet_skill_info_private"),normalized=event("/펫스킬정보");
     const rows:unknown[]=[actorRows];
     if(actorRows.length!==0)rows.push([{kst_today:"2026-09-07"}],passRows);
-    rows.push([{player_status:"active",identity_id:1n}]);
     let skillReaderCalls=0;
     const snapshot={query:async<T>(sql:string)=>{if(sql.startsWith("SELECT player.status player_status"))skillReaderCalls+=1;return rows.shift() as T;}};
     let projection:unknown;
     const recovery={execute:async(input:any)=>{const evaluated=await input.evaluateInSnapshot(snapshot);projection=evaluated.receiptProjection;input.validateReceiptProjection(projection);return{status:"completed",replayed:false,resultFingerprint:"d".repeat(64),terminalStatus:evaluated.terminalStatus??"SHADOW_EVALUATED",processing:{duplicate:false,replies:[]},...evaluated};}};
     const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW"});
-    assert.equal(skillReaderCalls,result.denialReason===undefined?1:0);
+    assert.equal(skillReaderCalls,0);
     return{projection:projection as {version:string;authorization:{mode:string;identityId?:string;playerId?:string;activePassCodes?:string[];reasonCode?:string};value:{reply?:string;status?:string;reasonCode?:string}},result};
   };
   const active=(pass_id:bigint,pass_code:string)=>({pass_id,pass_code,entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1});

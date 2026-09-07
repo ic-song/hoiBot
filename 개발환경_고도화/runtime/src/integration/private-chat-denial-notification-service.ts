@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createObjectAuditValues, createObjectIdentityCandidate } from "../identity/object-identity-audit-provider.js";
-import { parsePetSkillInfoPrivateDenialReceiptV2, type PetSkillInfoPrivateDenialReceiptV2 } from "../pet/pet-skill-info-read-only-recovery-ingress.js";
+import { parsePetSkillInfoPrivateDenialReceiptV2, parsePetSkillInfoPrivateDenialReceiptV3, type PetSkillInfoPrivateDenialReceiptV2, type PetSkillInfoPrivateDenialReceiptV3 } from "../pet/pet-skill-info-read-only-recovery-ingress.js";
 import { assertVerifiedEnvironmentContext, type VerifiedEnvironmentContext } from "../runtime/environment-context.js";
 import { insertWithCuid8CollisionRetry, withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
 
@@ -9,6 +9,8 @@ const COMMAND_CODE="PRIVATE_CHAT_DENIAL_NOTICE";
 const OPERATION_SCOPE="private-chat-denial.notice";
 const ACTOR="service:private-chat-denial-notice";
 const V2="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2";
+const V3="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3";
+type NotifiableReceipt=PetSkillInfoPrivateDenialReceiptV2|PetSkillInfoPrivateDenialReceiptV3;
 
 type RootRow={
   app_wiring_operation_id:string;claim_state:string;effect_mode:string|null;route:string;environment_code:string;database_identity:string;
@@ -40,18 +42,18 @@ function stableJson(value:unknown):string{
   return`{${Object.keys(record).sort().map(key=>`${JSON.stringify(key)}:${stableJson(record[key])}`).join(",")}}`;
 }
 function sha(value:string):string{return createHash("sha256").update(value).digest("hex");}
-function denialReason(receipt:PetSkillInfoPrivateDenialReceiptV2):"PRIVATE_HOI_PASS_REQUIRED"|"PRIVATE_CHAT_BLOCKED"{
+function denialReason(receipt:NotifiableReceipt):"PRIVATE_HOI_PASS_REQUIRED"|"PRIVATE_CHAT_BLOCKED"{
   return receipt.authorization.reasonCode==="PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"?"PRIVATE_HOI_PASS_REQUIRED":"PRIVATE_CHAT_BLOCKED";
 }
 function disposition(ordinal:bigint,enabled:boolean):"NOT_DUE"|"QUEUED"|"DISABLED"{
   return ordinal%3n!==0n?"NOT_DUE":enabled?"QUEUED":"DISABLED";
 }
 function resultFingerprint(input:{environmentCode:string;databaseIdentity:string;appWiringOperationId:string;counterId:string;eventId:string;ordinal:string;reason:string;disposition:string;configurationFingerprint:string|null}):string{return sha(stableJson(input));}
-function formatNotice(receipt:PetSkillInfoPrivateDenialReceiptV2,ordinal:bigint):string{
+function formatNotice(receipt:NotifiableReceipt,ordinal:bigint):string{
   return`[패스 미사용 1:1톡 감지]\n유저: ${receipt.notification.displayName}\n개인톡방: ${receipt.notification.privateRoomName}\n누적 횟수: ${ordinal.toString()}회\n최근 메시지: ${receipt.notification.messagePreview}`;
 }
 
-async function readRoot(tx:DatabaseTransaction,eventId:string):Promise<{row:RootRow;receipt:PetSkillInfoPrivateDenialReceiptV2}|undefined>{
+async function readRoot(tx:DatabaseTransaction,eventId:string):Promise<{row:RootRow;receipt:NotifiableReceipt}|undefined>{
   const rows=await tx.query<RootRow[]>(`SELECT claim.app_wiring_operation_id,claim.claim_state,claim.effect_mode,claim.route,claim.environment_code,claim.database_identity,claim.result_json claim_result_json,
     operation.id receipt_operation_id,operation.status operation_status,operation.result_json operation_result_json,
     execution.execution_status,execution.result_code execution_result_code,inbox.external_identity_id,inbox.provider_code,inbox.external_user_id,
@@ -65,8 +67,9 @@ async function readRoot(tx:DatabaseTransaction,eventId:string):Promise<{row:Root
   const row=rows[0]!;
   const operation=parseJson(row.operation_result_json),claim=parseJson(row.claim_result_json);
   const projection=operation.receiptProjection;
-  if((projection as {version?:unknown}|undefined)?.version!==V2)return undefined;
-  const receipt=parsePetSkillInfoPrivateDenialReceiptV2(projection);
+  const version=(projection as {version?:unknown}|undefined)?.version;
+  if(version!==V2&&version!==V3)return undefined;
+  const receipt=version===V3?parsePetSkillInfoPrivateDenialReceiptV3(projection):parsePetSkillInfoPrivateDenialReceiptV2(projection);
   const projectedFingerprint=sha(stableJson(projection));
   if(row.claim_state!=="COMPLETED"||row.effect_mode!=="READ_ONLY"||row.route!=="SHADOW"||row.operation_status!=="completed"||row.execution_status!=="completed"||row.execution_result_code!=="ignored"
     ||claim.status!=="SHADOW_DENIED"||claim.referenceId!==row.receipt_operation_id.toString()||claim.resultFingerprint!==projectedFingerprint
@@ -83,7 +86,7 @@ async function readAttempt(tx:DatabaseTransaction,eventId:string):Promise<Attemp
   return rows[0];
 }
 
-async function assertReplayInfrastructure(tx:DatabaseTransaction,attempt:AttemptRow,receipt:PetSkillInfoPrivateDenialReceiptV2):Promise<void>{
+async function assertReplayInfrastructure(tx:DatabaseTransaction,attempt:AttemptRow,receipt:NotifiableReceipt):Promise<void>{
   const rows=await tx.query<ReplayInfrastructureRow[]>(`SELECT operation.id notice_operation_id,operation.status operation_status,operation.result_json operation_result_json,
     execution.execution_status,execution.result_code execution_result_code,
     (SELECT COUNT(*) FROM command_audit audit WHERE audit.operation_id=operation.id AND audit.action_code='private_chat.denial.notice') audit_count,
@@ -167,8 +170,8 @@ export class PrivateChatDenialNotificationService{
       JOIN canonical_app_wiring_operations claim ON claim.app_wiring_operation_id=operation.idempotency_key
       LEFT JOIN private_chat_denial_attempts attempt ON attempt.event_id=execution.event_id
       WHERE execution.command_code='PET_SKILL_INFO' AND execution.execution_status='completed' AND execution.result_code='ignored'
-        AND claim.claim_state='COMPLETED' AND claim.environment_code=? AND claim.database_identity=? AND JSON_UNQUOTE(JSON_EXTRACT(operation.result_json,'$.receiptProjection.version'))=?
-        AND attempt.private_chat_denial_attempt_id IS NULL ORDER BY execution.id LIMIT ?`,[this.environment.environmentCode,this.environment.databaseIdentity,V2,limit]);
+        AND claim.claim_state='COMPLETED' AND claim.environment_code=? AND claim.database_identity=? AND JSON_UNQUOTE(JSON_EXTRACT(operation.result_json,'$.receiptProjection.version')) IN (?,?)
+        AND attempt.private_chat_denial_attempt_id IS NULL ORDER BY execution.id LIMIT ?`,[this.environment.environmentCode,this.environment.databaseIdentity,V2,V3,limit]);
     for(const row of rows)await this.processEvent(row.event_id);
     return rows.length;
   }

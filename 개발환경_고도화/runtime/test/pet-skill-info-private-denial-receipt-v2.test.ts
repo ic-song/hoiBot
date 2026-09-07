@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import {it} from "node:test";
 import type {DatabaseClient} from "../src/database.js";
 import type {NormalizedIrisEvent} from "../src/integration/iris-normalizer.js";
-import {executePetSkillInfoReadOnlyRecovery,parsePetSkillInfoPrivateDenialReceiptV2,type PetSkillInfoPrivateDenialReceiptV2} from "../src/pet/pet-skill-info-read-only-recovery-ingress.js";
+import {executePetSkillInfoReadOnlyRecovery,parsePetSkillInfoPrivateDenialReceiptV2,parsePetSkillInfoPrivateDenialReceiptV3,type PetSkillInfoPrivateDenialReceiptV2} from "../src/pet/pet-skill-info-read-only-recovery-ingress.js";
 import {createEnvironmentContext,verifyStartupDatabaseIdentity} from "../src/runtime/environment-context.js";
 
 const databaseIdentity="pet_skill_private_notice";
 const configurationFingerprint="c".repeat(64);
 const channelName={displayName:"합성 개인톡방",sourceCode:"kakao_chat_room_meta" as const};
+const actorContextProvider={resolve:async()=>({selectionSource:"ACTIVE_CONTEXT" as const,platformCode:"kakao" as const,externalContextId:"private-room-1",externalIdentityId:"11",selectedLegacyPlayerId:"22",selectedCanonicalPlayerId:"player22",entitlementLegacyPlayerId:"22",portalAccountId:"portal01",platformContextMembershipId:"member01",selectionVersion:"1"})};
 
 function event(message:string,input:{displayName?:string|null;displayNameSource?:NormalizedIrisEvent["displayNameSource"];displayNameTrust?:NormalizedIrisEvent["displayNameTrust"]}={}):NormalizedIrisEvent{
   const displayName=input.displayName===undefined?"합성 사용자":input.displayName;
@@ -38,16 +39,16 @@ async function run(input:{message?:string;displayName?:string|null;displayNameSo
     return{status:"completed",replayed:false,terminalStatus:evaluated.terminalStatus,resultFingerprint:"d".repeat(64),receiptProjection:projection,value:evaluated.value,processing:{duplicate:false,replies:[]}};
   }};
   const {database,environmentContext}=await verified();
-  const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW",...(input.room===undefined?{}:{channelName:input.room})});
+  const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW",actorContext:actorContextProvider,...(input.room===undefined?{}:{channelName:input.room})});
   return{projection:projection as Record<string,unknown>,result,queries};
 }
 
-it("creates an exact V2 denial receipt only from one stable identity and one environment-bound notification config",async()=>{
+it("creates an exact dual-context V3 denial receipt from one stable identity and one environment-bound notification config",async()=>{
   const message=`/펫스킬정보\r\n${"가".repeat(110)}`;
   const actual=await run({message,room:channelName});
   assert.equal(actual.result.denialReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");
   assert.equal(actual.result.privateDenialNotificationRequired,true);
-  const receipt=parsePetSkillInfoPrivateDenialReceiptV2(actual.projection);
+  const receipt=parsePetSkillInfoPrivateDenialReceiptV3(actual.projection);
   assert.deepEqual(receipt.notification,{
     scope:"PET_SKILL_INFO_ONLY",commandCode:"PET_SKILL_INFO",environmentCode:"dev",databaseIdentity,providerCode:"kakao",
     externalIdentityId:"11",externalUserId:"kakao-user-1",displayName:"합성 사용자",privateRoomName:"합성 개인톡방",privateRoomNameSource:"kakao_chat_room_meta",
@@ -60,32 +61,32 @@ it("creates an exact V2 denial receipt only from one stable identity and one env
 });
 
 it("uses the exact legacy preview normalization, empty marker, UTF-16 slice, and ellipsis rules",async()=>{
-  const normalized=parsePetSkillInfoPrivateDenialReceiptV2((await run({message:"/펫스킬정보\n\r   대상",room:channelName})).projection);
+  const normalized=parsePetSkillInfoPrivateDenialReceiptV3((await run({message:"/펫스킬정보\n\r   대상",room:channelName})).projection);
   assert.equal(normalized.notification.messagePreview,"/펫스킬정보    대상");
-  const emojiMessage=`/펫스킬정보 ${"😀".repeat(60)}`,emoji=parsePetSkillInfoPrivateDenialReceiptV2((await run({message:emojiMessage,room:channelName})).projection);
+  const emojiMessage=`/펫스킬정보 ${"😀".repeat(60)}`,emoji=parsePetSkillInfoPrivateDenialReceiptV3((await run({message:emojiMessage,room:channelName})).projection);
   assert.equal(emoji.notification.messagePreview,`${emojiMessage.slice(0,100)}...`);
 });
 
-it("keeps V1 when a trusted room and sender, observed display name, stable identity, or exact config cardinality is unavailable",async()=>{
-  const noRoom=await run({});assert.equal(noRoom.projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");assert.equal(noRoom.result.privateDenialNotificationRequired,undefined);
-  const noName=await run({room:channelName,displayName:null});assert.equal(noName.projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");assert.equal(noName.result.privateDenialNotificationRequired,undefined);
-  const untrusted=await run({room:channelName,displayNameSource:"iris_cache",displayNameTrust:"untrusted"});assert.equal(untrusted.projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");assert.equal(untrusted.result.privateDenialNotificationRequired,undefined);
-  assert.equal((await run({room:channelName,identityRows:[]})).projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");
-  assert.equal((await run({room:channelName,identityRows:[{external_identity_id:11n},{external_identity_id:12n}]})).projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");
-  assert.equal((await run({room:channelName,configRows:[]})).projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");
-  assert.equal((await run({room:channelName,configRows:[{external_channel_id:"a",delivery_enabled:1,configuration_fingerprint:configurationFingerprint}, {external_channel_id:"b",delivery_enabled:1,configuration_fingerprint:configurationFingerprint}]})).projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");
+it("keeps a non-notifiable dual-context receipt when trusted notification evidence is unavailable",async()=>{
+  const noRoom=await run({});assert.equal(noRoom.projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1");assert.equal(noRoom.result.privateDenialNotificationRequired,undefined);
+  const noName=await run({room:channelName,displayName:null});assert.equal(noName.projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1");assert.equal(noName.result.privateDenialNotificationRequired,undefined);
+  const untrusted=await run({room:channelName,displayNameSource:"iris_cache",displayNameTrust:"untrusted"});assert.equal(untrusted.projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1");assert.equal(untrusted.result.privateDenialNotificationRequired,undefined);
+  assert.equal((await run({room:channelName,identityRows:[]})).projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1");
+  assert.equal((await run({room:channelName,identityRows:[{external_identity_id:11n},{external_identity_id:12n}]})).projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1");
+  assert.equal((await run({room:channelName,configRows:[]})).projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1");
+  assert.equal((await run({room:channelName,configRows:[{external_channel_id:"a",delivery_enabled:1,configuration_fingerprint:configurationFingerprint}, {external_channel_id:"b",delivery_enabled:1,configuration_fingerprint:configurationFingerprint}]})).projection.version,"PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1");
 });
 
-it("keeps disabled delivery as an exact V2 snapshot and accepts the persisted false boolean",async()=>{
+it("keeps disabled delivery as an exact V3 snapshot and accepts the persisted false boolean",async()=>{
   const actual=await run({room:channelName,configRows:[{external_channel_id:"gm-channel-stable-1",delivery_enabled:0,configuration_fingerprint:configurationFingerprint}]});
-  assert.equal(actual.projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2");
+  assert.equal(actual.projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3");
   assert.equal(actual.result.privateDenialNotificationRequired,true);
-  assert.equal(parsePetSkillInfoPrivateDenialReceiptV2(actual.projection).notification.deliveryEnabled,false);
+  assert.equal(parsePetSkillInfoPrivateDenialReceiptV3(actual.projection).notification.deliveryEnabled,false);
 });
 
-it("parses persisted V2 fail-closed and rejects coordinated binding, policy, preview, room, identity, and config tampering",async()=>{
-  const original=parsePetSkillInfoPrivateDenialReceiptV2((await run({room:channelName})).projection);
-  const tamper=(change:(receipt:any)=>void)=>{const copy=structuredClone(original);change(copy);assert.throws(()=>parsePetSkillInfoPrivateDenialReceiptV2(copy),/PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2_INVALID/);};
+it("parses persisted V3 fail-closed and rejects coordinated binding, actor, policy, preview, room, identity, and config tampering",async()=>{
+  const original=parsePetSkillInfoPrivateDenialReceiptV3((await run({room:channelName})).projection);
+  const tamper=(change:(receipt:any)=>void)=>{const copy=structuredClone(original);change(copy);assert.throws(()=>parsePetSkillInfoPrivateDenialReceiptV3(copy),/PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3_INVALID/);};
   tamper(receipt=>{receipt.binding.environmentCode="prod";});
   tamper(receipt=>{receipt.notification.externalIdentityId="0";});
   tamper(receipt=>{receipt.notification.externalUserId="other";});
@@ -96,6 +97,9 @@ it("parses persisted V2 fail-closed and rejects coordinated binding, policy, pre
   tamper(receipt=>{receipt.notification.previewMaxLength=99;});
   tamper(receipt=>{receipt.notification.deliveryEnabled="false";});
   tamper(receipt=>{receipt.notification.configurationFingerprint="INVALID";});
+  tamper(receipt=>{receipt.actorContext.selectionVersion="0";});
+  tamper(receipt=>{receipt.actorContext.externalContextId="other-room";});
+  tamper(receipt=>{receipt.actorContext.externalIdentityId="12";});
   tamper(receipt=>{receipt.extra=true;});
 });
 

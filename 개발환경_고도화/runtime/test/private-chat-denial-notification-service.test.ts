@@ -5,7 +5,7 @@ import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult, RootTran
 import { PrivateChatDenialNotificationService } from "../src/integration/private-chat-denial-notification-service.js";
 import { createEnvironmentContext, verifyStartupDatabaseIdentity, type VerifiedEnvironmentContext } from "../src/runtime/environment-context.js";
 
-type ReceiptVersion = "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1" | "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2";
+type ReceiptVersion = "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1" | "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2" | "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3";
 type RootFixture = ReturnType<typeof rootFixture>;
 type Attempt = {
   private_chat_denial_attempt_id: string;
@@ -95,6 +95,7 @@ function denialProjection(input: {
     version,
     binding,
     authorization,
+    ...(version==="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3"?{actorContext:{selectionSource:"ACTIVE_CONTEXT",platformCode:"kakao",externalContextId:binding.externalChannelId,externalIdentityId:identityId.toString(),selectedLegacyPlayerId:"22",selectedCanonicalPlayerId:"player22",entitlementLegacyPlayerId:"11",portalAccountId:"portal01",platformContextMembershipId:"member01",selectionVersion:"4"}}:{}),
     value: { status: "denied", reasonCode: authorization.reasonCode },
     notification: {
       scope: "PET_SKILL_INFO_ONLY",
@@ -309,12 +310,12 @@ function createFakeDatabase(initialRoots: RootFixture[] = []) {
       if (sql.includes("LEFT JOIN private_chat_denial_attempts attempt")) {
         const requestedEnvironment = String(values[0]);
         const requestedDatabase = String(values[1]);
-        const version = String(values[2]);
-        const limit = Number(values[3]);
+        const versions = new Set([String(values[2]),String(values[3])]);
+        const limit = Number(values[4]);
         return [...state.roots.values()]
           .filter((root) => root.environment_code === requestedEnvironment
             && root.database_identity === requestedDatabase
-            && root.operation_result_json.receiptProjection.version === version
+            && versions.has(String(root.operation_result_json.receiptProjection.version))
             && !state.attempts.has(root.operation_result_json.eventId))
           .slice(0, limit)
           .map((root) => ({ event_id: root.operation_result_json.eventId })) as T;
@@ -497,10 +498,11 @@ describe("private chat denial notification service", () => {
     assert.equal(missingOutbox.rollbacks, 1);
   });
 
-  it("reconciles only V2 root receipts whose attempt is missing", async () => {
+  it("reconciles V2/V3 root receipts whose attempt is missing", async () => {
     const completed = rootFixture({ eventId: "event-1" });
     const missingV2 = rootFixture({ eventId: "event-2" });
     const historicalV1 = rootFixture({ eventId: "event-3", version: "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1" });
+    const missingV3 = rootFixture({ eventId: "event-5", version: "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3" });
     const otherEnvironment = rootFixture({ eventId: "event-4" });
     Reflect.set(otherEnvironment, "environment_code", "prod");
     const fake = createFakeDatabase([completed]);
@@ -508,13 +510,15 @@ describe("private chat denial notification service", () => {
     await service.processEvent("event-1");
     fake.addRoot(missingV2);
     fake.addRoot(historicalV1);
+    fake.addRoot(missingV3);
     fake.addRoot(otherEnvironment);
 
-    assert.equal(await service.reconcilePending(), 1);
+    assert.equal(await service.reconcilePending(), 2);
     assert.equal(fake.state.attempts.has("event-1"), true, "already completed V2 remains unchanged");
     assert.equal(fake.state.attempts.has("event-2"), true, "missing V2 is processed");
     assert.equal(fake.state.attempts.has("event-3"), false, "historical V1 is not backfilled");
     assert.equal(fake.state.attempts.has("event-4"), false, "another environment's V2 is excluded before processing");
-    assert.equal(fake.state.counter?.attempt_count, 2n);
+    assert.equal(fake.state.attempts.has("event-5"), true, "missing V3 is processed");
+    assert.equal(fake.state.counter?.attempt_count, 3n);
   });
 });

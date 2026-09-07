@@ -202,6 +202,7 @@ import { isPetSkillProbabilityCommand } from "./pet/pet-skill-probability-servic
 import { PetSkillProbabilityAtomicService } from "./pet/pet-skill-probability-atomic-service.js";
 import { normalizePetSkillInfoDispatchMessage } from "./pet/pet-skill-info-shadow-service.js";
 import { executePetSkillInfoReadOnlyRecovery, resolvePetSkillInfoIngressCommand } from "./pet/pet-skill-info-read-only-recovery-ingress.js";
+import type { MariaPetSkillInfoActorContextProvider } from "./pet/pet-skill-info-actor-context-provider.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
@@ -385,6 +386,7 @@ export interface AppDependencies {
   environmentContext?: VerifiedEnvironmentContext;
   appWiringOperationProvider?: MariaAppWiringOperationProvider;
   petSkillInfoReadOnlyRecoveryProvider?: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  petSkillInfoActorContextProvider?: Pick<MariaPetSkillInfoActorContextProvider,"resolve">;
   privateChatDenialNotificationService?: Pick<PrivateChatDenialNotificationService,"processEvent">;
   petExploreAppWiringIngress?: Pick<PetExploreAppWiringIngress, "handle">;
   petDataCompareAppWiringIngress?: Pick<PetDataCompareAppWiringIngress, "handle">;
@@ -1886,7 +1888,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
           })
         :atomicPetSkillInfo
-        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(async recovered=>{petSkillInfoRejectedReason=recovered.denialReason;if(recovered.privateDenialNotificationRequired===true){if(privateChatDenialNotificationService===undefined)throw new Error("PRIVATE_CHAT_DENIAL_NOTIFICATION_SERVICE_REQUIRED");await privateChatDenialNotificationService.processEvent(normalizedEvent.eventId);}return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
+        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(dependencies.petSkillInfoActorContextProvider===undefined?{}:{actorContext:dependencies.petSkillInfoActorContextProvider}),...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(async recovered=>{petSkillInfoRejectedReason=recovered.denialReason;if(recovered.privateDenialNotificationRequired===true){if(privateChatDenialNotificationService===undefined)throw new Error("PRIVATE_CHAT_DENIAL_NOTIFICATION_SERVICE_REQUIRED");await privateChatDenialNotificationService.processEvent(normalizedEvent.eventId);}return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
         : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership

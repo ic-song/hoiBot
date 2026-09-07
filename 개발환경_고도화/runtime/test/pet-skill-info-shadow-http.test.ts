@@ -11,6 +11,7 @@ import {projectCanonicalPetSkillSeed,type LegacyPetSkillSeedEntry} from "../src/
 
 const token = "wave14b-shadow-token";
 const roomId = "990000000000762";
+const actorContextProvider={resolve:async()=>({selectionSource:"ACTIVE_CONTEXT" as const,platformCode:"kakao" as const,externalContextId:roomId,externalIdentityId:"12",selectedLegacyPlayerId:"21",selectedCanonicalPlayerId:"player21",entitlementLegacyPlayerId:"21",portalAccountId:"portal01",platformContextMembershipId:"member01",selectionVersion:"1"})};
 interface PostFreeze{sourceHash:string;rows:Array<LegacyPetSkillSeedEntry&{runtimeSourceIndex:number}>}
 const baseline=JSON.parse(fs.readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/pet-skill-definitions-v2400.json",import.meta.url),"utf8"))as LegacyPetSkillSeedEntry[];
 const additions=JSON.parse(fs.readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/pet-skill-post-freeze-v2435.json",import.meta.url),"utf8"))as PostFreeze;
@@ -39,6 +40,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       database: trace.database,
       environmentContext: context,
       petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+      petSkillInfoActorContextProvider:actorContextProvider,
       inspectIrisChannel: async () => ({ mode: "operational", channelClass: "open_group", reason: "allowed",
         evidence: { roomType: "OM", openLinkActive: true, openLinkExpired: false } }),
       sendIrisTextReply: async () => { throw new Error("SHADOW_MUST_NOT_SEND"); }
@@ -79,7 +81,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const trace=createTraceDatabase(),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
     const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,
       inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
       sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
@@ -94,7 +96,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const trace=createTraceDatabase("pass_missing"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
     const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-denial-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,
       inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
       sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
@@ -111,7 +113,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
     const inspectIrisChannel=async()=>({mode:"denied" as const,channelClass:"open_direct" as const,reason:"open_direct_unverified" as const,evidence:{roomType:"DirectChat" as const,linkId:"direct-link"}});
     const trace=createTraceDatabase("pass_duplicate"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{const failed=await send(app,"private-integrity-1","/펫스킬정보");assert.equal(failed.statusCode,500,failed.body);assert.equal(trace.atomicHandlerCount,1);}finally{await app.close();}
     const legacyTrace=createTraceDatabase(),legacyContext=await verifyStartupDatabaseIdentity(legacyTrace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
     const legacyRecovery={execute:async()=>{throw new Error("APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");}};
@@ -123,7 +125,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const trace=createTraceDatabase(),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"prod",databaseIdentity:"wave14b_shadow"}));
     const config=loadConfig({NODE_ENV:"production",HOIBOT_ENVIRONMENT_CODE:"prod",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper-production-32",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,
       inspectIrisKakaoDatabase:async()=>privateSnapshot(),inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
       sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
@@ -136,7 +138,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const trace=createTraceDatabase(),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"prod",databaseIdentity:"wave14b_shadow"}));
     const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"prod",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,
       inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),
       sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
@@ -150,7 +152,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       const trace=createTraceDatabase("allowed",readiness),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
       const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"dev-readiness-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
       process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
-      const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+      const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
       try{const first=await send(app,eventId,"dev/펫스킬정보 청룡언월도");assert.equal(first.statusCode,202,first.body);const exact=readiness==="unready"?"[DEV 테스트환경]\n❌ DEV 펫스킬 카탈로그가 준비되지 않았습니다.\n정의: 0/93\n정의 연결: 0/93\n별칭: 0/30\n확률 정책: 0/4":"[DEV 테스트환경]\n⚠️ DEV 펫스킬 카탈로그가 일부만 준비되었습니다.\n정의: 92/93\n정의 연결: 92/93\n별칭: 29/30\n확률 정책: 3/4";assert.equal(trace.infoReply,exact);assert.ok(trace.snapshotSql.every(sql=>sql.startsWith("SELECT ")));assert.ok(trace.writes.every(({sql})=>!/canonical_pet_skill_|outbox_messages/.test(sql)));const before=trace.snapshotSql.length;assert.equal((await send(app,eventId,"dev/펫스킬정보 청룡언월도")).statusCode,202);assert.equal(trace.snapshotSql.length,before);assert.equal(trace.atomicHandlerCount,1);assert.equal(trace.atomicReplayCount,1);}finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
     };
     await run("unready","dev-readiness-empty-1");await run("partial","dev-readiness-partial-1");
@@ -160,7 +162,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const trace=createTraceDatabase("allowed","ready"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
     const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"dev-ready-full-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
     process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{
       const message="dev/펫스킬정보 엠퍼러의 천공 날개",first=await send(app,"dev-readiness-ready-1",message);
       assert.equal(first.statusCode,202,first.body);
@@ -173,7 +175,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
   it("fails closed on verified-environment versus snapshot database drift",async()=>{
     const trace=createTraceDatabase("allowed","drift"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
     const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"dev-ready-drift-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
-    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
     try{const failed=await send(app,"dev-readiness-drift-1","dev/펫스킬정보 엠퍼러의 천공 날개");assert.equal(failed.statusCode,500,failed.body);assert.equal(trace.infoReply,"");assert.equal(trace.atomicReplayCount,0);assert.ok(trace.writes.every(({sql})=>!/canonical_pet_skill_|outbox_messages/.test(sql)));}finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
   });
 });
@@ -238,7 +240,7 @@ function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_mi
     }] as T;
     throw new Error(`UNEXPECTED_SNAPSHOT_SQL:${sql}`);
   }};
-  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior.message!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");input.validateReceiptProjection?.(prior.projection);atomicReplayCount+=1;const denied=(prior.projection as {version?:string}).version==="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1";return{status:"completed",replayed:true,terminalStatus:denied?"SHADOW_DENIED":"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:prior.projection,processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection?.(evaluated.receiptProjection);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,{message:input.replyIdentity.message,projection:evaluated.receiptProjection});return{status:"completed",replayed:false,terminalStatus:evaluated.terminalStatus??"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:evaluated.receiptProjection,value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
+  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior.message!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");input.validateReceiptProjection?.(prior.projection);atomicReplayCount+=1;const denied=new Set(["PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1","PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2","PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1","PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3"]).has(String((prior.projection as {version?:string}).version));return{status:"completed",replayed:true,terminalStatus:denied?"SHADOW_DENIED":"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:prior.projection,processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection?.(evaluated.receiptProjection);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,{message:input.replyIdentity.message,projection:evaluated.receiptProjection});return{status:"completed",replayed:false,terminalStatus:evaluated.terminalStatus??"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:evaluated.receiptProjection,value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
   const database: DatabaseClient = {
     ping: async () => undefined,
     verifyRollback: async () => true,
