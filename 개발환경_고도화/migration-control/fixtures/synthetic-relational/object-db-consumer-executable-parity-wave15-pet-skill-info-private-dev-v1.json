@@ -1,0 +1,210 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave15:pet-skill-info-private-dev:v1",
+  "sliceId": "SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01",
+  "executionId": "펫스킬개인DEV영수증DB-SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01-202609071838",
+  "baselineCommit": "f10816ab7398f34979e64073325e118dd4e29e41",
+  "frozenLegacySource": {
+    "file": "main.js",
+    "gitBlobSha1": "451730e955e1ed47fc2ec6ce24845ea511bc0f21",
+    "lineEnding": "LF",
+    "spans": [
+      {
+        "code": "COMMAND_BRANCH",
+        "startLine": 3853,
+        "endLine": 3878,
+        "sha256": "218e36260ee1f7c613eb6c6f676524a82978ddfea6cf45f94cf7fdae1479b1e4"
+      },
+      {
+        "code": "DEV_READINESS",
+        "startLine": 2051,
+        "endLine": 2056,
+        "sha256": "b3b338a80c38b76ba115508544a581a9840876bc35efc1d990911418e5bc858c"
+      },
+      {
+        "code": "PRIVATE_GATE",
+        "startLine": 2120,
+        "endLine": 2126,
+        "sha256": "c3292507b009990f6ce7b81e5d717a2bc4fb5813fe9fb236eae8fbd9847107ee"
+      },
+      {
+        "code": "DEV_PREFIX_DETECTION",
+        "startLine": 28377,
+        "endLine": 28380,
+        "sha256": "1102764495388a44e93f808c533aca7f37ccbcb3357abfaa9f1444b391e306f5"
+      },
+      {
+        "code": "DEV_PREFIX_STRIP",
+        "startLine": 28419,
+        "endLine": 28424,
+        "sha256": "0add95082888870595aab609d916d2cbaf616bf0c662c972cfe0258aed94ba1b"
+      },
+      {
+        "code": "DEV_CONTEXT_AND_HEADER",
+        "startLine": 28426,
+        "endLine": 28456,
+        "sha256": "c28055ac97644dd57bbf42f807172698a7ac583fb54b3b1fb56e39f6595fc351"
+      },
+      {
+        "code": "PRIVATE_PASS_ACTIVE",
+        "startLine": 33240,
+        "endLine": 33260,
+        "sha256": "f88a645d17469ca6e3599eee4cac78712f5dc933c367414f7d20e18bebd2472c"
+      }
+    ]
+  },
+  "receiptContract": {
+    "version": "PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1",
+    "terminalResult": "NO_REPLY",
+    "transaction": "ONE_CONSISTENT_ROOT_TRANSACTION",
+    "exactCardinality": {
+      "eventInbox": 1,
+      "appWiringOperation": 1,
+      "operation": 1,
+      "commandExecution": 1,
+      "outbox": 0
+    },
+    "boundFields": [
+      "rawMessage",
+      "effectiveMessage",
+      "devContext",
+      "environmentCode",
+      "databaseIdentity",
+      "providerCode",
+      "externalUserId",
+      "channelType",
+      "externalChannelId"
+    ],
+    "allowedTransientDatabaseCodes": [
+      "1205",
+      "1213"
+    ],
+    "maximumAttempts": 3
+  },
+  "bindings": [
+    {
+      "scenarioKind": "READ_POSITIVE",
+      "scenarioId": "scenario:private-direct-active-pass",
+      "input": {
+        "environmentCode": "prod",
+        "channelType": "open_direct",
+        "rawMessage": "/펫스킬정보청룡언월도",
+        "effectiveMessage": "/펫스킬정보청룡언월도",
+        "devContext": "DEFAULT",
+        "passCode": "hoi"
+      },
+      "expected": {
+        "accepted": true,
+        "handlerInvocationCount": 1,
+        "reply": "청룡언월도📙\n등급: S\n확률: 100.0%\n효과: 삼국지 관우의 전설적인 무기입니다.",
+        "terminalResult": "NO_REPLY"
+      }
+    },
+    {
+      "scenarioKind": "NEGATIVE_GUARD",
+      "scenarioId": "scenario:uppercase-dev-prefix-is-not-dev",
+      "input": {
+        "environmentCode": "dev",
+        "channelType": "open_group",
+        "rawMessage": "Dev/펫스킬정보 청룡언월도"
+      },
+      "expected": {
+        "accepted": false,
+        "handlerInvocationCount": 0,
+        "reason": "PET_SKILL_INFO_COMMAND_NOT_MATCHED"
+      }
+    },
+    {
+      "scenarioKind": "AUTH_DENIED",
+      "scenarioId": "scenario:private-direct-pass-missing",
+      "input": {
+        "environmentCode": "prod",
+        "channelType": "open_direct",
+        "rawMessage": "/펫스킬정보 청룡언월도",
+        "effectiveMessage": "/펫스킬정보 청룡언월도",
+        "devContext": "DEFAULT",
+        "passCode": null
+      },
+      "expected": {
+        "accepted": false,
+        "handlerInvocationCount": 0,
+        "errorCode": "PET_SKILL_INFO_PRIVATE_PASS_REQUIRED",
+        "terminalResult": "FAILED"
+      }
+    },
+    {
+      "scenarioKind": "WRONG_ROOM_REJECTED",
+      "scenarioId": "scenario:unverified-open-direct",
+      "input": {
+        "environmentCode": "prod",
+        "channelType": "open_other",
+        "rawMessage": "/펫스킬정보 청룡언월도"
+      },
+      "expected": {
+        "accepted": false,
+        "handlerInvocationCount": 0,
+        "reason": "CHANNEL_NOT_ALLOWED"
+      }
+    },
+    {
+      "scenarioKind": "EXACT_OUTPUT",
+      "scenarioId": "scenario:dev-prefix-exact-header",
+      "input": {
+        "environmentCode": "dev",
+        "channelType": "open_group",
+        "rawMessage": "dev/  펫스킬정보",
+        "effectiveMessage": "/펫스킬정보",
+        "devContext": "DEV_PREFIX"
+      },
+      "expected": {
+        "accepted": true,
+        "handlerInvocationCount": 1,
+        "reply": "[DEV 테스트환경]\n사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)",
+        "terminalResult": "NO_REPLY"
+      }
+    },
+    {
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+      "scenarioId": "scenario:shadow-read-does-not-mutate-source-domain",
+      "input": {
+        "environmentCode": "prod",
+        "channelType": "open_group",
+        "rawMessage": "/펫스킬정보 청룡언월도",
+        "effectiveMessage": "/펫스킬정보 청룡언월도",
+        "devContext": "DEFAULT"
+      },
+      "expected": {
+        "accepted": true,
+        "sourceDomainDmlCount": 0,
+        "receiptDmlOnly": true,
+        "terminalResult": "NO_REPLY"
+      }
+    },
+    {
+      "scenarioKind": "RESTART_CONSISTENCY",
+      "scenarioId": "scenario:completed-replay-after-restart",
+      "input": {
+        "environmentCode": "prod",
+        "channelType": "open_group",
+        "rawMessage": "/펫스킬정보 청룡언월도",
+        "effectiveMessage": "/펫스킬정보 청룡언월도",
+        "devContext": "DEFAULT"
+      },
+      "expected": {
+        "accepted": true,
+        "firstHandlerInvocationCount": 1,
+        "replayHandlerInvocationCount": 0,
+        "operationCount": 1,
+        "commandExecutionCount": 1,
+        "outboxCount": 0,
+        "terminalResult": "NO_REPLY"
+      }
+    }
+  ],
+  "explicitDivergences": [
+    "BLOCKED_PRIVATE_ATTEMPT_THREE_OPERATOR_NOTIFICATION_FOLLOW_UP_WBS",
+    "DEV_READINESS_EXACT_REPLY_FOLLOW_UP_WBS",
+    "DUAL_CONTEXT_DATA_ROUTER_FOLLOW_UP_WBS",
+    "DIRECT_REPLY_HELD"
+  ]
+}
