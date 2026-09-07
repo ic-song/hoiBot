@@ -1,0 +1,32 @@
+{
+  "format": "hoibot-object-db-wave14-source-provenance-v1",
+  "runId": "펫스킬확률영수증DB-SL-PET-SKILL-PROBABILITY-FORMAL-RECEIPTS-01-202609071235",
+  "lease": 2585,
+  "consumerId": "legacy-e038a86d8e885624",
+  "evidenceCommit": "4b07fa45fddc80b0fa2cd9d949cdb6246e3212a5",
+  "hashMode": "git-blob-bytes-with-crlf-normalized-to-lf",
+  "sources": [
+    {
+      "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-harness.mjs",
+      "sha256": "a1159828c054f1b74256baaf9645961722b56c738e1cbe62ae93c46019606eea"
+    },
+    {
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
+      "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs",
+      "sha256": "b53967da249dd7a1b42c1eea0a6323d369e085da3291b8309a4a033c73417ff3"
+    }
+  ],
+  "legacyOracle": {
+    "sourceCommit": "8f075b4ef249543563e3338e8f3dd32046344880",
+    "sourcePath": "main.js",
+    "sourceStart": 201195,
+    "sourceEnd": 202371,
+    "sourceSpanSha256": "31d66373b98ac5e1fcc5ae3a416c3af775c682ade4b3cd3571851fec53ba0945",
+    "replyUtf16CodeUnits": 2630,
+    "replyUtf8Bytes": 5494,
+    "replySha256": "4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"
+  }
+}

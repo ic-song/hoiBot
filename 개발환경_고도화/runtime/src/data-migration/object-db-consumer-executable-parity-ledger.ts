@@ -27,7 +27,7 @@ const OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PATH = "개발환경_고도화/
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_COUNT = 149 as const;
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_BYTES = 636_158 as const;
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_SHA256 = "14160ca2c95bee198c04ca6223fc796e9b9295b4cd893b8aee7c4f04d5462f28" as const;
-const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_ROOT_COMMIT = "9f1611fbd60b7612fe09711981dd9eb4a76326f8" as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_ROOT_COMMIT = "6ac066bfd868efc876577b40b91b909053d025a3" as const;
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_EVIDENCE_COMMIT = "9f1611fbd60b7612fe09711981dd9eb4a76326f8" as const;
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PATH = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave13-v1.json" as const;
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_COUNT = 155 as const;
@@ -62,6 +62,17 @@ const OBJECT_DB_PARITY_WAVE11_HOME_FURNITURE_READ_TARGET_PATH = "개발환경_�
 const OBJECT_DB_PARITY_WAVE12_CHARACTER_COUNT_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave12-character-count.mjs" as const;
 const OBJECT_DB_PARITY_WAVE13_SERVER_STATS_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs" as const;
 const OBJECT_DB_PARITY_WAVE14_PET_SKILL_PROBABILITY_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs" as const;
+const OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT = "4b07fa45fddc80b0fa2cd9d949cdb6246e3212a5" as const;
+const OBJECT_DB_PARITY_WAVE14_HARNESS_SHA256 = "a1159828c054f1b74256baaf9645961722b56c738e1cbe62ae93c46019606eea" as const;
+const OBJECT_DB_PARITY_WAVE14_FIXTURE_SHA256 = "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a" as const;
+const OBJECT_DB_PARITY_WAVE14_TARGET_SHA256 = "b53967da249dd7a1b42c1eea0a6323d369e085da3291b8309a4a033c73417ff3" as const;
+const OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS = new Set([
+  "receipt:wave14:legacy-e038a86d8e885624:read_positive",
+  "receipt:wave14:legacy-e038a86d8e885624:negative_guard",
+  "receipt:wave14:legacy-e038a86d8e885624:exact_output",
+  "receipt:wave14:legacy-e038a86d8e885624:source_domain_dml_zero",
+  "receipt:wave14:legacy-e038a86d8e885624:restart_consistency",
+]);
 const TRUSTED_WAVE1_TITLE_READS = {
   "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
   "sql-repository-a0a5f5d8f3338d7b": { domain: "pet", symbol: "pet.listOwned", triggerOrPredicate: "SQL_METHOD:pet:listOwned", interfaceId: "pet-title.repository.maria-canonical-title-repository.pet.listOwned", definitionTable: "canonical_pet_title_definitions", definitionId: "pet_title_id", ownershipTable: "canonical_owned_pet_title_instances", ownedId: "owned_pet_title_id", selectionTable: "canonical_pet_title_selections" },
@@ -928,6 +939,7 @@ function assertReceiptGitProvenance(
     if(pinnedBundle.evidenceCommit!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_EVIDENCE_COMMIT||pinnedBundle.receipts.length!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_COUNT||Buffer.byteLength(compactPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_BYTES||sha256CanonicalText(compactPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_SHA256)throw new Error("pinned Wave13 receipt root drift");
     const pinned=pinnedBundle.receipts.find(candidate=>candidate.receiptId===receipt.receiptId);
     if(pinned===undefined||JSON.stringify(pinned)!==JSON.stringify(receipt))throw new Error(`historical receipt fingerprint drift: ${receipt.receiptId}`);
+    return;
   }
   for (const evidence of [
     { path: receipt.harness.path, sha256: receipt.harness.sourceSha256 },
@@ -978,7 +990,10 @@ function assertReceiptExecutableBinding(
     if (fixture.format !== "hoibot-object-db-consumer-parity-case-fixture-v1" || fixture.fixtureId !== receipt.fixture.fixtureId || !Array.isArray(fixture.bindings)) throw new Error(`${receipt.receiptId} fixture contract/binding mismatch`);
   }
   const exactBinding = JSON.stringify(binding);
-  if (!fixture.bindings.some((candidate) => isRecord(candidate) && JSON.stringify(candidate) === exactBinding)) throw new Error(`${receipt.receiptId} unrelated fixture lacks exact receipt binding`);
+  const hasExactBinding=receipt.receiptId.startsWith("receipt:wave14:")
+    ? fixture.bindings.some((candidate)=>isRecord(candidate)&&Object.keys(candidate).length===Object.keys(binding).length&&Object.entries(binding).every(([key,value])=>candidate[key]===value))
+    : fixture.bindings.some((candidate) => isRecord(candidate) && JSON.stringify(candidate) === exactBinding);
+  if (!hasExactBinding) throw new Error(`${receipt.receiptId} unrelated fixture lacks exact receipt binding`);
   if (receipt.harness.runner !== OBJECT_DB_PARITY_RUNNER) throw new Error(`${receipt.receiptId} runner metadata is not allowlisted`);
   const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave14:")
     ? OBJECT_DB_PARITY_WAVE14_HARNESS_PATH
@@ -999,7 +1014,7 @@ function assertReceiptExecutableBinding(
   // 이전 Wave 영수증은 해당 Wave의 고정 evidenceCommit 소스와 자체 해시로 이미 실행 검증됐다.
   // 현재 소스에서 재실행하면 무관한 후속 삽입으로 span 위치가 변하므로, 누적 묶음에서는
   // 위 provenance 검증과 불변 receipt/fixture/harness/target 해시만 재검증한다.
-  if (!receipt.receiptId.startsWith("receipt:wave13:")&&!receipt.receiptId.startsWith("receipt:wave14:")) return;
+  if (!receipt.receiptId.startsWith("receipt:wave14:")) return;
   const harnessPath = resolveEvidenceFile(receipt.harness.path, harnessText);
   const targetPath = resolveEvidenceFile(receipt.invocation.targetPath, targetText);
   const runDirectory = mkdtempSync(join(tmpdir(), "hoibot-parity-"));
@@ -1149,7 +1164,7 @@ function validateExecutionReceipt(
   const trustedWave11HomeFurnitureDml=receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS&&receipt.harness.path===OBJECT_DB_PARITY_WAVE11_HARNESS_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE11_HOME_FURNITURE_READ_TARGET_PATH;
   const trustedWave12CharacterCountDml=receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS&&receipt.harness.path===OBJECT_DB_PARITY_WAVE12_HARNESS_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE12_CHARACTER_COUNT_TARGET_PATH;
   const trustedWave13ServerStatsDml=receipt.consumerId in TRUSTED_WAVE13_SERVER_STATS_READS&&receipt.harness.path===OBJECT_DB_PARITY_WAVE13_HARNESS_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE13_SERVER_STATS_TARGET_PATH;
-  const trustedWave14PetSkillProbabilityDml=receipt.consumerId==="legacy-e038a86d8e885624"&&receipt.receiptId.startsWith("receipt:wave14:")&&receipt.harness.path===OBJECT_DB_PARITY_WAVE14_HARNESS_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE14_PET_SKILL_PROBABILITY_TARGET_PATH;
+  const trustedWave14PetSkillProbabilityDml=receipt.consumerId==="legacy-e038a86d8e885624"&&OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS.has(receipt.receiptId)&&evidenceCommit===OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT&&receipt.harness.path===OBJECT_DB_PARITY_WAVE14_HARNESS_PATH&&receipt.harness.sourceSha256===OBJECT_DB_PARITY_WAVE14_HARNESS_SHA256&&receipt.fixture.sha256===OBJECT_DB_PARITY_WAVE14_FIXTURE_SHA256&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE14_PET_SKILL_PROBABILITY_TARGET_PATH&&receipt.invocation.targetSourceSha256===OBJECT_DB_PARITY_WAVE14_TARGET_SHA256;
   const wave7InfrastructureStatements=new Set(["INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"]);
   const onlyTrustedWave7Infrastructure=dml.actualNormalizedStatements.every(statement=>wave7InfrastructureStatements.has(statement));
   const wave8AllowedTables=new Set(["command_routing_decisions","operations","outbox_messages","command_executions","command_audit","admin_server_stat_snapshot_sets","admin_server_stat_snapshot_rows","admin_server_stat_read_executions"]);
