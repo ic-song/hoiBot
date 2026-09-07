@@ -2,12 +2,13 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import cookie from "@fastify/cookie";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
-import { hasDatabaseTransactionCapabilities, type DatabaseClient } from "./database.js";
+import { createScopedDatabaseClient, hasDatabaseTransactionCapabilities, type DatabaseClient } from "./database.js";
 import type { VerifiedEnvironmentContext } from "./runtime/environment-context.js";
 import { RecentEventStore } from "./recent-events.js";
 import { ApplicationError } from "./shared/application-error.js";
 import { normalizeIrisEvent, type IrisPayload, type NormalizedIrisEvent } from "./integration/iris-normalizer.js";
-import { ProcessIrisEventService, recordOutboxDelivery, type PendingReply } from "./integration/event-processing-service.js";
+import { ProcessIrisEventService, recordOutboxDelivery, type ChannelNameObservation, type EventProcessingResult, type PendingReply } from "./integration/event-processing-service.js";
+import { withMariaTransactionRetry } from "./shared/maria-database-error-policy.js";
 import {
   formatIrisKakaoDiagnostic,
   IrisKakaoDatabaseInspector,
@@ -195,7 +196,8 @@ import { MariaPetTitleDefinitionLinkRepository } from "./pet/maria-pet-title-def
 import { isPetRebirthCommandCandidate, normalizePetRebirthDispatchMessage, PetRebirthService } from "./pet/pet-rebirth-service.js";
 import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, PetDuelEmoteService } from "./pet/pet-duel-emote-service.js";
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
-import { isPetSkillProbabilityCommand, PetSkillProbabilityService } from "./pet/pet-skill-probability-service.js";
+import { isPetSkillProbabilityCommand } from "./pet/pet-skill-probability-service.js";
+import { PetSkillProbabilityAtomicService } from "./pet/pet-skill-probability-atomic-service.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
@@ -770,28 +772,58 @@ function isPetSkillBulkGrantOrProbabilityCandidate(message: string | undefined):
   return isPetSkillBulkGrantCandidate(message) || isPetSkillProbabilityCommand(message);
 }
 
-// `/펫스킬확률` 하나만 canonical read provider에 전달해 범위 밖 aggregate 명령을 차단합니다.
-async function dispatchPetSkillProbabilityCommand(input: {
-  database: DatabaseClient | undefined;
-  eventProcessor: Pick<ProcessIrisEventService, "queueCommandReply"> | undefined;
-  isOperationalChannel: boolean;
-  duplicate: boolean | undefined;
-  route: string | undefined;
-  handlerKey: string | undefined;
+// 정확한 확률 명령은 inbox claim부터 outbox까지 하나의 root transaction으로 처리합니다.
+async function processPetSkillProbabilityAtomicIngress(input: {
+  database: DatabaseClient;
   event: NormalizedIrisEvent;
-  replies: PendingReply[] | undefined;
-}): Promise<void> {
-  if (input.database === undefined || input.eventProcessor === undefined || input.replies === undefined
-    || !input.isOperationalChannel || input.duplicate !== false || input.route !== "MODERN"
-    || input.handlerKey !== "pet_skill_probability" || !isPetSkillProbabilityCommand(input.event.message)
-    || input.event.userId === undefined) return;
-  const result = await new PetSkillProbabilityService(input.database).read({
-    externalUserId: input.event.userId,
-    displayName: input.event.displayName
+  replyIdentity: NormalizedIrisEvent;
+  environmentContext: VerifiedEnvironmentContext;
+  channelType: "open_group" | "open_direct";
+  channelName?: ChannelNameObservation;
+}): Promise<EventProcessingResult> {
+  if (input.event.channelId === undefined) throw new Error("PET_SKILL_PROBABILITY_CHANNEL_REQUIRED");
+  const destinationId = input.event.channelId;
+  return withMariaTransactionRetry(input.database, {
+    maxAttempts: 3,
+    allowRetry: () => true,
+    exhaustedErrorCode: "PET_SKILL_PROBABILITY_TRANSACTION_RETRY_EXHAUSTED"
+  }, async (transaction) => {
+    const scopedDatabase = createScopedDatabaseClient(transaction);
+    const processing = await new ProcessIrisEventService(scopedDatabase).executeAtomicCommandInTransaction(
+      transaction,input.event,input.replyIdentity,input.channelType,
+      input.channelName === undefined ? {} : { channelName: input.channelName }
+    );
+    const result = await new PetSkillProbabilityAtomicService(scopedDatabase).executeInTransaction(transaction, {
+      event: input.event,
+      environment: input.environmentContext.environmentCode,
+      databaseIdentity: input.environmentContext.databaseIdentity,
+      destinationId,
+      duplicateClaim: processing.duplicate
+    });
+    if (!result.replayed && result.data !== null && result.outboxId !== null) {
+      processing.replies.push({ outboxId: result.outboxId, room: destinationId, data: result.data });
+    }
+    return processing;
   });
-  if (result !== null) {
-    input.replies.push(await input.eventProcessor.queueCommandReply(input.event,"pet_skill_probability",result.reply));
+}
+
+async function verifyPetSkillProbabilityCompletedReplay(
+  database: DatabaseClient | undefined,
+  event: NormalizedIrisEvent,
+  environmentContext: VerifiedEnvironmentContext | undefined
+): Promise<boolean> {
+  if (database === undefined || event.channelId === undefined) return false;
+  if (environmentContext === undefined) {
+    if (event.message?.startsWith("/펫스킬확률")) throw new Error("PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED");
+    return false;
   }
+  return withMariaTransactionRetry(database, {
+    maxAttempts: 3,
+    allowRetry: () => true,
+    exhaustedErrorCode: "PET_SKILL_PROBABILITY_REPLAY_RETRY_EXHAUSTED"
+  }, transaction => new PetSkillProbabilityAtomicService(database).verifyCompletedReplayInTransaction(transaction, {
+    event,environment:environmentContext.environmentCode,databaseIdentity:environmentContext.databaseIdentity,destinationId:event.channelId!
+  }));
 }
 
 async function dispatchPetSkillReadCommands(input: {
@@ -805,7 +837,6 @@ async function dispatchPetSkillReadCommands(input: {
   replies: PendingReply[] | undefined;
 }): Promise<void> {
   if (input.handlerKey === "pet_skill_probability") {
-    await dispatchPetSkillProbabilityCommand(input);
     return;
   }
   if (input.database === undefined || input.eventProcessor === undefined || input.replies === undefined
@@ -1260,6 +1291,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const isOperationalChannel = channelAccess.mode === "operational";
       const isObservationChannel = channelAccess.mode === "observation";
       const isInteractiveChannel = isOperationalChannel || channelAccess.mode === "diagnostic";
+      if (isOperationalChannel
+        && await verifyPetSkillProbabilityCompletedReplay(database, normalizedEvent, dependencies.environmentContext)) {
+        return reply.code(202).send({ ok: true, accepted: true, ignored: false, duplicate: true, requestId: request.id });
+      }
       const verificationCode = readKakaoVerificationCode(normalizedEvent.message);
       const moderationIncidentNumber = readModerationIncidentNumber(normalizedEvent.message);
       const shouldCreateEventMonitorMessage = config.nodeEnv !== "production"
@@ -1787,22 +1822,32 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || (!isOperationalChannel && !isObservationChannel && !isDiagnosticModeration && !isDiagnosticMembership)
         ? undefined
         : new ProcessIrisEventService(database);
-      const processing = eventProcessor === undefined
+      const channelNameObservation: ChannelNameObservation | undefined = kakaoDatabaseSnapshot?.roomName === undefined
+        || kakaoDatabaseSnapshot.roomNameSource === "unavailable"
+        ? undefined
+        : { displayName: kakaoDatabaseSnapshot.roomName, sourceCode: kakaoDatabaseSnapshot.roomNameSource === "open_link" ? "kakao_open_link" : "kakao_chat_room_meta" };
+      const atomicPetSkillProbability = database !== undefined && isOperationalChannel
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pet_skill_probability"
+        && isPetSkillProbabilityCommand(normalizedEvent.message);
+      if (atomicPetSkillProbability && dependencies.environmentContext === undefined) {
+        throw new Error("PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED");
+      }
+      const processing = atomicPetSkillProbability
+        ? await processPetSkillProbabilityAtomicIngress({
+            database: database!, event: normalizedEvent, replyIdentity: commandEvent,
+            environmentContext: dependencies.environmentContext!,
+            channelType: channelAccess.channelClass === "open_direct" ? "open_direct" : "open_group",
+            ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
+          })
+        : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership
           ? await eventProcessor.execute(normalizedEvent, commandEvent, channelAccess.channelClass === "open_direct"
             ? "open_direct"
             : "open_group", {
               allowCommands: isOperationalChannel,
-              channelName: kakaoDatabaseSnapshot?.roomName === undefined
-                || kakaoDatabaseSnapshot.roomNameSource === "unavailable"
-                ? undefined
-                : {
-                    displayName: kakaoDatabaseSnapshot.roomName,
-                    sourceCode: kakaoDatabaseSnapshot.roomNameSource === "open_link"
-                      ? "kakao_open_link"
-                      : "kakao_chat_room_meta"
-                  }
+              ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
             })
           : await eventProcessor.executeDiagnosticModeration(normalizedEvent);
       await dispatchAccountSwitchCommand(

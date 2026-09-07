@@ -2413,6 +2413,8 @@ Status: VERIFIED
 
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/pet/pet-skill-probability-atomic-service.ts`
+- `개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts`
 
 ## Related Helpers
 - `setOperationNoticeByCommand`
@@ -3685,6 +3687,7 @@ Status: VERIFIED
 - `getPetSkillBagList`
 - `getPetSkillBagTotalCount`
 - `formatPetSkillName`
+- `processPetSkillProbabilityAtomicIngress`
 ## Data Usage
 - `petSkillData[sender].bag`
 - `data.member[sender].point`
@@ -3763,8 +3766,9 @@ Status: VERIFIED
 - `PET_SKILL_LIST`
 ## Save Flow
 - Read-only
-- 정규 DB 읽기: 전용 exact 후보가 canonical provider의 read-only consistent snapshot을 사용한다. 기본 rollout은 `SHADOW`이고 검증 시에만 `PET_SKILL_PROBABILITY`를 `ACTIVE`로 전환한다.
+- 정규 DB 읽기: 전용 exact 후보가 canonical provider projection을 명령의 단일 root transaction snapshot 안에서 사용한다. 기본 rollout은 `SHADOW`이고 검증 시에만 `PET_SKILL_PROBABILITY`를 `ACTIVE`로 전환한다.
 - 레거시 회원/정지/닉네임 길이 경계를 읽기 전용으로 검사하며 canonical source DML은 수행하지 않는다.
+- 현대 ingress는 검증된 환경·DB identity와 payload fingerprint를 사용하고, inbox claim부터 actor/catalog 조회, operation, audit, command execution, outbox까지 하나의 root transaction에서 처리한다. 동일 이벤트 replay는 추가 응답을 만들지 않고 drift는 fail closed 한다.
 ## Related Commands
 - `/펫스킬오픈`
 - `/펫스킬정보`
