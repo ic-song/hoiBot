@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "wave14b-source-provenance.v1",
+  "runId": "펫스킬정보DB-SL-PET-SKILL-INFO-ACTUAL-INGRESS-01-202609071422",
+  "sourceCommit": "5fed2850b56cffa105ea90db8dea86ced1211db8",
+  "byteSource": "git cat-file / git ls-tree committed blob bytes",
+  "files": [
+    { "path": "COMMAND_INDEX.md", "gitBlob": "cf6f79c2462c2a5cad3624ecd2c48f3eebaae97c", "bytes": 275499 },
+    { "path": "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json", "gitBlob": "ae6bf9f5a8b7271d0024e2ade2030a88e7ec7cea", "bytes": 155649 },
+    { "path": "개발환경_고도화/runtime/migrations/484_pet_skill_info_shadow_ingress.sql", "gitBlob": "64b5a05e841d79bb3b5efe69f5c49f89bfa54894", "bytes": 3434 },
+    { "path": "개발환경_고도화/runtime/migrations/rollback/484_pet_skill_info_shadow_ingress.rollback.sql", "gitBlob": "5a48d33bd0dfb4259096a01695cbd8f256c35f38", "bytes": 1010 },
+    { "path": "개발환경_고도화/runtime/scripts/rehearse-pet-skill-info-shadow-wave14b.ps1", "gitBlob": "db44dae360723bc5978718ffe165e280ea30d31d", "bytes": 6594 },
+    { "path": "개발환경_고도화/runtime/scripts/seed-canonical-pet-skill-read.ts", "gitBlob": "299f08f28dfb7c1362139e9a8a8caa27777cb150", "bytes": 3338 },
+    { "path": "개발환경_고도화/runtime/src/app.ts", "gitBlob": "4350004a9fa51fcfbf534fd2aa826ab171d0b8e3", "bytes": 273616 },
+    { "path": "개발환경_고도화/runtime/src/pet/pet-skill-info-metadata-seed.ts", "gitBlob": "dc80d92d23616a5a4f36c7e272181f1ffee34b4f", "bytes": 1534 },
+    { "path": "개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts", "gitBlob": "a59228e35e057a6c28296888b779ed62f1c5e573", "bytes": 7714 },
+    { "path": "개발환경_고도화/runtime/test/object-data-model-contract.test.ts", "gitBlob": "1ecce7c56f38879d21920917bc773fef738b9d81", "bytes": 37619 },
+    { "path": "개발환경_고도화/runtime/test/pet-skill-info-shadow-http.test.ts", "gitBlob": "7f3769558c6d116db0e25612fb1414adf7264713", "bytes": 7970 },
+    { "path": "개발환경_고도화/runtime/test/pet-skill-info-shadow-migration.test.ts", "gitBlob": "ac67c72264290236f6087d1b789658f8abeeb5c3", "bytes": 1466 },
+    { "path": "개발환경_고도화/runtime/test/pet-skill-info-shadow-service.test.ts", "gitBlob": "ab6f1cba9679360e955f7f8231e20cab3b957c07", "bytes": 7960 }
+  ],
+  "validation": {
+    "focused": "6 suites / 41 tests PASS",
+    "isolatedMaria": "all 472 migrations + canonical seed 93/30/4 + rollback + forward PASS on 3332; stopped",
+    "diffCheck": "PASS",
+    "typeBuild": "HOLD: baseline src/app.ts(1267,7) TS2563",
+    "directReceiptIssued": false
+  }
+}

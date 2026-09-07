@@ -198,6 +198,7 @@ import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, P
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
 import { isPetSkillProbabilityCommand } from "./pet/pet-skill-probability-service.js";
 import { PetSkillProbabilityAtomicService } from "./pet/pet-skill-probability-atomic-service.js";
+import { isPetSkillInfoShadowCandidate, normalizePetSkillInfoDispatchMessage, PetSkillInfoShadowService } from "./pet/pet-skill-info-shadow-service.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
@@ -769,7 +770,21 @@ async function dispatchPetExploreCommandConsumers(ingress: Pick<PetExploreAppWir
 }
 
 function isPetSkillBulkGrantOrProbabilityCandidate(message: string | undefined): boolean {
-  return isPetSkillBulkGrantCandidate(message) || isPetSkillProbabilityCommand(message);
+  return isPetSkillBulkGrantCandidate(message) || isPetSkillProbabilityCommand(message) || isPetSkillInfoShadowCandidate(message);
+}
+
+function resolvePetSkillDispatchMessage(message: string | undefined): string | undefined {
+  const value = message ?? "";
+  if (isPetSkillInfoShadowCandidate(message)) return normalizePetSkillInfoDispatchMessage(value);
+  if (isPetSkillSaleCandidate(message)) return normalizePetSkillSaleDispatchMessage(value);
+  if (isPetSkillEquipCandidate(message)) return normalizePetSkillEquipDispatchMessage(value);
+  if (isPetSkillBulkGrantCandidate(message)) return normalizePetSkillBulkGrantDispatchMessage(value);
+  if (isPetSkillOpenCandidate(message)) return normalizePetSkillOpenDispatchMessage(value);
+  if (isPetSkillMarketListingCandidate(message)) return normalizePetSkillMarketListingDispatchMessage(value);
+  if (isPetSkillCarrotTradeCandidate(message)) return normalizePetSkillCarrotTradeDispatchMessage(value);
+  if (isPetSkillBookCombineCandidate(message)) return normalizePetSkillBookCombineDispatchMessage(value);
+  if (isPetSkillExtinctionCandidate(message)) return normalizePetSkillExtinctionDispatchMessage(value);
+  return undefined;
 }
 
 // 정확한 확률 명령은 inbox claim부터 outbox까지 하나의 root transaction으로 처리합니다.
@@ -812,10 +827,10 @@ async function verifyPetSkillProbabilityCompletedReplay(
   event: NormalizedIrisEvent,
   environmentContext: VerifiedEnvironmentContext | undefined
 ): Promise<boolean> {
+  if (!isPetSkillProbabilityCommand(event.message)) return false;
   if (database === undefined || event.channelId === undefined) return false;
   if (environmentContext === undefined) {
-    if (event.message?.startsWith("/펫스킬확률")) throw new Error("PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED");
-    return false;
+    throw new Error("PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED");
   }
   return withMariaTransactionRetry(database, {
     maxAttempts: 3,
@@ -853,6 +868,33 @@ async function dispatchPetSkillReadCommands(input: {
     if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
       input.replies.push(await input.eventProcessor.queueCommandReply(input.event,"pet_skill_read_error",error.message));
     } else throw error;
+  }
+}
+
+async function evaluatePetSkillInfoShadow(input:{database:DatabaseClient|undefined;isOperationalChannel:boolean;duplicate:boolean|undefined;route:string|undefined;handlerKey:string|undefined;event:NormalizedIrisEvent}):Promise<void>{
+  if(input.database===undefined||!input.isOperationalChannel||input.duplicate!==false||input.route!=="SHADOW"
+    ||input.handlerKey!=="pet_skill_info"||!isPetSkillInfoShadowCandidate(input.event.message)||input.event.userId===undefined)return;
+  await new PetSkillInfoShadowService(input.database).evaluate({externalUserId:input.event.userId,displayName:input.event.displayName,message:input.event.message!});
+}
+
+async function dispatchPetSkillMutationCommands(input:{database:DatabaseClient|undefined;eventProcessor:ProcessIrisEventService|undefined;isOperationalChannel:boolean;processing:EventProcessingResult|undefined;route:string|undefined;handlerKey:string|undefined;event:NormalizedIrisEvent}):Promise<void>{
+  const {database,eventProcessor,isOperationalChannel,processing,route,handlerKey,event}=input;
+  if(database===undefined||eventProcessor===undefined||!isOperationalChannel||processing===undefined||processing.duplicate||route!=="MODERN"||event.userId===undefined||event.channelId===undefined)return;
+  if(isPetSkillExtinctionCandidate(event.message)&&handlerKey==="pet_skill_extinction"){
+    const result=await new PetSkillExtinctionService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    processing.replies.push(await eventProcessor.queueCommandReply(event,"pet_skill_extinction",result.reply));
+  }else if(isPetSkillOpenCandidate(event.message)&&handlerKey==="pet_skill_open"){
+    try{const result=await new PetSkillOpenService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});if("reply" in result)processing.replies.push(await eventProcessor.queueCommandReply(event,"pet_skill_open",result.reply));}
+    catch(error){if(error instanceof ApplicationError&&[409,422].includes(error.statusCode))processing.replies.push(await eventProcessor.queueCommandReply(event,"pet_skill_open_error",error.message));else throw error;}
+  }else if(isPetSkillBulkGrantCandidate(event.message)&&handlerKey==="pet_skill_bulk_grant"){
+    const result=await new PetSkillBulkGrantService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:event.channelId,data:result.reply!});
+  }else if(isPetSkillEquipCandidate(event.message)&&handlerKey==="pet_skill_equip"){
+    const result=await new PetSkillEquipService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    processing.replies.push({outboxId:result.outboxId,room:event.channelId,data:result.reply});
+  }else if(isPetSkillSaleCandidate(event.message)&&handlerKey==="pet_skill_sale_lifecycle"){
+    const result=await new PetSkillSaleLifecycleService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    processing.replies.push({outboxId:result.outboxId,room:event.channelId,data:result.reply});
   }
 }
 
@@ -1567,6 +1609,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
         || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
+      const petSkillDispatchMessage = resolvePetSkillDispatchMessage(normalizedEvent.message);
       const partialDispatchDecision = database !== undefined
         && normalizedEvent.direction === "incoming"
         && partialDispatchCandidate
@@ -1652,22 +1695,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizeHomeFurnitureBagDispatchMessage(normalizedEvent.message ?? "")
             : isHopePremiumDeleteCandidate(normalizedEvent.message)
             ? normalizeHopePremiumDeleteDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillSaleCandidate(normalizedEvent.message)
-            ? normalizePetSkillSaleDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillEquipCandidate(normalizedEvent.message)
-            ? normalizePetSkillEquipDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillBulkGrantCandidate(normalizedEvent.message)
-            ? normalizePetSkillBulkGrantDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillOpenCandidate(normalizedEvent.message)
-            ? normalizePetSkillOpenDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillMarketListingCandidate(normalizedEvent.message)
-            ? normalizePetSkillMarketListingDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillCarrotTradeCandidate(normalizedEvent.message)
-            ? normalizePetSkillCarrotTradeDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillBookCombineCandidate(normalizedEvent.message)
-            ? normalizePetSkillBookCombineDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillExtinctionCandidate(normalizedEvent.message)
-            ? normalizePetSkillExtinctionDispatchMessage(normalizedEvent.message ?? "")
+            : petSkillDispatchMessage !== undefined
+            ? petSkillDispatchMessage
             : isGuildPetSkillStockGrantCandidate(normalizedEvent.message)
             ? normalizeGuildPetSkillStockGrantDispatchMessage(normalizedEvent.message ?? "")
             : isPetDuelEmoteCommandCandidate(normalizedEvent.message)
@@ -2813,62 +2842,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillExtinctionCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_extinction"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillExtinctionService(database!).handle({
-          eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-          destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-        });
-        processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_extinction",result.reply));
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillOpenCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_open"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        try {
-          const result = await new PetSkillOpenService(database!).handle({
-            eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-          });
-          if ("reply" in result) {
-            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_open",result.reply));
-          }
-        } catch (error) {
-          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
-            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_open_error",error.message));
-          } else throw error;
-        }
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillBulkGrantCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_bulk_grant"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillBulkGrantService(database!).handle({
-          eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-          destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-        });
-        if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.reply! });
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillEquipCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_equip"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillEquipService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
-        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillSaleCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_sale_lifecycle"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillSaleLifecycleService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
-        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
-      }
+      await dispatchPetSkillMutationCommands({database,eventProcessor,isOperationalChannel,processing,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:normalizedEvent});
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isHopePremiumDeleteCandidate(normalizedEvent.message)
@@ -3314,6 +3288,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       await dispatchPetSkillReadCommands({database,eventProcessor,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:normalizedEvent,replies:processing?.replies});
+      await evaluatePetSkillInfoShadow({database,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:commandEvent});
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetDuelEmoteCommandCandidate(normalizedEvent.message)

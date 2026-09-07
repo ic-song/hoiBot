@@ -2752,7 +2752,7 @@ Status: VERIFIED
 - Save flow: 고도화 Runtime은 도메인 읽기 전용이며 `operations`, `command_executions`, `command_audit`, `outbox_messages`만 원자 기록
 - Guard: `msg === "/펫스킬"`
 - Aggregate commands: `/펫스킬`, `/펫스킬확률`, `/펫스킬정보 [스킬명|유저명]`
-- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회한다. `/펫스킬확률`만 전용 `pet_skill_probability` actual ingress에 연결되었고 기본 rollout은 `SHADOW`이며, `/펫스킬`·`/펫스킬정보`는 활성화하지 않았다.
+- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회한다. `/펫스킬확률`은 전용 actual ingress를 유지하고, `/펫스킬정보`는 별도 `pet_skill_info` SHADOW 평가기에만 연결한다. `/펫스킬`은 이 변경으로 활성화하지 않았다.
 
 # /펫스킬가방
 
@@ -2805,6 +2805,15 @@ Status: VERIFIED
 # /펫스킬정보 [스킬명|닉네임]
 
 Status: VERIFIED
+
+## Modernization
+
+- Slice: `SL-PET-SKILL-INFO-ACTUAL-INGRESS-01`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts`
+- DB: canonical catalog 3개 테이블과 `canonical_pet_skill_definitions.raid_charm_bonus`, `castle_charm_bonus`를 같은 read-only snapshot에서 조회
+- Rollout: `SHADOW` 전용이며 사용자 응답과 outbox를 만들지 않는다.
+- Guard: 레거시와 같은 `startsWith("/펫스킬정보")`; 붙여 쓴 조회값과 공백-only 사용법을 포함하고 `/펫스킬`, `/펫스킬확률`은 포함하지 않는다.
+- 제한: 관리자 타인 펫스킬가방은 full `checkRank`·프리미엄 표시의 canonical projection이 없어 fail-closed fallback으로 남긴다. SHADOW 평가 실패의 durable 재시도도 후속 atomic slice 전에는 미검증이다.
 
 ## Command Anchors
 
