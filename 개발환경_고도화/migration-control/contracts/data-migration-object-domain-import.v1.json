@@ -10,14 +10,14 @@
   "fieldMapContract": "object-domain-import-field-map.v1.json",
   "componentSemanticSha256": {
     "identityBindings": "283278b9d9e0f99c452da8bac8a3c3318575ff78853d2da301ea6266597e4696",
-    "objectModel": "1236776eed887851f27d39eda214979c68a1343c66a6382ada0a048cb84d6c1b",
+    "objectModel": "625e722666231c50b524ebdbe131cf4bbcb4d8e7e6ee410aa54b056c81150850",
     "disposition": "d8d34b782f0b5c64dc0ae486184760a0d3b4a435a8250ccf6e5f1f55330b525a",
     "fieldMap": "7d42a8f3afdb6133293a60604f2a0b55ab3484b853e305f9f5b2316137db812d"
   },
   "semanticHashPolicy": {
     "projectionVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V1",
     "importContractProjection": "all top-level import behavior fields except semanticHashPolicy",
-    "currentImportContractProjectionSha256": "67cf9e7c3d5811148e78a2b3eb87db768692aa85ac30b5bc58f7315dad4cb73b",
+    "currentImportContractProjectionSha256": "3ef260e8910a6e7334a189fc89cc4b599b547ca42901eaa29e2a129a58b0a3d8",
     "componentProjection": {
       "identityBindings": "whole canonical identity binding contract",
       "objectModel": "only the 45 direct target table declarations selected by disposition",

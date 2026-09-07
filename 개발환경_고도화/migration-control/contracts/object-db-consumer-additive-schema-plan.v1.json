@@ -56,6 +56,30 @@
       "operationalDataDependency": "SEPARATE_WBS_REQUIRED: import each LEGACY_JSON display value into player_profiles or a linked external identity before migration 474; player_id and source_identifier are never nickname fallbacks",
       "createOnly": false,
       "reentrantDdlRequired": true
+    },
+    {
+      "migration": "481_canonical_pet_skill_read_provider.sql",
+      "rollback": "481_canonical_pet_skill_read_provider.rollback.sql",
+      "kind": "ADDITIVE_CANONICAL_PET_SKILL_READ_METADATA",
+      "alters": ["canonical_pet_skill_definitions", "canonical_owned_pet_skill_equipments"],
+      "creates": ["canonical_pet_skill_aliases", "canonical_pet_skill_draw_grade_policies"],
+      "inputShape": "MIGRATION_449_CANONICAL_PET_SKILL",
+      "resultingShape": "MIGRATION_481_CANONICAL_PET_SKILL_READ_PROVIDER",
+      "rollbackPreflight": "REJECT_WHEN_SLOT_31_TO_40_EXISTS",
+      "createOnly": false,
+      "reentrantDdlRequired": false
+    },
+    {
+      "migration": "482_canonical_pet_skill_grade_unicode.sql",
+      "rollback": "482_canonical_pet_skill_grade_unicode.rollback.sql",
+      "kind": "ADDITIVE_CANONICAL_PET_SKILL_GRADE_UNICODE_CORRECTION",
+      "alters": ["canonical_pet_skill_definitions"],
+      "creates": [],
+      "inputShape": "MIGRATION_481_CANONICAL_PET_SKILL_READ_PROVIDER",
+      "resultingShape": "MIGRATION_482_CANONICAL_PET_SKILL_UNICODE_GRADE",
+      "rollbackPreflight": "REJECT_WHEN_NON_ASCII_GRADE_EXISTS",
+      "createOnly": false,
+      "reentrantDdlRequired": false
     }
   ],
   "ddlExecution": "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED",
@@ -87,7 +111,9 @@
     "canonical_member_title_operation_participants",
     "canonical_mini_pet_title_operation_participants",
     "canonical_pet_title_operation_participants",
-    "canonical_player_identity_operation_participants"
+    "canonical_player_identity_operation_participants",
+    "canonical_pet_skill_aliases",
+    "canonical_pet_skill_draw_grade_policies"
   ],
   "globalPolicies": {
     "newPrimaryKey": { "generator": "CUID2", "length": 8, "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "collisionHandling": "PK_OR_UNIQUE_DETECT_AND_BOUNDED_RETRY_BY_SHARED_PROVIDER" },

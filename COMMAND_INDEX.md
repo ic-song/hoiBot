@@ -2750,7 +2750,7 @@ Status: VERIFIED
 - Save flow: 고도화 Runtime은 도메인 읽기 전용이며 `operations`, `command_executions`, `command_audit`, `outbox_messages`만 원자 기록
 - Guard: `msg === "/펫스킬"`
 - Aggregate commands: `/펫스킬`, `/펫스킬확률`, `/펫스킬정보 [스킬명|유저명]`
-- Catalog flow: `skill_definitions.rules_json`의 `grade`, `rate`, `effect`, `tierInfo`를 조회하며 타인 가방은 `manager` 또는 `super_admin`만 허용
+- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회하도록 추가되었다. 이 provider는 아직 `/펫스킬`, `/펫스킬확률`, `/펫스킬정보`에 활성화하지 않았다.
 
 # /펫스킬가방
 
@@ -3760,6 +3760,7 @@ Status: VERIFIED
 - `PET_SKILL_LIST`
 ## Save Flow
 - Read-only
+- 정규 DB groundwork: `canonical-pet-skill-read-provider.ts`(미활성), `canonical-pet-skill-read-seed.ts`(레거시 93개 sourceKey 교차검증·메타데이터 seed)
 ## Related Commands
 - `/펫스킬오픈`
 - `/펫스킬정보`

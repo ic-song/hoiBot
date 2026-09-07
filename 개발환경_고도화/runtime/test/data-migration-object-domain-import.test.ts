@@ -660,6 +660,15 @@ describe("object domain import Gate 3/4", () => {
     }
   });
 
+  it("accepts canonical pet-skill equipment slots 31 through 40 and rejects 41", () => {
+    for (const slot_number of [31,40]) {
+      const input=completeInput();const row=input.rows.find((candidate)=>candidate.target_table_name==="canonical_owned_pet_skill_equipments")!;
+      setRowPayload(row,{slot_number:String(slot_number)});refreshProjectionFingerprints(input);assert.doesNotThrow(()=>buildObjectDomainImportPlan(input.run,input.decisions,input.rows,policy));
+    }
+    const invalid=completeInput();const row=invalid.rows.find((candidate)=>candidate.target_table_name==="canonical_owned_pet_skill_equipments")!;
+    setRowPayload(row,{slot_number:"41"});refreshProjectionFingerprints(invalid);assert.throws(()=>buildObjectDomainImportPlan(invalid.run,invalid.decisions,invalid.rows,policy),/DATABASE_CHECK_INVALID/);
+  });
+
   it("requires an owned positive pet-skill stack for the same player and skill", () => {
     const input = completeInput();
     const stack = input.rows.find((row) => row.target_table_name === "canonical_owned_pet_skill_stacks")!;

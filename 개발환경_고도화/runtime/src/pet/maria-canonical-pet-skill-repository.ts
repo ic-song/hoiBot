@@ -155,7 +155,7 @@ export class MariaCanonicalPetSkillRepository {
   public async equip(input: CanonicalPetSkillEquipInput): Promise<CanonicalPetSkillMutationResult> {
     identifier(input.playerId); identifier(input.ownedPetId); identifier(input.petSkillId);
     text(input.requestKey, 191, "CANONICAL_PET_SKILL_REQUEST_KEY_INVALID");
-    if (!Number.isInteger(input.slotNumber) || input.slotNumber < 1 || input.slotNumber > 30) throw new Error("CANONICAL_PET_SKILL_SLOT_INVALID");
+    if (!Number.isInteger(input.slotNumber) || input.slotNumber < 1 || input.slotNumber > 40) throw new Error("CANONICAL_PET_SKILL_SLOT_INVALID");
     const payload = fingerprint({ kind: "equip", ownedPetId: input.ownedPetId, petSkillId: input.petSkillId, slotNumber: input.slotNumber });
     return this.mutateWithReplay(input.playerId, input.requestKey, "equip", payload, (transaction) => this.equipInTransaction(transaction, input, payload));
   }

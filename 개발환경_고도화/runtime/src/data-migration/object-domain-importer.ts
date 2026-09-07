@@ -150,6 +150,11 @@ function parseSemanticDocument(documentText: string): Record<string, unknown> {
 }
 
 function preserveFrozenV1ObjectModel(table: Record<string, unknown>, projectionVersion: string): Record<string, unknown> {
+  if (table.table === "canonical_pet_skill_definitions" && Array.isArray(table.columns)) {
+    const runtimeOnlyColumns=new Set(["legacy_source_key","display_order","base_draw_rate","fixed_draw_rate_flag","openable_flag","pet_skill_grade_emoji","required_tier_name","tier_exclusive_flag","equip_description"]);
+    const {uniqueKeys:_runtimeOnlyUniqueKeys,...frozen}=table;
+    return{...frozen,columns:table.columns.filter((column)=>column!==null&&!Array.isArray(column)&&typeof column==="object"&&!runtimeOnlyColumns.has(String((column as Record<string,unknown>).name))),definitionOnlyColumns:Array.isArray(table.definitionOnlyColumns)?table.definitionOnlyColumns.filter((name)=>!runtimeOnlyColumns.has(String(name))):table.definitionOnlyColumns};
+  }
   if (projectionVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION || table.table !== "canonical_currency_operations" || !Array.isArray(table.uniqueKeys)) return table;
   return {
     ...table,
@@ -347,7 +352,7 @@ function validateDomainRules(row: PreparedRow): void {
   if (row.target_table_name === "canonical_mini_pet_replay_operations") { allowed("operation_kind", ["acquire"]); allowed("operation_status", ["completed"]); }
   if (/^canonical_owned_(?:member|pet|mini_pet)_title_instances$/.test(row.target_table_name)) allowed("ownership_status", ["owned", "sold", "removed"]);
   if (row.target_table_name === "canonical_pet_skill_definitions") allowed("handler_key", ["passive_modifier", "command_unlock", "presentation_only"]);
-  if (row.target_table_name === "canonical_owned_pet_skill_equipments") { const slot = Number(row.payload.slot_number); if (!Number.isInteger(slot) || slot < 1 || slot > 30) throw new Error("OBJECT_DOMAIN_IMPORT_DATABASE_CHECK_INVALID:canonical_owned_pet_skill_equipments.slot_number"); }
+  if (row.target_table_name === "canonical_owned_pet_skill_equipments") { const slot = Number(row.payload.slot_number); if (!Number.isInteger(slot) || slot < 1 || slot > 40) throw new Error("OBJECT_DOMAIN_IMPORT_DATABASE_CHECK_INVALID:canonical_owned_pet_skill_equipments.slot_number"); }
   if (row.target_table_name === "canonical_pet_skill_replay_operations") { allowed("operation_kind", ["grant", "equip"]); allowed("operation_status", ["completed"]); }
   if (row.target_table_name === "canonical_package_definitions") positive("max_open_quantity");
   if (row.target_table_name === "canonical_package_reward_groups") allowed("selection_mode", ["all", "weighted_one"]);
