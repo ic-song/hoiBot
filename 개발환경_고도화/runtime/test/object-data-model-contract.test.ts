@@ -25,12 +25,15 @@ describe("object data model standard contract", () => {
     assert.doesNotThrow(() => validateObjectDataModelContract(contract));
     assert.equal(contract.scope, "new_object_schema_only");
     const mutableMigrations = contract.registeredMigrations as string[];
+    const migration485 = mutableMigrations.pop();
     const migration484 = mutableMigrations.pop();
     assert.deepEqual(contract.registeredMigrations, ["443_object_identity_audit_provider.sql", "444_canonical_item_inventory.sql", "445_object_furniture_home_canonical_model.sql", "446_canonical_pet_equipment.sql", "447_canonical_mini_pet.sql", "448_canonical_title_domains.sql", "449_canonical_pet_skill.sql", "450_object_furniture_market_active_listing.sql", "451_canonical_package_reward.sql", "452_canonical_currency_ledger.sql", "453_canonical_building_recipe.sql", "454_object_import_crosswalk_payload_fingerprint.sql", "455_title_instance_acquisition_price.sql", "456_owned_object_state_hardening.sql", "457_data_migration_common_staging.sql", "458_data_migration_catalog_projection.sql", "459_catalog_projection_upstream_envelope.sql", "460_data_migration_object_domain_import.sql", "461_object_db_transition_identity_crosswalk.sql", "462_object_db_transition_app_wiring_claim.sql", "463_object_db_transition_operation_receipts.sql", "464_object_db_transition_typed_asset_ledgers.sql", "465_object_db_transition_operation_participants.sql", "466_object_db_transition_recovery_receipt_links.sql", "470_pet_explore_event_control_app_wiring.sql", "471_pet_title_sale_app_wiring.sql", "472_pet_title_admin_batch_app_wiring.sql", "474_pet_title_batch_member_key_snapshot.sql", "478_guild_territory_attack_runtime_item_policy.sql", "479_admin_global_gift_object_db.sql", "481_canonical_pet_skill_read_provider.sql", "482_canonical_pet_skill_grade_unicode.sql"]);
     assert.equal(migration484, "484_pet_skill_info_shadow_ingress.sql");
+    assert.equal(migration485, "485_pet_skill_info_admin_bag_projection.sql");
     assert.equal(contract.registeredMigrations.length, 32);
     mutableMigrations.push(migration484);
-    assert.equal(contract.tables.length, 105);
+    mutableMigrations.push(migration485);
+    assert.equal(contract.tables.length, 108);
     assert.deepEqual(contract.integrationOnlyTables?.map(({ table, integrationMigration, primaryKey }) => ({ table, integrationMigration, primaryKey })), [{ table: "guild_territory_attack_policy_versions", integrationMigration: "353_guild_territory_attack_execute.sql", primaryKey: ["policy_scope_code", "policy_version"] }]);
     const appWiring = contract.tables.find((entry) => entry.table === "canonical_app_wiring_operations");
     const receiptLinks = contract.tables.find((entry) => entry.table === "canonical_app_wiring_receipt_links");
@@ -304,6 +307,17 @@ describe("object data model standard contract", () => {
     assert.doesNotThrow(()=>validateObjectDataModelContract(valid));
     const drift=JSON.parse(JSON.stringify(valid)) as ObjectDataModelContract;
     drift.externalDependencies!.find(({table})=>table==="operations")!.columns[1]!.collation="utf8mb4_bin";
+    assert.throws(()=>validateObjectDataModelContract(drift),/EXTERNAL_DEPENDENCY_COLUMNS/);
+  });
+
+  it("pins the legacy channel composite key used by room-scoped object authority",()=>{
+    const valid=JSON.parse(JSON.stringify(contract)) as ObjectDataModelContract;
+    const dependency=valid.externalDependencies?.find(({table})=>table==="channels");
+    assert.deepEqual(dependency?.primaryKey,["id"]);
+    assert.deepEqual(dependency?.uniqueKeys,[["provider_code","external_channel_id"]]);
+    assert.doesNotThrow(()=>validateObjectDataModelContract(valid));
+    const drift=JSON.parse(JSON.stringify(valid)) as ObjectDataModelContract;
+    drift.externalDependencies!.find(({table})=>table==="channels")!.columns[2]!.collation="utf8mb4_unicode_ci";
     assert.throws(()=>validateObjectDataModelContract(drift),/EXTERNAL_DEPENDENCY_COLUMNS/);
   });
 

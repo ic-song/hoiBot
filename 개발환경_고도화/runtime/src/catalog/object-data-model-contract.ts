@@ -50,6 +50,17 @@ const EXTERNAL_DEPENDENCY_REGISTRY: Readonly<Record<string, ObjectDataModelExter
     primaryKey: ["id"],
     uniqueKeys: [["provider_code", "external_user_id"]],
   },
+  channels: {
+    table: "channels",
+    integrationMigration: "003_identity_import.sql",
+    columns: [
+      { name: "id", type: "BIGINT UNSIGNED" },
+      { name: "provider_code", type: "VARCHAR(64)", charset: "ascii", collation: "ascii_bin" },
+      { name: "external_channel_id", type: "VARCHAR(191)", charset: "utf8mb4", collation: "utf8mb4_bin" },
+    ],
+    primaryKey: ["id"],
+    uniqueKeys: [["provider_code", "external_channel_id"]],
+  },
 };
 
 export type ObjectTableRole = "identity" | "definition" | "ownership_quantity" | "ownership_instance" | "relation" | "history" | "operation";

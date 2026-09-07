@@ -70,6 +70,19 @@
       "reentrantDdlRequired": false
     },
     {
+      "migration": "485_pet_skill_info_admin_bag_projection.sql",
+      "rollback": "485_pet_skill_info_admin_bag_projection.rollback.sql",
+      "kind": "ADDITIVE_PET_SKILL_INFO_ADMIN_BAG_PROJECTION",
+      "alters": [],
+      "creates": ["pet_skill_info_admin_channel_authorities", "player_pet_skill_rank_marker_projections", "player_pet_skill_bag_import_completeness_projections"],
+      "inputShape": "MIGRATION_484_PET_SKILL_INFO_SHADOW_INGRESS",
+      "resultingShape": "MIGRATION_485_ADMIN_BAG_PROVEN_READ_ONLY_PROJECTION",
+      "rollbackPreflight": "REJECT_WHEN_ANY_PROJECTION_ROW_EXISTS",
+      "operationalDataDependency": "SEPARATE_WBS_REQUIRED: external channel authority rows, Admin/Master operator crosswalk, frozen eight marker slots and per-player import completeness receipts; permission registry and role grants are additive migration metadata",
+      "createOnly": true,
+      "reentrantDdlRequired": false
+    },
+    {
       "migration": "482_canonical_pet_skill_grade_unicode.sql",
       "rollback": "482_canonical_pet_skill_grade_unicode.rollback.sql",
       "kind": "ADDITIVE_CANONICAL_PET_SKILL_GRADE_UNICODE_CORRECTION",
@@ -113,7 +126,10 @@
     "canonical_pet_title_operation_participants",
     "canonical_player_identity_operation_participants",
     "canonical_pet_skill_aliases",
-    "canonical_pet_skill_draw_grade_policies"
+    "canonical_pet_skill_draw_grade_policies",
+    "pet_skill_info_admin_channel_authorities",
+    "player_pet_skill_rank_marker_projections",
+    "player_pet_skill_bag_import_completeness_projections"
   ],
   "globalPolicies": {
     "newPrimaryKey": { "generator": "CUID2", "length": 8, "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "collisionHandling": "PK_OR_UNIQUE_DETECT_AND_BOUNDED_RETRY_BY_SHARED_PROVIDER" },
