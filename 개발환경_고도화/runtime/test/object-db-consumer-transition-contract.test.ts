@@ -9,7 +9,7 @@ import {
   canonicalizeObjectDbConsumerSourceText,
   readCanonicalObjectDbConsumerSource
 } from "../src/data-migration/object-db-consumer-baseline.js";
-import { deriveConsumerManifest, predicateAcceptsRegistryCommand, rawAppMessageGuardKinds, registryCommandHasConsumerBinding } from "../src/data-migration/object-db-consumer-transition-audit.js";
+import { countUnresolvedDynamicCalls, deriveConsumerManifest, predicateAcceptsRegistryCommand, rawAppMessageGuardKinds, registryCommandHasConsumerBinding } from "../src/data-migration/object-db-consumer-transition-audit.js";
 import { auditObjectDbRuntimeAdoption } from "../src/data-migration/object-db-runtime-adoption-audit.js";
 
 type SourceSurface = { file: string; terms: string[] };
@@ -31,6 +31,7 @@ type Condition = { conditionId: string; status: string; ownerSlices: string[]; a
 type Contract = {
   format: string;
   status: string;
+  scope: string;
   baseCommit: string;
   baselinePolicy: { baseCommitRole: string; baselinePin: string; headEqualityRequired: boolean; verification: string };
   sourceTextNormalization: { rule: string; implementation: string; manifestValue: string };
@@ -55,7 +56,10 @@ type Contract = {
     status: string;
     entrypointRunner: string;
     productionSourceCallCount: number;
+    connectedDomains: string[];
+    connectedEffectModes: string[];
     connectedIngressFamilies: string[];
+    additionalConnectedIngressFamilies: string[];
     pendingIngressFamilies: string[];
     reviewedSourceHashes: {
       appSourceSha256: string;
@@ -100,9 +104,10 @@ type StandardForeignKey = { column?: string; columns?: string[]; referencesTable
 type StandardTable = { table: string; columns: Array<{ name: string; type: string; charset?: string; collation?: string }>; primaryKey: string[]; foreignKeys?: StandardForeignKey[] };
 const parsedStandard = JSON.parse(readRepoFile("개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json")) as {
   tables: StandardTable[];
+  integrationOnlyTables?: StandardTable[];
   externalDependencies?: StandardTable[];
 };
-const standard = { ...parsedStandard, tables: [...parsedStandard.tables, ...(parsedStandard.externalDependencies ?? [])] };
+const standard = { ...parsedStandard, tables: [...parsedStandard.tables, ...(parsedStandard.integrationOnlyTables ?? []), ...(parsedStandard.externalDependencies ?? [])] };
 
 function foreignKeyPairs(foreignKey: StandardForeignKey): Array<{ column: string; referencesColumn: string }> {
   const columns = foreignKey.column === undefined ? foreignKey.columns ?? [] : [foreignKey.column];
@@ -192,9 +197,26 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(registryCommandHasConsumerBinding(consumers, "main.js", "/포인트확인"), true);
   });
 
+  it("masks non-structural computed-call lookalikes while preserving actual computed calls", () => {
+    const source = [
+      "const single = '[single](';",
+      'const double = "[double](";',
+      "const template = `[template](`;",
+      "const interpolated = `prefix ${handlers[templateKey](payload)} suffix`;",
+      "const nestedTemplate = `outer ${`inner ${registry[nestedKey](payload)}`} suffix`;",
+      "// [lineComment](",
+      "/* [blockComment]( */",
+      "const parsed = input.match(/^(\\d{4})-(\\d{2})-(\\d{2})[ T](\\d{2}):(\\d{2})$/);",
+      "handlers[key](payload);",
+      'registry["named"] (payload);',
+    ].join("\n");
+    assert.equal(countUnresolvedDynamicCalls(source), 4);
+  });
+
   it("re-derives the complete consumer manifest with exact-one primary slice and no inventory drift", () => {
     const derived = deriveConsumerManifest(fileURLToPath(repoUrl), contract.baseCommit);
     assert.deepEqual(consumerManifest, derived);
+    assert.equal(derived.consumers.find(({ consumerId }) => consumerId === "legacy-0a10ef65ad4b37cd")?.unresolvedDynamicCallCount, 0);
     assert.equal(consumerManifest.audit.orphanCount, 0);
     assert.equal(consumerManifest.audit.extraCount, 0);
     assert.equal(consumerManifest.audit.duplicatePrimaryCount, 0);
@@ -211,15 +233,15 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       "main.js:/호월오픈",
     ]);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
-    assert.equal(consumerManifest.consumers.length, 1_111);
+    assert.equal(consumerManifest.consumers.length, 1_130);
     assert.deepEqual(consumerManifest.counts, {
       LEGACY_COMMAND: 684,
       AUTOMATIC_CALLBACK: 3,
-      RUNTIME_DISPATCH: 199,
+      RUNTIME_DISPATCH: 193,
       ADMIN_COMMAND: 78,
       HTTP_WEB_ROUTE: 81,
-      APP_WIRING: 7,
-      SQL_REPOSITORY: 59,
+      APP_WIRING: 10,
+      SQL_REPOSITORY: 81,
     });
     assert.equal(consumerManifest.consumers.some(({ kind, triggerOrPredicate }) =>
       kind === "APP_WIRING" && triggerOrPredicate === "dispatchPetDataCompareCommand"), false);
@@ -601,10 +623,11 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       const actual = createHash("sha256").update(blob).digest("hex");
       assert.equal(actual, expectedSha256, `baseline:${file}`);
     }
-    assert.equal(contract.implementationEvidence.checkpointDate, "2026-09-04");
+    assert.equal(contract.implementationEvidence.checkpointDate, "2026-09-08");
     assert.equal(contract.implementationEvidence.status, "PARTIALLY_IMPLEMENTED_BLOCKING_INGRESS_ADOPTION");
     assert.deepEqual(contract.implementationEvidence.acceptedPhases, ["P0", "P1", "P2"]);
-    assert.equal(contract.implementationEvidence.p2MariaVerification, "VERIFIED_ISOLATED_MARIADB_FORWARD_REPLAY_ROLLBACK_RESTART");
+    assert.equal(contract.implementationEvidence.p2MariaVerification, "VERIFIED_ISOLATED_MARIADB_FORWARD_REPLAY_ROLLBACK_RESTART_AND_PET_SKILL_INFO_DIRECT_REPLY");
+    assert.match(contract.scope, /WBS770 adds PET_SKILL_INFO CANARY read-only recovery/);
     for (const surface of contract.implementationEvidence.sourceSurfaces) {
       const text = readRepoFile(surface.file);
       assert.ok(surface.terms.length > 0, surface.file);
@@ -621,7 +644,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
 
   it("derives EVENT_CONTROL and PET_TITLE_SELL MODERN plus accepted IRIS read-only callsites while keeping Gate2 blocked", () => {
     assert.equal(contract.status, "PARTIALLY_IMPLEMENTED_BLOCKING_INGRESS_ADOPTION");
-    assert.equal(contract.runtimeAdoption.status, "PARTIAL_IRIS_PET_EXPLORE_EVENT_CONTROL_PET_TITLE_SELL_ADMIN_SYNC_MODERN_AND_READ_ONLY_ADOPTION");
+    assert.equal(contract.runtimeAdoption.status, "PARTIAL_IRIS_PET_EXPLORE_EVENT_CONTROL_PET_TITLE_SELL_ADMIN_SYNC_AND_PET_SKILL_INFO_DIRECT_REPLY_MODERN_ADOPTION");
     const runtimeRoot = fileURLToPath(new URL("../", import.meta.url));
     const adoption = auditObjectDbRuntimeAdoption(runtimeRoot, contract.runtimeAdoption.reviewedSourceHashes);
     assert.deepEqual(adoption.failures, []);
@@ -629,9 +652,13 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(contract.runtimeAdoption.productionSourceCallCount, adoption.productionSourceCallCount);
     assert.equal(contract.implementationEvidence.runtimeEntrypointCallCount, adoption.productionSourceCallCount);
     assert.deepEqual(contract.runtimeAdoption.connectedIngressFamilies, adoption.connectedIngressFamilies);
+    assert.deepEqual(contract.runtimeAdoption.connectedDomains, ["PET_EXPLORE", "ADMIN_PET_DATA_COMPARE", "PET_TITLE", "PET_SKILL_INFO"]);
+    assert.deepEqual(contract.runtimeAdoption.connectedEffectModes, ["MODERN_MUTATION", "MODERN_READ_ONLY_DIRECT_REPLY", "SHADOW", "REJECT"]);
+    assert.deepEqual(contract.runtimeAdoption.additionalConnectedIngressFamilies, ["ADMIN_PET_TITLE_ADD", "ADMIN_PET_TITLE_STORE_RESET", "ADMIN_PET_TITLE_SYNC", "PET_SKILL_INFO_DIRECT_REPLY_CANARY"]);
     assert.deepEqual(contract.runtimeAdoption.pendingIngressFamilies, ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "REMAINING_ADMIN", "WEB"]);
     assert.equal(contract.runtimeAdoption.cutoverClaimed, false);
     assert.match(contract.runtimeAdoption.currentAppBoundary, /EVENT_CONTROL and PET_TITLE SELL reach typed MODERN\/MUTATION handlers/);
+    assert.match(contract.runtimeAdoption.currentAppBoundary, /PET_SKILL_INFO CANARY uses MariaAppWiringReadOnlyRecoveryProvider/);
     assert.match(contract.runtimeAdoption.auditHelper, /auditObjectDbRuntimeAdoption$/);
   });
 

@@ -2752,7 +2752,7 @@ Status: VERIFIED
 - Save flow: 고도화 Runtime은 도메인 읽기 전용이며 `operations`, `command_executions`, `command_audit`, `outbox_messages`만 원자 기록
 - Guard: `msg === "/펫스킬"`
 - Aggregate commands: `/펫스킬`, `/펫스킬확률`, `/펫스킬정보 [스킬명|유저명]`
-- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회한다. `/펫스킬확률`은 전용 actual ingress를 유지하고, `/펫스킬정보`는 별도 `pet_skill_info` SHADOW 평가기에만 연결한다. `/펫스킬`은 이 변경으로 활성화하지 않았다.
+- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회한다. `/펫스킬확률`은 전용 actual ingress를 유지하고, `/펫스킬정보`는 동일 `pet_skill_info` 평가기를 SHADOW와 CANARY DIRECT에 재사용한다. `/펫스킬`은 이 변경으로 활성화하지 않았다.
 
 # /펫스킬가방
 
@@ -2808,15 +2808,18 @@ Status: VERIFIED
 
 ## Modernization
 
-- Slices: `SL-PET-SKILL-INFO-ACTUAL-INGRESS-01`, `SL-PET-SKILL-INFO-ADMIN-BAG-PROJECTION-01`, `SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01`, `SL-PET-SKILL-INFO-DEV-READINESS-01`, `SL-PET-SKILL-INFO-DUAL-CONTEXT-ROUTER-01`
+- Slices: `SL-PET-SKILL-INFO-ACTUAL-INGRESS-01`, `SL-PET-SKILL-INFO-ADMIN-BAG-PROJECTION-01`, `SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01`, `SL-PET-SKILL-INFO-DEV-READINESS-01`, `SL-PET-SKILL-INFO-DUAL-CONTEXT-ROUTER-01`, `SL-PET-SKILL-INFO-DIRECT-REPLY-01`
 - Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts`, `pet-skill-info-read-only-recovery-ingress.ts`, `pet-skill-info-actor-context-provider.ts`, `canonical-pet-skill-readiness-provider.ts`
 - DB: canonical catalog/가방, 방별 deny-first 관리자 권한, frozen 8-slot rank marker, KST premium, guild current-rank, per-player import completeness를 공용 READ_ONLY recovery의 한 consistent root snapshot에서 조회
-- Rollout: `SHADOW` 전용이며 사용자 응답과 outbox를 만들지 않는다. generic open-direct deny는 유지하고, Iris가 `DirectChat`으로 검증한 `open_direct_unverified` 중 이 명령 후보만 app 전용 recovery로 전달한다.
+- Rollout: `SHADOW`는 사용자 응답과 outbox를 만들지 않고, `CANARY` 허용 사용자는 같은 평가 결과를 `MODERN_REPLIED` outbox 1건으로 원자 저장한다. HTTP 요청 루프는 이 응답을 즉시 전송하지 않으며 outbox worker만 전송을 소유한다. 과거 SHADOW 완료 event는 CANARY 전환 뒤에도 기존 NO_REPLY receipt로 재생한다. generic open-direct deny는 유지하고, Iris가 `DirectChat`으로 검증한 `open_direct_unverified` 중 이 명령 후보만 app 전용 recovery로 전달한다.
 - Guard: 레거시와 같은 `startsWith("/펫스킬정보")`; 붙여 쓴 조회값과 공백-only 사용법을 포함하고 `/펫스킬`, `/펫스킬확률`은 포함하지 않는다. 소문자 `dev/`가 index 0일 때만 strip/trim/slash 보정하며 verified `dev` 환경에서만 `DEV_PREFIX`를 허용한다.
 - Kakao는 호출 방의 `account_platform_active_player_selections`를 같은 consistent root snapshot에서 한 번 해석한다. 선택된 게임계정과 호출 플랫폼 identity를 분리하고, 관리자 권한은 호출 identity에 유지한다. 포털 연결 계정은 활성 대표계정의 `hoi`/`newbie`/`premium` 패스를 이용권 권위로 사용하며, 포털 미연결 레거시만 자기 player 패스를 사용한다.
 - 선택계정, canonical player, 대표계정, portal, membership, `selection_version`은 dual-context receipt에 고정한다. 동일 event replay는 `/계정변경` 뒤에도 resolver·카탈로그를 다시 실행하지 않으며 저장된 결과를 반환한다. room/platform/membership/selection 변조와 대표계정 누락·복수는 fail-close 한다.
 - 개인방은 같은 snapshot에서 linked active identity/player의 유일성을 먼저 확인한다. 영구권 또는 KST 기준 유효 기간권만 허용하며 missing/duplicate/invalid는 fail-close 한다. 패스 차단 수신증 V3도 dual-context를 포함하고, 과거 V1/V2는 변경 없이 replay한다.
-- formal receipt는 raw/effective message, DEV context, verified environment/database, actor/channel을 고정하고 `event_inbox`/app-wiring/operation/command-execution terminal과 outbox 0을 replay에서 다시 검증한다.
+- formal receipt는 raw/effective message, DEV context, verified environment/database, actor/channel을 고정한다. 라우팅 결정도 선기록하지 않고 같은 consistent root transaction에 포함한다. SHADOW·정상 거부는 outbox 0, MODERN 성공은 operation/execution/outbox 각 1건이며 replay에서 신규 durable row 0과 본문·목적지·event·command fingerprint를 다시 검증한다.
+- routing hash는 레거시와 동일하게 정규화한 effective message를 사용한다. 따라서 WBS769에서 생성된 SHADOW routing row도 CANARY replay에서 중복 삽입 없이 재사용한다.
+- Migration 487은 `PET_SKILL_INFO`의 정확한 SHADOW v1 행만 CANARY v2로 승격하고 routing event ID를 128자로 확장한다. 전용 rollback은 registry/schema/100자 초과 데이터 drift를 먼저 차단한 뒤 SHADOW v1·VARCHAR(100)으로 복원하며 재적용 리허설까지 수행한다.
+- Wave16 실행 패리티는 DIRECT 7개 시나리오(정상·가드·권한거부·잘못된 방·정확 출력·source-domain DML 0·재시작 일관성)를 검증하고 Wave1~15 receipt/fixture는 역사적 봉인으로 유지한다.
 - 소문자 index-0 `dev/` 후보는 verified dev DB에서만 펫스킬 canonical 준비도를 같은 root snapshot으로 검사한다. `0/0/0/0`은 `UNREADY`, 일부 적재는 `PARTIAL`, active 정의/연결/별칭/확률정책 `93/93/30/4`와 정의 전체·import payload·별칭·정책·charm을 묶은 고정 semantic fingerprint 및 catalog projection 통과만 `READY`이다. 준비 전 상태는 상태·건수·정확 reply를 전용 V1 receipt에 저장하고 catalog 조회기·outbox·source-domain DML을 실행하지 않는다.
 - 관리자 닉네임은 skill 충돌보다 우선하고 비관리자는 skill을 우선한다. 전체 bag 출력은 레거시 header/guide/allsee/정렬/수량/checkRank 바이트를 보존한다.
 - 운영 방 CUID 권한·Admin/Master crosswalk·8 marker/import completeness seed가 없거나 불완전하면 `ADMIN_PLAYER_BAG_PROJECTION_UNPROVEN`으로 fail-close fallback한다. 방 이름 observation은 권한에 사용하지 않는다.
@@ -2849,7 +2852,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Source-domain read-only. App-wiring operation/receipt rows만 공용 원자적 recovery가 기록하며 외부 reply/outbox는 만들지 않는다.
+- Source-domain read-only. 공용 원자적 recovery가 routing/app-wiring/operation/command-execution을 기록하며, SHADOW·거부는 outbox 0, CANARY 성공은 worker 전용 Iris outbox 1건을 기록한다.
 
 ## Related Commands
 

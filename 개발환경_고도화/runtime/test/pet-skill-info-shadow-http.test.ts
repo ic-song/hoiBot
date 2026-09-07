@@ -51,7 +51,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       assert.equal(trace.snapshotCount, 1);
       assert.equal(trace.infoReply, "청룡언월도📙\n등급: S\n확률: 100.0%\n효과: 삼국지 관우의 전설적인 무기입니다.");
       assert.equal(trace.routeMessages.at(-1), "/펫스킬정보 [조회값]");
-      assert.ok(trace.writes.some(({ sql }) => sql.includes("command_routing_decisions")));
+      assert.equal(trace.writes.some(({ sql }) => sql.includes("command_routing_decisions")),false,"PET_SKILL_INFO routing must be recorded by the atomic recovery root, not before the claim");
       assert.equal(trace.atomicHandlerCount,1);
       assert.ok(trace.snapshotSql.every((sql) => sql.startsWith("SELECT ")));
       assert.ok(trace.writes.every(({ sql }) => !/canonical_pet_skill_(?:definitions|aliases|draw_grade_policies)/.test(sql)));
@@ -75,6 +75,22 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;
       await app.close();
     }
+  });
+
+  it("queues a CANARY direct reply without invoking the immediate Iris sender",async()=>{
+    const trace=createTraceDatabase("allowed","unready","CANARY"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
+    const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"wave14b-shadow-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
+    process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";let immediateSendCount=0;
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,petSkillInfoActorContextProvider:actorContextProvider,inspectIrisChannel:async()=>({mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",openLinkActive:true,openLinkExpired:false}}),sendIrisTextReply:async()=>{immediateSendCount+=1;}});
+    try{
+      const response=await send(app,"direct-1","dev/펫스킬정보");
+      assert.equal(response.statusCode,202,response.body);
+      assert.equal(trace.queuedReplies.length,1);
+      assert.match(trace.queuedReplies[0]!.data,/^\[DEV 테스트환경\]\n❌ DEV 펫스킬 카탈로그가 준비되지 않았습니다\./);
+      assert.equal(immediateSendCount,0,"the outbox worker, not the HTTP request loop, owns delivery");
+      assert.equal((await send(app,"direct-1","dev/펫스킬정보")).statusCode,202);
+      assert.equal(trace.queuedReplies.length,1,"replay must not queue another outbox row");
+    }finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
   });
 
   it("bypasses the generic deny only for a verified DirectChat pet-skill-info candidate",async()=>{
@@ -188,7 +204,7 @@ function send(app: ReturnType<typeof buildApp>, id: string, message: string, sen
 
 function privateSnapshot():IrisKakaoDatabaseSnapshot{return{nickname:"호이 남",nicknameSource:"open_chat_member",subjectUserId:"wave14b-user",roomName:"Wave14B 펫스킬방",roomNameSource:"chat_room_meta",db2IdentityTables:{rows:[]},chatLog:{rows:[]},targetChatLog:{rows:[]},chatRoom:{rows:[]},openChatMember:{rows:[]},friend:{rows:[]},openLink:{rows:[]}};}
 
-function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_missing"|"pass_duplicate"="allowed",readiness?:"unready"|"partial"|"ready"|"drift") {
+function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_missing"|"pass_duplicate"="allowed",readiness?:"unready"|"partial"|"ready"|"drift",rolloutState:"SHADOW"|"CANARY"="SHADOW") {
   let nextId = 1n;
   const events = new Set<string>();
   const writes: Array<{ sql: string; values: readonly unknown[] }> = [];
@@ -197,7 +213,8 @@ function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_mi
   let snapshotCount = 0;
   let infoReply = "";
   let atomicHandlerCount=0,atomicReplayCount=0;
-  const atomicReceipts=new Map<string,{message:string;projection:unknown}>();const failedOnce=new Set<string>();
+  const atomicReceipts=new Map<string,{message:string;projection:unknown;terminalStatus:string;reply?:{outboxId:string;room:string;data:string}}>();const failedOnce=new Set<string>();
+  const queuedReplies:Array<{outboxId:string;room:string;data:string}>=[];
   const write = async (sql: string, values: readonly unknown[] = []): Promise<DatabaseWriteResult> => {
     writes.push({ sql, values });
     if (sql.includes("INSERT INTO event_inbox")) {
@@ -240,7 +257,7 @@ function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_mi
     }] as T;
     throw new Error(`UNEXPECTED_SNAPSHOT_SQL:${sql}`);
   }};
-  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior.message!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");input.validateReceiptProjection?.(prior.projection);atomicReplayCount+=1;const denied=new Set(["PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1","PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2","PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1","PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3"]).has(String((prior.projection as {version?:string}).version));return{status:"completed",replayed:true,terminalStatus:denied?"SHADOW_DENIED":"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:prior.projection,processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection?.(evaluated.receiptProjection);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,{message:input.replyIdentity.message,projection:evaluated.receiptProjection});return{status:"completed",replayed:false,terminalStatus:evaluated.terminalStatus??"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:evaluated.receiptProjection,value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
+  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior.message!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");input.validateReceiptProjection?.(prior.projection);atomicReplayCount+=1;return{status:"completed",replayed:true,terminalStatus:prior.terminalStatus,resultFingerprint:"f".repeat(64),receiptProjection:prior.projection,...(prior.reply===undefined?{}:{reply:prior.reply}),processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection?.(evaluated.receiptProjection);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);const persistedReply=evaluated.reply===undefined?undefined:{outboxId:String(7000+queuedReplies.length),room:evaluated.reply.destinationId,data:evaluated.reply.data};if(persistedReply!==undefined)queuedReplies.push(persistedReply);const terminalStatus=evaluated.terminalStatus??"SHADOW_EVALUATED";atomicReceipts.set(input.event.eventId,{message:input.replyIdentity.message,projection:evaluated.receiptProjection,terminalStatus,...(persistedReply===undefined?{}:{reply:persistedReply})});return{status:"completed",replayed:false,terminalStatus,resultFingerprint:"f".repeat(64),receiptProjection:evaluated.receiptProjection,value:evaluated.value,...(persistedReply===undefined?{}:{reply:persistedReply}),processing:{duplicate:false,replies:[]}};}};
   const database: DatabaseClient = {
     ping: async () => undefined,
     verifyRollback: async () => true,
@@ -250,7 +267,7 @@ function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_mi
       if (sql === "SELECT DATABASE() AS database_identity") return [{ database_identity: "wave14b_shadow" }] as T;
       if (sql.includes("FROM command_aliases a")) {
         routeMessages.push(String(values[0]));
-        if (String(values[0]).startsWith("/펫스킬정보")) return [{ command_code: "PET_SKILL_INFO", handler_key: "pet_skill_info", auth_scope: "VERIFIED_USER", rollout_state: "SHADOW" }] as T;
+        if (String(values[0]).startsWith("/펫스킬정보")) return [{ command_code: "PET_SKILL_INFO", handler_key: "pet_skill_info", auth_scope: "VERIFIED_USER", rollout_state: rolloutState }] as T;
         return [] as T;
       }
       return [] as T;
@@ -267,6 +284,6 @@ function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_mi
       return work(controlled);
     }
   } as DatabaseClient;
-  return { database,recovery, writes, routeMessages, snapshotSql,
+  return { database,recovery, writes, routeMessages, snapshotSql,queuedReplies,
     get snapshotCount() { return snapshotCount; }, get infoReply() { return infoReply; },get atomicHandlerCount(){return atomicHandlerCount;},get atomicReplayCount(){return atomicReplayCount;},get failedAttemptCount(){return failedOnce.size;} };
 }

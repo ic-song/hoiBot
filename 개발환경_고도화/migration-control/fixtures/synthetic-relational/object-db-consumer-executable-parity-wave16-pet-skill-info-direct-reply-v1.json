@@ -1,0 +1,87 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave16:pet-skill-info-direct-reply:v1",
+  "sliceId": "SL-PET-SKILL-INFO-DIRECT-REPLY-01",
+  "consumerId": "legacy-0a10ef65ad4b37cd",
+  "supersedesFixtureId": "fixture:object-db-executable-parity:wave15:pet-skill-info-private-dev:v1",
+  "historicalShadowReceiptSeal": {
+    "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave15-v1.json",
+    "receiptCount": 167,
+    "compactReceiptBytes": 800975,
+    "compactReceiptSha256": "13f737ec01a5f0ace33efc2d4243baef1880d21fb5ac21f47f8bbe60fc2c44f5"
+  },
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/app.ts",
+    "개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts",
+    "개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts",
+    "개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts",
+    "개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-seed.ts",
+    "개발환경_고도화/runtime/src/pet/canonical-pet-skill-readiness-provider.ts",
+    "개발환경_고도화/runtime/src/pet/pet-skill-info-read-only-recovery-ingress.ts",
+    "개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts",
+    "개발환경_고도화/migration-control/fixtures/synthetic-relational/pet-skill-definitions-v2400.json",
+    "개발환경_고도화/migration-control/fixtures/synthetic-relational/pet-skill-post-freeze-v2435.json"
+  ],
+  "receiptContract": {
+    "version": "PET_SKILL_INFO_DIRECT_REPLY_V1",
+    "route": "MODERN",
+    "freshTerminalResult": "MODERN_REPLIED",
+    "deniedTerminalResult": "MODERN_DENIED",
+    "deliveryOwner": "OUTBOX_WORKER_ONLY",
+    "externalNetworkCalls": 0,
+    "freshCardinality": {
+      "eventInbox": 1,
+      "routingDecision": 1,
+      "appWiringOperation": 1,
+      "operation": 1,
+      "commandExecution": 1,
+      "outbox": 1
+    },
+    "replayAdditionalDml": 0,
+    "sourceDomainDml": 0
+  },
+  "bindings": [
+    {
+      "scenarioKind": "READ_POSITIVE",
+      "scenarioId": "scenario:wave16-direct-catalog-reply",
+      "input": { "environmentCode": "prod", "channelType": "open_group", "rawMessage": "/펫스킬정보 청룡언월도", "passCode": "hoi" },
+      "expected": { "accepted": true, "terminalStatus": "MODERN_REPLIED", "evaluatorRuns": 1, "outboxCount": 1, "externalReplyCount": 0, "reply": "청룡언월도📙\n등급: S\n확률: 0.1%\n효과: 삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." }
+    },
+    {
+      "scenarioKind": "NEGATIVE_GUARD",
+      "scenarioId": "scenario:wave16-command-not-matched",
+      "input": { "environmentCode": "dev", "channelType": "open_group", "rawMessage": "Dev/펫스킬정보 청룡언월도" },
+      "expected": { "accepted": false, "reason": "PET_SKILL_INFO_COMMAND_NOT_MATCHED", "evaluatorRuns": 0, "outboxCount": 0, "externalReplyCount": 0 }
+    },
+    {
+      "scenarioKind": "AUTH_DENIED",
+      "scenarioId": "scenario:wave16-private-pass-missing",
+      "input": { "environmentCode": "prod", "channelType": "open_direct", "rawMessage": "/펫스킬정보 청룡언월도", "passCode": null },
+      "expected": { "accepted": false, "reason": "PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED", "terminalStatus": "MODERN_DENIED", "evaluatorRuns": 1, "outboxCount": 0, "externalReplyCount": 0 }
+    },
+    {
+      "scenarioKind": "WRONG_ROOM_REJECTED",
+      "scenarioId": "scenario:wave16-wrong-room",
+      "input": { "environmentCode": "prod", "channelType": "open_other", "rawMessage": "/펫스킬정보 청룡언월도" },
+      "expected": { "accepted": false, "reason": "CHANNEL_NOT_ALLOWED", "evaluatorRuns": 0, "outboxCount": 0, "externalReplyCount": 0 }
+    },
+    {
+      "scenarioKind": "EXACT_OUTPUT",
+      "scenarioId": "scenario:wave16-dev-usage-direct-reply",
+      "input": { "environmentCode": "dev", "channelType": "open_group", "rawMessage": "dev/ 펫스킬정보" },
+      "expected": { "accepted": true, "terminalStatus": "MODERN_REPLIED", "evaluatorRuns": 1, "outboxCount": 1, "externalReplyCount": 0, "reply": "[DEV 테스트환경]\n사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)" }
+    },
+    {
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+      "scenarioId": "scenario:wave16-direct-source-domain-dml-zero",
+      "input": { "environmentCode": "prod", "channelType": "open_group", "rawMessage": "/펫스킬정보 청룡언월도" },
+      "expected": { "accepted": true, "terminalStatus": "MODERN_REPLIED", "evaluatorRuns": 1, "outboxCount": 1, "sourceDomainDmlCount": 0, "externalReplyCount": 0, "reply": "청룡언월도📙\n등급: S\n확률: 0.1%\n효과: 삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." }
+    },
+    {
+      "scenarioKind": "RESTART_CONSISTENCY",
+      "scenarioId": "scenario:wave16-direct-restart-replay",
+      "input": { "environmentCode": "prod", "channelType": "open_group", "rawMessage": "/펫스킬정보 청룡언월도" },
+      "expected": { "accepted": true, "terminalStatus": "MODERN_REPLIED", "firstEvaluatorRuns": 1, "replayEvaluatorRuns": 0, "outboxCount": 1, "replayAdditionalDml": 0, "externalReplyCount": 0, "reply": "청룡언월도📙\n등급: S\n확률: 0.1%\n효과: 삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." }
+    }
+  ]
+}

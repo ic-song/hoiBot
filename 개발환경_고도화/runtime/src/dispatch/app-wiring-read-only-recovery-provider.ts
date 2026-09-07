@@ -7,11 +7,12 @@ import type { AppWiringAtomicReadOnlyEvaluation, AppWiringClaimInput, AppWiringR
 
 export type AppWiringDevContext = "DEFAULT" | "DEV_PREFIX";
 export type AppWiringReadOnlyRecoveryResult<T> =
-  | { readonly status:"completed";readonly replayed:false;readonly resultFingerprint:string;readonly terminalStatus:AppWiringReadOnlyTerminalStatus;readonly receiptProjection:unknown;readonly value:T;readonly processing:EventProcessingResult }
-  | { readonly status:"completed";readonly replayed:true;readonly resultFingerprint:string;readonly terminalStatus:AppWiringReadOnlyTerminalStatus;readonly receiptProjection:unknown;readonly processing:EventProcessingResult };
+  | { readonly status:"completed";readonly replayed:false;readonly resultFingerprint:string;readonly terminalStatus:AppWiringReadOnlyTerminalStatus;readonly receiptProjection:unknown;readonly value:T;readonly processing:EventProcessingResult;readonly reply?:{readonly outboxId:string;readonly room:string;readonly data:string} }
+  | { readonly status:"completed";readonly replayed:true;readonly resultFingerprint:string;readonly terminalStatus:AppWiringReadOnlyTerminalStatus;readonly receiptProjection:unknown;readonly processing:EventProcessingResult;readonly reply?:{readonly outboxId:string;readonly room:string;readonly data:string} };
 
 export interface AppWiringReadOnlyRecoveryInput<T>{
   readonly event:NormalizedIrisEvent;
+  readonly routingMessage?:string;
   readonly replyIdentity:NormalizedIrisEvent;
   readonly channelType:"open_group"|"open_direct";
   readonly identityProviderCode:"kakao";
@@ -83,8 +84,11 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
   constructor(private readonly database:DatabaseClient,private readonly appWiring:MariaAppWiringOperationProvider){appWiring.assertRecoveryDatabase(database);}
 
   async execute<T>(input:AppWiringReadOnlyRecoveryInput<T>):Promise<AppWiringReadOnlyRecoveryResult<T>>{
-    if(input.decision.route!=="SHADOW"||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_READ_ONLY_SHADOW_ROUTE_REQUIRED");
+    if((input.decision.route!=="SHADOW"&&input.decision.route!=="MODERN")||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_READ_ONLY_ROUTE_REQUIRED");
     const claim=claimInput(input);
+    const routingMessage=input.routingMessage??input.event.message;
+    if(routingMessage===undefined)throw new Error("APP_WIRING_READ_ONLY_ROUTING_MESSAGE_REQUIRED");
+    const routingDecision={eventId:input.event.eventId,messageHash:createHash("sha256").update(routingMessage,"utf8").digest("hex")};
     let lastAttemptNumber=0;
     try{
       return await this.appWiring.withAtomicReadOnlyRootRetry(async(transaction,attemptNumber)=>{
@@ -92,13 +96,13 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
         const processing=await new ProcessIrisEventService(this.database).executeAtomicCommandInTransaction(transaction,input.event,input.replyIdentity,input.channelType,{...(input.channelName===undefined?{}:{channelName:input.channelName}),retryFailedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",retryAttemptNumber:attemptNumber});
         const binding=await assertInboxBinding(transaction,input,processing.duplicate);
         await assertIdentityUnique(transaction,input,binding);
-        const result=await this.appWiring.executeAtomicReadOnlyShadowInTransaction(transaction,{claim,decision:input.decision,sourceEventId:input.event.eventId,attemptCount:attemptNumber,duplicateClaim:processing.duplicate,evaluate:database=>input.evaluateInSnapshot(database),...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
+        const result=await this.appWiring.executeAtomicReadOnlyShadowInTransaction(transaction,{claim,decision:input.decision,routingDecision,sourceEventId:input.event.eventId,attemptCount:attemptNumber,duplicateClaim:processing.duplicate,evaluate:database=>input.evaluateInSnapshot(database),...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
         if(result.status==="failed"){
           if(binding.errorCode!==result.errorCode)throw new Error("APP_WIRING_READ_ONLY_FAILED_INBOX_ERROR_DRIFT");
           throw new StoredAtomicFailure(result.errorCode);
         }
-        return result.replayed?{status:"completed",replayed:true,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing}
-          :{status:"completed",replayed:false,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,value:result.value,processing};
+        return result.replayed?{status:"completed",replayed:true,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing,...(result.reply===undefined?{}:{reply:result.reply})}
+          :{status:"completed",replayed:false,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,value:result.value,processing,...(result.reply===undefined?{}:{reply:result.reply})};
       });
     }catch(error){
       if(error instanceof StoredAtomicFailure)throw error;
@@ -107,8 +111,8 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
       const reconciled=await this.appWiring.withAtomicReadOnlyFailureRetry(async transaction=>{
         const processing=await new ProcessIrisEventService(this.database).executeAtomicCommandInTransaction(transaction,input.event,input.replyIdentity,input.channelType,{...(input.channelName===undefined?{}:{channelName:input.channelName}),retryFailedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",retryAttemptNumber:failureAttemptCount});
         await assertInboxBinding(transaction,input,processing.duplicate);
-        const result=await this.appWiring.recordAtomicReadOnlyShadowFailureInTransaction(transaction,{claim,decision:input.decision,sourceEventId:input.event.eventId,attemptCount:failureAttemptCount,errorCode,...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
-        if(result.status==="completed")return{status:"completed" as const,replayed:true as const,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing};
+        const result=await this.appWiring.recordAtomicReadOnlyShadowFailureInTransaction(transaction,{claim,decision:input.decision,routingDecision,sourceEventId:input.event.eventId,attemptCount:failureAttemptCount,errorCode,...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
+        if(result.status==="completed")return{status:"completed" as const,replayed:true as const,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing,...(result.reply===undefined?{}:{reply:result.reply})};
         await transaction.execute("UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?",[failureAttemptCount,errorCode,input.event.eventId]);
         return undefined;
       });

@@ -602,11 +602,20 @@ function maskNonStructuralCode(text: string): string {
   const chars = text.split("");
   let state: "CODE" | "SINGLE" | "DOUBLE" | "TEMPLATE" | "LINE_COMMENT" | "BLOCK_COMMENT" | "REGEX" = "CODE";
   let escaped = false;
+  const templateExpressionDepths: number[] = [];
   for (let index = 0; index < chars.length; index += 1) {
     const current = text[index]!;
     const next = text[index + 1] ?? "";
     if (state === "CODE") {
-      if (current === "'") state = "SINGLE";
+      if (templateExpressionDepths.length > 0 && current === "{") templateExpressionDepths[templateExpressionDepths.length - 1]! += 1;
+      else if (templateExpressionDepths.length > 0 && current === "}") {
+        templateExpressionDepths[templateExpressionDepths.length - 1]! -= 1;
+        if (templateExpressionDepths[templateExpressionDepths.length - 1] === 0) {
+          templateExpressionDepths.pop();
+          state = "TEMPLATE";
+        }
+      }
+      else if (current === "'") state = "SINGLE";
       else if (current === '"') state = "DOUBLE";
       else if (current === "`") state = "TEMPLATE";
       else if (current === "/" && next === "/") { state = "LINE_COMMENT"; chars[index] = chars[index + 1] = " "; index += 1; }
@@ -619,9 +628,19 @@ function maskNonStructuralCode(text: string): string {
     if (state === "BLOCK_COMMENT") { if (current === "*" && next === "/") { chars[index + 1] = " "; index += 1; state = "CODE"; } continue; }
     if (escaped) { escaped = false; continue; }
     if (current === "\\") { escaped = true; continue; }
+    if (state === "TEMPLATE" && current === "$" && next === "{") {
+      templateExpressionDepths.push(0);
+      state = "CODE";
+      continue;
+    }
     if ((state === "SINGLE" && current === "'") || (state === "DOUBLE" && current === '"') || (state === "TEMPLATE" && current === "`") || (state === "REGEX" && current === "/")) state = "CODE";
   }
   return chars.join("");
+}
+
+export function countUnresolvedDynamicCalls(text: string): number {
+  const structuralCode = maskNonStructuralCode(text);
+  return [...structuralCode.matchAll(/\[[^\]]+\]\s*\(/g)].length;
 }
 
 function balancedEnd(masked: string, start: number, open: string, close: string): number {
@@ -726,7 +745,7 @@ function expandHelperClosure(text: string, initialBody: string): { text: string;
   let unresolvedDynamicCallCount = 0;
   while (queue.length > 0) {
     const body = queue.shift()!;
-    unresolvedDynamicCallCount += [...body.matchAll(/\[[^\]"']+\]\s*\(/g)].length;
+    unresolvedDynamicCallCount += countUnresolvedDynamicCalls(body);
     for (const match of body.matchAll(/(?<!\.)\b([A-Za-z_$][A-Za-z0-9_$]*)\s*\(/g)) {
       const name = match[1]!;
       // response(...) is the legacy command router.  Following it from an
@@ -1676,9 +1695,9 @@ function runtimeConsumers(root: string, tableNames: string[]): DerivedConsumer[]
 }
 
 export function deriveConsumerManifest(repoRoot: string, baseCommit: string): ConsumerManifest {
-  const standard = JSON.parse(readCanonicalObjectDbConsumerSource(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json"))) as { tables: StandardTable[]; externalDependencies?: StandardTable[] };
+  const standard = JSON.parse(readCanonicalObjectDbConsumerSource(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json"))) as { tables: StandardTable[]; integrationOnlyTables?: StandardTable[]; externalDependencies?: StandardTable[] };
   const tableNames = standard.tables.map(({ table }) => table);
-  const tableMap = new Map([...standard.tables, ...(standard.externalDependencies ?? [])].map((table) => [table.table, table]));
+  const tableMap = new Map([...standard.tables, ...(standard.integrationOnlyTables ?? []), ...(standard.externalDependencies ?? [])].map((table) => [table.table, table]));
   const targetSelectors = deriveTargetSelectors(repoRoot);
   const closeUsage = (seedTables: string[], seedColumns: string[]): { tables: string[]; columns: string[] } => {
     const tables = new Set(seedTables);
@@ -2014,9 +2033,10 @@ export function deriveTargetSelectors(repoRoot: string): Record<string, { domain
   };
   const standard = JSON.parse(readCanonicalObjectDbConsumerSource(resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json"))) as {
     tables: StandardTable[];
+    integrationOnlyTables?: StandardTable[];
     externalDependencies?: StandardTable[];
   };
-  const standardTables = new Map([...standard.tables, ...(standard.externalDependencies ?? [])].map((table) => [table.table, table]));
+  const standardTables = new Map([...standard.tables, ...(standard.integrationOnlyTables ?? []), ...(standard.externalDependencies ?? [])].map((table) => [table.table, table]));
   const mappings = new Map(fieldMap.mappings.map((entry) => [entry.domain, entry]));
   return Object.fromEntries(Object.entries(SLICE_DOMAINS).map(([slice, domains]) => {
     const entries = domains.map((domain) => mappings.get(domain)).filter((entry): entry is NonNullable<typeof entry> => entry !== undefined);

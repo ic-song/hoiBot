@@ -4,7 +4,7 @@ import type { AppWiringDevContext, MariaAppWiringReadOnlyRecoveryProvider } from
 import type { ChannelNameObservation, EventProcessingResult } from "../integration/event-processing-service.js";
 import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { assertVerifiedEnvironmentContext, type VerifiedEnvironmentContext } from "../runtime/environment-context.js";
-import { isPetSkillInfoShadowCandidate, PetSkillInfoShadowService } from "./pet-skill-info-shadow-service.js";
+import { isPetSkillInfoShadowCandidate, normalizePetSkillInfoDispatchMessage, PetSkillInfoShadowService } from "./pet-skill-info-shadow-service.js";
 import { formatPetSkillCatalogReadinessReply, MariaCanonicalPetSkillReadinessProvider, type PetSkillCatalogReadiness } from "./canonical-pet-skill-readiness-provider.js";
 import { MariaPetSkillInfoActorContextProvider, type PetSkillInfoActorContext } from "./pet-skill-info-actor-context-provider.js";
 
@@ -226,6 +226,7 @@ export interface PetSkillInfoReadOnlyRecoveryResult{
   readonly processing:EventProcessingResult;
   readonly denialReason?:PetSkillInfoPrivateDenialReason;
   readonly privateDenialNotificationRequired?:true;
+  readonly queuedReply?:{readonly outboxId:string;readonly room:string;readonly data:string};
 }
 
 export async function executePetSkillInfoReadOnlyRecovery(input:{
@@ -235,6 +236,7 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
   event:NormalizedIrisEvent;
   replyIdentity:NormalizedIrisEvent;
   channelType:"open_group"|"open_direct";
+  route?:"SHADOW"|"MODERN";
   reasonCode:string;
   channelName?:ChannelNameObservation;
   readiness?:Pick<MariaCanonicalPetSkillReadinessProvider,"inspect">;
@@ -244,6 +246,7 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
   if(input.replyIdentity.userId===undefined||input.replyIdentity.channelId===undefined||input.event.message===undefined||input.replyIdentity.message!==input.event.message)throw new Error("PET_SKILL_INFO_RECOVERY_BINDING_REQUIRED");
   const command=resolvePetSkillInfoIngressCommand(input.event.message);
   if(command===undefined)throw new Error("PET_SKILL_INFO_COMMAND_NOT_MATCHED");
+  const route=input.route??"SHADOW";
   const expected={command,environment:input.environmentContext,event:input.event,replyIdentity:input.replyIdentity,channelType:input.channelType,...(input.channelName===undefined?{}:{channelName:input.channelName})};
   const binding={rawMessage:command.rawMessage,effectiveMessage:command.effectiveMessage,devContext:command.devContext,
     environmentCode:input.environmentContext.environmentCode,databaseIdentity:input.environmentContext.databaseIdentity,eventId:input.event.eventId,
@@ -251,9 +254,9 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
     displayName:input.replyIdentity.displayName??null,displayNameSource:input.replyIdentity.displayNameSource??null,displayNameTrust:input.replyIdentity.displayNameTrust??null,
     channelType:input.channelType,externalChannelId:input.replyIdentity.channelId};
   const recovered=await input.recovery.execute<unknown>({
-    event:input.event,replyIdentity:input.replyIdentity,channelType:input.channelType,identityProviderCode:"kakao",
+    event:input.event,routingMessage:normalizePetSkillInfoDispatchMessage(command.effectiveMessage),replyIdentity:input.replyIdentity,channelType:input.channelType,identityProviderCode:"kakao",
     devContext:command.devContext,actor:"app:pet-skill-info",commandBinding:{rawMessage:command.rawMessage,effectiveMessage:command.effectiveMessage},
-    decision:{route:"SHADOW",effectMode:"READ_ONLY",reasonCode:input.reasonCode,commandCode:"PET_SKILL_INFO",handlerKey:"pet_skill_info"},
+    decision:{route,effectMode:"READ_ONLY",reasonCode:input.reasonCode,commandCode:"PET_SKILL_INFO",handlerKey:"pet_skill_info"},
     ...(input.channelName===undefined?{}:{channelName:input.channelName}),
     validateReceiptProjection:projection=>assertFormalReceiptProjection(projection,expected),
     evaluateInSnapshot:async transaction=>{
@@ -264,7 +267,7 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
         const receiptProjection=actorContext===undefined
           ?notification===undefined?{version:DENIAL_RECEIPT_VERSION,binding,authorization,value}:{version:DENIAL_RECEIPT_V2_VERSION,binding,authorization,value,notification}
           :notification===undefined?{version:DUAL_CONTEXT_DENIAL_RECEIPT_VERSION,binding,authorization,actorContext,value}:{version:DENIAL_RECEIPT_V3_VERSION,binding,authorization,actorContext,value,notification};
-        return{terminalStatus:"SHADOW_DENIED" as const,value,receiptProjection};
+        return{terminalStatus:route==="MODERN"?"MODERN_DENIED" as const:"SHADOW_DENIED" as const,value,receiptProjection};
       };
       const caller=input.channelType==="open_direct"?await resolvePrivateCallerIdentity(transaction,input.replyIdentity.userId!):undefined;
       if(caller!==undefined&&"mode" in caller)return denied(caller);
@@ -277,14 +280,24 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
       const readiness=command.devContext==="DEV_PREFIX"?await(input.readiness??new MariaCanonicalPetSkillReadinessProvider()).inspect(transaction,input.environmentContext):undefined;
       const evaluated=readiness!==undefined&&readiness.status!=="READY"?{status:"shadow" as const,reply:formatPetSkillCatalogReadinessReply(readiness)}:await new PetSkillInfoShadowService(input.database).evaluateInSnapshot(transaction,{externalUserId:input.replyIdentity.userId!,externalChannelId:input.replyIdentity.channelId,displayName:input.replyIdentity.displayName,message:command.effectiveMessage,actorContext});
       const value=readiness!==undefined&&readiness.status!=="READY"?evaluated:withDevHeader(evaluated,command.devContext);
-      return{value,receiptProjection:readiness!==undefined&&readiness.status!=="READY"?{version:DUAL_CONTEXT_READINESS_RECEIPT_VERSION,binding,authorization,actorContext,readiness,value}:{version:DUAL_CONTEXT_RECEIPT_VERSION,binding,authorization,actorContext,value}};
+      const receiptProjection=readiness!==undefined&&readiness.status!=="READY"?{version:DUAL_CONTEXT_READINESS_RECEIPT_VERSION,binding,authorization,actorContext,readiness,value}:{version:DUAL_CONTEXT_RECEIPT_VERSION,binding,authorization,actorContext,value};
+      if(route==="SHADOW")return{value,receiptProjection};
+      const direct=record(value);
+      return direct?.status==="shadow"&&typeof direct.reply==="string"
+        ?{value,receiptProjection,terminalStatus:"MODERN_REPLIED" as const,reply:{eventId:input.event.eventId,commandCode:"PET_SKILL_INFO",destinationId:input.replyIdentity.channelId!,data:direct.reply}}
+        :{value,receiptProjection,terminalStatus:"MODERN_DENIED" as const};
     },
     errorCode:error=>error instanceof Error&&/^[A-Z][A-Z0-9_]{0,63}$/.test(error.message)?error.message:"PET_SKILL_INFO_SHADOW_FAILED"
   });
   const projection=recovered.receiptProjection as {version?:unknown;authorization?:{mode?:unknown;reasonCode?:unknown}};
   const projectedReason=projection.authorization?.reasonCode;
   const denialProjection=(projection.version===DENIAL_RECEIPT_VERSION||projection.version===DENIAL_RECEIPT_V2_VERSION||projection.version===DUAL_CONTEXT_DENIAL_RECEIPT_VERSION||projection.version===DENIAL_RECEIPT_V3_VERSION)&&projection.authorization?.mode==="PRIVATE_DENIED"&&isPrivateDenialReason(projectedReason);
-  if((recovered.terminalStatus==="SHADOW_DENIED")!==denialProjection)throw new Error("PET_SKILL_INFO_RECEIPT_TERMINAL_STATUS_DRIFT");
+  if(denialProjection&&(recovered.terminalStatus!=="SHADOW_DENIED"&&recovered.terminalStatus!=="MODERN_DENIED"))throw new Error("PET_SKILL_INFO_RECEIPT_TERMINAL_STATUS_DRIFT");
+  if(recovered.terminalStatus==="SHADOW_DENIED"&&!denialProjection)throw new Error("PET_SKILL_INFO_RECEIPT_TERMINAL_STATUS_DRIFT");
+  const projectedValue=record((projection as Record<string,unknown>).value),projectedReply=projectedValue?.reply;
+  if(recovered.terminalStatus==="MODERN_REPLIED"){
+    if(recovered.reply===undefined||recovered.reply.outboxId.length===0||recovered.reply.room!==input.replyIdentity.channelId||typeof projectedReply!=="string"||recovered.reply.data!==projectedReply)throw new Error("PET_SKILL_INFO_DIRECT_REPLY_RECEIPT_DRIFT");
+  }else if(recovered.reply!==undefined)throw new Error("PET_SKILL_INFO_DIRECT_REPLY_TERMINAL_DRIFT");
   const denialReason=denialProjection?projectedReason as PetSkillInfoPrivateDenialReason:undefined;
-  return{processing:recovered.processing,...(denialReason===undefined?{}:{denialReason}),...((projection.version===DENIAL_RECEIPT_V2_VERSION||projection.version===DENIAL_RECEIPT_V3_VERSION)?{privateDenialNotificationRequired:true as const}:{})};
+  return{processing:recovered.processing,...(denialReason===undefined?{}:{denialReason}),...((projection.version===DENIAL_RECEIPT_V2_VERSION||projection.version===DENIAL_RECEIPT_V3_VERSION)?{privateDenialNotificationRequired:true as const}:{}),...(recovered.reply===undefined?{}:{queuedReply:recovered.reply})};
 }

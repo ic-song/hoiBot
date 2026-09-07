@@ -118,7 +118,7 @@ function denialProjection(input: {
   } as const;
 }
 
-function rootFixture(input: Parameters<typeof denialProjection>[0]) {
+function rootFixture(input: Parameters<typeof denialProjection>[0]&{route?:"SHADOW"|"MODERN"}) {
   const projection = denialProjection(input);
   const resultFingerprint = fingerprint(projection);
   const appWiringOperationId = `awo-${input.eventId}`;
@@ -127,14 +127,15 @@ function rootFixture(input: Parameters<typeof denialProjection>[0]) {
     app_wiring_operation_id: appWiringOperationId,
     claim_state: "COMPLETED",
     effect_mode: "READ_ONLY",
-    route: "SHADOW",
+    route: input.route??"SHADOW",
     environment_code: environmentCode,
     database_identity: databaseIdentity,
-    claim_result_json: { status: "SHADOW_DENIED", referenceId: receiptOperationId.toString(), resultFingerprint },
+    claim_result_json: { status: input.route==="MODERN"?"MODERN_DENIED":"SHADOW_DENIED", referenceId: receiptOperationId.toString(), resultFingerprint },
     receipt_operation_id: receiptOperationId,
     operation_status: "completed",
     operation_result_json: {
-      status: "SHADOW_DENIED",
+      status: input.route==="MODERN"?"MODERN_DENIED":"SHADOW_DENIED",
+      route: input.route??"SHADOW",
       delivery: "NO_REPLY",
       resultFingerprint,
       appWiringOperationId,
@@ -357,6 +358,13 @@ function deterministicIds() {
 }
 
 describe("private chat denial notification service", () => {
+  it("counts a modern direct denial without creating a user reply outbox", async () => {
+    const fake=createFakeDatabase([rootFixture({eventId:"event-1",route:"MODERN"})]);
+    const service=new PrivateChatDenialNotificationService(fake.database,await verifiedEnvironment(fake.database),deterministicIds());
+    assert.deepEqual(await service.processEvent("event-1"),{status:"counted",replayed:false,attemptOrdinal:"1",notificationDisposition:"NOT_DUE"});
+    assert.equal(fake.state.outboxes.length,0);
+  });
+
   it("keeps attempts one and two outbox-free, then queues the exact legacy admin notice on attempt three", async () => {
     const fake = createFakeDatabase([
       rootFixture({ eventId: "event-1", displayName: "첫 닉네임", privateRoomName: "개인방 A" }),

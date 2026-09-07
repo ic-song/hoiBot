@@ -71,9 +71,10 @@ async function readRoot(tx:DatabaseTransaction,eventId:string):Promise<{row:Root
   if(version!==V2&&version!==V3)return undefined;
   const receipt=version===V3?parsePetSkillInfoPrivateDenialReceiptV3(projection):parsePetSkillInfoPrivateDenialReceiptV2(projection);
   const projectedFingerprint=sha(stableJson(projection));
-  if(row.claim_state!=="COMPLETED"||row.effect_mode!=="READ_ONLY"||row.route!=="SHADOW"||row.operation_status!=="completed"||row.execution_status!=="completed"||row.execution_result_code!=="ignored"
-    ||claim.status!=="SHADOW_DENIED"||claim.referenceId!==row.receipt_operation_id.toString()||claim.resultFingerprint!==projectedFingerprint
-    ||operation.status!=="SHADOW_DENIED"||operation.delivery!=="NO_REPLY"||operation.resultFingerprint!==projectedFingerprint||row.root_outbox_count===undefined||BigInt(row.root_outbox_count)!==0n
+  const expectedTerminal=row.route==="SHADOW"?"SHADOW_DENIED":row.route==="MODERN"?"MODERN_DENIED":undefined;
+  if(row.claim_state!=="COMPLETED"||row.effect_mode!=="READ_ONLY"||expectedTerminal===undefined||row.operation_status!=="completed"||row.execution_status!=="completed"||row.execution_result_code!=="ignored"
+    ||claim.status!==expectedTerminal||claim.referenceId!==row.receipt_operation_id.toString()||claim.resultFingerprint!==projectedFingerprint
+    ||operation.status!==expectedTerminal||operation.route!==row.route||operation.delivery!=="NO_REPLY"||operation.resultFingerprint!==projectedFingerprint||row.root_outbox_count===undefined||BigInt(row.root_outbox_count)!==0n
     ||operation.appWiringOperationId!==row.app_wiring_operation_id||operation.eventId!==eventId||operation.commandCode!=="PET_SKILL_INFO"
     ||receipt.binding.eventId!==eventId||receipt.binding.eventProviderCode!==row.provider_code||receipt.notification.externalIdentityId!==String(row.external_identity_id)
     ||receipt.notification.externalUserId!==row.external_user_id)throw new Error("PRIVATE_CHAT_DENIAL_ROOT_RECEIPT_DRIFT");

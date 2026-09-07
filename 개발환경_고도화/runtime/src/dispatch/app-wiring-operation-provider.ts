@@ -70,12 +70,13 @@ export type AppWiringPersistedMutationIrisOutcome<T> =
   | { readonly value: T; readonly noReply: { readonly kind: "NO_REPLY" } };
 export interface AppWiringMutationReplyContext { readonly operationId: bigint }
 export interface AppWiringReadParticipant { query<T>(sql: string, values?: readonly unknown[]): Promise<T> }
-export type AppWiringReadOnlyTerminalStatus = "SHADOW_EVALUATED" | "SHADOW_DENIED";
+export type AppWiringReadOnlyTerminalStatus = "SHADOW_EVALUATED" | "SHADOW_DENIED" | "MODERN_REPLIED" | "MODERN_DENIED";
+export interface AppWiringAtomicRoutingDecision { readonly eventId:string;readonly messageHash:string }
 export type AppWiringAtomicReadOnlyShadowResult<T> =
-  | { readonly status: "completed"; readonly replayed: false; readonly resultFingerprint: string; readonly terminalStatus: AppWiringReadOnlyTerminalStatus; readonly receiptProjection: unknown; readonly value: T }
-  | { readonly status: "completed"; readonly replayed: true; readonly resultFingerprint: string; readonly terminalStatus: AppWiringReadOnlyTerminalStatus; readonly receiptProjection: unknown }
+  | { readonly status: "completed"; readonly replayed: false; readonly resultFingerprint: string; readonly terminalStatus: AppWiringReadOnlyTerminalStatus; readonly receiptProjection: unknown; readonly value: T;readonly reply?:AppWiringPersistedReply<T>["reply"] }
+  | { readonly status: "completed"; readonly replayed: true; readonly resultFingerprint: string; readonly terminalStatus: AppWiringReadOnlyTerminalStatus; readonly receiptProjection: unknown;readonly reply?:AppWiringPersistedReply<T>["reply"] }
   | { readonly status: "failed"; readonly replayed: boolean; readonly errorCode: string };
-export interface AppWiringAtomicReadOnlyEvaluation<T>{readonly value:T;readonly receiptProjection:unknown;readonly terminalStatus?:AppWiringReadOnlyTerminalStatus}
+export interface AppWiringAtomicReadOnlyEvaluation<T>{readonly value:T;readonly receiptProjection:unknown;readonly terminalStatus?:AppWiringReadOnlyTerminalStatus;readonly reply?:AppWiringIrisReplyDraft}
 export interface AppWiringMutationParticipant extends AppWiringReadParticipant {
   execute(sql: string, values?: readonly unknown[]): Promise<DatabaseWriteResult>;
   withTransaction<T>(work: (participant: AppWiringMutationParticipant) => Promise<T>): Promise<T>;
@@ -239,8 +240,19 @@ async function assertAtomicRequestEnvironment(tx:Pick<DatabaseTransaction,"query
   const rows=await tx.query<Array<{request_namespace:string}>>("SELECT request_namespace FROM canonical_app_wiring_operations WHERE entrypoint_kind=? AND external_request_id=? AND request_namespace<>? ORDER BY app_wiring_operation_id LIMIT 1 FOR UPDATE",[input.entrypointKind,input.externalRequestId,namespace]);
   if(rows.length!==0)throw new Error("APP_WIRING_ATOMIC_ENVIRONMENT_DRIFT");
 }
+async function ensureAtomicRoutingDecision(tx:Pick<DatabaseTransaction,"query"|"execute">,binding:AppWiringAtomicRoutingDecision,decision:AppWiringRouteDecision):Promise<void>{
+  if(binding.eventId.length===0||binding.eventId.length>128||!/^[0-9a-f]{64}$/.test(binding.messageHash))throw new Error("APP_WIRING_ATOMIC_ROUTING_BINDING_INVALID");
+  const read=()=>tx.query<Array<{event_id:string;message_hash:string;command_code:string|null;route:AppWiringRoute;reason_code:string}>>("SELECT event_id,message_hash,command_code,route,reason_code FROM command_routing_decisions WHERE event_id=? AND message_hash=? LIMIT 2 FOR UPDATE",[binding.eventId,binding.messageHash]);
+  let rows=await read();
+  if(rows.length===0){
+    await tx.execute("INSERT INTO command_routing_decisions(event_id,message_hash,command_code,route,reason_code) VALUES (?,?,?,?,?)",[binding.eventId,binding.messageHash,decision.commandCode??null,decision.route,decision.reasonCode]);
+    rows=await read();
+  }
+  const row=rows[0];
+  if(rows.length!==1||row===undefined||row.event_id!==binding.eventId||row.message_hash!==binding.messageHash||row.command_code!==(decision.commandCode??null)||row.route!==decision.route||row.reason_code!==decision.reasonCode)throw new Error("APP_WIRING_ATOMIC_ROUTING_DECISION_DRIFT");
+}
 async function assertAtomicNoReplyReceipt(tx:Pick<DatabaseTransaction,"query">,row:ClaimRow,receipt:Readonly<AppWiringReceiptResult>,sourceEventId:string,validateReceiptProjection?:(projection:unknown)=>void):Promise<{terminalStatus:AppWiringReadOnlyTerminalStatus;receiptProjection:unknown}>{
-  if((receipt.status!=="SHADOW_EVALUATED"&&receipt.status!=="SHADOW_DENIED")||receipt.referenceId===undefined||receipt.resultFingerprint===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");
+  if(!["SHADOW_EVALUATED","SHADOW_DENIED","MODERN_DENIED"].includes(receipt.status)||receipt.referenceId===undefined||receipt.resultFingerprint===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");
   const records=await tx.query<Array<{operation_id:bigint|number|string;idempotency_scope:string;idempotency_key:string;operation_status:string;operation_result_json:string|Record<string,unknown>|null;event_id:string;command_code:string;execution_status:string;result_code:string|null;outbox_id:bigint|number|string|null}>>(
     `SELECT operation.id operation_id,operation.idempotency_scope,operation.idempotency_key,operation.status operation_status,operation.result_json operation_result_json,
             execution.event_id,execution.command_code,execution.execution_status,execution.result_code,outbox.id outbox_id
@@ -250,14 +262,33 @@ async function assertAtomicNoReplyReceipt(tx:Pick<DatabaseTransaction,"query">,r
   const record=records[0]!,stored=typeof record.operation_result_json==="string"?JSON.parse(record.operation_result_json)as Record<string,unknown>:record.operation_result_json;
   if(String(record.operation_id)!==receipt.referenceId||record.idempotency_scope!=="app-wiring.read-only-no-reply"||record.idempotency_key!==row.app_wiring_operation_id
     ||record.operation_status!=="completed"||record.command_code!==row.command_code
-    ||record.execution_status!=="completed"||record.result_code!==(receipt.status==="SHADOW_DENIED"?"ignored":"no_reply")||record.outbox_id!==null||stored===null
+    ||record.execution_status!=="completed"||record.result_code!==((receipt.status==="SHADOW_DENIED"||receipt.status==="MODERN_DENIED")?"ignored":"no_reply")||record.outbox_id!==null||stored===null
     ||stored.appWiringOperationId!==row.app_wiring_operation_id||stored.requestIdentityFingerprint!==row.request_identity_fingerprint
     ||stored.requestNamespace!==row.request_namespace||stored.payloadFingerprint!==row.payload_fingerprint||stored.eventId!==record.event_id||record.event_id!==sourceEventId
     ||stored.commandCode!==row.command_code||stored.route!==row.route||stored.reasonCode!==row.reason_code||stored.handlerKey!==(row.handler_key??null)
     ||stored.resultFingerprint!==receipt.resultFingerprint||stored.status!==receipt.status||stored.delivery!=="NO_REPLY"
     ||!("receiptProjection" in stored)||sha(stableJson(stored.receiptProjection))!==receipt.resultFingerprint)throw new Error("APP_WIRING_ATOMIC_NO_REPLY_RECEIPT_DRIFT");
   validateReceiptProjection?.(stored.receiptProjection);
-  return{terminalStatus:receipt.status,receiptProjection:stored.receiptProjection};
+  return{terminalStatus:receipt.status as AppWiringReadOnlyTerminalStatus,receiptProjection:stored.receiptProjection};
+}
+async function assertAtomicReplyReceipt(tx:Pick<DatabaseTransaction,"query">,row:ClaimRow,receipt:Readonly<AppWiringReceiptResult>,sourceEventId:string,validateReceiptProjection?:(projection:unknown)=>void):Promise<{terminalStatus:"MODERN_REPLIED";receiptProjection:unknown;reply:AppWiringPersistedReply<unknown>["reply"]}>{
+  if(receipt.status!=="MODERN_REPLIED"||receipt.referenceId===undefined||receipt.resultFingerprint===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");
+  const records=await tx.query<Array<ReadOnlyReplyRow>>(`SELECT operation.id operation_id,operation.idempotency_scope,operation.idempotency_key,operation.status operation_status,operation.result_json operation_result_json,
+      execution.event_id,execution.command_code,execution.execution_status,execution.result_code,outbox.id outbox_id,outbox.provider_code,outbox.destination_id,outbox.message_type,outbox.payload_json
+      FROM outbox_messages outbox JOIN operations operation ON operation.id=outbox.operation_id JOIN command_executions execution ON execution.operation_id=operation.id
+      WHERE outbox.id=? AND NOT EXISTS(SELECT 1 FROM outbox_messages duplicate_outbox WHERE duplicate_outbox.operation_id=outbox.operation_id AND duplicate_outbox.id<>outbox.id) LIMIT 2 FOR UPDATE`,[receipt.referenceId]);
+  if(records.length!==1)throw new Error("APP_WIRING_ATOMIC_REPLY_CARDINALITY_INVALID");
+  const record=records[0]!,stored=typeof record.operation_result_json==="string"?JSON.parse(record.operation_result_json)as Record<string,unknown>:record.operation_result_json,data=readPayloadData(record.payload_json);
+  if(String(record.outbox_id)!==receipt.referenceId||record.idempotency_scope!=="app-wiring.read-only-reply"||record.idempotency_key!==row.app_wiring_operation_id||record.operation_status!=="completed"
+    ||record.event_id!==sourceEventId||record.command_code!==row.command_code||record.execution_status!=="completed"||record.result_code!=="reply_queued"
+    ||record.provider_code!=="iris"||record.message_type!=="text"||record.destination_id===null||stored===null
+    ||stored.appWiringOperationId!==row.app_wiring_operation_id||stored.requestIdentityFingerprint!==row.request_identity_fingerprint||stored.requestNamespace!==row.request_namespace
+    ||stored.payloadFingerprint!==row.payload_fingerprint||stored.eventId!==record.event_id||stored.commandCode!==row.command_code||stored.route!==row.route||stored.reasonCode!==row.reason_code
+    ||stored.handlerKey!==(row.handler_key??null)||stored.resultFingerprint!==receipt.resultFingerprint||stored.status!==receipt.status||stored.delivery!=="REPLY"
+    ||stored.outboxId!==String(record.outbox_id)||stored.destinationId!==record.destination_id||stored.data!==data||!("receiptProjection" in stored)
+    ||sha(stableJson({receiptProjection:stored.receiptProjection,reply:{eventId:record.event_id,commandCode:record.command_code,destinationId:record.destination_id,data}}))!==receipt.resultFingerprint)throw new Error("APP_WIRING_ATOMIC_REPLY_RECEIPT_DRIFT");
+  validateReceiptProjection?.(stored.receiptProjection);
+  return{terminalStatus:"MODERN_REPLIED",receiptProjection:stored.receiptProjection,reply:Object.freeze({outboxId:String(record.outbox_id),room:record.destination_id,data})};
 }
 type AtomicFailedReceipt={readonly operationId:bigint|number|string;readonly eventId:string};
 async function assertAtomicFailedReceipt(tx:Pick<DatabaseTransaction,"query">,row:ClaimRow,sourceEventId:string):Promise<AtomicFailedReceipt>{
@@ -400,11 +431,12 @@ export class MariaAppWiringOperationProvider {
   // 상위 event transaction 안에서 SHADOW 조회와 NO_REPLY terminal receipt를 원자 확정합니다.
   async executeAtomicReadOnlyShadowInTransaction<T>(transaction:DatabaseTransaction,input:{
     claim:AppWiringClaimInput;decision:AppWiringRouteDecision;sourceEventId:string;attemptCount:number;duplicateClaim:boolean;
+    routingDecision:AppWiringAtomicRoutingDecision;
     evaluate:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<AppWiringAtomicReadOnlyEvaluation<T>>;
     validateReceiptProjection?:(projection:unknown)=>void;
   }):Promise<AppWiringAtomicReadOnlyShadowResult<T>>{
     validateInput(input.claim);validateDecision(input.decision);
-    if(input.decision.route!=="SHADOW"||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_ATOMIC_READ_ONLY_SHADOW_ROUTE_REQUIRED");
+    if((input.decision.route!=="SHADOW"&&input.decision.route!=="MODERN")||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_ATOMIC_READ_ONLY_ROUTE_REQUIRED");
     if(input.decision.commandCode===undefined)throw new Error("APP_WIRING_ATOMIC_COMMAND_CODE_REQUIRED");
     if(input.sourceEventId.length===0||input.sourceEventId.length>128)throw new Error("APP_WIRING_ATOMIC_EVENT_ID_INVALID");
     if(!Number.isInteger(input.attemptCount)||input.attemptCount<1||input.attemptCount>8)throw new Error("APP_WIRING_ATOMIC_ATTEMPT_COUNT_INVALID");
@@ -413,11 +445,15 @@ export class MariaAppWiringOperationProvider {
     const payload=sha(stableJson(input.claim.normalizedPayload));
     await assertAtomicRequestEnvironment(transaction,this.environment.requestNamespace,input.claim);
     const found=await readClaim(transaction,fingerprint);
+    const replayDecision=found!==undefined&&found.claim_state==="COMPLETED"&&found.route==="SHADOW"&&input.decision.route==="MODERN"
+      ?{...input.decision,route:found.route,reasonCode:found.reason_code,commandCode:found.command_code??undefined,handlerKey:found.handler_key??undefined}:input.decision;
+    await ensureAtomicRoutingDecision(transaction,input.routingDecision,replayDecision);
     let operationId:string|undefined,failedReceipt:AtomicFailedReceipt|undefined,token:string|undefined,generation=1n,totalAttemptCount=BigInt(input.attemptCount);
     if(found!==undefined){
       checkReplay(found,input.claim,this.environment.requestNamespace,requestKey,payload);
-      if(found.route!==input.decision.route||found.effect_mode!=="READ_ONLY"||found.reason_code!==input.decision.reasonCode
-        ||found.command_code!==(input.decision.commandCode??null)||found.handler_key!==(input.decision.handlerKey??null))throw new Error("APP_WIRING_ATOMIC_ROUTE_DRIFT");
+      const historicalShadowReplay=found.claim_state==="COMPLETED"&&found.route==="SHADOW"&&input.decision.route==="MODERN"&&found.command_code===(input.decision.commandCode??null)&&found.handler_key===(input.decision.handlerKey??null);
+      if(found.effect_mode!=="READ_ONLY"||(!historicalShadowReplay&&(found.route!==input.decision.route||found.reason_code!==input.decision.reasonCode
+        ||found.command_code!==(input.decision.commandCode??null)||found.handler_key!==(input.decision.handlerKey??null))))throw new Error("APP_WIRING_ATOMIC_ROUTE_DRIFT");
       if(found.claim_state==="FAILED"){
         failedReceipt=await assertAtomicFailedReceipt(transaction,found,input.sourceEventId);
         if(found.error_code!=="APP_WIRING_READ_ONLY_RETRY_EXHAUSTED")return{status:"failed",replayed:true,errorCode:found.error_code??"APP_WIRING_ATOMIC_FAILED_RECEIPT_INVALID"};
@@ -429,7 +465,9 @@ export class MariaAppWiringOperationProvider {
       }else{
       if(found.claim_state!=="COMPLETED")throw new Error("APP_WIRING_ATOMIC_NON_TERMINAL_CLAIM");
       const receipt=parsedResult(found.result_json);
-      if(receipt===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");const persisted=await assertAtomicNoReplyReceipt(transaction,found,receipt,input.sourceEventId,input.validateReceiptProjection);
+      if(receipt===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");const persisted=receipt.status==="MODERN_REPLIED"
+        ?await assertAtomicReplyReceipt(transaction,found,receipt,input.sourceEventId,input.validateReceiptProjection)
+        :await assertAtomicNoReplyReceipt(transaction,found,receipt,input.sourceEventId,input.validateReceiptProjection);
       return{status:"completed",replayed:true,resultFingerprint:receipt.resultFingerprint!,...persisted};
       }
     }
@@ -450,43 +488,50 @@ export class MariaAppWiringOperationProvider {
       ...(input.decision.commandCode===undefined?{}:{commandCode:input.decision.commandCode}),...(input.decision.handlerKey===undefined?{}:{handlerKey:input.decision.handlerKey}),claimState:"CLAIMED" as const});
     const evaluation=await input.evaluate(this.readParticipant(transaction),claim);
     input.validateReceiptProjection?.(evaluation.receiptProjection);
-    const terminalStatus=evaluation.terminalStatus??"SHADOW_EVALUATED";
-    if(terminalStatus!=="SHADOW_EVALUATED"&&terminalStatus!=="SHADOW_DENIED")throw new Error("APP_WIRING_ATOMIC_TERMINAL_STATUS_INVALID");
-    const resultFingerprint=sha(stableJson(evaluation.receiptProjection));
+    const terminalStatus=evaluation.terminalStatus??(input.decision.route==="MODERN"?"MODERN_REPLIED":"SHADOW_EVALUATED");
+    if(input.decision.route==="SHADOW"&&(terminalStatus!=="SHADOW_EVALUATED"&&terminalStatus!=="SHADOW_DENIED"))throw new Error("APP_WIRING_ATOMIC_TERMINAL_STATUS_INVALID");
+    if(input.decision.route==="MODERN"&&(terminalStatus!=="MODERN_REPLIED"&&terminalStatus!=="MODERN_DENIED"))throw new Error("APP_WIRING_ATOMIC_TERMINAL_STATUS_INVALID");
+    if((terminalStatus==="MODERN_REPLIED")!== (evaluation.reply!==undefined))throw new Error("APP_WIRING_ATOMIC_REPLY_OUTCOME_INVALID");
+    if(evaluation.reply!==undefined){validateReadOnlyReplyDraft(evaluation.reply);if(evaluation.reply.eventId!==input.sourceEventId||evaluation.reply.commandCode!==input.decision.commandCode)throw new Error("APP_WIRING_ATOMIC_REPLY_BINDING_DRIFT");}
+    const resultFingerprint=sha(stableJson(evaluation.reply===undefined?evaluation.receiptProjection:{receiptProjection:evaluation.receiptProjection,reply:{eventId:evaluation.reply.eventId,commandCode:evaluation.reply.commandCode,destinationId:evaluation.reply.destinationId,data:evaluation.reply.data}}));
     let receiptOperationId:bigint|number|string;
     if(failedReceipt===undefined){
-      const operation=await transaction.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'app-wiring.read-only-no-reply',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",[randomUUID(),operationId]);
+      const operation=await transaction.execute(`INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,${evaluation.reply===undefined?"'app-wiring.read-only-no-reply'":"'app-wiring.read-only-reply'"},?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))`,[randomUUID(),operationId]);
       receiptOperationId=operation.insertId;
-      const executionSql=terminalStatus==="SHADOW_DENIED"
+      const executionSql=terminalStatus==="SHADOW_DENIED"||terminalStatus==="MODERN_DENIED"
         ?"INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','ignored',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))"
-        :"INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','no_reply',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))";
+        :evaluation.reply===undefined?"INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','no_reply',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))"
+        :"INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))";
       await transaction.execute(executionSql,[input.sourceEventId,input.decision.commandCode,receiptOperationId]);
     }else{
       if(failedReceipt.eventId!==input.sourceEventId)throw new Error("APP_WIRING_ATOMIC_FAILED_RECEIPT_EVENT_DRIFT");
       receiptOperationId=failedReceipt.operationId;
-      const operationReclaimed=await transaction.execute("UPDATE operations SET status='processing',result_json=NULL,completed_at=NULL WHERE id=? AND idempotency_scope='app-wiring.read-only-no-reply' AND idempotency_key=? AND status='failed'",[receiptOperationId,operationId]);
+      const operationReclaimed=await transaction.execute("UPDATE operations SET idempotency_scope=?,status='processing',result_json=NULL,completed_at=NULL WHERE id=? AND idempotency_scope='app-wiring.read-only-no-reply' AND idempotency_key=? AND status='failed'",[evaluation.reply===undefined?"app-wiring.read-only-no-reply":"app-wiring.read-only-reply",receiptOperationId,operationId]);
       if(operationReclaimed.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_OPERATION_RECLAIM_CONFLICT");
-      const executionReclaimSql=terminalStatus==="SHADOW_DENIED"
+      const executionReclaimSql=terminalStatus==="SHADOW_DENIED"||terminalStatus==="MODERN_DENIED"
         ?"UPDATE command_executions SET execution_status='completed',result_code='ignored',completed_at=UTC_TIMESTAMP(3) WHERE operation_id=? AND event_id=? AND command_code=? AND execution_status='failed' AND result_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED'"
-        :"UPDATE command_executions SET execution_status='completed',result_code='no_reply',completed_at=UTC_TIMESTAMP(3) WHERE operation_id=? AND event_id=? AND command_code=? AND execution_status='failed' AND result_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED'";
+        :evaluation.reply===undefined?"UPDATE command_executions SET execution_status='completed',result_code='no_reply',completed_at=UTC_TIMESTAMP(3) WHERE operation_id=? AND event_id=? AND command_code=? AND execution_status='failed' AND result_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED'"
+        :"UPDATE command_executions SET execution_status='completed',result_code='reply_queued',completed_at=UTC_TIMESTAMP(3) WHERE operation_id=? AND event_id=? AND command_code=? AND execution_status='failed' AND result_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED'";
       const executionReclaimed=await transaction.execute(executionReclaimSql,[receiptOperationId,input.sourceEventId,input.decision.commandCode]);
       if(executionReclaimed.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_EXECUTION_RECLAIM_CONFLICT");
     }
+    const outbox=evaluation.reply===undefined?undefined:await transaction.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[receiptOperationId,evaluation.reply.destinationId,JSON.stringify({data:evaluation.reply.data})]);
     const operationResult=JSON.stringify({appWiringOperationId:operationId,requestIdentityFingerprint:fingerprint,requestNamespace:this.environment.requestNamespace,
       payloadFingerprint:payload,eventId:input.sourceEventId,commandCode:input.decision.commandCode,route:input.decision.route,
-      reasonCode:input.decision.reasonCode,handlerKey:input.decision.handlerKey??null,resultFingerprint,receiptProjection:evaluation.receiptProjection,status:terminalStatus,delivery:"NO_REPLY"});
+      reasonCode:input.decision.reasonCode,handlerKey:input.decision.handlerKey??null,resultFingerprint,receiptProjection:evaluation.receiptProjection,status:terminalStatus,
+      ...(evaluation.reply===undefined?{delivery:"NO_REPLY"}:{delivery:"REPLY",outboxId:outbox!.insertId.toString(),destinationId:evaluation.reply.destinationId,data:evaluation.reply.data})});
     const operationTerminal=await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=? AND status='processing'",[operationResult,receiptOperationId]);
-    if(operationTerminal.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_NO_REPLY_OPERATION_CONFLICT");
-    const receipt=safeResult({status:terminalStatus,referenceId:receiptOperationId.toString(),resultFingerprint});
+    if(operationTerminal.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_OPERATION_CONFLICT");
+    const receipt=safeResult({status:terminalStatus,referenceId:(outbox?.insertId??receiptOperationId).toString(),resultFingerprint});
     const terminal=await transaction.execute("UPDATE canonical_app_wiring_operations SET claim_state='COMPLETED',result_json=?,error_code=NULL,lease_token=NULL,lease_expires_time=NULL,recovery_status='NONE',recovery_code=NULL,UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='CLAIMED' AND lease_token=? AND lease_generation=?",[receipt.serialized,audit.UPDATE_USER,audit.UPDATE_TIME,operationId,token,generation]);
     if(terminal.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_TERMINAL_TRANSITION_CONFLICT");
-    return{status:"completed",replayed:false,resultFingerprint,terminalStatus,receiptProjection:evaluation.receiptProjection,value:evaluation.value};
+    return{status:"completed",replayed:false,resultFingerprint,terminalStatus,receiptProjection:evaluation.receiptProjection,value:evaluation.value,...(evaluation.reply===undefined?{}:{reply:Object.freeze({outboxId:outbox!.insertId.toString(),room:evaluation.reply.destinationId,data:evaluation.reply.data})})};
   }
 
   // 최종 실패를 같은 request identity의 durable FAILED terminal로 기록합니다.
-  async recordAtomicReadOnlyShadowFailureInTransaction(transaction:DatabaseTransaction,input:{claim:AppWiringClaimInput;decision:AppWiringRouteDecision;sourceEventId:string;attemptCount:number;errorCode:string;validateReceiptProjection?:(projection:unknown)=>void}):Promise<AppWiringAtomicReadOnlyShadowResult<never>>{
+  async recordAtomicReadOnlyShadowFailureInTransaction(transaction:DatabaseTransaction,input:{claim:AppWiringClaimInput;decision:AppWiringRouteDecision;routingDecision:AppWiringAtomicRoutingDecision;sourceEventId:string;attemptCount:number;errorCode:string;validateReceiptProjection?:(projection:unknown)=>void}):Promise<AppWiringAtomicReadOnlyShadowResult<never>>{
     validateInput(input.claim);validateDecision(input.decision);
-    if(input.decision.route!=="SHADOW"||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_ATOMIC_READ_ONLY_SHADOW_ROUTE_REQUIRED");
+    if((input.decision.route!=="SHADOW"&&input.decision.route!=="MODERN")||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_ATOMIC_READ_ONLY_ROUTE_REQUIRED");
     if(input.decision.commandCode===undefined)throw new Error("APP_WIRING_ATOMIC_COMMAND_CODE_REQUIRED");
     if(input.sourceEventId.length===0||input.sourceEventId.length>128)throw new Error("APP_WIRING_ATOMIC_EVENT_ID_INVALID");
     if(!Number.isInteger(input.attemptCount)||input.attemptCount<1||input.attemptCount>8)throw new Error("APP_WIRING_ATOMIC_ATTEMPT_COUNT_INVALID");
@@ -496,10 +541,14 @@ export class MariaAppWiringOperationProvider {
     const payload=sha(stableJson(input.claim.normalizedPayload));
     await assertAtomicRequestEnvironment(transaction,this.environment.requestNamespace,input.claim);
     const found=await readClaim(transaction,fingerprint);
+    const replayDecision=found!==undefined&&found.claim_state==="COMPLETED"&&found.route==="SHADOW"&&input.decision.route==="MODERN"
+      ?{...input.decision,route:found.route,reasonCode:found.reason_code,commandCode:found.command_code??undefined,handlerKey:found.handler_key??undefined}:input.decision;
+    await ensureAtomicRoutingDecision(transaction,input.routingDecision,replayDecision);
     if(found!==undefined){
       checkReplay(found,input.claim,this.environment.requestNamespace,requestKey,payload);
-      if(found.route!==input.decision.route||found.effect_mode!=="READ_ONLY"||found.reason_code!==input.decision.reasonCode
-        ||found.command_code!==(input.decision.commandCode??null)||found.handler_key!==(input.decision.handlerKey??null))throw new Error("APP_WIRING_ATOMIC_ROUTE_DRIFT");
+      const historicalShadowReplay=found.claim_state==="COMPLETED"&&found.route==="SHADOW"&&input.decision.route==="MODERN"&&found.command_code===(input.decision.commandCode??null)&&found.handler_key===(input.decision.handlerKey??null);
+      if(found.effect_mode!=="READ_ONLY"||(!historicalShadowReplay&&(found.route!==input.decision.route||found.reason_code!==input.decision.reasonCode
+        ||found.command_code!==(input.decision.commandCode??null)||found.handler_key!==(input.decision.handlerKey??null))))throw new Error("APP_WIRING_ATOMIC_ROUTE_DRIFT");
       if(found.claim_state==="FAILED"){
         const failedReceipt=await assertAtomicFailedReceipt(transaction,found,input.sourceEventId);
         if(found.error_code==="APP_WIRING_READ_ONLY_RETRY_EXHAUSTED"){
@@ -521,7 +570,9 @@ export class MariaAppWiringOperationProvider {
       }
       if(found.claim_state!=="COMPLETED")throw new Error("APP_WIRING_ATOMIC_NON_TERMINAL_CLAIM");
       const receipt=parsedResult(found.result_json);
-      if(receipt===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");const persisted=await assertAtomicNoReplyReceipt(transaction,found,receipt,input.sourceEventId,input.validateReceiptProjection);
+      if(receipt===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");const persisted=receipt.status==="MODERN_REPLIED"
+        ?await assertAtomicReplyReceipt(transaction,found,receipt,input.sourceEventId,input.validateReceiptProjection)
+        :await assertAtomicNoReplyReceipt(transaction,found,receipt,input.sourceEventId,input.validateReceiptProjection);
       return{status:"completed",replayed:true,resultFingerprint:receipt.resultFingerprint!,...persisted};
     }
     const audit=createObjectAuditValues(input.claim.actor,this.now());

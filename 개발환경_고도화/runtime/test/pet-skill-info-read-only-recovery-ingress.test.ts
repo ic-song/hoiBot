@@ -91,6 +91,41 @@ it("stores exact UNREADY and PARTIAL DEV replies without invoking the catalog ev
   const semantic=await run("PARTIAL",{definitions:93,imports:93,aliases:30,policies:4},"SEMANTIC_DRIFT");assert.match(semantic.projection.value.reply,/정의: 93\/93/);assert.equal(semantic.projection.readiness.reasonCode,"SEMANTIC_DRIFT");
 });
 
+it("queues a modern direct reply while keeping the HTTP processing reply list empty",async()=>{
+  const {database,environmentContext}=await verified("pet_skill_info_direct"),normalized=event("dev/펫스킬정보");
+  const processing:{duplicate:boolean;replies:never[]}={duplicate:false,replies:[]};
+  let evaluations=0;
+  const recovery={execute:async(input:any)=>{
+    assert.equal(input.decision.route,"MODERN");
+    const evaluated=await input.evaluateInSnapshot({query:async<T>()=>[] as T});evaluations+=1;
+    assert.equal(evaluated.terminalStatus,"MODERN_REPLIED");
+    assert.equal(evaluated.reply.eventId,normalized.eventId);
+    assert.equal(evaluated.reply.commandCode,"PET_SKILL_INFO");
+    assert.equal(evaluated.reply.destinationId,normalized.channelId);
+    input.validateReceiptProjection(evaluated.receiptProjection);
+    return{status:"completed",replayed:false,resultFingerprint:"b".repeat(64),terminalStatus:evaluated.terminalStatus,receiptProjection:evaluated.receiptProjection,value:evaluated.value,reply:{outboxId:"42",room:evaluated.reply.destinationId,data:evaluated.reply.data},processing};
+  }};
+  const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_group",route:"MODERN",reasonCode:"MODERN_ROUTE_ALLOWED",readiness:{inspect:async()=>({status:"UNREADY",reasonCode:"EMPTY",counts:{definitions:0,imports:0,aliases:0,policies:0}})}});
+  assert.equal(evaluations,1);
+  assert.match(result.queuedReply?.data??"",/^\[DEV 테스트환경\]\n❌ DEV 펫스킬 카탈로그가 준비되지 않았습니다\./);
+  assert.deepEqual(result.queuedReply,{outboxId:"42",room:"room-1",data:result.queuedReply?.data});
+  assert.deepEqual(result.processing.replies,[],"outbox worker is the sole direct-delivery owner");
+});
+
+it("keeps a modern private denial user-outbox free",async()=>{
+  const {database,environmentContext}=await verified("pet_skill_info_direct_denial"),normalized=event("/펫스킬정보");
+  const recovery={execute:async(input:any)=>{
+    const evaluated=await input.evaluateInSnapshot({query:async<T>()=>[] as T});
+    assert.equal(evaluated.terminalStatus,"MODERN_DENIED");assert.equal(evaluated.reply,undefined);
+    input.validateReceiptProjection(evaluated.receiptProjection);
+    return{status:"completed",replayed:false,resultFingerprint:"c".repeat(64),terminalStatus:evaluated.terminalStatus,receiptProjection:evaluated.receiptProjection,value:evaluated.value,processing:{duplicate:false,replies:[]}};
+  }};
+  const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",route:"MODERN",reasonCode:"MODERN_ROUTE_ALLOWED"});
+  assert.equal(result.denialReason,"PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED");
+  assert.equal(result.queuedReply,undefined);
+  assert.deepEqual(result.processing.replies,[]);
+});
+
 it("persists expected private identity/pass denials without invoking the skill reader and keeps integrity faults failed",async()=>{
   const run=async(passRows:unknown[],actorRows:unknown[]=[{identity_id:1n,player_id:2n,identity_status:"linked",player_status:"active"}])=>{
     const {database,environmentContext}=await verified("pet_skill_info_private"),normalized=event("/펫스킬정보");

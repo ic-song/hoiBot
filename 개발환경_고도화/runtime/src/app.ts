@@ -1625,11 +1625,13 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const partialDispatchDecision = database !== undefined
         && normalizedEvent.direction === "incoming"
         && partialDispatchCandidate
-        ? await new CommandDispatcher(new MariaCommandDispatchRepository(database), {
-          enabled: partialDispatchEnabled,
-          allowAllCanaries: config.nodeEnv !== "production",
-          canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
-        }).resolve({
+        ? await (() => {
+          const dispatcher = new CommandDispatcher(new MariaCommandDispatchRepository(database), {
+            enabled: partialDispatchEnabled,
+            allowAllCanaries: config.nodeEnv !== "production",
+            canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
+          });
+          const dispatchInput = {
           eventId: normalizedEvent.eventId,
           message: isSocialOwnHeartCandidate(normalizedEvent.message)
             ? normalizeSocialOwnHeartDispatchMessage(normalizedEvent.message ?? "")
@@ -1855,8 +1857,12 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
                 : normalizedEvent.message ?? "",
           userId: normalizedEvent.userId,
-          hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
-        })
+            hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
+          };
+          return petSkillInfoIngressCommand === undefined
+            ? dispatcher.resolve(dispatchInput)
+            : dispatcher.resolveReadOnly(dispatchInput);
+        })()
         : undefined;
       const isDiagnosticMembership = channelAccess.mode === "diagnostic" && isMembershipEvent;
       const eventProcessor = database === undefined
@@ -1872,7 +1878,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "pet_skill_probability"
         && isPetSkillProbabilityCommand(normalizedEvent.message);
       const atomicPetSkillInfo=database!==undefined&&petSkillInfoReadOnlyRecoveryProvider!==undefined&&(isOperationalChannel||isPetSkillInfoPrivateChannel)
-        &&partialDispatchDecision?.route==="SHADOW"&&partialDispatchDecision.handlerKey==="pet_skill_info"
+        &&(partialDispatchDecision?.route==="SHADOW"||partialDispatchDecision?.route==="MODERN")&&partialDispatchDecision.handlerKey==="pet_skill_info"
         &&petSkillInfoIngressCommand!==undefined&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
       if(isPetSkillInfoPrivateChannel&&!atomicPetSkillInfo)return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:channelAccess.reason,requestId:request.id});
       if ((atomicPetSkillProbability||atomicPetSkillInfo) && dependencies.environmentContext === undefined) {
@@ -1888,7 +1894,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
           })
         :atomicPetSkillInfo
-        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(dependencies.petSkillInfoActorContextProvider===undefined?{}:{actorContext:dependencies.petSkillInfoActorContextProvider}),...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(async recovered=>{petSkillInfoRejectedReason=recovered.denialReason;if(recovered.privateDenialNotificationRequired===true){if(privateChatDenialNotificationService===undefined)throw new Error("PRIVATE_CHAT_DENIAL_NOTIFICATION_SERVICE_REQUIRED");await privateChatDenialNotificationService.processEvent(normalizedEvent.eventId);}return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
+        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",route:partialDispatchDecision!.route as "SHADOW"|"MODERN",reasonCode:partialDispatchDecision!.reasonCode,...(dependencies.petSkillInfoActorContextProvider===undefined?{}:{actorContext:dependencies.petSkillInfoActorContextProvider}),...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(async recovered=>{petSkillInfoRejectedReason=recovered.denialReason;if(recovered.privateDenialNotificationRequired===true){if(privateChatDenialNotificationService===undefined)throw new Error("PRIVATE_CHAT_DENIAL_NOTIFICATION_SERVICE_REQUIRED");await privateChatDenialNotificationService.processEvent(normalizedEvent.eventId);}return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
         : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership

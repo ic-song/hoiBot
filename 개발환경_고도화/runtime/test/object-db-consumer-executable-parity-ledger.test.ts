@@ -129,16 +129,16 @@ function buildWave1With(receipts: ObjectDbConsumerExecutionReceipt[], files: Rec
 }
 
 describe("object DB executable parity ledger Wave0", () => {
-  it("builds the exact source-derived fail-closed 1,111-ID baseline", () => {
+  it("builds the exact source-derived fail-closed 1,130-ID baseline", () => {
     const ledger = buildObjectDbConsumerExecutableParityLedger(baseInput);
     assert.deepEqual(ledger.coverage, {
-      manifestConsumers: 1_111, ledgerEntries: 1_111, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
-      readConsumers: 499, mutationConsumers: 612, unresolvedDynamicConsumers: 552, unresolvedDynamicCallCount: 790,
+      manifestConsumers: 1_130, ledgerEntries: 1_130, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
+      readConsumers: 501, mutationConsumers: 629, unresolvedDynamicConsumers: 82, unresolvedDynamicCallCount: 82,
       registrySourceMismatchCount: 8, registrySourceMismatchAttributedCount: 0, registrySourceMismatchUnattributedCount: 8,
-      provenConsumers: 0, unprovenConsumers: 1_111, directPassConsumers: 0, equivalentPassConsumers: 0,
-      verdicts: { STATIC_ONLY: 559, BLOCKED_DYNAMIC: 552, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 0, EQUIVALENT_PASS: 0 },
+      provenConsumers: 0, unprovenConsumers: 1_130, directPassConsumers: 0, equivalentPassConsumers: 0,
+      verdicts: { STATIC_ONLY: 1_048, BLOCKED_DYNAMIC: 82, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 0, EQUIVALENT_PASS: 0 },
     });
-    assert.equal(new Set(ledger.entries.map(({ consumerId }) => consumerId)).size, 1_111);
+    assert.equal(new Set(ledger.entries.map(({ consumerId }) => consumerId)).size, 1_130);
     assert.equal(ledger.entrySetSha256, sha256CanonicalJson(ledger.entries));
     assert.deepEqual(OBJECT_DB_EXECUTABLE_PARITY_VERDICTS, ["STATIC_ONLY", "BLOCKED_DYNAMIC", "BLOCKED_REGISTRY_MISMATCH", "PARTIAL", "DIRECT_PASS", "EQUIVALENT_PASS"]);
   });
@@ -189,12 +189,12 @@ describe("object DB executable parity ledger Wave0", () => {
     assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(sourceDrift,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts:{...evidenceFileTexts,[fixturePath]:fixtureText}}),/READ scenario must be READ_ONLY|evidenceCommit blob hash drift/);
   });
 
-  it("records the corrective Wave15 private/DEV matrix without bypassing its dynamic hold and rejects coordinated receipt tamper",()=>{
+  it("keeps the sealed Wave15 private/DEV matrix valid after dynamic classification is resolved and rejects coordinated receipt tamper",()=>{
     const bundle=JSON.parse(read(wave15ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
     const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave15ReceiptPath},evidenceFileTexts}),entry=ledger.entries.find(candidate=>candidate.consumerId==="legacy-0a10ef65ad4b37cd");
-    assert.equal(entry?.verdict,"BLOCKED_DYNAMIC");assert.deepEqual(entry?.scenarios.map(scenario=>scenario.scenarioKind).sort(),["AUTH_DENIED","EXACT_OUTPUT","NEGATIVE_GUARD","READ_POSITIVE","RESTART_CONSISTENCY","SOURCE_DOMAIN_DML_ZERO","WRONG_ROOM_REJECTED"]);
+    assert.equal(entry?.verdict,"DIRECT_PASS");assert.deepEqual(entry?.scenarios.map(scenario=>scenario.scenarioKind).sort(),["AUTH_DENIED","EXACT_OUTPUT","NEGATIVE_GUARD","READ_POSITIVE","RESTART_CONSISTENCY","SOURCE_DOMAIN_DML_ZERO","WRONG_ROOM_REJECTED"]);
     const tampered=structuredClone(bundle),receipt=tampered.receipts.find(candidate=>candidate.receiptId==="receipt:wave15:legacy-0a10ef65ad4b37cd:exact_output")!;receipt.expectedActual.reply.expectedSha256="0".repeat(64);receipt.expectedActual.reply.actualSha256="0".repeat(64);receipt.receiptSha256=receiptHash(receipt);
-    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(tampered,null,2),sourcePaths:{...paths,executionReceipts:wave15ReceiptPath},evidenceFileTexts}),/raw reply\/result capture hash mismatch|evidenceCommit blob hash drift/);
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(tampered,null,2),sourcePaths:{...paths,executionReceipts:wave15ReceiptPath},evidenceFileTexts}),/historical Wave15 receipt fingerprint drift/);
   });
 
   it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {
