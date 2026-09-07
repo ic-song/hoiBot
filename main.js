@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.467"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.468"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -44510,13 +44510,14 @@ function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var raidFinal = equippedSlotIndex >= 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, equippedSlotIndex, "raid")) : "";
     var petUpgradeFinal = equippedSlotIndex === 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, 0, "petUpgrade")) : "";
     var exploreFinal = equippedSlotIndex === 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, 0, "explore")) : "";
-    var supportInactiveSuffix = equippedSlotIndex === 1 ? " [보조 사용 불가]" : "";
     var lines = [];
     lines.push("💟 홈뱃지 큐브 옵션");
     lines.push("[1]⚔️+" + formatHomeBadgeCubeCardPercent(castle) + premiumSuffix + castleFinal);
     lines.push("[2]👾+" + formatHomeBadgeCubeCardPercent(raid) + premiumSuffix + raidFinal);
-    lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + (equippedSlotIndex === 0 ? premiumSuffix : "") + petUpgradeFinal + supportInactiveSuffix);
-    lines.push("[4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + (equippedSlotIndex === 0 ? premiumSuffix : "") + exploreFinal + supportInactiveSuffix);
+    if (equippedSlotIndex !== 1) {
+        lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + (equippedSlotIndex === 0 ? premiumSuffix : "") + petUpgradeFinal);
+        lines.push("[4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + (equippedSlotIndex === 0 ? premiumSuffix : "") + exploreFinal);
+    }
     if (isHomeBadgeCubeTotalBuffActive(record)) lines.push("└ 💟 기본 합계 100%! 장착 효과에 10% 추가 버프가 적용됩니다.");
     return lines.join("\n");
 }
