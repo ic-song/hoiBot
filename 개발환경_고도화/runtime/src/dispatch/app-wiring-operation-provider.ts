@@ -1,8 +1,9 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import type { CapableDatabaseClient, ControlledDatabaseTransaction, DatabaseWriteResult, ReadOnlySnapshotTransaction } from "../database.js";
+import { hasConsistentRootTransactionCapability, type CapableDatabaseClient, type ControlledDatabaseTransaction, type DatabaseClient, type DatabaseTransaction, type DatabaseWriteResult, type ReadOnlySnapshotTransaction } from "../database.js";
 import { assertReadOnlySqlStatement } from "../database/read-only-sql-boundary.js";
 import { OBJECT_IDENTITY_MAX_ATTEMPTS, assertObjectIdentityCandidate, createObjectAuditValues, createObjectIdentityCandidate, type ObjectIdentityCandidateGenerator } from "../identity/object-identity-audit-provider.js";
 import { assertVerifiedEnvironmentContext, type VerifiedEnvironmentContext } from "../runtime/environment-context.js";
+import { withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
 
 export type AppWiringEntrypointKind = "IRIS" | "AUTOMATIC" | "ADMIN" | "WEB";
 export type AppWiringRoute = "MODERN" | "SHADOW" | "LEGACY_FALLBACK" | "REJECT";
@@ -69,6 +70,11 @@ export type AppWiringPersistedMutationIrisOutcome<T> =
   | { readonly value: T; readonly noReply: { readonly kind: "NO_REPLY" } };
 export interface AppWiringMutationReplyContext { readonly operationId: bigint }
 export interface AppWiringReadParticipant { query<T>(sql: string, values?: readonly unknown[]): Promise<T> }
+export type AppWiringAtomicReadOnlyShadowResult<T> =
+  | { readonly status: "completed"; readonly replayed: false; readonly resultFingerprint: string; readonly value: T }
+  | { readonly status: "completed"; readonly replayed: true; readonly resultFingerprint: string }
+  | { readonly status: "failed"; readonly replayed: boolean; readonly errorCode: string };
+export interface AppWiringAtomicReadOnlyEvaluation<T>{readonly value:T;readonly receiptProjection:unknown}
 export interface AppWiringMutationParticipant extends AppWiringReadParticipant {
   execute(sql: string, values?: readonly unknown[]): Promise<DatabaseWriteResult>;
   withTransaction<T>(work: (participant: AppWiringMutationParticipant) => Promise<T>): Promise<T>;
@@ -228,6 +234,42 @@ function checkReplay(row: ClaimRow, input: AppWiringClaimInput, namespace: strin
   if (row.request_namespace !== namespace || row.entrypoint_kind !== input.entrypointKind || row.external_request_id !== input.externalRequestId || row.request_key !== requestKey) throw new Error("APP_WIRING_REQUEST_IDENTITY_DRIFT");
   if (row.payload_fingerprint !== payload) throw new Error("APP_WIRING_PAYLOAD_DRIFT");
 }
+async function assertAtomicRequestEnvironment(tx:Pick<DatabaseTransaction,"query">,namespace:string,input:AppWiringClaimInput):Promise<void>{
+  const rows=await tx.query<Array<{request_namespace:string}>>("SELECT request_namespace FROM canonical_app_wiring_operations WHERE entrypoint_kind=? AND external_request_id=? AND request_namespace<>? ORDER BY app_wiring_operation_id LIMIT 1 FOR UPDATE",[input.entrypointKind,input.externalRequestId,namespace]);
+  if(rows.length!==0)throw new Error("APP_WIRING_ATOMIC_ENVIRONMENT_DRIFT");
+}
+async function assertAtomicNoReplyReceipt(tx:Pick<DatabaseTransaction,"query">,row:ClaimRow,receipt:Readonly<AppWiringReceiptResult>,sourceEventId:string):Promise<void>{
+  if(receipt.status!=="SHADOW_EVALUATED"||receipt.referenceId===undefined||receipt.resultFingerprint===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");
+  const records=await tx.query<Array<{operation_id:bigint|number|string;idempotency_scope:string;idempotency_key:string;operation_status:string;operation_result_json:string|Record<string,unknown>|null;event_id:string;command_code:string;execution_status:string;result_code:string|null;outbox_id:bigint|number|string|null}>>(
+    `SELECT operation.id operation_id,operation.idempotency_scope,operation.idempotency_key,operation.status operation_status,operation.result_json operation_result_json,
+            execution.event_id,execution.command_code,execution.execution_status,execution.result_code,outbox.id outbox_id
+       FROM operations operation JOIN command_executions execution ON execution.operation_id=operation.id LEFT JOIN outbox_messages outbox ON outbox.operation_id=operation.id
+      WHERE operation.id=? LIMIT 2 FOR UPDATE`,[receipt.referenceId]);
+  if(records.length!==1)throw new Error("APP_WIRING_ATOMIC_NO_REPLY_CARDINALITY_INVALID");
+  const record=records[0]!,stored=typeof record.operation_result_json==="string"?JSON.parse(record.operation_result_json)as Record<string,unknown>:record.operation_result_json;
+  if(String(record.operation_id)!==receipt.referenceId||record.idempotency_scope!=="app-wiring.read-only-no-reply"||record.idempotency_key!==row.app_wiring_operation_id
+    ||record.operation_status!=="completed"||record.command_code!==row.command_code
+    ||record.execution_status!=="completed"||record.result_code!=="no_reply"||record.outbox_id!==null||stored===null
+    ||stored.appWiringOperationId!==row.app_wiring_operation_id||stored.requestIdentityFingerprint!==row.request_identity_fingerprint
+    ||stored.requestNamespace!==row.request_namespace||stored.payloadFingerprint!==row.payload_fingerprint||stored.eventId!==record.event_id||record.event_id!==sourceEventId
+    ||stored.commandCode!==row.command_code||stored.route!==row.route||stored.reasonCode!==row.reason_code||stored.handlerKey!==(row.handler_key??null)
+    ||stored.resultFingerprint!==receipt.resultFingerprint||stored.status!=="SHADOW_EVALUATED"||stored.delivery!=="NO_REPLY"
+    ||!("receiptProjection" in stored)||sha(stableJson(stored.receiptProjection))!==receipt.resultFingerprint)throw new Error("APP_WIRING_ATOMIC_NO_REPLY_RECEIPT_DRIFT");
+}
+type AtomicFailedReceipt={readonly operationId:bigint|number|string;readonly eventId:string};
+async function assertAtomicFailedReceipt(tx:Pick<DatabaseTransaction,"query">,row:ClaimRow,sourceEventId:string):Promise<AtomicFailedReceipt>{
+  const records=await tx.query<Array<{operation_id:bigint|number|string;idempotency_scope:string;idempotency_key:string;operation_status:string;operation_result_json:string|Record<string,unknown>|null;event_id:string;command_code:string;execution_status:string;result_code:string|null;outbox_id:bigint|number|string|null}>>(
+    `SELECT operation.id operation_id,operation.idempotency_scope,operation.idempotency_key,operation.status operation_status,operation.result_json operation_result_json,
+            execution.event_id,execution.command_code,execution.execution_status,execution.result_code,outbox.id outbox_id
+       FROM operations operation JOIN command_executions execution ON execution.operation_id=operation.id LEFT JOIN outbox_messages outbox ON outbox.operation_id=operation.id
+      WHERE operation.idempotency_scope='app-wiring.read-only-no-reply' AND operation.idempotency_key=? LIMIT 2 FOR UPDATE`,[row.app_wiring_operation_id]);
+  if(records.length!==1)throw new Error("APP_WIRING_ATOMIC_FAILED_RECEIPT_CARDINALITY_INVALID");
+  const record=records[0]!,stored=typeof record.operation_result_json==="string"?JSON.parse(record.operation_result_json)as Record<string,unknown>:record.operation_result_json;
+  if(record.operation_status!=="failed"||record.command_code!==row.command_code||record.execution_status!=="failed"||record.outbox_id!==null
+    ||record.result_code!==row.error_code||stored===null||stored.appWiringOperationId!==row.app_wiring_operation_id||stored.eventId!==record.event_id||record.event_id!==sourceEventId||stored.errorCode!==row.error_code
+    ||stored.status!=="FAILED"||stored.delivery!=="NO_REPLY")throw new Error("APP_WIRING_ATOMIC_FAILED_RECEIPT_DRIFT");
+  return{operationId:record.operation_id,eventId:record.event_id};
+}
 function prepared(row: ClaimRow, replayed: boolean, actor: string): AppWiringPreparedClaim {
   const value:AppWiringPreparedClaim = replayed ? Object.freeze({claim:toReplayClaim(row),replayed:true}) : Object.freeze({claim:toClaim(row),replayed:false});
   secrets.set(value, { leaseToken: row.lease_token, leaseGeneration: row.lease_generation === null ? 0n : BigInt(row.lease_generation), actor });
@@ -335,6 +377,151 @@ export class MariaAppWiringOperationProvider {
     private readonly maxAttempts = OBJECT_IDENTITY_MAX_ATTEMPTS, private readonly now: () => Date = () => new Date(),
     private readonly generateLeaseToken: () => string = () => randomBytes(32).toString("hex"), private readonly leaseDurationMs = 30_000) {
     assertVerifiedEnvironmentContext(environment);
+  }
+
+  // 공용 recovery coordinator가 동일한 verified DB 객체만 사용하도록 고정합니다.
+  assertRecoveryDatabase(database:DatabaseClient):void{if(database!==this.database)throw new Error("APP_WIRING_RECOVERY_DATABASE_BINDING_MISMATCH");if(!hasConsistentRootTransactionCapability(this.database))throw new Error("APP_WIRING_RECOVERY_ROOT_TRANSACTION_REQUIRED");}
+
+  // app-wiring provider가 자기 verified DB의 exact transient root retry를 소유합니다.
+  withAtomicReadOnlyRootRetry<T>(work:(transaction:DatabaseTransaction,attemptNumber:number)=>Promise<T>):Promise<T>{
+    if(!hasConsistentRootTransactionCapability(this.database))throw new Error("APP_WIRING_RECOVERY_ROOT_TRANSACTION_REQUIRED");
+    return withMariaTransactionRetry(this.database,{maxAttempts:3,allowRetry:kind=>kind==="TRANSACTION_DEADLOCK"||kind==="TRANSACTION_LOCK_WAIT_TIMEOUT",exhaustedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",rootTransaction:this.database.withConsistentRootTransaction.bind(this.database)},work);
+  }
+
+  // 실패 terminal 기록도 같은 verified DB에서 exact transient만 제한 재시도합니다.
+  withAtomicReadOnlyFailureRetry<T>(work:(transaction:DatabaseTransaction,attemptNumber:number)=>Promise<T>):Promise<T>{
+    if(!hasConsistentRootTransactionCapability(this.database))throw new Error("APP_WIRING_RECOVERY_ROOT_TRANSACTION_REQUIRED");
+    return withMariaTransactionRetry(this.database,{maxAttempts:3,allowRetry:kind=>kind==="TRANSACTION_DEADLOCK"||kind==="TRANSACTION_LOCK_WAIT_TIMEOUT",exhaustedErrorCode:"APP_WIRING_READ_ONLY_FAILURE_PERSIST_RETRY_EXHAUSTED",rootTransaction:this.database.withConsistentRootTransaction.bind(this.database)},work);
+  }
+
+  // 상위 event transaction 안에서 SHADOW 조회와 NO_REPLY terminal receipt를 원자 확정합니다.
+  async executeAtomicReadOnlyShadowInTransaction<T>(transaction:DatabaseTransaction,input:{
+    claim:AppWiringClaimInput;decision:AppWiringRouteDecision;sourceEventId:string;attemptCount:number;duplicateClaim:boolean;
+    evaluate:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<AppWiringAtomicReadOnlyEvaluation<T>>;
+  }):Promise<AppWiringAtomicReadOnlyShadowResult<T>>{
+    validateInput(input.claim);validateDecision(input.decision);
+    if(input.decision.route!=="SHADOW"||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_ATOMIC_READ_ONLY_SHADOW_ROUTE_REQUIRED");
+    if(input.decision.commandCode===undefined)throw new Error("APP_WIRING_ATOMIC_COMMAND_CODE_REQUIRED");
+    if(input.sourceEventId.length===0||input.sourceEventId.length>128)throw new Error("APP_WIRING_ATOMIC_EVENT_ID_INVALID");
+    if(!Number.isInteger(input.attemptCount)||input.attemptCount<1||input.attemptCount>8)throw new Error("APP_WIRING_ATOMIC_ATTEMPT_COUNT_INVALID");
+    const requestKey=`${input.claim.entrypointKind}:${input.claim.externalRequestId}`;
+    const fingerprint=sha(JSON.stringify([this.environment.requestNamespace,input.claim.entrypointKind,input.claim.externalRequestId]));
+    const payload=sha(stableJson(input.claim.normalizedPayload));
+    await assertAtomicRequestEnvironment(transaction,this.environment.requestNamespace,input.claim);
+    const found=await readClaim(transaction,fingerprint);
+    let operationId:string|undefined,failedReceipt:AtomicFailedReceipt|undefined,token:string|undefined,generation=1n,totalAttemptCount=BigInt(input.attemptCount);
+    if(found!==undefined){
+      checkReplay(found,input.claim,this.environment.requestNamespace,requestKey,payload);
+      if(found.route!==input.decision.route||found.effect_mode!=="READ_ONLY"||found.reason_code!==input.decision.reasonCode
+        ||found.command_code!==(input.decision.commandCode??null)||found.handler_key!==(input.decision.handlerKey??null))throw new Error("APP_WIRING_ATOMIC_ROUTE_DRIFT");
+      if(found.claim_state==="FAILED"){
+        failedReceipt=await assertAtomicFailedReceipt(transaction,found,input.sourceEventId);
+        if(found.error_code!=="APP_WIRING_READ_ONLY_RETRY_EXHAUSTED")return{status:"failed",replayed:true,errorCode:found.error_code??"APP_WIRING_ATOMIC_FAILED_RECEIPT_INVALID"};
+        if(found.lease_generation===null||found.attempt_count===null)throw new Error("APP_WIRING_ATOMIC_FAILED_METADATA_INVALID");
+        token=this.generateLeaseToken();if(!/^[0-9a-f]{64}$/.test(token))throw new Error("APP_WIRING_LEASE_TOKEN_INVALID");
+        generation=BigInt(found.lease_generation)+1n;totalAttemptCount=BigInt(found.attempt_count)+BigInt(input.attemptCount);
+        const reclaimed=await transaction.execute("UPDATE canonical_app_wiring_operations SET claim_state='CLAIMED',result_json=NULL,error_code=NULL,lease_token=?,lease_generation=?,lease_expires_time=?,attempt_count=?,recovery_status='RECOVERED',recovery_code='TRANSIENT_EXHAUSTED_RESTART',UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='FAILED' AND error_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED' AND lease_generation=?",[token,generation,createObjectAuditValues(input.claim.actor,this.now()).UPDATE_TIME,totalAttemptCount,createObjectAuditValues(input.claim.actor,this.now()).UPDATE_USER,createObjectAuditValues(input.claim.actor,this.now()).UPDATE_TIME,found.app_wiring_operation_id,found.lease_generation]);
+        if(reclaimed.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_RECLAIM_CONFLICT");operationId=found.app_wiring_operation_id;
+      }else{
+      if(found.claim_state!=="COMPLETED")throw new Error("APP_WIRING_ATOMIC_NON_TERMINAL_CLAIM");
+      const receipt=parsedResult(found.result_json);
+      if(receipt===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");await assertAtomicNoReplyReceipt(transaction,found,receipt,input.sourceEventId);
+      return{status:"completed",replayed:true,resultFingerprint:receipt.resultFingerprint!};
+      }
+    }
+    if(found===undefined&&input.duplicateClaim)throw new Error("ATOMIC_EVENT_WITHOUT_RECEIPT_RECOVERY_REQUIRED");
+    const audit=createObjectAuditValues(input.claim.actor,this.now());
+    if(token===undefined){token=this.generateLeaseToken();if(!/^[0-9a-f]{64}$/.test(token))throw new Error("APP_WIRING_LEASE_TOKEN_INVALID");}
+    for(let attempt=0;operationId===undefined&&attempt<this.maxAttempts;attempt+=1){
+      const candidate=this.generate();assertObjectIdentityCandidate(candidate);
+      try{
+        await transaction.execute("INSERT INTO canonical_app_wiring_operations(app_wiring_operation_id,request_identity_fingerprint,request_namespace,entrypoint_kind,external_request_id,request_key,payload_fingerprint,environment_code,database_identity,route,reason_code,command_code,handler_key,claim_state,effect_mode,lease_token,lease_generation,lease_expires_time,attempt_count,recovery_status,recovery_code,result_json,error_code,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'CLAIMED','READ_ONLY',?,1,?,?,'NONE',NULL,NULL,NULL,?,?,?,?)",[candidate,fingerprint,this.environment.requestNamespace,input.claim.entrypointKind,input.claim.externalRequestId,requestKey,payload,this.environment.environmentCode,this.environment.databaseIdentity,input.decision.route,input.decision.reasonCode,input.decision.commandCode??null,input.decision.handlerKey??null,token,audit.UPDATE_TIME,totalAttemptCount,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);
+        operationId=candidate;break;
+      }catch(error){if(!isPrimaryKeyDuplicate(error))throw error;}
+    }
+    if(operationId===undefined)throw new Error("APP_WIRING_ID_COLLISION_RETRY_EXHAUSTED");
+    const claim=Object.freeze({appWiringOperationId:operationId,requestIdentityFingerprint:fingerprint,requestNamespace:this.environment.requestNamespace,
+      entrypointKind:input.claim.entrypointKind,externalRequestId:input.claim.externalRequestId,requestKey,payloadFingerprint:payload,
+      route:input.decision.route,effectMode:"READ_ONLY" as const,reasonCode:input.decision.reasonCode,
+      ...(input.decision.commandCode===undefined?{}:{commandCode:input.decision.commandCode}),...(input.decision.handlerKey===undefined?{}:{handlerKey:input.decision.handlerKey}),claimState:"CLAIMED" as const});
+    const evaluation=await input.evaluate(this.readParticipant(transaction),claim);
+    const resultFingerprint=sha(stableJson(evaluation.receiptProjection));
+    let receiptOperationId:bigint|number|string;
+    if(failedReceipt===undefined){
+      const operation=await transaction.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'app-wiring.read-only-no-reply',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",[randomUUID(),operationId]);
+      receiptOperationId=operation.insertId;
+      await transaction.execute("INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed','no_reply',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[input.sourceEventId,input.decision.commandCode,receiptOperationId]);
+    }else{
+      if(failedReceipt.eventId!==input.sourceEventId)throw new Error("APP_WIRING_ATOMIC_FAILED_RECEIPT_EVENT_DRIFT");
+      receiptOperationId=failedReceipt.operationId;
+      const operationReclaimed=await transaction.execute("UPDATE operations SET status='processing',result_json=NULL,completed_at=NULL WHERE id=? AND idempotency_scope='app-wiring.read-only-no-reply' AND idempotency_key=? AND status='failed'",[receiptOperationId,operationId]);
+      if(operationReclaimed.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_OPERATION_RECLAIM_CONFLICT");
+      const executionReclaimed=await transaction.execute("UPDATE command_executions SET execution_status='completed',result_code='no_reply',completed_at=UTC_TIMESTAMP(3) WHERE operation_id=? AND event_id=? AND command_code=? AND execution_status='failed' AND result_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED'",[receiptOperationId,input.sourceEventId,input.decision.commandCode]);
+      if(executionReclaimed.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_EXECUTION_RECLAIM_CONFLICT");
+    }
+    const operationResult=JSON.stringify({appWiringOperationId:operationId,requestIdentityFingerprint:fingerprint,requestNamespace:this.environment.requestNamespace,
+      payloadFingerprint:payload,eventId:input.sourceEventId,commandCode:input.decision.commandCode,route:input.decision.route,
+      reasonCode:input.decision.reasonCode,handlerKey:input.decision.handlerKey??null,resultFingerprint,receiptProjection:evaluation.receiptProjection,status:"SHADOW_EVALUATED",delivery:"NO_REPLY"});
+    const operationTerminal=await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=? AND status='processing'",[operationResult,receiptOperationId]);
+    if(operationTerminal.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_NO_REPLY_OPERATION_CONFLICT");
+    const receipt=safeResult({status:"SHADOW_EVALUATED",referenceId:receiptOperationId.toString(),resultFingerprint});
+    const terminal=await transaction.execute("UPDATE canonical_app_wiring_operations SET claim_state='COMPLETED',result_json=?,error_code=NULL,lease_token=NULL,lease_expires_time=NULL,recovery_status='NONE',recovery_code=NULL,UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='CLAIMED' AND lease_token=? AND lease_generation=?",[receipt.serialized,audit.UPDATE_USER,audit.UPDATE_TIME,operationId,token,generation]);
+    if(terminal.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_TERMINAL_TRANSITION_CONFLICT");
+    return{status:"completed",replayed:false,resultFingerprint,value:evaluation.value};
+  }
+
+  // 최종 실패를 같은 request identity의 durable FAILED terminal로 기록합니다.
+  async recordAtomicReadOnlyShadowFailureInTransaction(transaction:DatabaseTransaction,input:{claim:AppWiringClaimInput;decision:AppWiringRouteDecision;sourceEventId:string;attemptCount:number;errorCode:string}):Promise<AppWiringAtomicReadOnlyShadowResult<never>>{
+    validateInput(input.claim);validateDecision(input.decision);
+    if(input.decision.route!=="SHADOW"||input.decision.effectMode!=="READ_ONLY")throw new Error("APP_WIRING_ATOMIC_READ_ONLY_SHADOW_ROUTE_REQUIRED");
+    if(input.decision.commandCode===undefined)throw new Error("APP_WIRING_ATOMIC_COMMAND_CODE_REQUIRED");
+    if(input.sourceEventId.length===0||input.sourceEventId.length>128)throw new Error("APP_WIRING_ATOMIC_EVENT_ID_INVALID");
+    if(!Number.isInteger(input.attemptCount)||input.attemptCount<1||input.attemptCount>8)throw new Error("APP_WIRING_ATOMIC_ATTEMPT_COUNT_INVALID");
+    if(!/^[A-Z][A-Z0-9_]{0,63}$/.test(input.errorCode))throw new Error("APP_WIRING_ATOMIC_ERROR_CODE_INVALID");
+    const requestKey=`${input.claim.entrypointKind}:${input.claim.externalRequestId}`;
+    const fingerprint=sha(JSON.stringify([this.environment.requestNamespace,input.claim.entrypointKind,input.claim.externalRequestId]));
+    const payload=sha(stableJson(input.claim.normalizedPayload));
+    await assertAtomicRequestEnvironment(transaction,this.environment.requestNamespace,input.claim);
+    const found=await readClaim(transaction,fingerprint);
+    if(found!==undefined){
+      checkReplay(found,input.claim,this.environment.requestNamespace,requestKey,payload);
+      if(found.route!==input.decision.route||found.effect_mode!=="READ_ONLY"||found.reason_code!==input.decision.reasonCode
+        ||found.command_code!==(input.decision.commandCode??null)||found.handler_key!==(input.decision.handlerKey??null))throw new Error("APP_WIRING_ATOMIC_ROUTE_DRIFT");
+      if(found.claim_state==="FAILED"){
+        const failedReceipt=await assertAtomicFailedReceipt(transaction,found,input.sourceEventId);
+        if(found.error_code==="APP_WIRING_READ_ONLY_RETRY_EXHAUSTED"){
+          if(found.attempt_count===null||found.lease_generation===null)throw new Error("APP_WIRING_ATOMIC_FAILED_METADATA_INVALID");
+          const audit=createObjectAuditValues(input.claim.actor,this.now());
+          const nextError=input.errorCode;
+          if(nextError!==found.error_code){
+            const failedResult=JSON.stringify({appWiringOperationId:found.app_wiring_operation_id,eventId:input.sourceEventId,errorCode:nextError,status:"FAILED",delivery:"NO_REPLY"});
+            const operationUpdated=await transaction.execute("UPDATE operations SET result_json=? WHERE id=? AND status='failed' AND idempotency_scope='app-wiring.read-only-no-reply' AND idempotency_key=?",[failedResult,failedReceipt.operationId,found.app_wiring_operation_id]);
+            if(operationUpdated.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_OPERATION_UPDATE_CONFLICT");
+            const executionUpdated=await transaction.execute("UPDATE command_executions SET result_code=? WHERE operation_id=? AND event_id=? AND command_code=? AND execution_status='failed' AND result_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED'",[nextError,failedReceipt.operationId,input.sourceEventId,input.decision.commandCode]);
+            if(executionUpdated.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_EXECUTION_UPDATE_CONFLICT");
+          }
+          const updated=await transaction.execute("UPDATE canonical_app_wiring_operations SET error_code=?,attempt_count=?,lease_generation=?,recovery_status='RECOVERED',recovery_code='TRANSIENT_EXHAUSTED_RESTART',UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='FAILED' AND error_code='APP_WIRING_READ_ONLY_RETRY_EXHAUSTED' AND attempt_count=? AND lease_generation=?",[nextError,BigInt(found.attempt_count)+BigInt(input.attemptCount),BigInt(found.lease_generation)+1n,audit.UPDATE_USER,audit.UPDATE_TIME,found.app_wiring_operation_id,found.attempt_count,found.lease_generation]);
+          if(updated.affectedRows!==1n)throw new Error("APP_WIRING_ATOMIC_FAILED_RETRY_RECORD_CONFLICT");
+          return{status:"failed",replayed:true,errorCode:nextError};
+        }
+        return{status:"failed",replayed:true,errorCode:found.error_code??"APP_WIRING_ATOMIC_FAILED_RECEIPT_INVALID"};
+      }
+      if(found.claim_state!=="COMPLETED")throw new Error("APP_WIRING_ATOMIC_NON_TERMINAL_CLAIM");
+      const receipt=parsedResult(found.result_json);
+      if(receipt===undefined)throw new Error("APP_WIRING_ATOMIC_COMPLETED_RECEIPT_INVALID");await assertAtomicNoReplyReceipt(transaction,found,receipt,input.sourceEventId);
+      return{status:"completed",replayed:true,resultFingerprint:receipt.resultFingerprint!};
+    }
+    const audit=createObjectAuditValues(input.claim.actor,this.now());
+    for(let attempt=0;attempt<this.maxAttempts;attempt+=1){
+      const candidate=this.generate();assertObjectIdentityCandidate(candidate);
+      try{
+        await transaction.execute("INSERT INTO canonical_app_wiring_operations(app_wiring_operation_id,request_identity_fingerprint,request_namespace,entrypoint_kind,external_request_id,request_key,payload_fingerprint,environment_code,database_identity,route,reason_code,command_code,handler_key,claim_state,effect_mode,lease_token,lease_generation,lease_expires_time,attempt_count,recovery_status,recovery_code,result_json,error_code,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'FAILED','READ_ONLY',NULL,0,NULL,?,'NONE',NULL,NULL,?,?,?,?,?)",[candidate,fingerprint,this.environment.requestNamespace,input.claim.entrypointKind,input.claim.externalRequestId,requestKey,payload,this.environment.environmentCode,this.environment.databaseIdentity,input.decision.route,input.decision.reasonCode,input.decision.commandCode??null,input.decision.handlerKey??null,input.attemptCount,input.errorCode,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);
+        const operation=await transaction.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at,completed_at) VALUES (?,'app-wiring.read-only-no-reply',?,'external_identity',NULL,'iris','failed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[randomUUID(),candidate,JSON.stringify({appWiringOperationId:candidate,eventId:input.sourceEventId,errorCode:input.errorCode,status:"FAILED",delivery:"NO_REPLY"})]);
+        await transaction.execute("INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'failed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[input.sourceEventId,input.decision.commandCode,operation.insertId,input.errorCode]);
+        return{status:"failed",replayed:false,errorCode:input.errorCode};
+      }catch(error){if(!isPrimaryKeyDuplicate(error))throw error;}
+    }
+    throw new Error("APP_WIRING_ID_COLLISION_RETRY_EXHAUSTED");
   }
 
   async prepare(input: AppWiringClaimInput, resolveRoute: () => AppWiringRouteDecision | Promise<AppWiringRouteDecision>): Promise<AppWiringPreparedClaim> {

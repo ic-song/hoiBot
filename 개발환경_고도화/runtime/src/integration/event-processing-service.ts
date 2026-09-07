@@ -35,7 +35,7 @@ export class ProcessIrisEventService {
     event: NormalizedIrisEvent,
     replyIdentity: NormalizedIrisEvent,
     channelType: "open_group" | "open_direct",
-    options: { channelName?: ChannelNameObservation } = {}
+    options: { channelName?: ChannelNameObservation; retryFailedErrorCode?: string; retryAttemptNumber?: number } = {}
   ): Promise<EventProcessingResult> {
     const claimToken = randomUUID();
     await transaction.execute(
@@ -48,11 +48,19 @@ export class ProcessIrisEventService {
       [event.eventId,event.providerCode,event.providerEventId,event.channelId ?? null,replyIdentity.userId ?? null,
         event.eventKind,event.origin ?? null,event.direction,event.payloadHash,claimToken]
     );
-    const claimed = await transaction.query<Array<{ error_code:string|null }>>(
-      "SELECT error_code FROM event_inbox WHERE event_id=? FOR UPDATE", [event.eventId]
+    const claimed = await transaction.query<Array<{ error_code:string|null;processing_status:string }>>(
+      "SELECT error_code,processing_status FROM event_inbox WHERE event_id=? FOR UPDATE", [event.eventId]
     );
     if (claimed.length !== 1) throw new Error("ATOMIC_EVENT_INBOX_CLAIM_RESULT_INVALID");
-    if (claimed[0]!.error_code !== claimToken) return { duplicate: true, replies: [] };
+    if (claimed[0]!.error_code !== claimToken) {
+      if(options.retryFailedErrorCode===undefined||claimed[0]!.processing_status!=="failed"||claimed[0]!.error_code!==options.retryFailedErrorCode)return { duplicate: true, replies: [] };
+      const retryAttemptNumber=options.retryAttemptNumber??1;
+      if(!Number.isInteger(retryAttemptNumber)||retryAttemptNumber<1||retryAttemptNumber>8)throw new Error("ATOMIC_EVENT_INBOX_RETRY_ATTEMPT_INVALID");
+      const retryClaim=await transaction.execute("UPDATE event_inbox SET processing_status='processing',error_code=?,attempt_count=attempt_count+?,processed_at=NULL WHERE event_id=? AND processing_status='failed' AND error_code=?",[claimToken,retryAttemptNumber,event.eventId,options.retryFailedErrorCode]);
+      if(retryClaim.affectedRows!==1n)throw new Error("ATOMIC_EVENT_INBOX_FAILED_RECLAIM_CONFLICT");
+      await transaction.execute("UPDATE event_inbox SET processing_status='processed',processed_at=UTC_TIMESTAMP(3),error_code=NULL WHERE event_id=? AND processing_status='processing' AND error_code=?",[event.eventId,claimToken]);
+      return{duplicate:false,replies:[]};
+    }
     const identity = await observeEventIdentity(transaction, replyIdentity, channelType);
     await transaction.execute(
       "UPDATE event_inbox SET channel_id=?,external_identity_id=? WHERE event_id=?",
