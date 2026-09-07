@@ -70,7 +70,11 @@ describe("MariaCanonicalPetSkillRepository", () => {
     await assert.rejects(() => repository.grant({ actor: "tester", playerId: "bad", petSkillId: "skill001", quantity: 1n, requestKey: "x" }), /IDENTIFIER_INVALID/);
     await assert.rejects(() => repository.grant({ actor: "tester", playerId: "player01", petSkillId: "skill001", quantity: 0n, requestKey: "x" }), /QUANTITY_INVALID/);
     await assert.rejects(() => repository.grant({ actor: "tester", playerId: "player01", petSkillId: "skill001", quantity: 18_446_744_073_709_551_616n, requestKey: "x" }), /QUANTITY_INVALID/);
-    await assert.rejects(() => repository.equip({ actor: "tester", playerId: "player01", ownedPetId: "ownedpet", petSkillId: "skill001", slotNumber: 31, requestKey: "x" }), /SLOT_INVALID/);
+    for (const slotNumber of [30,31,40]) {
+      const accepted=databaseFor(()=>[],[]);
+      await assert.rejects(() => new MariaCanonicalPetSkillRepository(accepted).equip({ actor: "tester", playerId: "player01", ownedPetId: "ownedpet", petSkillId: "skill001", slotNumber, requestKey: `accepted-${slotNumber}` }), /OWNED_PET_NOT_FOUND/);
+    }
+    for (const slotNumber of [0,41]) await assert.rejects(() => repository.equip({ actor: "tester", playerId: "player01", ownedPetId: "ownedpet", petSkillId: "skill001", slotNumber, requestKey: `rejected-${slotNumber}` }), /SLOT_INVALID/);
     await assert.rejects(() => repository.registerDefinition({ actor: "tester", sourceSystem: "LEGACY_JSON", sourceNamespace: "PET_SKILL_LIST", sourceIdentifier: "skill_001", petSkillName: "청룡언월도", handlerKey: "javascript", options: {} }), /HANDLER_NOT_ALLOWED/);
   });
 
