@@ -76,6 +76,35 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     }finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
   });
 
+  it("returns the persisted normal private denial on first delivery and replay",async()=>{
+    const trace=createTraceDatabase("pass_missing"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
+    const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-denial-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
+    process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+      inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
+      sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    try{
+      const first=await send(app,"private-denied-1","/펫스킬정보");const firstBody=JSON.parse(first.body);
+      assert.equal(first.statusCode,202,first.body);assert.equal(firstBody.ignored,true);assert.equal(firstBody.ignoreReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");
+      const replay=await send(app,"private-denied-1","/펫스킬정보");const replayBody=JSON.parse(replay.body);
+      assert.equal(replay.statusCode,202,replay.body);assert.equal(replayBody.ignored,true);assert.equal(replayBody.ignoreReason,firstBody.ignoreReason);
+      assert.equal(trace.atomicHandlerCount,1);assert.equal(trace.atomicReplayCount,1);assert.equal(trace.infoReply,"");assert.ok(trace.snapshotSql.every(sql=>!sql.includes("canonical_pet_skill_definitions")));
+    }finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
+  });
+
+  it("keeps private authorization integrity faults visible and only unwraps historical normal-denial failures",async()=>{
+    const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-integrity-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
+    process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
+    const inspectIrisChannel=async()=>({mode:"denied" as const,channelClass:"open_direct" as const,reason:"open_direct_unverified" as const,evidence:{roomType:"DirectChat" as const,linkId:"direct-link"}});
+    const trace=createTraceDatabase("pass_duplicate"),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    try{const failed=await send(app,"private-integrity-1","/펫스킬정보");assert.equal(failed.statusCode,500,failed.body);assert.equal(trace.atomicHandlerCount,1);}finally{await app.close();}
+    const legacyTrace=createTraceDatabase(),legacyContext=await verifyStartupDatabaseIdentity(legacyTrace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
+    const legacyRecovery={execute:async()=>{throw new Error("APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");}};
+    const legacyApp=buildApp(config,{database:legacyTrace.database,environmentContext:legacyContext,petSkillInfoReadOnlyRecoveryProvider:legacyRecovery as never,inspectIrisChannel,sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    try{const denied=await send(legacyApp,"private-legacy-denied-1","/펫스킬정보");const body=JSON.parse(denied.body);assert.equal(denied.statusCode,202,denied.body);assert.equal(body.ignored,true);assert.equal(body.ignoreReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");}finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await legacyApp.close();}
+  });
+
   it("restores the generic DirectChat deny when the exact SHADOW route is not enabled",async()=>{
     const trace=createTraceDatabase(),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"prod",databaseIdentity:"wave14b_shadow"}));
     const config=loadConfig({NODE_ENV:"production",HOIBOT_ENVIRONMENT_CODE:"prod",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper-production-32",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
@@ -109,7 +138,7 @@ function send(app: ReturnType<typeof buildApp>, id: string, message: string, sen
       json: { _id: id, chat_id: roomId, user_id: "wave14b-user" } } });
 }
 
-function createTraceDatabase() {
+function createTraceDatabase(privateAccess:"allowed"|"identity_missing"|"pass_missing"|"pass_duplicate"="allowed") {
   let nextId = 1n;
   const events = new Set<string>();
   const writes: Array<{ sql: string; values: readonly unknown[] }> = [];
@@ -138,9 +167,9 @@ function createTraceDatabase() {
   };
   const snapshot: ReadOnlySnapshotTransaction = { query: async <T>(sql: string): Promise<T> => {
     snapshotSql.push(sql);
-    if (sql.includes("identity.status identity_status")) return [{identity_id:12n,player_id:21n,identity_status:"linked",player_status:"active"}] as T;
+    if (sql.includes("identity.status identity_status")) return (privateAccess==="identity_missing"?[]:[{identity_id:12n,player_id:21n,identity_status:"linked",player_status:"active"}]) as T;
     if (sql.includes("SELECT DATE_FORMAT(UTC_TIMESTAMP")) return [{kst_today:"2026-09-07"}] as T;
-    if (sql.includes("FROM player_support_passes pass")) return [{pass_id:31n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1}] as T;
+    if (sql.includes("FROM player_support_passes pass")) return (privateAccess==="pass_missing"?[]:privateAccess==="pass_duplicate"?[{pass_id:31n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1},{pass_id:32n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1}]:[{pass_id:31n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1}]) as T;
     if (sql.includes("FROM external_identities identity")) return [{ player_status: "active", identity_id:12n }] as T;
     if (sql.includes("FROM player_profiles profile")) return [] as T;
     if (sql.includes("FROM canonical_pet_skill_aliases")) return [] as T;
@@ -154,7 +183,7 @@ function createTraceDatabase() {
     }] as T;
     throw new Error(`UNEXPECTED_SNAPSHOT_SQL:${sql}`);
   }};
-  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior.message!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");input.validateReceiptProjection?.(prior.projection);atomicReplayCount+=1;return{status:"completed",replayed:true,resultFingerprint:"f".repeat(64),processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection?.(evaluated.receiptProjection);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,{message:input.replyIdentity.message,projection:evaluated.receiptProjection});return{status:"completed",replayed:false,resultFingerprint:"f".repeat(64),value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
+  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior.message!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");input.validateReceiptProjection?.(prior.projection);atomicReplayCount+=1;const denied=(prior.projection as {version?:string}).version==="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1";return{status:"completed",replayed:true,terminalStatus:denied?"SHADOW_DENIED":"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:prior.projection,processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection?.(evaluated.receiptProjection);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,{message:input.replyIdentity.message,projection:evaluated.receiptProjection});return{status:"completed",replayed:false,terminalStatus:evaluated.terminalStatus??"SHADOW_EVALUATED",resultFingerprint:"f".repeat(64),receiptProjection:evaluated.receiptProjection,value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
   const database: DatabaseClient = {
     ping: async () => undefined,
     verifyRollback: async () => true,

@@ -48,12 +48,12 @@ it("consumes common READ_ONLY recovery and binds the complete synthetic admin pr
     const projection=evaluated.receiptProjection as {version:string;binding:{rawMessage:string;effectiveMessage:string;devContext:string;environmentCode:string;databaseIdentity:string};value:{reply:string}};
     assert.equal(projection.version,"PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1");assert.match(projection.value.reply,/^\[💞대상\] 보유 스킬가방📙\[3\/100\]/);
     assert.deepEqual(projection.binding,{rawMessage:"/펫스킬정보 대상",effectiveMessage:"/펫스킬정보 대상",devContext:"DEFAULT",environmentCode:"dev",databaseIdentity:"pet_skill_info_ingress",eventId:"event-admin-bag-1",providerEventId:"provider-1",eventProviderCode:"iris",identityProviderCode:"kakao",externalUserId:"admin-1",displayName:"호이 남",displayNameSource:"kakao_db",displayNameTrust:"trusted",channelType:"open_group",externalChannelId:"room-1"});
-    return{status:"completed",replayed:false,resultFingerprint:"c".repeat(64),value:evaluated.value,processing};
+    return{status:"completed",replayed:false,terminalStatus:"SHADOW_EVALUATED",resultFingerprint:"c".repeat(64),receiptProjection:evaluated.receiptProjection,value:evaluated.value,processing};
   }};
   const {database,environmentContext}=await verified("pet_skill_info_ingress");
   const normalized=event("/펫스킬정보 대상");
   const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_group",reasonCode:"ROLLOUT_SHADOW"});
-  assert.equal(result,processing);assert.equal(evaluations,1);assert.equal(rows.length,0);assert.deepEqual(result.replies,[]);
+  assert.equal(result.processing,processing);assert.equal(result.denialReason,undefined);assert.equal(evaluations,1);assert.equal(rows.length,0);assert.deepEqual(result.processing.replies,[]);
 });
 
 it("adds the exact DEV header and rejects DEV_PREFIX in a verified prod environment",async()=>{
@@ -67,24 +67,48 @@ it("adds the exact DEV header and rejects DEV_PREFIX in a verified prod environm
   await assert.rejects(()=>run("prod"),/PET_SKILL_INFO_DEV_ENVIRONMENT_REQUIRED/);
 });
 
-it("requires an exact linked active private identity and a current canonical hoi/newbie/premium pass",async()=>{
-  const run=async(passRows:unknown[])=>{
+it("persists expected private identity/pass denials without invoking the skill reader and keeps integrity faults failed",async()=>{
+  const run=async(passRows:unknown[],actorRows:unknown[]=[{identity_id:1n,player_id:2n,identity_status:"linked",player_status:"active"}])=>{
     const {database,environmentContext}=await verified("pet_skill_info_private"),normalized=event("/펫스킬정보");
-    const rows:unknown[]=[[{identity_id:1n,player_id:2n,identity_status:"linked",player_status:"active"}],[{kst_today:"2026-09-07"}],passRows,[{player_status:"active",identity_id:1n}]];
-    const snapshot={query:async<T>()=>rows.shift() as T};
+    const rows:unknown[]=[actorRows];
+    if(actorRows.length!==0)rows.push([{kst_today:"2026-09-07"}],passRows);
+    rows.push([{player_status:"active",identity_id:1n}]);
+    let skillReaderCalls=0;
+    const snapshot={query:async<T>(sql:string)=>{if(sql.startsWith("SELECT player.status player_status"))skillReaderCalls+=1;return rows.shift() as T;}};
     let projection:unknown;
-    const recovery={execute:async(input:any)=>{const evaluated=await input.evaluateInSnapshot(snapshot);projection=evaluated.receiptProjection;input.validateReceiptProjection(projection);return{processing:{duplicate:false,replies:[]},...evaluated};}};
-    await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW"});
-    return projection as {authorization:{mode:string;identityId:string;playerId:string;activePassCodes:string[]};value:{reply:string}};
+    const recovery={execute:async(input:any)=>{const evaluated=await input.evaluateInSnapshot(snapshot);projection=evaluated.receiptProjection;input.validateReceiptProjection(projection);return{status:"completed",replayed:false,resultFingerprint:"d".repeat(64),terminalStatus:evaluated.terminalStatus??"SHADOW_EVALUATED",processing:{duplicate:false,replies:[]},...evaluated};}};
+    const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW"});
+    assert.equal(skillReaderCalls,result.denialReason===undefined?1:0);
+    return{projection:projection as {version:string;authorization:{mode:string;identityId?:string;playerId?:string;activePassCodes?:string[];reasonCode?:string};value:{reply?:string;status?:string;reasonCode?:string}},result};
   };
   const active=(pass_id:bigint,pass_code:string)=>({pass_id,pass_code,entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1});
   const dated=(pass_id:bigint,end_date:string)=>({pass_id,pass_code:"newbie",entitlement_kind:"dated",end_date,pass_status:"active",definition_active:1n});
   const accepted=await run([active(3n,"hoi"),active(4n,"premium")]);
-  assert.deepEqual(accepted.authorization,{mode:"PRIVATE_PASS",identityId:"1",playerId:"2",activePassCodes:["hoi","premium"]});
-  assert.match(accepted.value.reply,/^사용법:/);
-  await assert.rejects(()=>run([]),/PET_SKILL_INFO_PRIVATE_PASS_REQUIRED/);
-  assert.deepEqual((await run([dated(5n,"2026-09-07")])).authorization.activePassCodes,["newbie"]);
-  await assert.rejects(()=>run([dated(6n,"2026-09-06")]),/PET_SKILL_INFO_PRIVATE_PASS_REQUIRED/);
-  await assert.rejects(()=>run([{...active(7n,"premium"),pass_status:"revoked"}]),/PET_SKILL_INFO_PRIVATE_PASS_REQUIRED/);
+  assert.deepEqual(accepted.projection.authorization,{mode:"PRIVATE_PASS",identityId:"1",playerId:"2",activePassCodes:["hoi","premium"]});
+  assert.match(accepted.projection.value.reply!,/^사용법:/);assert.equal(accepted.result.denialReason,undefined);
+  const noIdentity=await run([],[]);assert.equal(noIdentity.projection.version,"PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1");assert.deepEqual(noIdentity.projection.authorization,{mode:"PRIVATE_DENIED",reasonCode:"PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED"});assert.equal(noIdentity.result.denialReason,"PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED");
+  const noPass=await run([]);assert.deepEqual(noPass.projection.value,{status:"denied",reasonCode:"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"});assert.equal(noPass.result.denialReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");
+  assert.deepEqual((await run([dated(5n,"2026-09-07")])).projection.authorization.activePassCodes,["newbie"]);
+  assert.equal((await run([dated(6n,"2026-09-06")])).result.denialReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");
+  assert.equal((await run([{...active(7n,"premium"),pass_status:"revoked"}])).result.denialReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");
   await assert.rejects(()=>run([active(3n,"hoi"),active(4n,"hoi")]),/PET_SKILL_INFO_PRIVATE_PASS_DUPLICATE/);
+});
+
+it("restores the persisted private denial reason on replay without evaluating the snapshot",async()=>{
+  const {database,environmentContext}=await verified("pet_skill_info_private_replay"),normalized=event("/펫스킬정보");
+  const rows:unknown[]=[[{identity_id:1n,player_id:2n,identity_status:"linked",player_status:"active"}],[{kst_today:"2026-09-07"}],[]];
+  let persistedProjection:unknown;
+  const freshRecovery={execute:async(input:any)=>{const evaluated=await input.evaluateInSnapshot({query:async<T>()=>rows.shift() as T});persistedProjection=evaluated.receiptProjection;input.validateReceiptProjection(persistedProjection);return{status:"completed",replayed:false,terminalStatus:"SHADOW_DENIED",resultFingerprint:"e".repeat(64),receiptProjection:persistedProjection,value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
+  const fresh=await executePetSkillInfoReadOnlyRecovery({database,recovery:freshRecovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW"});
+  assert.equal(fresh.denialReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");
+  let replayEvaluations=0;
+  const replayRecovery={execute:async(input:any)=>{const guarded=input.evaluateInSnapshot;input.evaluateInSnapshot=async(...args:unknown[])=>{replayEvaluations+=1;return guarded(...args);};input.validateReceiptProjection(persistedProjection);return{status:"completed",replayed:true,terminalStatus:"SHADOW_DENIED",resultFingerprint:"e".repeat(64),receiptProjection:persistedProjection,processing:{duplicate:true,replies:[]}};}};
+  const replay=await executePetSkillInfoReadOnlyRecovery({database,recovery:replayRecovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW"});
+  assert.equal(replay.denialReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");assert.equal(replay.processing.duplicate,true);assert.equal(replayEvaluations,0);
+  const mismatchedDenial={execute:async(input:any)=>{input.validateReceiptProjection(persistedProjection);return{status:"completed",replayed:true,terminalStatus:"SHADOW_EVALUATED",resultFingerprint:"e".repeat(64),receiptProjection:persistedProjection,processing:{duplicate:true,replies:[]}};}};
+  await assert.rejects(()=>executePetSkillInfoReadOnlyRecovery({database,recovery:mismatchedDenial as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW"}),/PET_SKILL_INFO_RECEIPT_TERMINAL_STATUS_DRIFT/);
+  const denial=persistedProjection as {binding:unknown};
+  const mismatchedSuccessProjection={version:"PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1",binding:denial.binding,authorization:{mode:"PRIVATE_PASS",identityId:"1",playerId:"2",activePassCodes:["hoi"]},value:null};
+  const mismatchedSuccess={execute:async(input:any)=>{input.validateReceiptProjection(mismatchedSuccessProjection);return{status:"completed",replayed:true,terminalStatus:"SHADOW_DENIED",resultFingerprint:"f".repeat(64),receiptProjection:mismatchedSuccessProjection,processing:{duplicate:true,replies:[]}};}};
+  await assert.rejects(()=>executePetSkillInfoReadOnlyRecovery({database,recovery:mismatchedSuccess as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_direct",reasonCode:"ROLLOUT_SHADOW"}),/PET_SKILL_INFO_RECEIPT_TERMINAL_STATUS_DRIFT/);
 });

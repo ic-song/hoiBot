@@ -3,12 +3,12 @@ import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { ProcessIrisEventService, type ChannelNameObservation, type EventProcessingResult } from "../integration/event-processing-service.js";
 import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { isMariaTransactionRetryExhaustion } from "../shared/maria-database-error-policy.js";
-import type { AppWiringAtomicReadOnlyEvaluation, AppWiringClaimInput, AppWiringReadParticipant, AppWiringRouteDecision, MariaAppWiringOperationProvider } from "./app-wiring-operation-provider.js";
+import type { AppWiringAtomicReadOnlyEvaluation, AppWiringClaimInput, AppWiringReadOnlyTerminalStatus, AppWiringReadParticipant, AppWiringRouteDecision, MariaAppWiringOperationProvider } from "./app-wiring-operation-provider.js";
 
 export type AppWiringDevContext = "DEFAULT" | "DEV_PREFIX";
 export type AppWiringReadOnlyRecoveryResult<T> =
-  | { readonly status:"completed";readonly replayed:false;readonly resultFingerprint:string;readonly value:T;readonly processing:EventProcessingResult }
-  | { readonly status:"completed";readonly replayed:true;readonly resultFingerprint:string;readonly processing:EventProcessingResult };
+  | { readonly status:"completed";readonly replayed:false;readonly resultFingerprint:string;readonly terminalStatus:AppWiringReadOnlyTerminalStatus;readonly receiptProjection:unknown;readonly value:T;readonly processing:EventProcessingResult }
+  | { readonly status:"completed";readonly replayed:true;readonly resultFingerprint:string;readonly terminalStatus:AppWiringReadOnlyTerminalStatus;readonly receiptProjection:unknown;readonly processing:EventProcessingResult };
 
 export interface AppWiringReadOnlyRecoveryInput<T>{
   readonly event:NormalizedIrisEvent;
@@ -97,8 +97,8 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
           if(binding.errorCode!==result.errorCode)throw new Error("APP_WIRING_READ_ONLY_FAILED_INBOX_ERROR_DRIFT");
           throw new StoredAtomicFailure(result.errorCode);
         }
-        return result.replayed?{status:"completed",replayed:true,resultFingerprint:result.resultFingerprint,processing}
-          :{status:"completed",replayed:false,resultFingerprint:result.resultFingerprint,value:result.value,processing};
+        return result.replayed?{status:"completed",replayed:true,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing}
+          :{status:"completed",replayed:false,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,value:result.value,processing};
       });
     }catch(error){
       if(error instanceof StoredAtomicFailure)throw error;
@@ -108,7 +108,7 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
         const processing=await new ProcessIrisEventService(this.database).executeAtomicCommandInTransaction(transaction,input.event,input.replyIdentity,input.channelType,{...(input.channelName===undefined?{}:{channelName:input.channelName}),retryFailedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",retryAttemptNumber:failureAttemptCount});
         await assertInboxBinding(transaction,input,processing.duplicate);
         const result=await this.appWiring.recordAtomicReadOnlyShadowFailureInTransaction(transaction,{claim,decision:input.decision,sourceEventId:input.event.eventId,attemptCount:failureAttemptCount,errorCode,...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
-        if(result.status==="completed")return{status:"completed" as const,replayed:true as const,resultFingerprint:result.resultFingerprint,processing};
+        if(result.status==="completed")return{status:"completed" as const,replayed:true as const,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing};
         await transaction.execute("UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?",[failureAttemptCount,errorCode,input.event.eventId]);
         return undefined;
       });
