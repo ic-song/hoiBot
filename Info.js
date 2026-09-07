@@ -1774,12 +1774,29 @@ function generateElementalRanking(petData, members) {
 	};
 }
 
-// 장착 홈뱃지의 실제 큐브 옵션 수치를 회원 데이터에서 반환하는 함수
-function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
+// 회원 데이터의 대표·보조 홈뱃지 슬롯을 기존 단일 필드와 호환되게 반환하는 함수
+function getInfoHomeBadgeCubeEquippedBadgeIds(store) {
+	if (!store) return [null, null];
+	var ids = store.equippedBadgeIds instanceof Array && store.equippedBadgeIds.length === 2
+		? [store.equippedBadgeIds[0] || null, store.equippedBadgeIds[1] || null]
+		: [store.equippedBadgeId || null, null];
+	if (ids[0] && ids[0] === ids[1]) ids[1] = null;
+	if (!ids[0] && ids[1]) {
+		ids[0] = ids[1];
+		ids[1] = null;
+	}
+	return ids;
+}
+
+// 장착 홈뱃지 한 슬롯의 실제 큐브 옵션 수치를 반환하는 함수
+function getInfoHomeBadgeCubeSlotOptionPercent(data, user, slotIndex, optionKey) {
+	if (slotIndex === 1 && optionKey !== "castle" && optionKey !== "raid") return 0;
 	var member = data && data.member ? data.member[user] : null;
 	var store = member && member.homeBadgeCube && typeof member.homeBadgeCube === "object" ? member.homeBadgeCube : null;
-	if (!store || !store.equippedBadgeId) return 0;
-	var record = store.badges && store.badges[store.equippedBadgeId] ? store.badges[store.equippedBadgeId] : null;
+	var equippedBadgeIds = getInfoHomeBadgeCubeEquippedBadgeIds(store);
+	var badgeId = equippedBadgeIds[slotIndex];
+	if (!store || !badgeId) return 0;
+	var record = store.badges && store.badges[badgeId] ? store.badges[badgeId] : null;
 	var optionKeys = ["castle", "raid", "petUpgrade", "explore"];
 	var total = 0;
 	for (var i = 0; i < optionKeys.length; i++) {
@@ -1789,6 +1806,13 @@ function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
 	var appliedValue = total >= 100 ? Math.round(value * 11) / 10 : value;
 	if (isInfoSupportPassActive(data, user, "premium")) appliedValue += GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent;
 	return appliedValue;
+}
+
+// 대표·보조 홈뱃지의 실제 적용 큐브 옵션 합계를 반환하는 함수
+function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
+	var total = getInfoHomeBadgeCubeSlotOptionPercent(data, user, 0, optionKey);
+	if (optionKey === "castle" || optionKey === "raid") total += getInfoHomeBadgeCubeSlotOptionPercent(data, user, 1, optionKey);
+	return total;
 }
 
 function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
@@ -2101,8 +2125,8 @@ function generateCastleRanking(petData, data, homeData, guildData) {
 			((petData[b] && petData[b].miniPet && petData[b].miniPet.castleExp) || 0) +
 			getHomeTotalExp(homeData, b) +
 			getUserIntimacyInfo(data, b).exp;
-		castleExpA = Math.floor(castleExpA * (1 + getGuildContributionCubeMemberPercent(data, guildData, a, "castle") / 100));
-		castleExpB = Math.floor(castleExpB * (1 + getGuildContributionCubeMemberPercent(data, guildData, b, "castle") / 100));
+		castleExpA = Math.floor(castleExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "castle") + getGuildContributionCubeMemberPercent(data, guildData, a, "castle")) / 100));
+		castleExpB = Math.floor(castleExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "castle") + getGuildContributionCubeMemberPercent(data, guildData, b, "castle")) / 100));
 		return castleExpB - castleExpA;
 	});
 	let rankingMsg1 = "";
@@ -2120,7 +2144,7 @@ function generateCastleRanking(petData, data, homeData, guildData) {
 				homeExp +
 				intimacyExp
 		);
-		totalCastleExp = Math.floor(totalCastleExp * (1 + getGuildContributionCubeMemberPercent(data, guildData, username, "castle") / 100));
+		totalCastleExp = Math.floor(totalCastleExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "castle") + getGuildContributionCubeMemberPercent(data, guildData, username, "castle")) / 100));
 
 		if (totalCastleExp > 5) {
 			let rankEmoji = getRankEmoji(i + 1);
@@ -2149,8 +2173,8 @@ function generateRaidRanking(petData, data, homeData, guildData) {
 
 		var raidExpA = (calculateItemInfoAll(a, data, petData).raidExp || 0) + (petA.petexp || 0) + miniExpA + getHomeTotalExp(homeData, a);
 		var raidExpB = (calculateItemInfoAll(b, data, petData).raidExp || 0) + (petB.petexp || 0) + miniExpB + getHomeTotalExp(homeData, b);
-		raidExpA = Math.floor(raidExpA * (1 + getGuildContributionCubeMemberPercent(data, guildData, a, "raid") / 100));
-		raidExpB = Math.floor(raidExpB * (1 + getGuildContributionCubeMemberPercent(data, guildData, b, "raid") / 100));
+		raidExpA = Math.floor(raidExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "raid") + getGuildContributionCubeMemberPercent(data, guildData, a, "raid")) / 100));
+		raidExpB = Math.floor(raidExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "raid") + getGuildContributionCubeMemberPercent(data, guildData, b, "raid")) / 100));
 
 		return raidExpB - raidExpA;
 	});
@@ -2164,7 +2188,7 @@ function generateRaidRanking(petData, data, homeData, guildData) {
 		var miniPetExp = petInfo.miniPet && petInfo.miniPet.raidExp ? petInfo.miniPet.raidExp : 0;
 		var homeExp = getHomeTotalExp(homeData, username);
 		var totalRaidExp = Math.round((petInfo.petexp || 0) + (calculateItemInfoAll(username, data, petData).raidExp || 0) + miniPetExp + homeExp);
-		totalRaidExp = Math.floor(totalRaidExp * (1 + getGuildContributionCubeMemberPercent(data, guildData, username, "raid") / 100));
+		totalRaidExp = Math.floor(totalRaidExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "raid") + getGuildContributionCubeMemberPercent(data, guildData, username, "raid")) / 100));
 
 		if (totalRaidExp > 5) {
 			var rankEmoji = getRankEmoji(i + 1);
