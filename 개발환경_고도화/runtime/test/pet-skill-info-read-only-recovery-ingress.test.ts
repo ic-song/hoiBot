@@ -61,10 +61,31 @@ it("adds the exact DEV header and rejects DEV_PREFIX in a verified prod environm
     const {database,environmentContext}=await verified(`pet_skill_info_${environmentCode}`,environmentCode),normalized=event("dev/  펫스킬정보");
     const snapshot={query:async<T>(sql:string)=>sql.includes("FROM external_identities identity")?[{player_status:"active",identity_id:1n}] as T:[] as T};
     const recovery={execute:async(input:any)=>{const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection(evaluated.receiptProjection);return{processing:{duplicate:false,replies:[]},...evaluated};}};
-    return executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_group",reasonCode:"ROLLOUT_SHADOW"});
+    return executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_group",reasonCode:"ROLLOUT_SHADOW",readiness:{inspect:async()=>({status:"READY",reasonCode:"COMPLETE",counts:{definitions:93,imports:93,aliases:30,policies:4}})}});
   };
   await run("dev");
   await assert.rejects(()=>run("prod"),/PET_SKILL_INFO_DEV_ENVIRONMENT_REQUIRED/);
+});
+
+it("stores exact UNREADY and PARTIAL DEV replies without invoking the catalog evaluator",async()=>{
+  const run=async(status:"UNREADY"|"PARTIAL",counts:{definitions:number;imports:number;aliases:number;policies:number},reasonCode:"EMPTY"|"COUNT_MISMATCH"|"SEMANTIC_DRIFT"=status==="UNREADY"?"EMPTY":"COUNT_MISMATCH")=>{
+    const {database,environmentContext}=await verified("pet_skill_info_readiness"),normalized=event("dev/펫스킬정보 청룡언월도");
+    const rows:unknown[]=[[{player_status:"active",identity_id:1n}]];let projection:unknown,evaluations=0,validate:(projection:unknown)=>void=()=>{throw new Error("VALIDATOR_NOT_CAPTURED");};
+    const recovery={execute:async(input:any)=>{const evaluated=await input.evaluateInSnapshot({query:async<T>()=>rows.shift()as T});evaluations+=1;projection=evaluated.receiptProjection;validate=input.validateReceiptProjection;validate(projection);return{status:"completed",replayed:false,terminalStatus:"SHADOW_EVALUATED",resultFingerprint:"a".repeat(64),receiptProjection:projection,value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
+    const result=await executePetSkillInfoReadOnlyRecovery({database,recovery:recovery as never,environmentContext,event:normalized,replyIdentity:normalized,channelType:"open_group",reasonCode:"ROLLOUT_SHADOW",readiness:{inspect:async()=>({status,reasonCode,counts} as never)}});
+    return{result,projection:projection as {version:string;binding:unknown;authorization:unknown;readiness:{status:string;reasonCode:string;counts:{definitions:number;imports:number;aliases:number;policies:number}};value:{status:string;reply:string}},validate,evaluations,remaining:rows.length};
+  };
+  const empty=await run("UNREADY",{definitions:0,imports:0,aliases:0,policies:0});assert.equal(empty.projection.version,"PET_SKILL_INFO_DEV_READINESS_RECEIPT_V1");assert.deepEqual(empty.projection.readiness,{status:"UNREADY",reasonCode:"EMPTY",counts:{definitions:0,imports:0,aliases:0,policies:0}});assert.match(empty.projection.value.reply,/준비되지 않았습니다/);assert.equal(empty.remaining,1);assert.equal(empty.result.processing.replies.length,0);
+  for(const tampered of[
+    {...empty.projection,readiness:{...empty.projection.readiness,status:"PARTIAL"}},
+    {...empty.projection,readiness:{...empty.projection.readiness,status:"PARTIAL"},value:{...empty.projection.value,reply:empty.projection.value.reply.replace("❌ DEV 펫스킬 카탈로그가 준비되지 않았습니다.","⚠️ DEV 펫스킬 카탈로그가 일부만 준비되었습니다.")}},
+    {...empty.projection,readiness:{...empty.projection.readiness,counts:{...empty.projection.readiness.counts,definitions:1}}},
+    {...empty.projection,value:{...empty.projection.value,status:"denied"}},
+    {...empty.projection,value:{...empty.projection.value,reply:`${empty.projection.value.reply} 변조`}}
+  ])assert.throws(()=>empty.validate(tampered),/PET_SKILL_INFO_DEV_READINESS_RECEIPT_INVALID/);
+  const {readiness:discardedReadiness,...downgraded}=empty.projection;void discardedReadiness;assert.throws(()=>empty.validate({...downgraded,version:"PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1"}),/PET_SKILL_INFO_DEV_READINESS_RECEIPT_DOWNGRADE/);
+  const partial=await run("PARTIAL",{definitions:92,imports:92,aliases:29,policies:3});assert.match(partial.projection.value.reply,/일부만 준비되었습니다/);assert.equal(partial.remaining,1);assert.equal(partial.evaluations,1);
+  const semantic=await run("PARTIAL",{definitions:93,imports:93,aliases:30,policies:4},"SEMANTIC_DRIFT");assert.match(semantic.projection.value.reply,/정의: 93\/93/);assert.equal(semantic.projection.readiness.reasonCode,"SEMANTIC_DRIFT");
 });
 
 it("persists expected private identity/pass denials without invoking the skill reader and keeps integrity faults failed",async()=>{

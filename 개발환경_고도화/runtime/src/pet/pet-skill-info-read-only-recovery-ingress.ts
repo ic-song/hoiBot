@@ -5,8 +5,10 @@ import type { ChannelNameObservation, EventProcessingResult } from "../integrati
 import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { assertVerifiedEnvironmentContext, type VerifiedEnvironmentContext } from "../runtime/environment-context.js";
 import { isPetSkillInfoShadowCandidate, PetSkillInfoShadowService } from "./pet-skill-info-shadow-service.js";
+import { formatPetSkillCatalogReadinessReply, MariaCanonicalPetSkillReadinessProvider, type PetSkillCatalogReadiness } from "./canonical-pet-skill-readiness-provider.js";
 
 const RECEIPT_VERSION="PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1" as const;
+const READINESS_RECEIPT_VERSION="PET_SKILL_INFO_DEV_READINESS_RECEIPT_V1" as const;
 const DENIAL_RECEIPT_VERSION="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V1" as const;
 const DENIAL_RECEIPT_V2_VERSION="PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2" as const;
 const PRIVATE_DENIAL_COMMAND_SCOPE="PET_SKILL_INFO_ONLY" as const;
@@ -121,7 +123,7 @@ function withDevHeader<T>(value:T,devContext:AppWiringDevContext):T{
 function assertFormalReceiptProjection(projection:unknown,input:{command:PetSkillInfoIngressCommand;environment:VerifiedEnvironmentContext;event:NormalizedIrisEvent;replyIdentity:NormalizedIrisEvent;channelType:"open_group"|"open_direct";channelName?:ChannelNameObservation}):void{
   if(typeof projection!=="object"||projection===null||Array.isArray(projection))throw new Error("PET_SKILL_INFO_RECEIPT_PROJECTION_INVALID");
   const receipt=projection as Record<string,unknown>,binding=receipt.binding;
-  if((receipt.version!==RECEIPT_VERSION&&receipt.version!==DENIAL_RECEIPT_VERSION&&receipt.version!==DENIAL_RECEIPT_V2_VERSION)||typeof binding!=="object"||binding===null||Array.isArray(binding)||!("value" in receipt)||typeof receipt.authorization!=="object"||receipt.authorization===null)throw new Error("PET_SKILL_INFO_RECEIPT_PROJECTION_INVALID");
+  if((receipt.version!==RECEIPT_VERSION&&receipt.version!==READINESS_RECEIPT_VERSION&&receipt.version!==DENIAL_RECEIPT_VERSION&&receipt.version!==DENIAL_RECEIPT_V2_VERSION)||typeof binding!=="object"||binding===null||Array.isArray(binding)||!("value" in receipt)||typeof receipt.authorization!=="object"||receipt.authorization===null)throw new Error("PET_SKILL_INFO_RECEIPT_PROJECTION_INVALID");
   const actual=binding as Record<string,unknown>;
   const expected:Record<string,unknown>={rawMessage:input.command.rawMessage,effectiveMessage:input.command.effectiveMessage,devContext:input.command.devContext,
     environmentCode:input.environment.environmentCode,databaseIdentity:input.environment.databaseIdentity,eventId:input.event.eventId,
@@ -130,6 +132,12 @@ function assertFormalReceiptProjection(projection:unknown,input:{command:PetSkil
     displayNameTrust:input.replyIdentity.displayNameTrust??null,channelType:input.channelType,externalChannelId:input.replyIdentity.channelId??null};
   if(Object.keys(actual).length!==Object.keys(expected).length||Object.entries(expected).some(([key,value])=>actual[key]!==value))throw new Error("PET_SKILL_INFO_RECEIPT_BINDING_DRIFT");
   const authorization=receipt.authorization as Record<string,unknown>;
+  if(receipt.version===READINESS_RECEIPT_VERSION){
+    const readiness=record(receipt.readiness),counts=record(readiness?.counts),value=record(receipt.value);
+    const countValues=counts===undefined?[]:[counts.definitions,counts.imports,counts.aliases,counts.policies],allZero=countValues.length===4&&countValues.every(item=>item===0),allExpected=counts!==undefined&&counts.definitions===93&&counts.imports===93&&counts.aliases===30&&counts.policies===4;
+    const expectedReason=allZero?"EMPTY":allExpected?"SEMANTIC_DRIFT":"COUNT_MISMATCH";
+    if(!exactKeys(receipt,["version","binding","authorization","readiness","value"])||input.command.devContext!=="DEV_PREFIX"||input.environment.environmentCode!=="dev"||readiness===undefined||!exactKeys(readiness,["status","reasonCode","counts"])||(readiness.status!=="UNREADY"&&readiness.status!=="PARTIAL")||counts===undefined||!exactKeys(counts,["definitions","imports","aliases","policies"])||countValues.some(item=>typeof item!=="number"||!Number.isSafeInteger(item)||item<0)||readiness.status!==(allZero?"UNREADY":"PARTIAL")||readiness.reasonCode!==expectedReason||value===undefined||!exactKeys(value,["status","reply"])||value.status!=="shadow"||value.reply!==formatPetSkillCatalogReadinessReply(readiness as Exclude<PetSkillCatalogReadiness,{status:"READY"}>))throw new Error("PET_SKILL_INFO_DEV_READINESS_RECEIPT_INVALID");
+  }
   if(receipt.version===DENIAL_RECEIPT_V2_VERSION){
     const parsed=parsePetSkillInfoPrivateDenialReceiptV2(projection),channelName=input.channelName;
     if(channelName===undefined||parsed.notification.privateRoomName!==channelName.displayName||parsed.notification.privateRoomNameSource!==channelName.sourceCode)throw new Error("PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V2_ROOM_DRIFT");
@@ -147,6 +155,10 @@ function assertFormalReceiptProjection(projection:unknown,input:{command:PetSkil
     const codes=authorization.activePassCodes;
     if(Object.keys(authorization).length!==4||authorization.mode!=="PRIVATE_PASS"||typeof authorization.identityId!=="string"||typeof authorization.playerId!=="string"||!Array.isArray(codes)||codes.length===0
       ||codes.some(code=>typeof code!=="string"||!["hoi","newbie","premium"].includes(code))||new Set(codes).size!==codes.length||codes.join("\u0000")!==[...codes].sort().join("\u0000"))throw new Error("PET_SKILL_INFO_RECEIPT_AUTHORIZATION_INVALID");
+  }
+  if(receipt.version===RECEIPT_VERSION&&input.command.devContext==="DEV_PREFIX"){
+    const value=record(receipt.value),reply=value?.reply;
+    if(value?.status==="shadow"&&typeof reply==="string"&&(reply.startsWith("[DEV 테스트환경]\n❌ DEV 펫스킬 카탈로그가 준비되지 않았습니다.")||reply.startsWith("[DEV 테스트환경]\n⚠️ DEV 펫스킬 카탈로그가 일부만 준비되었습니다.")))throw new Error("PET_SKILL_INFO_DEV_READINESS_RECEIPT_DOWNGRADE");
   }
 }
 
@@ -169,6 +181,7 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
   channelType:"open_group"|"open_direct";
   reasonCode:string;
   channelName?:ChannelNameObservation;
+  readiness?:Pick<MariaCanonicalPetSkillReadinessProvider,"inspect">;
 }):Promise<PetSkillInfoReadOnlyRecoveryResult>{
   assertVerifiedEnvironmentContext(input.environmentContext);
   if(input.replyIdentity.userId===undefined||input.replyIdentity.channelId===undefined||input.event.message===undefined||input.replyIdentity.message!==input.event.message)throw new Error("PET_SKILL_INFO_RECOVERY_BINDING_REQUIRED");
@@ -194,13 +207,15 @@ export async function executePetSkillInfoReadOnlyRecovery(input:{
           channelType:input.channelType,externalChannelId:input.replyIdentity.channelId};
         return{terminalStatus:"SHADOW_DENIED" as const,value,receiptProjection:notification===undefined?{version:DENIAL_RECEIPT_VERSION,binding,authorization,value}:{version:DENIAL_RECEIPT_V2_VERSION,binding,authorization,value,notification}};
       }
-      const evaluated=await new PetSkillInfoShadowService(input.database).evaluateInSnapshot(transaction,{externalUserId:input.replyIdentity.userId!,externalChannelId:input.replyIdentity.channelId,displayName:input.replyIdentity.displayName,message:command.effectiveMessage});
-      const value=withDevHeader(evaluated,command.devContext);
-      return{value,receiptProjection:{version:RECEIPT_VERSION,binding:{rawMessage:command.rawMessage,effectiveMessage:command.effectiveMessage,devContext:command.devContext,
+      const readiness=command.devContext==="DEV_PREFIX"?await(input.readiness??new MariaCanonicalPetSkillReadinessProvider()).inspect(transaction,input.environmentContext):undefined;
+      const evaluated=readiness!==undefined&&readiness.status!=="READY"?{status:"shadow" as const,reply:formatPetSkillCatalogReadinessReply(readiness)}:await new PetSkillInfoShadowService(input.database).evaluateInSnapshot(transaction,{externalUserId:input.replyIdentity.userId!,externalChannelId:input.replyIdentity.channelId,displayName:input.replyIdentity.displayName,message:command.effectiveMessage});
+      const value=readiness!==undefined&&readiness.status!=="READY"?evaluated:withDevHeader(evaluated,command.devContext);
+      const binding={rawMessage:command.rawMessage,effectiveMessage:command.effectiveMessage,devContext:command.devContext,
         environmentCode:input.environmentContext.environmentCode,databaseIdentity:input.environmentContext.databaseIdentity,eventId:input.event.eventId,
         providerEventId:input.event.providerEventId??null,eventProviderCode:input.event.providerCode,identityProviderCode:"kakao",externalUserId:input.replyIdentity.userId,
         displayName:input.replyIdentity.displayName??null,displayNameSource:input.replyIdentity.displayNameSource??null,displayNameTrust:input.replyIdentity.displayNameTrust??null,
-        channelType:input.channelType,externalChannelId:input.replyIdentity.channelId},authorization,value}};
+        channelType:input.channelType,externalChannelId:input.replyIdentity.channelId};
+      return{value,receiptProjection:readiness!==undefined&&readiness.status!=="READY"?{version:READINESS_RECEIPT_VERSION,binding,authorization,readiness,value}:{version:RECEIPT_VERSION,binding,authorization,value}};
     },
     errorCode:error=>error instanceof Error&&/^[A-Z][A-Z0-9_]{0,63}$/.test(error.message)?error.message:"PET_SKILL_INFO_SHADOW_FAILED"
   });

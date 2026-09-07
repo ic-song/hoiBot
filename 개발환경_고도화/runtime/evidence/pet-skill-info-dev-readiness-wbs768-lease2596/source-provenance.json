@@ -1,0 +1,49 @@
+{
+  "format": "hoibot-object-db-slice-source-provenance-v1",
+  "sliceId": "SL-PET-SKILL-INFO-DEV-READINESS-01",
+  "wbsOrdinal": 768,
+  "leaseRow": 2596,
+  "executionId": "펫스킬DEV준비응답DB-SL-PET-SKILL-INFO-DEV-READINESS-01-202609080033",
+  "baselineCommit": "fc746894d74c6443bda0d2b3a8b3aaa20e969e34",
+  "frozenInputs": [
+    {
+      "file": "개발환경_고도화/migration-control/fixtures/synthetic-relational/pet-skill-definitions-v2400.json",
+      "gitBlobSha1": "79069840a4f970508c4269ec5390c61665cd2c95"
+    },
+    {
+      "file": "개발환경_고도화/migration-control/fixtures/synthetic-relational/pet-skill-post-freeze-v2435.json",
+      "gitBlobSha1": "59dac8e1db71c2f97ef65a89c8487b8b81e8c8c2"
+    }
+  ],
+  "legacyEvidence": {
+    "file": "main.js",
+    "devReadinessLines": "2051-2056",
+    "missingFileHelperLines": "29040-29054",
+    "scope": "all non-common legacy JSON files"
+  },
+  "modernScopeDecision": {
+    "scope": "PET_SKILL_INFO DEV_PREFIX canonical catalog readiness only",
+    "reason": "WBS768 DB mapping is a pet-skill object slice; operating JSON copy and operating-data migration are separate WBS items",
+    "environmentBoundary": "verified environmentCode=dev and exact database identity",
+    "sourceDomainDml": 0,
+    "outbox": 0,
+    "receiptInfrastructureDml": "preserved for durable SHADOW replay"
+  },
+  "readiness": {
+    "UNREADY": "active definitions/imports/aliases/policies are all zero",
+    "PARTIAL": "the footprint is non-empty but the complete contract does not pass",
+    "READY": "93 definitions, 93 LEGACY_JSON/PET_SKILL_LIST imports, 30 aliases, 4 policies, the pinned full semantic fingerprint, and canonical catalog projection pass",
+    "semanticFingerprintAlgorithm": "sha256(stable JSON of source-key-bound definition/import payload/charm tuples, alias tuples, and active policy tuples)",
+    "semanticFingerprint": "dfdc76016342f7db4f8514b8a6f529e0865d808f433cde3069b266eba6a02011",
+    "receiptVersion": "PET_SKILL_INFO_DEV_READINESS_RECEIPT_V1",
+    "receiptReasonCodes": ["EMPTY", "COUNT_MISMATCH", "SEMANTIC_DRIFT", "COMPLETE"],
+    "historicalReceiptPolicy": "historical formal V1 remains readable but cannot impersonate an UNREADY/PARTIAL DEV readiness reply"
+  },
+  "forbidden": [
+    "operating catalog import",
+    "operating database access",
+    "live room reply",
+    "Gate8",
+    "feature/prod reflection"
+  ]
+}
