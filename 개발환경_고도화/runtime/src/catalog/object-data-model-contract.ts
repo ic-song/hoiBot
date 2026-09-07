@@ -29,6 +29,15 @@ const INTEGRATION_DEPENDENCY_REGISTRY: Readonly<Record<string, { migration: stri
   },
 };
 const EXTERNAL_DEPENDENCY_REGISTRY: Readonly<Record<string, ObjectDataModelExternalDependency>> = {
+  event_inbox: {
+    table: "event_inbox",
+    integrationMigration: "001_foundation.sql",
+    columns: [
+      { name: "event_id", type: "VARCHAR(128)", charset: "utf8mb4", collation: "utf8mb4_unicode_ci" },
+    ],
+    primaryKey: ["event_id"],
+    uniqueKeys: [],
+  },
   operations: {
     table: "operations",
     integrationMigration: "002_event_processing.sql",
