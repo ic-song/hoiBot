@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.468"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.469"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -32109,7 +32109,9 @@ function buildGuildTerritoryTurnMessage(data, petData, guildData, autoTerritoryN
         buildGuildTerritoryRiftUi(war) +
         "\n" +
         "━━━━━━━━━━━━\n" +
-        status;
+        status +
+        "\n━━━━━━━━━━━━\n" +
+        turnLine;
 
     return [msg];
 }

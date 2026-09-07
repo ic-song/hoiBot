@@ -995,6 +995,7 @@ Status: VERIFIED
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
 - 종료되지 않은 공격 결과는 다음 공격자의 턴 안내와 구분선을 결과 본문 앞에 표시한다.
 - 수동 턴은 `[체크랭크] 님의 공격 차례입니다.`, 자동 턴은 `[체크랭크] 님이 자동공격을 진행합니다.`로 표시한다. 자동 공격은 우리 길드 점령지를 제외한 후보에서 예약 시 선택한 영지를 `자동공격 영지`로 안내하고 같은 영지를 실제 공격에 사용한다.
+- 영지공격 후 출력되는 다음 턴 현황 카드는 현재 공격자 문구를 상단에 표시하고, 영지전 상황 아래에도 구분선과 함께 한 번 더 표시한다.
 - 공격 결과 상단에는 수동·자동 여부에 맞는 `상세 결과`와 공격 영지, 길드·확률 보상을 표시하며 기존 전투 및 스킬 발동 내용은 `공격/방어/보상 상세보기` 안에 유지한다.
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` (currently 7) turns from the user's guild when remaining turns are at least the penalty
