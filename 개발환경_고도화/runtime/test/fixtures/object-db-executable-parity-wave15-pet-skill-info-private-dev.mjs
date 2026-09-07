@@ -25,10 +25,11 @@ export async function executeWave15PetSkillInfoPrivateDev(args){
   const environmentContext=await verifyStartupDatabaseIdentity(database,createEnvironmentContext({environmentCode:input.environmentCode,databaseIdentity:"wave15_formal"}));
   const app=buildApp(config,{database,environmentContext,
     inspectIrisChannel:async()=>channelDecision,sendIrisTextReply:async reply=>replies.push(reply)});
-  let response;
-  try{response=await app.inject({method:"POST",url:`/api/v1/integrations/iris/events?token=${token}`,payload:{
-    msg:input.rawMessage,room:"Wave15 펫스킬정보방",sender:"호이 남",json:{_id:args.providerEventId??`wave15-${binding.scenarioKind.toLowerCase()}`,
-      chat_id:"wave15-channel",user_id:binding.scenarioKind==="AUTH_DENIED"?"wave15-no-pass":"wave15-user"}}});}
+  const payload={msg:input.rawMessage,room:"Wave15 펫스킬정보방",sender:"호이 남",json:{_id:args.providerEventId??`wave15-${binding.scenarioKind.toLowerCase()}`,
+    chat_id:"wave15-channel",user_id:binding.scenarioKind==="AUTH_DENIED"?"wave15-no-pass":"wave15-user"}};
+  let response,rejectedReplay;
+  try{response=await app.inject({method:"POST",url:`/api/v1/integrations/iris/events?token=${token}`,payload});
+    if(binding.scenarioKind==="AUTH_DENIED")rejectedReplay=await app.inject({method:"POST",url:`/api/v1/integrations/iris/events?token=${token}`,payload});}
   finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
   const body=JSON.parse(response.body),evidence=database.evidence(),expected=binding.expected;
   const resolvedCommand=resolvePetSkillInfoIngressCommand(input.rawMessage);
@@ -38,7 +39,10 @@ export async function executeWave15PetSkillInfoPrivateDev(args){
   if(typeof expected.accepted==="boolean")check(accepted===expected.accepted,`Wave15 ${binding.scenarioKind} acceptance drift`);
   if(typeof expected.handlerInvocationCount==="number")check(evidence.handlerInvocations===expected.handlerInvocationCount,`Wave15 ${binding.scenarioKind} handler count drift`);
   if(expected.terminalResult==="NO_REPLY"&&accepted)check(evidence.outboxes===0,"Wave15 NO_REPLY created outbox");
-  if(expected.terminalResult==="FAILED")check(response.statusCode===202&&body.ignored===true&&body.ignoreReason===expected.errorCode&&evidence.failureCode===expected.errorCode,`Wave15 durable rejection drift: ${response.statusCode}/${body.ignoreReason}/${evidence.failureCode}`);
+  if(expected.terminalResult==="FAILED"){
+    const replayBody=JSON.parse(rejectedReplay?.body??"{}");
+    check(response.statusCode===202&&body.ignored===true&&body.ignoreReason===expected.errorCode&&rejectedReplay?.statusCode===202&&replayBody.ignored===true&&replayBody.ignoreReason===expected.errorCode&&evidence.failureCode===expected.errorCode&&evidence.operations===1&&evidence.executions===1,`Wave15 durable rejection replay drift: ${response.statusCode}/${body.ignoreReason}/${rejectedReplay?.statusCode}/${replayBody.ignoreReason}/${evidence.failureCode}`);
+  }
   if(expected.reason!==undefined)check(observedReason===expected.reason,`Wave15 guard reason drift: ${observedReason}`);
   const reply=evidence.projectedReply??"NO_REPLY";
   if(expected.reply!==undefined)check(reply===expected.reply,"Wave15 independent expected reply drift");
