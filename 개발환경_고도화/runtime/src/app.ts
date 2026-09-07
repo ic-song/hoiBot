@@ -199,8 +199,8 @@ import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, P
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
 import { isPetSkillProbabilityCommand } from "./pet/pet-skill-probability-service.js";
 import { PetSkillProbabilityAtomicService } from "./pet/pet-skill-probability-atomic-service.js";
-import { isPetSkillInfoShadowCandidate, normalizePetSkillInfoDispatchMessage } from "./pet/pet-skill-info-shadow-service.js";
-import { executePetSkillInfoReadOnlyRecovery } from "./pet/pet-skill-info-read-only-recovery-ingress.js";
+import { normalizePetSkillInfoDispatchMessage } from "./pet/pet-skill-info-shadow-service.js";
+import { executePetSkillInfoReadOnlyRecovery, resolvePetSkillInfoIngressCommand } from "./pet/pet-skill-info-read-only-recovery-ingress.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
@@ -773,12 +773,13 @@ async function dispatchPetExploreCommandConsumers(ingress: Pick<PetExploreAppWir
 }
 
 function isPetSkillBulkGrantOrProbabilityCandidate(message: string | undefined): boolean {
-  return isPetSkillBulkGrantCandidate(message) || isPetSkillProbabilityCommand(message) || isPetSkillInfoShadowCandidate(message);
+  return isPetSkillBulkGrantCandidate(message) || isPetSkillProbabilityCommand(message) || resolvePetSkillInfoIngressCommand(message)!==undefined;
 }
 
 function resolvePetSkillDispatchMessage(message: string | undefined): string | undefined {
   const value = message ?? "";
-  if (isPetSkillInfoShadowCandidate(message)) return normalizePetSkillInfoDispatchMessage(value);
+  const petSkillInfoCommand=resolvePetSkillInfoIngressCommand(message);
+  if (petSkillInfoCommand!==undefined) return normalizePetSkillInfoDispatchMessage(petSkillInfoCommand.effectiveMessage);
   if (isPetSkillSaleCandidate(message)) return normalizePetSkillSaleDispatchMessage(value);
   if (isPetSkillEquipCandidate(message)) return normalizePetSkillEquipDispatchMessage(value);
   if (isPetSkillBulkGrantCandidate(message)) return normalizePetSkillBulkGrantDispatchMessage(value);
@@ -1301,7 +1302,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     async (request, reply) => {
       const normalizedEvent = normalizeIrisEvent(request.body);
       const channelAccess = await inspectIrisChannel(normalizedEvent);
-      if (channelAccess.mode === "denied") {
+      const petSkillInfoIngressCommand=resolvePetSkillInfoIngressCommand(normalizedEvent.message);
+      const isPetSkillInfoPrivateChannel=channelAccess.mode==="denied"&&channelAccess.channelClass==="open_direct"
+        &&channelAccess.reason==="open_direct_unverified"&&petSkillInfoIngressCommand!==undefined;
+      if (channelAccess.mode === "denied"&&!isPetSkillInfoPrivateChannel) {
         request.log.info(
           { requestId: request.id, reason: channelAccess.reason, channelClass: channelAccess.channelClass },
           "iris.event_ignored_by_channel_policy"
@@ -1859,11 +1863,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN"
         && partialDispatchDecision.handlerKey === "pet_skill_probability"
         && isPetSkillProbabilityCommand(normalizedEvent.message);
-      const atomicPetSkillInfo=database!==undefined&&petSkillInfoReadOnlyRecoveryProvider!==undefined&&isOperationalChannel
+      const atomicPetSkillInfo=database!==undefined&&petSkillInfoReadOnlyRecoveryProvider!==undefined&&(isOperationalChannel||isPetSkillInfoPrivateChannel)
         &&partialDispatchDecision?.route==="SHADOW"&&partialDispatchDecision.handlerKey==="pet_skill_info"
-        &&isPetSkillInfoShadowCandidate(commandEvent.message)&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
-      if (atomicPetSkillProbability && dependencies.environmentContext === undefined) {
-        throw new Error("PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED");
+        &&petSkillInfoIngressCommand!==undefined&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
+      if ((atomicPetSkillProbability||atomicPetSkillInfo) && dependencies.environmentContext === undefined) {
+        throw new Error(atomicPetSkillProbability?"PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED":"PET_SKILL_INFO_VERIFIED_ENVIRONMENT_REQUIRED");
       }
       const processing = atomicPetSkillProbability
         ? await processPetSkillProbabilityAtomicIngress({
@@ -1873,7 +1877,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
           })
         :atomicPetSkillInfo
-        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})})
+        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})})
         : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership

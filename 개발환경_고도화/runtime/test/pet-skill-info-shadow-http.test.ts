@@ -60,6 +60,21 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       await app.close();
     }
   });
+
+  it("bypasses the generic deny only for a verified DirectChat pet-skill-info candidate",async()=>{
+    const trace=createTraceDatabase(),context=await verifyStartupDatabaseIdentity(trace.database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:"wave14b_shadow"}));
+    const config=loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:"dev",IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:"private-shadow-pepper",DATABASE_ENABLED:"true",DATABASE_HOST:"127.0.0.1",DATABASE_PORT:"3332",DATABASE_USER:"unused",DATABASE_PASSWORD:"unused",DATABASE_NAME:"wave14b_shadow"});
+    process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
+    const app=buildApp(config,{database:trace.database,environmentContext:context,petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
+      inspectIrisChannel:async()=>({mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"direct-link"}}),
+      sendIrisTextReply:async()=>{throw new Error("SHADOW_MUST_NOT_SEND");}});
+    try{
+      const accepted=await send(app,"private-info-1","/펫스킬정보청룡언월도");
+      assert.equal(accepted.statusCode,202,accepted.body);assert.equal(JSON.parse(accepted.body).ignored,false);assert.equal(trace.atomicHandlerCount,1);
+      const denied=await send(app,"private-sibling-1","/펫스킬");
+      assert.equal(denied.statusCode,202);assert.equal(JSON.parse(denied.body).ignored,true);assert.equal(trace.atomicHandlerCount,1);
+    }finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await app.close();}
+  });
 });
 
 function send(app: ReturnType<typeof buildApp>, id: string, message: string, sender = "호이 남") {
@@ -77,7 +92,7 @@ function createTraceDatabase() {
   let snapshotCount = 0;
   let infoReply = "";
   let atomicHandlerCount=0,atomicReplayCount=0;
-  const atomicReceipts=new Map<string,string>();const failedOnce=new Set<string>();
+  const atomicReceipts=new Map<string,{message:string;projection:unknown}>();const failedOnce=new Set<string>();
   const write = async (sql: string, values: readonly unknown[] = []): Promise<DatabaseWriteResult> => {
     writes.push({ sql, values });
     if (sql.includes("INSERT INTO event_inbox")) {
@@ -97,7 +112,10 @@ function createTraceDatabase() {
   };
   const snapshot: ReadOnlySnapshotTransaction = { query: async <T>(sql: string): Promise<T> => {
     snapshotSql.push(sql);
-    if (sql.includes("FROM external_identities identity")) return [{ player_status: "active", is_operator: 0 }] as T;
+    if (sql.includes("identity.status identity_status")) return [{identity_id:12n,player_id:21n,identity_status:"linked",player_status:"active"}] as T;
+    if (sql.includes("SELECT DATE_FORMAT(UTC_TIMESTAMP")) return [{kst_today:"2026-09-07"}] as T;
+    if (sql.includes("FROM player_support_passes pass")) return [{pass_id:31n,pass_code:"hoi",entitlement_kind:"permanent",end_date:null,pass_status:"active",definition_active:1}] as T;
+    if (sql.includes("FROM external_identities identity")) return [{ player_status: "active", identity_id:12n }] as T;
     if (sql.includes("FROM player_profiles profile")) return [] as T;
     if (sql.includes("FROM canonical_pet_skill_aliases")) return [] as T;
     if (sql.includes("FROM canonical_pet_skill_draw_grade_policies")) return [] as T;
@@ -110,7 +128,7 @@ function createTraceDatabase() {
     }] as T;
     throw new Error(`UNEXPECTED_SNAPSHOT_SQL:${sql}`);
   }};
-  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");atomicReplayCount+=1;return{status:"completed",replayed:true,resultFingerprint:"f".repeat(64),processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,input.replyIdentity.message);return{status:"completed",replayed:false,resultFingerprint:"f".repeat(64),value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
+  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior.message!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");input.validateReceiptProjection?.(prior.projection);atomicReplayCount+=1;return{status:"completed",replayed:true,resultFingerprint:"f".repeat(64),processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);input.validateReceiptProjection?.(evaluated.receiptProjection);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,{message:input.replyIdentity.message,projection:evaluated.receiptProjection});return{status:"completed",replayed:false,resultFingerprint:"f".repeat(64),value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
   const database: DatabaseClient = {
     ping: async () => undefined,
     verifyRollback: async () => true,

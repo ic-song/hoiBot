@@ -19,7 +19,9 @@ export interface AppWiringReadOnlyRecoveryInput<T>{
   readonly actor:string;
   readonly decision:AppWiringRouteDecision;
   readonly channelName?:ChannelNameObservation;
+  readonly commandBinding?:unknown;
   readonly evaluateInSnapshot:(database:AppWiringReadParticipant)=>Promise<AppWiringAtomicReadOnlyEvaluation<T>>;
+  readonly validateReceiptProjection?:(projection:unknown)=>void;
   readonly errorCode:(error:unknown)=>string;
 }
 
@@ -31,6 +33,7 @@ function claimInput<T>(input:AppWiringReadOnlyRecoveryInput<T>):AppWiringClaimIn
   return{entrypointKind:"IRIS",externalRequestId:externalRequestId(input.event.eventId),actor:input.actor,normalizedPayload:{
     version:"APP_WIRING_READ_ONLY_RECOVERY_V1",devContext:input.devContext,channelType:input.channelType,
     channelName:input.channelName??null,identityProviderCode:input.identityProviderCode,
+    commandBinding:input.commandBinding??null,
     event:{eventId:input.event.eventId,providerCode:input.event.providerCode,providerEventId:input.event.providerEventId??null,
       payloadHash:input.event.payloadHash,message:input.event.message??null,direction:input.event.direction,channelId:input.event.channelId??null,
       eventKind:input.event.eventKind,origin:input.event.origin??null,eventCode:input.event.eventCode,eventCategory:input.event.eventCategory,
@@ -89,7 +92,7 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
         const processing=await new ProcessIrisEventService(this.database).executeAtomicCommandInTransaction(transaction,input.event,input.replyIdentity,input.channelType,{...(input.channelName===undefined?{}:{channelName:input.channelName}),retryFailedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",retryAttemptNumber:attemptNumber});
         const binding=await assertInboxBinding(transaction,input,processing.duplicate);
         await assertIdentityUnique(transaction,input,binding);
-        const result=await this.appWiring.executeAtomicReadOnlyShadowInTransaction(transaction,{claim,decision:input.decision,sourceEventId:input.event.eventId,attemptCount:attemptNumber,duplicateClaim:processing.duplicate,evaluate:database=>input.evaluateInSnapshot(database)});
+        const result=await this.appWiring.executeAtomicReadOnlyShadowInTransaction(transaction,{claim,decision:input.decision,sourceEventId:input.event.eventId,attemptCount:attemptNumber,duplicateClaim:processing.duplicate,evaluate:database=>input.evaluateInSnapshot(database),...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
         if(result.status==="failed"){
           if(binding.errorCode!==result.errorCode)throw new Error("APP_WIRING_READ_ONLY_FAILED_INBOX_ERROR_DRIFT");
           throw new StoredAtomicFailure(result.errorCode);
@@ -104,7 +107,7 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
       const reconciled=await this.appWiring.withAtomicReadOnlyFailureRetry(async transaction=>{
         const processing=await new ProcessIrisEventService(this.database).executeAtomicCommandInTransaction(transaction,input.event,input.replyIdentity,input.channelType,{...(input.channelName===undefined?{}:{channelName:input.channelName}),retryFailedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",retryAttemptNumber:failureAttemptCount});
         await assertInboxBinding(transaction,input,processing.duplicate);
-        const result=await this.appWiring.recordAtomicReadOnlyShadowFailureInTransaction(transaction,{claim,decision:input.decision,sourceEventId:input.event.eventId,attemptCount:failureAttemptCount,errorCode});
+        const result=await this.appWiring.recordAtomicReadOnlyShadowFailureInTransaction(transaction,{claim,decision:input.decision,sourceEventId:input.event.eventId,attemptCount:failureAttemptCount,errorCode,...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
         if(result.status==="completed")return{status:"completed" as const,replayed:true as const,resultFingerprint:result.resultFingerprint,processing};
         await transaction.execute("UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?",[failureAttemptCount,errorCode,input.event.eventId]);
         return undefined;

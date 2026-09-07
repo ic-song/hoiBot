@@ -2808,11 +2808,13 @@ Status: VERIFIED
 
 ## Modernization
 
-- Slices: `SL-PET-SKILL-INFO-ACTUAL-INGRESS-01`, `SL-PET-SKILL-INFO-ADMIN-BAG-PROJECTION-01`
+- Slices: `SL-PET-SKILL-INFO-ACTUAL-INGRESS-01`, `SL-PET-SKILL-INFO-ADMIN-BAG-PROJECTION-01`, `SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01`
 - Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts`, `pet-skill-info-read-only-recovery-ingress.ts`
 - DB: canonical catalog/가방, 방별 deny-first 관리자 권한, frozen 8-slot rank marker, KST premium, guild current-rank, per-player import completeness를 공용 READ_ONLY recovery의 한 consistent root snapshot에서 조회
-- Rollout: `SHADOW` 전용이며 사용자 응답과 outbox를 만들지 않는다.
-- Guard: 레거시와 같은 `startsWith("/펫스킬정보")`; 붙여 쓴 조회값과 공백-only 사용법을 포함하고 `/펫스킬`, `/펫스킬확률`은 포함하지 않는다.
+- Rollout: `SHADOW` 전용이며 사용자 응답과 outbox를 만들지 않는다. generic open-direct deny는 유지하고, Iris가 `DirectChat`으로 검증한 `open_direct_unverified` 중 이 명령 후보만 app 전용 recovery로 전달한다.
+- Guard: 레거시와 같은 `startsWith("/펫스킬정보")`; 붙여 쓴 조회값과 공백-only 사용법을 포함하고 `/펫스킬`, `/펫스킬확률`은 포함하지 않는다. 소문자 `dev/`가 index 0일 때만 strip/trim/slash 보정하며 verified `dev` 환경에서만 `DEV_PREFIX`를 허용한다.
+- 개인방은 같은 consistent root snapshot에서 linked active identity/player의 유일성과 canonical `hoi`/`newbie`/`premium` 활성 패스를 검증한다. 영구권 또는 KST 기준 유효 기간권만 허용하며 missing/duplicate/invalid는 fail-close 한다.
+- formal receipt는 raw/effective message, DEV context, verified environment/database, actor/channel을 고정하고 `event_inbox`/app-wiring/operation/command-execution terminal과 outbox 0을 replay에서 다시 검증한다.
 - 관리자 닉네임은 skill 충돌보다 우선하고 비관리자는 skill을 우선한다. 전체 bag 출력은 레거시 header/guide/allsee/정렬/수량/checkRank 바이트를 보존한다.
 - 운영 방 CUID 권한·Admin/Master crosswalk·8 marker/import completeness seed가 없거나 불완전하면 `ADMIN_PLAYER_BAG_PROJECTION_UNPROVEN`으로 fail-close fallback한다. 방 이름 observation은 권한에 사용하지 않는다.
 
@@ -2831,6 +2833,7 @@ Status: VERIFIED
 - `getTierPetSkillSearchName`
 - `buildTierPetSkillInfoLine`
 - `normalizePetSkillName`
+- `resolvePetSkillInfoIngressCommand`
 
 ## Data Usage
 
