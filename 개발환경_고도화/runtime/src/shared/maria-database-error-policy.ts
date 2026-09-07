@@ -113,31 +113,36 @@ export interface MariaTransactionRetryOptions {
   readonly maxAttempts: number;
   readonly allowRetry: (kind: "TRANSACTION_DEADLOCK" | "TRANSACTION_LOCK_WAIT_TIMEOUT") => boolean;
   readonly exhaustedErrorCode?: string;
+  readonly rootTransaction?: <T>(work:(transaction:DatabaseTransaction)=>Promise<T>)=>Promise<T>;
 }
+
+const brandedTransactionRetryExhaustions=new WeakSet<object>();
+function exhausted(errorCode:string,cause?:unknown):Error{const error=new Error(errorCode,{cause});brandedTransactionRetryExhaustions.add(error);return error;}
+export function isMariaTransactionRetryExhaustion(error:unknown,errorCode:string):boolean{return error instanceof Error&&error.message===errorCode&&brandedTransactionRetryExhaustions.has(error);}
 
 // 매 시도마다 새 transaction을 시작하며, 도메인이 허용한 1213/1205만 transaction 전체에서 재시도합니다.
 export async function withMariaTransactionRetry<T>(
   database: DatabaseClient,
   options: MariaTransactionRetryOptions,
-  work: (transaction: DatabaseTransaction) => Promise<T>,
+  work: (transaction: DatabaseTransaction, attemptNumber: number) => Promise<T>,
 ): Promise<T> {
   assertAttempts(options.maxAttempts);
-  const root = hasRootTransactionCapability(database);
+  const root = options.rootTransaction===undefined?(hasRootTransactionCapability(database)?database.withRootTransaction.bind(database):undefined):options.rootTransaction;
   if (!root) {
     if (!hasCurrentTransactionCapability(database)) throw new Error("RFA03_TRANSACTION_BOUNDARY_CAPABILITY_REQUIRED");
     // 상위 owner의 transaction을 savepoint 없이 정확히 한 번 사용하고 모든 오류를 그대로 전파합니다.
-    return database.withCurrentTransaction(work);
+    return database.withCurrentTransaction(transaction => work(transaction, 1));
   }
   for (let attempt = 0; attempt < options.maxAttempts; attempt += 1) {
     try {
-      return await database.withRootTransaction(work);
+      return await root(transaction => work(transaction, attempt + 1));
     } catch (error) {
       const kind = classifyMariaDatabaseError(error).kind;
       const transactionKind = kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT" ? kind : undefined;
       // root transaction에서도 도메인이 허용한 transient conflict만 재시도합니다.
       if (transactionKind === undefined || !options.allowRetry(transactionKind)) throw error;
-      if (attempt + 1 === options.maxAttempts) throw new Error(options.exhaustedErrorCode ?? "RFA03_TRANSACTION_RETRY_EXHAUSTED", { cause: error });
+      if (attempt + 1 === options.maxAttempts) throw exhausted(options.exhaustedErrorCode ?? "RFA03_TRANSACTION_RETRY_EXHAUSTED",error);
     }
   }
-  throw new Error(options.exhaustedErrorCode ?? "RFA03_TRANSACTION_RETRY_EXHAUSTED");
+  throw exhausted(options.exhaustedErrorCode ?? "RFA03_TRANSACTION_RETRY_EXHAUSTED");
 }

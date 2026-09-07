@@ -7753,3 +7753,27 @@ Status: VERIFIED
 - RFA01 request/result fingerprint, 전용 typed receipt, 수신자/채널 snapshot, ownership 증가, 11건 outbox를 한 transaction으로 commit
 - 같은 event replay와 재시작 replay는 저장된 terminal을 검증하고 추가 지급·추가 outbox를 만들지 않음
 - SHADOW route는 service에 진입하지 않아 mutation/outbox가 없음
+
+# 공용 READ_ONLY SHADOW 복구 경계
+
+Status: VERIFIED
+
+## Files
+- `개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts`
+- `개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts`
+- `개발환경_고도화/runtime/src/integration/event-processing-service.ts`
+
+## Related Helpers
+- `MariaAppWiringReadOnlyRecoveryProvider.execute`
+- `MariaAppWiringOperationProvider.executeAtomicReadOnlyShadowInTransaction`
+- `ProcessIrisEventService.executeAtomicCommandInTransaction`
+
+## Data Usage
+- verified environment/database와 event/message/actor/channel/dev-context fingerprint를 하나의 claim에 고정
+- 기존 `event_inbox`, `canonical_app_wiring_operations`, `operations`, `command_executions`만 사용하며 outbox는 생성하지 않음
+
+## Save Flow
+- event inbox claim부터 READ_ONLY callback projection hash와 terminal `NO_REPLY` receipt까지 repeatable-read consistent root transaction 하나에서 확정
+- MariaDB 1205/1213만 최대 3회 재시도하고 transient FAILED 재시작은 기존 failed operation/execution을 fenced update로 재사용
+- completed replay는 callback 없이 exact 1 operation, exact 1 command execution, outbox 0과 저장 projection 재해시를 검증
+- 공용 provider seam만 제공하며 개별 명령 consumer와 DIRECT/외부 reply는 연결하지 않음

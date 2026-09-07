@@ -41,6 +41,11 @@ export interface RootTransactionDatabaseClient extends DatabaseClient {
   withRootTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T>;
 }
 
+// 기존 root 의미를 바꾸지 않고 B1 recovery만 repeatable-read consistent snapshot을 요구합니다.
+export interface ConsistentRootTransactionDatabaseClient extends DatabaseClient {
+  withConsistentRootTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T>;
+}
+
 // 이미 열린 transaction을 savepoint 없이 한 번 사용하는 scoped-client capability입니다.
 export interface CurrentTransactionDatabaseClient extends DatabaseClient {
   withCurrentTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T>;
@@ -48,6 +53,10 @@ export interface CurrentTransactionDatabaseClient extends DatabaseClient {
 
 export function hasRootTransactionCapability(database: DatabaseClient): database is RootTransactionDatabaseClient {
   return typeof (database as Partial<RootTransactionDatabaseClient>).withRootTransaction === "function";
+}
+
+export function hasConsistentRootTransactionCapability(database: DatabaseClient): database is ConsistentRootTransactionDatabaseClient {
+  return typeof (database as Partial<ConsistentRootTransactionDatabaseClient>).withConsistentRootTransaction === "function";
 }
 
 export function hasCurrentTransactionCapability(database: DatabaseClient): database is CurrentTransactionDatabaseClient {
@@ -312,6 +321,22 @@ class MariaDatabaseClient implements CapableDatabaseClient, RootTransactionDatab
 
   async withRootTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T> {
     return this.withTransaction(work);
+  }
+
+  async withConsistentRootTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T> {
+    const connection = await this.#pool.getConnection();
+    try {
+      await connection.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+      await connection.query("START TRANSACTION WITH CONSISTENT SNAPSHOT");
+      const result = await work(createQueryExecutor(connection));
+      await connection.commit();
+      return result;
+    } catch (error) {
+      await rollbackQuietly(connection);
+      throw error;
+    } finally {
+      await connection.release();
+    }
   }
 
   async withReadOnlySnapshot<T>(work: (transaction: ReadOnlySnapshotTransaction) => Promise<T>): Promise<T> {
