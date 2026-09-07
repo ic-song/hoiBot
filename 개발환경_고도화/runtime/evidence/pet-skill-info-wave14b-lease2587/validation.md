@@ -23,7 +23,7 @@
 
 ## 검증 결과
 
-- Focused Node: 6 suites, 41 tests PASS.
+- Focused Node: 핵심 6 suites/41 tests PASS. app 제어 흐름 helper 추출 후 인접 펫스킬 변경 명령 회귀를 포함한 11 suites/61 tests PASS.
 - Isolated MariaDB: `WAVE14B_ISOLATED_MARIADB_PASS migrations=all seed=93 rollback=true forward=true port=3332 production3306Unchanged=true`.
 - `git diff --check`: PASS.
-- Type/build: 기존 `src/app.ts(1267,7) TS2563` 단일 baseline 제약으로 실패. Wave14B 신규 파일의 별도 타입 오류는 없다. full/T3/Gate8은 지시대로 실행하지 않았다.
+- Typecheck/build: PASS. Wave14B 분기 추가로 발생한 TypeScript 제어 흐름 한계는 인접 펫스킬 정규화·실행 분기를 의미 보존 helper로 추출해 해소했다. full/T3/Gate8은 지시대로 실행하지 않았다.
