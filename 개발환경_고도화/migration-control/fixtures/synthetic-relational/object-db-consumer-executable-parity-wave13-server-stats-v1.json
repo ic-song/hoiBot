@@ -23,6 +23,14 @@
       "harnessId": "harness:object-db-executable-parity:wave13",
       "harnessCaseId": "case:admin-server-stats-corrective",
       "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+      "scenarioId": "scenario:auth-denied",
+      "scenarioKind": "AUTH_DENIED"
+    },
+    {
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "harnessId": "harness:object-db-executable-parity:wave13",
+      "harnessCaseId": "case:admin-server-stats-corrective",
+      "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
       "scenarioId": "scenario:exact-output",
       "scenarioKind": "EXACT_OUTPUT"
     },
@@ -52,12 +60,12 @@
         "requiredScenarios": [
           "READ_POSITIVE",
           "NEGATIVE_GUARD",
+          "AUTH_DENIED",
           "EXACT_OUTPUT",
           "SOURCE_DOMAIN_DML_ZERO",
           "RESTART_CONSISTENCY"
         ],
         "riskScenarios": [
-          "AUTH_DENIED",
           "WRONG_OPERATIONAL_CHANNEL",
           "APP_INBOX_DUPLICATE",
           "SAME_EVENT_REPLAY",
@@ -129,6 +137,14 @@
                 "externalUserId": "wave13-admin",
                 "destinationId": "wave13-server-room",
                 "message": "/서버통계 안내",
+                "environment": "dev"
+              },
+              "AUTH_DENIED": {
+                "providerEventId": "wave13-server-auth_denied",
+                "eventId": "iris:wave13-server-auth_denied",
+                "externalUserId": "wave13-admin",
+                "destinationId": "wave13-server-room",
+                "message": "/서버통계",
                 "environment": "dev"
               },
               "EXACT_OUTPUT": {
@@ -323,6 +339,56 @@
                       }
                     }
                   ]
+                }
+              ],
+              "AUTH_DENIED": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/서버통계"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "ADMIN_SERVER_STATS",
+                      "handler_key": "admin_server_stats",
+                      "auth_scope": "ADMIN",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT operator.id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny') AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow') OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id)) ORDER BY operator.id LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": []
                 }
               ],
               "EXACT_OUTPUT": [
@@ -1061,6 +1127,94 @@
                   "insertId": "0"
                 }
               ],
+              "AUTH_DENIED": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied",
+                    "iris",
+                    "wave13-server-auth_denied",
+                    "wave13-server-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "wave13-admin",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "294976aa1aa00f450de987f613113713e78cf10ec2a9118027e5696992349aca"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied",
+                    "d5c40aaa2c73d7d8b0105232b42207919316a07c87b8ea06b25b454de2eade73",
+                    "ADMIN_SERVER_STATS",
+                    "MODERN",
+                    "MODERN_ROUTE_ALLOWED"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
               "EXACT_OUTPUT": [
                 {
                   "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
@@ -1788,6 +1942,7 @@
             "expectedResultsByScenario": {
               "READ_POSITIVE": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}",
               "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"sentReplies\":[]}",
+              "AUTH_DENIED": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"sentReplies\":[]}",
               "EXACT_OUTPUT": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"prod\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}",
               "SOURCE_DOMAIN_DML_ZERO": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}",
               "RESTART_CONSISTENCY": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"prod\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}"
@@ -1795,6 +1950,7 @@
             "expectedReplyByScenario": {
               "READ_POSITIVE": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명",
               "NEGATIVE_GUARD": "NO_REPLY",
+              "AUTH_DENIED": "NO_REPLY",
               "EXACT_OUTPUT": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명",
               "SOURCE_DOMAIN_DML_ZERO": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명",
               "RESTART_CONSISTENCY": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명"
@@ -1840,6 +1996,34 @@
                 "channelMode": "operational",
                 "environment": "dev",
                 "serviceInvocationCount": 0,
+                "evidenceRowsBefore": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "evidenceRowsAfter": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "sentReplies": [],
+                "noReplyCode": "NO_REPLY"
+              },
+              "AUTH_DENIED": {
+                "statusCode": 202,
+                "accepted": true,
+                "ignored": false,
+                "channelMode": "operational",
+                "environment": "dev",
+                "serviceInvocationCount": 1,
                 "evidenceRowsBefore": {
                   "operations": 0,
                   "outbox_messages": 0,
@@ -1971,6 +2155,12 @@
                 "COMMIT"
               ],
               "NEGATIVE_GUARD": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "AUTH_DENIED": [
+                "BEGIN",
+                "COMMIT",
                 "BEGIN",
                 "COMMIT"
               ],
