@@ -42,6 +42,9 @@ const GLOBAL_CONFIG = {
 		evolutionRequiredExp: 10, // 알 진화 필요 매력치
 		totalCharmPerUpgrade: 1000 // 종합매력 계산 시 펫강화 1강당 반영 매력
 	},
+	pendant: { // 펜던트 시스템 설정
+		promotionCharmPerLevel: 5000000 // 승급 1단계당 종합매력
+	},
 	happyFoundation: { // 호이행복재단 설정
 		transferFeeMax: 16 // 이체 수수료 최대 설정값
 	},
@@ -1229,10 +1232,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (petInfo.pendant) {
 				var pendantDurability = "";
 				if (petInfo.pendant.durability !== undefined && petInfo.pendant.maxDurability !== undefined) {
-					pendantDurability = "[⚒️" + petInfo.pendant.durability + "/" + petInfo.pendant.maxDurability + "]";
+					pendantDurability = "⚒️" + petInfo.pendant.durability + "/" + petInfo.pendant.maxDurability;
 				}
 				var pendantUpgrade = petInfo.pendant.upgrade !== undefined ? petInfo.pendant.upgrade : 0;
-				resultMsg += "펜던트💎: " + petInfo.pendant.name + "[" + petInfo.pendant.grade + "]" + pendantDurability + "(+" + pendantUpgrade + ")\n";
+				var pendantPromotionLevel = Math.max(0, parseInt(petInfo.pendant.promotionLevel || 0, 10) || 0);
+				if (pendantPromotionLevel > 0) {
+					var pendantPromotionName = petInfo.pendant.name || "";
+					var pendantPromotionIcon = petInfo.pendant.icon || "";
+					if (pendantPromotionIcon && pendantPromotionName.substring(pendantPromotionName.length - pendantPromotionIcon.length) !== pendantPromotionIcon) pendantPromotionName += pendantPromotionIcon;
+					resultMsg += "- 승급: " + pendantPromotionName + "[" + petInfo.pendant.grade + "★" + pendantPromotionLevel + "]" + pendantDurability + "\n";
+				} else {
+					resultMsg += "펜던트💎: " + petInfo.pendant.name + "[" + petInfo.pendant.grade + "]" + (pendantDurability ? "[" + pendantDurability + "]" : "") + "(+" + pendantUpgrade + ")\n";
+				}
 			} else {
 				resultMsg += "펜던트💎: 현재 펜던트가 없습니다.\n";
 			}
@@ -3171,7 +3182,8 @@ function getPendantUpgradeCharmForInfo(upgrade) {
 // 펜던트 종합매력을 레이드/캐슬 매력으로 분배
 function calculatePendantItemInfoForInfo(pendant) {
 	if (!pendant) return { battleExp: 0, raidExp: 0, castleExp: 0 };
-	var charm = getPendantBaseCharmForInfo(pendant.grade) + getPendantUpgradeCharmForInfo(pendant.upgrade);
+	var promotionLevel = Math.max(0, parseInt(pendant.promotionLevel || 0, 10) || 0);
+	var charm = getPendantBaseCharmForInfo(pendant.grade) + getPendantUpgradeCharmForInfo(pendant.upgrade) + promotionLevel * GLOBAL_CONFIG.pendant.promotionCharmPerLevel;
 	var raid = Math.floor(charm / 2);
 	return { battleExp: 0, raidExp: raid, castleExp: charm - raid };
 }

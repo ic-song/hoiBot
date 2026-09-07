@@ -1472,7 +1472,7 @@ blockedNicknameTerms: [
     pendant: { // 펜던트 시스템 설정
         equipConfirmStaleMs: 30000, // 펜던트 교체 확인 대기 만료 시간
         promotionConfirmStaleMs: 30000, // 창조 펜던트 승급 확인 대기 만료 시간
-        promotionCharmPerLevel: 3000000,
+        promotionCharmPerLevel: 5000000,
         promotionStonePerLevel: 10,
         promotionPointPerLevel: 10000000000,
         promotionGrade: "창조"
@@ -22398,7 +22398,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("✅ 홈뱃지 장착·해제 요청을 취소했습니다.");
                     return;
                 }
-                if (msg === "홈뱃지교체" || msg === "홈뱃지해제확정" || /^\/홈뱃지장착\s+(?:(?:[12]\s+)?(?:\d+|[A-Za-z]{1,4}\d{2,3}))$/.test(msg) || /^\/홈뱃지해제\s+[12]$/.test(msg) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg)) {
+                if (msg === "홈뱃지교체" || msg === "홈뱃지해제확정" || /^\/홈뱃지장착\s+(?:(?:\d+\s+\d+)|(?:\d+|[A-Za-z]{1,4}\d{2,3}))$/.test(msg) || /^\/홈뱃지해제\s+\d+(?:\s+\d+)?$/.test(msg) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg)) {
                     var petHomeActivityDataForBadgeMutation = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var badgeMutationSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForBadgeMutation, sender);
                     var hadBadgeMutationCubeStore = data.member[sender].hasOwnProperty("homeBadgeCube");
@@ -22422,19 +22422,41 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             return;
                         }
                         badgeMutationNextIds = badgeMutationState.nextBadgeIds.slice(0);
-                        if (badgeMutationState.targetBadgeId && !petHomeStringListContains(badgeMutationSocial.badges, badgeMutationState.targetBadgeId)) {
-                            clearHomeBadgeMutationState(sender);
-                            replier.reply("❌ 교체할 홈뱃지를 더 이상 보유하고 있지 않습니다.");
-                            return;
+                        var badgeMutationTargetIds = badgeMutationState.targetBadgeIds instanceof Array ? badgeMutationState.targetBadgeIds : (badgeMutationState.targetBadgeId ? [badgeMutationState.targetBadgeId] : []);
+                        for (var badgeMutationTargetIndex = 0; badgeMutationTargetIndex < badgeMutationTargetIds.length; badgeMutationTargetIndex++) {
+                            if (!petHomeStringListContains(badgeMutationSocial.badges, badgeMutationTargetIds[badgeMutationTargetIndex])) {
+                                clearHomeBadgeMutationState(sender);
+                                replier.reply("❌ 변경할 홈뱃지를 더 이상 보유하고 있지 않습니다.");
+                                return;
+                            }
                         }
                         badgeMutationReply = expectedBadgeMutationAction === "replace" ? "✅ 홈뱃지 교체를 완료했습니다." : "✅ 홈뱃지 해제를 완료했습니다.";
                     } else if (msg.indexOf("/홈뱃지해제 ") === 0) {
-                        var badgeUnequipSlotIndex = parseInt(msg.substring("/홈뱃지해제 ".length), 10) - 1;
-                        if (!badgeMutationCurrentIds[badgeUnequipSlotIndex]) {
-                            replier.reply("⚠️ 선택한 슬롯에 장착된 홈뱃지가 없습니다.");
+                        var badgeUnequipParts = msg.substring("/홈뱃지해제 ".length).trim().split(/\s+/);
+                        var badgeUnequipTargets = [];
+                        for (var badgeUnequipPartIndex = 0; badgeUnequipPartIndex < badgeUnequipParts.length; badgeUnequipPartIndex++) {
+                            var badgeUnequipTarget = resolvePetHomeBadgeSelection(petHomeActivityDataForBadgeMutation, sender, badgeUnequipParts[badgeUnequipPartIndex], true);
+                            if (!badgeUnequipTarget) {
+                                replier.reply("❌ 존재하지 않거나 아직 획득하지 않은 뱃지번호입니다.\n보유 뱃지는 /홈뱃지에서 확인해 주세요.");
+                                return;
+                            }
+                            badgeUnequipTargets.push(badgeUnequipTarget);
+                        }
+                        if (badgeUnequipTargets.length === 2 && (badgeMutationCurrentIds[0] !== badgeUnequipTargets[0].id || badgeMutationCurrentIds[1] !== badgeUnequipTargets[1].id)) {
+                            replier.reply("⚠️ 입력한 대표·보조 뱃지번호가 현재 장착 상태와 다릅니다.\n/홈뱃지해제에서 현재 해제 명령을 확인해 주세요.");
                             return;
                         }
-                        badgeMutationNextIds[badgeUnequipSlotIndex] = null;
+                        var badgeUnequipSlotIndex = -1;
+                        if (badgeUnequipTargets.length === 1) {
+                            badgeUnequipSlotIndex = badgeMutationCurrentIds[0] === badgeUnequipTargets[0].id ? 0 : (badgeMutationCurrentIds[1] === badgeUnequipTargets[0].id ? 1 : -1);
+                            if (badgeUnequipSlotIndex < 0) {
+                                replier.reply("⚠️ 선택한 홈뱃지는 현재 장착 중이 아닙니다.\n현재 장착 상태는 /홈뱃지에서 확인해 주세요.");
+                                return;
+                            }
+                            badgeMutationNextIds[badgeUnequipSlotIndex] = null;
+                        } else {
+                            badgeMutationNextIds = [null, null];
+                        }
                         if (!badgeMutationNextIds[0] && badgeMutationNextIds[1]) {
                             badgeMutationNextIds[0] = badgeMutationNextIds[1];
                             badgeMutationNextIds[1] = null;
@@ -22445,8 +22467,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var badgeUnequipAfterEffect = buildHomeBadgeCubeEffectSummary(data, sender);
                         if (hadBadgeMutationCubeStore) data.member[sender].homeBadgeCube = badgeUnequipCubePreviewSnapshot;
                         else delete data.member[sender].homeBadgeCube;
-                        setHomeBadgeMutationState(sender, { action: "unequip", expectedBadgeIds: badgeMutationCurrentIds.slice(0), nextBadgeIds: badgeMutationNextIds.slice(0), targetBadgeId: null });
-                        replier.reply("⚠️ 홈뱃지 " + (badgeUnequipSlotIndex + 1) + "번 슬롯을 해제할까요?\n━━━━━━━━━━━━\n현재 효과: " + badgeUnequipBeforeEffect + "\n해제 후: " + badgeUnequipAfterEffect + (badgeUnequipSlotIndex === 0 && badgeMutationCurrentIds[1] ? "\n※ 보조 뱃지가 대표 슬롯으로 자동 이동합니다." : "") + "\n\n👉 [홈뱃지해제확정] / [홈뱃지취소]");
+                        setHomeBadgeMutationState(sender, { action: "unequip", expectedBadgeIds: badgeMutationCurrentIds.slice(0), nextBadgeIds: badgeMutationNextIds.slice(0), targetBadgeIds: [] });
+                        replier.reply("⚠️ 선택한 홈뱃지를 해제할까요?\n━━━━━━━━━━━━\n[현재]\n[1] 대표  " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, 0) + "\n[2] 보조  " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, 1) + "\n\n[해제 후]\n[1] 대표  " + getPetHomeBadgeSlotTextById(petHomeActivityDataForBadgeMutation, sender, badgeMutationNextIds[0]) + "\n[2] 보조  " + getPetHomeBadgeSlotTextById(petHomeActivityDataForBadgeMutation, sender, badgeMutationNextIds[1]) + "\n\n현재 효과: " + badgeUnequipBeforeEffect + "\n해제 후: " + badgeUnequipAfterEffect + (badgeUnequipSlotIndex === 0 && badgeMutationCurrentIds[1] ? "\n※ 보조 뱃지가 대표 슬롯으로 자동 이동합니다." : "") + "\n\n👉 [홈뱃지해제확정] / [홈뱃지취소]");
                         return;
                     } else if (msg.indexOf("/홈뱃지삭제 ") === 0) {
                         var badgeMutationSelection = msg.replace(/^\/홈뱃지(?:장착|삭제)\s+/, "").trim();
@@ -22465,36 +22487,47 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         badgeMutationReply = "✅ 펫홈 뱃지를 영구 삭제했습니다.\n━━━━━━━━━━━━\n삭제 뱃지: " + badgeMutation.emoji + " " + badgeMutation.name + " [" + badgeMutation.id + "]\n\n삭제한 뱃지는 다시 획득할 수 없습니다.";
                     } else {
                         var badgeEquipParts = msg.trim().split(/\s+/);
-                        var badgeEquipSlotIndex = badgeEquipParts.length === 3 ? parseInt(badgeEquipParts[1], 10) - 1 : 0;
-                        var badgeEquipRequestedSlotIndex = badgeEquipSlotIndex;
-                        var badgeEquipSelection = badgeEquipParts.length === 3 ? badgeEquipParts[2] : badgeEquipParts[1];
-                        var badgeEquipTarget = resolvePetHomeBadgeSelection(petHomeActivityDataForBadgeMutation, sender, badgeEquipSelection, true);
-                        if (!badgeEquipTarget) {
-                            replier.reply("❌ 존재하지 않거나 아직 획득하지 않은 뱃지입니다.\n보유 뱃지는 /홈뱃지에서 확인해 주세요.");
+                        var badgeEquipSelections = badgeEquipParts.slice(1);
+                        var badgeEquipTargets = [];
+                        for (var badgeEquipSelectionIndex = 0; badgeEquipSelectionIndex < badgeEquipSelections.length; badgeEquipSelectionIndex++) {
+                            var badgeEquipTarget = resolvePetHomeBadgeSelection(petHomeActivityDataForBadgeMutation, sender, badgeEquipSelections[badgeEquipSelectionIndex], true);
+                            if (!badgeEquipTarget) {
+                                replier.reply("❌ 존재하지 않거나 아직 획득하지 않은 뱃지입니다.\n보유 뱃지는 /홈뱃지에서 확인해 주세요.");
+                                return;
+                            }
+                            badgeEquipTargets.push(badgeEquipTarget);
+                        }
+                        if (badgeEquipTargets.length === 2 && badgeEquipTargets[0].id === badgeEquipTargets[1].id) {
+                            replier.reply("❌ 같은 홈뱃지는 대표와 보조에 동시에 장착할 수 없습니다.");
                             return;
                         }
-                        if (badgeEquipSlotIndex === 1 && !badgeMutationCurrentIds[0]) badgeEquipSlotIndex = 0;
-                        if (badgeMutationCurrentIds[badgeEquipSlotIndex] === badgeEquipTarget.id) {
-                            replier.reply("⚠️ 선택한 홈뱃지가 이미 " + (badgeEquipSlotIndex + 1) + "번 슬롯에 장착 중입니다.");
+                        if (badgeEquipTargets.length === 2) {
+                            badgeMutationNextIds = [badgeEquipTargets[0].id, badgeEquipTargets[1].id];
+                        } else {
+                            if (badgeMutationCurrentIds[1] === badgeEquipTargets[0].id) {
+                                replier.reply("❌ 선택한 홈뱃지는 이미 보조 슬롯에 장착 중입니다.\n같은 홈뱃지는 두 슬롯에 동시에 장착할 수 없습니다.");
+                                return;
+                            }
+                            badgeMutationNextIds[0] = badgeEquipTargets[0].id;
+                        }
+                        if (areHomeBadgeSlotIdsEqual(badgeMutationCurrentIds, badgeMutationNextIds)) {
+                            replier.reply("⚠️ 선택한 홈뱃지가 이미 같은 구성으로 장착 중입니다.");
                             return;
                         }
-                        if (badgeMutationCurrentIds[badgeEquipSlotIndex === 0 ? 1 : 0] === badgeEquipTarget.id) {
-                            replier.reply("❌ 같은 홈뱃지는 두 슬롯에 동시에 장착할 수 없습니다.");
-                            return;
-                        }
-                        badgeMutationNextIds[badgeEquipSlotIndex] = badgeEquipTarget.id;
-                        if (badgeMutationCurrentIds[badgeEquipSlotIndex]) {
+                        if (badgeMutationCurrentIds[0] || badgeMutationCurrentIds[1]) {
                             var badgeEquipCubePreviewSnapshot = hadBadgeMutationCubeStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
                             var badgeEquipBeforeEffect = buildHomeBadgeCubeEffectSummary(data, sender);
                             syncHomeBadgeCubeEquippedBadges(data, sender, badgeMutationNextIds);
                             var badgeEquipAfterEffect = buildHomeBadgeCubeEffectSummary(data, sender);
                             if (hadBadgeMutationCubeStore) data.member[sender].homeBadgeCube = badgeEquipCubePreviewSnapshot;
                             else delete data.member[sender].homeBadgeCube;
-                            setHomeBadgeMutationState(sender, { action: "replace", expectedBadgeIds: badgeMutationCurrentIds.slice(0), nextBadgeIds: badgeMutationNextIds.slice(0), targetBadgeId: badgeEquipTarget.id });
-                            replier.reply("⚠️ 홈뱃지 " + (badgeEquipSlotIndex + 1) + "번 슬롯을 교체할까요?\n━━━━━━━━━━━━\n현재: " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, badgeEquipSlotIndex) + "\n교체: " + badgeEquipTarget.emoji + " " + badgeEquipTarget.name + "\n\n현재 효과: " + badgeEquipBeforeEffect + "\n교체 후: " + badgeEquipAfterEffect + "\n\n👉 [홈뱃지교체] / [홈뱃지취소]");
+                            var badgeEquipTargetIdsForState = [];
+                            for (var badgeEquipTargetStateIndex = 0; badgeEquipTargetStateIndex < badgeEquipTargets.length; badgeEquipTargetStateIndex++) badgeEquipTargetIdsForState.push(badgeEquipTargets[badgeEquipTargetStateIndex].id);
+                            setHomeBadgeMutationState(sender, { action: "replace", expectedBadgeIds: badgeMutationCurrentIds.slice(0), nextBadgeIds: badgeMutationNextIds.slice(0), targetBadgeIds: badgeEquipTargetIdsForState });
+                            replier.reply("⚠️ 홈뱃지 장착 구성을 변경할까요?\n━━━━━━━━━━━━\n[현재]\n[1] 대표  " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, 0) + "\n[2] 보조  " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, 1) + "\n\n[변경 후]\n[1] 대표  " + getPetHomeBadgeSlotTextById(petHomeActivityDataForBadgeMutation, sender, badgeMutationNextIds[0]) + "\n[2] 보조  " + getPetHomeBadgeSlotTextById(petHomeActivityDataForBadgeMutation, sender, badgeMutationNextIds[1]) + "\n\n현재 효과: " + badgeEquipBeforeEffect + "\n변경 후: " + badgeEquipAfterEffect + "\n\n👉 [홈뱃지교체] / [홈뱃지취소]");
                             return;
                         }
-                        badgeMutationReply = "✅ 홈뱃지 " + (badgeEquipSlotIndex + 1) + "번 슬롯에 장착했습니다!" + (badgeEquipRequestedSlotIndex === 1 && badgeEquipSlotIndex === 0 ? "\n※ 대표 슬롯이 비어 있어 1번 대표로 자동 장착했습니다." : "");
+                        badgeMutationReply = badgeEquipTargets.length === 2 ? "✅ 대표·보조 홈뱃지를 한 번에 장착했습니다!" : "✅ 대표 홈뱃지를 장착했습니다!";
                     }
                     setPetHomeEquippedBadgeIds(badgeMutationSocial, badgeMutationNextIds);
                     syncHomeBadgeCubeEquippedBadges(data, sender, badgeMutationNextIds);
@@ -22527,7 +22560,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (/^\/홈뱃지장착(?:\s+.*)?$/.test(msg) || /^\/홈뱃지해제(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("사용법\n장착: /홈뱃지장착 [슬롯번호 1|2] [뱃지번호 또는 ID]\n기존 방식: /홈뱃지장착 [뱃지번호 또는 ID]\n해제: /홈뱃지해제 [슬롯번호 1|2]");
+                    replier.reply("사용법\n장착: /홈뱃지장착 [대표뱃지번호] [보조뱃지번호]\n해제: /홈뱃지해제 [대표뱃지번호] [보조뱃지번호]\n예시: /홈뱃지장착 3 5\n※ 번호 1개 입력은 대표 장착 또는 선택 뱃지 해제로 처리합니다.");
                     return;
                 }
                 if (msg === "/특별뱃지목록" || /^\/특별뱃지목록\s+\S+$/.test(msg)) {
@@ -29617,8 +29650,8 @@ function isExclusiveDataMutationCommandMessage(msg) {
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
         command === "홈뱃지교체" || command === "홈뱃지해제확정" || command === "홈뱃지취소" ||
-        /^\/홈뱃지장착\s+(?:(?:[12]\s+)?(?:\d+|[A-Za-z]{1,4}\d{2,3}))$/.test(command) ||
-        /^\/홈뱃지해제\s+[12]$/.test(command) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(command) ||
+        /^\/홈뱃지장착\s+(?:(?:\d+\s+\d+)|(?:\d+|[A-Za-z]{1,4}\d{2,3}))$/.test(command) ||
+        /^\/홈뱃지해제\s+\d+(?:\s+\d+)?$/.test(command) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(command) ||
         /^\/펜던트승급\s+\d+$/.test(command) || command === "승급할거임" || command === "쫄아뜸" ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" || command === "/기도" ||
@@ -44660,15 +44693,20 @@ function getPetHomeOwnedBadgeNumber(activityData, user, badgeId) {
     return 0;
 }
 
-// 장착 슬롯의 홈뱃지 표시 문구를 반환하는 함수
-function getPetHomeEquippedBadgeSlotText(activityData, user, slotIndex) {
+// 홈뱃지 ID의 보유 번호 포함 표시 문구를 반환하는 함수
+function getPetHomeBadgeSlotTextById(activityData, user, badgeId) {
     var social = getPetHomeSocialUser(activityData, user);
-    var equippedBadgeIds = getPetHomeEquippedBadgeIds(activityData, user);
-    var badge = getPetHomeBadgeById(equippedBadgeIds[slotIndex]);
+    var badge = getPetHomeBadgeById(badgeId);
     if (!badge || !petHomeStringListContains(social.badges, badge.id)) return "장착된 뱃지가 없습니다.";
     var ownedNumber = getPetHomeOwnedBadgeNumber(activityData, user, badge.id);
     if (ownedNumber > 0) return badge.emoji + " " + badge.name + "[" + ownedNumber + "번]";
     return badge.emoji + " " + badge.name;
+}
+
+// 장착 슬롯의 홈뱃지 표시 문구를 반환하는 함수
+function getPetHomeEquippedBadgeSlotText(activityData, user, slotIndex) {
+    var equippedBadgeIds = getPetHomeEquippedBadgeIds(activityData, user);
+    return getPetHomeBadgeSlotTextById(activityData, user, equippedBadgeIds[slotIndex]);
 }
 
 // 장착 중인 대표 펫홈 뱃지의 표시 문구를 반환하는 함수
@@ -44692,16 +44730,22 @@ function buildHomeBadgeSlotGuideMessage(data, petData, guildData, activityData, 
     lines.push("[2] 보조  " + getPetHomeEquippedBadgeSlotText(activityData, user, 1));
     lines.push("");
     if (action === "해제") {
-        lines.push("해제할 슬롯을 입력해 주세요.");
-        lines.push("/홈뱃지해제 [슬롯번호]");
-        lines.push("예: /홈뱃지해제 2");
+        var equippedIds = getPetHomeEquippedBadgeIds(activityData, user);
+        var equippedNumbers = [];
+        if (equippedIds[0]) equippedNumbers.push(getPetHomeOwnedBadgeNumber(activityData, user, equippedIds[0]));
+        if (equippedIds[1]) equippedNumbers.push(getPetHomeOwnedBadgeNumber(activityData, user, equippedIds[1]));
+        lines.push("해제할 장착 뱃지번호를 입력해 주세요.");
+        lines.push("/홈뱃지해제 [대표뱃지번호] [보조뱃지번호]");
+        if (equippedNumbers.length > 0) lines.push("현재 해제 명령: /홈뱃지해제 " + equippedNumbers.join(" "));
+        else lines.push("현재 장착된 홈뱃지가 없습니다.");
         lines.push("");
-        lines.push("※ 대표를 해제하면 보조 뱃지가 대표로 자동 이동합니다.");
+        lines.push("※ 번호 1개를 입력하면 선택한 장착 뱃지만 해제합니다.");
     } else {
-        lines.push("장착할 슬롯과 뱃지를 입력해 주세요.");
-        lines.push("/홈뱃지장착 [슬롯번호] [뱃지번호]");
-        lines.push("예: /홈뱃지장착 2 5");
+        lines.push("대표와 보조로 사용할 뱃지번호를 입력해 주세요.");
+        lines.push("/홈뱃지장착 [대표뱃지번호] [보조뱃지번호]");
+        lines.push("예: /홈뱃지장착 3 5");
         lines.push("");
+        lines.push("※ 번호 1개를 입력하면 대표 뱃지만 장착합니다.");
         lines.push("💡 대표 슬롯은 펫홈에 표시되고 모든 효과가 적용됩니다.");
         lines.push("💡 보조 슬롯은 캐슬·레이드 효과만 적용됩니다.");
     }
@@ -44897,8 +44941,9 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         (supportBadge ? buildHomeBadgeCubeOptionLines(data, user, supportBadge) + "\n" : "") +
         "\n💟 최종 적용 효과\n" + buildHomeBadgeCubeEffectSummary(data, user) + "\n" +
         "━━━━━━━━━━━━\n" +
-        "장착: /홈뱃지장착\n" +
-        "해제: /홈뱃지해제\n" +
+        "장착: /홈뱃지장착 [대표뱃지번호] [보조뱃지번호]\n" +
+        "해제: /홈뱃지해제 [대표뱃지번호] [보조뱃지번호]\n" +
+        "예시: /홈뱃지장착 3 5\n" +
         "상세: /홈뱃지정보 [번호, ID 또는 이름]\n" +
         "삭제: /홈뱃지삭제 [번호 또는 ID]\n" +
         "전체: /홈뱃지전체\n\n" +
@@ -48720,6 +48765,7 @@ function buildPendantInfoDetailMessage(title, pendant) {
     out += "기본 종합매력👑: " + numberWithCommas(stats.baseCharm) + "💞\n";
     out += "강화 종합매력👑: +" + numberWithCommas(stats.upgradeCharm) + "💞\n";
     out += "승급 종합매력👑: +" + numberWithCommas(stats.promotionCharm) + "💞\n";
+    out += allsee + "\n";
     out += "총 종합매력👑: " + numberWithCommas(stats.charm) + "💞\n\n";
     out += "기본 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.baseExplore) + "%\n";
     out += "강화 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.upgradeExplore) + "%\n";
@@ -48734,7 +48780,7 @@ function buildPendantInfoDetailMessage(title, pendant) {
     }
     if (pendant.grade === GLOBAL_CONFIG.pendant.promotionGrade) {
         var promotionCosts = getPendantPromotionCosts(normalizePendantPromotionLevel(pendant) + 1);
-        out += "\n" + allsee + "\n━━━━━━━━━━━━━\n🌟 창조 펜던트 승급\n";
+        out += "\n━━━━━━━━━━━━━\n🌟 창조 펜던트 승급\n";
         out += "현재 단계: ★" + normalizePendantPromotionLevel(pendant) + "\n";
         if (promotionCosts) {
             out += "다음 단계: ★" + promotionCosts.level + "\n";
