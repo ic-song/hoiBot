@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "4b07fa45fddc80b0fa2cd9d949cdb6246e3212a5",
+  "evidenceCommit": "3f3416d4ec843db8856540078f9df19ffd5c055d",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -13360,7 +13360,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-wave14-pet-skill-probability",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
-        "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+        "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs",
@@ -13468,7 +13468,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "369c76f289b3603262c2b2f79785ff9337a7bd7e5c5b8c28bdfa9d7914cda0fc"
+      "receiptSha256": "2c39f4f23f575890ac2012171e7a6baae9a5391cd4403c9fb8cecd0325c9da95"
     },
     {
       "receiptId": "receipt:wave14:legacy-e038a86d8e885624:negative_guard",
@@ -13484,7 +13484,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-wave14-pet-skill-probability",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
-        "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+        "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs",
@@ -13562,7 +13562,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "ec11becbe11127b85d551950815c38a4bb6916a2d39ca82d71edd5cc8b84947d"
+      "receiptSha256": "836425535675c9a2786f6f9d55ab65883aa7fefc3523a14c346af4115de51d22"
     },
     {
       "receiptId": "receipt:wave14:legacy-e038a86d8e885624:exact_output",
@@ -13578,7 +13578,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-wave14-pet-skill-probability",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
-        "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+        "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs",
@@ -13686,7 +13686,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "02932d9b1a6490e01613e96ad4c24932531e2dcd44fc03b30781518b7e98a2d9"
+      "receiptSha256": "b873b6705fd6ee3617b12288965f9f7b1657d02c8fc1bfaa40952a322c330a33"
     },
     {
       "receiptId": "receipt:wave14:legacy-e038a86d8e885624:source_domain_dml_zero",
@@ -13702,7 +13702,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-wave14-pet-skill-probability",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
-        "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+        "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs",
@@ -13810,7 +13810,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "7fdee2d9045e03c282fd1f6fcac3cb2d8233aacafc66ec895cadee2a4f23abe7"
+      "receiptSha256": "5b33503e3fd601599a48fc823e81475b79e07c561e16ef97fab21e6d3b0694f1"
     },
     {
       "receiptId": "receipt:wave14:legacy-e038a86d8e885624:restart_consistency",
@@ -13826,7 +13826,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-wave14-pet-skill-probability",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
-        "sha256": "fac3f86c01b073b17f120c08b05ebc4e801e719934de40b06c1a29099f83731a"
+        "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-pet-skill-probability.mjs",
@@ -13978,7 +13978,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "007fa36393a0d309b67e07d08cbdb6c1f4a85a9a10a53e5de17ffea43426630d"
+      "receiptSha256": "f0f092c547a2abf739238d5d628e00147a81aaadadf50da645810a49e6bc9880"
     }
   ]
 }
