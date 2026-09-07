@@ -2750,7 +2750,7 @@ Status: VERIFIED
 - Save flow: 고도화 Runtime은 도메인 읽기 전용이며 `operations`, `command_executions`, `command_audit`, `outbox_messages`만 원자 기록
 - Guard: `msg === "/펫스킬"`
 - Aggregate commands: `/펫스킬`, `/펫스킬확률`, `/펫스킬정보 [스킬명|유저명]`
-- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회하도록 추가되었다. 이 provider는 아직 `/펫스킬`, `/펫스킬확률`, `/펫스킬정보`에 활성화하지 않았다.
+- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회한다. `/펫스킬확률`만 전용 `pet_skill_probability` actual ingress에 연결되었고 기본 rollout은 `SHADOW`이며, `/펫스킬`·`/펫스킬정보`는 활성화하지 않았다.
 
 # /펫스킬가방
 
@@ -3119,6 +3119,9 @@ Status: VERIFIED
 - Search in main.js: `/길드가입조건`
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/pet/pet-skill-probability-service.ts`
+- `개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts`
+- `개발환경_고도화/runtime/src/app.ts`
 ## Related Helpers
 - `getMyGuildInfo`
 ## Data Usage
@@ -3760,7 +3763,8 @@ Status: VERIFIED
 - `PET_SKILL_LIST`
 ## Save Flow
 - Read-only
-- 정규 DB groundwork: `canonical-pet-skill-read-provider.ts`(미활성), `canonical-pet-skill-read-seed.ts`(레거시 93개 sourceKey 교차검증·메타데이터 seed)
+- 정규 DB 읽기: 전용 exact 후보가 canonical provider의 read-only consistent snapshot을 사용한다. 기본 rollout은 `SHADOW`이고 검증 시에만 `PET_SKILL_PROBABILITY`를 `ACTIVE`로 전환한다.
+- 레거시 회원/정지/닉네임 길이 경계를 읽기 전용으로 검사하며 canonical source DML은 수행하지 않는다.
 ## Related Commands
 - `/펫스킬오픈`
 - `/펫스킬정보`

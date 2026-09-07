@@ -195,6 +195,7 @@ import { MariaPetTitleDefinitionLinkRepository } from "./pet/maria-pet-title-def
 import { isPetRebirthCommandCandidate, normalizePetRebirthDispatchMessage, PetRebirthService } from "./pet/pet-rebirth-service.js";
 import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, PetDuelEmoteService } from "./pet/pet-duel-emote-service.js";
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
+import { isPetSkillProbabilityCommand, PetSkillProbabilityService } from "./pet/pet-skill-probability-service.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
@@ -765,6 +766,65 @@ async function dispatchPetExploreCommandConsumers(ingress: Pick<PetExploreAppWir
   await dispatchPetExploreEventControlCommand(ingress,isOperationalChannel,duplicate,event);
 }
 
+function isPetSkillBulkGrantOrProbabilityCandidate(message: string | undefined): boolean {
+  return isPetSkillBulkGrantCandidate(message) || isPetSkillProbabilityCommand(message);
+}
+
+// `/펫스킬확률` 하나만 canonical read provider에 전달해 범위 밖 aggregate 명령을 차단합니다.
+async function dispatchPetSkillProbabilityCommand(input: {
+  database: DatabaseClient | undefined;
+  eventProcessor: Pick<ProcessIrisEventService, "queueCommandReply"> | undefined;
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+  route: string | undefined;
+  handlerKey: string | undefined;
+  event: NormalizedIrisEvent;
+  replies: PendingReply[] | undefined;
+}): Promise<void> {
+  if (input.database === undefined || input.eventProcessor === undefined || input.replies === undefined
+    || !input.isOperationalChannel || input.duplicate !== false || input.route !== "MODERN"
+    || input.handlerKey !== "pet_skill_probability" || !isPetSkillProbabilityCommand(input.event.message)
+    || input.event.userId === undefined) return;
+  const result = await new PetSkillProbabilityService(input.database).read({
+    externalUserId: input.event.userId,
+    displayName: input.event.displayName
+  });
+  if (result !== null) {
+    input.replies.push(await input.eventProcessor.queueCommandReply(input.event,"pet_skill_probability",result.reply));
+  }
+}
+
+async function dispatchPetSkillReadCommands(input: {
+  database: DatabaseClient | undefined;
+  eventProcessor: Pick<ProcessIrisEventService, "queueCommandReply"> | undefined;
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+  route: string | undefined;
+  handlerKey: string | undefined;
+  event: NormalizedIrisEvent;
+  replies: PendingReply[] | undefined;
+}): Promise<void> {
+  if (input.handlerKey === "pet_skill_probability") {
+    await dispatchPetSkillProbabilityCommand(input);
+    return;
+  }
+  if (input.database === undefined || input.eventProcessor === undefined || input.replies === undefined
+    || !input.isOperationalChannel || input.duplicate !== false || input.route !== "MODERN"
+    || input.handlerKey !== "pet_skill_read" || !isPetSkillReadCommand(input.event.message)
+    || input.event.userId === undefined || input.event.channelId === undefined) return;
+  try {
+    const result = await new PetSkillReadService(input.database).read({
+      eventId:input.event.eventId, externalUserId:input.event.userId,
+      destinationId:input.event.channelId, message:input.event.message!
+    });
+    input.replies.push(await input.eventProcessor.queueCommandReply(input.event,"pet_skill_read",result.reply));
+  } catch (error) {
+    if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
+      input.replies.push(await input.eventProcessor.queueCommandReply(input.event,"pet_skill_read_error",error.message));
+    } else throw error;
+  }
+}
+
 export type PetDataCompareAppWiringDisposition = "not_applicable" | "legacy_fallback" | "claimed";
 
 // exact ADMIN 명령만 app-wiring에 전달하고 claim 여부를 레거시 실행 경계에 반환합니다.
@@ -1317,8 +1377,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         ? new PackageCatalogAddWizardIrisHandler(database)
         : undefined;
       const packageCatalogWizardControlCandidate = packageCatalogWizardHandler !== undefined
-        && isPackageCatalogWizardControl(normalizedEvent.message ?? "");
-      const packageCatalogWizardActiveInput = packageCatalogWizardHandler !== undefined
+        && isPackageCatalogWizardControl(normalizedEvent.message ?? ""),
+        packageCatalogWizardActiveInput = packageCatalogWizardHandler !== undefined
         && normalizedEvent.direction === "incoming"
         && normalizedEvent.message !== undefined
         && !normalizedEvent.message.startsWith("/")
@@ -1378,7 +1438,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPendantProbabilityCommand(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
-        || isPetSkillBulkGrantCandidate(normalizedEvent.message)
+        || isPetSkillBulkGrantOrProbabilityCandidate(normalizedEvent.message)
         || isPetSkillEquipCandidate(normalizedEvent.message)
         || isPetSkillSaleCandidate(normalizedEvent.message)
         || isHopePremiumDeleteCandidate(normalizedEvent.message)
@@ -3208,22 +3268,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillReadCommand(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_read"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        try {
-          const result = await new PetSkillReadService(database!).read({
-            eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-          });
-          processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_read",result.reply));
-        } catch (error) {
-          if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
-            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_read_error",error.message));
-          } else throw error;
-        }
-      }
+      await dispatchPetSkillReadCommands({database,eventProcessor,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:normalizedEvent,replies:processing?.replies});
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetDuelEmoteCommandCandidate(normalizedEvent.message)
