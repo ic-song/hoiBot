@@ -82,12 +82,12 @@ const OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS = new Set([
 const OBJECT_DB_PARITY_WAVE15_CONSUMER_ID="legacy-0a10ef65ad4b37cd" as const;
 const OBJECT_DB_PARITY_WAVE15_TARGET_PATH="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs" as const;
 const OBJECT_DB_PARITY_WAVE15_FIXTURE_PATH="개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave15-pet-skill-info-private-dev-v1.json" as const;
-const OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT="5ec1c6d8a088074987b5a10c4920efd2a6404833" as const;
+const OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT="ec7144a29c8bcd5066bf21243fc111c873582b1b" as const;
 const OBJECT_DB_PARITY_WAVE15_HARNESS_SHA256="fc16a16494d18c59b9293750eebe1121c698c5796e4fe72dcb7113e12bcdb00a" as const;
 const OBJECT_DB_PARITY_WAVE15_FIXTURE_SHA256="2e6bea0bc856a3ec0fdbbd8e80350db201ddc7a88de9946c61f03d2787ad54cc" as const;
-const OBJECT_DB_PARITY_WAVE15_TARGET_SHA256="4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131" as const;
+const OBJECT_DB_PARITY_WAVE15_TARGET_SHA256="cf8d765757856e22c111269f85b7fb157005a6ac4284fa09f2e7182a03b2bb12" as const;
 const OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES=[
-  {path:"개발환경_고도화/runtime/src/app.ts",sha256:"1a652876bf729b9bbd9684bf1252265540c9923b6ea1a7c783ce6a38d2d16910"},
+  {path:"개발환경_고도화/runtime/src/app.ts",sha256:"2b37454a23236e22d7df321165f53d1cce2542af16f1b4a5b6d1af34ccbce3f8"},
   {path:"개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts",sha256:"e20134fb8ecd4d8e6a5d63c9db495f347181638404e8bbc1e006c41917f50373"},
   {path:"개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts",sha256:"155927d4b3136f9e0dfc138cc0425353baa0ae2de050827b4c333116d2537e4a"},
   {path:"개발환경_고도화/runtime/src/pet/pet-skill-info-read-only-recovery-ingress.ts",sha256:"fca82050b248bc79a10a8f204a06d8fbfb13605bb0ee70b0e26f59557b9efdcf"},
