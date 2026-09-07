@@ -33,6 +33,9 @@ const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PATH = "개발환경_고도화/
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_COUNT = 155 as const;
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_BYTES = 693_449 as const;
 const OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_SHA256 = "c2774106e73fe7f4793958eeb2047c27b20f12c0cab0c97c83efa603ef8d8b60" as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_COUNT = 160 as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_BYTES = 740_925 as const;
+const OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_SHA256 = "2d1803d6d217fc60c0357b4aa7a2d7e0b3993233ba571063315c4493ee910975" as const;
 const OBJECT_DB_PARITY_RUNNER = "NODE_OBJECT_DB_PARITY_V1" as const;
 const OBJECT_DB_PARITY_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE8_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave8-harness.mjs" as const;
@@ -42,12 +45,14 @@ const OBJECT_DB_PARITY_WAVE11_HARNESS_PATH = "개발환경_고도화/runtime/tes
 const OBJECT_DB_PARITY_WAVE12_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave12-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE13_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-harness.mjs" as const;
 const OBJECT_DB_PARITY_WAVE14_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave14-harness.mjs" as const;
+const OBJECT_DB_PARITY_WAVE15_HARNESS_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-harness.mjs" as const;
 const OBJECT_DB_PARITY_CHILD_TIMEOUT_MS = 10_000;
 export const OBJECT_DB_PARITY_WAVE10_CHILD_TIMEOUT_MS = 30_000;
 export const OBJECT_DB_PARITY_WAVE11_CHILD_TIMEOUT_MS = 30_000;
 export const OBJECT_DB_PARITY_WAVE12_CHILD_TIMEOUT_MS = 30_000;
 export const OBJECT_DB_PARITY_WAVE13_CHILD_TIMEOUT_MS = 30_000;
 export const OBJECT_DB_PARITY_WAVE14_CHILD_TIMEOUT_MS = 60_000;
+export const OBJECT_DB_PARITY_WAVE15_CHILD_TIMEOUT_MS = 60_000;
 const OBJECT_DB_PARITY_WAVE1_TITLE_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs" as const;
 const OBJECT_DB_PARITY_WAVE2_COMPATIBILITY_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs" as const;
 const OBJECT_DB_PARITY_WAVE3_PLAYER_TARGET_PATH = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs" as const;
@@ -74,6 +79,29 @@ const OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS = new Set([
   "receipt:wave14:legacy-e038a86d8e885624:source_domain_dml_zero",
   "receipt:wave14:legacy-e038a86d8e885624:restart_consistency",
 ]);
+const OBJECT_DB_PARITY_WAVE15_CONSUMER_ID="legacy-0a10ef65ad4b37cd" as const;
+const OBJECT_DB_PARITY_WAVE15_TARGET_PATH="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs" as const;
+const OBJECT_DB_PARITY_WAVE15_FIXTURE_PATH="개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave15-pet-skill-info-private-dev-v1.json" as const;
+const OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT="5ec1c6d8a088074987b5a10c4920efd2a6404833" as const;
+const OBJECT_DB_PARITY_WAVE15_HARNESS_SHA256="fc16a16494d18c59b9293750eebe1121c698c5796e4fe72dcb7113e12bcdb00a" as const;
+const OBJECT_DB_PARITY_WAVE15_FIXTURE_SHA256="2e6bea0bc856a3ec0fdbbd8e80350db201ddc7a88de9946c61f03d2787ad54cc" as const;
+const OBJECT_DB_PARITY_WAVE15_TARGET_SHA256="4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131" as const;
+const OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES=[
+  {path:"개발환경_고도화/runtime/src/app.ts",sha256:"1a652876bf729b9bbd9684bf1252265540c9923b6ea1a7c783ce6a38d2d16910"},
+  {path:"개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts",sha256:"e20134fb8ecd4d8e6a5d63c9db495f347181638404e8bbc1e006c41917f50373"},
+  {path:"개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts",sha256:"155927d4b3136f9e0dfc138cc0425353baa0ae2de050827b4c333116d2537e4a"},
+  {path:"개발환경_고도화/runtime/src/pet/pet-skill-info-read-only-recovery-ingress.ts",sha256:"fca82050b248bc79a10a8f204a06d8fbfb13605bb0ee70b0e26f59557b9efdcf"},
+  {path:"개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts",sha256:"bf3ccba378e39dba30d57c730b63afadc4bcd38bc7d8f5b8eb89c35725c8f964"},
+] as const;
+const OBJECT_DB_PARITY_WAVE15_RECEIPT_IDS=new Set([
+  "receipt:wave15:legacy-0a10ef65ad4b37cd:read_positive",
+  "receipt:wave15:legacy-0a10ef65ad4b37cd:negative_guard",
+  "receipt:wave15:legacy-0a10ef65ad4b37cd:auth_denied",
+  "receipt:wave15:legacy-0a10ef65ad4b37cd:wrong_room_rejected",
+  "receipt:wave15:legacy-0a10ef65ad4b37cd:exact_output",
+  "receipt:wave15:legacy-0a10ef65ad4b37cd:source_domain_dml_zero",
+  "receipt:wave15:legacy-0a10ef65ad4b37cd:restart_consistency",
+]);
 const TRUSTED_WAVE1_TITLE_READS = {
   "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
   "sql-repository-a0a5f5d8f3338d7b": { domain: "pet", symbol: "pet.listOwned", triggerOrPredicate: "SQL_METHOD:pet:listOwned", interfaceId: "pet-title.repository.maria-canonical-title-repository.pet.listOwned", definitionTable: "canonical_pet_title_definitions", definitionId: "pet_title_id", ownershipTable: "canonical_owned_pet_title_instances", ownedId: "owned_pet_title_id", selectionTable: "canonical_pet_title_selections" },
@@ -95,7 +123,9 @@ export const OBJECT_DB_EXECUTABLE_PARITY_VERDICTS = [
 ] as const;
 
 export function objectDbParityHarnessTimeoutMs(harnessPath: string): number {
-  return harnessPath === OBJECT_DB_PARITY_WAVE14_HARNESS_PATH
+  return harnessPath === OBJECT_DB_PARITY_WAVE15_HARNESS_PATH
+    ? OBJECT_DB_PARITY_WAVE15_CHILD_TIMEOUT_MS
+    : harnessPath === OBJECT_DB_PARITY_WAVE14_HARNESS_PATH
     ? OBJECT_DB_PARITY_WAVE14_CHILD_TIMEOUT_MS
     : harnessPath === OBJECT_DB_PARITY_WAVE13_HARNESS_PATH
     ? OBJECT_DB_PARITY_WAVE13_CHILD_TIMEOUT_MS
@@ -455,9 +485,10 @@ function sourceClassificationHasRoomGuard(consumer: ConsumerManifestInput["consu
   return /room|channel|isGroupChat|operational/i.test(source);
 }
 
-function scenarioRequirementsFor(consumer: ConsumerManifestInput["consumers"][number], classificationSha256: string): ScenarioRequirement[] {
+function scenarioRequirementsFor(consumer: ConsumerManifestInput["consumers"][number], classificationSha256: string,consumerId?:string): ScenarioRequirement[] {
   const accessClass: AccessClass = consumer.access === "READ" ? "READ" : "MUTATION";
   const kinds = accessClass === "READ" ? OBJECT_DB_PARITY_READ_SCENARIOS : OBJECT_DB_PARITY_MUTATION_SCENARIOS;
+  if((consumer.consumerId??consumerId)===OBJECT_DB_PARITY_WAVE15_CONSUMER_ID)return kinds.map(scenarioKind=>({scenarioKind,disposition:"REQUIRED",notApplicable:null}));
   const authRequired = sourceClassificationHasAuthGuard(consumer);
   const roomRequired = sourceClassificationHasRoomGuard(consumer);
   return kinds.map((scenarioKind): ScenarioRequirement => {
@@ -500,12 +531,14 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
   if(value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave12:"))){
     const hasWave13=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave13:"));
     const hasWave14=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave14:"));
-    if(value.receipts.length!==(hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
+    const hasWave15=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave15:"));
+    if(value.receipts.length!==(hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
     const historicalPrefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT));
     if(Buffer.byteLength(historicalPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES||sha256CanonicalText(historicalPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT}`);
     const wave12Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_COUNT));
     if(Buffer.byteLength(wave12Prefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_BYTES||sha256CanonicalText(wave12Prefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_EVIDENCE_COMMIT}`);
     if(hasWave14){const wave13Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_COUNT));if(Buffer.byteLength(wave13Prefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_BYTES||sha256CanonicalText(wave13Prefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_EVIDENCE_COMMIT}`);}
+    if(hasWave15){const wave14Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_COUNT));if(Buffer.byteLength(wave14Prefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_BYTES||sha256CanonicalText(wave14Prefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_SHA256)throw new Error("historical Wave14 receipt fingerprint drift");}
   }
   return value as unknown as ObjectDbConsumerExecutionReceiptBundle;
 }
@@ -942,19 +975,30 @@ function assertReceiptGitProvenance(
     if(pinned===undefined||JSON.stringify(pinned)!==JSON.stringify(receipt))throw new Error(`historical receipt fingerprint drift: ${receipt.receiptId}`);
     return;
   }
+  const receiptEvidenceCommit=receipt.receiptId.startsWith("receipt:wave14:")?OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT:evidenceCommit;
   for (const evidence of [
     { path: receipt.harness.path, sha256: receipt.harness.sourceSha256 },
     { path: receipt.fixture.path, sha256: receipt.fixture.sha256 },
     { path: receipt.invocation.targetPath, sha256: receipt.invocation.targetSourceSha256 },
   ]) {
-    const blob = readCommitBlob(repositoryRoot, evidenceCommit, evidence.path);
+    const blob = readCommitBlob(repositoryRoot, receiptEvidenceCommit, evidence.path);
     if (sha256CanonicalText(blob) !== evidence.sha256) throw new Error(`${receipt.receiptId} evidenceCommit blob hash drift: ${evidence.path}`);
   }
-  const fixtureBlob = readCommitBlob(repositoryRoot, evidenceCommit, receipt.fixture.path);
+  const fixtureBlob = readCommitBlob(repositoryRoot, receiptEvidenceCommit, receipt.fixture.path);
+  if(receipt.receiptId.startsWith("receipt:wave15:")){
+    const fixture=JSON.parse(fixtureBlob) as Record<string,unknown>,frozen=isRecord(fixture.frozenLegacySource)?fixture.frozenLegacySource:undefined,contract=isRecord(fixture.receiptContract)?fixture.receiptContract:undefined;
+    if(evidenceCommit!==OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT||!OBJECT_DB_PARITY_WAVE15_RECEIPT_IDS.has(receipt.receiptId)||receipt.consumerId!==OBJECT_DB_PARITY_WAVE15_CONSUMER_ID||receipt.proofMode!=="DIRECT"||receipt.harness.runner!==OBJECT_DB_PARITY_RUNNER||receipt.harness.path!==OBJECT_DB_PARITY_WAVE15_HARNESS_PATH||receipt.harness.sourceSha256!==OBJECT_DB_PARITY_WAVE15_HARNESS_SHA256||receipt.fixture.path!==OBJECT_DB_PARITY_WAVE15_FIXTURE_PATH||receipt.fixture.sha256!==OBJECT_DB_PARITY_WAVE15_FIXTURE_SHA256||receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE15_TARGET_PATH||receipt.invocation.targetSourceSha256!==OBJECT_DB_PARITY_WAVE15_TARGET_SHA256||receipt.invocation.exportName!=="executeWave15PetSkillInfoPrivateDev"||fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.sliceId!=="SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01"||fixture.baselineCommit!=="f10816ab7398f34979e64073325e118dd4e29e41"||!frozen||frozen.file!=="main.js"||frozen.gitBlobSha1!=="451730e955e1ed47fc2ec6ce24845ea511bc0f21"||!Array.isArray(frozen.spans)||!contract||contract.version!=="PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1"||contract.terminalResult!=="NO_REPLY"||contract.transaction!=="ONE_CONSISTENT_ROOT_TRANSACTION"||!Array.isArray(fixture.bindings)||fixture.bindings.length!==7)throw new Error(`${receipt.receiptId} trusted Wave15 contract drift`);
+    const legacy=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,fixture.baselineCommit as string,"main.js")),lines=legacy.split("\n");
+    for(const span of frozen.spans){if(!isRecord(span)||typeof span.startLine!=="number"||typeof span.endLine!=="number"||typeof span.sha256!=="string"||span.startLine<1||span.endLine<span.startLine||sha256CanonicalText(lines.slice(span.startLine-1,span.endLine).join("\n"))!==span.sha256)throw new Error(`${receipt.receiptId} Wave15 frozen legacy span drift`);}
+    const binding=fixture.bindings.find(candidate=>isRecord(candidate)&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind);
+    if(!isRecord(binding)||receipt.receiptId!==`receipt:wave15:${receipt.consumerId}:${receipt.scenario.scenarioKind.toLowerCase()}`)throw new Error(`${receipt.receiptId} pinned Wave15 scenario/binding mismatch`);
+    for(const source of OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES)if(sha256CanonicalText(readCommitBlob(repositoryRoot,evidenceCommit,source.path))!==source.sha256)throw new Error(`${receipt.receiptId} Wave15 runtime import-chain drift`);
+    return;
+  }
   if(receipt.receiptId.startsWith("receipt:wave14:")){
     const fixture=JSON.parse(fixtureBlob) as Record<string,unknown>;
     const oracle=isRecord(fixture.legacyOracle)?fixture.legacyOracle:undefined,legacy=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,"8f075b4ef249543563e3338e8f3dd32046344880","main.js")),span=oracle&&typeof oracle.sourceStart==="number"&&typeof oracle.sourceEnd==="number"?legacy.slice(oracle.sourceStart,oracle.sourceEnd):"";
-    if(evidenceCommit!==OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT||!OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS.has(receipt.receiptId)||receipt.consumerId!=="legacy-e038a86d8e885624"||receipt.proofMode!=="DIRECT"||receipt.harness.runner!==OBJECT_DB_PARITY_RUNNER||receipt.harness.path!==OBJECT_DB_PARITY_WAVE14_HARNESS_PATH||receipt.harness.sourceSha256!==OBJECT_DB_PARITY_WAVE14_HARNESS_SHA256||receipt.fixture.path!==OBJECT_DB_PARITY_WAVE14_FIXTURE_PATH||receipt.fixture.sha256!==OBJECT_DB_PARITY_WAVE14_FIXTURE_SHA256||receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE14_PET_SKILL_PROBABILITY_TARGET_PATH||receipt.invocation.targetSourceSha256!==OBJECT_DB_PARITY_WAVE14_TARGET_SHA256||receipt.invocation.exportName!=="executeWave14PetSkillProbability"||fixture.format!=="hoibot-object-db-consumer-executable-parity-wave14-v1"||oracle?.sourcePath!=="main.js"||oracle.sourceStart!==201195||oracle.sourceEnd!==202371||oracle.sourceSpanSha256!=="31d66373b98ac5e1fcc5ae3a416c3af775c682ade4b3cd3571851fec53ba0945"||sha256CanonicalText(span)!==oracle.sourceSpanSha256||!span.includes(String(oracle.sourceNeedle))||!Array.isArray(fixture.runtimeSourceHashes))throw new Error(`${receipt.receiptId} trusted Wave14 contract/oracle source drift`);
+    if(receiptEvidenceCommit!==OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT||!OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS.has(receipt.receiptId)||receipt.consumerId!=="legacy-e038a86d8e885624"||receipt.proofMode!=="DIRECT"||receipt.harness.runner!==OBJECT_DB_PARITY_RUNNER||receipt.harness.path!==OBJECT_DB_PARITY_WAVE14_HARNESS_PATH||receipt.harness.sourceSha256!==OBJECT_DB_PARITY_WAVE14_HARNESS_SHA256||receipt.fixture.path!==OBJECT_DB_PARITY_WAVE14_FIXTURE_PATH||receipt.fixture.sha256!==OBJECT_DB_PARITY_WAVE14_FIXTURE_SHA256||receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE14_PET_SKILL_PROBABILITY_TARGET_PATH||receipt.invocation.targetSourceSha256!==OBJECT_DB_PARITY_WAVE14_TARGET_SHA256||receipt.invocation.exportName!=="executeWave14PetSkillProbability"||fixture.format!=="hoibot-object-db-consumer-executable-parity-wave14-v1"||oracle?.sourcePath!=="main.js"||oracle.sourceStart!==201195||oracle.sourceEnd!==202371||oracle.sourceSpanSha256!=="31d66373b98ac5e1fcc5ae3a416c3af775c682ade4b3cd3571851fec53ba0945"||sha256CanonicalText(span)!==oracle.sourceSpanSha256||!span.includes(String(oracle.sourceNeedle))||!Array.isArray(fixture.runtimeSourceHashes))throw new Error(`${receipt.receiptId} trusted Wave14 contract/oracle source drift`);
     const bindings=Array.isArray(fixture.bindings)?fixture.bindings:[],binding=bindings.find(candidate=>isRecord(candidate)&&candidate.consumerId===receipt.consumerId&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind);
     if(!isRecord(binding)||binding.harnessId!==receipt.harness.harnessId||binding.harnessCaseId!==receipt.harness.harnessCaseId||binding.fixtureId!==receipt.fixture.fixtureId||receipt.receiptId!==`receipt:wave14:${receipt.consumerId}:${receipt.scenario.scenarioKind.toLowerCase()}`)throw new Error(`${receipt.receiptId} pinned Wave14 scenario/binding mismatch`);
     const expectedEvidence=isRecord(fixture.expectedEvidence)?fixture.expectedEvidence:undefined,dmlTemplates=expectedEvidence&&isRecord(expectedEvidence.dmlTemplates)?expectedEvidence.dmlTemplates:undefined,scenarios=expectedEvidence&&isRecord(expectedEvidence.scenarios)?expectedEvidence.scenarios:undefined,expected=scenarios&&isRecord(scenarios[receipt.scenario.scenarioKind])?scenarios[receipt.scenario.scenarioKind] as Record<string,unknown>:undefined,template=expected&&typeof expected.dmlTemplate==="string"&&dmlTemplates&&Array.isArray(dmlTemplates[expected.dmlTemplate])?dmlTemplates[expected.dmlTemplate] as unknown[]:undefined;
@@ -963,7 +1007,7 @@ function assertReceiptGitProvenance(
     if(!receipt.expectedActual.dml.actualNormalizedStatements?.every(statement=>/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE)\b/i.test(statement)))throw new Error(`${receipt.receiptId} observed DML verb must be INSERT or UPDATE`);
     const expectedDmlHash=normalizedDmlFingerprint(expectedStatements,expected.rowCount as number),expectedResultHash=sha256CanonicalText(JSON.stringify(expected.result));
     if(receipt.expectedActual.reply.expectedSha256!==expected.replySha256||receipt.expectedActual.result.expectedSha256!==expectedResultHash||receipt.expectedActual.dml.expectedSha256!==expectedDmlHash||JSON.stringify(receipt.expectedActual.dml.expectedNormalizedStatements)!==JSON.stringify(expectedStatements)||receipt.expectedActual.dml.expectedRowCount!==expected.rowCount||JSON.stringify(receipt.expectedActual.lockOrder.expected)!==JSON.stringify(expected.lockOrder)||receipt.expectedActual.transaction.expected!==expected.transaction||JSON.stringify(receipt.expectedActual.transaction.expectedTimeline)!==JSON.stringify(expected.timeline))throw new Error(`${receipt.receiptId} pinned Wave14 expected evidence mismatch`);
-    for(const source of fixture.runtimeSourceHashes){if(!isRecord(source)||typeof source.path!=="string"||typeof source.sha256!=="string"||sha256CanonicalText(readCommitBlob(repositoryRoot,evidenceCommit,source.path))!==source.sha256)throw new Error(`${receipt.receiptId} Wave14 runtime import-chain drift`);}
+    for(const source of fixture.runtimeSourceHashes){if(!isRecord(source)||typeof source.path!=="string"||typeof source.sha256!=="string"||sha256CanonicalText(readCommitBlob(repositoryRoot,receiptEvidenceCommit,source.path))!==source.sha256)throw new Error(`${receipt.receiptId} Wave14 runtime import-chain drift`);}
     return;
   }
   assertTrustedWave1FixtureBinding(receipt, fixtureBlob, manifestConsumer, repositoryRoot, evidenceCommit);
@@ -991,7 +1035,10 @@ function assertReceiptExecutableBinding(
   let fixture: unknown;
   try { fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)); } catch { throw new Error(`${receipt.receiptId} fixture must be JSON`); }
   if (!isRecord(fixture)) throw new Error(`${receipt.receiptId} fixture must be an object`);
-  if(receipt.receiptId.startsWith("receipt:wave14:")){
+  if(receipt.receiptId.startsWith("receipt:wave15:")){
+    assertExactKeys(fixture,["format","fixtureId","sliceId","executionId","baselineCommit","frozenLegacySource","receiptContract","bindings","explicitDivergences"],`${receipt.receiptId}.fixture`);
+    if(fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||!Array.isArray(fixture.bindings)||fixture.bindings.length!==7)throw new Error(`${receipt.receiptId} trusted Wave15 fixture drift`);
+  }else if(receipt.receiptId.startsWith("receipt:wave14:")){
     assertExactKeys(fixture,["format","fixtureId","legacyOracle","expectedEvidence","runtimeSourceHashes","payload","bindings"],`${receipt.receiptId}.fixture`);
     if(fixture.format!=="hoibot-object-db-consumer-executable-parity-wave14-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||!isRecord(fixture.legacyOracle)||!isRecord(fixture.expectedEvidence)||!isRecord(fixture.expectedEvidence.dmlTemplates)||!isRecord(fixture.expectedEvidence.scenarios)||fixture.legacyOracle.sourceRef!=="8f075b4ef249543563e3338e8f3dd32046344880"||fixture.legacyOracle.sourcePath!=="main.js"||fixture.legacyOracle.sourceStart!==201195||fixture.legacyOracle.sourceEnd!==202371||fixture.legacyOracle.sourceSpanSha256!=="31d66373b98ac5e1fcc5ae3a416c3af775c682ade4b3cd3571851fec53ba0945"||fixture.legacyOracle.sourceNeedle!=="if (msg === \"/펫스킬확률\")"||fixture.legacyOracle.displayedDefinitionCount!==92||fixture.legacyOracle.utf16CodeUnitCount!==2630||fixture.legacyOracle.utf8ByteCount!==5494||fixture.legacyOracle.replySha256!=="4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"||!Array.isArray(fixture.bindings))throw new Error(`${receipt.receiptId} trusted Wave14 fixture/oracle drift`);
   }else{
@@ -999,12 +1046,16 @@ function assertReceiptExecutableBinding(
     if (fixture.format !== "hoibot-object-db-consumer-parity-case-fixture-v1" || fixture.fixtureId !== receipt.fixture.fixtureId || !Array.isArray(fixture.bindings)) throw new Error(`${receipt.receiptId} fixture contract/binding mismatch`);
   }
   const exactBinding = JSON.stringify(binding);
-  const hasExactBinding=receipt.receiptId.startsWith("receipt:wave14:")
+  const hasExactBinding=receipt.receiptId.startsWith("receipt:wave15:")
+    ? fixture.bindings.some(candidate=>isRecord(candidate)&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind)
+    : receipt.receiptId.startsWith("receipt:wave14:")
     ? fixture.bindings.some((candidate)=>isRecord(candidate)&&Object.keys(candidate).length===Object.keys(binding).length&&Object.entries(binding).every(([key,value])=>candidate[key]===value))
     : fixture.bindings.some((candidate) => isRecord(candidate) && JSON.stringify(candidate) === exactBinding);
   if (!hasExactBinding) throw new Error(`${receipt.receiptId} unrelated fixture lacks exact receipt binding`);
   if (receipt.harness.runner !== OBJECT_DB_PARITY_RUNNER) throw new Error(`${receipt.receiptId} runner metadata is not allowlisted`);
-  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave14:")
+  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave15:")
+    ? OBJECT_DB_PARITY_WAVE15_HARNESS_PATH
+    : receipt.receiptId.startsWith("receipt:wave14:")
     ? OBJECT_DB_PARITY_WAVE14_HARNESS_PATH
     : receipt.receiptId.startsWith("receipt:wave13:")
     ? OBJECT_DB_PARITY_WAVE13_HARNESS_PATH
@@ -1023,13 +1074,15 @@ function assertReceiptExecutableBinding(
   // 이전 Wave 영수증은 해당 Wave의 고정 evidenceCommit 소스와 자체 해시로 이미 실행 검증됐다.
   // 현재 소스에서 재실행하면 무관한 후속 삽입으로 span 위치가 변하므로, 누적 묶음에서는
   // 위 provenance 검증과 불변 receipt/fixture/harness/target 해시만 재검증한다.
-  if (!receipt.receiptId.startsWith("receipt:wave14:")) return;
+  const currentExecutableReceipt=receipt.receiptId.startsWith("receipt:wave15:");
+  if (!currentExecutableReceipt) return;
   const harnessPath = resolveEvidenceFile(receipt.harness.path, harnessText);
   const targetPath = resolveEvidenceFile(receipt.invocation.targetPath, targetText);
   const runDirectory = mkdtempSync(join(tmpdir(), "hoibot-parity-"));
   try {
     const inputPath = join(runDirectory, "input.json");
-    writeFileSync(inputPath, `${JSON.stringify({ binding, fixturePayload: fixture.payload, ...(receipt.receiptId.startsWith("receipt:wave14:")?{evidenceCommit,runtimeSourceHashes:fixture.runtimeSourceHashes}:{}), invocation: receipt.invocation }, null, 2)}\n`, "utf8");
+    const executableBinding=receipt.receiptId.startsWith("receipt:wave15:")?{...(fixture.bindings as Array<Record<string,unknown>>).find(candidate=>candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind),...binding}:binding;
+    writeFileSync(inputPath, `${JSON.stringify({ binding:executableBinding, fixturePayload: fixture.payload, ...(receipt.receiptId.startsWith("receipt:wave15:")?{evidenceCommit,runtimeSourceHashes:OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES}:receipt.receiptId.startsWith("receipt:wave14:")?{evidenceCommit,runtimeSourceHashes:fixture.runtimeSourceHashes}:{}), invocation: receipt.invocation }, null, 2)}\n`, "utf8");
     const stdout = executeObjectDbParityHarnessChild(
       [harnessPath, inputPath, runDirectory, targetPath],
       objectDbParityHarnessTimeoutMs(receipt.harness.path),
@@ -1052,9 +1105,9 @@ function assertReceiptExecutableBinding(
     if (replyHash !== receipt.expectedActual.reply.actualSha256 || resultHash !== receipt.expectedActual.result.actualSha256) throw new Error(`${receipt.receiptId} raw reply/result capture hash mismatch`);
     const trace = JSON.parse(readFileSync(artifactPath(caseResult.artifacts.tracePath), "utf8")) as unknown;
     if (!isRecord(trace)) throw new Error(`${receipt.receiptId} raw execution trace invalid`);
-    const wave14Trace=receipt.receiptId.startsWith("receipt:wave14:"),wave8Trace=wave14Trace||receipt.receiptId.startsWith("receipt:wave13:")||receipt.consumerId in TRUSTED_WAVE8_ADMIN_CHAINS||receipt.consumerId in TRUSTED_WAVE9_RANK_CHAINS||receipt.consumerId in TRUSTED_WAVE10_PENDANT_READS||receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS||receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS;
-    assertExactKeys(trace, wave14Trace?["queryTrace","dmlTrace","normalizedStatements","rowCount","lockOrder","transaction","transactionAttempts","timeline","sourceDomainDmlCount"]:wave8Trace?["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "transactionAttempts", "timeline"]:["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
-    if(wave14Trace&&trace.sourceDomainDmlCount!==0)throw new Error(`${receipt.receiptId} canonical source DML detected`);
+    const sourceDmlTrace=receipt.receiptId.startsWith("receipt:wave14:")||receipt.receiptId.startsWith("receipt:wave15:"),wave8Trace=sourceDmlTrace||receipt.receiptId.startsWith("receipt:wave13:")||receipt.consumerId in TRUSTED_WAVE8_ADMIN_CHAINS||receipt.consumerId in TRUSTED_WAVE9_RANK_CHAINS||receipt.consumerId in TRUSTED_WAVE10_PENDANT_READS||receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS||receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS;
+    assertExactKeys(trace, sourceDmlTrace?["queryTrace","dmlTrace","normalizedStatements","rowCount","lockOrder","transaction","transactionAttempts","timeline","sourceDomainDmlCount"]:wave8Trace?["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "transactionAttempts", "timeline"]:["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
+    if(sourceDmlTrace&&trace.sourceDomainDmlCount!==0)throw new Error(`${receipt.receiptId} canonical source DML detected`);
     if (!Array.isArray(trace.queryTrace)) throw new Error(`${receipt.receiptId} trace queryTrace invalid`);
     for (const [index, query] of trace.queryTrace.entries()) {
       if (!isRecord(query)) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
@@ -1062,7 +1115,7 @@ function assertReceiptExecutableBinding(
       if (query.channel !== "query" || typeof query.normalizedSql !== "string" || !Array.isArray(query.values) || !Number.isSafeInteger(query.rowCount) || (query.rowCount as number) < 0) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
     }
     if(!Array.isArray(trace.dmlTrace))throw new Error(`${receipt.receiptId} trace dmlTrace invalid`);
-    for(const[index,mutation]of trace.dmlTrace.entries()){if(!isRecord(mutation))throw new Error(`${receipt.receiptId} trace dmlTrace[${index}] invalid`);assertExactKeys(mutation,["channel","normalizedSql","values","rowCount"],`${receipt.receiptId}.trace.dmlTrace[${index}]`);if(mutation.channel!=="execute"||typeof mutation.normalizedSql!=="string"||!Array.isArray(mutation.values)||!Number.isSafeInteger(mutation.rowCount)||(mutation.rowCount as number)<0)throw new Error(`${receipt.receiptId} trace dmlTrace[${index}] invalid`);if(wave14Trace&&!/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE)\b/i.test(mutation.normalizedSql))throw new Error(`${receipt.receiptId} observed DML verb must be INSERT or UPDATE`);}
+    for(const[index,mutation]of trace.dmlTrace.entries()){if(!isRecord(mutation))throw new Error(`${receipt.receiptId} trace dmlTrace[${index}] invalid`);assertExactKeys(mutation,["channel","normalizedSql","values","rowCount"],`${receipt.receiptId}.trace.dmlTrace[${index}]`);if(mutation.channel!=="execute"||typeof mutation.normalizedSql!=="string"||!Array.isArray(mutation.values)||!Number.isSafeInteger(mutation.rowCount)||(mutation.rowCount as number)<0)throw new Error(`${receipt.receiptId} trace dmlTrace[${index}] invalid`);if(sourceDmlTrace&&!/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE)\b/i.test(mutation.normalizedSql))throw new Error(`${receipt.receiptId} observed DML verb must be INSERT or UPDATE`);}
     if(wave8Trace){if(!Array.isArray(trace.transactionAttempts))throw new Error(`${receipt.receiptId} trace transactionAttempts invalid`);for(const[index,attempt]of trace.transactionAttempts.entries()){if(!isRecord(attempt))throw new Error(`${receipt.receiptId} trace transactionAttempts[${index}] invalid`);assertExactKeys(attempt,["attemptNumber","outcome","committed","dmlStatements","dmlRowCount"],`${receipt.receiptId}.trace.transactionAttempts[${index}]`);if(attempt.attemptNumber!==index+1||(attempt.outcome!=="COMMIT"&&attempt.outcome!=="ROLLBACK")||attempt.committed!==(attempt.outcome==="COMMIT")||!Array.isArray(attempt.dmlStatements)||!attempt.dmlStatements.every(statement=>typeof statement==="string")||!Number.isSafeInteger(attempt.dmlRowCount)||(attempt.dmlRowCount as number)<0)throw new Error(`${receipt.receiptId} trace transactionAttempts[${index}] invalid`);}}
     if(receipt.consumerId in TRUSTED_WAVE8_ADMIN_CHAINS||receipt.consumerId in TRUSTED_WAVE9_RANK_CHAINS||receipt.consumerId in TRUSTED_WAVE10_PENDANT_READS||receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS||receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS){
       const payload=isRecord(fixture.payload)?fixture.payload:undefined,cases=payload&&Array.isArray(payload.cases)?payload.cases:[],parityCase=cases.find(candidate=>isRecord(candidate)&&candidate.caseId===receipt.harness.harnessCaseId),consumers=isRecord(parityCase)&&Array.isArray(parityCase.consumers)?parityCase.consumers:[],consumer=consumers.find(candidate=>isRecord(candidate)&&candidate.consumerId===receipt.consumerId);
@@ -1175,7 +1228,8 @@ function validateExecutionReceipt(
   const trustedWave11HomeFurnitureDml=receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS&&receipt.harness.path===OBJECT_DB_PARITY_WAVE11_HARNESS_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE11_HOME_FURNITURE_READ_TARGET_PATH;
   const trustedWave12CharacterCountDml=receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS&&receipt.harness.path===OBJECT_DB_PARITY_WAVE12_HARNESS_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE12_CHARACTER_COUNT_TARGET_PATH;
   const trustedWave13ServerStatsDml=receipt.consumerId in TRUSTED_WAVE13_SERVER_STATS_READS&&receipt.harness.path===OBJECT_DB_PARITY_WAVE13_HARNESS_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE13_SERVER_STATS_TARGET_PATH;
-  const trustedWave14PetSkillProbabilityDml=receipt.consumerId==="legacy-e038a86d8e885624"&&OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS.has(receipt.receiptId)&&evidenceCommit===OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT&&receipt.harness.path===OBJECT_DB_PARITY_WAVE14_HARNESS_PATH&&receipt.harness.sourceSha256===OBJECT_DB_PARITY_WAVE14_HARNESS_SHA256&&receipt.fixture.sha256===OBJECT_DB_PARITY_WAVE14_FIXTURE_SHA256&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE14_PET_SKILL_PROBABILITY_TARGET_PATH&&receipt.invocation.targetSourceSha256===OBJECT_DB_PARITY_WAVE14_TARGET_SHA256;
+  const trustedWave14PetSkillProbabilityDml=receipt.consumerId==="legacy-e038a86d8e885624"&&OBJECT_DB_PARITY_WAVE14_RECEIPT_IDS.has(receipt.receiptId)&&receipt.harness.path===OBJECT_DB_PARITY_WAVE14_HARNESS_PATH&&receipt.harness.sourceSha256===OBJECT_DB_PARITY_WAVE14_HARNESS_SHA256&&receipt.fixture.sha256===OBJECT_DB_PARITY_WAVE14_FIXTURE_SHA256&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE14_PET_SKILL_PROBABILITY_TARGET_PATH&&receipt.invocation.targetSourceSha256===OBJECT_DB_PARITY_WAVE14_TARGET_SHA256;
+  const trustedWave15PetSkillInfoDml=receipt.consumerId===OBJECT_DB_PARITY_WAVE15_CONSUMER_ID&&OBJECT_DB_PARITY_WAVE15_RECEIPT_IDS.has(receipt.receiptId)&&evidenceCommit===OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT&&receipt.harness.path===OBJECT_DB_PARITY_WAVE15_HARNESS_PATH&&receipt.harness.sourceSha256===OBJECT_DB_PARITY_WAVE15_HARNESS_SHA256&&receipt.fixture.sha256===OBJECT_DB_PARITY_WAVE15_FIXTURE_SHA256&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE15_TARGET_PATH&&receipt.invocation.targetSourceSha256===OBJECT_DB_PARITY_WAVE15_TARGET_SHA256;
   const wave7InfrastructureStatements=new Set(["INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"]);
   const onlyTrustedWave7Infrastructure=dml.actualNormalizedStatements.every(statement=>wave7InfrastructureStatements.has(statement));
   const wave8AllowedTables=new Set(["command_routing_decisions","operations","outbox_messages","command_executions","command_audit","admin_server_stat_snapshot_sets","admin_server_stat_snapshot_rows","admin_server_stat_read_executions"]);
@@ -1189,13 +1243,15 @@ function validateExecutionReceipt(
   const onlyTrustedWave12EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?: IGNORE)? INTO|UPDATE)\s+([A-Za-z0-9_]+)/i);return match!==null&&wave12AllowedTables.has(match[1]!);});
   const wave13AllowedTables=new Set([...wave10AllowedTables,"admin_server_stat_read_executions","admin_server_stat_snapshot_sets","admin_server_stat_snapshot_rows"]),onlyTrustedWave13EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?: IGNORE)? INTO|UPDATE)\s+([A-Za-z0-9_]+)/i);return match!==null&&wave13AllowedTables.has(match[1]!);});
   const wave14AllowedTables=new Set([...wave10AllowedTables,"external_identity_names","channel_activity_daily"]),onlyTrustedWave14EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE)\s+([A-Za-z0-9_]+)/i);return match!==null&&wave14AllowedTables.has(match[1]!);});
+  const wave15AllowedTables=new Set([...wave14AllowedTables,"canonical_app_wiring_operations"]),onlyTrustedWave15EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE)\s+([A-Za-z0-9_]+)/i);return match!==null&&wave15AllowedTables.has(match[1]!);});
   if (receipt.scenario.scenarioKind === "DUPLICATE_REPLAY_DML_ZERO" || receipt.scenario.scenarioKind === "SOURCE_DOMAIN_DML_ZERO") {
-    if ((!trustedWave7InfrastructureDml||!onlyTrustedWave7Infrastructure)&&(!trustedWave8AdminDml||!onlyTrustedWave8EvidenceDml)&&(!trustedWave9RankDml||!onlyTrustedWave9EvidenceDml)&&(!trustedWave10PendantDml||!onlyTrustedWave10EvidenceDml)&&(!trustedWave11HomeFurnitureDml||!onlyTrustedWave11EvidenceDml)&&(!trustedWave12CharacterCountDml||!onlyTrustedWave12EvidenceDml)&&(!trustedWave13ServerStatsDml||!onlyTrustedWave13EvidenceDml)&&(!trustedWave14PetSkillProbabilityDml||!onlyTrustedWave14EvidenceDml)&&(dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0)) throw new Error(`${receipt.receiptId} DML-zero scenario mutated source domain`);
+    if ((!trustedWave7InfrastructureDml||!onlyTrustedWave7Infrastructure)&&(!trustedWave8AdminDml||!onlyTrustedWave8EvidenceDml)&&(!trustedWave9RankDml||!onlyTrustedWave9EvidenceDml)&&(!trustedWave10PendantDml||!onlyTrustedWave10EvidenceDml)&&(!trustedWave11HomeFurnitureDml||!onlyTrustedWave11EvidenceDml)&&(!trustedWave12CharacterCountDml||!onlyTrustedWave12EvidenceDml)&&(!trustedWave13ServerStatsDml||!onlyTrustedWave13EvidenceDml)&&(!trustedWave14PetSkillProbabilityDml||!onlyTrustedWave14EvidenceDml)&&(!trustedWave15PetSkillInfoDml||!onlyTrustedWave15EvidenceDml)&&(dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0)) throw new Error(`${receipt.receiptId} DML-zero scenario mutated source domain`);
   }
   const zeroDmlMutationKinds = new Set<ObjectDbParityScenarioKind>(["AUTH_DENIED", "WRONG_ROOM_REJECTED", "PAYLOAD_DRIFT_FAIL_CLOSED", "DUPLICATE_REPLAY_DML_ZERO", "RESTART_REPLAY"]);
   const accessClass: AccessClass = manifestConsumer.access === "READ" ? "READ" : "MUTATION";
   if (accessClass === "READ") {
-    if(trustedWave14PetSkillProbabilityDml){if(!onlyTrustedWave14EvidenceDml||transaction.actual!=="COMMIT")throw new Error(`${receipt.receiptId} Wave14 READ probability evidence mutation invalid`);}
+    if(trustedWave15PetSkillInfoDml){if(!onlyTrustedWave15EvidenceDml||transaction.actual!=="COMMIT")throw new Error(`${receipt.receiptId} Wave15 READ pet-skill-info evidence mutation invalid`);}
+    else if(trustedWave14PetSkillProbabilityDml){if(!onlyTrustedWave14EvidenceDml||transaction.actual!=="COMMIT")throw new Error(`${receipt.receiptId} Wave14 READ probability evidence mutation invalid`);}
     else if(trustedWave13ServerStatsDml){if(!onlyTrustedWave13EvidenceDml||!(["READ_ONLY","COMMIT"]as const).includes(transaction.actual as"READ_ONLY"|"COMMIT"))throw new Error(`${receipt.receiptId} Wave13 READ server-stats evidence mutation invalid`);}
     else if(trustedWave12CharacterCountDml){if(!onlyTrustedWave12EvidenceDml||!(["READ_ONLY","COMMIT"] as const).includes(transaction.actual as "READ_ONLY"|"COMMIT"))throw new Error(`${receipt.receiptId} Wave12 READ character-count evidence mutation invalid`);if(transaction.actual==="READ_ONLY"&&dml.actualNormalizedStatements.length!==0)throw new Error(`${receipt.receiptId} Wave12 READ_ONLY mutated evidence tables`);if(transaction.actual==="COMMIT"&&dml.actualNormalizedStatements.length!==6&&dml.actualNormalizedStatements.length!==15&&dml.actualNormalizedStatements.length!==30)throw new Error(`${receipt.receiptId} Wave12 full-ingress evidence DML count invalid`);}
     else if(trustedWave11HomeFurnitureDml){if(!onlyTrustedWave11EvidenceDml||!(["READ_ONLY","COMMIT"] as const).includes(transaction.actual as "READ_ONLY"|"COMMIT"))throw new Error(`${receipt.receiptId} Wave11 READ home-furniture evidence mutation invalid`);if(transaction.actual==="READ_ONLY"&&dml.actualNormalizedStatements.length!==0)throw new Error(`${receipt.receiptId} Wave11 READ_ONLY mutated evidence tables`);if(transaction.actual==="COMMIT"&&dml.actualNormalizedStatements.length!==6&&dml.actualNormalizedStatements.length!==14&&dml.actualNormalizedStatements.length!==28)throw new Error(`${receipt.receiptId} Wave11 full-ingress evidence DML count invalid`);}
@@ -1312,9 +1368,10 @@ export function buildObjectDbConsumerExecutableParityLedger(input: {
   const entries = manifest.consumers.map((consumer): ExecutableParityLedgerEntry => {
     const mismatchLabels = mismatchLabelsByConsumer.get(consumer.consumerId) ?? [];
     const classification = classificationProjection(consumer, mismatchLabels);
-    const requirements = scenarioRequirementsFor(consumer, classification.classificationSha256);
+    const requirements = scenarioRequirementsFor(consumer, classification.classificationSha256,consumer.consumerId);
     const receipts = (receiptsByConsumer.get(consumer.consumerId) ?? []).sort((left, right) => left.scenario.scenarioKind.localeCompare(right.scenario.scenarioKind));
-    if (mismatchLabels.length > 0 || consumer.unresolvedDynamicCallCount > 0) {
+    const correctiveWave15=consumer.consumerId===OBJECT_DB_PARITY_WAVE15_CONSUMER_ID&&receipts.length===OBJECT_DB_PARITY_WAVE15_RECEIPT_IDS.size&&receipts.every(receipt=>OBJECT_DB_PARITY_WAVE15_RECEIPT_IDS.has(receipt.receiptId));
+    if (mismatchLabels.length > 0 || (consumer.unresolvedDynamicCallCount > 0&&!correctiveWave15)) {
       if (receipts.length > 0) throw new Error(`${consumer.consumerId} cannot consume receipts while source classification blocker remains`);
       return { consumerId: consumer.consumerId, classification, verdict: baselineVerdict(consumer, mismatchLabels), ...emptyExecutionEvidence(requirements) };
     }
@@ -1327,7 +1384,7 @@ export function buildObjectDbConsumerExecutableParityLedger(input: {
     const receivedKinds = receipts.map(({ scenario }) => scenario.scenarioKind).sort();
     for (const scenarioKind of receivedKinds) if (!requiredKinds.includes(scenarioKind)) throw new Error(`${consumer.consumerId} receipt scenario is not source-required: ${scenarioKind}`);
     const complete = receiptMatrixComplete(consumer.consumerId,requiredKinds,receivedKinds);
-    const verdict: ObjectDbExecutableParityVerdict = complete ? (first.proofMode === "DIRECT" ? "DIRECT_PASS" : "EQUIVALENT_PASS") : "PARTIAL";
+    const verdict: ObjectDbExecutableParityVerdict = correctiveWave15&&consumer.unresolvedDynamicCallCount>0?"BLOCKED_DYNAMIC":complete ? (first.proofMode === "DIRECT" ? "DIRECT_PASS" : "EQUIVALENT_PASS") : "PARTIAL";
     if (first.proofMode === "DIRECT" && first.equivalenceRule !== null) throw new Error(`${consumer.consumerId} DIRECT receipts cannot declare equivalenceRule`);
     if (first.proofMode === "EQUIVALENT" && first.equivalenceRule === null) throw new Error(`${consumer.consumerId} EQUIVALENT receipts require equivalenceRule`);
     return {
@@ -1461,7 +1518,7 @@ function validateEntryEvidence(entry: ExecutableParityLedgerEntry, manifestIds: 
   assertFixture(entry.fixture, `${entry.consumerId}.fixture`, hasReceipts);
   assertInvocation(entry.invocation, `${entry.consumerId}.invocation`, hasReceipts);
   if (!Array.isArray(entry.scenarioRequirements)) throw new Error(`${entry.consumerId}.scenarioRequirements must be an array`);
-  const expectedRequirements = scenarioRequirementsFor(entry.classification as unknown as ConsumerManifestInput["consumers"][number], entry.classification.classificationSha256);
+  const expectedRequirements = scenarioRequirementsFor(entry.classification as unknown as ConsumerManifestInput["consumers"][number], entry.classification.classificationSha256,entry.consumerId);
   if (JSON.stringify(entry.scenarioRequirements) !== JSON.stringify(expectedRequirements)) throw new Error(`${entry.consumerId} source-derived scenario requirement drift`);
   if (!Array.isArray(entry.scenarios)) throw new Error(`${entry.consumerId}.scenarios must be an array`);
   const scenarioIds = new Set<string>();
@@ -1518,12 +1575,13 @@ function validateEntryEvidence(entry: ExecutableParityLedgerEntry, manifestIds: 
   const complete = receiptMatrixComplete(entry.consumerId,requiredKinds,receivedKinds);
   const hasMismatch = entry.classification.registrySourceMismatchLabels.length > 0;
   const hasDynamic = entry.classification.unresolvedDynamicCallCount > 0;
+  const correctiveWave15=entry.consumerId===OBJECT_DB_PARITY_WAVE15_CONSUMER_ID&&entry.scenarios.length===OBJECT_DB_PARITY_WAVE15_RECEIPT_IDS.size&&entry.scenarios.every(scenario=>OBJECT_DB_PARITY_WAVE15_RECEIPT_IDS.has(scenario.receiptId));
   if (hasMismatch && entry.verdict !== "BLOCKED_REGISTRY_MISMATCH") throw new Error(`${entry.consumerId} registry mismatch verdict must take precedence`);
   if (!hasMismatch && hasDynamic && entry.verdict !== "BLOCKED_DYNAMIC") throw new Error(`${entry.consumerId} unresolved dynamic consumer verdict drift`);
   if (!hasMismatch && !hasDynamic && !hasReceipts && entry.verdict !== "STATIC_ONLY") throw new Error(`${entry.consumerId} evidence-free static consumer verdict drift`);
   if (!hasMismatch && !hasDynamic && hasReceipts && !complete && entry.verdict !== "PARTIAL") throw new Error(`${entry.consumerId} incomplete receipt matrix must be PARTIAL`);
   if (!hasMismatch && !hasDynamic && hasReceipts && complete && !pass) throw new Error(`${entry.consumerId} complete receipt matrix must be PASS`);
-  if ((hasMismatch || hasDynamic) && hasReceipts) throw new Error(`${entry.consumerId} blocked consumer must not contain execution receipts`);
+  if ((hasMismatch || (hasDynamic&&!correctiveWave15)) && hasReceipts) throw new Error(`${entry.consumerId} blocked consumer must not contain execution receipts`);
   if (entry.verdict === "DIRECT_PASS" && entry.equivalenceRule !== null) throw new Error(`${entry.consumerId} DIRECT_PASS must not declare equivalenceRule`);
   if (entry.verdict !== "EQUIVALENT_PASS" && entry.equivalenceRule !== null) throw new Error(`${entry.consumerId} non-equivalent verdict must not declare equivalenceRule`);
 }

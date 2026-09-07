@@ -30,6 +30,7 @@ const paths = {
 } as const;
 const wave1ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave13-v1.json";
 const wave14ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave14-v1.json";
+const wave15ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave15-v1.json";
 const read = (path: string): string => readFileSync(resolve(repoRoot, path), "utf8");
 const manifestText = read(paths.consumerManifest);
 const manifest = JSON.parse(manifestText) as ConsumerManifestInput;
@@ -186,6 +187,14 @@ describe("object DB executable parity ledger Wave0", () => {
     const fixture=JSON.parse(evidenceFileTexts[fixturePath]!)as{runtimeSourceHashes:Array<{sha256:string}>};fixture.runtimeSourceHashes[0]!.sha256="0".repeat(64);const fixtureText=`${JSON.stringify(fixture,null,2)}\n`,fixtureHash=sha256CanonicalText(fixtureText);
     for(const receipt of sourceDrift.receipts.filter(candidate=>candidate.receiptId.startsWith("receipt:wave14:"))){receipt.fixture.sha256=fixtureHash;receipt.receiptSha256=receiptHash(receipt);}
     assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(sourceDrift,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts:{...evidenceFileTexts,[fixturePath]:fixtureText}}),/READ scenario must be READ_ONLY|evidenceCommit blob hash drift/);
+  });
+
+  it("records the corrective Wave15 private/DEV matrix without bypassing its dynamic hold and rejects coordinated receipt tamper",()=>{
+    const bundle=JSON.parse(read(wave15ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave15ReceiptPath},evidenceFileTexts}),entry=ledger.entries.find(candidate=>candidate.consumerId==="legacy-0a10ef65ad4b37cd");
+    assert.equal(entry?.verdict,"BLOCKED_DYNAMIC");assert.deepEqual(entry?.scenarios.map(scenario=>scenario.scenarioKind).sort(),["AUTH_DENIED","EXACT_OUTPUT","NEGATIVE_GUARD","READ_POSITIVE","RESTART_CONSISTENCY","SOURCE_DOMAIN_DML_ZERO","WRONG_ROOM_REJECTED"]);
+    const tampered=structuredClone(bundle),receipt=tampered.receipts.find(candidate=>candidate.receiptId==="receipt:wave15:legacy-0a10ef65ad4b37cd:exact_output")!;receipt.expectedActual.reply.expectedSha256="0".repeat(64);receipt.expectedActual.reply.actualSha256="0".repeat(64);receipt.receiptSha256=receiptHash(receipt);
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(tampered,null,2),sourcePaths:{...paths,executionReceipts:wave15ReceiptPath},evidenceFileTexts}),/raw reply\/result capture hash mismatch|evidenceCommit blob hash drift/);
   });
 
   it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {
