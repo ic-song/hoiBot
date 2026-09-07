@@ -179,7 +179,7 @@ describe("object DB executable parity ledger Wave0", () => {
     const sourceDrift=structuredClone(original),fixturePath=sourceDrift.receipts.find(receipt=>receipt.receiptId.startsWith("receipt:wave14:"))!.fixture.path;
     const fixture=JSON.parse(evidenceFileTexts[fixturePath]!)as{runtimeSourceHashes:Array<{sha256:string}>};fixture.runtimeSourceHashes[0]!.sha256="0".repeat(64);const fixtureText=`${JSON.stringify(fixture,null,2)}\n`,fixtureHash=sha256CanonicalText(fixtureText);
     for(const receipt of sourceDrift.receipts.filter(candidate=>candidate.receiptId.startsWith("receipt:wave14:"))){receipt.fixture.sha256=fixtureHash;receipt.receiptSha256=receiptHash(receipt);}
-    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(sourceDrift,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts:{...evidenceFileTexts,[fixturePath]:fixtureText}}),/evidenceCommit blob hash drift/);
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(sourceDrift,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts:{...evidenceFileTexts,[fixturePath]:fixtureText}}),/READ scenario must be READ_ONLY|evidenceCommit blob hash drift/);
   });
 
   it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {
