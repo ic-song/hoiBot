@@ -25,6 +25,7 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
     const app = buildApp(config, {
       database: trace.database,
       environmentContext: context,
+      petSkillInfoReadOnlyRecoveryProvider:trace.recovery as never,
       inspectIrisChannel: async () => ({ mode: "operational", channelClass: "open_group", reason: "allowed",
         evidence: { roomType: "OM", openLinkActive: true, openLinkExpired: false } }),
       sendIrisTextReply: async () => { throw new Error("SHADOW_MUST_NOT_SEND"); }
@@ -36,10 +37,10 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       assert.equal(trace.infoReply, "청룡언월도📙\n등급: S\n확률: 100.0%\n효과: 삼국지 관우의 전설적인 무기입니다.");
       assert.equal(trace.routeMessages.at(-1), "/펫스킬정보 [조회값]");
       assert.ok(trace.writes.some(({ sql }) => sql.includes("command_routing_decisions")));
-      assert.ok(trace.writes.some(({ sql }) => sql.includes("event_inbox")));
+      assert.equal(trace.atomicHandlerCount,1);
       assert.ok(trace.snapshotSql.every((sql) => sql.startsWith("SELECT ")));
       assert.ok(trace.writes.every(({ sql }) => !/canonical_pet_skill_(?:definitions|aliases|draw_grade_policies)/.test(sql)));
-      assert.ok(trace.writes.every(({ sql }) => !/outbox_messages|command_executions|command_audit/.test(sql)));
+      assert.ok(trace.writes.every(({ sql }) => !/outbox_messages/.test(sql)));
 
       assert.equal((await send(app, "info-2", "/펫스킬정보   ")).statusCode, 202);
       assert.equal(trace.infoReply, "사용법:\n/펫스킬정보 [펫스킬이름] — 펫스킬 효과 조회\n/펫스킬정보 [유저닉네임] — 유저 펫스킬가방 조회 (관리자 전용)");
@@ -48,9 +49,12 @@ describe("Wave14B pet skill info actual HTTP ingress", () => {
       assert.equal(trace.snapshotCount, beforeSibling);
 
       assert.equal((await send(app, "long-1", "/펫스킬정보 청룡언월도", "다섯글자임")).statusCode, 202);
-      assert.equal(trace.snapshotCount, beforeSibling);
+      assert.equal(trace.snapshotCount, beforeSibling+1);
+      assert.equal((await send(app,"info-1","/펫스킬정보없음")).statusCode,500);assert.equal(trace.atomicHandlerCount,3);
       assert.equal((await send(app, "info-1", "/펫스킬정보청룡언월도")).statusCode, 202);
-      assert.equal(trace.snapshotCount, beforeSibling);
+      assert.equal(trace.snapshotCount, beforeSibling+1);assert.equal(trace.atomicReplayCount,1);assert.equal(trace.atomicHandlerCount,3);
+      assert.equal((await send(app,"retry-1","/펫스킬정보청룡언월도")).statusCode,500);assert.equal(trace.atomicHandlerCount,3);assert.equal(trace.failedAttemptCount,1);
+      assert.equal((await send(app,"retry-1","/펫스킬정보청룡언월도")).statusCode,202);assert.equal(trace.atomicHandlerCount,4);
     } finally {
       delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;
       await app.close();
@@ -72,6 +76,8 @@ function createTraceDatabase() {
   const snapshotSql: string[] = [];
   let snapshotCount = 0;
   let infoReply = "";
+  let atomicHandlerCount=0,atomicReplayCount=0;
+  const atomicReceipts=new Map<string,string>();const failedOnce=new Set<string>();
   const write = async (sql: string, values: readonly unknown[] = []): Promise<DatabaseWriteResult> => {
     writes.push({ sql, values });
     if (sql.includes("INSERT INTO event_inbox")) {
@@ -104,6 +110,7 @@ function createTraceDatabase() {
     }] as T;
     throw new Error(`UNEXPECTED_SNAPSHOT_SQL:${sql}`);
   }};
+  const recovery={execute:async(input:any)=>{const prior=atomicReceipts.get(input.event.eventId);if(prior!==undefined){if(prior!==input.replyIdentity.message)throw new Error("APP_WIRING_READ_ONLY_PAYLOAD_MISMATCH");atomicReplayCount+=1;return{status:"completed",replayed:true,resultFingerprint:"f".repeat(64),processing:{duplicate:true,replies:[]}};}if(input.event.eventId==="iris:retry-1"&&!failedOnce.has("iris:retry-1")){failedOnce.add("iris:retry-1");throw new Error("SYNTHETIC_FAILED_RECEIPT");}snapshotCount+=1;atomicHandlerCount+=1;const evaluated=await input.evaluateInSnapshot(snapshot);if(evaluated.value&&typeof evaluated.value==="object"&&"reply" in evaluated.value)infoReply=String(evaluated.value.reply);atomicReceipts.set(input.event.eventId,input.replyIdentity.message);return{status:"completed",replayed:false,resultFingerprint:"f".repeat(64),value:evaluated.value,processing:{duplicate:false,replies:[]}};}};
   const database: DatabaseClient = {
     ping: async () => undefined,
     verifyRollback: async () => true,
@@ -130,6 +137,6 @@ function createTraceDatabase() {
       return work(controlled);
     }
   } as DatabaseClient;
-  return { database, writes, routeMessages, snapshotSql,
-    get snapshotCount() { return snapshotCount; }, get infoReply() { return infoReply; } };
+  return { database,recovery, writes, routeMessages, snapshotSql,
+    get snapshotCount() { return snapshotCount; }, get infoReply() { return infoReply; },get atomicHandlerCount(){return atomicHandlerCount;},get atomicReplayCount(){return atomicReplayCount;},get failedAttemptCount(){return failedOnce.size;} };
 }

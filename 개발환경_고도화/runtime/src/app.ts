@@ -129,6 +129,7 @@ import {
   parseCanaryUserIds
 } from "./dispatch/command-dispatcher.js";
 import { MariaAppWiringOperationProvider } from "./dispatch/app-wiring-operation-provider.js";
+import { MariaAppWiringReadOnlyRecoveryProvider } from "./dispatch/app-wiring-read-only-recovery-provider.js";
 import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-creation-service.js";
 import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
@@ -198,7 +199,8 @@ import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, P
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
 import { isPetSkillProbabilityCommand } from "./pet/pet-skill-probability-service.js";
 import { PetSkillProbabilityAtomicService } from "./pet/pet-skill-probability-atomic-service.js";
-import { isPetSkillInfoShadowCandidate, normalizePetSkillInfoDispatchMessage, PetSkillInfoShadowService } from "./pet/pet-skill-info-shadow-service.js";
+import { isPetSkillInfoShadowCandidate, normalizePetSkillInfoDispatchMessage } from "./pet/pet-skill-info-shadow-service.js";
+import { executePetSkillInfoReadOnlyRecovery } from "./pet/pet-skill-info-read-only-recovery-ingress.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
@@ -381,6 +383,7 @@ export interface AppDependencies {
   database?: DatabaseClient;
   environmentContext?: VerifiedEnvironmentContext;
   appWiringOperationProvider?: MariaAppWiringOperationProvider;
+  petSkillInfoReadOnlyRecoveryProvider?: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
   petExploreAppWiringIngress?: Pick<PetExploreAppWiringIngress, "handle">;
   petDataCompareAppWiringIngress?: Pick<PetDataCompareAppWiringIngress, "handle">;
   petTitleAppWiringIngress?: Pick<PetTitleAppWiringIngress, "handle">;
@@ -871,12 +874,6 @@ async function dispatchPetSkillReadCommands(input: {
   }
 }
 
-async function evaluatePetSkillInfoShadow(input:{database:DatabaseClient|undefined;isOperationalChannel:boolean;duplicate:boolean|undefined;route:string|undefined;handlerKey:string|undefined;event:NormalizedIrisEvent}):Promise<void>{
-  if(input.database===undefined||!input.isOperationalChannel||input.duplicate!==false||input.route!=="SHADOW"
-    ||input.handlerKey!=="pet_skill_info"||!isPetSkillInfoShadowCandidate(input.event.message)||input.event.userId===undefined)return;
-  await new PetSkillInfoShadowService(input.database).evaluate({externalUserId:input.event.userId,displayName:input.event.displayName,message:input.event.message!});
-}
-
 async function dispatchPetSkillMutationCommands(input:{database:DatabaseClient|undefined;eventProcessor:ProcessIrisEventService|undefined;isOperationalChannel:boolean;processing:EventProcessingResult|undefined;route:string|undefined;handlerKey:string|undefined;event:NormalizedIrisEvent}):Promise<void>{
   const {database,eventProcessor,isOperationalChannel,processing,route,handlerKey,event}=input;
   if(database===undefined||eventProcessor===undefined||!isOperationalChannel||processing===undefined||processing.duplicate||route!=="MODERN"||event.userId===undefined||event.channelId===undefined)return;
@@ -996,6 +993,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? (database !== undefined && dependencies.environmentContext !== undefined && hasDatabaseTransactionCapabilities(database)
       ? new MariaAppWiringOperationProvider(database, dependencies.environmentContext)
       : undefined);
+  const petSkillInfoReadOnlyRecoveryProvider=dependencies.petSkillInfoReadOnlyRecoveryProvider
+    ??(database!==undefined&&appWiringOperationProvider!==undefined
+      ?new MariaAppWiringReadOnlyRecoveryProvider(database,appWiringOperationProvider):undefined);
   const petExploreAppWiringIngress = dependencies.petExploreAppWiringIngress
     ?? (database !== undefined && appWiringOperationProvider !== undefined
       ? new PetExploreAppWiringIngress(
@@ -1859,6 +1859,9 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN"
         && partialDispatchDecision.handlerKey === "pet_skill_probability"
         && isPetSkillProbabilityCommand(normalizedEvent.message);
+      const atomicPetSkillInfo=database!==undefined&&petSkillInfoReadOnlyRecoveryProvider!==undefined&&isOperationalChannel
+        &&partialDispatchDecision?.route==="SHADOW"&&partialDispatchDecision.handlerKey==="pet_skill_info"
+        &&isPetSkillInfoShadowCandidate(commandEvent.message)&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
       if (atomicPetSkillProbability && dependencies.environmentContext === undefined) {
         throw new Error("PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED");
       }
@@ -1869,6 +1872,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             channelType: channelAccess.channelClass === "open_direct" ? "open_direct" : "open_group",
             ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
           })
+        :atomicPetSkillInfo
+        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:partialDispatchDecision!.reasonCode,...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})})
         : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership
@@ -3288,7 +3293,6 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       await dispatchPetSkillReadCommands({database,eventProcessor,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:normalizedEvent,replies:processing?.replies});
-      await evaluatePetSkillInfoShadow({database,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:commandEvent});
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetDuelEmoteCommandCandidate(normalizedEvent.message)
