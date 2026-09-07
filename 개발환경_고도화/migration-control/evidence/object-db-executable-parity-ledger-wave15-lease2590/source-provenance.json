@@ -1,0 +1,28 @@
+{
+  "format": "hoibot-object-db-wave15-source-provenance-v1",
+  "runId": "펫스킬개인DEV영수증DB-SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01-202609071838",
+  "lease": 2590,
+  "consumerId": "legacy-0a10ef65ad4b37cd",
+  "evidenceCommit": "5ec1c6d8a088074987b5a10c4920efd2a6404833",
+  "hashMode": "git-blob-bytes-with-crlf-normalized-to-lf",
+  "sources": [
+    {
+      "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-harness.mjs",
+      "sha256": "fc16a16494d18c59b9293750eebe1121c698c5796e4fe72dcb7113e12bcdb00a"
+    },
+    {
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave15-pet-skill-info-private-dev-v1.json",
+      "sha256": "2e6bea0bc856a3ec0fdbbd8e80350db201ddc7a88de9946c61f03d2787ad54cc"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave15-pet-skill-info-private-dev.mjs",
+      "sha256": "4b2af401198a86226fcfd4b83495ce927d604c2807856fb12d7643560080e131"
+    }
+  ],
+  "legacyOracle": {
+    "sourceCommit": "f10816ab7398f34979e64073325e118dd4e29e41",
+    "sourcePath": "main.js",
+    "gitBlobSha1": "451730e955e1ed47fc2ec6ce24845ea511bc0f21",
+    "spanCount": 7
+  }
+}
