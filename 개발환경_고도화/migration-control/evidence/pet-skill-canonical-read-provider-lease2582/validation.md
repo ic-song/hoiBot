@@ -12,7 +12,7 @@
 - `object-data-model-contract.test.ts`
 - `data-migration-object-domain-import.test.ts`
 
-Result: non-integration focused cohort `74/74 PASS`; isolated MariaDB seed cohort `1/1 PASS`. This includes full-tuple tamper and anti-extra negatives. `npm run typecheck`, `npm run build`, and `git diff --check` passed.
+Result: non-integration focused cohort `75/75 PASS`; isolated MariaDB seed cohort `1/1 PASS`. This includes full-tuple tamper, anti-extra, and inactive-expected/active-extra replacement negatives for definition, alias, and policy sets. `npm run typecheck`, `npm run build`, and `git diff --check` passed.
 
 ## Isolated MariaDB
 
