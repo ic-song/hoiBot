@@ -39,6 +39,9 @@ describe("RFA03 Maria database error policy", () => {
     assert.equal(classifyMariaDatabaseError(primary).kind, "BUSINESS_UNIQUE_CONFLICT");
     assert.equal(classifyMariaDatabaseError(Object.assign(new Error(primary.message), { code: "ER_DUP_ENTRY" }), { candidate: "a1234567" }).kind, "OTHER");
     assert.equal(classifyMariaDatabaseError(mariaError("ER_DUP_ENTRY", 1213, primary.message), { candidate: "a1234567" }).kind, "OTHER");
+    assert.equal(classifyMariaDatabaseError(mariaError("ER_CHECKREAD", 1020, "Record has changed since last read")).kind, "TRANSACTION_CHECK_READ_CONFLICT");
+    assert.equal(classifyMariaDatabaseError(Object.assign(new Error("check read"), { code: "ER_CHECKREAD" })).kind, "OTHER");
+    assert.equal(classifyMariaDatabaseError(mariaError("ER_CHECKREAD", 1205, "wrong errno")).kind, "OTHER");
   });
 
   it("keeps business UNIQUE and both FK directions out of CUID collision retry", () => {
@@ -79,7 +82,7 @@ describe("RFA03 Maria database error policy", () => {
     assert.equal(writes, 2);
   });
 
-  it("restarts the whole transaction only for domain-approved 1213/1205", async () => {
+  it("keeps the existing whole-transaction retry for domain-approved 1213/1205", async () => {
     for (const conflict of [
       mariaError("ER_LOCK_DEADLOCK", 1213, "Deadlock found"),
       mariaError("ER_LOCK_WAIT_TIMEOUT", 1205, "Lock wait timeout exceeded"),
@@ -91,6 +94,20 @@ describe("RFA03 Maria database error policy", () => {
       assert.equal(harness.transactions().length, 2);
       assert.notEqual(harness.transactions()[0], harness.transactions()[1]);
     }
+  });
+
+  it("requires an explicit owner opt-in before allowRetry can receive exact 1020", async () => {
+    const conflict = mariaError("ER_CHECKREAD", 1020, "Record has changed since last read");
+    const defaultHarness = databaseWithTransactions(async () => { throw conflict; });
+    await assert.rejects(withMariaTransactionRetry(defaultHarness.database, { maxAttempts: 3, allowRetry: () => true }, async () => "never"), (error) => error === conflict);
+    assert.equal(defaultHarness.attempts(), 1);
+
+    const optedIn = databaseWithTransactions(async (attempt) => { if (attempt === 1) throw conflict; });
+    const observed: string[] = [];
+    const result = await withMariaTransactionRetry(optedIn.database, { maxAttempts: 2, allowCheckReadConflict: true, allowRetry: (kind) => { observed.push(kind); return true; } }, async () => "committed");
+    assert.equal(result, "committed");
+    assert.equal(optedIn.attempts(), 2);
+    assert.deepEqual(observed, ["TRANSACTION_CHECK_READ_CONFLICT"]);
   });
 
   it("keeps the exact final transaction conflict as the stable exhaustion cause", async () => {
@@ -153,6 +170,7 @@ describe("RFA03 Maria database error policy", () => {
   it("preserves domain denial and deterministic UNIQUE/FK errors without another transaction", async () => {
     for (const error of [
       mariaError("ER_LOCK_DEADLOCK", 1213, "Deadlock found"),
+      mariaError("ER_CHECKREAD", 1020, "Record has changed since last read"),
       mariaError("ER_DUP_ENTRY", 1062, "Duplicate entry for key 'uq_business'"),
       mariaError("ER_NO_REFERENCED_ROW_2", 1452, "Cannot add or update a child row"),
     ]) {

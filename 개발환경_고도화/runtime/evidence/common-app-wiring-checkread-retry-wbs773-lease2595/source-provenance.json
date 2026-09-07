@@ -1,0 +1,28 @@
+{
+  "sliceId": "SL-COMMON-APP-WIRING-ER-CHECKREAD-RETRY-01",
+  "wbsRow": 773,
+  "claimRow": 2595,
+  "branch": "codex/common-app-wiring-checkread-retry-v1-20260907",
+  "baselineCommit": "493f5a055d8a0219ddf2c1494a579c56371ad446",
+  "observedFailure": {
+    "database": "isolated MariaDB 12.2",
+    "code": "ER_CHECKREAD",
+    "errno": 1020,
+    "sqlState": "HY000",
+    "message": "Record has changed since last read in table 'channels'",
+    "boundary": "app-wiring READ_ONLY consistent root transaction"
+  },
+  "policy": {
+    "classification": "code and errno must both match exactly",
+    "allowedOwners": [
+      "MariaAppWiringOperationProvider.withAtomicReadOnlyRootRetry",
+      "MariaAppWiringOperationProvider.withAtomicReadOnlyFailureRetry"
+    ],
+    "maxAttempts": 3,
+    "explicitCheckReadOptInRequired": true,
+    "consumerNotificationRetryChanged": false
+  },
+  "operationalDataUsed": false,
+  "productionPortTouched": false,
+  "gate8Performed": false
+}
