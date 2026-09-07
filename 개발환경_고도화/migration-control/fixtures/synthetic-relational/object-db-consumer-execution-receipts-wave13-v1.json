@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "971112727e4f68be6a389bd933e68f351a7c25b5",
+  "evidenceCommit": "9f1611fbd60b7612fe09711981dd9eb4a76326f8",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -12584,11 +12584,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
-        "sha256": "68ec97f02172c615e522f2a74556bf841e46a73723533416bd87c3e01029ab27"
+        "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
-        "targetSourceSha256": "9c996dcc109c4a8bb9b0c1696fbfbc1f7a07717982521c82392857b9431094d9",
+        "targetSourceSha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6",
         "exportName": "executeWave13ServerStats"
       },
       "scenario": {
@@ -12708,7 +12708,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "1a50273c4decb4a0d15ee1a3e206c688d7f00bb860fe72fc465fa66cf5c11c69"
+      "receiptSha256": "32d33b2ccf6474cd7a377c4b1dd0976a7e2285b119ccb5a5d77144a0d6b8d23d"
     },
     {
       "receiptId": "receipt:wave13:admin-command-5e04d0767d4c2abc:negative_guard",
@@ -12724,11 +12724,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
-        "sha256": "68ec97f02172c615e522f2a74556bf841e46a73723533416bd87c3e01029ab27"
+        "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
-        "targetSourceSha256": "9c996dcc109c4a8bb9b0c1696fbfbc1f7a07717982521c82392857b9431094d9",
+        "targetSourceSha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6",
         "exportName": "executeWave13ServerStats"
       },
       "scenario": {
@@ -12790,7 +12790,111 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "d3e93fe7183899bb24716a98673b857c768572e78e94e436bf370a515b14fe52"
+      "receiptSha256": "a4c64d35e12b265bff1cc312a045f971a98bcad93b0c21037bc342e2a2dee59b"
+    },
+    {
+      "receiptId": "receipt:wave13:admin-command-5e04d0767d4c2abc:auth_denied",
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave13",
+        "harnessCaseId": "case:admin-server-stats-corrective",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-harness.mjs",
+        "sourceSha256": "2cbf47acf342fcf7e09e3f796717ffc045744d8c9adbe40abe19fadc5f39bb11"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
+        "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
+        "targetSourceSha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6",
+        "exportName": "executeWave13ServerStats"
+      },
+      "scenario": {
+        "scenarioId": "scenario:auth-denied",
+        "scenarioKind": "AUTH_DENIED"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+          "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "21237d9f13a48046e9da1b3d2668aeaa2c8e39a32ba6c7e8c69ce9ba4592cb7c",
+          "actualSha256": "21237d9f13a48046e9da1b3d2668aeaa2c8e39a32ba6c7e8c69ce9ba4592cb7c",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "459365b7713e73de7cd66a5d3de0c450680ef910b775353c77433debc1e7531d",
+          "actualSha256": "459365b7713e73de7cd66a5d3de0c450680ef910b775353c77433debc1e7531d",
+          "match": true,
+          "expectedNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+          ],
+          "actualNormalizedStatements": [
+            "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+            "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+            "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+            "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+            "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+            "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+          ],
+          "expectedRowCount": 7,
+          "actualRowCount": 7
+        },
+        "lockOrder": {
+          "expected": [
+            "external_identities",
+            "admin_operator_external_identities",
+            "admin_operators",
+            "admin_operator_permission_overrides",
+            "admin_operator_roles",
+            "admin_roles",
+            "admin_role_permissions"
+          ],
+          "actual": [
+            "external_identities",
+            "admin_operator_external_identities",
+            "admin_operators",
+            "admin_operator_permission_overrides",
+            "admin_operator_roles",
+            "admin_roles",
+            "admin_role_permissions"
+          ],
+          "match": true
+        },
+        "transaction": {
+          "expected": "COMMIT",
+          "actual": "COMMIT",
+          "match": true,
+          "expectedTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT"
+          ],
+          "actualTimeline": [
+            "BEGIN",
+            "COMMIT",
+            "BEGIN",
+            "COMMIT"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "1e6293da97f792c9f7fdb5771883c12dc5a4c0ba51061deb60f90d81c09de13c"
     },
     {
       "receiptId": "receipt:wave13:admin-command-5e04d0767d4c2abc:exact_output",
@@ -12806,11 +12910,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
-        "sha256": "68ec97f02172c615e522f2a74556bf841e46a73723533416bd87c3e01029ab27"
+        "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
-        "targetSourceSha256": "9c996dcc109c4a8bb9b0c1696fbfbc1f7a07717982521c82392857b9431094d9",
+        "targetSourceSha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6",
         "exportName": "executeWave13ServerStats"
       },
       "scenario": {
@@ -12930,7 +13034,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "976e3f4f104ad3d808cf7acc206a50c2249ea2bc5a1d3e117c09c8e084741af9"
+      "receiptSha256": "a9048d8c0096960a894a2a3acac3ee010edb44a7fb1fa2fb0807f0e830989938"
     },
     {
       "receiptId": "receipt:wave13:admin-command-5e04d0767d4c2abc:source_domain_dml_zero",
@@ -12946,11 +13050,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
-        "sha256": "68ec97f02172c615e522f2a74556bf841e46a73723533416bd87c3e01029ab27"
+        "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
-        "targetSourceSha256": "9c996dcc109c4a8bb9b0c1696fbfbc1f7a07717982521c82392857b9431094d9",
+        "targetSourceSha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6",
         "exportName": "executeWave13ServerStats"
       },
       "scenario": {
@@ -13070,7 +13174,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "5f30e562518a12c7bee5dd9e7a0c91c2f402bcbcd55a45ec9994a4d0ba9b95be"
+      "receiptSha256": "51f67c323e14327f9f83aff48fb317211a8ffa4e03569d893d193d626c7d64c3"
     },
     {
       "receiptId": "receipt:wave13:admin-command-5e04d0767d4c2abc:restart_consistency",
@@ -13086,11 +13190,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
-        "sha256": "68ec97f02172c615e522f2a74556bf841e46a73723533416bd87c3e01029ab27"
+        "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
-        "targetSourceSha256": "9c996dcc109c4a8bb9b0c1696fbfbc1f7a07717982521c82392857b9431094d9",
+        "targetSourceSha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6",
         "exportName": "executeWave13ServerStats"
       },
       "scenario": {
@@ -13240,7 +13344,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "8dec659c0f34e6c3c1672f1a77011eb977b1bd27a243f914bf9b61e5fb828f7d"
+      "receiptSha256": "b926acff541907dc85a3211158c1a1c6c4b3a3a5a236cfe5ef8da17a52846137"
     }
   ]
 }

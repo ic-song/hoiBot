@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "971112727e4f68be6a389bd933e68f351a7c25b5",
+  "evidenceCommit": "9f1611fbd60b7612fe09711981dd9eb4a76326f8",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -28,7 +28,7 @@
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave13-v1.json",
-      "sha256": "dfa47359093b07fb0c45d38f6ffad651344eb98dfc10e16711090b540cc6023c"
+      "sha256": "2fc01b99fe0d67fb17568c6af7932c306c0b4f6a6d5c721e5b505d390b4074c6"
     },
     "classificationSources": [
       {
@@ -3740,11 +3740,11 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
-        "sha256": "68ec97f02172c615e522f2a74556bf841e46a73723533416bd87c3e01029ab27"
+        "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
-        "targetSourceSha256": "9c996dcc109c4a8bb9b0c1696fbfbc1f7a07717982521c82392857b9431094d9",
+        "targetSourceSha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6",
         "exportName": "executeWave13ServerStats"
       },
       "scenarioRequirements": [
@@ -3790,6 +3790,90 @@
         }
       ],
       "scenarios": [
+        {
+          "receiptId": "receipt:wave13:admin-command-5e04d0767d4c2abc:auth_denied",
+          "scenarioId": "scenario:auth-denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:admin-server-stats-corrective",
+          "attributedConsumerIds": [
+            "admin-command-5e04d0767d4c2abc"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "21237d9f13a48046e9da1b3d2668aeaa2c8e39a32ba6c7e8c69ce9ba4592cb7c",
+              "actualSha256": "21237d9f13a48046e9da1b3d2668aeaa2c8e39a32ba6c7e8c69ce9ba4592cb7c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "459365b7713e73de7cd66a5d3de0c450680ef910b775353c77433debc1e7531d",
+              "actualSha256": "459365b7713e73de7cd66a5d3de0c450680ef910b775353c77433debc1e7531d",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)"
+              ],
+              "expectedRowCount": 7,
+              "actualRowCount": 7
+            },
+            "lockOrder": {
+              "expected": [
+                "external_identities",
+                "admin_operator_external_identities",
+                "admin_operators",
+                "admin_operator_permission_overrides",
+                "admin_operator_roles",
+                "admin_roles",
+                "admin_role_permissions"
+              ],
+              "actual": [
+                "external_identities",
+                "admin_operator_external_identities",
+                "admin_operators",
+                "admin_operator_permission_overrides",
+                "admin_operator_roles",
+                "admin_roles",
+                "admin_role_permissions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
+              ],
+              "actualTimeline": [
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        },
         {
           "receiptId": "receipt:wave13:admin-command-5e04d0767d4c2abc:exact_output",
           "scenarioId": "scenario:exact-output",
@@ -4365,6 +4449,7 @@
       ],
       "evidence": {
         "evidenceIds": [
+          "receipt:wave13:admin-command-5e04d0767d4c2abc:auth_denied",
           "receipt:wave13:admin-command-5e04d0767d4c2abc:exact_output",
           "receipt:wave13:admin-command-5e04d0767d4c2abc:negative_guard",
           "receipt:wave13:admin-command-5e04d0767d4c2abc:read_positive",
@@ -4377,7 +4462,7 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave13-server-stats-v1.json",
-            "sha256": "68ec97f02172c615e522f2a74556bf841e46a73723533416bd87c3e01029ab27"
+            "sha256": "495f9d0c60d6c678df9590f62efbe303650065205d844b7f9460370b8b6a4e97"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-harness.mjs",
@@ -4385,7 +4470,7 @@
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave13-server-stats.mjs",
-            "sha256": "9c996dcc109c4a8bb9b0c1696fbfbc1f7a07717982521c82392857b9431094d9"
+            "sha256": "fd304562a2c97b4a02b25de065920ddf62fcf4616169f40fbd81d6f7b8fb50f6"
           }
         ]
       },
@@ -108572,5 +108657,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "a2d05ec30a2c4f45d4b7b5969bfada717130984f4c4fcf1fda5fe094a66e87fe"
+  "entrySetSha256": "8773a9f3d7b1bb0f22dd3eeb4250a611a294c0dfdf33eb0c089342f1caf4f73e"
 }
