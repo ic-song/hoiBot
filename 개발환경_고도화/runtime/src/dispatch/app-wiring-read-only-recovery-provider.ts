@@ -33,7 +33,7 @@ function claimInput<T>(input:AppWiringReadOnlyRecoveryInput<T>):AppWiringClaimIn
   return{entrypointKind:"IRIS",externalRequestId:externalRequestId(input.event.eventId),actor:input.actor,normalizedPayload:{
     version:"APP_WIRING_READ_ONLY_RECOVERY_V1",devContext:input.devContext,channelType:input.channelType,
     channelName:input.channelName??null,identityProviderCode:input.identityProviderCode,
-    commandBinding:input.commandBinding??null,
+    ...(input.commandBinding===undefined?{}:{commandBinding:input.commandBinding}),
     event:{eventId:input.event.eventId,providerCode:input.event.providerCode,providerEventId:input.event.providerEventId??null,
       payloadHash:input.event.payloadHash,message:input.event.message??null,direction:input.event.direction,channelId:input.event.channelId??null,
       eventKind:input.event.eventKind,origin:input.event.origin??null,eventCode:input.event.eventCode,eventCategory:input.event.eventCategory,
