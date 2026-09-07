@@ -1,0 +1,57 @@
+{
+  "format": "hoibot-object-db-consumer-executable-parity-wave14-v1",
+  "fixtureId": "fixture:object-db-wave14-pet-skill-probability",
+  "legacyOracle": {
+    "sourceRef": "8f075b4ef249543563e3338e8f3dd32046344880",
+    "sourcePath": "main.js",
+    "sourceStart": 201195,
+    "sourceEnd": 202371,
+    "sourceSpanSha256": "31d66373b98ac5e1fcc5ae3a416c3af775c682ade4b3cd3571851fec53ba0945",
+    "sourceNeedle": "if (msg === \"/펫스킬확률\")",
+    "displayedDefinitionCount": 92,
+    "utf16CodeUnitCount": 2630,
+    "utf8ByteCount": 5494,
+    "replySha256": "4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"
+  },
+  "runtimeSourceHashes": [
+    {"path":"개발환경_고도화/runtime/src/app.ts","sha256":"2bfa4b5571a7fbbfaf43741c31fa812f4914f13fff7fe4054db49146e1594d89"},
+    {"path":"개발환경_고도화/runtime/src/integration/event-processing-service.ts","sha256":"2bc7040542e6be8e33e65ca472587574c84bd0ee505794219d2f136082d218aa"},
+    {"path":"개발환경_고도화/runtime/src/pet/pet-skill-probability-atomic-service.ts","sha256":"cc3b30ac18fad1b02d861b79fd0bc70bf15ab0ebb05c0a34edded0da1e461b1a"},
+    {"path":"개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts","sha256":"76a4eb75771b9f210e0cd49687206ca321195022e1947574dbe176f6ab46cd57"},
+    {"path":"개발환경_고도화/runtime/src/pet/pet-skill-probability-service.ts","sha256":"1c2510a94102533d3896b00fbd52a81e0d9ce16dbf339658e99bfa7bb1e79dd7"},
+    {"path":"개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts","sha256":"3d670c2fa2ace1269a124a4c80726a1f8beafe8cc889c423fdf9824d3ea3be40"},
+    {"path":"개발환경_고도화/runtime/src/database.ts","sha256":"84ee15af7130022e8f3452ba1e3f746747b83a31e7172ac48f1d2ec5924508f2"},
+    {"path":"개발환경_고도화/runtime/src/shared/maria-database-error-policy.ts","sha256":"ccfd5ee5288a6aa04c73d5c513b8f2b70264b7ecd35bddb5342e1ef905312b71"},
+    {"path":"개발환경_고도화/runtime/src/integration/iris-normalizer.ts","sha256":"1e74facd236c2c4369f0f65cb2ce41f14bee2c2ac846a417226dc5f0642fbcb5"},
+    {"path":"개발환경_고도화/runtime/src/config.ts","sha256":"3b49c38e39905ffa4078c335d50afa7c49ad25cc15471a29068db699f185a1a0"}
+  ],
+  "payload": {
+    "cases": [
+      {
+        "caseId": "case:pet-skill-probability-actual-ingress",
+        "executablePath": "buildApp().inject Iris HTTP event -> verified environment -> exact command route -> atomic inbox/catalog/audit/outbox",
+        "transactionPath": "stateful SQL root transaction with rollback and restart worker evidence; canonical source tables are query-only",
+        "requiredScenarios": ["READ_POSITIVE", "NEGATIVE_GUARD", "EXACT_OUTPUT", "SOURCE_DOMAIN_DML_ZERO", "RESTART_CONSISTENCY"],
+        "consumers": [
+          {
+            "consumerId": "legacy-e038a86d8e885624",
+            "scenarioInputsByScenario": {
+              "READ_POSITIVE": {"environment":"dev","message":"/펫스킬확률","room":"Wave14 펫스킬방","displayName":"호이 남","externalUserId":"user-ok","channelId":"990000000000581","providerEventId":"wave14-read","operational":true,"statusCode":202,"replyCount":1,"noReplyCode":"NO_REPLY"},
+              "NEGATIVE_GUARD": {"environment":"dev","message":"/펫스킬확률 ","room":"Wave14 펫스킬방","displayName":"호이 남","externalUserId":"user-ok","channelId":"990000000000581","providerEventId":"wave14-guard","operational":true,"statusCode":202,"replyCount":0,"noReplyCode":"GUARD_REJECTED"},
+              "EXACT_OUTPUT": {"environment":"prod","message":"/펫스킬확률","room":"Wave14 펫스킬방","displayName":"호이 남","externalUserId":"user-ok","channelId":"990000000000581","providerEventId":"wave14-output","operational":true,"statusCode":202,"replyCount":1,"noReplyCode":"NO_REPLY"},
+              "SOURCE_DOMAIN_DML_ZERO": {"environment":"dev","message":"/펫스킬확률","room":"Wave14 펫스킬방","displayName":"호이 남","externalUserId":"user-ok","channelId":"990000000000581","providerEventId":"wave14-dml0","operational":true,"statusCode":202,"replyCount":1,"noReplyCode":"NO_REPLY"},
+              "RESTART_CONSISTENCY": {"environment":"dev","message":"/펫스킬확률","room":"Wave14 펫스킬방","displayName":"호이 남","externalUserId":"user-ok","channelId":"990000000000581","providerEventId":"wave14-restart","operational":true,"statusCode":202,"replyCount":1,"noReplyCode":"NO_REPLY"}
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "bindings": [
+    {"harnessId":"harness:wave14-pet-skill-probability","harnessCaseId":"case:pet-skill-probability-actual-ingress","consumerId":"legacy-e038a86d8e885624","fixtureId":"fixture:object-db-wave14-pet-skill-probability","scenarioId":"scenario:wave14:read-positive","scenarioKind":"READ_POSITIVE"},
+    {"harnessId":"harness:wave14-pet-skill-probability","harnessCaseId":"case:pet-skill-probability-actual-ingress","consumerId":"legacy-e038a86d8e885624","fixtureId":"fixture:object-db-wave14-pet-skill-probability","scenarioId":"scenario:wave14:negative-guard","scenarioKind":"NEGATIVE_GUARD"},
+    {"harnessId":"harness:wave14-pet-skill-probability","harnessCaseId":"case:pet-skill-probability-actual-ingress","consumerId":"legacy-e038a86d8e885624","fixtureId":"fixture:object-db-wave14-pet-skill-probability","scenarioId":"scenario:wave14:exact-output","scenarioKind":"EXACT_OUTPUT"},
+    {"harnessId":"harness:wave14-pet-skill-probability","harnessCaseId":"case:pet-skill-probability-actual-ingress","consumerId":"legacy-e038a86d8e885624","fixtureId":"fixture:object-db-wave14-pet-skill-probability","scenarioId":"scenario:wave14:source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO"},
+    {"harnessId":"harness:wave14-pet-skill-probability","harnessCaseId":"case:pet-skill-probability-actual-ingress","consumerId":"legacy-e038a86d8e885624","fixtureId":"fixture:object-db-wave14-pet-skill-probability","scenarioId":"scenario:wave14:restart-consistency","scenarioKind":"RESTART_CONSISTENCY"}
+  ]
+}
