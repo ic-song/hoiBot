@@ -29,6 +29,11 @@ const ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES = [
     "ㄴㄴㄴ",
     "쫄았음",
     "진행시켜",
+    "승급할거임",
+    "쫄아뜸",
+    "홈뱃지교체",
+    "홈뱃지해제확정",
+    "홈뱃지취소",
     "생각해볼게",
     "장착할래",
     "입양할래",
@@ -1008,6 +1013,7 @@ const GLOBAL_CONFIG = {
     petHomeActivity: { // 펫홈 마음표현·활동 알림 설정
         maxAlerts: 100,
         maxRecentVisitors: 100,
+        badgeConfirmStaleMs: 30000,
         commentPreviewMaxLength: 15,
         feedMaxStored: 10,
         feedMaxLength: 100,
@@ -1464,7 +1470,12 @@ blockedNicknameTerms: [
 ]   
  },
     pendant: { // 펜던트 시스템 설정
-        equipConfirmStaleMs: 30000 // 펜던트 교체 확인 대기 만료 시간
+        equipConfirmStaleMs: 30000, // 펜던트 교체 확인 대기 만료 시간
+        promotionConfirmStaleMs: 30000, // 창조 펜던트 승급 확인 대기 만료 시간
+        promotionCharmPerLevel: 3000000,
+        promotionStonePerLevel: 10,
+        promotionPointPerLevel: 10000000000,
+        promotionGrade: "창조"
     },
     petExplore: { // 펫탐험 설정
         boostItemNames: ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"], // 확률UP 아이템 후보(높은 것부터)
@@ -19727,6 +19738,49 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(trialTower, trialTowerPath);
                     return;
                 }
+                if (msg === "쫄아뜸") {
+                    if (!getPendantPromotionState(sender)) {
+                        replier.reply("진행 중인 펜던트 승급 요청이 없습니다.");
+                        return;
+                    }
+                    clearPendantPromotionState(sender);
+                    replier.reply("펜던트 승급을 취소했습니다.");
+                    return;
+                }
+                if (msg === "승급할거임") {
+                    if (!getPendantPromotionState(sender)) {
+                        replier.reply("펜던트 승급 확인 시간이 만료되었거나 요청이 없습니다.\n다시 /펜던트승급 [번호]를 입력해 주세요.");
+                        return;
+                    }
+                    var pendantPromotionMemberSnapshot = JSON.parse(JSON.stringify(data.member[sender]));
+                    var pendantPromotionPetSnapshot = JSON.parse(JSON.stringify(petData[sender]));
+                    var pendantPromotionResult = runPendantPromotionFromState(sender, data, petData, guildData);
+                    if (!pendantPromotionResult.ok) {
+                        clearPendantPromotionState(sender);
+                        replier.reply(pendantPromotionResult.message);
+                        return;
+                    }
+                    try {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(petData, memberPetPath);
+                    } catch (pendantPromotionSaveError) {
+                        data.member[sender] = pendantPromotionMemberSnapshot;
+                        petData[sender] = pendantPromotionPetSnapshot;
+                        try {
+                            saveJsonFile(data, filePath);
+                            saveJsonFile(petData, memberPetPath);
+                        } catch (pendantPromotionRollbackError) {
+                            debuggerLog("[ERROR : 펜던트 승급 롤백 실패] " + pendantPromotionRollbackError);
+                        }
+                        clearPendantPromotionState(sender);
+                        replier.reply("❌ 저장 중 오류가 발생하여 펜던트 승급을 취소하고 데이터를 복구했습니다.");
+                        return;
+                    }
+                    clearPendantPromotionState(sender);
+                    replier.reply(pendantPromotionResult.message);
+                    if (pendantPromotionResult.noticeMessage) noticeMsg(pendantPromotionResult.noticeMessage);
+                    return;
+                }
                 if (msg === "쫄았음" && getPendantUpgradeState(sender)) {
                     clearPendantUpgradeState(sender);
                     replier.reply("펜던트 강화를 취소했습니다.");
@@ -19799,6 +19853,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     replier.reply(buildPendantInfoMessage(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10)));
+                    return;
+                }
+                if (msg === "/펜던트승급" || /^\/펜던트승급\s+.+$/.test(msg)) {
+                    if (!/^\/펜던트승급\s+\d+$/.test(msg)) {
+                        replier.reply("예) /펜던트승급 [펜던트가방번호]\n혹은 장착 펜던트는 숫자 0을 입력해 주세요.");
+                        return;
+                    }
+                    var pendantPromotionIdsChanged = ensurePendantIdsForUser(petData, sender);
+                    if (pendantPromotionIdsChanged) saveJsonFile(petData, memberPetPath);
+                    var pendantPromotionPreview = buildPendantPromotionPreview(data, petData, guildData, sender, parseInt(msg.split(/\s+/)[1], 10));
+                    replier.reply(pendantPromotionPreview.message);
                     return;
                 }
                 if (msg === "/펜던트장착" || /^\/펜던트장착\s+.+$/.test(msg)) {
@@ -22137,35 +22202,41 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (/^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(msg)) {
                     var homeBadgeCubeParts = msg.trim().split(/\s+/);
-                    var homeBadgeCubeSelection = homeBadgeCubeParts[1];
+                    var homeBadgeCubeSlotNumber = parseInt(homeBadgeCubeParts[1], 10);
                     var homeBadgeCubeOptionNumber = parseInt(homeBadgeCubeParts[2], 10);
                     var homeBadgeCubeTryCount = homeBadgeCubeParts.length >= 4 ? parseInt(homeBadgeCubeParts[3], 10) : 1;
                     var homeBadgeCubeConfig = GLOBAL_CONFIG.petHomeActivity.cube;
+                    if (homeBadgeCubeSlotNumber < 1 || homeBadgeCubeSlotNumber > 2) {
+                        replier.reply("❌ 장착 슬롯은 1번 또는 2번만 선택할 수 있습니다.\n사용법: /홈뱃지큐브 [장착슬롯번호] [옵션번호] [횟수]");
+                        return;
+                    }
                     if (homeBadgeCubeTryCount < 1 || homeBadgeCubeTryCount > homeBadgeCubeConfig.maxTryCount) {
-                        replier.reply("❌ 큐브는 한 번에 1~" + homeBadgeCubeConfig.maxTryCount + "회까지 사용할 수 있습니다.\n사용법: /홈뱃지큐브 [뱃지번호] [옵션번호] [횟수]");
+                        replier.reply("❌ 큐브는 한 번에 1~" + homeBadgeCubeConfig.maxTryCount + "회까지 사용할 수 있습니다.\n사용법: /홈뱃지큐브 [장착슬롯번호] [옵션번호] [횟수]");
                         return;
                     }
                     var homeBadgeCubeOption = getHomeBadgeCubeOptionConfig(homeBadgeCubeOptionNumber);
                     var homeBadgeCubeActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
-                    var homeBadgeCubeBadge = resolvePetHomeBadgeSelection(homeBadgeCubeActivityData, sender, homeBadgeCubeSelection, true);
-                    if (!homeBadgeCubeBadge || !homeBadgeCubeOption) {
-                        replier.reply("❌ 존재하지 않거나 보유하지 않은 홈뱃지·옵션입니다.\n보유 번호는 /홈뱃지에서 확인해 주세요.");
+                    var homeBadgeCubeEquippedIds = getPetHomeEquippedBadgeIds(homeBadgeCubeActivityData, sender);
+                    var homeBadgeCubeBadgeId = homeBadgeCubeEquippedIds[homeBadgeCubeSlotNumber - 1];
+                    var homeBadgeCubeBadge = homeBadgeCubeBadgeId ? getPetHomeBadgeById(homeBadgeCubeBadgeId) : null;
+                    var homeBadgeCubeSocial = getPetHomeSocialUser(homeBadgeCubeActivityData, sender);
+                    if (!homeBadgeCubeBadgeId) {
+                        replier.reply("❌ " + homeBadgeCubeSlotNumber + "번 장착 슬롯이 비어 있습니다.\n홈뱃지 큐브는 사용되지 않았습니다.");
                         return;
                     }
-                    var homeBadgeCubeOwnedBadges = getOwnedPetHomeBadges(homeBadgeCubeActivityData, sender);
-                    var homeBadgeCubeOwnedNumber = 0; // 전체 보유 목록에서 해당 뱃지가 표시되는 번호
-                    for (var homeBadgeCubeOwnedIndex = 0; homeBadgeCubeOwnedIndex < homeBadgeCubeOwnedBadges.length; homeBadgeCubeOwnedIndex++) {
-                        if (homeBadgeCubeOwnedBadges[homeBadgeCubeOwnedIndex].id === homeBadgeCubeBadge.id) {
-                            homeBadgeCubeOwnedNumber = homeBadgeCubeOwnedIndex + 1;
-                            break;
-                        }
+                    if (!homeBadgeCubeBadge || !petHomeStringListContains(homeBadgeCubeSocial.badges, homeBadgeCubeBadge.id) || !homeBadgeCubeOption) {
+                        replier.reply("❌ 장착된 홈뱃지 또는 옵션 정보를 확인할 수 없습니다.\n/홈뱃지에서 장착 상태를 확인해 주세요.");
+                        return;
                     }
-                    var homeBadgeCubeSocial = getPetHomeSocialUser(homeBadgeCubeActivityData, sender);
+                    if (homeBadgeCubeSlotNumber === 2 && (homeBadgeCubeOptionNumber === 3 || homeBadgeCubeOptionNumber === 4)) {
+                        replier.reply("❌ 보조 홈뱃지는 캐슬·레이드 옵션만 강화할 수 있습니다.\n홈뱃지 큐브와 포인트는 변경되지 않았습니다.");
+                        return;
+                    }
                     var hadHomeBadgeCubeStore = data.member[sender].hasOwnProperty("homeBadgeCube");
                     var homeBadgeCubeStoreSnapshot = hadHomeBadgeCubeStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
                     var hadHomeBadgeCubePoint = data.member[sender].hasOwnProperty("point");
                     var homeBadgeCubePointSnapshot = data.member[sender].point;
-                    syncHomeBadgeCubeEquippedBadge(data, sender, homeBadgeCubeSocial.equippedBadgeId);
+                    syncHomeBadgeCubeEquippedBadges(data, sender, homeBadgeCubeEquippedIds);
                     var homeBadgeCubeRecord = getHomeBadgeCubeRecord(data, sender, homeBadgeCubeBadge.id, true);
                     var homeBadgeCubeBefore = parseFloat(homeBadgeCubeRecord[homeBadgeCubeOption.key]) || 0;
                     if (homeBadgeCubeBefore >= homeBadgeCubeOption.max) {
@@ -22253,7 +22324,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var homeBadgeCubeAfter = homeBadgeCubeRecord[homeBadgeCubeOption.key];
                     var homeBadgeCubeRemain = parseInt(data.member[sender].bag[homeBadgeCubeConfig.itemName], 10) || 0;
-                    var homeBadgeCubeIsEquipped = homeBadgeCubeSocial.equippedBadgeId === homeBadgeCubeBadge.id;
                     var homeBadgeCubeLines = [];
                     homeBadgeCubeLines.push("💟[" + checkRank(data, petData, guildData, sender) + "] 님이 홈뱃지 큐브를 오픈합니다!");
                     homeBadgeCubeLines.push("확률정보: 채팅창에 '/큐브확률'을 적어보세요");
@@ -22262,7 +22332,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     homeBadgeCubeLines.push("💟 남은 큐브: " + numberWithCommas(homeBadgeCubeRemain) + "개");
                     homeBadgeCubeLines.push("🪙 획득 포인트: 🅟" + numberWithCommas(homeBadgeCubePointReward));
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
-                    homeBadgeCubeLines.push("[" + homeBadgeCubeSelection + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + getPetHomeBadgeTypeLabel(homeBadgeCubeBadge) + (homeBadgeCubeIsEquipped ? " ✅ 장착 중" : " ⚠️ 미장착"));
+                    homeBadgeCubeLines.push("[장착 슬롯 " + homeBadgeCubeSlotNumber + "] " + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + getPetHomeBadgeTypeLabel(homeBadgeCubeBadge) + " ✅ 장착 중");
                     homeBadgeCubeLines.push(buildHomeBadgeCubeOptionLines(data, sender, homeBadgeCubeBadge));
                     homeBadgeCubeLines.push("└ " + getPetHomeBadgeProgressText(homeBadgeCubeActivityData, sender, homeBadgeCubeBadge));
                     homeBadgeCubeLines.push("━━━━━━━━━━━━━━━");
@@ -22270,18 +22340,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     homeBadgeCubeLines.push("변경: +" + formatHomeBadgeCubePercent(homeBadgeCubeBefore) + " → +" + formatHomeBadgeCubePercent(homeBadgeCubeAfter));
                     homeBadgeCubeLines.push("마지막 추첨: " + formatHomeBadgeCubePercent(homeBadgeCubeLastRoll));
                     homeBadgeCubeLines.push("시도: " + homeBadgeCubeUsedCount + "/" + homeBadgeCubeTryCount + "회 | 상승 " + homeBadgeCubeUpgradeCount + "회 | 보호 " + homeBadgeCubeProtectedCount + "회");
-                    if (!homeBadgeCubeIsEquipped) homeBadgeCubeLines.push("⚠️ 대표 뱃지로 장착해야 매력·펫강화·펫탐험 효과가 적용됩니다.");
                     if (homeBadgeCubeAfter >= homeBadgeCubeOption.max) homeBadgeCubeLines.push("🎉 " + formatHomeBadgeCubePercent(homeBadgeCubeOption.max) + " 최대 옵션을 달성했습니다!");
                     if (isHomeBadgeCubeTotalBuffActive(homeBadgeCubeRecord)) homeBadgeCubeLines.push("💟 기본 합계 100% 달성! 장착 시 모든 효과에 10% 추가 버프가 적용됩니다.");
                     replier.reply(homeBadgeCubeLines.join("\n"));
                     for (var homeBadgeCubeNoticeIndex = 0; homeBadgeCubeNoticeIndex < homeBadgeCubeStageNoticePercents.length; homeBadgeCubeNoticeIndex++) {
-                        noticeMsg("[💟 홈뱃지 큐브 전체 알림]\n━━━━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이\n홈뱃지 " + homeBadgeCubeOwnedNumber + "번의 " + homeBadgeCubeOption.emoji + " " + homeBadgeCubeOption.name + " " + formatHomeBadgeCubeCardPercent(homeBadgeCubeStageNoticePercents[homeBadgeCubeNoticeIndex]) + "를 달성했습니다!\n━━━━━━━━━━━━━━━\n축하드립니다! 🎉");
+                        noticeMsg("[💟 홈뱃지 큐브 전체 알림]\n━━━━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이\n장착 슬롯 " + homeBadgeCubeSlotNumber + "번의 " + homeBadgeCubeOption.emoji + " " + homeBadgeCubeOption.name + " " + formatHomeBadgeCubeCardPercent(homeBadgeCubeStageNoticePercents[homeBadgeCubeNoticeIndex]) + "를 달성했습니다!\n━━━━━━━━━━━━━━━\n축하드립니다! 🎉");
                     }
                     if (homeBadgeCubeAllMaxNotice) noticeMsg("[💟 홈뱃지 큐브 전체 알림]\n[" + checkRank(data, petData, guildData, sender) + "] 님이\n" + homeBadgeCubeBadge.emoji + " " + homeBadgeCubeBadge.name + " 홈뱃지의 모든 옵션 최대치를 달성했습니다!");
                     return;
                 }
                 if (/^\/홈뱃지큐브(?:\s+.*)?$/.test(msg)) {
-                    replier.reply("사용법: /홈뱃지큐브 [홈뱃지번호] [옵션번호] [횟수]\n예시: /홈뱃지큐브 1 2\n예시: /홈뱃지큐브 1 2 1000\n옵션 번호와 비용은 /홈뱃지에서 확인해 주세요.");
+                    replier.reply("사용법: /홈뱃지큐브 [장착슬롯번호 1|2] [옵션번호] [횟수]\n예시: /홈뱃지큐브 1 2\n예시: /홈뱃지큐브 2 1 1000\n옵션 번호와 비용은 /홈뱃지에서 확인해 주세요.");
                     return;
                 }
                 if (/^\/홈뱃지오픈(?:\s+.*)?$/.test(msg)) {
@@ -22315,44 +22384,120 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(petHomeActivityDataForBadgeView, petHomeActivityFile);
                     return;
                 }
-                if (msg === "/홈뱃지해제" || /^\/홈뱃지(?:장착|삭제)\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg)) {
+                if (msg === "/홈뱃지장착" || msg === "/홈뱃지해제") {
+                    var petHomeActivityDataForBadgeGuide = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    replier.reply(buildHomeBadgeSlotGuideMessage(data, petData, guildData, petHomeActivityDataForBadgeGuide, sender, msg === "/홈뱃지해제" ? "해제" : "장착"));
+                    return;
+                }
+                if (msg === "홈뱃지취소") {
+                    if (!getHomeBadgeMutationState(sender)) {
+                        replier.reply("⚠️ 진행 중인 홈뱃지 장착·해제 요청이 없습니다.");
+                        return;
+                    }
+                    clearHomeBadgeMutationState(sender);
+                    replier.reply("✅ 홈뱃지 장착·해제 요청을 취소했습니다.");
+                    return;
+                }
+                if (msg === "홈뱃지교체" || msg === "홈뱃지해제확정" || /^\/홈뱃지장착\s+(?:(?:[12]\s+)?(?:\d+|[A-Za-z]{1,4}\d{2,3}))$/.test(msg) || /^\/홈뱃지해제\s+[12]$/.test(msg) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg)) {
                     var petHomeActivityDataForBadgeMutation = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var badgeMutationSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForBadgeMutation, sender);
                     var hadBadgeMutationCubeStore = data.member[sender].hasOwnProperty("homeBadgeCube");
                     var badgeMutationCubeSnapshot = hadBadgeMutationCubeStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
                     var badgeMutationSocial = getPetHomeSocialUser(petHomeActivityDataForBadgeMutation, sender);
+                    var badgeMutationCurrentIds = getPetHomeEquippedBadgeIds(petHomeActivityDataForBadgeMutation, sender);
                     var badgeMutationReply = "";
-                    if (msg === "/홈뱃지해제") {
-                        badgeMutationSocial.equippedBadgeId = null;
-                        syncHomeBadgeCubeEquippedBadge(data, sender, null);
-                        badgeMutationReply = "✅ 대표 펫홈 뱃지를 해제했습니다.\n현재 장착 중인 펫홈 뱃지가 없습니다.";
-                    } else {
+                    var badgeMutationNextIds = badgeMutationCurrentIds.slice(0);
+                    var badgeMutationDelete = null;
+                    var badgeMutationState = null;
+                    if (msg === "홈뱃지교체" || msg === "홈뱃지해제확정") {
+                        badgeMutationState = getHomeBadgeMutationState(sender);
+                        var expectedBadgeMutationAction = msg === "홈뱃지교체" ? "replace" : "unequip";
+                        if (!badgeMutationState || badgeMutationState.action !== expectedBadgeMutationAction) {
+                            replier.reply("⚠️ 홈뱃지 확인 시간이 만료되었거나 요청이 없습니다.\n다시 /홈뱃지장착 또는 /홈뱃지해제를 입력해 주세요.");
+                            return;
+                        }
+                        if (!areHomeBadgeSlotIdsEqual(badgeMutationCurrentIds, badgeMutationState.expectedBadgeIds)) {
+                            clearHomeBadgeMutationState(sender);
+                            replier.reply("⚠️ 장착 상태가 변경되어 요청을 취소했습니다.\n현재 상태를 확인한 뒤 다시 시도해 주세요.");
+                            return;
+                        }
+                        badgeMutationNextIds = badgeMutationState.nextBadgeIds.slice(0);
+                        if (badgeMutationState.targetBadgeId && !petHomeStringListContains(badgeMutationSocial.badges, badgeMutationState.targetBadgeId)) {
+                            clearHomeBadgeMutationState(sender);
+                            replier.reply("❌ 교체할 홈뱃지를 더 이상 보유하고 있지 않습니다.");
+                            return;
+                        }
+                        badgeMutationReply = expectedBadgeMutationAction === "replace" ? "✅ 홈뱃지 교체를 완료했습니다." : "✅ 홈뱃지 해제를 완료했습니다.";
+                    } else if (msg.indexOf("/홈뱃지해제 ") === 0) {
+                        var badgeUnequipSlotIndex = parseInt(msg.substring("/홈뱃지해제 ".length), 10) - 1;
+                        if (!badgeMutationCurrentIds[badgeUnequipSlotIndex]) {
+                            replier.reply("⚠️ 선택한 슬롯에 장착된 홈뱃지가 없습니다.");
+                            return;
+                        }
+                        badgeMutationNextIds[badgeUnequipSlotIndex] = null;
+                        if (!badgeMutationNextIds[0] && badgeMutationNextIds[1]) {
+                            badgeMutationNextIds[0] = badgeMutationNextIds[1];
+                            badgeMutationNextIds[1] = null;
+                        }
+                        var badgeUnequipCubePreviewSnapshot = hadBadgeMutationCubeStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
+                        var badgeUnequipBeforeEffect = buildHomeBadgeCubeEffectSummary(data, sender);
+                        syncHomeBadgeCubeEquippedBadges(data, sender, badgeMutationNextIds);
+                        var badgeUnequipAfterEffect = buildHomeBadgeCubeEffectSummary(data, sender);
+                        if (hadBadgeMutationCubeStore) data.member[sender].homeBadgeCube = badgeUnequipCubePreviewSnapshot;
+                        else delete data.member[sender].homeBadgeCube;
+                        setHomeBadgeMutationState(sender, { action: "unequip", expectedBadgeIds: badgeMutationCurrentIds.slice(0), nextBadgeIds: badgeMutationNextIds.slice(0), targetBadgeId: null });
+                        replier.reply("⚠️ 홈뱃지 " + (badgeUnequipSlotIndex + 1) + "번 슬롯을 해제할까요?\n━━━━━━━━━━━━\n현재 효과: " + badgeUnequipBeforeEffect + "\n해제 후: " + badgeUnequipAfterEffect + (badgeUnequipSlotIndex === 0 && badgeMutationCurrentIds[1] ? "\n※ 보조 뱃지가 대표 슬롯으로 자동 이동합니다." : "") + "\n\n👉 [홈뱃지해제확정] / [홈뱃지취소]");
+                        return;
+                    } else if (msg.indexOf("/홈뱃지삭제 ") === 0) {
                         var badgeMutationSelection = msg.replace(/^\/홈뱃지(?:장착|삭제)\s+/, "").trim();
                         var badgeMutation = resolvePetHomeBadgeSelection(petHomeActivityDataForBadgeMutation, sender, badgeMutationSelection, true);
                         if (!badgeMutation) {
                             replier.reply("❌ 존재하지 않거나 아직 획득하지 않은 뱃지입니다.\n보유 뱃지는 /홈뱃지에서 확인해 주세요.");
                             return;
                         }
-                        if (msg.indexOf("/홈뱃지장착 ") === 0) {
-                            if (badgeMutationSocial.equippedBadgeId === badgeMutation.id) {
-                                replier.reply("⚠️ 이미 대표 뱃지로 장착 중입니다.\n대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForBadgeMutation, sender));
-                                return;
-                            }
-                            badgeMutationSocial.equippedBadgeId = badgeMutation.id;
-                            syncHomeBadgeCubeEquippedBadge(data, sender, badgeMutation.id);
-                            badgeMutationReply = "✅ 대표 펫홈 뱃지를 장착했습니다!\n━━━━━━━━━━━━\n대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForBadgeMutation, sender) + "\n\n펫홈과 홈알림에 해당 뱃지가 표시됩니다.";
-                        } else {
-                            removePetHomeStringListValue(badgeMutationSocial.badges, badgeMutation.id);
-                            addPetHomeStringListValue(badgeMutationSocial.deletedBadgeIds, badgeMutation.id);
-                            var badgeDeleteCubeStore = getHomeBadgeCubeStore(data, sender, false);
-                            if (badgeDeleteCubeStore && badgeDeleteCubeStore.badges) delete badgeDeleteCubeStore.badges[badgeMutation.id];
-                            if (badgeMutationSocial.equippedBadgeId === badgeMutation.id) {
-                                badgeMutationSocial.equippedBadgeId = null;
-                                syncHomeBadgeCubeEquippedBadge(data, sender, null);
-                            }
-                            badgeMutationReply = "✅ 펫홈 뱃지를 영구 삭제했습니다.\n━━━━━━━━━━━━\n삭제 뱃지: " + badgeMutation.emoji + " " + badgeMutation.name + " [" + badgeMutation.id + "]\n\n삭제한 뱃지는 다시 획득할 수 없습니다.";
+                        badgeMutationDelete = badgeMutation;
+                        removePetHomeStringListValue(badgeMutationSocial.badges, badgeMutation.id);
+                        addPetHomeStringListValue(badgeMutationSocial.deletedBadgeIds, badgeMutation.id);
+                        var badgeDeleteCubeStore = getHomeBadgeCubeStore(data, sender, false);
+                        if (badgeDeleteCubeStore && badgeDeleteCubeStore.badges) delete badgeDeleteCubeStore.badges[badgeMutation.id];
+                        removeHomeBadgeFromEquippedSlots(data, badgeMutationSocial, sender, badgeMutation.id);
+                        badgeMutationNextIds = getPetHomeEquippedBadgeIds(petHomeActivityDataForBadgeMutation, sender);
+                        badgeMutationReply = "✅ 펫홈 뱃지를 영구 삭제했습니다.\n━━━━━━━━━━━━\n삭제 뱃지: " + badgeMutation.emoji + " " + badgeMutation.name + " [" + badgeMutation.id + "]\n\n삭제한 뱃지는 다시 획득할 수 없습니다.";
+                    } else {
+                        var badgeEquipParts = msg.trim().split(/\s+/);
+                        var badgeEquipSlotIndex = badgeEquipParts.length === 3 ? parseInt(badgeEquipParts[1], 10) - 1 : 0;
+                        var badgeEquipRequestedSlotIndex = badgeEquipSlotIndex;
+                        var badgeEquipSelection = badgeEquipParts.length === 3 ? badgeEquipParts[2] : badgeEquipParts[1];
+                        var badgeEquipTarget = resolvePetHomeBadgeSelection(petHomeActivityDataForBadgeMutation, sender, badgeEquipSelection, true);
+                        if (!badgeEquipTarget) {
+                            replier.reply("❌ 존재하지 않거나 아직 획득하지 않은 뱃지입니다.\n보유 뱃지는 /홈뱃지에서 확인해 주세요.");
+                            return;
                         }
+                        if (badgeEquipSlotIndex === 1 && !badgeMutationCurrentIds[0]) badgeEquipSlotIndex = 0;
+                        if (badgeMutationCurrentIds[badgeEquipSlotIndex] === badgeEquipTarget.id) {
+                            replier.reply("⚠️ 선택한 홈뱃지가 이미 " + (badgeEquipSlotIndex + 1) + "번 슬롯에 장착 중입니다.");
+                            return;
+                        }
+                        if (badgeMutationCurrentIds[badgeEquipSlotIndex === 0 ? 1 : 0] === badgeEquipTarget.id) {
+                            replier.reply("❌ 같은 홈뱃지는 두 슬롯에 동시에 장착할 수 없습니다.");
+                            return;
+                        }
+                        badgeMutationNextIds[badgeEquipSlotIndex] = badgeEquipTarget.id;
+                        if (badgeMutationCurrentIds[badgeEquipSlotIndex]) {
+                            var badgeEquipCubePreviewSnapshot = hadBadgeMutationCubeStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
+                            var badgeEquipBeforeEffect = buildHomeBadgeCubeEffectSummary(data, sender);
+                            syncHomeBadgeCubeEquippedBadges(data, sender, badgeMutationNextIds);
+                            var badgeEquipAfterEffect = buildHomeBadgeCubeEffectSummary(data, sender);
+                            if (hadBadgeMutationCubeStore) data.member[sender].homeBadgeCube = badgeEquipCubePreviewSnapshot;
+                            else delete data.member[sender].homeBadgeCube;
+                            setHomeBadgeMutationState(sender, { action: "replace", expectedBadgeIds: badgeMutationCurrentIds.slice(0), nextBadgeIds: badgeMutationNextIds.slice(0), targetBadgeId: badgeEquipTarget.id });
+                            replier.reply("⚠️ 홈뱃지 " + (badgeEquipSlotIndex + 1) + "번 슬롯을 교체할까요?\n━━━━━━━━━━━━\n현재: " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, badgeEquipSlotIndex) + "\n교체: " + badgeEquipTarget.emoji + " " + badgeEquipTarget.name + "\n\n현재 효과: " + badgeEquipBeforeEffect + "\n교체 후: " + badgeEquipAfterEffect + "\n\n👉 [홈뱃지교체] / [홈뱃지취소]");
+                            return;
+                        }
+                        badgeMutationReply = "✅ 홈뱃지 " + (badgeEquipSlotIndex + 1) + "번 슬롯에 장착했습니다!" + (badgeEquipRequestedSlotIndex === 1 && badgeEquipSlotIndex === 0 ? "\n※ 대표 슬롯이 비어 있어 1번 대표로 자동 장착했습니다." : "");
                     }
+                    setPetHomeEquippedBadgeIds(badgeMutationSocial, badgeMutationNextIds);
+                    syncHomeBadgeCubeEquippedBadges(data, sender, badgeMutationNextIds);
                     try {
                         saveJsonFile(petHomeActivityDataForBadgeMutation, petHomeActivityFile);
                         saveJsonFile(data, filePath);
@@ -22368,8 +22513,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                         throw badgeMutationSaveError;
                     }
-                    replier.reply(badgeMutationReply);
-                    if (isDebuggerFlag && msg.indexOf("/홈뱃지장착 ") === 0) {
+                    clearHomeBadgeMutationState(sender);
+                    replier.reply(badgeMutationReply + (badgeMutationDelete ? "" : "\n━━━━━━━━━━━━\n[1] 대표  " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, 0) + "\n[2] 보조  " + getPetHomeEquippedBadgeSlotText(petHomeActivityDataForBadgeMutation, sender, 1) + "\n최종 효과: " + buildHomeBadgeCubeEffectSummary(data, sender)));
+                    if (isDebuggerFlag && (msg.indexOf("/홈뱃지장착 ") === 0 || msg === "홈뱃지교체")) {
                         try {
                             var homeBadgeDebugHomeData = loadJsonFile(homeDataFile);
                             var homeBadgeDebugExploreData = loadJsonFile(petExplorePath);
@@ -22378,6 +22524,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             debuggerLog("[홈뱃지 큐브 디버깅 계산 실패] " + homeBadgeDebugError);
                         }
                     }
+                    return;
+                }
+                if (/^\/홈뱃지장착(?:\s+.*)?$/.test(msg) || /^\/홈뱃지해제(?:\s+.*)?$/.test(msg)) {
+                    replier.reply("사용법\n장착: /홈뱃지장착 [슬롯번호 1|2] [뱃지번호 또는 ID]\n기존 방식: /홈뱃지장착 [뱃지번호 또는 ID]\n해제: /홈뱃지해제 [슬롯번호 1|2]");
                     return;
                 }
                 if (msg === "/특별뱃지목록" || /^\/특별뱃지목록\s+\S+$/.test(msg)) {
@@ -22437,10 +22587,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             return;
                         }
                         removePetHomeStringListValue(specialBadgeSocial.badges, specialBadge.id);
-                        if (specialBadgeSocial.equippedBadgeId === specialBadge.id) {
-                            specialBadgeSocial.equippedBadgeId = null;
-                            syncHomeBadgeCubeEquippedBadge(data, specialBadgeTarget, null);
-                        }
+                        removeHomeBadgeFromEquippedSlots(data, specialBadgeSocial, specialBadgeTarget, specialBadge.id);
                     }
                     specialBadgeSocial.specialBadgeLogs.push({ badgeId: specialBadge.id, action: specialBadgeAction, adminId: sender, createdAt: formatDateTime(new Date()) });
                     var specialBadgeAlert = addPetHomeActivityAlert(petHomeActivityDataForSpecialBadge, specialBadgeTarget, specialBadgeAction === "지급" ? "special_badge_granted" : "special_badge_revoked", sender, "");
@@ -29469,6 +29616,10 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
+        command === "홈뱃지교체" || command === "홈뱃지해제확정" || command === "홈뱃지취소" ||
+        /^\/홈뱃지장착\s+(?:(?:[12]\s+)?(?:\d+|[A-Za-z]{1,4}\d{2,3}))$/.test(command) ||
+        /^\/홈뱃지해제\s+[12]$/.test(command) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(command) ||
+        /^\/펜던트승급\s+\d+$/.test(command) || command === "승급할거임" || command === "쫄아뜸" ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) ||
@@ -36163,10 +36314,16 @@ function hasActiveHoiPassAccess(data, user) {
 function isPassFreeHomeBadgeCommand(msg) {
     return msg === "/홈뱃지" ||
         msg === "/홈뱃지전체" ||
+        msg === "/홈뱃지장착" ||
         msg === "/홈뱃지해제" ||
+        msg === "홈뱃지교체" ||
+        msg === "홈뱃지해제확정" ||
+        msg === "홈뱃지취소" ||
         msg === "/큐브확률" ||
         /^\/홈뱃지정보\s+\S(?:.*\S)?$/.test(msg) ||
-        /^\/홈뱃지(?:장착|삭제)\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg) ||
+        /^\/홈뱃지장착(?:\s+.*)?$/.test(msg) ||
+        /^\/홈뱃지해제(?:\s+.*)?$/.test(msg) ||
+        /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg) ||
         /^\/홈뱃지큐브(?:\s+.*)?$/.test(msg);
 }
 
@@ -36205,10 +36362,7 @@ function revokeHoiPassPremiumBadge(data, activityData, user, operator) {
     var social = getPetHomeSocialUser(activityData, user);
     var badgeId = GLOBAL_CONFIG.supportPass.premium.badgeId;
     if (!removePetHomeStringListValue(social.badges, badgeId)) return false;
-    if (social.equippedBadgeId === badgeId) {
-        social.equippedBadgeId = null;
-        syncHomeBadgeCubeEquippedBadge(data, user, null);
-    }
+    removeHomeBadgeFromEquippedSlots(data, social, user, badgeId);
     social.specialBadgeLogs.push({ badgeId: badgeId, action: "프리미엄회수", adminId: operator || "시스템", createdAt: formatDateTime(new Date()) });
     var alert = addPetHomeActivityAlert(activityData, user, "special_badge_revoked", operator || "시스템", "");
     alert.badgeId = badgeId;
@@ -43748,6 +43902,28 @@ function requirePetHomeActivityData(activityData) {
     return activityData;
 }
 
+// 펫홈 대표·보조 뱃지 슬롯을 기존 단일 필드와 호환되게 정규화하는 함수
+function normalizePetHomeEquippedBadgeIds(social) {
+    var ids;
+    if (social.equippedBadgeIds === undefined) {
+        ids = [social.equippedBadgeId || null, null];
+    } else {
+        if (!(social.equippedBadgeIds instanceof Array) || social.equippedBadgeIds.length !== 2) throw new Error("Invalid pet home equipped badge slots");
+        ids = [social.equippedBadgeIds[0] || null, social.equippedBadgeIds[1] || null];
+    }
+    for (var i = 0; i < ids.length; i++) {
+        if (ids[i] !== null && typeof ids[i] !== "string") throw new Error("Invalid pet home equipped badge slot");
+    }
+    if (ids[0] && ids[0] === ids[1]) ids[1] = null;
+    if (!ids[0] && ids[1]) {
+        ids[0] = ids[1];
+        ids[1] = null;
+    }
+    social.equippedBadgeIds = ids;
+    social.equippedBadgeId = ids[0]; // 기존 대표 뱃지 소비자용 호환 필드
+    return ids;
+}
+
 // 펫홈 소셜 유저 데이터의 저장 구조를 검증하는 함수
 function validatePetHomeSocialUser(social, user) {
     if (!social || typeof social !== "object" || social instanceof Array) throw new Error("Invalid pet home social user: " + user);
@@ -43784,9 +43960,11 @@ function validatePetHomeSocialUser(social, user) {
         var value = social.badgeStats[statKeys[i]];
         if (typeof value !== "number" || value < 0) throw new Error("Invalid pet home badge stat: " + user + "/" + statKeys[i]);
     }
+    var equippedBadgeIds = normalizePetHomeEquippedBadgeIds(social);
     if (social.equippedBadgeId !== null && typeof social.equippedBadgeId !== "string") {
         throw new Error("Invalid pet home equipped badge: " + user);
     }
+    if (!(equippedBadgeIds instanceof Array) || equippedBadgeIds.length !== 2) throw new Error("Invalid pet home equipped badge slots: " + user);
     for (var logIndex = 0; logIndex < social.specialBadgeLogs.length; logIndex++) {
         var log = social.specialBadgeLogs[logIndex];
         if (!log || typeof log !== "object" || typeof log.badgeId !== "string" || typeof log.action !== "string" ||
@@ -43804,6 +43982,7 @@ function createPetHomeSocialUser() {
         badges: [],
         deletedBadgeIds: [],
         equippedBadgeId: null,
+        equippedBadgeIds: [null, null],
         heartUsage: { date: "", count: 0 },
         feedActivityDates: [],
         badgeStats: {
@@ -43824,6 +44003,22 @@ function getPetHomeSocialUser(activityData, user) {
     }
     if (!activityData.petHomeSocial.hasOwnProperty(user)) activityData.petHomeSocial[user] = createPetHomeSocialUser();
     return activityData.petHomeSocial[user];
+}
+
+// 유저의 대표·보조 홈뱃지 슬롯을 보유 상태에 맞춰 반환하는 함수
+function getPetHomeEquippedBadgeIds(activityData, user) {
+    var social = getPetHomeSocialUser(activityData, user);
+    var ids = normalizePetHomeEquippedBadgeIds(social);
+    for (var i = 0; i < ids.length; i++) {
+        if (ids[i] && !petHomeStringListContains(social.badges, ids[i])) ids[i] = null;
+    }
+    return normalizePetHomeEquippedBadgeIds(social).slice(0);
+}
+
+// 유저의 대표·보조 홈뱃지 슬롯을 저장하고 기존 대표 필드를 동기화하는 함수
+function setPetHomeEquippedBadgeIds(social, badgeIds) {
+    social.equippedBadgeIds = [badgeIds && badgeIds[0] ? badgeIds[0] : null, badgeIds && badgeIds[1] ? badgeIds[1] : null];
+    return normalizePetHomeEquippedBadgeIds(social);
 }
 
 // 문자열 배열에 값이 있는지 확인하는 함수
@@ -43929,7 +44124,7 @@ function getHomeBadgeCubeStore(data, user, createIfMissing) {
     if (!member) return null;
     if (member.homeBadgeCube === undefined) {
         if (!createIfMissing) return null;
-        member.homeBadgeCube = { equippedBadgeId: null, badges: {} };
+        member.homeBadgeCube = { equippedBadgeId: null, equippedBadgeIds: [null, null], badges: {} };
     }
     if (!member.homeBadgeCube || typeof member.homeBadgeCube !== "object" || member.homeBadgeCube instanceof Array) throw new Error("Invalid home badge cube store");
     if (member.homeBadgeCube.badges === undefined) {
@@ -43937,7 +44132,30 @@ function getHomeBadgeCubeStore(data, user, createIfMissing) {
         member.homeBadgeCube.badges = {};
     }
     if (!member.homeBadgeCube.badges || typeof member.homeBadgeCube.badges !== "object" || member.homeBadgeCube.badges instanceof Array) throw new Error("Invalid home badge cube badge store");
+    normalizeHomeBadgeCubeEquippedBadgeIds(member.homeBadgeCube);
     return member.homeBadgeCube;
+}
+
+// 회원 데이터의 대표·보조 홈뱃지 큐브 슬롯을 기존 단일 필드와 호환되게 정규화하는 함수
+function normalizeHomeBadgeCubeEquippedBadgeIds(store) {
+    var ids;
+    if (store.equippedBadgeIds === undefined) {
+        ids = [store.equippedBadgeId || null, null];
+    } else {
+        if (!(store.equippedBadgeIds instanceof Array) || store.equippedBadgeIds.length !== 2) throw new Error("Invalid home badge cube equipped slots");
+        ids = [store.equippedBadgeIds[0] || null, store.equippedBadgeIds[1] || null];
+    }
+    for (var i = 0; i < ids.length; i++) {
+        if (ids[i] !== null && typeof ids[i] !== "string") throw new Error("Invalid home badge cube equipped slot");
+    }
+    if (ids[0] && ids[0] === ids[1]) ids[1] = null;
+    if (!ids[0] && ids[1]) {
+        ids[0] = ids[1];
+        ids[1] = null;
+    }
+    store.equippedBadgeIds = ids;
+    store.equippedBadgeId = ids[0]; // 기존 대표 뱃지 소비자용 호환 필드
+    return ids;
 }
 
 // 홈뱃지 한 종의 큐브 옵션 기록을 검증하고 반환하는 함수
@@ -44002,15 +44220,30 @@ function isHomeBadgeCubeTotalBuffActive(record) {
     return total >= 100;
 }
 
-// 장착 홈뱃지의 실제 적용 옵션 수치를 반환하는 함수
-function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
+// 홈뱃지 슬롯과 옵션 종류에 따라 실제 효과 적용 여부를 반환하는 함수
+function isHomeBadgeCubeOptionAppliedInSlot(slotIndex, optionKey) {
+    return slotIndex === 0 || optionKey === "castle" || optionKey === "raid";
+}
+
+// 장착 홈뱃지 한 슬롯의 실제 적용 옵션 수치를 반환하는 함수
+function getHomeBadgeCubeSlotOptionPercent(data, user, slotIndex, optionKey) {
     var store = getHomeBadgeCubeStore(data, user, false);
-    if (!store || !store.equippedBadgeId) return 0;
-    var record = getHomeBadgeCubeRecord(data, user, store.equippedBadgeId, false);
+    if (!store || !isHomeBadgeCubeOptionAppliedInSlot(slotIndex, optionKey)) return 0;
+    var equippedBadgeIds = normalizeHomeBadgeCubeEquippedBadgeIds(store);
+    var badgeId = equippedBadgeIds[slotIndex];
+    if (!badgeId) return 0;
+    var record = getHomeBadgeCubeRecord(data, user, badgeId, false);
     var value = record ? (parseFloat(record[optionKey]) || 0) : 0;
     var appliedValue = record && isHomeBadgeCubeTotalBuffActive(record) ? Math.round(value * 11) / 10 : value;
     if (isHoiPassPremiumActive(data, user)) appliedValue += GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent;
     return appliedValue;
+}
+
+// 대표·보조 홈뱃지의 실제 적용 옵션 합계를 반환하는 함수
+function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
+    var total = getHomeBadgeCubeSlotOptionPercent(data, user, 0, optionKey);
+    if (optionKey === "castle" || optionKey === "raid") total += getHomeBadgeCubeSlotOptionPercent(data, user, 1, optionKey);
+    return total;
 }
 
 // 홈뱃지 큐브 효과를 반영한 유효 펫 강화수치를 반올림해 계산하는 함수
@@ -44057,14 +44290,27 @@ function buildHomeBadgeCubeDebugMessage(data, petData, homeData, petSkillData, p
 // 홈뱃지 옵션의 기본값·합계 버프·프리미엄 보너스·실제 적용값을 디버깅용으로 반환하는 함수
 function getHomeBadgeCubeOptionDebugDetail(data, user, optionKey) {
     var store = getHomeBadgeCubeStore(data, user, false);
-    var equippedBadgeId = store && store.equippedBadgeId ? store.equippedBadgeId : null;
-    var record = equippedBadgeId ? getHomeBadgeCubeRecord(data, user, equippedBadgeId, false) : null;
-    var basePercent = record ? (parseFloat(record[optionKey]) || 0) : 0;
-    var totalBuffActive = !!(record && isHomeBadgeCubeTotalBuffActive(record));
-    var totalBuffAppliedPercent = totalBuffActive ? Math.round(basePercent * 11) / 10 : basePercent;
-    var premiumBonusPercent = equippedBadgeId && isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent : 0;
+    var equippedBadgeIds = store ? normalizeHomeBadgeCubeEquippedBadgeIds(store).slice(0) : [null, null];
+    var basePercent = 0;
+    var totalBuffAppliedPercent = 0;
+    var totalBuffActive = false;
+    var appliedSlotCount = optionKey === "castle" || optionKey === "raid" ? 2 : 1;
+    var activeBadgeCount = 0; // 해당 옵션에 실제 반영되는 장착 뱃지 수
+    for (var slotIndex = 0; slotIndex < appliedSlotCount; slotIndex++) {
+        var badgeId = equippedBadgeIds[slotIndex];
+        if (!badgeId) continue;
+        var record = getHomeBadgeCubeRecord(data, user, badgeId, false);
+        var slotBasePercent = record ? (parseFloat(record[optionKey]) || 0) : 0;
+        var slotBuffActive = !!(record && isHomeBadgeCubeTotalBuffActive(record));
+        basePercent += slotBasePercent;
+        totalBuffAppliedPercent += slotBuffActive ? Math.round(slotBasePercent * 11) / 10 : slotBasePercent;
+        if (slotBuffActive) totalBuffActive = true;
+        activeBadgeCount++;
+    }
+    var premiumBonusPercent = isHoiPassPremiumActive(data, user) ? activeBadgeCount * GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent : 0;
     return {
-        equippedBadgeId: equippedBadgeId,
+        equippedBadgeId: equippedBadgeIds[0],
+        equippedBadgeIds: equippedBadgeIds,
         basePercent: basePercent,
         totalBuffActive: totalBuffActive,
         totalBuffAppliedPercent: totalBuffAppliedPercent,
@@ -44110,7 +44356,8 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     var lines = ["[🧪 매력 버프 적용 체크]", "대상: [" + checkRank(data, petData, guildData, user) + "] 님", "━━━━━━━━━━━━━━━"];
 
     lines.push("호패프리미엄: " + (premiumActive ? "ON" : "OFF"));
-    lines.push("대표 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeId || "없음"));
+    lines.push("대표 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeIds[0] || "없음"));
+    lines.push("보조 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeIds[1] || "없음"));
     lines.push("프리미엄 홈뱃지 +" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%p: " + (castleHomeDetail.premiumBonusPercent > 0 ? "적용 [✅]" : "미적용 [❌]"));
     lines.push("");
     lines.push("[기본 구성]");
@@ -44160,10 +44407,16 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     return lines.join("\n");
 }
 
-// 대표 홈뱃지 ID를 회원 데이터의 큐브 효과 대상과 동기화하는 함수
-function syncHomeBadgeCubeEquippedBadge(data, user, badgeId) {
+// 대표·보조 홈뱃지 ID를 회원 데이터의 큐브 효과 대상과 동기화하는 함수
+function syncHomeBadgeCubeEquippedBadges(data, user, badgeIds) {
     var store = getHomeBadgeCubeStore(data, user, true);
-    store.equippedBadgeId = badgeId || null;
+    store.equippedBadgeIds = [badgeIds && badgeIds[0] ? badgeIds[0] : null, badgeIds && badgeIds[1] ? badgeIds[1] : null];
+    normalizeHomeBadgeCubeEquippedBadgeIds(store);
+}
+
+// 기존 단일 대표 홈뱃지 동기화 호출을 두 슬롯 구조로 연결하는 함수
+function syncHomeBadgeCubeEquippedBadge(data, user, badgeId) {
+    syncHomeBadgeCubeEquippedBadges(data, user, [badgeId || null, null]);
 }
 
 // 홈뱃지 큐브의 구간 확률을 먼저 뽑고 구간 안 소수 첫째 자리를 균등 추첨하는 함수
@@ -44217,18 +44470,20 @@ function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var petUpgrade = record ? record.petUpgrade : 0;
     var explore = record ? record.explore : 0;
     var store = getHomeBadgeCubeStore(data, user, false);
-    var showPremiumAppliedValue = isHoiPassPremiumActive(data, user) && store && store.equippedBadgeId === badge.id;
-    var premiumSuffix = showPremiumAppliedValue ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%👑)" : "";
-    var castleFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "castle")) : "";
-    var raidFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "raid")) : "";
-    var petUpgradeFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade")) : "";
-    var exploreFinal = showPremiumAppliedValue ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "explore")) : "";
+    var equippedBadgeIds = store ? normalizeHomeBadgeCubeEquippedBadgeIds(store) : [null, null];
+    var equippedSlotIndex = equippedBadgeIds[0] === badge.id ? 0 : (equippedBadgeIds[1] === badge.id ? 1 : -1);
+    var premiumSuffix = equippedSlotIndex >= 0 && isHoiPassPremiumActive(data, user) ? "(+" + GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent + "%👑)" : "";
+    var castleFinal = equippedSlotIndex >= 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, equippedSlotIndex, "castle")) : "";
+    var raidFinal = equippedSlotIndex >= 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, equippedSlotIndex, "raid")) : "";
+    var petUpgradeFinal = equippedSlotIndex === 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, 0, "petUpgrade")) : "";
+    var exploreFinal = equippedSlotIndex === 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, 0, "explore")) : "";
+    var supportInactiveSuffix = equippedSlotIndex === 1 ? " [보조 사용 불가]" : "";
     var lines = [];
     lines.push("💟 홈뱃지 큐브 옵션");
     lines.push("[1]⚔️+" + formatHomeBadgeCubeCardPercent(castle) + premiumSuffix + castleFinal);
     lines.push("[2]👾+" + formatHomeBadgeCubeCardPercent(raid) + premiumSuffix + raidFinal);
-    lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + premiumSuffix + petUpgradeFinal);
-    lines.push("[4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + premiumSuffix + exploreFinal);
+    lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + (equippedSlotIndex === 0 ? premiumSuffix : "") + petUpgradeFinal + supportInactiveSuffix);
+    lines.push("[4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + (equippedSlotIndex === 0 ? premiumSuffix : "") + exploreFinal + supportInactiveSuffix);
     if (isHomeBadgeCubeTotalBuffActive(record)) lines.push("└ 💟 기본 합계 100%! 장착 효과에 10% 추가 버프가 적용됩니다.");
     return lines.join("\n");
 }
@@ -44396,16 +44651,108 @@ function raisePetHomeBadgeStat(activityData, user, statKey, minimumValue) {
     return social.badgeStats[statKey];
 }
 
-// 장착 중인 대표 펫홈 뱃지의 표시 문구를 반환하는 함수
-function getPetHomeEquippedBadgeText(activityData, user) {
-    var social = getPetHomeSocialUser(activityData, user);
-    var badge = getPetHomeBadgeById(social.equippedBadgeId);
-    if (!badge || !petHomeStringListContains(social.badges, badge.id)) return "장착된 뱃지가 없습니다.";
+// 보유 홈뱃지의 고정 목록 번호를 반환하는 함수
+function getPetHomeOwnedBadgeNumber(activityData, user, badgeId) {
     var owned = getOwnedPetHomeBadges(activityData, user);
     for (var i = 0; i < owned.length; i++) {
-        if (owned[i].id === badge.id) return badge.emoji + " " + badge.name + "[" + (i + 1) + "번]";
+        if (owned[i].id === badgeId) return i + 1;
     }
+    return 0;
+}
+
+// 장착 슬롯의 홈뱃지 표시 문구를 반환하는 함수
+function getPetHomeEquippedBadgeSlotText(activityData, user, slotIndex) {
+    var social = getPetHomeSocialUser(activityData, user);
+    var equippedBadgeIds = getPetHomeEquippedBadgeIds(activityData, user);
+    var badge = getPetHomeBadgeById(equippedBadgeIds[slotIndex]);
+    if (!badge || !petHomeStringListContains(social.badges, badge.id)) return "장착된 뱃지가 없습니다.";
+    var ownedNumber = getPetHomeOwnedBadgeNumber(activityData, user, badge.id);
+    if (ownedNumber > 0) return badge.emoji + " " + badge.name + "[" + ownedNumber + "번]";
     return badge.emoji + " " + badge.name;
+}
+
+// 장착 중인 대표 펫홈 뱃지의 표시 문구를 반환하는 함수
+function getPetHomeEquippedBadgeText(activityData, user) {
+    return getPetHomeEquippedBadgeSlotText(activityData, user, 0);
+}
+
+// 홈뱃지 네 옵션의 현재 최종 적용값을 한 줄로 생성하는 함수
+function buildHomeBadgeCubeEffectSummary(data, user) {
+    return "⚔️+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "castle")) +
+        " | 👾+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "raid")) +
+        " | 🌟+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "petUpgrade")) +
+        " | ⛰️+" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeActiveOptionPercent(data, user, "explore"));
+}
+
+// 홈뱃지 장착·해제 선택 안내 메시지를 생성하는 함수
+function buildHomeBadgeSlotGuideMessage(data, petData, guildData, activityData, user, action) {
+    var actionLabel = action === "해제" ? "해제" : "장착";
+    var lines = ["🏅 [" + checkRank(data, petData, guildData, user) + "] 님의 홈뱃지 " + actionLabel, "━━━━━━━━━━━━━━━"];
+    lines.push("[1] 대표  " + getPetHomeEquippedBadgeSlotText(activityData, user, 0));
+    lines.push("[2] 보조  " + getPetHomeEquippedBadgeSlotText(activityData, user, 1));
+    lines.push("");
+    if (action === "해제") {
+        lines.push("해제할 슬롯을 입력해 주세요.");
+        lines.push("/홈뱃지해제 [슬롯번호]");
+        lines.push("예: /홈뱃지해제 2");
+        lines.push("");
+        lines.push("※ 대표를 해제하면 보조 뱃지가 대표로 자동 이동합니다.");
+    } else {
+        lines.push("장착할 슬롯과 뱃지를 입력해 주세요.");
+        lines.push("/홈뱃지장착 [슬롯번호] [뱃지번호]");
+        lines.push("예: /홈뱃지장착 2 5");
+        lines.push("");
+        lines.push("💡 대표 슬롯은 펫홈에 표시되고 모든 효과가 적용됩니다.");
+        lines.push("💡 보조 슬롯은 캐슬·레이드 효과만 적용됩니다.");
+    }
+    return lines.join("\n");
+}
+
+// 홈뱃지 장착·해제 확인 상태를 저장하는 함수
+function setHomeBadgeMutationState(sender, state) {
+    if (!userState[sender]) userState[sender] = {};
+    state.requestedAt = Date.now();
+    userState[sender].homeBadgeMutation = state;
+}
+
+// 만료되지 않은 홈뱃지 장착·해제 확인 상태를 반환하는 함수
+function getHomeBadgeMutationState(sender) {
+    var state = userState[sender] && userState[sender].homeBadgeMutation ? userState[sender].homeBadgeMutation : null;
+    if (!state) return null;
+    if (Date.now() - state.requestedAt > GLOBAL_CONFIG.petHomeActivity.badgeConfirmStaleMs) {
+        clearHomeBadgeMutationState(sender);
+        return null;
+    }
+    return state;
+}
+
+// 홈뱃지 장착·해제 확인 상태를 제거하는 함수
+function clearHomeBadgeMutationState(sender) {
+    if (!userState[sender]) return;
+    delete userState[sender].homeBadgeMutation;
+    if (Object.keys(userState[sender]).length === 0) delete userState[sender];
+}
+
+// 두 홈뱃지 슬롯 배열이 같은지 확인하는 함수
+function areHomeBadgeSlotIdsEqual(left, right) {
+    return left instanceof Array && right instanceof Array && left.length === 2 && right.length === 2 && left[0] === right[0] && left[1] === right[1];
+}
+
+// 특정 홈뱃지를 두 장착 슬롯에서 제거하고 보조 단독 상태를 정리하는 함수
+function removeHomeBadgeFromEquippedSlots(data, social, user, badgeId) {
+    var ids = normalizePetHomeEquippedBadgeIds(social).slice(0);
+    var changed = false;
+    for (var i = 0; i < ids.length; i++) {
+        if (ids[i] === badgeId) {
+            ids[i] = null;
+            changed = true;
+        }
+    }
+    if (changed) {
+        setPetHomeEquippedBadgeIds(social, ids);
+        syncHomeBadgeCubeEquippedBadges(data, user, social.equippedBadgeIds);
+    }
+    return changed;
 }
 
 // 펫홈 마음표현의 오늘 사용량과 한도를 반환하는 함수
@@ -44537,25 +44884,33 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
     var social = getPetHomeSocialUser(activityData, user);
     var owned = getOwnedPetHomeBadges(activityData, user);
     var totalBadgeCount = getAllPetHomeBadges().length; // 전체 업적·특별·뽑기 뱃지 수
-    var equippedBadge = social.equippedBadgeId ? getPetHomeBadgeById(social.equippedBadgeId) : null;
-    var equippedOptionText = equippedBadge ? buildHomeBadgeCubeOptionLines(data, user, equippedBadge) + "\n" : "";
+    var equippedBadgeIds = getPetHomeEquippedBadgeIds(activityData, user);
+    var representativeBadge = equippedBadgeIds[0] ? getPetHomeBadgeById(equippedBadgeIds[0]) : null;
+    var supportBadge = equippedBadgeIds[1] ? getPetHomeBadgeById(equippedBadgeIds[1]) : null;
+    var equippedCount = (representativeBadge ? 1 : 0) + (supportBadge ? 1 : 0);
     var out = getHoiPassPremiumHeader(data, user) + "🏅 [" + checkRank(data, petData, guildData, user) + "] 님의 펫홈 뱃지\n" +
         "━━━━━━━━━━━━\n" +
-        "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, user) + "\n" + equippedOptionText +
+        "장착 홈뱃지 [" + equippedCount + "/2]\n\n" +
+        "[1번] 대표 뱃지\n" + getPetHomeEquippedBadgeSlotText(activityData, user, 0) + "\n" +
+        (representativeBadge ? buildHomeBadgeCubeOptionLines(data, user, representativeBadge) + "\n" : "") +
+        "\n[2번] 보조 뱃지\n" + getPetHomeEquippedBadgeSlotText(activityData, user, 1) + "\n" +
+        (supportBadge ? buildHomeBadgeCubeOptionLines(data, user, supportBadge) + "\n" : "") +
+        "\n💟 최종 적용 효과\n" + buildHomeBadgeCubeEffectSummary(data, user) + "\n" +
         "━━━━━━━━━━━━\n" +
-        "장착: /홈뱃지장착 [번호 또는 ID]\n" +
+        "장착: /홈뱃지장착\n" +
         "해제: /홈뱃지해제\n" +
         "상세: /홈뱃지정보 [번호, ID 또는 이름]\n" +
         "삭제: /홈뱃지삭제 [번호 또는 ID]\n" +
         "전체: /홈뱃지전체\n\n" +
         "💟 홈뱃지 큐브\n" +
         "━━━━━━━━━━━━\n" + allsee + "\n" +
-        "사용: /홈뱃지큐브 [뱃지번호] [옵션번호] [횟수]\n" +
+        "사용: /홈뱃지큐브 [장착슬롯 1|2] [옵션번호] [횟수]\n" +
         "예시: /홈뱃지큐브 1 2 1000\n" +
         "옵션 1 ⚔️ 캐슬 매력 (큐브 1개)\n" +
         "옵션 2 👾 레이드 매력 (큐브 1개)\n" +
         "옵션 3 🌟 펫 강화 수치 (큐브 2개)\n" +
         "옵션 4 ⛰️ 펫 탐험 확률 (큐브 3개)\n" +
+        "※ 보조 슬롯은 옵션 1 캐슬·2 레이드만 사용할 수 있습니다.\n" +
         "최대: 캐슬 50% / 레이드 50% / 펫강화 30% / 펫탐험 15%\n" +
         "확률: /큐브확률\n\n" +
         "수집 현황: " + owned.length + "/" + totalBadgeCount + "개\n\n" +
@@ -44563,8 +44918,9 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
     if (owned.length === 0) out += "아직 획득한 뱃지가 없습니다.\n";
     for (var i = 0; i < owned.length; i++) {
         var badge = owned[i];
+        var equippedStatus = equippedBadgeIds[0] === badge.id ? " ✅ 대표 장착" : (equippedBadgeIds[1] === badge.id ? " ✅ 보조 장착" : " ⚠️ 미장착");
         out += "[" + (i + 1) + "] " + badge.emoji + " " + badge.name + getPetHomeBadgeTypeLabel(badge) +
-            (social.equippedBadgeId === badge.id ? " ✅ 장착 중" : "") + "\n" +
+            equippedStatus + "\n" +
             buildHomeBadgeCubeOptionLines(data, user, badge) + "\n" +
             "└ " + getPetHomeBadgeProgressText(activityData, user, badge) + "\n\n";
     }
@@ -47935,6 +48291,110 @@ function ensurePendantUser(petData, user) {
     return petData[user];
 }
 
+// 펜던트 객체를 추적하기 위한 고유 ID를 생성하는 함수
+function createPendantId() {
+    return "PND-" + new Date().getTime().toString(36).toUpperCase() + "-" + Math.floor(Math.random() * 1679616).toString(36).toUpperCase();
+}
+
+// 펜던트 승급 단계를 안전한 0 이상의 정수로 정규화하는 함수
+function normalizePendantPromotionLevel(pendant) {
+    var level = pendant ? Number(pendant.promotionLevel) : 0;
+    if (!isFinite(level) || level < 0 || Math.floor(level) !== level) level = 0;
+    if (pendant) pendant.promotionLevel = level;
+    return level;
+}
+
+// 유저의 장착·가방 펜던트에 중복 없는 고유 ID와 승급 단계를 보장하는 함수
+function ensurePendantIdsForUser(petData, user) {
+    var pet = ensurePendantUser(petData, user);
+    var seen = {};
+    var changed = false;
+    var pendants = [];
+    if (pet.pendant) pendants.push(pet.pendant);
+    for (var i = 0; i < pet.pendantBag.length; i++) pendants.push(pet.pendantBag[i]);
+    for (var j = 0; j < pendants.length; j++) {
+        var pendant = pendants[j];
+        if (!pendant || typeof pendant !== "object") continue;
+        var id = typeof pendant.pendantId === "string" ? pendant.pendantId : "";
+        if (!id || seen[id]) {
+            do { id = createPendantId(); } while (seen[id]);
+            pendant.pendantId = id;
+            changed = true;
+        }
+        seen[id] = true;
+        var previousLevel = pendant.promotionLevel;
+        normalizePendantPromotionLevel(pendant);
+        if (previousLevel !== pendant.promotionLevel) changed = true;
+    }
+    return changed;
+}
+
+// 고유 ID로 장착 또는 가방의 펜던트를 찾는 함수
+function getPendantById(petData, user, pendantId) {
+    var pet = ensurePendantUser(petData, user);
+    if (pet.pendant && pet.pendant.pendantId === pendantId) return { pendant: pet.pendant, source: "equipped", arrayIndex: -1 };
+    for (var i = 0; i < pet.pendantBag.length; i++) {
+        if (pet.pendantBag[i] && pet.pendantBag[i].pendantId === pendantId) return { pendant: pet.pendantBag[i], source: "bag", arrayIndex: i };
+    }
+    return { pendant: null, source: "", arrayIndex: -1 };
+}
+
+// 다음 창조 펜던트 승급 단계의 비용을 계산하는 함수
+function getPendantPromotionCosts(nextLevel) {
+    var level = Number(nextLevel);
+    if (!isFinite(level) || level < 1 || Math.floor(level) !== level) return null;
+    var stones = level * GLOBAL_CONFIG.pendant.promotionStonePerLevel;
+    var points = level * GLOBAL_CONFIG.pendant.promotionPointPerLevel;
+    var charm = level * GLOBAL_CONFIG.pendant.promotionCharmPerLevel;
+    if (!isSafePointValue(points) || !isSafePointValue(charm) || !isSafePointValue(stones)) return null;
+    return { level: level, stones: stones, points: points, charm: charm };
+}
+
+// 승급 재료로 사용할 다른 창조 펜던트를 우선순위에 따라 선택하는 함수
+function selectPendantPromotionMaterial(petData, user, targetId) {
+    var bag = getPendantBag(petData, user);
+    var candidates = [];
+    for (var i = 0; i < bag.length; i++) {
+        var pendant = bag[i];
+        if (!pendant || pendant.pendantId === targetId || pendant.grade !== GLOBAL_CONFIG.pendant.promotionGrade) continue;
+        candidates.push({ pendant: pendant, arrayIndex: i });
+    }
+    candidates.sort(function(a, b) {
+        var levelDiff = normalizePendantPromotionLevel(a.pendant) - normalizePendantPromotionLevel(b.pendant);
+        if (levelDiff !== 0) return levelDiff;
+        var upgradeDiff = (parseInt(a.pendant.upgrade, 10) || 0) - (parseInt(b.pendant.upgrade, 10) || 0);
+        if (upgradeDiff !== 0) return upgradeDiff;
+        var durabilityDiff = (parseInt(a.pendant.durability, 10) || 0) - (parseInt(b.pendant.durability, 10) || 0);
+        if (durabilityDiff !== 0) return durabilityDiff;
+        return a.arrayIndex - b.arrayIndex;
+    });
+    return candidates.length ? candidates[0] : null;
+}
+
+// 창조 펜던트 승급 확인 상태를 저장하는 함수
+function setPendantPromotionState(sender, state) {
+    if (!userState[sender]) userState[sender] = {};
+    state.createdAt = new Date().getTime();
+    state.processing = false;
+    userState[sender].pendantPromotion = state;
+}
+
+// 만료되지 않은 창조 펜던트 승급 확인 상태를 반환하는 함수
+function getPendantPromotionState(sender) {
+    var state = userState[sender] && userState[sender].pendantPromotion ? userState[sender].pendantPromotion : null;
+    if (!state) return null;
+    if (!state.createdAt || new Date().getTime() - state.createdAt > GLOBAL_CONFIG.pendant.promotionConfirmStaleMs) {
+        clearPendantPromotionState(sender);
+        return null;
+    }
+    return state;
+}
+
+// 창조 펜던트 승급 확인 상태를 삭제하는 함수
+function clearPendantPromotionState(sender) {
+    if (userState[sender] && userState[sender].pendantPromotion) delete userState[sender].pendantPromotion;
+}
+
 // 펜던트 가방 최대 칸 수 반환
 function getPendantBagLimit() {
     return 50;
@@ -47956,9 +48416,11 @@ function getPendantGradeInfo(grade) {
 // 펜던트 객체 생성
 function createPendantByGradeInfo(info) {
     return {
+        pendantId: createPendantId(),
         name: info.name,
         icon: info.icon,
         grade: info.grade,
+        promotionLevel: 0,
         upgrade: 0,
         durability: 5,
         maxDurability: 5,
@@ -47992,7 +48454,9 @@ function formatPendantDisplay(pendant) {
     var maxDurability = pendant.maxDurability !== undefined ? pendant.maxDurability : 5;
     var durability = pendant.durability !== undefined ? pendant.durability : maxDurability;
     var upgrade = pendant.upgrade !== undefined ? pendant.upgrade : 0;
-    return formatPendantNameWithIcon(pendant) + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "](+" + upgrade + ")";
+    var promotionLevel = normalizePendantPromotionLevel(pendant);
+    var gradeText = pendant.grade + (promotionLevel > 0 ? "★" + promotionLevel : "");
+    return formatPendantNameWithIcon(pendant) + "[" + gradeText + "][⚒️" + durability + "/" + maxDurability + "](+" + upgrade + ")";
 }
 
 // 순위표용 등수 접두어를 반환하는 함수
@@ -48009,7 +48473,9 @@ function formatPendantOpenResultDisplay(pendant) {
     var maxDurability = pendant.maxDurability !== undefined ? pendant.maxDurability : 5;
     var durability = pendant.durability !== undefined ? pendant.durability : maxDurability;
     var gradeInfo = getPendantGradeInfo(pendant.grade);
-    return formatPendantNameWithIcon(pendant) + "[" + pendant.grade + "][⚒️" + durability + "/" + maxDurability + "] (확률:" + formatPendantPercent(gradeInfo.rate) + "%)";
+    var promotionLevel = normalizePendantPromotionLevel(pendant);
+    var gradeText = pendant.grade + (promotionLevel > 0 ? "★" + promotionLevel : "");
+    return formatPendantNameWithIcon(pendant) + "[" + gradeText + "][⚒️" + durability + "/" + maxDurability + "] (확률:" + formatPendantPercent(gradeInfo.rate) + "%)";
 }
 
 // 펜던트 확률 표시용 소수 정리
@@ -48054,7 +48520,7 @@ function sortPendantBagByGrade(bag) {
 
 // 펜던트 기본/강화 능력치 계산
 function calculatePendantStats(pendant) {
-    var result = { charm: 0, explore: 0, baseCharm: 0, upgradeCharm: 0, baseExplore: 0, upgradeExplore: 0 };
+    var result = { charm: 0, explore: 0, baseCharm: 0, upgradeCharm: 0, promotionCharm: 0, baseExplore: 0, upgradeExplore: 0 };
     if (!pendant) return result;
     var gradeInfo = getPendantGradeInfo(pendant.grade);
     result.baseCharm = gradeInfo.charm || 0;
@@ -48065,7 +48531,8 @@ function calculatePendantStats(pendant) {
         result.upgradeCharm += PENDANT_UPGRADE_TABLE[i].charm || 0;
         result.upgradeExplore = PENDANT_UPGRADE_TABLE[i].explore || result.upgradeExplore;
     }
-    result.charm = result.baseCharm + result.upgradeCharm;
+    result.promotionCharm = normalizePendantPromotionLevel(pendant) * GLOBAL_CONFIG.pendant.promotionCharmPerLevel;
+    result.charm = result.baseCharm + result.upgradeCharm + result.promotionCharm;
     result.explore = result.baseExplore + result.upgradeExplore;
     return result;
 }
@@ -48146,6 +48613,7 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     out += "※ 펜던트 판매: /펜던트판매 [번호]\n";
     out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
     out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] (장착 펜던트는 0)\n";
+    out += "※ 창조 승급: /펜던트승급 [펜던트가방번호] (장착 펜던트는 0)\n";
     out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
     out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n";
     out += "━━━━━━━━━━━━━\n";
@@ -48167,6 +48635,73 @@ function getPendantByIndex(petData, user, index) {
     return { pendant: bag[index - 1], source: "bag", arrayIndex: index - 1 };
 }
 
+// 창조 펜던트 승급 미리보기와 확인 상태를 생성하는 함수
+function buildPendantPromotionPreview(data, petData, guildData, sender, index) {
+    var targetInfo = getPendantByIndex(petData, sender, index);
+    if (!targetInfo.pendant) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다.\n장착 펜던트는 0, 가방 펜던트는 가방 번호를 입력해 주세요." };
+    var target = targetInfo.pendant;
+    if (target.grade !== GLOBAL_CONFIG.pendant.promotionGrade) return { ok: false, message: "❌ 창조 등급 펜던트만 승급할 수 있습니다." };
+    var currentLevel = normalizePendantPromotionLevel(target);
+    var costs = getPendantPromotionCosts(currentLevel + 1);
+    if (!costs) return { ok: false, message: "❌ 다음 승급 단계가 안전한 계산 범위를 초과하여 진행할 수 없습니다." };
+    var materialInfo = selectPendantPromotionMaterial(petData, sender, target.pendantId);
+    var pointHave = Number(data.member[sender].point) || 0;
+    var stoneName = GLOBAL_CONFIG.items.pendantEnhanceStoneName;
+    var stoneHave = data.member[sender].bag && data.member[sender].bag[stoneName] ? parseInt(data.member[sender].bag[stoneName], 10) || 0 : 0;
+    var shortageLines = [];
+    if (!materialInfo) shortageLines.push("창조의 펜던트🪬: 필요 1개 / 보유 0개");
+    if (!isSafePointValue(pointHave) || pointHave < costs.points) shortageLines.push("포인트💸: 필요 🅟" + numberWithCommas(costs.points) + " / 보유 🅟" + numberWithCommas(pointHave));
+    if (stoneHave < costs.stones) shortageLines.push(stoneName + ": 필요 " + numberWithCommas(costs.stones) + "개 / 보유 " + numberWithCommas(stoneHave) + "개");
+    if (shortageLines.length) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 펜던트 승급 재료가 부족합니다.\n━━━━━━━━━━━━━\n" + shortageLines.join("\n") };
+    var beforeStats = calculatePendantStats(target);
+    var afterTarget = cloneFreeMarketObject(target);
+    afterTarget.promotionLevel = costs.level;
+    var afterStats = calculatePendantStats(afterTarget);
+    setPendantPromotionState(sender, { targetPendantId: target.pendantId, materialPendantId: materialInfo.pendant.pendantId, expectedLevel: currentLevel });
+    var out = "[" + checkRank(data, petData, guildData, sender) + "] 님\n💎 창조 펜던트 승급\n━━━━━━━━━━━━━\n";
+    out += "대상: " + formatPendantDisplay(target) + "\n";
+    out += "재료: " + formatPendantDisplay(materialInfo.pendant) + "\n\n";
+    out += "승급: ★" + currentLevel + " → ★" + costs.level + "\n";
+    out += "종합매력👑: " + numberWithCommas(beforeStats.charm) + " → " + numberWithCommas(afterStats.charm) + "💞\n";
+    out += "펫탐험성공확률⛰️: +" + formatPendantPercent(beforeStats.explore) + "% (변화 없음)\n\n";
+    out += "필요 포인트💸: 🅟" + numberWithCommas(costs.points) + "\n";
+    out += "필요 " + stoneName + ": " + numberWithCommas(costs.stones) + "개\n";
+    out += "성공 확률: 100%\n━━━━━━━━━━━━━\n👉 [승급할거임] / [쫄아뜸]\n※ 30초 안에 선택해 주세요.";
+    return { ok: true, message: out };
+}
+
+// 저장된 확인 상태를 재검증해 창조 펜던트 승급을 실행하는 함수
+function runPendantPromotionFromState(sender, data, petData, guildData) {
+    var state = getPendantPromotionState(sender);
+    if (!state) return { ok: false, message: "펜던트 승급 확인 시간이 만료되었습니다." };
+    if (state.processing) return { ok: false, message: "펜던트 승급을 처리 중입니다." };
+    state.processing = true;
+    var targetInfo = getPendantById(petData, sender, state.targetPendantId);
+    var materialInfo = getPendantById(petData, sender, state.materialPendantId);
+    if (!targetInfo.pendant || !materialInfo.pendant || materialInfo.source !== "bag") return { ok: false, message: "대상 또는 재료 펜던트 상태가 변경되어 승급을 취소했습니다." };
+    if (targetInfo.pendant.grade !== GLOBAL_CONFIG.pendant.promotionGrade || materialInfo.pendant.grade !== GLOBAL_CONFIG.pendant.promotionGrade) return { ok: false, message: "창조 등급 펜던트만 대상과 재료로 사용할 수 있습니다." };
+    var currentLevel = normalizePendantPromotionLevel(targetInfo.pendant);
+    if (currentLevel !== state.expectedLevel) return { ok: false, message: "대상 펜던트의 승급 단계가 변경되어 요청을 취소했습니다." };
+    var costs = getPendantPromotionCosts(currentLevel + 1);
+    if (!costs) return { ok: false, message: "다음 승급 단계가 안전한 계산 범위를 초과했습니다." };
+    var currentPoint = Number(data.member[sender].point) || 0;
+    var nextPoint = currentPoint - costs.points;
+    if (!isSafePointValue(currentPoint) || !isSafePointValue(nextPoint) || nextPoint < 0) return { ok: false, message: "포인트가 부족하거나 안전 범위를 벗어났습니다." };
+    var stoneName = GLOBAL_CONFIG.items.pendantEnhanceStoneName;
+    if (!hasItem(data, sender, stoneName, costs.stones)) return { ok: false, message: stoneName + "이 부족합니다." };
+    data.member[sender].point = nextPoint;
+    removeItem(data, sender, stoneName, costs.stones);
+    getPendantBag(petData, sender).splice(materialInfo.arrayIndex, 1);
+    targetInfo.pendant.promotionLevel = costs.level;
+    targetInfo.pendant.promotionUpdatedAt = formatDateTime(new Date());
+    var stats = calculatePendantStats(targetInfo.pendant);
+    return {
+        ok: true,
+        message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n✅ 창조 펜던트 승급 성공!\n━━━━━━━━━━━━━\n" + formatPendantDisplay(targetInfo.pendant) + "\n종합매력👑: " + numberWithCommas(stats.charm) + "💞\n펫탐험성공확률⛰️: +" + formatPendantPercent(stats.explore) + "%\n\n사용 포인트💸: 🅟" + numberWithCommas(costs.points) + "\n사용 " + stoneName + ": " + numberWithCommas(costs.stones) + "개",
+        noticeMessage: "[💎 펜던트 승급 전체 알림]\n[" + checkRank(data, petData, guildData, sender) + "] 님이 창조의 펜던트를 [창조★" + costs.level + "] 등급으로 승급했습니다!"
+    };
+}
+
 // 펜던트 정보 메시지 생성
 function buildPendantInfoMessage(data, petData, guildData, user, index) {
     var info = getPendantByIndex(petData, user, index);
@@ -48184,6 +48719,7 @@ function buildPendantInfoDetailMessage(title, pendant) {
     out += "━━━━━━━━━━━━━\n";
     out += "기본 종합매력👑: " + numberWithCommas(stats.baseCharm) + "💞\n";
     out += "강화 종합매력👑: +" + numberWithCommas(stats.upgradeCharm) + "💞\n";
+    out += "승급 종합매력👑: +" + numberWithCommas(stats.promotionCharm) + "💞\n";
     out += "총 종합매력👑: " + numberWithCommas(stats.charm) + "💞\n\n";
     out += "기본 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.baseExplore) + "%\n";
     out += "강화 펫탐험성공확률⛰️: +" + formatPendantPercent(stats.upgradeExplore) + "%\n";
@@ -48195,6 +48731,19 @@ function buildPendantInfoDetailMessage(title, pendant) {
         out += "다음 강화성공 확률🎲: " + nextInfo.rate + "%\n";
         out += "다음 강화비용💸: 🅟" + numberWithCommas(nextInfo.point) + "\n";
         out += "필요 강화석📿: " + nextInfo.stone + "개";
+    }
+    if (pendant.grade === GLOBAL_CONFIG.pendant.promotionGrade) {
+        var promotionCosts = getPendantPromotionCosts(normalizePendantPromotionLevel(pendant) + 1);
+        out += "\n" + allsee + "\n━━━━━━━━━━━━━\n🌟 창조 펜던트 승급\n";
+        out += "현재 단계: ★" + normalizePendantPromotionLevel(pendant) + "\n";
+        if (promotionCosts) {
+            out += "다음 단계: ★" + promotionCosts.level + "\n";
+            out += "필요 포인트💸: 🅟" + numberWithCommas(promotionCosts.points) + "\n";
+            out += "필요 " + GLOBAL_CONFIG.items.pendantEnhanceStoneName + ": " + numberWithCommas(promotionCosts.stones) + "개\n";
+            out += "필요 재료: 다른 창조의 펜던트 1개";
+        } else {
+            out += "다음 승급 단계가 안전한 계산 범위를 초과했습니다.";
+        }
     }
     return out;
 }
