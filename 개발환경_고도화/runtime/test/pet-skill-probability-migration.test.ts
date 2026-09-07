@@ -16,6 +16,8 @@ describe("pet skill probability ingress migration", () => {
   it("restores the historical aggregate alias before deleting the dedicated registry row", () => {
     assert.match(rollback, /SET command_code='PET_SKILL_READ',active=TRUE/);
     assert.match(rollback, /WHERE command_text='\/펫스킬확률' AND command_code='PET_SKILL_PROBABILITY'/);
+    assert.match(rollback, /SET rollout_state='LEGACY_ONLY',enabled=FALSE/);
+    assert.match(rollback, /NOT EXISTS \(\s*SELECT 1 FROM command_routing_decisions/);
     assert.ok(rollback.indexOf("UPDATE command_aliases") < rollback.indexOf("DELETE FROM command_registry"));
   });
 });
