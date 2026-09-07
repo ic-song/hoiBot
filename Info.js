@@ -1236,14 +1236,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 				var pendantUpgrade = petInfo.pendant.upgrade !== undefined ? petInfo.pendant.upgrade : 0;
 				var pendantPromotionLevel = Math.max(0, parseInt(petInfo.pendant.promotionLevel || 0, 10) || 0);
-				if (pendantPromotionLevel > 0) {
-					var pendantPromotionName = petInfo.pendant.name || "";
-					var pendantPromotionIcon = petInfo.pendant.icon || "";
-					if (pendantPromotionIcon && pendantPromotionName.substring(pendantPromotionName.length - pendantPromotionIcon.length) !== pendantPromotionIcon) pendantPromotionName += pendantPromotionIcon;
-					resultMsg += "- 승급: " + pendantPromotionName + "[" + petInfo.pendant.grade + "★" + pendantPromotionLevel + "]" + pendantDurability + "\n";
-				} else {
-					resultMsg += "펜던트💎: " + petInfo.pendant.name + "[" + petInfo.pendant.grade + "]" + (pendantDurability ? "[" + pendantDurability + "]" : "") + "(+" + pendantUpgrade + ")\n";
-				}
+				var pendantDisplayName = petInfo.pendant.name || "";
+				var pendantDisplayIcon = petInfo.pendant.icon || "";
+				if (pendantDisplayIcon && pendantDisplayName.substring(pendantDisplayName.length - pendantDisplayIcon.length) !== pendantDisplayIcon) pendantDisplayName += pendantDisplayIcon;
+				var pendantDisplayGrade = petInfo.pendant.grade + (pendantPromotionLevel > 0 ? "★" + pendantPromotionLevel : "");
+				resultMsg += "펜던트💎: " + pendantDisplayName + "[" + pendantDisplayGrade + "]" + (pendantDurability ? "[" + pendantDurability + "]" : "") + "(+" + pendantUpgrade + ")\n";
 			} else {
 				resultMsg += "펜던트💎: 현재 펜던트가 없습니다.\n";
 			}

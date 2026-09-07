@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.467"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.468"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -44510,13 +44510,14 @@ function buildHomeBadgeCubeOptionLines(data, user, badge) {
     var raidFinal = equippedSlotIndex >= 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, equippedSlotIndex, "raid")) : "";
     var petUpgradeFinal = equippedSlotIndex === 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, 0, "petUpgrade")) : "";
     var exploreFinal = equippedSlotIndex === 0 ? "=" + formatHomeBadgeCubeCardPercent(getHomeBadgeCubeSlotOptionPercent(data, user, 0, "explore")) : "";
-    var supportInactiveSuffix = equippedSlotIndex === 1 ? " [보조 사용 불가]" : "";
     var lines = [];
     lines.push("💟 홈뱃지 큐브 옵션");
     lines.push("[1]⚔️+" + formatHomeBadgeCubeCardPercent(castle) + premiumSuffix + castleFinal);
     lines.push("[2]👾+" + formatHomeBadgeCubeCardPercent(raid) + premiumSuffix + raidFinal);
-    lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + (equippedSlotIndex === 0 ? premiumSuffix : "") + petUpgradeFinal + supportInactiveSuffix);
-    lines.push("[4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + (equippedSlotIndex === 0 ? premiumSuffix : "") + exploreFinal + supportInactiveSuffix);
+    if (equippedSlotIndex !== 1) {
+        lines.push("[3]🌟+" + formatHomeBadgeCubeCardPercent(petUpgrade) + (equippedSlotIndex === 0 ? premiumSuffix : "") + petUpgradeFinal);
+        lines.push("[4]⛰️+" + formatHomeBadgeCubeCardPercent(explore) + (equippedSlotIndex === 0 ? premiumSuffix : "") + exploreFinal);
+    }
     if (isHomeBadgeCubeTotalBuffActive(record)) lines.push("└ 💟 기본 합계 100%! 장착 효과에 10% 추가 버프가 적용됩니다.");
     return lines.join("\n");
 }
@@ -44939,7 +44940,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         (representativeBadge ? buildHomeBadgeCubeOptionLines(data, user, representativeBadge) + "\n" : "") +
         "\n[2번] 보조 뱃지\n" + getPetHomeEquippedBadgeSlotText(activityData, user, 1) + "\n" +
         (supportBadge ? buildHomeBadgeCubeOptionLines(data, user, supportBadge) + "\n" : "") +
-        "\n💟 최종 적용 효과\n" + buildHomeBadgeCubeEffectSummary(data, user) + "\n" +
+        "\n💟 최종 적용 효과\n" + buildHomeBadgeCubeEffectSummary(data, user) + "\n" + allsee + "\n" +
         "━━━━━━━━━━━━\n" +
         "장착: /홈뱃지장착 [대표뱃지번호] [보조뱃지번호]\n" +
         "해제: /홈뱃지해제 [대표뱃지번호] [보조뱃지번호]\n" +
@@ -44948,7 +44949,7 @@ function buildOwnedPetHomeBadgesMessage(data, petData, guildData, activityData, 
         "삭제: /홈뱃지삭제 [번호 또는 ID]\n" +
         "전체: /홈뱃지전체\n\n" +
         "💟 홈뱃지 큐브\n" +
-        "━━━━━━━━━━━━\n" + allsee + "\n" +
+        "━━━━━━━━━━━━\n" +
         "사용: /홈뱃지큐브 [장착슬롯 1|2] [옵션번호] [횟수]\n" +
         "예시: /홈뱃지큐브 1 2 1000\n" +
         "옵션 1 ⚔️ 캐슬 매력 (큐브 1개)\n" +
