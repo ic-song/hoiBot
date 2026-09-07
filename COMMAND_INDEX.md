@@ -2758,7 +2758,7 @@ Status: VERIFIED
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
-- `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용하므로 장착 홈뱃지 프리미엄 +3%p와 길드공헌 큐브가 동일하게 반영된다.
+- `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
 
@@ -4899,7 +4899,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Castle-focused charm leaderboard that depends on loaded home data
-- Applies the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
+- Applies the representative and support home-badge castle percentages plus the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
 - Re-check `initSweetHomeUser` when home normalization affects ranking totals
 
 ---
@@ -4943,7 +4943,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Raid-focused charm leaderboard parallel to `/캐슬매력순위`
-- Applies the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
+- Applies the representative and support home-badge raid percentages plus the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
 - Good anchor when raid total calculations diverge from displayed pet/home state
 
 ---
