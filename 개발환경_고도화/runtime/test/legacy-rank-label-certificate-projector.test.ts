@@ -13,7 +13,7 @@ class ProjectorDb implements DatabaseClient,DatabaseTransaction{
   async query<T>(sql:string):Promise<T>{
     this.queries.push(sql);
     const memberPayload=Buffer.from(JSON.stringify(this.member)),guildPayload=Buffer.from(JSON.stringify(this.guild));
-    if(sql.includes("FROM data_migration_object_domain_import_runs"))return [{object_domain_import_run_id:"i0000001",common_staging_run_id:"s0000001",run_status:"COMPLETE",raw_bundle_sha256:"b".repeat(64),snapshot_manifest_sha256:"c".repeat(64)}] as T;
+    if(sql.includes("FROM data_migration_object_domain_import_runs"))return [{object_domain_import_run_id:"i0000001",catalog_projection_run_id:"p0000001",common_staging_run_id:"s0000001",run_status:"COMPLETE",raw_bundle_sha256:"b".repeat(64),snapshot_manifest_sha256:"c".repeat(64)}] as T;
     if(sql.includes("FROM data_migration_raw_runs"))return [{raw_landing_run_id:"r0000001",run_status:"COMPLETE",bundle_sha256:"b".repeat(64),snapshot_manifest_sha256:"c".repeat(64),source_path_sha256:memberPath,source_content_sha256:sha(memberPayload),payload:memberPayload},{raw_landing_run_id:"r0000001",run_status:"COMPLETE",bundle_sha256:"b".repeat(64),snapshot_manifest_sha256:"c".repeat(64),source_path_sha256:guildPath,source_content_sha256:sha(guildPayload),payload:guildPayload}] as T;
     if(sql.includes("FROM data_migration_object_domain_import_records receipt"))return this.bindings as T;
     if(sql.includes("FROM player_pet_skill_rank_marker_projections"))return [{assignment_status:"UNASSIGNED",source_fingerprint:"a".repeat(64),player_id:null}] as T;
@@ -32,6 +32,7 @@ test("projector creates immutable clean certificates and exact replay performs z
   const projector=new LegacyRankLabelSideEffectCertificateProjector(db,()=>candidates.shift()!,()=>new Date("2026-09-08T03:00:00Z"));
   const first=await projector.project(input);assert.deepEqual(first,{validationRunId:"v0000001",status:"COMPLETE",expectedSubjectCount:2,wouldDeleteCount:0,unmappedCount:0,replayed:false});
   assert.equal(db.queries.some(sql=>sql.includes("data_migration_object_domain_import_records receipt")),true);
+  assert.equal(db.queries.some(sql=>sql.includes("projection.catalog_projection_run_id=?")&&sql.includes("staging.common_staging_run_id=?")&&sql.includes("staging.source_path_sha256=?")),true);
   assert.equal(db.queries.some(sql=>sql.includes("current_display_name")),false);
   const runInsert=db.writes.find(row=>row.sql.startsWith("INSERT INTO legacy_rank_label_validation_runs"))!;
   db.existing=[{legacy_rank_label_validation_run_id:"v0000001",validation_fingerprint:runInsert.values[13],certificate_set_sha256:runInsert.values[12],run_status:"COMPLETE",active_flag:true}];

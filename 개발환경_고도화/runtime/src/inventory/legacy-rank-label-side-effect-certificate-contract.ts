@@ -12,8 +12,11 @@ export interface LegacyRankLabelCertificateFields {
 
 export interface LegacyRankLabelValidationFields {
   readonly rawLandingRunId:string;
+  readonly commonStagingRunId:string;
   readonly objectDomainImportRunId:string;
+  readonly memberSourcePathSha256:string;
   readonly memberSourceContentSha256:string;
+  readonly guildSourcePathSha256:string;
   readonly guildSourceContentSha256:string;
   readonly rankMarkerSourceFingerprint:string;
   readonly legacyRuntimeSourceSha256:string;
