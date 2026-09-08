@@ -118,6 +118,13 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/inventory/item-bag-read-only-recovery-ingress.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-direct-read-service.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-shadow-read-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-command.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-service.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-iris-handler.ts`
@@ -162,6 +169,14 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/item-bag-read-only-recovery-ingress.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-direct-read-service.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-shadow-read-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts`
 - `Info.js`
 
 ## Related Helpers
@@ -522,6 +537,10 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
+- Modernization rollout is `SHADOW_ONLY` only when the enabled `ITEM_BAG_READ` registry entry resolves to `SHADOW`; disabled, missing, or `LEGACY_ONLY` registry state stays on the legacy path. The actual Iris ingress evaluates the resolved active-player canonical projection and records a typed receipt in one root transaction.
+- A non-silent SHADOW decision queues exactly one transitional legacy reply for outbox-worker delivery after canonical evaluation. Silent/evaluation-error decisions queue none; completed replay validates exact outbox cardinality, destination, and payload and fails closed on missing or changed delivery. `MODERN`/canonical direct cutover remains disabled.
+- The corrected WBS776 wrapper binds resolved legacy/canonical player IDs, includes inactive legacy/canonical item definitions for source parity, and fails closed on unknown query shape, incomplete per-player import provenance, multiple intimacy keys, presentation drift, or active world castle authority.
+- The additive owner-label and import-readiness SQL consumers are `STATIC_ONLY`; existing Wave6 bag compare `DIRECT_PASS` does not prove the WBS776 wrapper.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 

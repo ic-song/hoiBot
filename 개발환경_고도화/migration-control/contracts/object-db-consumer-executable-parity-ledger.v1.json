@@ -7,7 +7,7 @@
   "sources": {
     "ledgerSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.schema.json",
-      "sha256": "bc75060d0963bc9875f93cf74cdb826e87b75a7929536bf4421fdb681181056c"
+      "sha256": "83274e770a55321c0318b8e268ebe797e7684f3865696a2e3a07dc886c7e0e29"
     },
     "executionReceiptSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-execution-receipt.v1.schema.json",
@@ -15,16 +15,16 @@
     },
     "consumerManifest": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
-      "sha256": "b51d5be9e26ac528f2e7254a993caab853f489183ee386b432b94cba444f9251",
-      "consumerSetSha256": "0a5fc633809b2aea10d10b250318dd740c0e7530eefe54cc224bb03be6636cfd"
+      "sha256": "6a306959fbcaad1e33feece286f04c36003ef87ccea24aa078aedc7dda94e0c2",
+      "consumerSetSha256": "b722adc73e5baecb694587d57c45e0989b72442ccaa12d7e7c0490840b5c425f"
     },
     "consumerIdRegistry": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
-      "sha256": "976453a286f4ba590179ef683672c8725152f785913d8d57c285e3fb9edf928b"
+      "sha256": "b257d24bb35992a0e1a1aff054c0304d47341c690178e964801b90a8d68f3155"
     },
     "transitionContract": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
-      "sha256": "298a9a0ab74c89c20aa208e5fc0e5adc1354aeefdf6bb1611cfcef65db57f402"
+      "sha256": "5f26e9c275bbff4626bf81a5cbc52fc9586d5482db134a204e4e489123242e87"
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave16-v1.json",
@@ -51,12 +51,12 @@
     ]
   },
   "coverage": {
-    "manifestConsumers": 1130,
-    "ledgerEntries": 1130,
+    "manifestConsumers": 1132,
+    "ledgerEntries": 1132,
     "missingConsumerIds": 0,
     "duplicateConsumerIds": 0,
     "unknownConsumerIds": 0,
-    "readConsumers": 501,
+    "readConsumers": 503,
     "mutationConsumers": 629,
     "unresolvedDynamicConsumers": 82,
     "unresolvedDynamicCallCount": 82,
@@ -64,11 +64,11 @@
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 8,
     "provenConsumers": 31,
-    "unprovenConsumers": 1099,
+    "unprovenConsumers": 1101,
     "directPassConsumers": 31,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 1017,
+      "STATIC_ONLY": 1019,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
@@ -10112,14 +10112,14 @@
         "kind": "AUTOMATIC_CALLBACK",
         "file": "개발환경_고도화/runtime/src/app.ts",
         "symbol": "accountCleanupTimer",
-        "triggerOrPredicate": "TIMER:setInterval@76396",
+        "triggerOrPredicate": "TIMER:setInterval@78738",
         "access": "READ",
         "accessClass": "READ",
-        "interfaceId": "admin-lifecycle.automatic-callback.c90d54ec21d6",
+        "interfaceId": "admin-lifecycle.automatic-callback.c6a93cd7b1b8",
         "unresolvedDynamicCallCount": 0,
         "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "26918ba840ed24a5b2e82e620a1b8720518c25f4b1ec7d662841b70e8456e51a",
-        "classificationSha256": "8780c554324dc3b05757d58194d2280d7ba289e54d99ff72f07d6f8736b2ee70"
+        "classificationSha256": "be5a3836680ccb95cd48b8e90ad2f73149aafe276f61c1342c6060dbc157480d"
       },
       "verdict": "STATIC_ONLY",
       "harness": {
@@ -10161,7 +10161,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "8780c554324dc3b05757d58194d2280d7ba289e54d99ff72f07d6f8736b2ee70"
+            "sourceEvidenceSha256": "be5a3836680ccb95cd48b8e90ad2f73149aafe276f61c1342c6060dbc157480d"
           }
         },
         {
@@ -82729,15 +82729,15 @@
       "classification": {
         "kind": "RUNTIME_DISPATCH",
         "file": "개발환경_고도화/runtime/src/app.ts",
-        "symbol": "predicate=message-guard@152665;service=IrisAdminCommandService|IrisAdminCommandService.changePlayerServer",
-        "triggerOrPredicate": "predicate=message-guard@152665;service=IrisAdminCommandService|IrisAdminCommandService.changePlayerServer",
+        "symbol": "predicate=message-guard@156097;service=IrisAdminCommandService|IrisAdminCommandService.changePlayerServer",
+        "triggerOrPredicate": "predicate=message-guard@156097;service=IrisAdminCommandService|IrisAdminCommandService.changePlayerServer",
         "access": "READ_WRITE",
         "accessClass": "MUTATION",
-        "interfaceId": "admin-lifecycle.runtime-dispatch.bb0c24187622",
+        "interfaceId": "admin-lifecycle.runtime-dispatch.e978709ffb12",
         "unresolvedDynamicCallCount": 0,
         "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "5d0237a167ce76e912e2fc6d2a8d4cdbbe7feba6774ceb05705c7b943da31dc8",
-        "classificationSha256": "0a75eb46c2aff137e9db75d71d6e1c1100728e02a33fd2d95811836d914016c2"
+        "classificationSha256": "25ee6f0da01cb44184651138d561a4df5739fb8f3fc3f41f978a748d181d23ab"
       },
       "verdict": "STATIC_ONLY",
       "harness": {
@@ -82799,7 +82799,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "0a75eb46c2aff137e9db75d71d6e1c1100728e02a33fd2d95811836d914016c2"
+            "sourceEvidenceSha256": "25ee6f0da01cb44184651138d561a4df5739fb8f3fc3f41f978a748d181d23ab"
           }
         }
       ],
@@ -86557,8 +86557,8 @@
         "interfaceId": "item.runtime-dispatch.9e79e14fed78",
         "unresolvedDynamicCallCount": 0,
         "registrySourceMismatchLabels": [],
-        "sourceSpanSha256": "655d8acf1fb93b9c9b618e10d6b2172ed95d0ea82f56358070f1b428a6c172c0",
-        "classificationSha256": "c072d6c17534257b4a3c34d1b6bd21bb6ce39c157d3d4a05a50aafb72883def2"
+        "sourceSpanSha256": "06a32bff5894e786421f97f9489cdb418913c4cb931a9633ce20d401befe1574",
+        "classificationSha256": "e9280b3902326c69d408ec05692faa31aef7ac167feb6557f504e1c724b4962c"
       },
       "verdict": "STATIC_ONLY",
       "harness": {
@@ -86615,7 +86615,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
             "reasonCode": "NO_AUTH_GUARD",
             "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "c072d6c17534257b4a3c34d1b6bd21bb6ce39c157d3d4a05a50aafb72883def2"
+            "sourceEvidenceSha256": "e9280b3902326c69d408ec05692faa31aef7ac167feb6557f504e1c724b4962c"
           }
         },
         {
@@ -86625,7 +86625,7 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "c072d6c17534257b4a3c34d1b6bd21bb6ce39c157d3d4a05a50aafb72883def2"
+            "sourceEvidenceSha256": "e9280b3902326c69d408ec05692faa31aef7ac167feb6557f504e1c724b4962c"
           }
         }
       ],
@@ -102318,6 +102318,180 @@
       "equivalenceRule": null
     },
     {
+      "consumerId": "sql-repository-19f17500144188bf",
+      "classification": {
+        "kind": "SQL_REPOSITORY",
+        "file": "개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts",
+        "symbol": "resolve",
+        "triggerOrPredicate": "SQL_METHOD:resolve",
+        "access": "READ",
+        "accessClass": "READ",
+        "interfaceId": "item.repository.legacy-bag-owner-label-provider.resolve",
+        "unresolvedDynamicCallCount": 0,
+        "registrySourceMismatchLabels": [],
+        "sourceSpanSha256": "a3947e26ea1389b2dbcff491e95ffa9b45686e640f2761d998bde4e5a71fab15",
+        "classificationSha256": "ac2a498f8af81f3a4ddd719f90e8d2c0ec50b88ac2ef2a9a358081b6d020b808"
+      },
+      "verdict": "STATIC_ONLY",
+      "harness": {
+        "harnessId": null,
+        "runner": null,
+        "path": null,
+        "sha256": null
+      },
+      "fixture": {
+        "fixtureId": null,
+        "path": null,
+        "sha256": null
+      },
+      "invocation": {
+        "targetPath": null,
+        "targetSourceSha256": null,
+        "exportName": null
+      },
+      "scenarioRequirements": [
+        {
+          "scenarioKind": "READ_POSITIVE",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "NEGATIVE_GUARD",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "AUTH_DENIED",
+          "disposition": "NOT_APPLICABLE",
+          "notApplicable": {
+            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
+            "reasonCode": "NO_AUTH_GUARD",
+            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
+            "sourceEvidenceSha256": "ac2a498f8af81f3a4ddd719f90e8d2c0ec50b88ac2ef2a9a358081b6d020b808"
+          }
+        },
+        {
+          "scenarioKind": "WRONG_ROOM_REJECTED",
+          "disposition": "NOT_APPLICABLE",
+          "notApplicable": {
+            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
+            "reasonCode": "NO_ROOM_GUARD",
+            "reason": "Frozen consumer classification contains no room or channel guard.",
+            "sourceEvidenceSha256": "ac2a498f8af81f3a4ddd719f90e8d2c0ec50b88ac2ef2a9a358081b6d020b808"
+          }
+        },
+        {
+          "scenarioKind": "EXACT_OUTPUT",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        }
+      ],
+      "scenarios": [],
+      "evidence": {
+        "evidenceIds": [],
+        "attributedConsumerIds": [],
+        "hashes": []
+      },
+      "equivalenceRule": null
+    },
+    {
+      "consumerId": "sql-repository-2415b4267e1577c6",
+      "classification": {
+        "kind": "SQL_REPOSITORY",
+        "file": "개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts",
+        "symbol": "inspect",
+        "triggerOrPredicate": "SQL_METHOD:inspect",
+        "access": "READ",
+        "accessClass": "READ",
+        "interfaceId": "item.repository.canonical-item-bag-import-readiness-provider.inspect",
+        "unresolvedDynamicCallCount": 0,
+        "registrySourceMismatchLabels": [],
+        "sourceSpanSha256": "178f6905f83b14ff959773f91dd1d6d1d6dde18bebc684918b75210ccd8c5d74",
+        "classificationSha256": "bfaf0535b113ee62c0d2caf4c3c416b5a03b5e29962bf90ac5bd17c8a4fdebd8"
+      },
+      "verdict": "STATIC_ONLY",
+      "harness": {
+        "harnessId": null,
+        "runner": null,
+        "path": null,
+        "sha256": null
+      },
+      "fixture": {
+        "fixtureId": null,
+        "path": null,
+        "sha256": null
+      },
+      "invocation": {
+        "targetPath": null,
+        "targetSourceSha256": null,
+        "exportName": null
+      },
+      "scenarioRequirements": [
+        {
+          "scenarioKind": "READ_POSITIVE",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "NEGATIVE_GUARD",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "AUTH_DENIED",
+          "disposition": "NOT_APPLICABLE",
+          "notApplicable": {
+            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
+            "reasonCode": "NO_AUTH_GUARD",
+            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
+            "sourceEvidenceSha256": "bfaf0535b113ee62c0d2caf4c3c416b5a03b5e29962bf90ac5bd17c8a4fdebd8"
+          }
+        },
+        {
+          "scenarioKind": "WRONG_ROOM_REJECTED",
+          "disposition": "NOT_APPLICABLE",
+          "notApplicable": {
+            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
+            "reasonCode": "NO_ROOM_GUARD",
+            "reason": "Frozen consumer classification contains no room or channel guard.",
+            "sourceEvidenceSha256": "bfaf0535b113ee62c0d2caf4c3c416b5a03b5e29962bf90ac5bd17c8a4fdebd8"
+          }
+        },
+        {
+          "scenarioKind": "EXACT_OUTPUT",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        }
+      ],
+      "scenarios": [],
+      "evidence": {
+        "evidenceIds": [],
+        "attributedConsumerIds": [],
+        "hashes": []
+      },
+      "equivalenceRule": null
+    },
+    {
       "consumerId": "sql-repository-261eb97022941f77",
       "classification": {
         "kind": "SQL_REPOSITORY",
@@ -111360,5 +111534,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "ce96fdb3dcf0a9aa6381fc976cd0f3ebba3e92fccb13478d1cfe74257aa5b5ce"
+  "entrySetSha256": "1ffc1ad88fe31ed708df38e25b7a4eb2b142aa709201b2d991a3362627c37bf7"
 }

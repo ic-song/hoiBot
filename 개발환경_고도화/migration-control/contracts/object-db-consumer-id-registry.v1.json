@@ -5524,6 +5524,16 @@
       "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/account-platform/player-context-provider.ts\",\"resolveSelf\",\"SQL_METHOD:resolveSelf\"]",
       "consumerId": "sql-repository-7367fce7053551f3",
       "state": "ACTIVE"
+    },
+    {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts\",\"resolve\",\"SQL_METHOD:resolve\"]",
+      "consumerId": "sql-repository-19f17500144188bf",
+      "state": "ACTIVE"
+    },
+    {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts\",\"inspect\",\"SQL_METHOD:inspect\"]",
+      "consumerId": "sql-repository-2415b4267e1577c6",
+      "state": "ACTIVE"
     }
   ]
 }

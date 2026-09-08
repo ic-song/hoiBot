@@ -262,6 +262,12 @@ import { BagAddService, isBagAddCommandCandidate } from "./inventory/bag-add-ser
 import { MariaBagAddRepository } from "./inventory/maria-bag-add-repository.js";
 import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
 import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
+import { CanonicalItemBagDirectReadService, isCanonicalItemBagCommand } from "./inventory/canonical-item-bag-direct-read-service.js";
+import { CanonicalItemBagImportReadinessProvider } from "./inventory/canonical-item-bag-import-readiness-provider.js";
+import { LegacyBagOwnerLabelProvider } from "./inventory/legacy-bag-owner-label-provider.js";
+import { MariaBagShadowParityProvider } from "./inventory/bag-shadow-parity-provider.js";
+import { CanonicalItemBagShadowReadProvider } from "./inventory/canonical-item-bag-shadow-read-provider.js";
+import { executeItemBagReadOnlyRecovery } from "./inventory/item-bag-read-only-recovery-ingress.js";
 import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventory/inventory-snapshot-service.js";
 import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
@@ -386,6 +392,8 @@ export interface AppDependencies {
   environmentContext?: VerifiedEnvironmentContext;
   appWiringOperationProvider?: MariaAppWiringOperationProvider;
   petSkillInfoReadOnlyRecoveryProvider?: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  itemBagReadOnlyRecoveryProvider?: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  canonicalItemBagService?: Pick<CanonicalItemBagDirectReadService,"execute">;
   petSkillInfoActorContextProvider?: Pick<MariaPetSkillInfoActorContextProvider,"resolve">;
   privateChatDenialNotificationService?: Pick<PrivateChatDenialNotificationService,"processEvent">;
   petExploreAppWiringIngress?: Pick<PetExploreAppWiringIngress, "handle">;
@@ -830,6 +838,22 @@ async function processPetSkillProbabilityAtomicIngress(input: {
   });
 }
 
+// SHADOW receipt와 독립적으로 기존 legacy reply를 inbox claim과 같은 transaction에서 1회만 outbox에 확정합니다.
+async function processItemBagShadowIngress(input: {
+  database: DatabaseClient;
+  recovery: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  canonical: Pick<CanonicalItemBagDirectReadService,"execute">;
+  environmentContext: VerifiedEnvironmentContext;
+  event: NormalizedIrisEvent;
+  replyIdentity: NormalizedIrisEvent;
+  channelType: "open_group"|"open_direct";
+  reasonCode: "ROLLOUT_SHADOW";
+  channelName?: ChannelNameObservation;
+}): Promise<EventProcessingResult> {
+  const recovered = await executeItemBagReadOnlyRecovery({database:input.database,recovery:input.recovery,canonical:input.canonical,environmentContext:input.environmentContext,event:input.event,replyIdentity:input.replyIdentity,channelType:input.channelType,reasonCode:input.reasonCode,...(input.channelName===undefined?{}:{channelName:input.channelName})});
+  return recovered.processing;
+}
+
 async function verifyPetSkillProbabilityCompletedReplay(
   database: DatabaseClient | undefined,
   event: NormalizedIrisEvent,
@@ -1001,6 +1025,12 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   const petSkillInfoReadOnlyRecoveryProvider=dependencies.petSkillInfoReadOnlyRecoveryProvider
     ??(database!==undefined&&appWiringOperationProvider!==undefined
       ?new MariaAppWiringReadOnlyRecoveryProvider(database,appWiringOperationProvider):undefined);
+  const itemBagReadOnlyRecoveryProvider=dependencies.itemBagReadOnlyRecoveryProvider
+    ??(database!==undefined&&appWiringOperationProvider!==undefined
+      ?new MariaAppWiringReadOnlyRecoveryProvider(database,appWiringOperationProvider):undefined);
+  const canonicalItemBagService=dependencies.canonicalItemBagService??new CanonicalItemBagDirectReadService(
+    new CanonicalItemBagShadowReadProvider(new MariaPlayerContextProvider(),new MariaBagShadowParityProvider(),new LegacyBagOwnerLabelProvider(),new CanonicalItemBagImportReadinessProvider())
+  );
   const privateChatDenialNotificationService=dependencies.privateChatDenialNotificationService
     ??(database!==undefined&&dependencies.environmentContext!==undefined
       ?new PrivateChatDenialNotificationService(database,dependencies.environmentContext):undefined);
@@ -1473,6 +1503,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && !normalizedEvent.message.startsWith("/")
         && await packageCatalogWizardHandler.hasActiveSession(normalizedEvent);
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
+        || isCanonicalItemBagCommand(normalizedEvent.message)
         || isSignupCommand(normalizedEvent.message ?? "")
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1859,7 +1890,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           userId: normalizedEvent.userId,
             hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
           };
-          return petSkillInfoIngressCommand === undefined
+          return petSkillInfoIngressCommand === undefined && !isCanonicalItemBagCommand(normalizedEvent.message)
             ? dispatcher.resolve(dispatchInput)
             : dispatcher.resolveReadOnly(dispatchInput);
         })()
@@ -1880,9 +1911,13 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const atomicPetSkillInfo=database!==undefined&&petSkillInfoReadOnlyRecoveryProvider!==undefined&&(isOperationalChannel||isPetSkillInfoPrivateChannel)
         &&(partialDispatchDecision?.route==="SHADOW"||partialDispatchDecision?.route==="MODERN")&&partialDispatchDecision.handlerKey==="pet_skill_info"
         &&petSkillInfoIngressCommand!==undefined&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
+      const atomicItemBag=database!==undefined&&itemBagReadOnlyRecoveryProvider!==undefined&&isOperationalChannel
+        &&partialDispatchDecision?.route==="SHADOW"&&partialDispatchDecision.commandCode==="ITEM_BAG_READ"
+        &&partialDispatchDecision.handlerKey==="item_bag_canonical_read"
+        &&isCanonicalItemBagCommand(normalizedEvent.message)&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
       if(isPetSkillInfoPrivateChannel&&!atomicPetSkillInfo)return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:channelAccess.reason,requestId:request.id});
-      if ((atomicPetSkillProbability||atomicPetSkillInfo) && dependencies.environmentContext === undefined) {
-        throw new Error(atomicPetSkillProbability?"PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED":"PET_SKILL_INFO_VERIFIED_ENVIRONMENT_REQUIRED");
+      if ((atomicPetSkillProbability||atomicPetSkillInfo||atomicItemBag) && dependencies.environmentContext === undefined) {
+        throw new Error(atomicPetSkillProbability?"PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED":atomicPetSkillInfo?"PET_SKILL_INFO_VERIFIED_ENVIRONMENT_REQUIRED":"ITEM_BAG_VERIFIED_ENVIRONMENT_REQUIRED");
       }
       if(atomicPetSkillInfo&&petSkillInfoIngressCommand!.devContext==="DEV_PREFIX"&&dependencies.environmentContext!.environmentCode!=="dev")return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:"PET_SKILL_INFO_DEV_ENVIRONMENT_REQUIRED",requestId:request.id});
       let petSkillInfoRejectedReason:string|undefined;
@@ -1895,6 +1930,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           })
         :atomicPetSkillInfo
         ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",route:partialDispatchDecision!.route as "SHADOW"|"MODERN",reasonCode:partialDispatchDecision!.reasonCode,...(dependencies.petSkillInfoActorContextProvider===undefined?{}:{actorContext:dependencies.petSkillInfoActorContextProvider}),...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(async recovered=>{petSkillInfoRejectedReason=recovered.denialReason;if(recovered.privateDenialNotificationRequired===true){if(privateChatDenialNotificationService===undefined)throw new Error("PRIVATE_CHAT_DENIAL_NOTIFICATION_SERVICE_REQUIRED");await privateChatDenialNotificationService.processEvent(normalizedEvent.eventId);}return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
+        :atomicItemBag
+        ?await processItemBagShadowIngress({database:database!,recovery:itemBagReadOnlyRecoveryProvider!,canonical:canonicalItemBagService,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:"ROLLOUT_SHADOW",...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})})
         : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership
@@ -2302,7 +2339,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
+      if (!atomicItemBag && isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const bag = await new GetBagService(new MariaBagRepository(database!))

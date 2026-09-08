@@ -233,7 +233,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       "main.js:/호월오픈",
     ]);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
-    assert.equal(consumerManifest.consumers.length, 1_130);
+    assert.equal(consumerManifest.consumers.length, 1_132);
     assert.deepEqual(consumerManifest.counts, {
       LEGACY_COMMAND: 684,
       AUTOMATIC_CALLBACK: 3,
@@ -241,7 +241,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       ADMIN_COMMAND: 78,
       HTTP_WEB_ROUTE: 81,
       APP_WIRING: 10,
-      SQL_REPOSITORY: 81,
+      SQL_REPOSITORY: 83,
     });
     assert.equal(consumerManifest.consumers.some(({ kind, triggerOrPredicate }) =>
       kind === "APP_WIRING" && triggerOrPredicate === "dispatchPetDataCompareCommand"), false);
@@ -652,10 +652,10 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(contract.runtimeAdoption.productionSourceCallCount, adoption.productionSourceCallCount);
     assert.equal(contract.implementationEvidence.runtimeEntrypointCallCount, adoption.productionSourceCallCount);
     assert.deepEqual(contract.runtimeAdoption.connectedIngressFamilies, adoption.connectedIngressFamilies);
-    assert.deepEqual(contract.runtimeAdoption.connectedDomains, ["PET_EXPLORE", "ADMIN_PET_DATA_COMPARE", "PET_TITLE", "PET_SKILL_INFO"]);
+    assert.deepEqual(contract.runtimeAdoption.connectedDomains, ["PET_EXPLORE", "ADMIN_PET_DATA_COMPARE", "PET_TITLE", "PET_SKILL_INFO", "ITEM"]);
     assert.deepEqual(contract.runtimeAdoption.connectedEffectModes, ["MODERN_MUTATION", "MODERN_READ_ONLY_DIRECT_REPLY", "SHADOW", "REJECT"]);
-    assert.deepEqual(contract.runtimeAdoption.additionalConnectedIngressFamilies, ["ADMIN_PET_TITLE_ADD", "ADMIN_PET_TITLE_STORE_RESET", "ADMIN_PET_TITLE_SYNC", "PET_SKILL_INFO_DIRECT_REPLY_CANARY"]);
-    assert.deepEqual(contract.runtimeAdoption.pendingIngressFamilies, ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "REMAINING_ADMIN", "WEB"]);
+    assert.deepEqual(contract.runtimeAdoption.additionalConnectedIngressFamilies, ["ADMIN_PET_TITLE_ADD", "ADMIN_PET_TITLE_STORE_RESET", "ADMIN_PET_TITLE_SYNC", "PET_SKILL_INFO_DIRECT_REPLY_CANARY", "ITEM_BAG_SHADOW"]);
+    assert.deepEqual(contract.runtimeAdoption.pendingIngressFamilies, ["IRIS_PET_EXPLORE_SETTLEMENT_MODERN", "ITEM_BAG_MODERN", "IRIS_LEGACY_HANDOFF", "AUTOMATIC", "REMAINING_ADMIN", "WEB"]);
     assert.equal(contract.runtimeAdoption.cutoverClaimed, false);
     assert.match(contract.runtimeAdoption.currentAppBoundary, /EVENT_CONTROL and PET_TITLE SELL reach typed MODERN\/MUTATION handlers/);
     assert.match(contract.runtimeAdoption.currentAppBoundary, /PET_SKILL_INFO CANARY uses MariaAppWiringReadOnlyRecoveryProvider/);

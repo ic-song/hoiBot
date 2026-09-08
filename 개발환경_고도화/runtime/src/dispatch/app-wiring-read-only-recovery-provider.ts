@@ -21,6 +21,9 @@ export interface AppWiringReadOnlyRecoveryInput<T>{
   readonly decision:AppWiringRouteDecision;
   readonly channelName?:ChannelNameObservation;
   readonly commandBinding?:unknown;
+  readonly afterEvaluateInTransaction?:(transaction:DatabaseTransaction,processing:EventProcessingResult,result:{
+    readonly replayed:boolean;readonly terminalStatus:AppWiringReadOnlyTerminalStatus;readonly receiptProjection:unknown;
+  })=>Promise<void>;
   readonly evaluateInSnapshot:(database:AppWiringReadParticipant)=>Promise<AppWiringAtomicReadOnlyEvaluation<T>>;
   readonly validateReceiptProjection?:(projection:unknown)=>void;
   readonly errorCode:(error:unknown)=>string;
@@ -78,6 +81,9 @@ function safeErrorCode(input:AppWiringReadOnlyRecoveryInput<unknown>,error:unkno
 }
 
 class StoredAtomicFailure extends Error{constructor(readonly errorCode:string){super(`APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:${errorCode}`);}}
+class CompletedReplayIntegrityFailure extends Error{
+  constructor(readonly integrityError:unknown){super("APP_WIRING_READ_ONLY_COMPLETED_REPLAY_INTEGRITY_FAILED");}
+}
 
 // event inbox와 SHADOW callback result hash를 한 root transaction으로 복구 가능하게 확정합니다.
 export class MariaAppWiringReadOnlyRecoveryProvider{
@@ -101,18 +107,28 @@ export class MariaAppWiringReadOnlyRecoveryProvider{
           if(binding.errorCode!==result.errorCode)throw new Error("APP_WIRING_READ_ONLY_FAILED_INBOX_ERROR_DRIFT");
           throw new StoredAtomicFailure(result.errorCode);
         }
+        try{
+          await input.afterEvaluateInTransaction?.(transaction,processing,{replayed:result.replayed,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection});
+        }catch(error){
+          if(result.replayed)throw new CompletedReplayIntegrityFailure(error);
+          throw error;
+        }
         return result.replayed?{status:"completed",replayed:true,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing,...(result.reply===undefined?{}:{reply:result.reply})}
           :{status:"completed",replayed:false,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,value:result.value,processing,...(result.reply===undefined?{}:{reply:result.reply})};
       });
     }catch(error){
       if(error instanceof StoredAtomicFailure)throw error;
+      if(error instanceof CompletedReplayIntegrityFailure)throw error.integrityError;
       const errorCode=safeErrorCode(input,error);
       const failureAttemptCount=errorCode==="APP_WIRING_READ_ONLY_RETRY_EXHAUSTED"?3:Math.max(1,lastAttemptNumber);
       const reconciled=await this.appWiring.withAtomicReadOnlyFailureRetry(async transaction=>{
         const processing=await new ProcessIrisEventService(this.database).executeAtomicCommandInTransaction(transaction,input.event,input.replyIdentity,input.channelType,{...(input.channelName===undefined?{}:{channelName:input.channelName}),retryFailedErrorCode:"APP_WIRING_READ_ONLY_RETRY_EXHAUSTED",retryAttemptNumber:failureAttemptCount});
         await assertInboxBinding(transaction,input,processing.duplicate);
         const result=await this.appWiring.recordAtomicReadOnlyShadowFailureInTransaction(transaction,{claim,decision:input.decision,routingDecision,sourceEventId:input.event.eventId,attemptCount:failureAttemptCount,errorCode,...(input.validateReceiptProjection===undefined?{}:{validateReceiptProjection:input.validateReceiptProjection})});
-        if(result.status==="completed")return{status:"completed" as const,replayed:true as const,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing,...(result.reply===undefined?{}:{reply:result.reply})};
+        if(result.status==="completed"){
+          await input.afterEvaluateInTransaction?.(transaction,processing,{replayed:true,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection});
+          return{status:"completed" as const,replayed:true as const,resultFingerprint:result.resultFingerprint,terminalStatus:result.terminalStatus,receiptProjection:result.receiptProjection,processing,...(result.reply===undefined?{}:{reply:result.reply})};
+        }
         await transaction.execute("UPDATE event_inbox SET processing_status='failed',attempt_count=GREATEST(attempt_count,?),error_code=?,processed_at=UTC_TIMESTAMP(3) WHERE event_id=?",[failureAttemptCount,errorCode,input.event.eventId]);
         return undefined;
       });

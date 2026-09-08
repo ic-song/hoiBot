@@ -50,4 +50,13 @@ describe("legacy bag read slice", () => {
       (error: unknown) => error instanceof Error && error.message === "연결된 캐릭터를 찾을 수 없습니다."
     );
   });
+
+  it("keeps the exact 10/11 item advertisement and 500-ZWSP boundary", () => {
+    const item = (index: number) => ({ displayName: `항목${String(index).padStart(2, "0")}`, quantity: "1", legacyBagOrder: null });
+    const ten = formatLegacyBag({ ...BAG, items: Array.from({ length: 10 }, (_, index) => item(index)) });
+    const eleven = formatLegacyBag({ ...BAG, items: Array.from({ length: 11 }, (_, index) => item(index)) });
+    assert.equal(ten.includes("(알림)합성 광고"), false);
+    assert.equal(eleven.startsWith("[테스트알파]의 가방🧳\n(알림)합성 광고\n" + "\u200b".repeat(500)), true);
+    assert.equal((eleven.match(/\u200b/g) ?? []).length, 500);
+  });
 });
