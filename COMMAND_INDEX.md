@@ -246,13 +246,13 @@ Status: VERIFIED
 
 ---
 
-# /창세오픈
+# /창조오픈
 
 Status: VERIFIED
 
 ## Command Anchors
 
-- Search in `main.js`: `/창세오픈`
+- Search in `main.js`: `/창조오픈`
 
 ## Files
 
@@ -267,18 +267,18 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.member[sender].bag["[🐹미니펫]창세패키지 확정(/창세오픈)"]`
+- `data.member[sender].bag["[🐹미니펫]창조패키지 확정(/창조오픈)"]`
 - `petData[sender].miniPetBag`
 - `GLOBAL_CONFIG.guaranteedPackage.genesis`
 
 ## Save Flow
 
-- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
+- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 패키지 1개를 소모해 `호이빛💖(+1350000💕)[창조]` 1개를 지급한다.
 - 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
 
 ## AI Notes
 
-- Exact command guard: `/창세오픈`.
+- Exact command guard: `/창조오픈`.
 - 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
 
 ---

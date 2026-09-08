@@ -15,40 +15,26 @@
     },
     "consumerManifest": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
-      "sha256": "b74588b92c54e998db69913a212507067cbfc7b758d05ef12e649e00bf92128b",
+      "sha256": "dfe3273a722703a7837eaaf27780eb23bfccffc58bceee321964ffc978e6bd02",
       "consumerSetSha256": "015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a"
     },
     "consumerIdRegistry": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
-      "sha256": "c390339f8c809d7bc64105efca612e71d562d75743a54fa0910a4ff77e9d0785"
+      "sha256": "2ae4a60a9ea21984c742140efffb356e9cea50c60d1594ced5cf853ce57d0f24"
     },
     "transitionContract": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
-      "sha256": "9976175c8c579e9c46b82448a71bac54afd9a70e877151f8de00bc7485945cfd"
+      "sha256": "10701198918ee9590990364fccdd4d8d01313c5b5a341f4356f0aa2c1e3bc1c6"
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave17-v1.json",
       "sha256": "2f31d1f09ca35e5c570f2e430205b612d2850352a8b4261155b21504ddcccd39"
     },
-    "classificationSources": [
-      {
-        "path": "main.js",
-        "sha256": "d8541a602a5fda8a2d6d20f7f0214d42c4285775c595816deda7355605e1e6c0"
-      }
-    ]
+    "classificationSources": []
   },
   "registrySourceMismatchResolution": {
     "bindings": [],
-    "unattributed": [
-      "main.js:/길드스타터오픈4",
-      "main.js:/길드스타터오픈5",
-      "main.js:/길드영지오픈1",
-      "main.js:/오픈하면어른이됩니다",
-      "main.js:/창세오픈",
-      "main.js:/펫먹",
-      "main.js:/펫탐험시작",
-      "main.js:/호월오픈"
-    ]
+    "unattributed": []
   },
   "coverage": {
     "manifestConsumers": 1133,
@@ -60,9 +46,9 @@
     "mutationConsumers": 629,
     "unresolvedDynamicConsumers": 82,
     "unresolvedDynamicCallCount": 82,
-    "registrySourceMismatchCount": 8,
+    "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
-    "registrySourceMismatchUnattributedCount": 8,
+    "registrySourceMismatchUnattributedCount": 0,
     "provenConsumers": 33,
     "unprovenConsumers": 1100,
     "directPassConsumers": 33,

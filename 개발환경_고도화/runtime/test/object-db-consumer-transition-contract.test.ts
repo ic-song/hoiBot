@@ -223,17 +223,8 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.equal(consumerManifest.audit.extraCount, 0);
     assert.equal(consumerManifest.audit.duplicatePrimaryCount, 0);
     assert.equal(consumerManifest.audit.undeclaredSelectorCount, 0);
-    assert.equal(consumerManifest.audit.registrySourceMismatchCount, 8);
-    assert.deepEqual(consumerManifest.audit.registrySourceMismatches, [
-      "main.js:/길드스타터오픈4",
-      "main.js:/길드스타터오픈5",
-      "main.js:/길드영지오픈1",
-      "main.js:/오픈하면어른이됩니다",
-      "main.js:/창세오픈",
-      "main.js:/펫먹",
-      "main.js:/펫탐험시작",
-      "main.js:/호월오픈",
-    ]);
+    assert.equal(consumerManifest.audit.registrySourceMismatchCount, 0);
+    assert.deepEqual(consumerManifest.audit.registrySourceMismatches, []);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
     assert.equal(consumerManifest.consumers.length, 1_133);
     assert.deepEqual(consumerManifest.counts, {
