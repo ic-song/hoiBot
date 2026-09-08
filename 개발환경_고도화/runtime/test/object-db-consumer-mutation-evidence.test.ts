@@ -51,6 +51,10 @@ test("Wave20 validator fails closed on table, rollback, PID, database, source, a
   ];
   for(const mutate of cases){const value=clone(baseline);mutate(value);assert.throws(()=>validateObjectDbMutationScenarioEvidence(contract,value));}
   const restart=contract.scenarios.find(({scenarioKind})=>scenarioKind==="RESTART_REPLAY")!,restartEvidence=evidence(restart);restartEvidence.traces[1]!.processId=restartEvidence.traces[0]!.processId;assert.throws(()=>validateObjectDbMutationScenarioEvidence(contract,restartEvidence),/child process reuse/);
+  const restartModule=evidence(restart);restartModule.traces[1]!.moduleExecutionId=restartModule.traces[0]!.moduleExecutionId;assert.throws(()=>validateObjectDbMutationScenarioEvidence(contract,restartModule),/module execution reuse/);
+  const rollback=contract.scenarios.find(({scenarioKind})=>scenarioKind==="DOMAIN_FAILURE_ROLLBACK")!,forgedContract=clone(contract),forgedEvidence=evidence(rollback),forgedOracle=forgedContract.scenarios.find(({scenarioKind})=>scenarioKind==="DOMAIN_FAILURE_ROLLBACK")!;
+  forgedOracle.expectedRolledBackAffectedRowCount=12;forgedOracle.expectedAffectedDmlTableSequence.pop();forgedEvidence.traces[0]!.transactionAttempts[0]!.affectedDmlStatements.pop();forgedEvidence.traces[0]!.transactionAttempts[0]!.affectedRowCount=12;forgedEvidence.traces[0]!.rolledBackAffectedRowCount=12;
+  assert.throws(()=>validateObjectDbMutationScenarioEvidence(forgedContract,forgedEvidence),/independent oracle seal drift/);
 });
 
 test("Wave20 concurrency requires one committed writer and one zero-DML replay",()=>{

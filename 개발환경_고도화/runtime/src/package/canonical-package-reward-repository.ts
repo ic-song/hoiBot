@@ -3,8 +3,11 @@ import { createHash } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createScopedDatabaseClient } from "../database.js";
 import { MariaObjectIdentityAuditProvider } from "../identity/object-identity-audit-provider.js";
+import { classifyMariaDatabaseError } from "../shared/maria-database-error-policy.js";
 
 const MAX_TRANSACTION_ATTEMPTS = 3;
+const CONCURRENT_REPLAY_READ_ATTEMPTS = 3;
+const TRANSACTION_RETRY_DELAY_MS = 30;
 export const CANONICAL_PACKAGE_MAX_NESTED_DEPTH = 8;
 export const CANONICAL_PACKAGE_REQUEST_KEY_MAX_LENGTH = 182;
 const PROBABILITY_SCALE = 10_000_000_000n;
@@ -118,10 +121,11 @@ function isDuplicate(error: unknown): boolean {
   return typeof error === "object" && error !== null && (("code" in error && String(error.code) === "ER_DUP_ENTRY") || ("message" in error && /duplicate entry/i.test(String(error.message))));
 }
 function isRetryable(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const code = "code" in error ? String(error.code) : "";
-  const errno = "errno" in error ? Number(error.errno) : Number.NaN;
-  return code === "ER_LOCK_DEADLOCK" || code === "ER_LOCK_WAIT_TIMEOUT" || errno === 1213 || errno === 1205;
+  const kind = classifyMariaDatabaseError(error).kind;
+  return kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT";
+}
+async function waitBeforeConcurrentReplayRead(attempt: number): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, TRANSACTION_RETRY_DELAY_MS * (attempt + 1)));
 }
 
 export class MariaCanonicalPackageRewardRepository {
@@ -135,13 +139,34 @@ export class MariaCanonicalPackageRewardRepository {
         if (isDuplicate(error)) {
           const replay = await this.findReplay(input);
           if (replay !== undefined) return replay;
-          if (attempt + 1 < MAX_TRANSACTION_ATTEMPTS) continue;
+          if (attempt + 1 < MAX_TRANSACTION_ATTEMPTS) {
+            await waitBeforeConcurrentReplayRead(attempt);
+            continue;
+          }
+          const reconciled = await this.findConcurrentReplay(input);
+          if (reconciled !== undefined) return reconciled;
         }
-        if (isRetryable(error) && attempt + 1 < MAX_TRANSACTION_ATTEMPTS) continue;
+        if (isRetryable(error)) {
+          if (attempt + 1 < MAX_TRANSACTION_ATTEMPTS) {
+            await waitBeforeConcurrentReplayRead(attempt);
+            continue;
+          }
+          const reconciled = await this.findConcurrentReplay(input);
+          if (reconciled !== undefined) return reconciled;
+        }
         throw error;
       }
     }
     throw new Error("CANONICAL_PACKAGE_TRANSACTION_RETRY_EXHAUSTED");
+  }
+
+  private async findConcurrentReplay(input: CanonicalPackageImportInput): Promise<CanonicalPackageImportResult | undefined> {
+    for (let attempt = 0; attempt < CONCURRENT_REPLAY_READ_ATTEMPTS; attempt += 1) {
+      await waitBeforeConcurrentReplayRead(attempt);
+      const replay = await this.findReplay(input);
+      if (replay !== undefined) return replay;
+    }
+    return undefined;
   }
 
   private async importInTransaction(transaction: DatabaseTransaction, input: CanonicalPackageImportInput): Promise<CanonicalPackageImportResult> {

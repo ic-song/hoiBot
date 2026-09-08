@@ -1,4 +1,8 @@
+import { createHash } from "node:crypto";
+
 export const OBJECT_DB_MUTATION_EVIDENCE_FORMAT = "hoibot-object-db-consumer-mutation-evidence-v1" as const;
+
+const WAVE20_PACKAGE_IMPORT_ORACLE_SHA256 = "b40690fc50b87b42cc87294ce2fffed64a6bb0aa3146d0db3cea4337d9300fec";
 
 export const OBJECT_DB_MUTATION_SCENARIOS = [
   "MUTATION_SUCCESS",
@@ -28,7 +32,7 @@ export interface ObjectDbMutationTrace {
   processId: number;
   moduleExecutionId: string;
   role: "PRIMARY" | "SEED" | "REPLAY" | "CONCURRENT";
-  source: { path: string; sha256: string; spanStart: number; spanEnd: number; spanSha256: string };
+  source: { path: string; sha256: string; spanStart: number; spanEnd: number; spanSha256: string; catalogSpanStart: number; catalogSpanEnd: number; catalogSpanSha256: string; relocationDiffSha256: string };
   database: { host: string; port: number; name: string };
   transactionAttempts: Array<{
     attempt: number;
@@ -71,7 +75,7 @@ export interface ObjectDbMutationScenarioOracle {
 export interface ObjectDbMutationEvidenceContract {
   format: typeof OBJECT_DB_MUTATION_EVIDENCE_FORMAT;
   consumerId: string;
-  source: { path: string; sha256: string; spanStart: number; spanEnd: number; spanSha256: string };
+  source: ObjectDbMutationTrace["source"];
   database: { host: "127.0.0.1"; forbiddenPort: 3306; namePrefix: string };
   allowedTables: string[];
   scenarios: ObjectDbMutationScenarioOracle[];
@@ -113,14 +117,17 @@ export function validateObjectDbMutationScenarioEvidence(
   evidence: ObjectDbMutationScenarioEvidence,
 ): { primary: ObjectDbMutationTrace; processIds: number[] } {
   exactKeys(contract, ["format","consumerId","source","database","allowedTables","scenarios"], "mutation contract");
-  exactKeys(contract.source, ["path","sha256","spanStart","spanEnd","spanSha256"], "mutation contract source");
+  exactKeys(contract.source, ["path","sha256","spanStart","spanEnd","spanSha256","catalogSpanStart","catalogSpanEnd","catalogSpanSha256","relocationDiffSha256"], "mutation contract source");
   exactKeys(contract.database, ["host","forbiddenPort","namePrefix"], "mutation contract database");
   exactKeys(evidence, ["scenarioKind","traces"], "mutation evidence");
   if (contract.format !== OBJECT_DB_MUTATION_EVIDENCE_FORMAT) throw new Error("mutation evidence format drift");
-  if (!/^([0-9a-f]{64})$/.test(contract.source.sha256) || !/^([0-9a-f]{64})$/.test(contract.source.spanSha256)
-    || !Number.isSafeInteger(contract.source.spanStart) || !Number.isSafeInteger(contract.source.spanEnd) || contract.source.spanStart < 0 || contract.source.spanEnd <= contract.source.spanStart) throw new Error("mutation source provenance invalid");
+  if (![contract.source.sha256,contract.source.spanSha256,contract.source.catalogSpanSha256,contract.source.relocationDiffSha256].every((value)=>/^([0-9a-f]{64})$/.test(value))
+    || !Number.isSafeInteger(contract.source.spanStart) || !Number.isSafeInteger(contract.source.spanEnd) || contract.source.spanStart < 0 || contract.source.spanEnd <= contract.source.spanStart
+    || !Number.isSafeInteger(contract.source.catalogSpanStart) || !Number.isSafeInteger(contract.source.catalogSpanEnd) || contract.source.catalogSpanStart < 0 || contract.source.catalogSpanEnd <= contract.source.catalogSpanStart) throw new Error("mutation source provenance invalid");
   if (contract.database.host !== "127.0.0.1" || contract.database.forbiddenPort !== 3306 || contract.database.namePrefix.length === 0) throw new Error("mutation database isolation contract invalid");
   if (new Set(contract.allowedTables).size !== contract.allowedTables.length || contract.allowedTables.length === 0) throw new Error("mutation allowed table set invalid");
+  const oracleSha256 = createHash("sha256").update(JSON.stringify({ allowedTables: contract.allowedTables, scenarios: contract.scenarios })).digest("hex");
+  if (oracleSha256 !== WAVE20_PACKAGE_IMPORT_ORACLE_SHA256) throw new Error("mutation independent oracle seal drift");
   if (contract.scenarios.length !== OBJECT_DB_MUTATION_SCENARIOS.length || new Set(contract.scenarios.map(({ scenarioKind }) => scenarioKind)).size !== OBJECT_DB_MUTATION_SCENARIOS.length
     || OBJECT_DB_MUTATION_SCENARIOS.some((scenarioKind) => !contract.scenarios.some((candidate) => candidate.scenarioKind === scenarioKind))) throw new Error("mutation scenario oracle set drift");
   const oracle = contract.scenarios.find((candidate) => candidate.scenarioKind === evidence.scenarioKind);
@@ -132,7 +139,7 @@ export function validateObjectDbMutationScenarioEvidence(
   const allowed = new Set(contract.allowedTables);
   for (const trace of evidence.traces) {
     exactKeys(trace, ["processId","moduleExecutionId","role","source","database","transactionAttempts","committedDmlStatements","committedRowCount","rolledBackAffectedRowCount","lockOrder","before","after","replayed","errorCode","externalNetworkCalls","replyCalls"], `${evidence.scenarioKind}/${trace.role}.trace`);
-    exactKeys(trace.source, ["path","sha256","spanStart","spanEnd","spanSha256"], `${evidence.scenarioKind}/${trace.role}.source`);
+    exactKeys(trace.source, ["path","sha256","spanStart","spanEnd","spanSha256","catalogSpanStart","catalogSpanEnd","catalogSpanSha256","relocationDiffSha256"], `${evidence.scenarioKind}/${trace.role}.source`);
     exactKeys(trace.database, ["host","port","name"], `${evidence.scenarioKind}/${trace.role}.database`);
     if (JSON.stringify(trace.source) !== JSON.stringify(contract.source)) throw new Error(`${evidence.scenarioKind}/${trace.role} source provenance drift`);
     if (trace.database.host !== contract.database.host || trace.database.port === contract.database.forbiddenPort || !trace.database.name.startsWith(contract.database.namePrefix)) throw new Error(`${evidence.scenarioKind}/${trace.role} database isolation drift`);
@@ -170,6 +177,8 @@ export function validateObjectDbMutationScenarioEvidence(
   if (primary.replayed !== oracle.expectedReplayed || primary.errorCode !== oracle.expectedErrorCode) throw new Error(`${evidence.scenarioKind} result oracle mismatch`);
   const distinct = evidence.traces.filter(({ role }) => oracle.distinctProcessRoles.includes(role)).map(({ processId }) => processId);
   if (new Set(distinct).size !== distinct.length) throw new Error(`${evidence.scenarioKind} child process reuse detected`);
+  const distinctModules = evidence.traces.filter(({ role }) => oracle.distinctProcessRoles.includes(role)).map(({ moduleExecutionId }) => moduleExecutionId);
+  if (new Set(distinctModules).size !== distinctModules.length) throw new Error(`${evidence.scenarioKind} module execution reuse detected`);
   if (evidence.scenarioKind === "CONCURRENCY_SINGLE_WRITER") {
     const committedWriters = evidence.traces.filter((trace) => trace.committedRowCount > 0);
     const replays = evidence.traces.filter((trace) => trace.replayed === true && trace.committedRowCount === 0);
