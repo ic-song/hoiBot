@@ -4,6 +4,7 @@ import { readdir, readFile } from "node:fs/promises";
 import test from "node:test";
 
 const sha256=(value:string)=>createHash("sha256").update(value).digest("hex");
+const canonicalText=(value:string)=>value.replace(/\r\n?/g,"\n");
 const evidenceRoot=new URL("../../migration-control/evidence/legacy-rank-label-side-effect-certificate-lease2606/isolated-mariadb-20260908/",import.meta.url);
 
 interface Receipt {
@@ -17,6 +18,7 @@ interface Receipt {
     readiness:{query:{invoked:boolean;completed:boolean;error:string|null};result:{ready:boolean;reasonCode:string}};
     restart:{containerIdentityStable:boolean;preState:string;postState:string};
     rollback:{populatedRefusal:string;populatedRowsPreserved:string;emptyRollback:string};
+    transcriptHashNormalization:string;
     transcriptSha256:string;
   };
   payloadSha256:string;
@@ -27,7 +29,10 @@ test("WBS778 isolated MariaDB receipt and transcript are immutable and complete"
   const transcript=await readFile(new URL("isolated-mariadb-transcript.log",evidenceRoot),"utf8");
   assert.equal(receipt.payload.contract,"WBS778_ISOLATED_MARIADB_RECEIPT_V1");
   assert.equal(sha256(JSON.stringify(receipt.payload)),receipt.payloadSha256);
-  assert.equal(sha256(transcript),receipt.payload.transcriptSha256);
+  assert.equal(receipt.payload.transcriptHashNormalization,"CRLF_OR_CR_TO_LF_UTF8");
+  assert.equal(sha256(canonicalText(transcript)),receipt.payload.transcriptSha256);
+  assert.equal(sha256(canonicalText(transcript.replace(/\n/g,"\r\n"))),receipt.payload.transcriptSha256);
+  assert.equal(sha256(canonicalText(transcript.replace(/\n/g,"\r"))),receipt.payload.transcriptSha256);
   assert.match(receipt.payload.image.repositoryDigest,/^mariadb@sha256:[0-9a-f]{64}$/);
   assert.equal(receipt.payload.image.runReference,receipt.payload.image.repositoryDigest);
   assert.match(receipt.payload.image.serverVersion,/^11\.4\./);
