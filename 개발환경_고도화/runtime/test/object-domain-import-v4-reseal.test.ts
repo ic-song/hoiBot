@@ -4,19 +4,23 @@ import { describe, it } from "node:test";
 import {
   applyObjectDomainImportProfileV2,
   applyObjectDomainImportProfileV4,
+  calculateObjectDomainImportProfileV3Sha256,
   calculateObjectDomainImportProfileV4Sha256,
   parseObjectDomainImportProfileV2,
+  parseObjectDomainImportProfileV3,
   parseObjectDomainImportProfileV4,
   parseObjectDomainImportTargetSchemaV4,
   resolveObjectDomainImportProfileVersionV4
 } from "../src/data-migration/object-domain-import-profile.js";
 import {
+  assertObjectDomainImportPolicy,
   calculateObjectDomainImportComponentSemanticSha256,
   calculateObjectDomainImportContractSemanticSha256,
   calculateObjectDomainImportSemanticSha256,
   OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4,
   type DomainImportPolicy
 } from "../src/data-migration/object-domain-importer.js";
+import { calculateCatalogTargetSchemaSha256 } from "../src/data-migration/catalog-projection-provider.js";
 
 const contracts = new URL("../../migration-control/contracts/", import.meta.url);
 const text = (name: string): string => readFileSync(new URL(name, contracts), "utf8");
@@ -95,6 +99,11 @@ describe("WBS779 object-domain import V4 forward reseal", () => {
     const effective = applyObjectDomainImportProfileV4(base, parseObjectDomainImportTargetSchemaV4(text("object-domain-import-target-schema.v4.json")));
     assert.deepEqual([base.directTargets.length, effective.directTargets.length, effective.columns.length - base.columns.length], [47, 47, 11]);
     assert.equal(new Set(effective.columns.map((column) => `${column.table}.${column.column}`)).size, effective.columns.length);
+    assert.notEqual(calculateCatalogTargetSchemaSha256(JSON.stringify({ catalogVersion: "SC-20260902-1", columns: base.columns })), calculateCatalogTargetSchemaSha256(JSON.stringify({ catalogVersion: "SC-20260902-1", columns: effective.columns })));
+    const catalogCli = readFileSync(new URL("../scripts/import-catalog-projection.ts", import.meta.url), "utf8");
+    assert.match(catalogCli, /resolveObjectDomainImportProfileVersionV4/);
+    assert.match(catalogCli, /applyObjectDomainImportProfileV4/);
+    assert.match(catalogCli, /profileVersion === "v1" \? calculateCatalogTargetSchemaSha256\(schemaBytes/);
     assert.throws(() => applyObjectDomainImportProfileV4(effective, parseObjectDomainImportTargetSchemaV4(text("object-domain-import-target-schema.v4.json"))), /ALREADY_APPLIED_OR_BASE_INVALID/);
   });
 
@@ -114,5 +123,44 @@ describe("WBS779 object-domain import V4 forward reseal", () => {
     assert.match(script, /applyObjectDomainImportProfileV4/);
     assert.match(script, /profileVersion === "v4" \? OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4/);
     assert.match(script, /profileVersion === "v1" \? \[importContractSha256, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256\] : \[importContractSha256\]/);
+  });
+
+  it("assembles the same effective V4 policy as the CLI and passes the importer preflight", () => {
+    const v2 = parseObjectDomainImportProfileV2(text("object-domain-import-profile.v2.json"));
+    const base = applyObjectDomainImportProfileV2({
+      columns: baseSchema.columns,
+      generatedBindings: baseIdentity.generatedCuidBindings,
+      foreignKeys: objectModel.tables.flatMap((table) => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey }))),
+      definitionTargets: baseDisposition.definitionSeed,
+      directTargets: [...baseDisposition.definitionSeed, ...baseDisposition.stateImport, ...baseDisposition.initialLedger, ...baseDisposition.quarantineOnly],
+      domainTargets: Object.fromEntries(baseFieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables]))
+    }, v2);
+    const profileText = text("object-domain-import-profile.v4.json");
+    const profile = parseObjectDomainImportProfileV4(profileText);
+    const effective = applyObjectDomainImportProfileV4(base, parseObjectDomainImportTargetSchemaV4(text("object-domain-import-target-schema.v4.json")));
+    const contract = json<{ componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; semanticHashPolicy: { currentImportContractProjectionSha256: string } }>("data-migration-object-domain-import.v4.json");
+    const effectiveIdentity = { ...baseIdentity, generatedCuidBindings: effective.generatedBindings };
+    const effectiveDisposition = { ...baseDisposition, definitionSeed: effective.definitionTargets, derived: baseDisposition.derived.filter((table) => !effective.directTargets.includes(table)) };
+    const effectiveFieldMap = { ...baseFieldMap, mappings: baseFieldMap.mappings.map((mapping) => ({ ...mapping, targetTables: effective.domainTargets[mapping.domain] })) };
+    const exactDefinitionImports = v2.directTargetAdditions.map((target) => ({ table: target.table, definitionTable: target.foreignKey.referencesTable, definitionPkColumn: target.foreignKey.referencesColumn, foreignKeyColumn: target.foreignKey.column, sourceSystem: target.exactSource.sourceSystem, sourceNamespace: target.exactSource.sourceNamespace, sourceIdentifier: target.exactSource.sourceIdentifier, sourceIdentifierOrigin: target.exactSource.sourceIdentifierOrigin }));
+    const v3Profile = parseObjectDomainImportProfileV3(text("object-domain-import-profile.v3.json"));
+    const components = {
+      identityBindings: calculateObjectDomainImportComponentSemanticSha256("identityBindings", JSON.stringify(effectiveIdentity), effective.directTargets, OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4),
+      objectModel: calculateObjectDomainImportComponentSemanticSha256("objectModel", text("object-data-model-standard.v1.json"), effective.directTargets, OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4),
+      disposition: calculateObjectDomainImportComponentSemanticSha256("disposition", JSON.stringify(effectiveDisposition), effective.directTargets, OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4),
+      fieldMap: calculateObjectDomainImportComponentSemanticSha256("fieldMap", JSON.stringify(effectiveFieldMap), effective.directTargets, OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4)
+    };
+    const policy: DomainImportPolicy = {
+      catalogVersion: "SC-20260902-1", targetSchemaSha256: "a".repeat(64), importContractSha256: contract.semanticHashPolicy.currentImportContractProjectionSha256,
+      acceptedImportContractSha256: [contract.semanticHashPolicy.currentImportContractProjectionSha256], componentSemanticSha256: components, contractComponentSemanticSha256: contract.componentSemanticSha256,
+      columns: effective.columns, generatedBindings: effective.generatedBindings, reusedBindings: baseIdentity.reusedPrimaryKeys, foreignKeys: effective.foreignKeys,
+      directTargets: effective.directTargets, definitionTargets: effective.definitionTargets, domainTargets: effective.domainTargets, quarantineReasons: ["SOURCE_LOCATOR_PAYLOAD_DRIFT"], exactDefinitionImports,
+      itemBagCompletenessV3: { profileVersion: v3Profile.profileVersion, profileSemanticSha256: calculateObjectDomainImportProfileV3Sha256(text("object-domain-import-profile.v3.json")), sourceNamespace: v3Profile.completenessProjection.sourceNamespace, witnessRecordDomain: v3Profile.completenessProjection.witnessRecordDomain, witnessRecordKind: v3Profile.completenessProjection.witnessRecordKind, sourceKeyRecordKinds: v3Profile.completenessProjection.sourceKeyRecordKinds },
+      objectDomainImportV4: { profileVersion: profile.profileVersion, profileSemanticSha256: calculateObjectDomainImportProfileV4Sha256(profileText), targetColumnAdditionCount: profile.targetColumnAdditionCount }
+    };
+    assert.deepEqual(components, contract.componentSemanticSha256);
+    assert.equal(policy.columns.length, 263);
+    assert.doesNotThrow(() => assertObjectDomainImportPolicy(policy));
+    assert.throws(() => assertObjectDomainImportPolicy({ ...policy, objectDomainImportV4: undefined }), /COLUMN_SCOPE_MISMATCH/);
   });
 });

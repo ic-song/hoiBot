@@ -45,6 +45,7 @@ if (profileVersion !== "v1") {
   ({ columns, generatedBindings, foreignKeys, definitionTargets, directTargets, domainTargets } = effective);
 }
 let itemBagCompletenessV3: DomainImportPolicy["itemBagCompletenessV3"];
+let objectDomainImportV4: DomainImportPolicy["objectDomainImportV4"];
 if (profileVersion === "v3" || profileVersion === "v4") {
   const v3ProfileText = await readFile(resolve("../migration-control/contracts/object-domain-import-profile.v3.json"), "utf8");
   const v3Profile = parseObjectDomainImportProfileV3(v3ProfileText);
@@ -55,6 +56,7 @@ if (profileVersion === "v4") {
   const v4ProfileText = await readFile(resolve("../migration-control/contracts/object-domain-import-profile.v4.json"), "utf8");
   if (contract.profileSemanticSha256 !== calculateObjectDomainImportProfileV4Sha256(v4ProfileText)) throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V4_HASH_MISMATCH");
   const v4Profile = parseObjectDomainImportProfileV4(v4ProfileText);
+  objectDomainImportV4 = { profileVersion: v4Profile.profileVersion, profileSemanticSha256: calculateObjectDomainImportProfileV4Sha256(v4ProfileText), targetColumnAdditionCount: v4Profile.targetColumnAdditionCount };
   const [v4DispositionText, v4SchemaText, v4FieldMapText] = await Promise.all([readFile(resolve(`../migration-control/contracts/${v4Profile.dispositionAmendment}`), "utf8"), readFile(resolve(`../migration-control/contracts/${v4Profile.targetSchemaAmendment}`), "utf8"), readFile(resolve(`../migration-control/contracts/${v4Profile.fieldMapAmendment}`), "utf8")]);
   const actualAmendmentHashes = { disposition: calculateObjectDomainImportSemanticSha256(v4DispositionText), targetSchema: calculateObjectDomainImportSemanticSha256(v4SchemaText), fieldMap: calculateObjectDomainImportSemanticSha256(v4FieldMapText) };
   if (contract.amendmentSemanticSha256?.disposition !== actualAmendmentHashes.disposition || contract.amendmentSemanticSha256.targetSchema !== actualAmendmentHashes.targetSchema || contract.amendmentSemanticSha256.fieldMap !== actualAmendmentHashes.fieldMap) throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V4_AMENDMENT_HASH_MISMATCH");
@@ -85,7 +87,8 @@ const policy: DomainImportPolicy = {
   domainTargets,
   quarantineReasons: fieldMap.recordQuarantine,
   exactDefinitionImports,
-  itemBagCompletenessV3
+  itemBagCompletenessV3,
+  objectDomainImportV4
 };
 const config = loadConfig();
 assertObjectDomainImportDatabaseName(config.database.name);
