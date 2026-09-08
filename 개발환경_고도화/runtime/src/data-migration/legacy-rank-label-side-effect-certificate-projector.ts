@@ -10,7 +10,7 @@ type Decision = "NO_WRITE" | "WOULD_DELETE" | "UNMAPPED";
 
 interface RawRow { raw_landing_run_id:string; run_status:string; bundle_sha256:string; snapshot_manifest_sha256:string; source_path_sha256:string; source_content_sha256:string; payload:Buffer|string; }
 interface BindingRow { source_player_key_sha256:string; player_id:string; }
-interface ImportBindingRow { object_domain_import_run_id:string; common_staging_run_id:string; run_status:string; raw_bundle_sha256:string; snapshot_manifest_sha256:string; }
+interface ImportBindingRow { object_domain_import_run_id:string; catalog_projection_run_id:string; common_staging_run_id:string; run_status:string; raw_bundle_sha256:string; snapshot_manifest_sha256:string; }
 interface MarkerRow { assignment_status:string; source_fingerprint:string; player_id:string|null; }
 interface ExistingRow { legacy_rank_label_validation_run_id:string; validation_fingerprint:string; certificate_set_sha256:string; run_status:string; active_flag:number|boolean; }
 
@@ -49,7 +49,7 @@ export class LegacyRankLabelSideEffectCertificateProjector {
     if(input.memberSourcePathSha256===input.guildSourcePathSha256)throw new Error("LEGACY_RANK_LABEL_SOURCE_PATHS_NOT_DISTINCT");
     const audit=createObjectAuditValues(input.actor,this.now());
     return this.database.withTransaction(async tx=>{
-      const imports=await tx.query<ImportBindingRow[]>(`SELECT import_run.object_domain_import_run_id,staging.common_staging_run_id,import_run.run_status,staging.raw_bundle_sha256,staging.snapshot_manifest_sha256
+      const imports=await tx.query<ImportBindingRow[]>(`SELECT import_run.object_domain_import_run_id,import_run.catalog_projection_run_id,staging.common_staging_run_id,import_run.run_status,staging.raw_bundle_sha256,staging.snapshot_manifest_sha256
         FROM data_migration_object_domain_import_runs import_run
         JOIN data_migration_catalog_projection_runs catalog ON catalog.catalog_projection_run_id=import_run.catalog_projection_run_id
         JOIN data_migration_common_staging_runs staging ON staging.common_staging_run_id=catalog.common_staging_run_id
@@ -74,8 +74,10 @@ export class LegacyRankLabelSideEffectCertificateProjector {
         JOIN data_migration_catalog_projection_records projection ON projection.catalog_projection_record_id=receipt.catalog_projection_record_id
         JOIN data_migration_catalog_source_decisions decision ON decision.catalog_source_decision_id=projection.catalog_source_decision_id
         JOIN data_migration_common_staging_records staging ON staging.common_staging_record_id=decision.common_staging_record_id
-        WHERE receipt.object_domain_import_run_id=? AND receipt.target_table_name='canonical_players' AND receipt.target_pk_column_name='player_id' AND staging.owner_locator_sha256 IS NOT NULL
-        ORDER BY staging.owner_locator_sha256,receipt.target_pk_value FOR UPDATE`,[input.objectDomainImportRunId]);
+        WHERE receipt.object_domain_import_run_id=? AND projection.catalog_projection_run_id=? AND decision.catalog_projection_run_id=projection.catalog_projection_run_id
+          AND staging.common_staging_run_id=? AND staging.source_path_sha256=?
+          AND receipt.target_table_name='canonical_players' AND receipt.target_pk_column_name='player_id' AND staging.owner_locator_sha256 IS NOT NULL
+        ORDER BY staging.owner_locator_sha256,receipt.target_pk_value FOR UPDATE`,[input.objectDomainImportRunId,imports[0]!.catalog_projection_run_id,imports[0]!.common_staging_run_id,input.memberSourcePathSha256]);
       const bySourceHash=new Map<string,string[]>();for(const row of bindings)bySourceHash.set(row.source_player_key_sha256,[...(bySourceHash.get(row.source_player_key_sha256)??[]),row.player_id]);
       const marker=(await tx.query<MarkerRow[]>("SELECT assignment_status,source_fingerprint,player_id FROM player_pet_skill_rank_marker_projections WHERE active_flag=TRUE AND marker_kind='CASTLE_LORD' FOR UPDATE"));
       if(marker.length!==1||!/^[0-9a-f]{64}$/.test(marker[0]!.source_fingerprint))throw new Error("LEGACY_RANK_LABEL_CASTLE_MARKER_INVALID");
@@ -90,7 +92,7 @@ export class LegacyRankLabelSideEffectCertificateProjector {
       const certificateSetSha256=calculateLegacyRankLabelCertificateSetSha256(certificates);
       const counts={noWrite:certificates.filter(row=>row.sideEffectDecision==="NO_WRITE").length,wouldDelete:certificates.filter(row=>row.sideEffectDecision==="WOULD_DELETE").length,unmapped:certificates.filter(row=>row.sideEffectDecision==="UNMAPPED").length};
       const status=counts.wouldDelete===0&&counts.unmapped===0?"COMPLETE":"REJECTED" as const;
-      const fingerprint=calculateLegacyRankLabelValidationFingerprint({rawLandingRunId:input.rawLandingRunId,objectDomainImportRunId:input.objectDomainImportRunId,memberSourceContentSha256:memberRow.source_content_sha256,guildSourceContentSha256:guildRow.source_content_sha256,rankMarkerSourceFingerprint:marker[0]!.source_fingerprint,legacyRuntimeSourceSha256:LEGACY_RANK_LABEL_RUNTIME_SOURCE_SHA256,membershipSemanticSha256,certificateSetSha256,counts,status,projectionVersion:LEGACY_RANK_LABEL_PROJECTION_VERSION});
+      const fingerprint=calculateLegacyRankLabelValidationFingerprint({rawLandingRunId:input.rawLandingRunId,commonStagingRunId:imports[0]!.common_staging_run_id,objectDomainImportRunId:input.objectDomainImportRunId,memberSourcePathSha256:input.memberSourcePathSha256,memberSourceContentSha256:memberRow.source_content_sha256,guildSourcePathSha256:input.guildSourcePathSha256,guildSourceContentSha256:guildRow.source_content_sha256,rankMarkerSourceFingerprint:marker[0]!.source_fingerprint,legacyRuntimeSourceSha256:LEGACY_RANK_LABEL_RUNTIME_SOURCE_SHA256,membershipSemanticSha256,certificateSetSha256,counts,status,projectionVersion:LEGACY_RANK_LABEL_PROJECTION_VERSION});
       const existing=await tx.query<ExistingRow[]>("SELECT legacy_rank_label_validation_run_id,validation_fingerprint,certificate_set_sha256,run_status,active_flag FROM legacy_rank_label_validation_runs WHERE raw_landing_run_id=? AND object_domain_import_run_id=? AND projection_version=? FOR UPDATE",[input.rawLandingRunId,input.objectDomainImportRunId,LEGACY_RANK_LABEL_PROJECTION_VERSION]);
       if(existing.length>0){const row=existing[0]!;if(existing.length!==1||row.validation_fingerprint!==fingerprint||row.certificate_set_sha256!==certificateSetSha256||row.run_status!==status||Boolean(row.active_flag)!==(status==="COMPLETE"))throw new Error("LEGACY_RANK_LABEL_CERTIFICATE_REPLAY_DRIFT");return{validationRunId:row.legacy_rank_label_validation_run_id,status,expectedSubjectCount:subjects.length,wouldDeleteCount:counts.wouldDelete,unmappedCount:counts.unmapped,replayed:true};}
       const runId=await this.insertId(tx,"INSERT INTO legacy_rank_label_validation_runs(legacy_rank_label_validation_run_id,raw_landing_run_id,common_staging_run_id,object_domain_import_run_id,projection_version,member_source_path_sha256,member_source_content_sha256,guild_source_path_sha256,guild_source_content_sha256,rank_marker_source_fingerprint,legacy_runtime_source_sha256,membership_semantic_sha256,certificate_set_sha256,validation_fingerprint,expected_subject_count,no_write_count,would_delete_count,unmapped_count,run_status,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",candidate=>[candidate,input.rawLandingRunId,imports[0]!.common_staging_run_id,input.objectDomainImportRunId,LEGACY_RANK_LABEL_PROJECTION_VERSION,input.memberSourcePathSha256,memberRow.source_content_sha256,input.guildSourcePathSha256,guildRow.source_content_sha256,marker[0]!.source_fingerprint,LEGACY_RANK_LABEL_RUNTIME_SOURCE_SHA256,membershipSemanticSha256,certificateSetSha256,fingerprint,subjects.length,counts.noWrite,counts.wouldDelete,counts.unmapped,status,false,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);
