@@ -111,10 +111,11 @@ describe("object domain import target schema contract", () => {
 
   it("contains every and only non-audit manifest column once", () => {
     const targetTables = new Set(targetSchema.columns.map((entry) => entry.table));
+    const v4PetSkillColumns = new Set(["legacy_source_key", "display_order", "base_draw_rate", "fixed_draw_rate_flag", "openable_flag", "pet_skill_grade_emoji", "required_tier_name", "tier_exclusive_flag", "equip_description", "raid_charm_bonus", "castle_charm_bonus"]);
     const expected = standard.tables
       .filter((table) => targetTables.has(table.table))
       .flatMap((table) => table.columns
-        .filter((column) => !auditColumns.has(column.name))
+        .filter((column) => !auditColumns.has(column.name) && (table.table !== "canonical_pet_skill_definitions" || !v4PetSkillColumns.has(column.name)))
         .map((column) => `${table.table}.${column.name}`))
       .sort();
     const actual = targetSchema.columns.map((entry) => `${entry.table}.${entry.column}`).sort();

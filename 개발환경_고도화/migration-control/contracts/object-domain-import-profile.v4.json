@@ -1,0 +1,13 @@
+{
+  "format": "hoibot-object-domain-import-profile-v4",
+  "profileVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V4",
+  "catalogVersion": "SC-20260902-1",
+  "baseProfile": "object-domain-import-profile.v3.json",
+  "dispositionAmendment": "object-domain-import-disposition.v4.json",
+  "targetSchemaAmendment": "object-domain-import-target-schema.v4.json",
+  "fieldMapAmendment": "object-domain-import-field-map.v4.json",
+  "registeredMigrationSeal": ["484_pet_skill_info_shadow_ingress.sql", "485_pet_skill_info_admin_bag_projection.sql"],
+  "directTargetCount": 47,
+  "targetColumnAdditionCount": 11,
+  "compatibility": "V1, V2 and V3 COMPLETE runs replay or roll back only through their creating profiles. V4 accepts only the V4 semantic contract and does not rewrite applied migrations."
+}

@@ -1,0 +1,22 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-object-domain-import-target-schema-v4",
+  "baseSchema": "object-domain-import-target-schema.v1.json",
+  "table": "canonical_pet_skill_definitions",
+  "columnCount": 11,
+  "columns": [
+    {"table":"canonical_pet_skill_definitions","column":"legacy_source_key","sqlType":"VARCHAR(191)","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"display_order","sqlType":"INT UNSIGNED","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"base_draw_rate","sqlType":"DECIMAL(9,6)","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"fixed_draw_rate_flag","sqlType":"BOOLEAN","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"openable_flag","sqlType":"BOOLEAN","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"pet_skill_grade_emoji","sqlType":"VARCHAR(32)","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"required_tier_name","sqlType":"VARCHAR(100)","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"tier_exclusive_flag","sqlType":"BOOLEAN","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"equip_description","sqlType":"TEXT","nullable":true,"migration":"481_canonical_pet_skill_read_provider.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"raid_charm_bonus","sqlType":"BIGINT UNSIGNED","nullable":false,"migration":"484_pet_skill_info_shadow_ingress.sql"},
+    {"table":"canonical_pet_skill_definitions","column":"castle_charm_bonus","sqlType":"BIGINT UNSIGNED","nullable":false,"migration":"484_pet_skill_info_shadow_ingress.sql"}
+  ],
+  "unicodeAmendmentMigration": "482_canonical_pet_skill_grade_unicode.sql",
+  "adminProjectionMigration": "485_pet_skill_info_admin_bag_projection.sql"
+}

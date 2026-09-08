@@ -194,6 +194,7 @@ export interface DomainImportExactDefinitionRow {
 export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION = "OBJECT_DOMAIN_IMPORT_RELEVANT_V1" as const;
 export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2 = "OBJECT_DOMAIN_IMPORT_RELEVANT_V2" as const;
 export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V3 = "OBJECT_DOMAIN_IMPORT_RELEVANT_V3" as const;
+export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4 = "OBJECT_DOMAIN_IMPORT_RELEVANT_V4" as const;
 export const OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256 = "487f098d9d8357bbe636b91766dd07f24618b350e449510f52f266fd2b80a861" as const;
 export type ObjectDomainImportSemanticComponent = "identityBindings" | "objectModel" | "disposition" | "fieldMap";
 
@@ -205,8 +206,12 @@ function parseSemanticDocument(documentText: string): Record<string, unknown> {
 }
 
 function preserveFrozenV1ObjectModel(table: Record<string, unknown>, projectionVersion: string): Record<string, unknown> {
-  if (table.table === "canonical_pet_skill_definitions" && Array.isArray(table.columns)) {
+  if (projectionVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4 && table.table === "canonical_pet_skill_definitions" && Array.isArray(table.columns)) {
     const runtimeOnlyColumns=new Set(["legacy_source_key","display_order","base_draw_rate","fixed_draw_rate_flag","openable_flag","pet_skill_grade_emoji","required_tier_name","tier_exclusive_flag","equip_description"]);
+    if (projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION) {
+      runtimeOnlyColumns.add("raid_charm_bonus");
+      runtimeOnlyColumns.add("castle_charm_bonus");
+    }
     const {uniqueKeys:_runtimeOnlyUniqueKeys,...frozen}=table;
     return{...frozen,columns:table.columns.filter((column)=>column!==null&&!Array.isArray(column)&&typeof column==="object"&&!runtimeOnlyColumns.has(String((column as Record<string,unknown>).name))),definitionOnlyColumns:Array.isArray(table.definitionOnlyColumns)?table.definitionOnlyColumns.filter((name)=>!runtimeOnlyColumns.has(String(name))):table.definitionOnlyColumns};
   }
@@ -259,7 +264,8 @@ export function calculateObjectDomainImportContractSemanticSha256(documentText: 
   const v1Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION && Array.isArray(compatible) && compatible.length === 1 && compatible[0] === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
   const v2Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2 && Array.isArray(compatible) && compatible.length === 0;
   const v3Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V3 && Array.isArray(compatible) && compatible.length === 0;
-  if ((!v1Compatible && !v2Compatible && !v3Compatible) || typeof expectedProjectionSha256 !== "string" || !HASH.test(expectedProjectionSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
+  const v4Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4 && Array.isArray(compatible) && compatible.length === 0;
+  if ((!v1Compatible && !v2Compatible && !v3Compatible && !v4Compatible) || typeof expectedProjectionSha256 !== "string" || !HASH.test(expectedProjectionSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
   const { semanticHashPolicy: _semanticHashPolicy, ...importRelevantContract } = document;
   const actual = sha256(stableDomainImportJson({ projectionVersion, contract: importRelevantContract }));
   if (actual !== expectedProjectionSha256 || actual === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_PROJECTION_DRIFT");
