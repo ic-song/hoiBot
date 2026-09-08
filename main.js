@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.471"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.472"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -7736,27 +7736,45 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     data.member[sender].cntlike = 0;
                 }
 
-                if (msg === "/선물전달" && sender == "호이 남") {
-                    for (let user in data.member) {
-                        if (data.member[user].bag["호이응원패키지(무료)🐹[2]"]) {
-                            data.member[user].bag["호이응원패키지(무료)🐹[2]"]++;
-                        } else {
-                            data.member[user].bag["호이응원패키지(무료)🐹[2]"] = 1;
-                        }
+                if (msg === "/선물전달" || /^\/선물전달\s+.+\/\d+$/.test(msg)) {
+                    if (sender !== "호이 남") {
+                        replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
+                        return;
                     }
-                    var message = "호이응원패키지(무료)🐹[2] 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!\n\n 사용 방법:\n1. /패키지가방\n/패키지사용 [가방번호] [오픈갯수]";
-                    Api.replyRoom(room1, message);
-                    Api.replyRoom(room2, message);
-                    Api.replyRoom(room3, message);
-                    Api.replyRoom(room5, message);
-                    Api.replyRoom(room6, message);
-                    Api.replyRoom(room7, message);
-                    Api.replyRoom(room10, message);
-                    //  Api.replyRoom(room9, message);
-                    Api.replyRoom(room11, message);
-                    Api.replyRoom(room12, message);
-                    Api.replyRoom(room13, message);
-                    Api.replyRoom(room90, message);
+                    var giftMatch = msg.match(/^\/선물전달\s+(.+)\/(\d+)$/);
+                    if (!giftMatch) {
+                        replier.reply("사용법: /선물전달 아이템이름/갯수\n예시: /선물전달 미니펫뽑기🐹(/미니펫오픈)/1000");
+                        return;
+                    }
+                    var giftItemName = giftMatch[1].trim();
+                    var giftItemCount = parseInt(giftMatch[2], 10);
+                    if (!giftItemName || !isFinite(giftItemCount) || giftItemCount < 1) {
+                        replier.reply("❌ 아이템이름과 1개 이상의 지급 수량을 확인해주세요.");
+                        return;
+                    }
+                    var giftRecipientCount = 0;
+                    for (var giftUser in data.member) {
+                        addItem(data, giftUser, giftItemName, giftItemCount);
+                        giftRecipientCount++;
+                    }
+                    if (giftRecipientCount < 1) {
+                        replier.reply("지급 가능한 사용자가 없습니다.");
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    var giftMessage = "🎁 전체 선물이 도착했습니다!\n━━━━━━━━━━━━\n" + giftItemName + " " + numberWithCommas(giftItemCount) + "개가 지급되었습니다.\n\n가방을 확인해주세요.";
+                    Api.replyRoom(room1, giftMessage);
+                    Api.replyRoom(room2, giftMessage);
+                    Api.replyRoom(room3, giftMessage);
+                    Api.replyRoom(room5, giftMessage);
+                    Api.replyRoom(room6, giftMessage);
+                    Api.replyRoom(room7, giftMessage);
+                    Api.replyRoom(room10, giftMessage);
+                    //  Api.replyRoom(room9, giftMessage);
+                    Api.replyRoom(room11, giftMessage);
+                    Api.replyRoom(room12, giftMessage);
+                    Api.replyRoom(room13, giftMessage);
+                    Api.replyRoom(room90, giftMessage);
                 }
                 if (msg === "/선물삭제" && (isAdmin(sender) || isMaster(sender))) {
                     var freeSupportPackageDeleteResult = removeAllHoiFreeSupportPackages(data);

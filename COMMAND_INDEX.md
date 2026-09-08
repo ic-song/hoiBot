@@ -6533,6 +6533,41 @@ Status: VERIFIED
 
 ---
 
+# /선물전달
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/선물전달`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `addItem`
+- `numberWithCommas`
+
+## Data Usage
+
+- `data.member[*].bag[입력한 아이템이름]`
+
+## Save Flow
+
+- `/선물전달 아이템이름/갯수`는 전체 가입자의 가방에 입력 아이템을 지급한 뒤 `filePath`를 한 번 저장한다.
+
+## AI Notes
+
+- 사용 권한은 `호이 남`으로 유지한다.
+- 인자 없는 `/선물전달`은 사용법만 출력하며 지급하지 않는다.
+- 아이템명 내부의 `/관련명령어` 표기는 유지하고 마지막 `/숫자`만 지급 수량으로 분리한다.
+- 지급 완료 후 기존 공지 대상 전체 방과 GM 관리자방에 동적 지급 내역을 안내한다.
+- `호이의 봉인금고🔒(/봉인금고오픈 숫자)`처럼 명령어 표기가 포함된 공식 아이템명도 그대로 지급할 수 있다.
+
+---
+
 # /기도
 
 Status: VERIFIED
