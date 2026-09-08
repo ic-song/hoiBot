@@ -686,9 +686,11 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 ## Modification Permission
 
 - May update the selected Notion item's `상태`, `운영 반영예정일`, `운영반영일`, and `운영반영버전` properties when the workflow rules authorize the change.
+- May remove non-binding implementation suggestions from the selected planning page during planning review and synchronize that page's planning content with verified user-visible behavior after production reflection.
 - May rename a specifically requested Notion property or backfill that property across matching planning DB items only when the user explicitly requests the schema or bulk-data change.
 - MUST NOT modify repository files, Git branches, commits, or production state.
-- MUST NOT change Notion page content or unrelated properties unless the user explicitly requests it.
+- MUST NOT add internal variable names, helper names, storage schemas, save flows, or separate implementation-record sections to planning content.
+- MUST NOT change unrelated Notion page content or properties unless the user explicitly requests it.
 
 ## Rules
 
@@ -696,6 +698,8 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - If multiple target items exist, list them and wait for the user's selection; do not update all candidates.
 - Treat `운영 반영예정일` as text; when it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only, and do not write or backfill that phrase into Notion.
 - Never store `즉시 반영 필요` in the date-type `운영반영일` property.
+- During planning review, remove initial variable names, helper names, JSON or storage structures, locking, save-order, and code-structure suggestions. Do not replace them with guessed implementation details, and do not change READY/HOTFIX status merely because the cleanup is complete.
+- After `origin/feature/prod` verification, synchronize the same page's purpose, commands, formulas, limits, rewards or costs, UI, exceptions, acceptance criteria, and operational policy with the actual developed user-visible behavior. Remove planned behavior that was not developed.
 - Do not change READY/HOTFIX items to DEV until implementation, validation, source-branch push, and `feature/prod` reflection are all complete.
 - When changing `상태` from READY/HOTFIX to DEV after `origin/feature/prod` verification, set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`) and set `운영반영버전` to the exact `ver_<HoiBotVersion>` verified in production.
 - Treat the `상태`, `운영반영일`, and `운영반영버전` updates as one operation and verify all three values after updating.
