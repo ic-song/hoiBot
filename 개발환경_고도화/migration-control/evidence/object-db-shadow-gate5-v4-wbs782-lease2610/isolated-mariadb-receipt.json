@@ -1,0 +1,16 @@
+{
+  "format": "hoibot-object-db-shadow-gate5-v4-receipt-v1",
+  "payload": {
+    "migrationCount": 478,
+    "registeredMigrationCount": 39,
+    "registeredTableCount": 119,
+    "effectiveColumnCount": 263,
+    "directTargetCount": 47,
+    "shadowTargetCount": 45,
+    "schemaFingerprint": "b029d42bc19e3d7e65e51fb6d17e19f0ff1ca99dcc6a16360757dce96c30ea6b",
+    "rowFingerprint": "a145b1893b1f2cb87a686b361ebd167914f2f144023e72e27078d774fae2856e",
+    "projectionFingerprint": "8f2984f17e4a1a08dbb98c3d4434e5652130c439f38fb5a816991e12e4744452",
+    "sideEffectFingerprint": "9b85d47f3f4dc8494d13e2b63abe9d48ec3df9d9452f1346813c20af60a71b22"
+  },
+  "payloadSha256": "b59601b67ab1fb0c90f957855244386eb7ea9c3d1bd2fd6334c7867a85ee3884"
+}
