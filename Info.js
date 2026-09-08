@@ -42,6 +42,9 @@ const GLOBAL_CONFIG = {
 		evolutionRequiredExp: 10, // 알 진화 필요 매력치
 		totalCharmPerUpgrade: 1000 // 종합매력 계산 시 펫강화 1강당 반영 매력
 	},
+	pendant: { // 펜던트 시스템 설정
+		promotionCharmPerLevel: 5000000 // 승급 1단계당 종합매력
+	},
 	happyFoundation: { // 호이행복재단 설정
 		transferFeeMax: 16 // 이체 수수료 최대 설정값
 	},
@@ -1229,10 +1232,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (petInfo.pendant) {
 				var pendantDurability = "";
 				if (petInfo.pendant.durability !== undefined && petInfo.pendant.maxDurability !== undefined) {
-					pendantDurability = "[⚒️" + petInfo.pendant.durability + "/" + petInfo.pendant.maxDurability + "]";
+					pendantDurability = "⚒️" + petInfo.pendant.durability + "/" + petInfo.pendant.maxDurability;
 				}
 				var pendantUpgrade = petInfo.pendant.upgrade !== undefined ? petInfo.pendant.upgrade : 0;
-				resultMsg += "펜던트💎: " + petInfo.pendant.name + "[" + petInfo.pendant.grade + "]" + pendantDurability + "(+" + pendantUpgrade + ")\n";
+				var pendantPromotionLevel = Math.max(0, parseInt(petInfo.pendant.promotionLevel || 0, 10) || 0);
+				var pendantDisplayName = petInfo.pendant.name || "";
+				var pendantDisplayIcon = petInfo.pendant.icon || "";
+				if (pendantDisplayIcon && pendantDisplayName.substring(pendantDisplayName.length - pendantDisplayIcon.length) !== pendantDisplayIcon) pendantDisplayName += pendantDisplayIcon;
+				var pendantDisplayGrade = petInfo.pendant.grade + (pendantPromotionLevel > 0 ? "★" + pendantPromotionLevel : "");
+				resultMsg += "펜던트💎: " + pendantDisplayName + "[" + pendantDisplayGrade + "]" + (pendantDurability ? "[" + pendantDurability + "]" : "") + "(+" + pendantUpgrade + ")\n";
 			} else {
 				resultMsg += "펜던트💎: 현재 펜던트가 없습니다.\n";
 			}
@@ -1766,12 +1774,29 @@ function generateElementalRanking(petData, members) {
 	};
 }
 
-// 장착 홈뱃지의 실제 큐브 옵션 수치를 회원 데이터에서 반환하는 함수
-function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
+// 회원 데이터의 대표·보조 홈뱃지 슬롯을 기존 단일 필드와 호환되게 반환하는 함수
+function getInfoHomeBadgeCubeEquippedBadgeIds(store) {
+	if (!store) return [null, null];
+	var ids = store.equippedBadgeIds instanceof Array && store.equippedBadgeIds.length === 2
+		? [store.equippedBadgeIds[0] || null, store.equippedBadgeIds[1] || null]
+		: [store.equippedBadgeId || null, null];
+	if (ids[0] && ids[0] === ids[1]) ids[1] = null;
+	if (!ids[0] && ids[1]) {
+		ids[0] = ids[1];
+		ids[1] = null;
+	}
+	return ids;
+}
+
+// 장착 홈뱃지 한 슬롯의 실제 큐브 옵션 수치를 반환하는 함수
+function getInfoHomeBadgeCubeSlotOptionPercent(data, user, slotIndex, optionKey) {
+	if (slotIndex === 1 && optionKey !== "castle" && optionKey !== "raid") return 0;
 	var member = data && data.member ? data.member[user] : null;
 	var store = member && member.homeBadgeCube && typeof member.homeBadgeCube === "object" ? member.homeBadgeCube : null;
-	if (!store || !store.equippedBadgeId) return 0;
-	var record = store.badges && store.badges[store.equippedBadgeId] ? store.badges[store.equippedBadgeId] : null;
+	var equippedBadgeIds = getInfoHomeBadgeCubeEquippedBadgeIds(store);
+	var badgeId = equippedBadgeIds[slotIndex];
+	if (!store || !badgeId) return 0;
+	var record = store.badges && store.badges[badgeId] ? store.badges[badgeId] : null;
 	var optionKeys = ["castle", "raid", "petUpgrade", "explore"];
 	var total = 0;
 	for (var i = 0; i < optionKeys.length; i++) {
@@ -1781,6 +1806,13 @@ function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
 	var appliedValue = total >= 100 ? Math.round(value * 11) / 10 : value;
 	if (isInfoSupportPassActive(data, user, "premium")) appliedValue += GLOBAL_CONFIG.supportPass.premium.cubeOptionBonusPercent;
 	return appliedValue;
+}
+
+// 대표·보조 홈뱃지의 실제 적용 큐브 옵션 합계를 반환하는 함수
+function getHomeBadgeCubeActiveOptionPercent(data, user, optionKey) {
+	var total = getInfoHomeBadgeCubeSlotOptionPercent(data, user, 0, optionKey);
+	if (optionKey === "castle" || optionKey === "raid") total += getInfoHomeBadgeCubeSlotOptionPercent(data, user, 1, optionKey);
+	return total;
 }
 
 function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
@@ -2093,8 +2125,8 @@ function generateCastleRanking(petData, data, homeData, guildData) {
 			((petData[b] && petData[b].miniPet && petData[b].miniPet.castleExp) || 0) +
 			getHomeTotalExp(homeData, b) +
 			getUserIntimacyInfo(data, b).exp;
-		castleExpA = Math.floor(castleExpA * (1 + getGuildContributionCubeMemberPercent(data, guildData, a, "castle") / 100));
-		castleExpB = Math.floor(castleExpB * (1 + getGuildContributionCubeMemberPercent(data, guildData, b, "castle") / 100));
+		castleExpA = Math.floor(castleExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "castle") + getGuildContributionCubeMemberPercent(data, guildData, a, "castle")) / 100));
+		castleExpB = Math.floor(castleExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "castle") + getGuildContributionCubeMemberPercent(data, guildData, b, "castle")) / 100));
 		return castleExpB - castleExpA;
 	});
 	let rankingMsg1 = "";
@@ -2112,7 +2144,7 @@ function generateCastleRanking(petData, data, homeData, guildData) {
 				homeExp +
 				intimacyExp
 		);
-		totalCastleExp = Math.floor(totalCastleExp * (1 + getGuildContributionCubeMemberPercent(data, guildData, username, "castle") / 100));
+		totalCastleExp = Math.floor(totalCastleExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "castle") + getGuildContributionCubeMemberPercent(data, guildData, username, "castle")) / 100));
 
 		if (totalCastleExp > 5) {
 			let rankEmoji = getRankEmoji(i + 1);
@@ -2141,8 +2173,8 @@ function generateRaidRanking(petData, data, homeData, guildData) {
 
 		var raidExpA = (calculateItemInfoAll(a, data, petData).raidExp || 0) + (petA.petexp || 0) + miniExpA + getHomeTotalExp(homeData, a);
 		var raidExpB = (calculateItemInfoAll(b, data, petData).raidExp || 0) + (petB.petexp || 0) + miniExpB + getHomeTotalExp(homeData, b);
-		raidExpA = Math.floor(raidExpA * (1 + getGuildContributionCubeMemberPercent(data, guildData, a, "raid") / 100));
-		raidExpB = Math.floor(raidExpB * (1 + getGuildContributionCubeMemberPercent(data, guildData, b, "raid") / 100));
+		raidExpA = Math.floor(raidExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "raid") + getGuildContributionCubeMemberPercent(data, guildData, a, "raid")) / 100));
+		raidExpB = Math.floor(raidExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "raid") + getGuildContributionCubeMemberPercent(data, guildData, b, "raid")) / 100));
 
 		return raidExpB - raidExpA;
 	});
@@ -2156,7 +2188,7 @@ function generateRaidRanking(petData, data, homeData, guildData) {
 		var miniPetExp = petInfo.miniPet && petInfo.miniPet.raidExp ? petInfo.miniPet.raidExp : 0;
 		var homeExp = getHomeTotalExp(homeData, username);
 		var totalRaidExp = Math.round((petInfo.petexp || 0) + (calculateItemInfoAll(username, data, petData).raidExp || 0) + miniPetExp + homeExp);
-		totalRaidExp = Math.floor(totalRaidExp * (1 + getGuildContributionCubeMemberPercent(data, guildData, username, "raid") / 100));
+		totalRaidExp = Math.floor(totalRaidExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "raid") + getGuildContributionCubeMemberPercent(data, guildData, username, "raid")) / 100));
 
 		if (totalRaidExp > 5) {
 			var rankEmoji = getRankEmoji(i + 1);
@@ -2657,206 +2689,209 @@ function generateBagOutput(bagItems) {
 	if (bagItems && Object.keys(bagItems).length > 0) {
 		bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
 
-		var specialItems = [
-			"자동탐험권🌄",
-			"자동일퀘권📝",
-			GLOBAL_CONFIG.freeMarket.memberTicketItemName,
-			"확성기📢(/알림 내용 30자)",
-			"티어 승급티켓🎟",
-			"고급 티어 승급티켓🎫",
-			"펜던트뽑기💎(/펜던트오픈)",
-			"펜던트 강화석📿",
-			"펜던트 복원석🔷",
-			"펜던트귀속해제💎(/펜던트해제)",
-			"다이아상자💎(/다이아상자오픈)",
-			"1억포인트상자🪙(/포인트상자오픈)",
-			"럭키박스🍀(/럭키오픈)",
-			"혼자레이드리셋권😝",
-			"펫 강화석⭐",
-			"펫강화확률UP🌟(3%)",
-			"펫강화확률UP🌟(5%)",
-			"펫강화확률UP🌟(10%)",
-			"펫강화확률UP🌟(15%)",
-			"펫강화확률UP🌟(20%)",
-			"펫강화확률UP🌟(25%)",
-			"펫강화확률UP🌟(30%)",
-			"펫강화확률UP🌟(35%)",
-			"펫강화확률UP🌟(40%)",
-			"펫강화확률UP🌟(45%)",
-			"펫강화확률UP🌟(50%)",
-			"펫강화확률UP🌟(55%)",
-			"펫강화확률UP🌟(60%)",
-			"펫강화확률UP🌟(65%)",
-			"펫강화확률UP🌟(70%)",
-			"펫강화확률UP🌟(75%)",
-			"펫강화확률UP🌟(80%)",
-			"펫강화확률UP🌟(85%)",
-			"펫강화확률UP🌟(90%)",
-			"펫강화확률UP🌟(95%)",
-			"펫강화확률UP🌟(100%)",
+	    var specialItems = [
+            "자동탐험권🌄",
+            "자동일퀘권📝",
+            GLOBAL_CONFIG.freeMarket.memberTicketItemName,
+            "확성기📢(/알림 내용 30자)",
+            "티어 승급티켓🎟",
+            "고급 티어 승급티켓🎫",
+            GLOBAL_CONFIG.items.pendantOpenTicketName,
+            GLOBAL_CONFIG.items.pendantEnhanceStoneName,
+            GLOBAL_CONFIG.items.pendantRestoreStoneName,
+            GLOBAL_CONFIG.items.pendantUnbindItemName,
+            "다이아상자💎(/다이아상자오픈)",
+            "1억포인트상자🪙(/포인트상자오픈)",
+            "럭키박스🍀(/럭키오픈)",
+            "혼자레이드리셋권😝",
+            "펫 강화석⭐",
+            "펫강화확률UP🌟(3%)",
+            "펫강화확률UP🌟(5%)",
+            "펫강화확률UP🌟(10%)",
+            "펫강화확률UP🌟(15%)",
+            "펫강화확률UP🌟(20%)",
+            "펫강화확률UP🌟(25%)",
+            "펫강화확률UP🌟(30%)",
+            "펫강화확률UP🌟(35%)",
+            "펫강화확률UP🌟(40%)",
+            "펫강화확률UP🌟(45%)",
+            "펫강화확률UP🌟(50%)",
+            "펫강화확률UP🌟(55%)",
+            "펫강화확률UP🌟(60%)",
+            "펫강화확률UP🌟(65%)",
+            "펫강화확률UP🌟(70%)",
+            "펫강화확률UP🌟(75%)",
+            "펫강화확률UP🌟(80%)",
+            "펫강화확률UP🌟(85%)",
+            "펫강화확률UP🌟(90%)",
+            "펫강화확률UP🌟(95%)",
+            "펫강화확률UP🌟(100%)",
 
-			"미니펫 강화석💫",
-			"미니펫강화확률UP🐷(3%)",
-			"미니펫강화확률UP🐷(5%)",
-			"미니펫강화확률UP🐷(10%)",
-			"미니펫강화확률UP🐷(15%)",
-			"미니펫강화확률UP🐷(20%)",
-			"미니펫강화확률UP🐷(25%)",
-			"미니펫강화확률UP🐷(30%)",
-			"미니펫강화확률UP🐷(35%)",
-			"미니펫강화확률UP🐷(40%)",
-			"미니펫강화확률UP🐷(45%)",
-			"미니펫강화확률UP🐷(50%)",
-			"미니펫강화확률UP🐷(55%)",
-			"미니펫강화확률UP🐷(60%)",
-			"미니펫강화확률UP🐷(65%)",
-			"미니펫강화확률UP🐷(70%)",
-			"미니펫강화확률UP🐷(75%)",
-			"미니펫강화확률UP🐷(80%)",
-			"미니펫강화확률UP🐷(85%)",
-			"미니펫강화확률UP🐷(90%)",
-			"미니펫강화확률UP🐷(95%)",
-			"미니펫강화확률UP🐷(100%)",
+            "미니펫 강화석💫",
+            "미니펫강화확률UP🐷(3%)",
+            "미니펫강화확률UP🐷(5%)",
+            "미니펫강화확률UP🐷(10%)",
+            "미니펫강화확률UP🐷(15%)",
+            "미니펫강화확률UP🐷(20%)",
+            "미니펫강화확률UP🐷(25%)",
+            "미니펫강화확률UP🐷(30%)",
+            "미니펫강화확률UP🐷(35%)",
+            "미니펫강화확률UP🐷(40%)",
+            "미니펫강화확률UP🐷(45%)",
+            "미니펫강화확률UP🐷(50%)",
+            "미니펫강화확률UP🐷(55%)",
+            "미니펫강화확률UP🐷(60%)",
+            "미니펫강화확률UP🐷(65%)",
+            "미니펫강화확률UP🐷(70%)",
+            "미니펫강화확률UP🐷(75%)",
+            "미니펫강화확률UP🐷(80%)",
+            "미니펫강화확률UP🐷(85%)",
+            "미니펫강화확률UP🐷(90%)",
+            "미니펫강화확률UP🐷(95%)",
+            "미니펫강화확률UP🐷(100%)",
 
-			"미니펫대전리셋권🐹",
-			"미니펫뽑기🐹(/미니펫오픈)",
-			"미니펫외형변경권😺(/미니펫외형)",
-			"미니펫이름변경권🙀(/미니펫이름)",
-			"미니펫귀속해제권🐰(/귀속해제)",
+            "미니펫대전리셋권🐹",
+            "미니펫뽑기🐹(/미니펫오픈)",
+            "미니펫외형변경권😺(/미니펫외형)",
+            "미니펫이름변경권🙀(/미니펫이름)",
+            "미니펫귀속해제권🐰(/귀속해제)",
 
-			"후원 지원금👌",
+            "후원 지원금👌",
 
-			GLOBAL_CONFIG.titleGift.itemName,
-			"펫타이틀권🦊(/펫타이틀이름)",
-			GLOBAL_CONFIG.petSkill.bookItemName,
-			"펫스킬북 조각📙",
-			GLOBAL_CONFIG.petSkill.unbindItemName,
-			GLOBAL_CONFIG.petSkill.oldTraitBookItemName,
-			"반지 이름변경권🗯(/반지이름)",
-			"정령 이름변경권📝(/정령이름)",
+            GLOBAL_CONFIG.titleGift.itemName,
+            "펫타이틀권🦊(/펫타이틀이름)",
+            GLOBAL_CONFIG.petSkill.bookItemName,
+            "펫스킬북 조각📙",
+            GLOBAL_CONFIG.petSkill.unbindItemName,
+            GLOBAL_CONFIG.petSkill.oldTraitBookItemName,
+            "반지 이름변경권🗯(/반지이름)",
+            "정령 이름변경권📝(/정령이름)",
 
-			"잡템☠️",
-			"잡템상자☠",
-			"양념치킨🐔",
-			"치킨상자🐔",
-			"정령조각🥀",
-			"정령상자🥀",
-			"랜덤박스💝",
-			"극락상자👹",
-			"나락상자👹",
-			"선물상자🎁",
-			"우표💌",
+            "잡템☠️",
+            "잡템상자☠",
+            "양념치킨🐔",
+            "치킨상자🐔",
+            "정령조각🥀",
+            "정령상자🥀",
+            "랜덤박스💝",
+            "극락상자👹",
+            "나락상자👹",
+            "선물상자🎁",
+            "우표💌",
 
-			GLOBAL_CONFIG.items.carrotName,
-			GLOBAL_CONFIG.items.carrotThermometerName,
+            GLOBAL_CONFIG.items.carrotName,
+            GLOBAL_CONFIG.items.carrotThermometerName,
 
-			"마정석상자🔮",
-			"마정석🔮",
-			"시탑 부스터🔮",
-			"시탑 공략서📜",
-			"시련의탑리셋권😈",
+            "마정석상자🔮",
+            "마정석🔮",
+            "시탑 부스터🔮",
+            "시탑 공략서📜",
+            "시련의탑리셋권😈",
 
-			"레이드타격대인장👑(+600👾)",
-			"캐슬대전리셋권🐶",
-			"캐슬코인🥇",
-			"캐슬공격권⚔",
-			"영지공격권⚔",
-			"펫먹이🍼",
-			"펫먹이상자📦(/상자오픈)",
-			"펫먹이특식🥡(/특식오픈)",
+            "레이드타격대인장👑(+600👾)",
+            "캐슬대전리셋권🐶",
+            "캐슬코인🥇",
+            "캐슬공격권⚔",
+            "영지공격권⚔",
+            "펫먹이🍼",
+            "펫먹이상자📦(/상자오픈)",
+            "펫먹이특식🥡(/특식오픈)",
 
-			"정령 강화석🥀",
-			"정령강화확률UP🥀(3%)",
-			"정령강화확률UP🥀(5%)",
-			"정령강화확률UP🥀(10%)",
-			"정령강화확률UP🥀(15%)",
-			"정령강화확률UP🥀(20%)",
-			"정령강화확률UP🥀(25%)",
-			"정령강화확률UP🥀(30%)",
-			"정령강화확률UP🥀(35%)",
-			"정령강화확률UP🥀(40%)",
-			"정령강화확률UP🥀(45%)",
-			"정령강화확률UP🥀(50%)",
-			"정령강화확률UP🥀(55%)",
-			"정령강화확률UP🥀(60%)",
-			"정령강화확률UP🥀(65%)",
-			"정령강화확률UP🥀(70%)",
-			"정령강화확률UP🥀(75%)",
-			"정령강화확률UP🥀(80%)",
-			"정령강화확률UP🥀(85%)",
-			"정령강화확률UP🥀(90%)",
-			"정령강화확률UP🥀(95%)",
-			"정령강화확률UP🥀(100%)",
+            "정령 강화석🥀",
+            "정령강화확률UP🥀(3%)",
+            "정령강화확률UP🥀(5%)",
+            "정령강화확률UP🥀(10%)",
+            "정령강화확률UP🥀(15%)",
+            "정령강화확률UP🥀(20%)",
+            "정령강화확률UP🥀(25%)",
+            "정령강화확률UP🥀(30%)",
+            "정령강화확률UP🥀(35%)",
+            "정령강화확률UP🥀(40%)",
+            "정령강화확률UP🥀(45%)",
+            "정령강화확률UP🥀(50%)",
+            "정령강화확률UP🥀(55%)",
+            "정령강화확률UP🥀(60%)",
+            "정령강화확률UP🥀(65%)",
+            "정령강화확률UP🥀(70%)",
+            "정령강화확률UP🥀(75%)",
+            "정령강화확률UP🥀(80%)",
+            "정령강화확률UP🥀(85%)",
+            "정령강화확률UP🥀(90%)",
+            "정령강화확률UP🥀(95%)",
+            "정령강화확률UP🥀(100%)",
 
-			"반지 강화석💍",
-			"반지강화확률UP💍(3%)",
-			"반지강화확률UP💍(5%)",
-			"반지강화확률UP💍(10%)",
-			"반지강화확률UP💍(15%)",
-			"반지강화확률UP💍(20%)",
-			"반지강화확률UP💍(25%)",
-			"반지강화확률UP💍(30%)",
-			"반지강화확률UP💍(35%)",
-			"반지강화확률UP💍(40%)",
-			"반지강화확률UP💍(45%)",
-			"반지강화확률UP💍(50%)",
-			"반지강화확률UP💍(55%)",
-			"반지강화확률UP💍(60%)",
-			"반지강화확률UP💍(65%)",
-			"반지강화확률UP💍(70%)",
-			"반지강화확률UP💍(75%)",
-			"반지강화확률UP💍(80%)",
-			"반지강화확률UP💍(85%)",
-			"반지강화확률UP💍(90%)",
-			"반지강화확률UP💍(95%)",
-			"반지강화확률UP💍(100%)",
+            "반지 강화석💍",
+            "반지강화확률UP💍(3%)",
+            "반지강화확률UP💍(5%)",
+            "반지강화확률UP💍(10%)",
+            "반지강화확률UP💍(15%)",
+            "반지강화확률UP💍(20%)",
+            "반지강화확률UP💍(25%)",
+            "반지강화확률UP💍(30%)",
+            "반지강화확률UP💍(35%)",
+            "반지강화확률UP💍(40%)",
+            "반지강화확률UP💍(45%)",
+            "반지강화확률UP💍(50%)",
+            "반지강화확률UP💍(55%)",
+            "반지강화확률UP💍(60%)",
+            "반지강화확률UP💍(65%)",
+            "반지강화확률UP💍(70%)",
+            "반지강화확률UP💍(75%)",
+            "반지강화확률UP💍(80%)",
+            "반지강화확률UP💍(85%)",
+            "반지강화확률UP💍(90%)",
+            "반지강화확률UP💍(95%)",
+            "반지강화확률UP💍(100%)",
 
-			"보물지도🗺️",
-			"펫던전 입장권🌋",
-			"미궁 입장권🕋",
-			"탐험확률UP🗻(50%)",
-			"탐험확률UP🗻(40%)",
-			"탐험확률UP🗻(30%)",
-			"탐험확률UP🗻(20%)",
-			"탐험확률UP🗻(10%)",
+            "보물지도🗺️",
+            "펫던전 입장권🌋",
+            "미궁 입장권🕋",
+            "탐험확률UP🗻(50%)",
+            "탐험확률UP🗻(40%)",
+            "탐험확률UP🗻(30%)",
+            "탐험확률UP🗻(20%)",
+            "탐험확률UP🗻(10%)",
 
-			"영지기습공격권🔥(10%)",
-			"영지기습공격권🔥(40%)",
-			"영지절대방어권🛡(20%)",
-			"영지절대방어권🛡(50%)",
-			"🌋 대균열 유도권(/대균열)",
+            "영지기습공격권🔥(10%)",
+            "영지기습공격권🔥(40%)",
+            "영지절대방어권🛡(20%)",
+            "영지절대방어권🛡(50%)",
+            "🌋 대균열 유도권(/대균열)",
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
             "🚑 전쟁불안정 감소권(/안정)",
+            "만능상자🔐(/만능상자오픈 숫자)",
+            "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)",
+            "펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)",
 
-			"캐슬고급유닛🧙🏼‍♂(+50💕)",
-			"캐슬레어유닛⭐(+100💕)",
-			"캐슬유니크유닛👑(+200💕)",
-			"캐슬영웅유닛💠(+300💕)",
-			"캐슬전설유닛🧝🏻‍♀(+500💕)",
-			"캐슬신화유닛🧚🏻‍♀(+1000💕)",
-			"캐슬불멸유닛🐉(+1500💕)",
-			"캐슬불사조유닛🐦‍🔥(+6000💕)",
+            "캐슬고급유닛🧙🏼‍♂(+50💕)",
+            "캐슬레어유닛⭐(+100💕)",
+            "캐슬유니크유닛👑(+200💕)",
+            "캐슬영웅유닛💠(+300💕)",
+            "캐슬전설유닛🧝🏻‍♀(+500💕)",
+            "캐슬신화유닛🧚🏻‍♀(+1000💕)",
+            "캐슬불멸유닛🐉(+1500💕)",
+            "캐슬불사조유닛🐦‍🔥(+6000💕)",
 
-			"돌멩이🪨",
-			"땅문서📜",
-			"펫스윗홈인테리어샵🖼️(/샵오픈)",
-			"길드공헌훈장🌟(/길드공헌 숫자)",
-			"길드창고패키지🧳(/길드창고패키지오픈)",
-			"길드가입권🍭(/길드가입 숫자)",
-			"길드탈퇴권👋(/길드탈퇴 길드명)",
-			"길드자원분배🫂(/길드분배)",
-			"길드이름변경권🪧(/길드이름변경 이름)",
-			"길드마크변경권🔖(/길드마크변경 이모지)",
-			"H🐹",
-			"O🐹",
-			"I🐹",
-			"W🐹",
-			"O🐶",
-			"R🐹",
-			"L🐹",
-			"D🐹"
-		];
+            "돌멩이🪨",
+            "땅문서📜",
+            "펫스윗홈인테리어샵🖼️(/샵오픈)",
+            "길드공헌훈장🌟(/길드공헌 숫자)",
+            "길드창고패키지🧳(/길드창고패키지오픈)",
+            "길드가입권🍭(/길드가입 숫자)",
+            "길드탈퇴권👋(/길드탈퇴 길드명)",
+            "길드자원분배🫂(/길드분배)",
+            "길드이름변경권🪧(/길드이름변경 이름)",
+            "길드마크변경권🔖(/길드마크변경 이모지)",
+            "H🐹",
+            "O🐹",
+            "I🐹",
+            "W🐹",
+            "O🐶",
+            "R🐹",
+            "L🐹",
+            "D🐹"
+        ];
 
 		//  0) 펫 친밀도(가변 이름) 키 찾기 → 항상 맨 위로
 		var intimacyItemKey = null;
@@ -3168,7 +3203,8 @@ function getPendantUpgradeCharmForInfo(upgrade) {
 // 펜던트 종합매력을 레이드/캐슬 매력으로 분배
 function calculatePendantItemInfoForInfo(pendant) {
 	if (!pendant) return { battleExp: 0, raidExp: 0, castleExp: 0 };
-	var charm = getPendantBaseCharmForInfo(pendant.grade) + getPendantUpgradeCharmForInfo(pendant.upgrade);
+	var promotionLevel = Math.max(0, parseInt(pendant.promotionLevel || 0, 10) || 0);
+	var charm = getPendantBaseCharmForInfo(pendant.grade) + getPendantUpgradeCharmForInfo(pendant.upgrade) + promotionLevel * GLOBAL_CONFIG.pendant.promotionCharmPerLevel;
 	var raid = Math.floor(charm / 2);
 	return { battleExp: 0, raidExp: raid, castleExp: charm - raid };
 }

@@ -314,7 +314,7 @@ Status: VERIFIED
 | --- | --- | --- |
 | Inventory / bag / trade | `main.js`, `Info.js` | `/가방`, `generateBagOutput`, `/당근`, `/구매` |
 | Guild / territory / warehouse | `main.js`, `Info.js` | `/길드정보`, `/길드목록`, `/길드영지시작`, `ensureGuildTerritoryWar` |
-| Mini-pet / collection | `main.js`, `Info.js` | `/미니펫가방`, `buildMiniPetBagMessage`, `/컬렉션등록`, `/미니펫컬렉션` |
+| Mini-pet / collection | `main.js`, `Info.js` | `/미니펫가방`, `buildMiniPetBagMessage`, `/미니펫컬렉션등록`, `/미니펫컬렉션만능` |
 | Pet skill | `main.js`, `Info.js` | `/펫스정보`, `initPetSkillUser`, `getPetSkillSlotCount`, `/펫스장착` |
 | Sweet home / furniture | `main.js`, `Info.js` | `/가구가방`, `initSweetHomeUser`, `getHomeTotalExp`, `/가구순위` |
 | Ranking / profile / info | `Info.js`, `main.js` | `/내정보`, `/정보 [닉네임]`, `/펫정보`, `calculateTotalExp` |
@@ -378,6 +378,7 @@ Status: VERIFIED
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
+- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `전쟁불안정 감소권` 다음에 `만능상자` → `미니펫컬렉션 만능 열쇠` → `펫스킬컬렉션 만능 열쇠` 순으로 표시한다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
 ---
@@ -454,12 +455,14 @@ Status: VERIFIED
 
 ## Related Commands
 
+- `/미니펫오픈`
 - `/미니펫가방`
 
 ## AI Notes
 
 - 가방 미니펫 강화 중에는 기존 `sortIndex`를 유지하고, `/미니펫가방` 조회 시 매력 기준으로 재정렬한다.
 - 연속 강화는 처음 선택한 가방 번호의 미니펫만 계속 강화해야 한다.
+- `/미니펫오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.miniPet.openMaxCount`에서 관리하며 현재 3,000개다.
 
 ---
 
@@ -500,6 +503,7 @@ Status: VERIFIED
 
 ## Related Commands
 
+- `/샵오픈`
 - `/가구정보`
 - `/가구가방정리`
 - `/가구전체정리`
@@ -515,6 +519,7 @@ Status: VERIFIED
 - `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
+- `/샵오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.furniture.openMaxCount`에서 관리하며 현재 5,000개다.
 
 ---
 
@@ -546,13 +551,16 @@ Status: VERIFIED
 - `/홈뱃지`
 - `/홈뱃지전체`
 - `/홈뱃지정보 [번호|ID|이름]`
+- `/홈뱃지장착`
 - `/홈뱃지장착 [번호|ID]`
-- `/홈뱃지해제`
+- `/홈뱃지장착 [대표뱃지번호] [보조뱃지번호]`
+- `/홈뱃지해제 [대표뱃지번호] [보조뱃지번호]`
+- `홈뱃지교체` / `홈뱃지해제확정` / `홈뱃지취소`
 - `/홈뱃지삭제 [번호|ID]`
 - `/홈뱃지오픈 [숫자]`
 - `/홈뱃지오픈2 [숫자]`
 - `/홈뱃지오픈3 [숫자]`
-- `/홈뱃지큐브 [홈뱃지번호] [옵션번호] [횟수]`
+- `/홈뱃지큐브 [장착슬롯 1|2] [옵션번호] [횟수]`
 - `/큐브확률`
 - `/홈뽑기확률`
 - `/특별뱃지목록`
@@ -650,12 +658,12 @@ Status: VERIFIED
 - `petHomeActivityData.petHomeSocial[target].following`
 - `petHomeActivityData.petHomeSocial[target].badges`
 - `petHomeActivityData.petHomeSocial[target].deletedBadgeIds`
-- `petHomeActivityData.petHomeSocial[target].equippedBadgeId`
+- `petHomeActivityData.petHomeSocial[target].equippedBadgeIds` (`equippedBadgeId` 대표 호환 필드 유지)
 - `petHomeActivityData.petHomeSocial[target].heartUsage`
 - `petHomeActivityData.petHomeSocial[target].feedActivityDates`
 - `petHomeActivityData.petHomeSocial[target].badgeStats`
 - `petHomeActivityData.petHomeSocial[target].specialBadgeLogs`
-- `data.member[target].homeBadgeCube.equippedBadgeId`
+- `data.member[target].homeBadgeCube.equippedBadgeIds` (`equippedBadgeId` 대표 호환 필드 유지)
 - `data.member[target].homeBadgeCube.badges[badgeId]`
 - `petHomeActivityData.migrations.petHomeSocialBadges20260727`
 - Legacy `homeData[target].guestComments` is not changed by `/데이터정리`.
@@ -674,11 +682,11 @@ Status: VERIFIED
 - `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count + 망므📙 5회` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling. 스킬 해제 후에는 이미 사용한 횟수는 유지하고 추가 한도만 즉시 사라진다.
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
 - `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. `/내마음`은 `망므📙` 장착 시 `+5회`를 별도 표시한다. Their standalone guide outputs identify the requesting user with `[checkRank] 님`. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
-- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, 57 original gacha badges, 20 MBTI gacha badges, and 50 relationship-type gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path. These view/equip/unequip/delete commands are available without a hoi/newbie/premium pass. The owned list and every equip/delete/cube command use the fixed `getAllPetHomeBadges()` order, so cube option changes never renumber badges. Representative badge text appends the same stable number as `[N번]`. Each owned badge and cube-result card shows its type/grade, the four numbered cube options one per line, then the achievement or gacha text. The equipped premium badge shows each base value, the `+3%p` premium bonus, and the actual final applied value together.
+- `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, 57 original gacha badges, 20 MBTI gacha badges, and 50 relationship-type gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path. These commands are available without a pass. 장착은 `/홈뱃지장착 [대표뱃지번호] [보조뱃지번호]`로 두 슬롯을 한 번에 지정하며 기존 단일 `/홈뱃지장착 [번호|ID]`는 대표 슬롯으로 호환된다. 해제도 장착된 뱃지번호 1~2개를 지정하고 30초 확인을 거치며, 대표만 제거되면 보조가 자동 승격한다. 같은 뱃지 중복 장착은 거부한다. 캐슬·레이드는 두 슬롯, 펫강화·탐험은 대표 슬롯만 적용하며 뱃지별 기본합계 100% 보정과 프리미엄 +3%p를 독립 계산한다. 보조로 장착된 뱃지의 옵션 카드에는 사용 가능한 1번 캐슬·2번 레이드만 표시하고, 저장된 3·4번 수치는 보존해 대표 장착 시 다시 표시한다.
 - `/홈뱃지오픈` consumes `data.member[sender].bag["홈뱃지뽑기🛡️(/홈뱃지오픈)"]`, opens 1 by default or 1–100 by full numeric guard, runs under the response data write lock, draws C/B/A/S at 55/30/12/3% then uniformly within the grade, stores unique `HB001`–`HB057` IDs in `petHomeActivityFile`, and grants 100,000,000 points immediately for each duplicate. Member points, tickets, and badge data roll back together on save failure. All results are sent in one reply with `allsee` before the fifth draw, and S results send an overall notice.
 - `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뱃지오픈3 [숫자]` opens 1 badge when the count is omitted or accepts a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[3](/홈뱃지오픈3)"]`, runs under the response data write lock, uniformly draws one of 50 `LOVE01`–`LOVE50` relationship-type badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
-- `/홈뱃지큐브 [번호] [옵션] [횟수]` is available without a pass and uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. It allows 1–1,000 tries and stops at the option maximum or cube shortage. Only integer 1% floors such as 23%·24%·25%·26% are protected. When a multi-try command reaches the next floor, its successful decimal result is preserved through the rest of that command; on the next command, failing to reach the following floor returns it to the protected integer. Thus 26.8% without a 27%+ roll returns to 26%, while a 27.3% success remains 27.3% for that command and raises the protected floor to 27%. One roll cannot skip multiple protection bands. Rates from 10.1% through 49.9% are configured as separate 1% bands before selecting a uniform 0.1% value inside the chosen band. Maximums are castle 50%, raid 50%, pet-upgrade 30%, and explore 15%. Each option announces first-time 10% milestones even when a decimal result crosses the milestone. When the four base values total at least 100%, the equipped badge applies `×1.1` to every option. Option 3 multiplies the stored pet-upgrade level by its applied percentage and rounds to the nearest integer for critical and total-charm calculations; it does not change upgrade success probability, cost, or the stored level. While `/디버깅모드` is ON, successful `/홈뱃지장착` sends the test room the four actual applied option percentages plus before/after comparisons for castle/raid charm, effective pet-upgrade level, and the current exploration chance. `/큐브확률` is exact/read-only, available without a pass, and shows every configured 1% range rate to six decimal places with blank lines between high-value groups.
+- `/홈뱃지큐브 [장착슬롯] [옵션] [횟수]` is available without a pass and targets the badge currently in slot 1 or 2. Slot 1 allows options 1–4; support slot 2 allows only castle option 1 and raid option 2. Slot 2 options 3–4 and empty slots are rejected before cube/point mutation. It uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. Each consumed cube grants 500,000 points in the same `member.json` save, and point overflow or save failure rolls the point, cube bag, and cube-option state back together. It allows 1–1,000 tries and preserves the existing option limits, integer protection bands, per-badge `×1.1` total buff, and milestone notices.
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
@@ -714,7 +722,7 @@ Status: VERIFIED
 - Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
-- `/홈뱃지` shows general guides first, keeps the cube guide behind `allsee`, then shows the representative badge, collection summary, and four one-option lines for every owned badge.
+- `/홈뱃지` shows both equipped badge slots and the final applied-effect summary first, inserts `allsee` immediately after that summary, then keeps command guides, cube guides, collection summary, and the owned-badge list folded.
 - Standalone full/special badge lists, badge details, pet-home feed output, and follower/heart/badge ranking output identify the requesting or target user with `[checkRank] 님`.
 - `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.
 - `/특별뱃지목록 [코드]` shows one special badge by `S01` or `[S01]`, while the no-argument command keeps showing all S01–S10 badges.
@@ -987,11 +995,12 @@ Status: VERIFIED
 - `/소드마스터`에서 4번째 소드마스터가 추가될 때 `기사단 증원📙 [체크랭크] 소드마스터가 길드를 위하여 헌신합니다` 멘트를 추가 출력하며, 체크랭크는 추가된 4번째 인원 기준이다
 - 종료되지 않은 공격 결과는 다음 공격자의 턴 안내와 구분선을 결과 본문 앞에 표시한다.
 - 수동 턴은 `[체크랭크] 님의 공격 차례입니다.`, 자동 턴은 `[체크랭크] 님이 자동공격을 진행합니다.`로 표시한다. 자동 공격은 우리 길드 점령지를 제외한 후보에서 예약 시 선택한 영지를 `자동공격 영지`로 안내하고 같은 영지를 실제 공격에 사용한다.
+- 영지공격 후 출력되는 다음 턴 현황 카드는 현재 공격자 문구를 상단에 표시하고, 영지전 상황 아래에도 구분선과 함께 한 번 더 표시한다.
 - 공격 결과 상단에는 수동·자동 여부에 맞는 `상세 결과`와 공격 영지, 길드·확률 보상을 표시하며 기존 전투 및 스킬 발동 내용은 `공격/방어/보상 상세보기` 안에 유지한다.
 - Wrong-turn attacks eliminate the acting user from the current territory-war rotation
 - Wrong-turn attacks subtract `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty` (currently 7) turns from the user's guild when remaining turns are at least the penalty
 - Wrong-turn attacks eliminate the whole guild when remaining turns are less than `GLOBAL_CONFIG.guildTerritory.limits.wrongTurnPenalty`
-- 개인별 영지공격은 본인 차례와 같은 길드 대리 공격을 실제 공격자 기준으로 합산하며, `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 10회까지 가능하다. 초과 시 공격 처리 전에 차단한다.
+- 개인별 영지공격은 본인 차례와 같은 길드 대리 공격을 실제 공격자 기준으로 합산하며, `GLOBAL_CONFIG.guildTerritory.limits.personalAttackLimit` 기준 최대 7회까지 가능하다. 초과 시 공격 처리 전에 차단한다.
 - `/영지공격` is accepted only as `/영지공격 [1-9]`; suffix text such as `/영지공격 2 해봐` must not execute
 - `/영지공격 7` targets 길드영지PT광산🪙. A guild already holding 3 territories is blocked before combat resolution, while the already-counted attack turn remains consumed.
 - `/영지공격 8` triggers 차원의 문 🌀 when enabled: 80% user elimination with 2-turn attack-count penalty, 20% guild attack limit +4
@@ -2184,7 +2193,7 @@ Status: VERIFIED
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
 - `/패키지가방 [아이디]` is Master/Admin-only and reads another user's package bag without mutating or saving data
-- `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then displays current support pass status below the package use guide
+- `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then separates support-pass status from territory attack, pet-Musou preparation, and attendance automation status. 영구 패스는 `영구권 사용 중 [✅]`으로 구분하며, missing or expired entitlements display `이용 불가 [🔒]`; the view is read-only and does not initialize automation data.
 
 ---
 
@@ -2237,7 +2246,7 @@ Status: VERIFIED
 
 ## AI Notes
 - `/패키지가방` displays saved package notices with an `(알림)` prefix.
-- The support pass status section keeps `현재 호월패스🐹 사용중인 목록:` visible and folds the actual pass status rows from the first row with `allsee`.
+- The support pass and automation sections follow `allsee`, show active expiry dates or `사용 중`, and distinguish ON, OFF, and unavailable/locked states without saving data.
 
 ## Related Commands
 - `/패키지가방`
@@ -2291,17 +2300,18 @@ Status: VERIFIED
 
 ## Save Flow
 - 참가, 시작, 공격, 시간 초과, 강제 종료, 전체 초기화 결과는 `member.json`의 기존 DEV/PROD 경로 흐름으로 저장한다.
-- 운영 컨텍스트에서는 KST 기준 매일 12:30에 정규 펫무쌍 시작을 확인하고, 2026-09-06~2026-09-20 티켓 이벤트 기간에 이벤트가 활성화되어 있으면 20:30 시작을 추가한다. 타이머 등록 직후에도 현재 회차를 확인하고 날짜·시각 키로 중복 실행을 막으며 맞짱필드·길드 영지전과 동시 시작하지 않는다.
-- `/티켓이벤트시작`, `/티켓이벤트종료`, `/티켓전체회수`는 이벤트 상태·로그·쿠폰 회수 결과를 `member.json`에 한 번 저장한다. 이벤트 종료만으로 보유 쿠폰을 회수하지 않는다.
+- 운영 컨텍스트에서는 KST 기준 매일 12:30에 정규 펫무쌍 시작을 확인하고, 티켓 이벤트가 활성화되어 있으면 날짜 제한 없이 20:30 시작을 추가한다. 타이머 등록 직후에도 현재 회차를 확인하고 날짜·시각 키로 중복 실행을 막으며 맞짱필드·길드 영지전과 동시 시작하지 않는다.
+- `/티켓이벤트시작`, `/티켓이벤트종료`, `/티켓전체회수`는 이벤트 상태·로그·쿠폰 회수 결과를 `member.json`에 한 번 저장한다. 시작은 운영 기간 제한 없이 가능하며, 이벤트 종료만으로 보유 쿠폰을 회수하지 않는다.
 - `/벼락확률 [0-100]`은 진행 중인 대회의 `lightningRate`만 변경하고 `member.json`을 한 번 저장한다. `dev/` 입력은 기존 DEV 컨텍스트의 `member.json`에만 반영한다.
 - 종합매력과 크리티컬 기준값은 `/펫무쌍시작` 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
 - 다음 회차 준비자와 현재 회차 참가자를 별도 객체로 저장한다. 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
 - 참가 신청 명령은 `/펫무쌍준비`이며 `/펫무쌍참가` 별칭은 사용하지 않는다. `/펫무쌍시작`은 `오픈채팅봇`과 명령어방의 MASTER가 실행할 수 있다.
-- `/펫무쌍준비` 성공 안내의 접힌 영역에는 규칙과 현재 다음 회차 준비자 전원의 체크랭크 목록을 함께 표시하며, 방금 준비한 사용자도 목록에 포함한다.
-- `/펫무쌍시작`은 참가자·전투 스냅샷을 확정한 뒤 30초 준비 유예를 저장하고, 준비 중 공격을 차단한 다음 유예 종료 시 첫 공격자의 15초 타이머를 시작한다. 시작 안내 제목은 `🗡️ 펫 무쌍 대회 시작 🗡️`로 출력하며 기존 제목의 `준비!` 표현만 제거한다. 참가자·공격권·유예시간 등 본문은 `NoticeMsg`로 유지하고, 진행 중 제한 안내와 준비 종료 NoticeMsg는 출력하지 않는다.
+- `/펫무쌍준비` 성공 안내의 접힌 영역에는 규칙과 현재 다음 회차 준비자 전원의 체크랭크 목록을 함께 표시하며, 방금 준비한 사용자도 목록에 포함한다. 강제 종료·공격 소진·시간초과로 대회가 끝나면 프리미엄 자동 준비 ON 이용자를 다음 회차에 즉시 등록하고 종료 결과에 등록·제외·실패 인원을 표시한다.
+- `/펫무쌍시작`은 참가자·전투 스냅샷을 확정한 뒤 30초 준비 유예를 저장하고, 준비 중 공격을 차단한 다음 유예 종료 시 첫 공격자의 12초 타이머를 시작한다. 시작 안내 제목은 `🗡️ 펫 무쌍 대회 시작 🗡️`로 출력하며 기존 제목의 `준비!` 표현만 제거한다. 참가자·공격권·유예시간 등 본문은 `NoticeMsg`로 유지하고, 진행 중 제한 안내와 준비 종료 NoticeMsg는 출력하지 않는다.
 - 시작 유예 마감시각과 토큰을 `member.json`에 저장하며, 봇 재시작 뒤 첫 수신 메시지에서 남은 유예 타이머를 복구하거나 마감된 준비를 완료한다.
 - 정상 공격 결과 제목에는 깃발 발견·점령·전투 승리 여부에 따라 `[성공✅]` 또는 `[실패❌]`를 표시하며, 미공격 탈락은 기존 `[시간 초과⚠️]`를 유지한다.
-- 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올리고, 증가값과 변경 후 확률을 탈락 결과 및 다음 공격자 상태 UI에 반영한다.
+- 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올린다. 탈락자의 포인트를 최대 1억 차감해 0 미만으로 내리지 않고, `/무쌍온` 설정을 OFF 처리한다. 결과 UI는 `시간초과 패널티💸: -🅟1억`과 실제 남은 포인트를 다음 줄에 분리해 표시한다.
+- 정상 공격에서 벼락이 발생하지 않으면 다음 벼락 판정 확률이 `2%p`씩 누적되며, 벼락 발생 후에는 기본 `1%`로 초기화한다.
 - 개인 기본 공격 횟수는 4회이며 공격 1회당 기본 획득 포인트는 2억이다. 최종 우승 상금은 기존 값을 유지한다.
 - 티켓 이벤트 활성 중 공격권이 정상 차감된 공격에는 10% 70%, 20% 15%, 30% 7%, 40% 5%, 50% 3% 확률로 할인쿠폰 1장을 지급하고 공격 보상 바로 아래에 표시한다.
 - 진짜 깃발 발견 전 처음 찾은 가짜 깃발은 공격권만 1회 차감하고 생존하며, 결과 제목 바로 아래에 차감 후 남은 공격 횟수를 `[현재/최대⚔]` 형식으로 표시한다. 이미 공개된 가짜를 다시 공격하거나 진짜 깃발 발견 후 가짜를 공격하면 즉시 탈락한다.
@@ -2453,9 +2463,9 @@ Status: VERIFIED
 - `/호프단체추가 아이디,아이디/YY.MM.DD`는 날짜와 전체 유저를 먼저 검증한 뒤 한 번에 적용하고, 기본 호이패스가 없는 대상에게 자동탐험권을 지급한다.
 - `/호프구독`은 사용 중단 안내만 출력하며, 프리미엄을 포함한 전체 패스 일일 보상은 `/구독패스지급`에서 처리한다.
 - `/무쌍온`은 설정을 저장하고 현재 준비 회차 참가를 즉시 시도하며, 이후 수동·정시 시작 전 프리미엄 활성 유저를 자동 등록한다. 자동 등록은 유저별 오류를 격리·기록해 한 유저의 실패가 다음 유저를 중단하지 않으며, `/무쌍오프` 뒤에도 이미 등록된 현재 회차 참가는 유지한다. 이미 ON이면 중복 처리 없이 `이미 무쌍온 상태입니다.`를 안내한다.
-- `/출첵온` 설정은 프리미엄 만료 후에도 유지하지만 `/자동출첵` 실행 대상에서는 제외한다. `/자동출첵`은 MASTER·오픈채팅봇만 실행하며 구독 패스 지급 결과와 자동출첵 집계를 각각 기록하고, 대상자를 독립 처리해 한 유저의 실패가 다음 유저를 중단하지 않는다. 성공자 전원의 체크랭크·포인트·경험치 보상은 `allsee`가 포함된 하나의 NoticeMsg로 출력하며, 이미 ON이면 `이미 출첵온 상태입니다.`를 안내한다.
+- `/출첵온` 설정은 프리미엄 만료 후에도 유지하지만 `/자동출첵` 실행 대상에서는 제외한다. `/자동출첵`은 MASTER·오픈채팅봇만 실행하며 구독 패스 지급 결과와 자동출첵 집계를 각각 기록하고, 대상자를 독립 처리해 한 유저의 실패가 다음 유저를 중단하지 않는다. 성공자 전원의 체크랭크·포인트·경험치 보상은 `allsee`가 포함된 하나의 NoticeMsg로 출력하고, DEV 실행에서는 같은 합산 내용을 명령 실행방에 회신한다. 이미 ON이면 `이미 출첵온 상태입니다.`를 안내한다.
 - 수동 `ㅊㅊ`와 자동출첵은 같은 출석 판정·기본 보상·주사위·랭크·오픈런 보상 처리를 사용하며 명령 분기에서 `member.json`을 한 번 저장한다.
-- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 장착 가구 중 매력이 가장 낮은 초과 가구는 가구가방으로 회수한다. 재가입 시 잠금 스킬을 다시 활성화한다.
+- 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 장착 가구 중 매력이 가장 낮은 초과 가구는 가구가방으로 회수한다. 재가입 시 빈 슬롯만큼 잠금 스킬을 다시 활성화하며, 프리미엄 종료 후에도 `/냠냠`으로 친밀도 레벨이 올라 기본 슬롯이 늘어나면 확보된 빈 슬롯 수만큼 순서대로 잠금을 해제한다. 이미 공간이 늘어난 기존 잠금 데이터는 해당 유저의 다음 정상 명령 처리 시 같은 기준으로 복구한다.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
 
@@ -2657,6 +2667,8 @@ Status: VERIFIED
 - Summary view for equipped and available skills
 - Use this when the user report is about equip slots rather than whole bag totals
 - 기본 장착 슬롯은 친밀도 Lv.100당 1칸, 최대 30칸이며 `펫스킬 학개론📙` 장착 시 최대 33칸이다.
+- 장착 중인 스킬과 장착 가능한 스킬은 이름 뒤에 `PET_SKILL_LIST` 기준 등급을 표시한다.
+- 장착 가능 목록은 이미 장착된 스킬을 숨기되 `/펫스킬가방`의 원래 번호를 유지하므로 표시 번호를 `/펫스킬장착 [번호]`에 바로 사용할 수 있다.
 
 ---
 
@@ -2747,7 +2759,7 @@ Status: VERIFIED
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
-- `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용하므로 장착 홈뱃지 프리미엄 +3%p와 길드공헌 큐브가 동일하게 반영된다.
+- `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
 - Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
 - `allsee` is inserted after the top 5 rows for this command.
 
@@ -2940,6 +2952,34 @@ Status: VERIFIED
 
 - Ranking companion to the main tower progression command
 - Open `trialTowerRanking` first when sorting or display order is incorrect
+
+---
+
+# /길드공지 [내용]
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `getMyGuildInfo`
+- `canTransferGuildMaster`
+
+## Data Usage
+- `guildData.guilds[guildId].notice`
+- `GLOBAL_CONFIG.guild.noticeMaxLength`
+
+## Save Flow
+- 길드마스터가 최대 100자의 공지를 설정하고 `guildData`를 저장한다.
+
+## Related Commands
+- `/길드정보`
+- `/길드게시판`
+
+## AI Notes
+- `/길드공지` 단독 입력은 사용법을 표시하고, 공백 뒤 자유문자열만 공지 내용으로 처리한다.
+- 100자를 초과하면 저장하지 않는다.
 
 ---
 
@@ -3451,7 +3491,7 @@ Status: VERIFIED
 
 ---
 
-# /펫스킬가방추가 [유저], [스킬명] [개수]
+# /펫스킬가방추가 [유저], [펫스킬가방번호|스킬명] [개수]
 Status: VERIFIED
 ## Command Anchors
 - Search in `main.js`: `/펫스킬가방추가`
@@ -3460,6 +3500,7 @@ Status: VERIFIED
 ## Related Helpers
 - `normalizePetSkillName`
 - `getPetSkillData`
+- `getPetSkillBagList`
 - `parseDirectGrantPetSkillRequest`
 - `parsePetSkillBagGrantRequest`
 - `getPetSkillBagRemainCount`
@@ -3467,6 +3508,7 @@ Status: VERIFIED
 ## Data Usage
 - `petSkillData[user].bag`
 ## Save Flow
+- 숫자를 입력하면 대상 유저의 `/펫스킬가방` 번호에 해당하는 스킬을 찾는다.
 - Mutates target skill bag and saves `petSkillData`
 ## Related Commands
 - `/펫스킬가방`
@@ -3474,6 +3516,7 @@ Status: VERIFIED
 
 ## AI Notes
 - `전설의 몽둥이📙[한정판]` 지급 명령은 `호이 남`만 실행할 수 있다. `/펫스킬가방추가 [이름], 전설의 몽둥이` 입력 시 대상에게 1개, 뒤에 숫자를 입력하면 해당 수량만큼 지급하며 숫자 뒤 추가 문구는 차단한다.
+- 일반 번호 지급은 `/펫스킬가방추가 [유저], [펫스킬가방번호] [개수]` 형식이며, 명령어 바로 뒤에 쉼표를 붙인 기존 형식은 실행하지 않는다.
 
 ---
 
@@ -3574,9 +3617,13 @@ Status: VERIFIED
 - `main.js`
 ## Related Helpers
 - `getPetSkillActualRate`
+- `getPetSkillRandomWeight`
+- `getOpenablePetSkillCountByGrade`
+- `getPetSkillFixedActualRateTotal`
 - `formatPetSkillName`
 ## Data Usage
 - `PET_SKILL_LIST`
+- `PET_SKILL_FIXED_ACTUAL_RATES`
 ## Save Flow
 - Read-only
 ## Related Commands
@@ -3587,8 +3634,8 @@ Status: VERIFIED
 
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
-- `전설의 몽둥이📙[한정판]`는 `/펫스킬확률`과 일반 오픈 풀에 포함되지 않는다.
-- S/A/B/C의 기존 등급별 총확률은 유지한다. 노션에 개별 확률이 명시된 신규·조정 스킬은 그 값을 우선하고, 남은 등급 확률은 나머지 스킬과 티어책에 균등 분배한다. SS/D는 개별 확률을 사용한다.
+- 일반 등급 총 확률 아래 `한정판 등급` 구역에서 `전설의 몽둥이📙`, `베란다 확장📙`, `전설의 소매치기📙`, `광산에서 재벌까지📙`를 별도로 표시하며, 네 스킬은 일반 오픈 풀과 총 확률에 포함되지 않는다.
+- `신성한 기도📙[A]`와 `호월신의 총애📙[S]`를 포함한 오픈 가능한 95종 기준으로 SS는 각 0.1%, S는 각 0.3%, A는 각 0.4%, B는 각 0.6%, C는 각 1.5%다. SS~C 합계 59.6%를 제외한 40.4%는 D등급 6종에 균등 배분해 각각 약 6.73%로 추첨한다.
 
 ---
 
@@ -3631,7 +3678,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `pickRandomPetSkill`은 `getPetSkillRandomWeight`로 S/A/B/C의 명시 확률을 먼저 배정하고 남은 등급 확률을 균등 분배하며 티어 전용 펫스킬북도 추첨한다.
+- `pickRandomPetSkill`은 `getPetSkillRandomWeight`가 반환한 스킬별 실제 확률을 하나의 통합 풀에서 누적 추첨한다. SS~C는 등급별 스킬당 고정값을 사용하고, D는 100%에서 SS~C 합계를 뺀 잔여 확률을 오픈 가능한 D 스킬 수로 균등 배분한다.
 - `/펫스킬오픈`은 인자 없는 명령 또는 숫자 하나의 전체 패턴만 실행한다.
 - `openable === false`인 `전설의 몽둥이📙[한정판]`의 추첨 가중치는 항상 0이라 단건·다건 오픈 모두에서 획득할 수 없다.
 
@@ -3691,16 +3738,52 @@ Status: VERIFIED
 - 티어 전용 펫스킬은 `ticketTierData` 순서로 현재 티어가 요구 티어 이상인지 장착 시 검사하며, 티어책끼리는 한 종만 허용하고 일반 스킬과는 함께 장착할 수 있다.
 - 장착 후 티어가 내려가도 자동 해제하지 않으며, 티어책이 장착 목록에서 빠지면 레이드·캐슬 매력 보너스도 즉시 사라진다.
 - `무쌍귀신📙` 장착 성공 시 공통 `equipComment` 출력 흐름으로 `무쌍귀신📙 촹 촹 챙챙 슈슉 슈슉 윽! 악!`을 표시한다.
+- `VIP블랙카드📙` 장착 성공 시 귀속 안내 대신 `“가격표는 보지 않습니다. 직원이 알아서 낮출 테니까요.”` 전용 문구를 표시한다.
 - `기분탓📙`은 `?` 단일 채팅 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력하며 수치 변화는 없다
 - `종의 본능📙`은 `이쁘다` 정확 일치 입력 시 현재 계정이 존재하고 해당 스킬을 장착한 유저 전원의 연출 멘트를 출력한다
-- `/계삭진행`과 `/계정잠수삭제`는 대상의 `petSkillData` 항목과 `currencyLogData.user` 누적다이아 항목을 제거하고 각각 `petSkillDataPath`, `currencyLogPath`를 저장한다
+- `/계삭진행`과 `/계정잠수삭제`는 공통 `cleanupDeletedAccountResiduals` 흐름에 실제 삭제 성공 대상을 명시해, 해당 계정의 펫스킬·미니펫 컬렉션/칭호·펫/홈·시련의탑·펀치·펫탐험·소셜/방명록·시장·게시판·계정 식별 로그를 함께 제거하고 각 저장소를 명령 흐름에서 한 번씩 저장한다. 이때 다른 회원 목록 외 식별자를 함께 자동 정리하지 않는다.
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
 - `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
 - `전설의 몽둥이📙[한정판]`는 장착 목록에 있을 때 레이드·캐슬 매력 50만씩을 동적으로 적용하고 `/펫스킬소멸`로 제거되면 즉시 회수한다. 장착 성공 시 `오오.. 영롱하군요 너..빌런인가?` 멘트를 표시한다.
+- `베란다 확장📙[한정판]`은 가구 장착 한도를 3칸 늘린다. 소멸 후 한도를 초과하면 장착 목록 하단 가구부터 가구가방으로 회수하며, 가방 공간이 부족하면 스킬과 소멸권을 소비하지 않는다.
+- `전설의 소매치기📙[한정판]`을 장착하면 `/슈킹 [아이디]`를 사용할 수 있다. 기존 `전설의소매치기`·`전설의소매채기` 저장 이름은 시스템 버전 갱신 시 표준 이름으로 변환한다.
+- `VIP블랙카드📙`와 `쇼핑광📙`은 함께 장착할 수 없다.
 - `인플루언서📙`과 `셀럽📙`은 중복 장착 시 `/펫홈`, `/홈알림`, `/팔로워순위` 표시 팔로워에 합계 3,000명을 더하며 실제 팔로워 관계와 뱃지 누적값은 바꾸지 않는다.
 - `망므📙` 장착 멘트는 `이건 내 망므야!`이며 일일 마음 한도를 5회 늘린다.
 - 일반 종합매력 무기 스킬은 서로 중복 적용하고 해제 즉시 계산에서 빠진다. `엘리트 박사📙`는 장착 미니펫이 엘리트 등급일 때, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구가 5개 이상일 때만 발동한다.
+
+---
+
+# /슈킹 [아이디]
+Status: VERIFIED
+## Files
+- `main.js`
+## Related Helpers
+- `hasPetSkill`
+- `getLegendaryPickpocketDailyData`
+- `formatLegendaryPickpocketMessage`
+- `addPoint`
+- `checkRank`
+## Data Usage
+- `data.member[sender].point`
+- `data.member[target].point`
+- `data.member[sender].legendaryPickpocket.count`
+- `data.member[sender].legendaryPickpocket.targets`
+- `petSkillData[sender].petSkills.equipped`
+## Save Flow
+- 유효한 대상에 대한 확률 판정부터 일일 횟수와 동일 대상 기록을 소비하고 `saveJsonFile(data, filePath)`로 한 번 저장한다.
+- 성공하면 대상 포인트 100만을 시도자에게 이동하고, 실패하면 포인트를 변경하지 않는다.
+- `/리셋`에서 모든 회원의 `legendaryPickpocket` 일일 기록을 제거한다.
+## Related Commands
+- `/펫스킬장착 [번호]`
+- `/펫스킬소멸 [번호]`
+- `/리셋`
+## AI Notes
+- `전설의 소매치기📙` 장착이 필요하며 하루 2회, 동일 대상 하루 1회로 제한한다.
+- 존재하지 않는 대상, 자기 자신, 일일 제한 초과, 동일 대상 재시도, 대상의 100만 미만 포인트는 확률 판정 전에 거절하므로 횟수를 소비하지 않는다.
+- 유효한 시도는 성공·실패 모두 횟수를 소비하며 성공 확률은 50%다.
+- 전체 인자 문자열을 회원 키로 사용하고 명령 접미 텍스트를 별도 인자로 허용하지 않는다.
 
 ---
 
@@ -3717,6 +3800,8 @@ Status: VERIFIED
 - buildDormantAccountListMessage
 - ensureAccountSuspensions
 - removeAccountLifecycleEntriesOnDelete
+- cleanupDeletedAccountResiduals
+- collectDeletedAccountNames
 - buildAccountSuspensionListMessage
 - formatDormantDateText
 - getDormantDays
@@ -3868,8 +3953,8 @@ Status: VERIFIED
 - `buildMasterMiniPetCombinationFailMessage`
 - `buildMasterMiniPetCombinationSuccessMessage`
 ## Data Usage
-- `data.member["호이 남"].point`
-- `petData["호이 남"].miniPetBag`
+- `data.member[sender].point`
+- `petData[sender].miniPetBag`
 ## Save Flow
 - Failure consumes only 350억 points and saves `filePath`
 - Success consumes 350억 points, removes the selected five 엘리트 300강 mini-pets, adds one 마스터 mini-pet, saves `filePath` and `memberPetPath`
@@ -3879,7 +3964,7 @@ Status: VERIFIED
 - `/미니펫강화`
 - `/미니펫판매`
 ## AI Notes
-- The command and its guide are available only to `호이 남` in `팻 테스트방`; other senders and rooms receive no response.
+- The command and its guide are available to every registered user in every room.
 - The command accepts exactly five numeric, non-duplicate bag indexes; suffix guide text does not execute.
 - Master reward pool contains 영겁의 템푸스, 무한의 인피니타, 천상의 엠피레온 with equal selection probability after the 5% combination succeeds.
 - Master mini-pets gain 15,000 charm per successful upgrade, support up to 300 upgrades, and sell for 5000억 points.
@@ -3898,17 +3983,17 @@ Status: VERIFIED
 ## Data Usage
 - `data.admin`
 - `data.member[*].point`
-- `data.member[*].bag["미니펫뽑기🐹(/미니펫오픈)"]`
+- `data.member[*].bag[입력한 아이템이름]`
 ## Save Flow
 - `/관리자추가` and `/관리자삭제` mutate `data.admin` and save `filePath`
 - `/관리자일당` reads `data.admin`, gives existing members `GLOBAL_CONFIG.admin.dailyPayoutPoint` (10억) points, reports actual paid count, and saves `filePath`
-- `/부방상여` reads `data.admin`, gives existing members 미니펫뽑기 1000개, reports actual rewarded count, and saves `filePath`
+- `/부방상여 아이템이름/갯수`는 마지막 `/숫자`를 수량으로 해석하고, `data.admin`의 실제 가입 유저에게 입력 아이템을 지급한 뒤 대상 수와 지급 내역을 출력하고 `filePath`를 저장한다.
 ## Related Commands
 - `/관리자명단`
 - `/관리자추가`
 - `/관리자삭제`
 - `/관리자일당`
-- `/부방상여`
+- `/부방상여 아이템이름/갯수`
 ## AI Notes
 - Payout commands no longer keep separate hardcoded recipient arrays
 - `isAdmin` requires both `data.admin` membership and execution in `호이월드 GM 관리자방`, `팻 테스트방`, `통합스텝`, or `서버관리자`
@@ -3916,6 +4001,7 @@ Status: VERIFIED
 - `/주기리셋` and `/자동탐험시작` additionally allow an Admin or `오픈채팅봇` in `호이월드 GM 관리자방`; their existing Master access remains available in Master-authorized rooms
 - `/관리자일당` authorization remains `호이 남` and `오픈채팅봇`
 - `/부방상여` authorization remains `호이 남`
+- 인자 없는 `/부방상여`는 사용법만 출력하며 지급하지 않는다. 아이템명 내부의 `/관련명령어` 표기는 유지하고 마지막 `/숫자`만 지급 수량으로 분리한다.
 
 ---
 
@@ -4005,10 +4091,10 @@ Status: VERIFIED
 
 ---
 
-# /컬렉션등록 [번호...]
+# /미니펫컬렉션등록 [번호...]
 Status: VERIFIED
 ## Command Anchors
-- Search in main.js: `/컬렉션등록`
+- Search in main.js: `/미니펫컬렉션등록`
 ## Files
 - `main.js`
 ## Related Helpers
@@ -4023,7 +4109,7 @@ Status: VERIFIED
 ## Save Flow
 - Registers selected mini-pets, mutates collection/title/member/pet data, saves all touched stores
 ## Related Commands
-- `/미니펫컬렉션`
+- `/미니펫컬렉션만능`
 - `/미니펫컬렉션순위`
 
 ## AI Notes
@@ -4032,22 +4118,30 @@ Status: VERIFIED
 
 ---
 
-# /미니펫컬렉션
+# /미니펫컬렉션|/미니펫컬렉션만능 [미니펫컬렉션번호] ...
 Status: VERIFIED
 ## Command Anchors
-- Search in main.js: `/미니펫컬렉션`
+- Search in main.js: `/미니펫컬렉션`, `/미니펫컬렉션만능`
 ## Files
 - `main.js`
 ## Related Helpers
 - `sanitizeMiniPetCollectionData`
 - `ensureMiniPetCollection`
+- `getMiniPetCollectionAutoUpgradePlan`
+- `tryAutoUpgradeMiniPetForCollection`
 ## Data Usage
 - `miniPetCollectionData.member[sender]`
 - `miniPetCollectionInfo.stageReward`
+- `petData[sender].miniPetBag`
+- `data.member[sender].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)"]`
 ## Save Flow
-- Primarily read-only; may sanitize then save collection data
+- 인자 없는 명령은 현황을 조회하며 필요하면 컬렉션 데이터를 정리해 저장한다.
+- `/미니펫컬렉션만능 [번호] ...`는 일반 미니펫 보유 여부와 관계없이 만능 열쇠만 선택하며, 한 번에 최대 10개를 `등록` 확인 상태로 만든다.
+- 입력 순서로 현재 단계 완성 여부를 미리 계산하므로 한 명령에서 다음 단계 컬렉션까지 연속 선택할 수 있다.
+- 현황 UI는 단계 보상 다음에 만능열쇠 등록 `/미니펫컬렉션만능`과 등급 등록 `/미니펫컬렉션등록`을 안내한 뒤 상세 컬렉션을 표시한다.
+- `등록` 성공 시 기존 컬렉션·타이틀·회원·미니펫 저장 흐름을 재사용한다.
 ## Related Commands
-- `/컬렉션등록`
+- `/미니펫컬렉션등록`
 - `/미니펫컬렉션순위`
 
 ---
@@ -4109,6 +4203,8 @@ Status: VERIFIED
 - `data.member[sender].bag["확성기📢(/알림 내용 30자)"]`
 ## Save Flow
 - 호이패스 프리미엄 이용자가 최대 40글자의 알림을 전체방에 전송한 뒤 무료 횟수 또는 확성기 아이템 사용 횟수를 반영하고 `member.json`을 저장한다.
+## AI Notes
+- 일반 `/알림`의 전체방 전송은 디버깅모드 여부와 무관하며, DEV 컨텍스트 공지는 기존 테스트방 격리를 유지한다.
 ## Related Commands
 - `/길드영지시작`
 - `/길드영지종료`
@@ -4195,8 +4291,9 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `쇼핑광📙` discount applies before tax calculation
-- 티켓이벤트 쿠폰 할인은 티켓별로 높은 할인율부터 적용한 뒤 `쇼핑광📙` 할인을 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
+- `쇼핑광📙`은 20%, `VIP블랙카드📙`는 30%를 할인하며 두 스킬은 호환 그룹으로 중복 장착할 수 없다. 기존 비정상 데이터에 둘 다 있으면 VIP 할인만 적용한다.
+- 티켓이벤트 쿠폰 할인은 티켓별로 높은 할인율부터 적용한 뒤 펫스킬 할인을 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
+- 펫스킬 할인 안내는 구매와 데이터 저장이 성공한 뒤에만 출력한다.
 - `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
@@ -4803,7 +4900,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Castle-focused charm leaderboard that depends on loaded home data
-- Applies the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
+- Applies the representative and support home-badge castle percentages plus the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
 - Re-check `initSweetHomeUser` when home normalization affects ranking totals
 
 ---
@@ -4847,7 +4944,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Raid-focused charm leaderboard parallel to `/캐슬매력순위`
-- Applies the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
+- Applies the representative and support home-badge raid percentages plus the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
 - Good anchor when raid total calculations diverge from displayed pet/home state
 
 ---
@@ -5476,12 +5573,12 @@ Status: VERIFIED
 
 ---
 
-# /펫스킬컬렉션|/펫스킬컬렉션등록 [펫스킬가방번호] ...
+# /펫스킬컬렉션|/펫스킬컬렉션만능 [번호]|/펫스킬컬렉션등록 [번호] ...
 
 Status: VERIFIED
 
 ## Command Anchors
-- Search in `main.js`: `/펫스킬컬렉션`, `/펫스킬컬렉션등록`
+- Search in `main.js`: `/펫스킬컬렉션`, `/펫스킬컬렉션만능`, `/펫스킬컬렉션등록`
 
 ## Files
 - `main.js`
@@ -5492,6 +5589,8 @@ Status: VERIFIED
 - `buildPetSkillCollectionProgressLines`
 - `buildPetSkillCollectionMessage`
 - `buildPetSkillCollectionConfirmMessage`
+- `getPetSkillCollectionTargetList`
+- `normalizePetSkillStoredNames`
 - `getPetSkillBagList`
 - `removePetSkillFromBag`
 
@@ -5499,17 +5598,82 @@ Status: VERIFIED
 - `petSkillData.json -> [user].petSkillCollection[skillName]`
 - `petSkillData.json -> [user].petSkills.bag[skillName]`
 - `member.json -> member[user].bag["홈뱃지 큐브💟"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)"]`
 
 ## Save Flow
-- `/펫스킬컬렉션`은 컬렉션 파일을 읽어 SS~D 현황만 출력한다.
-- `/펫스킬컬렉션등록`은 최대 10개의 서로 다른 펫스킬가방 번호를 확인 상태에 저장한다.
-- `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상 아이템을 `member.json`에 저장한다.
+- `/펫스킬컬렉션`은 SS~D 현황과 통합 컬렉션 번호를 출력한다.
+- `/펫스킬컬렉션만능 [번호] ...`는 일반 펫스킬북 보유 여부와 관계없이 만능 열쇠로 한 번에 최대 10개를 등록한다.
+- 같은 컬렉션 번호도 남은 최대 등록 수량 안에서는 반복 입력할 수 있다.
+- `/펫스킬컬렉션등록`은 `/펫스킬가방` 기준 최대 10개의 서로 다른 가방 번호를 받는다.
+- 선택한 가방 번호의 펫스킬북을 등록 재료로 사용한다.
+- `한정판` 펫스킬은 종류별 최대 10개까지 등록할 수 있고, 등록 1개당 `홈뱃지 큐브💟` 300개를 지급한다.
+- 현황 UI는 컬렉션 보상표 앞에 `🗝️ 만능열쇠 등록`과 `/펫스킬컬렉션만능 [펫스킬컬렉션번호] ...`를 표시하고, 보상표는 SS~D 다음 한정판 순서를 유지한다.
+- 이전 표기 형태로 저장된 펫스킬북은 등록 재료 확인과 소모 전에 현재 표준 이름으로 병합한다.
+- `등록` 성공 시 컬렉션·펫스킬가방을 `petSkillData.json`에, 보상·만능 열쇠를 `member.json`에 저장한다.
+- 등록 완료 결과는 `allsee` 접기 없이 등록 성공 상세를 바로 이어서 표시한다.
 - 두 파일은 기존 1·2세대 자동 백업과 명령 단위 롤백 보호 흐름을 재사용한다.
 
 ## Related Commands
 - `/펫스킬가방`
 - `등록`
 - `ㄴㄴ`
+
+---
+
+# /만능상자오픈 [숫자]
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/만능상자오픈`, `runUniversalBoxOpen`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `runUniversalBoxOpen`
+- `addItem`
+- `removeItem`
+- `noticeMsg`
+
+## Data Usage
+- `member.json -> member[user].bag["만능상자🔐(/만능상자오픈 숫자)"]`
+- `member.json -> member[user].bag["펫스킬북📙(/펫스킬오픈)"]`
+- `member.json -> member[user].bag["펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)"]`
+- `member.json -> member[user].bag["미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)"]`
+
+## Save Flow
+- 상자마다 70%·25%·5%를 독립 추첨한 뒤 보상을 합산하고, 상자 차감과 보상 지급을 한 번 저장한다.
+- 미니펫컬렉션 만능 열쇠가 하나 이상 나오면 저장 후 전체 알림을 시도한다.
+- 개봉 결과는 실제 획득한 보상 종류에만 순번을 붙이고, 아이템의 관련 명령어는 가방 저장명에 유지하되 결과 표시명에서는 제외한다.
+
+---
+
+# /재벌도전
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/재벌도전`, `runDiamondTycoonChallenge`
+
+## Files
+- `main.js`
+
+## Related Helpers
+- `getDiamondTycoonDailyData`
+- `buildDiamondTycoonResultMessage`
+- `runDiamondTycoonChallenge`
+- `hasPetSkill`
+
+## Data Usage
+- `petSkillData.json -> [user].petSkills.equipped`
+- `member.json -> member[user].diamondTycoon`
+- `member.json -> member[user].bag["다이아상자💎(/다이아상자오픈)"]`
+
+## Save Flow
+- 장착 여부와 하루 10회 제한을 확인한 뒤 단일 난수로 로또·일반 성공·실패를 판정한다.
+- 모든 판정은 도전 횟수를 1회 사용하며, 성공 보상과 일일 상태를 함께 `member.json`에 저장한다.
+- 로또 결과는 저장 후 전체 알림을 시도하고, 알림 실패가 저장된 보상을 되돌리지 않는다.
 
 ---
 
@@ -5858,6 +6022,12 @@ Status: VERIFIED
 
 - `main.js`
 
+## Related Helpers
+
+- `cleanupDeletedAccountResiduals`
+- `collectDeletedAccountNames`
+- `removeDeletedAccountBoardRows`
+
 ## Data Usage
 
 - `homeData[*].furnitureBag`
@@ -5877,6 +6047,20 @@ Status: VERIFIED
 - `petData[*].ringRewardMigration`
 - `petSkillData[*]`
 - `guildData.guilds[*].warehouse.ring`
+- `memberTitleData.member[*]`
+- `petTitleData.member[*]`
+- `miniPetTitleData.member[*]`
+- `miniPetCollectionData.member[*]`
+- `currencyLogData.user[*]`
+- `trialTowerData.user[*]`
+- `punchRankData.member[*]`
+- `petHomeCommentsData.comments[*]`
+- `petHomeCommentsData.pinnedComments[*]`
+- `petHomeActivityData`
+- `petExploreData`
+- `freeMarketData`
+- `boardData.memo`, `boardData.record`, `carrotBoardData.memo`
+- `packageLogData.logs`
 
 ## Save Flow
 
@@ -5886,16 +6070,18 @@ Status: VERIFIED
 - Saves pet data through `saveJsonFile(petData, memberPetPath)`
 - Saves pet skill data through `saveJsonFile(petSkillData, petSkillDataPath)`
 - Saves guild data through `saveJsonFile(guildData, guildPath)`
+- Step 9 saves every account-residual store after comparing its user identifiers with `data.member`.
 
 ## AI Notes
 
 - Admin/Master-only maintenance command.
-- Does not load, mutate, or save `petHomeCommentsData`, and does not delete legacy `homeData[*].guestComments`.
+- Does not delete legacy `homeData[*].guestComments`.
 - Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
 - Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
 - Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
 - Step 8 removes every mistakenly issued `영지자동공격권⚔️` from member bags and deletes the obsolete first-grant/permanent-entitlement flags. Re-running the cleanup is idempotent and does not disable a valid `영지기습패스` user's current auto-attack setting.
+- Step 9 detects identifiers absent from `data.member` only from current account-owned data and removes their account data and cross-user references. Historical-only references such as comment authors, social actors/visitors, completed market logs, board records, automation/audit logs, and package logs do not independently make an identifier a cleanup target. `attendanceLightData` is not used as an orphan source because it intentionally stores pre-signup attendance, but a confirmed deleted account discovered in another store is removed from it too. The result count is shown as `잔여 식별자` rather than an actual deleted-account count.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
@@ -6166,6 +6352,8 @@ Status: VERIFIED
 - `/펜던트해제`
 - `/펜던트복원 [펜던트가방번호]`
 - `/펜던트강화 [펜던트가방번호]`
+- `/펜던트승급 [펜던트가방번호]`
+- `승급할거임` / `쫄아뜸`
 - `/펜던트판매 [펜던트가방번호]`
 - `/펜던트가방정리 시작번호~끝번호`
 - `/펜던트전체정리`
@@ -6203,6 +6391,9 @@ Status: VERIFIED
 - `formatPendantUpgradeRateLine`
 - `buildPendantUpgradePreview`
 - `runPendantUpgradeFromState`
+- `ensurePendantIdsForUser`
+- `buildPendantPromotionPreview`
+- `runPendantPromotionFromState`
 - `registerPendantFreeMarket`
 - `buildPendantTradeInfoMessage`
 - `cleanAllPendantBags`
@@ -6212,6 +6403,9 @@ Status: VERIFIED
 - `petData[user].pendant`
 - `petData[user].pendantBag`
 - `userState[user].pendantEquip`
+- `userState[user].pendantPromotion`
+- `petData[user].pendant.pendantId`, `promotionLevel`, `promotionUpdatedAt`
+- `petData[user].pendantBag[*].pendantId`, `promotionLevel`
 - `petSkillData[user].petSkills.equipped`
 - `data.member[user].bag`
 - `data.member[user].point`
@@ -6222,6 +6416,7 @@ Status: VERIFIED
 - 펜던트 장착/관리/강화/거래는 `petData`를 저장한다.
 - 장착 펜던트가 이미 있는 `/펜던트장착 [번호]`는 `userState[user].pendantEquip`에 확인 대기를 저장하고, `장착할래` 확정 시 기존 장착 펜던트를 소멸시키고 선택한 가방 펜던트를 장착한 뒤 `petData`를 저장한다.
 - 펜던트 오픈, 해제, 복원, 판매, 당근거래, 자유시장 등록/구매/취소는 필요 시 `data`와 `petData`를 함께 저장한다.
+- `/펜던트승급`은 기존 펜던트 ID를 먼저 보완 저장하고, 30초 확인 후 회원 포인트·펜던트 강화석과 펫 데이터를 함께 변경한다. 두 파일 중 하나라도 저장에 실패하면 사용자 단위 스냅샷으로 양쪽을 복원하며 전체알림은 두 저장 성공 후에만 보낸다.
 - 자유시장 펜던트 등록/취소/구매는 `freeMarketData`도 저장한다.
 - `/펜던트전체정리`는 `petData[user].pendantBag`에서 51개 이상인 가방의 초과분을 삭제한 뒤 `member_pet.json`을 저장한다.
 
@@ -6231,13 +6426,14 @@ Status: VERIFIED
 - `/펜던트장착 [번호]`는 장착 펜던트가 없으면 즉시 장착하고, 이미 장착 중이면 `장착할래` / `생각해볼게` 확인 단계를 거친다.
 - `/펜던트오픈` 결과 목록은 등급 내림차순으로 정렬하고 번호와 각 펜던트의 뽑기 확률을 함께 표시한다.
 - `/펜던트오픈` 결과는 5번째 항목부터 `allsee` 뒤에 표시한다.
-- `/펜던트오픈` 전체알림은 최상급+ 이상 펜던트마다 1개씩 송출하고, 창세/창조처럼 1% 미만인 획득 확률도 소수점으로 보존해 함께 표시한다.
+- `/펜던트오픈` 전체알림은 신화 이상 펜던트마다 1개씩 송출하고, 창세/창조처럼 1% 미만인 획득 확률도 소수점으로 보존해 함께 표시한다. 최상급+ `심판의 펜던트`는 전체알림에서 제외한다.
 - `/펜던트오픈`은 펜던트가방이 이미 50/50일 때만 막고, 49/50 이하에서는 보유한 펜던트뽑기 수량만큼 오픈할 수 있다.
 - `/펜던트당근거래`는 기존 호환 별칭이며, 안내 문구와 문서 기준 명령어는 `/펜던트당근`이다.
 - `/펜던트가방`은 창조 → 창세 → 초월 → 신화 → 최상급+ → 최상급 → 상급+ → 상급 → 중급+ → 중급 → 하급+ → 하급 → 최하급 순으로 정렬하고, 같은 등급 안에서는 이름 가나다순으로 표시한다.
 - `/펜던트가방`은 1~5번까지 먼저 보여주고 6번 이후는 `allsee` 뒤에 표시한다.
 - `/펜던트순위`는 장착 펜던트만 대상으로 등급 → 강화수치 → 닉네임 가나다순으로 100명까지 표시하고, 11등부터 `allsee` 뒤에 표시한다.
 - `/펜던트강화`는 펜던트가방 번호를 입력하며, 장착 펜던트는 숫자 `0`으로 강화한다.
+- `/펜던트승급`은 창조등급만 대상으로 하며 장착 펜던트는 `0`으로 선택한다. 목표 ★N 단계마다 다른 가방 창조 펜던트 1개, 펜던트 강화석 `N×10`개, 포인트 `N×100억`을 사용하고 100% 성공한다. 승급 1단계당 종합매력만 500만 증가하며 탐험 확률·강화·내구도는 유지한다. `/펫정보`의 기존 `펜던트💎:` 행에 `이름🪬[창조★N][⚒️현재/최대](+강화)` 형식으로 승급 단계를 표시하고 실제 캐슬·레이드 매력에도 승급 수치를 반영한다. 재료는 승급→강화→내구도→가방 번호 오름차순으로 자동 선택하고 확인 후에는 고유 `pendantId`로 같은 본체와 재료를 재검증한다.
 - `/펜던트거래정보 [자유시장번호]`는 자유시장 등록 목록의 펜던트 payload를 기존 펜던트 정보 형식으로 보여준다.
 - 펜던트 이름 끝에 이미 같은 이모지가 있으면 `formatPendantNameWithIcon`이 표시 이모지를 중복으로 붙이지 않는다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
@@ -6275,3 +6471,55 @@ Status: VERIFIED
 
 - `/선물삭제` accepts no arguments; suffix text such as `/선물삭제 해봐` does not execute.
 - All users are scanned, and only canonical variants `[1]` through `[10]` are removed.
+
+---
+
+# /기도
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `msg === "/기도"`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getEquippedPrayerSkillName`
+- `getPrayerSkillConfig`
+- `buildPrayerResultMessage`
+- `buildPrayerSkillEquipMessage`
+- `buildPrayerSkillInfoMessage`
+- `checkRank`
+- `addItem`
+- `saveJsonFile`
+
+## Data Usage
+
+- `petSkillData[sender].petSkills.equipped`
+- `data.member[sender].isGidoFlag`
+- `data.member[sender].bag["주간상자🌼"]`
+
+## Save Flow
+
+- 정상 사용 시 성공·실패와 관계없이 일일 사용 기록을 남기고, 성공 시에만 주간상자🌼 1개를 추가한 뒤 `saveJsonFile(data, filePath)`로 한 번 저장한다.
+- `/기도`는 단독 데이터 변경 잠금을 사용하며, 저장 실패 시 메모리의 일일 기록과 보상 수량을 복구하고 오류 안내를 표시한다.
+- `/리셋`에서 모든 회원의 기도 일일 사용 기록을 제거한다.
+
+## Related Commands
+
+- `/펫스킬장착 [번호]`
+- `/펫스킬정보 [스킬이름]`
+- `/펫스킬확률`
+- `/리셋`
+
+## AI Notes
+
+- `기도📙[C]`, `신성한 기도📙[A]`, `호월신의 총애📙[S]` 중 하나를 장착해야 하며 응답 확률은 각각 3%, 5%, 7%다.
+- 세 스킬은 서로 중복 장착할 수 없고, 장착 차단은 가방의 스킬북을 소모하기 전에 처리한다.
+- 결과는 장착 스킬과 성공 여부별 10개 멘트 중 하나를 사용하며 실제 채크랭크를 표시한다.
+
+---
