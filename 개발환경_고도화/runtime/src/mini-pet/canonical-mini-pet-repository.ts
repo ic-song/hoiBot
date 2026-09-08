@@ -2,9 +2,17 @@ import { createHash } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createScopedDatabaseClient } from "../database.js";
 import { createObjectAuditValues, MariaObjectIdentityAuditProvider } from "../identity/object-identity-audit-provider.js";
+import {
+  isMariaBusinessUniqueConflict,
+  isMariaTransactionRetryExhaustion,
+  withMariaTransactionRetry,
+} from "../shared/maria-database-error-policy.js";
 
 export const CANONICAL_MINI_PET_REQUEST_KEY_MAX_LENGTH = 182;
 const CANONICAL_MINI_PET_TRANSACTION_MAX_ATTEMPTS = 3;
+const CANONICAL_MINI_PET_CONCURRENT_REPLAY_READ_ATTEMPTS = 3;
+const CANONICAL_MINI_PET_CONCURRENT_REPLAY_READ_DELAY_MS = 30;
+const CANONICAL_MINI_PET_TRANSACTION_RETRY_EXHAUSTED = "CANONICAL_MINI_PET_TRANSACTION_RETRY_EXHAUSTED";
 
 export interface CanonicalMiniPetAcquireInput {
   actor: string;
@@ -38,8 +46,10 @@ interface ReplayRow {
   owned_mini_pet_id: string | null;
   operation_kind: string;
   payload_fingerprint: string;
+  operation_status: string;
 }
 
+interface PlayerRow { player_id: string; }
 interface DefinitionRow { mini_pet_id: string; }
 interface OwnedRow { owned_mini_pet_id: string; }
 
@@ -51,7 +61,7 @@ function assertAcquireInput(input: CanonicalMiniPetAcquireInput): void {
   assertIdentifier(input.playerId);
   assertIdentifier(input.miniPetId);
   // identity sourceIdentifier `${playerId}:${requestKey}`의 VARCHAR(191) 경계를 넘지 않습니다.
-  if (input.actor.trim() === "" || input.actor.length > 100 || input.requestKey.trim() === "" || input.requestKey.length > CANONICAL_MINI_PET_REQUEST_KEY_MAX_LENGTH) {
+  if (input.actor.trim() === "" || input.actor.length > 100 || input.requestKey.trim() === "" || input.requestKey.length > CANONICAL_MINI_PET_REQUEST_KEY_MAX_LENGTH || typeof input.bound !== "boolean") {
     throw new Error("CANONICAL_MINI_PET_ACQUIRE_INPUT_INVALID");
   }
 }
@@ -60,15 +70,8 @@ function acquireFingerprint(input: CanonicalMiniPetAcquireInput): string {
   return createHash("sha256").update(JSON.stringify({ operationKind: "acquire", miniPetId: input.miniPetId, bound: input.bound })).digest("hex");
 }
 
-function isDuplicate(error: unknown): boolean {
-  return typeof error === "object" && error !== null && (("code" in error && String(error.code) === "ER_DUP_ENTRY") || ("message" in error && /duplicate entry/i.test(String(error.message))));
-}
-
-function isRetryableTransactionConflict(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const code = "code" in error ? String(error.code) : "";
-  const errno = "errno" in error ? Number(error.errno) : Number.NaN;
-  return code === "ER_LOCK_DEADLOCK" || code === "ER_LOCK_WAIT_TIMEOUT" || errno === 1213 || errno === 1205;
+async function waitBeforeConcurrentReplayRead(attempt: number): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, CANONICAL_MINI_PET_CONCURRENT_REPLAY_READ_DELAY_MS * (attempt + 1)));
 }
 
 export function calculateCanonicalMiniPetCharm(
@@ -91,28 +94,33 @@ export class MariaCanonicalMiniPetRepository {
 
   async acquire(input: CanonicalMiniPetAcquireInput): Promise<CanonicalMiniPetAcquireResult> {
     assertAcquireInput(input);
-    for (let attempt = 0; attempt < CANONICAL_MINI_PET_TRANSACTION_MAX_ATTEMPTS; attempt += 1) {
-      try {
-        return await this.database.withTransaction((transaction) => this.acquireInTransaction(transaction, input));
-      } catch (error) {
-        if (isDuplicate(error)) {
-          const replay = await this.findReplay(input);
-          if (replay !== undefined) return replay;
-        }
-        if (isRetryableTransactionConflict(error) && attempt + 1 < CANONICAL_MINI_PET_TRANSACTION_MAX_ATTEMPTS) continue;
-        throw error;
+    try {
+      return await withMariaTransactionRetry(this.database, {
+        maxAttempts: CANONICAL_MINI_PET_TRANSACTION_MAX_ATTEMPTS,
+        allowRetry: (kind) => kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT",
+        exhaustedErrorCode: CANONICAL_MINI_PET_TRANSACTION_RETRY_EXHAUSTED,
+      }, (transaction) => this.acquireInTransaction(transaction, input));
+    } catch (error) {
+      if (isMariaBusinessUniqueConflict(error, "uq_canonical_mini_pet_operation_request") || isMariaTransactionRetryExhaustion(error, CANONICAL_MINI_PET_TRANSACTION_RETRY_EXHAUSTED)) {
+        const replay = await this.findConcurrentReplay(input);
+        if (replay !== undefined) return replay;
       }
+      throw error;
     }
-    throw new Error("CANONICAL_MINI_PET_CONCURRENT_RETRY_EXHAUSTED");
   }
 
   private async acquireInTransaction(transaction: DatabaseTransaction, input: CanonicalMiniPetAcquireInput): Promise<CanonicalMiniPetAcquireResult> {
     const fingerprint = acquireFingerprint(input);
     const prior = (await transaction.query<ReplayRow[]>(
-      "SELECT mini_pet_operation_id,owned_mini_pet_id,operation_kind,payload_fingerprint FROM canonical_mini_pet_operation_replays WHERE player_id=? AND request_key=? FOR UPDATE",
+      "SELECT mini_pet_operation_id,owned_mini_pet_id,operation_kind,payload_fingerprint,operation_status FROM canonical_mini_pet_operation_replays WHERE player_id=? AND request_key=? FOR UPDATE",
       [input.playerId, input.requestKey],
     ))[0];
     if (prior !== undefined) return this.toReplay(prior, fingerprint);
+    const player = (await transaction.query<PlayerRow[]>(
+      "SELECT player_id FROM canonical_players WHERE player_id=? FOR UPDATE",
+      [input.playerId],
+    ))[0];
+    if (player === undefined) throw new Error("CANONICAL_MINI_PET_PLAYER_NOT_FOUND");
     const definition = (await transaction.query<DefinitionRow[]>(
       "SELECT mini_pet_id FROM canonical_mini_pet_definitions WHERE mini_pet_id=? AND active_flag=TRUE FOR UPDATE",
       [input.miniPetId],
@@ -168,15 +176,24 @@ export class MariaCanonicalMiniPetRepository {
 
   private async findReplay(input: CanonicalMiniPetAcquireInput): Promise<CanonicalMiniPetAcquireResult | undefined> {
     const row = (await this.database.query<ReplayRow[]>(
-      "SELECT mini_pet_operation_id,owned_mini_pet_id,operation_kind,payload_fingerprint FROM canonical_mini_pet_operation_replays WHERE player_id=? AND request_key=?",
+      "SELECT mini_pet_operation_id,owned_mini_pet_id,operation_kind,payload_fingerprint,operation_status FROM canonical_mini_pet_operation_replays WHERE player_id=? AND request_key=?",
       [input.playerId, input.requestKey],
     ))[0];
     return row === undefined ? undefined : this.toReplay(row, acquireFingerprint(input));
   }
 
+  private async findConcurrentReplay(input: CanonicalMiniPetAcquireInput): Promise<CanonicalMiniPetAcquireResult | undefined> {
+    for (let attempt = 0; attempt < CANONICAL_MINI_PET_CONCURRENT_REPLAY_READ_ATTEMPTS; attempt += 1) {
+      await waitBeforeConcurrentReplayRead(attempt);
+      const replay = await this.findReplay(input);
+      if (replay !== undefined) return replay;
+    }
+    return undefined;
+  }
+
   private toReplay(row: ReplayRow, fingerprint: string): CanonicalMiniPetAcquireResult {
     if (row.operation_kind !== "acquire" || row.payload_fingerprint !== fingerprint) throw new Error("CANONICAL_MINI_PET_REQUEST_PAYLOAD_CONFLICT");
-    if (row.owned_mini_pet_id === null) throw new Error("CANONICAL_MINI_PET_REPLAY_INCOMPLETE");
+    if (row.operation_status !== "completed" || !/^[a-z][a-z0-9]{7}$/.test(row.mini_pet_operation_id) || typeof row.owned_mini_pet_id !== "string" || !/^[a-z][a-z0-9]{7}$/.test(row.owned_mini_pet_id)) throw new Error("CANONICAL_MINI_PET_REPLAY_INCOMPLETE");
     return { miniPetOperationId: row.mini_pet_operation_id, ownedMiniPetId: row.owned_mini_pet_id, replayed: true };
   }
 }
