@@ -1,0 +1,1661 @@
+{
+  "contractVersion": "WBS787_FURNITURE_PLACE_TARGETED_V1",
+  "consumerId": "sql-repository-818137c4fb22037a",
+  "sliceId": "SL-FURNITURE-PLACE-MUTATION-PARITY-01",
+  "executionId": "가구배치DB-SL-FURNITURE-PLACE-MUTATION-PARITY-01-20260909074941",
+  "leaseRow": 2615,
+  "baselineCommit": "24fac92e9b73fb112dc75177945cc33326c272ad",
+  "sourceMethod": {
+    "start": 15305,
+    "end": 20613,
+    "sha256": "24bee1a04a122da6f6e2ca53d23d2a8911500b5b8864ce4b91c43391a54e8466"
+  },
+  "migrationClosure": [
+    "443_object_identity_audit_provider.sql",
+    "444_canonical_item_inventory.sql",
+    "445_object_furniture_home_canonical_model.sql"
+  ],
+  "scenarios": {
+    "success": {
+      "processId": 16108,
+      "moduleExecutionId": "55d49734-f1dd-4199-acb4-590b43ebde1d",
+      "role": "PRIMARY",
+      "scenario": "success",
+      "database": {
+        "host": "127.0.0.1",
+        "port": 3346,
+        "name": "hoibot_wbs787_furniture_place_2615"
+      },
+      "attempts": [
+        {
+          "number": 1,
+          "outcome": "COMMIT",
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "object_owned_furniture_instances",
+            "object_home_furniture_placements"
+          ],
+          "attemptedDml": [
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+            "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+          ],
+          "affectedDml": [
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+            "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+          ],
+          "affectedRows": 4,
+          "failure": null
+        }
+      ],
+      "committedDml": [
+        "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+        "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+        "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+        "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+      ],
+      "committedRows": 4,
+      "rolledBackAffectedRows": 0,
+      "replayed": false,
+      "errorCode": null,
+      "beforeRows": {
+        "object_owned_furniture_instances": [
+          {
+            "owned_furniture_id": "owner001",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "bag",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          },
+          {
+            "owned_furniture_id": "owner002",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "bag",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_home_furniture_placements": [],
+        "object_furniture_operation_replays": [],
+        "object_furniture_ownership_history": []
+      },
+      "afterRows": {
+        "object_owned_furniture_instances": [
+          {
+            "owned_furniture_id": "owner001",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "placed",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          },
+          {
+            "owned_furniture_id": "owner002",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "bag",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_home_furniture_placements": [
+          {
+            "home_furniture_placement_id": "pls00001",
+            "owned_furniture_id": "owner001",
+            "placement_order": 7,
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_furniture_operation_replays": [
+          {
+            "furniture_operation_id": "ops00001",
+            "player_id": "player01",
+            "idempotency_scope": "wbs787.place",
+            "idempotency_key": "request-success",
+            "operation_kind": "place_owned_furniture",
+            "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+            "owned_furniture_id": "owner001",
+            "result_status": "placed",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_furniture_ownership_history": [
+          {
+            "furniture_ownership_history_id": "his00001",
+            "owned_furniture_id": "owner001",
+            "furniture_operation_id": "ops00001",
+            "status_before": "bag",
+            "status_after": "placed",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ]
+      },
+      "beforeSha256": "c053a5c2e6e8845e1a53a32eb186a077e60da68716950add2120a09f4108dc3c",
+      "afterSha256": "e147b717f7fae58720837b3924f9d8421fcb627fc9b149197ec27f76cef6ba70",
+      "locatorProjection": {
+        "mode": "RAW_COMPOSITE",
+        "rows": [
+          {
+            "furniture_operation_id": "ops00001",
+            "player_id": "player01",
+            "idempotency_scope": "wbs787.place",
+            "idempotency_key": "request-success",
+            "operation_kind": "place_owned_furniture",
+            "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+            "owned_furniture_id": "owner001",
+            "result_status": "placed"
+          }
+        ],
+        "locatorOK": true
+      },
+      "externalNetworkCalls": 0,
+      "replyCalls": 0
+    },
+    "rollback": {
+      "processId": 26852,
+      "moduleExecutionId": "b18cf035-a016-4c65-be63-9e6aeeed3897",
+      "role": "PRIMARY",
+      "scenario": "rollback",
+      "database": {
+        "host": "127.0.0.1",
+        "port": 3346,
+        "name": "hoibot_wbs787_furniture_place_2615"
+      },
+      "attempts": [
+        {
+          "number": 1,
+          "outcome": "ROLLBACK",
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "object_owned_furniture_instances",
+            "object_home_furniture_placements"
+          ],
+          "attemptedDml": [
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+            "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)"
+          ],
+          "affectedDml": [
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)"
+          ],
+          "affectedRows": 1,
+          "failure": {
+            "code": "ER_DUP_ENTRY",
+            "errno": 1062,
+            "errorKind": "BUSINESS_UNIQUE_CONFLICT",
+            "constraintName": "PRIMARY"
+          }
+        }
+      ],
+      "committedDml": [],
+      "committedRows": 0,
+      "rolledBackAffectedRows": 1,
+      "replayed": null,
+      "errorCode": "CANONICAL_FURNITURE_PLACEMENT_ID_COLLISION_RETRY_EXHAUSTED",
+      "beforeRows": {
+        "object_owned_furniture_instances": [
+          {
+            "owned_furniture_id": "owner001",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "bag",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          },
+          {
+            "owned_furniture_id": "owner002",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "bag",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_home_furniture_placements": [
+          {
+            "home_furniture_placement_id": "plseed01",
+            "owned_furniture_id": "owner002",
+            "placement_order": 99,
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_furniture_operation_replays": [],
+        "object_furniture_ownership_history": []
+      },
+      "afterRows": {
+        "object_owned_furniture_instances": [
+          {
+            "owned_furniture_id": "owner001",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "bag",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          },
+          {
+            "owned_furniture_id": "owner002",
+            "player_id": "player01",
+            "furniture_id": "furnit01",
+            "enhancement_level": 0,
+            "ownership_status": "bag",
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_home_furniture_placements": [
+          {
+            "home_furniture_placement_id": "plseed01",
+            "owned_furniture_id": "owner002",
+            "placement_order": 99,
+            "INSERT_USER": "wbs787-fixture",
+            "INSERT_TIME": "2026-09-09 08:00:00",
+            "UPDATE_USER": "wbs787-fixture",
+            "UPDATE_TIME": "2026-09-09 08:00:00"
+          }
+        ],
+        "object_furniture_operation_replays": [],
+        "object_furniture_ownership_history": []
+      },
+      "beforeSha256": "f77c06acac98e55dfb6f9495a8b6d23e3eb4305ad6358d2231bf2bbab431bb41",
+      "afterSha256": "f77c06acac98e55dfb6f9495a8b6d23e3eb4305ad6358d2231bf2bbab431bb41",
+      "locatorProjection": {
+        "mode": "RAW_COMPOSITE",
+        "rows": [],
+        "locatorOK": true
+      },
+      "externalNetworkCalls": 0,
+      "replyCalls": 0
+    },
+    "duplicate": [
+      {
+        "processId": 8596,
+        "moduleExecutionId": "b7c6d903-2137-4fa6-a96c-ef870622804e",
+        "role": "SEED",
+        "scenario": "duplicate",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "object_furniture_operation_replays",
+              "object_owned_furniture_instances",
+              "object_home_furniture_placements"
+            ],
+            "attemptedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedRows": 4,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+          "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+          "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+          "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+        ],
+        "committedRows": 4,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "errorCode": null,
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [],
+          "object_furniture_operation_replays": [],
+          "object_furniture_ownership_history": []
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "pld00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opd00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hid00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opd00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "c053a5c2e6e8845e1a53a32eb186a077e60da68716950add2120a09f4108dc3c",
+        "afterSha256": "17d05e9db5bff5e68339633ace71a4ba6b6acd53ace1a6d5a0f2296c0dea869b",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opd00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 25720,
+        "moduleExecutionId": "8b426720-dec9-4d11-9c39-dc32026cf6dd",
+        "role": "REPLAY",
+        "scenario": "duplicate",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "object_furniture_operation_replays",
+              "object_owned_furniture_instances",
+              "object_furniture_ownership_history"
+            ],
+            "attemptedDml": [],
+            "affectedDml": [],
+            "affectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": true,
+        "errorCode": null,
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "pld00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opd00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hid00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opd00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "pld00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opd00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hid00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opd00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "17d05e9db5bff5e68339633ace71a4ba6b6acd53ace1a6d5a0f2296c0dea869b",
+        "afterSha256": "17d05e9db5bff5e68339633ace71a4ba6b6acd53ace1a6d5a0f2296c0dea869b",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opd00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ],
+    "drift": [
+      {
+        "processId": 8852,
+        "moduleExecutionId": "53a54ca1-c119-4d26-9878-ccf064059fa7",
+        "role": "SEED",
+        "scenario": "drift",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "object_furniture_operation_replays",
+              "object_owned_furniture_instances",
+              "object_home_furniture_placements"
+            ],
+            "attemptedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedRows": 4,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+          "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+          "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+          "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+        ],
+        "committedRows": 4,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "errorCode": null,
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [],
+          "object_furniture_operation_replays": [],
+          "object_furniture_ownership_history": []
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "plx00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opx00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-drift",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hix00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opx00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "c053a5c2e6e8845e1a53a32eb186a077e60da68716950add2120a09f4108dc3c",
+        "afterSha256": "022ec5c6a19595bfd59f5b7afb1d32c83909890d2b348a9556b630ee34b68f03",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opx00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-drift",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 15692,
+        "moduleExecutionId": "839b49f7-3dc3-42ff-84a5-a90baca8c9c5",
+        "role": "PRIMARY",
+        "scenario": "drift",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "ROLLBACK",
+            "lockOrder": [
+              "object_furniture_operation_replays"
+            ],
+            "attemptedDml": [],
+            "affectedDml": [],
+            "affectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": null,
+        "errorCode": "CANONICAL_FURNITURE_IDEMPOTENCY_CONFLICT",
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "plx00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opx00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-drift",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hix00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opx00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "plx00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opx00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-drift",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hix00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opx00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "022ec5c6a19595bfd59f5b7afb1d32c83909890d2b348a9556b630ee34b68f03",
+        "afterSha256": "022ec5c6a19595bfd59f5b7afb1d32c83909890d2b348a9556b630ee34b68f03",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opx00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-drift",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ],
+    "restart": [
+      {
+        "processId": 27540,
+        "moduleExecutionId": "da65049e-b4f8-4643-b629-c71e0c84c1e9",
+        "role": "SEED",
+        "scenario": "restart",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "object_furniture_operation_replays",
+              "object_owned_furniture_instances",
+              "object_home_furniture_placements"
+            ],
+            "attemptedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedRows": 4,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+          "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+          "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+          "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+        ],
+        "committedRows": 4,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "errorCode": null,
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [],
+          "object_furniture_operation_replays": [],
+          "object_furniture_ownership_history": []
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "plr00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opr00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-restart",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hir00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opr00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "c053a5c2e6e8845e1a53a32eb186a077e60da68716950add2120a09f4108dc3c",
+        "afterSha256": "d812784dedffa5196ae7578bb18e575a55ba7211f5fd6dec7cc3afe71578d24f",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opr00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-restart",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 27052,
+        "moduleExecutionId": "602e2a05-22b2-435b-9ef0-3e9ec3151e3a",
+        "role": "REPLAY",
+        "scenario": "restart",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "object_furniture_operation_replays",
+              "object_owned_furniture_instances",
+              "object_furniture_ownership_history"
+            ],
+            "attemptedDml": [],
+            "affectedDml": [],
+            "affectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": true,
+        "errorCode": null,
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "plr00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opr00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-restart",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hir00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opr00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "plr00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opr00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-restart",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hir00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opr00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "d812784dedffa5196ae7578bb18e575a55ba7211f5fd6dec7cc3afe71578d24f",
+        "afterSha256": "d812784dedffa5196ae7578bb18e575a55ba7211f5fd6dec7cc3afe71578d24f",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opr00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-restart",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ],
+    "concurrency": [
+      {
+        "processId": 28112,
+        "moduleExecutionId": "7fd61a35-88c4-45d6-b928-8724e45a57f6",
+        "role": "CONCURRENT",
+        "scenario": "concurrency",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "object_furniture_operation_replays",
+              "object_owned_furniture_instances",
+              "object_home_furniture_placements"
+            ],
+            "attemptedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedDml": [
+              "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+              "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+              "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+              "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+            ],
+            "affectedRows": 4,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+          "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+          "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+          "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+        ],
+        "committedRows": 4,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "errorCode": null,
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [],
+          "object_furniture_operation_replays": [],
+          "object_furniture_ownership_history": []
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "pla00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opa00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-concurrency",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hia00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opa00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "c053a5c2e6e8845e1a53a32eb186a077e60da68716950add2120a09f4108dc3c",
+        "afterSha256": "26bca3b086948c824b4ec818d6ddc485cda3dbf90a256cd7a56d641677a6c1d1",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opa00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-concurrency",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 3136,
+        "moduleExecutionId": "ce45d4b4-96bb-43a3-ac9b-11a74c6a0b73",
+        "role": "CONCURRENT",
+        "scenario": "concurrency",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3346,
+          "name": "hoibot_wbs787_furniture_place_2615"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "object_furniture_operation_replays",
+              "object_owned_furniture_instances",
+              "object_furniture_ownership_history"
+            ],
+            "attemptedDml": [],
+            "affectedDml": [],
+            "affectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": true,
+        "errorCode": null,
+        "beforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [],
+          "object_furniture_operation_replays": [],
+          "object_furniture_ownership_history": []
+        },
+        "afterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "owner001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            },
+            {
+              "owned_furniture_id": "owner002",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_home_furniture_placements": [
+            {
+              "home_furniture_placement_id": "pla00001",
+              "owned_furniture_id": "owner001",
+              "placement_order": 7,
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "opa00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-concurrency",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ],
+          "object_furniture_ownership_history": [
+            {
+              "furniture_ownership_history_id": "hia00001",
+              "owned_furniture_id": "owner001",
+              "furniture_operation_id": "opa00001",
+              "status_before": "bag",
+              "status_after": "placed",
+              "INSERT_USER": "wbs787-fixture",
+              "INSERT_TIME": "2026-09-09 08:00:00",
+              "UPDATE_USER": "wbs787-fixture",
+              "UPDATE_TIME": "2026-09-09 08:00:00"
+            }
+          ]
+        },
+        "beforeSha256": "c053a5c2e6e8845e1a53a32eb186a077e60da68716950add2120a09f4108dc3c",
+        "afterSha256": "26bca3b086948c824b4ec818d6ddc485cda3dbf90a256cd7a56d641677a6c1d1",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "furniture_operation_id": "opa00001",
+              "player_id": "player01",
+              "idempotency_scope": "wbs787.place",
+              "idempotency_key": "request-concurrency",
+              "operation_kind": "place_owned_furniture",
+              "payload_fingerprint": "8dddf88658af3feac211be2f99f45ad416193e4f2f93a0389fd28642d2d04e00",
+              "owned_furniture_id": "owner001",
+              "result_status": "placed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ]
+  }
+}
