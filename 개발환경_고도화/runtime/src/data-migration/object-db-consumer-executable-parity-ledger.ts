@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 
 import { canonicalizeObjectDbConsumerSourceText, OBJECT_DB_CONSUMER_BASELINE_COMMIT } from "./object-db-consumer-baseline.js";
-import { deriveConsumerManifest, predicateAcceptsRegistryCommand } from "./object-db-consumer-transition-audit.js";
+import { deriveUniqueClassMethodSourceSpan, predicateAcceptsRegistryCommand } from "./object-db-consumer-transition-audit.js";
 import {
   createConsumerIdResolver,
   parseConsumerIdRegistry,
@@ -1131,10 +1131,10 @@ function assertReceiptGitProvenance(
       ||receipt.expectedActual.result.expectedSha256!==sha256CanonicalText(JSON.stringify(projectObjectDbMutationOracleResult(oracle)))||receipt.expectedActual.reply.expectedSha256!==sha256CanonicalText("NO_REPLY"))throw new Error(`${receipt.receiptId} independent Wave20 oracle mismatch`);
     if(manifestConsumer.file!==contract.source.path||manifestConsumer.symbol!=="importDefinition"||manifestConsumer.triggerOrPredicate!=="SQL_METHOD:importDefinition"||manifestConsumer.access!=="READ_WRITE"||manifestConsumer.sourceSpan.start!==contract.source.catalogSpanStart||manifestConsumer.sourceSpan.end!==contract.source.catalogSpanEnd||manifestConsumer.sourceSpan.sha256!==contract.source.catalogSpanSha256)throw new Error(`${receipt.receiptId} Wave20 manifest classification drift`);
     const source=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,evidenceCommit,contract.source.path));
-    const currentConsumer=deriveConsumerManifest(repositoryRoot,evidenceCommit).consumers.find(candidate=>candidate.consumerId===OBJECT_DB_PARITY_WAVE20_CONSUMER_ID);
+    const currentSpan=deriveUniqueClassMethodSourceSpan(source,"MariaCanonicalPackageRewardRepository","importDefinition");
     const catalogSource=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,OBJECT_DB_CONSUMER_BASELINE_COMMIT,contract.source.path));
     const relocationDiff=canonicalizeObjectDbConsumerSourceText(execFileSync("git",["diff","--no-ext-diff","--unified=0",OBJECT_DB_CONSUMER_BASELINE_COMMIT,evidenceCommit,"--",contract.source.path],{cwd:repositoryRoot,encoding:"utf8",maxBuffer:16*1024*1024}));
-    if(currentConsumer===undefined||currentConsumer.file!==contract.source.path||currentConsumer.symbol!=="importDefinition"||currentConsumer.triggerOrPredicate!=="SQL_METHOD:importDefinition"||currentConsumer.access!=="READ_WRITE"||currentConsumer.sourceSpan.start!==contract.source.spanStart||currentConsumer.sourceSpan.end!==contract.source.spanEnd||currentConsumer.sourceSpan.sha256!==contract.source.spanSha256
+    if(currentSpan.start!==contract.source.spanStart||currentSpan.end!==contract.source.spanEnd||currentSpan.sha256!==contract.source.spanSha256
       ||sha256CanonicalText(catalogSource.slice(contract.source.catalogSpanStart,contract.source.catalogSpanEnd))!==contract.source.catalogSpanSha256||sha256CanonicalText(relocationDiff)!==contract.source.relocationDiffSha256
       ||sha256CanonicalText(source)!==contract.source.sha256||sha256CanonicalText(source.slice(contract.source.spanStart,contract.source.spanEnd))!==contract.source.spanSha256||verified.primary.committedRowCount!==oracle.expectedCommittedRowCount)throw new Error(`${receipt.receiptId} Wave20 source/observation drift`);
     for(const path of fixture.runtimeSourcePaths as unknown[]){if(typeof path!=="string"||sha256CanonicalText(readCommitBlob(repositoryRoot,evidenceCommit,path)).length!==64)throw new Error(`${receipt.receiptId} Wave20 runtime source-chain drift`);}

@@ -904,6 +904,23 @@ function classMethodSpans(text: string): ClassMethodSpan[] {
   return output;
 }
 
+export function deriveUniqueClassMethodSourceSpan(text: string, className: string, methodName: string): { start: number; end: number; sha256: string } {
+  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(className) || !/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(methodName)) throw new Error("consumer source locator identifier invalid");
+  const masked = maskNonStructuralCode(text);
+  const classPattern = new RegExp(`\\bexport\\s+class\\s+${className}\\b`, "g");
+  const classes = [...masked.matchAll(classPattern)];
+  if (classes.length !== 1) throw new Error(`consumer source locator class cardinality drift: ${className}`);
+  const classStart = classes[0]!.index ?? 0;
+  const classBrace = masked.indexOf("{", classStart + classes[0]![0].length);
+  const classEnd = classBrace === -1 ? -1 : balancedEnd(masked, classBrace, "{", "}");
+  if (classEnd === -1) throw new Error(`consumer source locator class boundary drift: ${className}`);
+  const methods = classMethodSpans(text.slice(classStart, classEnd + 1)).filter(({ name }) => name === methodName);
+  if (methods.length !== 1) throw new Error(`consumer source locator method cardinality drift: ${className}.${methodName}`);
+  const start = classStart + methods[0]!.start;
+  const end = classStart + methods[0]!.end;
+  return { start, end, sha256: createHash("sha256").update(text.slice(start, end)).digest("hex") };
+}
+
 function expandClassMethodClosure(text: string, seed: ClassMethodSpan): { text: string; methods: string[] } {
   const methods = new Map(classMethodSpans(text).map((method) => [method.name, method]));
   const visited = new Set<string>([seed.name]);

@@ -27,10 +27,14 @@
     "consumerId": "sql-repository-b1d650b73c2ddff0",
     "source": {
       "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-      "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-      "spanStart": 7848,
-      "spanEnd": 8601,
-      "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+      "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+      "spanStart": 8044,
+      "spanEnd": 9247,
+      "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+      "catalogSpanStart": 7848,
+      "catalogSpanEnd": 8601,
+      "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+      "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
     },
     "database": {
       "host": "127.0.0.1",
@@ -580,15 +584,19 @@
       "scenarioKind": "MUTATION_SUCCESS",
       "traces": [
         {
-          "processId": 26676,
-          "moduleExecutionId": "2896694e-16ed-42e0-b7fc-4488e7dc81e9",
+          "processId": 17164,
+          "moduleExecutionId": "2e3ce095-8566-49f4-a973-292498855795",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -732,15 +740,19 @@
       "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
       "traces": [
         {
-          "processId": 8800,
-          "moduleExecutionId": "52c4941c-84a8-4d64-b442-09e3e434e68c",
+          "processId": 24776,
+          "moduleExecutionId": "60838b54-06fb-4ecc-945f-d20a02b87015",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -828,15 +840,19 @@
       "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
       "traces": [
         {
-          "processId": 17472,
-          "moduleExecutionId": "5fd4c48d-fb69-4cd3-9be2-051f6c8131db",
+          "processId": 11024,
+          "moduleExecutionId": "311c26d9-86ad-4215-b296-63f80c6b0242",
           "role": "SEED",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -975,15 +991,19 @@
           "replyCalls": 0
         },
         {
-          "processId": 14112,
-          "moduleExecutionId": "a16b3632-ef75-4578-aed4-24712cb09006",
+          "processId": 6940,
+          "moduleExecutionId": "fa58cfa6-7bdb-4fa6-b3d8-523f00ac6470",
           "role": "REPLAY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -1040,15 +1060,19 @@
       "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
       "traces": [
         {
-          "processId": 2288,
-          "moduleExecutionId": "c23ded9f-05ad-40b4-b621-e446bfc120ad",
+          "processId": 4116,
+          "moduleExecutionId": "5e031c25-1843-4cf6-807b-77afc7a5b16c",
           "role": "SEED",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -1187,15 +1211,19 @@
           "replyCalls": 0
         },
         {
-          "processId": 23884,
-          "moduleExecutionId": "33a8170c-da95-44a0-890d-5463ca99d472",
+          "processId": 27600,
+          "moduleExecutionId": "bf2e3d31-1791-4fca-abf3-7db4ecba90f7",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -1252,15 +1280,19 @@
       "scenarioKind": "RESTART_REPLAY",
       "traces": [
         {
-          "processId": 9652,
-          "moduleExecutionId": "208171f1-ffe9-4dcc-86cc-597e665f4f1f",
+          "processId": 3940,
+          "moduleExecutionId": "961151bc-f4cc-42f7-a91f-baadac00e6f8",
           "role": "SEED",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -1399,15 +1431,19 @@
           "replyCalls": 0
         },
         {
-          "processId": 22928,
-          "moduleExecutionId": "4c4cc55e-3ec9-4171-afa0-aa352594a1f0",
+          "processId": 13248,
+          "moduleExecutionId": "5b7bb7dc-abcc-4a98-8525-bea6a5523925",
           "role": "REPLAY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -1464,15 +1500,19 @@
       "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
       "traces": [
         {
-          "processId": 27524,
-          "moduleExecutionId": "79558b85-cc34-4c05-b713-f602c5b84667",
+          "processId": 22444,
+          "moduleExecutionId": "467a7c6d-be5c-41b9-bd47-70b6bec3fc6b",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -1611,15 +1651,19 @@
           "replyCalls": 0
         },
         {
-          "processId": 10048,
-          "moduleExecutionId": "2d1f4230-6d1b-4655-9aae-4ca9a1aead79",
+          "processId": 18276,
+          "moduleExecutionId": "4175265d-e670-47b7-b26c-929267353a2c",
           "role": "REPLAY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
-            "sha256": "d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5",
-            "spanStart": 7848,
-            "spanEnd": 8601,
-            "spanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0"
+            "sha256": "012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f",
+            "spanStart": 8044,
+            "spanEnd": 9247,
+            "spanSha256": "38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448",
+            "catalogSpanStart": 7848,
+            "catalogSpanEnd": 8601,
+            "catalogSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
+            "relocationDiffSha256": "ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052"
           },
           "database": {
             "host": "127.0.0.1",
@@ -1636,13 +1680,6 @@
             },
             {
               "attempt": 2,
-              "outcome": "ROLLBACK",
-              "attemptedDmlStatements": [],
-              "affectedDmlStatements": [],
-              "affectedRowCount": 0
-            },
-            {
-              "attempt": 3,
               "outcome": "COMMIT",
               "attemptedDmlStatements": [],
               "affectedDmlStatements": [],
