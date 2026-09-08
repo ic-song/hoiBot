@@ -20,6 +20,7 @@
     "provider error or absent/stale/tampered evidence returns LEGACY_SIDE_EFFECT_PARITY_UNPROVEN",
     "isolated SQL evidence requires byte-exact WBS777 migration488 fixture provenance, required completeness columns, query invoked/completed and null error separately from the empty-evidence result",
     "isolated transcript SHA-256 canonicalizes CRLF and bare CR to LF before UTF-8 hashing and records CRLF_OR_CR_TO_LF_UTF8",
+    "task-scoped gitattributes pins the immutable transcript and byte-exact WBS777 dependency fixture to LF checkout",
     "projector and readiness never write operational JSON and readiness exposes no DML participant"
   ],
   "protectedInputsUnmodified": [
