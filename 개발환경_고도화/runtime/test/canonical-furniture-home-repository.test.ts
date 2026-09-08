@@ -56,9 +56,9 @@ function grantInput(overrides: Partial<GrantCanonicalFurnitureInput> = {}): Gran
   return { actor: "migration", playerId: "p1234567", furnitureId: "f1234567", enhancementLevel: 3n, idempotencyScope: "legacy.import", idempotencyKey: "source-1", ...overrides };
 }
 
-function mariaError(code: string, errno: number | undefined, constraint?: string): Error {
-  const message = constraint === undefined ? code : `Duplicate entry 'fixture' for key '${constraint}'`;
-  return Object.assign(new Error(message), { code, ...(errno === undefined ? {} : { errno }), sqlMessage: message });
+function mariaError(code: string | undefined, errno: number | undefined, constraint?: string): Error {
+  const message = constraint === undefined ? (code ?? `Maria errno ${errno}`) : `Duplicate entry 'fixture' for key '${constraint}'`;
+  return Object.assign(new Error(message), { ...(code === undefined ? {} : { code }), ...(errno === undefined ? {} : { errno }), sqlMessage: message });
 }
 
 interface GrantDatabaseOptions {
@@ -204,6 +204,11 @@ describe("canonical furniture home repository", () => {
     for (const error of [mariaError("ER_DUP_ENTRY", 1062, "uq_unrelated"), mariaError("ER_DUP_ENTRY", undefined, "uq_object_furniture_operation_replay")]) {
       const fixture = grantDatabase({ replay, replayVisibleAfterFailure: true, replayInsertError: error });
       await assert.rejects(new MariaCanonicalFurnitureHomeRepository(fixture.client, () => ["o1234567", "r1234567"].shift()!, audit).grantOwnedFurniture(grantInput()), (actual) => actual === error);
+    }
+    for (const partial of [mariaError("ER_LOCK_DEADLOCK", undefined), mariaError(undefined, 1213), mariaError("ER_LOCK_WAIT_TIMEOUT", undefined), mariaError(undefined, 1205)]) {
+      const fixture = grantDatabase({ transactionErrors: [partial] });
+      await assert.rejects(new MariaCanonicalFurnitureHomeRepository(fixture.client, () => "o1234567", audit).grantOwnedFurniture(grantInput()), (actual) => actual === partial);
+      assert.equal(fixture.attempts(), 1);
     }
     const exhausted = grantDatabase({ transactionErrors: [mariaError("ER_LOCK_DEADLOCK", 1213), mariaError("ER_LOCK_WAIT_TIMEOUT", 1205), mariaError("ER_LOCK_DEADLOCK", 1213)] });
     await assert.rejects(new MariaCanonicalFurnitureHomeRepository(exhausted.client, () => "o1234567", audit).grantOwnedFurniture(grantInput()), /GRANT_TRANSACTION_RETRY_EXHAUSTED/);

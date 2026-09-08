@@ -1,0 +1,2137 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave22:furniture-grant:v1",
+  "sliceId": "WBS786",
+  "consumerId": "sql-repository-6a8f4b07e980a91f",
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+    "개발환경_고도화/runtime/src/database.ts",
+    "개발환경_고도화/runtime/src/shared/maria-database-error-policy.ts",
+    "개발환경_고도화/runtime/src/identity/object-identity-audit-provider.ts",
+    "개발환경_고도화/runtime/migrations/443_object_identity_audit_provider.sql",
+    "개발환경_고도화/runtime/migrations/444_canonical_item_inventory.sql",
+    "개발환경_고도화/runtime/migrations/445_object_furniture_home_canonical_model.sql"
+  ],
+  "receiptContract": {
+    "version": "WBS786_FURNITURE_GRANT_MUTATION_DIRECT_V1",
+    "transaction": "MUTATION",
+    "externalNetworkCalls": 0,
+    "replyCalls": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES",
+    "concurrency": "EXACTLY_ONE_COMMITTED_WRITER",
+    "sourceMethod": "MariaCanonicalFurnitureHomeRepository.grantOwnedFurniture",
+    "locatorProjectionMode": "RAW_COMPOSITE_DB_PROJECTION"
+  },
+  "mutationContract": {
+    "format": "hoibot-object-db-consumer-mutation-evidence-v1",
+    "consumerId": "sql-repository-6a8f4b07e980a91f",
+    "source": {
+      "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+      "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+      "spanStart": 9596,
+      "spanEnd": 13882,
+      "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+      "catalogSpanStart": 8538,
+      "catalogSpanEnd": 12292,
+      "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+      "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "forbiddenPort": 3306,
+      "namePrefix": "hoibot_wave22_furniture_grant"
+    },
+    "allowedTables": [
+      "object_owned_furniture_instances",
+      "object_furniture_operation_replays"
+    ],
+    "scenarios": [
+      {
+        "scenarioKind": "MUTATION_SUCCESS",
+        "traceRoles": [
+          "PRIMARY"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [
+          "object_owned_furniture_instances",
+          "object_furniture_operation_replays"
+        ],
+        "expectedAffectedDmlTableSequence": [
+          "object_owned_furniture_instances",
+          "object_furniture_operation_replays"
+        ],
+        "expectedDmlTableSequence": [
+          "object_owned_furniture_instances",
+          "object_furniture_operation_replays"
+        ],
+        "expectedLockOrder": [
+          "object_furniture_operation_replays",
+          "canonical_players",
+          "object_furniture_definitions"
+        ],
+        "expectedCommittedRowCount": 2,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_owned_furniture_instances": 0,
+          "object_furniture_operation_replays": 0
+        },
+        "expectedAfter": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedReplayed": false,
+        "expectedErrorCode": null,
+        "expectedAttemptFailures": [
+          null
+        ],
+        "expectedLockOrderByAttempt": [
+          [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ]
+        ],
+        "expectedBeforeRows": {
+          "object_owned_furniture_instances": [],
+          "object_furniture_operation_replays": []
+        },
+        "expectedAfterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "sown0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "srep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-success",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "sown0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedLocatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "playerId": "player01",
+          "idempotencyScope": "wave22.grant",
+          "idempotencyKey": "request-success",
+          "rows": [
+            {
+              "furniture_operation_id": "srep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-success",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "sown0001",
+              "result_status": "granted"
+            }
+          ],
+          "locatorOK": true
+        },
+        "expectedBeforeSha256": "28b3b212146c947b24fbf355c9aed5f65ebf6a497766268e3ae7547553c6e035",
+        "expectedAfterSha256": "3cfd0f7e9fb7136229336fb8086f6a0fcbbad51a6b995ed9685bd9758fe368f8",
+        "distinctProcessRoles": []
+      },
+      {
+        "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+        "traceRoles": [
+          "PRIMARY"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "ROLLBACK",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [
+          "object_owned_furniture_instances",
+          "object_furniture_operation_replays",
+          "object_furniture_operation_replays",
+          "object_furniture_operation_replays",
+          "object_furniture_operation_replays",
+          "object_furniture_operation_replays",
+          "object_furniture_operation_replays",
+          "object_furniture_operation_replays",
+          "object_furniture_operation_replays"
+        ],
+        "expectedAffectedDmlTableSequence": [
+          "object_owned_furniture_instances"
+        ],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "object_furniture_operation_replays",
+          "canonical_players",
+          "object_furniture_definitions"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 1,
+        "expectedBefore": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedAfter": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedReplayed": null,
+        "expectedErrorCode": "CANONICAL_FURNITURE_OPERATION_ID_COLLISION_RETRY_EXHAUSTED",
+        "expectedAttemptFailures": [
+          {
+            "code": "ER_DUP_ENTRY",
+            "errno": 1062,
+            "errorKind": "BUSINESS_UNIQUE_CONFLICT",
+            "constraintName": "PRIMARY"
+          }
+        ],
+        "expectedLockOrderByAttempt": [
+          [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ]
+        ],
+        "expectedBeforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "seedown1",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "collide1",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.seed",
+              "idempotency_key": "collision",
+              "operation_kind": "seed",
+              "payload_fingerprint": "ec2c8919c203dde483462ff6f364b963e21ffa255aca48ad26b57158bfbc0ef7",
+              "owned_furniture_id": "seedown1",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedAfterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "seedown1",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 0,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "collide1",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.seed",
+              "idempotency_key": "collision",
+              "operation_kind": "seed",
+              "payload_fingerprint": "ec2c8919c203dde483462ff6f364b963e21ffa255aca48ad26b57158bfbc0ef7",
+              "owned_furniture_id": "seedown1",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedLocatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "playerId": "player01",
+          "idempotencyScope": "wave22.grant",
+          "idempotencyKey": "request-failure",
+          "rows": [],
+          "locatorOK": true
+        },
+        "expectedBeforeSha256": "bc913c681d417292c09f73d5f8f2018a642a78ccfa4997518add5321c221076c",
+        "expectedAfterSha256": "bc913c681d417292c09f73d5f8f2018a642a78ccfa4997518add5321c221076c",
+        "distinctProcessRoles": []
+      },
+      {
+        "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+        "traceRoles": [
+          "SEED",
+          "REPLAY"
+        ],
+        "primaryRole": "REPLAY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [],
+        "expectedAffectedDmlTableSequence": [],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "object_furniture_operation_replays",
+          "object_owned_furniture_instances",
+          "object_furniture_definitions"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedAfter": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedReplayed": true,
+        "expectedErrorCode": null,
+        "expectedAttemptFailures": [
+          null
+        ],
+        "expectedLockOrderByAttempt": [
+          [
+            "object_furniture_operation_replays",
+            "object_owned_furniture_instances",
+            "object_furniture_definitions"
+          ]
+        ],
+        "expectedBeforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "down0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "drep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "down0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedAfterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "down0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "drep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "down0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedLocatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "playerId": "player01",
+          "idempotencyScope": "wave22.grant",
+          "idempotencyKey": "request-duplicate",
+          "rows": [
+            {
+              "furniture_operation_id": "drep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-duplicate",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "down0001",
+              "result_status": "granted"
+            }
+          ],
+          "locatorOK": true
+        },
+        "expectedBeforeSha256": "33806ca2b91e2b3cabfb5e0038f00cc67d7c3d3ef569f75364bb418dab9319ee",
+        "expectedAfterSha256": "33806ca2b91e2b3cabfb5e0038f00cc67d7c3d3ef569f75364bb418dab9319ee",
+        "distinctProcessRoles": [
+          "SEED",
+          "REPLAY"
+        ]
+      },
+      {
+        "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+        "traceRoles": [
+          "SEED",
+          "PRIMARY"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "ROLLBACK",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [],
+        "expectedAffectedDmlTableSequence": [],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "object_furniture_operation_replays"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedAfter": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedReplayed": null,
+        "expectedErrorCode": "CANONICAL_FURNITURE_IDEMPOTENCY_CONFLICT",
+        "expectedAttemptFailures": [
+          null
+        ],
+        "expectedLockOrderByAttempt": [
+          [
+            "object_furniture_operation_replays"
+          ]
+        ],
+        "expectedBeforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "rown0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "rrep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-drift",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "rown0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedAfterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "rown0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "rrep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-drift",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "rown0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedLocatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "playerId": "player01",
+          "idempotencyScope": "wave22.grant",
+          "idempotencyKey": "request-drift",
+          "rows": [
+            {
+              "furniture_operation_id": "rrep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-drift",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "rown0001",
+              "result_status": "granted"
+            }
+          ],
+          "locatorOK": true
+        },
+        "expectedBeforeSha256": "4cb35b462e5c16bb0cd3b7870f7824ea3f5c3fcf68e77411efb5056a08374ff9",
+        "expectedAfterSha256": "4cb35b462e5c16bb0cd3b7870f7824ea3f5c3fcf68e77411efb5056a08374ff9",
+        "distinctProcessRoles": [
+          "SEED",
+          "PRIMARY"
+        ]
+      },
+      {
+        "scenarioKind": "RESTART_REPLAY",
+        "traceRoles": [
+          "SEED",
+          "REPLAY"
+        ],
+        "primaryRole": "REPLAY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [],
+        "expectedAffectedDmlTableSequence": [],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "object_furniture_operation_replays",
+          "object_owned_furniture_instances",
+          "object_furniture_definitions"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedAfter": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedReplayed": true,
+        "expectedErrorCode": null,
+        "expectedAttemptFailures": [
+          null
+        ],
+        "expectedLockOrderByAttempt": [
+          [
+            "object_furniture_operation_replays",
+            "object_owned_furniture_instances",
+            "object_furniture_definitions"
+          ]
+        ],
+        "expectedBeforeRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "town0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "trep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-restart",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "town0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedAfterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "town0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "trep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-restart",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "town0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedLocatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "playerId": "player01",
+          "idempotencyScope": "wave22.grant",
+          "idempotencyKey": "request-restart",
+          "rows": [
+            {
+              "furniture_operation_id": "trep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-restart",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "town0001",
+              "result_status": "granted"
+            }
+          ],
+          "locatorOK": true
+        },
+        "expectedBeforeSha256": "ede827f3f7313fb44293bd27f775cb854c87b66703b96fe237cc5f66274c8385",
+        "expectedAfterSha256": "ede827f3f7313fb44293bd27f775cb854c87b66703b96fe237cc5f66274c8385",
+        "distinctProcessRoles": [
+          "SEED",
+          "REPLAY"
+        ]
+      },
+      {
+        "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+        "traceRoles": [
+          "PRIMARY",
+          "CONCURRENT"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [
+          "object_owned_furniture_instances",
+          "object_furniture_operation_replays"
+        ],
+        "expectedAffectedDmlTableSequence": [
+          "object_owned_furniture_instances",
+          "object_furniture_operation_replays"
+        ],
+        "expectedDmlTableSequence": [
+          "object_owned_furniture_instances",
+          "object_furniture_operation_replays"
+        ],
+        "expectedLockOrder": [
+          "object_furniture_operation_replays",
+          "canonical_players",
+          "object_furniture_definitions"
+        ],
+        "expectedCommittedRowCount": 2,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_owned_furniture_instances": 0,
+          "object_furniture_operation_replays": 0
+        },
+        "expectedAfter": {
+          "object_owned_furniture_instances": 1,
+          "object_furniture_operation_replays": 1
+        },
+        "expectedReplayed": false,
+        "expectedErrorCode": null,
+        "expectedAttemptFailures": [
+          null
+        ],
+        "expectedLockOrderByAttempt": [
+          [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ]
+        ],
+        "expectedBeforeRows": {
+          "object_owned_furniture_instances": [],
+          "object_furniture_operation_replays": []
+        },
+        "expectedAfterRows": {
+          "object_owned_furniture_instances": [
+            {
+              "owned_furniture_id": "cown0001",
+              "player_id": "player01",
+              "furniture_id": "furnit01",
+              "enhancement_level": 3,
+              "ownership_status": "bag",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ],
+          "object_furniture_operation_replays": [
+            {
+              "furniture_operation_id": "crep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-concurrency",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "cown0001",
+              "result_status": "granted",
+              "INSERT_USER": "wave22-fixture",
+              "INSERT_TIME": "2026-09-09 06:00:00",
+              "UPDATE_USER": "wave22-fixture",
+              "UPDATE_TIME": "2026-09-09 06:00:00"
+            }
+          ]
+        },
+        "expectedLocatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "playerId": "player01",
+          "idempotencyScope": "wave22.grant",
+          "idempotencyKey": "request-concurrency",
+          "rows": [
+            {
+              "furniture_operation_id": "crep0001",
+              "player_id": "player01",
+              "idempotency_scope": "wave22.grant",
+              "idempotency_key": "request-concurrency",
+              "operation_kind": "grant_owned_furniture",
+              "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+              "owned_furniture_id": "cown0001",
+              "result_status": "granted"
+            }
+          ],
+          "locatorOK": true
+        },
+        "expectedBeforeSha256": "28b3b212146c947b24fbf355c9aed5f65ebf6a497766268e3ae7547553c6e035",
+        "expectedAfterSha256": "e25bf4bec70db08798e207f473501822d8e55b70c18ed6bcf8f72b3bf2624d27",
+        "distinctProcessRoles": [
+          "PRIMARY",
+          "CONCURRENT"
+        ]
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "consumerId": "sql-repository-6a8f4b07e980a91f",
+      "scenarioId": "scenario:wave22:furniture-grant:mutation_success",
+      "scenarioKind": "MUTATION_SUCCESS",
+      "exportName": "executeWave22FurnitureGrant",
+      "harnessCaseId": "case:wave22:furniture-grant"
+    },
+    {
+      "consumerId": "sql-repository-6a8f4b07e980a91f",
+      "scenarioId": "scenario:wave22:furniture-grant:domain_failure_rollback",
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+      "exportName": "executeWave22FurnitureGrant",
+      "harnessCaseId": "case:wave22:furniture-grant"
+    },
+    {
+      "consumerId": "sql-repository-6a8f4b07e980a91f",
+      "scenarioId": "scenario:wave22:furniture-grant:duplicate_replay_dml_zero",
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+      "exportName": "executeWave22FurnitureGrant",
+      "harnessCaseId": "case:wave22:furniture-grant"
+    },
+    {
+      "consumerId": "sql-repository-6a8f4b07e980a91f",
+      "scenarioId": "scenario:wave22:furniture-grant:payload_drift_fail_closed",
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "exportName": "executeWave22FurnitureGrant",
+      "harnessCaseId": "case:wave22:furniture-grant"
+    },
+    {
+      "consumerId": "sql-repository-6a8f4b07e980a91f",
+      "scenarioId": "scenario:wave22:furniture-grant:restart_replay",
+      "scenarioKind": "RESTART_REPLAY",
+      "exportName": "executeWave22FurnitureGrant",
+      "harnessCaseId": "case:wave22:furniture-grant"
+    },
+    {
+      "consumerId": "sql-repository-6a8f4b07e980a91f",
+      "scenarioId": "scenario:wave22:furniture-grant:concurrency_single_writer",
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+      "exportName": "executeWave22FurnitureGrant",
+      "harnessCaseId": "case:wave22:furniture-grant"
+    }
+  ],
+  "sealedObservations": [
+    {
+      "scenarioKind": "MUTATION_SUCCESS",
+      "traces": [
+        {
+          "processId": 12744,
+          "moduleExecutionId": "54a6a645-7dfb-441b-b6bb-0d302c94dfb7",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedRowCount": 2,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+          ],
+          "committedRowCount": 2,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 0,
+            "object_furniture_operation_replays": 0
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-success",
+            "rows": [
+              {
+                "furniture_operation_id": "srep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-success",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "sown0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [],
+            "object_furniture_operation_replays": []
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "sown0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "srep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-success",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "sown0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "28b3b212146c947b24fbf355c9aed5f65ebf6a497766268e3ae7547553c6e035",
+          "afterSha256": "3cfd0f7e9fb7136229336fb8086f6a0fcbbad51a6b995ed9685bd9758fe368f8"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+      "traces": [
+        {
+          "processId": 14588,
+          "moduleExecutionId": "adfdd0df-6b56-4988-94e1-d0f72cb4a891",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)"
+              ],
+              "affectedRowCount": 1,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "failure": {
+                "code": "ER_DUP_ENTRY",
+                "errno": 1062,
+                "errorKind": "BUSINESS_UNIQUE_CONFLICT",
+                "constraintName": "PRIMARY"
+              }
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 1,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": null,
+          "errorCode": "CANONICAL_FURNITURE_OPERATION_ID_COLLISION_RETRY_EXHAUSTED",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-failure",
+            "rows": [],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "seedown1",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 0,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "collide1",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.seed",
+                "idempotency_key": "collision",
+                "operation_kind": "seed",
+                "payload_fingerprint": "ec2c8919c203dde483462ff6f364b963e21ffa255aca48ad26b57158bfbc0ef7",
+                "owned_furniture_id": "seedown1",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "seedown1",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 0,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "collide1",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.seed",
+                "idempotency_key": "collision",
+                "operation_kind": "seed",
+                "payload_fingerprint": "ec2c8919c203dde483462ff6f364b963e21ffa255aca48ad26b57158bfbc0ef7",
+                "owned_furniture_id": "seedown1",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "bc913c681d417292c09f73d5f8f2018a642a78ccfa4997518add5321c221076c",
+          "afterSha256": "bc913c681d417292c09f73d5f8f2018a642a78ccfa4997518add5321c221076c"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+      "traces": [
+        {
+          "processId": 25824,
+          "moduleExecutionId": "3943ad8e-542b-40e8-a8ff-d3a7be36e369",
+          "role": "SEED",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedRowCount": 2,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+          ],
+          "committedRowCount": 2,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 0,
+            "object_furniture_operation_replays": 0
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-duplicate",
+            "rows": [
+              {
+                "furniture_operation_id": "drep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-duplicate",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "down0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [],
+            "object_furniture_operation_replays": []
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "down0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "drep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-duplicate",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "down0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "28b3b212146c947b24fbf355c9aed5f65ebf6a497766268e3ae7547553c6e035",
+          "afterSha256": "33806ca2b91e2b3cabfb5e0038f00cc67d7c3d3ef569f75364bb418dab9319ee"
+        },
+        {
+          "processId": 25604,
+          "moduleExecutionId": "d6d05e59-c9c4-4d92-86e4-2f67dbed4420",
+          "role": "REPLAY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "object_owned_furniture_instances",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": true,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-duplicate",
+            "rows": [
+              {
+                "furniture_operation_id": "drep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-duplicate",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "down0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "down0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "drep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-duplicate",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "down0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "down0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "drep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-duplicate",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "down0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "33806ca2b91e2b3cabfb5e0038f00cc67d7c3d3ef569f75364bb418dab9319ee",
+          "afterSha256": "33806ca2b91e2b3cabfb5e0038f00cc67d7c3d3ef569f75364bb418dab9319ee"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "traces": [
+        {
+          "processId": 15204,
+          "moduleExecutionId": "8862f564-1e6e-4113-b57e-d6f77b19302b",
+          "role": "SEED",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedRowCount": 2,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+          ],
+          "committedRowCount": 2,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 0,
+            "object_furniture_operation_replays": 0
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-drift",
+            "rows": [
+              {
+                "furniture_operation_id": "rrep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-drift",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "rown0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [],
+            "object_furniture_operation_replays": []
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "rown0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "rrep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-drift",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "rown0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "28b3b212146c947b24fbf355c9aed5f65ebf6a497766268e3ae7547553c6e035",
+          "afterSha256": "4cb35b462e5c16bb0cd3b7870f7824ea3f5c3fcf68e77411efb5056a08374ff9"
+        },
+        {
+          "processId": 15620,
+          "moduleExecutionId": "c4aae823-81e7-48d7-82c7-c8c35051551a",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "object_furniture_operation_replays"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": null,
+          "errorCode": "CANONICAL_FURNITURE_IDEMPOTENCY_CONFLICT",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-drift",
+            "rows": [
+              {
+                "furniture_operation_id": "rrep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-drift",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "rown0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "rown0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "rrep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-drift",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "rown0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "rown0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "rrep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-drift",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "rown0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "4cb35b462e5c16bb0cd3b7870f7824ea3f5c3fcf68e77411efb5056a08374ff9",
+          "afterSha256": "4cb35b462e5c16bb0cd3b7870f7824ea3f5c3fcf68e77411efb5056a08374ff9"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "RESTART_REPLAY",
+      "traces": [
+        {
+          "processId": 23108,
+          "moduleExecutionId": "4d7f77dc-5046-439c-898c-094e303531f5",
+          "role": "SEED",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedRowCount": 2,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+          ],
+          "committedRowCount": 2,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 0,
+            "object_furniture_operation_replays": 0
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-restart",
+            "rows": [
+              {
+                "furniture_operation_id": "trep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-restart",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "town0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [],
+            "object_furniture_operation_replays": []
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "town0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "trep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-restart",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "town0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "28b3b212146c947b24fbf355c9aed5f65ebf6a497766268e3ae7547553c6e035",
+          "afterSha256": "ede827f3f7313fb44293bd27f775cb854c87b66703b96fe237cc5f66274c8385"
+        },
+        {
+          "processId": 17404,
+          "moduleExecutionId": "453083f4-5cc7-46e3-8568-08ad4ea66367",
+          "role": "REPLAY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "object_owned_furniture_instances",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": true,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-restart",
+            "rows": [
+              {
+                "furniture_operation_id": "trep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-restart",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "town0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "town0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "trep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-restart",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "town0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "town0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "trep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-restart",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "town0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "ede827f3f7313fb44293bd27f775cb854c87b66703b96fe237cc5f66274c8385",
+          "afterSha256": "ede827f3f7313fb44293bd27f775cb854c87b66703b96fe237cc5f66274c8385"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+      "traces": [
+        {
+          "processId": 21756,
+          "moduleExecutionId": "ed5a1ad2-1e42-49e9-aea4-28c450c1c5ce",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "affectedRowCount": 2,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+            "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+          ],
+          "committedRowCount": 2,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "canonical_players",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 0,
+            "object_furniture_operation_replays": 0
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-concurrency",
+            "rows": [
+              {
+                "furniture_operation_id": "crep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-concurrency",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "cown0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [],
+            "object_furniture_operation_replays": []
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "cown0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "crep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-concurrency",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "cown0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "28b3b212146c947b24fbf355c9aed5f65ebf6a497766268e3ae7547553c6e035",
+          "afterSha256": "e25bf4bec70db08798e207f473501822d8e55b70c18ed6bcf8f72b3bf2624d27"
+        },
+        {
+          "processId": 27224,
+          "moduleExecutionId": "06be3b32-7967-44ce-a8eb-57b84e5c6ad3",
+          "role": "CONCURRENT",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+            "sha256": "19f89307f470e1e1d98c541f6942a6b0894505089f2e3f09711c5021072a9538",
+            "spanStart": 9596,
+            "spanEnd": 13882,
+            "spanSha256": "564960609b3fe3187a3afd21381746ddc45a7dd89bddc93ba7a4f2a93d2f4d18",
+            "catalogSpanStart": 8538,
+            "catalogSpanEnd": 12292,
+            "catalogSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
+            "relocationDiffSha256": "4aa01328fa053f83177440996ff1f60d7853cef9f9b4ea2356a427c8eb72fbd7"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3344,
+            "name": "hoibot_wave22_furniture_grant_2614"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_definitions"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "object_furniture_operation_replays",
+            "object_owned_furniture_instances",
+            "object_furniture_definitions"
+          ],
+          "before": {
+            "object_owned_furniture_instances": 0,
+            "object_furniture_operation_replays": 1
+          },
+          "after": {
+            "object_owned_furniture_instances": 1,
+            "object_furniture_operation_replays": 1
+          },
+          "replayed": true,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorProjection": {
+            "mode": "RAW_COMPOSITE",
+            "playerId": "player01",
+            "idempotencyScope": "wave22.grant",
+            "idempotencyKey": "request-concurrency",
+            "rows": [
+              {
+                "furniture_operation_id": "crep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-concurrency",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "cown0001",
+                "result_status": "granted"
+              }
+            ],
+            "locatorOK": true
+          },
+          "beforeRows": {
+            "object_owned_furniture_instances": [],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "crep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-concurrency",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "cown0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "afterRows": {
+            "object_owned_furniture_instances": [
+              {
+                "owned_furniture_id": "cown0001",
+                "player_id": "player01",
+                "furniture_id": "furnit01",
+                "enhancement_level": 3,
+                "ownership_status": "bag",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ],
+            "object_furniture_operation_replays": [
+              {
+                "furniture_operation_id": "crep0001",
+                "player_id": "player01",
+                "idempotency_scope": "wave22.grant",
+                "idempotency_key": "request-concurrency",
+                "operation_kind": "grant_owned_furniture",
+                "payload_fingerprint": "16559d88b2ca2561eeb3a74e5de092fb2b0a335aeb2968f28178540e3f9d1514",
+                "owned_furniture_id": "cown0001",
+                "result_status": "granted",
+                "INSERT_USER": "wave22-fixture",
+                "INSERT_TIME": "2026-09-09 06:00:00",
+                "UPDATE_USER": "wave22-fixture",
+                "UPDATE_TIME": "2026-09-09 06:00:00"
+              }
+            ]
+          },
+          "beforeSha256": "98635c28f43b48ef84787fcbcefca816b9edda0bf7501607b7138af19f95c5c8",
+          "afterSha256": "e25bf4bec70db08798e207f473501822d8e55b70c18ed6bcf8f72b3bf2624d27"
+        }
+      ]
+    }
+  ]
+}
