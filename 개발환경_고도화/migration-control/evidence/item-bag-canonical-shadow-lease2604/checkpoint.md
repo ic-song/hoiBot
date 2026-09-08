@@ -23,9 +23,9 @@
 
 1. ITEM_BAG MODERN routing and external DIRECT reply remain intentionally disabled; Gate 6/7 SHADOW completion does not authorize cutover.
 2. Transitional `MariaBagRepository` remains legacy-only evidence and is not counted as canonical external DIRECT evidence.
-3. Final independent Gate 7 re-review and task-branch push are pending after this correction commit.
+3. The correction is pushed through `c5518e6d`; final independent Gate 7 re-review remains pending on a fresh detached checkout.
 4. No operational database, operational JSON, real chat room, external network, `feature/prod`, or Gate 8 action was used.
 
 ## Next safe slice
 
-Run the corrected focused set, typecheck, object-data validator, syntax and diff checks; commit and push the task branch; then obtain a fresh independent Gate 7 GO. Any MODERN routing, transitional-reader removal, operating import, or Gate 8 action requires a later separately authorized slice.
+Obtain a fresh independent Gate 7 GO from the pushed task-branch commit. Any MODERN routing, transitional-reader removal, operating import, or Gate 8 action requires a later separately authorized slice.

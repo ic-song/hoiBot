@@ -16,10 +16,10 @@
 
 - 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- 현재 HEAD: `e88431e73ada0faf813c55709cc227367af8fb24` (WBS776 Wave17 증적 봉인까지 통합)
-- 상태: WBS777/WBS778 완료·통합, WBS776 app wiring·분류 결박·Wave17 완료. 1차 독립 Gate7은 현행화 누락으로 NO-GO였고 P1 보정 후 재검토 대기 중
+- 현재 보정 커밋: `c5518e6d` (WBS776 Wave17 및 1차 Gate7 P1 보정 통합)
+- 상태: WBS777/WBS778 완료·통합, WBS776 app wiring·분류 결박·Wave17 완료. 1차 독립 Gate7 NO-GO의 P1을 보정·검증·push했고 fresh checkout 재검토 대기 중
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: 현재 브랜치는 origin보다 16커밋 앞서며, WBS777/WBS778/WBS776 통합과 현재 Gate7 보정은 아직 원격 미포함
+- 원격 상태: WBS777/WBS778/WBS776 통합과 Gate7 보정 `c5518e6d`까지 origin task branch에 push 완료
 
 ## 완료된 현재 슬라이스 작업
 
@@ -57,12 +57,12 @@
 - `개발환경_고도화/runtime/src/inventory/*item-bag*`, `legacy-bag-owner-label-provider.ts`
 - 관련 runtime tests
 - `.codex/checkpoints/object-db-migration.md`
-- 미커밋: Gate7 계약·stable-ID tombstone·WBS776 evidence/checkpoint 보정
+- 미커밋: 이 재개 체크포인트의 push 상태 현행화만 남음
 
 ## 미완료 검증과 주의점
 
 - WBS776 공식 진척은 Gate1~5 TRUE, Gate6~8 FALSE, 62.5%다.
-- WBS776 1차 독립 Gate7은 focused 65개 중 4개 현행화 실패와 stale evidence, 미push 상태 때문에 NO-GO였다. 코드 로직 P0는 없었고 발견된 계약/테스트/문서 P1을 현재 보정했다.
+- WBS776 1차 독립 Gate7은 focused 65개 중 4개 현행화 실패와 stale evidence, 미push 상태 때문에 NO-GO였다. 코드 로직 P0는 없었고 발견된 계약/테스트/문서 P1은 `c5518e6d`에서 보정·65/65 재검증·push했다.
 - `data-migration-object-domain-import.v3.json`은 Git 상태에 수정으로 보이지만 내용 diff는 없었다. 재개 시 line-ending 상태를 확인하고 의미 변경 없이 보존한다.
 - 같은 Node 프로세스의 app/pool 재구성만 증명했으므로 문서에서 실제 process restart라고 주장하지 않는다.
 - 전체 도메인 DML0/network0이 아니라 read-only evaluator, fixture quantity 불변, immediate Iris reply callback 0으로만 주장한다.
@@ -70,10 +70,9 @@
 
 ## 정확한 다음 행동
 
-1. 보정된 focused set, typecheck, object-data, syntax, diff 검증을 다시 실행한다.
-2. 의미 변경 파일만 커밋하고 task branch를 push한 뒤 clean checkout 상태를 확인한다.
-3. WBS776 독립 Gate7 재검토가 GO인 경우에만 evidence의 candidate 문구와 공식 WBS776 Gate6~7/100%/Lease를 갱신한다.
-4. WBS730~744 잔여 전체 감사를 수행한 뒤 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
+1. origin task branch의 fresh detached checkout에서 보정된 focused 65, typecheck, build, object-data, syntax, diff를 독립 재검토한다.
+2. WBS776 독립 Gate7 재검토가 GO인 경우에만 evidence의 candidate 문구와 공식 WBS776 Gate6~7/100%/Lease를 갱신한다.
+3. WBS730~744 잔여 전체 감사를 수행한 뒤 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
 
 ## 승인 경계
 
