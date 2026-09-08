@@ -135,7 +135,7 @@ describe("object DB executable parity ledger Wave0", () => {
     assert.deepEqual(ledger.coverage, {
       manifestConsumers: 1_133, ledgerEntries: 1_133, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
       readConsumers: 504, mutationConsumers: 629, unresolvedDynamicConsumers: 82, unresolvedDynamicCallCount: 82,
-      registrySourceMismatchCount: 8, registrySourceMismatchAttributedCount: 0, registrySourceMismatchUnattributedCount: 8,
+      registrySourceMismatchCount: 0, registrySourceMismatchAttributedCount: 0, registrySourceMismatchUnattributedCount: 0,
       provenConsumers: 0, unprovenConsumers: 1_133, directPassConsumers: 0, equivalentPassConsumers: 0,
       verdicts: { STATIC_ONLY: 1_051, BLOCKED_DYNAMIC: 82, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 0, EQUIVALENT_PASS: 0 },
     });
