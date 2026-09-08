@@ -7776,6 +7776,34 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     Api.replyRoom(room13, giftMessage);
                     Api.replyRoom(room90, giftMessage);
                 }
+                if (msg === "/프리미엄전달" || /^\/프리미엄전달\s+.+\/\d+$/.test(msg)) {
+                    if (sender !== "호이 남") {
+                        replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
+                        return;
+                    }
+                    var premiumGiftMatch = msg.match(/^\/프리미엄전달\s+(.+)\/(\d+)$/);
+                    if (!premiumGiftMatch) {
+                        replier.reply("📌 사용법\n/프리미엄전달 아이템이름/갯수\n\n📌 사용 예시\n/프리미엄전달 미니펫뽑기🐹(/미니펫오픈)/1000");
+                        return;
+                    }
+                    var premiumGiftItemName = premiumGiftMatch[1].trim();
+                    var premiumGiftItemCount = parseInt(premiumGiftMatch[2], 10);
+                    if (!premiumGiftItemName || !isFinite(premiumGiftItemCount) || premiumGiftItemCount < 1) {
+                        replier.reply("❌ 아이템이름과 1개 이상의 지급 수량을 확인해주세요.");
+                        return;
+                    }
+                    var premiumGiftUsers = getActiveSupportPassUsers(data, "premium");
+                    if (premiumGiftUsers.length < 1) {
+                        replier.reply("지급 가능한 호이패스 프리미엄 유저가 없습니다.");
+                        return;
+                    }
+                    for (var premiumGiftUserIndex = 0; premiumGiftUserIndex < premiumGiftUsers.length; premiumGiftUserIndex++) {
+                        addItem(data, premiumGiftUsers[premiumGiftUserIndex], premiumGiftItemName, premiumGiftItemCount);
+                    }
+                    saveJsonFile(data, filePath);
+                    var premiumGiftMessage = "👑 호이패스 프리미엄 👑\n\n👑 VIP 전용 전체 선물입니다!\n🎩 “VIP 회원님, 이쪽으로 모시겠습니다.”\n\n어서 오세요! 자리는 미리 준비해두었습니다.\n오늘의 VIP 코스 요리는 바로… 🎁\n━━━━━━━━━━━━\n🎁 " + premiumGiftItemName + " " + numberWithCommas(premiumGiftItemCount) + "개가 지급되었습니다.\n━━━━━━━━━━━━\n맛있게 챙겨가시고, 계산은 호이가 하겠습니다. ( _ _)\n\n/패키지가방에서 선물을 확인해주세요!\n\n📌 사용법\n/프리미엄전달 아이템이름/갯수\n\n📌 사용 예시\n/프리미엄전달 미니펫뽑기🐹(/미니펫오픈)/1000";
+                    noticeMsg(premiumGiftMessage);
+                }
                 if (msg === "/선물삭제" && (isAdmin(sender) || isMaster(sender))) {
                     var freeSupportPackageDeleteResult = removeAllHoiFreeSupportPackages(data);
                     saveJsonFile(data, filePath);
