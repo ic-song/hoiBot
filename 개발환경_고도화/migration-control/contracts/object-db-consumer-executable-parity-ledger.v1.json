@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "08294488840d3f5b136003e759015a9deea60221",
+  "evidenceCommit": "e34542d0405e06afe9bdcd1ada12f4f6c862c43f",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "c64ab24eca8d97b2d99e4f78d6a00b5f061ef220d1b8f1ae5cebbb22a91ce411"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave18-v1.json",
-      "sha256": "cc7fbbe430987c64c00def2408e4246f1f29149904322f5d40d7c0b64f739a1c"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave19-v1.json",
+      "sha256": "93f97002c34dd86dfa95afc7045bddfe823726145d040996c25797fae4586160"
     },
     "classificationSources": []
   },
@@ -49,16 +49,16 @@
     "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 0,
-    "provenConsumers": 37,
-    "unprovenConsumers": 1096,
-    "directPassConsumers": 37,
+    "provenConsumers": 38,
+    "unprovenConsumers": 1095,
+    "directPassConsumers": 38,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 1014,
+      "STATIC_ONLY": 1013,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 37,
+      "DIRECT_PASS": 38,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -88226,22 +88226,22 @@
         "sourceSpanSha256": "f6ea62cb30cc79bdb407a96d893339629f2738f69d52fd5260306b886e2b9bb0",
         "classificationSha256": "cfbc82f6b53924c4abdd7d85f415d39b7b9fc3bb113136f7864ce11127d24356"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave19:package-wizard-status",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave19-package-wizard-status-harness.mjs",
+        "sha256": "7cc61daa0ce3c900b364ddac3d1c0e28bb04152849ab6e334527bf34d75eaaf7"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave19:package-wizard-status:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave19-package-wizard-status-v1.json",
+        "sha256": "5b8aaaa80df3a798a94f41f08340c14bfcd67ca8e00b17bac48724a3804371eb"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave19-package-wizard-status.mjs",
+        "targetSourceSha256": "38702d9928355d980e89e7605a4ac85362bb5881f8971a06353053530eb8b87c",
+        "exportName": "executeWave19PackageWizardStatus"
       },
       "scenarioRequirements": [
         {
@@ -88290,11 +88290,263 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave19:runtime-dispatch-79ff58fea52c7457:exact_output",
+          "scenarioId": "wave19-package-wizard-status-exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:wave19:package-wizard-status",
+          "attributedConsumerIds": [
+            "runtime-dispatch-79ff58fea52c7457"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "actualSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "actualSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave19:runtime-dispatch-79ff58fea52c7457:negative_guard",
+          "scenarioId": "wave19-package-wizard-status-negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:wave19:package-wizard-status",
+          "attributedConsumerIds": [
+            "runtime-dispatch-79ff58fea52c7457"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5c8a181e8f548bdf0476c48b437d80edf3e6ff24a405b6a5693edabc3ed136ae",
+              "actualSha256": "5c8a181e8f548bdf0476c48b437d80edf3e6ff24a405b6a5693edabc3ed136ae",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave19:runtime-dispatch-79ff58fea52c7457:read_positive",
+          "scenarioId": "wave19-package-wizard-status-read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:wave19:package-wizard-status",
+          "attributedConsumerIds": [
+            "runtime-dispatch-79ff58fea52c7457"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "actualSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "actualSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave19:runtime-dispatch-79ff58fea52c7457:restart_consistency",
+          "scenarioId": "wave19-package-wizard-status-restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:wave19:package-wizard-status",
+          "attributedConsumerIds": [
+            "runtime-dispatch-79ff58fea52c7457"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "actualSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "actualSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave19:runtime-dispatch-79ff58fea52c7457:source_domain_dml_zero",
+          "scenarioId": "wave19-package-wizard-status-source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:wave19:package-wizard-status",
+          "attributedConsumerIds": [
+            "runtime-dispatch-79ff58fea52c7457"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "actualSha256": "9617615fe03c904f3de3fccb7bad228b8123335f882b6f9c8e352ad41996c234",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "actualSha256": "5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave19:runtime-dispatch-79ff58fea52c7457:exact_output",
+          "receipt:wave19:runtime-dispatch-79ff58fea52c7457:negative_guard",
+          "receipt:wave19:runtime-dispatch-79ff58fea52c7457:read_positive",
+          "receipt:wave19:runtime-dispatch-79ff58fea52c7457:restart_consistency",
+          "receipt:wave19:runtime-dispatch-79ff58fea52c7457:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-79ff58fea52c7457"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave19-package-wizard-status-v1.json",
+            "sha256": "5b8aaaa80df3a798a94f41f08340c14bfcd67ca8e00b17bac48724a3804371eb"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave19-package-wizard-status-harness.mjs",
+            "sha256": "7cc61daa0ce3c900b364ddac3d1c0e28bb04152849ab6e334527bf34d75eaaf7"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave19-package-wizard-status.mjs",
+            "sha256": "38702d9928355d980e89e7605a4ac85362bb5881f8971a06353053530eb8b87c"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -113097,5 +113349,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "2cc3bbf2208f8cc0414bb0858568d65f9e3bcafef8e974d5193acf65a61c0690"
+  "entrySetSha256": "76bb750c7b0424cba056e6969ef9849adf3cf213a188b5e1842c4260ed0937f9"
 }
