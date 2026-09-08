@@ -36,6 +36,11 @@ export interface DomainImportPolicy {
     witnessRecordKind: "BAG_CONTAINER";
     sourceKeyRecordKinds: readonly ["ITEM_STACK"];
   };
+  objectDomainImportV4?: {
+    profileVersion: "OBJECT_DOMAIN_IMPORT_RELEVANT_V4";
+    profileSemanticSha256: string;
+    targetColumnAdditionCount: 11;
+  };
 }
 
 interface ProjectionRunRow {
@@ -208,12 +213,13 @@ function parseSemanticDocument(documentText: string): Record<string, unknown> {
 function preserveFrozenV1ObjectModel(table: Record<string, unknown>, projectionVersion: string): Record<string, unknown> {
   if (projectionVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4 && table.table === "canonical_pet_skill_definitions" && Array.isArray(table.columns)) {
     const runtimeOnlyColumns=new Set(["legacy_source_key","display_order","base_draw_rate","fixed_draw_rate_flag","openable_flag","pet_skill_grade_emoji","required_tier_name","tier_exclusive_flag","equip_description"]);
-    if (projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION) {
+    if (projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION || projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2) {
       runtimeOnlyColumns.add("raid_charm_bonus");
       runtimeOnlyColumns.add("castle_charm_bonus");
     }
     const {uniqueKeys:_runtimeOnlyUniqueKeys,...frozen}=table;
-    return{...frozen,columns:table.columns.filter((column)=>column!==null&&!Array.isArray(column)&&typeof column==="object"&&!runtimeOnlyColumns.has(String((column as Record<string,unknown>).name))),definitionOnlyColumns:Array.isArray(table.definitionOnlyColumns)?table.definitionOnlyColumns.filter((name)=>!runtimeOnlyColumns.has(String(name))):table.definitionOnlyColumns};
+    const preserveAsciiGrade = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2;
+    return{...frozen,columns:table.columns.filter((column)=>column!==null&&!Array.isArray(column)&&typeof column==="object"&&!runtimeOnlyColumns.has(String((column as Record<string,unknown>).name))).map((column)=>preserveAsciiGrade&&(column as Record<string,unknown>).name==="pet_skill_grade"?{...(column as Record<string,unknown>),charset:"ascii",collation:"ascii_bin"}:column),definitionOnlyColumns:Array.isArray(table.definitionOnlyColumns)?table.definitionOnlyColumns.filter((name)=>!runtimeOnlyColumns.has(String(name))):table.definitionOnlyColumns};
   }
   if (projectionVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION || table.table !== "canonical_currency_operations" || !Array.isArray(table.uniqueKeys)) return table;
   return {
@@ -349,6 +355,7 @@ export function assertObjectDomainImportPolicy(policy: DomainImportPolicy): void
   const exactImports = policy.exactDefinitionImports ?? [];
   const equipmentGradeExtension = policy.equipmentGradeExtension;
   const completenessV3 = policy.itemBagCompletenessV3;
+  const profileV4 = policy.objectDomainImportV4;
   if (equipmentGradeExtension !== undefined && (equipmentGradeExtension.profile !== "EQUIPMENT_GRADE_EXTENSION_V1" || !HASH.test(equipmentGradeExtension.semanticSha256))) throw new Error("OBJECT_DOMAIN_IMPORT_EQUIPMENT_GRADE_EXTENSION_INVALID");
   if (completenessV3 !== undefined && (completenessV3.profileVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V3
     || !HASH.test(completenessV3.profileSemanticSha256)
@@ -357,6 +364,7 @@ export function assertObjectDomainImportPolicy(policy: DomainImportPolicy): void
     || completenessV3.witnessRecordKind !== "BAG_CONTAINER"
     || completenessV3.sourceKeyRecordKinds.length !== 1
     || completenessV3.sourceKeyRecordKinds[0] !== "ITEM_STACK")) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_V3_INVALID");
+  if (profileV4 !== undefined && (profileV4.profileVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V4 || !HASH.test(profileV4.profileSemanticSha256) || profileV4.targetColumnAdditionCount !== 11 || exactImports.length !== 2 || completenessV3 === undefined)) throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V4_INVALID");
   const v1Compatibility = exactImports.length === 0 && policy.acceptedImportContractSha256.length === 2 && policy.acceptedImportContractSha256[0] === policy.importContractSha256 && policy.acceptedImportContractSha256[1] === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
   const v2OrV3Compatibility = exactImports.length === 2 && policy.acceptedImportContractSha256.length === 1 && policy.acceptedImportContractSha256[0] === policy.importContractSha256;
   if ((!v1Compatibility && !v2OrV3Compatibility) || policy.importContractSha256 === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_CONTRACT_POLICY_INVALID");
@@ -370,7 +378,7 @@ export function assertObjectDomainImportPolicy(policy: DomainImportPolicy): void
   for (const key of ["identityBindings", "objectModel", "disposition", "fieldMap"] as const) if (!HASH.test(policy.componentSemanticSha256[key]) || policy.componentSemanticSha256[key] !== policy.contractComponentSemanticSha256[key]) throw new Error("OBJECT_DOMAIN_IMPORT_COMPONENT_CONTRACT_DRIFT");
   const expectedDirectTargets = (exactImports.length === 0 ? 45 : 47) + (equipmentGradeExtension === undefined ? 0 : 2);
   const expectedDefinitionTargets = (exactImports.length === 0 ? 23 : 25) + (equipmentGradeExtension === undefined ? 0 : 1);
-  const expectedColumns = (exactImports.length === 0 ? 241 : 252) + (equipmentGradeExtension === undefined ? 0 : 21);
+  const expectedColumns = (exactImports.length === 0 ? 241 : 252) + (equipmentGradeExtension === undefined ? 0 : 21) + (profileV4 === undefined ? 0 : 11);
   if (new Set(policy.directTargets).size !== expectedDirectTargets || policy.directTargets.length !== expectedDirectTargets) throw new Error("OBJECT_DOMAIN_IMPORT_DIRECT_TARGET_SCOPE_MISMATCH");
   if (new Set(policy.definitionTargets).size !== expectedDefinitionTargets || policy.definitionTargets.length !== expectedDefinitionTargets) throw new Error("OBJECT_DOMAIN_IMPORT_DEFINITION_TARGET_SCOPE_MISMATCH");
   if (policy.columns.length !== expectedColumns || new Set(policy.columns.map((column) => `${column.table}.${column.column}`)).size !== expectedColumns) throw new Error("OBJECT_DOMAIN_IMPORT_COLUMN_SCOPE_MISMATCH");

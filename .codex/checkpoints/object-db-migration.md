@@ -59,7 +59,8 @@
 - 전체 감사 P1 세 건을 WBS779/Lease2607로 분리했다. exact migration 계약은 현행 39개와 484/485를 포함하며, additive V4 disposition은 V1 90개와 후속 29개를 합쳐 등록 테이블 119개를 정확히 한 번씩 분류한다.
 - V4 target-schema/field-map은 `canonical_pet_skill_definitions`의 후속 11컬럼을 결박하고, migration 482 Unicode grade amendment와 migration 485 admin projection 경계를 명시한다. 불변 V1/V2 계약과 적용 migration은 수정하지 않았다.
 - importer CLI는 V1~V4를 명시 선택한다. V1 pre-466 호환 allowlist는 유지하고 V2/V3/V4는 각 생성 profile의 current semantic contract만 허용한다.
-- WBS779 focused `82/82`, replay subset `39/39`, disposable MariaDB `4/4`, typecheck/build/object validator 119/main·Info syntax가 통과했다. 운영 데이터·DB·실방·외부 전송·feature/prod·Sheets는 변경하지 않았다.
+- WBS779 1차 독립 검토가 실제 V4 policy의 effective V2 component hash 불일치, 263컬럼 preflight 부재, V2 semantic freeze 훼손, catalog-projection V4 upstream 부재를 P1으로 재현했다. 이를 보정해 두 CLI가 V4를 선택하고 동일한 263컬럼 schema hash를 사용하며, 실제 CLI-equivalent policy가 importer preflight를 통과한다.
+- WBS779 focused `88/88`, V2/V3/V4 profile subset `19/19`, disposable MariaDB `4/4`, typecheck/build/object validator 119/main·Info syntax가 통과했다. 운영 데이터·DB·실방·외부 전송·feature/prod·Sheets는 변경하지 않았다.
 
 ## 현재 변경 범위
 
