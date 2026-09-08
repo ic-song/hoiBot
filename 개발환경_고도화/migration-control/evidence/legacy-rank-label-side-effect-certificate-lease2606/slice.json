@@ -9,7 +9,8 @@
   "tables": ["legacy_rank_label_validation_runs", "legacy_rank_label_side_effect_certificates"],
   "invariants": [
     "raw_landing_run_id is an enforced FK to the migration476 CHAR(8) ascii_bin primary key",
-    "common staging, object import, RAW bundle and manifest are one completed lineage",
+    "object import catalog_projection_run_id, projection/decision catalog run, staging record/common staging run and validation common_staging_run_id form one exact lineage",
+    "validation fingerprint includes common staging run plus member and guild source-path hashes; cross-run and path drift fail closed",
     "current player and assigned castle lord certificates must be PRESENT/NO_WRITE and canonical-fingerprint exact",
     "certificate decision aggregates equal the active validation run counts",
     "member.json and guildData.json payload SHA-256 is recomputed at readiness time",
