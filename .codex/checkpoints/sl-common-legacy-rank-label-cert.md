@@ -2,12 +2,12 @@
 
 - 작업 키: `sl-common-legacy-rank-label-cert`
 - 표시 이름: WBS778 레거시 랭크 라벨 무저장 인증
-- 체크포인트 버전: 4
-- 마지막 갱신: `2026-09-08 16:10:15 KST`
-- 상태: 검증 완료
-- 정리 후보: 아니요
+- 체크포인트 버전: 5
+- 마지막 갱신: `2026-09-08 16:22:45 KST`
+- 상태: 작업 완료
+- 정리 후보: 예
 - 목표: Gate7 NO-GO의 exact lineage 및 재현 가능한 격리 Maria 증거 보강
-- 최신 요청: correction commit을 검증·push하고 독립 재검토 근거 보고
+- 최신 요청: 독립 Gate7 GO를 권위 시트에 반영하고 Lease2606을 해제한 뒤 완료 체크포인트를 보존
 - 승인 범위: WBS778/Lease2606 전용 runtime, migration489 계약·증거·테스트
 - 선언 파일 범위: legacy rank-label projector/readiness/contracts/tests, WBS778 scripts/evidence
 - worktree: `C:\Users\user\Desktop\hoiBot-worktrees\legacy-rank-label-side-effect-cert-v1-20260908`
@@ -16,9 +16,11 @@
 - 중간 커밋: `6ff02522480f176e11d12ed3a0dd9270760bfe9b`
 - 구현·증거 커밋: `c568ad866958c170455a4243ef5e731565e1d1a1` (origin push 확인)
 - SQL 완료 증거 correction: `4a8fe1b8099d88c1f84b8b2388736b151aebeaaf` (origin push 확인)
+- 독립 Gate7 검토 기준: `2e979ebce63b6f176ba0229d3fb7aa22a2f9fdc6` (독립 Maria 재실행 포함, blocking 0, GO)
 - 완료: exact import/catalog/decision/staging/path chain, validation hash 보강, 교차-run/path negative, WBS777 migration488 byte-exact harness dependency, readiness query invoked/completed/error 분리, digest-reference Maria rehearsal 및 immutable receipt/transcript
 - 검증: focused 11/11 PASS; typecheck PASS; Maria 11.4 migration 476/FK 5/restart/rollback/reapply PASS
 - 운영 불변: 운영 DB·포트 3306·운영 JSON·실방·feature/prod 미사용
-- 차단: Gate7 독립 재검토 ACK 대기
-- 다음 행동: Gate7 독립 재검토를 재요청하고 ACK 전 Lease2606 ACTIVE/Gate7 FALSE 유지
-- 체크포인트 Git 상태: 구현·증거와 함께 origin task branch에 보존됨
+- 권위 시트: WBS778 Gate1~7 TRUE, 100%, 최종 검증 완료; 검증 COMPLETE·독립 GO; Lease2606 RELEASED 재조회 확인
+- 차단: 없음
+- 다음 행동: 없음. WBS776 consumer readiness 주입은 별도 WBS/Lease에서 진행
+- 체크포인트 Git 상태: 완료 체크포인트를 task branch에 보존
