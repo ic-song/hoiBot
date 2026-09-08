@@ -23,6 +23,29 @@ export interface ObjectDomainImportProfileV2 {
   compatibility: string;
 }
 
+export interface ObjectDomainImportProfileV3 {
+  format: "hoibot-object-domain-import-profile-v3";
+  profileVersion: "OBJECT_DOMAIN_IMPORT_RELEVANT_V3";
+  catalogVersion: "SC-20260902-1";
+  baseProfile: "object-domain-import-profile.v2.json";
+  schemaPlan: "item-bag-import-completeness-schema-plan.v1.json";
+  witnessManifest: "item-bag-import-completeness-manifest.v1.json";
+  completenessProjection: {
+    table: "player_item_bag_import_completeness_projections";
+    migration: "488_item_bag_import_completeness.sql";
+    sourceNamespace: "member.bag";
+    witnessRecordDomain: "item";
+    witnessRecordKind: "BAG_CONTAINER";
+    witnessCatalogDecision: { status: "IGNORE"; reason: "NOT_OBJECT_DOMAIN_INPUT"; projectedRowCount: 0 };
+    sourceKeyRecordKinds: ["ITEM_STACK"];
+    playerBinding: string;
+    zeroSourceRows: string;
+    stateBinding: ["canonical_owned_item_stacks", "canonical_item_inventory_ledger_entries"];
+    transactionBoundary: string;
+  };
+  compatibility: string;
+}
+
 export interface ObjectDomainImportProfileBase {
   columns: DomainImportSchemaColumn[];
   generatedBindings: DomainImportGeneratedBinding[];
@@ -38,6 +61,41 @@ export function resolveObjectDomainImportProfileVersion(value: string | undefine
   if (value === undefined || value === "v1") return "v1";
   if (value === "v2") return "v2";
   throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_UNKNOWN");
+}
+
+export function resolveObjectDomainImportProfileVersionV3(value: string | undefined): "v1" | "v2" | "v3" {
+  if (value === "v3") return "v3";
+  return resolveObjectDomainImportProfileVersion(value);
+}
+
+export function parseObjectDomainImportProfileV3(text: string): ObjectDomainImportProfileV3 {
+  const profile = JSON.parse(text) as ObjectDomainImportProfileV3;
+  const projection = profile.completenessProjection;
+  if (profile.format !== "hoibot-object-domain-import-profile-v3"
+    || profile.profileVersion !== "OBJECT_DOMAIN_IMPORT_RELEVANT_V3"
+    || profile.catalogVersion !== "SC-20260902-1"
+    || profile.baseProfile !== "object-domain-import-profile.v2.json"
+    || profile.schemaPlan !== "item-bag-import-completeness-schema-plan.v1.json"
+    || profile.witnessManifest !== "item-bag-import-completeness-manifest.v1.json"
+    || projection?.table !== "player_item_bag_import_completeness_projections"
+    || projection.migration !== "488_item_bag_import_completeness.sql"
+    || projection.sourceNamespace !== "member.bag"
+    || projection.witnessRecordDomain !== "item"
+    || projection.witnessRecordKind !== "BAG_CONTAINER"
+    || projection.witnessCatalogDecision?.status !== "IGNORE"
+    || projection.witnessCatalogDecision.reason !== "NOT_OBJECT_DOMAIN_INPUT"
+    || projection.witnessCatalogDecision.projectedRowCount !== 0
+    || projection.sourceKeyRecordKinds.length !== 1
+    || projection.sourceKeyRecordKinds[0] !== "ITEM_STACK"
+    || projection.stateBinding.length !== 2
+    || projection.stateBinding[0] !== "canonical_owned_item_stacks"
+    || projection.stateBinding[1] !== "canonical_item_inventory_ledger_entries") throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V3_INVALID");
+  return profile;
+}
+
+export function calculateObjectDomainImportProfileV3Sha256(text: string): string {
+  const profile = parseObjectDomainImportProfileV3(text);
+  return sha256(JSON.stringify(profile));
 }
 
 export function parseObjectDomainImportProfileV2(text: string): ObjectDomainImportProfileV2 {

@@ -1,0 +1,11 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "wbs": "WBS777",
+  "sliceId": "SL-COMMON-ITEM-BAG-IMPORT-COMPLETENESS-01",
+  "executionId": "아이템가방완전성이관DB-SL-COMMON-ITEM-BAG-IMPORT-COMPLETENESS-01-20260908121046",
+  "claimRow": 2605,
+  "baseline": "81ee08fd63acccce20e025158f852c8d8e36d1e3",
+  "scope": ["migration488", "BAG_CONTAINER witness", "V3 semantic profile and contract", "same-transaction completeness create/replay/rollback"],
+  "excluded": ["operational assets", "feature/prod", "V1/V2 COMPLETE runs", "applied migrations", "consumer provider/readiness/bag-shadow/Wave17 evidence"],
+  "gate": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": false, "gate8": false }
+}

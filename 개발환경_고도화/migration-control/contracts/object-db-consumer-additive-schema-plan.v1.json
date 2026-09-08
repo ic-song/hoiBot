@@ -95,6 +95,19 @@
       "reentrantDdlRequired": false
     },
     {
+      "migration": "488_item_bag_import_completeness.sql",
+      "rollback": "488_item_bag_import_completeness.rollback.sql",
+      "kind": "ADDITIVE_ITEM_BAG_IMPORT_COMPLETENESS_BASELINE",
+      "alters": [],
+      "creates": ["player_item_bag_import_completeness_projections"],
+      "inputShape": "MIGRATION_487_PET_SKILL_INFO_DIRECT_REPLY_CANARY",
+      "resultingShape": "MIGRATION_488_ITEM_BAG_IMPORT_COMPLETENESS_V3",
+      "rollbackPreflight": "REJECT_WHEN_ANY_COMPLETENESS_PROJECTION_ROW_EXISTS",
+      "operationalDataDependency": "NONE: rows are created only by the isolated V3 object-domain importer from sealed BAG_CONTAINER witnesses",
+      "createOnly": true,
+      "reentrantDdlRequired": false
+    },
+    {
       "migration": "482_canonical_pet_skill_grade_unicode.sql",
       "rollback": "482_canonical_pet_skill_grade_unicode.rollback.sql",
       "kind": "ADDITIVE_CANONICAL_PET_SKILL_GRADE_UNICODE_CORRECTION",
@@ -144,7 +157,8 @@
     "player_pet_skill_bag_import_completeness_projections",
     "private_chat_denial_counters",
     "private_chat_denial_attempts",
-    "private_chat_denial_notification_channels"
+    "private_chat_denial_notification_channels",
+    "player_item_bag_import_completeness_projections"
   ],
   "globalPolicies": {
     "newPrimaryKey": { "generator": "CUID2", "length": 8, "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "collisionHandling": "PK_OR_UNIQUE_DETECT_AND_BOUNDED_RETRY_BY_SHARED_PROVIDER" },

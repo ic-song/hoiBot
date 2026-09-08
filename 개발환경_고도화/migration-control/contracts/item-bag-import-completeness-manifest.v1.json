@@ -1,0 +1,21 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-item-bag-import-completeness-manifest-contract-v1",
+  "profile": "object-domain-import-profile.v3.json",
+  "importContract": "data-migration-object-domain-import.v3.json",
+  "witness": {
+    "sourceNamespace": "member.bag",
+    "recordDomain": "item",
+    "recordKind": "BAG_CONTAINER",
+    "catalogDecision": { "status": "IGNORE", "reason": "NOT_OBJECT_DOMAIN_INPUT", "projectedRowCount": 0 },
+    "cardinalityPerPlayer": 1,
+    "emptyPayloadEligible": true,
+    "playerIdentity": "canonical_players(source_system=LEGACY_JSON,source_identifier=owner_locator_sha256)"
+  },
+  "sourceKeys": { "recordKinds": ["ITEM_STACK"], "zeroCountEligible": true },
+  "projectionFingerprint": "sha256(stable JSON of player/run/witness/semantic hashes/counts/import-commit stack baseline/import-commit ledger baseline/revision/active flag)",
+  "readinessContinuation": "baseline ledger rows must be an exact prefix; later canonical ledger rows must be continuous and reconcile to current final stack balances",
+  "forbiddenReadinessRule": "current stack or ledger state must not be required to equal the import-commit baseline",
+  "excludedState": "PET-EQUIPMENT frozen state belongs to consumer actual-read validation",
+  "operationalDataAllowed": false
+}
