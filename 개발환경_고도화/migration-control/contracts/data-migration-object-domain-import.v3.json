@@ -3,9 +3,10 @@
   "format": "hoibot-data-migration-object-domain-import-contract-v3",
   "migration": "460_data_migration_object_domain_import.sql",
   "completenessMigration": "488_item_bag_import_completeness.sql",
+  "completenessCorrectionMigration": "490_item_bag_import_baseline_ordering.sql",
   "baseContract": "data-migration-object-domain-import.v2.json",
   "profileContract": "object-domain-import-profile.v3.json",
-  "profileSemanticSha256": "7c7ba299c2b1bc87a370fa447e4a976d2987b00405a1a793b1997b12772cec32",
+  "profileSemanticSha256": "c9170ea6ed780a755918e776520a17cc3accbdf8dfec9865289c5b251232e27e",
   "componentSemanticSha256": {
     "identityBindings": "283278b9d9e0f99c452da8bac8a3c3318575ff78853d2da301ea6266597e4696",
     "objectModel": "54085c96d7bc4b31d6ae86c82aff5620552daf184280591d9ec2fd225c6558bc",
@@ -15,7 +16,7 @@
   "semanticHashPolicy": {
     "projectionVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V3",
     "importContractProjection": "all top-level import behavior fields except semanticHashPolicy",
-    "currentImportContractProjectionSha256": "a88ae67a230702e60a7c3ba2870579da933d9e4bfd2df93ef7fc1ac7c3b55e77",
+    "currentImportContractProjectionSha256": "0ba25d6e0f6e12d068c1f2757747de75b1b6642dcb8189b1c4b9f6bb89bb186b",
     "acceptedCompatibleImportContractSha256": [],
     "compatibilityBoundary": "V3 accepts only its current semantic contract. Existing V1/V2 COMPLETE runs must replay or roll back through their creating profile."
   },
@@ -32,13 +33,14 @@
     "table": "player_item_bag_import_completeness_projections",
     "sourceKeyKinds": ["ITEM_STACK"],
     "completeRule": "projected_stack_count equals expected_source_key_count and quarantine/ignore counts are zero",
-    "postImportMutationProof": "bind the ordered canonical item stack set and canonical item inventory ledger set/count as the import-commit baseline in the same transaction",
-    "readinessContinuationRule": "future readiness must verify the stored ledger set as an exact prefix, continuous canonical mutations after that prefix, and the current final stack balances; current state equality with the import baseline is forbidden because valid post-import canonical mutations must remain eligible",
+    "postImportMutationProof": "bind exact typed stack and ledger child sets plus the current per-player ledger head as the import-commit baseline in the same transaction",
+    "readinessContinuationRule": "readiness verifies exact typed baseline children, every live sequence from 1 through current head, and baseline stack quantity plus all post-baseline deltas equals the exact current stack set; valid later mutations and newly created stacks remain eligible",
+    "orderingBoundary": "pre-490 ledger IDs receive deterministic dense baseline ordinals without any historical-time claim; only inserts after the captured baseline head use the atomic monotonic sequence",
     "excludedActualReadState": "frozen PET-EQUIPMENT validation is not represented by this projection and remains a consumer actual-read state responsibility",
     "semanticBinding": ["profileSemanticSha256", "importContractSha256", "completenessFingerprint"]
   },
   "transactionBoundary": "one outer transaction inserts targets, target receipts, one completeness projection per BAG_CONTAINER witness, and only then marks the run COMPLETE",
   "replay": "same v3 profile, contract, witness, counts and current state fingerprints returns the prior run with zero writes; any drift fails closed",
-  "rollback": "delete v3 completeness projections first, then imported target rows in reverse import order, and the import run last",
+  "rollback": "delete ledger-baseline children, stack-baseline children, and projection first; prove imported ledger mappings form the locked exact tail and that no post-import ledger exists; delete mappings and ledger rows in reverse order while atomically rewinding the head; then delete other targets and the import run. Unsafe or partial rollback fails closed",
   "operationalDataAllowed": false
 }

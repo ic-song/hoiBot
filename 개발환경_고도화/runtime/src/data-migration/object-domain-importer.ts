@@ -70,8 +70,23 @@ interface ItemBagWitnessRow {
 
 interface ItemBagStateRow { owned_item_stack_id: string; item_id: string; quantity: string; }
 interface ItemLedgerStateRow {
-  item_inventory_ledger_entry_id: string; item_inventory_operation_id: string; item_id: string;
-  owned_item_stack_id: string | null; owned_item_id: string | null; quantity_delta: string; reason_type: string;
+  item_inventory_ledger_entry_id: string; item_inventory_operation_id: string; player_id: string; item_id: string;
+  owned_item_stack_id: string | null; owned_item_id: string | null; quantity_delta: string; reason_type: string; ledger_sequence: string | null;
+}
+
+interface ItemBagStackBaseline {
+  player_id: string; item_id: string; owned_item_stack_id: string; baseline_quantity: string; stack_entry_fingerprint: string;
+}
+
+interface ItemBagLedgerBaseline {
+  player_id: string; item_inventory_ledger_entry_id: string; item_inventory_operation_id: string; ledger_sequence: string; item_id: string;
+  owned_item_stack_id: string | null; owned_item_id: string | null; quantity_delta: string; reason_type: string; ledger_entry_fingerprint: string;
+}
+
+interface ExpectedItemBagCompleteness {
+  projection: Record<string, unknown>;
+  stacks: ItemBagStackBaseline[];
+  ledgers: ItemBagLedgerBaseline[];
 }
 
 interface ProjectionRow {
@@ -141,6 +156,24 @@ export function stableDomainImportJson(value: unknown): string {
     return `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${stableDomainImportJson(record[key])}`).join(",")}}`;
   }
   throw new Error("OBJECT_DOMAIN_IMPORT_UNSUPPORTED_VALUE");
+}
+
+export function calculateItemBagCompletenessFingerprint(value: Record<string, unknown>): string {
+  return sha256(stableDomainImportJson(value));
+}
+
+export async function rollbackCanonicalItemLedgerExactTail(transaction: DatabaseTransaction, itemInventoryLedgerEntryId: string, audit: ObjectAuditValues): Promise<void> {
+  const tails = await transaction.query<Array<{ player_id: string; ledger_sequence: string; last_ledger_sequence: string }>>("SELECT ordering.player_id,CAST(ordering.ledger_sequence AS CHAR) ledger_sequence,CAST(head.last_ledger_sequence AS CHAR) last_ledger_sequence FROM canonical_item_inventory_ledger_orderings ordering JOIN canonical_item_inventory_ledger_heads head ON head.player_id=ordering.player_id WHERE ordering.item_inventory_ledger_entry_id=? FOR UPDATE", [itemInventoryLedgerEntryId]);
+  if (tails.length !== 1 || tails[0]!.ledger_sequence !== tails[0]!.last_ledger_sequence) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_ROLLBACK_NOT_EXACT_TAIL");
+  const ordering = await transaction.execute("DELETE FROM canonical_item_inventory_ledger_orderings WHERE item_inventory_ledger_entry_id=?", [itemInventoryLedgerEntryId]);
+  if (ordering.affectedRows !== 1n) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_ORDERING_ROLLBACK_MISMATCH");
+  if (BigInt(tails[0]!.ledger_sequence) === 1n) {
+    const head = await transaction.execute("DELETE FROM canonical_item_inventory_ledger_heads WHERE player_id=? AND last_ledger_sequence=1", [tails[0]!.player_id]);
+    if (head.affectedRows !== 1n) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_HEAD_ROLLBACK_MISMATCH");
+  } else {
+    const head = await transaction.execute("UPDATE canonical_item_inventory_ledger_heads SET last_ledger_sequence=last_ledger_sequence-1,UPDATE_USER=?,UPDATE_TIME=? WHERE player_id=? AND last_ledger_sequence=?", [audit.UPDATE_USER, audit.UPDATE_TIME, tails[0]!.player_id, tails[0]!.ledger_sequence]);
+    if (head.affectedRows !== 1n) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_HEAD_ROLLBACK_MISMATCH");
+  }
 }
 
 export function calculateObjectDomainImportSemanticSha256(documentText: string): string {
@@ -685,21 +718,38 @@ export class MariaObjectDomainImporter {
     return witnesses;
   }
 
-  private async readItemBagState(transaction: DatabaseTransaction, playerId: string): Promise<{ stackRows: ItemBagStateRow[]; ledgerRows: ItemLedgerStateRow[]; stackSetFingerprint: string; itemLedgerSetFingerprint: string }> {
-    const stackRows = await transaction.query<ItemBagStateRow[]>("SELECT owned_item_stack_id,item_id,CAST(quantity AS CHAR) quantity FROM canonical_owned_item_stacks WHERE player_id=? ORDER BY owned_item_stack_id FOR UPDATE", [playerId]);
-    const ledgerRows = await transaction.query<ItemLedgerStateRow[]>("SELECT item_inventory_ledger_entry_id,item_inventory_operation_id,item_id,owned_item_stack_id,owned_item_id,CAST(quantity_delta AS CHAR) quantity_delta,reason_type FROM canonical_item_inventory_ledger_entries WHERE player_id=? ORDER BY item_inventory_ledger_entry_id FOR UPDATE", [playerId]);
-    return {
-      stackRows,
-      ledgerRows,
-      stackSetFingerprint: sha256(stableDomainImportJson(stackRows)),
-      itemLedgerSetFingerprint: sha256(stableDomainImportJson(ledgerRows))
-    };
+  private assertItemBagWitnessOwnerSet(witnesses: ItemBagWitnessRow[], plan: DomainImportPlan): void {
+    const witnessOwners = witnesses.map((row) => row.owner_locator_sha256!);
+    const importedOwners = plan.rows.filter((row) => row.target_table_name === "canonical_players" && row.payload.source_system === "LEGACY_JSON").map((row) => String(row.payload.source_identifier));
+    if (new Set(importedOwners).size !== importedOwners.length) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_PLAYER_OWNER_DUPLICATE");
+    const orderedWitnesses = [...witnessOwners].sort((left, right) => left.localeCompare(right, "en"));
+    const orderedImported = [...importedOwners].sort((left, right) => left.localeCompare(right, "en"));
+    if (stableDomainImportJson(orderedWitnesses) !== stableDomainImportJson(orderedImported)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_WITNESS_OWNER_SET_MISMATCH");
   }
 
-  private async expectedItemBagCompleteness(transaction: DatabaseTransaction, runId: string, witnesses: ItemBagWitnessRow[], decisions: DecisionRow[], plan: DomainImportPlan, policy: DomainImportPolicy, ids: Map<string, string>): Promise<Array<Record<string, unknown>>> {
+  private async readItemBagState(transaction: DatabaseTransaction, playerId: string): Promise<{ stackRows: ItemBagStateRow[]; ledgerRows: ItemLedgerStateRow[]; stackBaselines: ItemBagStackBaseline[]; ledgerBaselines: ItemBagLedgerBaseline[]; stackSetFingerprint: string; itemLedgerSetFingerprint: string }> {
+    const stackRows = await transaction.query<ItemBagStateRow[]>("SELECT owned_item_stack_id,item_id,CAST(quantity AS CHAR) quantity FROM canonical_owned_item_stacks WHERE player_id=? ORDER BY owned_item_stack_id FOR UPDATE", [playerId]);
+    const ledgerRows = await transaction.query<ItemLedgerStateRow[]>("SELECT ledger.item_inventory_ledger_entry_id,ledger.item_inventory_operation_id,ledger.player_id,ledger.item_id,ledger.owned_item_stack_id,ledger.owned_item_id,CAST(ledger.quantity_delta AS CHAR) quantity_delta,ledger.reason_type,CAST(ordering.ledger_sequence AS CHAR) ledger_sequence FROM canonical_item_inventory_ledger_entries ledger LEFT JOIN canonical_item_inventory_ledger_orderings ordering ON ordering.item_inventory_ledger_entry_id=ledger.item_inventory_ledger_entry_id AND ordering.player_id=ledger.player_id WHERE ledger.player_id=? ORDER BY ordering.ledger_sequence,ledger.item_inventory_ledger_entry_id FOR UPDATE", [playerId]);
+    const heads = await transaction.query<Array<{ last_ledger_sequence: string }>>("SELECT CAST(last_ledger_sequence AS CHAR) last_ledger_sequence FROM canonical_item_inventory_ledger_heads WHERE player_id=? FOR UPDATE", [playerId]);
+    if (ledgerRows.some((row) => row.ledger_sequence === null)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_ORDERING_MISSING");
+    if ((ledgerRows.length === 0 && heads.length !== 0) || (ledgerRows.length > 0 && (heads.length !== 1 || BigInt(String(heads[0]!.last_ledger_sequence)) !== BigInt(ledgerRows.length)))) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_SEQUENCE_HEAD_MISMATCH");
+    for (let index = 0; index < ledgerRows.length; index += 1) if (BigInt(ledgerRows[index]!.ledger_sequence!) !== BigInt(index + 1)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_SEQUENCE_GAP");
+    const stackBaselines = stackRows.map((row) => {
+      const baseline = { player_id: playerId, item_id: row.item_id, owned_item_stack_id: row.owned_item_stack_id, baseline_quantity: String(row.quantity) };
+      return { ...baseline, stack_entry_fingerprint: sha256(stableDomainImportJson(baseline)) };
+    });
+    const ledgerBaselines = ledgerRows.map((row) => {
+      const entry = { item_inventory_ledger_entry_id: row.item_inventory_ledger_entry_id, item_inventory_operation_id: row.item_inventory_operation_id, player_id: row.player_id, item_id: row.item_id, owned_item_stack_id: row.owned_item_stack_id, owned_item_id: row.owned_item_id, quantity_delta: String(row.quantity_delta), reason_type: row.reason_type };
+      return { player_id: playerId, item_inventory_ledger_entry_id: row.item_inventory_ledger_entry_id, item_inventory_operation_id: row.item_inventory_operation_id, ledger_sequence: String(row.ledger_sequence), item_id: row.item_id, owned_item_stack_id: row.owned_item_stack_id, owned_item_id: row.owned_item_id, quantity_delta: String(row.quantity_delta), reason_type: row.reason_type, ledger_entry_fingerprint: sha256(stableDomainImportJson(entry)) };
+    });
+    return { stackRows, ledgerRows, stackBaselines, ledgerBaselines, stackSetFingerprint: sha256(stableDomainImportJson(stackBaselines)), itemLedgerSetFingerprint: sha256(stableDomainImportJson(ledgerBaselines)) };
+  }
+
+  private async expectedItemBagCompleteness(transaction: DatabaseTransaction, runId: string, witnesses: ItemBagWitnessRow[], decisions: DecisionRow[], plan: DomainImportPlan, policy: DomainImportPolicy, ids: Map<string, string>): Promise<ExpectedItemBagCompleteness[]> {
     const config = policy.itemBagCompletenessV3;
     if (config === undefined) return [];
-    const result: Array<Record<string, unknown>> = [];
+    this.assertItemBagWitnessOwnerSet(witnesses, plan);
+    const result: ExpectedItemBagCompleteness[] = [];
     for (const witness of witnesses) {
       const ownerLocator = witness.owner_locator_sha256!;
       const witnessDecisions = decisions.filter((decision) => decision.common_staging_record_id === witness.common_staging_record_id);
@@ -735,25 +785,40 @@ export class MariaObjectDomainImporter {
         ignored_source_key_count: ignoredSourceKeyCount,
         stack_set_fingerprint: state.stackSetFingerprint,
         item_ledger_entry_count: String(state.ledgerRows.length),
+        baseline_ledger_head_sequence: String(state.ledgerRows.length),
         item_ledger_set_fingerprint: state.itemLedgerSetFingerprint,
         revision: "1",
         active_flag: true
       };
-      values.completeness_fingerprint = sha256(stableDomainImportJson(values));
-      result.push(values);
+      values.completeness_fingerprint = calculateItemBagCompletenessFingerprint(values);
+      result.push({ projection: values, stacks: state.stackBaselines, ledgers: state.ledgerBaselines });
     }
     return result;
   }
 
-  private async insertItemBagCompleteness(transaction: DatabaseTransaction, expected: Array<Record<string, unknown>>, audit: ObjectAuditValues): Promise<void> {
-    for (const row of expected) await this.insertWithCuidRetry(transaction, "INSERT INTO player_item_bag_import_completeness_projections(player_item_bag_import_completeness_projection_id,player_id,object_domain_import_run_id,common_staging_record_id,projection_version,profile_semantic_sha256,import_contract_sha256,source_locator_sha256,source_payload_fingerprint,expected_source_key_count,projected_stack_count,quarantined_source_key_count,ignored_source_key_count,stack_set_fingerprint,item_ledger_entry_count,item_ledger_set_fingerprint,completeness_fingerprint,revision,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,TRUE,?,?,?,?)", (candidate) => [candidate, row.player_id, row.object_domain_import_run_id, row.common_staging_record_id, row.projection_version, row.profile_semantic_sha256, row.import_contract_sha256, row.source_locator_sha256, row.source_payload_fingerprint, row.expected_source_key_count, row.projected_stack_count, row.quarantined_source_key_count, row.ignored_source_key_count, row.stack_set_fingerprint, row.item_ledger_entry_count, row.item_ledger_set_fingerprint, row.completeness_fingerprint, row.revision, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+  private async insertItemBagCompleteness(transaction: DatabaseTransaction, expected: ExpectedItemBagCompleteness[], audit: ObjectAuditValues): Promise<void> {
+    for (const entry of expected) {
+      const row = entry.projection;
+      const projectionId = await this.insertWithCuidRetry(transaction, "INSERT INTO player_item_bag_import_completeness_projections(player_item_bag_import_completeness_projection_id,player_id,object_domain_import_run_id,common_staging_record_id,projection_version,profile_semantic_sha256,import_contract_sha256,source_locator_sha256,source_payload_fingerprint,expected_source_key_count,projected_stack_count,quarantined_source_key_count,ignored_source_key_count,stack_set_fingerprint,item_ledger_entry_count,baseline_ledger_head_sequence,item_ledger_set_fingerprint,completeness_fingerprint,revision,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,TRUE,?,?,?,?)", (candidate) => [candidate, row.player_id, row.object_domain_import_run_id, row.common_staging_record_id, row.projection_version, row.profile_semantic_sha256, row.import_contract_sha256, row.source_locator_sha256, row.source_payload_fingerprint, row.expected_source_key_count, row.projected_stack_count, row.quarantined_source_key_count, row.ignored_source_key_count, row.stack_set_fingerprint, row.item_ledger_entry_count, row.baseline_ledger_head_sequence, row.item_ledger_set_fingerprint, row.completeness_fingerprint, row.revision, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+      for (const stack of entry.stacks) await this.insertWithCuidRetry(transaction, "INSERT INTO player_item_bag_import_stack_baselines(player_item_bag_import_stack_baseline_id,player_item_bag_import_completeness_projection_id,player_id,item_id,owned_item_stack_id,baseline_quantity,stack_entry_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?)", (candidate) => [candidate, projectionId, stack.player_id, stack.item_id, stack.owned_item_stack_id, stack.baseline_quantity, stack.stack_entry_fingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+      for (const ledger of entry.ledgers) await this.insertWithCuidRetry(transaction, "INSERT INTO player_item_bag_import_ledger_baselines(player_item_bag_import_ledger_baseline_id,player_item_bag_import_completeness_projection_id,player_id,item_inventory_ledger_entry_id,item_inventory_operation_id,ledger_sequence,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,ledger_entry_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (candidate) => [candidate, projectionId, ledger.player_id, ledger.item_inventory_ledger_entry_id, ledger.item_inventory_operation_id, ledger.ledger_sequence, ledger.item_id, ledger.owned_item_stack_id, ledger.owned_item_id, ledger.quantity_delta, ledger.reason_type, ledger.ledger_entry_fingerprint, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+    }
   }
 
-  private async verifyItemBagCompletenessReplay(transaction: DatabaseTransaction, expected: Array<Record<string, unknown>>, runId: string): Promise<void> {
-    const rows = await transaction.query<Array<Record<string, unknown>>>("SELECT player_id,object_domain_import_run_id,common_staging_record_id,projection_version,profile_semantic_sha256,import_contract_sha256,source_locator_sha256,source_payload_fingerprint,expected_source_key_count,projected_stack_count,quarantined_source_key_count,ignored_source_key_count,stack_set_fingerprint,CAST(item_ledger_entry_count AS CHAR) item_ledger_entry_count,item_ledger_set_fingerprint,completeness_fingerprint,CAST(revision AS CHAR) revision,active_flag FROM player_item_bag_import_completeness_projections WHERE object_domain_import_run_id=? ORDER BY player_id FOR UPDATE", [runId]);
-    const normalized = rows.map((row) => ({ ...row, expected_source_key_count: Number(row.expected_source_key_count), projected_stack_count: Number(row.projected_stack_count), quarantined_source_key_count: Number(row.quarantined_source_key_count), ignored_source_key_count: Number(row.ignored_source_key_count), item_ledger_entry_count: String(row.item_ledger_entry_count), active_flag: row.active_flag === true || row.active_flag === 1 || row.active_flag === 1n }));
-    const orderedExpected = [...expected].sort((left, right) => String(left.player_id).localeCompare(String(right.player_id), "en"));
+  private async verifyItemBagCompletenessReplay(transaction: DatabaseTransaction, expected: ExpectedItemBagCompleteness[], runId: string): Promise<void> {
+    const rows = await transaction.query<Array<Record<string, unknown>>>("SELECT player_id,object_domain_import_run_id,common_staging_record_id,projection_version,profile_semantic_sha256,import_contract_sha256,source_locator_sha256,source_payload_fingerprint,expected_source_key_count,projected_stack_count,quarantined_source_key_count,ignored_source_key_count,stack_set_fingerprint,CAST(item_ledger_entry_count AS CHAR) item_ledger_entry_count,CAST(baseline_ledger_head_sequence AS CHAR) baseline_ledger_head_sequence,item_ledger_set_fingerprint,completeness_fingerprint,CAST(revision AS CHAR) revision,active_flag FROM player_item_bag_import_completeness_projections WHERE object_domain_import_run_id=? ORDER BY player_id FOR UPDATE", [runId]);
+    const normalized = rows.map((row) => ({ ...row, expected_source_key_count: Number(row.expected_source_key_count), projected_stack_count: Number(row.projected_stack_count), quarantined_source_key_count: Number(row.quarantined_source_key_count), ignored_source_key_count: Number(row.ignored_source_key_count), item_ledger_entry_count: String(row.item_ledger_entry_count), baseline_ledger_head_sequence: String(row.baseline_ledger_head_sequence), active_flag: row.active_flag === true || row.active_flag === 1 || row.active_flag === 1n }));
+    const orderedExpected = expected.map((entry) => entry.projection).sort((left, right) => String(left.player_id).localeCompare(String(right.player_id), "en"));
     if (stableDomainImportJson(normalized) !== stableDomainImportJson(orderedExpected)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_REPLAY_DRIFT");
+    for (const entry of expected) {
+      const projection = rows.find((row) => row.player_id === entry.projection.player_id)!;
+      const projectionIdRows = await transaction.query<Array<{ player_item_bag_import_completeness_projection_id: string }>>("SELECT player_item_bag_import_completeness_projection_id FROM player_item_bag_import_completeness_projections WHERE object_domain_import_run_id=? AND player_id=? FOR UPDATE", [runId, entry.projection.player_id]);
+      if (projection === undefined || projectionIdRows.length !== 1) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_REPLAY_DRIFT");
+      const projectionId = projectionIdRows[0]!.player_item_bag_import_completeness_projection_id;
+      const stacks = await transaction.query<ItemBagStackBaseline[]>("SELECT player_id,item_id,owned_item_stack_id,CAST(baseline_quantity AS CHAR) baseline_quantity,stack_entry_fingerprint FROM player_item_bag_import_stack_baselines WHERE player_item_bag_import_completeness_projection_id=? ORDER BY owned_item_stack_id FOR UPDATE", [projectionId]);
+      const ledgers = await transaction.query<ItemBagLedgerBaseline[]>("SELECT player_id,item_inventory_ledger_entry_id,item_inventory_operation_id,CAST(ledger_sequence AS CHAR) ledger_sequence,item_id,owned_item_stack_id,owned_item_id,CAST(quantity_delta AS CHAR) quantity_delta,reason_type,ledger_entry_fingerprint FROM player_item_bag_import_ledger_baselines WHERE player_item_bag_import_completeness_projection_id=? ORDER BY ledger_sequence FOR UPDATE", [projectionId]);
+      if (stableDomainImportJson(stacks) !== stableDomainImportJson(entry.stacks) || stableDomainImportJson(ledgers) !== stableDomainImportJson(entry.ledgers)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_BASELINE_CHILD_REPLAY_DRIFT");
+    }
   }
 
   private async findCompatiblePriorRun(transaction: DatabaseTransaction, catalogProjectionRunId: string, policy: DomainImportPolicy): Promise<PriorRunRow | undefined> {
@@ -820,6 +885,7 @@ export class MariaObjectDomainImporter {
 
   async rollback(catalogProjectionRunId: string, policy: DomainImportPolicy): Promise<number> {
     assertObjectDomainImportPolicy(policy);
+    const rollbackAudit = createObjectAuditValues("object-domain-import-rollback", this.now());
     return this.database.withTransaction(async (transaction) => {
       const projectionRun = (await transaction.query<ProjectionRunRow[]>("SELECT catalog_projection_run_id,common_staging_run_id,catalog_version,projection_manifest_sha256,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,expected_file_count,CAST(expected_total_bytes AS CHAR) expected_total_bytes,projected_file_count,ignored_file_count,target_schema_sha256,projection_sha256,upstream_envelope_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status FROM data_migration_catalog_projection_runs WHERE catalog_projection_run_id=? FOR UPDATE", [catalogProjectionRunId]))[0];
       if (projectionRun === undefined) throw new Error("OBJECT_DOMAIN_IMPORT_PROJECTION_RUN_NOT_FOUND");
@@ -836,10 +902,22 @@ export class MariaObjectDomainImporter {
       if (policy.itemBagCompletenessV3 !== undefined) {
         const expectedCompleteness = await this.expectedItemBagCompleteness(transaction, run.object_domain_import_run_id, itemBagWitnesses, decisions, plan, policy, new Map());
         await this.verifyItemBagCompletenessReplay(transaction, expectedCompleteness, run.object_domain_import_run_id);
+        const deletedLedgerBaselines = await transaction.execute("DELETE baseline FROM player_item_bag_import_ledger_baselines baseline JOIN player_item_bag_import_completeness_projections projection ON projection.player_item_bag_import_completeness_projection_id=baseline.player_item_bag_import_completeness_projection_id WHERE projection.object_domain_import_run_id=?", [run.object_domain_import_run_id]);
+        const expectedLedgerBaselines = expectedCompleteness.reduce((count, entry) => count + entry.ledgers.length, 0);
+        if (deletedLedgerBaselines.affectedRows !== BigInt(expectedLedgerBaselines)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_LEDGER_BASELINE_ROLLBACK_MISMATCH");
+        const deletedStackBaselines = await transaction.execute("DELETE baseline FROM player_item_bag_import_stack_baselines baseline JOIN player_item_bag_import_completeness_projections projection ON projection.player_item_bag_import_completeness_projection_id=baseline.player_item_bag_import_completeness_projection_id WHERE projection.object_domain_import_run_id=?", [run.object_domain_import_run_id]);
+        const expectedStackBaselines = expectedCompleteness.reduce((count, entry) => count + entry.stacks.length, 0);
+        if (deletedStackBaselines.affectedRows !== BigInt(expectedStackBaselines)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_STACK_BASELINE_ROLLBACK_MISMATCH");
         const deleted = await transaction.execute("DELETE FROM player_item_bag_import_completeness_projections WHERE object_domain_import_run_id=?", [run.object_domain_import_run_id]);
         if (deleted.affectedRows !== BigInt(expectedCompleteness.length)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_ROLLBACK_MISMATCH");
       }
       for (const receipt of [...receipts].reverse()) {
+        if (receipt.target_table_name === "canonical_item_inventory_ledger_entries") {
+          await rollbackCanonicalItemLedgerExactTail(transaction, receipt.target_pk_value, rollbackAudit);
+        }
+        if (receipt.target_table_name === "canonical_players") {
+          await transaction.execute("DELETE FROM canonical_item_inventory_ledger_heads WHERE player_id=? AND NOT EXISTS(SELECT 1 FROM canonical_item_inventory_ledger_orderings WHERE player_id=?)", [receipt.target_pk_value, receipt.target_pk_value]);
+        }
         const result = await transaction.execute(`DELETE FROM ${receipt.target_table_name} WHERE ${receipt.target_pk_column_name}=?`, [receipt.target_pk_value]);
         if (result.affectedRows !== 1n) throw new Error("OBJECT_DOMAIN_IMPORT_ROLLBACK_TARGET_MISSING");
       }

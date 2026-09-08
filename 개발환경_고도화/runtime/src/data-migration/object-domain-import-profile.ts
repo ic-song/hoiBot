@@ -33,6 +33,7 @@ export interface ObjectDomainImportProfileV3 {
   completenessProjection: {
     table: "player_item_bag_import_completeness_projections";
     migration: "488_item_bag_import_completeness.sql";
+    forwardCorrectionMigration: "490_item_bag_import_baseline_ordering.sql";
     sourceNamespace: "member.bag";
     witnessRecordDomain: "item";
     witnessRecordKind: "BAG_CONTAINER";
@@ -40,7 +41,7 @@ export interface ObjectDomainImportProfileV3 {
     sourceKeyRecordKinds: ["ITEM_STACK"];
     playerBinding: string;
     zeroSourceRows: string;
-    stateBinding: ["canonical_owned_item_stacks", "canonical_item_inventory_ledger_entries"];
+    stateBinding: ["canonical_owned_item_stacks", "canonical_item_inventory_ledger_entries", "canonical_item_inventory_ledger_heads", "canonical_item_inventory_ledger_orderings", "player_item_bag_import_stack_baselines", "player_item_bag_import_ledger_baselines"];
     transactionBoundary: string;
   };
   compatibility: string;
@@ -79,6 +80,7 @@ export function parseObjectDomainImportProfileV3(text: string): ObjectDomainImpo
     || profile.witnessManifest !== "item-bag-import-completeness-manifest.v1.json"
     || projection?.table !== "player_item_bag_import_completeness_projections"
     || projection.migration !== "488_item_bag_import_completeness.sql"
+    || projection.forwardCorrectionMigration !== "490_item_bag_import_baseline_ordering.sql"
     || projection.sourceNamespace !== "member.bag"
     || projection.witnessRecordDomain !== "item"
     || projection.witnessRecordKind !== "BAG_CONTAINER"
@@ -87,9 +89,13 @@ export function parseObjectDomainImportProfileV3(text: string): ObjectDomainImpo
     || projection.witnessCatalogDecision.projectedRowCount !== 0
     || projection.sourceKeyRecordKinds.length !== 1
     || projection.sourceKeyRecordKinds[0] !== "ITEM_STACK"
-    || projection.stateBinding.length !== 2
+    || projection.stateBinding.length !== 6
     || projection.stateBinding[0] !== "canonical_owned_item_stacks"
-    || projection.stateBinding[1] !== "canonical_item_inventory_ledger_entries") throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V3_INVALID");
+    || projection.stateBinding[1] !== "canonical_item_inventory_ledger_entries"
+    || projection.stateBinding[2] !== "canonical_item_inventory_ledger_heads"
+    || projection.stateBinding[3] !== "canonical_item_inventory_ledger_orderings"
+    || projection.stateBinding[4] !== "player_item_bag_import_stack_baselines"
+    || projection.stateBinding[5] !== "player_item_bag_import_ledger_baselines") throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V3_INVALID");
   return profile;
 }
 

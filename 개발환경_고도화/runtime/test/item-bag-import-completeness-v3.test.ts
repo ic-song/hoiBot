@@ -16,6 +16,7 @@ import {
   parseObjectDomainImportProfileV3,
   resolveObjectDomainImportProfileVersionV3
 } from "../src/data-migration/object-domain-import-profile.js";
+import { APPROVED_ITEM_BAG_V3_IMPORT_CONTRACT_SHA256, APPROVED_ITEM_BAG_V3_PROFILE_SEMANTIC_SHA256 } from "../src/inventory/canonical-item-bag-import-readiness-provider.js";
 
 const contracts = new URL("../../migration-control/contracts/", import.meta.url);
 const text = (name: string): string => readFileSync(new URL(name, contracts), "utf8");
@@ -44,6 +45,8 @@ describe("WBS777 item bag import completeness V3", () => {
     assert.equal(resolveObjectDomainImportProfileVersionV3("v3"), "v3");
     assert.equal(calculateObjectDomainImportProfileV3Sha256(profileText), contract.profileSemanticSha256);
     assert.equal(calculateObjectDomainImportContractSemanticSha256(text("data-migration-object-domain-import.v3.json")), contract.semanticHashPolicy.currentImportContractProjectionSha256);
+    assert.equal(contract.profileSemanticSha256, APPROVED_ITEM_BAG_V3_PROFILE_SEMANTIC_SHA256);
+    assert.equal(contract.semanticHashPolicy.currentImportContractProjectionSha256, APPROVED_ITEM_BAG_V3_IMPORT_CONTRACT_SHA256);
     assert.equal(profile.completenessProjection.witnessRecordKind, "BAG_CONTAINER");
     assert.deepEqual(profile.completenessProjection.sourceKeyRecordKinds, ["ITEM_STACK"]);
     assert.equal(profile.schemaPlan, "item-bag-import-completeness-schema-plan.v1.json");
@@ -55,16 +58,26 @@ describe("WBS777 item bag import completeness V3", () => {
     }
   });
 
-  it("registers migration 488, the witness FK and zero-row-safe counts", () => {
+  it("keeps migration 488 sealed and adds forward-only migration 490 typed baselines and ordering", () => {
     const migration = readFileSync(new URL("../migrations/488_item_bag_import_completeness.sql", import.meta.url), "utf8");
     const rollback = readFileSync(new URL("../migrations/rollback/488_item_bag_import_completeness.rollback.sql", import.meta.url), "utf8");
+    const correction = readFileSync(new URL("../migrations/490_item_bag_import_baseline_ordering.sql", import.meta.url), "utf8");
+    const correctionRollback = readFileSync(new URL("../migrations/rollback/490_item_bag_import_baseline_ordering.rollback.sql", import.meta.url), "utf8");
     const table = objectModel.tables.find((candidate) => candidate.table === "player_item_bag_import_completeness_projections");
     assert.ok(objectModel.registeredMigrations.includes("488_item_bag_import_completeness.sql"));
+    assert.ok(objectModel.registeredMigrations.includes("490_item_bag_import_baseline_ordering.sql"));
     assert.ok(table);
+    for (const name of ["canonical_item_inventory_ledger_heads", "canonical_item_inventory_ledger_orderings", "player_item_bag_import_stack_baselines", "player_item_bag_import_ledger_baselines"]) assert.ok(objectModel.tables.some((candidate) => candidate.table === name));
     assert.match(migration, /FOREIGN KEY\(common_staging_record_id\) REFERENCES data_migration_common_staging_records/);
     assert.match(migration, /projected_stack_count=expected_source_key_count/);
     assert.doesNotMatch(migration, /expected_source_key_count>0|projected_stack_count>0/);
     assert.match(rollback, /ROLLBACK_488_PROJECTION_ROWS_EXIST/);
+    assert.match(correction, /CREATE TABLE canonical_item_inventory_ledger_heads/);
+    assert.match(correction, /CREATE TABLE canonical_item_inventory_ledger_orderings/);
+    assert.match(correction, /CREATE TABLE player_item_bag_import_stack_baselines/);
+    assert.match(correction, /CREATE TABLE player_item_bag_import_ledger_baselines/);
+    assert.match(correction, /AFTER INSERT ON canonical_item_inventory_ledger_entries/);
+    assert.match(correctionRollback, /ROLLBACK_490_SEQUENCE_EVIDENCE_EXISTS/);
   });
 
   it("creates and verifies the baseline in the importer transaction and deletes it before target rollback", () => {
@@ -75,7 +88,10 @@ describe("WBS777 item bag import completeness V3", () => {
     const deleteTarget = source.indexOf("DELETE FROM ${receipt.target_table_name}", deleteProjection);
     assert.ok(insert > 0 && complete > insert);
     assert.ok(deleteProjection > 0 && deleteTarget > deleteProjection);
-    assert.match(source, /canonical_item_inventory_ledger_entries WHERE player_id=\?/);
+    assert.match(source, /canonical_item_inventory_ledger_entries ledger LEFT JOIN canonical_item_inventory_ledger_orderings/);
+    assert.match(source, /OBJECT_DOMAIN_IMPORT_ITEM_LEDGER_ORDERING_MISSING/);
+    assert.ok(source.indexOf("DELETE baseline FROM player_item_bag_import_ledger_baselines") < deleteProjection);
+    assert.match(source, /await rollbackCanonicalItemLedgerExactTail\(transaction, receipt\.target_pk_value, rollbackAudit\)/);
     assert.match(source, /OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_REPLAY_DRIFT/);
   });
 
@@ -84,26 +100,31 @@ describe("WBS777 item bag import completeness V3", () => {
     const transaction = {
       query: async (sql: string): Promise<Array<Record<string, unknown>>> => {
         if (sql.startsWith("SELECT owned_item_stack_id")) return [];
-        if (sql.startsWith("SELECT item_inventory_ledger_entry_id")) return [];
+        if (sql.startsWith("SELECT ledger.item_inventory_ledger_entry_id")) return [];
+        if (sql.startsWith("SELECT CAST(last_ledger_sequence")) return [];
         if (sql.startsWith("SELECT player_id,object_domain_import_run_id")) return stored;
+        if (sql.startsWith("SELECT player_item_bag_import_completeness_projection_id")) return [{ player_item_bag_import_completeness_projection_id: "proj0001" }];
+        if (sql.includes("FROM player_item_bag_import_stack_baselines")) return [];
+        if (sql.includes("FROM player_item_bag_import_ledger_baselines")) return [];
         if (sql.startsWith("SELECT player_id FROM canonical_players")) return [{ player_id: "play0001" }];
         throw new Error(`UNEXPECTED_QUERY:${sql}`);
       }
     };
     const importer = new MariaObjectDomainImporter({} as never) as unknown as {
-      expectedItemBagCompleteness: (...args: unknown[]) => Promise<Array<Record<string, unknown>>>;
+      expectedItemBagCompleteness: (...args: unknown[]) => Promise<Array<{ projection: Record<string, unknown>; stacks: unknown[]; ledgers: unknown[] }>>;
       verifyItemBagCompletenessReplay: (...args: unknown[]) => Promise<void>;
     };
     const v3 = json<{ profileSemanticSha256: string; semanticHashPolicy: { currentImportContractProjectionSha256: string } }>("data-migration-object-domain-import.v3.json");
     const policy = { importContractSha256: v3.semanticHashPolicy.currentImportContractProjectionSha256, itemBagCompletenessV3: { profileVersion: "OBJECT_DOMAIN_IMPORT_RELEVANT_V3", profileSemanticSha256: v3.profileSemanticSha256, sourceNamespace: "member.bag", witnessRecordDomain: "item", witnessRecordKind: "BAG_CONTAINER", sourceKeyRecordKinds: ["ITEM_STACK"] } };
     const witness = { common_staging_record_id: "wit00001", source_locator_sha256: "b".repeat(64), owner_locator_sha256: "c".repeat(64), payload_fingerprint: "d".repeat(64), source_namespace: "member.bag", record_domain: "item", record_kind: "BAG_CONTAINER", projection_status: "PROJECT", quarantine_reason: null };
     const witnessDecision = { common_staging_record_id: "wit00001", decision_status: "IGNORE", decision_reason: "NOT_OBJECT_DOMAIN_INPUT", projected_row_count: 0, record_kind: "BAG_CONTAINER" };
-    const expected = await importer.expectedItemBagCompleteness(transaction, "run00001", [witness], [witnessDecision], { decisions: [witnessDecision], rows: [], importSha256: "e".repeat(64) }, policy, new Map());
+    const playerRow = { target_table_name: "canonical_players", identity_locator_sha256: "f".repeat(64), payload: { source_system: "LEGACY_JSON", source_identifier: "c".repeat(64) } };
+    const expected = await importer.expectedItemBagCompleteness(transaction, "run00001", [witness], [witnessDecision], { decisions: [witnessDecision], rows: [playerRow], importSha256: "e".repeat(64) }, policy, new Map());
     assert.equal(expected.length, 1);
-    assert.deepEqual([expected[0]!.expected_source_key_count, expected[0]!.projected_stack_count, expected[0]!.item_ledger_entry_count], [0, 0, "0"]);
-    stored.push({ ...expected[0]!, active_flag: 1, item_ledger_entry_count: "0", revision: "1" });
+    assert.deepEqual([expected[0]!.projection.expected_source_key_count, expected[0]!.projection.projected_stack_count, expected[0]!.projection.item_ledger_entry_count, expected[0]!.projection.baseline_ledger_head_sequence], [0, 0, "0", "0"]);
+    stored.push({ ...expected[0]!.projection, active_flag: 1, item_ledger_entry_count: "0", baseline_ledger_head_sequence: "0", revision: "1" });
     await assert.doesNotReject(() => importer.verifyItemBagCompletenessReplay(transaction, expected, "run00001"));
-    stored[0]!.stack_set_fingerprint = "f".repeat(64);
+    stored[0]!.stack_set_fingerprint = "a".repeat(64);
     await assert.rejects(() => importer.verifyItemBagCompletenessReplay(transaction, expected, "run00001"), /COMPLETENESS_REPLAY_DRIFT/);
   });
 
@@ -121,11 +142,22 @@ describe("WBS777 item bag import completeness V3", () => {
     assert.throws(() => assertObjectDomainImportPolicy({ ...policy, itemBagCompletenessV3: { ...policy.itemBagCompletenessV3!, witnessRecordKind: "ITEM_STACK" as "BAG_CONTAINER" } }), /ITEM_BAG_COMPLETENESS_V3_INVALID/);
   });
 
+  it("requires exact equality in both directions between imported player owners and BAG_CONTAINER owners", () => {
+    const importer = new MariaObjectDomainImporter({} as never) as unknown as { assertItemBagWitnessOwnerSet: (witnesses: unknown[], plan: unknown) => void };
+    const witness = (owner: string) => ({ owner_locator_sha256: owner });
+    const player = (owner: string) => ({ target_table_name: "canonical_players", payload: { source_system: "LEGACY_JSON", source_identifier: owner } });
+    assert.doesNotThrow(() => importer.assertItemBagWitnessOwnerSet([witness("a")], { rows: [player("a")] }));
+    assert.throws(() => importer.assertItemBagWitnessOwnerSet([], { rows: [player("a")] }), /WITNESS_OWNER_SET_MISMATCH/);
+    assert.throws(() => importer.assertItemBagWitnessOwnerSet([witness("a"), witness("b")], { rows: [player("a")] }), /WITNESS_OWNER_SET_MISMATCH/);
+    assert.throws(() => importer.assertItemBagWitnessOwnerSet([witness("a")], { rows: [player("a"), player("a")] }), /PLAYER_OWNER_DUPLICATE/);
+  });
+
   it("documents baseline continuation and keeps PET-EQUIPMENT actual-read validation out of this projection", () => {
     const contract = text("data-migration-object-domain-import.v3.json");
-    assert.match(contract, /exact prefix/);
-    assert.match(contract, /current final stack balances/);
-    assert.match(contract, /current state equality.*forbidden/);
+    assert.match(contract, /exact typed baseline children/);
+    assert.doesNotMatch(contract, /exact prefix/);
+    assert.match(contract, /post-baseline deltas equals the exact current stack set/);
+    assert.match(contract, /deterministic dense baseline ordinals without any historical-time claim/);
     assert.match(contract, /PET-EQUIPMENT.*consumer actual-read state/);
   });
 });

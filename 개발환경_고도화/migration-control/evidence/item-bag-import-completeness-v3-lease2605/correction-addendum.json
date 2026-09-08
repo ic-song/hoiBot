@@ -1,0 +1,27 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "wbs": "WBS777",
+  "lease": "슬라이스_선점!2605",
+  "baselineCommit": "9d7539c764d64c296d11810e1524933a6ab39ec9",
+  "reason": "Gate7 independent review rejected the migration488 hash-only baseline as insufficient",
+  "sealedEvidencePreserved": ["slice.json", "validation.md", "488_item_bag_import_completeness.sql", "488_item_bag_import_completeness.rollback.sql"],
+  "forwardCorrection": {
+    "migration": "490_item_bag_import_baseline_ordering.sql",
+    "rollback": "490_item_bag_import_baseline_ordering.rollback.sql",
+    "migrationSha256": "44e5d7403d2058f118b37ad05065f4f877dd3c2170d10cf5a7ffb663144e430e",
+    "rollbackSha256": "243c2dfc7fc646f9c66c9f4f1ebab9da5041e548718eea4b0679f42e12e798f0",
+    "preflight": "requires zero existing V3 projection rows; migration488 remains unchanged",
+    "tables": ["canonical_item_inventory_ledger_heads", "canonical_item_inventory_ledger_orderings", "player_item_bag_import_stack_baselines", "player_item_bag_import_ledger_baselines"]
+  },
+  "semanticBinding": {
+    "profileSemanticSha256": "c9170ea6ed780a755918e776520a17cc3accbdf8dfec9865289c5b251232e27e",
+    "importContractSemanticSha256": "0ba25d6e0f6e12d068c1f2757747de75b1b6642dcb8189b1c4b9f6bb89bb186b"
+  },
+  "validation": {
+    "typecheck": "PASS",
+    "focused": "16/16 PASS",
+    "isolatedMaria": "4/4 PASS",
+    "objectDataModel": "PASS (116 registered tables)",
+    "gate7": "PENDING_INDEPENDENT_REVIEW"
+  }
+}
