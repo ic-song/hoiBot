@@ -1,6 +1,13 @@
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createHash } from "node:crypto";
 import { assertObjectIdentityCandidate, OBJECT_IDENTITY_MAX_ATTEMPTS, type ObjectAuditValues, type ObjectIdentityCandidateGenerator } from "../identity/object-identity-audit-provider.js";
+import { insertWithCuid8CollisionRetry, isMariaBusinessUniqueConflict, isMariaTransactionRetryExhaustion, withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
+
+const GRANT_TRANSACTION_MAX_ATTEMPTS = 3;
+const GRANT_REPLAY_READ_ATTEMPTS = 3;
+const GRANT_REPLAY_READ_DELAY_MS = 30;
+const GRANT_TRANSACTION_RETRY_EXHAUSTED = "CANONICAL_FURNITURE_GRANT_TRANSACTION_RETRY_EXHAUSTED";
+const MAX_UNSIGNED_INT = 4_294_967_295n;
 
 export interface CanonicalFurnitureDefinition {
   furnitureId: string;
@@ -67,9 +74,9 @@ function assertGrantInput(input: GrantCanonicalFurnitureInput): void {
   assertCuid2Length(input.playerId);
   assertCuid2Length(input.furnitureId);
   if (input.actor.trim() === "" || input.actor.length > 100) throw new Error("CANONICAL_FURNITURE_ACTOR_INVALID");
-  if (input.idempotencyScope.trim() === "" || input.idempotencyScope.length > 100) throw new Error("CANONICAL_FURNITURE_SCOPE_INVALID");
+  if (!/^[A-Za-z0-9_.:-]{1,100}$/.test(input.idempotencyScope)) throw new Error("CANONICAL_FURNITURE_SCOPE_INVALID");
   if (input.idempotencyKey.trim() === "" || input.idempotencyKey.length > 191) throw new Error("CANONICAL_FURNITURE_KEY_INVALID");
-  if (input.enhancementLevel !== undefined && input.enhancementLevel < 0n) throw new Error("CANONICAL_FURNITURE_ENHANCEMENT_INVALID");
+  if (input.enhancementLevel !== undefined && (input.enhancementLevel < 0n || input.enhancementLevel > MAX_UNSIGNED_INT)) throw new Error("CANONICAL_FURNITURE_ENHANCEMENT_INVALID");
 }
 
 // 정의값과 인스턴스 강화 단계만으로 최종 매력을 계산하며 결과를 저장하지 않습니다.
@@ -154,6 +161,16 @@ function requireReplayMatch(row: ReplayRow, operationKind: string, payloadFinger
   if (row.operation_kind !== operationKind || row.payload_fingerprint !== payloadFingerprint) throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_CONFLICT");
 }
 
+function requireGrantReplayMatch(row: ReplayRow, operationKind: string, payloadFingerprint: string): string {
+  requireReplayMatch(row, operationKind, payloadFingerprint);
+  if (row.result_status !== "granted" || typeof row.owned_furniture_id !== "string" || !/^[a-z][a-z0-9]{7}$/.test(row.owned_furniture_id)) throw new Error("CANONICAL_FURNITURE_REPLAY_CORRUPTED");
+  return row.owned_furniture_id;
+}
+
+async function waitBeforeGrantReplayRead(attempt: number): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, GRANT_REPLAY_READ_DELAY_MS * (attempt + 1)));
+}
+
 const ALLOWED_OWNERSHIP_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
   bag: ["listed", "removed"],
   placed: ["bag", "removed"],
@@ -179,47 +196,53 @@ export class MariaCanonicalFurnitureHomeRepository {
     assertGrantInput(input);
     const operationKind = "grant_owned_furniture";
     const payloadFingerprint = fingerprint(operationKind, [input.playerId, input.furnitureId, String(input.enhancementLevel ?? 0n)]);
-    for (let transactionAttempt = 0; transactionAttempt < OBJECT_IDENTITY_MAX_ATTEMPTS; transactionAttempt += 1) {
-      try {
-        return await this.database.withTransaction(async (transaction) => {
+    try {
+      return await withMariaTransactionRetry(this.database, {
+        maxAttempts: GRANT_TRANSACTION_MAX_ATTEMPTS,
+        allowRetry: (kind) => kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT",
+        exhaustedErrorCode: GRANT_TRANSACTION_RETRY_EXHAUSTED,
+      }, async (transaction) => {
           const replay = (await transaction.query<ReplayRow[]>(
             "SELECT owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
             [input.playerId, input.idempotencyScope, input.idempotencyKey]
           ))[0];
-          if (replay !== undefined) { requireReplayMatch(replay, operationKind, payloadFingerprint); return { furniture: await this.findOwnedForUpdate(transaction, replay.owned_furniture_id), replayed: true }; }
+          if (replay !== undefined) {
+            const ownedFurnitureId = requireGrantReplayMatch(replay, operationKind, payloadFingerprint);
+            return { furniture: await this.findGrantOwned(transaction, ownedFurnitureId, input, true), replayed: true };
+          }
+          const player = (await transaction.query<Array<{ player_id: string }>>("SELECT player_id FROM canonical_players WHERE player_id=? FOR UPDATE", [input.playerId]))[0];
+          if (player === undefined) throw new Error("CANONICAL_FURNITURE_PLAYER_NOT_FOUND");
           const definition = (await transaction.query<DefinitionRow[]>(
             "SELECT furniture_id,display_name,purchase_price,base_charm,charm_per_enhancement,active FROM object_furniture_definitions WHERE furniture_id=? FOR UPDATE",
             [input.furnitureId]
           ))[0];
           if (definition === undefined || !Boolean(definition.active)) throw new Error("CANONICAL_FURNITURE_DEFINITION_NOT_FOUND");
-          const player = (await transaction.query<Array<{ player_id: string }>>("SELECT player_id FROM canonical_players WHERE player_id=? FOR UPDATE", [input.playerId]))[0];
-          if (player === undefined) throw new Error("CANONICAL_FURNITURE_PLAYER_NOT_FOUND");
           const audit = this.createAudit(input.actor, this.now());
           const enhancementLevel = input.enhancementLevel ?? 0n;
-          let ownedFurnitureId = "";
-          await reserveId(transaction, this.generate, async (candidate) => {
+          const ownedFurnitureId = await insertWithCuid8CollisionRetry(async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
               [candidate, input.playerId, input.furnitureId, enhancementLevel, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
-            ownedFurnitureId = candidate;
-          });
-          await reserveOperationReplayId(transaction, this.generate, async (candidate) => {
+          }, { generate: this.generate, exhaustedErrorCode: "CANONICAL_FURNITURE_OWNED_ID_COLLISION_RETRY_EXHAUSTED" });
+          await insertWithCuid8CollisionRetry(async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)",
               [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, operationKind, payloadFingerprint, ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
-          });
+          }, { generate: this.generate, exhaustedErrorCode: "CANONICAL_FURNITURE_OPERATION_ID_COLLISION_RETRY_EXHAUSTED" });
           return { furniture: {
             ownedFurnitureId, playerId: input.playerId, furnitureId: definition.furniture_id, enhancementLevel,
             finalCharm: calculateCanonicalFurnitureCharm(BigInt(definition.base_charm), BigInt(definition.charm_per_enhancement), enhancementLevel), ownershipStatus: "bag"
           }, replayed: false };
-        });
-      } catch (error) {
-        if (!isOperationReplayBusinessDuplicate(error)) throw error;
+      });
+    } catch (error) {
+      if (isMariaBusinessUniqueConflict(error, "uq_object_furniture_operation_replay") || isMariaTransactionRetryExhaustion(error, GRANT_TRANSACTION_RETRY_EXHAUSTED)) {
+        const concurrent = await this.findConcurrentGrantReplay(input, operationKind, payloadFingerprint);
+        if (concurrent !== undefined) return concurrent;
       }
+      throw error;
     }
-    throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_RETRY_EXHAUSTED");
   }
 
   // ownership_status가 lifecycle 권위이고 placement는 placed 상태의 상세 관계입니다. 둘은 한 transaction에서 같이 기록합니다.
@@ -329,5 +352,37 @@ export class MariaCanonicalFurnitureHomeRepository {
     ))[0];
     if (row === undefined) throw new Error("CANONICAL_FURNITURE_REPLAY_CORRUPTED");
     return owned(row);
+  }
+
+  private async findGrantOwned(queryable: Pick<DatabaseClient, "query">, ownedFurnitureId: string, input: GrantCanonicalFurnitureInput, lock: boolean): Promise<CanonicalOwnedFurniture> {
+    const row = (await queryable.query<Array<{ owned_furniture_id: string; base_charm: bigint; charm_per_enhancement: bigint }>>(
+      `SELECT owned.owned_furniture_id,definition.base_charm,definition.charm_per_enhancement FROM object_owned_furniture_instances owned JOIN object_furniture_definitions definition ON definition.furniture_id=owned.furniture_id WHERE owned.owned_furniture_id=? AND owned.player_id=? AND owned.furniture_id=?${lock ? " FOR UPDATE" : ""}`,
+      [ownedFurnitureId, input.playerId, input.furnitureId]
+    ))[0];
+    if (row === undefined) throw new Error("CANONICAL_FURNITURE_REPLAY_CORRUPTED");
+    const enhancementLevel = input.enhancementLevel ?? 0n;
+    return {
+      ownedFurnitureId: row.owned_furniture_id,
+      playerId: input.playerId,
+      furnitureId: input.furnitureId,
+      enhancementLevel,
+      finalCharm: calculateCanonicalFurnitureCharm(BigInt(row.base_charm), BigInt(row.charm_per_enhancement), enhancementLevel),
+      ownershipStatus: "bag",
+    };
+  }
+
+  private async findConcurrentGrantReplay(input: GrantCanonicalFurnitureInput, operationKind: string, payloadFingerprint: string): Promise<{ furniture: CanonicalOwnedFurniture; replayed: boolean } | undefined> {
+    for (let attempt = 0; attempt < GRANT_REPLAY_READ_ATTEMPTS; attempt += 1) {
+      await waitBeforeGrantReplayRead(attempt);
+      const replay = (await this.database.query<ReplayRow[]>(
+        "SELECT owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=?",
+        [input.playerId, input.idempotencyScope, input.idempotencyKey]
+      ))[0];
+      if (replay !== undefined) {
+        const ownedFurnitureId = requireGrantReplayMatch(replay, operationKind, payloadFingerprint);
+        return { furniture: await this.findGrantOwned(this.database, ownedFurnitureId, input, false), replayed: true };
+      }
+    }
+    return undefined;
   }
 }
