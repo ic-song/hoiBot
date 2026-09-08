@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 18
-- 마지막 갱신: 2026-09-09 00:40:05 KST
+- 체크포인트 버전: 19
+- 마지막 갱신: 2026-09-09 03:45:12 KST
 
 ## 현재 목표
 
@@ -17,23 +17,23 @@
 - WBS730~732: 완료.
 - WBS733~741: Gate1~4 완료, Gate5~7 잔여.
 - WBS742: 현행 25%, 후속 검증 필요.
-- WBS743: 현행 12.5%, 미증명 consumer 1,095건 해소 필요. 공식 ledger는 1,133건, DIRECT_PASS 38, STATIC_ONLY 1,013, BLOCKED_DYNAMIC 82, receipts 207이다.
+- WBS743: 현행 12.5%, 미증명 consumer 1,094건 해소 필요. 공식 ledger는 1,133건, DIRECT_PASS 39, STATIC_ONLY 1,012, BLOCKED_DYNAMIC 82, receipts 213이다.
 - WBS744: 현행 62.5%, Gate6~7 잔여.
 - WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
-- WBS779~783: Gate1~7 완료, 공식 검증과 Lease 종료. WBS783 aggregate `78f3740e`는 origin과 일치한다.
-- WBS784: PACKAGE 정의 가져오기 mutation 실행 패리티 착수. Lease2612 ACTIVE, baseline `78f3740e`.
+- WBS779~784: Gate1~7 완료, 공식 검증과 Lease 종료. WBS784 aggregate `549a173b`는 origin과 일치한다.
+- WBS785: PET_EQUIPMENT assign mutation 실행 패리티가 다음 READY 대상이다. 사전 읽기 감사에서 requestKey 183~191 identity locator 단절, 입력 길이·CUID2 검증, 소유 상태·잠금·deadlock retry 보완 필요성을 확인했다.
 
 ## 현재 작업 위치
 
 - 통합 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 통합 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- 통합 원격 SHA: `78f3740e1eff758cf5bd36ce4b098e92985a58cf`
-- 현재 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\package-import-mutation-parity-v1-20260909`
-- 현재 실행 브랜치: `codex/package-import-mutation-parity-v1-20260909`
-- 현재 실행: WBS784 / Lease2612 / `SL-PACKAGE-IMPORT-MUTATION-PARITY-01`
-- 상태: WBS783 공식 종료 후 WBS784 Gate1~7 구현·격리 Maria 검증 진행 중
+- 통합 원격 SHA: `549a173b5ef9f353cbf6e20ef321c5417296d5b9`
+- 직전 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\package-import-mutation-parity-v1-20260909`
+- 직전 실행 브랜치: `codex/package-import-mutation-parity-v1-20260909`
+- 직전 실행: WBS784 / Lease2612 / `SL-PACKAGE-IMPORT-MUTATION-PARITY-01` 완료
+- 상태: WBS784 공식 종료, WBS785 신규 Lease 발급 대기
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: 통합 브랜치 `78f3740e`까지 origin push 및 exact 일치 확인
+- 원격 상태: 통합 브랜치 `549a173b`까지 origin push 및 exact 일치 확인
 
 ## 완료된 현재 슬라이스 작업
 
@@ -71,6 +71,7 @@
 - WBS782 격리 MariaDB fresh rerun에서 migration 478, max 490, replay 0, 등록 migration 39, tables 119, effective columns 263, direct 47, shadow 45를 확인했고 WBS744 Gate5를 완료했다.
 - WBS781 Wave18 READ4는 202 receipts, DIRECT 37, STATIC 1,014, BLOCKED 82로 독립 Gate7 GO를 받았다.
 - WBS783 Wave19 PACKAGE 상태 조회는 5 receipts를 추가해 총 207, DIRECT 38, STATIC 1,013, BLOCKED 82를 만들었다. ancestry-only merge 뒤 source `7186b012`, aggregate `78f3740e`, 독립 재검토 27/27 PASS와 P0/P1/P2 0건을 확인했다.
+- WBS784 Wave20 PACKAGE import는 공용 mutation evidence를 추가하고 실제 repository를 격리 MariaDB에서 success 26 committed rows, 중간 DML 13 전량 rollback, duplicate·drift·restart DML0, concurrency writer 1로 증명했다. 초기 독립 재검토의 P1 3건을 repository-local retry/reconciliation·module identity·immutable oracle로 보정한 뒤 fresh Maria 5/5, tamper 11/11, full ledger 16/16을 통과했다. receipts 213, DIRECT 39, STATIC 1,012이며 aggregate `549a173b`가 origin과 일치한다.
 
 ## 현재 변경 범위
 
@@ -95,10 +96,11 @@
 
 ## 정확한 다음 행동
 
-1. WBS784가 `MariaCanonicalPackageRewardRepository.importDefinition` 실제 source를 격리 MariaDB에서 성공·rollback·duplicate DML0·payload drift·restart·concurrency 6시나리오로 증명한다.
-2. WBS784의 Wave20 receipts·ledger·validator를 독립 Gate7 검토한 뒤 aggregate에 통합하고 Lease2612·공식 WBS·검증 행을 종료한다.
-3. WBS785 PET_EQUIPMENT assign을 WBS784 통합 기준선에서 직렬 시작하고, 나머지 consumer cohort를 계속 진행한다.
-4. WBS730~744 Gate1~7이 모두 닫힌 뒤에만 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
+1. WBS785 전용 branch/worktree와 단독 Lease를 aggregate `549a173b` 기준으로 발급한다.
+2. `MariaCanonicalPetEquipmentRepository.assign`의 requestKey hashed locator, 입력 길이·CUID2, player/pet/equipment owned lock, 중앙 Maria retry를 최소 범위로 보완한다.
+3. Wave20 mutation validator를 재사용해 success DML 6, 중간쓰기 rollback, duplicate DML0, payload drift, restart, concurrency single-writer 6시나리오를 격리 MariaDB에서 증명하고 receipts 219/DIRECT 40을 목표로 한다.
+4. 독립 Gate7 GO 뒤 aggregate에 통합하고 가구 grant/place 등 나머지 consumer cohort를 계속 진행한다.
+5. WBS730~744 Gate1~7이 모두 닫힌 뒤에만 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
 
 ## 승인 경계
 
