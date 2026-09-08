@@ -2,8 +2,8 @@
 
 - 작업 키: `sl-common-legacy-rank-label-cert`
 - 표시 이름: WBS778 레거시 랭크 라벨 무저장 인증
-- 체크포인트 버전: 3
-- 마지막 갱신: `2026-09-08 16:12:00 KST`
+- 체크포인트 버전: 4
+- 마지막 갱신: `2026-09-08 16:10:15 KST`
 - 상태: 검증 완료
 - 정리 후보: 아니요
 - 목표: Gate7 NO-GO의 exact lineage 및 재현 가능한 격리 Maria 증거 보강
@@ -15,9 +15,10 @@
 - 기준 커밋: `52ca5d5a3d79d5beadc7a8559f92273eee42344e`
 - 중간 커밋: `6ff02522480f176e11d12ed3a0dd9270760bfe9b`
 - 구현·증거 커밋: `c568ad866958c170455a4243ef5e731565e1d1a1` (origin push 확인)
+- SQL 완료 증거 correction: `4a8fe1b8099d88c1f84b8b2388736b151aebeaaf` (origin push 확인)
 - 완료: exact import/catalog/decision/staging/path chain, validation hash 보강, 교차-run/path negative, WBS777 migration488 byte-exact harness dependency, readiness query invoked/completed/error 분리, digest-reference Maria rehearsal 및 immutable receipt/transcript
 - 검증: focused 11/11 PASS; typecheck PASS; Maria 11.4 migration 476/FK 5/restart/rollback/reapply PASS
 - 운영 불변: 운영 DB·포트 3306·운영 JSON·실방·feature/prod 미사용
 - 차단: Gate7 독립 재검토 ACK 대기
-- 다음 행동: 신규 correction을 검증·push한 뒤 Gate7 독립 재검토를 재요청하고 ACK 전 Lease2606 ACTIVE/Gate7 FALSE 유지
+- 다음 행동: Gate7 독립 재검토를 재요청하고 ACK 전 Lease2606 ACTIVE/Gate7 FALSE 유지
 - 체크포인트 Git 상태: 구현·증거와 함께 origin task branch에 보존됨
