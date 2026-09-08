@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.473"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.474"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -7763,18 +7763,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     saveJsonFile(data, filePath);
                     var giftMessage = "🎁 호이가 여러분의 주머니에\n선물을 넣어드렸습니다.\nㄱ( ^ㅡ^)r ~ 덩 실 ㄱ( ^ㅡ^)r ~  덩실\n━━━━━━━━━━━━\n" + giftItemName + " " + numberWithCommas(giftItemCount) + "개가 지급되었습니다.\n\n/패키지가방 을 확인해주세요.";
-                    Api.replyRoom(room1, giftMessage);
-                    Api.replyRoom(room2, giftMessage);
-                    Api.replyRoom(room3, giftMessage);
-                    Api.replyRoom(room5, giftMessage);
-                    Api.replyRoom(room6, giftMessage);
-                    Api.replyRoom(room7, giftMessage);
-                    Api.replyRoom(room10, giftMessage);
-                    //  Api.replyRoom(room9, giftMessage);
-                    Api.replyRoom(room11, giftMessage);
-                    Api.replyRoom(room12, giftMessage);
-                    Api.replyRoom(room13, giftMessage);
-                    Api.replyRoom(room90, giftMessage);
+                    noticeMsg(giftMessage);
+                    replier.reply("✅ 전체 유저 선물 전달이 완료되었습니다.\n지급 대상: " + numberWithCommas(giftRecipientCount) + "명");
                 }
                 if (msg === "/프리미엄전달" || /^\/프리미엄전달\s+.+\/\d+$/.test(msg)) {
                     if (sender !== "호이 남") {
@@ -7801,8 +7791,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         addItem(data, premiumGiftUsers[premiumGiftUserIndex], premiumGiftItemName, premiumGiftItemCount);
                     }
                     saveJsonFile(data, filePath);
-                    var premiumGiftMessage = "👑 호이패스 프리미엄 👑\n\n👑 VIP 전용 전체 선물입니다!\n🎩 “VIP 회원님, 이쪽으로 모시겠습니다.”\n\n어서 오세요! 자리는 미리 준비해두었습니다.\n오늘의 VIP 코스 요리는 바로… 🎁\n━━━━━━━━━━━━\n🎁 " + premiumGiftItemName + " " + numberWithCommas(premiumGiftItemCount) + "개가 지급되었습니다.\n━━━━━━━━━━━━\n맛있게 챙겨가시고, 계산은 호이가 하겠습니다. ( _ _)\n\n/패키지가방에서 선물을 확인해주세요!\n\n📌 사용법\n/프리미엄전달 아이템이름/갯수\n\n📌 사용 예시\n/프리미엄전달 미니펫뽑기🐹(/미니펫오픈)/1000";
+                    var premiumGiftMessage = "👑 호이패스 프리미엄 👑\n\n👑 VIP 전용 전체 선물입니다!\n🎩 “VIP 회원님, 이쪽으로 모시겠습니다.”\n\n어서 오세요! 자리는 미리 준비해두었습니다.\n오늘의 VIP 코스 요리는 바로… 🎁\n━━━━━━━━━━━━\n🎁 " + premiumGiftItemName + " " + numberWithCommas(premiumGiftItemCount) + "개가 지급되었습니다.\n━━━━━━━━━━━━\n맛있게 챙겨가시고, 계산은 호이가 하겠습니다. ( _ _)\n\n/패키지가방에서 선물을 확인해주세요!";
                     noticeMsg(premiumGiftMessage);
+                    replier.reply("✅ 호이패스 프리미엄 선물 전달이 완료되었습니다.\n지급 대상: " + numberWithCommas(premiumGiftUsers.length) + "명");
                 }
                 if (msg === "/선물삭제" && (isAdmin(sender) || isMaster(sender))) {
                     var freeSupportPackageDeleteResult = removeAllHoiFreeSupportPackages(data);
