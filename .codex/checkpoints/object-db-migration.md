@@ -4,20 +4,28 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 16
-- 마지막 갱신: 2026-09-08 18:31:17 KST
+- 체크포인트 버전: 17
+- 마지막 갱신: 2026-09-08 19:20:00 KST
 
 ## 현재 목표
 
 - WBS730~744 Gate 1~7을 완료하고 마지막에 WBS745 Gate 8 비운영 배포·복구 준비만 수행한다.
 - 운영 데이터 최종 적재, 운영 cutover, 실운영방·운영 DB·feature/prod 반영은 별도 승인 전 금지한다.
 
+## 전체 감사 현황
+
+- WBS730~732: 완료.
+- WBS733~741: Gate1~4 완료, Gate5~7 잔여.
+- WBS742: 현행 25%, 후속 검증 필요.
+- WBS743: 현행 12.5%, 미증명 consumer 1,100건 해소 필요.
+- WBS744: 현행 50%, Gate5~7 잔여.
+- WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
+
 ## 현재 작업 위치
 
-- 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
-- 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- Gate7 검토 커밋: `909fc1ab` (origin task branch와 exact 일치)
-- 상태: WBS777/WBS778 완료·통합, WBS776 Gate1~7 독립 GO·공식 100%·Lease2604 RELEASED. WBS730~744 잔여 전체 감사 진행 중
+- 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-domain-import-v4-reseal-v1-20260908`
+- 브랜치: `codex/object-domain-import-v4-reseal-v1-20260908`
+- 상태: WBS779/Lease2607 V4 forward correction 구현·검증 완료, 독립 Gate7 검토 및 작업반장 통합 대기
 - 체크포인트 Git 추적: 기존 추적 파일
 - 원격 상태: WBS776 Gate7 검토 기준 `909fc1ab`까지 origin task branch에 push 완료
 
@@ -48,6 +56,10 @@
 - 동일한 독립 검토 focused 명령을 재실행해 transition/ledger/Wave17/stable-ID/WBS777/WBS778/실제 SHADOW ingress 65/65 PASS를 확인했다. typecheck, build, object-data 119, main/Info syntax, diff check도 PASS다.
 - origin `909fc1ab`의 fresh detached checkout 독립 재검토는 GO이며 P0/P1/P2가 모두 0이다.
 - 공식 시트 WBS776은 Gate1~7 TRUE, Gate8 FALSE, 100%, `최종 검증 완료`로 갱신했고 검증11226은 완료, Lease2604는 RELEASED다. 기존 CONTROL5625는 SUPERSEDED, CONTROL5626은 WBS730~744 전체 감사 ACTIVE로 승계했다.
+- 전체 감사 P1 세 건을 WBS779/Lease2607로 분리했다. exact migration 계약은 현행 39개와 484/485를 포함하며, additive V4 disposition은 V1 90개와 후속 29개를 합쳐 등록 테이블 119개를 정확히 한 번씩 분류한다.
+- V4 target-schema/field-map은 `canonical_pet_skill_definitions`의 후속 11컬럼을 결박하고, migration 482 Unicode grade amendment와 migration 485 admin projection 경계를 명시한다. 불변 V1/V2 계약과 적용 migration은 수정하지 않았다.
+- importer CLI는 V1~V4를 명시 선택한다. V1 pre-466 호환 allowlist는 유지하고 V2/V3/V4는 각 생성 profile의 current semantic contract만 허용한다.
+- WBS779 focused `82/82`, replay subset `39/39`, disposable MariaDB `4/4`, typecheck/build/object validator 119/main·Info syntax가 통과했다. 운영 데이터·DB·실방·외부 전송·feature/prod·Sheets는 변경하지 않았다.
 
 ## 현재 변경 범위
 
@@ -72,9 +84,9 @@
 
 ## 정확한 다음 행동
 
-1. 공식 시트와 저장소 증거를 기준으로 WBS730~744의 Gate1~7 완료 여부와 잔여 차단점을 전수 대사한다.
-2. 발견된 잔여 구현 슬라이스만 새 선점과 독립 Gate 검토를 거쳐 완료한다.
-3. WBS730~744가 모두 닫힌 뒤 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
+1. WBS779 커밋·push 후 fresh checkout 독립 Gate7 검토를 받는다.
+2. 작업반장이 WBS779을 통합하고 Lease2607·공식 WBS/검증 행을 동기화한다.
+3. 전체 감사 현황에 따라 WBS733~744 잔여 Gate를 진행하고, 모두 닫힌 뒤 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
 
 ## 승인 경계
 

@@ -515,7 +515,7 @@ describe("object domain import Gate 3/4", () => {
     assert.equal(database.identities.size, identityCount);
     assert.equal(database.input.run, projectionRun);
     const deletes = database.writes.filter((write) => /^DELETE FROM (?!data_migration_)/.test(write.sql));
-    assert.equal(deletes.length, 47);
+    assert.equal(deletes.length, 48);
   });
 
   it("fails rollback before writes when a receipt is redirected to another allowed target", async () => {

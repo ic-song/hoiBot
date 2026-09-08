@@ -47,6 +47,30 @@ export interface ObjectDomainImportProfileV3 {
   compatibility: string;
 }
 
+export interface ObjectDomainImportProfileV4 {
+  format: "hoibot-object-domain-import-profile-v4";
+  profileVersion: "OBJECT_DOMAIN_IMPORT_RELEVANT_V4";
+  catalogVersion: "SC-20260902-1";
+  baseProfile: "object-domain-import-profile.v3.json";
+  dispositionAmendment: "object-domain-import-disposition.v4.json";
+  targetSchemaAmendment: "object-domain-import-target-schema.v4.json";
+  fieldMapAmendment: "object-domain-import-field-map.v4.json";
+  registeredMigrationSeal: ["484_pet_skill_info_shadow_ingress.sql", "485_pet_skill_info_admin_bag_projection.sql"];
+  directTargetCount: 47;
+  targetColumnAdditionCount: 11;
+  compatibility: string;
+}
+
+export interface ObjectDomainImportTargetSchemaV4 {
+  format: "hoibot-object-domain-import-target-schema-v4";
+  baseSchema: "object-domain-import-target-schema.v1.json";
+  table: "canonical_pet_skill_definitions";
+  columnCount: 11;
+  columns: Array<DomainImportSchemaColumn & { migration: string }>;
+  unicodeAmendmentMigration: "482_canonical_pet_skill_grade_unicode.sql";
+  adminProjectionMigration: "485_pet_skill_info_admin_bag_projection.sql";
+}
+
 export interface ObjectDomainImportProfileBase {
   columns: DomainImportSchemaColumn[];
   generatedBindings: DomainImportGeneratedBinding[];
@@ -67,6 +91,55 @@ export function resolveObjectDomainImportProfileVersion(value: string | undefine
 export function resolveObjectDomainImportProfileVersionV3(value: string | undefined): "v1" | "v2" | "v3" {
   if (value === "v3") return "v3";
   return resolveObjectDomainImportProfileVersion(value);
+}
+
+export function resolveObjectDomainImportProfileVersionV4(value: string | undefined): "v1" | "v2" | "v3" | "v4" {
+  if (value === "v4") return "v4";
+  return resolveObjectDomainImportProfileVersionV3(value);
+}
+
+export function parseObjectDomainImportProfileV4(text: string): ObjectDomainImportProfileV4 {
+  const profile = JSON.parse(text) as ObjectDomainImportProfileV4;
+  if (profile.format !== "hoibot-object-domain-import-profile-v4"
+    || profile.profileVersion !== "OBJECT_DOMAIN_IMPORT_RELEVANT_V4"
+    || profile.catalogVersion !== "SC-20260902-1"
+    || profile.baseProfile !== "object-domain-import-profile.v3.json"
+    || profile.dispositionAmendment !== "object-domain-import-disposition.v4.json"
+    || profile.targetSchemaAmendment !== "object-domain-import-target-schema.v4.json"
+    || profile.fieldMapAmendment !== "object-domain-import-field-map.v4.json"
+    || profile.registeredMigrationSeal.length !== 2
+    || profile.registeredMigrationSeal[0] !== "484_pet_skill_info_shadow_ingress.sql"
+    || profile.registeredMigrationSeal[1] !== "485_pet_skill_info_admin_bag_projection.sql"
+    || profile.directTargetCount !== 47
+    || profile.targetColumnAdditionCount !== 11) throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V4_INVALID");
+  return profile;
+}
+
+export function parseObjectDomainImportTargetSchemaV4(text: string): ObjectDomainImportTargetSchemaV4 {
+  const schema = JSON.parse(text) as ObjectDomainImportTargetSchemaV4;
+  const expectedColumns = ["legacy_source_key", "display_order", "base_draw_rate", "fixed_draw_rate_flag", "openable_flag", "pet_skill_grade_emoji", "required_tier_name", "tier_exclusive_flag", "equip_description", "raid_charm_bonus", "castle_charm_bonus"];
+  if (schema.format !== "hoibot-object-domain-import-target-schema-v4"
+    || schema.baseSchema !== "object-domain-import-target-schema.v1.json"
+    || schema.table !== "canonical_pet_skill_definitions"
+    || schema.columnCount !== expectedColumns.length
+    || schema.columns.length !== expectedColumns.length
+    || schema.unicodeAmendmentMigration !== "482_canonical_pet_skill_grade_unicode.sql"
+    || schema.adminProjectionMigration !== "485_pet_skill_info_admin_bag_projection.sql") throw new Error("OBJECT_DOMAIN_IMPORT_TARGET_SCHEMA_V4_INVALID");
+  for (const [index, column] of schema.columns.entries()) {
+    const expectedMigration = index < 9 ? "481_canonical_pet_skill_read_provider.sql" : "484_pet_skill_info_shadow_ingress.sql";
+    if (column.table !== schema.table || column.column !== expectedColumns[index] || column.migration !== expectedMigration) throw new Error("OBJECT_DOMAIN_IMPORT_TARGET_SCHEMA_V4_INVALID");
+  }
+  return schema;
+}
+
+export function calculateObjectDomainImportProfileV4Sha256(text: string): string {
+  return sha256(JSON.stringify(parseObjectDomainImportProfileV4(text)));
+}
+
+export function applyObjectDomainImportProfileV4(base: ObjectDomainImportProfileBase, schema: ObjectDomainImportTargetSchemaV4): ObjectDomainImportProfileBase {
+  const additions = schema.columns;
+  if (base.directTargets.length !== 47 || !base.directTargets.includes(schema.table) || additions.some((addition) => base.columns.some((column) => column.table === addition.table && column.column === addition.column))) throw new Error("OBJECT_DOMAIN_IMPORT_PROFILE_V4_ALREADY_APPLIED_OR_BASE_INVALID");
+  return { ...base, columns: [...base.columns, ...additions] };
 }
 
 export function parseObjectDomainImportProfileV3(text: string): ObjectDomainImportProfileV3 {

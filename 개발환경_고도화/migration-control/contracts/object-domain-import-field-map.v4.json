@@ -1,0 +1,22 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-object-domain-import-field-map-v4",
+  "baseFieldMap": "object-domain-import-field-map.v1.json",
+  "targetSchemaAmendment": "object-domain-import-target-schema.v4.json",
+  "domain": "pet-skill",
+  "targetTable": "canonical_pet_skill_definitions",
+  "fields": [
+    {"source":"sealed petSkillInfo skill_<ordinal> key","targetColumns":["canonical_pet_skill_definitions.legacy_source_key"],"conversion":"preserve exact UTF-8 key; must satisfy skill_[0-9]{3,}"},
+    {"source":"one-based sealed petSkillInfo order","targetColumns":["canonical_pet_skill_definitions.display_order"],"conversion":"lossless positive unsigned integer"},
+    {"source":"sealed base draw rate","targetColumns":["canonical_pet_skill_definitions.base_draw_rate"],"conversion":"decimal percentage in range 0..100"},
+    {"source":"sealed fixed-rate marker","targetColumns":["canonical_pet_skill_definitions.fixed_draw_rate_flag"],"conversion":"strict boolean or null when absent"},
+    {"source":"sealed openable marker","targetColumns":["canonical_pet_skill_definitions.openable_flag"],"conversion":"strict boolean or null when absent"},
+    {"source":"sealed grade emoji","targetColumns":["canonical_pet_skill_definitions.pet_skill_grade_emoji"],"conversion":"preserve exact UTF-8 string or null"},
+    {"source":"sealed required tier name","targetColumns":["canonical_pet_skill_definitions.required_tier_name"],"conversion":"preserve exact UTF-8 string or null"},
+    {"source":"sealed tier-exclusive marker","targetColumns":["canonical_pet_skill_definitions.tier_exclusive_flag"],"conversion":"strict boolean; true requires required_tier_name"},
+    {"source":"sealed equip description","targetColumns":["canonical_pet_skill_definitions.equip_description"],"conversion":"preserve exact UTF-8 text or null"},
+    {"source":"approved pet-skill info raid charm mapping","targetColumns":["canonical_pet_skill_definitions.raid_charm_bonus"],"conversion":"lossless unsigned integer; default zero is explicit"},
+    {"source":"approved pet-skill info castle charm mapping","targetColumns":["canonical_pet_skill_definitions.castle_charm_bonus"],"conversion":"lossless unsigned integer; default zero is explicit"}
+  ],
+  "executablePayloadAllowed": false
+}
