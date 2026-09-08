@@ -36,6 +36,7 @@ const wave18ReceiptPath = "개발환경_고도화/migration-control/fixtures/syn
 const wave19ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave19-v1.json";
 const wave20ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave20-v1.json";
 const wave21ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave21-v1.json";
+const wave22ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave22-v1.json";
 const read = (path: string): string => readFileSync(resolve(repoRoot, path), "utf8");
 const manifestText = read(paths.consumerManifest);
 const manifest = JSON.parse(manifestText) as ConsumerManifestInput;
@@ -241,6 +242,14 @@ describe("object DB executable parity ledger Wave0", () => {
     assert.equal(bundle.receipts.length,219);assert.deepEqual(bundle.receipts.slice(0,213),wave20.receipts);assert.equal(Buffer.byteLength(prefix,"utf8"),883778);assert.equal(sha256CanonicalText(prefix),"d85dc0275af21fc6492df9c8f5565d03a105d0695f1c100731c9ef9eca659f34");
     const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave21ReceiptPath},evidenceFileTexts});
     assert.equal(ledger.entries.length,1133);assert.equal(ledger.entries.find(entry=>entry.consumerId==="sql-repository-4f896a4a6feb5ec1")?.verdict,"DIRECT_PASS");assert.equal(ledger.coverage.directPassConsumers,40);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1011);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);assert.equal(ledger.coverage.registrySourceMismatchCount,0);assert.equal(ledger.coverage.missingConsumerIds,0);assert.equal(ledger.coverage.duplicateConsumerIds,0);assert.equal(ledger.coverage.unknownConsumerIds,0);
+  });
+
+  it("promotes the Wave22 furniture grant mutation while preserving the exact Wave21 prefix",()=>{
+    const bundle=JSON.parse(read(wave22ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const wave21=JSON.parse(read(wave21ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,prefix=JSON.stringify(bundle.receipts.slice(0,219));
+    assert.equal(bundle.receipts.length,225);assert.deepEqual(bundle.receipts.slice(0,219),wave21.receipts);assert.equal(Buffer.byteLength(prefix,"utf8"),903454);assert.equal(sha256CanonicalText(prefix),"6ef3d333dc5a6605734eeb346b75069d1a0b3c6eeb498e81cbce03d8ff26b333");
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave22ReceiptPath},evidenceFileTexts});
+    assert.equal(ledger.entries.length,1133);assert.equal(ledger.entries.find(entry=>entry.consumerId==="sql-repository-6a8f4b07e980a91f")?.verdict,"DIRECT_PASS");assert.equal(ledger.coverage.directPassConsumers,41);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1010);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);assert.equal(ledger.coverage.registrySourceMismatchCount,0);assert.equal(ledger.coverage.missingConsumerIds,0);assert.equal(ledger.coverage.duplicateConsumerIds,0);assert.equal(ledger.coverage.unknownConsumerIds,0);
   });
 
   it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {

@@ -142,6 +142,16 @@ const OBJECT_DB_PARITY_WAVE21_CONSUMER_ID="sql-repository-4f896a4a6feb5ec1" as c
 const OBJECT_DB_PARITY_WAVE21_EXPORT_NAME="executeWave21PetEquipmentAssign" as const;
 const OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_COUNT=219 as const;
 const OBJECT_DB_PARITY_WAVE21_ALLOWED_TABLES=["object_identities","object_identity_crosswalks","canonical_owned_pet_equipment","canonical_pet_equipment_operation_replays"] as const;
+const OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_BYTES=903_454 as const;
+const OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_SHA256="6ef3d333dc5a6605734eeb346b75069d1a0b3c6eeb498e81cbce03d8ff26b333" as const;
+const OBJECT_DB_PARITY_WAVE21_EVIDENCE_COMMIT="86274556c610b8934380b74a25dcf160d6681da6" as const;
+const OBJECT_DB_PARITY_WAVE22_HARNESS_PATH="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave22-furniture-grant-harness.mjs" as const;
+const OBJECT_DB_PARITY_WAVE22_TARGET_PATH="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave22-furniture-grant.mjs" as const;
+const OBJECT_DB_PARITY_WAVE22_FIXTURE_PATH="개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave22-furniture-grant-v1.json" as const;
+const OBJECT_DB_PARITY_WAVE22_CONSUMER_ID="sql-repository-6a8f4b07e980a91f" as const;
+const OBJECT_DB_PARITY_WAVE22_EXPORT_NAME="executeWave22FurnitureGrant" as const;
+const OBJECT_DB_PARITY_WAVE22_FULL_RECEIPT_COUNT=225 as const;
+const OBJECT_DB_PARITY_WAVE22_ALLOWED_TABLES=["object_owned_furniture_instances","object_furniture_operation_replays"] as const;
 const OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_BYTES=849_438 as const;
 const OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_SHA256="92824417cd67180ed155edf01d39d8acc156c276f16077361f01b46a9193a9b2" as const;
 const OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_BYTES=838_358 as const;
@@ -194,6 +204,9 @@ const OBJECT_DB_PARITY_WAVE20_RECEIPT_IDS=new Set([
 const OBJECT_DB_PARITY_WAVE21_RECEIPT_IDS=new Set([
   "MUTATION_SUCCESS","DOMAIN_FAILURE_ROLLBACK","DUPLICATE_REPLAY_DML_ZERO","PAYLOAD_DRIFT_FAIL_CLOSED","RESTART_REPLAY","CONCURRENCY_SINGLE_WRITER",
 ].map(kind=>`receipt:wave21:${OBJECT_DB_PARITY_WAVE21_CONSUMER_ID}:${kind.toLowerCase()}`));
+const OBJECT_DB_PARITY_WAVE22_RECEIPT_IDS=new Set([
+  "MUTATION_SUCCESS","DOMAIN_FAILURE_ROLLBACK","DUPLICATE_REPLAY_DML_ZERO","PAYLOAD_DRIFT_FAIL_CLOSED","RESTART_REPLAY","CONCURRENCY_SINGLE_WRITER",
+].map(kind=>`receipt:wave22:${OBJECT_DB_PARITY_WAVE22_CONSUMER_ID}:${kind.toLowerCase()}`));
 const OBJECT_DB_PARITY_HISTORICAL_EVIDENCE_COMMITS:Readonly<Record<string,string>>={
   wave1:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave2:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,
   wave3:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave4:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,
@@ -202,7 +215,7 @@ const OBJECT_DB_PARITY_HISTORICAL_EVIDENCE_COMMITS:Readonly<Record<string,string
   wave9:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave10:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,
   wave11:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave12:OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_EVIDENCE_COMMIT,
   wave13:OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_EVIDENCE_COMMIT,wave14:OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT,
-  wave15:OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT,wave20:OBJECT_DB_PARITY_WAVE20_EVIDENCE_COMMIT,
+  wave15:OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT,wave20:OBJECT_DB_PARITY_WAVE20_EVIDENCE_COMMIT,wave21:OBJECT_DB_PARITY_WAVE21_EVIDENCE_COMMIT,
 };
 const TRUSTED_WAVE1_TITLE_READS = {
   "sql-repository-0dc3c380c54081a2": { domain: "member", symbol: "member.listOwned", triggerOrPredicate: "SQL_METHOD:member:listOwned", interfaceId: "member-title.repository.maria-canonical-title-repository.member.listOwned", definitionTable: "canonical_member_title_definitions", definitionId: "member_title_id", ownershipTable: "canonical_owned_member_title_instances", ownedId: "owned_member_title_id", selectionTable: "canonical_member_title_selections" },
@@ -225,7 +238,7 @@ export const OBJECT_DB_EXECUTABLE_PARITY_VERDICTS = [
 ] as const;
 
 export function objectDbParityHarnessTimeoutMs(harnessPath: string): number {
-  return harnessPath === OBJECT_DB_PARITY_WAVE21_HARNESS_PATH||harnessPath === OBJECT_DB_PARITY_WAVE20_HARNESS_PATH
+  return harnessPath === OBJECT_DB_PARITY_WAVE22_HARNESS_PATH||harnessPath === OBJECT_DB_PARITY_WAVE21_HARNESS_PATH||harnessPath === OBJECT_DB_PARITY_WAVE20_HARNESS_PATH
     ? OBJECT_DB_PARITY_WAVE20_CHILD_TIMEOUT_MS
     : harnessPath === OBJECT_DB_PARITY_WAVE19_HARNESS_PATH
     ? OBJECT_DB_PARITY_WAVE19_CHILD_TIMEOUT_MS
@@ -648,13 +661,15 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
     const hasWave19=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave19:"));
     const hasWave20=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave20:"));
     const hasWave21=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave21:"));
+    const hasWave22=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave22:"));
     if(hasWave15&&hasWave16)throw new Error("Wave15 SHADOW and Wave16 DIRECT receipts cannot be active together");
     if(hasWave17&&!hasWave16)throw new Error("Wave17 receipt bundle must preserve Wave16 receipts");
     if(hasWave18&&!hasWave17)throw new Error("Wave18 receipt bundle must preserve Wave17 receipts");
     if(hasWave19&&!hasWave18)throw new Error("Wave19 receipt bundle must preserve Wave18 receipts");
     if(hasWave20&&!hasWave19)throw new Error("Wave20 receipt bundle must preserve Wave19 receipts");
     if(hasWave21&&!hasWave20)throw new Error("Wave21 receipt bundle must preserve Wave20 receipts");
-    if(value.receipts.length!==(hasWave21?OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_COUNT:hasWave20?OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_COUNT:hasWave19?OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_COUNT:hasWave18?OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_COUNT:hasWave17?OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave21?"Wave21":hasWave20?"Wave20":hasWave19?"Wave19":hasWave18?"Wave18":hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
+    if(hasWave22&&!hasWave21)throw new Error("Wave22 receipt bundle must preserve Wave21 receipts");
+    if(value.receipts.length!==(hasWave22?OBJECT_DB_PARITY_WAVE22_FULL_RECEIPT_COUNT:hasWave21?OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_COUNT:hasWave20?OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_COUNT:hasWave19?OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_COUNT:hasWave18?OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_COUNT:hasWave17?OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave22?"Wave22":hasWave21?"Wave21":hasWave20?"Wave20":hasWave19?"Wave19":hasWave18?"Wave18":hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
     const historicalPrefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT));
     if(Buffer.byteLength(historicalPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES||sha256CanonicalText(historicalPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT}`);
     const wave12Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_COUNT));
@@ -665,8 +680,9 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
     if(hasWave17||hasWave18||hasWave19||hasWave20){const wave16Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave16Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_BYTES||sha256CanonicalText(wave16Receipts)!==OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_SHA256)throw new Error("historical Wave16 receipt fingerprint drift");}
     if(hasWave18||hasWave19||hasWave20){const wave17Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave17Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_BYTES||sha256CanonicalText(wave17Receipts)!==OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_SHA256)throw new Error("historical Wave17 receipt fingerprint drift");}
     if(hasWave19||hasWave20){const wave18Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave18Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_BYTES||sha256CanonicalText(wave18Receipts)!==OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_SHA256)throw new Error("historical Wave18 receipt fingerprint drift");}
-    if(hasWave20||hasWave21){const wave19Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave19Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_BYTES||sha256CanonicalText(wave19Receipts)!==OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_SHA256)throw new Error("historical Wave19 receipt fingerprint drift");}
-    if(hasWave21){const wave20Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave20Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_BYTES||sha256CanonicalText(wave20Receipts)!==OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_SHA256)throw new Error("historical Wave20 receipt fingerprint drift");}
+    if(hasWave20||hasWave21||hasWave22){const wave19Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave19Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_BYTES||sha256CanonicalText(wave19Receipts)!==OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_SHA256)throw new Error("historical Wave19 receipt fingerprint drift");}
+    if(hasWave21||hasWave22){const wave20Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave20Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_BYTES||sha256CanonicalText(wave20Receipts)!==OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_SHA256)throw new Error("historical Wave20 receipt fingerprint drift");}
+    if(hasWave22){const wave21Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave21Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_BYTES||sha256CanonicalText(wave21Receipts)!==OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_SHA256)throw new Error("historical Wave21 receipt fingerprint drift");}
   }
   return value as unknown as ObjectDbConsumerExecutionReceiptBundle;
 }
@@ -1128,9 +1144,25 @@ function assertReceiptGitProvenance(
     if (sha256CanonicalText(blob) !== evidence.sha256) throw new Error(`${receipt.receiptId} evidenceCommit blob hash drift: ${evidence.path}`);
   }
   const fixtureBlob = readCommitBlob(repositoryRoot, receiptEvidenceCommit, receipt.fixture.path);
+  if(receipt.receiptId.startsWith("receipt:wave22:")){
+    const fixture=JSON.parse(fixtureBlob) as Record<string,unknown>,contract=fixture.mutationContract as ObjectDbMutationEvidenceContract|undefined,receiptContract=isRecord(fixture.receiptContract)?fixture.receiptContract:undefined;
+    if(receiptEvidenceCommit!==evidenceCommit||receipt.consumerId!==OBJECT_DB_PARITY_WAVE22_CONSUMER_ID||!OBJECT_DB_PARITY_WAVE22_RECEIPT_IDS.has(receipt.receiptId)||receipt.proofMode!=="DIRECT"||receipt.equivalenceRule!==null
+      ||receipt.harness.runner!==OBJECT_DB_PARITY_RUNNER||receipt.harness.path!==OBJECT_DB_PARITY_WAVE22_HARNESS_PATH||receipt.fixture.path!==OBJECT_DB_PARITY_WAVE22_FIXTURE_PATH||receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE22_TARGET_PATH||receipt.invocation.exportName!==OBJECT_DB_PARITY_WAVE22_EXPORT_NAME
+      ||fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.sliceId!=="WBS786"||fixture.consumerId!==receipt.consumerId||!contract||!receiptContract
+      ||receiptContract.version!=="WBS786_FURNITURE_GRANT_MUTATION_DIRECT_V1"||receiptContract.sourceMethod!=="MariaCanonicalFurnitureHomeRepository.grantOwnedFurniture"||receiptContract.locatorProjectionMode!=="RAW_COMPOSITE_DB_PROJECTION"
+      ||!Array.isArray(fixture.runtimeSourcePaths)||fixture.runtimeSourcePaths.length!==7||JSON.stringify(contract.allowedTables)!==JSON.stringify(OBJECT_DB_PARITY_WAVE22_ALLOWED_TABLES)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==6||!Array.isArray(fixture.sealedObservations)||fixture.sealedObservations.length!==6)throw new Error(`${receipt.receiptId} trusted Wave22 contract drift`);
+    const binding=(fixture.bindings as unknown[]).find(candidate=>isRecord(candidate)&&candidate.consumerId===receipt.consumerId&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&candidate.exportName===OBJECT_DB_PARITY_WAVE22_EXPORT_NAME);
+    const observation=(fixture.sealedObservations as unknown[]).find(candidate=>isRecord(candidate)&&candidate.scenarioKind===receipt.scenario.scenarioKind) as ObjectDbMutationScenarioEvidence|undefined;
+    const oracle=contract.scenarios.find(candidate=>candidate.scenarioKind===receipt.scenario.scenarioKind);
+    if(!isRecord(binding)||!observation||!oracle||receipt.receiptId!==`receipt:wave22:${receipt.consumerId}:${receipt.scenario.scenarioKind.toLowerCase()}`)throw new Error(`${receipt.receiptId} Wave22 scenario binding drift`);
+    const verified=validateObjectDbMutationScenarioEvidence(contract,observation),source=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,evidenceCommit,contract.source.path)),currentSpan=deriveUniqueClassMethodSourceSpan(source,"MariaCanonicalFurnitureHomeRepository","grantOwnedFurniture"),catalogSource=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,OBJECT_DB_CONSUMER_BASELINE_COMMIT,contract.source.path)),relocationDiff=canonicalizeObjectDbConsumerSourceText(execFileSync("git",["diff","--no-ext-diff","--unified=0",OBJECT_DB_CONSUMER_BASELINE_COMMIT,evidenceCommit,"--",contract.source.path],{cwd:repositoryRoot,encoding:"utf8",maxBuffer:16*1024*1024}));
+    if(manifestConsumer.file!==contract.source.path||manifestConsumer.symbol!=="grantOwnedFurniture"||manifestConsumer.triggerOrPredicate!=="SQL_METHOD:grantOwnedFurniture"||manifestConsumer.access!=="READ_WRITE"||manifestConsumer.sourceSpan.start!==contract.source.catalogSpanStart||manifestConsumer.sourceSpan.end!==contract.source.catalogSpanEnd||manifestConsumer.sourceSpan.sha256!==contract.source.catalogSpanSha256
+      ||currentSpan.start!==contract.source.spanStart||currentSpan.end!==contract.source.spanEnd||currentSpan.sha256!==contract.source.spanSha256||sha256CanonicalText(source)!==contract.source.sha256||sha256CanonicalText(catalogSource.slice(contract.source.catalogSpanStart,contract.source.catalogSpanEnd))!==contract.source.catalogSpanSha256||sha256CanonicalText(relocationDiff)!==contract.source.relocationDiffSha256||verified.primary.committedRowCount!==oracle.expectedCommittedRowCount)throw new Error(`${receipt.receiptId} Wave22 source/observation drift`);
+    return;
+  }
   if(receipt.receiptId.startsWith("receipt:wave21:")){
     const fixture=JSON.parse(fixtureBlob) as Record<string,unknown>,contract=fixture.mutationContract as ObjectDbMutationEvidenceContract|undefined,receiptContract=isRecord(fixture.receiptContract)?fixture.receiptContract:undefined;
-    if(receiptEvidenceCommit!==evidenceCommit||receipt.consumerId!==OBJECT_DB_PARITY_WAVE21_CONSUMER_ID||!OBJECT_DB_PARITY_WAVE21_RECEIPT_IDS.has(receipt.receiptId)||receipt.proofMode!=="DIRECT"||receipt.equivalenceRule!==null
+    if(receiptEvidenceCommit!==OBJECT_DB_PARITY_WAVE21_EVIDENCE_COMMIT||receipt.consumerId!==OBJECT_DB_PARITY_WAVE21_CONSUMER_ID||!OBJECT_DB_PARITY_WAVE21_RECEIPT_IDS.has(receipt.receiptId)||receipt.proofMode!=="DIRECT"||receipt.equivalenceRule!==null
       ||receipt.harness.runner!==OBJECT_DB_PARITY_RUNNER||receipt.harness.path!==OBJECT_DB_PARITY_WAVE21_HARNESS_PATH||receipt.fixture.path!==OBJECT_DB_PARITY_WAVE21_FIXTURE_PATH||receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE21_TARGET_PATH||receipt.invocation.exportName!==OBJECT_DB_PARITY_WAVE21_EXPORT_NAME
       ||fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.sliceId!=="WBS785"||fixture.consumerId!==receipt.consumerId||!contract||!receiptContract
       ||receiptContract.version!=="WBS785_PET_EQUIPMENT_ASSIGN_MUTATION_DIRECT_V1"||receiptContract.sourceMethod!=="MariaCanonicalPetEquipmentRepository.assign"||JSON.stringify(receiptContract.locatorModes)!==JSON.stringify(["LEGACY_RAW","SHA256_OVERFLOW"])
@@ -1283,7 +1315,7 @@ function assertReceiptExecutableBinding(
   let fixture: unknown;
   try { fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)); } catch { throw new Error(`${receipt.receiptId} fixture must be JSON`); }
   if (!isRecord(fixture)) throw new Error(`${receipt.receiptId} fixture must be an object`);
-  if(receipt.receiptId.startsWith("receipt:wave21:")){
+  if(receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:")){
     assertExactKeys(fixture,["format","fixtureId","sliceId","consumerId","runtimeSourcePaths","receiptContract","mutationContract","bindings","sealedObservations"],`${receipt.receiptId}.fixture`);
     if(fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.consumerId!==receipt.consumerId||!Array.isArray(fixture.bindings)||fixture.bindings.length!==6||!Array.isArray(fixture.sealedObservations)||fixture.sealedObservations.length!==6)throw new Error(`${receipt.receiptId} trusted Wave21 fixture drift`);
   }else if(receipt.receiptId.startsWith("receipt:wave20:")){
@@ -1312,14 +1344,16 @@ function assertReceiptExecutableBinding(
     if (fixture.format !== "hoibot-object-db-consumer-parity-case-fixture-v1" || fixture.fixtureId !== receipt.fixture.fixtureId || !Array.isArray(fixture.bindings)) throw new Error(`${receipt.receiptId} fixture contract/binding mismatch`);
   }
   const exactBinding = JSON.stringify(binding);
-  const hasExactBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:"))
-    ? fixture.bindings.some(candidate=>isRecord(candidate)&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:"))||candidate.consumerId===receipt.consumerId))
+  const hasExactBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))
+    ? fixture.bindings.some(candidate=>isRecord(candidate)&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))||candidate.consumerId===receipt.consumerId))
     : receipt.receiptId.startsWith("receipt:wave14:")
     ? fixture.bindings.some((candidate)=>isRecord(candidate)&&Object.keys(candidate).length===Object.keys(binding).length&&Object.entries(binding).every(([key,value])=>candidate[key]===value))
     : fixture.bindings.some((candidate) => isRecord(candidate) && JSON.stringify(candidate) === exactBinding);
   if (!hasExactBinding) throw new Error(`${receipt.receiptId} unrelated fixture lacks exact receipt binding`);
   if (receipt.harness.runner !== OBJECT_DB_PARITY_RUNNER) throw new Error(`${receipt.receiptId} runner metadata is not allowlisted`);
-  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave21:")
+  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave22:")
+    ? OBJECT_DB_PARITY_WAVE22_HARNESS_PATH
+    : receipt.receiptId.startsWith("receipt:wave21:")
     ? OBJECT_DB_PARITY_WAVE21_HARNESS_PATH
     : receipt.receiptId.startsWith("receipt:wave20:")
     ? OBJECT_DB_PARITY_WAVE20_HARNESS_PATH
@@ -1352,20 +1386,20 @@ function assertReceiptExecutableBinding(
   // 이전 Wave 영수증은 해당 Wave의 고정 evidenceCommit 소스와 자체 해시로 이미 실행 검증됐다.
   // 현재 소스에서 재실행하면 무관한 후속 삽입으로 span 위치가 변하므로, 누적 묶음에서는
   // 위 provenance 검증과 불변 receipt/fixture/harness/target 해시만 재검증한다.
-  const currentExecutableReceipt=receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:");
+  const currentExecutableReceipt=receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:");
   if (!currentExecutableReceipt) return;
   const harnessPath = resolveEvidenceFile(receipt.harness.path, harnessText);
   const targetPath = resolveEvidenceFile(receipt.invocation.targetPath, targetText);
   const runDirectory = mkdtempSync(join(tmpdir(), "hoibot-parity-"));
   try {
     const inputPath = join(runDirectory, "input.json");
-    const executableBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:"))?{...(fixture.bindings as Array<Record<string,unknown>>).find(candidate=>candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:"))||candidate.consumerId===receipt.consumerId)),...binding}:binding;
-    const currentRuntimeSourceHashes=(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:"))&&Array.isArray(fixture.runtimeSourcePaths)
+    const executableBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))?{...(fixture.bindings as Array<Record<string,unknown>>).find(candidate=>candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))||candidate.consumerId===receipt.consumerId)),...binding}:binding;
+    const currentRuntimeSourceHashes=(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))&&Array.isArray(fixture.runtimeSourcePaths)
       ?fixture.runtimeSourcePaths.map(path=>{if(typeof path!=="string")throw new Error(`${receipt.receiptId} current runtime source path invalid`);return{path,sha256:sha256CanonicalText(readCommitBlob(gitRepositoryRoot(),evidenceCommit,path))};})
       :undefined;
-    writeFileSync(inputPath, `${JSON.stringify({ binding:executableBinding, fixturePayload: (receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:"))?fixture:fixture.payload, ...((receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:"))?{evidenceCommit,runtimeSourceHashes:currentRuntimeSourceHashes}:receipt.receiptId.startsWith("receipt:wave15:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT,runtimeSourceHashes:OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES}:receipt.receiptId.startsWith("receipt:wave14:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT,runtimeSourceHashes:fixture.runtimeSourceHashes}:{}), invocation: receipt.invocation }, null, 2)}\n`, "utf8");
+    writeFileSync(inputPath, `${JSON.stringify({ binding:executableBinding, fixturePayload: (receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))?fixture:fixture.payload, ...((receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))?{evidenceCommit,runtimeSourceHashes:currentRuntimeSourceHashes}:receipt.receiptId.startsWith("receipt:wave15:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT,runtimeSourceHashes:OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES}:receipt.receiptId.startsWith("receipt:wave14:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT,runtimeSourceHashes:fixture.runtimeSourceHashes}:{}), invocation: receipt.invocation }, null, 2)}\n`, "utf8");
     const stdout = executeObjectDbParityHarnessChild(
-      (receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:"))?["--import","tsx",harnessPath,inputPath,runDirectory,targetPath]:[harnessPath, inputPath, runDirectory, targetPath],
+      (receipt.receiptId.startsWith("receipt:wave20:")||receipt.receiptId.startsWith("receipt:wave21:")||receipt.receiptId.startsWith("receipt:wave22:"))?["--import","tsx",harnessPath,inputPath,runDirectory,targetPath]:[harnessPath, inputPath, runDirectory, targetPath],
       objectDbParityHarnessTimeoutMs(receipt.harness.path),
     );
     if (stdout.length !== 0) throw new Error(`${receipt.receiptId} print-only/stdout harness is forbidden`);
@@ -1386,8 +1420,8 @@ function assertReceiptExecutableBinding(
     if (replyHash !== receipt.expectedActual.reply.actualSha256 || resultHash !== receipt.expectedActual.result.actualSha256) throw new Error(`${receipt.receiptId} raw reply/result capture hash mismatch`);
     const trace = JSON.parse(readFileSync(artifactPath(caseResult.artifacts.tracePath), "utf8")) as unknown;
     if (!isRecord(trace)) throw new Error(`${receipt.receiptId} raw execution trace invalid`);
-    const wave21Trace=receipt.receiptId.startsWith("receipt:wave21:"),wave20Trace=receipt.receiptId.startsWith("receipt:wave20:"),wave19Trace=receipt.receiptId.startsWith("receipt:wave19:"),wave18Trace=receipt.receiptId.startsWith("receipt:wave18:"),wave17Trace=receipt.receiptId.startsWith("receipt:wave17:"),sourceDmlTrace=wave19Trace||wave18Trace||wave17Trace||receipt.receiptId.startsWith("receipt:wave14:")||receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:"),wave8Trace=sourceDmlTrace||receipt.receiptId.startsWith("receipt:wave13:")||receipt.consumerId in TRUSTED_WAVE8_ADMIN_CHAINS||receipt.consumerId in TRUSTED_WAVE9_RANK_CHAINS||receipt.consumerId in TRUSTED_WAVE10_PENDANT_READS||receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS||receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS;
-    if(wave21Trace||wave20Trace){
+    const wave22Trace=receipt.receiptId.startsWith("receipt:wave22:"),wave21Trace=receipt.receiptId.startsWith("receipt:wave21:"),wave20Trace=receipt.receiptId.startsWith("receipt:wave20:"),wave19Trace=receipt.receiptId.startsWith("receipt:wave19:"),wave18Trace=receipt.receiptId.startsWith("receipt:wave18:"),wave17Trace=receipt.receiptId.startsWith("receipt:wave17:"),sourceDmlTrace=wave19Trace||wave18Trace||wave17Trace||receipt.receiptId.startsWith("receipt:wave14:")||receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:"),wave8Trace=sourceDmlTrace||receipt.receiptId.startsWith("receipt:wave13:")||receipt.consumerId in TRUSTED_WAVE8_ADMIN_CHAINS||receipt.consumerId in TRUSTED_WAVE9_RANK_CHAINS||receipt.consumerId in TRUSTED_WAVE10_PENDANT_READS||receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS||receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS;
+    if(wave22Trace||wave21Trace||wave20Trace){
       assertExactKeys(trace,["scenarioKind","traces"],`${receipt.receiptId}.trace`);
       const contract=fixture.mutationContract as ObjectDbMutationEvidenceContract|undefined;
       if(!contract)throw new Error(`${receipt.receiptId} mutation contract missing`);
@@ -1531,6 +1565,7 @@ function validateExecutionReceipt(
   const trustedWave16PetSkillInfoDml=receipt.consumerId===OBJECT_DB_PARITY_WAVE16_CONSUMER_ID&&OBJECT_DB_PARITY_WAVE16_RECEIPT_IDS.has(receipt.receiptId)&&receipt.harness.path===OBJECT_DB_PARITY_WAVE16_HARNESS_PATH&&receipt.fixture.path===OBJECT_DB_PARITY_WAVE16_FIXTURE_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE16_TARGET_PATH;
   const trustedWave20PackageImportDml=receipt.consumerId===OBJECT_DB_PARITY_WAVE20_CONSUMER_ID&&OBJECT_DB_PARITY_WAVE20_RECEIPT_IDS.has(receipt.receiptId)&&receipt.harness.path===OBJECT_DB_PARITY_WAVE20_HARNESS_PATH&&receipt.fixture.path===OBJECT_DB_PARITY_WAVE20_FIXTURE_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE20_TARGET_PATH;
   const trustedWave21PetEquipmentDml=receipt.consumerId===OBJECT_DB_PARITY_WAVE21_CONSUMER_ID&&OBJECT_DB_PARITY_WAVE21_RECEIPT_IDS.has(receipt.receiptId)&&receipt.harness.path===OBJECT_DB_PARITY_WAVE21_HARNESS_PATH&&receipt.fixture.path===OBJECT_DB_PARITY_WAVE21_FIXTURE_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE21_TARGET_PATH;
+  const trustedWave22FurnitureGrantDml=receipt.consumerId===OBJECT_DB_PARITY_WAVE22_CONSUMER_ID&&OBJECT_DB_PARITY_WAVE22_RECEIPT_IDS.has(receipt.receiptId)&&receipt.harness.path===OBJECT_DB_PARITY_WAVE22_HARNESS_PATH&&receipt.fixture.path===OBJECT_DB_PARITY_WAVE22_FIXTURE_PATH&&receipt.invocation.targetPath===OBJECT_DB_PARITY_WAVE22_TARGET_PATH;
   const wave7InfrastructureStatements=new Set(["INSERT INTO operations (operation_key, actor_type, source_code, status, created_at, completed_at) VALUES (?, 'external_identity', 'iris', 'completed', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO command_executions (event_id, command_code, operation_id, execution_status, result_code, created_at, completed_at) VALUES (?, ?, ?, 'completed', 'reply_queued', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))","INSERT INTO outbox_messages (operation_id, provider_code, destination_id, message_type, payload_json, status, available_at, created_at) VALUES (?, 'iris', ?, 'text', ?, 'pending', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))"]);
   const onlyTrustedWave7Infrastructure=dml.actualNormalizedStatements.every(statement=>wave7InfrastructureStatements.has(statement));
   const wave8AllowedTables=new Set(["command_routing_decisions","operations","outbox_messages","command_executions","command_audit","admin_server_stat_snapshot_sets","admin_server_stat_snapshot_rows","admin_server_stat_read_executions"]);
@@ -1548,6 +1583,7 @@ function validateExecutionReceipt(
   const onlyTrustedWave16EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE)\s+([A-Za-z0-9_]+)/i);return match!==null&&wave15AllowedTables.has(match[1]!);});
   const onlyTrustedWave20EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE|DELETE\s+FROM)\s+([A-Za-z0-9_]+)/i);return match!==null&&new Set<string>(OBJECT_DB_PARITY_WAVE20_ALLOWED_TABLES).has(match[1]!);});
   const onlyTrustedWave21EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE|DELETE\s+FROM)\s+([A-Za-z0-9_]+)/i);return match!==null&&new Set<string>(OBJECT_DB_PARITY_WAVE21_ALLOWED_TABLES).has(match[1]!);});
+  const onlyTrustedWave22EvidenceDml=dml.actualNormalizedStatements.every(statement=>{const match=statement.match(/^(?:INSERT(?:\s+IGNORE)?\s+INTO|UPDATE|DELETE\s+FROM)\s+([A-Za-z0-9_]+)/i);return match!==null&&new Set<string>(OBJECT_DB_PARITY_WAVE22_ALLOWED_TABLES).has(match[1]!);});
   if (receipt.scenario.scenarioKind === "DUPLICATE_REPLAY_DML_ZERO" || receipt.scenario.scenarioKind === "SOURCE_DOMAIN_DML_ZERO") {
     if ((!trustedWave7InfrastructureDml||!onlyTrustedWave7Infrastructure)&&(!trustedWave8AdminDml||!onlyTrustedWave8EvidenceDml)&&(!trustedWave9RankDml||!onlyTrustedWave9EvidenceDml)&&(!trustedWave10PendantDml||!onlyTrustedWave10EvidenceDml)&&(!trustedWave11HomeFurnitureDml||!onlyTrustedWave11EvidenceDml)&&(!trustedWave12CharacterCountDml||!onlyTrustedWave12EvidenceDml)&&(!trustedWave13ServerStatsDml||!onlyTrustedWave13EvidenceDml)&&(!trustedWave14PetSkillProbabilityDml||!onlyTrustedWave14EvidenceDml)&&(!trustedWave15PetSkillInfoDml||!onlyTrustedWave15EvidenceDml)&&(!trustedWave16PetSkillInfoDml||!onlyTrustedWave16EvidenceDml)&&(dml.actualRowCount !== 0 || dml.actualNormalizedStatements.length !== 0)) throw new Error(`${receipt.receiptId} DML-zero scenario mutated source domain`);
   }
@@ -1564,6 +1600,12 @@ function validateExecutionReceipt(
     if((receipt.scenario.scenarioKind==="MUTATION_SUCCESS"||receipt.scenario.scenarioKind==="CONCURRENCY_SINGLE_WRITER")&&(transaction.actual!=="COMMIT"||dml.actualRowCount!==6||dml.actualNormalizedStatements.length!==6))throw new Error(`${receipt.receiptId} Wave21 committed writer evidence invalid`);
     if((receipt.scenario.scenarioKind==="DOMAIN_FAILURE_ROLLBACK"||receipt.scenario.scenarioKind==="PAYLOAD_DRIFT_FAIL_CLOSED")&&transaction.actual!=="ROLLBACK")throw new Error(`${receipt.receiptId} Wave21 fail-closed transaction invalid`);
     if((receipt.scenario.scenarioKind==="DUPLICATE_REPLAY_DML_ZERO"||receipt.scenario.scenarioKind==="RESTART_REPLAY")&&(transaction.actual!=="COMMIT"||dml.actualRowCount!==0||dml.actualNormalizedStatements.length!==0))throw new Error(`${receipt.receiptId} Wave21 replay evidence invalid`);
+  }
+  if(trustedWave22FurnitureGrantDml){
+    if(!onlyTrustedWave22EvidenceDml)throw new Error(`${receipt.receiptId} Wave22 non-allowlisted mutation`);
+    if((receipt.scenario.scenarioKind==="MUTATION_SUCCESS"||receipt.scenario.scenarioKind==="CONCURRENCY_SINGLE_WRITER")&&(transaction.actual!=="COMMIT"||dml.actualRowCount!==2||dml.actualNormalizedStatements.length!==2))throw new Error(`${receipt.receiptId} Wave22 committed writer evidence invalid`);
+    if((receipt.scenario.scenarioKind==="DOMAIN_FAILURE_ROLLBACK"||receipt.scenario.scenarioKind==="PAYLOAD_DRIFT_FAIL_CLOSED")&&transaction.actual!=="ROLLBACK")throw new Error(`${receipt.receiptId} Wave22 fail-closed transaction invalid`);
+    if((receipt.scenario.scenarioKind==="DUPLICATE_REPLAY_DML_ZERO"||receipt.scenario.scenarioKind==="RESTART_REPLAY")&&(transaction.actual!=="COMMIT"||dml.actualRowCount!==0||dml.actualNormalizedStatements.length!==0))throw new Error(`${receipt.receiptId} Wave22 replay evidence invalid`);
   }
   if (accessClass === "READ") {
     if(trustedWave16PetSkillInfoDml){if(!onlyTrustedWave16EvidenceDml||!(transaction.actual==="COMMIT"||transaction.actual==="READ_ONLY"))throw new Error(`${receipt.receiptId} Wave16 READ pet-skill-info evidence mutation invalid`);if(transaction.actual==="READ_ONLY"&&dml.actualNormalizedStatements.length!==0)throw new Error(`${receipt.receiptId} Wave16 READ_ONLY mutated evidence tables`);}
