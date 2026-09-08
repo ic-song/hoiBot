@@ -5649,6 +5649,61 @@ Status: VERIFIED
 
 ---
 
+# /봉인금고
+
+Status: VERIFIED
+
+## Command Anchors
+- Search in `main.js`: `/봉인금고`, `/봉인금고오픈`, `runSealedVaultCommand`, `runSealedVaultOpen`
+
+## Files
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+- `isSealedVaultCommandMessage`
+- `isSealedVaultMutationCommandMessage`
+- `runSealedVaultCommand`
+- `runSealedVaultOpen`
+- `drawSealedVaultWeightedReward`
+- `ensureSealedVaultUserState`
+- `ensureSealedVaultRootData`
+- `appendSealedVaultRareRecord`
+- `appendSealedVaultAdminLog`
+- `addItem`
+- `removeItem`
+- `noticeMsg`
+
+## Data Usage
+- `member.json -> member[user].bag["해방의 열쇠🗝️(/봉인금고오픈 숫자)"]`
+- `member.json -> member[user].sealedVault`
+- `member.json -> sealedVault.monthlyRewards`
+- `member.json -> sealedVault.rareRecords`
+- `member.json -> sealedVault.adminLogs`
+
+## Save Flow
+- `/봉인금고오픈 [숫자]`는 1~100개의 열쇠를 한 번에 사용하며, 각 회차를 순서대로 추첨한 뒤 열쇠 차감·보상·누적 상태·희귀 기록을 `member.json`에 한 번 저장한다.
+- 30번째 개봉마다 해당 회차의 일반·플래티넘·초대형 최종 보상을 2배 지급하고 부스터 누적을 초기화한다.
+- 플래티넘이 199회 연속 나오지 않으면 200번째 개봉에서 플래티넘을 확정한다. 초대형 보상은 플래티넘 미등장 누적을 초기화하지 않는다.
+- 플래티넘과 초대형 보상은 개인·전체 희귀 기록에 남기고, 저장 완료 후 전체 알림을 시도한다.
+- `/봉인금고`, `/봉인금고확률`, `/봉인금고기록`은 조회 전용이다.
+- 관리자 명령은 열쇠 지급·회수, 계정 상태 조회, 부스터·천장 누적 조정, 월별 초대형 보상 설정, 전체 희귀 기록 조회를 지원한다.
+- `해방의 열쇠🗝️`는 가방 특수 아이템에 표시하며 판매·당근 거래를 막는다.
+- 데이터 변경 명령은 기존 회원 데이터 명령 단위 잠금과 저장 실패 롤백 흐름을 재사용한다.
+
+## Related Commands
+- `/봉인금고확률`
+- `/봉인금고기록`
+- `/봉인금고기록전체`
+- `/해방열쇠지급 [아이디] [숫자]`
+- `/해방열쇠회수 [아이디] [숫자]`
+- `/봉인금고상태 [아이디]`
+- `/봉인금고부스터설정 [아이디] [숫자]`
+- `/봉인금고천장설정 [아이디] [숫자]`
+- `/봉인금고보상설정 [YYYY-MM] [만능상자] [홈뱃지큐브] [다이아상자]`
+
+---
+
 # /재벌도전
 
 Status: VERIFIED
