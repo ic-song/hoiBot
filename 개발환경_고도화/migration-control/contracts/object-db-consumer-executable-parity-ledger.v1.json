@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "e34542d0405e06afe9bdcd1ada12f4f6c862c43f",
+  "evidenceCommit": "bbb5297245195ae03d71580a737b4354444bbf59",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "c64ab24eca8d97b2d99e4f78d6a00b5f061ef220d1b8f1ae5cebbb22a91ce411"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave19-v1.json",
-      "sha256": "93f97002c34dd86dfa95afc7045bddfe823726145d040996c25797fae4586160"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave20-v1.json",
+      "sha256": "57a9f2b9bfbf84e11de30a1c492011325c29c51a5bd0875c705800c3567d3f6c"
     },
     "classificationSources": []
   },
@@ -49,16 +49,16 @@
     "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 0,
-    "provenConsumers": 38,
-    "unprovenConsumers": 1095,
-    "directPassConsumers": 38,
+    "provenConsumers": 39,
+    "unprovenConsumers": 1094,
+    "directPassConsumers": 39,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 1013,
+      "STATIC_ONLY": 1012,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 38,
+      "DIRECT_PASS": 39,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -111282,22 +111282,22 @@
         "sourceSpanSha256": "7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0",
         "classificationSha256": "a857402ea3870049dad560cfac82da411141b20c27e30b927ae3d9f8841629de"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave20:package-import",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import-harness.mjs",
+        "sha256": "26318e27f552ca21efc31c736f3bc677803a06111c9a1fd4b135a1bdbdd0cf28"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
+        "targetSourceSha256": "7c6938d122f521ed8e756b06aa196edf1c4e6f33c9948381662fa21000ce3665",
+        "exportName": "executeWave20PackageImport"
       },
       "scenarioRequirements": [
         {
@@ -111351,11 +111351,484 @@
           }
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:concurrency_single_writer",
+          "scenarioId": "wave20-package-import-concurrency-single-writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave20:package-import",
+          "attributedConsumerIds": [
+            "sql-repository-b1d650b73c2ddff0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "9d540d6a2826efe6eabdfb8e5a14c2d658b84b6c2fb25c9ba852b460e2f9b01e",
+              "actualSha256": "9d540d6a2826efe6eabdfb8e5a14c2d658b84b6c2fb25c9ba852b460e2f9b01e",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "a2e3343d409540429c396c6e66f8ed27d34b284cbc2c5f3dc60f7fcb9a4a7647",
+              "actualSha256": "a2e3343d409540429c396c6e66f8ed27d34b284cbc2c5f3dc60f7fcb9a4a7647",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definitions(package_id,package_name,package_description,max_open_quantity,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_imports(package_definition_import_id,package_id,source_system,source_namespace,source_identifier,payload_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_groups(package_reward_group_id,package_id,selection_mode,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_item_rewards(package_reward_entry_id,item_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_nested_rewards(package_reward_entry_id,package_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_quarantines(package_reward_quarantine_id,package_reward_entry_id,package_id,source_reward_identifier,target_kind,target_source_identifier,target_display_name,quarantine_reason,quarantine_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,'open',?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_replays(package_definition_operation_id,source_system,source_namespace,request_key,payload_fingerprint,package_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definitions(package_id,package_name,package_description,max_open_quantity,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_imports(package_definition_import_id,package_id,source_system,source_namespace,source_identifier,payload_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_groups(package_reward_group_id,package_id,selection_mode,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_item_rewards(package_reward_entry_id,item_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_nested_rewards(package_reward_entry_id,package_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_quarantines(package_reward_quarantine_id,package_reward_entry_id,package_id,source_reward_identifier,target_kind,target_source_identifier,target_display_name,quarantine_reason,quarantine_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,'open',?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_replays(package_definition_operation_id,source_system,source_namespace,request_key,payload_fingerprint,package_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?)"
+              ],
+              "expectedRowCount": 26,
+              "actualRowCount": 26
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_package_definition_replays",
+                "canonical_package_definition_imports",
+                "object_identity_crosswalks",
+                "canonical_item_definitions",
+                "canonical_package_definitions",
+                "package_descendants",
+                "canonical_package_reward_entries"
+              ],
+              "actual": [
+                "canonical_package_definition_replays",
+                "canonical_package_definition_imports",
+                "object_identity_crosswalks",
+                "canonical_item_definitions",
+                "canonical_package_definitions",
+                "package_descendants",
+                "canonical_package_reward_entries"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:domain_failure_rollback",
+          "scenarioId": "wave20-package-import-domain-failure-rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave20:package-import",
+          "attributedConsumerIds": [
+            "sql-repository-b1d650b73c2ddff0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f5cd20776d9e5a33e9bfe7d83de1d9e225f7e6a50d4893fd0c3d3f36930b4fa2",
+              "actualSha256": "f5cd20776d9e5a33e9bfe7d83de1d9e225f7e6a50d4893fd0c3d3f36930b4fa2",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_package_definition_replays",
+                "canonical_package_definition_imports",
+                "object_identity_crosswalks",
+                "canonical_item_definitions"
+              ],
+              "actual": [
+                "canonical_package_definition_replays",
+                "canonical_package_definition_imports",
+                "object_identity_crosswalks",
+                "canonical_item_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:duplicate_replay_dml_zero",
+          "scenarioId": "wave20-package-import-duplicate-replay-dml-zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave20:package-import",
+          "attributedConsumerIds": [
+            "sql-repository-b1d650b73c2ddff0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "57e0bae9d1955550eccdc2ecab5c58dfdd733d62341af648cb7e0c9717202a31",
+              "actualSha256": "57e0bae9d1955550eccdc2ecab5c58dfdd733d62341af648cb7e0c9717202a31",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_package_definition_replays"
+              ],
+              "actual": [
+                "canonical_package_definition_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:mutation_success",
+          "scenarioId": "wave20-package-import-mutation-success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave20:package-import",
+          "attributedConsumerIds": [
+            "sql-repository-b1d650b73c2ddff0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f31ff9d1bd1c0093a62616b957fc02d17915db6c335dcd42593b9c0e19147df2",
+              "actualSha256": "f31ff9d1bd1c0093a62616b957fc02d17915db6c335dcd42593b9c0e19147df2",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "a2e3343d409540429c396c6e66f8ed27d34b284cbc2c5f3dc60f7fcb9a4a7647",
+              "actualSha256": "a2e3343d409540429c396c6e66f8ed27d34b284cbc2c5f3dc60f7fcb9a4a7647",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definitions(package_id,package_name,package_description,max_open_quantity,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_imports(package_definition_import_id,package_id,source_system,source_namespace,source_identifier,payload_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_groups(package_reward_group_id,package_id,selection_mode,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_item_rewards(package_reward_entry_id,item_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_nested_rewards(package_reward_entry_id,package_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_quarantines(package_reward_quarantine_id,package_reward_entry_id,package_id,source_reward_identifier,target_kind,target_source_identifier,target_display_name,quarantine_reason,quarantine_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,'open',?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_replays(package_definition_operation_id,source_system,source_namespace,request_key,payload_fingerprint,package_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definitions(package_id,package_name,package_description,max_open_quantity,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_imports(package_definition_import_id,package_id,source_system,source_namespace,source_identifier,payload_fingerprint,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_groups(package_reward_group_id,package_id,selection_mode,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_item_rewards(package_reward_entry_id,item_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_nested_rewards(package_reward_entry_id,package_id,quantity,probability,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_entries(package_reward_entry_id,package_reward_group_id,reward_order,target_kind,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_reward_quarantines(package_reward_quarantine_id,package_reward_entry_id,package_id,source_reward_identifier,target_kind,target_source_identifier,target_display_name,quarantine_reason,quarantine_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,'open',?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_package_definition_replays(package_definition_operation_id,source_system,source_namespace,request_key,payload_fingerprint,package_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?)"
+              ],
+              "expectedRowCount": 26,
+              "actualRowCount": 26
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_package_definition_replays",
+                "canonical_package_definition_imports",
+                "object_identity_crosswalks",
+                "canonical_item_definitions",
+                "canonical_package_definitions",
+                "package_descendants",
+                "canonical_package_reward_entries"
+              ],
+              "actual": [
+                "canonical_package_definition_replays",
+                "canonical_package_definition_imports",
+                "object_identity_crosswalks",
+                "canonical_item_definitions",
+                "canonical_package_definitions",
+                "package_descendants",
+                "canonical_package_reward_entries"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:payload_drift_fail_closed",
+          "scenarioId": "wave20-package-import-payload-drift-fail-closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave20:package-import",
+          "attributedConsumerIds": [
+            "sql-repository-b1d650b73c2ddff0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "388f69b054c5669bf19f80bde40f0831b6ba9ec086c71a1e17f62ad3f54dd3c3",
+              "actualSha256": "388f69b054c5669bf19f80bde40f0831b6ba9ec086c71a1e17f62ad3f54dd3c3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_package_definition_replays"
+              ],
+              "actual": [
+                "canonical_package_definition_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:restart_replay",
+          "scenarioId": "wave20-package-import-restart-replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave20:package-import",
+          "attributedConsumerIds": [
+            "sql-repository-b1d650b73c2ddff0"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c9d4af5b9037ed4a9910cc0eb9e0dbed20eca011fe7fc9bf1e1257416a0cff7c",
+              "actualSha256": "c9d4af5b9037ed4a9910cc0eb9e0dbed20eca011fe7fc9bf1e1257416a0cff7c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_package_definition_replays"
+              ],
+              "actual": [
+                "canonical_package_definition_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave20:sql-repository-b1d650b73c2ddff0:concurrency_single_writer",
+          "receipt:wave20:sql-repository-b1d650b73c2ddff0:domain_failure_rollback",
+          "receipt:wave20:sql-repository-b1d650b73c2ddff0:duplicate_replay_dml_zero",
+          "receipt:wave20:sql-repository-b1d650b73c2ddff0:mutation_success",
+          "receipt:wave20:sql-repository-b1d650b73c2ddff0:payload_drift_fail_closed",
+          "receipt:wave20:sql-repository-b1d650b73c2ddff0:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-b1d650b73c2ddff0"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
+            "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import-harness.mjs",
+            "sha256": "26318e27f552ca21efc31c736f3bc677803a06111c9a1fd4b135a1bdbdd0cf28"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
+            "sha256": "7c6938d122f521ed8e756b06aa196edf1c4e6f33c9948381662fa21000ce3665"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -113349,5 +113822,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "76bb750c7b0424cba056e6969ef9849adf3cf213a188b5e1842c4260ed0937f9"
+  "entrySetSha256": "27ee919af9fa947adc9b74c067d6e7da834e62b7f1ccc18a1bc378ee98314525"
 }
