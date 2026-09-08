@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 17
-- 마지막 갱신: 2026-09-08 19:20:00 KST
+- 체크포인트 버전: 18
+- 마지막 갱신: 2026-09-09 00:40:05 KST
 
 ## 현재 목표
 
@@ -17,17 +17,23 @@
 - WBS730~732: 완료.
 - WBS733~741: Gate1~4 완료, Gate5~7 잔여.
 - WBS742: 현행 25%, 후속 검증 필요.
-- WBS743: 현행 12.5%, 미증명 consumer 1,100건 해소 필요.
-- WBS744: 현행 50%, Gate5~7 잔여.
+- WBS743: 현행 12.5%, 미증명 consumer 1,095건 해소 필요. 공식 ledger는 1,133건, DIRECT_PASS 38, STATIC_ONLY 1,013, BLOCKED_DYNAMIC 82, receipts 207이다.
+- WBS744: 현행 62.5%, Gate6~7 잔여.
 - WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
+- WBS779~783: Gate1~7 완료, 공식 검증과 Lease 종료. WBS783 aggregate `78f3740e`는 origin과 일치한다.
+- WBS784: PACKAGE 정의 가져오기 mutation 실행 패리티 착수. Lease2612 ACTIVE, baseline `78f3740e`.
 
 ## 현재 작업 위치
 
-- 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-domain-import-v4-reseal-v1-20260908`
-- 브랜치: `codex/object-domain-import-v4-reseal-v1-20260908`
-- 상태: WBS779/Lease2607 V4 forward correction 구현·검증 완료, 독립 Gate7 검토 및 작업반장 통합 대기
+- 통합 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
+- 통합 브랜치: `codex/item-bag-canonical-read-v1-20260908`
+- 통합 원격 SHA: `78f3740e1eff758cf5bd36ce4b098e92985a58cf`
+- 현재 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\package-import-mutation-parity-v1-20260909`
+- 현재 실행 브랜치: `codex/package-import-mutation-parity-v1-20260909`
+- 현재 실행: WBS784 / Lease2612 / `SL-PACKAGE-IMPORT-MUTATION-PARITY-01`
+- 상태: WBS783 공식 종료 후 WBS784 Gate1~7 구현·격리 Maria 검증 진행 중
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: WBS776 Gate7 검토 기준 `909fc1ab`까지 origin task branch에 push 완료
+- 원격 상태: 통합 브랜치 `78f3740e`까지 origin push 및 exact 일치 확인
 
 ## 완료된 현재 슬라이스 작업
 
@@ -61,6 +67,10 @@
 - importer CLI는 V1~V4를 명시 선택한다. V1 pre-466 호환 allowlist는 유지하고 V2/V3/V4는 각 생성 profile의 current semantic contract만 허용한다.
 - WBS779 1차 독립 검토가 실제 V4 policy의 effective V2 component hash 불일치, 263컬럼 preflight 부재, V2 semantic freeze 훼손, catalog-projection V4 upstream 부재를 P1으로 재현했다. 이를 보정해 두 CLI가 V4를 선택하고 동일한 263컬럼 schema hash를 사용하며, 실제 CLI-equivalent policy가 importer preflight를 통과한다.
 - WBS779 focused `88/88`, V2/V3/V4 profile subset `19/19`, disposable MariaDB `4/4`, typecheck/build/object validator 119/main·Info syntax가 통과했다. 운영 데이터·DB·실방·외부 전송·feature/prod·Sheets는 변경하지 않았다.
+- WBS780 V4 target/schema manifest 불일치 8건을 0건으로 보정하고 aggregate `7f38cf28`에 통합했다.
+- WBS782 격리 MariaDB fresh rerun에서 migration 478, max 490, replay 0, 등록 migration 39, tables 119, effective columns 263, direct 47, shadow 45를 확인했고 WBS744 Gate5를 완료했다.
+- WBS781 Wave18 READ4는 202 receipts, DIRECT 37, STATIC 1,014, BLOCKED 82로 독립 Gate7 GO를 받았다.
+- WBS783 Wave19 PACKAGE 상태 조회는 5 receipts를 추가해 총 207, DIRECT 38, STATIC 1,013, BLOCKED 82를 만들었다. ancestry-only merge 뒤 source `7186b012`, aggregate `78f3740e`, 독립 재검토 27/27 PASS와 P0/P1/P2 0건을 확인했다.
 
 ## 현재 변경 범위
 
@@ -85,9 +95,10 @@
 
 ## 정확한 다음 행동
 
-1. WBS779 커밋·push 후 fresh checkout 독립 Gate7 검토를 받는다.
-2. 작업반장이 WBS779을 통합하고 Lease2607·공식 WBS/검증 행을 동기화한다.
-3. 전체 감사 현황에 따라 WBS733~744 잔여 Gate를 진행하고, 모두 닫힌 뒤 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
+1. WBS784가 `MariaCanonicalPackageRewardRepository.importDefinition` 실제 source를 격리 MariaDB에서 성공·rollback·duplicate DML0·payload drift·restart·concurrency 6시나리오로 증명한다.
+2. WBS784의 Wave20 receipts·ledger·validator를 독립 Gate7 검토한 뒤 aggregate에 통합하고 Lease2612·공식 WBS·검증 행을 종료한다.
+3. WBS785 PET_EQUIPMENT assign을 WBS784 통합 기준선에서 직렬 시작하고, 나머지 consumer cohort를 계속 진행한다.
+4. WBS730~744 Gate1~7이 모두 닫힌 뒤에만 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
 
 ## 승인 경계
 
