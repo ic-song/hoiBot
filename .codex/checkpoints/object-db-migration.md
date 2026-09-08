@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 15
-- 마지막 갱신: 2026-09-08 17:46:44 KST
+- 체크포인트 버전: 16
+- 마지막 갱신: 2026-09-08 18:31:17 KST
 
 ## 현재 목표
 
@@ -16,10 +16,10 @@
 
 - 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- 현재 보정 커밋: `c5518e6d` (WBS776 Wave17 및 1차 Gate7 P1 보정 통합)
-- 상태: WBS777/WBS778 완료·통합, WBS776 app wiring·분류 결박·Wave17 완료. 1차 독립 Gate7 NO-GO의 P1을 보정·검증·push했고 fresh checkout 재검토 대기 중
+- Gate7 검토 커밋: `909fc1ab` (origin task branch와 exact 일치)
+- 상태: WBS777/WBS778 완료·통합, WBS776 Gate1~7 독립 GO·공식 100%·Lease2604 RELEASED. WBS730~744 잔여 전체 감사 진행 중
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: WBS777/WBS778/WBS776 통합과 Gate7 보정 `c5518e6d`까지 origin task branch에 push 완료
+- 원격 상태: WBS776 Gate7 검토 기준 `909fc1ab`까지 origin task branch에 push 완료
 
 ## 완료된 현재 슬라이스 작업
 
@@ -46,6 +46,8 @@
 - Wave6 `sql-repository-3001ad9fc2f36d01`의 과거 receipt는 current source span과 달라 provenance만 보존하고 current ledger에서는 STATIC_ONLY로 유지한다.
 - 1차 독립 Gate7이 찾은 manifest count, app/current source hash, readiness source term, stable-ID lifecycle 불일치를 보정했다. 제거된 pet-skill runtime identity 6개는 TOMBSTONE으로 예약하며 targeted stable/transition test는 23/23 PASS다.
 - 동일한 독립 검토 focused 명령을 재실행해 transition/ledger/Wave17/stable-ID/WBS777/WBS778/실제 SHADOW ingress 65/65 PASS를 확인했다. typecheck, build, object-data 119, main/Info syntax, diff check도 PASS다.
+- origin `909fc1ab`의 fresh detached checkout 독립 재검토는 GO이며 P0/P1/P2가 모두 0이다.
+- 공식 시트 WBS776은 Gate1~7 TRUE, Gate8 FALSE, 100%, `최종 검증 완료`로 갱신했고 검증11226은 완료, Lease2604는 RELEASED다. 기존 CONTROL5625는 SUPERSEDED, CONTROL5626은 WBS730~744 전체 감사 ACTIVE로 승계했다.
 
 ## 현재 변경 범위
 
@@ -57,12 +59,12 @@
 - `개발환경_고도화/runtime/src/inventory/*item-bag*`, `legacy-bag-owner-label-provider.ts`
 - 관련 runtime tests
 - `.codex/checkpoints/object-db-migration.md`
-- 미커밋: 이 재개 체크포인트의 push 상태 현행화만 남음
+- 체크포인트 반영 대상: 이 문서와 WBS776 최종 evidence 현행화
 
 ## 미완료 검증과 주의점
 
-- WBS776 공식 진척은 Gate1~5 TRUE, Gate6~8 FALSE, 62.5%다.
-- WBS776 1차 독립 Gate7은 focused 65개 중 4개 현행화 실패와 stale evidence, 미push 상태 때문에 NO-GO였다. 코드 로직 P0는 없었고 발견된 계약/테스트/문서 P1은 `c5518e6d`에서 보정·65/65 재검증·push했다.
+- WBS776 공식 진척은 Gate1~7 TRUE, Gate8 FALSE, 100%이며 WBS776 범위는 COMPLETE다.
+- 1차 독립 Gate7의 P1은 `c5518e6d`에서 보정했고, `909fc1ab` fresh detached 재검토에서 focused 65/65 및 보조 검증이 모두 통과해 최종 GO를 받았다.
 - `data-migration-object-domain-import.v3.json`은 Git 상태에 수정으로 보이지만 내용 diff는 없었다. 재개 시 line-ending 상태를 확인하고 의미 변경 없이 보존한다.
 - 같은 Node 프로세스의 app/pool 재구성만 증명했으므로 문서에서 실제 process restart라고 주장하지 않는다.
 - 전체 도메인 DML0/network0이 아니라 read-only evaluator, fixture quantity 불변, immediate Iris reply callback 0으로만 주장한다.
@@ -70,9 +72,9 @@
 
 ## 정확한 다음 행동
 
-1. origin task branch의 fresh detached checkout에서 보정된 focused 65, typecheck, build, object-data, syntax, diff를 독립 재검토한다.
-2. WBS776 독립 Gate7 재검토가 GO인 경우에만 evidence의 candidate 문구와 공식 WBS776 Gate6~7/100%/Lease를 갱신한다.
-3. WBS730~744 잔여 전체 감사를 수행한 뒤 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
+1. 공식 시트와 저장소 증거를 기준으로 WBS730~744의 Gate1~7 완료 여부와 잔여 차단점을 전수 대사한다.
+2. 발견된 잔여 구현 슬라이스만 새 선점과 독립 Gate 검토를 거쳐 완료한다.
+3. WBS730~744가 모두 닫힌 뒤 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
 
 ## 승인 경계
 
