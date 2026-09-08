@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "8263cac1c70ac0fef210df3f31545bc094607787",
+  "evidenceCommit": "bbb5297245195ae03d71580a737b4354444bbf59",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -28,7 +28,7 @@
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave20-v1.json",
-      "sha256": "c651ae740387b1e8a651506418d6cf42f9ffbdebb0047e385e28fa912c961991"
+      "sha256": "57a9f2b9bfbf84e11de30a1c492011325c29c51a5bd0875c705800c3567d3f6c"
     },
     "classificationSources": []
   },
@@ -111292,7 +111292,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-        "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
@@ -111818,7 +111818,7 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-            "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+            "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import-harness.mjs",
@@ -113822,5 +113822,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "d8fa688c8775d37b1e55b4997a6c4a5a03cb786fdca6e99e84b60be207284a29"
+  "entrySetSha256": "27ee919af9fa947adc9b74c067d6e7da834e62b7f1ccc18a1bc378ee98314525"
 }

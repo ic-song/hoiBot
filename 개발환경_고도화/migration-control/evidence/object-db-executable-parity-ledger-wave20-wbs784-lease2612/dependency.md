@@ -3,10 +3,12 @@
 - 실행 ID: `패키지가져오기DB-SL-PACKAGE-IMPORT-MUTATION-PARITY-01-20260909004005`
 - consumer: `sql-repository-b1d650b73c2ddff0`
 - 실제 메서드: `MariaCanonicalPackageRewardRepository.importDefinition`
-- evidence commit: `8263cac1c70ac0fef210df3f31545bc094607787`
+- evidence commit: `bbb5297245195ae03d71580a737b4354444bbf59`
 - 기준 commit: `78f3740e1eff758cf5bd36ce4b098e92985a58cf`
-- source 전체 SHA-256: `d67175877028c27fbae2f84185ee6e316fa104477fb799f3b96532dd1ae40fd5`
-- manifest span: `7848..8601`, SHA-256 `7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0`
+- current source 전체 SHA-256: `012e3224f1ff9cd14f01209849eb71ba2013e4dd7eb8abc288ab061b167af21f`
+- frozen catalog span: `7848..8601`, SHA-256 `7a89387dd6499a0fc01ac0b186301ef23e3fffe8ec5dbd391b2d3aa4ee2828e0`
+- current runtime span: `8044..9247`, SHA-256 `38e92a944cd4e817a74737c13d8660d24e388dfd37ff123397d71a76437f6448`
+- catalog→current relocation diff SHA-256: `ad64d4f17a0a895a74fb5906d93d7087ae8cd7d98177a3fc10cfacc417144052`
 
 ## 최소 스키마 폐쇄
 

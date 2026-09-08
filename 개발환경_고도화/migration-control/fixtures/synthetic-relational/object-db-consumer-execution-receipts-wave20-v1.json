@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-execution-receipts-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "8263cac1c70ac0fef210df3f31545bc094607787",
+  "evidenceCommit": "bbb5297245195ae03d71580a737b4354444bbf59",
   "receipts": [
     {
       "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
@@ -17184,7 +17184,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-        "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
@@ -17306,7 +17306,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "12d261674d602db8c165b0a3aa6746c5557290b989bf45fe25910dc1f88ef9ef"
+      "receiptSha256": "b3c5fa703443a0de74bf157e90cc1200638f4d43ab8090131eff583233222593"
     },
     {
       "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:domain_failure_rollback",
@@ -17322,7 +17322,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-        "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
@@ -17384,7 +17384,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "feeca38d2d0a6e1442cdeb2d002b9ddd4be0aeaa763a096bc06a393b91bfed78"
+      "receiptSha256": "2bd993a56490ae937c050f3007265f27845d562d3f41bf2eb81b66e2893cea59"
     },
     {
       "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:duplicate_replay_dml_zero",
@@ -17400,7 +17400,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-        "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
@@ -17456,7 +17456,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "39dff99d38e9e09bee114cec240227e492604176d858c29723c1e99a9a545195"
+      "receiptSha256": "aec17614bcca63b8d4d7bb02d4e3d6a4d8fb721081f685d445c4335593a32221"
     },
     {
       "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:payload_drift_fail_closed",
@@ -17472,7 +17472,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-        "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
@@ -17528,7 +17528,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "390ca141b70628dafcd2e8dd0be5792ad88a3ef316b06de6d412f5a2cd8541f2"
+      "receiptSha256": "0f56880c2c1cbbecf580a637c661d10b16f4d58fc0c2fc61c289e0ddf17eed2e"
     },
     {
       "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:restart_replay",
@@ -17544,7 +17544,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-        "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
@@ -17600,7 +17600,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "ce743a61ab9dbb899f6d08fc87e4ae25af1960c84a5cd69ccd5d33c63f295df9"
+      "receiptSha256": "dd2f16f5f3858f6f594b7e9eca3ab1585b199a061d979be68df74b9d07e49da8"
     },
     {
       "receiptId": "receipt:wave20:sql-repository-b1d650b73c2ddff0:concurrency_single_writer",
@@ -17616,7 +17616,7 @@
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave20:package-import:v1",
         "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave20-package-import-v1.json",
-        "sha256": "d34b23af5556263ab185a1b7033ec29fe32f04ccd55ea2fe275d57c99948eab4"
+        "sha256": "d8729e1786bd1589769942afb03b36dafd436507ea8f48c931d9d3c0f3c06478"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs",
@@ -17738,7 +17738,7 @@
       },
       "equivalenceRule": null,
       "verdict": "PASS",
-      "receiptSha256": "a0238c1583f46d93fb3b8693f4ba1d149e9a277244dba99e2f75f7e1a5e84430"
+      "receiptSha256": "ad4a0c684fab8f1ff2a7ea75f7cddffa78c9078dca35af94fc404c96a08a4c35"
     }
   ]
 }
