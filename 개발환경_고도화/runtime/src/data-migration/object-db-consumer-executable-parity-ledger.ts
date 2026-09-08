@@ -708,8 +708,10 @@ function sha256Raw(value: Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+let cachedGitRepositoryRoot:string|undefined;
 function gitRepositoryRoot(): string {
-  return execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+  if(cachedGitRepositoryRoot===undefined)cachedGitRepositoryRoot=execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+  return cachedGitRepositoryRoot;
 }
 
 function receiptMatrixComplete(consumerId:string,requiredKinds:string[],receivedKinds:string[]):boolean{
@@ -723,7 +725,7 @@ const commitBlobCache=new Map<string,string>();
 function readCommitBlob(repositoryRoot: string, commit: string, path: string): string {
   const cacheKey=`${repositoryRoot}\0${commit}\0${path}`,cached=commitBlobCache.get(cacheKey);if(cached!==undefined)return cached;
   try {
-    const blob=execFileSync("git", ["-c", "core.longpaths=true", "show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });commitBlobCache.set(cacheKey,blob);return blob;
+    const blob=execFileSync("git", ["-c", "core.longpaths=true", "show", `${commit}:${path}`], { cwd: repositoryRoot, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });commitBlobCache.set(cacheKey,blob);return blob;
   } catch {
     throw new Error(`evidenceCommit does not contain trusted input: ${path}`);
   }
@@ -1321,7 +1323,7 @@ function assertReceiptExecutableBinding(
       :undefined;
     writeFileSync(inputPath, `${JSON.stringify({ binding:executableBinding, fixturePayload: receipt.receiptId.startsWith("receipt:wave20:")?fixture:fixture.payload, ...((receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:")||receipt.receiptId.startsWith("receipt:wave19:")||receipt.receiptId.startsWith("receipt:wave20:"))?{evidenceCommit,runtimeSourceHashes:currentRuntimeSourceHashes}:receipt.receiptId.startsWith("receipt:wave15:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT,runtimeSourceHashes:OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES}:receipt.receiptId.startsWith("receipt:wave14:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT,runtimeSourceHashes:fixture.runtimeSourceHashes}:{}), invocation: receipt.invocation }, null, 2)}\n`, "utf8");
     const stdout = executeObjectDbParityHarnessChild(
-      [harnessPath, inputPath, runDirectory, targetPath],
+      receipt.receiptId.startsWith("receipt:wave20:")?["--import","tsx",harnessPath,inputPath,runDirectory,targetPath]:[harnessPath, inputPath, runDirectory, targetPath],
       objectDbParityHarnessTimeoutMs(receipt.harness.path),
     );
     if (stdout.length !== 0) throw new Error(`${receipt.receiptId} print-only/stdout harness is forbidden`);
