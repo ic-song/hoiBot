@@ -19,6 +19,7 @@
     "legacy player-key hash binds to canonical player only through exact staging owner locator and canonical-player import receipt provenance; display-name identity is forbidden",
     "provider error or absent/stale/tampered evidence returns LEGACY_SIDE_EFFECT_PARITY_UNPROVEN",
     "isolated SQL evidence requires byte-exact WBS777 migration488 fixture provenance, required completeness columns, query invoked/completed and null error separately from the empty-evidence result",
+    "isolated transcript SHA-256 canonicalizes CRLF and bare CR to LF before UTF-8 hashing and records CRLF_OR_CR_TO_LF_UTF8",
     "projector and readiness never write operational JSON and readiness exposes no DML participant"
   ],
   "protectedInputsUnmodified": [

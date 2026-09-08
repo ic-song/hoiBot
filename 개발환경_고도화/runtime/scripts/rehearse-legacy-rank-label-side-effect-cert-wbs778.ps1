@@ -26,6 +26,9 @@ function Sha256([string]$value) {
   $bytes = [System.Text.Encoding]::UTF8.GetBytes($value)
   return [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
 }
+function CanonicalText([string]$value) {
+  return (($value -replace "`r`n", "`n") -replace "`r", "`n")
+}
 function Query([string]$sql) {
   $result = & docker exec $containerName mariadb "-u$databaseUser" "--password=$databasePassword" -N -B $databaseName -e $sql 2>&1
   if ($LASTEXITCODE -ne 0) { throw "WBS778_QUERY_FAILED: $result" }
@@ -170,7 +173,8 @@ try {
     readiness = $readinessProbe
     restart = [ordered]@{ containerIdentityStable=$true; preState=$stateBefore; postState=$stateAfter }
     rollback = [ordered]@{ populatedRefusal="ROLLBACK_489_DATA_PRESENT"; populatedRowsPreserved=$preserved; emptyRollback="PASS" }
-    transcriptSha256 = Sha256 $transcript
+    transcriptHashNormalization = "CRLF_OR_CR_TO_LF_UTF8"
+    transcriptSha256 = Sha256 (CanonicalText $transcript)
   }
   $payloadJson = $payload | ConvertTo-Json -Depth 8 -Compress
   $receipt = [ordered]@{ payload=$payload; payloadSha256=(Sha256 $payloadJson) }

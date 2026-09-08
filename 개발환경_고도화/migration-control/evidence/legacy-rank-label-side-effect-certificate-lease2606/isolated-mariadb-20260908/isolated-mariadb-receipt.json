@@ -542,7 +542,8 @@
       "populatedRowsPreserved": "1|1",
       "emptyRollback": "PASS"
     },
+    "transcriptHashNormalization": "CRLF_OR_CR_TO_LF_UTF8",
     "transcriptSha256": "ae0a3e14de6adce08b9782736c5d4f488472375d00f6c06104e7e6c1db807f5d"
   },
-  "payloadSha256": "048c75822105f096d89be902b5f4cc33f91d2ccbbde558b3e67b53e9753cafaf"
+  "payloadSha256": "d4f30836f0c872f827bf5076800cf553d1371e0ed3719e7ed4eae3512b32929c"
 }
