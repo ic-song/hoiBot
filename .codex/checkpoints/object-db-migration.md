@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 10
-- 마지막 갱신: 2026-09-08 11:41 KST
+- 체크포인트 버전: 11
+- 마지막 갱신: 2026-09-08 11:49 KST
 
 ## 현재 목표
 
@@ -16,10 +16,10 @@
 
 - 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- HEAD: `4f7492f980bf95744b3f0eb4f9e8717cc4dd50d3`
-- 상태: WBS776 변경 미커밋·미푸시
-- 체크포인트 Git 추적: 기존 추적 파일, 이번 갱신은 미커밋
-- 원격 포함 커밋: 없음
+- 구현 커밋: `4dbff2aa35f39ce49fd2501706a2cc5b87f4ca0d`
+- 상태: WBS776 Gate1~5 검증·작업 브랜치 push 완료, Gate6 formal parity 진행 중
+- 체크포인트 Git 추적: 기존 추적 파일
+- 원격 포함 커밋: `4dbff2aa35f39ce49fd2501706a2cc5b87f4ca0d`
 
 ## 완료된 현재 슬라이스 작업
 
@@ -47,16 +47,16 @@
 
 ## 미완료 검증과 주의점
 
-- 독립 reviewer의 최종 재검토, task branch 커밋·push, WBS776/lease2604 현행화가 남았다.
+- 독립 reviewer 최종 재검토는 blocking 0건이다. WBS776은 Gate1~5 TRUE, Gate6~8 FALSE, 62.5%로 현행화했고 lease2604는 ACTIVE로 연장했다.
 - 같은 Node 프로세스의 app/pool 재구성만 증명했으므로 문서에서 실제 process restart라고 주장하지 않는다.
 - 전체 도메인 DML0/network0이 아니라 read-only evaluator, fixture quantity 불변, immediate Iris reply callback 0으로만 주장한다.
 - zero-row/post-import completeness, 전체 item instance/equipment/pet coverage, MODERN/DIRECT receipt는 여전히 차단점이다.
 
 ## 정확한 다음 행동
 
-1. 최종 변경과 증적을 독립 reviewer가 재검토한다.
-2. 검토 결과를 반영한 뒤 task branch를 커밋·push한다.
-3. WBS776/lease2604를 실제 Gate 증거와 남은 차단점 기준으로 현행화한다.
+1. per-player bag import completeness projection으로 zero-row와 post-import mutation을 증명한다.
+2. frozen consumer의 owned instance/equipment/pet 범위를 빠짐없이 대사한다.
+3. 신규 WBS776 consumer에 formal DIRECT/EQUIVALENT receipt를 귀속해 Gate6을 완료한 뒤 Gate7을 재검증한다.
 
 ## 승인 경계
 
