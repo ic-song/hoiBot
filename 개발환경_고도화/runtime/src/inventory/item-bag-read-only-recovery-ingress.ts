@@ -5,9 +5,6 @@ import { ProcessIrisEventService, type ChannelNameObservation, type EventProcess
 import type { NormalizedIrisEvent } from "../integration/iris-normalizer.js";
 import { assertVerifiedEnvironmentContext, type VerifiedEnvironmentContext } from "../runtime/environment-context.js";
 import { ITEM_BAG_CANONICAL_CONSUMER_ID, type CanonicalItemBagDirectReadResult, CanonicalItemBagDirectReadService, isCanonicalItemBagCommand } from "./canonical-item-bag-direct-read-service.js";
-import { GetBagService } from "./get-bag-service.js";
-import { formatLegacyBag } from "./legacy-bag-formatter.js";
-import { MariaBagRepository } from "./maria-bag-repository.js";
 
 export const ITEM_BAG_RECEIPT_VERSION = "ITEM_BAG_CANONICAL_DIRECT_READ_V1";
 const LEGACY_REPLY_COMMAND = "bag_read";
@@ -80,7 +77,9 @@ function validateItemBagReceiptProjection(projection: unknown, input: {
     return;
   }
   if (!exactKeys(value, ["status", "canonicalDecision", "legacyReply"])
-    || !validLegacyReplyProjection(value.legacyReply, input.replyIdentity.channelId!)) throw new Error("ITEM_BAG_RECEIPT_DRIFT");
+    || !validLegacyReplyProjection(value.legacyReply, input.replyIdentity.channelId!)
+    || value.canonicalDecision.status === "silent"
+    || value.legacyReply.data !== value.canonicalDecision.data) throw new Error("ITEM_BAG_RECEIPT_DRIFT");
 }
 
 function legacyReplyFromReceipt(projection: unknown, input: {
@@ -160,8 +159,10 @@ export async function executeItemBagReadOnlyRecovery(input: {
         const canonical = await input.canonical.execute(database, { providerCode: "kakao", externalUserId: input.replyIdentity.userId!, externalContextId: input.replyIdentity.channelId! });
         if (canonical.status === "silent") value = { status: canonical.status, canonicalDecision: canonical };
         else {
-          const legacyBag = await new GetBagService(new MariaBagRepository(database)).execute("kakao", input.replyIdentity.userId!);
-          const data = formatLegacyBag(legacyBag);
+          // The canonical service already returns the parity-checked exact legacy presentation
+          // for both direct and fallback decisions. Re-reading the generic SQL bag here would
+          // drop signed/zero quantities, inactive source rows, and the checkRank owner label.
+          const data = canonical.data;
           value = { status: canonical.status, canonicalDecision: canonical, legacyReply: {
             commandCode: LEGACY_REPLY_COMMAND, destinationId: input.replyIdentity.channelId, data,
             payloadSha256: createHash("sha256").update(data, "utf8").digest("hex"),

@@ -48,8 +48,33 @@ describe("WBS776 actual /가방 SHADOW ingress", () => {
     assert.equal(result.queuedReply, undefined);
   });
 
+  it("rejects receipt tampering between the canonical decision and queued legacy bytes", async () => {
+    const database = {
+      query: async <T>(sql: string): Promise<T> => sql === "SELECT DATABASE() AS database_identity" ? [{ database_identity: "item_bag_shadow" }] as T : [] as T,
+      execute: async (): Promise<DatabaseWriteResult> => ({ affectedRows: 0n, insertId: 0n }),
+      withTransaction: async <T>(work: (transaction: DatabaseTransaction) => Promise<T>) => work(database as DatabaseTransaction),
+      withRootTransaction: async <T>(work: (transaction: DatabaseTransaction) => Promise<T>) => work(database as DatabaseTransaction),
+      ping: async () => undefined, verifyRollback: async () => true, close: async () => undefined,
+    } as RootTransactionDatabaseClient;
+    const environmentContext = await verifyStartupDatabaseIdentity(database, createEnvironmentContext({ environmentCode: "dev", databaseIdentity: "item_bag_shadow" }));
+    const event = { eventId: "iris:cross-field-tamper", channelId: "room-1", userId: "user-1", message: "/가방", senderName: "회원", raw: {} } as never;
+    await assert.rejects(() => executeItemBagReadOnlyRecovery({
+      database,
+      recovery: { execute: async (input: any) => {
+        const evaluated = await input.evaluateInSnapshot(database);
+        evaluated.receiptProjection.value.legacyReply.data = "tampered";
+        evaluated.receiptProjection.value.legacyReply.payloadSha256 = "f".repeat(64);
+        input.validateReceiptProjection(evaluated.receiptProjection);
+        throw new Error("must-not-reach");
+      } },
+      canonical: { execute: async () => ({ status: "legacy_reply" as const, consumerId: "legacy-94904fa11988ff04" as const, reason: "CANONICAL_IMPORT_INCOMPLETE" as const, playerId: "42", parityFingerprint: "a".repeat(64), data: "exact" }) },
+      environmentContext, event, replyIdentity: event, channelType: "open_group", reasonCode: "ROLLOUT_SHADOW",
+    } as never), /ITEM_BAG_RECEIPT_DRIFT/);
+  });
+
   it("rolls back an atomic transient crash and commits one legacy outbox with one SHADOW receipt", async () => {
     let nextId = 1n, immediateReplies = 0, evaluations = 0, replays = 0;
+    let genericBagReadCount = 0;
     let crashBeforeFirstReceipt = true;
     const writes: string[] = [], outboxPayloads: string[] = [], receipts = new Map<string, unknown>();
     const inbox = new Map<string, { error_code: string | null; processing_status: string }>();
@@ -67,8 +92,7 @@ describe("WBS776 actual /가방 SHADOW ingress", () => {
           provider_code: "iris", destination_id: "room-1", message_type: "text", payload_json: payload,
         })) as T;
         if (sql.includes("SELECT player_id, display_name")) return [{ player_id: 42n, display_name: "기존회원" }] as T;
-        if (sql.includes("FROM inventory_stacks stack")) return [{ display_name: "기존상자🎁", quantity: 3n, legacy_bag_order: null }] as T;
-        if (sql.includes("legacy.bag.advertisement")) return [{ string_value: "기존광고" }] as T;
+        if (sql.includes("FROM inventory_stacks stack") || sql.includes("legacy.bag.advertisement")) genericBagReadCount += 1;
         return [] as T;
       },
       execute: async (sql: string, values: readonly unknown[] = []): Promise<DatabaseWriteResult> => {
@@ -94,8 +118,7 @@ describe("WBS776 actual /가방 SHADOW ingress", () => {
         if (sql === "SELECT DATABASE() AS database_identity") return [{ database_identity: "item_bag_shadow" }] as T;
         if (sql.includes("FROM command_aliases a")) return [{ command_code: "ITEM_BAG_READ", handler_key: "item_bag_canonical_read", auth_scope: "VERIFIED_USER", rollout_state: "SHADOW" }] as T;
         if (sql.includes("SELECT player_id, display_name")) return [{ player_id: 42n, display_name: "기존회원" }] as T;
-        if (sql.includes("FROM inventory_stacks stack")) return [{ display_name: "기존상자🎁", quantity: 3n, legacy_bag_order: null }] as T;
-        if (sql.includes("legacy.bag.advertisement")) return [{ string_value: "기존광고" }] as T;
+        if (sql.includes("FROM inventory_stacks stack") || sql.includes("legacy.bag.advertisement")) genericBagReadCount += 1;
         return [] as T;
       },
     };
@@ -131,7 +154,8 @@ describe("WBS776 actual /가방 SHADOW ingress", () => {
       }
       throw new Error("unreachable");
     } };
-    const canonical = { execute: async () => ({ status: "legacy_reply" as const, consumerId: "legacy-94904fa11988ff04" as const, reason: "CANONICAL_IMPORT_INCOMPLETE" as const, playerId: "42", parityFingerprint: "a".repeat(64), data: "shadow-only" }) };
+    const exactLegacyData = "[🏰기존회원_☬]의 가방🧳\n(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n   1. 비활성상자🎁 x -3\n   2. 일반 0 x 0";
+    const canonical = { execute: async () => ({ status: "legacy_reply" as const, consumerId: "legacy-94904fa11988ff04" as const, reason: "CANONICAL_IMPORT_INCOMPLETE" as const, playerId: "42", parityFingerprint: "a".repeat(64), data: exactLegacyData }) };
     const config = loadConfig({ NODE_ENV: "test", HOIBOT_ENVIRONMENT_CODE: "dev", IRIS_SHARED_TOKEN: token, USER_VERIFICATION_PEPPER: "item-bag-shadow-pepper", DATABASE_ENABLED: "true", DATABASE_HOST: "127.0.0.1", DATABASE_PORT: "3332", DATABASE_USER: "unused", DATABASE_PASSWORD: "unused", DATABASE_NAME: "item_bag_shadow" });
     const app = buildApp(config, { database, environmentContext: context, itemBagReadOnlyRecoveryProvider: recovery as never, canonicalItemBagService: canonical,
       inspectIrisChannel: async () => ({ mode: "operational", channelClass: "open_group", reason: "allowed", evidence: { roomType: "OM", openLinkActive: true, openLinkExpired: false } }),
@@ -144,8 +168,8 @@ describe("WBS776 actual /가방 SHADOW ingress", () => {
       assert.equal(replayed.statusCode, 202, replayed.body);
       assert.equal(evaluations, 2); assert.equal(replays, 1); assert.equal(immediateReplies, 0);
       assert.equal(writes.filter((sql) => sql.includes("outbox_messages")).length, 1);
-      assert.deepEqual(outboxPayloads, [JSON.stringify({ data: "[기존회원]의 가방🧳\n(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n   1. 기존상자🎁 x 3" })]);
-      assert.ok(!outboxPayloads[0]!.includes("shadow-only"), "canonical evaluator output is evidence-only in SHADOW");
+      assert.deepEqual(outboxPayloads, [JSON.stringify({ data: exactLegacyData })]);
+      assert.equal(genericBagReadCount, 0, "SHADOW delivery must not re-read the lossy generic bag projection");
       assert.ok(writes.every((sql) => !/canonical_(?:owned_item|item_definitions)/.test(sql)), "SHADOW ingress must not mutate canonical item domain");
       const receipt = receipts.get("iris:bag-shadow-1") as any;
       assert.equal(receipt.version, "ITEM_BAG_CANONICAL_DIRECT_READ_V1");
@@ -155,7 +179,7 @@ describe("WBS776 actual /가방 SHADOW ingress", () => {
       outboxPayloads[0] = JSON.stringify({ data: "tampered" });
       const tampered = await send("bag-shadow-1");
       assert.equal(tampered.statusCode, 500);
-      outboxPayloads[0] = JSON.stringify({ data: "[기존회원]의 가방🧳\n(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n   1. 기존상자🎁 x 3" });
+      outboxPayloads[0] = JSON.stringify({ data: exactLegacyData });
       outboxPayloads.length = 0;
       const missing = await send("bag-shadow-1");
       assert.equal(missing.statusCode, 500);

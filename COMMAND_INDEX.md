@@ -523,8 +523,9 @@ Status: VERIFIED
 
 ## Save Flow
 
-- No intended state mutation
-- Branch does not call `saveJsonFile` for member data
+- The `/가방` branch itself does not intentionally mutate the bag.
+- `checkRank` reaches `getMyGuildInfo`; a truthy stale `member.guild` pointer is deleted and `member.json` is saved when the guild or member link is missing.
+- The modern READ_ONLY path must therefore require a snapshot-bound no-write certificate before it can replace the legacy execution path.
 
 ## Related Commands
 
@@ -538,6 +539,7 @@ Status: VERIFIED
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
 - Modernization rollout is `SHADOW_ONLY` only when the enabled `ITEM_BAG_READ` registry entry resolves to `SHADOW`; disabled, missing, or `LEGACY_ONLY` registry state stays on the legacy path. The actual Iris ingress evaluates the resolved active-player canonical projection and records a typed receipt in one root transaction.
+- A non-silent parity decision carries the already verified exact legacy presentation into the transactional outbox; the ingress must not re-read the generic positive-active-only bag projection.
 - A non-silent SHADOW decision queues exactly one transitional legacy reply for outbox-worker delivery after canonical evaluation. Silent/evaluation-error decisions queue none; completed replay validates exact outbox cardinality, destination, and payload and fails closed on missing or changed delivery. `MODERN`/canonical direct cutover remains disabled.
 - The corrected WBS776 wrapper binds resolved legacy/canonical player IDs, includes inactive legacy/canonical item definitions for source parity, and fails closed on unknown query shape, incomplete per-player import provenance, multiple intimacy keys, presentation drift, or active world castle authority.
 - The additive owner-label and import-readiness SQL consumers are `STATIC_ONLY`; existing Wave6 bag compare `DIRECT_PASS` does not prove the WBS776 wrapper.

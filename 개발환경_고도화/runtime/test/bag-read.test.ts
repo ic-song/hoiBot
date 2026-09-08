@@ -59,4 +59,33 @@ describe("legacy bag read slice", () => {
     assert.equal(eleven.startsWith("[테스트알파]의 가방🧳\n(알림)합성 광고\n" + "\u200b".repeat(500)), true);
     assert.equal((eleven.match(/\u200b/g) ?? []).length, 500);
   });
+
+  it("reproduces zero and negative legacy truthiness without treating a nonempty bag as empty", () => {
+    const output = formatLegacyBag({ ...BAG, items: [
+      { displayName: "잡템☠️", quantity: "0", legacyBagOrder: 20 },
+      { displayName: "양념치킨🐔", quantity: "-2", legacyBagOrder: 21 },
+      { displayName: "일반 0", quantity: "0", legacyBagOrder: null },
+    ] });
+    assert.equal(output, [
+      "[테스트알파]의 가방🧳",
+      "(알림📢)후원은 봇 개발에 많은 도움이됩니다.",
+      "   1. 양념치킨🐔 x -2",
+      "   2. 일반 0 x 0",
+    ].join("\n"));
+    assert.equal(formatLegacyBag({ ...BAG, items: [{ displayName: "잡템☠️", quantity: "0", legacyBagOrder: 20 }] }), [
+      "[테스트알파]의 가방🧳",
+      "(알림📢)후원은 봇 개발에 많은 도움이됩니다.",
+    ].join("\n"));
+  });
+
+  it("puts only the first intimacy key first and sorts later intimacy keys as ordinary Korean items", () => {
+    const first = { displayName: "펫 친밀도🐾 [Lv.9](9/1000)+9💕", quantity: "0", legacyBagOrder: null };
+    const second = { displayName: "펫 친밀도🐾 [Lv.1](1/1000)+1💕", quantity: "-1", legacyBagOrder: null };
+    const output = formatLegacyBag({ ...BAG, items: [first, { displayName: "가나다", quantity: "1", legacyBagOrder: null }, second] });
+    assert.deepEqual(output.split("\n").slice(2), [
+      `   1. ${first.displayName} x 0`,
+      "   2. 가나다 x 1",
+      `   3. ${second.displayName} x -1`,
+    ]);
+  });
 });

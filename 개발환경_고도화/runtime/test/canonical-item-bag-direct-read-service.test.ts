@@ -15,6 +15,7 @@ function parity(overrides: Partial<BagShadowParityResult> = {}): BagShadowParity
     legacyBag: { playerId: "42", ownerLabel: "회원😀", advertisement: "", items: [] },
     canonicalBag: { playerId: "player01", ownerLabel: "회원😀", advertisement: "", items: [{ displayName: "한글상자🎁", quantity: "9007199254740993", legacyBagOrder: null }] },
     legacyItemOrderPreview: "", canonicalItemOrderPreview: "", legacyFingerprint: "a", canonicalFingerprint: "a", resultFingerprint: "a".repeat(64),
+    frozenDomainCoverage: { schemaVersion: "item-bag-frozen-domain.v1", outputNeutralDomains: ["pets", "equipment"], domains: { players: [], items: [], pets: [], equipment: [] }, parity: true, fingerprint: "b".repeat(64) },
     missingItems: [], extraItems: [], quantityMismatches: [], orderMismatches: [], unsupportedDomainRecords: [], ...overrides,
   };
 }
