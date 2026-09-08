@@ -2,12 +2,12 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "5e8495e241edce5230a69e96f5372f29ade5a1de",
+  "evidenceCommit": "08294488840d3f5b136003e759015a9deea60221",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.schema.json",
-      "sha256": "b6340393714a67983df8aa4b0769d811ccb276c7990a96ef73ecce66485ef322"
+      "sha256": "4cb30613f68ed6b5a9d734f8e4ffd359bd6d5cfd89df51ea5bf86196cc218476"
     },
     "executionReceiptSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-execution-receipt.v1.schema.json",
@@ -20,15 +20,15 @@
     },
     "consumerIdRegistry": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
-      "sha256": "2ae4a60a9ea21984c742140efffb356e9cea50c60d1594ced5cf853ce57d0f24"
+      "sha256": "69bcdfbc70b6fa7d793944c7693279e3af28bc118b45192df7c301673bff42b0"
     },
     "transitionContract": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
-      "sha256": "10701198918ee9590990364fccdd4d8d01313c5b5a341f4356f0aa2c1e3bc1c6"
+      "sha256": "c64ab24eca8d97b2d99e4f78d6a00b5f061ef220d1b8f1ae5cebbb22a91ce411"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave17-v1.json",
-      "sha256": "2f31d1f09ca35e5c570f2e430205b612d2850352a8b4261155b21504ddcccd39"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave18-v1.json",
+      "sha256": "cc7fbbe430987c64c00def2408e4246f1f29149904322f5d40d7c0b64f739a1c"
     },
     "classificationSources": []
   },
@@ -49,16 +49,16 @@
     "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 0,
-    "provenConsumers": 33,
-    "unprovenConsumers": 1100,
-    "directPassConsumers": 33,
+    "provenConsumers": 37,
+    "unprovenConsumers": 1096,
+    "directPassConsumers": 37,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 1018,
+      "STATIC_ONLY": 1014,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 33,
+      "DIRECT_PASS": 37,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -103615,22 +103615,22 @@
         "sourceSpanSha256": "cbbdfb5d63fa0daab00c50e1d59ffe65d6dbdb7fcfa5ce5f52d88b1ea63eb686",
         "classificationSha256": "f344e1cb2acbed1b528550ae4962954ab109c005f152f9f5551ee38d4697e497"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave18:read4",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+        "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave18:read4:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+        "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+        "targetSourceSha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f",
+        "exportName": "executeWave18BagCompare"
       },
       "scenarioRequirements": [
         {
@@ -103679,11 +103679,263 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave18:sql-repository-3001ad9fc2f36d01:exact_output",
+          "scenarioId": "wave18-bag-compare-exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:wave18:sql-repository-3001ad9fc2f36d01",
+          "attributedConsumerIds": [
+            "sql-repository-3001ad9fc2f36d01"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69",
+              "actualSha256": "5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-3001ad9fc2f36d01:negative_guard",
+          "scenarioId": "wave18-bag-compare-negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:wave18:sql-repository-3001ad9fc2f36d01",
+          "attributedConsumerIds": [
+            "sql-repository-3001ad9fc2f36d01"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b5025052d4c7205c3c67da864c8942f234b0de480b2d8bb73001130a0b7e551f",
+              "actualSha256": "b5025052d4c7205c3c67da864c8942f234b0de480b2d8bb73001130a0b7e551f",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-3001ad9fc2f36d01:read_positive",
+          "scenarioId": "wave18-bag-compare-read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:wave18:sql-repository-3001ad9fc2f36d01",
+          "attributedConsumerIds": [
+            "sql-repository-3001ad9fc2f36d01"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69",
+              "actualSha256": "5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-3001ad9fc2f36d01:restart_consistency",
+          "scenarioId": "wave18-bag-compare-restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:wave18:sql-repository-3001ad9fc2f36d01",
+          "attributedConsumerIds": [
+            "sql-repository-3001ad9fc2f36d01"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69",
+              "actualSha256": "5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-3001ad9fc2f36d01:source_domain_dml_zero",
+          "scenarioId": "wave18-bag-compare-source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:wave18:sql-repository-3001ad9fc2f36d01",
+          "attributedConsumerIds": [
+            "sql-repository-3001ad9fc2f36d01"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "fe173421b88e243e308af17217a9ee3e06e4be21f619fa6eafaf8b3422074144",
+              "actualSha256": "fe173421b88e243e308af17217a9ee3e06e4be21f619fa6eafaf8b3422074144",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave18:sql-repository-3001ad9fc2f36d01:exact_output",
+          "receipt:wave18:sql-repository-3001ad9fc2f36d01:negative_guard",
+          "receipt:wave18:sql-repository-3001ad9fc2f36d01:read_positive",
+          "receipt:wave18:sql-repository-3001ad9fc2f36d01:restart_consistency",
+          "receipt:wave18:sql-repository-3001ad9fc2f36d01:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-3001ad9fc2f36d01"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+            "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+            "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+            "sha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -104593,22 +104845,22 @@
         "sourceSpanSha256": "65045496c12163000f59ff8f30b1a3f27681520c17c516c805bdf53311cf5bf9",
         "classificationSha256": "ec653975552e97fa3143c431b3304afbbd689500067b6ceb32d023b45f3a2816"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave18:read4",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+        "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave18:read4:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+        "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+        "targetSourceSha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f",
+        "exportName": "executeWave18PetEvaluate"
       },
       "scenarioRequirements": [
         {
@@ -104657,11 +104909,263 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave18:sql-repository-41a1be35f0d83825:exact_output",
+          "scenarioId": "wave18-pet-evaluate-exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:wave18:sql-repository-41a1be35f0d83825",
+          "attributedConsumerIds": [
+            "sql-repository-41a1be35f0d83825"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "actualSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-41a1be35f0d83825:negative_guard",
+          "scenarioId": "wave18-pet-evaluate-negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:wave18:sql-repository-41a1be35f0d83825",
+          "attributedConsumerIds": [
+            "sql-repository-41a1be35f0d83825"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+              "actualSha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-41a1be35f0d83825:read_positive",
+          "scenarioId": "wave18-pet-evaluate-read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:wave18:sql-repository-41a1be35f0d83825",
+          "attributedConsumerIds": [
+            "sql-repository-41a1be35f0d83825"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "actualSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-41a1be35f0d83825:restart_consistency",
+          "scenarioId": "wave18-pet-evaluate-restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:wave18:sql-repository-41a1be35f0d83825",
+          "attributedConsumerIds": [
+            "sql-repository-41a1be35f0d83825"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "actualSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-41a1be35f0d83825:source_domain_dml_zero",
+          "scenarioId": "wave18-pet-evaluate-source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:wave18:sql-repository-41a1be35f0d83825",
+          "attributedConsumerIds": [
+            "sql-repository-41a1be35f0d83825"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "83bb8365f064751869f6cd5ef5f2380e04ccba94ba55b6c5fb2c5dfb34057cc0",
+              "actualSha256": "83bb8365f064751869f6cd5ef5f2380e04ccba94ba55b6c5fb2c5dfb34057cc0",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave18:sql-repository-41a1be35f0d83825:exact_output",
+          "receipt:wave18:sql-repository-41a1be35f0d83825:negative_guard",
+          "receipt:wave18:sql-repository-41a1be35f0d83825:read_positive",
+          "receipt:wave18:sql-repository-41a1be35f0d83825:restart_consistency",
+          "receipt:wave18:sql-repository-41a1be35f0d83825:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-41a1be35f0d83825"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+            "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+            "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+            "sha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -105232,22 +105736,22 @@
         "sourceSpanSha256": "f2e473644fdb16b9d54f7020ec15fed384a780652ce077d6ec974e9a4d050995",
         "classificationSha256": "194fb97830f0f421e55d683ee55cb1848249ed7edc66db7de203948f6b39a79c"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave18:read4",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+        "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave18:read4:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+        "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+        "targetSourceSha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f",
+        "exportName": "executeWave18PetReadinessInspect"
       },
       "scenarioRequirements": [
         {
@@ -105296,11 +105800,263 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave18:sql-repository-4fdd013faca84a3f:exact_output",
+          "scenarioId": "wave18-readiness-exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:wave18:sql-repository-4fdd013faca84a3f",
+          "attributedConsumerIds": [
+            "sql-repository-4fdd013faca84a3f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16",
+              "actualSha256": "f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-4fdd013faca84a3f:negative_guard",
+          "scenarioId": "wave18-readiness-negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:wave18:sql-repository-4fdd013faca84a3f",
+          "attributedConsumerIds": [
+            "sql-repository-4fdd013faca84a3f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "0026ce913a9bb13e5d347d177f12b96dc3b9144009295325c0255580d705aa54",
+              "actualSha256": "0026ce913a9bb13e5d347d177f12b96dc3b9144009295325c0255580d705aa54",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-4fdd013faca84a3f:read_positive",
+          "scenarioId": "wave18-readiness-read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:wave18:sql-repository-4fdd013faca84a3f",
+          "attributedConsumerIds": [
+            "sql-repository-4fdd013faca84a3f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16",
+              "actualSha256": "f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-4fdd013faca84a3f:restart_consistency",
+          "scenarioId": "wave18-readiness-restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:wave18:sql-repository-4fdd013faca84a3f",
+          "attributedConsumerIds": [
+            "sql-repository-4fdd013faca84a3f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16",
+              "actualSha256": "f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-4fdd013faca84a3f:source_domain_dml_zero",
+          "scenarioId": "wave18-readiness-source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:wave18:sql-repository-4fdd013faca84a3f",
+          "attributedConsumerIds": [
+            "sql-repository-4fdd013faca84a3f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c88009c08d5ab2343ad6bf3adf3dde19f35c28e47e9429f7a2ecd9daa1ab4df5",
+              "actualSha256": "c88009c08d5ab2343ad6bf3adf3dde19f35c28e47e9429f7a2ecd9daa1ab4df5",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave18:sql-repository-4fdd013faca84a3f:exact_output",
+          "receipt:wave18:sql-repository-4fdd013faca84a3f:negative_guard",
+          "receipt:wave18:sql-repository-4fdd013faca84a3f:read_positive",
+          "receipt:wave18:sql-repository-4fdd013faca84a3f:restart_consistency",
+          "receipt:wave18:sql-repository-4fdd013faca84a3f:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-4fdd013faca84a3f"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+            "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+            "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+            "sha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -105754,22 +106510,22 @@
         "sourceSpanSha256": "4a70c202d102e96a6258a1f1588421ffe7b06a9a8bc92dea61d14538bf32d4be",
         "classificationSha256": "f8404aeb4bdd3b389084c996db5f4515cf762bef0a59ee8281eff97450babfbe"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave18:read4",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+        "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave18:read4:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+        "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+        "targetSourceSha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f",
+        "exportName": "executeWave18PetEvaluateInSnapshot"
       },
       "scenarioRequirements": [
         {
@@ -105818,11 +106574,263 @@
           "notApplicable": null
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave18:sql-repository-55dcd683c5528d65:exact_output",
+          "scenarioId": "wave18-pet-snapshot-exact-output",
+          "scenarioKind": "EXACT_OUTPUT",
+          "harnessCaseId": "case:wave18:sql-repository-55dcd683c5528d65",
+          "attributedConsumerIds": [
+            "sql-repository-55dcd683c5528d65"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "actualSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-55dcd683c5528d65:negative_guard",
+          "scenarioId": "wave18-pet-snapshot-negative-guard",
+          "scenarioKind": "NEGATIVE_GUARD",
+          "harnessCaseId": "case:wave18:sql-repository-55dcd683c5528d65",
+          "attributedConsumerIds": [
+            "sql-repository-55dcd683c5528d65"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+              "actualSha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-55dcd683c5528d65:read_positive",
+          "scenarioId": "wave18-pet-snapshot-read-positive",
+          "scenarioKind": "READ_POSITIVE",
+          "harnessCaseId": "case:wave18:sql-repository-55dcd683c5528d65",
+          "attributedConsumerIds": [
+            "sql-repository-55dcd683c5528d65"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "actualSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-55dcd683c5528d65:restart_consistency",
+          "scenarioId": "wave18-pet-snapshot-restart-consistency",
+          "scenarioKind": "RESTART_CONSISTENCY",
+          "harnessCaseId": "case:wave18:sql-repository-55dcd683c5528d65",
+          "attributedConsumerIds": [
+            "sql-repository-55dcd683c5528d65"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "actualSha256": "c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave18:sql-repository-55dcd683c5528d65:source_domain_dml_zero",
+          "scenarioId": "wave18-pet-snapshot-source-domain-dml-zero",
+          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+          "harnessCaseId": "case:wave18:sql-repository-55dcd683c5528d65",
+          "attributedConsumerIds": [
+            "sql-repository-55dcd683c5528d65"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "1a7595151f239344fe1df3eb342d0c4cbcdfe57f61f0d863533b39730650ddb9",
+              "actualSha256": "1a7595151f239344fe1df3eb342d0c4cbcdfe57f61f0d863533b39730650ddb9",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "READ_ONLY",
+              "actual": "READ_ONLY",
+              "match": true,
+              "expectedTimeline": [
+                "READ_ONLY"
+              ],
+              "actualTimeline": [
+                "READ_ONLY"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave18:sql-repository-55dcd683c5528d65:exact_output",
+          "receipt:wave18:sql-repository-55dcd683c5528d65:negative_guard",
+          "receipt:wave18:sql-repository-55dcd683c5528d65:read_positive",
+          "receipt:wave18:sql-repository-55dcd683c5528d65:restart_consistency",
+          "receipt:wave18:sql-repository-55dcd683c5528d65:source_domain_dml_zero"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-55dcd683c5528d65"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json",
+            "sha256": "21c37fab046d6e5b1b1856eaa3e2f017118f127d5e438bc71633dedb50bcd49e"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs",
+            "sha256": "84d5e402c453461db3042784fcbc8b114d8568256b303bd5f3c73e6e17af73bf"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs",
+            "sha256": "13ec038ddee493052cdc11a9ba8ced4b28a8147f16bf6aee393872da80d2947f"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -112089,5 +113097,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "775a00e4ef73f19361bab6d3a057984ffb4902a1afadc5167067edea7ce5a882"
+  "entrySetSha256": "2cc3bbf2208f8cc0414bb0858568d65f9e3bcafef8e974d5193acf65a61c0690"
 }
