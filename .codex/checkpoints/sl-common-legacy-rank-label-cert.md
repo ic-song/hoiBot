@@ -2,9 +2,9 @@
 
 - 작업 키: `sl-common-legacy-rank-label-cert`
 - 표시 이름: WBS778 레거시 랭크 라벨 무저장 인증
-- 체크포인트 버전: 6
-- 마지막 갱신: `2026-09-08 16:27:00 KST`
-- 상태: 보정 진행 중
+- 체크포인트 버전: 7
+- 마지막 갱신: `2026-09-08 16:38:00 KST`
+- 상태: 보정 검증 완료
 - 정리 후보: 아니요
 - 목표: Gate7 NO-GO의 exact lineage 및 재현 가능한 격리 Maria 증거 보강
 - 최신 요청: Windows 새 checkout의 CRLF 변환에도 transcript receipt hash가 동일하도록 canonical newline 계약 보정
@@ -21,6 +21,8 @@
 - 검증: focused 11/11 PASS; typecheck PASS; Maria 11.4 migration 476/FK 5/restart/rollback/reapply PASS
 - 운영 불변: 운영 DB·포트 3306·운영 JSON·실방·feature/prod 미사용
 - 권위 시트: WBS778 Gate7 PENDING/FALSE, 75%; 검증 Gate6 완료; Lease2606 ACTIVE로 복귀
-- 차단: transcript hash의 checkout 줄바꿈 비독립성 보정·재검증 필요
-- 다음 행동: CRLF/CR→LF canonical hash test와 focused/typecheck 통과 후 correction commit·push 및 Gate7 재검토
-- 체크포인트 Git 상태: 7a04162c 이후 correction을 작업 중
+- 줄바꿈 보정: receipt에 `CRLF_OR_CR_TO_LF_UTF8` 계약을 기록하고 harness/verifier가 canonical text SHA-256을 사용; task-scoped `.gitattributes`로 transcript와 byte-exact WBS777 SQL fixture를 LF 고정
+- 새 checkout 검증: `core.autocrlf=true` Windows worktree에서 focused 11/11, typecheck PASS; transcript raw/canonical `ae0a3e14...`, fixture `932e7634...`
+- 차단: Gate7 독립 재검토 ACK 대기
+- 다음 행동: correction tip push 후 Gate7 독립 재검토
+- 체크포인트 Git 상태: 40a68610, 71f41584, 410ac80d correction 보존; 최종 체크포인트 커밋 예정
