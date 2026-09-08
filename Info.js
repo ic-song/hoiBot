@@ -79,9 +79,17 @@ const GLOBAL_CONFIG = {
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪"
 	},
+	sealedVault: { // 호이의 봉인금고 아이템명 설정
+		vaultItemName: "호이의 봉인금고🔒(/봉인금고오픈 숫자)",
+		keyItemName: "해방의 열쇠🗝️(/봉인금고오픈 숫자)"
+	},
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
-		carrotThermometerName: "🌡️당근온도기(/온도 아이디)"
+		carrotThermometerName: "🌡️당근온도기(/온도 아이디)",
+		pendantOpenTicketName: "펜던트뽑기💎(/펜던트오픈)",
+		pendantEnhanceStoneName: "펜던트 강화석📿",
+		pendantRestoreStoneName: "펜던트 복원석🔷",
+		pendantUnbindItemName: "펜던트귀속해제💎(/펜던트해제)"
 	}
 };
 //랭크.txt 로드, 오류로그 세이브용
