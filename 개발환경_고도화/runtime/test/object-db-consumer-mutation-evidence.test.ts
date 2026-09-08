@@ -47,7 +47,7 @@ test("Wave20 validator fails closed on table, rollback, PID, database, source, a
     value=>{value.traces[0]!.transactionAttempts[0]!.outcome="ROLLBACK";},
     value=>{value.traces[0]!.database.port=3306;},
     value=>{value.traces[0]!.source.sha256="0".repeat(64);},
-    value=>{value.traces[0]!.after.canonical_package_reward_entries+=1;},
+    value=>{value.traces[0]!.after.canonical_package_reward_entries=value.traces[0]!.after.canonical_package_reward_entries!+1;},
   ];
   for(const mutate of cases){const value=clone(baseline);mutate(value);assert.throws(()=>validateObjectDbMutationScenarioEvidence(contract,value));}
   const restart=contract.scenarios.find(({scenarioKind})=>scenarioKind==="RESTART_REPLAY")!,restartEvidence=evidence(restart);restartEvidence.traces[1]!.processId=restartEvidence.traces[0]!.processId;assert.throws(()=>validateObjectDbMutationScenarioEvidence(contract,restartEvidence),/child process reuse/);
