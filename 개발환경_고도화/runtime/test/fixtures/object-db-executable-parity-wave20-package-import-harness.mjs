@@ -18,7 +18,7 @@ assert(binding.harnessCaseId === "case:wave20:package-import", "Wave20 case bind
 assert(input.invocation.targetPath === "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave20-package-import.mjs", "Wave20 target path drift");
 assert(hash(readFileSync(resolve(targetPath), "utf8")) === input.invocation.targetSourceSha256, "Wave20 target hash drift");
 assert(fixture.fixtureId === "fixture:object-db-executable-parity:wave20:package-import:v1" && fixture.sliceId === "WBS784", "Wave20 fixture identity drift");
-assert(Array.isArray(fixture.runtimeSourcePaths) && fixture.runtimeSourcePaths.length === 7, "Wave20 runtime source chain drift");
+assert(Array.isArray(fixture.runtimeSourcePaths) && fixture.runtimeSourcePaths.length === 8, "Wave20 runtime source chain drift");
 const repositoryRoot = resolve(import.meta.dirname, "../../../..");
 for (const source of input.runtimeSourceHashes) {
   assert(fixture.runtimeSourcePaths.includes(source.path), `Wave20 unexpected runtime source: ${source.path}`);

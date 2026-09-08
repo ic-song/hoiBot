@@ -9,6 +9,7 @@
     "개발환경_고도화/runtime/src/identity/object-identity-audit-provider.ts",
     "개발환경_고도화/runtime/src/shared/maria-database-error-policy.ts",
     "개발환경_고도화/runtime/migrations/443_object_identity_audit_provider.sql",
+    "개발환경_고도화/runtime/migrations/444_canonical_item_inventory.sql",
     "개발환경_고도화/runtime/migrations/451_canonical_package_reward.sql",
     "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json"
   ],
@@ -579,8 +580,8 @@
       "scenarioKind": "MUTATION_SUCCESS",
       "traces": [
         {
-          "processId": 20712,
-          "moduleExecutionId": "237c5cd8-a636-4134-97e5-dbb6559f120d",
+          "processId": 26676,
+          "moduleExecutionId": "2896694e-16ed-42e0-b7fc-4488e7dc81e9",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -731,8 +732,8 @@
       "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
       "traces": [
         {
-          "processId": 1532,
-          "moduleExecutionId": "12c06ed6-fa2f-4303-8624-974fb501467d",
+          "processId": 8800,
+          "moduleExecutionId": "52c4941c-84a8-4d64-b442-09e3e434e68c",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -827,8 +828,8 @@
       "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
       "traces": [
         {
-          "processId": 21796,
-          "moduleExecutionId": "b830584f-3057-4a88-8d2d-f40d0e13efc4",
+          "processId": 17472,
+          "moduleExecutionId": "5fd4c48d-fb69-4cd3-9be2-051f6c8131db",
           "role": "SEED",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -974,8 +975,8 @@
           "replyCalls": 0
         },
         {
-          "processId": 9704,
-          "moduleExecutionId": "70dc7615-de1c-48e8-acb9-40f1730a3107",
+          "processId": 14112,
+          "moduleExecutionId": "a16b3632-ef75-4578-aed4-24712cb09006",
           "role": "REPLAY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -1039,8 +1040,8 @@
       "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
       "traces": [
         {
-          "processId": 14116,
-          "moduleExecutionId": "5d56398e-f13a-4bcf-9d46-8970e8817169",
+          "processId": 2288,
+          "moduleExecutionId": "c23ded9f-05ad-40b4-b621-e446bfc120ad",
           "role": "SEED",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -1186,8 +1187,8 @@
           "replyCalls": 0
         },
         {
-          "processId": 21476,
-          "moduleExecutionId": "ff3e4f5d-097e-4c29-957d-be25fb7a3ff6",
+          "processId": 23884,
+          "moduleExecutionId": "33a8170c-da95-44a0-890d-5463ca99d472",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -1251,8 +1252,8 @@
       "scenarioKind": "RESTART_REPLAY",
       "traces": [
         {
-          "processId": 1352,
-          "moduleExecutionId": "558b2105-9bb5-498c-bd17-5af00a798de3",
+          "processId": 9652,
+          "moduleExecutionId": "208171f1-ffe9-4dcc-86cc-597e665f4f1f",
           "role": "SEED",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -1398,8 +1399,8 @@
           "replyCalls": 0
         },
         {
-          "processId": 23584,
-          "moduleExecutionId": "390d6324-f47e-42d4-b85e-ab1533e36fbb",
+          "processId": 22928,
+          "moduleExecutionId": "4c4cc55e-3ec9-4171-afa0-aa352594a1f0",
           "role": "REPLAY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -1463,8 +1464,8 @@
       "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
       "traces": [
         {
-          "processId": 28344,
-          "moduleExecutionId": "194169f5-9d3c-442a-80a4-5f139958e820",
+          "processId": 27524,
+          "moduleExecutionId": "79558b85-cc34-4c05-b713-f602c5b84667",
           "role": "PRIMARY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",
@@ -1610,8 +1611,8 @@
           "replyCalls": 0
         },
         {
-          "processId": 26992,
-          "moduleExecutionId": "1be52dd7-a3c2-4efe-9f60-398aeed0c6d8",
+          "processId": 10048,
+          "moduleExecutionId": "2d1f4230-6d1b-4655-9aae-4ca9a1aead79",
           "role": "REPLAY",
           "source": {
             "path": "개발환경_고도화/runtime/src/package/canonical-package-reward-repository.ts",

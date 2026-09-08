@@ -730,6 +730,12 @@ function readCommitBlob(repositoryRoot: string, commit: string, path: string): s
 }
 
 const verifiedEvidenceCommits=new Set<string>();
+const verifiedCommitAncestries=new Set<string>();
+function assertCommitAncestor(repositoryRoot:string,ancestor:string,descendant:string,errorMessage:string):void{
+  const cacheKey=`${repositoryRoot}\0${ancestor}\0${descendant}`;if(verifiedCommitAncestries.has(cacheKey))return;
+  try{execFileSync("git",["merge-base","--is-ancestor",ancestor,descendant],{cwd:repositoryRoot,stdio:"ignore"});}catch{throw new Error(errorMessage);}
+  verifiedCommitAncestries.add(cacheKey);
+}
 function assertEvidenceCommitAncestry(repositoryRoot: string, evidenceCommit: string): void {
   const cacheKey=`${repositoryRoot}\0${evidenceCommit}`;if(verifiedEvidenceCommits.has(cacheKey))return;
   try { execFileSync("git", ["cat-file", "-e", `${evidenceCommit}^{commit}`], { cwd: repositoryRoot, stdio: "ignore" }); }
@@ -1072,7 +1078,7 @@ function assertReceiptGitProvenance(
   assertEvidenceCommitAncestry(repositoryRoot, evidenceCommit);
   const receiptWave=/^receipt:(wave\d+):/.exec(receipt.receiptId)?.[1];
   const receiptEvidenceCommit=receiptWave===undefined?evidenceCommit:(OBJECT_DB_PARITY_HISTORICAL_EVIDENCE_COMMITS[receiptWave]??evidenceCommit);
-  try{execFileSync("git",["merge-base","--is-ancestor",receiptEvidenceCommit,evidenceCommit],{cwd:repositoryRoot,stdio:"ignore"});}catch{throw new Error(`${receipt.receiptId} historical evidence commit is not bundle evidence ancestor`);}
+  assertCommitAncestor(repositoryRoot,receiptEvidenceCommit,evidenceCommit,`${receipt.receiptId} historical evidence commit is not bundle evidence ancestor`);
   if(/^receipt:wave(?:[1-9]|10|11):/.test(receipt.receiptId)){
     const pinnedBundle=JSON.parse(readCommitBlob(repositoryRoot,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_ROOT_COMMIT,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PATH)) as ObjectDbConsumerExecutionReceiptBundle;
     const compactPrefix=JSON.stringify(pinnedBundle.receipts);
@@ -1110,7 +1116,7 @@ function assertReceiptGitProvenance(
       ||receipt.harness.runner!==OBJECT_DB_PARITY_RUNNER||receipt.harness.path!==OBJECT_DB_PARITY_WAVE20_HARNESS_PATH||receipt.fixture.path!==OBJECT_DB_PARITY_WAVE20_FIXTURE_PATH||receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE20_TARGET_PATH||receipt.invocation.exportName!==OBJECT_DB_PARITY_WAVE20_EXPORT_NAME
       ||fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.sliceId!=="WBS784"||fixture.consumerId!==receipt.consumerId||!contract
       ||!receiptContract||receiptContract.version!=="WBS784_PACKAGE_IMPORT_MUTATION_DIRECT_V1"||receiptContract.transaction!=="MUTATION"||receiptContract.externalNetworkCalls!==0||receiptContract.replyCalls!==0||receiptContract.restart!=="DISTINCT_NODE_CHILD_PROCESSES"||receiptContract.concurrency!=="EXACTLY_ONE_COMMITTED_WRITER"
-      ||!Array.isArray(fixture.runtimeSourcePaths)||fixture.runtimeSourcePaths.length!==7||JSON.stringify(contract.allowedTables)!==JSON.stringify(OBJECT_DB_PARITY_WAVE20_ALLOWED_TABLES)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==6||!Array.isArray(fixture.sealedObservations)||fixture.sealedObservations.length!==6)throw new Error(`${receipt.receiptId} trusted Wave20 contract drift`);
+      ||!Array.isArray(fixture.runtimeSourcePaths)||fixture.runtimeSourcePaths.length!==8||!fixture.runtimeSourcePaths.includes("개발환경_고도화/runtime/migrations/444_canonical_item_inventory.sql")||JSON.stringify(contract.allowedTables)!==JSON.stringify(OBJECT_DB_PARITY_WAVE20_ALLOWED_TABLES)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==6||!Array.isArray(fixture.sealedObservations)||fixture.sealedObservations.length!==6)throw new Error(`${receipt.receiptId} trusted Wave20 contract drift`);
     const binding=(fixture.bindings as unknown[]).find(candidate=>isRecord(candidate)&&candidate.consumerId===receipt.consumerId&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&candidate.exportName===OBJECT_DB_PARITY_WAVE20_EXPORT_NAME);
     const observation=(fixture.sealedObservations as unknown[]).find(candidate=>isRecord(candidate)&&candidate.scenarioKind===receipt.scenario.scenarioKind) as ObjectDbMutationScenarioEvidence|undefined;
     const oracle=contract.scenarios.find(candidate=>candidate.scenarioKind===receipt.scenario.scenarioKind);

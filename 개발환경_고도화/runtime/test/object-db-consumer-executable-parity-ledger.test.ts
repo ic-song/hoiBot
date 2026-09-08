@@ -34,6 +34,7 @@ const wave15ReceiptPath = "개발환경_고도화/migration-control/fixtures/syn
 const wave17ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave17-v1.json";
 const wave18ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave18-v1.json";
 const wave19ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave19-v1.json";
+const wave20ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave20-v1.json";
 const read = (path: string): string => readFileSync(resolve(repoRoot, path), "utf8");
 const manifestText = read(paths.consumerManifest);
 const manifest = JSON.parse(manifestText) as ConsumerManifestInput;
@@ -222,6 +223,15 @@ describe("object DB executable parity ledger Wave0", () => {
     const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave19ReceiptPath},evidenceFileTexts});
     assert.equal(ledger.entries.find(entry=>entry.consumerId==="runtime-dispatch-79ff58fea52c7457")?.verdict,"DIRECT_PASS");
     assert.equal(ledger.coverage.directPassConsumers,38);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1013);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);
+  });
+
+  it("promotes the Wave20 package import mutation while preserving the exact Wave19 prefix",()=>{
+    const bundle=JSON.parse(read(wave20ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const wave19=JSON.parse(read(wave19ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,prefix=JSON.stringify(bundle.receipts.slice(0,207));
+    assert.equal(bundle.receipts.length,213);assert.deepEqual(bundle.receipts.slice(0,207),wave19.receipts);assert.equal(Buffer.byteLength(prefix,"utf8"),849438);assert.equal(sha256CanonicalText(prefix),"92824417cd67180ed155edf01d39d8acc156c276f16077361f01b46a9193a9b2");
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave20ReceiptPath},evidenceFileTexts});
+    assert.equal(ledger.entries.length,1133);assert.equal(ledger.entries.find(entry=>entry.consumerId==="sql-repository-b1d650b73c2ddff0")?.verdict,"DIRECT_PASS");
+    assert.equal(ledger.coverage.directPassConsumers,39);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1012);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);assert.equal(ledger.coverage.registrySourceMismatchCount,0);assert.equal(ledger.coverage.missingConsumerIds,0);assert.equal(ledger.coverage.duplicateConsumerIds,0);assert.equal(ledger.coverage.unknownConsumerIds,0);
   });
 
   it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {
