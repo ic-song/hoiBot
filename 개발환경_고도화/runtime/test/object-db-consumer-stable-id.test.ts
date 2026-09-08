@@ -37,8 +37,8 @@ describe("object DB consumer stable ID registry", () => {
     assert.equal(registry.sourceManifestConsumerSetSha256, OBJECT_DB_CONSUMER_ID_REGISTRY_SEED_SHA256);
     assert.equal(createHash("sha256").update(JSON.stringify(manifest.consumers)).digest("hex"), manifest.consumerSetSha256);
     assert.notEqual(manifest.consumerSetSha256, OBJECT_DB_CONSUMER_ID_REGISTRY_SEED_SHA256);
-    assert.equal(registry.entries.length, 1_107);
-    assert.equal(registry.entries.filter(({ state }) => state === "ACTIVE").length, 1_101);
+    assert.equal(registry.entries.length, 1_110);
+    assert.equal(registry.entries.filter(({ state }) => state === "ACTIVE").length, 1_104);
     assert.equal(registry.entries.filter(({ state }) => state === "TOMBSTONE").length, 6);
     const registered = new Map(registry.entries.map((entry) => [entry.logicalKey, entry]));
     const current = new Map(manifest.consumers.map((consumer) => [deriveConsumerLogicalKey(consumer), consumer.consumerId]));
@@ -48,7 +48,7 @@ describe("object DB consumer stable ID registry", () => {
       if (entry.state === "ACTIVE") assert.equal(current.get(logicalKey), entry.consumerId, logicalKey);
       else assert.equal(current.has(logicalKey), false, logicalKey);
     }
-    assert.equal([...current.keys()].filter((logicalKey) => !registered.has(logicalKey)).length, 32);
+    assert.equal([...current.keys()].filter((logicalKey) => !registered.has(logicalKey)).length, 29);
     const resolveId = createConsumerIdResolver(registry);
     for (const consumer of manifest.consumers) assert.equal(resolveId(consumer), consumer.consumerId, deriveConsumerLogicalKey(consumer));
   });

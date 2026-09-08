@@ -101,6 +101,18 @@ const OBJECT_DB_PARITY_WAVE17_CONSUMERS={
   "sql-repository-3b23c2f0f5501988":{exportName:"executeWave17LegacyRankLabelSideEffectReadinessResolve",file:"개발환경_고도화/runtime/src/inventory/legacy-rank-label-side-effect-readiness-provider.ts",symbol:"resolve"},
 } as const;
 const OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT=182 as const;
+const OBJECT_DB_PARITY_WAVE18_HARNESS_PATH="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4-harness.mjs" as const;
+const OBJECT_DB_PARITY_WAVE18_TARGET_PATH="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave18-read4.mjs" as const;
+const OBJECT_DB_PARITY_WAVE18_FIXTURE_PATH="개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave18-read4-v1.json" as const;
+const OBJECT_DB_PARITY_WAVE18_CONSUMERS={
+  "sql-repository-3001ad9fc2f36d01":{exportName:"executeWave18BagCompare",file:"개발환경_고도화/runtime/src/inventory/bag-shadow-parity-provider.ts",symbol:"compare"},
+  "sql-repository-41a1be35f0d83825":{exportName:"executeWave18PetEvaluate",file:"개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts",symbol:"evaluate"},
+  "sql-repository-4fdd013faca84a3f":{exportName:"executeWave18PetReadinessInspect",file:"개발환경_고도화/runtime/src/pet/canonical-pet-skill-readiness-provider.ts",symbol:"inspect"},
+  "sql-repository-55dcd683c5528d65":{exportName:"executeWave18PetEvaluateInSnapshot",file:"개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts",symbol:"evaluateInSnapshot"},
+} as const;
+const OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_COUNT=202 as const;
+const OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_BYTES=795_793 as const;
+const OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_SHA256="ce5c0c207b9bb28f83553f776851b0d87d8e87f58aa9ba2cfca9c8d3f68663b6" as const;
 const OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_COUNT=167 as const;
 const OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_BYTES=762_133 as const;
 const OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_SHA256="64f80cf0f01beff713905ba414db4c11f1f192e6eab8136127047d3d2444015f" as const;
@@ -135,6 +147,9 @@ const OBJECT_DB_PARITY_WAVE16_RECEIPT_IDS=new Set([
 const OBJECT_DB_PARITY_WAVE17_RECEIPT_IDS=new Set(Object.keys(OBJECT_DB_PARITY_WAVE17_CONSUMERS).flatMap(consumerId=>[
   "READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY",
 ].map(kind=>`receipt:wave17:${consumerId}:${kind.toLowerCase()}`)));
+const OBJECT_DB_PARITY_WAVE18_RECEIPT_IDS=new Set(Object.keys(OBJECT_DB_PARITY_WAVE18_CONSUMERS).flatMap(consumerId=>[
+  "READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY",
+].map(kind=>`receipt:wave18:${consumerId}:${kind.toLowerCase()}`)));
 const OBJECT_DB_PARITY_HISTORICAL_EVIDENCE_COMMITS:Readonly<Record<string,string>>={
   wave1:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave2:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,
   wave3:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave4:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,
@@ -581,17 +596,20 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
     const hasWave15=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave15:"));
     const hasWave16=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave16:"));
     const hasWave17=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave17:"));
+    const hasWave18=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave18:"));
     if(hasWave15&&hasWave16)throw new Error("Wave15 SHADOW and Wave16 DIRECT receipts cannot be active together");
     if(hasWave17&&!hasWave16)throw new Error("Wave17 receipt bundle must preserve Wave16 receipts");
-    if(value.receipts.length!==(hasWave17?OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
+    if(hasWave18&&!hasWave17)throw new Error("Wave18 receipt bundle must preserve Wave17 receipts");
+    if(value.receipts.length!==(hasWave18?OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_COUNT:hasWave17?OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave18?"Wave18":hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
     const historicalPrefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT));
     if(Buffer.byteLength(historicalPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES||sha256CanonicalText(historicalPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT}`);
     const wave12Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_COUNT));
     if(Buffer.byteLength(wave12Prefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_BYTES||sha256CanonicalText(wave12Prefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_EVIDENCE_COMMIT}`);
     if(hasWave14){const wave13Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_COUNT));if(Buffer.byteLength(wave13Prefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_BYTES||sha256CanonicalText(wave13Prefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE13_RECEIPT_EVIDENCE_COMMIT}`);}
-    if(hasWave15||hasWave16||hasWave17){const wave14Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_COUNT));if(Buffer.byteLength(wave14Prefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_BYTES||sha256CanonicalText(wave14Prefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_SHA256)throw new Error("historical Wave14 receipt fingerprint drift");}
+    if(hasWave15||hasWave16||hasWave17||hasWave18){const wave14Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_COUNT));if(Buffer.byteLength(wave14Prefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_BYTES||sha256CanonicalText(wave14Prefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE14_RECEIPT_PREFIX_SHA256)throw new Error("historical Wave14 receipt fingerprint drift");}
     if(hasWave15){const wave15Receipts=JSON.stringify(value.receipts);if(Buffer.byteLength(wave15Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE15_FULL_RECEIPT_BYTES||sha256CanonicalText(wave15Receipts)!==OBJECT_DB_PARITY_WAVE15_FULL_RECEIPT_SHA256)throw new Error("historical Wave15 receipt fingerprint drift");}
-    if(hasWave17){const wave16Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave16Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_BYTES||sha256CanonicalText(wave16Receipts)!==OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_SHA256)throw new Error("historical Wave16 receipt fingerprint drift");}
+    if(hasWave17||hasWave18){const wave16Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave16Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_BYTES||sha256CanonicalText(wave16Receipts)!==OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_SHA256)throw new Error("historical Wave16 receipt fingerprint drift");}
+    if(hasWave18){const wave17Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave17Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_BYTES||sha256CanonicalText(wave17Receipts)!==OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_SHA256)throw new Error("historical Wave17 receipt fingerprint drift");}
   }
   return value as unknown as ObjectDbConsumerExecutionReceiptBundle;
 }
@@ -1045,6 +1063,20 @@ function assertReceiptGitProvenance(
     if (sha256CanonicalText(blob) !== evidence.sha256) throw new Error(`${receipt.receiptId} evidenceCommit blob hash drift: ${evidence.path}`);
   }
   const fixtureBlob = readCommitBlob(repositoryRoot, receiptEvidenceCommit, receipt.fixture.path);
+  if(receipt.receiptId.startsWith("receipt:wave18:")){
+    const trusted=OBJECT_DB_PARITY_WAVE18_CONSUMERS[receipt.consumerId as keyof typeof OBJECT_DB_PARITY_WAVE18_CONSUMERS],fixture=JSON.parse(fixtureBlob) as Record<string,unknown>,contract=isRecord(fixture.receiptContract)?fixture.receiptContract:undefined;
+    if(receiptEvidenceCommit!==evidenceCommit||trusted===undefined||!OBJECT_DB_PARITY_WAVE18_RECEIPT_IDS.has(receipt.receiptId)||receipt.proofMode!=="DIRECT"||receipt.equivalenceRule!==null
+      ||receipt.harness.runner!==OBJECT_DB_PARITY_RUNNER||receipt.harness.path!==OBJECT_DB_PARITY_WAVE18_HARNESS_PATH||receipt.fixture.path!==OBJECT_DB_PARITY_WAVE18_FIXTURE_PATH||receipt.invocation.targetPath!==OBJECT_DB_PARITY_WAVE18_TARGET_PATH||receipt.invocation.exportName!==trusted.exportName
+      ||fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.sliceId!=="WBS781"||!Array.isArray(fixture.consumerIds)||JSON.stringify(fixture.consumerIds)!==JSON.stringify(Object.keys(OBJECT_DB_PARITY_WAVE18_CONSUMERS))
+      ||!contract||contract.version!=="WBS781_READ4_DIRECT_V1"||contract.transaction!=="READ_ONLY"||contract.sourceDomainDmlCount!==0||contract.restart!=="DISTINCT_NODE_CHILD_PROCESSES"||contract.bagSelectCount!==10||contract.petEvaluateSnapshotCount!==1||contract.petEvaluateInSnapshotCount!==0||contract.readinessEnvironment!=="VERIFIED_DATABASE_IDENTITY"
+      ||!Array.isArray(fixture.runtimeSourcePaths)||fixture.runtimeSourcePaths.length!==10||!fixture.runtimeSourcePaths.includes(trusted.file)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==20)throw new Error(`${receipt.receiptId} trusted Wave18 contract drift`);
+    const binding=fixture.bindings.find(candidate=>isRecord(candidate)&&candidate.consumerId===receipt.consumerId&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&candidate.exportName===trusted.exportName);
+    if(!isRecord(binding)||receipt.receiptId!==`receipt:wave18:${receipt.consumerId}:${receipt.scenario.scenarioKind.toLowerCase()}`)throw new Error(`${receipt.receiptId} pinned Wave18 scenario/binding mismatch`);
+    if(manifestConsumer.file!==trusted.file||manifestConsumer.symbol!==trusted.symbol||manifestConsumer.access!=="READ")throw new Error(`${receipt.receiptId} Wave18 manifest classification drift`);
+    const source=canonicalizeObjectDbConsumerSourceText(readCommitBlob(repositoryRoot,evidenceCommit,trusted.file)),span=source.slice(manifestConsumer.sourceSpan.start,manifestConsumer.sourceSpan.end);
+    if(sha256CanonicalText(span)!==manifestConsumer.sourceSpan.sha256)throw new Error(`${receipt.receiptId} Wave18 source span drift`);
+    return;
+  }
   if(receipt.receiptId.startsWith("receipt:wave17:")){
     const trusted=OBJECT_DB_PARITY_WAVE17_CONSUMERS[receipt.consumerId as keyof typeof OBJECT_DB_PARITY_WAVE17_CONSUMERS],fixture=JSON.parse(fixtureBlob) as Record<string,unknown>,contract=isRecord(fixture.receiptContract)?fixture.receiptContract:undefined;
     if(receiptEvidenceCommit!==evidenceCommit||trusted===undefined||!OBJECT_DB_PARITY_WAVE17_RECEIPT_IDS.has(receipt.receiptId)||receipt.proofMode!=="DIRECT"||receipt.equivalenceRule!==null
@@ -1145,14 +1177,16 @@ function assertReceiptExecutableBinding(
     if (fixture.format !== "hoibot-object-db-consumer-parity-case-fixture-v1" || fixture.fixtureId !== receipt.fixture.fixtureId || !Array.isArray(fixture.bindings)) throw new Error(`${receipt.receiptId} fixture contract/binding mismatch`);
   }
   const exactBinding = JSON.stringify(binding);
-  const hasExactBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:"))
-    ? fixture.bindings.some(candidate=>isRecord(candidate)&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!receipt.receiptId.startsWith("receipt:wave17:")||candidate.consumerId===receipt.consumerId))
+  const hasExactBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:"))
+    ? fixture.bindings.some(candidate=>isRecord(candidate)&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:"))||candidate.consumerId===receipt.consumerId))
     : receipt.receiptId.startsWith("receipt:wave14:")
     ? fixture.bindings.some((candidate)=>isRecord(candidate)&&Object.keys(candidate).length===Object.keys(binding).length&&Object.entries(binding).every(([key,value])=>candidate[key]===value))
     : fixture.bindings.some((candidate) => isRecord(candidate) && JSON.stringify(candidate) === exactBinding);
   if (!hasExactBinding) throw new Error(`${receipt.receiptId} unrelated fixture lacks exact receipt binding`);
   if (receipt.harness.runner !== OBJECT_DB_PARITY_RUNNER) throw new Error(`${receipt.receiptId} runner metadata is not allowlisted`);
-  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave17:")
+  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave18:")
+    ? OBJECT_DB_PARITY_WAVE18_HARNESS_PATH
+    : receipt.receiptId.startsWith("receipt:wave17:")
     ? OBJECT_DB_PARITY_WAVE17_HARNESS_PATH
     : receipt.receiptId.startsWith("receipt:wave16:")
     ? OBJECT_DB_PARITY_WAVE16_HARNESS_PATH
@@ -1177,18 +1211,18 @@ function assertReceiptExecutableBinding(
   // 이전 Wave 영수증은 해당 Wave의 고정 evidenceCommit 소스와 자체 해시로 이미 실행 검증됐다.
   // 현재 소스에서 재실행하면 무관한 후속 삽입으로 span 위치가 변하므로, 누적 묶음에서는
   // 위 provenance 검증과 불변 receipt/fixture/harness/target 해시만 재검증한다.
-  const currentExecutableReceipt=receipt.receiptId.startsWith("receipt:wave17:");
+  const currentExecutableReceipt=receipt.receiptId.startsWith("receipt:wave18:");
   if (!currentExecutableReceipt) return;
   const harnessPath = resolveEvidenceFile(receipt.harness.path, harnessText);
   const targetPath = resolveEvidenceFile(receipt.invocation.targetPath, targetText);
   const runDirectory = mkdtempSync(join(tmpdir(), "hoibot-parity-"));
   try {
     const inputPath = join(runDirectory, "input.json");
-    const executableBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:"))?{...(fixture.bindings as Array<Record<string,unknown>>).find(candidate=>candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!receipt.receiptId.startsWith("receipt:wave17:")||candidate.consumerId===receipt.consumerId)),...binding}:binding;
-    const currentRuntimeSourceHashes=receipt.receiptId.startsWith("receipt:wave17:")&&Array.isArray(fixture.runtimeSourcePaths)
-      ?fixture.runtimeSourcePaths.map(path=>{if(typeof path!=="string")throw new Error(`${receipt.receiptId} Wave17 runtime source path invalid`);return{path,sha256:sha256CanonicalText(readCommitBlob(gitRepositoryRoot(),evidenceCommit,path))};})
+    const executableBinding=(receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:")||receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:"))?{...(fixture.bindings as Array<Record<string,unknown>>).find(candidate=>candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&(!(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:"))||candidate.consumerId===receipt.consumerId)),...binding}:binding;
+    const currentRuntimeSourceHashes=(receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:"))&&Array.isArray(fixture.runtimeSourcePaths)
+      ?fixture.runtimeSourcePaths.map(path=>{if(typeof path!=="string")throw new Error(`${receipt.receiptId} current runtime source path invalid`);return{path,sha256:sha256CanonicalText(readCommitBlob(gitRepositoryRoot(),evidenceCommit,path))};})
       :undefined;
-    writeFileSync(inputPath, `${JSON.stringify({ binding:executableBinding, fixturePayload: fixture.payload, ...(receipt.receiptId.startsWith("receipt:wave17:")?{evidenceCommit,runtimeSourceHashes:currentRuntimeSourceHashes}:receipt.receiptId.startsWith("receipt:wave15:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT,runtimeSourceHashes:OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES}:receipt.receiptId.startsWith("receipt:wave14:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT,runtimeSourceHashes:fixture.runtimeSourceHashes}:{}), invocation: receipt.invocation }, null, 2)}\n`, "utf8");
+    writeFileSync(inputPath, `${JSON.stringify({ binding:executableBinding, fixturePayload: fixture.payload, ...((receipt.receiptId.startsWith("receipt:wave17:")||receipt.receiptId.startsWith("receipt:wave18:"))?{evidenceCommit,runtimeSourceHashes:currentRuntimeSourceHashes}:receipt.receiptId.startsWith("receipt:wave15:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE15_EVIDENCE_COMMIT,runtimeSourceHashes:OBJECT_DB_PARITY_WAVE15_RUNTIME_SOURCE_HASHES}:receipt.receiptId.startsWith("receipt:wave14:")?{evidenceCommit:OBJECT_DB_PARITY_WAVE14_EVIDENCE_COMMIT,runtimeSourceHashes:fixture.runtimeSourceHashes}:{}), invocation: receipt.invocation }, null, 2)}\n`, "utf8");
     const stdout = executeObjectDbParityHarnessChild(
       [harnessPath, inputPath, runDirectory, targetPath],
       objectDbParityHarnessTimeoutMs(receipt.harness.path),
@@ -1211,10 +1245,11 @@ function assertReceiptExecutableBinding(
     if (replyHash !== receipt.expectedActual.reply.actualSha256 || resultHash !== receipt.expectedActual.result.actualSha256) throw new Error(`${receipt.receiptId} raw reply/result capture hash mismatch`);
     const trace = JSON.parse(readFileSync(artifactPath(caseResult.artifacts.tracePath), "utf8")) as unknown;
     if (!isRecord(trace)) throw new Error(`${receipt.receiptId} raw execution trace invalid`);
-    const wave17Trace=receipt.receiptId.startsWith("receipt:wave17:"),sourceDmlTrace=wave17Trace||receipt.receiptId.startsWith("receipt:wave14:")||receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:"),wave8Trace=sourceDmlTrace||receipt.receiptId.startsWith("receipt:wave13:")||receipt.consumerId in TRUSTED_WAVE8_ADMIN_CHAINS||receipt.consumerId in TRUSTED_WAVE9_RANK_CHAINS||receipt.consumerId in TRUSTED_WAVE10_PENDANT_READS||receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS||receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS;
-    assertExactKeys(trace, wave17Trace?["queryTrace","dmlTrace","normalizedStatements","rowCount","lockOrder","transaction","transactionAttempts","timeline","sourceDomainDmlCount","restartProcessIds"]:sourceDmlTrace?["queryTrace","dmlTrace","normalizedStatements","rowCount","lockOrder","transaction","transactionAttempts","timeline","sourceDomainDmlCount"]:wave8Trace?["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "transactionAttempts", "timeline"]:["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
+    const wave18Trace=receipt.receiptId.startsWith("receipt:wave18:"),wave17Trace=receipt.receiptId.startsWith("receipt:wave17:"),sourceDmlTrace=wave18Trace||wave17Trace||receipt.receiptId.startsWith("receipt:wave14:")||receipt.receiptId.startsWith("receipt:wave15:")||receipt.receiptId.startsWith("receipt:wave16:"),wave8Trace=sourceDmlTrace||receipt.receiptId.startsWith("receipt:wave13:")||receipt.consumerId in TRUSTED_WAVE8_ADMIN_CHAINS||receipt.consumerId in TRUSTED_WAVE9_RANK_CHAINS||receipt.consumerId in TRUSTED_WAVE10_PENDANT_READS||receipt.consumerId in TRUSTED_WAVE11_HOME_FURNITURE_READS||receipt.consumerId in TRUSTED_WAVE12_CHARACTER_COUNT_READS;
+    assertExactKeys(trace, wave18Trace?["queryTrace","dmlTrace","normalizedStatements","rowCount","lockOrder","transaction","transactionAttempts","timeline","sourceDomainDmlCount","restartProcessIds","snapshotCount","verifiedEnvironment","databaseIdentity"]:wave17Trace?["queryTrace","dmlTrace","normalizedStatements","rowCount","lockOrder","transaction","transactionAttempts","timeline","sourceDomainDmlCount","restartProcessIds"]:sourceDmlTrace?["queryTrace","dmlTrace","normalizedStatements","rowCount","lockOrder","transaction","transactionAttempts","timeline","sourceDomainDmlCount"]:wave8Trace?["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "transactionAttempts", "timeline"]:["queryTrace", "dmlTrace", "normalizedStatements", "rowCount", "lockOrder", "transaction", "timeline"], `${receipt.receiptId}.trace`);
     if(sourceDmlTrace&&trace.sourceDomainDmlCount!==0)throw new Error(`${receipt.receiptId} canonical source DML detected`);
     if(wave17Trace&&(!Array.isArray(trace.restartProcessIds)||trace.restartProcessIds.length!==(receipt.scenario.scenarioKind==="RESTART_CONSISTENCY"?2:1)||!trace.restartProcessIds.every(value=>Number.isSafeInteger(value))))throw new Error(`${receipt.receiptId} Wave17 restart process evidence drift`);
+    if(wave18Trace&&(!Array.isArray(trace.restartProcessIds)||trace.restartProcessIds.length!==(receipt.scenario.scenarioKind==="RESTART_CONSISTENCY"?2:1)||!trace.restartProcessIds.every(value=>Number.isSafeInteger(value))))throw new Error(`${receipt.receiptId} Wave18 restart process evidence drift`);
     if (!Array.isArray(trace.queryTrace)) throw new Error(`${receipt.receiptId} trace queryTrace invalid`);
     for (const [index, query] of trace.queryTrace.entries()) {
       if (!isRecord(query)) throw new Error(`${receipt.receiptId} trace queryTrace[${index}] invalid`);
