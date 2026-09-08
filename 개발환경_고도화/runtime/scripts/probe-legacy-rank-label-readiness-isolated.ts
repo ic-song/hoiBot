@@ -10,11 +10,22 @@ const connection=await mariadb.createConnection({
   bigIntAsNumber:false,
 });
 try{
+  let queryInvoked=false,queryCompleted=false,queryError:string|null=null;
   const result=await new LegacyRankLabelSideEffectReadinessProvider().resolve(
-    {query:async<T>(sql:string,values:readonly unknown[]=[])=>await connection.query(sql,[...values]) as T},
+    {query:async<T>(sql:string,values:readonly unknown[]=[])=>{
+      queryInvoked=true;
+      try{
+        const rows=await connection.query(sql,[...values]) as T;
+        queryCompleted=true;
+        return rows;
+      }catch(error){
+        queryError=error instanceof Error?`${error.name}:${error.message}`:String(error);
+        throw error;
+      }
+    }},
     {canonicalPlayerId:"pempty01",legacyPlayerId:"isolated-empty",externalIdentityId:"isolated-empty",displayName:"isolated-empty",rankEmoji:"",platformCode:"kakao",externalContextId:"isolated-room",selectionSource:"ACTIVE_CONTEXT"},
   );
-  process.stdout.write(JSON.stringify(result));
+  process.stdout.write(JSON.stringify({query:{invoked:queryInvoked,completed:queryCompleted,error:queryError},result}));
 }finally{
   await connection.end();
 }

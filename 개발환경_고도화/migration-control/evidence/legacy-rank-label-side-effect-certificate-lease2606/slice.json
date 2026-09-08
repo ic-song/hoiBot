@@ -18,6 +18,7 @@
     "main.js generateBagOutput and the /가방 command block are brace-aware source-bound; checkRank proves zero petData reads",
     "legacy player-key hash binds to canonical player only through exact staging owner locator and canonical-player import receipt provenance; display-name identity is forbidden",
     "provider error or absent/stale/tampered evidence returns LEGACY_SIDE_EFFECT_PARITY_UNPROVEN",
+    "isolated SQL evidence requires byte-exact WBS777 migration488 fixture provenance, required completeness columns, query invoked/completed and null error separately from the empty-evidence result",
     "projector and readiness never write operational JSON and readiness exposes no DML participant"
   ],
   "protectedInputsUnmodified": [

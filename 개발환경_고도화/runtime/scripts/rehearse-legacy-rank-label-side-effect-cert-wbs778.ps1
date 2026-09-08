@@ -10,8 +10,13 @@ $databaseName = "hoibot_wbs778"
 $databaseUser = "wbs778"
 $databasePassword = "wbs778-isolated-only"
 $rootPassword = "wbs778-root-isolated-only"
+$dependencyFixturePath = Join-Path (Split-Path -Parent $runtimeRoot) "migration-control/evidence/legacy-rank-label-side-effect-certificate-lease2606/fixtures/488_item_bag_import_completeness.harness-only.sql"
+$dependencySourceCommit = "505fac1657c35bdc322b5cb0c742cf0b877efc64"
+$dependencySourceSha256 = "932e7634543a18b6aeeed5ac1881aa94bb765721fa90a598efe5cd8c60290734"
 $transcriptPath = Join-Path $OutputDirectory "isolated-mariadb-transcript.log"
 $receiptPath = Join-Path $OutputDirectory "isolated-mariadb-receipt.json"
+$transcriptTempPath = "$transcriptPath.tmp-$PID"
+$receiptTempPath = "$receiptPath.tmp-$PID"
 if (Test-Path -LiteralPath $transcriptPath) { throw "WBS778_TRANSCRIPT_ALREADY_EXISTS" }
 if (Test-Path -LiteralPath $receiptPath) { throw "WBS778_RECEIPT_ALREADY_EXISTS" }
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
@@ -47,7 +52,8 @@ function Run-Migrations {
 try {
   $repoDigest = (& docker image inspect $Image --format "{{index .RepoDigests 0}}" 2>&1).Trim()
   if ($LASTEXITCODE -ne 0 -or $repoDigest -notmatch "@sha256:[0-9a-f]{64}$") { throw "WBS778_IMAGE_DIGEST_UNAVAILABLE" }
-  $containerId = (& docker run --detach --rm --name $containerName --label "hoibot.scope=wbs778-isolated" -e "MARIADB_ROOT_PASSWORD=$rootPassword" -e "MARIADB_DATABASE=$databaseName" -e "MARIADB_USER=$databaseUser" -e "MARIADB_PASSWORD=$databasePassword" -p "127.0.0.1::3306" $Image).Trim()
+  $runImage = $repoDigest
+  $containerId = (& docker run --detach --rm --name $containerName --label "hoibot.scope=wbs778-isolated" -e "MARIADB_ROOT_PASSWORD=$rootPassword" -e "MARIADB_DATABASE=$databaseName" -e "MARIADB_USER=$databaseUser" -e "MARIADB_PASSWORD=$databasePassword" -p "127.0.0.1::3306" $runImage).Trim()
   if ($LASTEXITCODE -ne 0 -or $containerId -notmatch "^[0-9a-f]{64}$") { throw "WBS778_CONTAINER_START_FAILED" }
   $ready = $false
   for ($attempt = 0; $attempt -lt 120; $attempt += 1) {
@@ -64,6 +70,7 @@ try {
   Add-Evidence "container.id=$containerId"
   Add-Evidence "image.ref=$Image"
   Add-Evidence "image.digest=$repoDigest"
+  Add-Evidence "image.run_reference=$runImage"
   Add-Evidence "mariadb.version=$serverVersion"
   Add-Evidence "database.name=$databaseName"
   Add-Evidence "database.user=$databaseUser"
@@ -77,6 +84,20 @@ try {
   if ($migrationNames.Count -ne 476 -or $migrationNames[-1] -ne "489_legacy_rank_label_side_effect_certificate.sql") { throw "WBS778_MIGRATION_SET_MISMATCH" }
   Add-Evidence "migration.count=$($migrationNames.Count)"
   Add-Evidence "migration.last=$($migrationNames[-1])"
+  $dependencyFixtureSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $dependencyFixturePath).Hash.ToLowerInvariant()
+  if ($dependencyFixtureSha256 -ne $dependencySourceSha256) { throw "WBS778_WBS777_DEPENDENCY_HASH_MISMATCH" }
+  $dependencySql = Get-Content -Raw -LiteralPath $dependencyFixturePath
+  $dependencyApply = $dependencySql | & docker exec -i $containerName mariadb "-u$databaseUser" "--password=$databasePassword" $databaseName 2>&1
+  if ($LASTEXITCODE -ne 0) { throw "WBS778_WBS777_DEPENDENCY_APPLY_FAILED: $dependencyApply" }
+  $requiredDependencyColumns = @((Query "SELECT column_name FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='player_item_bag_import_completeness_projections' AND column_name IN ('player_id','object_domain_import_run_id','projection_version','completeness_fingerprint','revision','active_flag') ORDER BY column_name") -split "`n")
+  $expectedDependencyColumns = @("active_flag","completeness_fingerprint","object_domain_import_run_id","player_id","projection_version","revision")
+  if (($requiredDependencyColumns -join "|") -ne ($expectedDependencyColumns -join "|")) { throw "WBS778_WBS777_DEPENDENCY_COLUMNS_MISMATCH" }
+  Add-Evidence "dependency.wbs=WBS777"
+  Add-Evidence "dependency.source_commit=$dependencySourceCommit"
+  Add-Evidence "dependency.source_sha256=$dependencySourceSha256"
+  Add-Evidence "dependency.fixture_sha256=$dependencyFixtureSha256"
+  Add-Evidence "dependency.table=player_item_bag_import_completeness_projections"
+  Add-Evidence "dependency.required_columns=$($requiredDependencyColumns -join ',')"
   $foreignKeys = @((Query "SELECT CONCAT(constraint_name,'|',table_name,'.',column_name,'->',referenced_table_name,'.',referenced_column_name) FROM information_schema.key_column_usage WHERE table_schema=DATABASE() AND constraint_name LIKE 'fk_legacy_rank_label_%' ORDER BY constraint_name") -split "`n")
   if ($foreignKeys.Count -ne 5) { throw "WBS778_FOREIGN_KEY_COUNT_MISMATCH" }
   foreach ($foreignKey in $foreignKeys) { Add-Evidence "foreign_key=$foreignKey" }
@@ -86,9 +107,14 @@ try {
   finally { Pop-Location }
   if ($LASTEXITCODE -ne 0) { throw "WBS778_READINESS_SQL_FAILED: $readinessOutput" }
   $readiness = ($readinessOutput -join "`n").Trim()
-  if ($readiness -ne '{"ready":false,"reasonCode":"LEGACY_SIDE_EFFECT_PARITY_UNPROVEN"}') { throw "WBS778_READINESS_NOT_FAIL_CLOSED" }
-  Add-Evidence "readiness.sql.execute=PASS"
-  Add-Evidence "readiness.result=$readiness"
+  $readinessProbe = $readiness | ConvertFrom-Json
+  if (-not $readinessProbe.query.invoked -or -not $readinessProbe.query.completed -or $null -ne $readinessProbe.query.error) { throw "WBS778_READINESS_SQL_NOT_COMPLETED: $readiness" }
+  if ($readinessProbe.result.ready -or $readinessProbe.result.reasonCode -ne "LEGACY_SIDE_EFFECT_PARITY_UNPROVEN") { throw "WBS778_READINESS_NOT_EMPTY_FAIL_CLOSED" }
+  Add-Evidence "readiness.query.invoked=true"
+  Add-Evidence "readiness.query.completed=true"
+  Add-Evidence "readiness.query.error=null"
+  Add-Evidence "readiness.result.ready=false"
+  Add-Evidence "readiness.result.reason=LEGACY_SIDE_EFFECT_PARITY_UNPROVEN"
 
   $stateBefore = Query "SELECT CONCAT((SELECT COUNT(*) FROM schema_migrations),'|',(SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()),'|',(SELECT COUNT(*) FROM information_schema.key_column_usage WHERE table_schema=DATABASE() AND constraint_name LIKE 'fk_legacy_rank_label_%'))"
   Add-Evidence "restart.pre_state=$stateBefore"
@@ -133,23 +159,28 @@ try {
   Add-Evidence "migration.reapply=PASS:$reapplied"
 
   $transcript = ($lines -join "`n") + "`n"
-  [System.IO.File]::WriteAllText($transcriptPath, $transcript, [System.Text.UTF8Encoding]::new($false))
+  [System.IO.File]::WriteAllText($transcriptTempPath, $transcript, [System.Text.UTF8Encoding]::new($false))
   $payload = [ordered]@{
     contract = "WBS778_ISOLATED_MARIADB_RECEIPT_V1"
-    image = [ordered]@{ reference=$Image; repositoryDigest=$repoDigest; serverVersion=$serverVersion }
+    image = [ordered]@{ reference=$Image; repositoryDigest=$repoDigest; runReference=$runImage; serverVersion=$serverVersion }
     isolation = [ordered]@{ containerName=$containerName; containerId=$containerId; host="127.0.0.1"; dynamicPort=[int]$hostPort; database=$databaseName; user=$databaseUser; operationalDatabaseUsed=$false; operationalPort3306BoundByHarness=$false }
     migrations = [ordered]@{ count=$migrationNames.Count; names=$migrationNames; reapply="PASS" }
+    dependency = [ordered]@{ wbs="WBS777"; sourceCommit=$dependencySourceCommit; sourceSha256=$dependencySourceSha256; fixtureSha256=$dependencyFixtureSha256; table="player_item_bag_import_completeness_projections"; requiredColumns=$requiredDependencyColumns }
     foreignKeys = $foreignKeys
-    readiness = [ordered]@{ sqlExecuted=$true; result=($readiness | ConvertFrom-Json) }
+    readiness = $readinessProbe
     restart = [ordered]@{ containerIdentityStable=$true; preState=$stateBefore; postState=$stateAfter }
     rollback = [ordered]@{ populatedRefusal="ROLLBACK_489_DATA_PRESENT"; populatedRowsPreserved=$preserved; emptyRollback="PASS" }
     transcriptSha256 = Sha256 $transcript
   }
   $payloadJson = $payload | ConvertTo-Json -Depth 8 -Compress
   $receipt = [ordered]@{ payload=$payload; payloadSha256=(Sha256 $payloadJson) }
-  [System.IO.File]::WriteAllText($receiptPath, ($receipt | ConvertTo-Json -Depth 8) + "`n", [System.Text.UTF8Encoding]::new($false))
+  [System.IO.File]::WriteAllText($receiptTempPath, ($receipt | ConvertTo-Json -Depth 8) + "`n", [System.Text.UTF8Encoding]::new($false))
+  Move-Item -LiteralPath $transcriptTempPath -Destination $transcriptPath
+  Move-Item -LiteralPath $receiptTempPath -Destination $receiptPath
   Write-Output "WBS778 isolated MariaDB rehearsal PASS"
   Write-Output $receiptPath
 } finally {
   & docker rm -f $containerName 2>$null | Out-Null
+  if (Test-Path -LiteralPath $transcriptTempPath) { Remove-Item -LiteralPath $transcriptTempPath -Force }
+  if (Test-Path -LiteralPath $receiptTempPath) { Remove-Item -LiteralPath $receiptTempPath -Force }
 }

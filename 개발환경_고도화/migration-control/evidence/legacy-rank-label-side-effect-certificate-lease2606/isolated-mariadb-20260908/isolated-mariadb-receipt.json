@@ -4,13 +4,14 @@
     "image": {
       "reference": "mariadb:11.4",
       "repositoryDigest": "mariadb@sha256:67873d30a17f6a9c331f06363b2fa15f38abca415529966d67c84f87f82439fe",
+      "runReference": "mariadb@sha256:67873d30a17f6a9c331f06363b2fa15f38abca415529966d67c84f87f82439fe",
       "serverVersion": "11.4.12-MariaDB-ubu2404"
     },
     "isolation": {
-      "containerName": "hoibot-wbs778-26432",
-      "containerId": "da40802672cb4e4af0263259f69f88f46fbd13d80b533b91ffa2ef88763861bb",
+      "containerName": "hoibot-wbs778-26760",
+      "containerId": "a3a72e054bf4b9dc3f51a907d7f318d6f7bf3124e51bd061ac2d138e414970a7",
       "host": "127.0.0.1",
-      "dynamicPort": 61707,
+      "dynamicPort": 51293,
       "database": "hoibot_wbs778",
       "user": "wbs778",
       "operationalDatabaseUsed": false,
@@ -498,6 +499,21 @@
       ],
       "reapply": "PASS"
     },
+    "dependency": {
+      "wbs": "WBS777",
+      "sourceCommit": "505fac1657c35bdc322b5cb0c742cf0b877efc64",
+      "sourceSha256": "932e7634543a18b6aeeed5ac1881aa94bb765721fa90a598efe5cd8c60290734",
+      "fixtureSha256": "932e7634543a18b6aeeed5ac1881aa94bb765721fa90a598efe5cd8c60290734",
+      "table": "player_item_bag_import_completeness_projections",
+      "requiredColumns": [
+        "active_flag",
+        "completeness_fingerprint",
+        "object_domain_import_run_id",
+        "player_id",
+        "projection_version",
+        "revision"
+      ]
+    },
     "foreignKeys": [
       "fk_legacy_rank_label_certificate_player|legacy_rank_label_side_effect_certificates.player_id->canonical_players.player_id",
       "fk_legacy_rank_label_certificate_run|legacy_rank_label_side_effect_certificates.legacy_rank_label_validation_run_id->legacy_rank_label_validation_runs.legacy_rank_label_validation_run_id",
@@ -506,7 +522,11 @@
       "fk_legacy_rank_label_validation_staging_run|legacy_rank_label_validation_runs.common_staging_run_id->data_migration_common_staging_runs.common_staging_run_id"
     ],
     "readiness": {
-      "sqlExecuted": true,
+      "query": {
+        "invoked": true,
+        "completed": true,
+        "error": null
+      },
       "result": {
         "ready": false,
         "reasonCode": "LEGACY_SIDE_EFFECT_PARITY_UNPROVEN"
@@ -514,15 +534,15 @@
     },
     "restart": {
       "containerIdentityStable": true,
-      "preState": "476|855|5",
-      "postState": "476|855|5"
+      "preState": "476|856|5",
+      "postState": "476|856|5"
     },
     "rollback": {
       "populatedRefusal": "ROLLBACK_489_DATA_PRESENT",
       "populatedRowsPreserved": "1|1",
       "emptyRollback": "PASS"
     },
-    "transcriptSha256": "8fc4f5db8d9c7cbea8da3542e1569353ec6a96b24f2eb7554dce147e12317c93"
+    "transcriptSha256": "ae0a3e14de6adce08b9782736c5d4f488472375d00f6c06104e7e6c1db807f5d"
   },
-  "payloadSha256": "a5508d0386eace3119ae8090ed6712429c3de7f9ba549074e0118b2065cbc168"
+  "payloadSha256": "048c75822105f096d89be902b5f4cc33f91d2ccbbde558b3e67b53e9753cafaf"
 }
