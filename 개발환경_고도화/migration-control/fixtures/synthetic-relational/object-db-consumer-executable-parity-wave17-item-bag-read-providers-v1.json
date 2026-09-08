@@ -4,11 +4,15 @@
   "sliceId": "WBS776",
   "consumerIds": [
     "sql-repository-19f17500144188bf",
-    "sql-repository-2415b4267e1577c6"
+    "sql-repository-2415b4267e1577c6",
+    "sql-repository-3b23c2f0f5501988"
   ],
   "runtimeSourcePaths": [
     "개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts",
-    "개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts"
+    "개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts",
+    "개발환경_고도화/runtime/src/inventory/legacy-rank-label-side-effect-readiness-provider.ts",
+    "개발환경_고도화/runtime/src/inventory/legacy-rank-label-side-effect-certificate-contract.ts",
+    "개발환경_고도화/runtime/src/inventory/legacy-rank-label-runtime-source-contract.ts"
   ],
   "receiptContract": {
     "version": "ITEM_BAG_READ_PROVIDERS_DIRECT_V1",
@@ -26,6 +30,11 @@
     {"consumerId":"sql-repository-2415b4267e1577c6","scenarioId":"wave17-import-readiness-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave17CanonicalItemBagImportReadinessInspect","expectedResult":{"empty":false,"duplicate":false,"missingRun":false,"incomplete":false,"badHash":false,"zeroSource":false,"unsafeCount":false,"countMismatch":false,"quarantined":false,"ignored":false,"zeroRows":false,"rowMismatch":false}},
     {"consumerId":"sql-repository-2415b4267e1577c6","scenarioId":"wave17-import-readiness-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave17CanonicalItemBagImportReadinessInspect","expectedResult":{"ready":true,"empty":false}},
     {"consumerId":"sql-repository-2415b4267e1577c6","scenarioId":"wave17-import-readiness-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave17CanonicalItemBagImportReadinessInspect","expectedResult":{"ready":true,"transaction":"READ_ONLY","sourceDomainDmlCount":0}},
-    {"consumerId":"sql-repository-2415b4267e1577c6","scenarioId":"wave17-import-readiness-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave17CanonicalItemBagImportReadinessInspect","expectedResult":{"ready":true}}
+    {"consumerId":"sql-repository-2415b4267e1577c6","scenarioId":"wave17-import-readiness-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave17CanonicalItemBagImportReadinessInspect","expectedResult":{"ready":true}},
+    {"consumerId":"sql-repository-3b23c2f0f5501988","scenarioId":"wave17-side-effect-readiness-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave17LegacyRankLabelSideEffectReadinessResolve","expectedResult":{"ready":{"ready":true,"reasonCode":"READY","validationRunId":"valid001"}}},
+    {"consumerId":"sql-repository-3b23c2f0f5501988","scenarioId":"wave17-side-effect-readiness-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave17LegacyRankLabelSideEffectReadinessResolve","expectedResult":{"tamperedValidation":{"ready":false,"reasonCode":"LEGACY_SIDE_EFFECT_PARITY_UNPROVEN"},"tamperedLineage":{"ready":false,"reasonCode":"LEGACY_SIDE_EFFECT_PARITY_UNPROVEN"},"ambiguousRows":{"ready":false,"reasonCode":"LEGACY_SIDE_EFFECT_PARITY_UNPROVEN"}}},
+    {"consumerId":"sql-repository-3b23c2f0f5501988","scenarioId":"wave17-side-effect-readiness-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave17LegacyRankLabelSideEffectReadinessResolve","expectedResult":{"ready":{"ready":true,"reasonCode":"READY","validationRunId":"valid001"},"empty":{"ready":false,"reasonCode":"LEGACY_SIDE_EFFECT_PARITY_UNPROVEN"}}},
+    {"consumerId":"sql-repository-3b23c2f0f5501988","scenarioId":"wave17-side-effect-readiness-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave17LegacyRankLabelSideEffectReadinessResolve","expectedResult":{"ready":{"ready":true,"reasonCode":"READY","validationRunId":"valid001"},"transaction":"READ_ONLY","sourceDomainDmlCount":0}},
+    {"consumerId":"sql-repository-3b23c2f0f5501988","scenarioId":"wave17-side-effect-readiness-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave17LegacyRankLabelSideEffectReadinessResolve","expectedResult":{"ready":{"ready":true,"reasonCode":"READY","validationRunId":"valid001"}}}
   ]
 }

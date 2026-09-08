@@ -98,7 +98,9 @@ const OBJECT_DB_PARITY_WAVE17_FIXTURE_PATH="개발환경_고도화/migration-con
 const OBJECT_DB_PARITY_WAVE17_CONSUMERS={
   "sql-repository-19f17500144188bf":{exportName:"executeWave17LegacyBagOwnerLabelResolve",file:"개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts",symbol:"resolve"},
   "sql-repository-2415b4267e1577c6":{exportName:"executeWave17CanonicalItemBagImportReadinessInspect",file:"개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts",symbol:"inspect"},
+  "sql-repository-3b23c2f0f5501988":{exportName:"executeWave17LegacyRankLabelSideEffectReadinessResolve",file:"개발환경_고도화/runtime/src/inventory/legacy-rank-label-side-effect-readiness-provider.ts",symbol:"resolve"},
 } as const;
+const OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT=182 as const;
 const OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_COUNT=167 as const;
 const OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_BYTES=762_133 as const;
 const OBJECT_DB_PARITY_WAVE16_FULL_RECEIPT_SHA256="64f80cf0f01beff713905ba414db4c11f1f192e6eab8136127047d3d2444015f" as const;
@@ -581,7 +583,7 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
     const hasWave17=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave17:"));
     if(hasWave15&&hasWave16)throw new Error("Wave15 SHADOW and Wave16 DIRECT receipts cannot be active together");
     if(hasWave17&&!hasWave16)throw new Error("Wave17 receipt bundle must preserve Wave16 receipts");
-    if(value.receipts.length!==(hasWave17?177:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
+    if(value.receipts.length!==(hasWave17?OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
     const historicalPrefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT));
     if(Buffer.byteLength(historicalPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES||sha256CanonicalText(historicalPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT}`);
     const wave12Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_COUNT));
@@ -1049,7 +1051,7 @@ function assertReceiptGitProvenance(
       ||fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.sliceId!=="WBS776"
       ||!Array.isArray(fixture.consumerIds)||JSON.stringify(fixture.consumerIds)!==JSON.stringify(Object.keys(OBJECT_DB_PARITY_WAVE17_CONSUMERS))
       ||!contract||contract.version!=="ITEM_BAG_READ_PROVIDERS_DIRECT_V1"||contract.transaction!=="READ_ONLY"||contract.sourceDomainDmlCount!==0||contract.restart!=="DISTINCT_NODE_CHILD_PROCESSES"
-      ||!Array.isArray(fixture.runtimeSourcePaths)||fixture.runtimeSourcePaths.length!==2||!fixture.runtimeSourcePaths.includes(trusted.file)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==10)throw new Error(`${receipt.receiptId} trusted Wave17 contract drift`);
+      ||!Array.isArray(fixture.runtimeSourcePaths)||fixture.runtimeSourcePaths.length!==5||!fixture.runtimeSourcePaths.includes(trusted.file)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==15)throw new Error(`${receipt.receiptId} trusted Wave17 contract drift`);
     const binding=fixture.bindings.find(candidate=>isRecord(candidate)&&candidate.consumerId===receipt.consumerId&&candidate.scenarioId===receipt.scenario.scenarioId&&candidate.scenarioKind===receipt.scenario.scenarioKind&&candidate.exportName===trusted.exportName);
     if(!isRecord(binding)||receipt.receiptId!==`receipt:wave17:${receipt.consumerId}:${receipt.scenario.scenarioKind.toLowerCase()}`)throw new Error(`${receipt.receiptId} pinned Wave17 scenario/binding mismatch`);
     if(manifestConsumer.file!==trusted.file||manifestConsumer.symbol!==trusted.symbol||manifestConsumer.access!=="READ")throw new Error(`${receipt.receiptId} Wave17 manifest classification drift`);
@@ -1126,7 +1128,7 @@ function assertReceiptExecutableBinding(
   if (!isRecord(fixture)) throw new Error(`${receipt.receiptId} fixture must be an object`);
   if(receipt.receiptId.startsWith("receipt:wave17:")){
     assertExactKeys(fixture,["format","fixtureId","sliceId","consumerIds","runtimeSourcePaths","receiptContract","bindings"],`${receipt.receiptId}.fixture`);
-    if(fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||!Array.isArray(fixture.consumerIds)||!fixture.consumerIds.includes(receipt.consumerId)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==10)throw new Error(`${receipt.receiptId} trusted Wave17 fixture drift`);
+    if(fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||!Array.isArray(fixture.consumerIds)||!fixture.consumerIds.includes(receipt.consumerId)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==15)throw new Error(`${receipt.receiptId} trusted Wave17 fixture drift`);
   }else if(receipt.receiptId.startsWith("receipt:wave16:")){
     assertExactKeys(fixture,["format","fixtureId","sliceId","consumerId","supersedesFixtureId","historicalShadowReceiptSeal","runtimeSourcePaths","receiptContract","bindings"],`${receipt.receiptId}.fixture`);
     if(fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||fixture.consumerId!==receipt.consumerId||!Array.isArray(fixture.bindings)||fixture.bindings.length!==7)throw new Error(`${receipt.receiptId} trusted Wave16 fixture drift`);
