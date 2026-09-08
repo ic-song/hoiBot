@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.472"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.473"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -7762,7 +7762,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     saveJsonFile(data, filePath);
-                    var giftMessage = "🎁 전체 선물이 도착했습니다!\n━━━━━━━━━━━━\n" + giftItemName + " " + numberWithCommas(giftItemCount) + "개가 지급되었습니다.\n\n가방을 확인해주세요.";
+                    var giftMessage = "🎁 호이가 여러분의 주머니에\n선물을 넣어드렸습니다.\nㄱ( ^ㅡ^)r ~ 덩 실 ㄱ( ^ㅡ^)r ~  덩실\n━━━━━━━━━━━━\n" + giftItemName + " " + numberWithCommas(giftItemCount) + "개가 지급되었습니다.\n\n/패키지가방 을 확인해주세요.";
                     Api.replyRoom(room1, giftMessage);
                     Api.replyRoom(room2, giftMessage);
                     Api.replyRoom(room3, giftMessage);
@@ -7775,6 +7775,34 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     Api.replyRoom(room12, giftMessage);
                     Api.replyRoom(room13, giftMessage);
                     Api.replyRoom(room90, giftMessage);
+                }
+                if (msg === "/프리미엄전달" || /^\/프리미엄전달\s+.+\/\d+$/.test(msg)) {
+                    if (sender !== "호이 남") {
+                        replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
+                        return;
+                    }
+                    var premiumGiftMatch = msg.match(/^\/프리미엄전달\s+(.+)\/(\d+)$/);
+                    if (!premiumGiftMatch) {
+                        replier.reply("📌 사용법\n/프리미엄전달 아이템이름/갯수\n\n📌 사용 예시\n/프리미엄전달 미니펫뽑기🐹(/미니펫오픈)/1000");
+                        return;
+                    }
+                    var premiumGiftItemName = premiumGiftMatch[1].trim();
+                    var premiumGiftItemCount = parseInt(premiumGiftMatch[2], 10);
+                    if (!premiumGiftItemName || !isFinite(premiumGiftItemCount) || premiumGiftItemCount < 1) {
+                        replier.reply("❌ 아이템이름과 1개 이상의 지급 수량을 확인해주세요.");
+                        return;
+                    }
+                    var premiumGiftUsers = getActiveSupportPassUsers(data, "premium");
+                    if (premiumGiftUsers.length < 1) {
+                        replier.reply("지급 가능한 호이패스 프리미엄 유저가 없습니다.");
+                        return;
+                    }
+                    for (var premiumGiftUserIndex = 0; premiumGiftUserIndex < premiumGiftUsers.length; premiumGiftUserIndex++) {
+                        addItem(data, premiumGiftUsers[premiumGiftUserIndex], premiumGiftItemName, premiumGiftItemCount);
+                    }
+                    saveJsonFile(data, filePath);
+                    var premiumGiftMessage = "👑 호이패스 프리미엄 👑\n\n👑 VIP 전용 전체 선물입니다!\n🎩 “VIP 회원님, 이쪽으로 모시겠습니다.”\n\n어서 오세요! 자리는 미리 준비해두었습니다.\n오늘의 VIP 코스 요리는 바로… 🎁\n━━━━━━━━━━━━\n🎁 " + premiumGiftItemName + " " + numberWithCommas(premiumGiftItemCount) + "개가 지급되었습니다.\n━━━━━━━━━━━━\n맛있게 챙겨가시고, 계산은 호이가 하겠습니다. ( _ _)\n\n/패키지가방에서 선물을 확인해주세요!\n\n📌 사용법\n/프리미엄전달 아이템이름/갯수\n\n📌 사용 예시\n/프리미엄전달 미니펫뽑기🐹(/미니펫오픈)/1000";
+                    noticeMsg(premiumGiftMessage);
                 }
                 if (msg === "/선물삭제" && (isAdmin(sender) || isMaster(sender))) {
                     var freeSupportPackageDeleteResult = removeAllHoiFreeSupportPackages(data);
@@ -49592,6 +49620,7 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
     var state = ensureSealedVaultUserState(data, user);
     var config = GLOBAL_CONFIG.sealedVault;
     var bag = data.member[user].bag || {};
+    var vaultCount = normalizeSealedVaultCount(bag[config.vaultItemName]);
     var keyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
     var monthKey = getSealedVaultMonthKey();
     var monthlyRewards = getSealedVaultMonthlyRewards(data, monthKey);
@@ -49601,6 +49630,7 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
     var lines = [];
     lines.push("🔒 [" + checkRank(data, petData, guildData, user) + "] 님의 호이의 봉인금고");
     lines.push("━━━━━━━━━━━━━━━");
+    lines.push("보유 호봉금고🔐: " + numberWithCommas(vaultCount) + "개");
     lines.push("보유 해방의 열쇠🗝️: " + numberWithCommas(keyCount) + "개");
     lines.push("누적 개봉: " + numberWithCommas(state.totalOpenCount) + "회");
     lines.push("");
@@ -49618,6 +49648,7 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
         lines.push("⚠️ " + getSealedVaultMonthLabel(monthKey) + " 초대형 보상이 아직 설정되지 않았습니다.");
     }
     lines.push("━━━━━━━━━━━━━━━");
+    lines.push("확인: /봉인금고");
     lines.push("개봉: /봉인금고오픈 [숫자]");
     lines.push("확률: /봉인금고확률");
     lines.push("기록: /봉인금고기록");
@@ -49812,6 +49843,8 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     var lines = [];
     lines.push("🔒 [" + checkRank(data, petData, guildData, sender) + "] 님의");
     lines.push("봉인금고🔒 " + openCount + "회 개봉 결과");
+    lines.push("확인: /봉인금고");
+    lines.push("※ 현재 부스터,플래티넘 보상 기록등 확인가능");
     lines.push("━━━━━━━━━━━━━━━");
     for (var outputIndex = 0; outputIndex < gainOrder.length; outputIndex++) {
         var outputItemName = gainOrder[outputIndex];
