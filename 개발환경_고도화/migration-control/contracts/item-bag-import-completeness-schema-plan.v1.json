@@ -1,0 +1,20 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-item-bag-import-completeness-schema-plan-v1",
+  "migration": "488_item_bag_import_completeness.sql",
+  "rollback": "488_item_bag_import_completeness.rollback.sql",
+  "table": "player_item_bag_import_completeness_projections",
+  "role": "relation",
+  "primaryKey": { "column": "player_item_bag_import_completeness_projection_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "generator": "CUID2_8_COLLISION_RETRY" },
+  "foreignKeys": [
+    { "column": "player_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "referencesTable": "canonical_players", "referencesColumn": "player_id", "onDelete": "RESTRICT" },
+    { "column": "object_domain_import_run_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "referencesTable": "data_migration_object_domain_import_runs", "referencesColumn": "object_domain_import_run_id", "onDelete": "RESTRICT" },
+    { "column": "common_staging_record_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "referencesTable": "data_migration_common_staging_records", "referencesColumn": "common_staging_record_id", "onDelete": "RESTRICT" }
+  ],
+  "uniqueKeys": [["player_id", "active_player_guard"], ["object_domain_import_run_id", "player_id"], ["object_domain_import_run_id", "common_staging_record_id"], ["player_id", "revision"]],
+  "zeroSourceRowsAllowed": true,
+  "completeCheck": "projected_stack_count=expected_source_key_count AND quarantined_source_key_count=0 AND ignored_source_key_count=0",
+  "baselineColumns": ["stack_set_fingerprint", "item_ledger_entry_count", "item_ledger_set_fingerprint"],
+  "audit": { "columns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"], "timeFormat": "KST_YYYY-MM-DD HH:MM:SS" },
+  "rollbackPreflight": "refuse DROP while any projection row exists"
+}

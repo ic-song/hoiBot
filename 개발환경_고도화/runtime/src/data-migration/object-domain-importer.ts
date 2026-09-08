@@ -28,6 +28,14 @@ export interface DomainImportPolicy {
   quarantineReasons: string[];
   exactDefinitionImports?: DomainImportExactDefinitionImport[];
   equipmentGradeExtension?: { profile: "EQUIPMENT_GRADE_EXTENSION_V1"; semanticSha256: string };
+  itemBagCompletenessV3?: {
+    profileVersion: "OBJECT_DOMAIN_IMPORT_RELEVANT_V3";
+    profileSemanticSha256: string;
+    sourceNamespace: "member.bag";
+    witnessRecordDomain: "item";
+    witnessRecordKind: "BAG_CONTAINER";
+    sourceKeyRecordKinds: readonly ["ITEM_STACK"];
+  };
 }
 
 interface ProjectionRunRow {
@@ -51,6 +59,19 @@ interface DecisionRow {
   projected_row_count: number; decision_fingerprint: string;
   record_kind: string; staging_projection_status: string; staging_quarantine_reason: string | null;
   staging_source_locator_sha256: string; staging_payload_fingerprint: string; staging_record_domain: string;
+  common_staging_record_id?: string; staging_owner_locator_sha256?: string | null; staging_source_namespace?: string;
+}
+
+interface ItemBagWitnessRow {
+  common_staging_record_id: string; source_locator_sha256: string; owner_locator_sha256: string | null;
+  payload_fingerprint: string; source_namespace: string; record_domain: string; record_kind: string;
+  projection_status: string; quarantine_reason: string | null;
+}
+
+interface ItemBagStateRow { owned_item_stack_id: string; item_id: string; quantity: string; }
+interface ItemLedgerStateRow {
+  item_inventory_ledger_entry_id: string; item_inventory_operation_id: string; item_id: string;
+  owned_item_stack_id: string | null; owned_item_id: string | null; quantity_delta: string; reason_type: string;
 }
 
 interface ProjectionRow {
@@ -139,6 +160,7 @@ export interface DomainImportExactDefinitionRow {
 
 export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION = "OBJECT_DOMAIN_IMPORT_RELEVANT_V1" as const;
 export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2 = "OBJECT_DOMAIN_IMPORT_RELEVANT_V2" as const;
+export const OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V3 = "OBJECT_DOMAIN_IMPORT_RELEVANT_V3" as const;
 export const OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256 = "487f098d9d8357bbe636b91766dd07f24618b350e449510f52f266fd2b80a861" as const;
 export type ObjectDomainImportSemanticComponent = "identityBindings" | "objectModel" | "disposition" | "fieldMap";
 
@@ -203,7 +225,8 @@ export function calculateObjectDomainImportContractSemanticSha256(documentText: 
   const expectedProjectionSha256 = (policy as Record<string, unknown>).currentImportContractProjectionSha256;
   const v1Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION && Array.isArray(compatible) && compatible.length === 1 && compatible[0] === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
   const v2Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V2 && Array.isArray(compatible) && compatible.length === 0;
-  if ((!v1Compatible && !v2Compatible) || typeof expectedProjectionSha256 !== "string" || !HASH.test(expectedProjectionSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
+  const v3Compatible = projectionVersion === OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V3 && Array.isArray(compatible) && compatible.length === 0;
+  if ((!v1Compatible && !v2Compatible && !v3Compatible) || typeof expectedProjectionSha256 !== "string" || !HASH.test(expectedProjectionSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_SEMANTIC_HASH_POLICY_INVALID");
   const { semanticHashPolicy: _semanticHashPolicy, ...importRelevantContract } = document;
   const actual = sha256(stableDomainImportJson({ projectionVersion, contract: importRelevantContract }));
   if (actual !== expectedProjectionSha256 || actual === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_CONTRACT_PROJECTION_DRIFT");
@@ -286,11 +309,19 @@ export function assertObjectDomainImportPolicy(policy: DomainImportPolicy): void
   if (policy.catalogVersion !== "SC-20260902-1" || !HASH.test(policy.targetSchemaSha256) || !HASH.test(policy.importContractSha256)) throw new Error("OBJECT_DOMAIN_IMPORT_POLICY_INVALID");
   const exactImports = policy.exactDefinitionImports ?? [];
   const equipmentGradeExtension = policy.equipmentGradeExtension;
+  const completenessV3 = policy.itemBagCompletenessV3;
   if (equipmentGradeExtension !== undefined && (equipmentGradeExtension.profile !== "EQUIPMENT_GRADE_EXTENSION_V1" || !HASH.test(equipmentGradeExtension.semanticSha256))) throw new Error("OBJECT_DOMAIN_IMPORT_EQUIPMENT_GRADE_EXTENSION_INVALID");
+  if (completenessV3 !== undefined && (completenessV3.profileVersion !== OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION_V3
+    || !HASH.test(completenessV3.profileSemanticSha256)
+    || completenessV3.sourceNamespace !== "member.bag"
+    || completenessV3.witnessRecordDomain !== "item"
+    || completenessV3.witnessRecordKind !== "BAG_CONTAINER"
+    || completenessV3.sourceKeyRecordKinds.length !== 1
+    || completenessV3.sourceKeyRecordKinds[0] !== "ITEM_STACK")) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_V3_INVALID");
   const v1Compatibility = exactImports.length === 0 && policy.acceptedImportContractSha256.length === 2 && policy.acceptedImportContractSha256[0] === policy.importContractSha256 && policy.acceptedImportContractSha256[1] === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
-  const v2Compatibility = exactImports.length === 2 && policy.acceptedImportContractSha256.length === 1 && policy.acceptedImportContractSha256[0] === policy.importContractSha256;
-  if ((!v1Compatibility && !v2Compatibility) || policy.importContractSha256 === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_CONTRACT_POLICY_INVALID");
-  if (v2Compatibility) {
+  const v2OrV3Compatibility = exactImports.length === 2 && policy.acceptedImportContractSha256.length === 1 && policy.acceptedImportContractSha256[0] === policy.importContractSha256;
+  if ((!v1Compatibility && !v2OrV3Compatibility) || policy.importContractSha256 === OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_CONTRACT_POLICY_INVALID");
+  if (v2OrV3Compatibility) {
     const expected = [
       { table: "canonical_item_definition_imports", definitionTable: "canonical_item_definitions", definitionPkColumn: "item_id", foreignKeyColumn: "item_id", sourceSystem: "LEGACY_JSON", sourceNamespace: "member.bag", sourceIdentifier: "펫타이틀권🦊(/펫타이틀이름)", sourceIdentifierOrigin: "SOURCE_EXACT" },
       { table: "canonical_currency_definition_imports", definitionTable: "canonical_currency_definitions", definitionPkColumn: "currency_id", foreignKeyColumn: "currency_id", sourceSystem: "LEGACY_JSON", sourceNamespace: "member.point", sourceIdentifier: "point", sourceIdentifierOrigin: "CONSTANT_CONTRACT" }
@@ -645,6 +676,86 @@ function normalizeComparableValue(value: unknown, sqlType: string, stored: boole
 export class MariaObjectDomainImporter {
   constructor(private readonly database: DatabaseClient, private readonly now: () => Date = () => new Date()) {}
 
+  private async loadItemBagWitnesses(transaction: DatabaseTransaction, commonStagingRunId: string, policy: DomainImportPolicy): Promise<ItemBagWitnessRow[]> {
+    const config = policy.itemBagCompletenessV3;
+    if (config === undefined) return [];
+    const witnesses = await transaction.query<ItemBagWitnessRow[]>("SELECT common_staging_record_id,source_locator_sha256,owner_locator_sha256,payload_fingerprint,source_namespace,record_domain,record_kind,projection_status,quarantine_reason FROM data_migration_common_staging_records WHERE common_staging_run_id=? AND source_namespace=? AND record_domain=? AND record_kind=? ORDER BY source_locator_sha256 FOR UPDATE", [commonStagingRunId, config.sourceNamespace, config.witnessRecordDomain, config.witnessRecordKind]);
+    if (witnesses.length === 0 || witnesses.some((row) => row.owner_locator_sha256 === null || row.projection_status !== "PROJECT" || row.quarantine_reason !== null || !HASH.test(row.source_locator_sha256) || !HASH.test(row.payload_fingerprint))) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_WITNESS_INVALID");
+    if (new Set(witnesses.map((row) => row.owner_locator_sha256)).size !== witnesses.length) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_WITNESS_AMBIGUOUS");
+    return witnesses;
+  }
+
+  private async readItemBagState(transaction: DatabaseTransaction, playerId: string): Promise<{ stackRows: ItemBagStateRow[]; ledgerRows: ItemLedgerStateRow[]; stackSetFingerprint: string; itemLedgerSetFingerprint: string }> {
+    const stackRows = await transaction.query<ItemBagStateRow[]>("SELECT owned_item_stack_id,item_id,CAST(quantity AS CHAR) quantity FROM canonical_owned_item_stacks WHERE player_id=? ORDER BY owned_item_stack_id FOR UPDATE", [playerId]);
+    const ledgerRows = await transaction.query<ItemLedgerStateRow[]>("SELECT item_inventory_ledger_entry_id,item_inventory_operation_id,item_id,owned_item_stack_id,owned_item_id,CAST(quantity_delta AS CHAR) quantity_delta,reason_type FROM canonical_item_inventory_ledger_entries WHERE player_id=? ORDER BY item_inventory_ledger_entry_id FOR UPDATE", [playerId]);
+    return {
+      stackRows,
+      ledgerRows,
+      stackSetFingerprint: sha256(stableDomainImportJson(stackRows)),
+      itemLedgerSetFingerprint: sha256(stableDomainImportJson(ledgerRows))
+    };
+  }
+
+  private async expectedItemBagCompleteness(transaction: DatabaseTransaction, runId: string, witnesses: ItemBagWitnessRow[], decisions: DecisionRow[], plan: DomainImportPlan, policy: DomainImportPolicy, ids: Map<string, string>): Promise<Array<Record<string, unknown>>> {
+    const config = policy.itemBagCompletenessV3;
+    if (config === undefined) return [];
+    const result: Array<Record<string, unknown>> = [];
+    for (const witness of witnesses) {
+      const ownerLocator = witness.owner_locator_sha256!;
+      const witnessDecisions = decisions.filter((decision) => decision.common_staging_record_id === witness.common_staging_record_id);
+      if (witnessDecisions.length !== 1 || witnessDecisions[0]!.decision_status !== "IGNORE" || witnessDecisions[0]!.decision_reason !== "NOT_OBJECT_DOMAIN_INPUT" || Number(witnessDecisions[0]!.projected_row_count) !== 0) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_WITNESS_DECISION_INVALID");
+      const playerProjection = plan.rows.find((row) => row.target_table_name === "canonical_players" && row.payload.source_system === "LEGACY_JSON" && row.payload.source_identifier === ownerLocator);
+      let playerId = playerProjection === undefined ? undefined : ids.get(`canonical_players\0player_id\0${playerProjection.identity_locator_sha256}`);
+      if (playerId === undefined) {
+        const players = await transaction.query<Array<{ player_id: string }>>("SELECT player_id FROM canonical_players WHERE source_system='LEGACY_JSON' AND source_identifier=? FOR UPDATE", [ownerLocator]);
+        if (players.length !== 1) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_PLAYER_BINDING_INVALID");
+        playerId = players[0]!.player_id;
+      }
+      const sourceDecisions = decisions.filter((decision) => decision.staging_source_namespace === config.sourceNamespace && decision.staging_record_domain === config.witnessRecordDomain && config.sourceKeyRecordKinds.includes(decision.record_kind as "ITEM_STACK") && decision.staging_owner_locator_sha256 === ownerLocator);
+      const sourceDecisionIds = new Set(sourceDecisions.map((decision) => decision.catalog_source_decision_id));
+      const projectedStackCount = plan.rows.filter((row) => row.target_table_name === "canonical_owned_item_stacks" && sourceDecisionIds.has(row.catalog_source_decision_id)).length;
+      const quarantinedSourceKeyCount = sourceDecisions.filter((decision) => decision.decision_status === "QUARANTINE").length;
+      const ignoredSourceKeyCount = sourceDecisions.filter((decision) => decision.decision_status === "IGNORE").length;
+      const expectedSourceKeyCount = sourceDecisions.length;
+      if (projectedStackCount !== expectedSourceKeyCount || quarantinedSourceKeyCount !== 0 || ignoredSourceKeyCount !== 0) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_INCOMPLETE");
+      const state = await this.readItemBagState(transaction, playerId);
+      if (state.stackRows.length !== projectedStackCount) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_STATE_COUNT_MISMATCH");
+      const values: Record<string, unknown> = {
+        player_id: playerId,
+        object_domain_import_run_id: runId,
+        common_staging_record_id: witness.common_staging_record_id,
+        projection_version: config.profileVersion,
+        profile_semantic_sha256: config.profileSemanticSha256,
+        import_contract_sha256: policy.importContractSha256,
+        source_locator_sha256: witness.source_locator_sha256,
+        source_payload_fingerprint: witness.payload_fingerprint,
+        expected_source_key_count: expectedSourceKeyCount,
+        projected_stack_count: projectedStackCount,
+        quarantined_source_key_count: quarantinedSourceKeyCount,
+        ignored_source_key_count: ignoredSourceKeyCount,
+        stack_set_fingerprint: state.stackSetFingerprint,
+        item_ledger_entry_count: String(state.ledgerRows.length),
+        item_ledger_set_fingerprint: state.itemLedgerSetFingerprint,
+        revision: "1",
+        active_flag: true
+      };
+      values.completeness_fingerprint = sha256(stableDomainImportJson(values));
+      result.push(values);
+    }
+    return result;
+  }
+
+  private async insertItemBagCompleteness(transaction: DatabaseTransaction, expected: Array<Record<string, unknown>>, audit: ObjectAuditValues): Promise<void> {
+    for (const row of expected) await this.insertWithCuidRetry(transaction, "INSERT INTO player_item_bag_import_completeness_projections(player_item_bag_import_completeness_projection_id,player_id,object_domain_import_run_id,common_staging_record_id,projection_version,profile_semantic_sha256,import_contract_sha256,source_locator_sha256,source_payload_fingerprint,expected_source_key_count,projected_stack_count,quarantined_source_key_count,ignored_source_key_count,stack_set_fingerprint,item_ledger_entry_count,item_ledger_set_fingerprint,completeness_fingerprint,revision,active_flag,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,TRUE,?,?,?,?)", (candidate) => [candidate, row.player_id, row.object_domain_import_run_id, row.common_staging_record_id, row.projection_version, row.profile_semantic_sha256, row.import_contract_sha256, row.source_locator_sha256, row.source_payload_fingerprint, row.expected_source_key_count, row.projected_stack_count, row.quarantined_source_key_count, row.ignored_source_key_count, row.stack_set_fingerprint, row.item_ledger_entry_count, row.item_ledger_set_fingerprint, row.completeness_fingerprint, row.revision, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+  }
+
+  private async verifyItemBagCompletenessReplay(transaction: DatabaseTransaction, expected: Array<Record<string, unknown>>, runId: string): Promise<void> {
+    const rows = await transaction.query<Array<Record<string, unknown>>>("SELECT player_id,object_domain_import_run_id,common_staging_record_id,projection_version,profile_semantic_sha256,import_contract_sha256,source_locator_sha256,source_payload_fingerprint,expected_source_key_count,projected_stack_count,quarantined_source_key_count,ignored_source_key_count,stack_set_fingerprint,CAST(item_ledger_entry_count AS CHAR) item_ledger_entry_count,item_ledger_set_fingerprint,completeness_fingerprint,CAST(revision AS CHAR) revision,active_flag FROM player_item_bag_import_completeness_projections WHERE object_domain_import_run_id=? ORDER BY player_id FOR UPDATE", [runId]);
+    const normalized = rows.map((row) => ({ ...row, expected_source_key_count: Number(row.expected_source_key_count), projected_stack_count: Number(row.projected_stack_count), quarantined_source_key_count: Number(row.quarantined_source_key_count), ignored_source_key_count: Number(row.ignored_source_key_count), item_ledger_entry_count: String(row.item_ledger_entry_count), active_flag: row.active_flag === true || row.active_flag === 1 || row.active_flag === 1n }));
+    const orderedExpected = [...expected].sort((left, right) => String(left.player_id).localeCompare(String(right.player_id), "en"));
+    if (stableDomainImportJson(normalized) !== stableDomainImportJson(orderedExpected)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_REPLAY_DRIFT");
+  }
+
   private async findCompatiblePriorRun(transaction: DatabaseTransaction, catalogProjectionRunId: string, policy: DomainImportPolicy): Promise<PriorRunRow | undefined> {
     const runs = await transaction.query<PriorRunRow[]>("SELECT object_domain_import_run_id,catalog_projection_sha256,upstream_envelope_sha256,target_schema_sha256,import_contract_sha256,import_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,expected_row_count,imported_row_count,run_status FROM data_migration_object_domain_import_runs WHERE catalog_projection_run_id=? AND catalog_version=? FOR UPDATE", [catalogProjectionRunId, policy.catalogVersion]);
     if (runs.length > 1) throw new Error("OBJECT_DOMAIN_IMPORT_COMPATIBLE_RUN_AMBIGUOUS");
@@ -661,12 +772,17 @@ export class MariaObjectDomainImporter {
       const staging = (await transaction.query<CommonStagingRunRow[]>("SELECT common_staging_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,staging_sha256,expected_file_count,CAST(expected_total_bytes AS CHAR) expected_total_bytes,projected_file_count,ignored_file_count,run_status FROM data_migration_common_staging_runs WHERE common_staging_run_id=? FOR UPDATE", [run.common_staging_run_id]))[0];
       if (staging === undefined) throw new Error("OBJECT_DOMAIN_IMPORT_STAGING_RUN_NOT_FOUND");
       assertObjectDomainImportUpstreamEnvelope(run, staging);
-      const decisions = await transaction.query<DecisionRow[]>("SELECT decision.catalog_source_decision_id,decision.source_locator_sha256,decision.source_payload_fingerprint,decision.record_domain,decision.decision_status,decision.decision_reason,decision.projected_row_count,decision.decision_fingerprint,staging.record_domain staging_record_domain,staging.record_kind,staging.projection_status staging_projection_status,staging.quarantine_reason staging_quarantine_reason,staging.source_locator_sha256 staging_source_locator_sha256,staging.payload_fingerprint staging_payload_fingerprint FROM data_migration_catalog_source_decisions decision JOIN data_migration_common_staging_records staging ON staging.common_staging_record_id=decision.common_staging_record_id WHERE decision.catalog_projection_run_id=? ORDER BY decision.source_locator_sha256 FOR UPDATE", [catalogProjectionRunId]);
+      const decisions = await transaction.query<DecisionRow[]>("SELECT decision.catalog_source_decision_id,decision.source_locator_sha256,decision.source_payload_fingerprint,decision.record_domain,decision.decision_status,decision.decision_reason,decision.projected_row_count,decision.decision_fingerprint,staging.common_staging_record_id,staging.source_namespace staging_source_namespace,staging.owner_locator_sha256 staging_owner_locator_sha256,staging.record_domain staging_record_domain,staging.record_kind,staging.projection_status staging_projection_status,staging.quarantine_reason staging_quarantine_reason,staging.source_locator_sha256 staging_source_locator_sha256,staging.payload_fingerprint staging_payload_fingerprint FROM data_migration_catalog_source_decisions decision JOIN data_migration_common_staging_records staging ON staging.common_staging_record_id=decision.common_staging_record_id WHERE decision.catalog_projection_run_id=? ORDER BY decision.source_locator_sha256 FOR UPDATE", [catalogProjectionRunId]);
       const rows = await transaction.query<ProjectionRow[]>("SELECT record.catalog_projection_record_id,record.catalog_source_decision_id,record.projection_locator,record.identity_locator_sha256,record.identity_mode,record.target_table_name,record.target_pk_column_name,record.target_object_type,record.target_source_namespace,record.source_role,record.approval_kind,record.approval_sha256,CAST(record.target_payload_json AS CHAR) target_payload_json,record.target_payload_fingerprint,CAST(record.value_origins_json AS CHAR) value_origins_json,record.value_origins_fingerprint,CAST(record.reference_bindings_json AS CHAR) reference_bindings_json,record.reference_bindings_fingerprint,decision.record_domain,decision.decision_status FROM data_migration_catalog_projection_records record JOIN data_migration_catalog_source_decisions decision ON decision.catalog_source_decision_id=record.catalog_source_decision_id WHERE record.catalog_projection_run_id=? ORDER BY record.catalog_projection_record_id FOR UPDATE", [catalogProjectionRunId]);
       const plan = buildObjectDomainImportPlan(run, decisions, rows, policy);
+      const itemBagWitnesses = await this.loadItemBagWitnesses(transaction, run.common_staging_run_id, policy);
       const prior = await this.findCompatiblePriorRun(transaction, catalogProjectionRunId, policy);
       if (prior !== undefined) {
         await this.verifyReplay(transaction, prior, run, plan, policy);
+        if (policy.itemBagCompletenessV3 !== undefined) {
+          const expectedCompleteness = await this.expectedItemBagCompleteness(transaction, prior.object_domain_import_run_id, itemBagWitnesses, decisions, plan, policy, new Map());
+          await this.verifyItemBagCompletenessReplay(transaction, expectedCompleteness, prior.object_domain_import_run_id);
+        }
         return { objectDomainImportRunId: prior.object_domain_import_run_id, insertedCanonicalRows: 0, insertedDecisionReceipts: 0, replayed: true };
       }
       const identityProvider = new MariaObjectIdentityAuditProvider(this.database, undefined, undefined, this.now);
@@ -695,6 +811,8 @@ export class MariaObjectDomainImporter {
         await this.insertTarget(transaction, row, targetPk, references, audit, policy);
         await this.insertReceipt(transaction, runId, row, targetPk, references, importOrder, audit);
       }
+      const expectedCompleteness = await this.expectedItemBagCompleteness(transaction, runId, itemBagWitnesses, decisions, plan, policy, ids);
+      await this.insertItemBagCompleteness(transaction, expectedCompleteness, audit);
       await transaction.execute("UPDATE data_migration_object_domain_import_runs SET imported_row_count=?,run_status='COMPLETE',UPDATE_USER=?,UPDATE_TIME=? WHERE object_domain_import_run_id=?", [plan.rows.length, audit.UPDATE_USER, audit.UPDATE_TIME, runId]);
       return { objectDomainImportRunId: runId, insertedCanonicalRows: plan.rows.length, insertedDecisionReceipts: plan.decisions.length, replayed: false };
     });
@@ -708,12 +826,19 @@ export class MariaObjectDomainImporter {
       const staging = (await transaction.query<CommonStagingRunRow[]>("SELECT common_staging_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,staging_sha256,expected_file_count,CAST(expected_total_bytes AS CHAR) expected_total_bytes,projected_file_count,ignored_file_count,run_status FROM data_migration_common_staging_runs WHERE common_staging_run_id=? FOR UPDATE", [projectionRun.common_staging_run_id]))[0];
       if (staging === undefined) throw new Error("OBJECT_DOMAIN_IMPORT_STAGING_RUN_NOT_FOUND");
       assertObjectDomainImportUpstreamEnvelope(projectionRun, staging);
-      const decisions = await transaction.query<DecisionRow[]>("SELECT decision.catalog_source_decision_id,decision.source_locator_sha256,decision.source_payload_fingerprint,decision.record_domain,decision.decision_status,decision.decision_reason,decision.projected_row_count,decision.decision_fingerprint,staging.record_domain staging_record_domain,staging.record_kind,staging.projection_status staging_projection_status,staging.quarantine_reason staging_quarantine_reason,staging.source_locator_sha256 staging_source_locator_sha256,staging.payload_fingerprint staging_payload_fingerprint FROM data_migration_catalog_source_decisions decision JOIN data_migration_common_staging_records staging ON staging.common_staging_record_id=decision.common_staging_record_id WHERE decision.catalog_projection_run_id=? ORDER BY decision.source_locator_sha256 FOR UPDATE", [catalogProjectionRunId]);
+      const decisions = await transaction.query<DecisionRow[]>("SELECT decision.catalog_source_decision_id,decision.source_locator_sha256,decision.source_payload_fingerprint,decision.record_domain,decision.decision_status,decision.decision_reason,decision.projected_row_count,decision.decision_fingerprint,staging.common_staging_record_id,staging.source_namespace staging_source_namespace,staging.owner_locator_sha256 staging_owner_locator_sha256,staging.record_domain staging_record_domain,staging.record_kind,staging.projection_status staging_projection_status,staging.quarantine_reason staging_quarantine_reason,staging.source_locator_sha256 staging_source_locator_sha256,staging.payload_fingerprint staging_payload_fingerprint FROM data_migration_catalog_source_decisions decision JOIN data_migration_common_staging_records staging ON staging.common_staging_record_id=decision.common_staging_record_id WHERE decision.catalog_projection_run_id=? ORDER BY decision.source_locator_sha256 FOR UPDATE", [catalogProjectionRunId]);
       const projectionRows = await transaction.query<ProjectionRow[]>("SELECT record.catalog_projection_record_id,record.catalog_source_decision_id,record.projection_locator,record.identity_locator_sha256,record.identity_mode,record.target_table_name,record.target_pk_column_name,record.target_object_type,record.target_source_namespace,record.source_role,record.approval_kind,record.approval_sha256,CAST(record.target_payload_json AS CHAR) target_payload_json,record.target_payload_fingerprint,CAST(record.value_origins_json AS CHAR) value_origins_json,record.value_origins_fingerprint,CAST(record.reference_bindings_json AS CHAR) reference_bindings_json,record.reference_bindings_fingerprint,decision.record_domain,decision.decision_status FROM data_migration_catalog_projection_records record JOIN data_migration_catalog_source_decisions decision ON decision.catalog_source_decision_id=record.catalog_source_decision_id WHERE record.catalog_projection_run_id=? ORDER BY record.catalog_projection_record_id FOR UPDATE", [catalogProjectionRunId]);
       const plan = buildObjectDomainImportPlan(projectionRun, decisions, projectionRows, policy);
+      const itemBagWitnesses = await this.loadItemBagWitnesses(transaction, projectionRun.common_staging_run_id, policy);
       const run = await this.findCompatiblePriorRun(transaction, catalogProjectionRunId, policy);
       if (run === undefined) return 0;
       const receipts = await this.verifyReplay(transaction, run, projectionRun, plan, policy);
+      if (policy.itemBagCompletenessV3 !== undefined) {
+        const expectedCompleteness = await this.expectedItemBagCompleteness(transaction, run.object_domain_import_run_id, itemBagWitnesses, decisions, plan, policy, new Map());
+        await this.verifyItemBagCompletenessReplay(transaction, expectedCompleteness, run.object_domain_import_run_id);
+        const deleted = await transaction.execute("DELETE FROM player_item_bag_import_completeness_projections WHERE object_domain_import_run_id=?", [run.object_domain_import_run_id]);
+        if (deleted.affectedRows !== BigInt(expectedCompleteness.length)) throw new Error("OBJECT_DOMAIN_IMPORT_ITEM_BAG_COMPLETENESS_ROLLBACK_MISMATCH");
+      }
       for (const receipt of [...receipts].reverse()) {
         const result = await transaction.execute(`DELETE FROM ${receipt.target_table_name} WHERE ${receipt.target_pk_column_name}=?`, [receipt.target_pk_value]);
         if (result.affectedRows !== 1n) throw new Error("OBJECT_DOMAIN_IMPORT_ROLLBACK_TARGET_MISSING");
