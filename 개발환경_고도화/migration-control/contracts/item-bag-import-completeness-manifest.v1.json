@@ -10,11 +10,14 @@
     "catalogDecision": { "status": "IGNORE", "reason": "NOT_OBJECT_DOMAIN_INPUT", "projectedRowCount": 0 },
     "cardinalityPerPlayer": 1,
     "emptyPayloadEligible": true,
-    "playerIdentity": "canonical_players(source_system=LEGACY_JSON,source_identifier=owner_locator_sha256)"
+    "playerIdentity": "canonical_players(source_system=LEGACY_JSON,source_identifier=owner_locator_sha256)",
+    "setEquality": "the complete V3 imported LEGACY_JSON canonical player owner-locator set equals the BAG_CONTAINER witness owner-locator set in both directions; missing, extra, and duplicate owners fail closed"
   },
   "sourceKeys": { "recordKinds": ["ITEM_STACK"], "zeroCountEligible": true },
   "projectionFingerprint": "sha256(stable JSON of player/run/witness/semantic hashes/counts/import-commit stack baseline/import-commit ledger baseline/revision/active flag)",
-  "readinessContinuation": "baseline ledger rows must be an exact prefix; later canonical ledger rows must be continuous and reconcile to current final stack balances",
+  "typedBaseline": "stack child rows preserve player/item/stack/baseline quantity; ledger child rows preserve entry ID, operation ID, player/item, stack-or-instance target, delta, reason, deterministic baseline ordinal, and a fingerprint over exactly those typed ledger fields excluding audit values",
+  "ledgerOrdering": "migration backfill ordinal is a deterministic immutable baseline set order, not historical time; only inserts after the captured baseline head are a DB-enforced per-player monotonic sequence",
+  "readinessContinuation": "baseline typed children must equal the live baseline entries exactly; all current sequences 1..head must be gap-free; baseline stack quantity plus post-baseline deltas must equal the exact current stack set, including stacks first created after import",
   "forbiddenReadinessRule": "current stack or ledger state must not be required to equal the import-commit baseline",
   "excludedState": "PET-EQUIPMENT frozen state belongs to consumer actual-read validation",
   "operationalDataAllowed": false

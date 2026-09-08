@@ -108,6 +108,19 @@
       "reentrantDdlRequired": false
     },
     {
+      "migration": "490_item_bag_import_baseline_ordering.sql",
+      "rollback": "490_item_bag_import_baseline_ordering.rollback.sql",
+      "kind": "FORWARD_ONLY_ITEM_BAG_TYPED_BASELINE_AND_LEDGER_ORDERING_CORRECTION",
+      "alters": ["canonical_item_inventory_ledger_entries", "player_item_bag_import_completeness_projections"],
+      "creates": ["canonical_item_inventory_ledger_heads", "canonical_item_inventory_ledger_orderings", "player_item_bag_import_stack_baselines", "player_item_bag_import_ledger_baselines"],
+      "inputShape": "MIGRATION_489_RESERVED_WBS778_AFTER_MIGRATION_488_WITH_ZERO_COMPLETENESS_ROWS",
+      "resultingShape": "MIGRATION_490_ITEM_BAG_TYPED_BASELINE_AND_MONOTONIC_CONTINUATION",
+      "rollbackPreflight": "REJECT_WHEN_ANY_COMPLETENESS_TYPED_BASELINE_OR_CANONICAL_LEDGER_SEQUENCE_EVIDENCE_EXISTS",
+      "operationalDataDependency": "NONE: existing ledger rows receive deterministic non-temporal baseline ordinals; no operational values are seeded",
+      "createOnly": false,
+      "reentrantDdlRequired": false
+    },
+    {
       "migration": "482_canonical_pet_skill_grade_unicode.sql",
       "rollback": "482_canonical_pet_skill_grade_unicode.rollback.sql",
       "kind": "ADDITIVE_CANONICAL_PET_SKILL_GRADE_UNICODE_CORRECTION",
@@ -158,7 +171,11 @@
     "private_chat_denial_counters",
     "private_chat_denial_attempts",
     "private_chat_denial_notification_channels",
-    "player_item_bag_import_completeness_projections"
+    "player_item_bag_import_completeness_projections",
+    "canonical_item_inventory_ledger_heads",
+    "canonical_item_inventory_ledger_orderings",
+    "player_item_bag_import_stack_baselines",
+    "player_item_bag_import_ledger_baselines"
   ],
   "globalPolicies": {
     "newPrimaryKey": { "generator": "CUID2", "length": 8, "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "collisionHandling": "PK_OR_UNIQUE_DETECT_AND_BOUNDED_RETRY_BY_SHARED_PROVIDER" },

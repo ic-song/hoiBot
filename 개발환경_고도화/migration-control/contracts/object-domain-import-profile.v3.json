@@ -8,6 +8,7 @@
   "completenessProjection": {
     "table": "player_item_bag_import_completeness_projections",
     "migration": "488_item_bag_import_completeness.sql",
+    "forwardCorrectionMigration": "490_item_bag_import_baseline_ordering.sql",
     "sourceNamespace": "member.bag",
     "witnessRecordDomain": "item",
     "witnessRecordKind": "BAG_CONTAINER",
@@ -15,8 +16,10 @@
     "sourceKeyRecordKinds": ["ITEM_STACK"],
     "playerBinding": "BAG_CONTAINER.owner_locator_sha256 equals canonical_players.source_identifier for source_system LEGACY_JSON and resolves player_id through that persisted unique pair",
     "zeroSourceRows": "exactly one BAG_CONTAINER witness is required even when the bag object is empty",
-    "stateBinding": ["canonical_owned_item_stacks", "canonical_item_inventory_ledger_entries"],
-    "stateBindingSemantics": "import-commit baseline only; readiness validates ledger prefix/continuity and current final balances rather than current-equals-baseline",
+    "stateBinding": ["canonical_owned_item_stacks", "canonical_item_inventory_ledger_entries", "canonical_item_inventory_ledger_heads", "canonical_item_inventory_ledger_orderings", "player_item_bag_import_stack_baselines", "player_item_bag_import_ledger_baselines"],
+    "ownerSetBinding": "bidirectional exact set equality between imported LEGACY_JSON canonical player locators and BAG_CONTAINER owner locators; duplicates fail closed",
+    "stateBindingSemantics": "typed import-commit baseline children are exact; deterministic backfill ordinals do not claim historical time; only sequences after captured baseline head are monotonic, gap-free continuation and their deltas reconcile to current balances",
+    "rollbackBoundary": "approved import rollback deletes typed children and projection, proves imported ledger mappings are the locked exact tail with no post-import entry, deletes that tail, and rewinds head atomically; all other ledger DELETE is blocked",
     "excludedActualReadState": "PET-EQUIPMENT is validated separately by the consumer actual-read path",
     "transactionBoundary": "create after all imported targets and receipts and before marking the object-domain import run COMPLETE"
   },
