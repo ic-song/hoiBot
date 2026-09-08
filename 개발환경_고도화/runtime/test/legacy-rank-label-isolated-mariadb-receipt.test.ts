@@ -27,12 +27,13 @@ interface Receipt {
 test("WBS778 isolated MariaDB receipt and transcript are immutable and complete",async()=>{
   const receipt=JSON.parse(await readFile(new URL("isolated-mariadb-receipt.json",evidenceRoot),"utf8")) as Receipt;
   const transcript=await readFile(new URL("isolated-mariadb-transcript.log",evidenceRoot),"utf8");
+  const canonicalTranscript=canonicalText(transcript);
   assert.equal(receipt.payload.contract,"WBS778_ISOLATED_MARIADB_RECEIPT_V1");
   assert.equal(sha256(JSON.stringify(receipt.payload)),receipt.payloadSha256);
   assert.equal(receipt.payload.transcriptHashNormalization,"CRLF_OR_CR_TO_LF_UTF8");
-  assert.equal(sha256(canonicalText(transcript)),receipt.payload.transcriptSha256);
-  assert.equal(sha256(canonicalText(transcript.replace(/\n/g,"\r\n"))),receipt.payload.transcriptSha256);
-  assert.equal(sha256(canonicalText(transcript.replace(/\n/g,"\r"))),receipt.payload.transcriptSha256);
+  assert.equal(sha256(canonicalTranscript),receipt.payload.transcriptSha256);
+  assert.equal(sha256(canonicalText(canonicalTranscript.replace(/\n/g,"\r\n"))),receipt.payload.transcriptSha256);
+  assert.equal(sha256(canonicalText(canonicalTranscript.replace(/\n/g,"\r"))),receipt.payload.transcriptSha256);
   assert.match(receipt.payload.image.repositoryDigest,/^mariadb@sha256:[0-9a-f]{64}$/);
   assert.equal(receipt.payload.image.runReference,receipt.payload.image.repositoryDigest);
   assert.match(receipt.payload.image.serverVersion,/^11\.4\./);
