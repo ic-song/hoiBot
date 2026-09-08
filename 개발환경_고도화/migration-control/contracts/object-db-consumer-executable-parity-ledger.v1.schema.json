@@ -14,7 +14,7 @@
     "sources": { "$ref": "#/$defs/sources" },
     "registrySourceMismatchResolution": { "$ref": "#/$defs/mismatchResolution" },
     "coverage": { "$ref": "#/$defs/coverage" },
-    "entries": { "type": "array", "minItems": 1132, "maxItems": 1132, "items": { "$ref": "#/$defs/entry" } },
+    "entries": { "type": "array", "minItems": 1133, "maxItems": 1133, "items": { "$ref": "#/$defs/entry" } },
     "entrySetSha256": { "$ref": "#/$defs/sha256" }
   },
   "$defs": {
@@ -66,13 +66,13 @@
       "type": "object", "additionalProperties": false,
       "required": ["manifestConsumers", "ledgerEntries", "missingConsumerIds", "duplicateConsumerIds", "unknownConsumerIds", "readConsumers", "mutationConsumers", "unresolvedDynamicConsumers", "unresolvedDynamicCallCount", "registrySourceMismatchCount", "registrySourceMismatchAttributedCount", "registrySourceMismatchUnattributedCount", "provenConsumers", "unprovenConsumers", "directPassConsumers", "equivalentPassConsumers", "verdicts"],
       "properties": {
-        "manifestConsumers": { "const": 1132 }, "ledgerEntries": { "const": 1132 }, "missingConsumerIds": { "const": 0 },
-        "duplicateConsumerIds": { "const": 0 }, "unknownConsumerIds": { "const": 0 }, "readConsumers": { "const": 503 },
+        "manifestConsumers": { "const": 1133 }, "ledgerEntries": { "const": 1133 }, "missingConsumerIds": { "const": 0 },
+        "duplicateConsumerIds": { "const": 0 }, "unknownConsumerIds": { "const": 0 }, "readConsumers": { "const": 504 },
         "mutationConsumers": { "const": 629 }, "unresolvedDynamicConsumers": { "const": 82 }, "unresolvedDynamicCallCount": { "const": 82 },
         "registrySourceMismatchCount": { "const": 8 }, "registrySourceMismatchAttributedCount": { "const": 0 },
-        "registrySourceMismatchUnattributedCount": { "const": 8 }, "provenConsumers": { "type": "integer", "minimum": 0, "maximum": 1132 },
-        "unprovenConsumers": { "type": "integer", "minimum": 0, "maximum": 1132 }, "directPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1132 },
-        "equivalentPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1132 }, "verdicts": { "$ref": "#/$defs/verdictCounts" }
+        "registrySourceMismatchUnattributedCount": { "const": 8 }, "provenConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 },
+        "unprovenConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 }, "directPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 },
+        "equivalentPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 }, "verdicts": { "$ref": "#/$defs/verdictCounts" }
       }
     },
     "classification": {
