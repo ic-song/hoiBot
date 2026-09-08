@@ -1,0 +1,30 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave19:package-wizard-status:v1",
+  "sliceId": "WBS783",
+  "consumerId": "runtime-dispatch-79ff58fea52c7457",
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/app.ts",
+    "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts",
+    "개발환경_고도화/runtime/src/integration/event-processing-service.ts",
+    "개발환경_고도화/runtime/src/package/package-catalog-add-wizard-iris-handler.ts",
+    "개발환경_고도화/runtime/src/package/package-catalog-add-wizard-service.ts",
+    "개발환경_고도화/runtime/src/package/package-catalog-add-wizard.ts",
+    "개발환경_고도화/runtime/src/package/mariadb-package-catalog-add-wizard.ts"
+  ],
+  "receiptContract": {
+    "version": "WBS783_PACKAGE_WIZARD_STATUS_DIRECT_V1",
+    "route": "MODERN",
+    "transaction": "READ_ONLY",
+    "sourceDomainDmlCount": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES_AND_MODULES",
+    "externalNetworkCalls": 0
+  },
+  "bindings": [
+    {"consumerId":"runtime-dispatch-79ff58fea52c7457","scenarioId":"wave19-package-wizard-status-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave19PackageWizardStatus","expectedResultSha256":"5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61"},
+    {"consumerId":"runtime-dispatch-79ff58fea52c7457","scenarioId":"wave19-package-wizard-status-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave19PackageWizardStatus","expectedResultSha256":"5c8a181e8f548bdf0476c48b437d80edf3e6ff24a405b6a5693edabc3ed136ae"},
+    {"consumerId":"runtime-dispatch-79ff58fea52c7457","scenarioId":"wave19-package-wizard-status-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave19PackageWizardStatus","expectedResultSha256":"5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61"},
+    {"consumerId":"runtime-dispatch-79ff58fea52c7457","scenarioId":"wave19-package-wizard-status-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave19PackageWizardStatus","expectedResultSha256":"5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61"},
+    {"consumerId":"runtime-dispatch-79ff58fea52c7457","scenarioId":"wave19-package-wizard-status-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave19PackageWizardStatus","expectedResultSha256":"5741179d58fa9399091117b2b1faf52e4e5478962a35ecddb9bc896589587e61"}
+  ]
+}
