@@ -1160,7 +1160,10 @@ function assertReceiptExecutableBinding(
   let fixture: unknown;
   try { fixture = JSON.parse(canonicalizeObjectDbConsumerSourceText(fixtureText)); } catch { throw new Error(`${receipt.receiptId} fixture must be JSON`); }
   if (!isRecord(fixture)) throw new Error(`${receipt.receiptId} fixture must be an object`);
-  if(receipt.receiptId.startsWith("receipt:wave17:")){
+  if(receipt.receiptId.startsWith("receipt:wave18:")){
+    assertExactKeys(fixture,["format","fixtureId","sliceId","consumerIds","runtimeSourcePaths","receiptContract","bindings"],`${receipt.receiptId}.fixture`);
+    if(fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||!Array.isArray(fixture.consumerIds)||!fixture.consumerIds.includes(receipt.consumerId)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==20)throw new Error(`${receipt.receiptId} trusted Wave18 fixture drift`);
+  }else if(receipt.receiptId.startsWith("receipt:wave17:")){
     assertExactKeys(fixture,["format","fixtureId","sliceId","consumerIds","runtimeSourcePaths","receiptContract","bindings"],`${receipt.receiptId}.fixture`);
     if(fixture.format!=="hoibot-object-db-consumer-parity-case-fixture-v1"||fixture.fixtureId!==receipt.fixture.fixtureId||!Array.isArray(fixture.consumerIds)||!fixture.consumerIds.includes(receipt.consumerId)||!Array.isArray(fixture.bindings)||fixture.bindings.length!==15)throw new Error(`${receipt.receiptId} trusted Wave17 fixture drift`);
   }else if(receipt.receiptId.startsWith("receipt:wave16:")){
@@ -1271,7 +1274,7 @@ function assertReceiptExecutableBinding(
       for(let index=0;index<expectedMutations.length;index++){const step=expectedMutations[index],actual=trace.dmlTrace[index] as Record<string,unknown>;if(!isRecord(step)||typeof step.expectedNormalizedSql!=="string"||!Array.isArray(step.expectedValues)||!Array.isArray(actual.values))throw new Error(`${receipt.receiptId} trusted Wave8 mutation step invalid`);const expectedValues=step.expectedValues;if(actual.normalizedSql!==step.expectedNormalizedSql||actual.rowCount!==step.affectedRows||actual.values.length!==expectedValues.length||!actual.values.every((value,valueIndex)=>matchesTrustedTraceValue(value,expectedValues[valueIndex])))throw new Error(`${receipt.receiptId} trusted Wave8 exact mutation trace mismatch`);}
       const expectedLocks:string[]=[];for(const step of queries){if(!isRecord(step)||typeof step.expectedNormalizedSql!=="string"||!/\bFOR UPDATE\b/i.test(step.expectedNormalizedSql))continue;for(const match of step.expectedNormalizedSql.matchAll(/\b(?:FROM|JOIN)\s+([A-Za-z0-9_]+)/gi))if(!expectedLocks.includes(match[1]!))expectedLocks.push(match[1]!);}if(JSON.stringify(trace.lockOrder)!==JSON.stringify(expectedLocks))throw new Error(`${receipt.receiptId} trusted Wave8 lock order drift`);
       if(receipt.scenario.scenarioKind==="RESTART_CONSISTENCY"){const operationKeys=(trace.dmlTrace as Array<Record<string,unknown>>).filter(entry=>typeof entry.normalizedSql==="string"&&/^INSERT(?: IGNORE)? INTO operations/.test(entry.normalizedSql)).map(entry=>(entry.values as unknown[])[0]);if(operationKeys.length!==2||!operationKeys.every(value=>typeof value==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))||operationKeys[0]===operationKeys[1])throw new Error(`${receipt.receiptId} trusted full-ingress restart UUID drift`);}
-    } else if (receipt.consumerId === "sql-repository-7367fce7053551f3" || receipt.consumerId === "sql-repository-3001ad9fc2f36d01" || receipt.consumerId in TRUSTED_WAVE7_SERVICE_CHAINS) {
+    } else if (!wave18Trace && (receipt.consumerId === "sql-repository-7367fce7053551f3" || receipt.consumerId === "sql-repository-3001ad9fc2f36d01" || receipt.consumerId in TRUSTED_WAVE7_SERVICE_CHAINS)) {
       const fixturePayload = isRecord(fixture.payload) ? fixture.payload : undefined;
       const cases = fixturePayload !== undefined && Array.isArray(fixturePayload.cases) ? fixturePayload.cases : [];
       const parityCase = cases.find((candidate) => isRecord(candidate) && candidate.caseId === receipt.harness.harnessCaseId);
