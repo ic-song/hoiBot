@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.474"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.475"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -7791,7 +7791,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         addItem(data, premiumGiftUsers[premiumGiftUserIndex], premiumGiftItemName, premiumGiftItemCount);
                     }
                     saveJsonFile(data, filePath);
-                    var premiumGiftMessage = "👑 호이패스 프리미엄 👑\n\n👑 VIP 전용 전체 선물입니다!\n🎩 “VIP 회원님, 이쪽으로 모시겠습니다.”\n\n어서 오세요! 자리는 미리 준비해두었습니다.\n오늘의 VIP 코스 요리는 바로… 🎁\n━━━━━━━━━━━━\n🎁 " + premiumGiftItemName + " " + numberWithCommas(premiumGiftItemCount) + "개가 지급되었습니다.\n━━━━━━━━━━━━\n맛있게 챙겨가시고, 계산은 호이가 하겠습니다. ( _ _)\n\n/패키지가방에서 선물을 확인해주세요!";
+                    var premiumGiftMessage = "👑 호이패스 프리미엄 👑\n\n👑 호이패스 프리미엄 전용 전체 선물입니다!\n🎩 “VIP 회원님, 이쪽으로 모시겠습니다.”\n\n어서 오세요! 자리는 미리 준비해두었습니다.\n오늘의 VIP 코스 요리는 바로… 🎁\n━━━━━━━━━━━━\n🎁 " + premiumGiftItemName + " " + numberWithCommas(premiumGiftItemCount) + "개가 지급되었습니다.\n━━━━━━━━━━━━\n맛있게 챙겨가시고, 계산은 호이가 하겠습니다. ( _ _)\n\n/패키지가방에서 선물을 확인해주세요!";
                     noticeMsg(premiumGiftMessage);
                     replier.reply("✅ 호이패스 프리미엄 선물 전달이 완료되었습니다.\n지급 대상: " + numberWithCommas(premiumGiftUsers.length) + "명");
                 }
