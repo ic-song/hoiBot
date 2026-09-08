@@ -7762,7 +7762,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     saveJsonFile(data, filePath);
-                    var giftMessage = "🎁 전체 선물이 도착했습니다!\n━━━━━━━━━━━━\n" + giftItemName + " " + numberWithCommas(giftItemCount) + "개가 지급되었습니다.\n\n가방을 확인해주세요.";
+                    var giftMessage = "🎁 호이가 여러분의 주머니에\n선물을 넣어드렸습니다.\nㄱ( ^ㅡ^)r ~ 덩 실 ㄱ( ^ㅡ^)r ~  덩실\n━━━━━━━━━━━━\n" + giftItemName + " " + numberWithCommas(giftItemCount) + "개가 지급되었습니다.\n\n/패키지가방 을 확인해주세요.";
                     Api.replyRoom(room1, giftMessage);
                     Api.replyRoom(room2, giftMessage);
                     Api.replyRoom(room3, giftMessage);
@@ -49592,6 +49592,7 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
     var state = ensureSealedVaultUserState(data, user);
     var config = GLOBAL_CONFIG.sealedVault;
     var bag = data.member[user].bag || {};
+    var vaultCount = normalizeSealedVaultCount(bag[config.vaultItemName]);
     var keyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
     var monthKey = getSealedVaultMonthKey();
     var monthlyRewards = getSealedVaultMonthlyRewards(data, monthKey);
@@ -49601,6 +49602,7 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
     var lines = [];
     lines.push("🔒 [" + checkRank(data, petData, guildData, user) + "] 님의 호이의 봉인금고");
     lines.push("━━━━━━━━━━━━━━━");
+    lines.push("보유 호봉금고🔐: " + numberWithCommas(vaultCount) + "개");
     lines.push("보유 해방의 열쇠🗝️: " + numberWithCommas(keyCount) + "개");
     lines.push("누적 개봉: " + numberWithCommas(state.totalOpenCount) + "회");
     lines.push("");
@@ -49618,6 +49620,7 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
         lines.push("⚠️ " + getSealedVaultMonthLabel(monthKey) + " 초대형 보상이 아직 설정되지 않았습니다.");
     }
     lines.push("━━━━━━━━━━━━━━━");
+    lines.push("확인: /봉인금고");
     lines.push("개봉: /봉인금고오픈 [숫자]");
     lines.push("확률: /봉인금고확률");
     lines.push("기록: /봉인금고기록");
@@ -49812,6 +49815,8 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     var lines = [];
     lines.push("🔒 [" + checkRank(data, petData, guildData, sender) + "] 님의");
     lines.push("봉인금고🔒 " + openCount + "회 개봉 결과");
+    lines.push("확인: /봉인금고");
+    lines.push("※ 현재 부스터,플래티넘 보상 기록등 확인가능");
     lines.push("━━━━━━━━━━━━━━━");
     for (var outputIndex = 0; outputIndex < gainOrder.length; outputIndex++) {
         var outputItemName = gainOrder[outputIndex];
