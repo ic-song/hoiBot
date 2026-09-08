@@ -127,7 +127,7 @@ run("actual Maria read-only snapshot resolves the active subaccount and canonica
     await verifyStartupDatabaseIdentity(database,createEnvironmentContext({environmentCode:"dev",databaseIdentity:target.name}));
     await verifyConnectedItemBagRehearsalTarget(database,target);
     await seed();
-    const service = new CanonicalItemBagDirectReadService(new CanonicalItemBagShadowReadProvider(new MariaPlayerContextProvider(),new MariaBagShadowParityProvider(),new LegacyBagOwnerLabelProvider(),new CanonicalItemBagImportReadinessProvider()));
+    const service = new CanonicalItemBagDirectReadService(new CanonicalItemBagShadowReadProvider(new MariaPlayerContextProvider(),new MariaBagShadowParityProvider(),new LegacyBagOwnerLabelProvider(),new CanonicalItemBagImportReadinessProvider(),{resolve:async()=>({ready:true as const,reasonCode:"READY" as const,validationRunId:"wbs778-covered-separately"})}));
     const result = await (database as any).withReadOnlySnapshot((snapshot: any) => service.execute(snapshot,{providerCode:"kakao",externalUserId:"lease2604-caller",externalContextId:"room-2604"}));
     assert.equal(result.status,"direct_reply");
     if (result.status === "direct_reply") {

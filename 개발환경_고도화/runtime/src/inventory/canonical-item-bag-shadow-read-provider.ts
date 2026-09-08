@@ -3,6 +3,7 @@ import type { AppWiringReadParticipant } from "../dispatch/app-wiring-operation-
 import { BagShadowParityProvider, type BagShadowParityResult } from "./bag-shadow-parity-provider.js";
 import type { CanonicalItemBagImportReadinessProvider } from "./canonical-item-bag-import-readiness-provider.js";
 import type { LegacyBagOwnerLabelProvider } from "./legacy-bag-owner-label-provider.js";
+import type { LegacyRankLabelSideEffectReadinessProvider } from "./legacy-rank-label-side-effect-readiness-provider.js";
 
 const INTIMACY_ITEM = /^펫 친밀도🐾\s*\[Lv\.\d+\]\(\d+\/1000\)\+\d+💕$/;
 const LEGACY_ACTIVE_FILTER = " AND item.active=TRUE";
@@ -17,7 +18,7 @@ function removeExactSourceActiveFilter(sql: string, tableFragment: string, filte
 
 export type CanonicalItemBagShadowReadResult =
   | { readonly status: "ready"; readonly context: PlayerContext; readonly parity: BagShadowParityResult; readonly ownerLabel: string | null; readonly importReady: boolean; readonly intimacyKeyUnique: boolean }
-  | { readonly status: "silent"; readonly reason: "PLAYER_CONTEXT_UNPROVEN" | "CANONICAL_IMPORT_INCOMPLETE" | "ACTIVE_PLAYER_PARITY_UNAVAILABLE" };
+  | { readonly status: "silent"; readonly reason: "PLAYER_CONTEXT_UNPROVEN" | "LEGACY_SIDE_EFFECT_PARITY_UNPROVEN" | "CANONICAL_IMPORT_INCOMPLETE" | "ACTIVE_PLAYER_PARITY_UNAVAILABLE" };
 
 // 기존 Wave6 compare source는 보존하면서 WBS776에 필요한 resolved identity와 source-parity 보정을 조립합니다.
 export class CanonicalItemBagShadowReadProvider {
@@ -26,6 +27,7 @@ export class CanonicalItemBagShadowReadProvider {
     private readonly bagParity: Pick<BagShadowParityProvider, "compare">,
     private readonly ownerLabel: Pick<LegacyBagOwnerLabelProvider, "resolve">,
     private readonly importReadiness: Pick<CanonicalItemBagImportReadinessProvider, "inspect">,
+    private readonly sideEffectReadiness: Pick<LegacyRankLabelSideEffectReadinessProvider, "resolve">,
   ) {}
 
   async read(database: AppWiringReadParticipant, input: { providerCode: string; externalUserId: string; externalContextId: string }): Promise<CanonicalItemBagShadowReadResult> {
@@ -34,6 +36,12 @@ export class CanonicalItemBagShadowReadProvider {
       context = await this.playerContext.resolveSelf(database, { identityProviderCode: input.providerCode, externalUserId: input.externalUserId, externalContextId: input.externalContextId });
     } catch {
       return { status: "silent", reason: "PLAYER_CONTEXT_UNPROVEN" };
+    }
+    try {
+      const readiness = await this.sideEffectReadiness.resolve(database, context);
+      if (!readiness.ready) return { status: "silent", reason: "LEGACY_SIDE_EFFECT_PARITY_UNPROVEN" };
+    } catch {
+      return { status: "silent", reason: "LEGACY_SIDE_EFFECT_PARITY_UNPROVEN" };
     }
     const resolvedDatabase: AppWiringReadParticipant = {
       query: async <T>(sql: string, values?: readonly unknown[]): Promise<T> => {

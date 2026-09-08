@@ -16,8 +16,24 @@ function provider(compare: (db: AppWiringReadParticipant) => Promise<BagShadowPa
     { async compare(db) { return compare(db); } },
     { async resolve() { return "♔부계정_길드"; } },
     { async inspect() { return true; } },
+    { async resolve() { return { ready: true as const, reasonCode: "READY" as const, validationRunId: "v0000001" }; } },
   );
 }
+
+test("fails closed before bag parity when the legacy rank/guild side-effect certificate is unproven", async () => {
+  let compareCalls = 0;
+  const make = (resolve: () => Promise<{ ready: boolean }>) => new CanonicalItemBagShadowReadProvider(
+    { async resolveSelf() { return context; }, async resolveUniqueLegacyDisplayTarget() { throw new Error("unused"); } },
+    { async compare() { compareCalls += 1; return parity(); } },
+    { async resolve() { return "unused"; } },
+    { async inspect() { return true; } },
+    { resolve } as never,
+  );
+  const input = { providerCode: "kakao", externalUserId: "u", externalContextId: "r" };
+  assert.deepEqual(await make(async () => ({ ready: false })).read(database, input), { status: "silent", reason: "LEGACY_SIDE_EFFECT_PARITY_UNPROVEN" });
+  assert.deepEqual(await make(async () => { throw new Error("missing evidence"); }).read(database, input), { status: "silent", reason: "LEGACY_SIDE_EFFECT_PARITY_UNPROVEN" });
+  assert.equal(compareCalls, 0);
+});
 
 test("binds the resolved active player and removes each known inactive-item filter exactly once", async () => {
   const forwarded: string[] = [];

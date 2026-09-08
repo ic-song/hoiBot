@@ -122,3 +122,13 @@ describe("object DB consumer stable ID registry", () => {
     assert.throws(() => createConsumerIdResolver(tombstoned)({ kind: "LEGACY_COMMAND", file: "main.js", symbol: "response", triggerOrPredicate: "A" }), /tombstoned/);
   });
 });
+
+describe("WBS776 item bag stable consumer identity", () => {
+  it("keeps the frozen /가방 consumer ID after the additive classification correction", () => {
+    const consumer = manifest.consumers.find((entry) => entry.kind === "LEGACY_COMMAND"
+      && entry.file === "main.js"
+      && entry.symbol === "response"
+      && entry.triggerOrPredicate === 'msg === "/가방" || msg === "ㄴㄴㄴ"');
+    assert.equal(consumer?.consumerId, "legacy-94904fa11988ff04");
+  });
+});

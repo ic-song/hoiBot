@@ -267,6 +267,7 @@ import { CanonicalItemBagImportReadinessProvider } from "./inventory/canonical-i
 import { LegacyBagOwnerLabelProvider } from "./inventory/legacy-bag-owner-label-provider.js";
 import { MariaBagShadowParityProvider } from "./inventory/bag-shadow-parity-provider.js";
 import { CanonicalItemBagShadowReadProvider } from "./inventory/canonical-item-bag-shadow-read-provider.js";
+import { LegacyRankLabelSideEffectReadinessProvider } from "./inventory/legacy-rank-label-side-effect-readiness-provider.js";
 import { executeItemBagReadOnlyRecovery } from "./inventory/item-bag-read-only-recovery-ingress.js";
 import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventory/inventory-snapshot-service.js";
 import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
@@ -1029,7 +1030,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ??(database!==undefined&&appWiringOperationProvider!==undefined
       ?new MariaAppWiringReadOnlyRecoveryProvider(database,appWiringOperationProvider):undefined);
   const canonicalItemBagService=dependencies.canonicalItemBagService??new CanonicalItemBagDirectReadService(
-    new CanonicalItemBagShadowReadProvider(new MariaPlayerContextProvider(),new MariaBagShadowParityProvider(),new LegacyBagOwnerLabelProvider(),new CanonicalItemBagImportReadinessProvider())
+    new CanonicalItemBagShadowReadProvider(new MariaPlayerContextProvider(),new MariaBagShadowParityProvider(),new LegacyBagOwnerLabelProvider(),new CanonicalItemBagImportReadinessProvider(),new LegacyRankLabelSideEffectReadinessProvider())
   );
   const privateChatDenialNotificationService=dependencies.privateChatDenialNotificationService
     ??(database!==undefined&&dependencies.environmentContext!==undefined

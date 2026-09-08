@@ -43,7 +43,10 @@ test("WBS778 isolated MariaDB receipt and transcript are immutable and complete"
   assert.notEqual(receipt.payload.isolation.dynamicPort,3306);
   assert.equal(receipt.payload.isolation.operationalDatabaseUsed,false);
   assert.equal(receipt.payload.isolation.operationalPort3306BoundByHarness,false);
-  const migrationNames=(await readdir(new URL("../migrations/",import.meta.url))).filter(name=>/^\d+_[a-z0-9_]+\.sql$/i.test(name)).sort();
+  const mergedWbs777Migrations=["488_item_bag_import_completeness.sql","490_item_bag_import_baseline_ordering.sql"];
+  const currentMigrationNames=(await readdir(new URL("../migrations/",import.meta.url))).filter(name=>/^\d+_[a-z0-9_]+\.sql$/i.test(name)).sort();
+  for(const migration of mergedWbs777Migrations)assert.ok(currentMigrationNames.includes(migration),`${migration}: merged WBS777 migration missing`);
+  const migrationNames=currentMigrationNames.filter(name=>!mergedWbs777Migrations.includes(name));
   assert.equal(receipt.payload.migrations.count,476);
   assert.deepEqual(receipt.payload.migrations.names,migrationNames);
   assert.equal(receipt.payload.migrations.reapply,"PASS");

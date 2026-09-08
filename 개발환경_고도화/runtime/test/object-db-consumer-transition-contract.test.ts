@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
@@ -9,7 +11,7 @@ import {
   canonicalizeObjectDbConsumerSourceText,
   readCanonicalObjectDbConsumerSource
 } from "../src/data-migration/object-db-consumer-baseline.js";
-import { countUnresolvedDynamicCalls, deriveConsumerManifest, predicateAcceptsRegistryCommand, rawAppMessageGuardKinds, registryCommandHasConsumerBinding } from "../src/data-migration/object-db-consumer-transition-audit.js";
+import { assertItemBagClassificationSideEffectContract, countUnresolvedDynamicCalls, deriveConsumerManifest, predicateAcceptsRegistryCommand, rawAppMessageGuardKinds, registryCommandHasConsumerBinding, type ConsumerClassificationAddendum } from "../src/data-migration/object-db-consumer-transition-audit.js";
 import { auditObjectDbRuntimeAdoption } from "../src/data-migration/object-db-runtime-adoption-audit.js";
 
 type SourceSurface = { file: string; terms: string[] };
@@ -766,5 +768,127 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
     assert.ok(contract.forbidden.includes("generic object CODE"));
     assert.ok(contract.forbidden.includes("definition value copies in ownership tables"));
     assert.ok(contract.forbidden.some((entry) => entry.includes("Gate2 cutover claim") && entry.includes("P2 MariaDB")));
+  });
+});
+
+describe("WBS776 item bag classification addendum", () => {
+  const addendum = JSON.parse(readCanonicalObjectDbConsumerSource(new URL("../../migration-control/contracts/object-db-consumer-classification-addendum-wbs776-item-bag.v1.json", import.meta.url))) as {
+    consumerId: string; originalClassification: string; correctionKind: string;
+    frozenLocator: { triggerOrPredicate: string; primarySlice: string; targetSelectorId: string; sourceSpan: { start: number; end: number; sha256: string }; originalDependentSlices: string[] };
+    effectiveDependentSlices: string[]; effectiveReadTables: string[]; excludedCompletenessDomains: string[];
+    sideEffectCondition: { requiredContract: string; requiredContractSha256: string; requiredProjectionVersion: string; requiredDecision: string; requiredFunctions: string[]; requiredImplementationSources: Array<{ role: string; path: string; sha256: string }> };
+  };
+
+  it("preserves the frozen locator while narrowing only the effective output dependency", () => {
+    const consumer = consumerManifest.consumers.find(({ consumerId }) => consumerId === addendum.consumerId);
+    assert.ok(consumer);
+    assert.equal(addendum.originalClassification, "FROZEN_PRESERVED");
+    assert.equal(addendum.correctionKind, "OVER_APPROXIMATE_REACHABLE_HELPER_DEPENDENCY");
+    assert.equal(consumer.triggerOrPredicate, addendum.frozenLocator.triggerOrPredicate);
+    assert.equal(consumer.primarySlice, addendum.frozenLocator.primarySlice);
+    assert.equal(consumer.targetSelectorId, addendum.frozenLocator.targetSelectorId);
+    assert.deepEqual(consumer.sourceSpan, addendum.frozenLocator.sourceSpan);
+    assert.deepEqual(addendum.frozenLocator.originalDependentSlices, ["PET-EQUIPMENT"]);
+    assert.deepEqual(consumer.dependentSlices, addendum.effectiveDependentSlices);
+    assert.deepEqual(consumer.readTargetTables, addendum.effectiveReadTables);
+    assert.deepEqual(consumer.writeTargetTables, []);
+    for (const excluded of ["canonical_owned_item_instances", "canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances"]) {
+      assert.equal(consumer.usedTargetTables.includes(excluded), false, excluded);
+    }
+    assert.ok(addendum.excludedCompletenessDomains.includes("canonical_owned_item_instances"));
+    assert.ok(addendum.excludedCompletenessDomains.includes("PET-EQUIPMENT"));
+  });
+
+  it("keeps the global ITEM selector broad and requires the WBS778 no-write source oracle", () => {
+    const selector = consumerManifest.targetSelectors["selector:ITEM"]!;
+    assert.ok(selector.tables.includes("canonical_owned_item_instances"));
+    assert.equal(addendum.sideEffectCondition.requiredContract, "legacy-rank-label-runtime-source.v1.json");
+    assert.match(addendum.sideEffectCondition.requiredContractSha256, /^[0-9a-f]{64}$/);
+    assert.equal(addendum.sideEffectCondition.requiredProjectionVersion, "LEGACY_RANK_LABEL_SIDE_EFFECT_V1");
+    assert.equal(addendum.sideEffectCondition.requiredDecision, "NO_WRITE");
+    assert.deepEqual(addendum.sideEffectCondition.requiredFunctions, ["checkRank", "getMyGuildId", "getMyGuildInfo", "generateBagOutput"]);
+    assert.deepEqual(addendum.sideEffectCondition.requiredImplementationSources.map(({ role }) => role), ["PROJECTOR", "READINESS_PROVIDER", "SCHEMA_MIGRATION"]);
+    for (const source of addendum.sideEffectCondition.requiredImplementationSources) assert.match(source.sha256, /^[0-9a-f]{64}$/);
+  });
+
+  it("fails closed when the WBS778 source oracle is missing, substituted, or semantically stale", () => {
+    const root = mkdtempSync(join(tmpdir(), "hoibot-wbs776-contract-"));
+    const contracts = join(root, "개발환경_고도화", "migration-control", "contracts");
+    const contractPath = join(contracts, "legacy-rank-label-runtime-source.v1.json");
+    const functionBodies = [
+      'function checkRank(){return "rank";}',
+      'function getMyGuildId(){return "guild-id";}',
+      'function getMyGuildInfo(){return "guild-info";}',
+      'function generateBagOutput(){return "bag";}',
+    ];
+    const bagBlock = 'if (msg === "/가방" || msg === "ㄴㄴㄴ") {\n  checkRank(data, petData, guildData, sender);\n}';
+    const mainSource = `${functionBodies.join("\n")}\n${bagBlock}\n`;
+    const symbolNames = ["checkRank", "getMyGuildId", "getMyGuildInfo", "generateBagOutput"];
+    const symbols = symbolNames.map((symbol, index) => ({ symbol, sha256: createHash("sha256").update(functionBodies[index]!).digest("hex") }));
+    const contract = {
+      format: "hoibot-legacy-rank-label-runtime-source-v1",
+      source: "main.js",
+      extraction: "FUNCTION_SYMBOL_BRACE_AWARE_UTF8_LF",
+      symbols,
+      runtimeSourceSha256: createHash("sha256").update(symbols.map(({ symbol, sha256 }) => `${symbol}:${sha256}`).join("\n")).digest("hex"),
+      bagCommandAnchor: {
+        marker: "if (msg === \"/가방\" || msg === \"ㄴㄴㄴ\")",
+        extraction: "STATEMENT_BRACE_AWARE_UTF8_LF",
+        sha256: createHash("sha256").update(bagBlock).digest("hex"),
+        requiredCall: "checkRank(data, petData, guildData, sender)",
+      },
+    };
+    const source = `${JSON.stringify(contract, null, 2)}\n`;
+    const implementationBodies: Record<string, string> = {
+      PROJECTOR: 'export const LEGACY_RANK_LABEL_PROJECTION_VERSION = "LEGACY_RANK_LABEL_SIDE_EFFECT_V1" as const;\n',
+      READINESS_PROVIDER: "validation.projection_version='LEGACY_RANK_LABEL_SIDE_EFFECT_V1';current.sideEffectDecision===\"NO_WRITE\";castle.sideEffectDecision===\"NO_WRITE\";\n",
+      SCHEMA_MIGRATION: "projection_version VARCHAR(50), side_effect_decision VARCHAR(16);\n",
+    };
+    const withHash = (value: string): ConsumerClassificationAddendum => {
+      const copy = JSON.parse(JSON.stringify(addendum)) as ConsumerClassificationAddendum;
+      copy.sideEffectCondition.requiredContractSha256 = createHash("sha256").update(value).digest("hex");
+      for (const binding of copy.sideEffectCondition.requiredImplementationSources) {
+        const body = implementationBodies[binding.role]!;
+        binding.sha256 = createHash("sha256").update(body).digest("hex");
+      }
+      return copy;
+    };
+    try {
+      assert.throws(() => assertItemBagClassificationSideEffectContract(root, withHash(source)), /contract unavailable/);
+      mkdirSync(contracts, { recursive: true });
+      writeFileSync(contractPath, source, "utf8");
+      const validAddendum = withHash(source);
+      validAddendum.frozenLocator.sourceSpan.sha256 = contract.bagCommandAnchor.sha256;
+      writeFileSync(join(root, "main.js"), mainSource, "utf8");
+      for (const binding of validAddendum.sideEffectCondition.requiredImplementationSources) {
+        const path = join(root, binding.path);
+        mkdirSync(dirname(path), { recursive: true });
+        writeFileSync(path, implementationBodies[binding.role]!, "utf8");
+      }
+      assert.doesNotThrow(() => assertItemBagClassificationSideEffectContract(root, validAddendum));
+      writeFileSync(contractPath, `${source}\n`, "utf8");
+      assert.throws(() => assertItemBagClassificationSideEffectContract(root, withHash(source)), /contract hash drift/);
+      const stale = `${JSON.stringify({ ...contract, symbols: contract.symbols.slice(0, 3) }, null, 2)}\n`;
+      writeFileSync(contractPath, stale, "utf8");
+      assert.throws(() => assertItemBagClassificationSideEffectContract(root, withHash(stale)), /contract semantic drift/);
+      const wrongDecision = withHash(stale);
+      wrongDecision.frozenLocator.sourceSpan.sha256 = contract.bagCommandAnchor.sha256;
+      (wrongDecision.sideEffectCondition as { requiredDecision: string }).requiredDecision = "WOULD_DELETE";
+      assert.throws(() => assertItemBagClassificationSideEffectContract(root, wrongDecision), /side-effect condition invalid/);
+      writeFileSync(contractPath, source, "utf8");
+      const driftedProvider = validAddendum.sideEffectCondition.requiredImplementationSources.find(({ role }) => role === "READINESS_PROVIDER")!;
+      const providerPath = join(root, driftedProvider.path);
+      const wouldDelete = implementationBodies.READINESS_PROVIDER!.replaceAll("NO_WRITE", "WOULD_DELETE");
+      writeFileSync(providerPath, wouldDelete, "utf8");
+      driftedProvider.sha256 = createHash("sha256").update(wouldDelete).digest("hex");
+      assert.throws(() => assertItemBagClassificationSideEffectContract(root, validAddendum), /implementation semantic drift/);
+      writeFileSync(providerPath, implementationBodies.READINESS_PROVIDER!, "utf8");
+      writeFileSync(join(root, "main.js"), mainSource.replace('return "rank"', 'return "changed"'), "utf8");
+      const runtimeDrift = withHash(source);
+      runtimeDrift.frozenLocator.sourceSpan.sha256 = contract.bagCommandAnchor.sha256;
+      assert.throws(() => assertItemBagClassificationSideEffectContract(root, runtimeDrift), /runtime symbol hash drift/);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

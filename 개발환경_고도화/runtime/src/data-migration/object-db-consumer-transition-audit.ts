@@ -58,6 +58,197 @@ export interface ConsumerManifest {
   audit: { orphanCount: number; extraCount: number; duplicatePrimaryCount: number; undeclaredSelectorCount: number; excludedNegativeGuardCount: number; activeRegistryObjectRows: number; registrySourceMismatchCount: number; registrySourceMismatches: string[]; appSourceCandidateCount: number; appRawGuardCount: number; adminSourceCandidateCount: number; adminOrphanKeys: string[]; adminExtraKeys: string[]; operationReceiptTableCount: number; missingOperationReceiptTableCount: number; missingOperationReceiptTables: string[]; legacyOrphanKeys: string[]; legacyExtraKeys: string[]; appOrphanKeys: string[]; appExtraKeys: string[] };
 }
 
+export interface ConsumerClassificationAddendum {
+  format: "hoibot-object-db-consumer-classification-addendum-v1";
+  consumerId: string;
+  originalClassification: "FROZEN_PRESERVED";
+  correctionKind: "OVER_APPROXIMATE_REACHABLE_HELPER_DEPENDENCY";
+  frozenLocator: Pick<DerivedConsumer, "kind" | "file" | "symbol" | "triggerOrPredicate" | "primarySlice" | "targetSelectorId" | "interfaceId" | "sourceSpan"> & { originalDependentSlices: string[] };
+  effectiveOutputDependencies: string[];
+  effectiveDependentSlices: string[];
+  effectiveReadTables: string[];
+  excludedCompletenessDomains: string[];
+  reason: string;
+  sideEffectCondition: {
+    requiredContract: string;
+    requiredContractSha256: string;
+    requiredProjectionVersion: string;
+    requiredDecision: "NO_WRITE";
+    requiredFunctions: string[];
+    requiredImplementationSources: Array<{ role: "PROJECTOR" | "READINESS_PROVIDER" | "SCHEMA_MIGRATION"; path: string; sha256: string }>;
+  };
+  operationalDataAllowed: false;
+}
+
+interface LegacyRankLabelRuntimeSourceContract {
+  format: string;
+  source: string;
+  extraction: string;
+  symbols: Array<{ symbol: string; sha256: string }>;
+  runtimeSourceSha256: string;
+  bagCommandAnchor: { marker: string; extraction: string; sha256: string; requiredCall: string };
+}
+
+const WBS778_REQUIRED_FUNCTIONS = ["checkRank", "getMyGuildId", "getMyGuildInfo", "generateBagOutput"] as const;
+const WBS778_IMPLEMENTATION_BINDINGS = [
+  { role: "PROJECTOR", path: "개발환경_고도화/runtime/src/data-migration/legacy-rank-label-side-effect-certificate-projector.ts" },
+  { role: "READINESS_PROVIDER", path: "개발환경_고도화/runtime/src/inventory/legacy-rank-label-side-effect-readiness-provider.ts" },
+  { role: "SCHEMA_MIGRATION", path: "개발환경_고도화/runtime/migrations/489_legacy_rank_label_side_effect_certificate.sql" },
+] as const;
+const SHA256_HEX = /^[0-9a-f]{64}$/;
+
+function extractClassificationBraceBlock(source: string, start: number, label: string): string {
+  const open = source.indexOf("{", start);
+  if (open < 0) throw new Error(`consumer classification side-effect source brace missing: ${label}`);
+  let depth = 0;
+  let state: "normal" | "single" | "double" | "template" | "line" | "block" = "normal";
+  let escaped = false;
+  for (let index = open; index < source.length; index += 1) {
+    const character = source[index]!;
+    const next = source[index + 1];
+    if (state === "line") { if (character === "\n") state = "normal"; continue; }
+    if (state === "block") { if (character === "*" && next === "/") { state = "normal"; index += 1; } continue; }
+    if (state !== "normal") {
+      if (escaped) { escaped = false; continue; }
+      if (character === "\\") { escaped = true; continue; }
+      if ((state === "single" && character === "'") || (state === "double" && character === '"') || (state === "template" && character === "`")) state = "normal";
+      continue;
+    }
+    if (character === "/" && next === "/") { state = "line"; index += 1; continue; }
+    if (character === "/" && next === "*") { state = "block"; index += 1; continue; }
+    if (character === "'") { state = "single"; continue; }
+    if (character === '"') { state = "double"; continue; }
+    if (character === "`") { state = "template"; continue; }
+    if (character === "{") depth += 1;
+    else if (character === "}" && --depth === 0) return source.slice(start, index + 1);
+  }
+  throw new Error(`consumer classification side-effect source unterminated: ${label}`);
+}
+
+function extractClassificationFunction(source: string, symbol: string): string {
+  const start = source.indexOf(`function ${symbol}(`);
+  if (start < 0) throw new Error(`consumer classification side-effect source symbol missing: ${symbol}`);
+  return extractClassificationBraceBlock(source, start, symbol);
+}
+
+export function assertItemBagClassificationSideEffectContract(repoRoot: string, addendum: ConsumerClassificationAddendum): void {
+  const condition = addendum.sideEffectCondition;
+  if (condition.requiredContract !== "legacy-rank-label-runtime-source.v1.json"
+    || !SHA256_HEX.test(condition.requiredContractSha256)
+    || condition.requiredProjectionVersion !== "LEGACY_RANK_LABEL_SIDE_EFFECT_V1"
+    || condition.requiredDecision !== "NO_WRITE"
+    || JSON.stringify(condition.requiredFunctions) !== JSON.stringify(WBS778_REQUIRED_FUNCTIONS)
+    || !Array.isArray(condition.requiredImplementationSources)
+    || JSON.stringify(condition.requiredImplementationSources.map(({ role, path }) => ({ role, path }))) !== JSON.stringify(WBS778_IMPLEMENTATION_BINDINGS)
+    || condition.requiredImplementationSources.some(({ sha256 }) => !SHA256_HEX.test(sha256))) {
+    throw new Error("consumer classification addendum side-effect condition invalid");
+  }
+  const contractPath = resolve(repoRoot, "개발환경_고도화/migration-control/contracts", condition.requiredContract);
+  let contractSource: string;
+  try {
+    contractSource = readCanonicalObjectDbConsumerSource(contractPath);
+  } catch (error) {
+    throw new Error(`consumer classification side-effect contract unavailable: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (sha(contractSource) !== condition.requiredContractSha256) {
+    throw new Error("consumer classification side-effect contract hash drift");
+  }
+  let contract: LegacyRankLabelRuntimeSourceContract;
+  try {
+    contract = JSON.parse(contractSource) as LegacyRankLabelRuntimeSourceContract;
+  } catch (error) {
+    throw new Error(`consumer classification side-effect contract JSON invalid: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const symbols = Array.isArray(contract.symbols) ? contract.symbols : [];
+  const symbolNames = symbols.map(({ symbol }) => symbol);
+  const sourceValid = contract.format === "hoibot-legacy-rank-label-runtime-source-v1"
+    && contract.source === "main.js"
+    && contract.extraction === "FUNCTION_SYMBOL_BRACE_AWARE_UTF8_LF"
+    && JSON.stringify(symbolNames) === JSON.stringify(WBS778_REQUIRED_FUNCTIONS)
+    && symbols.every(({ sha256 }) => SHA256_HEX.test(sha256))
+    && SHA256_HEX.test(contract.runtimeSourceSha256)
+    && contract.bagCommandAnchor?.marker === "if (msg === \"/가방\" || msg === \"ㄴㄴㄴ\")"
+    && contract.bagCommandAnchor.extraction === "STATEMENT_BRACE_AWARE_UTF8_LF"
+    && contract.bagCommandAnchor.sha256 === addendum.frozenLocator.sourceSpan.sha256
+    && contract.bagCommandAnchor.requiredCall === "checkRank(data, petData, guildData, sender)";
+  if (!sourceValid) throw new Error("consumer classification side-effect contract semantic drift");
+  let runtimeSource: string;
+  try {
+    runtimeSource = readCanonicalObjectDbConsumerSource(resolve(repoRoot, contract.source));
+  } catch (error) {
+    throw new Error(`consumer classification side-effect runtime source unavailable: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const extractedSymbols = symbols.map(({ symbol, sha256 }) => {
+    const source = extractClassificationFunction(runtimeSource, symbol);
+    if (sha(source) !== sha256) throw new Error(`consumer classification side-effect runtime symbol hash drift: ${symbol}`);
+    return `${symbol}:${sha256}`;
+  });
+  if (sha(extractedSymbols.join("\n")) !== contract.runtimeSourceSha256) throw new Error("consumer classification side-effect runtime source hash drift");
+  const anchorStart = runtimeSource.indexOf(contract.bagCommandAnchor.marker);
+  if (anchorStart < 0) throw new Error("consumer classification side-effect runtime anchor missing");
+  const anchorSource = extractClassificationBraceBlock(runtimeSource, anchorStart, "bagCommandAnchor");
+  if (sha(anchorSource) !== contract.bagCommandAnchor.sha256 || !anchorSource.includes(contract.bagCommandAnchor.requiredCall)) {
+    throw new Error("consumer classification side-effect runtime anchor drift");
+  }
+  const implementationSources = condition.requiredImplementationSources.map((binding) => {
+    let source: string;
+    try {
+      source = readCanonicalObjectDbConsumerSource(resolve(repoRoot, binding.path));
+    } catch (error) {
+      throw new Error(`consumer classification side-effect implementation unavailable: ${binding.role}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (sha(source) !== binding.sha256) throw new Error(`consumer classification side-effect implementation hash drift: ${binding.role}`);
+    return { ...binding, source };
+  });
+  const projector = implementationSources.find(({ role }) => role === "PROJECTOR")!.source;
+  const readiness = implementationSources.find(({ role }) => role === "READINESS_PROVIDER")!.source;
+  const migration = implementationSources.find(({ role }) => role === "SCHEMA_MIGRATION")!.source;
+  if (!projector.includes('export const LEGACY_RANK_LABEL_PROJECTION_VERSION = "LEGACY_RANK_LABEL_SIDE_EFFECT_V1"')
+    || !readiness.includes("validation.projection_version='LEGACY_RANK_LABEL_SIDE_EFFECT_V1'")
+    || !readiness.includes('current.sideEffectDecision==="NO_WRITE"')
+    || !readiness.includes('castle.sideEffectDecision==="NO_WRITE"')
+    || !migration.includes("projection_version VARCHAR(50)")
+    || !migration.includes("side_effect_decision VARCHAR(16)")) {
+    throw new Error("consumer classification side-effect implementation semantic drift");
+  }
+}
+
+function applyConsumerClassificationAddendum(repoRoot: string, consumer: DerivedConsumer): DerivedConsumer {
+  if (consumer.consumerId !== "legacy-94904fa11988ff04") return consumer;
+  const path = resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-addendum-wbs776-item-bag.v1.json");
+  const addendum = JSON.parse(readCanonicalObjectDbConsumerSource(path)) as ConsumerClassificationAddendum;
+  const frozen = addendum.frozenLocator;
+  const frozenMatches = addendum.format === "hoibot-object-db-consumer-classification-addendum-v1"
+    && addendum.consumerId === consumer.consumerId
+    && addendum.originalClassification === "FROZEN_PRESERVED"
+    && addendum.correctionKind === "OVER_APPROXIMATE_REACHABLE_HELPER_DEPENDENCY"
+    && frozen.kind === consumer.kind && frozen.file === consumer.file && frozen.symbol === consumer.symbol
+    && frozen.triggerOrPredicate === consumer.triggerOrPredicate && frozen.primarySlice === consumer.primarySlice
+    && frozen.targetSelectorId === consumer.targetSelectorId && frozen.interfaceId === consumer.interfaceId
+    && JSON.stringify(frozen.sourceSpan) === JSON.stringify(consumer.sourceSpan)
+    && JSON.stringify(frozen.originalDependentSlices) === JSON.stringify(consumer.dependentSlices)
+    && addendum.operationalDataAllowed === false;
+  if (!frozenMatches) throw new Error("consumer classification addendum frozen locator drift");
+  assertItemBagClassificationSideEffectContract(repoRoot, addendum);
+  if (addendum.effectiveDependentSlices.length !== 0
+    || addendum.effectiveReadTables.join("|") !== "canonical_item_definitions|canonical_owned_item_stacks|canonical_players") {
+    throw new Error("consumer classification addendum effective boundary invalid");
+  }
+  const readTables = [...addendum.effectiveReadTables];
+  const readColumns = consumer.readTargetColumns.filter((column) => readTables.includes(column.split(".")[0]!));
+  return {
+    ...consumer,
+    dependentSlices: [],
+    usedTargetTables: readTables,
+    readTargetTables: readTables,
+    writeTargetTables: [],
+    usedTargetColumns: readColumns,
+    readTargetColumns: readColumns,
+    writeTargetColumns: [],
+    transactionalPortDependencies: []
+  };
+}
+
 type StandardForeignKey = {
   column?: string;
   columns?: string[];
@@ -1947,6 +2138,7 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
       };
     })
     .map((consumer) => ({ ...consumer, consumerId: resolveConsumerId(consumer) }))
+    .map((consumer) => applyConsumerClassificationAddendum(repoRoot, consumer))
     .sort((left, right) => left.consumerId.localeCompare(right.consumerId));
   const ids = consumers.map(({ consumerId }) => consumerId);
   if (new Set(ids).size !== ids.length) throw new Error("duplicate consumerId");
