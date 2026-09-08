@@ -1,0 +1,22 @@
+# 작업 체크포인트
+
+- 작업 키: `sl-common-legacy-rank-label-cert`
+- 표시 이름: WBS778 레거시 랭크 라벨 무저장 인증
+- 체크포인트 버전: 1
+- 마지막 갱신: `2026-09-08 15:40:31 KST`
+- 상태: 검증 완료
+- 정리 후보: 아니요
+- 목표: Gate7 NO-GO의 exact lineage 및 재현 가능한 격리 Maria 증거 보강
+- 최신 요청: correction commit을 검증·push하고 독립 재검토 근거 보고
+- 승인 범위: WBS778/Lease2606 전용 runtime, migration489 계약·증거·테스트
+- 선언 파일 범위: legacy rank-label projector/readiness/contracts/tests, WBS778 scripts/evidence
+- worktree: `C:\Users\user\Desktop\hoiBot-worktrees\legacy-rank-label-side-effect-cert-v1-20260908`
+- branch: `codex/legacy-rank-label-side-effect-cert-v1-20260908`
+- 기준 커밋: `52ca5d5a3d79d5beadc7a8559f92273eee42344e`
+- 중간 커밋: `6ff02522480f176e11d12ed3a0dd9270760bfe9b`
+- 완료: exact import/catalog/decision/staging/path chain, validation hash 보강, 교차-run/path negative, disposable Maria rehearsal 및 immutable receipt/transcript
+- 검증: focused 11/11 PASS; typecheck PASS; Maria 11.4 migration 476/FK 5/restart/rollback/reapply PASS
+- 운영 불변: 운영 DB·포트 3306·운영 JSON·실방·feature/prod 미사용
+- 차단: Gate7 독립 재검토 ACK 대기
+- 다음 행동: 전체 build/object-data 검증 후 correction commit을 origin task branch에 push하고 재검토 요청
+- 체크포인트 Git 상태: correction commit에 포함 예정

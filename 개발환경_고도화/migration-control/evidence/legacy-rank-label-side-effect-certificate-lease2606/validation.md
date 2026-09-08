@@ -1,15 +1,16 @@
 # WBS778 / Lease2606 validation
 
 - `npm run typecheck`: PASS.
-- Focused Node tests: 10/10 PASS; the object-model contract suite adds 25/25 PASS.
+- Focused Node tests: 11/11 PASS, including the immutable Maria receipt/transcript hash verifier; the object-model contract suite adds 25/25 PASS.
 - `npm run build`: PASS.
 - `npm run object-data:validate`: PASS, 114 registered tables.
 - Legacy oracle: exact brace-extracted `checkRank`/`getMyGuildId`/`getMyGuildInfo` functions were executed in a VM. VALID and NONE produced zero `saveJsonFile` calls; current stale and lord stale produced one each; dual stale produced two. Exact guild-field deletion and all other member/data invariants were compared. Poison `petData` recorded zero property reads.
 - Source drift: `checkRank`, `getMyGuildId`, `getMyGuildInfo`, and `generateBagOutput` hashes plus their ordered aggregate equal `4973477b937a33533381ef0f5bf9f256c46410e9aef2d02a0861531f5c9eb896`; the `/가방` branch anchor is also pinned.
-- Identity: legacy player-key hashes bind only through the same import run's staging owner locator -> canonical-player import receipt; display name is never used as identity. Nickname change stays READY while wrong-player and ambiguous provenance fail closed.
-- Tamper negatives: every certificate fingerprint, full certificate set, membership semantic hash, validation fingerprint, counts, RAW content, runtime source, and castle-lord evidence are recalculated or exactly rebound; other-member mutation and bogus 64-hex values fail closed.
+- Identity and lineage: legacy player-key hashes bind only through the exact import run -> catalog projection run -> catalog decision -> common staging record/run -> member source path chain. Validation fingerprints also bind the common staging run and both member/guild source-path hashes. Display name is never used as identity. Nickname change stays READY while wrong-player, cross-run catalog/staging, source-path drift, duplicate receipt and ambiguous provenance fail closed.
+- Tamper negatives: every certificate fingerprint, full certificate set, membership semantic hash, validation fingerprint, counts, RAW path/content, runtime source, and castle-lord evidence are recalculated or exactly rebound; other-member mutation and bogus 64-hex values fail closed.
 - Replay/rollback: exact replay performs zero DML; drift is rejected; only inactive validation runs can be deleted; schema rollback refuses populated evidence.
-- Isolated MariaDB 11.4 (`hoibot-wbs778-mariadb-final`, local disposable DB, removed after test): all 476 migrations through 489 applied; two WBS778 tables and five FKs verified; the full readiness SELECT parsed/executed and failed closed on empty evidence; server restart retained both tables; empty rollback removed both; migration489 reapplied successfully.
+- Reproducible isolated MariaDB: `runtime/scripts/rehearse-legacy-rank-label-side-effect-cert-wbs778.ps1` creates a disposable, dynamically mapped `hoibot_wbs778` database from digest-pinned MariaDB 11.4. It applied all 476 migrations through 489, verified the five exact FK rows, executed the full readiness SELECT with an empty fail-close result, retained identity/schema state across restart, proved populated rollback refusal with both rows preserved, completed empty rollback, and reapplied 489. The container was removed and operational port 3306/database were never used.
+- Immutable Maria evidence: `isolated-mariadb-20260908/isolated-mariadb-receipt.json` records image digest/version, schema/user/dynamic port, every applied migration name, FK rows and scenario results. `isolated-mariadb-transcript.log` records the execution facts. The focused test recalculates both payload and transcript SHA-256 values and compares the migration list to the repository.
 - DML0: readiness accepts only `AppWiringReadParticipant`, emits one SELECT, and tests reject any INSERT/UPDATE/DELETE/REPLACE token.
 
 No operational JSON/database, live room, external send, WBS776 consumer, or WBS777 source was touched. Direct activation remains fail-closed until WBS776 explicitly injects this provider and Gate8 reseals the latest production snapshot.
