@@ -4968,7 +4968,7 @@
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_bulk_grant\",\"handlerKey=pet_skill_bulk_grant\"]",
       "consumerId": "runtime-dispatch-d68b234f49758b15",
-      "state": "ACTIVE"
+      "state": "TOMBSTONE"
     },
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_carrot_trade\",\"handlerKey=pet_skill_carrot_trade\"]",
@@ -4983,12 +4983,12 @@
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_equip\",\"handlerKey=pet_skill_equip\"]",
       "consumerId": "runtime-dispatch-a249f3e9ab8b4b28",
-      "state": "ACTIVE"
+      "state": "TOMBSTONE"
     },
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_extinction\",\"handlerKey=pet_skill_extinction\"]",
       "consumerId": "runtime-dispatch-199e2faad91b7ad8",
-      "state": "ACTIVE"
+      "state": "TOMBSTONE"
     },
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_market_listing\",\"handlerKey=pet_skill_market_listing\"]",
@@ -4998,17 +4998,17 @@
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_open\",\"handlerKey=pet_skill_open\"]",
       "consumerId": "runtime-dispatch-225d18d2ea58f0bc",
-      "state": "ACTIVE"
+      "state": "TOMBSTONE"
     },
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_read\",\"handlerKey=pet_skill_read\"]",
       "consumerId": "runtime-dispatch-f14345551751e728",
-      "state": "ACTIVE"
+      "state": "TOMBSTONE"
     },
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_skill_sale_lifecycle\",\"handlerKey=pet_skill_sale_lifecycle\"]",
       "consumerId": "runtime-dispatch-63ed578910ef4707",
-      "state": "ACTIVE"
+      "state": "TOMBSTONE"
     },
     {
       "logicalKey": "[\"RUNTIME_DISPATCH\",\"개발환경_고도화/runtime/src/app.ts\",\"handlerKey=pet_status_read\",\"handlerKey=pet_status_read\"]",

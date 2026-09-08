@@ -235,7 +235,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       "main.js:/호월오픈",
     ]);
     assert.equal(consumerManifest.counts.ADMIN_COMMAND, 78);
-    assert.equal(consumerManifest.consumers.length, 1_132);
+    assert.equal(consumerManifest.consumers.length, 1_133);
     assert.deepEqual(consumerManifest.counts, {
       LEGACY_COMMAND: 684,
       AUTOMATIC_CALLBACK: 3,
@@ -243,7 +243,7 @@ describe("WBS743 object DB consumer transition Gate1/2 contract", () => {
       ADMIN_COMMAND: 78,
       HTTP_WEB_ROUTE: 81,
       APP_WIRING: 10,
-      SQL_REPOSITORY: 83,
+      SQL_REPOSITORY: 84,
     });
     assert.equal(consumerManifest.consumers.some(({ kind, triggerOrPredicate }) =>
       kind === "APP_WIRING" && triggerOrPredicate === "dispatchPetDataCompareCommand"), false);
