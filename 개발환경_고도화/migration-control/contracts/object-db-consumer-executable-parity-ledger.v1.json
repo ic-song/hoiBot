@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "86274556c610b8934380b74a25dcf160d6681da6",
+  "evidenceCommit": "da5532d80f9a8d313c75dd162340b1cd9ab0db1c",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "c64ab24eca8d97b2d99e4f78d6a00b5f061ef220d1b8f1ae5cebbb22a91ce411"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave21-v1.json",
-      "sha256": "4b6c4bc8e664ed1a5a8b4ec234500e541c8c10ab85566789e9ecbe7b66b841da"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave22-v1.json",
+      "sha256": "13c5230cafe0b7e8bbfed00be51def744a78981a938c6659198fde6fcf1366b6"
     },
     "classificationSources": []
   },
@@ -49,16 +49,16 @@
     "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 0,
-    "provenConsumers": 40,
-    "unprovenConsumers": 1093,
-    "directPassConsumers": 40,
+    "provenConsumers": 41,
+    "unprovenConsumers": 1092,
+    "directPassConsumers": 41,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 1011,
+      "STATIC_ONLY": 1010,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 40,
+      "DIRECT_PASS": 41,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -108384,22 +108384,22 @@
         "sourceSpanSha256": "42c0ef793d7893eb66d26f585f5c6770de87ffe7e74a9be0871db87589c44e17",
         "classificationSha256": "059fedfec2d974ee853b166a730ca407a73f7071f333832a739b1e62e9e3e1bf"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave22:furniture-grant",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave22-furniture-grant-harness.mjs",
+        "sha256": "398a6659e77ae789e7c4ea4ab7ccfc08b88123a1521e010d5f5c7940de4c0719"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave22:furniture-grant:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave22-furniture-grant-v1.json",
+        "sha256": "713e8cff8ed777476b91c48b4d2fac8a4a37596156cc2f111952c19047e69e59"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave22-furniture-grant.mjs",
+        "targetSourceSha256": "434897ad5792e917dd7ad728a14175be9afe578288a7d48313c290318420432f",
+        "exportName": "executeWave22FurnitureGrant"
       },
       "scenarioRequirements": [
         {
@@ -108453,11 +108453,378 @@
           }
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave22:sql-repository-6a8f4b07e980a91f:concurrency_single_writer",
+          "scenarioId": "scenario:wave22:furniture-grant:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave22:furniture-grant",
+          "attributedConsumerIds": [
+            "sql-repository-6a8f4b07e980a91f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b34eb5b538381e5f01072c25a4ee4172bfaac734b40b6330a8e064e26c1dd19c",
+              "actualSha256": "b34eb5b538381e5f01072c25a4ee4172bfaac734b40b6330a8e064e26c1dd19c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "765a079d58af23ae4da423328e809ca73fbd7eb31ac451b353dbfd30c9d0307e",
+              "actualSha256": "765a079d58af23ae4da423328e809ca73fbd7eb31ac451b353dbfd30c9d0307e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave22:sql-repository-6a8f4b07e980a91f:domain_failure_rollback",
+          "scenarioId": "scenario:wave22:furniture-grant:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave22:furniture-grant",
+          "attributedConsumerIds": [
+            "sql-repository-6a8f4b07e980a91f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f1944deb990b429f0276d6abda99be54bccdbc615933a7f5c3d07641a39660e0",
+              "actualSha256": "f1944deb990b429f0276d6abda99be54bccdbc615933a7f5c3d07641a39660e0",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave22:sql-repository-6a8f4b07e980a91f:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave22:furniture-grant:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave22:furniture-grant",
+          "attributedConsumerIds": [
+            "sql-repository-6a8f4b07e980a91f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "0b65f7a728037eb61d886799f01618eb0e36b71a182b4b46174e4d0f7be03b6d",
+              "actualSha256": "0b65f7a728037eb61d886799f01618eb0e36b71a182b4b46174e4d0f7be03b6d",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_definitions"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave22:sql-repository-6a8f4b07e980a91f:mutation_success",
+          "scenarioId": "scenario:wave22:furniture-grant:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave22:furniture-grant",
+          "attributedConsumerIds": [
+            "sql-repository-6a8f4b07e980a91f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "a1905cbaa1834eb25811914b116c7f04e9f79779175e94bbe696b8d3b410d3ac",
+              "actualSha256": "a1905cbaa1834eb25811914b116c7f04e9f79779175e94bbe696b8d3b410d3ac",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "765a079d58af23ae4da423328e809ca73fbd7eb31ac451b353dbfd30c9d0307e",
+              "actualSha256": "765a079d58af23ae4da423328e809ca73fbd7eb31ac451b353dbfd30c9d0307e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO object_owned_furniture_instances(owned_furniture_id,player_id,furniture_id,enhancement_level,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,'bag',?,?,?,?)",
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?, ?,?,'granted',?,?,?,?)"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "canonical_players",
+                "object_furniture_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave22:sql-repository-6a8f4b07e980a91f:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave22:furniture-grant:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave22:furniture-grant",
+          "attributedConsumerIds": [
+            "sql-repository-6a8f4b07e980a91f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b7c0b4cdb964a224cad2b44603e4a690699c87bd70d262b943d5560bc4425f95",
+              "actualSha256": "b7c0b4cdb964a224cad2b44603e4a690699c87bd70d262b943d5560bc4425f95",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays"
+              ],
+              "actual": [
+                "object_furniture_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave22:sql-repository-6a8f4b07e980a91f:restart_replay",
+          "scenarioId": "scenario:wave22:furniture-grant:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave22:furniture-grant",
+          "attributedConsumerIds": [
+            "sql-repository-6a8f4b07e980a91f"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "0dc0ca15f17ae4cbdd633fbf96a7fe237c2cb664d8e440b35a52fc9cf2d2e98e",
+              "actualSha256": "0dc0ca15f17ae4cbdd633fbf96a7fe237c2cb664d8e440b35a52fc9cf2d2e98e",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_definitions"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_definitions"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave22:sql-repository-6a8f4b07e980a91f:concurrency_single_writer",
+          "receipt:wave22:sql-repository-6a8f4b07e980a91f:domain_failure_rollback",
+          "receipt:wave22:sql-repository-6a8f4b07e980a91f:duplicate_replay_dml_zero",
+          "receipt:wave22:sql-repository-6a8f4b07e980a91f:mutation_success",
+          "receipt:wave22:sql-repository-6a8f4b07e980a91f:payload_drift_fail_closed",
+          "receipt:wave22:sql-repository-6a8f4b07e980a91f:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-6a8f4b07e980a91f"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave22-furniture-grant-v1.json",
+            "sha256": "713e8cff8ed777476b91c48b4d2fac8a4a37596156cc2f111952c19047e69e59"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave22-furniture-grant-harness.mjs",
+            "sha256": "398a6659e77ae789e7c4ea4ab7ccfc08b88123a1521e010d5f5c7940de4c0719"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave22-furniture-grant.mjs",
+            "sha256": "434897ad5792e917dd7ad728a14175be9afe578288a7d48313c290318420432f"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -114215,5 +114582,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "353947aa508459d9387f5dd311a72df1d78b24e680b5ceb46033089eb1d65c27"
+  "entrySetSha256": "980bce23b397c9426c0b9294002c815d88c5fb3e275dff887194131df80c400f"
 }

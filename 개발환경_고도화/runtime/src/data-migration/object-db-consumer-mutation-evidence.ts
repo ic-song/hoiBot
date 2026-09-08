@@ -5,6 +5,7 @@ export const OBJECT_DB_MUTATION_EVIDENCE_FORMAT = "hoibot-object-db-consumer-mut
 const SEALED_ORACLE_SHA256_BY_CONSUMER: Readonly<Record<string, string>> = Object.freeze({
   "sql-repository-b1d650b73c2ddff0": "b40690fc50b87b42cc87294ce2fffed64a6bb0aa3146d0db3cea4337d9300fec",
   "sql-repository-4f896a4a6feb5ec1": "9d19c75cabbcc382e05d6837f94a69d960d39782350bf3f3d61f33671781fb8d",
+  "sql-repository-6a8f4b07e980a91f": "7ebd1d7b46f7623070870161b122e248ea070f365ab0ae4681d31d53312d8460",
 });
 
 export const OBJECT_DB_MUTATION_SCENARIOS = [
@@ -32,6 +33,8 @@ export interface ObjectDbMutationTrace {
     attemptedDmlStatements: string[];
     affectedDmlStatements: string[];
     affectedRowCount: number;
+    lockOrder?: string[];
+    failure?: { code: string | null; errno: number | null; errorKind: string; constraintName: string | null } | null;
   }>;
   committedDmlStatements: string[];
   committedRowCount: number;
@@ -46,6 +49,9 @@ export interface ObjectDbMutationTrace {
   locatorMode?: "LEGACY_RAW" | "SHA256_OVERFLOW";
   beforeSha256?: string;
   afterSha256?: string;
+  locatorProjection?: { mode: "RAW_COMPOSITE"; playerId: string; idempotencyScope: string; idempotencyKey: string; rows: Array<Record<string, unknown>>; locatorOK: true };
+  beforeRows?: Record<string, Array<Record<string, unknown>>>;
+  afterRows?: Record<string, Array<Record<string, unknown>>>;
 }
 
 export interface ObjectDbMutationScenarioOracle {
@@ -65,6 +71,13 @@ export interface ObjectDbMutationScenarioOracle {
   expectedReplayed: boolean | null;
   expectedErrorCode: string | null;
   distinctProcessRoles: ObjectDbMutationTrace["role"][];
+  expectedAttemptFailures?: Array<ObjectDbMutationTrace["transactionAttempts"][number]["failure"]>;
+  expectedLockOrderByAttempt?: string[][];
+  expectedBeforeRows?: Record<string, Array<Record<string, unknown>>>;
+  expectedAfterRows?: Record<string, Array<Record<string, unknown>>>;
+  expectedLocatorProjection?: ObjectDbMutationTrace["locatorProjection"];
+  expectedBeforeSha256?: string;
+  expectedAfterSha256?: string;
 }
 
 export interface ObjectDbMutationEvidenceContract {
@@ -121,7 +134,9 @@ export function validateObjectDbMutationScenarioEvidence(
     || OBJECT_DB_MUTATION_SCENARIOS.some((scenarioKind) => !contract.scenarios.some((candidate) => candidate.scenarioKind === scenarioKind))) throw new Error("mutation scenario oracle set drift");
   const oracle = contract.scenarios.find((candidate) => candidate.scenarioKind === evidence.scenarioKind);
   if (oracle === undefined) throw new Error(`mutation oracle missing: ${evidence.scenarioKind}`);
-  exactKeys(oracle, ["scenarioKind","traceRoles","primaryRole","primaryTransactionOutcome","primaryTransactionAttempts","expectedAttemptedDmlTableSequence","expectedAffectedDmlTableSequence","expectedDmlTableSequence","expectedLockOrder","expectedCommittedRowCount","expectedRolledBackAffectedRowCount","expectedBefore","expectedAfter","expectedReplayed","expectedErrorCode","distinctProcessRoles"], `${evidence.scenarioKind}.oracle`);
+  const oracleKeys = ["scenarioKind","traceRoles","primaryRole","primaryTransactionOutcome","primaryTransactionAttempts","expectedAttemptedDmlTableSequence","expectedAffectedDmlTableSequence","expectedDmlTableSequence","expectedLockOrder","expectedCommittedRowCount","expectedRolledBackAffectedRowCount","expectedBefore","expectedAfter","expectedReplayed","expectedErrorCode","distinctProcessRoles"];
+  if (contract.consumerId === "sql-repository-6a8f4b07e980a91f") oracleKeys.push("expectedAttemptFailures","expectedLockOrderByAttempt","expectedBeforeRows","expectedAfterRows","expectedLocatorProjection","expectedBeforeSha256","expectedAfterSha256");
+  exactKeys(oracle, oracleKeys, `${evidence.scenarioKind}.oracle`);
   if (evidence.traces.length !== oracle.traceRoles.length) throw new Error(`${evidence.scenarioKind} trace cardinality drift`);
   const roles = evidence.traces.map(({ role }) => role).sort();
   if (JSON.stringify(roles) !== JSON.stringify([...oracle.traceRoles].sort())) throw new Error(`${evidence.scenarioKind} trace role drift`);
@@ -129,6 +144,7 @@ export function validateObjectDbMutationScenarioEvidence(
   for (const trace of evidence.traces) {
     const traceKeys = ["processId","moduleExecutionId","role","source","database","transactionAttempts","committedDmlStatements","committedRowCount","rolledBackAffectedRowCount","lockOrder","before","after","replayed","errorCode","externalNetworkCalls","replyCalls"];
     if (contract.consumerId === "sql-repository-4f896a4a6feb5ec1") traceKeys.push("locatorMode", "beforeSha256", "afterSha256");
+    if (contract.consumerId === "sql-repository-6a8f4b07e980a91f") traceKeys.push("locatorProjection", "beforeRows", "afterRows", "beforeSha256", "afterSha256");
     exactKeys(trace, traceKeys, `${evidence.scenarioKind}/${trace.role}.trace`);
     exactKeys(trace.source, ["path","sha256","spanStart","spanEnd","spanSha256","catalogSpanStart","catalogSpanEnd","catalogSpanSha256","relocationDiffSha256"], `${evidence.scenarioKind}/${trace.role}.source`);
     exactKeys(trace.database, ["host","port","name"], `${evidence.scenarioKind}/${trace.role}.database`);
@@ -138,7 +154,9 @@ export function validateObjectDbMutationScenarioEvidence(
     if (!Number.isSafeInteger(trace.processId) || trace.processId <= 0 || !/^[0-9a-f-]{36}$/.test(trace.moduleExecutionId)) throw new Error(`${evidence.scenarioKind}/${trace.role} child identity invalid`);
     if (trace.transactionAttempts.length === 0 || trace.transactionAttempts.some((attempt, index) => attempt.attempt !== index + 1)) throw new Error(`${evidence.scenarioKind}/${trace.role} transaction attempt sequence drift`);
     for (const attempt of trace.transactionAttempts) {
-      exactKeys(attempt, ["attempt","outcome","attemptedDmlStatements","affectedDmlStatements","affectedRowCount"], `${evidence.scenarioKind}/${trace.role}.attempt`);
+      const attemptKeys = ["attempt","outcome","attemptedDmlStatements","affectedDmlStatements","affectedRowCount"];
+      if (contract.consumerId === "sql-repository-6a8f4b07e980a91f") attemptKeys.push("lockOrder","failure");
+      exactKeys(attempt, attemptKeys, `${evidence.scenarioKind}/${trace.role}.attempt`);
       for (const statement of [...attempt.attemptedDmlStatements, ...attempt.affectedDmlStatements]) if (!allowed.has(dmlTable(statement))) throw new Error(`${evidence.scenarioKind}/${trace.role} non-allowlisted DML table`);
       if (!Number.isSafeInteger(attempt.affectedRowCount) || attempt.affectedRowCount < 0 || attempt.affectedDmlStatements.length > attempt.attemptedDmlStatements.length) throw new Error(`${evidence.scenarioKind}/${trace.role} attempt DML accounting drift`);
     }
@@ -158,6 +176,14 @@ export function validateObjectDbMutationScenarioEvidence(
       const afterSha256 = createHash("sha256").update(JSON.stringify(trace.after)).digest("hex");
       if (trace.beforeSha256 !== beforeSha256 || trace.afterSha256 !== afterSha256) throw new Error(`${evidence.scenarioKind}/${trace.role} state hash drift`);
     }
+    if (contract.consumerId === "sql-repository-6a8f4b07e980a91f") {
+      if (trace.locatorProjection?.mode !== "RAW_COMPOSITE" || trace.locatorProjection.playerId.length === 0 || trace.locatorProjection.idempotencyScope.length === 0 || trace.locatorProjection.idempotencyKey.length === 0 || trace.locatorProjection.rows.length > 1 || trace.locatorProjection.locatorOK !== true
+        || trace.locatorProjection.rows.some((row) => row.player_id !== trace.locatorProjection!.playerId || row.idempotency_scope !== trace.locatorProjection!.idempotencyScope || row.idempotency_key !== trace.locatorProjection!.idempotencyKey)) throw new Error(`${evidence.scenarioKind}/${trace.role} locator projection drift`);
+      if (trace.beforeRows === undefined || trace.afterRows === undefined) throw new Error(`${evidence.scenarioKind}/${trace.role} exact row projection missing`);
+      exactKeys(trace.beforeRows, contract.allowedTables, `${evidence.scenarioKind}/${trace.role}.beforeRows`);
+      exactKeys(trace.afterRows, contract.allowedTables, `${evidence.scenarioKind}/${trace.role}.afterRows`);
+      if (trace.beforeSha256 !== createHash("sha256").update(JSON.stringify(trace.beforeRows)).digest("hex") || trace.afterSha256 !== createHash("sha256").update(JSON.stringify(trace.afterRows)).digest("hex")) throw new Error(`${evidence.scenarioKind}/${trace.role} exact row hash drift`);
+    }
   }
   const primary = evidence.traces.find(({ role }) => role === oracle.primaryRole);
   if (primary === undefined) throw new Error(`${evidence.scenarioKind} primary trace missing`);
@@ -172,6 +198,11 @@ export function validateObjectDbMutationScenarioEvidence(
   assertPostState(primary.before, oracle.expectedBefore, contract.allowedTables, `${evidence.scenarioKind}.before`);
   assertPostState(primary.after, oracle.expectedAfter, contract.allowedTables, `${evidence.scenarioKind}.after`);
   if (primary.replayed !== oracle.expectedReplayed || primary.errorCode !== oracle.expectedErrorCode) throw new Error(`${evidence.scenarioKind} result oracle mismatch`);
+  if (contract.consumerId === "sql-repository-6a8f4b07e980a91f") {
+    const strengthenedActual = { failures: primary.transactionAttempts.map(({ failure }) => failure), locks: primary.transactionAttempts.map(({ lockOrder }) => lockOrder), beforeRows: primary.beforeRows, afterRows: primary.afterRows, locator: primary.locatorProjection, beforeSha256: primary.beforeSha256, afterSha256: primary.afterSha256 };
+    const strengthenedExpected = { failures: oracle.expectedAttemptFailures, locks: oracle.expectedLockOrderByAttempt, beforeRows: oracle.expectedBeforeRows, afterRows: oracle.expectedAfterRows, locator: oracle.expectedLocatorProjection, beforeSha256: oracle.expectedBeforeSha256, afterSha256: oracle.expectedAfterSha256 };
+    if (JSON.stringify(strengthenedActual) !== JSON.stringify(strengthenedExpected)) throw new Error(`${evidence.scenarioKind} Wave22 strengthened oracle mismatch: ${JSON.stringify({ actual: strengthenedActual, expected: strengthenedExpected })}`);
+  }
   const distinct = evidence.traces.filter(({ role }) => oracle.distinctProcessRoles.includes(role)).map(({ processId }) => processId);
   if (new Set(distinct).size !== distinct.length) throw new Error(`${evidence.scenarioKind} child process reuse detected`);
   const distinctModules = evidence.traces.filter(({ role }) => oracle.distinctProcessRoles.includes(role)).map(({ moduleExecutionId }) => moduleExecutionId);
