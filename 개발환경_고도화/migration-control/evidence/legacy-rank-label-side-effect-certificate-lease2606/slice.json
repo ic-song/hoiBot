@@ -1,0 +1,31 @@
+{
+  "wbs": "WBS778",
+  "lease": "Lease2606",
+  "slice": "SL-COMMON-LEGACY-RANK-LABEL-SIDE-EFFECT-CERT-01",
+  "baselineCommit": "81ee08fd63acccce20e025158f852c8d8e36d1e3",
+  "migration": "489_legacy_rank_label_side_effect_certificate.sql",
+  "runtimeSourceContract": "legacy-rank-label-runtime-source.v1.json",
+  "runtimeSourceSha256": "4973477b937a33533381ef0f5bf9f256c46410e9aef2d02a0861531f5c9eb896",
+  "tables": ["legacy_rank_label_validation_runs", "legacy_rank_label_side_effect_certificates"],
+  "invariants": [
+    "raw_landing_run_id is an enforced FK to the migration476 CHAR(8) ascii_bin primary key",
+    "common staging, object import, RAW bundle and manifest are one completed lineage",
+    "current player and assigned castle lord certificates must be PRESENT/NO_WRITE and canonical-fingerprint exact",
+    "certificate decision aggregates equal the active validation run counts",
+    "member.json and guildData.json payload SHA-256 is recomputed at readiness time",
+    "main.js checkRank/getMyGuildId/getMyGuildInfo brace-aware source hash is compiled and stored",
+    "main.js generateBagOutput and the /가방 command block are brace-aware source-bound; checkRank proves zero petData reads",
+    "legacy player-key hash binds to canonical player only through exact staging owner locator and canonical-player import receipt provenance; display-name identity is forbidden",
+    "provider error or absent/stale/tampered evidence returns LEGACY_SIDE_EFFECT_PARITY_UNPROVEN",
+    "projector and readiness never write operational JSON and readiness exposes no DML participant"
+  ],
+  "protectedInputsUnmodified": [
+    "runtime/src/data-migration/object-domain-importer.ts",
+    "runtime/src/data-migration/object-domain-import-profile.ts",
+    "migration-control/contracts/data-migration-object-domain-import.v2.json",
+    "migration-control/contracts/object-domain-import-profile.v2.json",
+    "WBS776 consumer files",
+    "WBS777 migration488/profile/importer"
+  ],
+  "gate8": "BLOCKED_UNTIL_LATEST_OPERATIONAL_RAW_RESEAL_AND_WRITER_FREEZE; this slice is prerequisite evidence only"
+}

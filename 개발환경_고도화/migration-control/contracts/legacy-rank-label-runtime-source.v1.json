@@ -1,0 +1,18 @@
+{
+  "format": "hoibot-legacy-rank-label-runtime-source-v1",
+  "source": "main.js",
+  "extraction": "FUNCTION_SYMBOL_BRACE_AWARE_UTF8_LF",
+  "symbols": [
+    {"symbol":"checkRank","sha256":"fd94657125b4e9d24285797bafea4bfb84638527a8431eae3aa8043200fcbf6d"},
+    {"symbol":"getMyGuildId","sha256":"f2e18e72310827da7fb081cbfb872b6ada4daa150f5840838b5ea66cf502574e"},
+    {"symbol":"getMyGuildInfo","sha256":"d93671d5c87bc037fd9267eb325e85aee8f0fbc5b1db2d5fcdfa40c05b83d6f6"},
+    {"symbol":"generateBagOutput","sha256":"9c52d52a27613fdfcdea2aa0a58fe47a96ff23ed31d5bbd96a755e18319ca064"}
+  ],
+  "runtimeSourceSha256": "4973477b937a33533381ef0f5bf9f256c46410e9aef2d02a0861531f5c9eb896",
+  "bagCommandAnchor": {
+    "marker": "if (msg === \"/가방\" || msg === \"ㄴㄴㄴ\")",
+    "extraction": "STATEMENT_BRACE_AWARE_UTF8_LF",
+    "sha256": "2fb7e40c328fc01e0c12677fa6acc8424b638842b9d17e40cb4fa91226eb98fb",
+    "requiredCall": "checkRank(data, petData, guildData, sender)"
+  }
+}

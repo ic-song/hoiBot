@@ -131,6 +131,20 @@
       "rollbackPreflight": "REJECT_WHEN_NON_ASCII_GRADE_EXISTS",
       "createOnly": false,
       "reentrantDdlRequired": false
+    },
+    {
+      "migration": "489_legacy_rank_label_side_effect_certificate.sql",
+      "rollback": "489_legacy_rank_label_side_effect_certificate.rollback.sql",
+      "kind": "ADDITIVE_IMMUTABLE_RAW_SIDE_EFFECT_CERTIFICATE",
+      "alters": [],
+      "creates": ["legacy_rank_label_validation_runs", "legacy_rank_label_side_effect_certificates"],
+      "inputShape": "MIGRATION_488_ITEM_BAG_IMPORT_COMPLETENESS_AVAILABLE_AT_READINESS_QUERY",
+      "resultingShape": "MIGRATION_489_LEGACY_CHECK_RANK_NO_WRITE_CERTIFICATE",
+      "runtimeSourceContract": "legacy-rank-label-runtime-source.v1.json",
+      "rollbackPreflight": "REJECT_WHEN_ANY_CERTIFICATE_OR_RUN_ROW_EXISTS",
+      "operationalDataDependency": "SEPARATE_GATE8_RESEAL_REQUIRED: immutable RAW member.json and guildData.json plus exact import run; migration and projector never write operational JSON",
+      "createOnly": true,
+      "reentrantDdlRequired": false
     }
   ],
   "ddlExecution": "NEW_MIGRATIONS_ONLY_TEST_DATABASE_VALIDATION_REQUIRED",
