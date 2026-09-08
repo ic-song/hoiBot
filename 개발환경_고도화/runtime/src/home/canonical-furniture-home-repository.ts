@@ -7,6 +7,10 @@ const GRANT_TRANSACTION_MAX_ATTEMPTS = 3;
 const GRANT_REPLAY_READ_ATTEMPTS = 3;
 const GRANT_REPLAY_READ_DELAY_MS = 30;
 const GRANT_TRANSACTION_RETRY_EXHAUSTED = "CANONICAL_FURNITURE_GRANT_TRANSACTION_RETRY_EXHAUSTED";
+const PLACE_TRANSACTION_MAX_ATTEMPTS = 3;
+const PLACE_REPLAY_READ_ATTEMPTS = 3;
+const PLACE_REPLAY_READ_DELAY_MS = 30;
+const PLACE_TRANSACTION_RETRY_EXHAUSTED = "CANONICAL_FURNITURE_PLACE_TRANSACTION_RETRY_EXHAUSTED";
 const MAX_UNSIGNED_INT = 4_294_967_295n;
 
 export interface CanonicalFurnitureDefinition {
@@ -49,7 +53,7 @@ export interface TransitionCanonicalFurnitureInput {
 
 export type CanonicalFurnitureAuditFactory = (actor: string, now: Date) => ObjectAuditValues;
 
-interface ReplayRow { owned_furniture_id: string; result_status: string; operation_kind: string; payload_fingerprint: string; }
+interface ReplayRow { furniture_operation_id?: string; owned_furniture_id: string; result_status: string; operation_kind: string; payload_fingerprint: string; }
 interface DefinitionRow { furniture_id: string; display_name: string; purchase_price: bigint; base_charm: bigint; charm_per_enhancement: bigint; active: number; }
 interface OwnedRow { owned_furniture_id: string; player_id: string; furniture_id: string; enhancement_level: bigint; base_charm: bigint; charm_per_enhancement: bigint; }
 
@@ -65,9 +69,15 @@ function assertPlacementInput(input: PlaceCanonicalFurnitureInput): void {
   assertCuid2Length(input.playerId);
   assertCuid2Length(input.ownedFurnitureId);
   if (input.actor.trim() === "" || input.actor.length > 100) throw new Error("CANONICAL_FURNITURE_ACTOR_INVALID");
-  if (input.placementOrder < 0n) throw new Error("CANONICAL_FURNITURE_PLACEMENT_ORDER_INVALID");
+  if (typeof input.placementOrder !== "bigint" || input.placementOrder < 0n) throw new Error("CANONICAL_FURNITURE_PLACEMENT_ORDER_INVALID");
   if (input.idempotencyScope.trim() === "" || input.idempotencyScope.length > 100) throw new Error("CANONICAL_FURNITURE_SCOPE_INVALID");
   if (input.idempotencyKey.trim() === "" || input.idempotencyKey.length > 191) throw new Error("CANONICAL_FURNITURE_KEY_INVALID");
+}
+
+function assertPlaceOwnedFurnitureInput(input: PlaceCanonicalFurnitureInput): void {
+  assertPlacementInput(input);
+  if (input.placementOrder > MAX_UNSIGNED_INT) throw new Error("CANONICAL_FURNITURE_PLACEMENT_ORDER_INVALID");
+  if (!/^[A-Za-z0-9_.:-]{1,100}$/.test(input.idempotencyScope)) throw new Error("CANONICAL_FURNITURE_SCOPE_INVALID");
 }
 
 function assertGrantInput(input: GrantCanonicalFurnitureInput): void {
@@ -167,8 +177,20 @@ function requireGrantReplayMatch(row: ReplayRow, operationKind: string, payloadF
   return row.owned_furniture_id;
 }
 
+function requirePlaceReplayMatch(row: ReplayRow, operationKind: string, payloadFingerprint: string, ownedFurnitureId: string): string {
+  requireReplayMatch(row, operationKind, payloadFingerprint);
+  if (row.result_status !== "placed" || row.owned_furniture_id !== ownedFurnitureId || typeof row.furniture_operation_id !== "string" || !/^[a-z][a-z0-9]{7}$/.test(row.furniture_operation_id)) {
+    throw new Error("CANONICAL_FURNITURE_REPLAY_CORRUPTED");
+  }
+  return row.furniture_operation_id;
+}
+
 async function waitBeforeGrantReplayRead(attempt: number): Promise<void> {
   await new Promise<void>((resolve) => setTimeout(resolve, GRANT_REPLAY_READ_DELAY_MS * (attempt + 1)));
+}
+
+async function waitBeforePlaceReplayRead(attempt: number): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, PLACE_REPLAY_READ_DELAY_MS * (attempt + 1)));
 }
 
 const ALLOWED_OWNERSHIP_TRANSITIONS: Readonly<Record<string, readonly string[]>> = {
@@ -247,17 +269,24 @@ export class MariaCanonicalFurnitureHomeRepository {
 
   // ownership_status가 lifecycle 권위이고 placement는 placed 상태의 상세 관계입니다. 둘은 한 transaction에서 같이 기록합니다.
   async placeOwnedFurniture(input: PlaceCanonicalFurnitureInput): Promise<{ ownedFurnitureId: string; replayed: boolean }> {
-    assertPlacementInput(input);
+    assertPlaceOwnedFurnitureInput(input);
     const operationKind = "place_owned_furniture";
     const payloadFingerprint = fingerprint(operationKind, [input.playerId, input.ownedFurnitureId, String(input.placementOrder)]);
-    for (let transactionAttempt = 0; transactionAttempt < OBJECT_IDENTITY_MAX_ATTEMPTS; transactionAttempt += 1) {
-      try {
-        return await this.database.withTransaction(async (transaction) => {
+    try {
+      return await withMariaTransactionRetry(this.database, {
+        maxAttempts: PLACE_TRANSACTION_MAX_ATTEMPTS,
+        allowRetry: (kind) => kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT",
+        exhaustedErrorCode: PLACE_TRANSACTION_RETRY_EXHAUSTED,
+      }, async (transaction) => {
           const replay = (await transaction.query<ReplayRow[]>(
-            "SELECT owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
+            "SELECT furniture_operation_id,owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=? FOR UPDATE",
             [input.playerId, input.idempotencyScope, input.idempotencyKey]
           ))[0];
-          if (replay !== undefined) { requireReplayMatch(replay, operationKind, payloadFingerprint); return { ownedFurnitureId: replay.owned_furniture_id, replayed: true }; }
+          if (replay !== undefined) {
+            const operationId = requirePlaceReplayMatch(replay, operationKind, payloadFingerprint, input.ownedFurnitureId);
+            await this.requirePlacedReplayHistory(transaction, input, operationId, true);
+            return { ownedFurnitureId: input.ownedFurnitureId, replayed: true };
+          }
           const ownedFurniture = (await transaction.query<Array<{ owned_furniture_id: string; ownership_status: string }>>(
             "SELECT owned_furniture_id,ownership_status FROM object_owned_furniture_instances WHERE owned_furniture_id=? AND player_id=? FOR UPDATE",
             [input.ownedFurnitureId, input.playerId]
@@ -270,33 +299,35 @@ export class MariaCanonicalFurnitureHomeRepository {
           ))[0];
           if (alreadyPlaced !== undefined) throw new Error("CANONICAL_FURNITURE_ALREADY_PLACED");
           const audit = this.createAudit(input.actor, this.now());
-          let operationId = "";
-          await reserveOperationReplayId(transaction, this.generate, async (candidate) => {
+          const operationId = await insertWithCuid8CollisionRetry(async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
               [candidate, input.playerId, input.idempotencyScope, input.idempotencyKey, operationKind, payloadFingerprint, input.ownedFurnitureId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
-            ); operationId = candidate;
-          });
-          await reserveId(transaction, this.generate, async (candidate) => {
+            );
+          }, { generate: this.generate, exhaustedErrorCode: "CANONICAL_FURNITURE_OPERATION_ID_COLLISION_RETRY_EXHAUSTED" });
+          await insertWithCuid8CollisionRetry(async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
               [candidate, input.ownedFurnitureId, input.placementOrder, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
-          });
-          await reserveId(transaction, this.generate, async (candidate) => {
+          }, { generate: this.generate, exhaustedErrorCode: "CANONICAL_FURNITURE_PLACEMENT_ID_COLLISION_RETRY_EXHAUSTED" });
+          await insertWithCuid8CollisionRetry(async (candidate) => {
             await transaction.execute(
               "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
               [candidate, input.ownedFurnitureId, operationId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
             );
-          });
-          await transaction.execute("UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'", [audit.UPDATE_USER, audit.UPDATE_TIME, input.ownedFurnitureId, input.playerId]);
+          }, { generate: this.generate, exhaustedErrorCode: "CANONICAL_FURNITURE_HISTORY_ID_COLLISION_RETRY_EXHAUSTED" });
+          const changed = await transaction.execute("UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'", [audit.UPDATE_USER, audit.UPDATE_TIME, input.ownedFurnitureId, input.playerId]);
+          if (changed.affectedRows !== 1n) throw new Error("CANONICAL_FURNITURE_STATE_INVALID");
           return { ownedFurnitureId: input.ownedFurnitureId, replayed: false };
-        });
-      } catch (error) {
-        if (!isOperationReplayBusinessDuplicate(error)) throw error;
+      });
+    } catch (error) {
+      if (isMariaBusinessUniqueConflict(error, "uq_object_furniture_operation_replay") || isMariaTransactionRetryExhaustion(error, PLACE_TRANSACTION_RETRY_EXHAUSTED)) {
+        const concurrent = await this.findConcurrentPlaceReplay(input, operationKind, payloadFingerprint);
+        if (concurrent !== undefined) return concurrent;
       }
+      throw error;
     }
-    throw new Error("CANONICAL_FURNITURE_IDEMPOTENCY_RETRY_EXHAUSTED");
   }
 
   // 해제·등록·취소·판매·삭제는 소유 상태와 placement/market 관계를 한 transaction에서 같이 바꿉니다.
@@ -381,6 +412,36 @@ export class MariaCanonicalFurnitureHomeRepository {
       if (replay !== undefined) {
         const ownedFurnitureId = requireGrantReplayMatch(replay, operationKind, payloadFingerprint);
         return { furniture: await this.findGrantOwned(this.database, ownedFurnitureId, input, false), replayed: true };
+      }
+    }
+    return undefined;
+  }
+
+  private async requirePlacedReplayHistory(queryable: Pick<DatabaseClient, "query">, input: PlaceCanonicalFurnitureInput, operationId: string, lock: boolean): Promise<void> {
+    const suffix = lock ? " FOR UPDATE" : "";
+    const ownedRow = (await queryable.query<Array<{ owned_furniture_id: string; ownership_status: string }>>(
+      `SELECT owned_furniture_id,ownership_status FROM object_owned_furniture_instances WHERE owned_furniture_id=? AND player_id=?${suffix}`,
+      [input.ownedFurnitureId, input.playerId]
+    ))[0];
+    if (ownedRow === undefined) throw new Error("CANONICAL_FURNITURE_REPLAY_CORRUPTED");
+    const historyRows = await queryable.query<Array<{ furniture_ownership_history_id: string }>>(
+      `SELECT furniture_ownership_history_id FROM object_furniture_ownership_history WHERE furniture_operation_id=? AND owned_furniture_id=? AND status_before='bag' AND status_after='placed'${suffix}`,
+      [operationId, input.ownedFurnitureId]
+    );
+    if (historyRows.length !== 1) throw new Error("CANONICAL_FURNITURE_REPLAY_CORRUPTED");
+  }
+
+  private async findConcurrentPlaceReplay(input: PlaceCanonicalFurnitureInput, operationKind: string, payloadFingerprint: string): Promise<{ ownedFurnitureId: string; replayed: boolean } | undefined> {
+    for (let attempt = 0; attempt < PLACE_REPLAY_READ_ATTEMPTS; attempt += 1) {
+      await waitBeforePlaceReplayRead(attempt);
+      const replay = (await this.database.query<ReplayRow[]>(
+        "SELECT furniture_operation_id,owned_furniture_id,result_status,operation_kind,payload_fingerprint FROM object_furniture_operation_replays WHERE player_id=? AND idempotency_scope=? AND idempotency_key=?",
+        [input.playerId, input.idempotencyScope, input.idempotencyKey]
+      ))[0];
+      if (replay !== undefined) {
+        const operationId = requirePlaceReplayMatch(replay, operationKind, payloadFingerprint, input.ownedFurnitureId);
+        await this.requirePlacedReplayHistory(this.database, input, operationId, false);
+        return { ownedFurnitureId: input.ownedFurnitureId, replayed: true };
       }
     }
     return undefined;
