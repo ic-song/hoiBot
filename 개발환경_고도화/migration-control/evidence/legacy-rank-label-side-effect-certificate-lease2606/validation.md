@@ -1,7 +1,7 @@
 # WBS778 / Lease2606 validation
 
 - `npm run typecheck`: PASS.
-- Focused Node tests: 11/11 PASS, including the immutable Maria receipt/transcript hash verifier; the object-model contract suite adds 25/25 PASS.
+- Focused Node tests: 11/11 PASS, including the immutable Maria receipt/transcript hash verifier; the object-model contract suite adds 25/25 PASS. A fresh `core.autocrlf=true` Windows worktree at correction HEAD also passed focused 11/11 and typecheck; transcript raw/canonical SHA-256 remained `ae0a3e14...`, and the WBS777 fixture remained byte-exact `932e7634...`.
 - `npm run build`: PASS.
 - `npm run object-data:validate`: PASS, 114 registered tables.
 - Legacy oracle: exact brace-extracted `checkRank`/`getMyGuildId`/`getMyGuildInfo` functions were executed in a VM. VALID and NONE produced zero `saveJsonFile` calls; current stale and lord stale produced one each; dual stale produced two. Exact guild-field deletion and all other member/data invariants were compared. Poison `petData` recorded zero property reads.
