@@ -2689,7 +2689,7 @@ function generateBagOutput(bagItems) {
 	if (bagItems && Object.keys(bagItems).length > 0) {
 		bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
 
-	    var specialItems = [
+	       var specialItems = [
             "자동탐험권🌄",
             "자동일퀘권📝",
             GLOBAL_CONFIG.freeMarket.memberTicketItemName,
@@ -2860,8 +2860,8 @@ function generateBagOutput(bagItems) {
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
             "🚑 전쟁불안정 감소권(/안정)",
-            "호이의 봉인금고🔒(/봉인금고오픈 숫자)",
-            "해방의 열쇠🗝️(/봉인금고오픈 숫자)",
+            GLOBAL_CONFIG.sealedVault.vaultItemName,
+            GLOBAL_CONFIG.sealedVault.keyItemName,
             "만능상자🔐(/만능상자오픈 숫자)",
             "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)",
             "펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)",
