@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.476"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.477"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -49757,10 +49757,12 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     var member = data && data.member ? data.member[sender] : null;
     if (!member) return createSealedVaultCommandResult("❌ 회원 정보를 찾을 수 없습니다.", false);
     var bag = member.bag || (member.bag = {});
-    if (!hasItem(data, sender, config.vaultItemName, 1)) {
+    var haveVaultCount = normalizeSealedVaultCount(bag[config.vaultItemName]);
+    if (haveVaultCount < openCount) {
         return createSealedVaultCommandResult(
-            "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n호이의 봉인금고가 없습니다.\n" +
-            "━━━━━━━━━━━━━━━\n/미니펫대전에서 " + config.vaultItemName + "를 획득한 후 개봉할 수 있습니다.",
+            "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n호이의 봉인금고가 부족합니다.\n" +
+            "━━━━━━━━━━━━━━━\n필요한 호봉금고: " + openCount + "개\n보유한 호봉금고: " + haveVaultCount + "개\n부족한 호봉금고: " + (openCount - haveVaultCount) + "개\n\n" +
+            "/미니펫대전에서 " + config.vaultItemName + "를 획득한 후 개봉할 수 있습니다.",
             false
         );
     }
@@ -49825,6 +49827,7 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
         }
     }
 
+    removeItem(data, sender, config.vaultItemName, openCount);
     removeItem(data, sender, config.keyItemName, openCount);
     for (var gainIndex = 0; gainIndex < gainOrder.length; gainIndex++) {
         addItem(data, sender, gainOrder[gainIndex], gainMap[gainOrder[gainIndex]]);
@@ -49843,11 +49846,12 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     }
     lines.push("");
     lines.push("🔥 2배 부스터 발동: " + boosterTriggerCount + "회");
-    lines.push("💎 플래티넘 금고: " + (platinumCount > 0 ? platinumCount + "회" : "미등장"));
-    lines.push("👑 초대형 보상: " + (jackpotCount > 0 ? jackpotCount + "회" : "미등장"));
+    lines.push("💎 플래티넘 금고: " + (platinumCount > 0 ? "당첨" : "미당첨"));
+    lines.push("👑 초대형 보상: " + (jackpotCount > 0 ? "당첨" : "미당첨"));
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("사용한 열쇠: " + openCount + "개");
     lines.push("남은 해방의 열쇠🗝️: " + numberWithCommas(normalizeSealedVaultCount(bag[config.keyItemName])) + "개");
+    lines.push("남은 호봉금고🔐: " + numberWithCommas(normalizeSealedVaultCount(bag[config.vaultItemName])) + "개");
     lines.push("");
     lines.push("🔥 현재 2배 부스터: " + getSealedVaultBoosterPercent(state) + "% (" + state.boosterCount + "/" + config.boosterCycle + ")");
     lines.push("💎 플래티넘 금고 확정까지: " + (config.platinumPityCount - state.platinumMissCount) + "회");
