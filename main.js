@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.477"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.478"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -49532,12 +49532,15 @@ function getSealedVaultBoosterPercent(state) {
     return Math.floor((state.boosterCount * 100) / GLOBAL_CONFIG.sealedVault.boosterCycle);
 }
 
-// 봉인금고 부스터 진행 막대를 생성하는 함수
-function buildSealedVaultBoosterBar(state) {
-    var filled = Math.floor(getSealedVaultBoosterPercent(state) / 10);
+// 현재값과 최대값으로 봉인금고 공용 진행 막대를 생성하는 함수
+function buildSealedVaultProgressBar(currentCount, maxCount) {
+    var current = normalizeSealedVaultCount(currentCount, maxCount);
+    var max = normalizeSealedVaultCount(maxCount);
+    var percent = max > 0 ? Math.floor((current * 100) / max) : 0;
+    var filled = Math.floor(percent / 10);
     var bar = "[";
     for (var i = 0; i < 10; i++) bar += i < filled ? "■" : "□";
-    return bar + "]";
+    return bar + "] " + percent + "% (" + current + "/" + max + ")";
 }
 
 // 보상 목록을 줄 단위 사용자 문구로 변환하는 함수
@@ -49615,7 +49618,6 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
     var keyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
     var monthKey = getSealedVaultMonthKey();
     var monthlyRewards = getSealedVaultMonthlyRewards(data, monthKey);
-    var boosterPercent = getSealedVaultBoosterPercent(state); // 30회 주기의 현재 정수 진행률
     var nextBoosterCount = config.boosterCycle - state.boosterCount; // 다음 2배 보상까지 남은 개봉 수
     var pityRemaining = config.platinumPityCount - state.platinumMissCount; // 다음 플래티넘 확정까지 최대 남은 수
     var lines = [];
@@ -49625,12 +49627,12 @@ function buildSealedVaultStatusMessage(data, petData, guildData, user) {
     lines.push("보유 해방의 열쇠🗝️: " + numberWithCommas(keyCount) + "개");
     lines.push("누적 개봉: " + numberWithCommas(state.totalOpenCount) + "회");
     lines.push("");
-    lines.push("🔥 2배 부스터");
-    lines.push(buildSealedVaultBoosterBar(state) + " " + boosterPercent + "% (" + state.boosterCount + "/" + config.boosterCycle + ")");
+    lines.push("🔥 현재 2배 부스터까지");
+    lines.push(buildSealedVaultProgressBar(state.boosterCount, config.boosterCycle));
     lines.push("다음 2배 보상까지: " + nextBoosterCount + "회");
     lines.push("");
-    lines.push("💎 플래티넘 금고 확정까지");
-    lines.push(pityRemaining + "회 남았습니다.");
+    lines.push("💎 플래티넘 금고 확정까지: " + pityRemaining + "회");
+    lines.push(buildSealedVaultProgressBar(state.platinumMissCount, config.platinumPityCount));
     lines.push("━━━━━━━━━━━━━━━");
     if (monthlyRewards) {
         lines.push("👑 " + getSealedVaultMonthLabel(monthKey) + " 이달의 초대형 보상");
@@ -49853,8 +49855,11 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     lines.push("남은 해방의 열쇠🗝️: " + numberWithCommas(normalizeSealedVaultCount(bag[config.keyItemName])) + "개");
     lines.push("남은 호봉금고🔐: " + numberWithCommas(normalizeSealedVaultCount(bag[config.vaultItemName])) + "개");
     lines.push("");
-    lines.push("🔥 현재 2배 부스터: " + getSealedVaultBoosterPercent(state) + "% (" + state.boosterCount + "/" + config.boosterCycle + ")");
+    lines.push("🔥 현재 2배 부스터까지:");
+    lines.push(buildSealedVaultProgressBar(state.boosterCount, config.boosterCycle));
+    lines.push("");
     lines.push("💎 플래티넘 금고 확정까지: " + (config.platinumPityCount - state.platinumMissCount) + "회");
+    lines.push(buildSealedVaultProgressBar(state.platinumMissCount, config.platinumPityCount));
 
     var noticeMessages = [];
     for (var noticeIndex = 0; noticeIndex < rareEvents.length; noticeIndex++) {
