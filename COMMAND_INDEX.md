@@ -1868,6 +1868,7 @@ Status: VERIFIED
 
 - `data.member[sender].point`
 - `data.member[sender].exp`
+- `data.member[sender].bag["호이의 봉인금고🔒(/봉인금고오픈 숫자)"]`
 - `petData[sender].miniPet`
 - `petData[sender].miniPetBag`
 - `petData[sender].miniPetBattle`
@@ -1882,6 +1883,7 @@ Status: VERIFIED
 - 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/미니펫/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
 - 카드 상단의 대전횟수·리셋권 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`로 먼저 표시한다.
+- 기본 아이템 보상은 기존 6종과 `호이의 봉인금고🔒(/봉인금고오픈 숫자)`를 합한 7종 중 1종을 같은 비율로 추첨한다.
 - `약탈자`, `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 저장 흐름을 유지한다.
 
 ---
@@ -5675,6 +5677,7 @@ Status: VERIFIED
 - `noticeMsg`
 
 ## Data Usage
+- `member.json -> member[user].bag["호이의 봉인금고🔒(/봉인금고오픈 숫자)"]`
 - `member.json -> member[user].bag["해방의 열쇠🗝️(/봉인금고오픈 숫자)"]`
 - `member.json -> member[user].sealedVault`
 - `member.json -> sealedVault.monthlyRewards`
@@ -5682,6 +5685,7 @@ Status: VERIFIED
 - `member.json -> sealedVault.adminLogs`
 
 ## Save Flow
+- `호이의 봉인금고🔒(/봉인금고오픈 숫자)`를 1개 이상 보유한 회원만 해방의 열쇠로 개봉할 수 있으며, 봉인금고 아이템 자체는 소모하지 않는다.
 - `/봉인금고오픈 [숫자]`는 1~100개의 열쇠를 한 번에 사용하며, 각 회차를 순서대로 추첨한 뒤 열쇠 차감·보상·누적 상태·희귀 기록을 `member.json`에 한 번 저장한다.
 - 30번째 개봉마다 해당 회차의 일반·플래티넘·초대형 최종 보상을 2배 지급하고 부스터 누적을 초기화한다.
 - 플래티넘이 199회 연속 나오지 않으면 200번째 개봉에서 플래티넘을 확정한다. 초대형 보상은 플래티넘 미등장 누적을 초기화하지 않는다.

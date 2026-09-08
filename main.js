@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.470"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.471"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -954,6 +954,7 @@ const GLOBAL_CONFIG = {
         miniPetKeyRate: 0.05
     },
     sealedVault: { // 호이의 봉인금고 확률·천장·부스터·보상 설정
+        vaultItemName: "호이의 봉인금고🔒(/봉인금고오픈 숫자)",
         keyItemName: "해방의 열쇠🗝️(/봉인금고오픈 숫자)",
         maxOpenCount: 100,
         boosterCycle: 30,
@@ -19349,6 +19350,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         },
                         {
                             item: "양념치킨🐔",
+                            count: 1
+                        },
+                        {
+                            item: GLOBAL_CONFIG.sealedVault.vaultItemName,
                             count: 1
                         }
                     ];
@@ -40294,6 +40299,7 @@ function generateBagOutput(bagItems) {
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
             "🚑 전쟁불안정 감소권(/안정)",
+            GLOBAL_CONFIG.sealedVault.vaultItemName,
             GLOBAL_CONFIG.sealedVault.keyItemName,
             "만능상자🔐(/만능상자오픈 숫자)",
             "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)",
@@ -49711,11 +49717,18 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     var member = data && data.member ? data.member[sender] : null;
     if (!member) return createSealedVaultCommandResult("❌ 회원 정보를 찾을 수 없습니다.", false);
     var bag = member.bag || (member.bag = {});
+    if (!hasItem(data, sender, config.vaultItemName, 1)) {
+        return createSealedVaultCommandResult(
+            "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n호이의 봉인금고가 없습니다.\n" +
+            "━━━━━━━━━━━━━━━\n/미니펫대전에서 " + config.vaultItemName + "를 획득한 후 개봉할 수 있습니다.",
+            false
+        );
+    }
     var haveKeyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
     if (haveKeyCount < openCount) {
         return createSealedVaultCommandResult(
             "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n해방의 열쇠가 부족합니다.\n" +
-            "━━━━━━━━━━━━━━━\n필요한 열쇠: " + openCount + "개\n보유한 열쇠: " + haveKeyCount + "개\n부족한 열쇠: " + (openCount - haveKeyCount) + "개\n\n해방의 열쇠🗝️는 후원에서 구매할 수 있습니다.",
+            "━━━━━━━━━━━━━━━\n필요한 열쇠: " + openCount + "개\n보유한 열쇠: " + haveKeyCount + "개\n부족한 열쇠: " + (openCount - haveKeyCount) + "개\n\n해방의 열쇠🗝️는 후원에서 구매할 수 있습니다.\nhttps://hoiland123.tistory.com/700",
             false
         );
     }
@@ -49794,8 +49807,8 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     lines.push("사용한 열쇠: " + openCount + "개");
     lines.push("남은 해방의 열쇠🗝️: " + numberWithCommas(normalizeSealedVaultCount(bag[config.keyItemName])) + "개");
     lines.push("");
-    lines.push("현재 2배 부스터: " + getSealedVaultBoosterPercent(state) + "% (" + state.boosterCount + "/" + config.boosterCycle + ")");
-    lines.push("플래티넘 확정까지: " + (config.platinumPityCount - state.platinumMissCount) + "회");
+    lines.push("🔥 현재 2배 부스터: " + getSealedVaultBoosterPercent(state) + "% (" + state.boosterCount + "/" + config.boosterCycle + ")");
+    lines.push("💎 플래티넘 금고 확정까지: " + (config.platinumPityCount - state.platinumMissCount) + "회");
 
     var noticeMessages = [];
     for (var noticeIndex = 0; noticeIndex < rareEvents.length; noticeIndex++) {
