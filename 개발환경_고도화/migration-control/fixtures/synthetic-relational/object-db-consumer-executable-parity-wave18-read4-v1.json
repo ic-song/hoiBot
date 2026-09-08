@@ -1,0 +1,55 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave18:read4:v1",
+  "sliceId": "WBS781",
+  "consumerIds": [
+    "sql-repository-3001ad9fc2f36d01",
+    "sql-repository-41a1be35f0d83825",
+    "sql-repository-4fdd013faca84a3f",
+    "sql-repository-55dcd683c5528d65"
+  ],
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/inventory/bag-shadow-parity-provider.ts",
+    "개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts",
+    "개발환경_고도화/runtime/src/pet/canonical-pet-skill-readiness-provider.ts",
+    "개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts",
+    "개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-seed.ts",
+    "개발환경_고도화/runtime/src/pet/canonical-pet-skill-handler-registry.ts",
+    "개발환경_고도화/runtime/src/runtime/environment-context.ts",
+    "개발환경_고도화/runtime/src/database.ts",
+    "개발환경_고도화/migration-control/fixtures/synthetic-relational/pet-skill-definitions-v2400.json",
+    "개발환경_고도화/migration-control/fixtures/synthetic-relational/pet-skill-post-freeze-v2435.json"
+  ],
+  "receiptContract": {
+    "version": "WBS781_READ4_DIRECT_V1",
+    "transaction": "READ_ONLY",
+    "sourceDomainDmlCount": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES",
+    "bagSelectCount": 10,
+    "petEvaluateSnapshotCount": 1,
+    "petEvaluateInSnapshotCount": 0,
+    "readinessEnvironment": "VERIFIED_DATABASE_IDENTITY"
+  },
+  "bindings": [
+    {"consumerId":"sql-repository-3001ad9fc2f36d01","scenarioId":"wave18-bag-compare-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave18BagCompare","expectedResultSha256":"5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69"},
+    {"consumerId":"sql-repository-3001ad9fc2f36d01","scenarioId":"wave18-bag-compare-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave18BagCompare","expectedResultSha256":"b5025052d4c7205c3c67da864c8942f234b0de480b2d8bb73001130a0b7e551f"},
+    {"consumerId":"sql-repository-3001ad9fc2f36d01","scenarioId":"wave18-bag-compare-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave18BagCompare","expectedResultSha256":"5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69"},
+    {"consumerId":"sql-repository-3001ad9fc2f36d01","scenarioId":"wave18-bag-compare-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave18BagCompare","expectedResultSha256":"fe173421b88e243e308af17217a9ee3e06e4be21f619fa6eafaf8b3422074144"},
+    {"consumerId":"sql-repository-3001ad9fc2f36d01","scenarioId":"wave18-bag-compare-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave18BagCompare","expectedResultSha256":"5b21947e40749223a3e0892ebf8afe7015d821995e490fbd817a187372defa69"},
+    {"consumerId":"sql-repository-41a1be35f0d83825","scenarioId":"wave18-pet-evaluate-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave18PetEvaluate","expectedResultSha256":"c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539"},
+    {"consumerId":"sql-repository-41a1be35f0d83825","scenarioId":"wave18-pet-evaluate-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave18PetEvaluate","expectedResultSha256":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"},
+    {"consumerId":"sql-repository-41a1be35f0d83825","scenarioId":"wave18-pet-evaluate-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave18PetEvaluate","expectedResultSha256":"c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539"},
+    {"consumerId":"sql-repository-41a1be35f0d83825","scenarioId":"wave18-pet-evaluate-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave18PetEvaluate","expectedResultSha256":"83bb8365f064751869f6cd5ef5f2380e04ccba94ba55b6c5fb2c5dfb34057cc0"},
+    {"consumerId":"sql-repository-41a1be35f0d83825","scenarioId":"wave18-pet-evaluate-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave18PetEvaluate","expectedResultSha256":"c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539"},
+    {"consumerId":"sql-repository-4fdd013faca84a3f","scenarioId":"wave18-readiness-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave18PetReadinessInspect","expectedResultSha256":"f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16"},
+    {"consumerId":"sql-repository-4fdd013faca84a3f","scenarioId":"wave18-readiness-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave18PetReadinessInspect","expectedResultSha256":"0026ce913a9bb13e5d347d177f12b96dc3b9144009295325c0255580d705aa54"},
+    {"consumerId":"sql-repository-4fdd013faca84a3f","scenarioId":"wave18-readiness-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave18PetReadinessInspect","expectedResultSha256":"f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16"},
+    {"consumerId":"sql-repository-4fdd013faca84a3f","scenarioId":"wave18-readiness-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave18PetReadinessInspect","expectedResultSha256":"c88009c08d5ab2343ad6bf3adf3dde19f35c28e47e9429f7a2ecd9daa1ab4df5"},
+    {"consumerId":"sql-repository-4fdd013faca84a3f","scenarioId":"wave18-readiness-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave18PetReadinessInspect","expectedResultSha256":"f975cb33e3acd279e9b4712be8c9b4c6b873636f20f9d53405abe1a5a29eaf16"},
+    {"consumerId":"sql-repository-55dcd683c5528d65","scenarioId":"wave18-pet-snapshot-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave18PetEvaluateInSnapshot","expectedResultSha256":"c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539"},
+    {"consumerId":"sql-repository-55dcd683c5528d65","scenarioId":"wave18-pet-snapshot-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave18PetEvaluateInSnapshot","expectedResultSha256":"74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"},
+    {"consumerId":"sql-repository-55dcd683c5528d65","scenarioId":"wave18-pet-snapshot-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave18PetEvaluateInSnapshot","expectedResultSha256":"c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539"},
+    {"consumerId":"sql-repository-55dcd683c5528d65","scenarioId":"wave18-pet-snapshot-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave18PetEvaluateInSnapshot","expectedResultSha256":"1a7595151f239344fe1df3eb342d0c4cbcdfe57f61f0d863533b39730650ddb9"},
+    {"consumerId":"sql-repository-55dcd683c5528d65","scenarioId":"wave18-pet-snapshot-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave18PetEvaluateInSnapshot","expectedResultSha256":"c8d054f538bdd2441290ee9c7e9e16c41b06d2b66e8e120c0333ad9c88a29539"}
+  ]
+}

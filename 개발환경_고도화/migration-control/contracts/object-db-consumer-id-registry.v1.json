@@ -5539,6 +5539,21 @@
       "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/inventory/legacy-rank-label-side-effect-readiness-provider.ts\",\"resolve\",\"SQL_METHOD:resolve\"]",
       "consumerId": "sql-repository-3b23c2f0f5501988",
       "state": "ACTIVE"
+    },
+    {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts\",\"evaluate\",\"SQL_METHOD:evaluate\"]",
+      "consumerId": "sql-repository-41a1be35f0d83825",
+      "state": "ACTIVE"
+    },
+    {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/pet/canonical-pet-skill-readiness-provider.ts\",\"inspect\",\"SQL_METHOD:inspect\"]",
+      "consumerId": "sql-repository-4fdd013faca84a3f",
+      "state": "ACTIVE"
+    },
+    {
+      "logicalKey": "[\"SQL_REPOSITORY\",\"개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts\",\"evaluateInSnapshot\",\"SQL_METHOD:evaluateInSnapshot\"]",
+      "consumerId": "sql-repository-55dcd683c5528d65",
+      "state": "ACTIVE"
     }
   ]
 }
