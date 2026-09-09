@@ -16,8 +16,8 @@
     "manifestSha256": "dfe3273a722703a7837eaaf27780eb23bfccffc58bceee321964ffc978e6bd02",
     "manifestConsumerSetSha256": "015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a",
     "ledgerPath": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
-    "ledgerSha256": "72346dc2a2c3a20189f23ec4682687cd96c372d1336e48f7414bf8661dbba0f9",
-    "ledgerEntrySetSha256": "980bce23b397c9426c0b9294002c815d88c5fb3e275dff887194131df80c400f"
+    "ledgerSha256": "557a89755073290177389005a129692fe706cb58e189b9ed66904c4b70c97f17",
+    "ledgerEntrySetSha256": "7103871b3f92f6f1a5c14a4c81ba5e534d9f6888e8f3f45d8df48ac61d23e131"
   },
   "policy": {
     "A_REUSABLE_PROOF_ASSET": "A prior bundle, observation or harness is reusable input only; it is not completed proof and requires re-execution or exact resealing as official receipts.",
@@ -137,10 +137,10 @@
   ],
   "summary": {
     "manifestConsumers": 1133,
-    "alreadyDirectOrEquivalent": 41,
-    "residualConsumers": 1092,
+    "alreadyDirectOrEquivalent": 44,
+    "residualConsumers": 1089,
     "categoryCounts": {
-      "A_REUSABLE_PROOF_ASSET": 5,
+      "A_REUSABLE_PROOF_ASSET": 2,
       "B_STRICT_EQUIVALENCE": 10,
       "C_DIRECT_EXECUTION": 995,
       "D_PREREQUISITE": 82
@@ -151,17 +151,17 @@
       "BUILDING-RECIPE": 24,
       "CONTEXT-BRIDGE": 12,
       "CURRENCY-SHOP": 73,
-      "FURNITURE-HOME": 29,
+      "FURNITURE-HOME": 28,
       "HOME-AGGREGATE-RANK": 86,
       "ITEM": 161,
       "MARKET-ORCHESTRATOR": 95,
       "MEMBER-TITLE": 23,
-      "MINI-PET": 62,
+      "MINI-PET": 61,
       "MINI-PET-TITLE-COLLECTION": 14,
       "PACKAGE-CATALOG": 65,
       "PACKAGE-USE": 81,
       "PET-EQUIPMENT": 100,
-      "PET-SKILL": 68,
+      "PET-SKILL": 67,
       "PET-TITLE": 30
     },
     "byKind": {
@@ -171,10 +171,10 @@
       "HTTP_WEB_ROUTE": 81,
       "LEGACY_COMMAND": 682,
       "RUNTIME_DISPATCH": 179,
-      "SQL_REPOSITORY": 64
+      "SQL_REPOSITORY": 61
     },
     "byAccessClass": {
-      "MUTATION": 626,
+      "MUTATION": 623,
       "READ": 466
     }
   },
@@ -116282,127 +116282,6 @@
       "blockers": []
     },
     {
-      "consumerId": "sql-repository-31c4099080d9c9c1",
-      "category": "A_REUSABLE_PROOF_ASSET",
-      "domain": "PET-SKILL",
-      "kind": "SQL_REPOSITORY",
-      "accessClass": "MUTATION",
-      "interfaceId": "pet-skill.repository.maria-canonical-pet-skill-repository.grant",
-      "sourceSpanSha256": "b572aa5281d29c1f853e727eaa5826d9626d70fcf26fa49e927fc5b2854b8eda",
-      "targetTables": [
-        "canonical_owned_pet_instances",
-        "canonical_owned_pet_skill_equipments",
-        "canonical_owned_pet_skill_stacks",
-        "canonical_pet_skill_definitions",
-        "canonical_pet_skill_operation_replays",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_owned_pet_instances.owned_pet_id",
-        "canonical_owned_pet_skill_equipments.owned_pet_skill_equipment_id",
-        "canonical_owned_pet_skill_stacks.INSERT_TIME",
-        "canonical_owned_pet_skill_stacks.INSERT_USER",
-        "canonical_owned_pet_skill_stacks.UPDATE_TIME",
-        "canonical_owned_pet_skill_stacks.UPDATE_USER",
-        "canonical_owned_pet_skill_stacks.owned_pet_skill_id",
-        "canonical_owned_pet_skill_stacks.pet_skill_id",
-        "canonical_owned_pet_skill_stacks.player_id",
-        "canonical_owned_pet_skill_stacks.quantity",
-        "canonical_pet_skill_definitions.INSERT_TIME",
-        "canonical_pet_skill_definitions.INSERT_USER",
-        "canonical_pet_skill_definitions.UPDATE_TIME",
-        "canonical_pet_skill_definitions.UPDATE_USER",
-        "canonical_pet_skill_definitions.active_flag",
-        "canonical_pet_skill_definitions.handler_key",
-        "canonical_pet_skill_definitions.options_json",
-        "canonical_pet_skill_definitions.pet_skill_id",
-        "canonical_pet_skill_operation_replays.INSERT_TIME",
-        "canonical_pet_skill_operation_replays.INSERT_USER",
-        "canonical_pet_skill_operation_replays.UPDATE_TIME",
-        "canonical_pet_skill_operation_replays.UPDATE_USER",
-        "canonical_pet_skill_operation_replays.operation_kind",
-        "canonical_pet_skill_operation_replays.operation_status",
-        "canonical_pet_skill_operation_replays.owned_pet_id",
-        "canonical_pet_skill_operation_replays.owned_pet_skill_equipment_id",
-        "canonical_pet_skill_operation_replays.payload_fingerprint",
-        "canonical_pet_skill_operation_replays.pet_skill_id",
-        "canonical_pet_skill_operation_replays.pet_skill_operation_id",
-        "canonical_pet_skill_operation_replays.player_id",
-        "canonical_pet_skill_operation_replays.request_key",
-        "canonical_pet_skill_operation_replays.resulting_quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "pet-skill.repository.maria-canonical-pet-skill-repository.grant",
-      "transactionParticipantInterfaceIds": [
-        "pet-skill.ownership.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_pet_skill_operation_replays"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "1070f6afee6f0a659513a6e29c92696f3035e838d6d53d4134cf71eb01928efb"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "1070f6afee6f0a659513a6e29c92696f3035e838d6d53d4134cf71eb01928efb"
-          }
-        }
-      ],
-      "nextAction": "REEXECUTE_OR_RESEAL_AS_OFFICIAL_RECEIPTS",
-      "evidenceCandidate": {
-        "evidenceKind": "SEALED_OBSERVATION",
-        "evidenceCommit": "dd912eca5f7f926c1e5213cd64d46f5294ca5ea1",
-        "evidenceRefs": [
-          "개발환경_고도화/migration-control/evidence/wbs789-pet-skill-grant/targeted-evidence.json"
-        ]
-      },
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
       "consumerId": "sql-repository-371fd50e7bc0f625",
       "category": "C_DIRECT_EXECUTION",
       "domain": "PET-TITLE",
@@ -119010,133 +118889,6 @@
       "blockers": []
     },
     {
-      "consumerId": "sql-repository-818137c4fb22037a",
-      "category": "A_REUSABLE_PROOF_ASSET",
-      "domain": "FURNITURE-HOME",
-      "kind": "SQL_REPOSITORY",
-      "accessClass": "MUTATION",
-      "interfaceId": "furniture-home.repository.canonical-furniture-home-repository.placeOwnedFurniture",
-      "sourceSpanSha256": "b24303b0f0b36db045cdbc5d243eea27e6abfe098b25304ba44c126c8ac5a7d9",
-      "targetTables": [
-        "canonical_players",
-        "object_furniture_definitions",
-        "object_furniture_operation_replays",
-        "object_furniture_ownership_history",
-        "object_home_furniture_placements",
-        "object_owned_furniture_instances"
-      ],
-      "targetColumns": [
-        "canonical_players.player_id",
-        "object_furniture_definitions.furniture_id",
-        "object_furniture_operation_replays.INSERT_TIME",
-        "object_furniture_operation_replays.INSERT_USER",
-        "object_furniture_operation_replays.UPDATE_TIME",
-        "object_furniture_operation_replays.UPDATE_USER",
-        "object_furniture_operation_replays.furniture_operation_id",
-        "object_furniture_operation_replays.idempotency_key",
-        "object_furniture_operation_replays.idempotency_scope",
-        "object_furniture_operation_replays.operation_kind",
-        "object_furniture_operation_replays.owned_furniture_id",
-        "object_furniture_operation_replays.payload_fingerprint",
-        "object_furniture_operation_replays.player_id",
-        "object_furniture_operation_replays.result_status",
-        "object_furniture_ownership_history.INSERT_TIME",
-        "object_furniture_ownership_history.INSERT_USER",
-        "object_furniture_ownership_history.UPDATE_TIME",
-        "object_furniture_ownership_history.UPDATE_USER",
-        "object_furniture_ownership_history.furniture_operation_id",
-        "object_furniture_ownership_history.furniture_ownership_history_id",
-        "object_furniture_ownership_history.owned_furniture_id",
-        "object_furniture_ownership_history.status_after",
-        "object_furniture_ownership_history.status_before",
-        "object_home_furniture_placements.INSERT_TIME",
-        "object_home_furniture_placements.INSERT_USER",
-        "object_home_furniture_placements.UPDATE_TIME",
-        "object_home_furniture_placements.UPDATE_USER",
-        "object_home_furniture_placements.home_furniture_placement_id",
-        "object_home_furniture_placements.owned_furniture_id",
-        "object_home_furniture_placements.placement_order",
-        "object_owned_furniture_instances.INSERT_TIME",
-        "object_owned_furniture_instances.INSERT_USER",
-        "object_owned_furniture_instances.UPDATE_TIME",
-        "object_owned_furniture_instances.UPDATE_USER",
-        "object_owned_furniture_instances.furniture_id",
-        "object_owned_furniture_instances.owned_furniture_id",
-        "object_owned_furniture_instances.ownership_status",
-        "object_owned_furniture_instances.player_id"
-      ],
-      "transactionOwnerInterfaceId": "furniture-home.repository.canonical-furniture-home-repository.placeOwnedFurniture",
-      "transactionParticipantInterfaceIds": [
-        "furniture.ownership.mutate"
-      ],
-      "operationReceiptTables": [
-        "object_furniture_operation_replays",
-        "object_furniture_ownership_history"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "8d548f9ab77f08eb3345e1b775156c49d2111c426de83d920f3f5ed18809b530"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "8d548f9ab77f08eb3345e1b775156c49d2111c426de83d920f3f5ed18809b530"
-          }
-        }
-      ],
-      "nextAction": "REEXECUTE_OR_RESEAL_AS_OFFICIAL_RECEIPTS",
-      "evidenceCandidate": {
-        "evidenceKind": "SEALED_OBSERVATION",
-        "evidenceCommit": "d773af54996907b07a5cdfe5ae3ef8c2f3436311",
-        "evidenceRefs": [
-          "개발환경_고도화/migration-control/evidence/wbs787-furniture-place/targeted-evidence.json"
-        ]
-      },
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
       "consumerId": "sql-repository-81ba01f732909dc7",
       "category": "C_DIRECT_EXECUTION",
       "domain": "MINI-PET-TITLE-COLLECTION",
@@ -121681,121 +121433,6 @@
       ],
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "sql-repository-f6c531148a436a21",
-      "category": "A_REUSABLE_PROOF_ASSET",
-      "domain": "MINI-PET",
-      "kind": "SQL_REPOSITORY",
-      "accessClass": "MUTATION",
-      "interfaceId": "mini-pet.repository.canonical-mini-pet-repository.acquire",
-      "sourceSpanSha256": "20d39cc4886ac67218f1926afafff179d6768d7b1f2dca4751a2061c40c4082c",
-      "targetTables": [
-        "canonical_mini_pet_definitions",
-        "canonical_mini_pet_operation_replays",
-        "canonical_owned_mini_pet_instances",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_mini_pet_definitions.INSERT_TIME",
-        "canonical_mini_pet_definitions.INSERT_USER",
-        "canonical_mini_pet_definitions.UPDATE_TIME",
-        "canonical_mini_pet_definitions.UPDATE_USER",
-        "canonical_mini_pet_definitions.active_flag",
-        "canonical_mini_pet_definitions.mini_pet_id",
-        "canonical_mini_pet_operation_replays.INSERT_TIME",
-        "canonical_mini_pet_operation_replays.INSERT_USER",
-        "canonical_mini_pet_operation_replays.UPDATE_TIME",
-        "canonical_mini_pet_operation_replays.UPDATE_USER",
-        "canonical_mini_pet_operation_replays.mini_pet_operation_id",
-        "canonical_mini_pet_operation_replays.operation_kind",
-        "canonical_mini_pet_operation_replays.operation_status",
-        "canonical_mini_pet_operation_replays.owned_mini_pet_id",
-        "canonical_mini_pet_operation_replays.payload_fingerprint",
-        "canonical_mini_pet_operation_replays.player_id",
-        "canonical_mini_pet_operation_replays.request_key",
-        "canonical_owned_mini_pet_instances.INSERT_TIME",
-        "canonical_owned_mini_pet_instances.INSERT_USER",
-        "canonical_owned_mini_pet_instances.UPDATE_TIME",
-        "canonical_owned_mini_pet_instances.UPDATE_USER",
-        "canonical_owned_mini_pet_instances.bound_flag",
-        "canonical_owned_mini_pet_instances.enhancement_level",
-        "canonical_owned_mini_pet_instances.equipped_flag",
-        "canonical_owned_mini_pet_instances.mini_pet_id",
-        "canonical_owned_mini_pet_instances.owned_mini_pet_id",
-        "canonical_owned_mini_pet_instances.ownership_status",
-        "canonical_owned_mini_pet_instances.player_id",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "mini-pet.repository.canonical-mini-pet-repository.acquire",
-      "transactionParticipantInterfaceIds": [
-        "mini-pet.ownership.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_mini_pet_operation_replays"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "482d520399fd484f1319e0bfec775eca7b73b6d6ec99822eb1eb5bae68e9551e"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "482d520399fd484f1319e0bfec775eca7b73b6d6ec99822eb1eb5bae68e9551e"
-          }
-        }
-      ],
-      "nextAction": "REEXECUTE_OR_RESEAL_AS_OFFICIAL_RECEIPTS",
-      "evidenceCandidate": {
-        "evidenceKind": "REUSABLE_HARNESS",
-        "evidenceCommit": "db69cd8f59c90f8a2bd603abcc720252cc2af20a",
-        "evidenceRefs": [
-          "개발환경_고도화/runtime/test/canonical-mini-pet-acquire-mariadb.integration.test.ts"
-        ]
-      },
       "equivalenceCohortId": null,
       "blockers": []
     },
