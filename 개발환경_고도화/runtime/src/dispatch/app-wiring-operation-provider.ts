@@ -3,7 +3,7 @@ import { hasConsistentRootTransactionCapability, type CapableDatabaseClient, typ
 import { assertReadOnlySqlStatement } from "../database/read-only-sql-boundary.js";
 import { OBJECT_IDENTITY_MAX_ATTEMPTS, assertObjectIdentityCandidate, createObjectAuditValues, createObjectIdentityCandidate, type ObjectIdentityCandidateGenerator } from "../identity/object-identity-audit-provider.js";
 import { assertVerifiedEnvironmentContext, type VerifiedEnvironmentContext } from "../runtime/environment-context.js";
-import { withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
+import { isMariaTransactionRetryExhaustion, withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
 
 export type AppWiringEntrypointKind = "IRIS" | "AUTOMATIC" | "ADMIN" | "WEB";
 export type AppWiringRoute = "MODERN" | "SHADOW" | "LEGACY_FALLBACK" | "REJECT";
@@ -69,6 +69,11 @@ export type AppWiringPersistedMutationIrisOutcome<T> =
   | { readonly value: T; readonly reply: AppWiringPersistedReply<T>["reply"] }
   | { readonly value: T; readonly noReply: { readonly kind: "NO_REPLY" } };
 export interface AppWiringMutationReplyContext { readonly operationId: bigint }
+export interface AppWiringMutationRunOptions { readonly retryTransientRootTransaction?: true }
+export const APP_WIRING_MUTATION_ROOT_RETRY_EXHAUSTED = "APP_WIRING_MUTATION_ROOT_RETRY_EXHAUSTED" as const;
+export function isAppWiringMutationRootRetryExhaustion(error:unknown):boolean{
+  return isMariaTransactionRetryExhaustion(error,APP_WIRING_MUTATION_ROOT_RETRY_EXHAUSTED);
+}
 export interface AppWiringReadParticipant { query<T>(sql: string, values?: readonly unknown[]): Promise<T> }
 export type AppWiringReadOnlyTerminalStatus = "SHADOW_EVALUATED" | "SHADOW_DENIED" | "MODERN_REPLIED" | "MODERN_DENIED";
 export interface AppWiringAtomicRoutingDecision { readonly eventId:string;readonly messageHash:string }
@@ -642,48 +647,52 @@ export class MariaAppWiringOperationProvider {
     }
   }
 
-  async runMutation<T>(claim: ActivePreparedClaim, handler: (db: AppWiringMutationParticipant, claim: AppWiringClaim) => Promise<AppWiringMutationHandlerOutcome<T>>): Promise<T> {
+  async runMutation<T>(claim: ActivePreparedClaim, handler: (db: AppWiringMutationParticipant, claim: AppWiringClaim) => Promise<AppWiringMutationHandlerOutcome<T>>,options:AppWiringMutationRunOptions={}): Promise<T> {
     const secret=getSecret(claim,"MUTATION");
     if(claim.claim.route === "SHADOW" || claim.claim.route === "REJECT") throw new Error("APP_WIRING_ROUTE_EFFECT_INVALID");
-    let terminalAttempted=false;
-    let completedOutcome:AppWiringMutationHandlerOutcome<T>|undefined;
-    let expectedResultJson:string|undefined;
-    let expectedBinding:ReceiptBinding|undefined;
-    let expectedLinkId:string|undefined;
-    try {
-      return await this.database.withControlledTransaction(async(tx) => {
-        await this.assertLease(tx,claim,secret,true);
-        const ensureMutationStarted=async():Promise<void>=>{
-          const audit=createObjectAuditValues(secret.actor,this.now());
-          const transition=await tx.execute("UPDATE canonical_app_wiring_operations SET claim_state='MUTATION_STARTED',recovery_status='PENDING',recovery_code='ACTIVE_MUTATION_IN_PROGRESS',UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='CLAIMED' AND lease_token=? AND lease_generation=? AND lease_expires_time>?",[audit.UPDATE_USER,audit.UPDATE_TIME,claim.claim.appWiringOperationId,secret.leaseToken,secret.leaseGeneration,audit.UPDATE_TIME]);
-          if(transition.affectedRows===1n)return;
-          const row=await readClaim(tx,claim.claim.requestIdentityFingerprint);
-          if(row?.claim_state!=="MUTATION_STARTED"||row.lease_token!==secret.leaseToken||row.lease_generation===null||BigInt(row.lease_generation)!==secret.leaseGeneration)throw new Error("APP_WIRING_MUTATION_TRANSITION_CONFLICT");
-          if(row.lease_expires_time===null||row.lease_expires_time<=audit.UPDATE_TIME)throw new Error("APP_WIRING_LEASE_EXPIRED");
-        };
-        let participant!:AppWiringMutationParticipant;
-        participant={query:async<R>(sql:string,values:readonly unknown[]=[])=>{assertReadOnlySqlStatement(sql,true);return tx.query<R>(sql,values);},execute:async(sql:string,values:readonly unknown[]=[])=>{assertDomainMutation(sql);await ensureMutationStarted();return tx.execute(sql,values);},withTransaction:<R>(work:(db:AppWiringMutationParticipant)=>Promise<R>)=>tx.withSavepoint(()=>work(participant))};
-        const outcome=await handler(participant,claim.claim);
-        await this.assertMutationLease(tx,claim,secret,true);
-        const receipt=safeResult(outcome.receipt);
-        if(receipt.value.resultFingerprint===undefined)throw new Error("APP_WIRING_MUTATION_RESULT_FINGERPRINT_REQUIRED");
-        const binding=receiptBinding(outcome.typedReceipt);
-        if(binding.fingerprint!==receipt.value.resultFingerprint)throw new Error("APP_WIRING_RECEIPT_FINGERPRINT_MISMATCH");
-        const typed=(await tx.query<Array<{result_fingerprint:string;operation_status:string}>>(`SELECT result_fingerprint,${binding.statusColumn} FROM ${binding.table} WHERE ${binding.column}=? FOR UPDATE`,[binding.operationId]))[0];
-        if(typed===undefined)throw new Error("APP_WIRING_TYPED_RECEIPT_NOT_FOUND");
-        if(typed.operation_status!=="COMPLETED")throw new Error("APP_WIRING_TYPED_RECEIPT_NOT_COMPLETED");
-        if(typed.result_fingerprint!==binding.fingerprint)throw new Error("APP_WIRING_TYPED_RECEIPT_FINGERPRINT_MISMATCH");
-        const typedIds:Array<string|null>=Array(11).fill(null);typedIds[binding.position]=binding.operationId;
+    let attemptedState:{readonly completedOutcome:AppWiringMutationHandlerOutcome<T>;readonly expectedResultJson:string;readonly expectedBinding:ReceiptBinding;readonly expectedLinkId:string}|undefined;
+    const executeAttempt=async(transaction:DatabaseTransaction):Promise<T>=>{
+      // 재시도마다 이전 rollback 시도의 receipt/outcome을 버리고 새 root transaction 상태만 사용합니다.
+      attemptedState=undefined;
+      const tx=transaction as ControlledDatabaseTransaction;
+      await this.assertLease(tx,claim,secret,true);
+      const ensureMutationStarted=async():Promise<void>=>{
         const audit=createObjectAuditValues(secret.actor,this.now());
-        let linkId:string|undefined;
-        for(let attempt=0;attempt<this.maxAttempts;attempt+=1){const candidate=this.generate();assertObjectIdentityCandidate(candidate);try{const linked=await tx.execute("INSERT INTO canonical_app_wiring_receipt_links(canonical_app_wiring_receipt_link_id,app_wiring_operation_id,receipt_kind,result_fingerprint,daily_prayer_operation_id,home_aggregate_operation_id,market_operation_id,member_title_operation_id,mini_pet_title_operation_id,package_use_operation_id,pet_explore_operation_id,pet_explore_event_control_operation_id,pet_title_operation_id,pet_title_batch_operation_id,player_identity_operation_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",[candidate,claim.claim.appWiringOperationId,binding.kind,binding.fingerprint,...typedIds,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);if(linked.affectedRows!==1n)throw new Error("APP_WIRING_RECEIPT_LINK_NOT_PERSISTED");linkId=candidate;break;}catch(error){if(!isDuplicate(error))throw error;if(!isPrimaryKeyDuplicate(error))throw new Error("APP_WIRING_RECEIPT_LINK_BUSINESS_CONFLICT");}}
-        if(linkId===undefined)throw new Error("APP_WIRING_RECEIPT_LINK_ID_COLLISION_RETRY_EXHAUSTED");
-        completedOutcome=outcome;expectedResultJson=receipt.serialized;expectedBinding=binding;expectedLinkId=linkId;terminalAttempted=true;
-        const result=await tx.execute("UPDATE canonical_app_wiring_operations SET claim_state='COMPLETED',result_json=?,error_code=NULL,lease_token=NULL,lease_expires_time=NULL,recovery_status='NONE',recovery_code=NULL,UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='MUTATION_STARTED' AND lease_token=? AND lease_generation=? AND lease_expires_time>?",[receipt.serialized,audit.UPDATE_USER,audit.UPDATE_TIME,claim.claim.appWiringOperationId,secret.leaseToken,secret.leaseGeneration,audit.UPDATE_TIME]);
-        if(result.affectedRows!==1n)throw new Error("APP_WIRING_TERMINAL_TRANSITION_CONFLICT");return outcome.value;
-      });
+        const transition=await tx.execute("UPDATE canonical_app_wiring_operations SET claim_state='MUTATION_STARTED',recovery_status='PENDING',recovery_code='ACTIVE_MUTATION_IN_PROGRESS',UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='CLAIMED' AND lease_token=? AND lease_generation=? AND lease_expires_time>?",[audit.UPDATE_USER,audit.UPDATE_TIME,claim.claim.appWiringOperationId,secret.leaseToken,secret.leaseGeneration,audit.UPDATE_TIME]);
+        if(transition.affectedRows===1n)return;
+        const row=await readClaim(tx,claim.claim.requestIdentityFingerprint);
+        if(row?.claim_state!=="MUTATION_STARTED"||row.lease_token!==secret.leaseToken||row.lease_generation===null||BigInt(row.lease_generation)!==secret.leaseGeneration)throw new Error("APP_WIRING_MUTATION_TRANSITION_CONFLICT");
+        if(row.lease_expires_time===null||row.lease_expires_time<=audit.UPDATE_TIME)throw new Error("APP_WIRING_LEASE_EXPIRED");
+      };
+      let participant!:AppWiringMutationParticipant;
+      participant={query:async<R>(sql:string,values:readonly unknown[]=[])=>{assertReadOnlySqlStatement(sql,true);return tx.query<R>(sql,values);},execute:async(sql:string,values:readonly unknown[]=[])=>{assertDomainMutation(sql);await ensureMutationStarted();return tx.execute(sql,values);},withTransaction:<R>(work:(db:AppWiringMutationParticipant)=>Promise<R>)=>tx.withSavepoint(()=>work(participant))};
+      const outcome=await handler(participant,claim.claim);
+      await this.assertMutationLease(tx,claim,secret,true);
+      const receipt=safeResult(outcome.receipt);
+      if(receipt.value.resultFingerprint===undefined)throw new Error("APP_WIRING_MUTATION_RESULT_FINGERPRINT_REQUIRED");
+      const binding=receiptBinding(outcome.typedReceipt);
+      if(binding.fingerprint!==receipt.value.resultFingerprint)throw new Error("APP_WIRING_RECEIPT_FINGERPRINT_MISMATCH");
+      const typed=(await tx.query<Array<{result_fingerprint:string;operation_status:string}>>(`SELECT result_fingerprint,${binding.statusColumn} FROM ${binding.table} WHERE ${binding.column}=? FOR UPDATE`,[binding.operationId]))[0];
+      if(typed===undefined)throw new Error("APP_WIRING_TYPED_RECEIPT_NOT_FOUND");
+      if(typed.operation_status!=="COMPLETED")throw new Error("APP_WIRING_TYPED_RECEIPT_NOT_COMPLETED");
+      if(typed.result_fingerprint!==binding.fingerprint)throw new Error("APP_WIRING_TYPED_RECEIPT_FINGERPRINT_MISMATCH");
+      const typedIds:Array<string|null>=Array(11).fill(null);typedIds[binding.position]=binding.operationId;
+      const audit=createObjectAuditValues(secret.actor,this.now());
+      let linkId:string|undefined;
+      for(let attempt=0;attempt<this.maxAttempts;attempt+=1){const candidate=this.generate();assertObjectIdentityCandidate(candidate);try{const linked=await tx.execute("INSERT INTO canonical_app_wiring_receipt_links(canonical_app_wiring_receipt_link_id,app_wiring_operation_id,receipt_kind,result_fingerprint,daily_prayer_operation_id,home_aggregate_operation_id,market_operation_id,member_title_operation_id,mini_pet_title_operation_id,package_use_operation_id,pet_explore_operation_id,pet_explore_event_control_operation_id,pet_title_operation_id,pet_title_batch_operation_id,player_identity_operation_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",[candidate,claim.claim.appWiringOperationId,binding.kind,binding.fingerprint,...typedIds,audit.INSERT_USER,audit.INSERT_TIME,audit.UPDATE_USER,audit.UPDATE_TIME]);if(linked.affectedRows!==1n)throw new Error("APP_WIRING_RECEIPT_LINK_NOT_PERSISTED");linkId=candidate;break;}catch(error){if(!isDuplicate(error))throw error;if(!isPrimaryKeyDuplicate(error))throw new Error("APP_WIRING_RECEIPT_LINK_BUSINESS_CONFLICT");}}
+      if(linkId===undefined)throw new Error("APP_WIRING_RECEIPT_LINK_ID_COLLISION_RETRY_EXHAUSTED");
+      attemptedState={completedOutcome:outcome,expectedResultJson:receipt.serialized,expectedBinding:binding,expectedLinkId:linkId};
+      const result=await tx.execute("UPDATE canonical_app_wiring_operations SET claim_state='COMPLETED',result_json=?,error_code=NULL,lease_token=NULL,lease_expires_time=NULL,recovery_status='NONE',recovery_code=NULL,UPDATE_USER=?,UPDATE_TIME=? WHERE app_wiring_operation_id=? AND claim_state='MUTATION_STARTED' AND lease_token=? AND lease_generation=? AND lease_expires_time>?",[receipt.serialized,audit.UPDATE_USER,audit.UPDATE_TIME,claim.claim.appWiringOperationId,secret.leaseToken,secret.leaseGeneration,audit.UPDATE_TIME]);
+      if(result.affectedRows!==1n)throw new Error("APP_WIRING_TERMINAL_TRANSITION_CONFLICT");return outcome.value;
+    };
+    try {
+      if(options.retryTransientRootTransaction===true)return await withMariaTransactionRetry(this.database,{maxAttempts:3,allowRetry:kind=>kind==="TRANSACTION_DEADLOCK"||kind==="TRANSACTION_LOCK_WAIT_TIMEOUT",exhaustedErrorCode:APP_WIRING_MUTATION_ROOT_RETRY_EXHAUSTED,rootTransaction:work=>this.database.withControlledTransaction(tx=>work(tx))},executeAttempt);
+      return await this.database.withControlledTransaction(executeAttempt);
     } catch(error) {
-      if(terminalAttempted&&completedOutcome!==undefined&&expectedResultJson!==undefined&&expectedBinding!==undefined&&expectedLinkId!==undefined){
+      // 소진 브랜드는 claim을 CLAIMED로 보존하는 복구 신호이므로 추가 read가 원 오류를 가리지 않게 즉시 전파합니다.
+      if(options.retryTransientRootTransaction===true&&isAppWiringMutationRootRetryExhaustion(error))throw error;
+      if(attemptedState!==undefined){
+        const {completedOutcome,expectedResultJson,expectedBinding,expectedLinkId}=attemptedState;
         const reconciled=await this.database.withControlledTransaction(async tx=>readClaim(tx,claim.claim.requestIdentityFingerprint));
         if(exactTerminalIdentity(reconciled,claim.claim,secret)&&reconciled.claim_state==="COMPLETED"&&reconciled.result_json===expectedResultJson&&reconciled.lease_token===null){
           const link=(await this.database.withControlledTransaction(tx=>tx.query<Array<Record<string,unknown>>>(`SELECT canonical_app_wiring_receipt_link_id,app_wiring_operation_id,receipt_kind,result_fingerprint,${RECEIPT_ID_COLUMNS.join(",")} FROM canonical_app_wiring_receipt_links WHERE canonical_app_wiring_receipt_link_id=? FOR UPDATE`,[expectedLinkId!])))[0];
@@ -696,18 +705,20 @@ export class MariaAppWiringOperationProvider {
   }
 
   // 기존 reply 전용 API를 보존하고, 명시적 NO_REPLY가 필요한 소비자는 공용 union API를 사용합니다.
-  async runMutationReply<T>(claim:ActivePreparedClaim,handler:(db:AppWiringMutationParticipant,claim:AppWiringClaim,context:AppWiringMutationReplyContext)=>Promise<AppWiringMutationReplyOutcome<T>>):Promise<AppWiringPersistedReply<T>>{
-    const outcome=await this.runMutationIrisOutcome(claim,handler);
+  async runMutationReply<T>(claim:ActivePreparedClaim,handler:(db:AppWiringMutationParticipant,claim:AppWiringClaim,context:AppWiringMutationReplyContext)=>Promise<AppWiringMutationReplyOutcome<T>>,options:AppWiringMutationRunOptions={}):Promise<AppWiringPersistedReply<T>>{
+    const outcome=await this.runMutationIrisOutcome(claim,handler,options);
     if (!("reply" in outcome)) throw new Error("APP_WIRING_MUTATION_REPLY_EXPECTED");
     return outcome;
   }
 
   // MODERN mutation의 typed receipt와 REPLY/NO_REPLY 결과를 같은 controlled transaction에 참여시킵니다.
-  async runMutationIrisOutcome<T>(claim:ActivePreparedClaim,handler:(db:AppWiringMutationParticipant,claim:AppWiringClaim,context:AppWiringMutationReplyContext)=>Promise<AppWiringMutationIrisOutcome<T>>):Promise<AppWiringPersistedMutationIrisOutcome<T>>{
+  async runMutationIrisOutcome<T>(claim:ActivePreparedClaim,handler:(db:AppWiringMutationParticipant,claim:AppWiringClaim,context:AppWiringMutationReplyContext)=>Promise<AppWiringMutationIrisOutcome<T>>,options:AppWiringMutationRunOptions={}):Promise<AppWiringPersistedMutationIrisOutcome<T>>{
     if(claim.claim.entrypointKind!=="IRIS"||claim.claim.route!=="MODERN"||claim.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
     let persistedDelivery:AppWiringPersistedMutationIrisOutcome<T>|undefined;
     let expectedReceipt:Readonly<AppWiringReceiptResult>|undefined;
     const value=await this.runMutation(claim,async(database,activeClaim)=>{
+      persistedDelivery=undefined;
+      expectedReceipt=undefined;
       const operation=await database.execute(
         "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,'app-wiring.mutation-reply',?,'external_identity',NULL,'iris','processing',UTC_TIMESTAMP(3))",
         [randomUUID(),activeClaim.appWiringOperationId],
@@ -737,7 +748,7 @@ export class MariaAppWiringOperationProvider {
       }
       expectedReceipt=Object.freeze({status:outcome.receipt.status,referenceId:binding.operationId,resultFingerprint:outcome.receipt.resultFingerprint});
       return {...outcome,receipt:{...outcome.receipt,referenceId:binding.operationId}};
-    });
+    },options);
     if(persistedDelivery===undefined||expectedReceipt===undefined)throw new Error("APP_WIRING_MUTATION_REPLY_NOT_PERSISTED");
     const verified=await this.replayMutationIrisOutcome({...claim.claim,claimState:"COMPLETED",result:expectedReceipt});
     if("reply" in persistedDelivery){
