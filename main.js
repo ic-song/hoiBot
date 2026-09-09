@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.481"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.482"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -3244,7 +3244,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             saveJsonFile(data, filePath);
-            castleMsg(petMusouStartResult.message, replier, true);
+            noticeMsg(petMusouStartResult.message);
             startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, true);
             return;
         }
@@ -35377,7 +35377,7 @@ function runPetMusouScheduleTick(timerCtx, replier, now) {
         if (!scheduleResult.changed) return;
         saveJsonFile(latestData, filePath);
         if (scheduleResult.started) {
-            castleMsg(scheduleResult.message, replier, true);
+            noticeMsg(scheduleResult.message);
             startPetMusouOpeningTimer(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, true, true);
         }
     } catch (scheduleError) {
@@ -35611,7 +35611,15 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData, finaliz
         musou.roundId = musou.nextRoundId;
         musou.startGraceToken = String(signupNow) + "_" + String(Math.random());
         musou.startGraceDeadlineAt = signupNow + GLOBAL_CONFIG.petMusou.startGraceMs;
-        return { ok: true, message: "🗡️ 펫무쌍 참가 모집 🗡️\n" + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 안에 /펫무쌍준비 를 입력하면 이번 대회에 참여할 수 있습니다.\n이미 준비한 참가자는 그대로 참여합니다.\n모집이 끝나면 참가자 명단과 함께 시작합니다." };
+        return {
+            ok: true,
+            message: "[⚔️전체알림⚔️]\n" +
+                "🗡️ 펫무쌍 대화 시작 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 전 🗡️\n" +
+                "/펫무쌍준비 를 입력하면 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 안에 대회에 참여할 수 있습니다.\n\n" +
+                "이미 준비한 참가자는 그대로 참여합니다.\n" +
+                "모집이 끝나면 참가자 명단과 함께 시작합니다.\n" +
+                "https://open.kakao.com/o/gaP4Xybh"
+        };
     }
     if (!musou.active || musou.startReady || !musou.signupOpen) return { ok: false, message: "❌ 참가 모집 중인 대회가 없습니다." };
     var preparedParticipants = musou.nextParticipants;
@@ -35960,7 +35968,7 @@ function buildPetMusouAliveParticipantList(data, petData, guildData, musou) {
     for (var user in musou.players) {
         if (musou.players.hasOwnProperty(user) && musou.players[user].alive) names.push("• " + checkRank(data, petData, guildData, user));
     }
-    return "👥 참가자 명단 (" + names.length + "명)\n" + names.join("\n");
+    return "👥 참가자 명단 (" + names.length + "명)" + allsee + "\n" + names.join("\n");
 }
 
 // 펫무쌍 현재 공격 차례와 깃발·생존 참가자 상태를 출력하는 함수
