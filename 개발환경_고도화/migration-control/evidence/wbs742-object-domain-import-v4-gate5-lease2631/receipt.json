@@ -1,0 +1,70 @@
+{
+  "evidenceSchemaVersion": "object-domain-import-gate5-evidence-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WBS742-G5-20260909-1",
+  "leaseId": 2631,
+  "controlRow": 5642,
+  "baselineCommit": "f7961b3fca90f107cecd4defe4824029c854067d",
+  "gate": 5,
+  "tier": "T2",
+  "result": "PASS",
+  "executionMode": "ISOLATED_MARIADB_SYNTHETIC",
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3364,
+    "schema": "hoibot_rehearsal_wbs742_v4_gate5",
+    "environmentCode": "dev",
+    "migrationCount": 480,
+    "restartProcessChanged": true,
+    "listenerRemovedAfterRun": true
+  },
+  "contract": {
+    "registeredTableCount": 119,
+    "directTargetCount": 47,
+    "targetColumnCount": 263,
+    "definitionTargetCount": 25,
+    "syntheticProjectionRowCount": 49,
+    "comparedFieldValueCount": 272
+  },
+  "freshImport": {
+    "targetRowsBefore": 2,
+    "targetRowsAfter": 51,
+    "insertedTargetRows": 49,
+    "importRunsAfter": 1,
+    "importDecisionsAfter": 13,
+    "importRecordsAfter": 49
+  },
+  "rollbackAndReplay": {
+    "witnessTamperRejected": true,
+    "witnessRestoredBeforeFreshImport": true,
+    "forcedTransactionFailureRolledBack": true,
+    "restartExactReplay": true,
+    "replayCountsUnchanged": true,
+    "rollbackRunCount": 1,
+    "targetRowsBeforeRollback": 51,
+    "targetRowsAfterRollback": 2,
+    "projectionRunsPreserved": 1,
+    "projectionRecordsPreserved": 49
+  },
+  "isolation": {
+    "productionPort": 3306,
+    "productionOwnerPidBefore": 4872,
+    "productionOwnerPidAfter": 4872,
+    "productionOwnerUnchanged": true,
+    "operationalDataAccess": false
+  },
+  "artifacts": {
+    "harnessSha256": "fd0e073551983159112d787e2678c363f7a64baba0c3c8cc5f413feb31e21970",
+    "testSha256": "6b59ca3b935612cf265d8903eda853a6acca9bbf91e86f869f3703a6f2267df3"
+  },
+  "verification": {
+    "isolatedMariaDbHarness": "PASS",
+    "gate3Gate4V2V4FocusedRegression": "19/19 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "powerShellParse": "PASS",
+    "diffCheck": "PASS",
+    "utf8StrictDecode": "PASS"
+  },
+  "forbiddenChangesObserved": false
+}
