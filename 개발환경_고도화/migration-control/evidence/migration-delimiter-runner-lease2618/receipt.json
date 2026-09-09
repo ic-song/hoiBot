@@ -1,0 +1,60 @@
+{
+  "receiptFormat": "hoibot-migration-delimiter-runner-evidence-v1",
+  "leaseId": "Lease2618",
+  "baselineCommit": "d99832c5",
+  "providerCommit": "38b266e3d511f471a1bece9c31d131b79da57acd",
+  "databaseIdentity": {
+    "engine": "MariaDB 11.8.8-MariaDB-ubu2404",
+    "host": "127.0.0.1",
+    "publishedPort": 3349,
+    "database": "hoibot_rehearsal_migration_delimiter_evidence",
+    "containerId": "4932d251f511",
+    "containerName": "hoibot-migration-delimiter-evidence"
+  },
+  "migration490": {
+    "fileSha256": "0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88",
+    "recordedChecksum": "0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88",
+    "appliedTime": "2026-09-09 03:34:44.933",
+    "triggerCount": 1,
+    "preflightRoutineCountAfterMigration": 0
+  },
+  "result": {
+    "freshMigrationCount": 478,
+    "freshFinalMigration": "490_item_bag_import_baseline_ordering.sql",
+    "rerunAppliedCount": 0,
+    "rerunMigrationCount": 478,
+    "rerunMaxAppliedTime": "2026-09-09 03:34:44.933",
+    "operatingDatabaseTouches": 0,
+    "networkCalls": 0,
+    "listenerBeforeRemoval": "127.0.0.1:3349->3306/tcp",
+    "listenerAfterRemoval": "none",
+    "containerRemoved": true
+  },
+  "resultHashPayload": {
+    "databaseEngine": "11.8.8-MariaDB-ubu2404",
+    "databaseHost": "127.0.0.1",
+    "publishedPort": 3349,
+    "containerPort": 3306,
+    "databaseName": "hoibot_rehearsal_migration_delimiter_evidence",
+    "containerId": "4932d251f511",
+    "containerName": "hoibot-migration-delimiter-evidence",
+    "freshMigrationCount": 478,
+    "freshFinalMigration": "490_item_bag_import_baseline_ordering.sql",
+    "replayApplied": 0,
+    "rerunMigrationCount": 478,
+    "triggerCount": 1,
+    "preflightRoutineCount": 0,
+    "migrationFileSha256": "0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88",
+    "recordedChecksum": "0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88",
+    "migrationAppliedTime": "2026-09-09 03:34:44.933",
+    "rerunMaxAppliedTime": "2026-09-09 03:34:44.933",
+    "operatingDatabaseTouches": 0,
+    "networkCalls": 0,
+    "listenerStart": "127.0.0.1:3349->3306/tcp",
+    "listenerBeforeRemoval": "127.0.0.1:3349->3306/tcp",
+    "listenerAfterRemoval": "none",
+    "containerRemoved": true,
+    "rawTranscriptSha256": "f8b599c00db073b04dd90e98a0fd25a594b6a859b2c17feb766d465a92045869"
+  },
+  "resultSha256": "622c7045113985d939362cc86c9f9e78efe2c1ef831174b35fcd33a9200fe972"
+}
