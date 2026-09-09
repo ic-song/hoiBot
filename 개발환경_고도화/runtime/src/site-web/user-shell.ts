@@ -11,7 +11,7 @@ function secureUserShellReply(reply: FastifyReply): FastifyReply {
     .header("x-frame-options", "DENY");
 }
 
-// 기존 사용자 인증 API를 소비하는 로그인·이용자 홈 셸 경로를 등록합니다.
+// 기존 사용자 인증 API를 소비하는 로그인·이용자 홈·계정 연결 셸 경로를 등록합니다.
 export async function registerUserShellRoutes(app: FastifyInstance): Promise<void> {
   const serveShell = async (_request: unknown, reply: FastifyReply) =>
     secureUserShellReply(reply).type("text/html; charset=utf-8").send(USER_SHELL_HTML);
@@ -21,6 +21,10 @@ export async function registerUserShellRoutes(app: FastifyInstance): Promise<voi
   app.get("/login/", serveShell);
   app.get("/app", serveShell);
   app.get("/app/", serveShell);
+  app.get("/account", serveShell);
+  app.get("/account/", serveShell);
+  app.get("/account/links", serveShell);
+  app.get("/account/links/", serveShell);
   app.get("/site/assets/user-shell.css", async (_request, reply) =>
     secureUserShellReply(reply).type("text/css; charset=utf-8").send(USER_SHELL_STYLES));
   app.get("/site/assets/user-shell.js", async (_request, reply) =>

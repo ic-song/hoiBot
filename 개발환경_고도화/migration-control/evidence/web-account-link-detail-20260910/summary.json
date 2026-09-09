@@ -1,0 +1,30 @@
+{
+  "evidenceSchemaVersion": "web-account-link-detail-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-2",
+  "wbsId": "WEB-WBS-009",
+  "sliceId": "SL-ACCOUNT-USER-WEB-CONTEXT-CONSUMER-01",
+  "lease": "Lease2637",
+  "riskTier": "T1",
+  "baseline": "b63debf9a3ba3abf3964356f909f88700fe409f6",
+  "scope": ["/account", "/account/links", "read-only current account detail"],
+  "validation": {
+    "focusedUserShell": "6/6 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "responsive": "4/4 PASS; /account at 375, 768, 1024, 1440; overflowX=0",
+    "existingApisOnly": ["GET /api/v1/sessions/current", "GET /api/v1/player-profiles/current"],
+    "mutationAdded": false,
+    "internalIdentifiersRendered": false,
+    "operatingDbOrDataMutation": false,
+    "featureProdMutation": false,
+    "gate8": false
+  },
+  "screenshots": {
+    "account-375.png": "d72b8f3111fd34923795465bcf9942cf02594c063f23bff06ccc09d7a2c79f1f",
+    "account-768.png": "27389d613459987b84b8990abda6b324c56bf0331ba62c3ceadd14abc9b2fe8e",
+    "account-1024.png": "302867c9645965ada43760494da0bd49994989ccf2f85cae1d96d1264bb7abee",
+    "account-1440.png": "425bbd0fc2206ab72cb7f8ee921843516021714d306a5a93a5fd71a291104a38"
+  },
+  "gate7": "PENDING_INDEPENDENT_REVIEW"
+}

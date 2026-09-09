@@ -77,15 +77,15 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
           </div>
         </div>
         <nav aria-label="내 정보">
-          <a class="nav-link active" href="/app" aria-current="page"><span>홈</span><small>현재</small></a>
-          <span class="nav-link disabled" aria-disabled="true">계정 연결 <small>준비 중</small></span>
+          <a id="nav-home" class="nav-link active" href="/app" aria-current="page"><span>홈</span><small>요약</small></a>
+          <a id="nav-account" class="nav-link" href="/account"><span>계정 연결</span><small>상세</small></a>
           <span class="nav-link disabled" aria-disabled="true">가방 <small>준비 중</small></span>
           <span class="nav-link disabled" aria-disabled="true">재화 <small>준비 중</small></span>
         </nav>
         <button id="logout-button" class="secondary-button" type="button">로그아웃</button>
       </aside>
 
-      <div class="app-content">
+      <div id="home-content" class="app-content">
         <div class="page-heading">
           <div>
             <p class="eyebrow dark">OVERVIEW</p>
@@ -146,6 +146,48 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
             <a class="guide-link" href="/signup">가입·인증 상태 확인</a>
           </aside>
         </div>
+      </div>
+
+      <div id="account-content" class="app-content" hidden>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow dark">ACCOUNT CONNECTION</p>
+            <h2 id="account-title" tabindex="-1">계정 연결</h2>
+            <p>현재 로그인한 웹 계정과 연결된 게임 프로필을 확인할 수 있어요.</p>
+          </div>
+          <span class="status-badge">연결 확인됨</span>
+        </div>
+
+        <section class="account-link-card" aria-labelledby="linked-account-title">
+          <div class="account-link-heading">
+            <div>
+              <p class="card-label">CONNECTED ACCOUNT</p>
+              <h2 id="linked-account-title">연결된 계정</h2>
+            </div>
+            <span class="status-badge compact"><span class="status-dot" aria-hidden="true"></span>사용 중</span>
+          </div>
+          <dl class="account-detail-list">
+            <div><dt>웹 로그인 ID</dt><dd id="link-login-id">—</dd></div>
+            <div><dt>시스템 계정</dt><dd id="link-system-account">—</dd></div>
+            <div><dt>현재 게임 프로필</dt><dd id="link-player-name">—</dd></div>
+            <div><dt>서버</dt><dd id="link-player-server">—</dd></div>
+          </dl>
+        </section>
+
+        <div class="account-help-grid">
+          <section class="account-help-card">
+            <p class="card-label">PRIVACY</p>
+            <h2>표시 정보 안내</h2>
+            <p>웹에서는 로그인 ID를 일부 가리고, 내부 계정 식별자는 표시하지 않습니다.</p>
+          </section>
+          <section class="account-help-card">
+            <p class="card-label">VERIFICATION</p>
+            <h2>연결 상태가 다른가요?</h2>
+            <p>카카오톡 인증 상태를 다시 확인하면 현재 계정의 연결 절차를 확인할 수 있어요.</p>
+            <a href="/signup">가입·인증 상태 확인</a>
+          </section>
+        </div>
+        <p class="account-footnote">연결 해제와 계정 전환 기능은 준비 중입니다.</p>
       </div>
     </section>
   </main>
@@ -281,6 +323,22 @@ button:disabled { opacity: .58; cursor: wait; }
 .guide-list strong { font-size: 13px; }
 .guide-list small { color: var(--muted); line-height: 1.45; }
 .guide-link { min-height: 44px; display: inline-flex; align-items: center; margin-top: 18px; color: var(--blue); font-size: 13px; font-weight: 800; text-underline-offset: 3px; }
+.account-link-card, .account-help-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,.05); }
+.account-link-card { padding: 20px; }
+.account-link-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.account-link-heading h2, .account-help-card h2 { margin: 6px 0 0; letter-spacing: -.03em; }
+.account-link-heading h2 { font-size: 24px; }
+.status-badge.compact { min-height: 28px; gap: 8px; }
+.account-detail-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 14px; margin: 0; padding-top: 20px; }
+.account-detail-list div { min-width: 0; }
+.account-detail-list dt { color: var(--muted); font-size: 12px; }
+.account-detail-list dd { margin: 5px 0 0; font-weight: 800; overflow-wrap: anywhere; }
+.account-help-grid { display: grid; gap: 12px; margin-top: 14px; }
+.account-help-card { padding: 18px; }
+.account-help-card h2 { font-size: 18px; }
+.account-help-card p:not(.card-label), .account-footnote { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.account-help-card a { min-height: 44px; display: inline-flex; align-items: center; color: var(--blue); font-size: 13px; font-weight: 800; text-underline-offset: 3px; }
+.account-footnote { margin: 14px 2px 0; }
 .empty-state { padding: 28px 0 4px; text-align: left; }
 .empty-state p { margin: 7px 0 10px; color: var(--muted); line-height: 1.6; }
 .site-footer { min-height: 48px; display: grid; place-items: center; padding: 10px 20px; color: var(--muted); background: var(--canvas); border-top: 1px solid var(--line); text-align: center; font-size: 11px; }
@@ -288,6 +346,7 @@ button:disabled { opacity: .58; cursor: wait; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (min-width: 620px) {
   .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .account-help-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .page-heading { flex-direction: row; align-items: flex-start; justify-content: space-between; }
 }
 @media (min-width: 820px) {
@@ -306,6 +365,7 @@ button:disabled { opacity: .58; cursor: wait; }
   .app-sidebar { border-radius: 14px; }
   .nav-link { padding-inline: 11px; }
   .nav-link small { display: none; }
+  .account-detail-list { grid-template-columns: 1fr; }
   .page-heading { margin-top: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -321,6 +381,11 @@ export const USER_SHELL_CLIENT = String.raw`
   var loadingView = document.getElementById("loading-view");
   var loginView = document.getElementById("login-view");
   var appView = document.getElementById("app-view");
+  var homeContent = document.getElementById("home-content");
+  var accountContent = document.getElementById("account-content");
+  var navHome = document.getElementById("nav-home");
+  var navAccount = document.getElementById("nav-account");
+  var requestedPath = window.location && window.location.pathname ? window.location.pathname : "/app";
   var loginForm = document.getElementById("login-form");
   var loginButton = document.getElementById("login-button");
   var loginIdInput = document.getElementById("login-id");
@@ -348,6 +413,21 @@ export const USER_SHELL_CLIENT = String.raw`
     loginView.hidden = name !== "login";
     appView.hidden = name !== "app";
     text("header-session", name === "app" ? "로그인됨" : name === "loading" ? "세션 확인 중" : "로그인 필요");
+  }
+
+  function setAppSection(name) {
+    var account = name === "account";
+    homeContent.hidden = account;
+    accountContent.hidden = !account;
+    navHome.setAttribute("class", account ? "nav-link" : "nav-link active");
+    navAccount.setAttribute("class", account ? "nav-link active" : "nav-link");
+    if (account) {
+      navHome.removeAttribute("aria-current");
+      navAccount.setAttribute("aria-current", "page");
+    } else {
+      navAccount.removeAttribute("aria-current");
+      navHome.setAttribute("aria-current", "page");
+    }
   }
 
   function setBusy(button, busy, busyText, normalText) {
@@ -425,7 +505,7 @@ export const USER_SHELL_CLIENT = String.raw`
   }
 
   function clearSensitiveView() {
-    ["account-login-id", "account-id", "system-account-name", "player-id", "account-name"].forEach(function (id) { text(id, "—"); });
+    ["account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server"].forEach(function (id) { text(id, "—"); });
     var list = document.getElementById("profile-list");
     list.replaceChildren();
     list.hidden = true;
@@ -437,6 +517,8 @@ export const USER_SHELL_CLIENT = String.raw`
     var list = document.getElementById("profile-list");
     var empty = document.getElementById("profile-empty");
     var entries = profileEntries(profile);
+    text("link-player-name", profile && (profile.nickname || profile.name || profile.playerName));
+    text("link-player-server", profile && (profile.serverName || profile.server));
     list.replaceChildren();
     if (!entries.length) {
       list.hidden = true;
@@ -465,6 +547,8 @@ export const USER_SHELL_CLIENT = String.raw`
     text("system-account-name", session.systemAccountName);
     text("player-id", session.playerId ? "게임계정 연결 확인됨" : "게임계정 연결 확인 필요");
     text("account-name", session.systemAccountName ? session.systemAccountName + " 계정으로 로그인했어요." : "로그인한 계정 정보를 확인하세요.");
+    text("link-login-id", maskLoginId(session.loginId));
+    text("link-system-account", session.systemAccountName);
     renderProfile(state.profile);
   }
 
@@ -510,11 +594,13 @@ export const USER_SHELL_CLIENT = String.raw`
     state.csrfToken = sessionPayload.csrfToken || "";
     state.profile = null;
     setView("app");
+    var accountRoute = /^\/account(?:\/links)?\/?$/.test(requestedPath);
+    setAppSection(accountRoute ? "account" : "home");
     renderSession();
-    window.history.replaceState({}, "", "/app");
-    document.getElementById("welcome-title").focus();
+    window.history.replaceState({}, "", accountRoute ? "/account" : "/app");
+    document.getElementById(accountRoute ? "account-title" : "welcome-title").focus();
     await loadProfile();
-    announce("로그인했습니다. 계정 요약을 표시합니다.");
+    announce(accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
   }
 
   function showLogin(message) {

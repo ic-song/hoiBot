@@ -24,16 +24,16 @@ class ShellElement {
   focus() { this.focusLog.push(this.id); }
 }
 
-function createShellHarness(responses: Array<{ status: number; payload?: Record<string, unknown> }>) {
+function createShellHarness(responses: Array<{ status: number; payload?: Record<string, unknown> }>, pathname = "/app") {
   const focusLog: string[] = [];
   const ids = [
-    "loading-view", "login-view", "app-view", "login-form", "login-button", "login-id", "password",
+    "loading-view", "login-view", "app-view", "home-content", "account-content", "nav-home", "nav-account", "account-title", "login-form", "login-button", "login-id", "password",
     "login-error-summary", "login-error-message", "app-error", "app-error-message", "logout-button", "retry-button",
     "live-status", "header-session", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
-    "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "welcome-title", "login-title"
+    "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server", "welcome-title", "login-title"
   ];
   const elements = new Map(ids.map((id) => [id, new ShellElement(id, focusLog)]));
-  ["login-view", "app-view", "login-error-summary", "app-error", "login-id-error", "password-error", "profile-empty"]
+  ["login-view", "app-view", "account-content", "login-error-summary", "app-error", "login-id-error", "password-error", "profile-empty"]
     .forEach((id) => { const element = elements.get(id); if (element !== undefined) element.hidden = true; });
   const calls: Array<{ url: string; options: Record<string, unknown> }> = [];
   const history: string[] = [];
@@ -43,6 +43,7 @@ function createShellHarness(responses: Array<{ status: number; payload?: Record<
   };
   const window = {
     setTimeout: (callback: () => void) => { callback(); return 0; },
+    location: { pathname },
     history: { replaceState: (_state: unknown, _title: string, url: string) => history.push(url) }
   };
   const fetch = async (url: string, options?: Record<string, unknown>) => {
@@ -86,15 +87,17 @@ function assertSecurityHeaders(headers: Record<string, string | string[] | numbe
 
 test("이용자 셸과 정적 자산을 보안 헤더와 함께 제공합니다", async () => {
   const app = await buildShellApp();
-  const [root, login, protectedApp, css, client] = await Promise.all([
+  const [root, login, protectedApp, account, accountLinks, css, client] = await Promise.all([
     app.inject({ method: "GET", url: "/" }),
     app.inject({ method: "GET", url: "/login" }),
     app.inject({ method: "GET", url: "/app" }),
+    app.inject({ method: "GET", url: "/account" }),
+    app.inject({ method: "GET", url: "/account/links" }),
     app.inject({ method: "GET", url: "/site/assets/user-shell.css" }),
     app.inject({ method: "GET", url: "/site/assets/user-shell.js" })
   ]);
 
-  for (const response of [root, login, protectedApp, css, client]) {
+  for (const response of [root, login, protectedApp, account, accountLinks, css, client]) {
     assert.equal(response.statusCode, 200);
     assertSecurityHeaders(response.headers);
   }
@@ -104,6 +107,8 @@ test("이용자 셸과 정적 자산을 보안 헤더와 함께 제공합니다"
   assert.equal(root.body, USER_SHELL_HTML);
   assert.equal(login.body, USER_SHELL_HTML);
   assert.equal(protectedApp.body, USER_SHELL_HTML);
+  assert.equal(account.body, USER_SHELL_HTML);
+  assert.equal(accountLinks.body, USER_SHELL_HTML);
   assert.equal(css.body, USER_SHELL_STYLES);
   assert.equal(client.body, USER_SHELL_CLIENT);
   await app.close();
@@ -189,4 +194,22 @@ test("프로필 조회가 401이면 로그인 화면으로 전환하고 계정 �
   assert.equal(harness.elements.get("account-login-id")?.textContent, "—");
   assert.equal(harness.elements.get("system-account-name")?.textContent, "—");
   assert.equal(harness.elements.get("profile-list")?.children.length, 0);
+});
+
+test("계정 연결 경로는 본인 세션과 현재 프로필만 마스킹해 표시합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { nickname: "테스트용사", level: 27, tier: "골드", serverName: "호이월드 1" } } },
+    { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } }
+  ], "/account/links");
+  await flushShellClient();
+  assert.equal(harness.history.at(-1), "/account");
+  assert.equal(harness.elements.get("home-content")?.hidden, true);
+  assert.equal(harness.elements.get("account-content")?.hidden, false);
+  assert.equal(harness.elements.get("link-login-id")?.textContent, "pla*****");
+  assert.equal(harness.elements.get("link-system-account")?.textContent, "호이월드");
+  assert.equal(harness.elements.get("link-player-name")?.textContent, "테스트용사");
+  assert.equal(harness.elements.get("link-player-server")?.textContent, "호이월드 1");
+  assert.equal(harness.focusLog.includes("account-title"), true);
+  assert.doesNotMatch(USER_SHELL_HTML, /id="link-account-id"|id="link-player-id"/);
 });
