@@ -27,7 +27,7 @@ test("residual work plan freezes every unproven consumer into one actionable cat
     C_DIRECT_EXECUTION: 987,
     D_PREREQUISITE: 82,
   });
-  assert.equal(new Set(plan.entries.map((entry: { consumerId: string }) => entry.consumerId)).size, 1_071);
+  assert.equal(new Set(plan.entries.map((entry: { consumerId: string }) => entry.consumerId)).size, 1_069);
   for (const consumerId of ["sql-repository-818137c4fb22037a", "sql-repository-f6c531148a436a21", "sql-repository-31c4099080d9c9c1", "sql-repository-87ed81931dd7417b", "legacy-94904fa11988ff04", "legacy-827e1dc284cea52c", "legacy-bf7edb9e7cee98cd"]) {
     assert.equal(plan.entries.some((entry: { consumerId: string }) => entry.consumerId === consumerId), false);
   }
