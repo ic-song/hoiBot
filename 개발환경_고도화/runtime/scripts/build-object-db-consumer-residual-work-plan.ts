@@ -61,48 +61,7 @@ if (new Set([...reusableEvidence.keys(), ...rocketConsumerIds]).size !== reusabl
   throw new Error("Residual plan categories overlap");
 }
 
-const rocketEquivalenceProjection = (consumerId: string): Record<string, unknown> => {
-  const consumer = manifestById.get(consumerId);
-  const ledgerEntry = residualLedgerById.get(consumerId);
-  if (consumer === undefined || ledgerEntry === undefined) throw new Error(`Rocket equivalence consumer missing: ${consumerId}`);
-  return {
-    interfaceId: consumer.interfaceId,
-    accessClass: ledgerEntry.classification.accessClass,
-    sourceSpan: consumer.sourceSpan,
-    targetTables: consumer.usedTargetTables,
-    targetColumns: consumer.usedTargetColumns,
-    transactionOwnerInterfaceId: consumer.transactionOwnerInterfaceId,
-    transactionParticipantInterfaceIds: consumer.transactionParticipantInterfaceIds,
-    operationReceiptTables: consumer.operationReceiptTables,
-    scenarioRequirements: ledgerEntry.scenarioRequirements.map((requirement: Record<string, any>) => ({
-      scenarioKind: requirement.scenarioKind,
-      disposition: requirement.disposition,
-      notApplicable: requirement.notApplicable === null ? null : {
-        ruleId: requirement.notApplicable.ruleId,
-        reasonCode: requirement.notApplicable.reasonCode,
-        reason: requirement.notApplicable.reason,
-      },
-    })),
-  };
-};
-const rocketEquivalenceProjections = [...rocketConsumerIds].map(rocketEquivalenceProjection);
-const rocketRepresentative = rocketEquivalenceProjections[0];
-if (rocketRepresentative === undefined || rocketEquivalenceProjections.some((projection) => JSON.stringify(projection) !== JSON.stringify(rocketRepresentative))) {
-  throw new Error("Rocket equivalence cohort is not strictly equivalent");
-}
-const rocketEquivalenceKeySha256 = sha256(JSON.stringify({
-  ruleId: "SAME_INTERFACE_ACCESS_V1",
-  interfaceId: rocketRepresentative.interfaceId,
-  accessClass: rocketRepresentative.accessClass,
-}));
-const rocketStrictProjectionSha256 = sha256(JSON.stringify({ ruleId: "RESIDUAL_STRICT_PROJECTION_V1", ...rocketRepresentative }));
-const completeInterfaceAccessCohort = ledger.entries
-  .filter((entry) => entry.classification.interfaceId === rocketRepresentative.interfaceId && entry.classification.accessClass === rocketRepresentative.accessClass)
-  .map((entry) => entry.consumerId as string)
-  .sort();
-if (JSON.stringify(completeInterfaceAccessCohort) !== JSON.stringify([...rocketConsumerIds].sort())) {
-  throw new Error("Rocket equivalence cohort is not the complete interface/access set");
-}
+for(const consumerId of rocketConsumerIds)if(residualLedgerById.has(consumerId))throw new Error(`Completed Rocket equivalence consumer remained residual: ${consumerId}`);
 
 const entries = residualLedgerEntries.map((ledgerEntry) => {
   const consumer = manifestById.get(ledgerEntry.consumerId as string);
@@ -145,25 +104,31 @@ for (const entry of entries) {
   if (entry.category === "D_PREREQUISITE" && entry.blockers.length === 0) throw new Error(`Residual prerequisite has no blocker: ${entry.consumerId}`);
 }
 
-const categoryCounts = countBy(entries, (entry) => entry.category);
+const measuredCategoryCounts = countBy(entries, (entry) => entry.category);
+const categoryCounts = {
+  B_STRICT_EQUIVALENCE: measuredCategoryCounts.B_STRICT_EQUIVALENCE ?? 0,
+  C_DIRECT_EXECUTION: measuredCategoryCounts.C_DIRECT_EXECUTION ?? 0,
+  D_PREREQUISITE: measuredCategoryCounts.D_PREREQUISITE ?? 0,
+};
 const expectedCounts = {
-  B_STRICT_EQUIVALENCE: 10,
+  B_STRICT_EQUIVALENCE: 0,
   C_DIRECT_EXECUTION: 995,
   D_PREREQUISITE: 82,
 };
-if (entries.length !== 1_087 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
+if (entries.length !== 1_077 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
   throw new Error(`Residual plan cardinality drift: ${JSON.stringify({ total: entries.length, categoryCounts })}`);
 }
 
 const output = {
   format: "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1",
   catalogVersion: ledger.catalogVersion,
-  frozenAt: "2026-09-09 14:40:00 KST",
-  integrationBaseline: "6da64b77e14c4faa548e68cf0557527570d75e79",
+  frozenAt: "2026-09-09 16:58:00 KST",
+  integrationBaseline: "898e83896dd8279a0e055e68299d90cdf89d16d4",
   dependencyResolutions: [
     { wbs: "WBS791", commit: "854502debd9a7df249a022352468384bf1a42f4d", resolution: "APP_WIRING_ROOT_RETRY_COMPLETED" },
     { wbs: "WBS791", commit: "a91c2e3405ebc70b7c1301a563b0b216a1ddf4b3", resolution: "CHANGE_STACK_QUANTITY_OFFICIAL_RECEIPTS" },
     { wbs: "WBS792", commit: "6da64b77e14c4faa548e68cf0557527570d75e79", resolution: "ITEM_BAG_OFFICIAL_READ_RECEIPTS" },
+    { wbs: "WBS793", commit: "898e83896dd8279a0e055e68299d90cdf89d16d4", resolution: "ROCKET_ADMIN_GRANT_STRICT_EQUIVALENCE_RECEIPTS" },
   ],
   sources: {
     textNormalization: "LF_UTF8",
@@ -181,16 +146,7 @@ const output = {
     D_PREREQUISITE: "Explicit runtime port or dispatch boundary is required before executable evidence.",
     fullRegression: "Run once for the fixed final integration candidate; expand earlier only for broad or unknown impact.",
   },
-  equivalenceCohorts: [{
-    cohortId: "ITEM-ROCKET-ADMIN-GRANT-01",
-    ruleId: "SAME_INTERFACE_ACCESS_V1",
-    equivalenceKeySha256: rocketEquivalenceKeySha256,
-    strictProjectionRuleId: "RESIDUAL_STRICT_PROJECTION_V1",
-    strictProjectionSha256: rocketStrictProjectionSha256,
-    strictProjection: rocketRepresentative,
-    sourceSpanSha256: (rocketRepresentative.sourceSpan as Record<string, unknown>).sha256,
-    consumerIds: [...rocketConsumerIds].sort(),
-  }],
+  equivalenceCohorts: [],
   summary: {
     manifestConsumers: manifest.consumers.length,
     alreadyDirectOrEquivalent: ledger.entries.length - entries.length,

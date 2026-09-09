@@ -97,7 +97,7 @@
       "additionalProperties": false,
       "required": ["ruleId", "ruleVersion", "mechanical", "equivalenceKey", "variantConsumerIds"],
       "properties": {
-        "ruleId": { "const": "SAME_INTERFACE_ACCESS_V1" },
+        "ruleId": { "enum": ["SAME_INTERFACE_ACCESS_V1", "ROCKET_PARAMETER_PROJECTION_V1"] },
         "ruleVersion": { "const": "1" },
         "mechanical": { "const": true },
         "equivalenceKey": { "$ref": "#/$defs/sha256" },

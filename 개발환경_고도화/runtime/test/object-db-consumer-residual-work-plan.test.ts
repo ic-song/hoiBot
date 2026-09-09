@@ -20,39 +20,24 @@ test("residual work plan freezes every unproven consumer into one actionable cat
   assert.equal(plan.format, "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1");
   assert.equal(plan.catalogVersion, "SC-20260902-1");
   assert.equal(plan.summary.manifestConsumers, 1_133);
-  assert.equal(plan.summary.alreadyDirectOrEquivalent, 46);
-  assert.equal(plan.summary.residualConsumers, 1_087);
+  assert.equal(plan.summary.alreadyDirectOrEquivalent, 56);
+  assert.equal(plan.summary.residualConsumers, 1_077);
   assert.deepEqual(plan.summary.categoryCounts, {
-    B_STRICT_EQUIVALENCE: 10,
+    B_STRICT_EQUIVALENCE: 0,
     C_DIRECT_EXECUTION: 995,
     D_PREREQUISITE: 82,
   });
-  assert.equal(new Set(plan.entries.map((entry: { consumerId: string }) => entry.consumerId)).size, 1_087);
+  assert.equal(new Set(plan.entries.map((entry: { consumerId: string }) => entry.consumerId)).size, 1_077);
   for (const consumerId of ["sql-repository-818137c4fb22037a", "sql-repository-f6c531148a436a21", "sql-repository-31c4099080d9c9c1", "sql-repository-87ed81931dd7417b", "legacy-94904fa11988ff04"]) {
     assert.equal(plan.entries.some((entry: { consumerId: string }) => entry.consumerId === consumerId), false);
   }
 });
 
-test("the promoted reusable proof leaves only the strict equivalence cohort", () => {
+test("the promoted rocket cohort leaves no strict equivalence residual", () => {
   const reusable = plan.entries.filter((entry: { category: string }) => entry.category === "A_REUSABLE_PROOF_ASSET");
   assert.deepEqual(reusable, []);
-  const cohort = plan.equivalenceCohorts[0];
-  assert.equal(cohort.ruleId, "SAME_INTERFACE_ACCESS_V1");
-  assert.match(cohort.equivalenceKeySha256, /^[a-f0-9]{64}$/);
-  assert.equal(cohort.equivalenceKeySha256, createHash("sha256").update(JSON.stringify({
-    ruleId: "SAME_INTERFACE_ACCESS_V1",
-    interfaceId: "item.admin-grant.execute",
-    accessClass: "MUTATION",
-  })).digest("hex"));
-  assert.equal(cohort.strictProjectionRuleId, "RESIDUAL_STRICT_PROJECTION_V1");
-  assert.equal(cohort.strictProjectionSha256, createHash("sha256").update(JSON.stringify({
-    ruleId: cohort.strictProjectionRuleId,
-    ...cohort.strictProjection,
-  })).digest("hex"));
-  assert.equal(cohort.sourceSpanSha256, cohort.strictProjection.sourceSpan.sha256);
-  assert.equal(cohort.consumerIds.length, 10);
-  assert.ok(cohort.consumerIds.every((consumerId: string) =>
-    plan.entries.find((entry: { consumerId: string }) => entry.consumerId === consumerId)?.category === "B_STRICT_EQUIVALENCE"));
+  assert.deepEqual(plan.equivalenceCohorts, []);
+  assert.equal(plan.entries.some((entry: { category: string }) => entry.category === "B_STRICT_EQUIVALENCE"), false);
 });
 
 test("blocked dynamic consumers are not counted as complete", () => {

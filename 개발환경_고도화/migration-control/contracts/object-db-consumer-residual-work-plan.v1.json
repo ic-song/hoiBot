@@ -1,8 +1,8 @@
 {
   "format": "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1",
   "catalogVersion": "SC-20260902-1",
-  "frozenAt": "2026-09-09 14:40:00 KST",
-  "integrationBaseline": "6da64b77e14c4faa548e68cf0557527570d75e79",
+  "frozenAt": "2026-09-09 16:58:00 KST",
+  "integrationBaseline": "898e83896dd8279a0e055e68299d90cdf89d16d4",
   "dependencyResolutions": [
     {
       "wbs": "WBS791",
@@ -18,6 +18,11 @@
       "wbs": "WBS792",
       "commit": "6da64b77e14c4faa548e68cf0557527570d75e79",
       "resolution": "ITEM_BAG_OFFICIAL_READ_RECEIPTS"
+    },
+    {
+      "wbs": "WBS793",
+      "commit": "898e83896dd8279a0e055e68299d90cdf89d16d4",
+      "resolution": "ROCKET_ADMIN_GRANT_STRICT_EQUIVALENCE_RECEIPTS"
     }
   ],
   "sources": {
@@ -26,8 +31,8 @@
     "manifestSha256": "dfe3273a722703a7837eaaf27780eb23bfccffc58bceee321964ffc978e6bd02",
     "manifestConsumerSetSha256": "015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a",
     "ledgerPath": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
-    "ledgerSha256": "b344266b3fd12b64ea844ad7b860519f7f4370c0c3e63d380bfc932abd4fa1e0",
-    "ledgerEntrySetSha256": "8194d1840d03fc84b97664cf375f6fd6b6e576be6ee554a9fb4a58229ae5d6d0"
+    "ledgerSha256": "9f5f658d7317a5eecade3b101e95dad932f81341b2ffcaf3978e6c02069267ae",
+    "ledgerEntrySetSha256": "15a660a69d630210cd71154c90c9e1c1e00c37c65962645c33bed2f664224bbf"
   },
   "policy": {
     "A_REUSABLE_PROOF_ASSET": "A prior bundle, observation or harness is reusable input only; it is not completed proof and requires re-execution or exact resealing as official receipts.",
@@ -36,121 +41,13 @@
     "D_PREREQUISITE": "Explicit runtime port or dispatch boundary is required before executable evidence.",
     "fullRegression": "Run once for the fixed final integration candidate; expand earlier only for broad or unknown impact."
   },
-  "equivalenceCohorts": [
-    {
-      "cohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
-      "ruleId": "SAME_INTERFACE_ACCESS_V1",
-      "equivalenceKeySha256": "baa3771c7788730ac444554748d56ba87f58570f2dbf721b687432b2bdd88ba0",
-      "strictProjectionRuleId": "RESIDUAL_STRICT_PROJECTION_V1",
-      "strictProjectionSha256": "6983642bf325464c6fd926021324251d89f1a4aa2e71976d2712d6bf796054f2",
-      "strictProjection": {
-        "interfaceId": "item.admin-grant.execute",
-        "accessClass": "MUTATION",
-        "sourceSpan": {
-          "start": 469110,
-          "end": 470441,
-          "sha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f"
-        },
-        "targetTables": [
-          "canonical_item_definitions",
-          "canonical_owned_item_instances",
-          "canonical_owned_item_stacks",
-          "canonical_players"
-        ],
-        "targetColumns": [
-          "canonical_item_definitions.active_flag",
-          "canonical_item_definitions.item_description",
-          "canonical_item_definitions.item_grade",
-          "canonical_item_definitions.item_id",
-          "canonical_item_definitions.item_name",
-          "canonical_item_definitions.price_amount",
-          "canonical_item_definitions.price_currency_source_identifier",
-          "canonical_owned_item_instances.item_id",
-          "canonical_owned_item_instances.owned_item_id",
-          "canonical_owned_item_instances.ownership_status",
-          "canonical_owned_item_instances.player_id",
-          "canonical_owned_item_stacks.item_id",
-          "canonical_owned_item_stacks.owned_item_stack_id",
-          "canonical_owned_item_stacks.player_id",
-          "canonical_owned_item_stacks.quantity",
-          "canonical_players.player_id"
-        ],
-        "transactionOwnerInterfaceId": "item.admin-grant.execute",
-        "transactionParticipantInterfaceIds": [
-          "item.inventory.mutate"
-        ],
-        "operationReceiptTables": [
-          "canonical_item_inventory_ledger_entries",
-          "canonical_item_inventory_operations"
-        ],
-        "scenarioRequirements": [
-          {
-            "scenarioKind": "MUTATION_SUCCESS",
-            "disposition": "REQUIRED",
-            "notApplicable": null
-          },
-          {
-            "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-            "disposition": "REQUIRED",
-            "notApplicable": null
-          },
-          {
-            "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-            "disposition": "REQUIRED",
-            "notApplicable": null
-          },
-          {
-            "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-            "disposition": "REQUIRED",
-            "notApplicable": null
-          },
-          {
-            "scenarioKind": "RESTART_REPLAY",
-            "disposition": "REQUIRED",
-            "notApplicable": null
-          },
-          {
-            "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-            "disposition": "REQUIRED",
-            "notApplicable": null
-          },
-          {
-            "scenarioKind": "AUTH_DENIED",
-            "disposition": "REQUIRED",
-            "notApplicable": null
-          },
-          {
-            "scenarioKind": "WRONG_ROOM_REJECTED",
-            "disposition": "NOT_APPLICABLE",
-            "notApplicable": {
-              "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-              "reasonCode": "NO_ROOM_GUARD",
-              "reason": "Frozen consumer classification contains no room or channel guard."
-            }
-          }
-        ]
-      },
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "consumerIds": [
-        "legacy-15076f1474d3bf90",
-        "legacy-16dc4874712ffe07",
-        "legacy-1e1016af0dea53d4",
-        "legacy-7c3e90397c74fdc0",
-        "legacy-7fa084c426801da5",
-        "legacy-8befb54eb907db04",
-        "legacy-b455212232514478",
-        "legacy-b9a3e9684a6c3909",
-        "legacy-cc1ca98a74fa80e5",
-        "legacy-dec710bc74968473"
-      ]
-    }
-  ],
+  "equivalenceCohorts": [],
   "summary": {
     "manifestConsumers": 1133,
-    "alreadyDirectOrEquivalent": 46,
-    "residualConsumers": 1087,
+    "alreadyDirectOrEquivalent": 56,
+    "residualConsumers": 1077,
     "categoryCounts": {
-      "B_STRICT_EQUIVALENCE": 10,
+      "B_STRICT_EQUIVALENCE": 0,
       "C_DIRECT_EXECUTION": 995,
       "D_PREREQUISITE": 82
     },
@@ -162,7 +59,7 @@
       "CURRENCY-SHOP": 73,
       "FURNITURE-HOME": 28,
       "HOME-AGGREGATE-RANK": 86,
-      "ITEM": 159,
+      "ITEM": 149,
       "MARKET-ORCHESTRATOR": 95,
       "MEMBER-TITLE": 23,
       "MINI-PET": 61,
@@ -178,12 +75,12 @@
       "APP_WIRING": 10,
       "AUTOMATIC_CALLBACK": 3,
       "HTTP_WEB_ROUTE": 81,
-      "LEGACY_COMMAND": 681,
+      "LEGACY_COMMAND": 671,
       "RUNTIME_DISPATCH": 179,
       "SQL_REPOSITORY": 60
     },
     "byAccessClass": {
-      "MUTATION": 622,
+      "MUTATION": 612,
       "READ": 465
     }
   },
@@ -19159,98 +19056,6 @@
       "blockers": []
     },
     {
-      "consumerId": "legacy-15076f1474d3bf90",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "bd0e764098aef75896d4f563bca8cbde431faeacb5587c1d439fec2de28cc3ff"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
-      "blockers": []
-    },
-    {
       "consumerId": "legacy-152eecc94daf88c5",
       "category": "C_DIRECT_EXECUTION",
       "domain": "PACKAGE-CATALOG",
@@ -19860,98 +19665,6 @@
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
       "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-16dc4874712ffe07",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "4691d2b670d002b16f09fb0cb845e85a8e698664a463baff37b9dad1106fea24"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
       "blockers": []
     },
     {
@@ -22061,98 +21774,6 @@
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
       "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-1e1016af0dea53d4",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "d755da0927935ab8d147a96d9021dfd5803a9647d715652340da0df475251438"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
       "blockers": []
     },
     {
@@ -51889,98 +51510,6 @@
       "blockers": []
     },
     {
-      "consumerId": "legacy-7c3e90397c74fdc0",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "ab8a4a4955acd77ad902b4ec25a6ff2d769f85df1eb7316cc4f60a48353883a0"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
-      "blockers": []
-    },
-    {
       "consumerId": "legacy-7cdf1655b06674a4",
       "category": "C_DIRECT_EXECUTION",
       "domain": "ITEM",
@@ -53056,98 +52585,6 @@
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
       "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-7fa084c426801da5",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "849fe3b09ee16e8f514b0579b5e08350439570df4f2e223b8cb27383028d2fee"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
       "blockers": []
     },
     {
@@ -56913,98 +56350,6 @@
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
       "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-8befb54eb907db04",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "3c27e9e85b2c87a9ea645966d9f9eccd7aa38d9d3dcdc5e32d577b9bf1b68813"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
       "blockers": []
     },
     {
@@ -70303,98 +69648,6 @@
       "blockers": []
     },
     {
-      "consumerId": "legacy-b455212232514478",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "2fe19ed2fbd50c28edf91db6f648c318fb9f7ce8aa95d90e8f2cab0a3d955272"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
-      "blockers": []
-    },
-    {
       "consumerId": "legacy-b5a3a875f8041d8e",
       "category": "C_DIRECT_EXECUTION",
       "domain": "MARKET-ORCHESTRATOR",
@@ -71126,98 +70379,6 @@
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
       "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-b9a3e9684a6c3909",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "5bbf97dfdd9a4a280f03d3c97700cdd20f2f74cc7f1f9cfe1ec90516af88be94"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
       "blockers": []
     },
     {
@@ -78119,98 +77280,6 @@
       "blockers": []
     },
     {
-      "consumerId": "legacy-cc1ca98a74fa80e5",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "b5e927a398fd948777e60d1fa28980275ed6422b9e6f91f3e14802491c66aa1e"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
-      "blockers": []
-    },
-    {
       "consumerId": "legacy-ccbd93cc393f96b3",
       "category": "C_DIRECT_EXECUTION",
       "domain": "HOME-AGGREGATE-RANK",
@@ -84358,98 +83427,6 @@
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
       "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-dec710bc74968473",
-      "category": "B_STRICT_EQUIVALENCE",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.admin-grant.execute",
-      "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.admin-grant.execute",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "31d8971bebe78021e70fc9c52233779f9e56e1631bdac0eac3811a4d8c622cb9"
-          }
-        }
-      ],
-      "nextAction": "RUN_ONE_REPRESENTATIVE_AND_PROVE_EQUIVALENCE",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
       "blockers": []
     },
     {
