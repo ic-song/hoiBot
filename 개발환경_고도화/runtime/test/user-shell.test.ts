@@ -124,6 +124,13 @@ test("로그인 화면은 키보드·스크린리더·비밀번호 관리자를 
   assert.match(USER_SHELL_STYLES, /min-height: 4[46]px/);
   assert.match(USER_SHELL_STYLES, /@media \(min-width: 820px\)/);
   assert.match(USER_SHELL_STYLES, /prefers-reduced-motion: reduce/);
+  assert.match(USER_SHELL_STYLES, /\.app-sidebar nav \{[^}]*align-content: start;/);
+  assert.match(USER_SHELL_STYLES, /grid-template-columns: 224px minmax\(0, 1fr\)/);
+  assert.match(USER_SHELL_STYLES, /\.summary-grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/);
+  assert.match(USER_SHELL_STYLES, /@media \(max-width: 619px\)/);
+  assert.doesNotMatch(USER_SHELL_STYLES, /grid-template-rows: auto 1fr auto/);
+  assert.match(USER_SHELL_HTML, /보안 상태/);
+  assert.match(USER_SHELL_HTML, /aria-labelledby="guide-title"/);
   assert.doesNotThrow(() => new Function(USER_SHELL_CLIENT));
 });
 

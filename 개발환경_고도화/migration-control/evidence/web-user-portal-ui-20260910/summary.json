@@ -1,0 +1,31 @@
+{
+  "evidenceSchemaVersion": "web-user-portal-ui-v2",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-1",
+  "wbsId": "WEB-WBS-008R",
+  "sliceId": "SL-COMMON-USER-WEB-SHELL-UX-REFINEMENT-01",
+  "lease": "Lease2636",
+  "riskTier": "T1",
+  "baseline": "5d4aee340f8eae9b830d1e25dc2bc7c5d3bf6d15",
+  "scope": [
+    "/login compact account card",
+    "/app compact navigation and account dashboard",
+    "responsive and accessibility regression evidence"
+  ],
+  "validation": {
+    "focusedUserShell": "5/5 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "responsive": "4/4 PASS; 375, 768, 1024, 1440; overflowX=0",
+    "operatingDbOrDataMutation": false,
+    "featureProdMutation": false,
+    "gate8": false
+  },
+  "screenshots": {
+    "app-375.png": "f204f10f957de3656da77bc0e73a59e34db9dd28738d3eb7909dc6266c1d3460",
+    "app-768.png": "2f7356d3c06516a1a0d2f77ffcc4c2b6c91a23d72a18c8fa1c04db8f799137ea",
+    "app-1024.png": "a16a5ab0afa6141cb8ab91f42f898db3033e4249030301af714bed5de47e8a10",
+    "app-1440.png": "7a05a35322aabd8f9fc3cec5604f11ed4a8abe70ab7ca564eebd47fe106a149e"
+  },
+  "gate7": "PENDING_INDEPENDENT_REVIEW"
+}

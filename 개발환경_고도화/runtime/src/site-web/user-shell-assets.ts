@@ -27,8 +27,8 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
     <section id="login-view" class="login-layout" hidden>
       <div class="login-intro" aria-labelledby="login-title">
         <p class="eyebrow">HOI WORLD PORTAL</p>
-        <h1 id="login-title" tabindex="-1">내 호이월드를<br>한곳에서 확인하세요.</h1>
-        <p class="intro-copy">카카오톡에서 연결한 계정으로 게임 정보와 연결 상태를 안전하게 확인할 수 있어요.</p>
+        <h1 id="login-title" tabindex="-1">호이월드 계정을<br>한곳에서 관리하세요.</h1>
+        <p class="intro-copy">카카오톡에서 인증한 계정으로 로그인해 내 게임 프로필과 연결 상태를 확인할 수 있어요.</p>
         <ul class="trust-list" aria-label="포털 이용 안내">
           <li><span aria-hidden="true">01</span><div><strong>연결된 계정만 표시</strong><small>현재 로그인한 본인의 정보만 불러옵니다.</small></div></li>
           <li><span aria-hidden="true">02</span><div><strong>민감정보 저장 안 함</strong><small>비밀번호와 세션 정보는 브라우저 저장소에 남기지 않습니다.</small></div></li>
@@ -68,13 +68,16 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
 
     <section id="app-view" class="app-shell" hidden>
       <aside class="app-sidebar" aria-label="이용자 메뉴">
-        <div>
+        <div class="sidebar-profile">
+          <span class="sidebar-avatar" aria-hidden="true">H</span>
+          <div>
           <p class="eyebrow">MY HOI WORLD</p>
           <h1 id="welcome-title" tabindex="-1">내 호이월드</h1>
           <p id="account-name" class="sidebar-copy"></p>
+          </div>
         </div>
         <nav aria-label="내 정보">
-          <a class="nav-link active" href="/app" aria-current="page">홈</a>
+          <a class="nav-link active" href="/app" aria-current="page"><span>홈</span><small>현재</small></a>
           <span class="nav-link disabled" aria-disabled="true">계정 연결 <small>준비 중</small></span>
           <span class="nav-link disabled" aria-disabled="true">가방 <small>준비 중</small></span>
           <span class="nav-link disabled" aria-disabled="true">재화 <small>준비 중</small></span>
@@ -108,23 +111,41 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
             <strong id="system-account-name">—</strong>
             <small id="player-id">게임계정 정보를 확인 중입니다.</small>
           </article>
+          <article class="summary-card status-summary">
+            <p class="card-label">보안 상태</p>
+            <strong><span class="status-dot" aria-hidden="true"></span>안전하게 연결됨</strong>
+            <small>현재 브라우저에 비밀번호를 별도로 저장하지 않습니다.</small>
+          </article>
         </section>
 
-        <section class="profile-card" aria-labelledby="profile-title">
-          <div class="profile-heading">
-            <div>
-              <p class="card-label">CURRENT PLAYER</p>
-              <h2 id="profile-title">내 게임 프로필</h2>
+        <div class="dashboard-grid">
+          <section class="profile-card" aria-labelledby="profile-title">
+            <div class="profile-heading">
+              <div>
+                <p class="card-label">CURRENT PLAYER</p>
+                <h2 id="profile-title">내 게임 프로필</h2>
+              </div>
+              <span id="profile-state" class="status-text">조회 중</span>
             </div>
-            <span id="profile-state" class="status-text">조회 중</span>
-          </div>
-          <dl id="profile-list" class="profile-list" hidden></dl>
-          <div id="profile-empty" class="empty-state" hidden>
-            <strong>표시할 프로필이 아직 없어요.</strong>
-            <p>카카오톡 인증이 완료됐는지 확인하거나 잠시 후 다시 시도해 주세요.</p>
-            <a href="/signup">가입·인증 상태 확인</a>
-          </div>
-        </section>
+            <dl id="profile-list" class="profile-list" hidden></dl>
+            <div id="profile-empty" class="empty-state" hidden>
+              <strong>표시할 프로필이 아직 없어요.</strong>
+              <p>카카오톡 인증이 완료됐는지 확인하거나 잠시 후 다시 시도해 주세요.</p>
+              <a href="/signup">가입·인증 상태 확인</a>
+            </div>
+          </section>
+
+          <aside class="guide-card" aria-labelledby="guide-title">
+            <p class="card-label">QUICK GUIDE</p>
+            <h2 id="guide-title">이용 안내</h2>
+            <ul class="guide-list">
+              <li><span aria-hidden="true">1</span><div><strong>계정 확인</strong><small>웹 계정과 게임 계정의 연결 상태를 확인하세요.</small></div></li>
+              <li><span aria-hidden="true">2</span><div><strong>프로필 확인</strong><small>연결된 캐릭터의 주요 정보를 확인하세요.</small></div></li>
+              <li><span aria-hidden="true">3</span><div><strong>추가 메뉴</strong><small>가방과 재화 조회는 WBS 순서에 따라 제공됩니다.</small></div></li>
+            </ul>
+            <a class="guide-link" href="/signup">가입·인증 상태 확인</a>
+          </aside>
+        </div>
       </div>
     </section>
   </main>
@@ -138,7 +159,7 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
 export const USER_SHELL_STYLES = String.raw`
 :root {
   color: #020617;
-  background: #f8fafc;
+  background: #f4f7fb;
   font-family: system-ui, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
   font-synthesis: none;
   --ink: #020617;
@@ -149,7 +170,7 @@ export const USER_SHELL_STYLES = String.raw`
   --muted: #475569;
   --line: #dbe3ec;
   --surface: #ffffff;
-  --canvas: #f8fafc;
+  --canvas: #f4f7fb;
   --soft-blue: #eef4ff;
   --danger: #b42318;
   --danger-bg: #fff1f0;
@@ -170,31 +191,31 @@ button { cursor: pointer; }
 .skip-link:focus { transform: translateY(0); }
 a:focus-visible, button:focus-visible, input:focus-visible, [tabindex="-1"]:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 .site-header a:focus-visible, .login-intro [tabindex="-1"]:focus-visible, .app-sidebar a:focus-visible, .app-sidebar button:focus-visible, .app-sidebar [tabindex="-1"]:focus-visible { outline-color: var(--focus-dark); }
-.site-header { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px clamp(18px, 4vw, 48px); color: #fff; background: var(--navy); }
+.site-header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px clamp(18px, 4vw, 48px); color: #fff; background: var(--navy); border-bottom: 1px solid #23304a; }
 .brand { min-height: 44px; display: inline-flex; align-items: center; gap: 11px; color: #fff; text-decoration: none; }
 .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: var(--gold); font-weight: 900; }
 .brand > span:last-child { display: grid; gap: 1px; }
 .brand strong { font-size: 15px; letter-spacing: -.01em; }
 .brand small { color: #cbd5e1; font-size: 11px; }
 .header-session { margin: 0; color: #cbd5e1; font-size: 12px; }
-main { min-height: calc(100vh - 116px); }
-.state-view { min-height: calc(100vh - 116px); display: grid; place-content: center; justify-items: center; gap: 10px; padding: 32px 20px; text-align: center; }
+main { min-height: calc(100vh - 112px); }
+.state-view { min-height: calc(100vh - 112px); display: grid; place-content: center; justify-items: center; gap: 10px; padding: 32px 20px; text-align: center; }
 .state-view h1 { margin: 4px 0 0; font-size: clamp(24px, 6vw, 34px); letter-spacing: -.04em; }
 .state-view p { max-width: 34rem; margin: 0; color: var(--muted); line-height: 1.65; }
 .spinner { width: 28px; height: 28px; border: 3px solid #dbe3ec; border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
-.login-layout { min-height: calc(100vh - 116px); background: var(--surface); }
-.login-intro { padding: 48px 22px 38px; color: #fff; background: linear-gradient(145deg, var(--navy), #162b59); }
+.login-layout { width: min(960px, calc(100% - 32px)); margin: 32px auto 48px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 20px 60px rgba(15,23,42,.10); }
+.login-intro { padding: 38px 24px 34px; color: #fff; background: linear-gradient(145deg, var(--navy), #17346d); }
 .eyebrow { margin: 0 0 12px; color: #d8c89b; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
 .eyebrow.dark { color: var(--gold); }
-.login-intro h1 { max-width: 640px; margin: 0; font-size: clamp(36px, 10vw, 62px); line-height: 1.08; letter-spacing: -.055em; }
-.intro-copy { max-width: 570px; margin: 22px 0 30px; color: #dbe6ff; line-height: 1.7; }
+.login-intro h1 { max-width: 520px; margin: 0; font-size: clamp(32px, 7vw, 48px); line-height: 1.13; letter-spacing: -.05em; }
+.intro-copy { max-width: 510px; margin: 18px 0 26px; color: #dbe6ff; line-height: 1.65; }
 .trust-list { display: grid; gap: 13px; max-width: 600px; margin: 0; padding: 0; list-style: none; }
 .trust-list li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
 .trust-list li > span { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.32); border-radius: 50%; font-size: 10px; font-weight: 800; }
 .trust-list div { display: grid; gap: 3px; }
 .trust-list strong { font-size: 14px; }
 .trust-list small { color: #bdcbed; line-height: 1.5; }
-.login-panel { width: min(100%, 34rem); margin: 0 auto; padding: 38px 22px 48px; }
+.login-panel { width: min(100%, 34rem); margin: 0 auto; padding: 34px 24px 40px; }
 .panel-heading h2, .page-heading h2, .profile-heading h2 { margin: 0; letter-spacing: -.035em; }
 .panel-heading h2 { font-size: 29px; }
 .panel-heading > p:last-child, .page-heading p { margin: 8px 0 26px; color: var(--muted); line-height: 1.6; }
@@ -216,29 +237,35 @@ button:disabled { opacity: .58; cursor: wait; }
 .error-summary, .inline-notice { margin-bottom: 20px; padding: 14px 15px; color: var(--danger); background: var(--danger-bg); border-left: 4px solid var(--danger); border-radius: 8px; }
 .error-summary strong, .inline-notice strong { font-size: 14px; }
 .error-summary p, .inline-notice p { margin: 5px 0 0; font-size: 13px; line-height: 1.55; }
-.app-shell { width: min(1180px, 100%); margin: 0 auto; background: var(--canvas); }
-.app-sidebar { display: grid; gap: 22px; padding: 28px 20px; color: #fff; background: var(--navy); }
-.app-sidebar h1 { margin: 0; font-size: 30px; letter-spacing: -.04em; }
-.sidebar-copy { margin: 8px 0 0; color: #cbd5e1; font-size: 14px; line-height: 1.5; }
-.app-sidebar nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.app-shell { width: min(1240px, calc(100% - 32px)); margin: 24px auto 48px; }
+.app-sidebar { display: grid; align-content: start; gap: 18px; padding: 22px 18px; color: #fff; background: var(--navy); border-radius: 16px; }
+.sidebar-profile { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 12px; align-items: start; }
+.sidebar-avatar { width: 42px; height: 42px; display: grid; place-items: center; color: #fff; background: var(--gold); border-radius: 12px; font-weight: 900; }
+.app-sidebar h1 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
+.app-sidebar .eyebrow { margin-bottom: 4px; font-size: 9px; }
+.sidebar-copy { margin: 5px 0 0; color: #cbd5e1; font-size: 12px; line-height: 1.45; }
+.app-sidebar nav { display: grid; align-content: start; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .nav-link { min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 13px; color: #e2e8f0; border: 1px solid #334155; border-radius: 9px; text-decoration: none; font-size: 13px; font-weight: 700; }
-.nav-link.active { color: #fff; background: var(--blue); border-color: #3154a9; }
-.nav-link.disabled { color: #94a3b8; cursor: default; }
+.nav-link.active { color: #fff; background: var(--blue); border-color: #4165bd; }
+.nav-link.disabled { color: #a8b5c7; cursor: default; }
 .nav-link small { font-size: 10px; font-weight: 500; }
 .app-sidebar .secondary-button { width: 100%; color: #fff; background: transparent; border-color: #64748b; }
-.app-content { padding: 30px 20px 52px; }
-.page-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 22px; }
-.page-heading h2 { font-size: clamp(28px, 6vw, 40px); }
+.app-content { min-width: 0; padding: 28px 2px 0; }
+.page-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
+.page-heading h2 { font-size: clamp(28px, 5vw, 36px); }
 .page-heading p { margin-bottom: 0; }
 .status-badge { display: inline-flex; align-items: center; min-height: 32px; padding: 0 11px; color: var(--success); background: var(--success-bg); border: 1px solid #a7d7b5; border-radius: 999px; font-size: 12px; font-weight: 800; }
 .inline-notice { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .summary-grid { display: grid; gap: 12px; margin-bottom: 14px; }
-.summary-card, .profile-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 7px 24px rgba(15,23,42,.06); }
-.summary-card { min-height: 132px; display: grid; align-content: center; gap: 7px; padding: 22px; }
-.summary-card strong { font-size: 22px; overflow-wrap: anywhere; }
+.summary-card, .profile-card, .guide-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,.05); }
+.summary-card { min-height: 116px; display: grid; align-content: center; gap: 6px; padding: 18px; }
+.summary-card strong { font-size: 19px; overflow-wrap: anywhere; }
 .summary-card small { color: var(--muted); line-height: 1.5; }
+.status-summary strong { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+.status-dot { width: 9px; height: 9px; flex: 0 0 auto; background: #22c55e; border: 2px solid #dcfce7; border-radius: 50%; box-shadow: 0 0 0 2px #86efac; }
 .card-label { margin: 0; color: var(--gold); font-size: 11px; font-weight: 850; letter-spacing: .1em; }
-.profile-card { padding: 22px; }
+.dashboard-grid { display: grid; gap: 14px; }
+.profile-card, .guide-card { padding: 20px; }
 .profile-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .profile-heading h2 { margin-top: 6px; font-size: 24px; }
 .status-text { color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
@@ -246,24 +273,40 @@ button:disabled { opacity: .58; cursor: wait; }
 .profile-list div { min-width: 0; }
 .profile-list dt { color: var(--muted); font-size: 12px; }
 .profile-list dd { margin: 5px 0 0; font-weight: 800; overflow-wrap: anywhere; }
+.guide-card h2 { margin: 6px 0 18px; font-size: 21px; letter-spacing: -.03em; }
+.guide-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.guide-list li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; }
+.guide-list li > span { width: 28px; height: 28px; display: grid; place-items: center; color: var(--blue); background: var(--soft-blue); border-radius: 8px; font-size: 11px; font-weight: 900; }
+.guide-list div { display: grid; gap: 3px; }
+.guide-list strong { font-size: 13px; }
+.guide-list small { color: var(--muted); line-height: 1.45; }
+.guide-link { min-height: 44px; display: inline-flex; align-items: center; margin-top: 18px; color: var(--blue); font-size: 13px; font-weight: 800; text-underline-offset: 3px; }
 .empty-state { padding: 28px 0 4px; text-align: left; }
 .empty-state p { margin: 7px 0 10px; color: var(--muted); line-height: 1.6; }
 .site-footer { min-height: 48px; display: grid; place-items: center; padding: 10px 20px; color: var(--muted); background: var(--canvas); border-top: 1px solid var(--line); text-align: center; font-size: 11px; }
 .site-footer p { margin: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (min-width: 620px) {
-  .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .page-heading { flex-direction: row; align-items: flex-start; justify-content: space-between; }
 }
 @media (min-width: 820px) {
-  .login-layout { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(420px, .92fr); }
-  .login-intro { display: flex; flex-direction: column; justify-content: center; padding: clamp(56px, 7vw, 96px); }
-  .login-panel { display: flex; flex-direction: column; justify-content: center; padding: 54px clamp(42px, 5vw, 72px); }
-  .app-shell { min-height: calc(100vh - 116px); display: grid; grid-template-columns: 260px minmax(0, 1fr); }
-  .app-sidebar { align-content: start; grid-template-rows: auto 1fr auto; padding: 42px 22px 28px; }
+  .login-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(390px, .82fr); margin-top: 48px; }
+  .login-intro { display: flex; flex-direction: column; justify-content: center; padding: 50px; }
+  .login-panel { display: flex; flex-direction: column; justify-content: center; padding: 46px 42px; }
+  .app-shell { display: grid; grid-template-columns: 224px minmax(0, 1fr); align-items: start; gap: 26px; }
+  .app-sidebar { position: sticky; top: 88px; align-self: start; grid-template-rows: auto auto auto; padding: 22px 16px; }
   .app-sidebar nav { grid-template-columns: 1fr; }
-  .app-content { padding: 48px clamp(34px, 5vw, 68px) 72px; }
+  .app-content { padding: 14px 0 36px; }
+  .dashboard-grid { grid-template-columns: minmax(0, 1.75fr) minmax(250px, .75fr); align-items: start; }
   .profile-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 619px) {
+  .app-shell { width: min(calc(100% - 24px), 720px); margin-top: 12px; }
+  .app-sidebar { border-radius: 14px; }
+  .nav-link { padding-inline: 11px; }
+  .nav-link small { display: none; }
+  .page-heading { margin-top: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
