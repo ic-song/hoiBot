@@ -28,6 +28,9 @@
     "account:cleanup": "node --env-file-if-exists=.env --import tsx scripts/cleanup-deleted-accounts.ts",
     "config:inventory": "node --import tsx scripts/inventory-hardcoded-config.ts",
     "object-data:validate": "node --import tsx scripts/validate-object-data-model-contract.ts",
+    "object-consumer:delta:build": "node --import tsx scripts/build-object-db-consumer-classification-delta.ts",
+    "object-consumer:delta:validate": "node --import tsx scripts/validate-object-db-consumer-classification-delta.ts",
+    "object-consumer:delta:source-check": "node --import tsx scripts/validate-object-db-consumer-classification-delta.ts --source-check",
     "db:probe": "node --env-file-if-exists=.env --import tsx scripts/probe-database.ts",
     "db:probe:modernization": "node --env-file-if-exists=.env --import tsx scripts/probe-modernization-flow.ts",
     "db:probe:authorization": "node --env-file-if-exists=.env --import tsx scripts/probe-admin-authorization.ts",
@@ -200,6 +203,7 @@
   "devDependencies": {
     "@types/node": "^26.1.2",
     "tsx": "^4.23.1",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "typescript5": "npm:typescript@^5.9.3"
   }
 }

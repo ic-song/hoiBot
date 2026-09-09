@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readdirSync } from "node:fs";
 import { basename, dirname, relative, resolve } from "node:path";
 import { extractHttpRouteSurface, type HttpRouteMethod } from "./http-route-surface-audit.js";
+import { auditHttpRouteCompositionBindings } from "./http-route-composition-binding-audit.js";
 import { readCanonicalObjectDbConsumerSource } from "./object-db-consumer-baseline.js";
 import { createConsumerIdResolver, deriveConsumerLogicalKey, loadConsumerIdRegistry } from "./object-db-consumer-id-registry.js";
 
@@ -325,6 +326,9 @@ const OBJECT_MARKER = /가방|아이템|포인트|다이아|상점|조합|건설
 // external consumer. They are runtime-adoption evidence, not new consumers.
 const ADOPTION_ONLY_CONSUMER_SURFACES = new Set([
   "dispatchPetDataCompareCommand",
+  "isRocketPackageGrantCommandCandidate",
+  "isSlotNewbiePackageGrantCommandCandidate",
+  "개발환경_고도화/runtime/src/admin/admin-stack-grant-service.ts",
   "개발환경_고도화/runtime/src/admin/pet-data-compare-shadow-snapshot-provider.ts",
 ]);
 
@@ -1666,7 +1670,7 @@ function adminSourceCandidateKeys(root: string): Set<string> {
   const keys = new Set<string>();
   for (const match of dispatch.matchAll(/\bif\s*\(\s*(is[A-Za-z0-9_$]*(?:Command|Candidate)[A-Za-z0-9_$]*)\s*\(\s*input\.message\s*\)/g)) {
     const guard = match[1]!;
-    if (!ADMIN_NON_OBJECT_COMMAND.test(guard)) keys.add(`ADMIN:${guard}`);
+    if (!ADMIN_NON_OBJECT_COMMAND.test(guard) && !isAdoptionOnlyConsumerSurface(guard)) keys.add(`ADMIN:${guard}`);
   }
   if (dispatch.includes("const match = /^\\/포인트수정")) keys.add("ADMIN:/포인트수정");
   return keys;
@@ -1698,19 +1702,35 @@ function knownMigrationSqlTables(root: string): Set<string> {
 function httpRouteConsumers(root: string, tableNames: string[]): DerivedConsumer[] {
   const runtimeRoot = resolve(root, "개발환경_고도화/runtime");
   const knownSqlTables = knownMigrationSqlTables(root);
-  return extractHttpRouteSurface({ runtimeRoot }).endpoints.map((endpoint) => {
+  const endpoints = extractHttpRouteSurface({ runtimeRoot }).endpoints;
+  const bindingEvidence = new Map(auditHttpRouteCompositionBindings({
+    repoRoot: root,
+    runtimeRoot,
+    endpoints,
+    knownSqlTables,
+  }).map((entry) => [entry.endpointKey, entry]));
+  return endpoints.map((endpoint) => {
     const file = resolve(runtimeRoot, endpoint.module);
     const text = readCanonicalObjectDbConsumerSource(file);
     const direct = text.slice(endpoint.sourceSpan.start, endpoint.sourceSpan.end);
     // A route span proves only its direct body. Interface-property calls such as
     // dependencies.auth.refreshSession cannot be resolved to one implementation
     // without composition-root type analysis, so do not overclaim transitive SQL.
-    const observedSql = observedSqlDirection(direct, knownSqlTables);
-    const sqlTables = tableNames.filter((table) => new RegExp(`\\b${table}\\b`, "i").test(direct));
+    const binding = bindingEvidence.get(endpoint.key);
+    // WBS795 promotes only routes whose concrete composition and SQL method
+    // closure are complete. Ambiguous bindings remain dynamically blocked.
+    const bindingResolved = binding?.resolved === true;
+    const observedSql = bindingResolved ? { read: binding.observedSqlReadTables, write: binding.observedSqlWriteTables }
+      : observedSqlDirection(direct, knownSqlTables);
+    const sqlTables = bindingResolved ? unique([...observedSql.read, ...observedSql.write])
+      : tableNames.filter((table) => new RegExp(`\\b${table}\\b`, "i").test(direct));
     const registrarSlices = appRouteDependentSlices(endpoint.registrar);
     const inferredSlices = dependentSlices("ADMIN-WEB-APP-WIRING", `${endpoint.key}\n${direct}`, sqlTables);
     const dependent = unique([...registrarSlices, ...inferredSlices].filter((slice) => slice !== "ADMIN-WEB-APP-WIRING"));
-    const access = httpEndpointAccess(endpoint.method, endpoint.path);
+    const inferredAccess = httpEndpointAccess(endpoint.method, endpoint.path);
+    const access = bindingResolved
+      ? observedSql.write.length > 0 ? (observedSql.read.length > 0 ? "READ_WRITE" : "WRITE") : "READ"
+      : inferredAccess;
     return {
       consumerId: "",
       kind: "HTTP_WEB_ROUTE",
@@ -1724,9 +1744,10 @@ function httpRouteConsumers(root: string, tableNames: string[]): DerivedConsumer
       observedSqlWriteTables: observedSql.write,
       saveLoad: [],
       environmentResolver: "composition-root database",
-      currentProviderImports: [],
-      reachableHelpers: unique([...direct.matchAll(/\bdependencies\.([A-Za-z0-9_$]+(?:\.[A-Za-z0-9_$]+)*)/g)].map((match) => match[1]!)),
-      unresolvedDynamicCallCount: 1,
+      currentProviderImports: bindingResolved ? unique(binding.methodClosure.map(({ file }) => file)) : [],
+      reachableHelpers: bindingResolved ? binding.dependencyCalls
+        : unique([...direct.matchAll(/\bdependencies\.([A-Za-z0-9_$]+(?:\.[A-Za-z0-9_$]+)*)/g)].map((match) => match[1]!)),
+      unresolvedDynamicCallCount: bindingResolved ? 0 : 1,
       primarySlice: "ADMIN-WEB-APP-WIRING",
       dependentSlices: dependent,
       p1Bridges: p1For("ADMIN-WEB-APP-WIRING", access),
@@ -1735,7 +1756,7 @@ function httpRouteConsumers(root: string, tableNames: string[]): DerivedConsumer
       targetSelectorId: "selector:ADMIN-WEB-APP-WIRING",
       usedTargetTables: [], usedTargetColumns: [], readTargetTables: [], writeTargetTables: [], readTargetColumns: [], writeTargetColumns: [],
       transactionalPortDependencies: [], interfaceId: "", interfaceMethod: "READ", transactionOwnerInterfaceId: null,
-      transactionParticipantInterfaceIds: [], operationReceiptTables: [], targetUsageMode: "PORT_ONLY"
+      transactionParticipantInterfaceIds: [], operationReceiptTables: [], targetUsageMode: bindingResolved ? "CURRENT_SQL" : "PORT_ONLY"
     };
   });
 }
@@ -1747,6 +1768,8 @@ function runtimeConsumers(root: string, tableNames: string[]): DerivedConsumer[]
   for (const file of walkTs(runtimeSrc)) {
     const relativeFile = repoPath(root, file);
     if (relativeFile.endsWith("object-db-consumer-transition-audit.ts")) continue;
+    if (basename(file) === "http-route-composition-binding-audit.ts") continue;
+    if (basename(file) === "object-db-consumer-classification-delta.ts") continue;
     if (isAdoptionOnlyConsumerSurface(relativeFile)) continue;
     const text = readCanonicalObjectDbConsumerSource(file);
     const imports = unique([...text.matchAll(/from\s+["']([^"']*(?:repository|provider|service)[^"']*)["']/gi)].map((match) => match[1]!));
@@ -1837,7 +1860,7 @@ function runtimeConsumers(root: string, tableNames: string[]): DerivedConsumer[]
       if (dispatch !== undefined) {
         for (const statement of ifStatements(dispatch.body)) {
           const guard = statement.predicate.match(/\b(is[A-Za-z0-9_$]*(?:Command|Candidate)[A-Za-z0-9_$]*)\s*\(\s*input\.message\s*\)/)?.[1];
-          if (guard === undefined || ADMIN_NON_OBJECT_COMMAND.test(guard)) continue;
+          if (guard === undefined || ADMIN_NON_OBJECT_COMMAND.test(guard) || isAdoptionOnlyConsumerSurface(guard)) continue;
           let commandEvidence = `${statement.predicate}\n${statement.branch}`;
           const localMethods = unique([...statement.branch.matchAll(/\bthis\.([A-Za-z0-9_$]+)\s*\(/g)].map((match) => match[1]!));
           for (const localMethod of localMethods) {
@@ -2087,8 +2110,8 @@ export function deriveConsumerManifest(repoRoot: string, baseCommit: string): Co
       const methodName = consumer.symbol.split(".").at(-1)!;
       const method = classMethodSpans(text).find(({ name }) => name === methodName);
       const sqlEvidence = method === undefined ? text.slice(consumer.sourceSpan.start, consumer.sourceSpan.end) : expandClassMethodClosure(text, method).text;
-      const readTables = new Set<string>();
-      const writeTables = new Set<string>();
+      const readTables = new Set<string>(consumer.kind === "HTTP_WEB_ROUTE" ? consumer.observedSqlReadTables : []);
+      const writeTables = new Set<string>(consumer.kind === "HTTP_WEB_ROUTE" ? consumer.observedSqlWriteTables : []);
       const canonicalTitleRepository = consumer.file.endsWith("/title/maria-canonical-title-repository.ts");
       if (canonicalTitleRepository) {
         const definitionTable = consumer.sqlTables.find((tableName) => /_title_definitions$/.test(tableName));

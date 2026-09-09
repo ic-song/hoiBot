@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hoibot-object-db-consumer-classification-delta-v1",
+  "type": "object",
+  "required": ["format", "evidenceSchemaVersion", "baseCatalogVersion", "deltaId", "sourceManifest", "scope", "audit", "operations", "preservation", "deltaSha256"],
+  "properties": {
+    "format": { "const": "hoibot-object-db-consumer-classification-delta-v1" },
+    "evidenceSchemaVersion": { "const": "object-db-consumer-delta-v1" },
+    "baseCatalogVersion": { "const": "SC-20260902-1" },
+    "deltaId": { "const": "SCD-20260909-1" },
+    "sourceManifest": { "type": "object", "required": ["consumerCount", "consumerSetSha256", "consumerIdSetSha256", "nonHttpConsumersSha256", "sha256"] },
+    "scope": { "type": "object", "required": ["kind", "routeCount", "registrarCounts"], "properties": { "kind": { "const": "HTTP_WEB_ROUTE" }, "routeCount": { "const": 81 } } },
+    "audit": { "type": "object", "required": ["resolvedCount", "unresolvedCount", "registrarResults", "entries"], "properties": { "entries": { "type": "array", "minItems": 81, "maxItems": 81 } } },
+    "operations": { "type": "array", "items": { "type": "object", "required": ["operation", "consumerId", "beforeSha256", "afterSha256", "before", "after"], "properties": { "operation": { "const": "REPLACE" } } } },
+    "preservation": { "type": "object", "required": ["receiptCount", "wave27PrefixCount", "wave27PrefixBytes", "wave27PrefixSha256"] },
+    "deltaSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "additionalProperties": false
+}

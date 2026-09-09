@@ -1,0 +1,164 @@
+{
+  "format": "wbs795-http-binding-delta-validation-v1",
+  "wbs": "WBS795",
+  "sliceId": "SL-ADMIN-WEB-HTTP-COMPOSITION-BINDING-RESOLVER-01",
+  "lease": "Lease2627",
+  "worker": "HTTP바인딩DB",
+  "taskId": "/root/wbs795_http_binding_recovery",
+  "validatedAt": "2026-09-09 21:46:56 KST",
+  "baselineCommit": "9f909288ba82ff6445e0a781d972153b45ed56f6",
+  "baseCatalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-20260909-1",
+  "evidenceSchemaVersion": "object-db-consumer-delta-v1",
+  "scope": {
+    "baseConsumerCount": 1133,
+    "httpRouteCount": 81,
+    "resolvedRouteCount": 78,
+    "unresolvedRouteCount": 3,
+    "replacementOperationCount": 78,
+    "nonHttpConsumersChanged": 0,
+    "unresolvedBaseRowsChanged": 0
+  },
+  "registrars": [
+    {
+      "name": "registerAdminRoutes",
+      "total": 42,
+      "resolved": 39,
+      "unresolved": 3
+    },
+    {
+      "name": "registerUserAuthRoutes",
+      "total": 9,
+      "resolved": 9,
+      "unresolved": 0
+    },
+    {
+      "name": "registerAdminConfigurationCatalogWebRoutes",
+      "total": 7,
+      "resolved": 7,
+      "unresolved": 0
+    },
+    {
+      "name": "registerAdminPetSkillCatalogWebRoutes",
+      "total": 7,
+      "resolved": 7,
+      "unresolved": 0
+    },
+    {
+      "name": "registerAdminPackageCatalogWebRoutes",
+      "total": 5,
+      "resolved": 5,
+      "unresolved": 0
+    },
+    {
+      "name": "registerAdminObjectCatalogWebRoutes",
+      "total": 4,
+      "resolved": 4,
+      "unresolved": 0
+    },
+    {
+      "name": "registerAdminBalanceWebRoutes",
+      "total": 4,
+      "resolved": 4,
+      "unresolved": 0
+    },
+    {
+      "name": "registerAdminDiamondShopCatalogWebRoutes",
+      "total": 3,
+      "resolved": 3,
+      "unresolved": 0
+    }
+  ],
+  "unresolved": [
+    {
+      "endpoint": "GET|/api/v1/admin/moderation-incidents/:incidentId/content",
+      "reason": "NULLISH_BINDING_NOT_UNIQUE",
+      "disposition": "BLOCKED_DYNAMIC"
+    },
+    {
+      "endpoint": "GET|/api/v1/admin/retained-event-contents/:contentId",
+      "reason": "CONDITIONAL_BINDING_NOT_UNIQUE",
+      "disposition": "BLOCKED_DYNAMIC"
+    },
+    {
+      "endpoint": "GET|/api/v1/admin/retained-event-contents/:contentId/media",
+      "reason": "CONDITIONAL_BINDING_NOT_UNIQUE",
+      "disposition": "BLOCKED_DYNAMIC"
+    }
+  ],
+  "hashes": {
+    "canonicalManifestFileSha256": "f575bff8d417bd8babb54d9cb4193498f839e3d98cbc988b90e5f7f395428e2a",
+    "canonicalManifestSemanticSha256": "7acd7c038d7f6b7110b6623df0eaea55c04c20bd157c6229ca6755ccd685a49e",
+    "baseConsumerSetSha256": "d183ade67fa2aff0b7167327d9c6a1ed5ae689da0e060b7a093a88e1462e0e0b",
+    "consumerIdSetSha256": "b5c767587653eb6211dbbdade58d71642407be91dcb225b456c24f8e0d46a676",
+    "nonHttpConsumersSha256": "a7eb0f3a18d889d0a0c30bef6d2b49bbe231bb143d1f354c3eb9d37a702cd3bf",
+    "effectiveConsumerSetSha256": "2abf54ab6e4f3917fd108f0015f1619b34be59b88ebecc26359b6953db4658eb",
+    "deltaSha256": "5b7f5fb587ab7fb6f0113bfeaa72e23583822d94ae81a3398be51b91f623b3fa"
+  },
+  "receiptPreservation": {
+    "receiptCount": 352,
+    "wave27PrefixCount": 324,
+    "wave27PrefixBytes": 1260829,
+    "wave27PrefixSha256": "72522ab348255c339dc2e4918fac6ab1702643e6ba8725b99e74ab3457b35adb",
+    "status": "PASS"
+  },
+  "validation": {
+    "npmCi": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "focusedTamper": {
+      "status": "PASS",
+      "passed": 4,
+      "failed": 0
+    },
+    "deltaValidator": "PASS",
+    "deltaSourceCheck": "PASS",
+    "schemaDraft202012": "PASS",
+    "jsonParse": "PASS",
+    "objectDataModel": {
+      "status": "PASS",
+      "registeredTables": 119
+    },
+    "mainSyntax": "PASS",
+    "infoSyntax": "PASS",
+    "utf8Strict": "PASS",
+    "bomFree": "PASS",
+    "secretScan": "PASS",
+    "diffCheck": "PASS",
+    "canonicalManifestDiff": 0,
+    "resourceConflictCount": 0
+  },
+  "fullTransitionContract": {
+    "passed": 15,
+    "failed": 2,
+    "wbs795EffectiveManifestAssertion": "PASS",
+    "baselineOnlyFailures": [
+      "implementation:runtime/src/admin/iris-admin-command-service.ts source hash mismatch",
+      "APP_WIRING_OPERATION_PROVIDER_SOURCE_HASH_MISMATCH plus PET_TITLE ingress/mutation provider source hash mismatches"
+    ],
+    "baselineProof": "The implicated source files have identical current and HEAD hashes at 9f909288ba82ff6445e0a781d972153b45ed56f6."
+  },
+  "regression": {
+    "passed": 33,
+    "failed": 1,
+    "baselineOnlyFailure": "Wave26 test expects directPassConsumers=47 while the unchanged HEAD ledger records 48; both the test and ledger are HEAD-identical.",
+    "wbs795Regression": false
+  },
+  "gateEvidence": {
+    "G1": "PRESERVED",
+    "G2": "PRESERVED",
+    "G3": "SUPPORTED_BY_FAIL_CLOSED_TAMPER_FIXTURE",
+    "G4": "SUPPORTED_BY_RESOLVER_AND_DELTA_IMPLEMENTATION",
+    "G5": "SUPPORTED_BY_BASE_PLUS_DELTA_APPLY_VALIDATION",
+    "G6": "SUPPORTED_BY_DETERMINISTIC_SOURCE_CHECK_AND_REGRESSION",
+    "G7": "FALSE_PENDING_INDEPENDENT_REVIEW",
+    "G8": "FALSE_FORBIDDEN"
+  },
+  "safety": {
+    "operationalDatabaseTouched": false,
+    "operationalDataTouched": false,
+    "featureProdTouched": false,
+    "gate8Attempted": false
+  },
+  "selfSha256": "d9059ea7eb94c9400431f4320457cd3bb3120e8e51d35969d9a13e3ebf12549d"
+}
