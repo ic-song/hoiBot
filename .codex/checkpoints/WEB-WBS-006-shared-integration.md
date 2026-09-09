@@ -1,5 +1,16 @@
 # WEB-WBS-006 공유 계정 기준선 통합 체크포인트
 
+## 복구 상태
+
+- 작업 키: `WEB-WBS-006-shared-integration`
+- 체크포인트 버전: `2`
+- 마지막 갱신: `2026-09-10 KST`
+- 상태: `공유 통합 완료`
+- 정리 후보: `아니요`
+- 최신 요청: 기존 dirty worktree를 대사하고 누락된 좁은 검증만 재실행한 뒤 현재 범위를 commit/push하고, 독립 Gate 7과 canonical REPORT·Lease readback까지 완료한다.
+- 선언 파일 범위: `COMMAND_INDEX.md`, `.codex/checkpoints/WEB-WBS-006-shared-integration.md`, `snapshot-evidence/web-responsive-20260909/**`, `개발환경_고도화/runtime/src/app.ts`, `개발환경_고도화/runtime/src/user-auth/routes.ts`, `개발환경_고도화/runtime/src/user-auth/user-auth-service.ts`, `개발환경_고도화/runtime/test/site-web-app-wiring.test.ts`, `개발환경_고도화/runtime/test/user-auth-recovery.test.ts`
+- 완료 결과: 구현 commit `1b1aa88875df38c946bf6575cec60b6819a20b93`을 `origin/feature/web-portal`과 exact 상태로 확인했고, 독립 Gate 7 `GO`, canonical REPORT `ACKED`, Lease2634 `INTEGRATED`를 사후 재읽기했다.
+
 ## 실행 경계
 
 - 실행 ID: `웹포털통합-SL-WEB-PORTAL-SHARED-ACCOUNT-INTEGRATION-01-20260909222853`
@@ -46,10 +57,11 @@
 
 ## 검증
 
-- `npm run typecheck`: PASS
-- 웹·회원가입·계정 집중 테스트: 47/47 PASS
+- `npm run typecheck`: PASS (2026-09-10 복구 재실행)
+- 웹·회원가입·계정 집중 테스트: 47/47 PASS (2026-09-10 복구 재실행)
 - `npm run build`: PASS
 - `git diff --check`: PASS
+- 반응형 audit JSON 재대사: 12/12 조합 overflow 0, offender 0
 - 전체 회귀: total 2,178 / pass 2,158 / fail 12 / skip 8 / duration 1,003.288초. 실패는 웹·계정 기능이 아니라 동결 이후 변경된 운영 JSON·`main.js`·`app.ts`와 과거 exact-source fixture/hash 차이 11건, `object-db-consumer-transition-contract.test.ts` 프로세스 OOM 1건이다.
 - 동일 오브젝트 DB 계약 파일의 단독 재검사는 약 18.5GB working set까지 계속 증가해 시스템 부담을 막기 위해 종료했다. 웹 변경의 기능 실패 증거는 없으며 오브젝트 DB 계약 테스트 실행 자원 문제로 분리한다.
 - 미리보기 서버는 `127.0.0.1:3310`에서 다시 기동했고 `/`가 `/login`으로 이동해 화면이 표시되는 것을 브라우저에서 재확인했다.
