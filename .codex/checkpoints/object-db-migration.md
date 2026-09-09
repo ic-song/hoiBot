@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 21
-- 마지막 갱신: 2026-09-09 09:49:00 KST
+- 체크포인트 버전: 22
+- 마지막 갱신: 2026-09-09 10:27:00 KST
 
 ## 현재 목표
 
@@ -17,7 +17,7 @@
 - WBS730~732: 완료.
 - WBS733~741: Gate1~4 완료, Gate5~7 잔여.
 - WBS742: 현행 25%, 후속 검증 필요.
-- WBS743: 공식 ledger는 1,133건, DIRECT_PASS 41, STATIC_ONLY 1,010, BLOCKED_DYNAMIC 82이며 미증명 consumer 1,092건이다. WBS787~791 증분 증거는 아직 shared ledger 승격 전이다.
+- WBS743: 공식 ledger는 1,133건, DIRECT_PASS 41, STATIC_ONLY 1,010, BLOCKED_DYNAMIC 82이며 미증명 consumer 1,092건이다. 잔여 작업표는 재사용 증명 자산 5, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 완전 분할됐고 WBS787~791 증분 증거는 아직 shared ledger 승격 전이다.
 - WBS744: 현행 62.5%, Gate6~7 잔여.
 - WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
 - WBS779~785: Gate1~7 완료, 공식 검증과 Lease 종료. WBS785 aggregate `8cf572b4`는 origin과 일치한다.
@@ -29,13 +29,13 @@
 
 - 통합 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 통합 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- 통합 원격 SHA: `4dc632fb55aa0add134d0d0b0b4dcec9d4e2a894`
+- 통합 현재 SHA: `42554daa002c8456a6f3166861224162df899637`
 - 직전 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\common-mutation-root-retry-v1-20260909`
 - 직전 실행 브랜치: `codex/common-mutation-root-retry-v1-20260909`
 - 직전 실행: WBS791 / Lease2619 / `SL-COMMON-APP-WIRING-MUTATION-ROOT-RETRY-01` Gate1~5 완료
-- 상태: WBS787~791 증분 구현·통합 완료, 잔여 1,092경로 유한 분류표와 Wave23 shared ledger 승격 진행
+- 상태: WBS787~791 증분 구현·통합 완료, 잔여 1,092경로 유한 작업표 확정, Wave23 shared ledger 승격 진행
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: 통합 브랜치 `4dc632fb`까지 origin push 및 exact 일치 확인
+- 원격 상태: 통합 브랜치 `4dc632fb`까지 origin push 확인. 잔여 작업표 `42554daa`는 체크포인트와 함께 push 예정.
 
 ## 완료된 현재 슬라이스 작업
 
@@ -79,6 +79,7 @@
 - WBS786은 FURNITURE grant mutation 6개 시나리오를 Wave22 shared ledger에 승격해 receipts225, DIRECT41, STATIC1,010, BLOCKED82를 확정했다.
 - WBS787~789는 가구 배치·미니펫 획득·펫스킬 지급의 success/rollback/replay/drift/restart/concurrency를 집중 검증했고 source와 aggregate를 origin에 push했다. 전체 회귀는 수행하지 않았다.
 - WBS790은 item stack quantity mutation을 focused44/44와 격리 Maria8/8로, WBS791은 app-wiring opt-in root retry를 focused70/70과 typecheck/build로 검증했다. exhaustion은 exact 1213/1205 최대3, committed DML0, provider.fail0, reconciliation read0을 보장하며 aggregate `4dc632fb`가 origin과 일치한다.
+- 잔여 작업표는 manifest/ledger 전체 ID 집합·중복·내부 SHA·base commit·verdict를 fail-close로 검증한다. 1,092건을 재사용 증명 자산 5, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 정확히 한 번씩 분류하며 결정적 재생성 4/4와 독립 P0/P1 0건을 통과했다. 재사용 자산은 완료 증거가 아니라 재실행 또는 공식 재봉인 대상이다.
 
 ## 현재 변경 범위
 
@@ -106,11 +107,11 @@
 
 ## 정확한 다음 행동
 
-1. 공식 ledger의 미증명 1,092경로를 `기존 증거 재사용`, `엄격 동등성 증명`, `개별 실행`, `선행 보완`으로 대사해 유한한 잔여 작업표를 확정한다.
-2. WBS787~791의 승인 source·fixture·focused 결과를 Wave23 shared ledger/evidence에 직렬 승격하고 validator를 통과시킨다.
-3. 승격된 소비자만 Gate6으로 올리고, 같은 계약·fixture 도메인 묶음을 집중 검증해 도메인 Shadow까지 닫는다.
-4. RNG가 transaction 내부에 있는 TrialTower와 Package는 재시도 간 난수 고정 계약을 먼저 분리한다. Raid·PetExplore 등 결정적 owner와 섞지 않는다.
-5. 최종 고정 통합 후보에서 전체 회귀를 1회 수행한 뒤 WBS730~744 Gate1~7을 닫고, 그 이후에만 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
+1. Wave23 신규 schema·fixture·harness·sealer로 WBS787~789의 각 REQUIRED 6개, 총 18개 receipt를 새로 실행·봉인한다. 기존 Wave22 225건 prefix는 byte-exact 보존한다.
+2. WBS787~789를 shared ledger에 승격해 receipts 243, DIRECT_PASS 44, STATIC_ONLY 1,007, BLOCKED_DYNAMIC 82를 목표로 한다.
+3. WBS790은 raw transaction owner 후속 보완과 sealed trace가 모두 끝난 뒤 별도 6개 receipt를 추가한다. 그 전에는 Gate6을 열지 않는다.
+4. 잔여 작업표의 다음 작은 도메인 묶음은 MINI-PET-TITLE-COLLECTION 14 → MEMBER-TITLE 23 순으로 진행하며, CONTEXT-BRIDGE 12는 공유 경계 lease로 직렬화한다.
+5. 전체 회귀는 증분마다 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
 
 ## 승인 경계
 
