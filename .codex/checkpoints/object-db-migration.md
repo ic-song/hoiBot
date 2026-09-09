@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 24
-- 마지막 갱신: 2026-09-09 11:11:00 KST
+- 체크포인트 버전: 25
+- 마지막 갱신: 2026-09-09 12:03:00 KST
 
 ## 현재 목표
 
@@ -16,26 +16,26 @@
 
 - WBS730~732: 완료.
 - WBS733~741: Gate1~4 완료, Gate5~7 잔여.
-- WBS742: 현행 25%. 초기 canonical 65개 중 직접 이관은 45개이고, 현행 V4 표준은 119개 중 직접 이관 47개다. WBS724·725 provider와 영속 인터페이스는 구현됐으며 실제 provider-to-provider 연쇄 증거만 잔여다.
-- WBS743: 공식 ledger는 1,133건, DIRECT_PASS 41, STATIC_ONLY 1,010, BLOCKED_DYNAMIC 82이며 미증명 consumer 1,092건이다. 잔여 작업표는 재사용 증명 자산 5, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 완전 분할됐고 WBS787~791 증분 증거는 아직 shared ledger 승격 전이다.
+- WBS742: 초기 canonical 65개 중 직접 이관은 45개이고, 현행 V4 표준은 119개 중 직접 이관 47개다. sealed RAW→실제 WBS724 staging provider→실제 WBS725 projection provider 연쇄 증거를 완료하고 독립 Gate GO를 받았다. 전체 fresh migration은 기존 migration 490 DELIMITER driver parse 문제로 별도 잔여다.
+- WBS743: 공식 ledger는 1,133건, receipts 243, DIRECT_PASS 44, STATIC_ONLY 1,007, BLOCKED_DYNAMIC 82이며 미증명 consumer 1,089건이다. 잔여 작업표는 재사용 증명 자산 2, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 완전 분할됐다.
 - WBS744: 현행 62.5%, Gate6~7 잔여.
 - WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
 - WBS779~785: Gate1~7 완료, 공식 검증과 Lease 종료. WBS785 aggregate `8cf572b4`는 origin과 일치한다.
 - WBS786: Gate1~7 완료, 공식 종료. source `4f481a7d`, aggregate `24fac92e`, focused20/20, Maria6, receipts225, DIRECT_PASS 41이다.
-- WBS787~789: 가구 배치·미니펫 획득·펫스킬 지급 증분 구현과 격리 검증을 완료해 aggregate에 통합했다. 공용 원장 승격 전이므로 Gate1~5, 62.5%로 유지한다.
+- WBS787~789: 가구 배치·미니펫 획득·펫스킬 지급 증분 구현과 격리 검증을 완료하고 Wave23 공용 원장에 각 6개, 총 18개 receipt를 승격했다. 독립 Gate GO와 통합 브랜치 재검증을 통과했다.
 - WBS790~791: 아이템 스택 수량 mutation과 app-wiring 상위 root retry를 구현·검증해 aggregate `4dc632fb`에 통합했다. WBS790 focused44/44+Maria8, WBS791 focused70/70+typecheck/build이며 둘 다 Gate1~5, 62.5%다.
 
 ## 현재 작업 위치
 
 - 통합 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 통합 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- 통합 현재 SHA: `7f6e85477b7ff2e68e70ffd3211c21a376134ce4`
-- 현재 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-db-parity-wave23-v1-20260909`
-- 현재 실행 브랜치: `codex/object-db-parity-wave23-v1-20260909`
-- 현재 실행: WBS787~789 / Lease2619 범위 / Wave23 shared ledger receipt 18건 작성·봉인
-- 상태: 중단 당시의 Wave23 변경을 보존해 동일 에이전트가 재개했고 evidence `5edc0b27`을 생성했다. Lease2619는 Wave23으로 갱신했으며 Lease2620에서 WBS742 staging→projection 연쇄 증거를 별도 작업 트리로 병렬 진행한다.
+- 통합 현재 SHA: 체크포인트 커밋 직전 `bfd61aa8`; 이 문서 커밋 후 Git HEAD를 권위값으로 사용한다.
+- 현재 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
+- 현재 실행 브랜치: `codex/item-bag-canonical-read-v1-20260908`
+- 현재 실행: 복구 완료 지점 고정 및 다음 MINI-PET-TITLE-COLLECTION Gate1 경계 준비
+- 상태: Wave23과 Lease2620 체인 증거를 독립 GO 후 통합했다. cherry-pick으로 끊긴 evidenceCommit 조상 관계는 원본 브랜치 ancestry-only merge로 복구했고 Wave23 전용 검증 2/2가 다시 통과했다.
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: 통합 브랜치 `7f6e8547`까지 origin과 exact 일치. Wave23 변경은 아직 미커밋이며 별도 전용 브랜치에만 존재한다.
+- 원격 상태: 체크포인트 커밋과 함께 통합 브랜치 push 예정. 원본 Wave23 `b28469de`, 체인 `a4ae7d57`, 잔여 작업표 `8a50eab4`는 각 원격 브랜치에 push 완료됐다.
 
 ## 완료된 현재 슬라이스 작업
 
@@ -79,7 +79,9 @@
 - WBS786은 FURNITURE grant mutation 6개 시나리오를 Wave22 shared ledger에 승격해 receipts225, DIRECT41, STATIC1,010, BLOCKED82를 확정했다.
 - WBS787~789는 가구 배치·미니펫 획득·펫스킬 지급의 success/rollback/replay/drift/restart/concurrency를 집중 검증했고 source와 aggregate를 origin에 push했다. 전체 회귀는 수행하지 않았다.
 - WBS790은 item stack quantity mutation을 focused44/44와 격리 Maria8/8로, WBS791은 app-wiring opt-in root retry를 focused70/70과 typecheck/build로 검증했다. exhaustion은 exact 1213/1205 최대3, committed DML0, provider.fail0, reconciliation read0을 보장하며 aggregate `4dc632fb`가 origin과 일치한다.
-- 잔여 작업표는 manifest/ledger 전체 ID 집합·중복·내부 SHA·base commit·verdict를 fail-close로 검증한다. 1,092건을 재사용 증명 자산 5, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 정확히 한 번씩 분류하며 결정적 재생성 4/4와 독립 P0/P1 0건을 통과했다. 재사용 자산은 완료 증거가 아니라 재실행 또는 공식 재봉인 대상이다.
+- Wave23은 Wave22 225건/919,668 bytes/SHA-256 `1a7bec9fefe0c009012fbaa3286f987a1ae8b8d279cbd23ab0870e4919d83809` prefix를 byte-exact 보존하고 WBS787~789 각 6개, 총 18개를 추가했다. receipts243, DIRECT44, STATIC1007, BLOCKED82이며 WBS790 receipt는 0개다.
+- WBS742 연쇄 증거는 실제 `extractAndStage→project`를 사용해 PROJECT/QUARANTINE/IGNORE 1/1/1, 동일 run/envelope/SHA/fingerprint, 재실행 DML0, 중간 실패 residue0을 격리 Maria에서 증명했다. child는 연결 전 loopback·비3306·격리 DB명을 자체 검사하며 독립 GO를 받았다.
+- 잔여 작업표는 manifest/ledger 전체 ID 집합·중복·내부 SHA·base commit·verdict를 fail-close로 검증한다. 1,089건을 재사용 증명 자산 2, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 정확히 한 번씩 분류하며 결정적 재생성 4/4를 통과했다. 재사용 자산은 완료 증거가 아니라 재실행 또는 공식 재봉인 대상이다.
 
 ## 현재 변경 범위
 
@@ -101,17 +103,17 @@
 - 같은 Node 프로세스의 app/pool 재구성만 증명했으므로 문서에서 실제 process restart라고 주장하지 않는다.
 - 전체 도메인 DML0/network0이 아니라 read-only evaluator, fixture quantity 불변, immediate Iris reply callback 0으로만 주장한다.
 - WBS777은 zero-row/post-import continuation completeness를, WBS778은 rank/guild presentation no-write side effect를 증명한다. ITEM_BAG MODERN, 외부 DIRECT reply, 운영 데이터/DB/실방/Gate8은 이 Gate7 완료 주장에 포함하지 않는다.
-- WBS787~791은 shared executable parity ledger에 아직 승격되지 않았으므로 Gate6과 Gate7을 완료로 표시하지 않는다.
+- WBS787~789는 shared executable parity ledger 승격과 독립 검토를 완료했다. WBS790~791은 아직 Gate6과 Gate7을 완료로 표시하지 않는다.
 - WBS791 독립 검토는 GO, P0/P1 0건, P2 3건이다. P2는 durable attempt_count 관측, lease 만료 경계, 전용 Maria harness 부재다.
 - 전체 회귀는 각 증분에서 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
 
 ## 정확한 다음 행동
 
-1. Wave23 신규 schema·fixture·harness·sealer로 WBS787~789의 각 REQUIRED 6개, 총 18개 receipt를 새로 실행·봉인한다. 기존 Wave22 225건 prefix는 byte-exact 보존한다.
-2. Lease2620은 sealed RAW→실제 WBS724 staging provider→실제 WBS725 projection provider를 격리 Maria에서 연속 실행해 수량·SHA·replay·rollback·restart를 봉인한다.
-3. WBS787~789를 shared ledger에 승격해 receipts 243, DIRECT_PASS 44, STATIC_ONLY 1,007, BLOCKED_DYNAMIC 82를 목표로 한다.
+1. Lease2619와 Lease2620을 공식 시트에서 검증 결과와 함께 종료하고 Wave23/체인 통합 SHA를 기록한다.
+2. MINI-PET-TITLE-COLLECTION 14개 소비자의 Gate1 분류를 보정한다: add/remove 인증 분류, repository receipt/replay owner, sale/collection composite transaction owner graph, legacy runtime port를 확정한다.
+3. 공유 원장 lease를 새로 확보한 뒤 MINI-PET-TITLE-COLLECTION을 Gate2~7까지 작은 단위로 실행한다.
 4. WBS790은 raw transaction owner 후속 보완과 sealed trace가 모두 끝난 뒤 별도 6개 receipt를 추가한다. 그 전에는 Gate6을 열지 않는다.
-5. 잔여 작업표의 다음 작은 도메인 묶음은 MINI-PET-TITLE-COLLECTION 14 → MEMBER-TITLE 23 순으로 진행하며, CONTEXT-BRIDGE 12는 공유 경계 lease로 직렬화한다.
+5. 다음 묶음은 MEMBER-TITLE 23이며 CONTEXT-BRIDGE 12는 공유 경계 lease로 직렬화한다.
 6. 전체 회귀는 증분마다 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
 
 ## 승인 경계
