@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
+import { parseObjectDbConsumerExecutionReceiptBundle } from "../src/data-migration/object-db-consumer-executable-parity-ledger.js";
 
 const root = resolve(import.meta.dirname, "../../..");
 const read = (path: string): any => JSON.parse(readFileSync(resolve(root, path), "utf8"));
@@ -19,7 +20,19 @@ describe("Wave29 home badge usage DIRECT parity", () => {
     assert.deepEqual(current.receipts.slice(0, 352), prior.receipts);
     assert.equal(Buffer.byteLength(prefix), 1_361_204);
     assert.equal(sha(prefix), "70fca768ac020cc1b8dcbceb221c0beeba927e2b16e7bfc32ad09677b95cec5b");
+    const prefix243 = JSON.stringify(current.receipts.slice(0, 243));
+    assert.equal(Buffer.byteLength(prefix243), 970_854);
+    assert.equal(sha(prefix243), "e21eeacea4c7c9b3fb733a349b928e0d1248579ddbb2cf770e20b1b0fd0b5f97");
+    const prefix324 = JSON.stringify(current.receipts.slice(0, 324));
+    assert.equal(Buffer.byteLength(prefix324), 1_260_829);
+    assert.equal(sha(prefix324), "72522ab348255c339dc2e4918fac6ab1702643e6ba8725b99e74ab3457b35adb");
     assert.ok(current.receipts.slice(352).every((receipt: any) => receipt.proofMode === "DIRECT" && receipt.verdict === "PASS"));
+  });
+
+  it("fails closed when an immutable historical receipt is tampered", () => {
+    const current = read("개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave29-v1.json");
+    current.receipts[0].receiptSha256 = "0".repeat(64);
+    assert.throws(() => parseObjectDbConsumerExecutionReceiptBundle(current), /historical receipt fingerprint drift/);
   });
 
   it("binds two consumers to all five required read scenarios", () => {

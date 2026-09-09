@@ -1,0 +1,35 @@
+{
+  "format": "WBS796_GATE3_6_VALIDATION_V1",
+  "sliceId": "SL-HOME-BADGE-GACHA-USAGE-PARITY-01",
+  "wbs": "WBS796",
+  "lease": 2635,
+  "evidenceCommit": "83648e269d2c87187b4994a1d46151b43887a1cd",
+  "receipts": {
+    "prior": 352,
+    "added": 10,
+    "total": 362,
+    "fileSha256": "4a6e1c6c7cc45d7a6872625ba9c96896b2255d5079b77ff32935d4ca3231c472",
+    "prefix352": {"bytes": 1361204, "sha256": "70fca768ac020cc1b8dcbceb221c0beeba927e2b16e7bfc32ad09677b95cec5b"},
+    "prefix243": {"bytes": 970854, "sha256": "e21eeacea4c7c9b3fb733a349b928e0d1248579ddbb2cf770e20b1b0fd0b5f97"},
+    "prefix324": {"bytes": 1260829, "sha256": "72522ab348255c339dc2e4918fac6ab1702643e6ba8725b99e74ab3457b35adb"}
+  },
+  "coverage": {
+    "direct": 50,
+    "equivalent": 12,
+    "static": 989,
+    "blocked": 82,
+    "proven": 62,
+    "residual": 1071,
+    "residualCategories": {"C_DIRECT_EXECUTION": 989, "D_PREREQUISITE": 82}
+  },
+  "validation": {
+    "focused": "PASS 13/13",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "ledgerValidator": "PASS AJV2020_STRICT_PASS RECEIPT_SCHEMA_STRICT_PASS",
+    "tamper": "PASS historical prefix mutation rejected",
+    "restart": "PASS distinct child process and module IDs",
+    "sourceDomainDml": 0
+  },
+  "unchanged": ["main.js", "개발환경_고도화/runtime/src/app.ts", "운영 DB", "운영 data", "feature/prod", "Gate 7", "Gate 8"]
+}
