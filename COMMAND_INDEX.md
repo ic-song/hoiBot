@@ -5127,7 +5127,6 @@ Status: VERIFIED
 - `isSafePointValue`
 - `calculateTransferFee`
 - `ensureHappyFoundationData`
-- `isMemberTierKing`
 - `addPoint`
 - `addHappyFoundationFee`
 
@@ -5152,7 +5151,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Exact/full-pattern command guard: `/이체 [유저] [숫자]`
-- Both sender and recipient must currently be tier `킹` or higher before any point mutation.
+- The sender must be tier `킹` or higher before any point mutation; the recipient can receive points regardless of tier.
 - Amount input is rejected when the transfer amount, fee, or total required point exceeds the safe range used for point arithmetic; existing held balances are not used as a separate safe-range blocker
 - Fee calculation must never use `total - amount` as the primary fee value; oversized or negative fee/total values must be rejected before mutating points
 

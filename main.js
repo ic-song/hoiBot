@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.482"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.483"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -18168,11 +18168,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("[" + targetUser + "] 이름을 가진 멤버가 존재하지 않습니다.");
                         return;
                     }
-                    if (!isMemberTierKing(data, targetUser)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, targetUser) + "]님은 티어 👑킹 미만이라 포인트를 받을 수 없습니다.");
-                        return;
-                    }
-
                     if (sender == targetUser) {
                         replier.reply("장난해?😤");
                         return;
