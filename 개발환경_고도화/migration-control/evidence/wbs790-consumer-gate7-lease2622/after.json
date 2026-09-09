@@ -1,0 +1,23 @@
+{
+  "pid": 5364,
+  "priorPid": 27584,
+  "replayPid": 21852,
+  "seedPid": 13444,
+  "shadow": {
+    "executedTarget": "test/fixtures/object-db-executable-parity-wave24-target.mjs",
+    "rollbackRows": 4,
+    "committedRows": 0,
+    "rawSevenTableSnapshotEqual": true,
+    "result": {
+      "quantity": "3",
+      "replayed": false
+    }
+  },
+  "hashes": {
+    "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json": "db9afd1982d01c685f1a5040f5e2caf96ae1c077d434ba5c642d7670f7f10dcc",
+    "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave24-mutations-v1.json": "156e2069af3e64f42e7e86cfbb573bd1963c9ee48b20dc59bb135d36b6693850",
+    "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave23-v1.json": "c29a44052b2f33071a303bf647b69ca0911aeb265fc556ce9c53a00afc59ae91",
+    "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave24-v1.json": "46241d9e6627ba1bf1a52c018637077a82c8b85b2460c74a9e690907614a9b1a",
+    "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave24-target.mjs": "f2cbe8716f19877a310a803a4aee298eaf3dd1b60dca6b3668d8f22fb05a35b7"
+  }
+}

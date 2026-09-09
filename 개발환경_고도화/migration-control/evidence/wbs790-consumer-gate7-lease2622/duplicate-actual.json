@@ -1,0 +1,145 @@
+{
+  "processId": 12648,
+  "moduleExecutionId": "5aefe66c-92e5-4bf2-9826-ca60f183c551",
+  "scenario": "consumer-restart",
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3358,
+    "name": "hoibot_wave24_item_stack_quantity_2622"
+  },
+  "attempts": [
+    {
+      "number": 1,
+      "outcome": "COMMIT",
+      "lockOrder": [
+        "canonical_item_inventory_ledger_entries",
+        "canonical_item_inventory_operations"
+      ],
+      "targetDml": [],
+      "targetAffectedRows": 0,
+      "failure": null
+    }
+  ],
+  "committedDml": [],
+  "committedRows": 0,
+  "rolledBackAffectedRows": 0,
+  "replayed": true,
+  "errorCode": null,
+  "result": {
+    "quantity": "3",
+    "replayed": true
+  },
+  "beforeRows": {
+    "canonical_owned_item_stacks": [
+      {
+        "owned_item_stack_id": "STACK_ID",
+        "player_id": "player01",
+        "item_id": "item0001",
+        "quantity": "3",
+        "INSERT_USER": "wave24-fixture",
+        "INSERT_TIME": "2026-09-09 14:00:00",
+        "UPDATE_USER": "wave24-fixture",
+        "UPDATE_TIME": "2026-09-09 14:00:00"
+      }
+    ],
+    "canonical_item_inventory_operations": [
+      {
+        "item_inventory_operation_id": "OPERATION_ID",
+        "player_id": "player01",
+        "request_key": "request-consumer-restart",
+        "operation_status": "completed",
+        "resulting_quantity": "3",
+        "INSERT_USER": "wave24-fixture",
+        "INSERT_TIME": "2026-09-09 14:00:00",
+        "UPDATE_USER": "wave24-fixture",
+        "UPDATE_TIME": "2026-09-09 14:00:00"
+      }
+    ],
+    "canonical_item_inventory_ledger_entries": [
+      {
+        "item_inventory_ledger_entry_id": "LEDGER_ID",
+        "item_inventory_operation_id": "OPERATION_ID",
+        "player_id": "player01",
+        "item_id": "item0001",
+        "owned_item_stack_id": "STACK_ID",
+        "owned_item_id": null,
+        "quantity_delta": "3",
+        "reason_type": "REWARD",
+        "INSERT_USER": "wave24-fixture",
+        "INSERT_TIME": "2026-09-09 14:00:00",
+        "UPDATE_USER": "wave24-fixture",
+        "UPDATE_TIME": "2026-09-09 14:00:00"
+      }
+    ]
+  },
+  "afterRows": {
+    "canonical_owned_item_stacks": [
+      {
+        "owned_item_stack_id": "STACK_ID",
+        "player_id": "player01",
+        "item_id": "item0001",
+        "quantity": "3",
+        "INSERT_USER": "wave24-fixture",
+        "INSERT_TIME": "2026-09-09 14:00:00",
+        "UPDATE_USER": "wave24-fixture",
+        "UPDATE_TIME": "2026-09-09 14:00:00"
+      }
+    ],
+    "canonical_item_inventory_operations": [
+      {
+        "item_inventory_operation_id": "OPERATION_ID",
+        "player_id": "player01",
+        "request_key": "request-consumer-restart",
+        "operation_status": "completed",
+        "resulting_quantity": "3",
+        "INSERT_USER": "wave24-fixture",
+        "INSERT_TIME": "2026-09-09 14:00:00",
+        "UPDATE_USER": "wave24-fixture",
+        "UPDATE_TIME": "2026-09-09 14:00:00"
+      }
+    ],
+    "canonical_item_inventory_ledger_entries": [
+      {
+        "item_inventory_ledger_entry_id": "LEDGER_ID",
+        "item_inventory_operation_id": "OPERATION_ID",
+        "player_id": "player01",
+        "item_id": "item0001",
+        "owned_item_stack_id": "STACK_ID",
+        "owned_item_id": null,
+        "quantity_delta": "3",
+        "reason_type": "REWARD",
+        "INSERT_USER": "wave24-fixture",
+        "INSERT_TIME": "2026-09-09 14:00:00",
+        "UPDATE_USER": "wave24-fixture",
+        "UPDATE_TIME": "2026-09-09 14:00:00"
+      }
+    ]
+  },
+  "beforeSha256": "befe4d8ffd6ce2c54566faad157f672f46883393148dbb83c98154f6e8fb0f02",
+  "afterSha256": "befe4d8ffd6ce2c54566faad157f672f46883393148dbb83c98154f6e8fb0f02",
+  "locatorProjection": {
+    "mode": "RAW_COMPOSITE",
+    "key": {
+      "player_id": "player01",
+      "request_key": "request-consumer-restart"
+    },
+    "rows": [
+      {
+        "item_inventory_operation_id": "OPERATION_ID",
+        "player_id": "player01",
+        "request_key": "request-consumer-restart",
+        "operation_status": "completed",
+        "resulting_quantity": "3",
+        "item_inventory_ledger_entry_id": "LEDGER_ID",
+        "item_id": "item0001",
+        "quantity_delta": "3",
+        "reason_type": "REWARD",
+        "owned_item_stack_id": "STACK_ID",
+        "quantity": "3"
+      }
+    ],
+    "locatorOK": true
+  },
+  "externalNetworkCalls": 0,
+  "replyCalls": 0
+}

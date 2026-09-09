@@ -1,0 +1,68 @@
+{
+  "processId": 24448,
+  "moduleExecutionId": "0fb586e1-f2ea-4d03-a140-38d8f3586d13",
+  "scenario": "consumer-shadow",
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3358,
+    "name": "hoibot_wave24_item_stack_quantity_2622"
+  },
+  "attempts": [
+    {
+      "number": 1,
+      "outcome": "ROLLBACK",
+      "lockOrder": [
+        "canonical_item_inventory_ledger_entries",
+        "canonical_item_inventory_operations",
+        "canonical_players",
+        "canonical_item_definitions",
+        "canonical_owned_item_stacks"
+      ],
+      "targetDml": [
+        "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+        "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+        "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+        "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+      ],
+      "targetAffectedRows": 4,
+      "failure": {
+        "code": "WAVE24_SHADOW_ROLLBACK",
+        "errno": null,
+        "errorKind": "OTHER",
+        "constraintName": null
+      }
+    }
+  ],
+  "committedDml": [],
+  "committedRows": 0,
+  "rolledBackAffectedRows": 4,
+  "replayed": null,
+  "errorCode": "WAVE24_SHADOW_ROLLBACK",
+  "result": {
+    "quantity": "3",
+    "replayed": false
+  },
+  "beforeRows": {
+    "canonical_owned_item_stacks": [],
+    "canonical_item_inventory_operations": [],
+    "canonical_item_inventory_ledger_entries": []
+  },
+  "afterRows": {
+    "canonical_owned_item_stacks": [],
+    "canonical_item_inventory_operations": [],
+    "canonical_item_inventory_ledger_entries": []
+  },
+  "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+  "afterSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+  "locatorProjection": {
+    "mode": "RAW_COMPOSITE",
+    "key": {
+      "player_id": "player01",
+      "request_key": "request-consumer-shadow"
+    },
+    "rows": [],
+    "locatorOK": true
+  },
+  "externalNetworkCalls": 0,
+  "replyCalls": 0
+}

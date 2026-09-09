@@ -1,0 +1,1 @@
+CONSUMER_AFTER_PASS dbRestartReplayDml=0 actualShadowRollback=4 committed=0 rawSevenTableSnapshotEqual=true
