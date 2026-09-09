@@ -123,6 +123,7 @@ test("브라우저는 기존 계정 API만 사용하고 자격 증명을 저장�
   assert.match(ACCOUNT_RECOVERY_CLIENT, /"x-csrf-token": state\.csrfToken/);
   assert.match(ACCOUNT_RECOVERY_CLIENT, /JSON\.stringify\(\{ confirmed: true \}\)/);
   assert.match(ACCOUNT_RECOVERY_CLIENT, /credentials: "same-origin"/);
+  assert.match(ACCOUNT_RECOVERY_CLIENT, /AUTH_RATE_LIMITED/);
   assert.match(ACCOUNT_RECOVERY_CLIENT, /passwordInput\.value = ""/);
   assert.match(ACCOUNT_RECOVERY_CLIENT, /maskLoginId/);
   assert.doesNotMatch(ACCOUNT_RECOVERY_CLIENT, /localStorage|sessionStorage|Authorization|console\./);
@@ -178,4 +179,48 @@ test("세션 조회는 401만 로그인으로 보내고 서버 오류는 재시�
   assert.deepEqual(unavailable.redirects, []);
   assert.equal(unavailable.elements.get("delete-error")?.hidden, false);
   assert.equal(unavailable.elements.get("delete-form-panel")?.hidden, true);
+});
+
+test("탈퇴 CSRF 오류와 복구 요청 제한을 화면에 남기고 비밀번호를 지웁니다", async () => {
+  const deletion = createClientHarness("/account/delete", [
+    { status: 200, payload: { session: { loginId: "player01", playerId: "private-player-id" }, csrfToken: "csrf-1" } },
+    { status: 403, payload: { error: { code: "CSRF_TOKEN_INVALID" } } }
+  ]);
+  await flushClient();
+  const confirmed = deletion.elements.get("delete-confirmed");
+  const deletionForm = deletion.elements.get("delete-form");
+  assert.ok(confirmed && deletionForm);
+  confirmed.checked = true;
+  await submit(deletionForm);
+  assert.equal(deletion.elements.get("delete-error")?.hidden, false);
+  assert.match(deletion.elements.get("delete-error-message")?.textContent ?? "", /새로고침/);
+  assert.equal(deletion.elements.get("delete-success")?.hidden, true);
+
+  const recovery = createClientHarness("/recover-account", [
+    { status: 429, payload: { error: { code: "AUTH_RATE_LIMITED" } } }
+  ]);
+  const login = recovery.elements.get("recover-login-id");
+  const password = recovery.elements.get("recover-password");
+  const recoveryForm = recovery.elements.get("recover-form");
+  assert.ok(login && password && recoveryForm);
+  login.value = "player01";
+  password.value = "Pass1234";
+  await submit(recoveryForm);
+  assert.equal(password.value, "");
+  assert.equal(recovery.elements.get("recover-error")?.hidden, false);
+  assert.match(recovery.elements.get("recover-error-message")?.textContent ?? "", /요청이 너무 많아요/);
+});
+
+test("복구 비밀번호는 서버 계약과 같은 8~64자 범위를 검사합니다", async () => {
+  const harness = createClientHarness("/recover-account", []);
+  const login = harness.elements.get("recover-login-id");
+  const password = harness.elements.get("recover-password");
+  const form = harness.elements.get("recover-form");
+  assert.ok(login && password && form);
+  login.value = "player01";
+  password.value = `A1${"x".repeat(63)}`;
+  await submit(form);
+  assert.equal(harness.calls.length, 0);
+  assert.equal(harness.elements.get("recover-password-error")?.hidden, false);
+  assert.match(harness.elements.get("recover-password-error")?.textContent ?? "", /8~64자/);
 });

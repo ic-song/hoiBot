@@ -28,16 +28,16 @@
 
 ## Validation and review
 
-- The assets, registrar, and focused test bundles parse successfully; six route/header/accessibility/API-contract/client-behavior tests pass.
+- The assets, registrar, and focused test bundles parse successfully; eight route/header/accessibility/API-contract/client-behavior tests pass.
 - A synthetic browser flow passed `GET current session -> POST deletion 201 with CSRF -> sessions revoked -> DELETE recovery 200 with credentials`.
 - The UI masks the login ID, clears it after deletion, never renders request/account/player IDs, clears the password field, and uses `textContent` for dynamic values.
-- Independent review found no P0/P1 in the new UI files. The reported maxlength, error association, storage wording, and non-401 session-error handling P2 items were corrected. A dependency-free client harness now executes CSRF deletion, credential recovery, sensitive-value cleanup, and 401-versus-5xx routing behavior.
+- Independent review found no P0/P1 in the new UI files. The reported maxlength, error association, storage wording, and non-401 session-error handling P2 items were corrected. A dependency-free client harness now executes CSRF deletion, credential recovery, sensitive-value cleanup, 401-versus-5xx routing, 403/429 feedback, and the 64-character password boundary.
 - Shared provider P1 remains: the public recovery route has no account/network rate limit, and `recoverDeletion` does not serialize with cleanup or verify `scheduled_delete_at` and update counts. `슬라이스_보고수신!5643` records the High-review provider request. Gate 7 remains FALSE.
 
 ## Next actions
 
 1. Commit and push the independent-review corrections and behavior tests.
-2. Extend failure-path coverage for 403, 429, and cleanup races with the shared provider correction.
+2. Add the cleanup-race integration test with the shared provider correction.
 3. Apply the shared provider correction under a separate High-review W claim after WBS746 integration.
 4. Register the routes only after the shared WBS795 R claims close and the WBS746 baseline is integrated once.
 

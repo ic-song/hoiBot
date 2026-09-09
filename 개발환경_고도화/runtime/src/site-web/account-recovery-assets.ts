@@ -175,6 +175,7 @@ export const ACCOUNT_RECOVERY_CLIENT = `
       DELETION_REQUEST_NOT_RECOVERABLE: "복구할 수 있는 탈퇴 요청이 없어요.",
       CSRF_TOKEN_REQUIRED: "보안 확인 정보가 만료됐어요. 화면을 새로고침해 주세요.",
       CSRF_TOKEN_INVALID: "보안 확인 정보가 만료됐어요. 화면을 새로고침해 주세요.",
+      AUTH_RATE_LIMITED: "요청이 너무 많아요. 잠시 기다린 뒤 다시 시도해 주세요.",
       RATE_LIMITED: "요청이 너무 많아요. 잠시 기다린 뒤 다시 시도해 주세요."
     };
     if (messages[code]) return messages[code];
