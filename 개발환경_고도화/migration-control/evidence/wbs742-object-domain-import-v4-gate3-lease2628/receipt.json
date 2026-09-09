@@ -1,0 +1,40 @@
+{
+  "evidenceSchemaVersion": "object-domain-import-gate3-evidence-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WBS742-G3-20260909-1",
+  "leaseId": 2628,
+  "controlRow": 5642,
+  "baselineCommit": "9f909288ba82ff6445e0a781d972153b45ed56f6",
+  "gate": 3,
+  "tier": "T2",
+  "result": "PASS",
+  "summary": {
+    "registeredTableCount": 119,
+    "directTargetCount": 47,
+    "targetColumnCount": 263,
+    "definitionTargetCount": 25,
+    "syntheticProjectionRowCount": 49,
+    "comparedFieldValueCount": 272
+  },
+  "artifacts": {
+    "fixtureSha256": "18eaa96edd9d457c432829f8c07a7dc25fc8bf766bd7050cc60d4260d695172b",
+    "harnessSha256": "ee39b4e4ae7f5b029d6fced6cab92ab1397cfbfc7089493c2885e5019b8fa0fb",
+    "oracleTestSha256": "4c0eaf8b0e6f3a33a59cd753035c0776b73409b97f32d09eb9e89a4be8bcc1f4"
+  },
+  "verification": {
+    "readOnlyHarness": "PASS",
+    "independentOracleAndTamper": "2/2 PASS",
+    "v2AndV4ContractRegression": "12/12 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "jsonParse": "PASS",
+    "diffCheck": "PASS"
+  },
+  "preserved": [
+    "WBS742 existing Gate1-Gate7 state",
+    "V1 and V2 exact-schema contracts, fixtures, tests, and evidence",
+    "WBS779 and WBS782 evidence",
+    "Lease2618 and Lease2620 evidence lineage"
+  ],
+  "forbiddenChangesObserved": false
+}

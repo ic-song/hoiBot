@@ -1,0 +1,29 @@
+{
+  "format": "hoibot-object-domain-import-synthetic-fixture-v4",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WBS742-G3-20260909-1",
+  "evidenceSchemaVersion": "object-domain-import-gate3-evidence-v1",
+  "profileVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V4",
+  "baseFixture": "data-migration-object-domain-import-v2.json",
+  "nonIdentifying": true,
+  "registeredTableCount": 119,
+  "directTargetCount": 47,
+  "targetColumnCount": 263,
+  "definitionTargetCount": 25,
+  "syntheticProjectionRowCount": 49,
+  "comparedFieldValueCount": 272,
+  "additionalProjectionRows": [
+    { "table": "canonical_package_definitions", "reason": "PACKAGE_GRAPH_SECOND_DEFINITION" },
+    { "table": "canonical_package_reward_entries", "reason": "PACKAGE_GRAPH_SECOND_REWARD" }
+  ],
+  "scenarios": [
+    "all-119-registered-tables-classified-exactly-once",
+    "all-47-direct-targets-and-263-columns",
+    "49-synthetic-rows-and-272-compared-field-values",
+    "25-definition-targets-before-ownership",
+    "v4-pet-skill-eleven-column-amendment",
+    "v1-v2-exact-schema-evidence-remains-immutable",
+    "catalog-delta-evidence-version-identities-remain-distinct",
+    "contract-and-fixture-drift-fail-closed"
+  ]
+}
