@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 20
-- 마지막 갱신: 2026-09-09 05:37:23 KST
+- 체크포인트 버전: 21
+- 마지막 갱신: 2026-09-09 09:49:00 KST
 
 ## 현재 목표
 
@@ -17,23 +17,25 @@
 - WBS730~732: 완료.
 - WBS733~741: Gate1~4 완료, Gate5~7 잔여.
 - WBS742: 현행 25%, 후속 검증 필요.
-- WBS743: 현행 12.5%, 미증명 consumer 1,093건 해소 필요. 공식 ledger는 1,133건, DIRECT_PASS 40, STATIC_ONLY 1,011, BLOCKED_DYNAMIC 82, receipts 219이다.
+- WBS743: 공식 ledger는 1,133건, DIRECT_PASS 41, STATIC_ONLY 1,010, BLOCKED_DYNAMIC 82이며 미증명 consumer 1,092건이다. WBS787~791 증분 증거는 아직 shared ledger 승격 전이다.
 - WBS744: 현행 62.5%, Gate6~7 잔여.
 - WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
 - WBS779~785: Gate1~7 완료, 공식 검증과 Lease 종료. WBS785 aggregate `8cf572b4`는 origin과 일치한다.
-- WBS786: FURNITURE grant mutation 실행 패리티가 다음 READY 대상이다. 선행 읽기 감사에서 consumer `sql-repository-6a8f4b07e980a91f`, 대상 `MariaCanonicalFurnitureHomeRepository.grantOwnedFurniture`, migration 443→444→445, 성공 DML 2를 확인했다.
+- WBS786: Gate1~7 완료, 공식 종료. source `4f481a7d`, aggregate `24fac92e`, focused20/20, Maria6, receipts225, DIRECT_PASS 41이다.
+- WBS787~789: 가구 배치·미니펫 획득·펫스킬 지급 증분 구현과 격리 검증을 완료해 aggregate에 통합했다. 공용 원장 승격 전이므로 Gate1~5, 62.5%로 유지한다.
+- WBS790~791: 아이템 스택 수량 mutation과 app-wiring 상위 root retry를 구현·검증해 aggregate `4dc632fb`에 통합했다. WBS790 focused44/44+Maria8, WBS791 focused70/70+typecheck/build이며 둘 다 Gate1~5, 62.5%다.
 
 ## 현재 작업 위치
 
 - 통합 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 통합 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- 통합 원격 SHA: `8cf572b44dff12ffbd5d508afeb4100817dff769`
-- 직전 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\pet-equipment-assign-mutation-v1-20260909`
-- 직전 실행 브랜치: `codex/pet-equipment-assign-mutation-v1-20260909`
-- 직전 실행: WBS785 / Lease2613 / `SL-PET-EQUIPMENT-ASSIGN-MUTATION-PARITY-01` 완료
-- 상태: WBS785 공식 종료, WBS786 신규 Lease 발급 대기
+- 통합 원격 SHA: `4dc632fb55aa0add134d0d0b0b4dcec9d4e2a894`
+- 직전 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\common-mutation-root-retry-v1-20260909`
+- 직전 실행 브랜치: `codex/common-mutation-root-retry-v1-20260909`
+- 직전 실행: WBS791 / Lease2619 / `SL-COMMON-APP-WIRING-MUTATION-ROOT-RETRY-01` Gate1~5 완료
+- 상태: WBS787~791 증분 구현·통합 완료, 잔여 1,092경로 유한 분류표와 Wave23 shared ledger 승격 진행
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: 통합 브랜치 `8cf572b4`까지 origin push 및 exact 일치 확인
+- 원격 상태: 통합 브랜치 `4dc632fb`까지 origin push 및 exact 일치 확인
 
 ## 완료된 현재 슬라이스 작업
 
@@ -74,6 +76,9 @@
 - WBS784 Wave20 PACKAGE import는 공용 mutation evidence를 추가하고 실제 repository를 격리 MariaDB에서 success 26 committed rows, 중간 DML 13 전량 rollback, duplicate·drift·restart DML0, concurrency writer 1로 증명했다. 초기 독립 재검토의 P1 3건을 repository-local retry/reconciliation·module identity·immutable oracle로 보정한 뒤 fresh Maria 5/5, tamper 11/11, full ledger 16/16을 통과했다. receipts 213, DIRECT 39, STATIC 1,012이며 aggregate `549a173b`가 origin과 일치한다.
 - WBS785 Wave21 PET_EQUIPMENT assign은 requestKey 182자까지 legacy raw locator를 보존하고 183자부터 SHA-256으로 전환한다. replay-first 잠금, player/pet/equipment 소유·활성 fail-close, exact 1062와 1213/1205 transaction retry/reconciliation을 적용했다.
 - WBS785는 repository 8/8, mutation 15/15, 구현자 full ledger 17/17, 격리 Maria 구현자 5회와 독립 1회를 통과했다. success DML 6, 중간 DML 4 전량 rollback, replay·drift·restart DML0, concurrency writer 1이며 receipts 219, DIRECT 40, STATIC 1,011, BLOCKED 82다. source `a9f2cb51`, aggregate `8cf572b4`는 origin과 일치한다.
+- WBS786은 FURNITURE grant mutation 6개 시나리오를 Wave22 shared ledger에 승격해 receipts225, DIRECT41, STATIC1,010, BLOCKED82를 확정했다.
+- WBS787~789는 가구 배치·미니펫 획득·펫스킬 지급의 success/rollback/replay/drift/restart/concurrency를 집중 검증했고 source와 aggregate를 origin에 push했다. 전체 회귀는 수행하지 않았다.
+- WBS790은 item stack quantity mutation을 focused44/44와 격리 Maria8/8로, WBS791은 app-wiring opt-in root retry를 focused70/70과 typecheck/build로 검증했다. exhaustion은 exact 1213/1205 최대3, committed DML0, provider.fail0, reconciliation read0을 보장하며 aggregate `4dc632fb`가 origin과 일치한다.
 
 ## 현재 변경 범위
 
@@ -95,15 +100,17 @@
 - 같은 Node 프로세스의 app/pool 재구성만 증명했으므로 문서에서 실제 process restart라고 주장하지 않는다.
 - 전체 도메인 DML0/network0이 아니라 read-only evaluator, fixture quantity 불변, immediate Iris reply callback 0으로만 주장한다.
 - WBS777은 zero-row/post-import continuation completeness를, WBS778은 rank/guild presentation no-write side effect를 증명한다. ITEM_BAG MODERN, 외부 DIRECT reply, 운영 데이터/DB/실방/Gate8은 이 Gate7 완료 주장에 포함하지 않는다.
-- WBS785 독립 Gate7은 GO, P0/P1 0건, P2 3건이다. P2는 attempt별 Maria 오류 상세, 실제 crosswalk 기반 locator mode, exact-row state hash 증거 강화이며 다음 Wave에서 보완한다.
+- WBS787~791은 shared executable parity ledger에 아직 승격되지 않았으므로 Gate6과 Gate7을 완료로 표시하지 않는다.
+- WBS791 독립 검토는 GO, P0/P1 0건, P2 3건이다. P2는 durable attempt_count 관측, lease 만료 경계, 전용 Maria harness 부재다.
+- 전체 회귀는 각 증분에서 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
 
 ## 정확한 다음 행동
 
-1. WBS786 전용 branch/worktree와 단독 Lease를 aggregate `8cf572b4` 기준으로 발급한다.
-2. `MariaCanonicalFurnitureHomeRepository.grantOwnedFurniture`의 terminal replay, 소유자 결속, 중앙 Maria retry와 exact unique reconciliation을 최소 범위로 보완한다.
-3. Wave22에서 success DML 2, 중간쓰기 rollback, duplicate DML0, payload drift, restart, concurrency single-writer 6시나리오를 격리 MariaDB에서 증명하고 receipts 225/DIRECT 41을 목표로 한다. WBS785 P2 3건의 증거 강화를 함께 적용한다.
-4. 독립 Gate7 GO 뒤 aggregate에 통합하고 FURNITURE place 등 나머지 consumer cohort를 계속 진행한다.
-5. WBS730~744 Gate1~7이 모두 닫힌 뒤에만 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
+1. 공식 ledger의 미증명 1,092경로를 `기존 증거 재사용`, `엄격 동등성 증명`, `개별 실행`, `선행 보완`으로 대사해 유한한 잔여 작업표를 확정한다.
+2. WBS787~791의 승인 source·fixture·focused 결과를 Wave23 shared ledger/evidence에 직렬 승격하고 validator를 통과시킨다.
+3. 승격된 소비자만 Gate6으로 올리고, 같은 계약·fixture 도메인 묶음을 집중 검증해 도메인 Shadow까지 닫는다.
+4. RNG가 transaction 내부에 있는 TrialTower와 Package는 재시도 간 난수 고정 계약을 먼저 분리한다. Raid·PetExplore 등 결정적 owner와 섞지 않는다.
+5. 최종 고정 통합 후보에서 전체 회귀를 1회 수행한 뒤 WBS730~744 Gate1~7을 닫고, 그 이후에만 WBS745 Gate8 비운영 배포·복구 준비로 넘어간다.
 
 ## 승인 경계
 
