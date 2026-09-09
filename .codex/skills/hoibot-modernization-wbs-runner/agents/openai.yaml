@@ -1,7 +1,7 @@
 interface:
-  display_name: "hoiBot 슬라이스 고도화"
-  short_description: "전체 명령 분류 후 슬라이스별 Gate 1~7 실행"
-  default_prompt: "Use $hoibot-modernization-wbs-runner to classify assigned commands while the catalog is open, or execute one frozen hoiBot slice end-to-end through Gate 7."
+  display_name: "hoiBot 고도화 실행"
+  short_description: "증분 분류와 자원 Lease로 봇·웹 병행 실행"
+  default_prompt: "Use $hoibot-modernization-wbs-runner to run one assigned bot, web, or shared-integration item with resource-scoped ownership and evidence-based gates."
 
 policy:
   allow_implicit_invocation: true

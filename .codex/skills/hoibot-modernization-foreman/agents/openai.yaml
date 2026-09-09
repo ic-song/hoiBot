@@ -1,7 +1,7 @@
 interface:
   display_name: "hoiBot 작업반장"
-  short_description: "전체 슬라이스 분류 후 Gate 1~7 전담 병렬 운영"
-  default_prompt: "Use $hoibot-modernization-foreman to freeze a complete hoiBot slice catalog first, then assign conflict-free end-to-end Gate 1-7 slice owners."
+  short_description: "자원 충돌만 직렬화하는 봇·웹 고도화 운영"
+  default_prompt: "Use $hoibot-modernization-foreman to coordinate bot migration, web portal work, and shared integration with incremental catalog deltas and resource-scoped leases."
 
 policy:
   allow_implicit_invocation: true
