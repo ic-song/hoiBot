@@ -32,6 +32,7 @@ const disposition = JSON.parse(dispositionText) as { definitionSeed: string[]; s
 const fieldMap = JSON.parse(fieldMapText) as { mappings: Array<{ domain: string; targetTables: string[] }>; recordQuarantine: string[] };
 const contract = JSON.parse(contractText) as { componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; semanticHashPolicy: { acceptedCompatibleImportContractSha256: string[] } };
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/data-migration-object-domain-import-v1.json", import.meta.url), "utf8")) as { syntheticProjectionRowCount: number; directTargetCount: number; targetColumnCount: number; gate6SourceDecisionCount: number; gate6ProjectedDecisionCount: number; gate6QuarantinedDecisionCount: number; gate6IgnoredDecisionCount: number; gate6ComparedFieldValueCount: number };
+const expectations = { projectionRowCount: 47, directTargetCount: 45, schemaFieldCount: 241, definitionTargetCount: 23, comparedFieldValueCount: 250 } as const;
 const directTargets = [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly];
 const policy: DomainImportPolicy = {
   catalogVersion: schema.catalogVersion,
@@ -95,6 +96,11 @@ describe("object domain import Gate 6 parity contract", () => {
       import_sha256: currentRun.import_sha256
     }, policy, fingerprintInput), /OBJECT_DOMAIN_PARITY_IMPORT_FINGERPRINT_DRIFT/);
   });
+
+  it("requires the caller's sealed parity cardinalities before reading persisted rows", async () => {
+    const verifier = new ObjectDomainParityVerifier();
+    await assert.rejects(verifier.verify({} as DatabaseTransaction, "p1234567", policy, { ...expectations, directTargetCount: 44 }), /OBJECT_DOMAIN_PARITY_POLICY_SCOPE_INVALID/);
+  });
 });
 
 async function writeCounters(database: DatabaseClient): Promise<Record<string, string>> {
@@ -119,7 +125,7 @@ if (process.env.OBJECT_DOMAIN_GATE6_PHASE === "verify") describe("object domain 
     const verifier = new ObjectDomainParityVerifier();
     try {
       const writesBefore = await writeCounters(database);
-      const result = await database.withTransaction((transaction) => verifier.verify(transaction, "p1234567", policy));
+      const result = await database.withTransaction((transaction) => verifier.verify(transaction, "p1234567", policy, expectations));
       const writesAfter = await writeCounters(database);
       assert.deepEqual(writesAfter, writesBefore);
       assert.deepEqual([result.projectionRowCount, result.targetRowCount, result.directTargetCount, result.schemaFieldCount, result.comparedFieldValueCount, result.decisionCount, result.projectedDecisionCount, result.quarantinedDecisionCount, result.ignoredDecisionCount, result.rowDiffCount], [fixture.syntheticProjectionRowCount, fixture.syntheticProjectionRowCount, fixture.directTargetCount, fixture.targetColumnCount, fixture.gate6ComparedFieldValueCount, fixture.gate6SourceDecisionCount, fixture.gate6ProjectedDecisionCount, fixture.gate6QuarantinedDecisionCount, fixture.gate6IgnoredDecisionCount, 0]);
@@ -128,7 +134,7 @@ if (process.env.OBJECT_DOMAIN_GATE6_PHASE === "verify") describe("object domain 
       assert.ok(result.lastDefinitionImportOrder < result.firstNonDefinitionImportOrder);
 
       const componentDriftPolicy: DomainImportPolicy = { ...policy, componentSemanticSha256: { ...policy.componentSemanticSha256, fieldMap: "f".repeat(64) } };
-      await assert.rejects(database.withTransaction((transaction) => verifier.verify(transaction, "p1234567", componentDriftPolicy)), /OBJECT_DOMAIN_PARITY_COMPONENT_CONTRACT_DRIFT/);
+      await assert.rejects(database.withTransaction((transaction) => verifier.verify(transaction, "p1234567", componentDriftPolicy, expectations)), /OBJECT_DOMAIN_PARITY_COMPONENT_CONTRACT_DRIFT/);
 
       const persistedHashDrifts = [
         { table: "data_migration_catalog_projection_runs", column: "target_schema_sha256", key: "catalog_projection_run_id" },
@@ -144,43 +150,43 @@ if (process.env.OBJECT_DOMAIN_GATE6_PHASE === "verify") describe("object domain 
       for (const drift of persistedHashDrifts) await assert.rejects(database.withTransaction(async (transaction) => {
         assert.match(`${drift.table}.${drift.column}.${drift.key}`, /^[a-z0-9_.]+$/);
         await transaction.execute(`UPDATE ${drift.table} SET ${drift.column}=? WHERE ${drift.key}=?`, ["f".repeat(64), "p1234567"]);
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_/);
 
       for (const column of ["identity_locator_sha256", "imported_row_fingerprint"]) await assert.rejects(database.withTransaction(async (transaction) => {
         assert.match(column, /^[a-z0-9_]+$/);
         await transaction.execute(`UPDATE data_migration_object_domain_import_records SET ${column}=? WHERE object_domain_import_run_id=(SELECT object_domain_import_run_id FROM data_migration_object_domain_import_runs WHERE catalog_projection_run_id=?) ORDER BY import_order LIMIT 1`, ["f".repeat(64), "p1234567"]);
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_IMPORT_RECORD_MISMATCH/);
 
       await assert.rejects(database.withTransaction(async (transaction) => {
         const pk = await targetPk(transaction, "canonical_currency_ledger_entries", "currency_ledger_entry_id");
         await transaction.execute("DELETE FROM canonical_currency_ledger_entries WHERE currency_ledger_entry_id=?", [pk]);
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_TARGET_ROW_MISSING/);
 
       await assert.rejects(database.withTransaction(async (transaction) => {
         const pk = await targetPk(transaction, "canonical_item_definitions", "item_id");
         await transaction.execute("INSERT INTO canonical_item_definitions(item_id,item_name,item_description,item_kind,item_grade,price_amount,price_currency_source_identifier,stackable_flag,active_flag,definition_options,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) SELECT 'z1234567',item_name,item_description,item_kind,item_grade,price_amount,price_currency_source_identifier,stackable_flag,active_flag,definition_options,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME FROM canonical_item_definitions WHERE item_id=?", [pk]);
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_TARGET_ROW_EXTRA/);
 
       await assert.rejects(database.withTransaction(async (transaction) => {
         const pk = await targetPk(transaction, "canonical_item_definitions", "item_id");
         await transaction.execute("UPDATE canonical_item_definitions SET item_name=CONCAT(item_name,'-DRIFT') WHERE item_id=?", [pk]);
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_TARGET_ROW_DRIFT/);
 
       await assert.rejects(database.withTransaction(async (transaction) => {
         const nested = (await transaction.query<Array<{ package_reward_entry_id: string; package_id: string }>>("SELECT package_reward_entry_id,package_id FROM canonical_package_nested_rewards"))[0]!;
         const redirected = (await transaction.query<Array<{ package_id: string }>>("SELECT package_id FROM canonical_package_definitions WHERE package_id<>? ORDER BY package_id LIMIT 1", [nested.package_id]))[0]!;
         await transaction.execute("UPDATE canonical_package_nested_rewards SET package_id=? WHERE package_reward_entry_id=?", [redirected.package_id, nested.package_reward_entry_id]);
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_TARGET_ROW_DRIFT/);
 
       await assert.rejects(database.withTransaction(async (transaction) => {
         await transaction.execute("UPDATE data_migration_catalog_source_decisions SET decision_status='IGNORE' WHERE catalog_projection_run_id='p1234567' AND decision_status='QUARANTINE'");
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_DECISION_COUNT_MISMATCH/);
 
       await assert.rejects(database.withTransaction(async (transaction) => {
@@ -189,10 +195,10 @@ if (process.env.OBJECT_DOMAIN_GATE6_PHASE === "verify") describe("object domain 
         await transaction.execute("UPDATE data_migration_object_domain_import_records SET import_order=999 WHERE object_domain_import_record_id=?", [boundary[0]!.object_domain_import_record_id]);
         await transaction.execute("UPDATE data_migration_object_domain_import_records SET import_order=? WHERE object_domain_import_record_id=?", [result.lastDefinitionImportOrder, boundary[1]!.object_domain_import_record_id]);
         await transaction.execute("UPDATE data_migration_object_domain_import_records SET import_order=? WHERE object_domain_import_record_id=?", [result.firstNonDefinitionImportOrder, boundary[0]!.object_domain_import_record_id]);
-        await verifier.verify(transaction, "p1234567", policy);
+        await verifier.verify(transaction, "p1234567", policy, expectations);
       }), /OBJECT_DOMAIN_PARITY_DEFINITION_ORDER_INVALID/);
 
-      const restored = await database.withTransaction((transaction) => verifier.verify(transaction, "p1234567", policy));
+      const restored = await database.withTransaction((transaction) => verifier.verify(transaction, "p1234567", policy, expectations));
       assert.equal(restored.rowDiffCount, 0);
       process.stdout.write(`GATE6_PARITY ${JSON.stringify({ writesBefore, writesAfter, result })}\n`);
     } finally { await database.close(); }

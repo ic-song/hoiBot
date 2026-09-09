@@ -46,6 +46,14 @@ export interface ObjectDomainParityResult {
   lastDefinitionImportOrder: number; firstNonDefinitionImportOrder: number; rowDiffCount: 0;
 }
 
+export interface ObjectDomainParityExpectations {
+  projectionRowCount: number;
+  directTargetCount: number;
+  schemaFieldCount: number;
+  definitionTargetCount: number;
+  comparedFieldValueCount: number;
+}
+
 export interface ObjectDomainParityImportFingerprintInput {
   catalogProjectionRunId: string; projectionManifestSha256: string; projectionSha256: string;
   upstreamEnvelopeSha256: string; targetSchemaSha256: string;
@@ -125,13 +133,17 @@ function identityKey(table: string, column: string, locator: string): string { r
 function rowKey(table: string, pk: string): string { return `${table}\0${pk}`; }
 
 export class ObjectDomainParityVerifier {
-  async verify(transaction: DatabaseTransaction, catalogProjectionRunId: string, policy: DomainImportPolicy): Promise<ObjectDomainParityResult> {
+  async verify(transaction: DatabaseTransaction, catalogProjectionRunId: string, policy: DomainImportPolicy, expectations: ObjectDomainParityExpectations): Promise<ObjectDomainParityResult> {
     assertObjectDomainImportPolicy(policy);
-    if (new Set(policy.directTargets).size !== 45 || policy.columns.length !== 241 || policy.definitionTargets.length !== 23) throw new Error("OBJECT_DOMAIN_PARITY_POLICY_SCOPE_INVALID");
+    if (Object.values(expectations).some((value) => !Number.isSafeInteger(value) || value <= 0)
+      || new Set(policy.directTargets).size !== expectations.directTargetCount
+      || policy.directTargets.length !== expectations.directTargetCount
+      || policy.columns.length !== expectations.schemaFieldCount
+      || policy.definitionTargets.length !== expectations.definitionTargetCount) throw new Error("OBJECT_DOMAIN_PARITY_POLICY_SCOPE_INVALID");
     for (const key of ["identityBindings", "objectModel", "disposition", "fieldMap"] as const) if (!HASH.test(policy.componentSemanticSha256[key]) || policy.componentSemanticSha256[key] !== policy.contractComponentSemanticSha256[key]) throw new Error("OBJECT_DOMAIN_PARITY_COMPONENT_CONTRACT_DRIFT");
     for (const name of [...policy.directTargets, ...policy.columns.flatMap((column) => [column.table, column.column])]) if (!IDENTIFIER.test(name)) throw new Error("OBJECT_DOMAIN_PARITY_IDENTIFIER_INVALID");
     const run = (await transaction.query<ProjectionRunRow[]>("SELECT catalog_projection_run_id,common_staging_run_id,catalog_version,projection_manifest_sha256,target_schema_sha256,projection_sha256,upstream_envelope_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,projected_row_count,run_status FROM data_migration_catalog_projection_runs WHERE catalog_projection_run_id=?", [catalogProjectionRunId]))[0];
-    if (run === undefined || run.run_status !== "COMPLETE" || run.catalog_version !== policy.catalogVersion || run.target_schema_sha256 !== policy.targetSchemaSha256 || !HASH.test(run.projection_manifest_sha256) || !HASH.test(run.projection_sha256) || !HASH.test(run.upstream_envelope_sha256) || Number(run.projected_row_count) !== 47) throw new Error("OBJECT_DOMAIN_PARITY_PROJECTION_RUN_INVALID");
+    if (run === undefined || run.run_status !== "COMPLETE" || run.catalog_version !== policy.catalogVersion || run.target_schema_sha256 !== policy.targetSchemaSha256 || !HASH.test(run.projection_manifest_sha256) || !HASH.test(run.projection_sha256) || !HASH.test(run.upstream_envelope_sha256) || Number(run.projected_row_count) !== expectations.projectionRowCount) throw new Error("OBJECT_DOMAIN_PARITY_PROJECTION_RUN_INVALID");
     const stagingRuns = await transaction.query<CommonStagingRunRow[]>("SELECT common_staging_run_id,raw_bundle_sha256,snapshot_manifest_sha256,extraction_manifest_sha256,staging_sha256,expected_file_count,CAST(expected_total_bytes AS CHAR) expected_total_bytes,projected_file_count,ignored_file_count,run_status FROM data_migration_common_staging_runs WHERE common_staging_run_id=?", [run.common_staging_run_id]);
     if (stagingRuns.length !== 1 || stagingRuns[0]!.run_status !== "COMPLETE") throw new Error("OBJECT_DOMAIN_PARITY_STAGING_RUN_INVALID");
     const staging = stagingRuns[0]!;
@@ -146,7 +158,7 @@ export class ObjectDomainParityVerifier {
     }
     if (decisions.length !== Number(run.expected_source_count) || decisionCounts.PROJECT !== Number(run.projected_source_count) || decisionCounts.QUARANTINE !== Number(run.quarantined_source_count) || decisionCounts.IGNORE !== Number(run.ignored_source_count)) throw new Error("OBJECT_DOMAIN_PARITY_DECISION_COUNT_MISMATCH");
     const rows = await transaction.query<ProjectionRow[]>("SELECT catalog_projection_record_id,catalog_source_decision_id,projection_locator,identity_locator_sha256,identity_mode,target_table_name,target_pk_column_name,target_object_type,target_source_namespace,source_role,approval_kind,approval_sha256,CAST(target_payload_json AS CHAR) target_payload_json,target_payload_fingerprint,CAST(value_origins_json AS CHAR) value_origins_json,value_origins_fingerprint,CAST(reference_bindings_json AS CHAR) reference_bindings_json,reference_bindings_fingerprint FROM data_migration_catalog_projection_records WHERE catalog_projection_run_id=? ORDER BY catalog_projection_record_id", [catalogProjectionRunId]);
-    if (rows.length !== 47 || new Set(rows.map((row) => row.catalog_projection_record_id)).size !== 47) throw new Error("OBJECT_DOMAIN_PARITY_PROJECTION_COUNT_MISMATCH");
+    if (rows.length !== expectations.projectionRowCount || new Set(rows.map((row) => row.catalog_projection_record_id)).size !== expectations.projectionRowCount) throw new Error("OBJECT_DOMAIN_PARITY_PROJECTION_COUNT_MISMATCH");
     for (const row of rows) if (sha256(row.target_payload_json) !== row.target_payload_fingerprint || sha256(row.value_origins_json) !== row.value_origins_fingerprint || sha256(row.reference_bindings_json) !== row.reference_bindings_fingerprint) throw new Error("OBJECT_DOMAIN_PARITY_PROJECTION_RECORD_FINGERPRINT_DRIFT");
     const projectedByDecision = new Map<string, number>();
     for (const row of rows) projectedByDecision.set(row.catalog_source_decision_id, (projectedByDecision.get(row.catalog_source_decision_id) ?? 0) + 1);
@@ -163,7 +175,7 @@ export class ObjectDomainParityVerifier {
     const importRuns = await transaction.query<ImportRunRow[]>("SELECT object_domain_import_run_id,catalog_version,catalog_projection_sha256,upstream_envelope_sha256,target_schema_sha256,import_contract_sha256,import_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,expected_row_count,imported_row_count,run_status FROM data_migration_object_domain_import_runs WHERE catalog_projection_run_id=?", [catalogProjectionRunId]);
     if (importRuns.length !== 1) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_RUN_INVALID");
     const importRun = importRuns[0]!;
-    if (importRun.run_status !== "COMPLETE" || importRun.catalog_version !== policy.catalogVersion || importRun.catalog_projection_sha256 !== run.projection_sha256 || importRun.upstream_envelope_sha256 !== run.upstream_envelope_sha256 || importRun.target_schema_sha256 !== policy.targetSchemaSha256 || !HASH.test(importRun.import_contract_sha256) || !policy.acceptedImportContractSha256.includes(importRun.import_contract_sha256) || Number(importRun.expected_source_count) !== decisions.length || Number(importRun.projected_source_count) !== decisionCounts.PROJECT || Number(importRun.quarantined_source_count) !== decisionCounts.QUARANTINE || Number(importRun.ignored_source_count) !== decisionCounts.IGNORE || Number(importRun.expected_row_count) !== 47 || Number(importRun.imported_row_count) !== 47) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_RUN_INVALID");
+    if (importRun.run_status !== "COMPLETE" || importRun.catalog_version !== policy.catalogVersion || importRun.catalog_projection_sha256 !== run.projection_sha256 || importRun.upstream_envelope_sha256 !== run.upstream_envelope_sha256 || importRun.target_schema_sha256 !== policy.targetSchemaSha256 || !HASH.test(importRun.import_contract_sha256) || !policy.acceptedImportContractSha256.includes(importRun.import_contract_sha256) || Number(importRun.expected_source_count) !== decisions.length || Number(importRun.projected_source_count) !== decisionCounts.PROJECT || Number(importRun.quarantined_source_count) !== decisionCounts.QUARANTINE || Number(importRun.ignored_source_count) !== decisionCounts.IGNORE || Number(importRun.expected_row_count) !== expectations.projectionRowCount || Number(importRun.imported_row_count) !== expectations.projectionRowCount) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_RUN_INVALID");
     const decisionReceipts = await transaction.query<Array<Omit<DecisionRow, "source_payload_fingerprint" | "record_domain">>>("SELECT catalog_source_decision_id,source_locator_sha256,decision_status,decision_reason,projected_row_count,decision_fingerprint FROM data_migration_object_domain_import_decisions WHERE object_domain_import_run_id=? ORDER BY catalog_source_decision_id", [importRun.object_domain_import_run_id]);
     const expectedDecisionReceipts = decisions.map(({ catalog_source_decision_id, source_locator_sha256, decision_status, decision_reason, projected_row_count, decision_fingerprint }) => ({ catalog_source_decision_id, source_locator_sha256, decision_status, decision_reason, projected_row_count: Number(projected_row_count), decision_fingerprint }));
     if (stable(decisionReceipts.map((row) => ({ ...row, projected_row_count: Number(row.projected_row_count) }))) !== stable(expectedDecisionReceipts)) throw new Error("OBJECT_DOMAIN_PARITY_DECISION_RECEIPT_MISMATCH");
@@ -233,7 +245,7 @@ export class ObjectDomainParityVerifier {
     for (const [key, expected] of expectedByKey) if (stable(expected.values) !== stable(actualByKey.get(key)!.values)) throw new Error("OBJECT_DOMAIN_PARITY_TARGET_ROW_DRIFT");
 
     const importRecords = await transaction.query<ImportRecordRow[]>("SELECT catalog_projection_record_id,target_table_name,target_pk_column_name,target_pk_value,identity_locator_sha256,import_order,binding_fingerprint,imported_row_fingerprint FROM data_migration_object_domain_import_records WHERE object_domain_import_run_id=? ORDER BY import_order", [importRun.object_domain_import_run_id]);
-    if (importRecords.length !== 47 || new Set(importRecords.map((record) => record.catalog_projection_record_id)).size !== 47 || new Set(importRecords.map((record) => rowKey(record.target_table_name, record.target_pk_value))).size !== 47 || importRecords.some((record, index) => Number(record.import_order) !== index)) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_ORDER_INVALID");
+    if (importRecords.length !== expectations.projectionRowCount || new Set(importRecords.map((record) => record.catalog_projection_record_id)).size !== expectations.projectionRowCount || new Set(importRecords.map((record) => rowKey(record.target_table_name, record.target_pk_value))).size !== expectations.projectionRowCount || importRecords.some((record, index) => Number(record.import_order) !== index)) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_ORDER_INVALID");
     const expectedByProjection = new Map(expectedRows.map((row) => [row.projectionRecordId, row]));
     for (const record of importRecords) {
       const expected = expectedByProjection.get(record.catalog_projection_record_id);
@@ -262,11 +274,14 @@ export class ObjectDomainParityVerifier {
     const targetSha256 = sha256(stable(canonicalActual));
     if (projectionSha256 !== targetSha256) throw new Error("OBJECT_DOMAIN_PARITY_HASH_MISMATCH");
     const schemaFields = new Set(expectedRows.flatMap((row) => Object.keys(row.values).map((column) => `${row.table}.${column}`)));
-    if (schemaFields.size !== 241) throw new Error("OBJECT_DOMAIN_PARITY_FIELD_COVERAGE_INVALID");
+    const policySchemaFields = new Set(policy.columns.map((column) => `${column.table}.${column.column}`));
+    if (policySchemaFields.size !== expectations.schemaFieldCount || schemaFields.size !== expectations.schemaFieldCount || [...schemaFields].some((field) => !policySchemaFields.has(field))) throw new Error("OBJECT_DOMAIN_PARITY_FIELD_COVERAGE_INVALID");
     const tableCounts = (values: Array<{ table: string }>): Record<string, number> => Object.fromEntries([...policy.directTargets].sort().map((table) => [table, values.filter((row) => row.table === table).length]));
     const projectionTableCounts = tableCounts(expectedRows);
     const targetTableCounts = tableCounts(actualRows);
     if (stable(projectionTableCounts) !== stable(targetTableCounts)) throw new Error("OBJECT_DOMAIN_PARITY_TABLE_COUNT_MISMATCH");
-    return { projectionRowCount: expectedRows.length, targetRowCount: actualRows.length, directTargetCount: new Set(expectedRows.map((row) => row.table)).size, schemaFieldCount: schemaFields.size, comparedFieldValueCount: expectedRows.reduce((count, row) => count + Object.keys(row.values).length, 0), decisionCount: decisions.length, projectedDecisionCount: decisionCounts.PROJECT, quarantinedDecisionCount: decisionCounts.QUARANTINE, ignoredDecisionCount: decisionCounts.IGNORE, projectionTableCounts, targetTableCounts, lastDefinitionImportOrder: Math.max(...definitionOrders), firstNonDefinitionImportOrder: Math.min(...remainingOrders), projectionSha256, targetSha256, rowDiffCount: 0 };
+    const comparedFieldValueCount = expectedRows.reduce((count, row) => count + Object.keys(row.values).length, 0);
+    if (comparedFieldValueCount !== expectations.comparedFieldValueCount) throw new Error("OBJECT_DOMAIN_PARITY_COMPARED_VALUE_COUNT_INVALID");
+    return { projectionRowCount: expectedRows.length, targetRowCount: actualRows.length, directTargetCount: new Set(expectedRows.map((row) => row.table)).size, schemaFieldCount: schemaFields.size, comparedFieldValueCount, decisionCount: decisions.length, projectedDecisionCount: decisionCounts.PROJECT, quarantinedDecisionCount: decisionCounts.QUARANTINE, ignoredDecisionCount: decisionCounts.IGNORE, projectionTableCounts, targetTableCounts, lastDefinitionImportOrder: Math.max(...definitionOrders), firstNonDefinitionImportOrder: Math.min(...remainingOrders), projectionSha256, targetSha256, rowDiffCount: 0 };
   }
 }

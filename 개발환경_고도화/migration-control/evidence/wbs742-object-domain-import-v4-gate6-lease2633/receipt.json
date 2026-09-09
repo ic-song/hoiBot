@@ -1,0 +1,72 @@
+{
+  "evidenceSchemaVersion": "object-domain-import-gate6-evidence-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WBS742-G6-20260909-1",
+  "leaseId": 2633,
+  "controlRow": 5642,
+  "baselineCommit": "13e404f614b5e7315afadb9fd9734532621c2242",
+  "gate": 6,
+  "tier": "T2",
+  "result": "PASS_PENDING_INDEPENDENT_REVIEW",
+  "executionMode": "ISOLATED_MARIADB_SYNTHETIC_PARITY",
+  "trustedExpectations": {
+    "projectionRowCount": 49,
+    "directTargetCount": 47,
+    "schemaFieldCount": 263,
+    "definitionTargetCount": 25,
+    "comparedFieldValueCount": 272,
+    "wrongProjectionRowCountRejected": true
+  },
+  "parity": {
+    "projectionRowCount": 49,
+    "targetRowCount": 49,
+    "rowDiffCount": 0,
+    "projectionSha256": "8bc4eb01ca082a6448b26eb148c9ccc27f3d4bcd3f5408218226842dd89ce536",
+    "targetSha256": "8bc4eb01ca082a6448b26eb148c9ccc27f3d4bcd3f5408218226842dd89ce536",
+    "verifierDmlCountersUnchanged": true,
+    "restoredPositiveParity": true
+  },
+  "failClosed": {
+    "expectationTamperCount": 1,
+    "databaseDriftCount": 3,
+    "databaseDrifts": [
+      "canonical target value",
+      "import record identity locator",
+      "persisted projection fingerprint"
+    ]
+  },
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3365,
+    "schema": "hoibot_rehearsal_wbs742_v4_gate6",
+    "environmentCode": "dev",
+    "migrationCount": 480,
+    "isolatedServerPid": 176452,
+    "listenerRemovedAfterRun": true
+  },
+  "isolation": {
+    "productionPort": 3306,
+    "productionOwnerPidBefore": 4872,
+    "productionOwnerPidAfter": 4872,
+    "productionOwnerUnchanged": true,
+    "operationalDataAccess": false
+  },
+  "artifacts": {
+    "verifierSha256": "fb43a7e89c96e14623565b7af837375395c6dbeee1e9dc946d5a1370c9aa9efa",
+    "v1TestSha256": "b38c8fac00f6675fccbf11be20836f6569755f8aff04252e3944079d6f5f533f",
+    "harnessSha256": "2d03ea8de76172e97f96dab091f58662e898477bfe3ce04513d2e39737119164",
+    "v4TestSha256": "ab8f5fc47f4447ad8c7d77ac3cdc27ecff9d83fab738d72e4afcdf0bc620bc7d"
+  },
+  "verification": {
+    "isolatedMariaDbParity": "PASS",
+    "v1V2V4FocusedRegression": "22/22 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "powerShellParse": "PASS",
+    "diffCheck": "PASS",
+    "secretScan": "PASS_SYNTHETIC_LOCAL_CREDENTIALS_ONLY",
+    "utf8StrictDecode": "PASS"
+  },
+  "gate7AuthorshipSeparated": true,
+  "forbiddenChangesObserved": false
+}
