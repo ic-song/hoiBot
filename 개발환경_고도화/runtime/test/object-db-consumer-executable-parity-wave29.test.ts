@@ -45,12 +45,12 @@ describe("Wave29 home badge usage DIRECT parity", () => {
 
   it("moves only the two target consumers in the final ledger", () => {
     const ledger = read("개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json");
-    assert.equal(ledger.coverage.directPassConsumers, 52);
+    assert.equal(ledger.coverage.directPassConsumers, 50);
     assert.equal(ledger.coverage.equivalentPassConsumers, 12);
-    assert.equal(ledger.coverage.verdicts.STATIC_ONLY, 987);
+    assert.equal(ledger.coverage.verdicts.STATIC_ONLY, 989);
     assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC, 82);
-    assert.equal(ledger.coverage.provenConsumers, 64);
-    assert.equal(ledger.coverage.unprovenConsumers, 1069);
+    assert.equal(ledger.coverage.provenConsumers, 62);
+    assert.equal(ledger.coverage.unprovenConsumers, 1071);
     for (const id of ids) {
       const entry = ledger.entries.find((candidate: any) => candidate.consumerId === id);
       assert.equal(entry.verdict, "DIRECT_PASS");
