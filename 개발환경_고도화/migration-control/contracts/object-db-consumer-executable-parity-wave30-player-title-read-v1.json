@@ -1,0 +1,20 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave30:player-title-read:v1",
+  "sliceId": "WBS797",
+  "consumerIds": ["runtime-dispatch-e2445b135d4fb12c", "runtime-dispatch-e2dde461680d21ca"],
+  "runtimeSourcePaths": ["개발환경_고도화/runtime/src/app.ts", "개발환경_고도화/runtime/src/player/player-title-read-service.ts", "개발환경_고도화/runtime/src/player/player-title-owned-projection.ts"],
+  "receiptContract": {"version":"WBS797_PLAYER_TITLE_READ_RUNTIME_DISPATCH_DIRECT_V1","route":"CANDIDATE_NORMALIZED_ALIAS_MODERN_HANDLER_SERVICE","transaction":"READ_ONLY","sourceDomainDmlCount":0,"restart":"DISTINCT_NODE_CHILD_PROCESSES_AND_MODULES","canonicalTarget":"PORT_ONLY; WBS645/648 hash-linked prerequisite evidence, not canonical SQL execution evidence"},
+  "bindings": [
+    {"consumerId":"runtime-dispatch-e2445b135d4fb12c","scenarioId":"wave30-list-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave30PlayerTitleRead","kind":"list","input":"/타이틀목록","expectedReply":"[⭐조회회원]님의 타이틀 목록\n\n1. 첫 번째\n☞ 2. 두 번째"},
+    {"consumerId":"runtime-dispatch-e2445b135d4fb12c","scenarioId":"wave30-list-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave30PlayerTitleRead","kind":"list","input":"/타이틀목록안내","expectedReply":"NO_REPLY"},
+    {"consumerId":"runtime-dispatch-e2445b135d4fb12c","scenarioId":"wave30-list-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave30PlayerTitleRead","kind":"list","input":"/타이틀목록 대상회원추가","expectedReply":"[🌙대상회원]님의 타이틀 목록\n\n1. 첫 번째/획득일:2026-08-27 23:00/가격: 🅟9,999"},
+    {"consumerId":"runtime-dispatch-e2445b135d4fb12c","scenarioId":"wave30-list-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave30PlayerTitleRead","kind":"list","input":"/타이틀목록","expectedReply":"[⭐조회회원]님의 타이틀 목록\n\n1. 첫 번째\n☞ 2. 두 번째"},
+    {"consumerId":"runtime-dispatch-e2445b135d4fb12c","scenarioId":"wave30-list-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave30PlayerTitleRead","kind":"list","input":"/타이틀목록","expectedReply":"[⭐조회회원]님의 타이틀 목록\n\n1. 첫 번째\n☞ 2. 두 번째"},
+    {"consumerId":"runtime-dispatch-e2dde461680d21ca","scenarioId":"wave30-info-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave30PlayerTitleRead","kind":"info","input":"/타이틀정보 2","expectedReply":"[⭐조회회원] 님의 타이틀 [두 번째] 상세정보\n획득일:2026-08-27 23:10\n구매액: 🅟15,000\n판매가: 🅟4,500"},
+    {"consumerId":"runtime-dispatch-e2dde461680d21ca","scenarioId":"wave30-info-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave30PlayerTitleRead","kind":"info","input":"/타이틀정보안내","expectedReply":"올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀정보 [번호]"},
+    {"consumerId":"runtime-dispatch-e2dde461680d21ca","scenarioId":"wave30-info-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave30PlayerTitleRead","kind":"info","input":"/타이틀정보 1 안내","expectedReply":"올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀정보 [번호]"},
+    {"consumerId":"runtime-dispatch-e2dde461680d21ca","scenarioId":"wave30-info-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave30PlayerTitleRead","kind":"info","input":"/타이틀정보 9","expectedReply":"해당 번호의 타이틀이 존재하지 않습니다."},
+    {"consumerId":"runtime-dispatch-e2dde461680d21ca","scenarioId":"wave30-info-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave30PlayerTitleRead","kind":"info","input":"/타이틀정보 2","expectedReply":"[⭐조회회원] 님의 타이틀 [두 번째] 상세정보\n획득일:2026-08-27 23:10\n구매액: 🅟15,000\n판매가: 🅟4,500"}
+  ]
+}
