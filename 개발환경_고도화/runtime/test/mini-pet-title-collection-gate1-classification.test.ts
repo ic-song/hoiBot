@@ -20,6 +20,8 @@ type ClassifiedConsumer = {
   consumerId: string;
   access: string;
   runtimePort: string;
+  transactionOwner: string;
+  receiptOwner: string | null;
 };
 type Contract = {
   format: string;
@@ -35,17 +37,36 @@ type Contract = {
     repositorySource: InputEvidence;
     operationMigration: InputEvidence;
     participantMigration: InputEvidence;
+    catalogReplayPatternMigration: InputEvidence;
   };
   selectionRule: { manifestConsumerCount: number; selectedConsumerCount: number; excludedDirectPassConsumerIds: string[] };
   consumers: ClassifiedConsumer[];
   authorizationContracts: Array<{ consumerId: string; sourceGuard: string; decision: string; participantRoles: string[] }>;
   repositoryReceiptReplay: {
+    applicableConsumerIds: string[];
     participantRoles: string[];
     uniqueLocator: string[];
     terminalStatus: string;
     exactReplay: string;
     payloadDrift: string;
     currentGap: string;
+  };
+  catalogMutationReplay: {
+    applicableConsumerIds: string[];
+    playerScopedOperationTableForbidden: string;
+    implementationStatus: string;
+    requiredAdditiveReceiptTable: string;
+    patternTable: string;
+    uniqueLocator: string[];
+    migrationRule: string;
+  };
+  legacyNormalizationPolicy: {
+    affectedConsumerIds: string[];
+    canonicalIngressRule: string;
+    maintenanceOwner: string;
+    receiptScope: string;
+    implementationStatus: string;
+    publicRankCompatibility: string;
   };
   compositeTransactionOwners: Array<{
     owner: string;
@@ -74,6 +95,14 @@ function sha256(text: string): string {
 
 function canonicalSource(text: string): string {
   return text.replace(/\r\n?/g, "\n");
+}
+
+function tableDdl(text: string, table: string): string {
+  const start = text.indexOf(`CREATE TABLE${text.includes(`CREATE TABLE IF NOT EXISTS ${table}`) ? " IF NOT EXISTS" : ""} ${table}`);
+  assert.notEqual(start, -1, table);
+  const end = text.indexOf("ENGINE=InnoDB", start);
+  assert.notEqual(end, -1, table);
+  return text.slice(start, end);
 }
 
 const contract = readJson<Contract>(contractPath);
@@ -134,18 +163,46 @@ describe("Lease2621 mini-pet-title collection Gate1 classification", () => {
   it("assigns the canonical receipt and exposes the repository replay gap", () => {
     const operationDdl = readText(contract.inputs.operationMigration.path);
     const participantDdl = readText(contract.inputs.participantMigration.path);
+    const catalogPatternDdl = readText(contract.inputs.catalogReplayPatternMigration.path);
     const repository = readText(contract.inputs.repositorySource.path);
+    const ownershipReceiptDdl = tableDdl(operationDdl, "canonical_mini_pet_title_operations");
+    const catalogReceiptPatternDdl = tableDdl(catalogPatternDdl, "canonical_package_definition_replays");
     assert.match(operationDdl, /CREATE TABLE IF NOT EXISTS canonical_mini_pet_title_operations/);
     assert.match(operationDdl, /UNIQUE KEY uq_odbt_463_05_01 \(replay_namespace, player_id, request_key\)/);
     assert.match(participantDdl, /CREATE TABLE IF NOT EXISTS canonical_mini_pet_title_operation_participants/);
     assert.match(participantDdl, /participant_role IN \('OWNER','RECIPIENT'\)/);
+    assert.match(ownershipReceiptDdl, /player_id CHAR\(8\).*NOT NULL/);
     assert.deepEqual(contract.repositoryReceiptReplay.uniqueLocator, ["replay_namespace", "player_id", "request_key"]);
     assert.deepEqual(contract.repositoryReceiptReplay.participantRoles, ["OWNER", "RECIPIENT"]);
     assert.equal(contract.repositoryReceiptReplay.terminalStatus, "COMPLETED");
     assert.equal(contract.repositoryReceiptReplay.exactReplay, "RETURN_COMMITTED_RESULT_WITH_ZERO_DOMAIN_DML");
     assert.equal(contract.repositoryReceiptReplay.payloadDrift, "FAIL_CLOSED");
+    assert.deepEqual(contract.repositoryReceiptReplay.applicableConsumerIds, [
+      "sql-repository-099449f24cdb2763",
+      "sql-repository-c5361160b1d4362b",
+      "sql-repository-fd6a78de68e8f580"
+    ]);
     assert.doesNotMatch(repository, /canonical_mini_pet_title_operations|canonical_mini_pet_title_operation_participants/);
-    assert.match(contract.repositoryReceiptReplay.currentGap, /does not write/);
+    assert.match(contract.repositoryReceiptReplay.currentGap, /do not write/);
+    assert.match(catalogPatternDdl, /CREATE TABLE canonical_package_definition_replays/);
+    assert.doesNotMatch(catalogReceiptPatternDdl, /player_id/);
+    assert.match(catalogReceiptPatternDdl, /source_system VARCHAR\(50\).*NOT NULL/);
+    assert.match(catalogReceiptPatternDdl, /UNIQUE KEY uq_canonical_package_definition_request \(source_system, source_namespace, request_key\)/);
+    assert.deepEqual(contract.catalogMutationReplay.applicableConsumerIds, [
+      "sql-repository-649707c7a4a4b178",
+      "sql-repository-81ba01f732909dc7"
+    ]);
+    assert.equal(contract.catalogMutationReplay.implementationStatus, "PLANNED_NOT_IMPLEMENTED");
+    assert.equal(contract.catalogMutationReplay.requiredAdditiveReceiptTable, "canonical_mini_pet_title_definition_replays");
+    assert.equal(contract.catalogMutationReplay.patternTable, "canonical_package_definition_replays");
+    assert.deepEqual(contract.catalogMutationReplay.uniqueLocator, ["source_system", "source_namespace", "request_key"]);
+    assert.match(contract.catalogMutationReplay.playerScopedOperationTableForbidden, /player_id is NOT NULL/);
+    assert.match(contract.catalogMutationReplay.migrationRule, /Gate1 does not claim/);
+    for (const consumerId of contract.catalogMutationReplay.applicableConsumerIds) {
+      const consumer = contract.consumers.find((entry) => entry.consumerId === consumerId);
+      assert.equal(consumer?.receiptOwner, null);
+      assert.equal(consumer?.transactionOwner, "CATALOG_ADMIN_REPLAY_ROOT_PENDING_ADDITIVE_SCHEMA");
+    }
   });
 
   it("keeps sale and collection confirmation under one root each", () => {
@@ -168,6 +225,26 @@ describe("Lease2621 mini-pet-title collection Gate1 classification", () => {
     assert.ok(collection.participants.includes("mini-pet.enhancement.auto-upgrade"));
     assert.ok(collection.participants.includes("mini-pet-title.ownership.grant"));
     assert.match(collection.rollback, /all roll back/);
+    assert.equal(
+      contract.consumers.find((entry) => entry.consumerId === "sql-repository-099449f24cdb2763")?.transactionOwner,
+      "REPOSITORY_OPERATION_ROOT_OR_COMPOSITE_PARTICIPANT"
+    );
+  });
+
+  it("keeps public ranking pure-read and moves normalization to non-player maintenance", () => {
+    const rank = contract.consumers.find((entry) => entry.consumerId === "legacy-6a42c658dfc99e35");
+    assert.ok(rank);
+    assert.equal(rank.receiptOwner, null);
+    assert.equal(rank.transactionOwner, "READ_ONLY_CANONICAL_PLUS_SEPARATE_MAINTENANCE_REPAIR");
+    assert.deepEqual(contract.legacyNormalizationPolicy.affectedConsumerIds, [
+      "legacy-6a42c658dfc99e35",
+      "legacy-ae36b9a9e188508d"
+    ]);
+    assert.match(contract.legacyNormalizationPolicy.canonicalIngressRule, /pure READ/);
+    assert.equal(contract.legacyNormalizationPolicy.maintenanceOwner, "MINI_PET_COLLECTION_NORMALIZATION_MAINTENANCE_ROOT");
+    assert.equal(contract.legacyNormalizationPolicy.receiptScope, "NON_PLAYER_MAINTENANCE_RECEIPT_PENDING_ADDITIVE_SCHEMA");
+    assert.equal(contract.legacyNormalizationPolicy.implementationStatus, "PLANNED_NOT_IMPLEMENTED");
+    assert.match(contract.legacyNormalizationPolicy.publicRankCompatibility, /player_id is NOT NULL/);
   });
 
   it("fails closed until all nine legacy runtime ports are bound", () => {
@@ -180,7 +257,7 @@ describe("Lease2621 mini-pet-title collection Gate1 classification", () => {
     assert.ok(contract.legacyRuntimeFailClose.requiredPorts.includes("canonical-player-identity.resolve"));
     assert.ok(contract.legacyRuntimeFailClose.forbiddenFallbacks.includes("legacy display-name identity"));
     assert.ok(contract.legacyRuntimeFailClose.forbiddenFallbacks.includes("nested repository root transaction inside a composite owner"));
-    assert.deepEqual(contract.gate2BlockingRisks.map((risk) => risk.severity), ["P1", "P1", "P1", "P1"]);
+    assert.deepEqual(contract.gate2BlockingRisks.map((risk) => risk.severity), ["P1", "P1", "P1", "P1", "P1", "P1"]);
     assert.deepEqual(contract.forbiddenAtGate1, ["shared ledger mutation", "receipt promotion", "production database", "port 3306", "operational data", "live room", "external network", "feature/prod"]);
   });
 });

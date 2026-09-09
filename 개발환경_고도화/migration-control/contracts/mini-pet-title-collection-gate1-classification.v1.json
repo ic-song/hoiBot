@@ -11,7 +11,8 @@
     "legacySource": { "path": "main.js", "sha256": "91bd1c772aeb0979359ff2af86320850b77a738c1ddee295ae843ca5bcb10495" },
     "repositorySource": { "path": "개발환경_고도화/runtime/src/title/maria-canonical-title-repository.ts", "sha256": "5e6b2251b35a0c10a84acda15d10b081b818118fd2ef8ba75f65903379006252" },
     "operationMigration": { "path": "개발환경_고도화/runtime/migrations/463_object_db_transition_operation_receipts.sql", "sha256": "09149b60389f779e210ec4d572897641d24f0f4bd16363d8564c5e5930adf3f8" },
-    "participantMigration": { "path": "개발환경_고도화/runtime/migrations/465_object_db_transition_operation_participants.sql", "sha256": "f045d174b769d64acd88522a90244e822d3698645e1596461b0618d967c98430" }
+    "participantMigration": { "path": "개발환경_고도화/runtime/migrations/465_object_db_transition_operation_participants.sql", "sha256": "f045d174b769d64acd88522a90244e822d3698645e1596461b0618d967c98430" },
+    "catalogReplayPatternMigration": { "path": "개발환경_고도화/runtime/migrations/451_canonical_package_reward.sql", "sha256": "877fdc539b885575b150c6af641c69de36daafac70de5a7f22ca38296797b2f3" }
   },
   "selectionRule": {
     "expression": "manifest.primarySlice == MINI-PET-TITLE-COLLECTION AND ledger.verdict != DIRECT_PASS",
@@ -24,16 +25,16 @@
   "consumers": [
     { "consumerId": "legacy-52a2111d587077dc", "access": "READ_WRITE", "role": "COLLECTION_CONFIRM", "authorization": "AUTHENTICATED_SELF", "runtimePort": "mini-pet-collection.confirm.mutate", "transactionOwner": "MINI_PET_COLLECTION_CONFIRM_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
     { "consumerId": "legacy-65bdcd5c86aaa184", "access": "READ_WRITE", "role": "TITLE_SELL", "authorization": "AUTHENTICATED_SELF", "runtimePort": "mini-pet-title.sale.mutate", "transactionOwner": "MINI_PET_TITLE_SALE_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
-    { "consumerId": "legacy-6a42c658dfc99e35", "access": "READ_WRITE", "role": "COLLECTION_RANK_READ_WITH_NORMALIZATION", "authorization": "PUBLIC_COMMAND", "runtimePort": "mini-pet-collection.rank.read", "transactionOwner": "NORMALIZATION_REPAIR_ROOT_IF_REQUIRED", "receiptOwner": "canonical_mini_pet_title_operations" },
+    { "consumerId": "legacy-6a42c658dfc99e35", "access": "READ_WRITE", "role": "COLLECTION_RANK_READ_WITH_LEGACY_NORMALIZATION", "authorization": "PUBLIC_COMMAND", "runtimePort": "mini-pet-collection.rank.read", "transactionOwner": "READ_ONLY_CANONICAL_PLUS_SEPARATE_MAINTENANCE_REPAIR", "receiptOwner": null },
     { "consumerId": "legacy-7e211a21f6194155", "access": "READ", "role": "COLLECTION_PENDING_CANCEL", "authorization": "AUTHENTICATED_SELF_SESSION", "runtimePort": "mini-pet-collection.pending.cancel", "transactionOwner": "SESSION_ONLY_NO_DATABASE_TRANSACTION", "receiptOwner": null },
-    { "consumerId": "legacy-ae36b9a9e188508d", "access": "READ_WRITE", "role": "COLLECTION_STATUS_READ_WITH_NORMALIZATION", "authorization": "AUTHENTICATED_SELF", "runtimePort": "mini-pet-collection.status.read", "transactionOwner": "NORMALIZATION_REPAIR_ROOT_IF_REQUIRED", "receiptOwner": "canonical_mini_pet_title_operations" },
+    { "consumerId": "legacy-ae36b9a9e188508d", "access": "READ_WRITE", "role": "COLLECTION_STATUS_READ_WITH_LEGACY_NORMALIZATION", "authorization": "AUTHENTICATED_SELF", "runtimePort": "mini-pet-collection.status.read", "transactionOwner": "READ_ONLY_CANONICAL_PLUS_SEPARATE_MAINTENANCE_REPAIR", "receiptOwner": null },
     { "consumerId": "legacy-bd75d0cfdb9f6dcb", "access": "READ", "role": "TITLE_LIST", "authorization": "AUTHENTICATED_SELF", "runtimePort": "mini-pet-title.owned.read", "transactionOwner": "READ_ONLY", "receiptOwner": null },
     { "consumerId": "legacy-c085f3fbcbe62bb3", "access": "READ_WRITE", "role": "TITLE_SELECT", "authorization": "AUTHENTICATED_SELF", "runtimePort": "mini-pet-title.select.mutate", "transactionOwner": "MINI_PET_TITLE_SELECT_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
     { "consumerId": "legacy-cb9358f157d74d5e", "access": "READ_WRITE", "role": "TITLE_ADMIN_GRANT", "authorization": "MASTER_ONLY_SILENT_DENY", "runtimePort": "mini-pet-title.admin-grant.mutate", "transactionOwner": "MINI_PET_TITLE_ADMIN_GRANT_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
     { "consumerId": "legacy-ed6659b495a1d419", "access": "READ_WRITE", "role": "TITLE_ADMIN_REMOVE", "authorization": "MASTER_ONLY_SILENT_DENY", "runtimePort": "mini-pet-title.admin-remove.mutate", "transactionOwner": "MINI_PET_TITLE_ADMIN_REMOVE_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
-    { "consumerId": "sql-repository-099449f24cdb2763", "access": "READ_WRITE", "role": "REPOSITORY_GRANT", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.ownership.mutate", "transactionOwner": "REPOSITORY_OPERATION_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
-    { "consumerId": "sql-repository-649707c7a4a4b178", "access": "READ_WRITE", "role": "REPOSITORY_DEFINITION_REGISTER", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.catalog.mutate", "transactionOwner": "REPOSITORY_OPERATION_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
-    { "consumerId": "sql-repository-81ba01f732909dc7", "access": "READ_WRITE", "role": "REPOSITORY_DEFINITION_UPDATE", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.catalog.mutate", "transactionOwner": "REPOSITORY_OPERATION_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" },
+    { "consumerId": "sql-repository-099449f24cdb2763", "access": "READ_WRITE", "role": "REPOSITORY_GRANT", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.ownership.mutate", "transactionOwner": "REPOSITORY_OPERATION_ROOT_OR_COMPOSITE_PARTICIPANT", "receiptOwner": "canonical_mini_pet_title_operations" },
+    { "consumerId": "sql-repository-649707c7a4a4b178", "access": "READ_WRITE", "role": "REPOSITORY_DEFINITION_REGISTER", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.catalog.mutate", "transactionOwner": "CATALOG_ADMIN_REPLAY_ROOT_PENDING_ADDITIVE_SCHEMA", "receiptOwner": null },
+    { "consumerId": "sql-repository-81ba01f732909dc7", "access": "READ_WRITE", "role": "REPOSITORY_DEFINITION_UPDATE", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.catalog.mutate", "transactionOwner": "CATALOG_ADMIN_REPLAY_ROOT_PENDING_ADDITIVE_SCHEMA", "receiptOwner": null },
     { "consumerId": "sql-repository-c5361160b1d4362b", "access": "READ_WRITE", "role": "REPOSITORY_RELEASE", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.ownership.mutate", "transactionOwner": "REPOSITORY_OPERATION_ROOT_OR_COMPOSITE_PARTICIPANT", "receiptOwner": "canonical_mini_pet_title_operations" },
     { "consumerId": "sql-repository-fd6a78de68e8f580", "access": "READ_WRITE", "role": "REPOSITORY_SELECT", "authorization": "CALLER_ENFORCED", "runtimePort": "mini-pet-title.ownership.mutate", "transactionOwner": "REPOSITORY_OPERATION_ROOT", "receiptOwner": "canonical_mini_pet_title_operations" }
   ],
@@ -61,8 +62,30 @@
     "terminalStatus": "COMPLETED",
     "exactReplay": "RETURN_COMMITTED_RESULT_WITH_ZERO_DOMAIN_DML",
     "payloadDrift": "FAIL_CLOSED",
-    "ownerRule": "Each standalone repository mutation owns one operation receipt; release used by sale and grant used by collection are transaction-scoped participants of the composite root and must not open nested root transactions.",
-    "currentGap": "MariaCanonicalTitleRepository does not write canonical_mini_pet_title_operations or participants; registerDefinition/grant use identity crosswalk replay only, while updateDefinition/select/release have no request-key replay contract."
+    "applicableConsumerIds": ["sql-repository-099449f24cdb2763", "sql-repository-c5361160b1d4362b", "sql-repository-fd6a78de68e8f580"],
+    "ownerRule": "Each standalone ownership mutation owns one player-scoped operation receipt; release used by sale and grant used by collection are transaction-scoped participants of the composite root and must not open nested root transactions.",
+    "currentGap": "MariaCanonicalTitleRepository ownership methods do not write canonical_mini_pet_title_operations or participants; grant uses identity crosswalk replay only, while select/release have no request-key replay contract."
+  },
+  "catalogMutationReplay": {
+    "applicableConsumerIds": ["sql-repository-649707c7a4a4b178", "sql-repository-81ba01f732909dc7"],
+    "playerScopedOperationTableForbidden": "canonical_mini_pet_title_operations.player_id is NOT NULL and catalog definitions are global, so this table cannot own catalog replay.",
+    "implementationStatus": "PLANNED_NOT_IMPLEMENTED",
+    "requiredAdditiveReceiptTable": "canonical_mini_pet_title_definition_replays",
+    "patternTable": "canonical_package_definition_replays",
+    "uniqueLocator": ["source_system", "source_namespace", "request_key"],
+    "requiredColumns": ["mini_pet_title_definition_operation_id", "source_system", "source_namespace", "request_key", "payload_fingerprint", "mini_pet_title_id", "operation_status", "INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"],
+    "exactReplay": "RETURN_COMMITTED_DEFINITION_WITH_ZERO_DOMAIN_DML",
+    "payloadDrift": "FAIL_CLOSED",
+    "migrationRule": "Create only through a new additive migration after schema lease approval; Gate1 does not claim the table or runtime path exists."
+  },
+  "legacyNormalizationPolicy": {
+    "affectedConsumerIds": ["legacy-6a42c658dfc99e35", "legacy-ae36b9a9e188508d"],
+    "canonicalIngressRule": "Canonical collection status and public ranking ports are pure READ and never normalize with DML.",
+    "maintenanceOwner": "MINI_PET_COLLECTION_NORMALIZATION_MAINTENANCE_ROOT",
+    "receiptScope": "NON_PLAYER_MAINTENANCE_RECEIPT_PENDING_ADDITIVE_SCHEMA",
+    "implementationStatus": "PLANNED_NOT_IMPLEMENTED",
+    "publicRankCompatibility": "The public ranking command has no authenticated player, so canonical_mini_pet_title_operations is forbidden because player_id is NOT NULL.",
+    "migrationRule": "Legacy repair runs only as an isolated maintenance/import operation after a separate non-player receipt contract is approved."
   },
   "compositeTransactionOwners": [
     {
@@ -110,7 +133,9 @@
   },
   "gate2BlockingRisks": [
     { "severity": "P1", "id": "P1-MISSING-RUNTIME-PORTS", "detail": "The nine legacy consumers are not bound to the canonical runtime ports." },
-    { "severity": "P1", "id": "P1-MISSING-OPERATION-RECEIPT", "detail": "The five repository mutations do not yet persist and replay canonical mini-pet-title operation receipts." },
+    { "severity": "P1", "id": "P1-MISSING-OWNERSHIP-OPERATION-RECEIPT", "detail": "The three ownership repository mutations do not yet persist and replay canonical mini-pet-title operation receipts." },
+    { "severity": "P1", "id": "P1-MISSING-CATALOG-REPLAY-SCHEMA", "detail": "The two global catalog mutations need a separate additive definition replay table and cannot use the player-scoped operation table." },
+    { "severity": "P1", "id": "P1-NON-PLAYER-NORMALIZATION-RECEIPT", "detail": "Legacy collection normalization must leave public reads and run under a separate non-player maintenance/import receipt contract." },
     { "severity": "P1", "id": "P1-COMPOSITE-ATOMICITY", "detail": "Sale and collection confirmation currently span multiple legacy files and require single-root transaction owners." },
     { "severity": "P1", "id": "P1-AUTH-EVIDENCE", "detail": "Admin add/remove must preserve master-only silent denial and record OWNER/RECIPIENT without trusting display names." }
   ],
