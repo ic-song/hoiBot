@@ -1,0 +1,1635 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave27:slot-newbie:v1",
+  "sliceId": "WBS794",
+  "cohortId": "PACKAGE-SLOT-NEWBIE-ADMIN-GRANT-01",
+  "representativeConsumerId": "legacy-36588f6a2db3277d",
+  "source": {
+    "path": "main.js",
+    "sha256": "d8541a602a5fda8a2d6d20f7f0214d42c4285775c595816deda7355605e1e6c0",
+    "spanStart": 400947,
+    "spanEnd": 403777,
+    "spanSha256": "b8116501b20b58b9050854d6a2b885e164f6534d8660a8f72a0bef1aa784b9bf"
+  },
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/admin/admin-stack-grant-service.ts",
+    "개발환경_고도화/runtime/src/admin/slot-newbie-package-grant-service.ts",
+    "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts",
+    "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+    "개발환경_고도화/runtime/src/database.ts",
+    "개발환경_고도화/runtime/migrations/492_admin_slot_newbie_package_grant.sql"
+  ],
+  "allowedTables": [
+    "operations",
+    "outbox_messages",
+    "command_executions",
+    "command_audit",
+    "canonical_owned_item_stacks",
+    "canonical_item_inventory_operations",
+    "canonical_item_inventory_ledger_entries"
+  ],
+  "variants": [
+    {
+      "consumerId": "legacy-36588f6a2db3277d",
+      "trigger": "/슬롯초보,",
+      "predicate": "msg.startsWith(\"/슬롯초보,\") && isMaster(sender)",
+      "variantNo": 1,
+      "itemName": "슬롯초보패키지🪙(/슬롯초보오픈)",
+      "reply": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+        "itemName": "슬롯초보패키지🪙(/슬롯초보오픈)"
+      },
+      "sourceSpan": {
+        "start": 400947,
+        "end": 401635,
+        "sha256": "cb783aaba0e86cec13e6096fafc9e34cbd04d00ea1280eb9d50389a52fc29c99"
+      }
+    },
+    {
+      "consumerId": "legacy-02d447882f335ea1",
+      "trigger": "/슬롯초보2,",
+      "predicate": "msg.startsWith(\"/슬롯초보2,\") && isMaster(sender)",
+      "variantNo": 2,
+      "itemName": "슬롯초보패키지2🪙(/슬롯초보오픈2)",
+      "reply": "대상 회원님에게 슬롯초보패키지2(/슬롯초보오픈2)🪙를 지급했습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+        "itemName": "슬롯초보패키지2🪙(/슬롯초보오픈2)"
+      },
+      "sourceSpan": {
+        "start": 401652,
+        "end": 402349,
+        "sha256": "7a54cacbd8f581d936ffb4d66a892cca786bdfc80b4628f67ec49000c07d8cb0"
+      }
+    },
+    {
+      "consumerId": "legacy-ac46db2ac0deedf4",
+      "trigger": "/슬롯초보3,",
+      "predicate": "msg.startsWith(\"/슬롯초보3,\") && isMaster(sender)",
+      "variantNo": 3,
+      "itemName": "슬롯초보패키지3🪙(/슬롯초보오픈3)",
+      "reply": "대상 회원님에게 슬롯초보패키지3(/슬롯초보오픈3)🪙를 지급했습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+        "itemName": "슬롯초보패키지3🪙(/슬롯초보오픈3)"
+      },
+      "sourceSpan": {
+        "start": 402366,
+        "end": 403063,
+        "sha256": "bb382111ab43b7cff7ae78aea0129a6214d6f988384547a39e9717d0a6ae911b"
+      }
+    },
+    {
+      "consumerId": "legacy-f51202b9335997d8",
+      "trigger": "/슬롯초보4,",
+      "predicate": "msg.startsWith(\"/슬롯초보4,\") && isMaster(sender)",
+      "variantNo": 4,
+      "itemName": "슬롯초보패키지4🪙(/슬롯초보오픈4)",
+      "reply": "대상 회원님에게 슬롯초보패키지4(/슬롯초보오픈4)🪙를 지급했습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+        "itemName": "슬롯초보패키지4🪙(/슬롯초보오픈4)"
+      },
+      "sourceSpan": {
+        "start": 403080,
+        "end": 403777,
+        "sha256": "e9219ebc644e982e7605be108bdc03e2bda4f30187da9e01d415fd4e81f873bb"
+      }
+    }
+  ],
+  "cohortProjectionSha256": "90e5bc3abc01930c9abf44cfbf5041fd9801d4bb59a1b435dafcc62e063cd793",
+  "scenarioKinds": [
+    "MUTATION_SUCCESS",
+    "DOMAIN_FAILURE_ROLLBACK",
+    "DUPLICATE_REPLAY_DML_ZERO",
+    "PAYLOAD_DRIFT_FAIL_CLOSED",
+    "RESTART_REPLAY",
+    "CONCURRENCY_SINGLE_WRITER",
+    "AUTH_DENIED"
+  ],
+  "observations": [
+    {
+      "scenarioKind": "MUTATION_SUCCESS",
+      "traces": [
+        {
+          "processId": 29396,
+          "moduleExecutionId": "d66c1e05-8e3d-474e-83dc-27e45add61ec",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "1"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-success",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"1\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-success",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-success",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-success",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-success",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-success",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "7f1a268fa105ca550392fc11fd114d24f5635499cd87af1a6316fbc865e28550",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+      "traces": [
+        {
+          "processId": 25596,
+          "moduleExecutionId": "3a9b3612-2658-4b50-82b7-a05010b07560",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": null,
+          "errorCode": "(conn:26, no: 1644, SQLState: 45000) WAVE27_DOMAIN_FAILURE\nsql: INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3)) - parameters:[2,'998100001','inve...",
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))"
+              ],
+              "affectedRowCount": 7,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": "(conn:26, no: 1644, SQLState: 45000) WAVE27_DOMAIN_FAILURE\nsql: INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3)) - parameters:[2,'998100001','inve..."
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 7,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+      "traces": [
+        {
+          "processId": 29876,
+          "moduleExecutionId": "08546798-e562-4ee1-a50a-d20211eed934",
+          "mode": "EXEC",
+          "role": "SEED",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "3"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-duplicate",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"3\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-duplicate",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-duplicate",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-duplicate",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-duplicate",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-duplicate",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "c3e67bb46de4a02f1ed62474ebbe8274ac825549146eaea20e1fc1ad567d8a56",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 31104,
+          "moduleExecutionId": "28f034ef-eeaf-4dfc-a088-74717feebd60",
+          "mode": "EXEC",
+          "role": "REPLAY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "3"
+          },
+          "errorCode": null,
+          "replayed": true,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-duplicate",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"3\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-duplicate",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-duplicate",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-duplicate",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-duplicate",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-duplicate",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-duplicate",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"3\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-duplicate",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-duplicate",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-duplicate",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-duplicate",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-duplicate",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "c3e67bb46de4a02f1ed62474ebbe8274ac825549146eaea20e1fc1ad567d8a56",
+          "afterSha256": "c3e67bb46de4a02f1ed62474ebbe8274ac825549146eaea20e1fc1ad567d8a56",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "traces": [
+        {
+          "processId": 32076,
+          "moduleExecutionId": "4d0bf103-e896-4bcf-938b-2241aeadce68",
+          "mode": "EXEC",
+          "role": "SEED",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "4"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-drift",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"4\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-drift",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-drift",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-drift",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-drift",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-drift",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "718c6a8506dff9523bf69bebdeb9bd2c1a95b1cbb75611379807ffcefab2a2fc",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 28996,
+          "moduleExecutionId": "b2743011-8964-4aff-9928-1d07192173e1",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": null,
+          "errorCode": "ADMIN_STACK_GRANT_PAYLOAD_DRIFT",
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": "ADMIN_STACK_GRANT_PAYLOAD_DRIFT"
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-drift",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"4\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-drift",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-drift",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-drift",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-drift",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-drift",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-drift",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"4\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-drift",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-drift",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-drift",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-drift",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-drift",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "718c6a8506dff9523bf69bebdeb9bd2c1a95b1cbb75611379807ffcefab2a2fc",
+          "afterSha256": "718c6a8506dff9523bf69bebdeb9bd2c1a95b1cbb75611379807ffcefab2a2fc",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "RESTART_REPLAY",
+      "traces": [
+        {
+          "processId": 3928,
+          "moduleExecutionId": "1859096d-6d69-41e5-93b0-f395742a0a5d",
+          "mode": "EXEC",
+          "role": "SEED",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "5"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-restart",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"5\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-restart",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-restart",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-restart",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-restart",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-restart",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "455e892907c3b9eb0dafc616f019bf0a5fce5b2855f338f73d18de06411ed562",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 14664,
+          "moduleExecutionId": "710dc478-76af-4ad8-9d22-a44bca62ce3a",
+          "mode": "EXEC",
+          "role": "REPLAY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "5"
+          },
+          "errorCode": null,
+          "replayed": true,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-restart",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"5\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-restart",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-restart",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-restart",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-restart",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-restart",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-restart",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"5\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-restart",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-restart",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-restart",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-restart",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-restart",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "455e892907c3b9eb0dafc616f019bf0a5fce5b2855f338f73d18de06411ed562",
+          "afterSha256": "455e892907c3b9eb0dafc616f019bf0a5fce5b2855f338f73d18de06411ed562",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+      "traces": [
+        {
+          "processId": 27148,
+          "moduleExecutionId": "186595eb-b938-4de1-88fc-f6c458671e94",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "6"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-concurrency",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"6\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-concurrency",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-concurrency",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-concurrency",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-concurrency",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-concurrency",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "9d49b801319d49fbedd47c1a77ba7fa317a829e68b28f5c90110f40f6b633d73",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 6900,
+          "moduleExecutionId": "6f0d0d31-e6fe-40b0-9f1e-c703eeeed427",
+          "mode": "EXEC",
+          "role": "CONCURRENT",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.",
+            "outboxId": "6"
+          },
+          "errorCode": null,
+          "replayed": true,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.slot_newbie_package.grant",
+                "idempotency_key": "wave27-concurrency",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"0bc2c8e80ae6a5382dd5ee93941d9e3e41976af746777dbe7a50f97740ab73f4\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\",\"outboxId\":\"6\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave27-concurrency",
+                "destination_id": "wave27-room",
+                "payload_json": "{\"data\":\"대상 회원님에게 슬롯초보패키지(/슬롯초보오픈)🪙를 지급했습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave27-concurrency",
+                "command_code": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave27-concurrency",
+                "action_code": "inventory.slot_newbie_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-SLOT-NEWBIE-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave27-concurrency",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave27-concurrency",
+                "player_id": "player01",
+                "item_name": "슬롯초보패키지🪙(/슬롯초보오픈)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_SLOT_NEWBIE_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "9d49b801319d49fbedd47c1a77ba7fa317a829e68b28f5c90110f40f6b633d73",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "AUTH_DENIED",
+      "traces": [
+        {
+          "processId": 15520,
+          "moduleExecutionId": "22c7c625-b6cd-4879-9c6a-ea7bb75840d9",
+          "mode": "AUTH",
+          "role": "PRIMARY",
+          "result": {
+            "status": "handled_no_reply"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3361,
+            "name": "hoibot_wave27_slot_newbie_2626"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    }
+  ],
+  "wrongRoom": {
+    "disposition": "NOT_APPLICABLE",
+    "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
+    "sourceSpanSha256": "cb783aaba0e86cec13e6096fafc9e34cbd04d00ea1280eb9d50389a52fc29c99"
+  },
+  "shadowObservation": {
+    "processId": 30060,
+    "moduleExecutionId": "57fe622d-2310-46d8-90d2-c5049c921016",
+    "mode": "SHADOW",
+    "role": "PRIMARY",
+    "result": null,
+    "errorCode": "WAVE27_SHADOW_ROLLBACK",
+    "replayed": false,
+    "database": {
+      "host": "127.0.0.1",
+      "port": 3361,
+      "name": "hoibot_wave27_slot_newbie_2626"
+    },
+    "attempts": [
+      {
+        "attempt": 1,
+        "outcome": "ROLLBACK",
+        "attemptedDmlStatements": [
+          "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+          "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+          "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+          "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+          "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+          "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+        ],
+        "affectedDmlStatements": [
+          "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+          "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+          "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+          "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+          "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+          "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+        ],
+        "affectedRowCount": 9,
+        "lockOrder": [
+          "operations",
+          "canonical_players",
+          "canonical_item_definitions",
+          "canonical_item_inventory_ledger_entries",
+          "canonical_item_inventory_operations",
+          "canonical_owned_item_stacks"
+        ],
+        "failure": "WAVE27_SHADOW_ROLLBACK"
+      }
+    ],
+    "committedDmlStatements": [],
+    "committedRowCount": 0,
+    "rolledBackAffectedRowCount": 9,
+    "before": {
+      "operations": [],
+      "outbox_messages": [],
+      "command_executions": [],
+      "command_audit": [],
+      "canonical_owned_item_stacks": [],
+      "canonical_item_inventory_operations": [],
+      "canonical_item_inventory_ledger_entries": []
+    },
+    "after": {
+      "operations": [],
+      "outbox_messages": [],
+      "command_executions": [],
+      "command_audit": [],
+      "canonical_owned_item_stacks": [],
+      "canonical_item_inventory_operations": [],
+      "canonical_item_inventory_ledger_entries": []
+    },
+    "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+    "afterSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+    "externalNetworkCalls": 0,
+    "replyCalls": 0
+  }
+}

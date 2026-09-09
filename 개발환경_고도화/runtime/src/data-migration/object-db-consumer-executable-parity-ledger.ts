@@ -580,6 +580,15 @@ export function assertTrustedWave26RocketVariantProjection(variant:unknown,manif
   if(JSON.stringify(variant.payload)!==JSON.stringify(payload))throw new Error(`${manifestConsumer.consumerId} Wave26 payload projection drift`);
 }
 
+export function assertTrustedWave27SlotNewbieVariantProjection(variant:unknown,manifestConsumer:Pick<ConsumerManifestInput["consumers"][number],"consumerId"|"triggerOrPredicate"|"sourceSpan">):void{
+  if(!isRecord(variant))throw new Error(`${manifestConsumer.consumerId} Wave27 variant missing`);
+  assertExactKeys(variant,["consumerId","trigger","predicate","variantNo","itemName","reply","payload","sourceSpan"],`${manifestConsumer.consumerId}.Wave27Variant`);
+  const match=String(manifestConsumer.triggerOrPredicate).match(/^msg\.startsWith\("\/슬롯초보([2-4])?,"\) && isMaster\(sender\)$/),variantNo=match?.[1]===undefined?1:Number(match[1]),suffix=variantNo===1?"":String(variantNo),trigger=`/슬롯초보${suffix},`,itemName=`슬롯초보패키지${suffix}🪙(/슬롯초보오픈${suffix})`,reply=`대상 회원님에게 슬롯초보패키지${suffix}(/슬롯초보오픈${suffix})🪙를 지급했습니다.`,payload={amount:"1",targetLegacyKey:"대상 회원",reasonType:"ADMIN_SLOT_NEWBIE_PACKAGE_GRANT",itemName};
+  if(!match||variant.consumerId!==manifestConsumer.consumerId||variant.trigger!==trigger||variant.predicate!==manifestConsumer.triggerOrPredicate||variant.variantNo!==variantNo||variant.itemName!==itemName||variant.reply!==reply||!isRecord(variant.payload))throw new Error(`${manifestConsumer.consumerId} Wave27 trigger/parameter projection drift`);
+  assertExactKeys(variant.payload,["amount","targetLegacyKey","reasonType","itemName"],`${manifestConsumer.consumerId}.Wave27Variant.payload`);
+  if(JSON.stringify(variant.payload)!==JSON.stringify(payload)||JSON.stringify(variant.sourceSpan)!==JSON.stringify(manifestConsumer.sourceSpan))throw new Error(`${manifestConsumer.consumerId} Wave27 payload/source projection drift`);
+}
+
 function matchesTrustedTraceValue(actual:unknown,expected:unknown):boolean{
   if(isRecord(expected)&&expected.matcher==="UUID_V4")return typeof actual==="string"&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actual);
   if(isRecord(expected)&&typeof expected.$bigint==="string")return actual===expected.$bigint;

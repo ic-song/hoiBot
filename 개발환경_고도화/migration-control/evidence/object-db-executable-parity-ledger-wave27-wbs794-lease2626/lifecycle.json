@@ -1,0 +1,9 @@
+﻿{
+    "port":  3361,
+    "database":  "hoibot_wave27_slot_newbie_2626",
+    "listenerRemoved":  true,
+    "startedPids":  [
+                        31080
+                    ],
+    "production3306Unchanged":  true
+}
