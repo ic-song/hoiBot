@@ -1,0 +1,1689 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave26:rocket:v1",
+  "sliceId": "WBS793",
+  "cohortId": "ITEM-ROCKET-ADMIN-GRANT-01",
+  "representativeConsumerId": "legacy-16dc4874712ffe07",
+  "source": {
+    "path": "main.js",
+    "sha256": "d8541a602a5fda8a2d6d20f7f0214d42c4285775c595816deda7355605e1e6c0",
+    "spanStart": 469110,
+    "spanEnd": 470441,
+    "spanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f"
+  },
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/admin/admin-stack-grant-service.ts",
+    "개발환경_고도화/runtime/src/admin/rocket-package-grant-service.ts",
+    "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts",
+    "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+    "개발환경_고도화/runtime/src/database.ts",
+    "개발환경_고도화/runtime/migrations/491_admin_rocket_package_grant.sql"
+  ],
+  "allowedTables": [
+    "operations",
+    "outbox_messages",
+    "command_executions",
+    "command_audit",
+    "canonical_owned_item_stacks",
+    "canonical_item_inventory_operations",
+    "canonical_item_inventory_ledger_entries"
+  ],
+  "variants": [
+    {
+      "consumerId": "legacy-16dc4874712ffe07",
+      "trigger": "/로켓1,",
+      "rocketNo": 1,
+      "itemName": "로켓배송패키지🚀[1](/호팡오픈1)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[1](/호팡오픈1)"
+      }
+    },
+    {
+      "consumerId": "legacy-b9a3e9684a6c3909",
+      "trigger": "/로켓2,",
+      "rocketNo": 2,
+      "itemName": "로켓배송패키지🚀[2](/호팡오픈2)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[2](/호팡오픈2)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[2](/호팡오픈2)"
+      }
+    },
+    {
+      "consumerId": "legacy-cc1ca98a74fa80e5",
+      "trigger": "/로켓3,",
+      "rocketNo": 3,
+      "itemName": "로켓배송패키지🚀[3](/호팡오픈3)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[3](/호팡오픈3)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[3](/호팡오픈3)"
+      }
+    },
+    {
+      "consumerId": "legacy-dec710bc74968473",
+      "trigger": "/로켓4,",
+      "rocketNo": 4,
+      "itemName": "로켓배송패키지🚀[4](/호팡오픈4)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[4](/호팡오픈4)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[4](/호팡오픈4)"
+      }
+    },
+    {
+      "consumerId": "legacy-b455212232514478",
+      "trigger": "/로켓5,",
+      "rocketNo": 5,
+      "itemName": "로켓배송패키지🚀[5](/호팡오픈5)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[5](/호팡오픈5)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[5](/호팡오픈5)"
+      }
+    },
+    {
+      "consumerId": "legacy-7c3e90397c74fdc0",
+      "trigger": "/로켓6,",
+      "rocketNo": 6,
+      "itemName": "로켓배송패키지🚀[6](/호팡오픈6)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[6](/호팡오픈6)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[6](/호팡오픈6)"
+      }
+    },
+    {
+      "consumerId": "legacy-1e1016af0dea53d4",
+      "trigger": "/로켓7,",
+      "rocketNo": 7,
+      "itemName": "로켓배송패키지🚀[7](/호팡오픈7)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[7](/호팡오픈7)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[7](/호팡오픈7)"
+      }
+    },
+    {
+      "consumerId": "legacy-15076f1474d3bf90",
+      "trigger": "/로켓8,",
+      "rocketNo": 8,
+      "itemName": "로켓배송패키지🚀[8](/호팡오픈8)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[8](/호팡오픈8)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[8](/호팡오픈8)"
+      }
+    },
+    {
+      "consumerId": "legacy-8befb54eb907db04",
+      "trigger": "/로켓9,",
+      "rocketNo": 9,
+      "itemName": "로켓배송패키지🚀[9](/호팡오픈9)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[9](/호팡오픈9)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[9](/호팡오픈9)"
+      }
+    },
+    {
+      "consumerId": "legacy-7fa084c426801da5",
+      "trigger": "/로켓10,",
+      "rocketNo": 10,
+      "itemName": "로켓배송패키지🚀[10](/호팡오픈10)",
+      "reply": "[대상 회원]님에게 로켓배송패키지🚀[10](/호팡오픈10)가 지급되었습니다.",
+      "payload": {
+        "amount": "1",
+        "targetLegacyKey": "대상 회원",
+        "reasonType": "ADMIN_ROCKET_PACKAGE_GRANT",
+        "itemName": "로켓배송패키지🚀[10](/호팡오픈10)"
+      }
+    }
+  ],
+  "cohortProjectionSha256": "03413066112ac607bd94a7c170c70b21010dfb3741cf6137dc88bec2d934d8d8",
+  "scenarioKinds": [
+    "MUTATION_SUCCESS",
+    "DOMAIN_FAILURE_ROLLBACK",
+    "DUPLICATE_REPLAY_DML_ZERO",
+    "PAYLOAD_DRIFT_FAIL_CLOSED",
+    "RESTART_REPLAY",
+    "CONCURRENCY_SINGLE_WRITER",
+    "AUTH_DENIED"
+  ],
+  "observations": [
+    {
+      "scenarioKind": "MUTATION_SUCCESS",
+      "traces": [
+        {
+          "processId": 11892,
+          "moduleExecutionId": "35bc77e0-cd60-4a42-ad58-aeac5f51522d",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "1"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-success",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"1\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-success",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-success",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-success",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-success",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-success",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "b5d82527d754c405e34d340b3d8c30b0292986c29c7d1ca1972f145e3567a672",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+      "traces": [
+        {
+          "processId": 20060,
+          "moduleExecutionId": "5b2bd2b2-5330-4b25-bcb0-f1169b901906",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": null,
+          "errorCode": "(conn:28, no: 1644, SQLState: 45000) WAVE26_DOMAIN_FAILURE\nsql: INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3)) - parameters:[2,'998100001','inve...",
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))"
+              ],
+              "affectedRowCount": 7,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": "(conn:28, no: 1644, SQLState: 45000) WAVE26_DOMAIN_FAILURE\nsql: INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3)) - parameters:[2,'998100001','inve..."
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 7,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+      "traces": [
+        {
+          "processId": 19940,
+          "moduleExecutionId": "4cfa92a4-8e80-4b00-a877-77f12c1dbb15",
+          "mode": "EXEC",
+          "role": "SEED",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "3"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-duplicate",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"3\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-duplicate",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-duplicate",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-duplicate",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-duplicate",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-duplicate",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "b7ddef48d6a88e8213374eed17914525b1c104aadd1e649af492427e80f2991b",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 8928,
+          "moduleExecutionId": "638048c7-ce9e-4133-8f0c-d252f2261ac1",
+          "mode": "EXEC",
+          "role": "REPLAY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "3"
+          },
+          "errorCode": null,
+          "replayed": true,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-duplicate",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"3\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-duplicate",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-duplicate",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-duplicate",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-duplicate",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-duplicate",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-duplicate",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"3\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-duplicate",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-duplicate",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-duplicate",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-duplicate",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-duplicate",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "b7ddef48d6a88e8213374eed17914525b1c104aadd1e649af492427e80f2991b",
+          "afterSha256": "b7ddef48d6a88e8213374eed17914525b1c104aadd1e649af492427e80f2991b",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "traces": [
+        {
+          "processId": 27400,
+          "moduleExecutionId": "7d28c663-c086-4385-bf4e-d101da75f22f",
+          "mode": "EXEC",
+          "role": "SEED",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "4"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-drift",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"4\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-drift",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-drift",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-drift",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-drift",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-drift",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "df996ee1c816a607bf9902624e43061140a6f5d80674c90267afdfcb34747b3c",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 29944,
+          "moduleExecutionId": "ffba428c-23d2-4264-ab49-ec7e30cc7b5b",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": null,
+          "errorCode": "ADMIN_STACK_GRANT_PAYLOAD_DRIFT",
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": "ADMIN_STACK_GRANT_PAYLOAD_DRIFT"
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-drift",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"4\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-drift",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-drift",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-drift",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-drift",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-drift",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-drift",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"4\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-drift",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-drift",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-drift",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-drift",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-drift",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "df996ee1c816a607bf9902624e43061140a6f5d80674c90267afdfcb34747b3c",
+          "afterSha256": "df996ee1c816a607bf9902624e43061140a6f5d80674c90267afdfcb34747b3c",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "RESTART_REPLAY",
+      "traces": [
+        {
+          "processId": 11172,
+          "moduleExecutionId": "9f5e17b7-da14-4386-9a60-4d8a2dcc92c0",
+          "mode": "EXEC",
+          "role": "SEED",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "5"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-restart",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"5\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-restart",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-restart",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-restart",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-restart",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-restart",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "11cd191d6c57666985b4296b705adfde601a768eb2ddb3590319930a87502521",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 27676,
+          "moduleExecutionId": "1cfa4af9-f90b-47af-80ce-3c13073834e8",
+          "mode": "EXEC",
+          "role": "REPLAY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "5"
+          },
+          "errorCode": null,
+          "replayed": true,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-restart",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"5\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-restart",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-restart",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-restart",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-restart",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-restart",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-restart",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"5\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-restart",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-restart",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-restart",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-restart",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-restart",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "11cd191d6c57666985b4296b705adfde601a768eb2ddb3590319930a87502521",
+          "afterSha256": "11cd191d6c57666985b4296b705adfde601a768eb2ddb3590319930a87502521",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+      "traces": [
+        {
+          "processId": 32608,
+          "moduleExecutionId": "fdb3a920-7f27-4b76-945f-1096c8e54b27",
+          "mode": "EXEC",
+          "role": "PRIMARY",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "6"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "affectedRowCount": 9,
+              "lockOrder": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+            "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+            "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+            "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+            "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+            "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+            "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+          ],
+          "committedRowCount": 9,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-concurrency",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"6\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-concurrency",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-concurrency",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-concurrency",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-concurrency",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-concurrency",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "4261a185f450be9b649c32c9b11624c78a7e0f39b41eea212148c1c0193b214e",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        },
+        {
+          "processId": 15596,
+          "moduleExecutionId": "61c869b6-1bc9-4843-8af6-0136a2aabb3e",
+          "mode": "EXEC",
+          "role": "CONCURRENT",
+          "result": {
+            "status": "granted",
+            "quantity": "1",
+            "data": "[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.",
+            "outboxId": "6"
+          },
+          "errorCode": null,
+          "replayed": true,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [
+                "operations"
+              ],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [
+              {
+                "idempotency_scope": "admin.rocket_package.grant",
+                "idempotency_key": "wave26-concurrency",
+                "status": "completed",
+                "result_json": "{\"payloadSha256\":\"476295ee39bc71ecfc89322923263d9dd75351df5315a1a8def25cbfac0415c6\",\"result\":{\"status\":\"granted\",\"quantity\":\"1\",\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\",\"outboxId\":\"6\"}}"
+              }
+            ],
+            "outbox_messages": [
+              {
+                "idempotency_key": "wave26-concurrency",
+                "destination_id": "wave26-room",
+                "payload_json": "{\"data\":\"[대상 회원]님에게 로켓배송패키지🚀[1](/호팡오픈1)가 지급되었습니다.\"}",
+                "status": "pending"
+              }
+            ],
+            "command_executions": [
+              {
+                "event_id": "wave26-concurrency",
+                "command_code": "ADMIN_ROCKET_PACKAGE_GRANT",
+                "execution_status": "completed",
+                "result_code": "granted"
+              }
+            ],
+            "command_audit": [
+              {
+                "idempotency_key": "wave26-concurrency",
+                "action_code": "inventory.rocket_package.grant",
+                "result_code": "granted",
+                "change_summary_json": "{\"targetLegacyKey\":\"대상 회원\",\"itemCode\":\"LEGACY-ROCKET-PACKAGE-1\",\"amount\":\"1\",\"quantity\":\"1\",\"replayed\":false,\"canonicalPlayerId\":\"player01\"}"
+              }
+            ],
+            "canonical_owned_item_stacks": [
+              {
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_operations": [
+              {
+                "player_id": "player01",
+                "request_key": "wave26-concurrency",
+                "operation_status": "completed",
+                "resulting_quantity": "1"
+              }
+            ],
+            "canonical_item_inventory_ledger_entries": [
+              {
+                "request_key": "wave26-concurrency",
+                "player_id": "player01",
+                "item_name": "로켓배송패키지🚀[1](/호팡오픈1)",
+                "quantity_delta": "1",
+                "reason_type": "ADMIN_ROCKET_PACKAGE_GRANT"
+              }
+            ]
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "4261a185f450be9b649c32c9b11624c78a7e0f39b41eea212148c1c0193b214e",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    },
+    {
+      "scenarioKind": "AUTH_DENIED",
+      "traces": [
+        {
+          "processId": 22992,
+          "moduleExecutionId": "f3b1e133-1138-48ad-8be7-b4853a7b21ff",
+          "mode": "AUTH",
+          "role": "PRIMARY",
+          "result": {
+            "status": "handled_no_reply"
+          },
+          "errorCode": null,
+          "replayed": false,
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3360,
+            "name": "hoibot_wave26_rocket_2625"
+          },
+          "attempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0,
+              "lockOrder": [],
+              "failure": null
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "before": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "after": {
+            "operations": [],
+            "outbox_messages": [],
+            "command_executions": [],
+            "command_audit": [],
+            "canonical_owned_item_stacks": [],
+            "canonical_item_inventory_operations": [],
+            "canonical_item_inventory_ledger_entries": []
+          },
+          "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "afterSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0
+        }
+      ]
+    }
+  ],
+  "wrongRoom": {
+    "disposition": "NOT_APPLICABLE",
+    "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
+    "sourceSpanSha256": "2b7d993d0112180779b2f2e0f37958b5fa590a23b4bac0075b2367cb01f1714f"
+  },
+  "shadowObservation": {
+    "processId": 31504,
+    "moduleExecutionId": "4c7f4346-cfb0-4adc-aa5d-37286487561d",
+    "mode": "SHADOW",
+    "role": "PRIMARY",
+    "result": null,
+    "errorCode": "WAVE26_SHADOW_ROLLBACK",
+    "replayed": false,
+    "database": {
+      "host": "127.0.0.1",
+      "port": 3360,
+      "name": "hoibot_wave26_rocket_2625"
+    },
+    "attempts": [
+      {
+        "attempt": 1,
+        "outcome": "ROLLBACK",
+        "attemptedDmlStatements": [
+          "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+          "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+          "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+          "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+          "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+          "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+        ],
+        "affectedDmlStatements": [
+          "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+          "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+          "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+          "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+          "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+          "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+          "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+        ],
+        "affectedRowCount": 9,
+        "lockOrder": [
+          "operations",
+          "canonical_players",
+          "canonical_item_definitions",
+          "canonical_item_inventory_ledger_entries",
+          "canonical_item_inventory_operations",
+          "canonical_owned_item_stacks"
+        ],
+        "failure": "WAVE26_SHADOW_ROLLBACK"
+      }
+    ],
+    "committedDmlStatements": [],
+    "committedRowCount": 0,
+    "rolledBackAffectedRowCount": 9,
+    "before": {
+      "operations": [],
+      "outbox_messages": [],
+      "command_executions": [],
+      "command_audit": [],
+      "canonical_owned_item_stacks": [],
+      "canonical_item_inventory_operations": [],
+      "canonical_item_inventory_ledger_entries": []
+    },
+    "after": {
+      "operations": [],
+      "outbox_messages": [],
+      "command_executions": [],
+      "command_audit": [],
+      "canonical_owned_item_stacks": [],
+      "canonical_item_inventory_operations": [],
+      "canonical_item_inventory_ledger_entries": []
+    },
+    "beforeSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+    "afterSha256": "d2519a7c11ae1517c55975875148ada62139e2cde77e405dbf3ddfce3c622634",
+    "externalNetworkCalls": 0,
+    "replyCalls": 0
+  }
+}

@@ -1,0 +1,17 @@
+import {createHash} from "node:crypto";
+import {execFileSync} from "node:child_process";
+import {pathToFileURL} from "node:url";
+import {readFileSync,writeFileSync} from "node:fs";
+import {resolve} from "node:path";
+const hash=value=>createHash("sha256").update(value.replace(/\r\n?/g,"\n")).digest("hex"),assert=(ok,message)=>{if(!ok)throw new Error(message)};
+const [inputPath,outputDirectory,targetPath]=process.argv.slice(2),input=JSON.parse(readFileSync(resolve(inputPath),"utf8")),fixture=input.fixturePayload,binding=input.binding,root=resolve(import.meta.dirname,"../../../..");
+assert(fixture.fixtureId==="fixture:object-db-executable-parity:wave26:rocket:v1"&&fixture.sliceId==="WBS793"&&fixture.cohortId==="ITEM-ROCKET-ADMIN-GRANT-01","Wave26 fixture identity drift");
+assert(fixture.variants.length===10&&fixture.observations.length===7&&fixture.cohortProjectionSha256===createHash("sha256").update(JSON.stringify(fixture.variants)).digest("hex"),"Wave26 cohort projection drift");
+const main=readFileSync(resolve(root,"main.js"),"utf8").replace(/\r\n?/g,"\n");assert(hash(main)===fixture.source.sha256&&hash(main.slice(fixture.source.spanStart,fixture.source.spanEnd))===fixture.source.spanSha256,"Wave26 current source drift");
+for(const source of input.runtimeSourceHashes){assert(fixture.runtimeSourcePaths.includes(source.path),`Wave26 unexpected runtime source ${source.path}`);const committed=execFileSync("git",["show",`${input.evidenceCommit}:${source.path}`],{cwd:root,encoding:"utf8",maxBuffer:32*1024*1024});assert(hash(committed)===source.sha256&&hash(readFileSync(resolve(root,source.path),"utf8"))===source.sha256,`Wave26 runtime source drift ${source.path}`)}
+assert(hash(readFileSync(resolve(targetPath),"utf8"))===input.invocation.targetSourceSha256,"Wave26 projection target drift");
+const variant=fixture.variants.find(candidate=>candidate.consumerId===binding.consumerId),scenario=fixture.observations.find(candidate=>candidate.scenarioKind===binding.scenarioKind);assert(variant&&scenario,"Wave26 binding missing");
+assert(variant.trigger===`/로켓${variant.rocketNo},`&&variant.itemName===`로켓배송패키지🚀[${variant.rocketNo}](/호팡오픈${variant.rocketNo})`&&variant.reply===`[대상 회원]님에게 ${variant.itemName}가 지급되었습니다.`&&JSON.stringify(variant.payload)===JSON.stringify({amount:"1",targetLegacyKey:"대상 회원",reasonType:"ADMIN_ROCKET_PACKAGE_GRANT",itemName:variant.itemName}),"Wave26 strict parameter projection drift");
+const role=binding.scenarioKind==="DUPLICATE_REPLAY_DML_ZERO"||binding.scenarioKind==="RESTART_REPLAY"?"REPLAY":"PRIMARY",trace=scenario.traces.find(candidate=>candidate.role===role);assert(trace,"Wave26 representative trace missing");
+const module=await import(`${pathToFileURL(resolve(targetPath)).href}?receipt=${encodeURIComponent(binding.consumerId+binding.scenarioKind)}`),result=module.executeWave26RocketProjection({variant,scenarioKind:binding.scenarioKind,trace});
+writeFileSync(resolve(outputDirectory,"reply.raw"),"NO_REPLY");writeFileSync(resolve(outputDirectory,"result.raw"),JSON.stringify(result));writeFileSync(resolve(outputDirectory,"trace.json"),JSON.stringify({normalizedStatements:trace.committedDmlStatements,rowCount:trace.committedRowCount,lockOrder:trace.attempts.at(-1).lockOrder,transaction:trace.attempts.at(-1).outcome,timeline:trace.attempts.flatMap(attempt=>[`ATTEMPT_${attempt.attempt}_BEGIN`,`ATTEMPT_${attempt.attempt}_${attempt.outcome}`])}));

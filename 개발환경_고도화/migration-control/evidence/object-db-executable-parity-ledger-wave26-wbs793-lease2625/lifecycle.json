@@ -1,0 +1,9 @@
+﻿{
+    "port":  3360,
+    "database":  "hoibot_wave26_rocket_2625",
+    "listenerRemoved":  true,
+    "startedPids":  [
+                        19520
+                    ],
+    "production3306Unchanged":  true
+}
