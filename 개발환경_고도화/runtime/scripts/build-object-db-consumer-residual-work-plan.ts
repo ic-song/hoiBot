@@ -16,7 +16,6 @@ const countBy = <T>(values: readonly T[], key: (value: T) => string): Record<str
 
 const reusableEvidence = new Map<string, { readonly evidenceKind: "EVIDENCE_BUNDLE" | "SEALED_OBSERVATION" | "REUSABLE_HARNESS"; readonly evidenceRefs: readonly string[]; readonly evidenceCommit: string }>([
   ["legacy-94904fa11988ff04", { evidenceKind: "EVIDENCE_BUNDLE", evidenceCommit: "909fc1ab3ca3f39f1cdec14bb189b695404a9698", evidenceRefs: ["개발환경_고도화/migration-control/evidence/item-bag-canonical-shadow-lease2604/"] }],
-  ["sql-repository-87ed81931dd7417b", { evidenceKind: "REUSABLE_HARNESS", evidenceCommit: "c9f280a8bd21869ee067923413365099697f8d9f", evidenceRefs: ["개발환경_고도화/runtime/test/canonical-item-stack-change-mariadb.integration.test.ts", "개발환경_고도화/runtime/test/app-wiring-mutation-reply.test.ts"] }],
 ]);
 
 const rocketConsumerIds = new Set([
@@ -148,21 +147,24 @@ for (const entry of entries) {
 
 const categoryCounts = countBy(entries, (entry) => entry.category);
 const expectedCounts = {
-  A_REUSABLE_PROOF_ASSET: 2,
+  A_REUSABLE_PROOF_ASSET: 1,
   B_STRICT_EQUIVALENCE: 10,
   C_DIRECT_EXECUTION: 995,
   D_PREREQUISITE: 82,
 };
-if (entries.length !== 1_089 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
+if (entries.length !== 1_088 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
   throw new Error(`Residual plan cardinality drift: ${JSON.stringify({ total: entries.length, categoryCounts })}`);
 }
 
 const output = {
   format: "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1",
   catalogVersion: ledger.catalogVersion,
-  frozenAt: "2026-09-09 09:49:00 KST",
+  frozenAt: "2026-09-09 14:40:00 KST",
   integrationBaseline: "4dc632fb55aa0add134d0d0b0b4dcec9d4e2a894",
-  dependencyResolutions: [{ wbs: "WBS791", commit: "854502debd9a7df249a022352468384bf1a42f4d", resolution: "APP_WIRING_ROOT_RETRY_COMPLETED" }],
+  dependencyResolutions: [
+    { wbs: "WBS791", commit: "854502debd9a7df249a022352468384bf1a42f4d", resolution: "APP_WIRING_ROOT_RETRY_COMPLETED" },
+    { wbs: "WBS791", commit: "a91c2e3405ebc70b7c1301a563b0b216a1ddf4b3", resolution: "CHANGE_STACK_QUANTITY_OFFICIAL_RECEIPTS" },
+  ],
   sources: {
     textNormalization: "LF_UTF8",
     manifestPath,

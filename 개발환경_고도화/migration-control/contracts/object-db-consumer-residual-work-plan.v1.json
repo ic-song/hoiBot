@@ -1,13 +1,18 @@
 {
   "format": "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1",
   "catalogVersion": "SC-20260902-1",
-  "frozenAt": "2026-09-09 09:49:00 KST",
+  "frozenAt": "2026-09-09 14:40:00 KST",
   "integrationBaseline": "4dc632fb55aa0add134d0d0b0b4dcec9d4e2a894",
   "dependencyResolutions": [
     {
       "wbs": "WBS791",
       "commit": "854502debd9a7df249a022352468384bf1a42f4d",
       "resolution": "APP_WIRING_ROOT_RETRY_COMPLETED"
+    },
+    {
+      "wbs": "WBS791",
+      "commit": "a91c2e3405ebc70b7c1301a563b0b216a1ddf4b3",
+      "resolution": "CHANGE_STACK_QUANTITY_OFFICIAL_RECEIPTS"
     }
   ],
   "sources": {
@@ -16,8 +21,8 @@
     "manifestSha256": "dfe3273a722703a7837eaaf27780eb23bfccffc58bceee321964ffc978e6bd02",
     "manifestConsumerSetSha256": "015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a",
     "ledgerPath": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
-    "ledgerSha256": "557a89755073290177389005a129692fe706cb58e189b9ed66904c4b70c97f17",
-    "ledgerEntrySetSha256": "7103871b3f92f6f1a5c14a4c81ba5e534d9f6888e8f3f45d8df48ac61d23e131"
+    "ledgerSha256": "91d200558c1cf1b5c4e9912f893f4826c59c22a2f105a4a4afaaad55cec49565",
+    "ledgerEntrySetSha256": "0dd8d54a31bf12b7311b3f61bd51a4810e153cf7a616fbd5d9dab49828bf058f"
   },
   "policy": {
     "A_REUSABLE_PROOF_ASSET": "A prior bundle, observation or harness is reusable input only; it is not completed proof and requires re-execution or exact resealing as official receipts.",
@@ -137,10 +142,10 @@
   ],
   "summary": {
     "manifestConsumers": 1133,
-    "alreadyDirectOrEquivalent": 44,
-    "residualConsumers": 1089,
+    "alreadyDirectOrEquivalent": 45,
+    "residualConsumers": 1088,
     "categoryCounts": {
-      "A_REUSABLE_PROOF_ASSET": 2,
+      "A_REUSABLE_PROOF_ASSET": 1,
       "B_STRICT_EQUIVALENCE": 10,
       "C_DIRECT_EXECUTION": 995,
       "D_PREREQUISITE": 82
@@ -153,7 +158,7 @@
       "CURRENCY-SHOP": 73,
       "FURNITURE-HOME": 28,
       "HOME-AGGREGATE-RANK": 86,
-      "ITEM": 161,
+      "ITEM": 160,
       "MARKET-ORCHESTRATOR": 95,
       "MEMBER-TITLE": 23,
       "MINI-PET": 61,
@@ -171,10 +176,10 @@
       "HTTP_WEB_ROUTE": 81,
       "LEGACY_COMMAND": 682,
       "RUNTIME_DISPATCH": 179,
-      "SQL_REPOSITORY": 61
+      "SQL_REPOSITORY": 60
     },
     "byAccessClass": {
-      "MUTATION": 623,
+      "MUTATION": 622,
       "READ": 466
     }
   },
@@ -119051,128 +119056,6 @@
       ],
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "sql-repository-87ed81931dd7417b",
-      "category": "A_REUSABLE_PROOF_ASSET",
-      "domain": "ITEM",
-      "kind": "SQL_REPOSITORY",
-      "accessClass": "MUTATION",
-      "interfaceId": "item.repository.canonical-item-inventory-repository.changeStackQuantity",
-      "sourceSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.item_id",
-        "canonical_item_inventory_ledger_entries.INSERT_TIME",
-        "canonical_item_inventory_ledger_entries.INSERT_USER",
-        "canonical_item_inventory_ledger_entries.UPDATE_TIME",
-        "canonical_item_inventory_ledger_entries.UPDATE_USER",
-        "canonical_item_inventory_ledger_entries.item_id",
-        "canonical_item_inventory_ledger_entries.item_inventory_ledger_entry_id",
-        "canonical_item_inventory_ledger_entries.item_inventory_operation_id",
-        "canonical_item_inventory_ledger_entries.owned_item_id",
-        "canonical_item_inventory_ledger_entries.owned_item_stack_id",
-        "canonical_item_inventory_ledger_entries.player_id",
-        "canonical_item_inventory_ledger_entries.quantity_delta",
-        "canonical_item_inventory_ledger_entries.reason_type",
-        "canonical_item_inventory_operations.INSERT_TIME",
-        "canonical_item_inventory_operations.INSERT_USER",
-        "canonical_item_inventory_operations.UPDATE_TIME",
-        "canonical_item_inventory_operations.UPDATE_USER",
-        "canonical_item_inventory_operations.item_inventory_operation_id",
-        "canonical_item_inventory_operations.operation_status",
-        "canonical_item_inventory_operations.player_id",
-        "canonical_item_inventory_operations.request_key",
-        "canonical_item_inventory_operations.resulting_quantity",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_stacks.INSERT_TIME",
-        "canonical_owned_item_stacks.INSERT_USER",
-        "canonical_owned_item_stacks.UPDATE_TIME",
-        "canonical_owned_item_stacks.UPDATE_USER",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": "item.repository.canonical-item-inventory-repository.changeStackQuantity",
-      "transactionParticipantInterfaceIds": [
-        "item.inventory.mutate"
-      ],
-      "operationReceiptTables": [
-        "canonical_item_inventory_ledger_entries",
-        "canonical_item_inventory_operations"
-      ],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "MUTATION_SUCCESS",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_REPLAY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "3e4050cedbc33c7c0cb07d0cf770bd684be7e038665b10f90041ef1629923f5a"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "3e4050cedbc33c7c0cb07d0cf770bd684be7e038665b10f90041ef1629923f5a"
-          }
-        }
-      ],
-      "nextAction": "REEXECUTE_OR_RESEAL_AS_OFFICIAL_RECEIPTS",
-      "evidenceCandidate": {
-        "evidenceKind": "REUSABLE_HARNESS",
-        "evidenceCommit": "c9f280a8bd21869ee067923413365099697f8d9f",
-        "evidenceRefs": [
-          "개발환경_고도화/runtime/test/canonical-item-stack-change-mariadb.integration.test.ts",
-          "개발환경_고도화/runtime/test/app-wiring-mutation-reply.test.ts"
-        ]
-      },
       "equivalenceCohortId": null,
       "blockers": []
     },

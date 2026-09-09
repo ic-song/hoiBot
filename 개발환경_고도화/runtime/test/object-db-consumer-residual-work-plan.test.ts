@@ -20,29 +20,26 @@ test("residual work plan freezes every unproven consumer into one actionable cat
   assert.equal(plan.format, "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1");
   assert.equal(plan.catalogVersion, "SC-20260902-1");
   assert.equal(plan.summary.manifestConsumers, 1_133);
-  assert.equal(plan.summary.alreadyDirectOrEquivalent, 44);
-  assert.equal(plan.summary.residualConsumers, 1_089);
+  assert.equal(plan.summary.alreadyDirectOrEquivalent, 45);
+  assert.equal(plan.summary.residualConsumers, 1_088);
   assert.deepEqual(plan.summary.categoryCounts, {
-    A_REUSABLE_PROOF_ASSET: 2,
+    A_REUSABLE_PROOF_ASSET: 1,
     B_STRICT_EQUIVALENCE: 10,
     C_DIRECT_EXECUTION: 995,
     D_PREREQUISITE: 82,
   });
-  assert.equal(new Set(plan.entries.map((entry: { consumerId: string }) => entry.consumerId)).size, 1_089);
-  for (const consumerId of ["sql-repository-818137c4fb22037a", "sql-repository-f6c531148a436a21", "sql-repository-31c4099080d9c9c1"]) {
+  assert.equal(new Set(plan.entries.map((entry: { consumerId: string }) => entry.consumerId)).size, 1_088);
+  for (const consumerId of ["sql-repository-818137c4fb22037a", "sql-repository-f6c531148a436a21", "sql-repository-31c4099080d9c9c1", "sql-repository-87ed81931dd7417b"]) {
     assert.equal(plan.entries.some((entry: { consumerId: string }) => entry.consumerId === consumerId), false);
   }
 });
 
 test("reuse and equivalence candidates remain explicit and disjoint", () => {
   const reusable = plan.entries.filter((entry: { category: string }) => entry.category === "A_REUSABLE_PROOF_ASSET");
-  assert.equal(reusable.length, 2);
+  assert.equal(reusable.length, 1);
   assert.ok(reusable.every((entry: { evidenceCandidate: unknown }) => entry.evidenceCandidate !== null));
   assert.ok(reusable.every((entry: { nextAction: string }) => entry.nextAction === "REEXECUTE_OR_RESEAL_AS_OFFICIAL_RECEIPTS"));
-  assert.deepEqual(reusable.map((entry: any) => entry.evidenceCandidate.evidenceKind).sort(), [
-    "EVIDENCE_BUNDLE",
-    "REUSABLE_HARNESS",
-  ]);
+  assert.deepEqual(reusable.map((entry: any) => entry.evidenceCandidate.evidenceKind), ["EVIDENCE_BUNDLE"]);
   const cohort = plan.equivalenceCohorts[0];
   assert.equal(cohort.ruleId, "SAME_INTERFACE_ACCESS_V1");
   assert.match(cohort.equivalenceKeySha256, /^[a-f0-9]{64}$/);
