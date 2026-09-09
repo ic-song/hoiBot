@@ -1,11 +1,11 @@
 # 작업 복구 체크포인트
 
 - 작업 키: modernization-wbs-workflow
-- 작업 이름: 슬라이스 중심 고도화 WBS 재정립
+- 작업 이름: 자원 기반 봇·웹 고도화 운영
 - 작업 상태: 검증 완료
 - 정리 후보: 아니요
-- 체크포인트 버전: 10
-- 마지막 갱신: 2026-08-17 KST
+- 체크포인트 버전: 11
+- 마지막 갱신: 2026-09-09 KST
 - 대화 식별명: 고도화 프로세스 재정립
 
 허용 상태: `진행 중 → 검증 완료 → 작업 완료`
@@ -14,6 +14,8 @@
 
 - 기존 개발 성과를 RESET하지 않고 기능 슬라이스와 8개 Gate로 승계한다.
 - 모든 활성 명령과 최종 데이터를 명령·공유 로직·DB 매핑·합성 fixture·검증 시나리오가 결합된 작업 단위로 관리한다.
+- 최초 동결 이후에는 전체 재분류 대신 `SCD-*` 증분 catalog를 사용한다.
+- 봇 이관, 이용·운영 사이트와 공유 통합을 독립 workstream으로 병행하고 겹치는 쓰기 자원만 직렬화한다.
 - Notion은 새 WBS 링크와 퍼센티지만 표시한다.
 
 ## 사용자 요청과 승인 범위
@@ -30,6 +32,7 @@
 ## 고정 리소스
 
 - 새 WBS: `https://docs.google.com/spreadsheets/d/1tlvrlQ1dGb2ijRc6kDKEBRkSdLjQyhc1u9OfiJES3Ps/edit`
+- 이용·운영 사이트 WBS: `https://docs.google.com/spreadsheets/d/1r0mkJL43iWndCi0CHKI4RLU5oE6keEWtRBtEpWLNfmU/edit`
 - 보존 WBS: `https://docs.google.com/spreadsheets/d/15TP6sa36r_cwh49ny-pOiM3nkhgQ5i_KBYzsqdM0NZw/edit`
 - Notion: `https://app.notion.com/p/3bb393bdd7aa81e38bb9ea8d773a8caf?pvs=204`
 
@@ -41,6 +44,26 @@
 - `슬라이스_DB매핑`: JSON→DB 테이블·컬럼·키·transaction·fixture 연결
 - `슬라이스_검증`: 정상·경계·실패·중복·재시작·parity·Shadow 근거
 - `슬라이스_선점`: 실행 ID, Lease, Heartbeat, 인계와 worktree 소유권
+
+## 2026-09-09 운영 규칙
+
+- `BOT_MIGRATION`, `WEB_PORTAL`, `SHARED_INTEGRATION`을 별도 workstream으로 관리한다.
+- frozen `SC-*` 이후에는 변경 범위만 `SCD-*`로 검수한다.
+- Lease는 repository-qualified resource의 R/W claim이며 R/R만 병행한다.
+- 기능·슬라이스마다 책임 소유자 한 명을 두고 전문 작업은 좁은 sub-claim으로 나눈다.
+- Gate 7은 현재·이전 소유자와 검수 대상 구현·evidence 작성자를 제외한 독립 검수자가 확인한다.
+- Gate 1~8과 G:N 진행률 구조는 유지하고 execution profile과 T0~T3로 evidence 깊이와 실행량을 조절한다.
+- append 전 최소 100개 빈 행을 확보하고, 확장 실패 시 Lease 발급을 중단한다.
+- CONTROL은 최신 non-superseded chain 한 개를 권위로 사용한다.
+- 기존 evidence의 catalog와 schema version은 바꾸지 않고 delta bundle 또는 새 schema·validator로 확장한다.
+
+## 2026-09-09 WBS 감사
+
+- `슬라이스_WBS`에는 현재 634개 행이 있으며 `SL-*` 615개와 `CATALOG` 19개로 확인됐다.
+- 실제 Gate TRUE는 4,083/5,072로 80.5%인데 대시보드는 정적 기준 3,097/3,592, 86.2%를 표시해 재산정이 필요하다.
+- 진행률 O열은 수식, 숫자와 문자열이 혼재하므로 G:N을 현재 계산 권위로 사용한다.
+- `슬라이스_선점`은 rowCount 2626과 마지막 ACTIVE Lease 행이 같고, `슬라이스_보고수신`도 rowCount 5640과 마지막 REPORT 행이 같아 다음 append 전에 행 확장이 필요하다.
+- 기존 A:X, Gate G:N과 evidence schema는 즉시 재배치하지 않는다. ACTIVE 작업 checkpoint 후 별도 schema migration으로 validation과 dashboard를 정리한다.
 
 ## 완료된 외부 작업
 
@@ -55,8 +78,11 @@
 - WBS 사용안내와 Notion에 `미사용 검토` 및 `미사용` 처리 기준을 추가했다.
 - `CODEX-CONFIG/main`에 고도화 스킬과 최신 hoiBot 스킬을 등록하고 로컬 스킬을 중앙 원본 junction으로 전환했다.
 - 기존 로컬 hoiBot 스킬은 `%LOCALAPPDATA%/CODEX-CONFIG/backups/skills-20260817-033138`에 보존했다.
+- `CODEX-CONFIG/main` `cb89e19`에서 작업반장과 WBS runner를 증분 catalog·resource claim·봇/웹 병행 구조로 최신화했다.
 
-## 현재 퍼센티지
+## 2026-08-17 보존 스냅샷
+
+아래 값은 초기 WBS 구축 당시 이력이며 현재 보고에 사용하지 않는다.
 
 - 전체 명령 이관률: 1.8%
 - 슬라이스 분류율: 2.5%
@@ -78,10 +104,11 @@
 
 ## 검증
 
-- 중앙 레지스트리 검증과 암호화 금고 테스트 7개 통과
-- hoiBot 중앙 스킬 7개와 프로젝트 미러 `quick_validate.py`: 모두 `Skill is valid!`
-- 중앙 원본과 프로젝트 미러 7개 내용 일치 확인
-- 로컬 hoiBot 스킬 7개 junction 대상 일치 확인
+- 중앙 레지스트리 검증과 암호화 금고 테스트 8개 통과
+- 변경한 중앙 스킬 2개와 프로젝트 미러 `quick_validate.py`: 모두 `Skill is valid!`
+- 중앙 원본과 프로젝트 미러 내용 일치 확인
+- 로컬 hoiBot 스킬 junction 대상 일치 확인
+- 독립 forward test에서 Lease 병행, 동일 파일 충돌, catalog delta, Gate 인계, 행 포화와 exact evidence 6개 시나리오 통과
 - `git diff --check`: 공백 오류 없음
 - 제한된 역할 표현 검색: 저장소 변경 범위와 새 WBS에서 불허 표현 없음
 - Sheets: 사용 상태 validation, 확정 `미사용` 제외 수식, 사용안내와 7개 퍼센티지 재조회 완료
