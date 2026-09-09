@@ -40,6 +40,8 @@
 - `node --import tsx scripts/build-object-db-consumer-executable-parity-ledger.ts` — PASS.
 - `node --import tsx scripts/build-object-db-consumer-residual-work-plan.ts --check` — PASS.
 - `node --import tsx --test test/object-db-consumer-executable-parity-wave25.test.ts` — 2/2 PASS.
+- `node --import tsx --test test/object-db-consumer-residual-work-plan.test.ts` — 4/4 PASS with DIRECT 46 and residual 1,087.
+- `node --import tsx scripts/validate-object-db-consumer-executable-parity-ledger.ts` — AJV schemas, all committed evidence paths including Wave25, deterministic ledger and entry-set validation PASS.
 - `node --import tsx --test test/canonical-item-bag-direct-read-service.test.ts test/item-bag-shadow-http.test.ts` — 11/11 PASS.
 - `npm run typecheck`, `npm run build`, `npm run object-data:validate` — PASS; object target count 119.
 - `node --check main.js`, `node --check Info.js`, `git diff --check` — PASS.
