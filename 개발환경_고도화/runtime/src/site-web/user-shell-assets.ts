@@ -141,7 +141,7 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
             <ul class="guide-list">
               <li><span aria-hidden="true">1</span><div><strong>계정 확인</strong><small>웹 계정과 게임 계정의 연결 상태를 확인하세요.</small></div></li>
               <li><span aria-hidden="true">2</span><div><strong>프로필 확인</strong><small>연결된 캐릭터의 주요 정보를 확인하세요.</small></div></li>
-              <li><span aria-hidden="true">3</span><div><strong>추가 메뉴</strong><small>가방과 재화 조회는 WBS 순서에 따라 제공됩니다.</small></div></li>
+              <li><span aria-hidden="true">3</span><div><strong>추가 메뉴</strong><small>가방과 재화 조회도 순차적으로 제공될 예정입니다.</small></div></li>
             </ul>
             <a class="guide-link" href="/signup">가입·인증 상태 확인</a>
           </aside>

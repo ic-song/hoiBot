@@ -16,7 +16,7 @@
     "focusedUserShell": "5/5 PASS",
     "typecheck": "PASS",
     "build": "PASS",
-    "responsive": "4/4 PASS; 375, 768, 1024, 1440; overflowX=0",
+    "responsive": "8/8 PASS; /login and /app at 375, 768, 1024, 1440; overflowX=0",
     "operatingDbOrDataMutation": false,
     "featureProdMutation": false,
     "gate8": false
@@ -25,7 +25,11 @@
     "app-375.png": "f204f10f957de3656da77bc0e73a59e34db9dd28738d3eb7909dc6266c1d3460",
     "app-768.png": "2f7356d3c06516a1a0d2f77ffcc4c2b6c91a23d72a18c8fa1c04db8f799137ea",
     "app-1024.png": "a16a5ab0afa6141cb8ab91f42f898db3033e4249030301af714bed5de47e8a10",
-    "app-1440.png": "7a05a35322aabd8f9fc3cec5604f11ed4a8abe70ab7ca564eebd47fe106a149e"
+    "app-1440.png": "7a05a35322aabd8f9fc3cec5604f11ed4a8abe70ab7ca564eebd47fe106a149e",
+    "login-375.png": "8da7b95ea58b26da74bf808c7b8dcd02146c822e8681f1fcf0122c95471b79c7",
+    "login-768.png": "136c00855925188cb616afdb2b2968722a3a981a022a9164a66e29884e6176ae",
+    "login-1024.png": "05f3d65166df769e5169fbadba74ae1c2666fc55b82d1e217bfca462641d779e",
+    "login-1440.png": "c6430e195fc884c3a3eb4518db159d3392dd47e87039c7b33383c74926d53989"
   },
   "gate7": "PENDING_INDEPENDENT_REVIEW"
 }

@@ -20,7 +20,7 @@
 - `node --import tsx --test test/user-shell.test.ts`: 5/5 PASS
 - `npm run typecheck`: PASS
 - `npm run build`: PASS
-- DevTools viewport audit: 375, 768, 1024, 1440 모두 `overflowX=0`
+- DevTools viewport audit: `/login`, `/app` 각각 375, 768, 1024, 1440에서 `overflowX=0`
 - 화면 증거: `개발환경_고도화/migration-control/evidence/web-user-portal-ui-20260910/`
 - 운영 DB·운영 데이터·`feature/prod`·Gate 8: 변경 없음
 

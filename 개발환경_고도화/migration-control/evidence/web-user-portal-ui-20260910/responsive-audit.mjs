@@ -3,12 +3,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const outputDir = dirname(fileURLToPath(import.meta.url));
-const targets = [
+const viewports = [
   { width: 375, height: 812 },
   { width: 768, height: 1024 },
   { width: 1024, height: 900 },
   { width: 1440, height: 1000 }
 ];
+const previewLoginId = process.env.HOIBOT_PREVIEW_LOGIN_ID;
+const previewPassword = process.env.HOIBOT_PREVIEW_PASSWORD;
+if (!previewLoginId || !previewPassword) throw new Error("미리보기 로그인 환경변수가 필요합니다.");
 
 const pages = await fetch("http://127.0.0.1:9333/json/list").then((response) => response.json());
 const page = pages.find((candidate) => candidate.type === "page");
@@ -41,14 +44,16 @@ function send(method, params = {}) {
 await send("Page.enable");
 await send("Runtime.enable");
 const results = [];
-for (const target of targets) {
+
+async function captureRoute(route, expectedView) {
+for (const target of viewports) {
   await send("Emulation.setDeviceMetricsOverride", {
     width: target.width,
     height: target.height,
     deviceScaleFactor: 1,
     mobile: false
   });
-  await send("Page.navigate", { url: "http://127.0.0.1:3310/app" });
+  await send("Page.navigate", { url: `http://127.0.0.1:3310${route}` });
   await new Promise((resolve) => setTimeout(resolve, 900));
   const evaluated = await send("Runtime.evaluate", {
     expression: `({
@@ -70,14 +75,24 @@ for (const target of targets) {
     fromSurface: true,
     captureBeyondViewport: false
   });
-  await writeFile(join(outputDir, `app-${target.width}.png`), Buffer.from(screenshot.data, "base64"));
+  await writeFile(join(outputDir, `${expectedView}-${target.width}.png`), Buffer.from(screenshot.data, "base64"));
   results.push({
     ...metrics,
     overflowX: metrics.document.scrollWidth - metrics.document.clientWidth,
-    pass: metrics.activeView === "app" && metrics.document.scrollWidth === metrics.document.clientWidth
+    pass: metrics.activeView === expectedView && metrics.document.scrollWidth === metrics.document.clientWidth
   });
 }
+}
+
+await fetch("http://127.0.0.1:3310/api/v1/sessions", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ loginId: previewLoginId, password: previewPassword })
+});
+await captureRoute("/app", "app");
+await fetch("http://127.0.0.1:3310/api/v1/sessions/current", { method: "DELETE" });
+await captureRoute("/login", "login");
 
 socket.close();
-await writeFile(join(outputDir, "responsive-results.json"), `${JSON.stringify({ checkedAt: new Date().toISOString(), results }, null, 2)}\n`);
+await writeFile(join(outputDir, "responsive-results.json"), `${JSON.stringify({ checkedAt: new Date().toISOString(), resultCount: results.length, results }, null, 2)}\n`);
 console.log(JSON.stringify(results));

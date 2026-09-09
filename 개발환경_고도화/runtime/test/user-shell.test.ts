@@ -131,6 +131,7 @@ test("로그인 화면은 키보드·스크린리더·비밀번호 관리자를 
   assert.doesNotMatch(USER_SHELL_STYLES, /grid-template-rows: auto 1fr auto/);
   assert.match(USER_SHELL_HTML, /보안 상태/);
   assert.match(USER_SHELL_HTML, /aria-labelledby="guide-title"/);
+  assert.doesNotMatch(USER_SHELL_HTML, /WBS/);
   assert.doesNotThrow(() => new Function(USER_SHELL_CLIENT));
 });
 
