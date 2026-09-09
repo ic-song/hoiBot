@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.479"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.480"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -903,7 +903,7 @@ const GLOBAL_CONFIG = {
         attackLimit: 4,
         bonusAttackSkillNames: ["무쌍신화", "무쌍귀신"],
         bonusAttackCount: 1,
-        startGraceMs: 30000,
+        startGraceMs: 60000,
         turnTimeoutMs: 12000,
         attackRewardPoint: 200000000,
         realFlagDiscoveryBonusPoint: 200000000,
@@ -957,6 +957,8 @@ const GLOBAL_CONFIG = {
         vaultItemName: "호이의 봉인금고🔒(/봉인금고오픈 숫자)",
         keyItemName: "해방의 열쇠🗝️(/봉인금고오픈 숫자)",
         maxOpenCount: 100,
+        keyCombineVaultCost: 100, // 해방의 열쇠 1개 조합에 필요한 봉인금고 수
+        dailyQuestVaultReward: 1, // 일일퀘스트 완료 보상 수량
         boosterCycle: 30,
         platinumPityCount: 200,
         maxAdminItemCount: 1000000000,
@@ -3114,7 +3116,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var matzangField = ensureMatzangFieldData(data);
         addResponseTiming("맞짱필드 보정", commonStepStart);
         var petMusou = ensurePetMusouData(data);
-        recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat);
+        var petMusouRecoveryHomeData = petMusou.active && !petMusou.startReady ? loadJsonFile(homeDataFile) : null; // 모집 종료 시점 참가자 능력치 계산용
+        recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat, petMusouRecoveryHomeData);
         petMusou = ensurePetMusouData(data);
         if (!ctx.isDev) ensurePetMusouScheduleTimer(replier);
         if (isHoiPassPremiumAutomationCommand(msg)) {
@@ -3187,6 +3190,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (isPetMusouBlockedDuringTournamentCommand(petMusou, msg, sender)) {
+            if (msg.charAt(0) === "/" || msg === "ㅈㅈㅈ" || msg === "ㅍㅍㅍ" || msg === "ㅁㅁㅁ") {
+                replier.reply("🗡️ 펫무쌍 대회 진행 중에는 펫무쌍 관련 명령어만 사용할 수 있습니다.\n\n허용 명령어: /펫무쌍공격 [1-10], /무쌍순위");
+            }
             return;
         }
         commonStepStart = Date.now();
@@ -3238,7 +3244,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             saveJsonFile(data, filePath);
-            noticeMsg(petMusouStartResult.message);
+            castleMsg(petMusouStartResult.message, replier, true);
             startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, true);
             return;
         }
@@ -19388,10 +19394,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         {
                             item: "양념치킨🐔",
                             count: 1
-                        },
-                        {
-                            item: GLOBAL_CONFIG.sealedVault.vaultItemName,
-                            count: 1
                         }
                     ];
                     // 내 miniPetBattle 전적 초기화 (없으면 생성)
@@ -35375,7 +35377,7 @@ function runPetMusouScheduleTick(timerCtx, replier, now) {
         if (!scheduleResult.changed) return;
         saveJsonFile(latestData, filePath);
         if (scheduleResult.started) {
-            noticeMsg(scheduleResult.message);
+            castleMsg(scheduleResult.message, replier, true);
             startPetMusouOpeningTimer(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, true, true);
         }
     } catch (scheduleError) {
@@ -35499,6 +35501,7 @@ function isPetMusouLightningRateCommand(msg) {
 // 펫무쌍 진행 중 일반 유저의 펫무쌍 외 입력 차단 여부를 확인하는 함수
 function isPetMusouBlockedDuringTournamentCommand(musou, msg, sender) {
     if (!musou || !musou.active || typeof msg !== "string") return false;
+    if (!musou.startReady && musou.signupOpen && msg === "/펫무쌍준비") return false;
     if (isPetMusouOperator(sender)) return false;
     if (msg === "/펫무쌍시작" && isPetMusouStartOperator(sender)) return false;
     return !isPetMusouAllowedDuringTournamentCommand(msg);
@@ -35554,7 +35557,7 @@ function buildPetMusouPreparedParticipantList(data, petData, guildData, musou) {
 // 펫무쌍 참가 신청을 저장하는 함수
 function joinPetMusou(data, petData, petSkillData, guildData, sender) {
     var musou = ensurePetMusouData(data);
-    if (musou.active || !musou.signupOpen) return { ok: false, message: "❌ 현재 펫무쌍 참가 신청을 받고 있지 않습니다." };
+    if (!musou.signupOpen || (musou.active && (musou.startReady || new Date().getTime() >= musou.startGraceDeadlineAt))) return { ok: false, message: "❌ 현재 펫무쌍 참가 신청을 받고 있지 않습니다." };
     if (isAccountSuspended(data, sender)) return { ok: false, message: "❌ 계정정지 상태에서는 펫무쌍에 참가할 수 없습니다." };
     var guildInfo = getPetMusouGuildInfo(data, guildData, sender);
     if (!guildInfo) return { ok: false, message: "❌ 길드에 가입된 유저만 펫무쌍에 참가할 수 있습니다." };
@@ -35593,9 +35596,24 @@ function joinPetMusou(data, petData, petSkillData, guildData, sender) {
 }
 
 // 펫무쌍 참가자 전원의 시작 시점 종합매력을 저장하고 대회를 시작하는 함수
-function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
+function beginPetMusou(data, petData, homeData, petSkillData, guildData, finalizeSignup) {
     var musou = ensurePetMusouData(data);
-    if (musou.active) return { ok: false, message: "❌ 이미 펫무쌍 대회가 진행 중입니다." };
+    if (!finalizeSignup) {
+        if (musou.active) return { ok: false, message: "❌ 이미 펫무쌍 대회가 진행 중입니다." };
+        var signupNow = new Date().getTime(); // 참가 모집 마감시각과 중복 타이머 방지 토큰 기준
+        musou.active = true;
+        musou.signupOpen = true;
+        musou.startReady = false;
+        musou.players = {};
+        musou.participants = {};
+        musou.turnQueue = [];
+        musou.currentHolder = "";
+        musou.roundId = musou.nextRoundId;
+        musou.startGraceToken = String(signupNow) + "_" + String(Math.random());
+        musou.startGraceDeadlineAt = signupNow + GLOBAL_CONFIG.petMusou.startGraceMs;
+        return { ok: true, message: "🗡️ 펫무쌍 참가 모집 🗡️\n" + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 안에 /펫무쌍준비 를 입력하면 이번 대회에 참여할 수 있습니다.\n이미 준비한 참가자는 그대로 참여합니다.\n모집이 끝나면 참가자 명단과 함께 시작합니다." };
+    }
+    if (!musou.active || musou.startReady || !musou.signupOpen) return { ok: false, message: "❌ 참가 모집 중인 대회가 없습니다." };
     var preparedParticipants = musou.nextParticipants;
     var participantNames = Object.keys(preparedParticipants);
     var validUsers = [];
@@ -35655,7 +35673,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
     musou.lightningRate = GLOBAL_CONFIG.petMusou.lightningStartRate;
     musou.turnToken = "";
     musou.turnDeadlineAt = 0;
-    var startGraceNow = new Date().getTime(); // 30초 시작 유예 토큰과 마감시각의 공통 기준시각
+    var startGraceNow = new Date().getTime(); // 참가 확정 시각
     musou.startReady = false;
     musou.startGraceToken = String(startGraceNow) + "_" + String(Math.random());
     musou.startGraceDeadlineAt = startGraceNow + GLOBAL_CONFIG.petMusou.startGraceMs;
@@ -35667,9 +35685,8 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
             "━━━━━━━━━━━━━━━━\n" +
             "참가자: " + validUsers.length + "명\n" +
             "개인 공격권: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
-            "준비 유예시간: " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초\n" +
             "공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n\n" +
-            "⏳ 준비 시간이 끝난 뒤 첫 공격이 시작됩니다.\n\n" +
+            "참가 모집이 끝났습니다. 첫 공격을 시작합니다.\n\n" +
             "10개의 깃발 중 진짜 깃발은 단 1개!\n" +
             "처음 발견한 가짜 깃발은 공격권만 차감됩니다.\n" +
             "공개된 가짜를 다시 공격하면 즉시 탈락합니다.\n\n" +
@@ -35677,7 +35694,8 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
             "━━━━━━━━━━━━━━━━\n" +
             "펫무쌍 공격은 공성전 방에서만 가능합니다.\n" +
             "https://open.kakao.com/o/gaP4Xybh" +
-            (excludedUsers.length > 0 ? "\n\n참가 조건 재확인 제외: " + excludedUsers.join(", ") : "")
+            (excludedUsers.length > 0 ? "\n\n참가 조건 재확인 제외: " + excludedUsers.join(", ") : "") +
+            "\n\n" + buildPetMusouAliveParticipantList(data, petData, guildData, musou)
     };
 }
 
@@ -35936,7 +35954,16 @@ function buildPetMusouAttackDetailMessage(data, petData, guildData, musou, attac
         "종합매력(시작 기준): " + numberWithCommas(snapshot.baseExp) + "💕";
 }
 
-// 펫무쌍 깃발 현황과 다음 공격자를 출력하는 함수
+// 현재 탈락하지 않은 펫무쌍 참가자 명단을 생성하는 함수
+function buildPetMusouAliveParticipantList(data, petData, guildData, musou) {
+    var names = [];
+    for (var user in musou.players) {
+        if (musou.players.hasOwnProperty(user) && musou.players[user].alive) names.push("• " + checkRank(data, petData, guildData, user));
+    }
+    return "👥 참가자 명단 (" + names.length + "명)\n" + names.join("\n");
+}
+
+// 펫무쌍 현재 공격 차례와 깃발·생존 참가자 상태를 출력하는 함수
 function buildPetMusouStatusMessage(data, petData, guildData, musou) {
     var attacker = getPetMusouCurrentAttacker(musou);
     if (!attacker) return "";
@@ -35961,7 +35988,7 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
         }
         lines.push("[" + flagNo + "] " + getPetMusouFlagName(flagNo) + ": " + stateText);
     }
-    lines.push("━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.");
+    lines.push("━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", buildPetMusouAliveParticipantList(data, petData, guildData, musou));
     return lines.join("\n");
 }
 
@@ -36137,10 +36164,27 @@ function clearPetMusouOpeningTimer(ctx) {
     }
 }
 
-// 펫무쌍 30초 준비 종료 후 첫 공격과 턴 타이머를 시작하는 함수
-function openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat) {
+// 펫무쌍 참가 모집 종료 후 참가자를 확정하고 첫 공격을 시작하는 함수
+function openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat, homeData) {
     var musou = ensurePetMusouData(data);
-    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return false;
+    if (!musou.active || musou.startReady) return false;
+    if (musou.signupOpen) {
+        var startResult = beginPetMusou(data, petData, homeData, petSkillData, guildData, true);
+        if (!startResult.ok) {
+            musou.active = false;
+            musou.startGraceToken = "";
+            musou.startGraceDeadlineAt = 0;
+            saveJsonFile(data, filePath);
+            castleMsg(startResult.message, replier, true);
+            return false;
+        }
+        musou.startReady = true;
+        musou.startGraceToken = "";
+        musou.startGraceDeadlineAt = 0;
+        saveJsonFile(data, filePath);
+        castleMsg(startResult.message, replier, true);
+    }
+    if (!getPetMusouCurrentAttacker(musou)) return false;
     musou.startReady = true;
     musou.startGraceToken = "";
     musou.startGraceDeadlineAt = 0;
@@ -36149,10 +36193,10 @@ function openPetMusouForAttacks(data, petData, petSkillData, guildData, replier,
     return true;
 }
 
-// 펫무쌍 저장 마감시각을 기준으로 30초 시작 유예 타이머를 예약하거나 복구하는 함수
+// 펫무쌍 저장 마감시각을 기준으로 참가 모집 타이머를 예약하거나 복구하는 함수
 function startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, preserveDeadline) {
     var musou = ensurePetMusouData(data);
-    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return;
+    if (!musou.active || musou.startReady) return;
     var timerCtx = getCurrentContext();
     var timerCtxKey = timerCtx.key();
     clearPetMusouOpeningTimer(timerCtx);
@@ -36180,7 +36224,8 @@ function startPetMusouOpeningTimer(data, petData, petSkillData, guildData, repli
             var latestGuildData = loadJsonFile(guildPath);
             var latestMusou = ensurePetMusouData(latestData);
             if (!latestMusou.active || latestMusou.startReady || latestMusou.startGraceToken !== token) return;
-            openPetMusouForAttacks(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat);
+            var latestHomeData = loadJsonFile(homeDataFile);
+            openPetMusouForAttacks(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat, latestHomeData);
         } finally {
             if (timerTransactionEntered) endDataSaveTransaction();
             if (timerTransactionAcquired) dataTransactionLock.unlock();
@@ -36250,14 +36295,14 @@ function startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier,
 }
 
 // 봇 재시작 후 저장된 펫무쌍 턴을 다음 수신 메시지에서 복구하는 함수
-function recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat) {
+function recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat, homeData) {
     var musou = ensurePetMusouData(data);
-    if (!musou.active || !getPetMusouCurrentAttacker(musou)) return;
+    if (!musou.active) return;
     var ctx = getCurrentContext();
     if (!musou.startReady) {
         if (petMusouOpeningTimers[ctx.key()]) return;
         if (musou.startGraceDeadlineAt > 0 && musou.startGraceDeadlineAt <= new Date().getTime()) {
-            openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat);
+            openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat, homeData);
             return;
         }
         startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, true);
@@ -38646,6 +38691,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 1);
         addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
         addItem(data, sender, "펫 강화석⭐", 30);
+        addItem(data, sender, GLOBAL_CONFIG.sealedVault.vaultItemName, GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward);
         member.dailyQuestCnt = (member.dailyQuestCnt || 0) + 1;
         member.weeklyQuestCnt = Math.min((parseInt(member.weeklyQuestCnt, 10) || 0) + 1, status.weeklyMax);
         status.weeklyUsed = member.weeklyQuestCnt;
@@ -38653,7 +38699,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         claimed = true;
         dailyClaimed = true;
 
-        messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개");
+        messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개");
     }
 
     if (status.passDailyComplete && !status.passDailyRewardDone) {
@@ -40033,6 +40079,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     lines.push("다이아상자💎(/다이아상자오픈) 1개");
     lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
     lines.push("펫 강화석⭐ 30개");
+    lines.push(GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개");
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【🦋주간 퀘스트 조건 】");
     lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
@@ -49444,6 +49491,7 @@ function applyRewardGainItems(data, user, gainItems) {
 // 봉인금고 관련 명령어를 현재 응답에서 처리할지 확인하는 함수
 function isSealedVaultCommandMessage(msg) {
     var command = String(msg || "");
+    if (command === "해방열쇠조합" || command === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(command)) return true;
     return command === "/봉인금고" || command === "/봉인금고확률" || command === "/봉인금고기록" || command === "/봉인금고기록전체" ||
         /^\/봉인금고오픈(?:\s+.*)?$/.test(command) || /^\/해방열쇠지급(?:\s+.*)?$/.test(command) ||
         /^\/해방열쇠회수(?:\s+.*)?$/.test(command) || /^\/봉인금고상태(?:\s+.*)?$/.test(command) ||
@@ -49454,6 +49502,7 @@ function isSealedVaultCommandMessage(msg) {
 // 봉인금고 데이터가 바뀌는 명령어인지 확인하는 함수
 function isSealedVaultMutationCommandMessage(msg) {
     var command = String(msg || "");
+    if (/^\/해방열쇠조합\s+\d+$/.test(command)) return true;
     return /^\/봉인금고오픈\s+\d+$/.test(command) || /^\/해방열쇠지급\s+.+\s+\d+$/.test(command) ||
         /^\/해방열쇠회수\s+.+\s+\d+$/.test(command) || /^\/봉인금고부스터설정\s+.+\s+\d+$/.test(command) ||
         /^\/봉인금고천장설정\s+.+\s+\d+$/.test(command) ||
@@ -49763,7 +49812,7 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
         return createSealedVaultCommandResult(
             "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n호이의 봉인금고가 부족합니다.\n" +
             "━━━━━━━━━━━━━━━\n필요한 호봉금고: " + openCount + "개\n보유한 호봉금고: " + haveVaultCount + "개\n부족한 호봉금고: " + (openCount - haveVaultCount) + "개\n\n" +
-            "/미니펫대전에서 " + config.vaultItemName + "를 획득한 후 개봉할 수 있습니다.",
+            "일일퀘스트 완료 보상으로 " + config.vaultItemName + " " + config.dailyQuestVaultReward + "개를 획득할 수 있습니다.",
             false
         );
     }
@@ -49771,7 +49820,7 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     if (haveKeyCount < openCount) {
         return createSealedVaultCommandResult(
             "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n해방의 열쇠가 부족합니다.\n" +
-            "━━━━━━━━━━━━━━━\n필요한 열쇠: " + openCount + "개\n보유한 열쇠: " + haveKeyCount + "개\n부족한 열쇠: " + (openCount - haveKeyCount) + "개\n\n해방의 열쇠🗝️는 후원에서 구매할 수 있습니다.\nhttps://hoiland123.tistory.com/700",
+            "━━━━━━━━━━━━━━━\n필요한 열쇠: " + openCount + "개\n보유한 열쇠: " + haveKeyCount + "개\n부족한 열쇠: " + (openCount - haveKeyCount) + "개\n\n해방의 열쇠🗝️는 후원에서 구매할 수 있습니다.\nhttps://hoiland123.tistory.com/700\n\n아이템조합을 원하시면 \"해방열쇠조합\"을 적어보세요.",
             false
         );
     }
@@ -49909,8 +49958,30 @@ function buildSealedVaultRewardSettingMessage(data) {
     return lines.join("\n");
 }
 
+// 봉인금고를 소모해 요청 수량의 해방의 열쇠를 조합하는 함수
+function runSealedVaultKeyCombine(sender, data, msg) {
+    var config = GLOBAL_CONFIG.sealedVault;
+    var match = String(msg).match(/^\/해방열쇠조합\s+(\d+)$/);
+    if (!match) return createSealedVaultCommandResult("🗝️ 해방열쇠 조합\n" + config.vaultItemName + " " + config.keyCombineVaultCost + "개 → " + config.keyItemName + " 1개\n\n사용법: /해방열쇠조합 [숫자]\n예시: /해방열쇠조합 2 (열쇠 2개 조합)", false);
+    var count = Number(match[1]);
+    var cost = count * config.keyCombineVaultCost; // 요청한 열쇠 수량에 필요한 총 봉인금고 수
+    if (!isFinite(cost) || count < 1 || cost > 9007199254740991) return createSealedVaultCommandResult("❌ 조합 수량은 계산 가능한 1 이상의 정수로 입력해 주세요.", false);
+    var member = data && data.member ? data.member[sender] : null;
+    if (!member) return createSealedVaultCommandResult("❌ 회원 정보를 찾을 수 없습니다.", false);
+    var bag = member.bag || {};
+    var vaultCount = normalizeSealedVaultCount(bag[config.vaultItemName]);
+    var keyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
+    if (vaultCount < cost) return createSealedVaultCommandResult("❌ 호이의 봉인금고가 부족합니다.\n필요: " + numberWithCommas(cost) + "개\n보유: " + numberWithCommas(vaultCount) + "개\n\n일일퀘스트 완료 보상으로 " + config.dailyQuestVaultReward + "개를 획득할 수 있습니다.", false);
+    if (keyCount + count > 9007199254740991) return createSealedVaultCommandResult("❌ 보유 가능한 열쇠 수량을 초과합니다.", false);
+    bag[config.vaultItemName] = vaultCount - cost;
+    bag[config.keyItemName] = keyCount + count;
+    member.bag = bag;
+    return createSealedVaultCommandResult("✅ 해방열쇠 조합 완료!\n소모: " + config.vaultItemName + " " + numberWithCommas(cost) + "개\n획득: " + config.keyItemName + " " + numberWithCommas(count) + "개", true);
+}
+
 // 봉인금고 사용자·관리자 명령을 실행하는 함수
 function runSealedVaultCommand(sender, data, petData, guildData, msg) {
+    if (msg === "해방열쇠조합" || msg === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(msg)) return runSealedVaultKeyCombine(sender, data, msg);
     var config = GLOBAL_CONFIG.sealedVault;
     if (msg === "/봉인금고") return createSealedVaultCommandResult(buildSealedVaultStatusMessage(data, petData, guildData, sender), false);
     if (msg === "/봉인금고확률") return createSealedVaultCommandResult(buildSealedVaultProbabilityMessage(), false);
