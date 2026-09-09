@@ -1,0 +1,86 @@
+{
+  "checkedAt": "2026-09-09T23:21:55.431Z",
+  "resultCount": 4,
+  "results": [
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "document": {
+        "clientWidth": 360,
+        "scrollWidth": 360,
+        "clientHeight": 812,
+        "scrollHeight": 1423
+      },
+      "route": "/login",
+      "activeView": "login",
+      "noticeVisible": true,
+      "noticeText": "세션이 이미 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.",
+      "focusedId": "login-session-notice",
+      "sensitiveCleared": true,
+      "overflowX": 0,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "document": {
+        "clientWidth": 753,
+        "scrollWidth": 753,
+        "clientHeight": 1024,
+        "scrollHeight": 1288
+      },
+      "route": "/login",
+      "activeView": "login",
+      "noticeVisible": true,
+      "noticeText": "세션이 이미 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.",
+      "focusedId": "login-session-notice",
+      "sensitiveCleared": true,
+      "overflowX": 0,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "document": {
+        "clientWidth": 1009,
+        "scrollWidth": 1009,
+        "clientHeight": 900,
+        "scrollHeight": 949
+      },
+      "route": "/login",
+      "activeView": "login",
+      "noticeVisible": true,
+      "noticeText": "세션이 이미 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.",
+      "focusedId": "login-session-notice",
+      "sensitiveCleared": true,
+      "overflowX": 0,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "document": {
+        "clientWidth": 1425,
+        "scrollWidth": 1425,
+        "clientHeight": 1000,
+        "scrollHeight": 1049
+      },
+      "route": "/login",
+      "activeView": "login",
+      "noticeVisible": true,
+      "noticeText": "세션이 이미 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.",
+      "focusedId": "login-session-notice",
+      "sensitiveCleared": true,
+      "overflowX": 0,
+      "pass": true
+    }
+  ]
+}

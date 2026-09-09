@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "web-account-session-expiry-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-3",
+  "wbsId": "WEB-WBS-009",
+  "sliceId": "SL-ACCOUNT-USER-WEB-SESSION-EXPIRY-UI-01",
+  "lease": "Lease2639",
+  "executionProfile": "READ_UI",
+  "validationTier": "T1",
+  "baseCommit": "c1290dd597e5a503505be3b4f4ef99181722aa94",
+  "scope": {
+    "sessionExpiredVisibleState": true,
+    "sensitiveViewCleared": true,
+    "focusTransferredToStatus": true,
+    "firstVisitUnauthenticatedSeparated": true,
+    "newApi": false,
+    "mutation": false
+  },
+  "validation": {
+    "focusedUserShell": "6/6 PASS",
+    "webRegression": "16/16 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diffCheck": "PASS",
+    "responsive": "4/4 PASS",
+    "horizontalOverflow": "0 at 375/768/1024/1440",
+    "responsiveResults": "responsive-results.json"
+  },
+  "screenshots": [
+    {
+      "file": "session-expiry-375.png",
+      "sha256": "5269bccbfdbbee273e7017e49461931367220fc3510828bacebcc2e1f57056a5"
+    },
+    {
+      "file": "session-expiry-768.png",
+      "sha256": "55b491597c0113ea6f0d709926c946a5aaf13fa4a650e3ca4861efc2bd4d15aa"
+    },
+    {
+      "file": "session-expiry-1024.png",
+      "sha256": "10642e481f1750adba40da91def0fe345f3701a0b73dfb49d526fbe328d4eb46"
+    },
+    {
+      "file": "session-expiry-1440.png",
+      "sha256": "1909fe750777e969e91a8c98dc16cbc71b7d16440f0fa4e97f2ca56c07adaa09"
+    }
+  ],
+  "excludes": [
+    "app.ts",
+    "database",
+    "migration",
+    "provider",
+    "ledger",
+    "receipt",
+    "account switching",
+    "link removal",
+    "feature/prod",
+    "Gate 8"
+  ]
+}

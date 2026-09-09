@@ -42,6 +42,10 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
           <h2>로그인</h2>
           <p>가입할 때 만든 ID와 비밀번호를 입력해 주세요.</p>
         </div>
+        <div id="login-session-notice" class="session-notice" role="status" tabindex="-1" hidden>
+          <strong>로그인 상태가 변경됐어요.</strong>
+          <p id="login-session-message"></p>
+        </div>
         <div id="login-error-summary" class="error-summary" role="alert" tabindex="-1" hidden>
           <strong>로그인 정보를 확인해 주세요.</strong>
           <p id="login-error-message"></p>
@@ -276,6 +280,9 @@ main { min-height: calc(100vh - 112px); }
 button:disabled { opacity: .58; cursor: wait; }
 .panel-footer { display: grid; gap: 6px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 .panel-footer a, .empty-state a { min-height: 44px; display: inline-flex; align-items: center; color: var(--blue); font-weight: 800; text-underline-offset: 3px; }
+.session-notice { margin-bottom: 20px; padding: 14px 15px; color: #854d0e; background: #fffbeb; border-left: 4px solid #d97706; border-radius: 8px; }
+.session-notice strong { font-size: 14px; }
+.session-notice p { margin: 5px 0 0; color: #713f12; font-size: 13px; line-height: 1.55; }
 .error-summary, .inline-notice { margin-bottom: 20px; padding: 14px 15px; color: var(--danger); background: var(--danger-bg); border-left: 4px solid var(--danger); border-radius: 8px; }
 .error-summary strong, .inline-notice strong { font-size: 14px; }
 .error-summary p, .inline-notice p { margin: 5px 0 0; font-size: 13px; line-height: 1.55; }
@@ -392,6 +399,8 @@ export const USER_SHELL_CLIENT = String.raw`
   var passwordInput = document.getElementById("password");
   var errorSummary = document.getElementById("login-error-summary");
   var errorMessage = document.getElementById("login-error-message");
+  var sessionNotice = document.getElementById("login-session-notice");
+  var sessionMessage = document.getElementById("login-session-message");
   var appError = document.getElementById("app-error");
   var appErrorMessage = document.getElementById("app-error-message");
   var logoutButton = document.getElementById("logout-button");
@@ -443,6 +452,17 @@ export const USER_SHELL_CLIENT = String.raw`
       error.hidden = true;
       error.textContent = "";
     });
+  }
+
+  function hideSessionNotice() {
+    sessionNotice.hidden = true;
+    sessionMessage.textContent = "";
+  }
+
+  function showSessionNotice(message) {
+    sessionMessage.textContent = message;
+    sessionNotice.hidden = false;
+    sessionNotice.focus();
   }
 
   function showFieldError(input, errorId, message) {
@@ -562,7 +582,7 @@ export const USER_SHELL_CLIENT = String.raw`
       renderProfile(state.profile);
     } catch (error) {
       if (error.status === 401) {
-        showLogin("세션이 만료됐어요. 다시 로그인해 주세요.");
+        showLogin("세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true);
         return;
       }
       state.profile = null;
@@ -577,7 +597,7 @@ export const USER_SHELL_CLIENT = String.raw`
       renderSession();
     } catch (error) {
       if (error.status === 401) {
-        showLogin("세션이 만료됐어요. 다시 로그인해 주세요.");
+        showLogin("세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true);
         return;
       }
       profileError = error;
@@ -603,7 +623,7 @@ export const USER_SHELL_CLIENT = String.raw`
     announce(accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
   }
 
-  function showLogin(message) {
+  function showLogin(message, visibleNotice) {
     state.csrfToken = "";
     state.session = null;
     state.profile = null;
@@ -611,6 +631,8 @@ export const USER_SHELL_CLIENT = String.raw`
     setView("login");
     window.history.replaceState({}, "", "/login");
     document.getElementById("login-title").focus();
+    hideSessionNotice();
+    if (visibleNotice && message) showSessionNotice(message);
     if (message) announce(message);
   }
 
@@ -630,6 +652,7 @@ export const USER_SHELL_CLIENT = String.raw`
 
   loginForm.addEventListener("submit", async function (event) {
     event.preventDefault();
+    hideSessionNotice();
     clearLoginErrors();
     var loginId = loginIdInput.value.trim();
     var password = passwordInput.value;
@@ -662,16 +685,16 @@ export const USER_SHELL_CLIENT = String.raw`
       try {
         await api("/api/v1/sessions/current", { method: "DELETE", headers: { "x-csrf-token": state.csrfToken } });
       } catch (error) {
-        if (error.status === 401) { showLogin("세션이 이미 만료됐어요."); return; }
+        if (error.status === 401) { showLogin("세션이 이미 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true); return; }
         if (error.status !== 403) throw error;
         var refreshed = await api("/api/v1/sessions/current");
         state.csrfToken = refreshed.csrfToken || "";
         await api("/api/v1/sessions/current", { method: "DELETE", headers: { "x-csrf-token": state.csrfToken } });
       }
-      showLogin("로그아웃했습니다.");
+      showLogin("안전하게 로그아웃했어요.", true);
     } catch (error) {
       if (error.status === 401) {
-        showLogin("세션이 이미 만료됐어요.");
+        showLogin("세션이 이미 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true);
         return;
       }
       appErrorMessage.textContent = error.message || "로그아웃하지 못했어요. 다시 시도해 주세요.";

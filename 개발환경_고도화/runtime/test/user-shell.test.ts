@@ -28,12 +28,12 @@ function createShellHarness(responses: Array<{ status: number; payload?: Record<
   const focusLog: string[] = [];
   const ids = [
     "loading-view", "login-view", "app-view", "home-content", "account-content", "nav-home", "nav-account", "account-title", "login-form", "login-button", "login-id", "password",
-    "login-error-summary", "login-error-message", "app-error", "app-error-message", "logout-button", "retry-button",
+    "login-error-summary", "login-error-message", "login-session-notice", "login-session-message", "app-error", "app-error-message", "logout-button", "retry-button",
     "live-status", "header-session", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
     "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server", "welcome-title", "login-title"
   ];
   const elements = new Map(ids.map((id) => [id, new ShellElement(id, focusLog)]));
-  ["login-view", "app-view", "account-content", "login-error-summary", "app-error", "login-id-error", "password-error", "profile-empty"]
+  ["login-view", "app-view", "account-content", "login-error-summary", "login-session-notice", "app-error", "login-id-error", "password-error", "profile-empty"]
     .forEach((id) => { const element = elements.get(id); if (element !== undefined) element.hidden = true; });
   const calls: Array<{ url: string; options: Record<string, unknown> }> = [];
   const history: string[] = [];
@@ -123,6 +123,7 @@ test("로그인 화면은 키보드·스크린리더·비밀번호 관리자를 
   assert.match(USER_SHELL_HTML, /autocomplete="current-password"/);
   assert.match(USER_SHELL_HTML, /pattern="\[a-z0-9\]\{6,20\}"/);
   assert.match(USER_SHELL_HTML, /role="alert" tabindex="-1"/);
+  assert.match(USER_SHELL_HTML, /id="login-session-notice" class="session-notice" role="status" tabindex="-1" hidden/);
   assert.match(USER_SHELL_HTML, /aria-live="polite"/);
   assert.match(USER_SHELL_HTML, /<script src="\/site\/assets\/user-shell\.js" defer><\/script>/);
   assert.doesNotMatch(USER_SHELL_HTML, /<script(?! src=)/);
@@ -194,6 +195,9 @@ test("프로필 조회가 401이면 로그인 화면으로 전환하고 계정 �
   assert.equal(harness.elements.get("account-login-id")?.textContent, "—");
   assert.equal(harness.elements.get("system-account-name")?.textContent, "—");
   assert.equal(harness.elements.get("profile-list")?.children.length, 0);
+  assert.equal(harness.elements.get("login-session-notice")?.hidden, false);
+  assert.equal(harness.elements.get("login-session-message")?.textContent, "세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.");
+  assert.equal(harness.focusLog.at(-1), "login-session-notice");
 });
 
 test("계정 연결 경로는 본인 세션과 현재 프로필만 마스킹해 표시합니다", async () => {
