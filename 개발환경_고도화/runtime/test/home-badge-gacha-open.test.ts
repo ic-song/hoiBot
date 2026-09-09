@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isHomeBadgeGachaCommandCandidate, normalizeHomeBadgeGachaDispatchMessage, parseHomeBadgeGachaCommand } from "../src/home/home-badge-gacha-command.js";
-import { createHomeBadgeGachaSeed, planHomeBadgeGachaDraws, selectHomeBadgeGachaGrade, type HomeBadgeGachaDefinition } from "../src/home/home-badge-gacha-service.js";
+import { createHomeBadgeGachaSeed, formatHomeBadgeGachaUsage, planHomeBadgeGachaDraws, selectHomeBadgeGachaGrade, type HomeBadgeGachaDefinition } from "../src/home/home-badge-gacha-service.js";
 
 describe("home badge gacha open v2.400", () => {
   it("keeps exact command boundaries and usage fallbacks", () => {
@@ -18,6 +18,11 @@ describe("home badge gacha open v2.400", () => {
     assert.equal(parseHomeBadgeGachaCommand("/홈뱃지오픈3 101")?.valid, false);
     assert.deepEqual(parseHomeBadgeGachaCommand("/홈뱃지오픈2 001")?.count, 1n);
     assert.equal(parseHomeBadgeGachaCommand("/홈뱃지오픈2 1 해봐")?.valid, false);
+  });
+
+  it("matches the legacy open2/open3 usage replies exactly", () => {
+    assert.equal(formatHomeBadgeGachaUsage("🏆테스터", "open2"), "[🏆테스터] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10");
+    assert.equal(formatHomeBadgeGachaUsage("🏆테스터", "open3"), "[🏆테스터] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10");
   });
 
   it("keeps C/B/A/S 55/30/12/3 boundaries", () => {

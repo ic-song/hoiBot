@@ -75,6 +75,13 @@ function integerDecimal(value: string): bigint { return BigInt(value.split(".")[
 // 정수 포인트를 천 단위 구분 문자열로 표시합니다.
 function pointText(value: bigint): string { return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
 
+// legacy 홈뱃지 명령의 사용법 응답을 현재 rank 표시와 함께 그대로 만듭니다.
+export function formatHomeBadgeGachaUsage(rankDisplay: string, variant: HomeBadgeGachaVariant): string {
+  if (variant === "open2") return `[${rankDisplay}] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10`;
+  if (variant === "open3") return `[${rankDisplay}] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10`;
+  return `예) /홈뱃지오픈 [1~100]`;
+}
+
 // draw 결과를 v2.400의 단일 응답·다섯 번째 접기 형식으로 만듭니다.
 function formatResult(actor: Actor, variant: HomeBadgeGachaVariant, draws: Array<{ definition: HomeBadgeGachaDefinition; resultKind: "new" | "duplicate" | "deleted"; reward: bigint }>): string {
   const title = variant === "open1" ? "홈뱃지" : variant === "open2" ? "MBTI 홈뱃지" : "연애유형 홈뱃지";
@@ -138,7 +145,7 @@ export class HomeBadgeGachaService {
         }
         const operation = await transaction.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3))", [randomUUID(), scope, key, actor.identity_id]);
         if (!command.valid || command.count === null) {
-          const usage = command.variant === "open2" ? "예) /홈뱃지오픈2 [1~100]" : `예) /홈뱃지오픈${command.variant === "open3" ? "3" : ""} [1~100]`;
+          const usage = formatHomeBadgeGachaUsage(actor.rank_display, command.variant);
           return complete(transaction, { operationId: operation.insertId, eventId: input.eventId, destinationId: input.destinationId, actor, commandCode: command.commandCode, actionCode: `home.badge.gacha.${command.variant}`, resultCode: "usage", data: usage, result: { status: "usage", variant: command.variant }, broadcastIds: this.broadcastIds, summary: { mutation: false } });
         }
         await transaction.query("SELECT id FROM players WHERE id=? FOR UPDATE", [actor.player_id]);

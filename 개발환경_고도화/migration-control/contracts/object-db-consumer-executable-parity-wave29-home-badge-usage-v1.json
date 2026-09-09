@@ -1,0 +1,30 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave29:home-badge-usage:v1",
+  "sliceId": "WBS796",
+  "consumerIds": ["legacy-827e1dc284cea52c", "legacy-bf7edb9e7cee98cd"],
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/home/home-badge-gacha-command.ts",
+    "개발환경_고도화/runtime/src/home/home-badge-gacha-service.ts"
+  ],
+  "receiptContract": {
+    "version": "WBS796_HOME_BADGE_USAGE_DIRECT_V1",
+    "transaction": "READ_ONLY",
+    "sourceDomainDmlCount": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES",
+    "authDenied": "NOT_APPLICABLE",
+    "wrongRoomRejected": "NOT_APPLICABLE"
+  },
+  "bindings": [
+    {"consumerId":"legacy-bf7edb9e7cee98cd","scenarioId":"wave29-open2-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave29HomeBadgeUsage","variant":"open2","input":"/홈뱃지오픈2","negativeInput":"/홈뱃지오픈22","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10"},
+    {"consumerId":"legacy-bf7edb9e7cee98cd","scenarioId":"wave29-open2-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave29HomeBadgeUsage","variant":"open2","input":"/홈뱃지오픈2","negativeInput":"/홈뱃지오픈22","expectedReply":"NO_REPLY"},
+    {"consumerId":"legacy-bf7edb9e7cee98cd","scenarioId":"wave29-open2-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave29HomeBadgeUsage","variant":"open2","input":"/홈뱃지오픈2","negativeInput":"/홈뱃지오픈22","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10"},
+    {"consumerId":"legacy-bf7edb9e7cee98cd","scenarioId":"wave29-open2-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave29HomeBadgeUsage","variant":"open2","input":"/홈뱃지오픈2","negativeInput":"/홈뱃지오픈22","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10"},
+    {"consumerId":"legacy-bf7edb9e7cee98cd","scenarioId":"wave29-open2-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave29HomeBadgeUsage","variant":"open2","input":"/홈뱃지오픈2","negativeInput":"/홈뱃지오픈22","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈2 숫자\n예시: /홈뱃지오픈2 10"},
+    {"consumerId":"legacy-827e1dc284cea52c","scenarioId":"wave29-open3-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave29HomeBadgeUsage","variant":"open3","input":"/홈뱃지오픈3 안내","negativeInput":"/홈뱃지오픈3안내","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10"},
+    {"consumerId":"legacy-827e1dc284cea52c","scenarioId":"wave29-open3-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave29HomeBadgeUsage","variant":"open3","input":"/홈뱃지오픈3 안내","negativeInput":"/홈뱃지오픈3안내","expectedReply":"NO_REPLY"},
+    {"consumerId":"legacy-827e1dc284cea52c","scenarioId":"wave29-open3-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave29HomeBadgeUsage","variant":"open3","input":"/홈뱃지오픈3 안내","negativeInput":"/홈뱃지오픈3안내","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10"},
+    {"consumerId":"legacy-827e1dc284cea52c","scenarioId":"wave29-open3-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave29HomeBadgeUsage","variant":"open3","input":"/홈뱃지오픈3 안내","negativeInput":"/홈뱃지오픈3안내","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10"},
+    {"consumerId":"legacy-827e1dc284cea52c","scenarioId":"wave29-open3-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave29HomeBadgeUsage","variant":"open3","input":"/홈뱃지오픈3 안내","negativeInput":"/홈뱃지오픈3안내","expectedReply":"[🏆테스터] 님\n사용법: /홈뱃지오픈3 또는 /홈뱃지오픈3 숫자\n예시: /홈뱃지오픈3 10"}
+  ]
+}
