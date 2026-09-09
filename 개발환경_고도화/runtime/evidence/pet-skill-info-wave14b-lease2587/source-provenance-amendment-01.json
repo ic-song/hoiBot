@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "wave14b-source-provenance-amendment.v1",
+  "supersedesValidationStateFrom": "78a049c8b3528cac2351bce36fde8712be1fd775",
+  "sourceCommit": "165a9cc63cd889c3158fd1a1d535edf1913910f8",
+  "reason": "Wave14B app 분기 추가로 발생한 TS2563을 의미 보존 펫스킬 helper 추출로 해소",
+  "byteSource": "git cat-file / git ls-tree committed blob bytes",
+  "changedFiles": [
+    { "path": "개발환경_고도화/runtime/src/app.ts", "gitBlob": "d19b8487236bd911e360e4989767a91f3b954f60", "bytes": 272310 },
+    { "path": "개발환경_고도화/runtime/evidence/pet-skill-info-wave14b-lease2587/validation.md", "gitBlob": "3ac3fbb73780a79f4fb8a8e71238e2bb6c30324e", "bytes": 3049 }
+  ],
+  "validation": {
+    "typecheck": "PASS",
+    "build": "PASS",
+    "focused": "11 suites / 61 tests PASS",
+    "diffCheck": "PASS",
+    "directReceiptIssued": false
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "wbs": "WBS752",
+  "lease": 2569,
+  "baseline": "c3b2fe31e155e1ca7e36409edc176a4c1fc0ec61",
+  "command": "/선물전달",
+  "legacySource": {"path":"main.js","lines":[6979,7000],"mode":"READ_ONLY"},
+  "exactItem": {"displayName":"호이응원패키지(무료)🐹[2]","sourceSystem":"LEGACY_JS","sourceNamespace":"member.bag","sourceIdentifier":"호이응원패키지(무료)🐹[2]","sourceObjectKey":"item.direct_bag.8349df1a3be0b247","legacyCodeBoundaryEvidence":"ITEM-FREE-HOI-SUPPORT-02","runtimeIdentity":"canonical item_id","quantityDelta":"1"},
+  "legacyRoomOrder": [1,2,3,5,6,7,10,11,12,13,90],
+  "runtimeChannelContract": "exact active channel_sequence 1..11; operational room identifiers are not seeded",
+  "message": "호이응원패키지(무료)🐹[2] 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!\n\n 사용 방법:\n1. /패키지가방\n/패키지사용 [가방번호] [오픈갯수]",
+  "forbiddenChanges": {"main.js":false,"Info.js":false,"data":false,"featureProd":false,"operationalRoomSeed":false,"legacyCodeRuntimeIdentity":false}
+}

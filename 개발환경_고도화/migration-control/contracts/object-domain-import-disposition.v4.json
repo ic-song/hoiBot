@@ -1,0 +1,45 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-object-domain-import-disposition-v4",
+  "baseDisposition": "object-domain-import-disposition.v1.json",
+  "objectModelContract": "object-data-model-standard.v1.json",
+  "registeredTableCount": 119,
+  "baseClassifiedTableCount": 90,
+  "additions": {
+    "derived": [
+      "data_migration_common_staging_runs",
+      "data_migration_common_staging_records",
+      "data_migration_catalog_projection_runs",
+      "data_migration_catalog_source_decisions",
+      "data_migration_catalog_projection_records",
+      "data_migration_object_domain_import_runs",
+      "data_migration_object_domain_import_decisions",
+      "data_migration_object_domain_import_records",
+      "player_pet_skill_rank_marker_projections",
+      "player_pet_skill_bag_import_completeness_projections",
+      "player_item_bag_import_completeness_projections",
+      "canonical_item_inventory_ledger_heads",
+      "canonical_item_inventory_ledger_orderings",
+      "player_item_bag_import_stack_baselines",
+      "player_item_bag_import_ledger_baselines",
+      "data_migration_raw_runs",
+      "legacy_rank_label_validation_runs",
+      "legacy_rank_label_side_effect_certificates"
+    ],
+    "runtimeOnly": [
+      "guild_territory_attack_item_candidates",
+      "canonical_pet_skill_aliases",
+      "canonical_pet_skill_draw_grade_policies",
+      "canonical_admin_global_gift_channel_configs",
+      "canonical_admin_global_gift_operations",
+      "canonical_admin_global_gift_recipients",
+      "canonical_admin_global_gift_channel_snapshots",
+      "pet_skill_info_admin_channel_authorities",
+      "private_chat_denial_counters",
+      "private_chat_denial_attempts",
+      "private_chat_denial_notification_channels"
+    ]
+  },
+  "directImportBoundary": "The V1 47-table direct target set is unchanged. Later pipeline, projection, baseline, policy and operation tables are derived or runtime-only and are never inferred from legacy rows.",
+  "operationalDataAllowed": false
+}

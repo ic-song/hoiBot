@@ -76,6 +76,7 @@
 | `npm run typecheck` | PASS |
 | `npm run build` | PASS |
 | `git diff --check` | PASS |
+| V2 profile + V1 importer/catalog regression (`object-domain-import-profile-v2`, `data-migration-object-domain-import`, `data-migration-catalog-projection`) | `42/42 PASS` |
 | Gate7 actual snapshot read-only inventory | 13 files, byte hash unchanged, approved PROJECT `0`, furniture candidate/missing/ambiguous `3525/1715/87`, mini-pet `3601/239/50` |
 | `scripts/rehearse-object-domain-import-gate7.ps1` | migration `448`, provider synthetic `1-row` chains, full `47→45`, oracle diff `0`, restart replay DML `0`, rollback/upstream/identity preservation, 3323/3306 safety PASS |
 | Gate7 forced startup failure cleanup | expected failure; 3323 listener `0`, exact temp 없음, environment restored |

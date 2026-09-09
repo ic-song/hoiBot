@@ -1,0 +1,367 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, it } from "node:test";
+
+import {
+  buildObjectDbConsumerExecutableParityLedger,
+  OBJECT_DB_EXECUTABLE_PARITY_VERDICTS,
+  sha256CanonicalJson,
+  sha256CanonicalText,
+  validateObjectDbConsumerExecutableParityLedger,
+  type ConsumerManifestInput,
+  type ExecutableParityLedger,
+  type ExpectedActualEvidence,
+  type ObjectDbConsumerExecutionReceipt,
+  type ObjectDbConsumerExecutionReceiptBundle,
+  type ObjectDbParityScenarioKind,
+} from "../src/data-migration/object-db-consumer-executable-parity-ledger.js";
+import { parseConsumerIdRegistry } from "../src/data-migration/object-db-consumer-id-registry.js";
+
+const runtimeRoot = resolve(import.meta.dirname, "..");
+const repoRoot = resolve(runtimeRoot, "../..");
+const paths = {
+  ledgerSchema: "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.schema.json",
+  executionReceiptSchema: "개발환경_고도화/migration-control/contracts/object-db-consumer-execution-receipt.v1.schema.json",
+  consumerManifest: "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
+  consumerIdRegistry: "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
+  transitionContract: "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
+  executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave0-v1.json",
+} as const;
+const wave1ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave13-v1.json";
+const wave14ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave14-v1.json";
+const wave15ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave15-v1.json";
+const wave17ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave17-v1.json";
+const wave18ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave18-v1.json";
+const wave19ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave19-v1.json";
+const wave20ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave20-v1.json";
+const wave21ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave21-v1.json";
+const wave22ReceiptPath = "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave22-v1.json";
+const read = (path: string): string => readFileSync(resolve(repoRoot, path), "utf8");
+const manifestText = read(paths.consumerManifest);
+const manifest = JSON.parse(manifestText) as ConsumerManifestInput;
+const registryText = read(paths.consumerIdRegistry);
+const registry = parseConsumerIdRegistry(JSON.parse(registryText), manifest.baseCommit);
+const emptyBundle = JSON.parse(read(paths.executionReceipts)) as ObjectDbConsumerExecutionReceiptBundle;
+const classificationSourceTexts = Object.fromEntries([...new Set(manifest.audit.registrySourceMismatches.map((label) => label.slice(0, label.indexOf(":"))))].sort().map((path) => [path, read(path)]));
+const baseInput = {
+  ledgerSchemaText: read(paths.ledgerSchema),
+  executionReceiptSchemaText: read(paths.executionReceiptSchema),
+  consumerManifestText: manifestText,
+  consumerIdRegistryText: registryText,
+  transitionContractText: read(paths.transitionContract),
+  executionReceiptsText: JSON.stringify(emptyBundle, null, 2),
+  classificationSourceTexts,
+  sourcePaths: paths,
+};
+
+function expectedActual(kind: ObjectDbParityScenarioKind, accessClass: "READ" | "MUTATION"): ExpectedActualEvidence {
+  const dmlZero = accessClass === "READ" || new Set<ObjectDbParityScenarioKind>(["AUTH_DENIED", "WRONG_ROOM_REJECTED", "PAYLOAD_DRIFT_FAIL_CLOSED", "DUPLICATE_REPLAY_DML_ZERO", "RESTART_REPLAY"]).has(kind);
+  const statements = dmlZero ? [] : ["UPDATE canonical_owned_item_stacks SET quantity = ? WHERE owned_item_stack_id = ?"];
+  const rowCount = dmlZero ? 0 : 1;
+  const dmlHash = sha256CanonicalJson({ normalizedStatements: statements, rowCount });
+  const replyHash = sha256CanonicalText(`reply:${kind}`);
+  const resultHash = sha256CanonicalText(`result:${kind}`);
+  const rollback = kind === "DOMAIN_FAILURE_ROLLBACK" || kind === "PAYLOAD_DRIFT_FAIL_CLOSED";
+  const transaction = accessClass === "READ" ? "READ_ONLY" as const : rollback ? "ROLLBACK" as const : "COMMIT" as const;
+  const timeline = transaction === "READ_ONLY" ? ["READ"] : transaction === "ROLLBACK" ? ["BEGIN", "ROLLBACK"] : ["BEGIN", "COMMIT"];
+  const locks = accessClass === "READ" ? [] : ["canonical_players", "canonical_owned_item_stacks"];
+  return {
+    reply: { expectedSha256: replyHash, actualSha256: replyHash, match: true },
+    result: { expectedSha256: resultHash, actualSha256: resultHash, match: true },
+    dml: { expectedSha256: dmlHash, actualSha256: dmlHash, match: true, expectedNormalizedStatements: statements, actualNormalizedStatements: statements, expectedRowCount: rowCount, actualRowCount: rowCount },
+    lockOrder: { expected: locks.slice(), actual: locks.slice(), match: true },
+    transaction: { expected: transaction, actual: transaction, match: true, expectedTimeline: timeline.slice(), actualTimeline: timeline.slice() },
+  };
+}
+
+function receiptHash(receipt: Omit<ObjectDbConsumerExecutionReceipt, "receiptSha256"> | ObjectDbConsumerExecutionReceipt): string {
+  const { receiptSha256: _receiptSha256, ...payload } = receipt as ObjectDbConsumerExecutionReceipt;
+  return sha256CanonicalJson(payload);
+}
+
+function receiptsFor(entry: ExecutableParityLedger["entries"][number], limit?: number): { receipts: ObjectDbConsumerExecutionReceipt[]; files: Record<string, string> } {
+  const required = entry.scenarioRequirements.filter(({ disposition }) => disposition === "REQUIRED").map(({ scenarioKind }) => scenarioKind).slice(0, limit);
+  const harnessId = `harness:${entry.consumerId}`;
+  const fixtureId = `fixture:${entry.consumerId}`;
+  const harnessPath = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs";
+  const targetPath = "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-synthetic-consumer.mjs";
+  const fixturePath = `migration-control/fixtures/generated/${entry.consumerId}.json`;
+  const bindings = required.map((scenarioKind, index) => ({ consumerId: entry.consumerId, harnessId, harnessCaseId: `case:${index}`, fixtureId, scenarioId: `scenario:${index}`, scenarioKind }));
+  const harnessText = read(harnessPath);
+  const targetText = read(targetPath);
+  const fixtureText = `${JSON.stringify({ format: "hoibot-object-db-consumer-parity-case-fixture-v1", fixtureId, bindings, payload: { accessClass: entry.classification.accessClass } }, null, 2)}\n`;
+  const harnessSha = sha256CanonicalText(harnessText);
+  const fixtureSha = sha256CanonicalText(fixtureText);
+  const targetSha = sha256CanonicalText(targetText);
+  const receipts = bindings.map((binding) => {
+    const payload: Omit<ObjectDbConsumerExecutionReceipt, "receiptSha256"> = {
+      receiptId: `receipt:${entry.consumerId}:${binding.scenarioKind.toLowerCase()}`,
+      consumerId: entry.consumerId,
+      proofMode: "DIRECT",
+      harness: { harnessId, harnessCaseId: binding.harnessCaseId, runner: "NODE_OBJECT_DB_PARITY_V1", path: harnessPath, sourceSha256: harnessSha },
+      fixture: { fixtureId, path: fixturePath, sha256: fixtureSha },
+      invocation: { targetPath, targetSourceSha256: targetSha, exportName: "executeSyntheticConsumer" },
+      scenario: { scenarioId: binding.scenarioId, scenarioKind: binding.scenarioKind },
+      expectedActual: expectedActual(binding.scenarioKind, entry.classification.accessClass),
+      equivalenceRule: null,
+      verdict: "PASS",
+    };
+    return { ...payload, receiptSha256: receiptHash(payload) };
+  });
+  return { receipts, files: { [harnessPath]: harnessText, [fixturePath]: fixtureText, [targetPath]: targetText } };
+}
+
+function buildWith(receipts: ObjectDbConsumerExecutionReceipt[], evidenceFileTexts: Record<string, string>): ExecutableParityLedger {
+  const bundle: ObjectDbConsumerExecutionReceiptBundle = { ...emptyBundle, receipts };
+  return buildObjectDbConsumerExecutableParityLedger({ ...baseInput, executionReceiptsText: JSON.stringify(bundle, null, 2), evidenceFileTexts });
+}
+
+function wave1Proof(consumerId: string, limit?: number): { receipts: ObjectDbConsumerExecutionReceipt[]; files: Record<string, string>; bundle: ObjectDbConsumerExecutionReceiptBundle } {
+  const bundle = JSON.parse(read(wave1ReceiptPath)) as ObjectDbConsumerExecutionReceiptBundle;
+  const receipts = bundle.receipts.filter((receipt) => receipt.consumerId === consumerId).slice(0, limit);
+  assert.ok(receipts.length > 0);
+  const files = Object.fromEntries([...new Set(receipts.flatMap((receipt) => [receipt.harness.path, receipt.fixture.path, receipt.invocation.targetPath]))].map((path) => [path, read(path)]));
+  return { receipts, files, bundle };
+}
+
+function buildWave1With(receipts: ObjectDbConsumerExecutionReceipt[], files: Record<string, string>, bundle: ObjectDbConsumerExecutionReceiptBundle): ExecutableParityLedger {
+  return buildObjectDbConsumerExecutableParityLedger({
+    ...baseInput,
+    executionReceiptsText: JSON.stringify({ ...bundle, receipts }, null, 2),
+    sourcePaths: { ...paths, executionReceipts: wave1ReceiptPath },
+    evidenceFileTexts: files,
+  });
+}
+
+describe("object DB executable parity ledger Wave0", () => {
+  it("builds the exact source-derived fail-closed 1,133-ID baseline", () => {
+    const ledger = buildObjectDbConsumerExecutableParityLedger(baseInput);
+    assert.deepEqual(ledger.coverage, {
+      manifestConsumers: 1_133, ledgerEntries: 1_133, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
+      readConsumers: 504, mutationConsumers: 629, unresolvedDynamicConsumers: 82, unresolvedDynamicCallCount: 82,
+      registrySourceMismatchCount: 0, registrySourceMismatchAttributedCount: 0, registrySourceMismatchUnattributedCount: 0,
+      provenConsumers: 0, unprovenConsumers: 1_133, directPassConsumers: 0, equivalentPassConsumers: 0,
+      verdicts: { STATIC_ONLY: 1_051, BLOCKED_DYNAMIC: 82, BLOCKED_REGISTRY_MISMATCH: 0, PARTIAL: 0, DIRECT_PASS: 0, EQUIVALENT_PASS: 0 },
+    });
+    assert.equal(new Set(ledger.entries.map(({ consumerId }) => consumerId)).size, 1_133);
+    assert.equal(ledger.entrySetSha256, sha256CanonicalJson(ledger.entries));
+    assert.deepEqual(OBJECT_DB_EXECUTABLE_PARITY_VERDICTS, ["STATIC_ONLY", "BLOCKED_DYNAMIC", "BLOCKED_REGISTRY_MISMATCH", "PARTIAL", "DIRECT_PASS", "EQUIVALENT_PASS"]);
+  });
+
+  it("is deterministic across LF/CRLF for every hashed text input", () => {
+    const lf = buildObjectDbConsumerExecutableParityLedger(baseInput);
+    const crlf = (value: string): string => value.replace(/\r\n?/g, "\n").replace(/\n/g, "\r\n");
+    const actual = buildObjectDbConsumerExecutableParityLedger({
+      ...baseInput,
+      ledgerSchemaText: crlf(baseInput.ledgerSchemaText), executionReceiptSchemaText: crlf(baseInput.executionReceiptSchemaText),
+      consumerManifestText: crlf(baseInput.consumerManifestText), consumerIdRegistryText: crlf(baseInput.consumerIdRegistryText),
+      transitionContractText: crlf(baseInput.transitionContractText), executionReceiptsText: crlf(baseInput.executionReceiptsText),
+      classificationSourceTexts: Object.fromEntries(Object.entries(baseInput.classificationSourceTexts).map(([path, text]) => [path, crlf(text)])),
+    });
+    assert.deepEqual(actual, lf);
+  });
+
+  it("promotes only a valid receipt subset to PARTIAL and a complete matrix to DIRECT_PASS", () => {
+    const consumerId = "sql-repository-0dc3c380c54081a2";
+    const full = wave1Proof(consumerId);
+    const partial = wave1Proof(consumerId, 1);
+    assert.equal(buildWave1With(partial.receipts, partial.files, partial.bundle).entries.find((entry) => entry.consumerId === consumerId)?.verdict, "PARTIAL");
+    const ledger = buildWave1With(full.receipts, full.files, full.bundle);
+    assert.equal(ledger.entries.find((entry) => entry.consumerId === consumerId)?.verdict, "DIRECT_PASS");
+    assert.equal(ledger.coverage.provenConsumers, 1);
+  });
+
+  it("does not accept the superseded Wave8 direct-service server statistics receipts without Wave13 correction",()=>{const oldPath="개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave12-v1.json",bundle=JSON.parse(read(oldPath))as ObjectDbConsumerExecutionReceiptBundle,files=Object.fromEntries([...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))].map(path=>[path,read(path)])),ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:oldPath},evidenceFileTexts:files});assert.notEqual(ledger.entries.find(entry=>entry.consumerId==="admin-command-5e04d0767d4c2abc")?.verdict,"DIRECT_PASS");});
+
+  it("rejects recomputed Wave12 expected/actual hashes after Wave13 supersedes executable replay",()=>{const bundle=JSON.parse(read(wave1ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,receipt=bundle.receipts.find(candidate=>candidate.receiptId.startsWith("receipt:wave12:"))!;receipt.expectedActual.reply.expectedSha256="0".repeat(64);receipt.expectedActual.reply.actualSha256="0".repeat(64);receipt.receiptSha256=receiptHash(receipt);assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave1ReceiptPath}}),/historical receipt fingerprint drift at 2d1b6a4545d2b8beaaf95d3859b237248c4b648b/);});
+
+  it("rejects Wave14 generator bypass, coordinated fixture/receipt tamper, unsupported DML verbs, and committed import-chain drift before replay",()=>{
+    const original=JSON.parse(read(wave14ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle;
+    const evidencePaths=[...new Set(original.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))];
+    const evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const outputDrift=structuredClone(original),negative=outputDrift.receipts.find(receipt=>receipt.receiptId==="receipt:wave14:legacy-e038a86d8e885624:read_positive")!;
+    negative.expectedActual.reply.expectedSha256="0".repeat(64);negative.expectedActual.reply.actualSha256="0".repeat(64);negative.receiptSha256=receiptHash(negative);
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(outputDrift,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts}),/pinned Wave14 expected evidence mismatch/);
+    const coordinated=structuredClone(original),coordinatedReceipt=coordinated.receipts.find(receipt=>receipt.receiptId==="receipt:wave14:legacy-e038a86d8e885624:read_positive")!,coordinatedFixture=JSON.parse(evidenceFileTexts[coordinatedReceipt.fixture.path]!)as{expectedEvidence:{scenarios:{READ_POSITIVE:{replySha256:string}}}};
+    coordinatedFixture.expectedEvidence.scenarios.READ_POSITIVE.replySha256="0".repeat(64);const coordinatedFixtureText=`${JSON.stringify(coordinatedFixture,null,2)}\n`,coordinatedFixtureHash=sha256CanonicalText(coordinatedFixtureText);
+    for(const receipt of coordinated.receipts.filter(candidate=>candidate.receiptId.startsWith("receipt:wave14:"))){receipt.fixture.sha256=coordinatedFixtureHash;if(receipt.receiptId===coordinatedReceipt.receiptId){receipt.expectedActual.reply.expectedSha256="0".repeat(64);receipt.expectedActual.reply.actualSha256="0".repeat(64);}receipt.receiptSha256=receiptHash(receipt);}
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(coordinated,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts:{...evidenceFileTexts,[coordinatedReceipt.fixture.path]:coordinatedFixtureText}}),/evidenceCommit blob hash drift/);
+    const unsupportedVerb=structuredClone(original),verbReceipt=unsupportedVerb.receipts.find(receipt=>receipt.receiptId==="receipt:wave14:legacy-e038a86d8e885624:read_positive")!,statements=verbReceipt.expectedActual.dml.actualNormalizedStatements!.slice();statements[0]="DELETE FROM channels WHERE channel_id = ?";const verbHash=sha256CanonicalJson({normalizedStatements:statements,rowCount:verbReceipt.expectedActual.dml.actualRowCount});verbReceipt.expectedActual.dml.expectedNormalizedStatements=statements.slice();verbReceipt.expectedActual.dml.actualNormalizedStatements=statements.slice();verbReceipt.expectedActual.dml.expectedSha256=verbHash;verbReceipt.expectedActual.dml.actualSha256=verbHash;verbReceipt.receiptSha256=receiptHash(verbReceipt);
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(unsupportedVerb,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts}),/observed DML verb must be INSERT or UPDATE/);
+    const sourceDrift=structuredClone(original),fixturePath=sourceDrift.receipts.find(receipt=>receipt.receiptId.startsWith("receipt:wave14:"))!.fixture.path;
+    const fixture=JSON.parse(evidenceFileTexts[fixturePath]!)as{runtimeSourceHashes:Array<{sha256:string}>};fixture.runtimeSourceHashes[0]!.sha256="0".repeat(64);const fixtureText=`${JSON.stringify(fixture,null,2)}\n`,fixtureHash=sha256CanonicalText(fixtureText);
+    for(const receipt of sourceDrift.receipts.filter(candidate=>candidate.receiptId.startsWith("receipt:wave14:"))){receipt.fixture.sha256=fixtureHash;receipt.receiptSha256=receiptHash(receipt);}
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(sourceDrift,null,2),sourcePaths:{...paths,executionReceipts:wave14ReceiptPath},evidenceFileTexts:{...evidenceFileTexts,[fixturePath]:fixtureText}}),/READ scenario must be READ_ONLY|evidenceCommit blob hash drift/);
+  });
+
+  it("keeps the sealed Wave15 private/DEV matrix valid after dynamic classification is resolved and rejects coordinated receipt tamper",()=>{
+    const bundle=JSON.parse(read(wave15ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave15ReceiptPath},evidenceFileTexts}),entry=ledger.entries.find(candidate=>candidate.consumerId==="legacy-0a10ef65ad4b37cd");
+    assert.equal(entry?.verdict,"DIRECT_PASS");assert.deepEqual(entry?.scenarios.map(scenario=>scenario.scenarioKind).sort(),["AUTH_DENIED","EXACT_OUTPUT","NEGATIVE_GUARD","READ_POSITIVE","RESTART_CONSISTENCY","SOURCE_DOMAIN_DML_ZERO","WRONG_ROOM_REJECTED"]);
+    const tampered=structuredClone(bundle),receipt=tampered.receipts.find(candidate=>candidate.receiptId==="receipt:wave15:legacy-0a10ef65ad4b37cd:exact_output")!;receipt.expectedActual.reply.expectedSha256="0".repeat(64);receipt.expectedActual.reply.actualSha256="0".repeat(64);receipt.receiptSha256=receiptHash(receipt);
+    assert.throws(()=>buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(tampered,null,2),sourcePaths:{...paths,executionReceipts:wave15ReceiptPath},evidenceFileTexts}),/historical Wave15 receipt fingerprint drift/);
+  });
+
+  it("promotes exactly three Wave17 item-bag SQL providers while preserving but not promoting the stale Wave6 compare proof",()=>{
+    const bundle=JSON.parse(read(wave17ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    assert.equal(bundle.receipts.length,182);assert.deepEqual(bundle.receipts.slice(0,167),JSON.parse(read("개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave16-v1.json")).receipts);
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave17ReceiptPath},evidenceFileTexts});
+    for(const consumerId of ["sql-repository-19f17500144188bf","sql-repository-2415b4267e1577c6","sql-repository-3b23c2f0f5501988"])assert.equal(ledger.entries.find(entry=>entry.consumerId===consumerId)?.verdict,"DIRECT_PASS");
+    assert.equal(ledger.entries.find(entry=>entry.consumerId==="sql-repository-3001ad9fc2f36d01")?.verdict,"STATIC_ONLY");
+  });
+
+  it("promotes exactly four Wave18 READ providers while preserving the exact Wave17 prefix",()=>{
+    const bundle=JSON.parse(read(wave18ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    assert.equal(bundle.receipts.length,202);assert.deepEqual(bundle.receipts.slice(0,182),JSON.parse(read(wave17ReceiptPath)).receipts);
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave18ReceiptPath},evidenceFileTexts});
+    for(const consumerId of ["sql-repository-3001ad9fc2f36d01","sql-repository-41a1be35f0d83825","sql-repository-4fdd013faca84a3f","sql-repository-55dcd683c5528d65"])assert.equal(ledger.entries.find(entry=>entry.consumerId===consumerId)?.verdict,"DIRECT_PASS");
+    assert.equal(ledger.coverage.directPassConsumers,37);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1014);
+  });
+
+  it("promotes the Wave19 package wizard status dispatch while preserving the exact Wave18 prefix",()=>{
+    const bundle=JSON.parse(read(wave19ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    assert.equal(bundle.receipts.length,207);assert.deepEqual(bundle.receipts.slice(0,202),JSON.parse(read(wave18ReceiptPath)).receipts);
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave19ReceiptPath},evidenceFileTexts});
+    assert.equal(ledger.entries.find(entry=>entry.consumerId==="runtime-dispatch-79ff58fea52c7457")?.verdict,"DIRECT_PASS");
+    assert.equal(ledger.coverage.directPassConsumers,38);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1013);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);
+  });
+
+  it("promotes the Wave20 package import mutation while preserving the exact Wave19 prefix",()=>{
+    const bundle=JSON.parse(read(wave20ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const wave19=JSON.parse(read(wave19ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,prefix=JSON.stringify(bundle.receipts.slice(0,207));
+    assert.equal(bundle.receipts.length,213);assert.deepEqual(bundle.receipts.slice(0,207),wave19.receipts);assert.equal(Buffer.byteLength(prefix,"utf8"),849438);assert.equal(sha256CanonicalText(prefix),"92824417cd67180ed155edf01d39d8acc156c276f16077361f01b46a9193a9b2");
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave20ReceiptPath},evidenceFileTexts});
+    assert.equal(ledger.entries.length,1133);assert.equal(ledger.entries.find(entry=>entry.consumerId==="sql-repository-b1d650b73c2ddff0")?.verdict,"DIRECT_PASS");
+    assert.equal(ledger.coverage.directPassConsumers,39);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1012);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);assert.equal(ledger.coverage.registrySourceMismatchCount,0);assert.equal(ledger.coverage.missingConsumerIds,0);assert.equal(ledger.coverage.duplicateConsumerIds,0);assert.equal(ledger.coverage.unknownConsumerIds,0);
+  });
+
+  it("promotes the Wave21 pet-equipment mutation while preserving the exact Wave20 prefix",()=>{
+    const bundle=JSON.parse(read(wave21ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const wave20=JSON.parse(read(wave20ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,prefix=JSON.stringify(bundle.receipts.slice(0,213));
+    assert.equal(bundle.receipts.length,219);assert.deepEqual(bundle.receipts.slice(0,213),wave20.receipts);assert.equal(Buffer.byteLength(prefix,"utf8"),883778);assert.equal(sha256CanonicalText(prefix),"d85dc0275af21fc6492df9c8f5565d03a105d0695f1c100731c9ef9eca659f34");
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave21ReceiptPath},evidenceFileTexts});
+    assert.equal(ledger.entries.length,1133);assert.equal(ledger.entries.find(entry=>entry.consumerId==="sql-repository-4f896a4a6feb5ec1")?.verdict,"DIRECT_PASS");assert.equal(ledger.coverage.directPassConsumers,40);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1011);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);assert.equal(ledger.coverage.registrySourceMismatchCount,0);assert.equal(ledger.coverage.missingConsumerIds,0);assert.equal(ledger.coverage.duplicateConsumerIds,0);assert.equal(ledger.coverage.unknownConsumerIds,0);
+  });
+
+  it("promotes the Wave22 furniture grant mutation while preserving the exact Wave21 prefix",()=>{
+    const bundle=JSON.parse(read(wave22ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,evidencePaths=[...new Set(bundle.receipts.flatMap(receipt=>[receipt.harness.path,receipt.fixture.path,receipt.invocation.targetPath]))],evidenceFileTexts=Object.fromEntries(evidencePaths.map(path=>[path,read(path)]));
+    const wave21=JSON.parse(read(wave21ReceiptPath))as ObjectDbConsumerExecutionReceiptBundle,prefix=JSON.stringify(bundle.receipts.slice(0,219));
+    assert.equal(bundle.receipts.length,225);assert.deepEqual(bundle.receipts.slice(0,219),wave21.receipts);assert.equal(Buffer.byteLength(prefix,"utf8"),903454);assert.equal(sha256CanonicalText(prefix),"6ef3d333dc5a6605734eeb346b75069d1a0b3c6eeb498e81cbce03d8ff26b333");
+    const ledger=buildObjectDbConsumerExecutableParityLedger({...baseInput,executionReceiptsText:JSON.stringify(bundle,null,2),sourcePaths:{...paths,executionReceipts:wave22ReceiptPath},evidenceFileTexts});
+    assert.equal(ledger.entries.length,1133);assert.equal(ledger.entries.find(entry=>entry.consumerId==="sql-repository-6a8f4b07e980a91f")?.verdict,"DIRECT_PASS");assert.equal(ledger.coverage.directPassConsumers,41);assert.equal(ledger.coverage.verdicts.STATIC_ONLY,1010);assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC,82);assert.equal(ledger.coverage.registrySourceMismatchCount,0);assert.equal(ledger.coverage.missingConsumerIds,0);assert.equal(ledger.coverage.duplicateConsumerIds,0);assert.equal(ledger.coverage.unknownConsumerIds,0);
+  });
+
+  it("rejects unrelated, self-hash, other-consumer, and fixture-binding evidence", () => {
+    const baseline = buildObjectDbConsumerExecutableParityLedger(baseInput);
+    const entry = baseline.entries.find(({ consumerId }) => consumerId === "sql-repository-0dc3c380c54081a2")!;
+    const proofWithBundle = wave1Proof(entry.consumerId, 1);
+    const proof = { receipts: proofWithBundle.receipts, files: proofWithBundle.files };
+    const receipt = proof.receipts[0]!;
+    const commentsOnly = structuredClone(receipt);
+    const commentsText = `// OBJECT_DB_EXECUTABLE_PARITY_BINDING:${JSON.stringify({ consumerId: receipt.consumerId })}\n`;
+    commentsOnly.harness.sourceSha256 = sha256CanonicalText(commentsText);
+    commentsOnly.receiptSha256 = receiptHash(commentsOnly);
+    assert.throws(() => buildWave1With([commentsOnly], { ...proof.files, [receipt.harness.path]: commentsText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
+    for (const [maliciousPath] of [
+      ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-print-only-harness.mjs"],
+      ["개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-rawless-harness.mjs"],
+    ] as const) {
+      const maliciousText = read(maliciousPath);
+      const malicious = structuredClone(receipt);
+      malicious.harness.path = maliciousPath;
+      malicious.harness.sourceSha256 = sha256CanonicalText(maliciousText);
+      malicious.receiptSha256 = receiptHash(malicious);
+      assert.throws(() => buildWave1With([malicious], { ...proof.files, [maliciousPath]: maliciousText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
+    }
+    const ignoredRunner = structuredClone(receipt);
+    ignoredRunner.harness.runner = "node --eval";
+    ignoredRunner.receiptSha256 = receiptHash(ignoredRunner);
+    assert.throws(() => buildWave1With([ignoredRunner], proof.files, proofWithBundle.bundle), /historical receipt fingerprint drift/);
+    const targetHashDrift = structuredClone(receipt);
+    targetHashDrift.invocation.targetSourceSha256 = "0".repeat(64);
+    targetHashDrift.receiptSha256 = receiptHash(targetHashDrift);
+    assert.throws(() => buildWave1With([targetHashDrift], proof.files, proofWithBundle.bundle), /historical receipt fingerprint drift/);
+    const selfPath = structuredClone(receipt);
+    selfPath.harness.path = paths.executionReceipts;
+    selfPath.receiptSha256 = receiptHash(selfPath);
+    assert.throws(() => buildWave1With([selfPath], { ...proof.files, [paths.executionReceipts]: baseInput.executionReceiptsText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
+    const other = structuredClone(receipt);
+    other.consumerId = baseline.entries.find(({ consumerId }) => consumerId !== entry.consumerId)!.consumerId;
+    other.receiptSha256 = receiptHash(other);
+    assert.throws(() => buildWave1With([other], proof.files, proofWithBundle.bundle), /historical receipt fingerprint drift/);
+    const unrelatedFixtureText = JSON.stringify({ format: "hoibot-object-db-consumer-parity-case-fixture-v1", fixtureId: receipt.fixture.fixtureId, bindings: [], payload: {} });
+    const unrelatedFixture = structuredClone(receipt);
+    unrelatedFixture.fixture.sha256 = sha256CanonicalText(unrelatedFixtureText);
+    unrelatedFixture.receiptSha256 = receiptHash(unrelatedFixture);
+    assert.throws(() => buildWave1With([unrelatedFixture], { ...proof.files, [receipt.fixture.path]: unrelatedFixtureText }, proofWithBundle.bundle), /historical receipt fingerprint drift/);
+  });
+
+  it("rejects reply/result, DML row, lock-order, timeline, and arbitrary verdict drift", () => {
+    const entry = buildObjectDbConsumerExecutableParityLedger(baseInput).entries.find(({ consumerId }) => consumerId === "sql-repository-0dc3c380c54081a2")!;
+    const proofWithBundle = wave1Proof(entry.consumerId, 1);
+    const proof = { receipts: proofWithBundle.receipts, files: proofWithBundle.files };
+    for (const [label, mutate] of [
+      ["result", (receipt: ObjectDbConsumerExecutionReceipt) => { const hash = sha256CanonicalText("self-declared-result"); receipt.expectedActual.result.expectedSha256 = hash; receipt.expectedActual.result.actualSha256 = hash; }],
+      ["DML row", (receipt: ObjectDbConsumerExecutionReceipt) => { receipt.expectedActual.dml.expectedRowCount! += 1; receipt.expectedActual.dml.actualRowCount! += 1; const hash = sha256CanonicalJson({ normalizedStatements: receipt.expectedActual.dml.actualNormalizedStatements, rowCount: receipt.expectedActual.dml.actualRowCount }); receipt.expectedActual.dml.expectedSha256 = hash; receipt.expectedActual.dml.actualSha256 = hash; }],
+      ["lock order", (receipt: ObjectDbConsumerExecutionReceipt) => { receipt.expectedActual.lockOrder.expected!.push("drift_lock"); receipt.expectedActual.lockOrder.actual!.push("drift_lock"); }],
+      ["timeline", (receipt: ObjectDbConsumerExecutionReceipt) => { receipt.expectedActual.transaction.expectedTimeline!.push("DRIFT"); receipt.expectedActual.transaction.actualTimeline!.push("DRIFT"); }],
+    ] as const) {
+      const drift = structuredClone(proof.receipts[0]!); mutate(drift); drift.receiptSha256 = receiptHash(drift);
+      assert.throws(() => buildWave1With([drift], proof.files, proofWithBundle.bundle), /raw .*mismatch|fingerprint drift|READ scenario must have business DML0/, label);
+    }
+    const ledger = buildObjectDbConsumerExecutableParityLedger(baseInput);
+    ledger.entries.find(({ verdict }) => verdict === "STATIC_ONLY")!.verdict = "DIRECT_PASS";
+    ledger.entrySetSha256 = sha256CanonicalJson(ledger.entries);
+    assert.throws(() => validateObjectDbConsumerExecutableParityLedger(ledger, { manifest, registry }), /verdict|PASS/);
+  });
+
+  it("enforces READ_ONLY/DML0 reads and DML0 mutation guard/replay semantics", () => {
+    const baseline = buildObjectDbConsumerExecutableParityLedger(baseInput);
+    const readEntry = baseline.entries.find(({ verdict, classification }) => verdict === "STATIC_ONLY" && classification.accessClass === "READ")!;
+    const readProof = receiptsFor(readEntry);
+    const invalidRead = structuredClone(readProof.receipts[0]!);
+    invalidRead.expectedActual.transaction = { expected: "COMMIT", actual: "COMMIT", match: true, expectedTimeline: ["BEGIN", "COMMIT"], actualTimeline: ["BEGIN", "COMMIT"] };
+    invalidRead.receiptSha256 = receiptHash(invalidRead);
+    assert.throws(() => buildWith([invalidRead], readProof.files), /READ scenario must be READ_ONLY/);
+    const invalidReadDml = structuredClone(readProof.receipts[0]!);
+    const readStatements = ["UPDATE forbidden_source_domain SET value = ?"];
+    const readDmlHash = sha256CanonicalJson({ normalizedStatements: readStatements, rowCount: 1 });
+    invalidReadDml.expectedActual.dml = { expectedSha256: readDmlHash, actualSha256: readDmlHash, match: true, expectedNormalizedStatements: readStatements.slice(), actualNormalizedStatements: readStatements.slice(), expectedRowCount: 1, actualRowCount: 1 };
+    invalidReadDml.receiptSha256 = receiptHash(invalidReadDml);
+    assert.throws(() => buildWith([invalidReadDml], readProof.files), /READ scenario must have business DML0/);
+
+    const mutationEntry = baseline.entries.find(({ verdict, classification, scenarioRequirements }) => verdict === "STATIC_ONLY" && classification.accessClass === "MUTATION" && scenarioRequirements.some(({ scenarioKind, disposition }) => scenarioKind === "PAYLOAD_DRIFT_FAIL_CLOSED" && disposition === "REQUIRED"))!;
+    const mutationProof = receiptsFor(mutationEntry);
+    for (const kind of ["AUTH_DENIED", "WRONG_ROOM_REJECTED", "PAYLOAD_DRIFT_FAIL_CLOSED", "DUPLICATE_REPLAY_DML_ZERO", "RESTART_REPLAY"] as const) {
+      const invalid = structuredClone(mutationProof.receipts[0]!);
+      invalid.scenario.scenarioKind = kind;
+      const statements = ["UPDATE canonical_owned_item_stacks SET quantity = ? WHERE owned_item_stack_id = ?"];
+      const hash = sha256CanonicalJson({ normalizedStatements: statements, rowCount: 1 });
+      invalid.expectedActual.dml = { expectedSha256: hash, actualSha256: hash, match: true, expectedNormalizedStatements: statements.slice(), actualNormalizedStatements: statements.slice(), expectedRowCount: 1, actualRowCount: 1 };
+      if (kind === "PAYLOAD_DRIFT_FAIL_CLOSED") invalid.expectedActual.transaction = { expected: "ROLLBACK", actual: "ROLLBACK", match: true, expectedTimeline: ["BEGIN", "ROLLBACK"], actualTimeline: ["BEGIN", "ROLLBACK"] };
+      invalid.receiptSha256 = receiptHash(invalid);
+      assert.throws(() => buildWith([invalid], mutationProof.files), /business DML0|DML-zero/);
+    }
+  });
+
+  it("rejects missing, duplicate, unknown, and classification-drifted ledger IDs", () => {
+    for (const mutate of [
+      (ledger: ExecutableParityLedger) => { ledger.entries.pop(); },
+      (ledger: ExecutableParityLedger) => { ledger.entries.splice(1, 0, structuredClone(ledger.entries[0]!)); },
+      (ledger: ExecutableParityLedger) => { ledger.entries[0]!.consumerId = "legacy-ffffffffffffffff"; ledger.entries.sort((a, b) => a.consumerId.localeCompare(b.consumerId)); },
+      (ledger: ExecutableParityLedger) => { ledger.entries[0]!.classification.interfaceId += "-drift"; },
+    ]) {
+      const ledger = buildObjectDbConsumerExecutableParityLedger(baseInput); mutate(ledger); ledger.entrySetSha256 = sha256CanonicalJson(ledger.entries);
+      assert.throws(() => validateObjectDbConsumerExecutableParityLedger(ledger, { manifest, registry }), /coverage drift|join|duplicate|classification drift|sorted/);
+    }
+  });
+
+  it("keeps both Draft 2020-12 schemas parseable and closed", () => {
+    for (const text of [baseInput.ledgerSchemaText, baseInput.executionReceiptSchemaText]) {
+      const schema = JSON.parse(text) as Record<string, unknown>;
+      assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
+      assert.equal(schema.additionalProperties, false);
+    }
+  });
+});

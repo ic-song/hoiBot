@@ -11,6 +11,7 @@
 - PC/redroid 환경에서 KakaoTalk + Iris 연결 상태를 단계적으로 검증한다.
 - TypeScript/Node.js 24 LTS/Fastify 5 기반 hoiBot Server로 기존 게임 로직을 점진적으로 이전한다.
 - 기존 운영을 즉시 변경하지 않고 별도 테스트 흐름에서 입력·응답·저장 경로를 먼저 확인한다.
+- 신규·레거시 회원가입, 포털 1:N 게임계정과 방·서버별 활성계정 구조를 WBS Gate 1~7로 구현·검증한다.
 
 ## 현재 진행 위치
 
@@ -18,6 +19,8 @@
 - hoiBot Server 구현 스택이 확정됐다.
 - `runtime/`에 Fastify 기반 Lite 서버와 Iris HTTP 이벤트 수신 API가 존재한다.
 - 고도화 문서는 결정, 대화 메모리, 정보성 참조자료로 분리됐다.
+- `SL-ACCOUNT-MULTI-GAME-PLATFORM-CONTEXT-01`이 WBS746에 추가됐고 Gate 1 조사 중이다.
+- schema·인증 provider Gate 1~4는 별도 작업공간에서 병렬 진행하며, 전체 명령 actor-context 통합 Gate 5~7은 오브젝트 소비자 전환 이후 수행한다.
 
 ## 확인된 현상
 

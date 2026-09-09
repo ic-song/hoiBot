@@ -1,0 +1,60 @@
+{
+  "format": "hoibot-guild-territory-attack-runtime4-parity-v1",
+  "wbs": 756,
+  "lease": 2568,
+  "baseline": "a397e2dc6cb810404efc812ab0c4ee33c43b369b",
+  "sourceAuditCommit": "3b3bdb33",
+  "dependencies": {
+    "schema": [
+      "212_admin_legacy_data_cleanup.sql",
+      "353_guild_territory_attack_execute.sql",
+      "444_canonical_item_inventory.sql"
+    ],
+    "preservedIndependentMetadata": [
+      "387_iteminfo_territory_ticket_definitions.sql"
+    ],
+    "sharedProviders": [
+      "src/shared/maria-database-error-policy.ts",
+      "src/database.ts",
+      "src/inventory/canonical-item-inventory-repository.ts",
+      "src/catalog/object-data-model-contract.ts"
+    ],
+    "service": "src/guild/guild-territory-attack-service.ts",
+    "runtimePolicyProvider": "src/guild/guild-territory-attack-runtime4-policy-provider.ts"
+  },
+  "additiveMigration": "478_guild_territory_attack_runtime_item_policy.sql",
+  "rollback": "rollback/478_guild_territory_attack_runtime_item_policy.rollback.sql",
+  "candidateOrder": {
+    "DEFENSE": [
+      { "sourceIdentifier": "ITEM-TERRITORY-DEFENSE-50", "successBps": 5000 },
+      { "sourceIdentifier": "ITEM-TERRITORY-DEFENSE-20", "successBps": 2000 }
+    ],
+    "ATTACK": [
+      { "sourceIdentifier": "ITEM-TERRITORY-AMBUSH-40", "successBps": 4000 },
+      { "sourceIdentifier": "ITEM-TERRITORY-AMBUSH-10", "successBps": 1000 }
+    ]
+  },
+  "identityBoundary": {
+    "policyForeignKey": "guild_territory_attack_item_candidates.item_id -> canonical_item_definitions.item_id",
+    "legacyCrosswalk": "canonical_item_definition_imports: RUNTIME_DB/item_definitions/source_identifier",
+    "migrationSeeds": false,
+    "providerReplay": true
+  },
+  "runtimeBootstrap": {
+    "entrypoint": "GuildTerritoryAttackService.attack",
+    "readiness": "canonical definition/import + exact legacy display/active + candidate policy drift fail-close",
+    "shadowMutation": false,
+    "replayDml": 0
+  },
+  "forbiddenChanges": {
+    "mainJs": false,
+    "infoJs": false,
+    "data": false,
+    "migration353": false,
+    "migration387": false,
+    "castlePremiumSixMapping": false,
+    "featureProd": false,
+    "gate8": false,
+    "operationalDatabase": false
+  }
+}

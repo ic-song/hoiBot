@@ -1,0 +1,23 @@
+{
+  "runId": "펫스킬확률DB-SL-PET-SKILL-PROBABILITY-ACTUAL-INGRESS-01-202609071055",
+  "sliceId": "SL-PET-SKILL-PROBABILITY-ACTUAL-INGRESS-01",
+  "wbsId": 758,
+  "leaseId": 2583,
+  "baselineCommit": "a880ac1bcf4bab79ba9b42a16df9aeffe0af1f93",
+  "sourceCommit": "5d7fdb9b9744d07b962e342cdebb4d5da8425c07",
+  "legacySourceRef": "8f075b4ef249543563e3338e8f3dd32046344880",
+  "legacyOracle": {
+    "displayedDefinitionCount": 92,
+    "utf16CodeUnitCount": 2630,
+    "utf8ByteCount": 5494,
+    "replySha256": "4b1c023c26f0481d849044790b42d38a79d611b8971ee243af947ea0b2a9536a"
+  },
+  "orderedSources": [
+    {"path":"main.js","byteCount":2634004,"sha256":"91bd1c772aeb0979359ff2af86320850b77a738c1ddee295ae843ca5bcb10495"},
+    {"path":"개발환경_고도화/runtime/migrations/483_pet_skill_probability_actual_ingress.sql","byteCount":544,"sha256":"2ccb77bc5067ec08ad0a3e295aa8080d42c5f93656ade868227b6474cf71e1fc"},
+    {"path":"개발환경_고도화/runtime/src/app.ts","byteCount":273666,"sha256":"74e282c82126305ff11f0160889143328d2aff700e7c04aef2f99f0a9c15fafe"},
+    {"path":"개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts","byteCount":9988,"sha256":"79b7bfb3c9d70efa39939a7583b817a901aa14975cfc122c84c31824aafe93a4"},
+    {"path":"개발환경_고도화/runtime/src/pet/pet-skill-probability-service.ts","byteCount":3657,"sha256":"1c2510a94102533d3896b00fbd52a81e0d9ce16dbf339658e99bfa7bb1e79dd7"},
+    {"path":"개발환경_고도화/runtime/test/pet-skill-probability-http-mariadb.integration.test.ts","byteCount":8780,"sha256":"5895cb56dc467b4ea210955b38ef560aed6b49f10bd1efa4d9831f248b2d82ab"}
+  ]
+}

@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hoibot.local/contracts/object-db-consumer-execution-receipt.v1.schema.json",
+  "title": "hoiBot object DB consumer execution receipt bundle v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "catalogVersion", "classificationBaseCommit", "evidenceCommit", "receipts"],
+  "properties": {
+    "format": { "const": "hoibot-object-db-consumer-execution-receipts-v1" },
+    "catalogVersion": { "const": "SC-20260902-1" },
+    "classificationBaseCommit": { "$ref": "#/$defs/commit" },
+    "evidenceCommit": { "$ref": "#/$defs/commit" },
+    "receipts": { "type": "array", "items": { "$ref": "#/$defs/receipt" } }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "consumerId": { "type": "string", "pattern": "^(legacy|automatic-callback|runtime-dispatch|admin-command|http-web-route|app-wiring|sql-repository)-[a-f0-9]{16}$" },
+    "scenarioKind": {
+      "enum": [
+        "READ_POSITIVE",
+        "NEGATIVE_GUARD",
+        "AUTH_DENIED",
+        "WRONG_ROOM_REJECTED",
+        "EXACT_OUTPUT",
+        "SOURCE_DOMAIN_DML_ZERO",
+        "RESTART_CONSISTENCY",
+        "MUTATION_SUCCESS",
+        "DOMAIN_FAILURE_ROLLBACK",
+        "DUPLICATE_REPLAY_DML_ZERO",
+        "PAYLOAD_DRIFT_FAIL_CLOSED",
+        "RESTART_REPLAY",
+        "CONCURRENCY_SINGLE_WRITER"
+      ]
+    },
+    "hashComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expectedSha256", "actualSha256", "match"],
+      "properties": {
+        "expectedSha256": { "$ref": "#/$defs/sha256" },
+        "actualSha256": { "$ref": "#/$defs/sha256" },
+        "match": { "const": true }
+      }
+    },
+    "dmlComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expectedSha256", "actualSha256", "match", "expectedNormalizedStatements", "actualNormalizedStatements", "expectedRowCount", "actualRowCount"],
+      "properties": {
+        "expectedSha256": { "$ref": "#/$defs/sha256" },
+        "actualSha256": { "$ref": "#/$defs/sha256" },
+        "match": { "const": true },
+        "expectedNormalizedStatements": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "actualNormalizedStatements": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "expectedRowCount": { "type": "integer", "minimum": 0 },
+        "actualRowCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sequenceComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "actual", "match"],
+      "properties": {
+        "expected": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "actual": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "match": { "const": true }
+      }
+    },
+    "transactionComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "actual", "match", "expectedTimeline", "actualTimeline"],
+      "properties": {
+        "expected": { "enum": ["READ_ONLY", "COMMIT", "ROLLBACK"] },
+        "actual": { "enum": ["READ_ONLY", "COMMIT", "ROLLBACK"] },
+        "match": { "const": true },
+        "expectedTimeline": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "actualTimeline": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
+    "expectedActual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reply", "result", "dml", "lockOrder", "transaction"],
+      "properties": {
+        "reply": { "$ref": "#/$defs/hashComparison" },
+        "result": { "$ref": "#/$defs/hashComparison" },
+        "dml": { "$ref": "#/$defs/dmlComparison" },
+        "lockOrder": { "$ref": "#/$defs/sequenceComparison" },
+        "transaction": { "$ref": "#/$defs/transactionComparison" }
+      }
+    },
+    "equivalenceRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "ruleVersion", "mechanical", "equivalenceKey", "variantConsumerIds"],
+      "properties": {
+        "ruleId": { "const": "SAME_INTERFACE_ACCESS_V1" },
+        "ruleVersion": { "const": "1" },
+        "mechanical": { "const": true },
+        "equivalenceKey": { "$ref": "#/$defs/sha256" },
+        "variantConsumerIds": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/consumerId" } }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receiptId", "consumerId", "proofMode", "harness", "fixture", "invocation", "scenario", "expectedActual", "equivalenceRule", "verdict", "receiptSha256"],
+      "properties": {
+        "receiptId": { "type": "string", "pattern": "^receipt:[A-Za-z0-9._:-]+$" },
+        "consumerId": { "$ref": "#/$defs/consumerId" },
+        "proofMode": { "enum": ["DIRECT", "EQUIVALENT"] },
+        "harness": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["harnessId", "harnessCaseId", "runner", "path", "sourceSha256"],
+          "properties": {
+            "harnessId": { "$ref": "#/$defs/nonEmptyString" },
+            "harnessCaseId": { "$ref": "#/$defs/nonEmptyString" },
+            "runner": { "const": "NODE_OBJECT_DB_PARITY_V1" },
+            "path": { "$ref": "#/$defs/nonEmptyString" },
+            "sourceSha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "fixture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fixtureId", "path", "sha256"],
+          "properties": {
+            "fixtureId": { "$ref": "#/$defs/nonEmptyString" },
+            "path": { "$ref": "#/$defs/nonEmptyString" },
+            "sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "invocation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["targetPath", "targetSourceSha256", "exportName"],
+          "properties": {
+            "targetPath": { "$ref": "#/$defs/nonEmptyString" },
+            "targetSourceSha256": { "$ref": "#/$defs/sha256" },
+            "exportName": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        },
+        "scenario": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scenarioId", "scenarioKind"],
+          "properties": {
+            "scenarioId": { "$ref": "#/$defs/nonEmptyString" },
+            "scenarioKind": { "$ref": "#/$defs/scenarioKind" }
+          }
+        },
+        "expectedActual": { "$ref": "#/$defs/expectedActual" },
+        "equivalenceRule": { "oneOf": [{ "$ref": "#/$defs/equivalenceRule" }, { "type": "null" }] },
+        "verdict": { "const": "PASS" },
+        "receiptSha256": { "$ref": "#/$defs/sha256" }
+      },
+      "allOf": [
+        {
+          "if": { "type": "object", "properties": { "proofMode": { "const": "DIRECT" } }, "required": ["proofMode"] },
+          "then": { "type": "object", "properties": { "equivalenceRule": { "type": "null" } } },
+          "else": { "type": "object", "properties": { "equivalenceRule": { "$ref": "#/$defs/equivalenceRule" } } }
+        }
+      ]
+    }
+  }
+}

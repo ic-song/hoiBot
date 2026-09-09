@@ -1,0 +1,71 @@
+{
+  "format": "hoibot-item25-raid-strike-seal-consumer-parity-audit-v1",
+  "wbs": 754,
+  "lease": 2567,
+  "baseline": "a397e2dc6cb810404efc812ab0c4ee33c43b369b",
+  "sourceAuditCommit": "3b3bdb33",
+  "object": {
+    "sourcePointer": "/raidSpecialItem/dept2/item_0",
+    "sourceLocatorSha256": "064bcb1971ffce549b2d5f00810b58d3bcc0bec937d89b5bb232f40037c9f8bf",
+    "sourcePayloadFingerprint": "77cb001679d3e915622e91a872848c4c53b388479d4c88ca68760361e18c6ee9",
+    "name": "레이드타격대인장👑(+600👾)",
+    "sealedOptions": { "name": "레이드타격대인장👑(+600👾)", "exp": 600 },
+    "memberOwnerCount": 308,
+    "memberTotalQuantity": 7342,
+    "homeRequirementOccurrences": 140,
+    "trialTowerRewardPointer": "/0/reward/15/item"
+  },
+  "existingAcquisitionAndConsumption": {
+    "legacyCraft": "main.js:14493-14521 (read-only)",
+    "legacyPackage": "main.js:12412-12429 (read-only)",
+    "legacyTower": "data/trialTowerBoss.json#/0/reward/15 (read-only)",
+    "legacyHome": "data/petSweetHomeInfo.json required occurrences=140 (read-only)",
+    "legacyCharm": ["main.js:36944-36964 (read-only)", "Info.js:2957-2964 (read-only)", "Info.js:3084-3107 (read-only)"],
+    "modernPackageBoundary": "ITEM-RWD-043 is accepted only as a compatibility input and routed to exact canonical ownership",
+    "modernTowerBoundary": "ITEM-RWD-043 is accepted only as a reward compatibility input and routed to exact canonical ownership",
+    "modernCharmBoundary": "the exact dept2/item_0 contribution is excluded from the legacy item subquery and overlaid from canonical ownership",
+    "modernHomeBoundary": "migration 428 preserves 140 typed requirements; MariaCanonicalBuildingRecipeRepository already consumes canonical CUID item targets"
+  },
+  "remediation": {
+    "reason": "craft and existing modern consumers could otherwise split the exact item between legacy and canonical ownership",
+    "definitionResolution": "LEGACY_JSON/itemInfo.json exact pointer plus object-import item locator/payload crosswalk, active/stackable and one CUID8",
+    "sealedOptionResolution": "item25 provider stable normalized hash must match the sealed source payload; exp type and value are not independently inferred",
+    "ownerResolution": "canonical_player_identity_crosswalks to one canonical_players.player_id CUID8",
+    "ownershipAuthority": "one RaidStrikeSealCanonicalOwnershipProvider delegates all target balances and mutations to CanonicalItemInventoryRepository",
+    "legacyInputBoundary": "ITEM-RWD-043 remains accepted only at package/tower input boundaries; it is never the stored identity",
+    "rfa01": "craft replay envelope binds scope, source event, actor, exact locator, channelId, message and craftQuantity",
+    "newSchema": false,
+    "newMigration": false,
+    "duplicateProvider": false,
+    "probabilityChange": false
+  },
+  "sharedProviderExportClaim": {
+    "path": "runtime/src/data-migration/item25-canonical-definition-provider.ts",
+    "scope": "read-only assertion export over the existing sealed authoritative entry map and existing normalization/hash implementation",
+    "schemaOrApplyChange": false,
+    "reason": "prevents the WBS754 consumer bridge from duplicating the sealed options hash authority",
+    "leaseApproval": "Foreman explicitly approved this 9-line minimal export within Lease2567 existing-provider maximum reuse scope",
+    "existingProviderFocusedRegression": "PASS"
+  },
+  "isolatedMaria": {
+    "database": "hoibot_item25_wbs754_20260906 (destroyed after validation)",
+    "migrationCount": 465,
+    "exact": { "itemId": "rseal001", "playerId": "pseal001", "raidCharmPerItem": 600 },
+    "afterPackage": { "canonicalQuantity": 2, "canonicalOperations": 1, "canonicalLedger": 1, "legacyQuantity": 9, "legacyTargetLedger": 0 },
+    "packageRestartReplay": { "quantity": 2, "replayed": true },
+    "afterTower": { "canonicalQuantity": 12, "canonicalOperations": 2, "canonicalLedger": 2, "legacyQuantity": 9, "legacyTargetLedger": 0 },
+    "towerRestartReplay": true,
+    "rankEntry": { "itemRaidCharm": 7200, "petExperience": 6, "finalRaidCharm": 7206 },
+    "rollbackPreserved": true,
+    "legacyTargetDualWrite": false,
+    "result": "PASS"
+  },
+  "protected": {
+    "mainJsModified": false,
+    "infoJsModified": false,
+    "operatingDataModified": false,
+    "appliedMigrationModified": false,
+    "featureProdModified": false,
+    "gate8": false
+  }
+}

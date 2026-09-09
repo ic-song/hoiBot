@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseClient } from "../database.js";
+import { AccountPlatformChallengeService } from "../account-platform/account-platform-challenge-service.js";
 import { ApplicationError } from "../shared/application-error.js";
 import { createInitialPlayer } from "../signup/create-initial-player.js";
 import { USER_CODE_MAX_FAILURES } from "./policy.js";
@@ -27,6 +28,48 @@ export class ProviderVerificationService {
   constructor(private readonly database: DatabaseClient, private readonly verificationPepper: string) {}
 
   async verifyInitialKakao(input: {
+    code: string;
+    externalUserId: string;
+    displayName: string;
+    channelId: string;
+    requestKey?: string;
+  }): Promise<ProviderVerificationResult> {
+    const codeHash = hashVerificationCode(input.code, this.verificationPepper);
+    const purposes = await this.database.query<Array<{ code_hash: string; purpose_code: string }>>(
+      `SELECT code_hash,purpose_code FROM user_verification_challenges
+       WHERE code_hint=? AND provider_code='kakao' AND status IN ('pending','verified')
+       ORDER BY created_at DESC`, [input.code.slice(0, 4).toUpperCase()]
+    );
+    const exactPurpose = purposes.find((candidate) => candidate.code_hash === codeHash)?.purpose_code;
+    const hasModernHint = purposes.some((candidate) => candidate.purpose_code === "NEW_GAME_ACCOUNT" || candidate.purpose_code === "LEGACY_GAME_ACCOUNT_LINK");
+    if (exactPurpose === "initial_link" || (exactPurpose === undefined && !hasModernHint && purposes.some((candidate) => candidate.purpose_code === "initial_link"))) {
+      return this.verifyLegacyInitialKakao(input);
+    }
+    const requestKey = input.requestKey ?? `kakao-verification:${hashVerificationCode(`${input.code}|${input.channelId}|${input.externalUserId}`, this.verificationPepper).slice(0, 48)}`;
+    let result;
+    try {
+      result = await new AccountPlatformChallengeService(this.database, this.verificationPepper).verify({
+        requestKey, code: input.code, platformCode: "KAKAO", contextType: "ROOM",
+        externalContextKey: input.channelId, externalUserKey: input.externalUserId,
+        observedDisplayName: input.displayName, actor: "사용자"
+      });
+    } catch (error) {
+      if (error instanceof ApplicationError && error.code === "ACCOUNT_NAME_MISMATCH") {
+        throw new ApplicationError("ACCOUNT_NAME_MISMATCH", error.message.replace("플랫폼 닉네임", "카카오톡 닉네임"), 409);
+      }
+      throw error;
+    }
+    return {
+      status: "verified",
+      playerId: result.playerId,
+      data: result.createdPlayer
+        ? `✅ '${input.displayName}' 새 게임계정의 KakaoTalk 연동과 회원가입이 완료됐습니다.`
+        : `✅ 기존 게임계정 '${input.displayName}'의 KakaoTalk 연동과 회원가입이 완료됐습니다.`
+    };
+  }
+
+  // 이관 전에 발급된 initial_link 코드를 기존 계약으로 안전하게 소비합니다.
+  private async verifyLegacyInitialKakao(input: {
     code: string;
     externalUserId: string;
     displayName: string;

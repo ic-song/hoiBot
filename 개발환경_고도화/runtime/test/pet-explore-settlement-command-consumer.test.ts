@@ -35,9 +35,9 @@ describe("pet explore settlement command consumer", () => {
     assert.equal((await response(new ApplicationError("PET_EXPLORE_SETTLEMENT_ROUND_NOT_FOUND","missing",404))).status,"not_found");
     assert.equal((await response(new ApplicationError("PET_EXPLORE_PREMIUM_POLICY_CONFLICT","gap",409))).status,"policy_blocked");
   });
-  it("seeds migration407 and wires app dispatch to the real snapshot provider",()=>{
+  it("seeds migration407 and keeps settlement on the shared app-wiring ingress seam",()=>{
     const migration=readFileSync(new URL("../migrations/407_pet_explore_settlement_command_consumer.sql",import.meta.url),"utf8"),app=readFileSync(new URL("../src/app.ts",import.meta.url),"utf8");
     assert.match(migration,/ADMIN_PET_EXPLORE_SETTLEMENT/);assert.match(migration,/'\/펫탐험정산'/);assert.match(migration,/'SHADOW'/);
-    assert.match(app,/dispatchPetExploreSettlementCommand\(database,eventProcessor,isOperationalChannel/);
+    assert.match(app,/dispatchPetExploreSettlementCommand\(ingress,isOperationalChannel,duplicate,event\)/);
   });
 });

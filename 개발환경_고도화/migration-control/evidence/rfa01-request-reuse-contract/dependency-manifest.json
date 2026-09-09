@@ -1,0 +1,41 @@
+{
+  "contractVersion": "RFA01_REQUEST_REUSE_V1",
+  "catalogVersion": "SC-20260902-1",
+  "sliceId": "SL-COMMON-RUNTIME-INTEGRATION-01",
+  "leaseRow": 2558,
+  "executionId": "요청재사용계약DB-SL-COMMON-RUNTIME-INTEGRATION-01-RFA01-202609060240",
+  "baselineSha": "f31d4a206d36e0125b7735a6911fc1142e785612",
+  "providerSha": "953f118e4f583c422b0f2964fd4430406f686cb8",
+  "providerFileGitBlobSha": "0f33975b313533d94ea8aae3ff75f7da7c8cdadd",
+  "dependencyLockSha256": "d42aefb62bea066d46db205e9e2d624ec6da20e997405f6560b46fb93f7c6dda",
+  "migrationBundleSha256": "8a7e260102b1f2c849945bf2e7fe7ca2a5b2e8118b7872099fcb29e80f07fea1",
+  "migrationFileCount": 465,
+  "ownedFiles": [
+    "개발환경_고도화/runtime/src/shared/request-reuse-contract.ts",
+    "개발환경_고도화/runtime/test/request-reuse-contract.test.ts",
+    "개발환경_고도화/migration-control/contracts/request-reuse-contract.v1.json",
+    "개발환경_고도화/migration-control/evidence/rfa01-request-reuse-contract/current-source-audit.md",
+    "개발환경_고도화/migration-control/evidence/rfa01-request-reuse-contract/dependency-manifest.json",
+    "개발환경_고도화/migration-control/evidence/rfa01-request-reuse-contract/scenario-matrix.md",
+    "개발환경_고도화/migration-control/evidence/rfa01-request-reuse-contract/focused-test.log",
+    "개발환경_고도화/migration-control/evidence/rfa01-request-reuse-contract/validation.md",
+    "개발환경_고도화/migration-control/evidence/rfa01-request-reuse-contract/checkpoint.md"
+  ],
+  "readOnlyDependencies": [
+    "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+    "개발환경_고도화/runtime/src/currency/maria-canonical-currency-repository.ts",
+    "개발환경_고도화/runtime/src/home/canonical-furniture-home-repository.ts",
+    "개발환경_고도화/runtime/src/shared/transactional-operation.ts",
+    "개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts",
+    "개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts"
+  ],
+  "forbidden": [
+    "개발환경_고도화/runtime/src/app.ts",
+    "개발환경_고도화/runtime/src/dispatch/**",
+    "main.js",
+    "Info.js",
+    "개발환경_고도화/runtime/migrations/**",
+    "feature/prod",
+    "operational database and data"
+  ]
+}

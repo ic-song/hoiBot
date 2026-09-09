@@ -1,0 +1,13 @@
+{
+  "catalogVersion":"SC-20260902-1",
+  "format":"hoibot-elemental-grade-definition-bridge-schema-plan-v1",
+  "migration":"477_elemental_grade_definition_bridge.sql",
+  "table":"canonical_elemental_grade_definition_bridges",
+  "role":"relation",
+  "primaryKey":{"column":"elemental_grade_definition_bridge_id","sqlType":"CHAR(8)","charset":"ascii","collation":"ascii_bin","generator":"CUID2_8_COLLISION_RETRY"},
+  "foreignKeys":[{"column":"equipment_grade_definition_id","sqlType":"CHAR(8)","charset":"ascii","collation":"ascii_bin","referencesTable":"canonical_equipment_grade_definitions","referencesColumn":"equipment_grade_definition_id","onDelete":"RESTRICT"}],
+  "columns":["elemental_grade_definition_bridge_id","equipment_grade_definition_id","elemental_grade_order","source_identifier_sha256","binding_fingerprint","numeric_tuple_sha256","numeric_order_sha256","bridge_manifest_sha256","INSERT_USER","INSERT_TIME","UPDATE_USER","UPDATE_TIME"],
+  "uniqueKeys":[["equipment_grade_definition_id"],["elemental_grade_order"],["source_identifier_sha256"],["binding_fingerprint"]],
+  "audit":{"columns":["INSERT_USER","INSERT_TIME","UPDATE_USER","UPDATE_TIME"],"timeFormat":"KST_YYYY-MM-DD HH:MM:SS"},
+  "forbiddenIdentityInputs":["grade_display_name","equipment_grade_name","equipment_grade_emoji","equipment_name","names_json"]
+}

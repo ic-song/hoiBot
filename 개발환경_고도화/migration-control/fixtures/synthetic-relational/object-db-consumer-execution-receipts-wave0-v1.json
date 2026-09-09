@@ -1,0 +1,7 @@
+{
+  "format": "hoibot-object-db-consumer-execution-receipts-v1",
+  "catalogVersion": "SC-20260902-1",
+  "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
+  "evidenceCommit": "f07021701d2f058531512b0e805dc0d9c4b2a3fb",
+  "receipts": []
+}

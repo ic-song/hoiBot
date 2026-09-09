@@ -1,0 +1,27 @@
+T1 command:
+node --import tsx --test test/transaction-receipt-outbox-contract.test.ts
+
+Result: PASS
+tests 15, suites 1, pass 15, fail 0
+
+T2 command:
+node --import tsx --test test/request-reuse-contract.test.ts test/transaction-receipt-outbox-contract.test.ts
+
+Result: PASS
+tests 38, suites 3, pass 38, fail 0
+
+Static and contract validation:
+npm.cmd run typecheck -- --pretty false
+npm.cmd run build -- --pretty false
+npm.cmd run object-data:validate
+
+Result: PASS
+typecheck diagnostics 0
+build diagnostics 0
+object data model registered targets 98
+
+Additional validation:
+JSON parse PASS
+tracked and untracked whitespace/diff check PASS
+forbidden path check PASS
+full npm test suite NOT RUN by lease constraint

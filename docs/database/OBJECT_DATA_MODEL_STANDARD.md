@@ -88,11 +88,14 @@ KST 시계와 문자열 formatter의 실제 구현·시험도 WBS731 공용 iden
 ## migration·seed·이관·배포
 
 - schema 변경은 새 migration으로만 수행하며 운영 DB에서 임의 DDL을 실행하지 않는다.
+- 신규 `CREATE TABLE`뿐 아니라 이미 적용된 표준 테이블에 대한 additive `ALTER TABLE`도 새 migration으로 수행하고, 변경된 최종 컬럼·키·FK·CHECK와 새 지원 테이블을 manifest 및 schema plan에 같은 변경으로 동기화한다. CREATE-only migration 묶음과 amendment/recovery migration은 계약에서 구분한다.
 - 레거시 이관은 `RAW Landing → Common Staging → Catalog Projection → Domain Import → 검증 및 전환` 순서다.
 - RAW 원본은 변경하지 않는다. 이름·이모지·공백·괄호를 보존하고, 매핑 불가 데이터는 임의 병합하지 않고 격리한다.
 - 정의 seed와 사용자/보유 데이터 import를 분리한다. 정의를 먼저 확정한 뒤 사용자 행이 정의 PK를 참조하게 한다.
 - Docker 이미지를 빌드해도 개발 PC DB 데이터가 운영 PC로 자동 복사되지 않는다. 최초 배포는 migration, 정의 seed, 사용자 import, 행수·합계·FK 검증, application start, health 확인 순서다.
 - 재배포는 MariaDB 영구 볼륨과 사용자 데이터를 보존한다. seed를 매 시작마다 무조건 덮어쓰거나 DB 볼륨 삭제를 배포 절차에 포함하지 않는다.
+- 동일 catalogVersion의 Domain Import 의미 hash는 전체 object manifest나 전체 disposition 문서가 아니라 실제 import 대상 정의 seed, state import, initial ledger, quarantine direct target, 해당 45개 테이블 선언, identity binding과 field map만 versioned canonical projection으로 계산한다. runtime-only 테이블·컬럼·migration baseline 증가는 이 hash를 바꾸지 않는다.
+- 이미 COMPLETE인 import의 replay·rollback 호환 hash는 계약에 명시된 projection version과 정확한 hash allowlist로만 허용한다. 임의의 과거 hash 전체를 허용하거나 현재 파일 raw hash로 기존 원장을 우회하지 않으며, catalogVersion·target schema·projection·row fingerprint가 모두 같아야 한다.
 
 ## 기계 검증 계약
 
@@ -104,6 +107,14 @@ npm.cmd run object-data:validate
 ```
 
 이 validator는 manifest에 등록된 신규 표준 대상만 검사한다. `registeredMigrations`와 `tables`는 모두 비어 있거나 모두 등록되어야 한다. 비어 있을 때 통과 메시지는 표준 준비 상태일 뿐 신규 schema compliance 증거가 아니다. 이미 적용된 001~442 migration은 수정하거나 소급 실패시키지 않는다.
+
+## claim·lease·recovery·typed receipt 경계
+
+- 외부 요청은 비즈니스 mutation 전에 app-wiring claim을 영속화하며, 동일 요청 identity와 payload는 저장된 terminal receipt를 재생하고 payload drift는 fail closed 한다.
+- mutation 실행 권한은 현재 `lease_token`과 단조 증가하는 `lease_generation`에 묶는다. 만료되거나 세대가 뒤처진 실행자는 쓰기를 계속할 수 없으며, terminal 상태에서는 lease token과 만료 시각을 비운다.
+- `READ_ONLY` 효과는 mutation 시작 상태로 진입할 수 없다. `MUTATION_STARTED`에서 중단된 작업만 명시적 recovery 상태와 시도 횟수로 복구하며, 이전 writer가 남긴 transition metadata 전체 NULL 행은 저장 호환만 허용하고 신규 writer가 자동 인수·실행하지 않는다.
+- `effect_mode=MUTATION`인 app-wiring operation만 terminal 전환과 정확히 하나의 typed operation receipt link를 같은 controlled transaction에서 확정해야 한다. `READ_ONLY` 및 `REJECT` terminal 결과는 비즈니스 mutation receipt가 없으므로 link 없이 유효하다. link가 있으면 discriminator와 정확히 하나의 typed FK를 가지며, 동일 app-wiring operation/kind 및 각 typed receipt의 중복 연결을 UNIQUE로 차단한다.
+- 이종 typed operation 테이블의 `result_fingerprint` 값과 link 값의 동등성은 단일 행 CHECK로 표현할 수 없으므로 shared provider가 link insert와 replay 때 검증한다. PK/FK, exactly-one, discriminator 매핑, fingerprint 형식, 감사 시각 형식은 DB 계약으로도 검증한다.
 
 ## 금지 요약
 

@@ -14,7 +14,7 @@ interface BagItemRow {
 
 // 외부 identity의 인벤토리 stack을 레거시 가방 출력용 읽기 모델로 조회합니다.
 export class MariaBagRepository implements BagRepository {
-  constructor(private readonly database: DatabaseClient) {}
+  constructor(private readonly database: Pick<DatabaseClient, "query">) {}
 
   async findByExternalIdentity(providerCode: string, externalUserId: string): Promise<BagView | null> {
     const identities = await this.database.query<IdentityRow[]>(

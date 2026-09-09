@@ -1,0 +1,55 @@
+{
+  "standardVersion": "object-data-model-standard.v1",
+  "scope": "new_object_schema_only",
+  "registeredMigrations": ["476_data_migration_raw_landing_standard_correction.sql"],
+  "tables": [
+    {
+      "table": "data_migration_raw_runs",
+      "role": "operation",
+      "columns": [
+        {"name":"raw_landing_run_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},
+        {"name":"legacy_raw_run_sequence","type":"BIGINT UNSIGNED"},
+        {"name":"legacy_created_at_utc","type":"DATETIME(3)"},
+        {"name":"legacy_completed_at_utc","type":"DATETIME(3)"},
+        {"name":"run_key","type":"CHAR(64)"},
+        {"name":"snapshot_manifest_sha256","type":"CHAR(64)"},
+        {"name":"bundle_sha256","type":"CHAR(64)"},
+        {"name":"expected_file_count","type":"INT UNSIGNED"},
+        {"name":"expected_total_bytes","type":"BIGINT UNSIGNED"},
+        {"name":"run_status","type":"VARCHAR(16)"},
+        {"name":"raw_landing_completed_time","type":"CHAR(19)"},
+        {"name":"INSERT_USER","type":"VARCHAR(100)"},
+        {"name":"INSERT_TIME","type":"CHAR(19)"},
+        {"name":"UPDATE_USER","type":"VARCHAR(100)"},
+        {"name":"UPDATE_TIME","type":"CHAR(19)"}
+      ],
+      "primaryKey": ["raw_landing_run_id"],
+      "foreignKeys": [],
+      "uniqueKeys": [["run_key"], ["legacy_raw_run_sequence"]],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "data_migration_raw_files",
+      "role": "relation",
+      "columns": [
+        {"name":"raw_landing_file_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},
+        {"name":"raw_landing_run_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},
+        {"name":"legacy_imported_at_utc","type":"DATETIME(3)"},
+        {"name":"source_path_sha256","type":"CHAR(64)"},
+        {"name":"source_content_sha256","type":"CHAR(64)"},
+        {"name":"size_bytes","type":"BIGINT UNSIGNED"},
+        {"name":"payload","type":"LONGBLOB"},
+        {"name":"INSERT_USER","type":"VARCHAR(100)"},
+        {"name":"INSERT_TIME","type":"CHAR(19)"},
+        {"name":"UPDATE_USER","type":"VARCHAR(100)"},
+        {"name":"UPDATE_TIME","type":"CHAR(19)"}
+      ],
+      "primaryKey": ["raw_landing_file_id"],
+      "foreignKeys": [{"column":"raw_landing_run_id","referencesTable":"data_migration_raw_runs","referencesColumn":"raw_landing_run_id"}],
+      "uniqueKeys": [["raw_landing_run_id", "source_path_sha256"]],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    }
+  ],
+  "externalDependencies": [],
+  "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"]
+}

@@ -21,8 +21,8 @@ import { LordIncomeService } from "./lord-income-service.js";
 import { isOperationIntervalResetCommand, OperationIntervalResetService } from "./operation-interval-reset-service.js";
 import { isPetDataCompareCommand, PetDataCompareService } from "./pet-data-compare-service.js";
 import { isMemberCharacterCountCommand, MemberCharacterCountService } from "./member-character-count-service.js";
-import { CharacterCountStatsService, isCharacterCountStatsCommand } from "./character-count-stats-service.js";
-import { isServerStatsCommand, ServerStatsService } from "./server-stats-service.js";
+import { CharacterCountStatsService, isCharacterCountStatsCommand, type CharacterCountRuntimeContext } from "./character-count-stats-service.js";
+import { isServerStatsCommand, ServerStatsService, type ServerStatsRuntimeContext } from "./server-stats-service.js";
 import { isStatusAllCommand, StatusAllService } from "./status-all-service.js";
 import { isDataStatusCommand, DataStatusService } from "./data-status-service.js";
 import { isDataBackupCommand, DataBackupService } from "./data-backup-service.js";
@@ -94,10 +94,16 @@ import { AutoExploreSchedulerService, isAutoExploreSchedulerStartCommand } from 
 import { GuildShopCatalogService, isGuildShopCatalogCommandCandidate } from "../guild/guild-shop-catalog-service.js";
 import { DiamondShopCatalogAdminService, isDiamondShopCatalogAdminCommandCandidate } from "../shop/diamond-shop-catalog-admin-service.js";
 import { isSupportGrantManualCommandCandidate, SupportGrantManualService } from "./support-grant-manual-service.js";
+import type { PetTitleAdminAppWiringIngress } from "./pet-title-admin-app-wiring-ingress.js";
 
 // 기존 `/서버이동 대상 서버명`을 같은 Application Service로 실행합니다.
 export class IrisAdminCommandService {
-  constructor(private readonly database: DatabaseClient, private readonly broadcastIds: string[] = []) {}
+  constructor(
+    private readonly database: DatabaseClient,
+    private readonly broadcastIds: string[] = [],
+    private readonly petTitleAdminAppWiringIngress?: Pick<PetTitleAdminAppWiringIngress,"add"|"sync"|"reset">,
+    private readonly diagnosticRuntime?: CharacterCountRuntimeContext & ServerStatsRuntimeContext & { now?:()=>number },
+  ) {}
 
   async changePlayerServer(input: { externalUserId: string; channelId: string; message: string; eventId: string }): Promise<{ data: string; outboxId: string }> {
     if (!/^\/서버이동\s+\S.+$/.test(input.message)) {
@@ -147,7 +153,7 @@ export class IrisAdminCommandService {
     | { status: "shadow" | "legacy_fallback" | "handled_no_reply" }
   > {
     if (isMatzangSessionCommand(input.message)) return new MatzangSessionCommandService(this.database).handleIris(input);
-    if (isMatzangTimeCheckCommandCandidate(input.message)) return new MatzangTimeCheckService(this.database).handleIris(input);
+    if (isMatzangTimeCheckCommandCandidate(input.message)) return new MatzangTimeCheckService(this.database,this.diagnosticRuntime).handleIris(input);
     if (isMiniPetDuelResetGrantCommandCandidate(input.message)) return this.handleMiniPetDuelResetGrant(input);
     if (isPetDungeonEntryGrantCommandCandidate(input.message)) return this.handlePetDungeonEntryGrant(input);
     if (isMiniPetDrawGrantCommandCandidate(input.message)) return this.handleMiniPetDrawGrant(input);
@@ -220,13 +226,25 @@ export class IrisAdminCommandService {
     if (isDataStatusCommand(input.message)) return new DataStatusService(this.database).handleIris(input);
     if (isStatusAllCommand(input.message)) return new StatusAllService(this.database).handleIris(input);
     if (isMemberCharacterCountCommand(input.message)) return this.handleMemberCharacterCount(input);
-    if (isCharacterCountStatsCommand(input.message)) return new CharacterCountStatsService(this.database).handleIris(input);
-    if (isServerStatsCommand(input.message)) return new ServerStatsService(this.database).handleIris(input);
+    if (isCharacterCountStatsCommand(input.message)) return new CharacterCountStatsService(this.database,this.diagnosticRuntime).handleIris(input);
+    if (isServerStatsCommand(input.message)) return new ServerStatsService(this.database,this.diagnosticRuntime).handleIris(input);
     if (isPetMemberCharacterCountCommand(input.message)) return this.handlePetMemberCharacterCount(input);
     if (isPetDataCompareCommand(input.message)) return this.handlePetDataCompare(input);
-    if (isPetTitleAddCommandCandidate(input.message)) return this.handlePetTitleAdd(input);
-    if (isPetTitleStoreResetCommand(input.message)) return this.handlePetTitleStoreReset(input);
-    if (isPetTitleSyncCommand(input.message)) return this.handlePetTitleSync(input);
+    if (isPetTitleAddCommandCandidate(input.message)) {
+      if (this.petTitleAdminAppWiringIngress === undefined) return this.handlePetTitleAdd(input);
+      const result=await this.petTitleAdminAppWiringIngress.add(input,parsePetTitleAddCommand(input.message)!);
+      return result.status==="changed"?{status:"changed" as const,data:result.data,outboxId:result.outboxId}:result;
+    }
+    if (isPetTitleStoreResetCommand(input.message)) {
+      if (this.petTitleAdminAppWiringIngress === undefined) return this.handlePetTitleStoreReset(input);
+      const result=await this.petTitleAdminAppWiringIngress.reset(input);
+      return result.status==="changed"?{status:"changed" as const,data:result.data,outboxId:result.outboxId}:result;
+    }
+    if (isPetTitleSyncCommand(input.message)) {
+      if (this.petTitleAdminAppWiringIngress === undefined) return this.handlePetTitleSync(input);
+      const result=await this.petTitleAdminAppWiringIngress.sync(input);
+      return result.status==="changed"?{status:"changed" as const,data:result.data,outboxId:result.outboxId}:result;
+    }
     if (isPetDataSyncCommand(input.message)) return this.handlePetDataSync(input);
     if (isTrialTowerSyncCommand(input.message)) return this.handleTrialTowerSync(input);
     if (isTrialTowerAdminModifyCommandCandidate(input.message)) return this.handleTrialTowerAdminModify(input);
@@ -1300,7 +1318,7 @@ export class IrisAdminCommandService {
 export function isPointEditCommandCandidate(message: string | undefined): boolean {
   return message !== undefined && (/^\/포인트수정\s+.+?\s+\d{1,27}$/.test(message) || isHoiLandEditCommandCandidate(message)
     || isLordIncomeCommandCandidate(message) || isAuthCheckCountResetCommand(message) || isRequestMonitorConfigCommandCandidate(message)
-    || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message)
+    || isRequestMonitorExceptionCommandCandidate(message) || isWeeklyQuestCountCommandCandidate(message) || isServerStatsCommand(message)
     || isOperationIntervalResetCommand(message) || isGuildTerritoryDimensionGateCommand(message)
     || isGuildShopCatalogCommandCandidate(message) || isDiamondShopCatalogAdminCommandCandidate(message) || isMemberVoiceAuthRewardCommandCandidate(message) || isSupportGrantManualCommandCandidate(message) || isSpecialBadgeGrantCommandCandidate(message) || isSpecialBadgeRevokeCommandCandidate(message) || isPetDataSyncCommand(message) || isPetDataCompareCommand(message)
     || isTrialTowerSyncCommand(message)
@@ -1313,7 +1331,8 @@ export function isPointEditCommandCandidate(message: string | undefined): boolea
     || isManagedBackupCommand(message)
     || isDataBackupCommand(message)
     || isDataStatusCommand(message)
-    || isStatusAllCommand(message)
+    || isCharacterCountStatsCommand(message)
+    || isMatzangTimeCheckCommandCandidate(message)
     || isMemberCharacterCountCommand(message)
     || isPetMemberCharacterCountCommand(message) || isPetTitleSyncCommand(message) || isPetTitleAddCommandCandidate(message)
     || isPetTitleStoreResetCommand(message) || isRetiredRingCommandCandidate(message) || isRingRewardClaimCommand(message)

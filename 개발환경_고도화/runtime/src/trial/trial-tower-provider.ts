@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { critChance, critMultiplier, typeBuff } from "../battle/matzang-field-provider.js";
+import { RaidStrikeSealCanonicalOwnershipProvider } from "../raid/raid-strike-seal-canonical-ownership-provider.js";
 
 const json = (value: unknown) => JSON.stringify(value, (_key, item) => typeof item === "bigint" ? item.toString() : item);
 const parse = <T>(value: string | T): T => typeof value === "string" ? JSON.parse(value) as T : value;
@@ -35,7 +36,7 @@ type Boss = { boss_code: string; display_name: string; pet_type_name: string | n
 type Item = { id: bigint; code: string; quantity: bigint };
 
 export class TrialTowerProvider {
-  constructor(private readonly db: DatabaseClient, private readonly random: () => number = Math.random) {}
+  constructor(private readonly db: DatabaseClient, private readonly random: () => number = Math.random,private readonly raidSealOwnership=new RaidStrikeSealCanonicalOwnershipProvider()) {}
 
   async attempt(input: { eventId: string; destinationId: string; playerId: string; profile: TrialTowerProfile; recordDate: string; autoBonus?: boolean; masterBypass?: boolean; suppressOutbox?: boolean; format?: (result: TrialTowerResult) => string }): Promise<TrialTowerResult> {
     return this.db.withTransaction(async tx => {
@@ -79,10 +80,13 @@ export class TrialTowerProvider {
       await mutate(guide, policy.guideUsed ? -1n : 0n, "TRIAL_TOWER_GUIDE");
       if (policy.win) {
         await mutate(byCode.get("trial_junk"), BigInt(policy.junkReward), "TRIAL_TOWER_JUNK_REWARD");
-        for (const reward of parse<TrialTowerReward[]>(boss.rewards_json)) {
+        const rewards=parse<TrialTowerReward[]>(boss.rewards_json);
+        for (let rewardIndex=0;rewardIndex<rewards.length;rewardIndex+=1) {
+          const reward=rewards[rewardIndex]!;
           const item = byCode.get(reward.itemCode); let quantity = BigInt(reward.quantity);
           if (reward.boostable && booster) { boosterUsed += booster.quantity < quantity ? booster.quantity : quantity; quantity += booster.quantity < quantity ? booster.quantity : quantity; }
-          await mutate(item, quantity, "TRIAL_TOWER_BOSS_REWARD");
+          if(this.raidSealOwnership.isLegacyCompatibilityInput(reward.itemCode))await this.raidSealOwnership.change(tx,{actor:"trial-tower",legacyPlayerId:input.playerId,requestKey:`tower:${input.eventId}:${floor}:${rewardIndex}`,quantityDelta:quantity,reasonType:"TRIAL_TOWER_BOSS_REWARD"});
+          else await mutate(item, quantity, "TRIAL_TOWER_BOSS_REWARD");
         }
         await mutate(booster, -boosterUsed, "TRIAL_TOWER_BOOSTER");
         await tx.execute("UPDATE trial_tower_progress SET floor=?,last_win_at=UTC_TIMESTAMP(3),version=version+1 WHERE season_key=? AND player_id=?", [floor, season.season_key, input.playerId]);

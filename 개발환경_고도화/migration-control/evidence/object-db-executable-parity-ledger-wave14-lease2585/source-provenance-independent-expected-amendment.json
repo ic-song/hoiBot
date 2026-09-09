@@ -1,0 +1,24 @@
+{
+  "format": "hoibot-object-db-wave14-source-provenance-amendment-v1",
+  "reason": "기존 generator가 actual artifact를 expected에도 복사하던 self-oracle 경계를 제거한다.",
+  "supersedesEvidenceCommit": "4b07fa45fddc80b0fa2cd9d949cdb6246e3212a5",
+  "evidenceCommit": "3f3416d4ec843db8856540078f9df19ffd5c055d",
+  "independentExpectedFixture": {
+    "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave14-pet-skill-probability-v1.json",
+    "sha256": "7bc4e2c47e84bc624847372ef1d7e71942c9d3175245bd1c15733231c6a7299d",
+    "contents": [
+      "scenario reply SHA-256",
+      "exact result object",
+      "exact normalized DML template and repetition count",
+      "row count",
+      "lock order",
+      "transaction and timeline"
+    ]
+  },
+  "receiptBundle": {
+    "priorReceiptCount": 155,
+    "totalReceiptCount": 160,
+    "compactReceiptBytes": 740925,
+    "compactReceiptSha256": "2d1803d6d217fc60c0357b4aa7a2d7e0b3993233ba571063315c4493ee910975"
+  }
+}

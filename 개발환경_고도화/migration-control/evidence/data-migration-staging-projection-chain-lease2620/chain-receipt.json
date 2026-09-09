@@ -1,0 +1,41 @@
+{
+  "receiptFormat": "hoibot-data-migration-staging-projection-chain-evidence-v1",
+  "leaseId": "Lease2620",
+  "sliceId": "SL-DATA-MIGRATION-STAGING-PROJECTION-CHAIN-01",
+  "baselineCommit": "a652751a1bb6fd6a8217eaf5ab43064352ad6e9f",
+  "fixtureNonce": "lease2620-sealed-v1",
+  "providerChain": [
+    "MariaCommonStagingRepository.extractAndStage",
+    "MariaCatalogProjectionRepository.project"
+  ],
+  "sealedEnvelope": {
+    "rawBundleSha256": "3e701c663b6afe7f822d0fa3448e8da86a1977e4b700efc3c1869d98daa776ad",
+    "snapshotManifestSha256": "e0d48b1d3de3e44ebb01cef7516be70f377b40c42f75d3da0bf741a2f10c6c4c",
+    "extractionManifestSha256": "a58e24b4e7b0ac234516b1dca80419122b5e5a7eb5659393e97ddd0bb8a0f8fb",
+    "stagingSha256": "576ed580d98254e13dd82c3aa34e7221c83b7fbe3d2339a180b5969a5f373e44",
+    "catalogProjectionManifestSha256": "460ccbc115aed95d5ce5e5cef8bb6a90920e8b297cd22c689bc0e847a230c18d",
+    "payloadFingerprints": [
+      "8c96d8883a54adc0ad2208f2b20e4a53320fb99ee4a4e90847c74e7e4a31b249",
+      "4b0c7f7cff0727e7a8e8439ad376afa82455487b9bb462fd660828c07887955f",
+      "9329b5c06466acbd4f10bd0f77a8f0e337343f643fcbfab9c39b3f335352e65a"
+    ]
+  },
+  "verified": {
+    "sameCommonStagingRunIdConsumed": true,
+    "decisionCounts": { "PROJECT": 1, "QUARANTINE": 1, "IGNORE": 1 },
+    "projectedRowCount": 1,
+    "inProcessReplayDml": 0,
+    "childProcessRestartReplayDml": 0,
+    "midProjectionFailureResidueRows": 0,
+    "operatingDatabaseTouches": 0,
+    "snapshotWrites": 0,
+    "networkCalls": 0
+  },
+  "validation": {
+    "database": "hoibot_rehearsal_lease2620_chain",
+    "host": "127.0.0.1",
+    "port": 3348,
+    "focusedTest": "3 passed, 0 failed",
+    "typecheck": "passed"
+  }
+}

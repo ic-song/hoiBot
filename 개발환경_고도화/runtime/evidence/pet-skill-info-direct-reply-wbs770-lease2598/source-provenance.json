@@ -1,0 +1,66 @@
+{
+  "format": "hoibot-object-db-wave16-source-provenance-v1",
+  "runId": "펫스킬직접응답준비DB-SL-PET-SKILL-INFO-DIRECT-REPLY-01-202609080312",
+  "wbsOrdinal": 770,
+  "leaseRow": 2598,
+  "sliceId": "SL-PET-SKILL-INFO-DIRECT-REPLY-01",
+  "consumerId": "legacy-0a10ef65ad4b37cd",
+  "implementationEvidenceCommit": "cf8552bb48040e79b1ab5a2b4866b80b3d49e37b",
+  "receiptLedgerCommit": "8960ffde40f682ca3dad06b8941ece645b2f76ce",
+  "hashMode": "git-blob-text-with-crlf-and-cr-normalized-to-lf-before-sha256",
+  "sources": [
+    {
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave16-pet-skill-info-direct-reply-v1.json",
+      "sha256": "de50c23d664b6481a0a064a348087afbcaadd0fa764fce3df0dc438911371480"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave16-harness.mjs",
+      "sha256": "49abd4544bb3fc4a156f3b785b203cd648a72d9933fd5b80b1c56482a2e367c9"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave16-pet-skill-info-direct-reply.mjs",
+      "sha256": "bf86d22ca8b5bc5b1e5b4b5755e8902cecb35e6f72d4b05edfc8387de83e95b6"
+    },
+    {
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave16-v1.json",
+      "sha256": "55783041934eb7c8a644c8d993cf4fcd244a23d1b1b6e8760d2f59ae92987aba"
+    },
+    {
+      "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
+      "sha256": "b812aa1412f56a7ede4f018445a56abfe3ce54f1ff522c4be79daae3c7c455dd"
+    },
+    {
+      "path": "개발환경_고도화/runtime/migrations/487_pet_skill_info_direct_reply_canary.sql",
+      "sha256": "b564cf69f3be5c08bf1d8ce01ebb019466bd17b355124db9385661f84b3749de"
+    },
+    {
+      "path": "개발환경_고도화/runtime/migrations/rollback/487_pet_skill_info_direct_reply_canary.rollback.sql",
+      "sha256": "6d7e0a9971416ba0172a9510110cc47bf6ccfd862dfcf2c06e259e100a62965c"
+    }
+  ],
+  "wave16": {
+    "consumerReceiptCount": 7,
+    "totalReceiptCount": 167,
+    "preservedWave14ReceiptCount": 160,
+    "supersededWave15ReceiptCount": 7,
+    "proofMode": "DIRECT",
+    "externalNetworkCalls": 0,
+    "sourceDomainDmlCount": 0
+  },
+  "ledger": {
+    "manifestConsumers": 1130,
+    "ledgerEntries": 1130,
+    "directPassConsumers": 31,
+    "staticOnlyConsumers": 1017,
+    "blockedDynamicConsumers": 82,
+    "entrySetSha256": "ce96fdb3dcf0a9aa6381fc976cd0f3ebba3e92fccb13478d1cfe74257aa5b5ce"
+  },
+  "forbidden": [
+    "operating data migration",
+    "operating database mutation",
+    "live room reply",
+    "external network delivery",
+    "Gate8 operating cutover",
+    "feature/prod reflection"
+  ]
+}

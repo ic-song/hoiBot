@@ -1,0 +1,18 @@
+{
+  "format": "hoibot-data-migration-raw-landing-amendment-v1",
+  "baselineMigration": "442_data_migration_raw_landing.sql",
+  "correctionMigration": "476_data_migration_raw_landing_standard_correction.sql",
+  "rollbackMigration": "476_data_migration_raw_landing_standard_correction.rollback.sql",
+  "objectModel": "object-data-model-raw-landing-correction.v1.json",
+  "identityPolicy": {
+    "newRows": "CUID2_LENGTH_8_WITH_PRIMARY_KEY_COLLISION_RETRY_8",
+    "backfill": "stable r/f-prefixed 8-character SHA-256 projection with pre-DDL collision guard",
+    "legacySequence": "data_migration_raw_runs.legacy_raw_run_sequence is nullable rollback provenance and never a runtime identity",
+    "legacyTemporalProvenance": "legacy_created_at_utc, legacy_completed_at_utc and legacy_imported_at_utc preserve DATETIME(3) exactly; new rows leave them NULL"
+  },
+  "auditPolicy": "INSERT_USER, INSERT_TIME, UPDATE_USER, UPDATE_TIME; Asia/Seoul YYYY-MM-DD HH:MM:SS",
+  "losslessBackfill": ["run count", "file count", "total bytes", "payload SHA-256", "bundle SHA-256", "source path/content SHA-256", "run status", "created/completed/imported DATETIME(3) fractional seconds"],
+  "runtimeConsumers": ["maria-raw-landing-repository.ts", "common-staging-extractor.ts"],
+  "replay": "same bundle returns the stored COMPLETE run and inserts zero files after exact hash/count/byte parity",
+  "rollback": "baseline rows restore numeric identity and UTC DATETIME values; rows created after correction fail closed because they have no legacy sequence"
+}

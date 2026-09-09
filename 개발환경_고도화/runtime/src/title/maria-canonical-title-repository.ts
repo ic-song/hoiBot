@@ -27,6 +27,7 @@ export interface CanonicalTitleGrantInput {
   titleDefinitionId: string;
   acquisitionSequence: bigint;
   acquiredTime: string;
+  acquisitionPrice?: bigint | null;
 }
 
 export interface CanonicalTitleSelectionInput {
@@ -51,6 +52,7 @@ export interface CanonicalOwnedTitleView {
   titleDefinitionId: string;
   titleName: string;
   baseSalePrice: bigint;
+  acquisitionPrice: bigint | null;
   acquisitionSequence: bigint;
   acquiredTime: string;
   selected: boolean;
@@ -74,6 +76,7 @@ interface OwnedRow {
   title_definition_id: string;
   acquisition_sequence: bigint;
   acquired_time: string;
+  acquisition_price: bigint | null;
   ownership_status: string;
 }
 
@@ -126,6 +129,7 @@ function assertGrantInput(input: CanonicalTitleGrantInput): void {
   assertObjectIdentityCandidate(input.playerId);
   assertObjectIdentityCandidate(input.titleDefinitionId);
   if (input.acquisitionSequence < 1n || input.acquisitionSequence > UNSIGNED_BIGINT_MAX) throw new Error("CANONICAL_TITLE_SEQUENCE_INVALID");
+  if (input.acquisitionPrice !== undefined && input.acquisitionPrice !== null && (input.acquisitionPrice < 0n || input.acquisitionPrice > UNSIGNED_BIGINT_MAX)) throw new Error("CANONICAL_TITLE_ACQUISITION_PRICE_INVALID");
   if (!KST_TIME.test(input.acquiredTime)) throw new Error("CANONICAL_TITLE_ACQUIRED_TIME_INVALID");
 }
 
@@ -204,8 +208,8 @@ export class MariaCanonicalTitleRepository {
       if (result.replayed) return this.verifyGrantReplay(transaction, domain, result.objectIdentityId, input);
       const audit = result.audit;
       await transaction.execute(
-        `INSERT INTO ${domain.ownershipTable}(${domain.ownedId},player_id,${domain.definitionId},acquisition_sequence,acquired_time,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,'owned',?,?,?,?)`,
-        [result.objectIdentityId, input.playerId, input.titleDefinitionId, input.acquisitionSequence, input.acquiredTime, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+        `INSERT INTO ${domain.ownershipTable}(${domain.ownedId},player_id,${domain.definitionId},acquisition_sequence,acquired_time,acquisition_price,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'owned',?,?,?,?)`,
+        [result.objectIdentityId, input.playerId, input.titleDefinitionId, input.acquisitionSequence, input.acquiredTime, input.acquisitionPrice ?? null, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
       );
       return { ownedTitleId: result.objectIdentityId, replayed: false };
     });
@@ -254,9 +258,9 @@ export class MariaCanonicalTitleRepository {
     const domain = config(domainName);
     const rows = await this.database.query<Array<{
       owned_title_id: string; title_definition_id: string; title_name: string; base_sale_price: bigint;
-      acquisition_sequence: bigint; acquired_time: string; selected_flag: number;
+      acquisition_price: bigint | null; acquisition_sequence: bigint; acquired_time: string; selected_flag: number;
     }>>(
-      `SELECT owned.${domain.ownedId} AS owned_title_id,owned.${domain.definitionId} AS title_definition_id,definition_row.title_name,definition_row.base_sale_price,owned.acquisition_sequence,owned.acquired_time,CASE WHEN selection_row.${domain.ownedId} IS NULL THEN 0 ELSE 1 END AS selected_flag FROM ${domain.ownershipTable} owned JOIN ${domain.definitionTable} definition_row ON definition_row.${domain.definitionId}=owned.${domain.definitionId} LEFT JOIN ${domain.selectionTable} selection_row ON selection_row.player_id=owned.player_id AND selection_row.${domain.ownedId}=owned.${domain.ownedId} WHERE owned.player_id=? AND owned.ownership_status='owned' ORDER BY owned.acquisition_sequence,owned.${domain.ownedId}`,
+      `SELECT owned.${domain.ownedId} AS owned_title_id,owned.${domain.definitionId} AS title_definition_id,definition_row.title_name,definition_row.base_sale_price,owned.acquisition_price,owned.acquisition_sequence,owned.acquired_time,CASE WHEN selection_row.${domain.ownedId} IS NULL THEN 0 ELSE 1 END AS selected_flag FROM ${domain.ownershipTable} owned JOIN ${domain.definitionTable} definition_row ON definition_row.${domain.definitionId}=owned.${domain.definitionId} LEFT JOIN ${domain.selectionTable} selection_row ON selection_row.player_id=owned.player_id AND selection_row.${domain.ownedId}=owned.${domain.ownedId} WHERE owned.player_id=? AND owned.ownership_status='owned' ORDER BY owned.acquisition_sequence,owned.${domain.ownedId}`,
       [playerId]
     );
     return rows.map((row) => ({
@@ -264,6 +268,7 @@ export class MariaCanonicalTitleRepository {
       titleDefinitionId: row.title_definition_id,
       titleName: row.title_name,
       baseSalePrice: BigInt(row.base_sale_price),
+      acquisitionPrice: row.acquisition_price === null ? null : BigInt(row.acquisition_price),
       acquisitionSequence: BigInt(row.acquisition_sequence),
       acquiredTime: row.acquired_time,
       selected: Number(row.selected_flag) === 1
@@ -272,13 +277,14 @@ export class MariaCanonicalTitleRepository {
 
   private async verifyGrantReplay(transaction: DatabaseTransaction, domain: DomainConfig, ownedTitleId: string, input: CanonicalTitleGrantInput): Promise<CanonicalTitleGrantResult> {
     const row = (await transaction.query<OwnedRow[]>(
-      `SELECT player_id,${domain.definitionId} AS title_definition_id,acquisition_sequence,acquired_time,ownership_status FROM ${domain.ownershipTable} WHERE ${domain.ownedId}=? FOR UPDATE`,
+      `SELECT player_id,${domain.definitionId} AS title_definition_id,acquisition_sequence,acquired_time,acquisition_price,ownership_status FROM ${domain.ownershipTable} WHERE ${domain.ownedId}=? FOR UPDATE`,
       [ownedTitleId]
     ))[0];
     if (row === undefined) throw new Error("CANONICAL_TITLE_GRANT_REPLAY_INCOMPLETE");
     if (
       row.player_id !== input.playerId || row.title_definition_id !== input.titleDefinitionId ||
-      BigInt(row.acquisition_sequence) !== input.acquisitionSequence || row.acquired_time !== input.acquiredTime
+      BigInt(row.acquisition_sequence) !== input.acquisitionSequence || row.acquired_time !== input.acquiredTime ||
+      (row.acquisition_price === null ? null : BigInt(row.acquisition_price)) !== (input.acquisitionPrice ?? null)
     ) throw new Error("CANONICAL_TITLE_GRANT_REQUEST_CONFLICT");
     if (row.ownership_status !== "owned") throw new Error("CANONICAL_TITLE_GRANT_RELEASED_REPLAY");
     return { ownedTitleId, replayed: true };

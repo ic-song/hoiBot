@@ -19,6 +19,7 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
   - `ERROR_FIX_LOG.md`: runtime error investigation records for future bug-fix reference
   - `docs/database/OBJECT_DATA_MODEL_STANDARD.md`: authoritative object database, ownership, migration, seed, and deployment data standard
+  - `개발환경_고도화/ACCOUNT_PLATFORM_DATA_MODEL_STANDARD.md`: authoritative portal, game-account, platform identity, context selection, and new/legacy verification standard
 
 ---
 
@@ -114,6 +115,13 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Documentation-only compliance does not prove implementation compliance. Validate the resulting schema and data flow against every applicable rule in the standard.
 - When creating or modifying slash commands, avoid broad prefix guards for execution commands.
 - Commands with no arguments must use exact equality such as `msg === "/명령어"`.
+
+## Account And Platform Data Model Standard
+
+- All work that creates or changes portal accounts, game-account ownership, representative/subaccount roles, platform identities, room/server memberships, active-account selection, `/인증`, `/계정변경`, or legacy-account synchronization MUST read and comply with `개발환경_고도화/ACCOUNT_PLATFORM_DATA_MODEL_STANDARD.md` before implementation.
+- Preserve applied account migrations and existing evidence. Correct incompatible structures through new additive migrations and an explicitly recorded WBS plan.
+- Nicknames are never ownership keys. Authorization and game-data access must resolve a stable platform identity, its room/server context, and exactly one active `player_id`.
+- Documentation-only compliance does not prove implementation compliance. Validate concurrency, replay, restart, rollback, cross-portal duplicate rejection, context isolation, and nickname-change behavior.
 - Commands with numeric arguments must use full-pattern guards such as `msg === "/명령어" || /^\/명령어\s+\d+$/.test(msg)` or `/^\/명령어\s+\d+$/.test(msg)` when the argument is required.
 - Inputs with extra guide text after valid arguments, such as `/명령어 1 해봐`, must not execute command logic unless that command explicitly accepts free-form text.
 - When adding a new helper/function, add a brief one-line purpose comment directly above it, for example `// 현재 날짜 문자열 반환 함수`.

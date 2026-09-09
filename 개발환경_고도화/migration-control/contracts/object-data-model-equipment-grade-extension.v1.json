@@ -1,0 +1,54 @@
+{
+  "standardVersion": "object-data-model-standard.v1",
+  "scope": "new_object_schema_only",
+  "registeredMigrations": ["475_equipment_grade_definition_extension.sql"],
+  "tables": [
+    {
+      "table": "canonical_equipment_grade_definitions",
+      "role": "definition",
+      "columns": [
+        {"name":"equipment_grade_definition_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},
+        {"name":"source_definition_pointer","type":"VARCHAR(512)","charset":"utf8mb4","collation":"utf8mb4_bin"},
+        {"name":"equipment_family","type":"VARCHAR(32)","charset":"ascii","collation":"ascii_bin"},
+        {"name":"equipment_grade_name","type":"VARCHAR(255)","charset":"utf8mb4","collation":"utf8mb4_bin"},
+        {"name":"equipment_grade_emoji","type":"VARCHAR(32)","charset":"utf8mb4","collation":"utf8mb4_bin"},
+        {"name":"enhancement_success_probability","type":"DECIMAL(31,30)"},
+        {"name":"enhancement_drop_probability","type":"DECIMAL(31,30)"},
+        {"name":"item_cost_quantity","type":"DECIMAL(65,0)"},
+        {"name":"point_cost_amount","type":"DECIMAL(65,0)"},
+        {"name":"maximum_enhancement_level","type":"DECIMAL(65,0)"},
+        {"name":"battle_base_experience_amount","type":"DECIMAL(65,0)"},
+        {"name":"battle_experience_per_enhancement_amount","type":"DECIMAL(65,0)"},
+        {"name":"raid_base_experience_amount","type":"DECIMAL(65,0)"},
+        {"name":"raid_experience_per_enhancement_amount","type":"DECIMAL(65,0)"},
+        {"name":"castle_base_experience_amount","type":"DECIMAL(65,0)"},
+        {"name":"castle_experience_per_enhancement_amount","type":"DECIMAL(65,0)"},
+        {"name":"active_flag","type":"BOOLEAN"},
+        {"name":"INSERT_USER","type":"VARCHAR(100)"},{"name":"INSERT_TIME","type":"CHAR(19)"},
+        {"name":"UPDATE_USER","type":"VARCHAR(100)"},{"name":"UPDATE_TIME","type":"CHAR(19)"}
+      ],
+      "primaryKey": ["equipment_grade_definition_id"],
+      "foreignKeys": [],
+      "uniqueKeys": [["source_definition_pointer"]],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "canonical_equipment_grade_aliases",
+      "role": "relation",
+      "columns": [
+        {"name":"equipment_grade_alias_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},
+        {"name":"equipment_grade_definition_id","type":"CHAR(8)","charset":"ascii","collation":"ascii_bin"},
+        {"name":"alias_order","type":"INT UNSIGNED"},
+        {"name":"equipment_name","type":"VARCHAR(255)","charset":"utf8mb4","collation":"utf8mb4_bin"},
+        {"name":"INSERT_USER","type":"VARCHAR(100)"},{"name":"INSERT_TIME","type":"CHAR(19)"},
+        {"name":"UPDATE_USER","type":"VARCHAR(100)"},{"name":"UPDATE_TIME","type":"CHAR(19)"}
+      ],
+      "primaryKey": ["equipment_grade_alias_id"],
+      "foreignKeys": [{"column":"equipment_grade_definition_id","referencesTable":"canonical_equipment_grade_definitions","referencesColumn":"equipment_grade_definition_id"}],
+      "uniqueKeys": [["equipment_grade_definition_id","alias_order"]],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    }
+  ],
+  "externalDependencies": [],
+  "forbiddenExecutableColumns": ["javascript","js","sql","script","executable_payload"]
+}

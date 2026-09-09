@@ -118,6 +118,13 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/inventory/item-bag-read-only-recovery-ingress.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-direct-read-service.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-shadow-read-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-command.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-service.ts`
 - `개발환경_고도화/runtime/src/admin/legacy-data-cleanup-iris-handler.ts`
@@ -162,6 +169,14 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/item-bag-read-only-recovery-ingress.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-direct-read-service.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-shadow-read-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/canonical-item-bag-import-readiness-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/legacy-bag-owner-label-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts`
 - `Info.js`
 
 ## Related Helpers
@@ -231,13 +246,13 @@ Status: VERIFIED
 
 ---
 
-# /창세오픈
+# /창조오픈
 
 Status: VERIFIED
 
 ## Command Anchors
 
-- Search in `main.js`: `/창세오픈`
+- Search in `main.js`: `/창조오픈`
 
 ## Files
 
@@ -252,18 +267,18 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.member[sender].bag["[🐹미니펫]창세패키지 확정(/창세오픈)"]`
+- `data.member[sender].bag["[🐹미니펫]창조패키지 확정(/창조오픈)"]`
 - `petData[sender].miniPetBag`
 - `GLOBAL_CONFIG.guaranteedPackage.genesis`
 
 ## Save Flow
 
-- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
+- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 패키지 1개를 소모해 `호이빛💖(+1350000💕)[창조]` 1개를 지급한다.
 - 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
 
 ## AI Notes
 
-- Exact command guard: `/창세오픈`.
+- Exact command guard: `/창조오픈`.
 - 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
 
 ---
@@ -275,6 +290,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/admin/character-count-stats-service.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/src/app.ts`
 
 ## Data Usage
 
@@ -297,6 +315,7 @@ Status: VERIFIED
 ## Save Flow
 
 - Read-only command. It reads active DEV/PROD-resolved files through `resolveActiveDataPath` and does not save data.
+- 현대 경로는 주입된 DEV/PROD 환경의 활성 `legacy_snapshot_sets`와 15개 `legacy_source_snapshots` 원문을 한 transaction에서 읽고, 응답·실행·감사 receipt만 저장한다.
 
 ## AI Notes
 
@@ -306,6 +325,8 @@ Status: VERIFIED
 - 출력은 핵심 데이터, 칭호·성장 데이터, 운영 데이터 구역으로 나눠 표시한다.
 - 펜던트 글자수와 유저 수는 `member_pet.json`에서 `pendant`와 `pendantBag` 데이터가 있는 유저만 추출해 계산한다.
 - 연결된 동기화 명령어가 있으면 해당 항목 바로 아래 줄에 `/장착가구동기화`, `/펫데이터동기화`, `/펫타이틀동기화`, `/시련의탑동기화`, `/길드데이터동기화`, `/전체동기화`를 표시한다.
+- 현대 경로도 원문 JSON의 UTF-16 code unit 길이와 파일별 레거시 고유 인원 계산을 독립 검산하며, 개별 파일 누락은 `❌ 파일 없음`으로 계속 표시한다. 펜던트 projection은 빈 배열·빈 객체도 레거시 JavaScript truthiness와 동일하게 포함한다.
+- 실제 Iris HTTP 진입은 운영 채널, 활성 관리자 권한, ACTIVE rollout에서만 현대 응답을 만들며 환경·event·actor·channel·message fingerprint로 replay 불일치를 차단한다.
 
 ---
 
@@ -502,8 +523,9 @@ Status: VERIFIED
 
 ## Save Flow
 
-- No intended state mutation
-- Branch does not call `saveJsonFile` for member data
+- The `/가방` branch itself does not intentionally mutate the bag.
+- `checkRank` reaches `getMyGuildInfo`; a truthy stale `member.guild` pointer is deleted and `member.json` is saved when the guild or member link is missing.
+- The modern READ_ONLY path must therefore require a snapshot-bound no-write certificate before it can replace the legacy execution path.
 
 ## Related Commands
 
@@ -516,6 +538,11 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
+- Modernization rollout is `SHADOW_ONLY` only when the enabled `ITEM_BAG_READ` registry entry resolves to `SHADOW`; disabled, missing, or `LEGACY_ONLY` registry state stays on the legacy path. The actual Iris ingress evaluates the resolved active-player canonical projection and records a typed receipt in one root transaction.
+- A non-silent parity decision carries the already verified exact legacy presentation into the transactional outbox; the ingress must not re-read the generic positive-active-only bag projection.
+- A non-silent SHADOW decision queues exactly one transitional legacy reply for outbox-worker delivery after canonical evaluation. Silent/evaluation-error decisions queue none; completed replay validates exact outbox cardinality, destination, and payload and fails closed on missing or changed delivery. `MODERN`/canonical direct cutover remains disabled.
+- The corrected WBS776 wrapper binds resolved legacy/canonical player IDs, includes inactive legacy/canonical item definitions for source parity, and fails closed on unknown query shape, incomplete per-player import provenance, multiple intimacy keys, presentation drift, or active world castle authority.
+- The additive owner-label and import-readiness SQL consumers are `STATIC_ONLY`; existing Wave6 bag compare `DIRECT_PASS` does not prove the WBS776 wrapper.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
@@ -1048,6 +1075,9 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/guild/guild-territory-attack-service.ts`
+- `개발환경_고도화/runtime/src/guild/guild-territory-attack-runtime4-policy-provider.ts`
+- `개발환경_고도화/runtime/migrations/478_guild_territory_attack_runtime_item_policy.sql`
 
 ## Related Helpers
 
@@ -1101,6 +1131,8 @@ Status: VERIFIED
 - `GLOBAL_CONFIG.guildTerritory.limits.maxOwnedTerritories`
 - `GLOBAL_CONFIG.guildTerritory.rewards.pointMineFundRewardAmount`
 - `GLOBAL_CONFIG.guildTerritory.scores.pointMine`
+- `guild_territory_attack_item_candidates`: canonical `item_id`를 참조해 DB runtime의 방어 50→20, 공격 40→10 후보 PK·우선순위·확률을 관리
+- `canonical_item_definition_imports`: `RUNTIME_DB/item_definitions` source identifier를 기존 legacy item definition으로 해석하는 crosswalk
 
 ## Save Flow
 
@@ -1147,6 +1179,8 @@ Status: VERIFIED
 - 영지전 시작 타이머는 홈 데이터를 한 번만 읽고 공격 순서 참가자와 기존 점령자의 캐슬매력은 `castleExpSnapshots`, 강화 기준 크리 확률·배율은 `castleBattleSnapshots`에 저장한다.
 - 진행 중인 구버전 영지전에서 누락된 캐슬매력·크리 스냅샷은 해당 사용자의 최초 공격 시 한 번 계산해 저장한다.
 - 특수 방어권·기습공격권이 발동하지 않으면 공격자와 방어자의 크리티컬을 각각 한 번 판정한 최종 캐슬매력을 비교하며, 동률이면 방어자가 승리한다.
+- DB runtime도 보유 중인 첫 후보 하나만 판정하며 아이템 RNG는 `<=`, 성공한 후보만 차감한다. 공격권 성공 차감 뒤 길드공헌 큐브는 strict `<`로 별도 판정하고 차단되어도 공격권을 환불하지 않는다.
+- DB runtime ACTIVE 공격은 command transaction 전에 canonical import/crosswalk와 runtime4 후보 네 행을 멱등 ensure하며, SHADOW에서는 이 provisioning을 실행하지 않는다.
 - `/디버깅모드`가 켜진 상태에서 `/영지공격 [1-7]`을 실행하면 방어자의 영지절대방어권 확률, 길드공헌 큐브 기습방어 증가분, 두 수치의 단순 합산값을 테스트방에 표시한다. 실제 전투는 합산 확률 한 번이 아니라 절대방어권 선판정 후 기습공격 발동 시 큐브를 별도로 판정한다.
 - 일반 캐슬매력 대결 상세보기에는 영지, 공격·방어 길드, 유저·펫, 기본·최종 매력, 크리 발동, 비교식과 점령 결과를 카드형 UI로 표시한다.
 - 영지전 도중 펫홈·미니펫·장비·펫스킬 변경은 현재 스냅샷을 바꾸지 않고 다음 영지전부터 반영된다.
@@ -1403,6 +1437,9 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts`
+- `개발환경_고도화/runtime/src/admin/server-stats-service.ts`
 - `개발환경_고도화/runtime/src/player/player-overall-rank-read-service.ts`
 - `개발환경_고도화/runtime/src/player/admin-player-info-read-service.ts`
 - `개발환경_고도화/runtime/src/player/maria-profile-repository.ts`
@@ -1651,7 +1688,9 @@ Status: VERIFIED
 ## Related Helpers
 
 - `ensureGuildShop`
-- `numberWithCommas`
+- `isServerStatsCommand`
+- `projectLegacyMemberStats`
+- `formatServerStats`
 
 ## Data Usage
 
@@ -2395,6 +2434,8 @@ Status: VERIFIED
 
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/pet/pet-skill-probability-atomic-service.ts`
+- `개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts`
 
 ## Related Helpers
 - `setOperationNoticeByCommand`
@@ -2732,7 +2773,7 @@ Status: VERIFIED
 - Save flow: 고도화 Runtime은 도메인 읽기 전용이며 `operations`, `command_executions`, `command_audit`, `outbox_messages`만 원자 기록
 - Guard: `msg === "/펫스킬"`
 - Aggregate commands: `/펫스킬`, `/펫스킬확률`, `/펫스킬정보 [스킬명|유저명]`
-- Catalog flow: `skill_definitions.rules_json`의 `grade`, `rate`, `effect`, `tierInfo`를 조회하며 타인 가방은 `manager` 또는 `super_admin`만 허용
+- Catalog groundwork: `canonical-pet-skill-read-provider.ts`가 `canonical_pet_skill_definitions`, `canonical_pet_skill_aliases`, `canonical_pet_skill_draw_grade_policies`를 하나의 read-only consistent snapshot으로 조회한다. `/펫스킬확률`은 전용 actual ingress를 유지하고, `/펫스킬정보`는 동일 `pet_skill_info` 평가기를 SHADOW와 CANARY DIRECT에 재사용한다. `/펫스킬`은 이 변경으로 활성화하지 않았다.
 
 # /펫스킬가방
 
@@ -2786,6 +2827,24 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+## Modernization
+
+- Slices: `SL-PET-SKILL-INFO-ACTUAL-INGRESS-01`, `SL-PET-SKILL-INFO-ADMIN-BAG-PROJECTION-01`, `SL-PET-SKILL-INFO-PRIVATE-DEV-FORMAL-RECEIPTS-01`, `SL-PET-SKILL-INFO-DEV-READINESS-01`, `SL-PET-SKILL-INFO-DUAL-CONTEXT-ROUTER-01`, `SL-PET-SKILL-INFO-DIRECT-REPLY-01`
+- Runtime: `개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts`, `pet-skill-info-read-only-recovery-ingress.ts`, `pet-skill-info-actor-context-provider.ts`, `canonical-pet-skill-readiness-provider.ts`
+- DB: canonical catalog/가방, 방별 deny-first 관리자 권한, frozen 8-slot rank marker, KST premium, guild current-rank, per-player import completeness를 공용 READ_ONLY recovery의 한 consistent root snapshot에서 조회
+- Rollout: `SHADOW`는 사용자 응답과 outbox를 만들지 않고, `CANARY` 허용 사용자는 같은 평가 결과를 `MODERN_REPLIED` outbox 1건으로 원자 저장한다. HTTP 요청 루프는 이 응답을 즉시 전송하지 않으며 outbox worker만 전송을 소유한다. 과거 SHADOW 완료 event는 CANARY 전환 뒤에도 기존 NO_REPLY receipt로 재생한다. generic open-direct deny는 유지하고, Iris가 `DirectChat`으로 검증한 `open_direct_unverified` 중 이 명령 후보만 app 전용 recovery로 전달한다.
+- Guard: 레거시와 같은 `startsWith("/펫스킬정보")`; 붙여 쓴 조회값과 공백-only 사용법을 포함하고 `/펫스킬`, `/펫스킬확률`은 포함하지 않는다. 소문자 `dev/`가 index 0일 때만 strip/trim/slash 보정하며 verified `dev` 환경에서만 `DEV_PREFIX`를 허용한다.
+- Kakao는 호출 방의 `account_platform_active_player_selections`를 같은 consistent root snapshot에서 한 번 해석한다. 선택된 게임계정과 호출 플랫폼 identity를 분리하고, 관리자 권한은 호출 identity에 유지한다. 포털 연결 계정은 활성 대표계정의 `hoi`/`newbie`/`premium` 패스를 이용권 권위로 사용하며, 포털 미연결 레거시만 자기 player 패스를 사용한다.
+- 선택계정, canonical player, 대표계정, portal, membership, `selection_version`은 dual-context receipt에 고정한다. 동일 event replay는 `/계정변경` 뒤에도 resolver·카탈로그를 다시 실행하지 않으며 저장된 결과를 반환한다. room/platform/membership/selection 변조와 대표계정 누락·복수는 fail-close 한다.
+- 개인방은 같은 snapshot에서 linked active identity/player의 유일성을 먼저 확인한다. 영구권 또는 KST 기준 유효 기간권만 허용하며 missing/duplicate/invalid는 fail-close 한다. 패스 차단 수신증 V3도 dual-context를 포함하고, 과거 V1/V2는 변경 없이 replay한다.
+- formal receipt는 raw/effective message, DEV context, verified environment/database, actor/channel을 고정한다. 라우팅 결정도 선기록하지 않고 같은 consistent root transaction에 포함한다. SHADOW·정상 거부는 outbox 0, MODERN 성공은 operation/execution/outbox 각 1건이며 replay에서 신규 durable row 0과 본문·목적지·event·command fingerprint를 다시 검증한다.
+- routing hash는 레거시와 동일하게 정규화한 effective message를 사용한다. 따라서 WBS769에서 생성된 SHADOW routing row도 CANARY replay에서 중복 삽입 없이 재사용한다.
+- Migration 487은 `PET_SKILL_INFO`의 정확한 SHADOW v1 행만 CANARY v2로 승격하고 routing event ID를 128자로 확장한다. 전용 rollback은 registry/schema/100자 초과 데이터 drift를 먼저 차단한 뒤 SHADOW v1·VARCHAR(100)으로 복원하며 재적용 리허설까지 수행한다.
+- Wave16 실행 패리티는 DIRECT 7개 시나리오(정상·가드·권한거부·잘못된 방·정확 출력·source-domain DML 0·재시작 일관성)를 검증하고 Wave1~15 receipt/fixture는 역사적 봉인으로 유지한다.
+- 소문자 index-0 `dev/` 후보는 verified dev DB에서만 펫스킬 canonical 준비도를 같은 root snapshot으로 검사한다. `0/0/0/0`은 `UNREADY`, 일부 적재는 `PARTIAL`, active 정의/연결/별칭/확률정책 `93/93/30/4`와 정의 전체·import payload·별칭·정책·charm을 묶은 고정 semantic fingerprint 및 catalog projection 통과만 `READY`이다. 준비 전 상태는 상태·건수·정확 reply를 전용 V1 receipt에 저장하고 catalog 조회기·outbox·source-domain DML을 실행하지 않는다.
+- 관리자 닉네임은 skill 충돌보다 우선하고 비관리자는 skill을 우선한다. 전체 bag 출력은 레거시 header/guide/allsee/정렬/수량/checkRank 바이트를 보존한다.
+- 운영 방 CUID 권한·Admin/Master crosswalk·8 marker/import completeness seed가 없거나 불완전하면 `ADMIN_PLAYER_BAG_PROJECTION_UNPROVEN`으로 fail-close fallback한다. 방 이름 observation은 권한에 사용하지 않는다.
+
 ## Command Anchors
 
 - Search in `main.js`: `/펫스킬정보`
@@ -2801,15 +2860,20 @@ Status: VERIFIED
 - `getTierPetSkillSearchName`
 - `buildTierPetSkillInfoLine`
 - `normalizePetSkillName`
+- `resolvePetSkillInfoIngressCommand`
+- `MariaPetSkillInfoActorContextProvider.resolve`
+- `MariaPlayerContextProvider.resolveSelf`
 
 ## Data Usage
 
 - `petSkillData`
 - `data.member`
+- `account_platform_identities`, `account_platform_contexts`, `account_platform_context_memberships`, `account_platform_active_player_selections`
+- `portal_game_account_links`, `canonical_player_identity_crosswalks`, `canonical_players`, `player_support_passes`
 
 ## Save Flow
 
-- Read-only in the confirmed branch
+- Source-domain read-only. 공용 원자적 recovery가 routing/app-wiring/operation/command-execution을 기록하며, SHADOW·거부는 outbox 0, CANARY 성공은 worker 전용 Iris outbox 1건을 기록한다.
 
 ## Related Commands
 
@@ -3101,6 +3165,9 @@ Status: VERIFIED
 - Search in main.js: `/길드가입조건`
 ## Files
 - `main.js`
+- `개발환경_고도화/runtime/src/pet/pet-skill-probability-service.ts`
+- `개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts`
+- `개발환경_고도화/runtime/src/app.ts`
 ## Related Helpers
 - `getMyGuildInfo`
 ## Data Usage
@@ -3664,6 +3731,7 @@ Status: VERIFIED
 - `getPetSkillBagList`
 - `getPetSkillBagTotalCount`
 - `formatPetSkillName`
+- `processPetSkillProbabilityAtomicIngress`
 ## Data Usage
 - `petSkillData[sender].bag`
 - `data.member[sender].point`
@@ -3742,6 +3810,9 @@ Status: VERIFIED
 - `PET_SKILL_LIST`
 ## Save Flow
 - Read-only
+- 정규 DB 읽기: 전용 exact 후보가 canonical provider projection을 명령의 단일 root transaction snapshot 안에서 사용한다. 기본 rollout은 `SHADOW`이고 검증 시에만 `PET_SKILL_PROBABILITY`를 `ACTIVE`로 전환한다.
+- 레거시 회원/정지/닉네임 길이 경계를 읽기 전용으로 검사하며 canonical source DML은 수행하지 않는다.
+- 현대 ingress는 검증된 환경·DB identity와 payload fingerprint를 사용하고, inbox claim부터 actor/catalog 조회, operation, audit, command execution, outbox까지 하나의 root transaction에서 처리한다. 동일 이벤트 replay는 추가 응답을 만들지 않고 drift는 fail closed 한다.
 ## Related Commands
 - `/펫스킬오픈`
 - `/펫스킬정보`
@@ -4437,9 +4508,9 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-Modernization: `SL-PET-TITLE-SELECT` Gate 1~7 implementation uses `player_pet_title_instances` for stable KEY/order/equipped state while preserving current list sequence.
+Modernization: canonical 목록 self는 app-wiring MODERN 조회로 연결됐습니다. `/펫타이틀이름 [인자]`는 MODERN에서 canonical ITEM 티켓 차감, 요청별 PET_TITLE 정의·소유 occurrence 생성, typed receipt/OWNER participant, command execution, Iris outbox, claim 완료를 한 transaction으로 처리합니다. 동일 표시명도 요청별 정의 ID를 따로 만들며, 티켓은 `LEGACY_JSON/member.bag/정확한 원본 문자열` import binding으로만 찾습니다. `/펫타이틀판매 [번호]`는 방의 활성 계정 selection을 먼저 잠근 뒤 world scope→영지전 권위를 잠그고, 비활성일 때 소유 occurrence의 획득가격 우선 판매가, `LEGACY_JSON/member.point/point` 통화 정의, CURRENCY 잔액·operation·ledger, PET_TITLE SELL receipt와 Iris 응답을 같은 mutation transaction으로 처리합니다. ACTIVE_OPENING/ACTIVE_READY에서는 타이틀·통화를 변경하지 않고 typed PET_TITLE no-op receipt와 `NO_REPLY` execution만 저장하며 outbox는 만들지 않습니다. 생성·판매 등록 rollout은 SHADOW이며 WBS742 V2 exact import 승인 전에는 MODERN 전환하지 않습니다. `/펫타이틀 [번호]` 선택 MODERN도 mutation reply 계약이 완성될 때까지 레거시로 고정합니다.
 
-Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
+Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이틀목록 [유저명]`, `/펫타이틀이름 [인자]`, `/펫타이틀판매 [번호]`, `/펫타이틀제거 [유저명] [타이틀번호]`.
 
 ## Command Anchors
 
@@ -4449,6 +4520,10 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/pet/pet-title-app-wiring-ingress.ts`
+- `개발환경_고도화/runtime/src/pet/pet-title-canonical-read-provider.ts`
+- `개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts`
+- `개발환경_고도화/runtime/src/account-platform/player-context-provider.ts`
 
 ## Related Helpers
 
@@ -4460,10 +4535,21 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 - `petTitleData.member[sender].title.list`
 - `petTitleData.member[sender].title.num`
 - `petTitleData.member[targetUser].title.list`
+- `canonical_owned_pet_title_instances` + `canonical_pet_title_definitions` (MODERN self 목록 및 선택 SHADOW)
+- `canonical_pet_title_selections` (현재 선택 표시)
+- `canonical_item_definition_imports` + `canonical_owned_item_stacks` + `canonical_item_inventory_ledger_entries` (생성 티켓 exact ID 해석·차감)
+- `canonical_pet_title_operations` + `canonical_pet_title_operation_participants` (생성 typed receipt·OWNER)
+- `guild_territory_start_scopes` → `guild_territory_wars` (선택 SHADOW와 판매 MODERN의 공용 world 영지전 권위)
+- `canonical_currency_definition_imports` + `canonical_player_currency_balances` + `canonical_currency_operations` + `canonical_currency_ledger_entries` (판매 포인트 정산)
 
 ## Save Flow
 
-- Read-only in the confirmed branch
+- 레거시 `Info.js` 목록은 read-only
+- canonical self 목록은 claim·조회 결과·outbox를 한 READ_ONLY transaction으로 저장
+- canonical 선택 SHADOW는 query-only이며 실제 선택 저장은 아직 레거시 경로가 담당
+- canonical 생성 MODERN은 활성 계정 selection을 잠근 뒤 도메인 변경·응답 outbox를 원자 저장하며 replay에서 다시 차감·생성하지 않음
+- canonical 판매 MODERN은 selection→world scope→war→player→owned title→currency 순으로 잠그고, 판매·포인트·typed receipt·응답을 원자 저장하며 replay에서 중복 적립하지 않음
+- 영지전 활성 판매는 PET_TITLE no-op receipt·OWNER participant·`NO_REPLY` command execution을 저장하고 outbox 0건을 유지
 
 ## Related Commands
 
@@ -4475,6 +4561,7 @@ Connected commands: `/펫타이틀 [번호]`, `/펫타이틀목록`, `/펫타이
 
 - Pet-title inventory viewer parallel to `/타이틀목록`
 - Useful when checking title-equip state mismatches between pet profile output and title storage
+- target 목록 MODERN은 레거시 room/principal 권한 parity가 완성될 때까지 fallback
 
 ---
 
@@ -4832,6 +4919,50 @@ Status: VERIFIED
 
 - Ranking output for elemental/spirit enhancement state
 - Investigate here before checking broader pet-summary commands
+
+---
+
+# /정령정보
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/정령정보`
+- Search in `개발환경_고도화/runtime/src/app.ts`: `isSpiritInfoCommand`, `spirit_info_read`
+
+## Files
+
+- `main.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/pet/spirit-info-service.ts`
+
+## Related Helpers
+
+- `isSpiritInfoCommand`
+- `isSpiritInfoOperator`
+- `formatSpiritInfoReplies`
+- `SpiritInfoService`
+
+## Data Usage
+
+- legacy pet state: `player_pet_elementals.grade_code`, `display_name`, `grade_display_name`, `enhancement_level`
+- bridge order: `elemental_enhancement_grades.grade_order` → `canonical_elemental_grade_definition_bridges.elemental_grade_order`
+- canonical CUID FK: `canonical_elemental_grade_definition_bridges.equipment_grade_definition_id` → `canonical_equipment_grade_definitions.equipment_grade_definition_id`
+- replay receipt: `operations`, `outbox_messages`
+
+## Save Flow
+
+- `partialDispatchCandidate`가 exact `/정령정보`를 현재 SHADOW rollout에서 MODERN route 대상 후보로 분류한다.
+- 서비스는 신뢰된 현재 이벤트 표시명과 stable external identity를 확인하며, `player_profiles.current_display_name`을 운영자 권한 식별에 사용하지 않는다.
+- 동일 이벤트는 caller actor, 요청 fingerprint, terminal result, 두 outbox 전달 메타데이터와 payload를 MariaDB transaction에서 먼저 검증하고 live pet/catalog 재조회 없이 exact replay한다.
+- 최초 실행만 canonical bridge/definition을 조회하며 operation, 두 outbox, command execution, audit, terminal result를 한 MariaDB 트랜잭션으로 저장한다.
+
+## AI Notes
+
+- 사용자 응답은 기존 JSON 속성 순서와 Unicode를 유지한 정확히 두 메시지다.
+- 표시명·alias는 canonical grade identity가 아니며 등급 계산값은 CUID FK로 연결된 canonical definition에서만 읽는다.
+- 비운영자는 silent이며 untrusted 표시명 provenance, replay actor/payload/outbox drift, 누락 bridge/definition은 fail-close한다.
 
 ---
 
@@ -5206,10 +5337,13 @@ Status: VERIFIED
 ## Data Usage
 
 - `data.member[*].server`
+- 활성 `legacy_snapshot_sets`의 `legacy_source_snapshots(source_code='member')`
+- `admin_server_stat_snapshot_sets`, `admin_server_stat_snapshot_rows`
 
 ## Save Flow
 
-- Read-only in the confirmed branch
+- 원본 member snapshot은 읽기 전용
+- 결과 snapshot, operation, command audit, outbox는 한 transaction에서 기록
 
 ## Related Commands
 
@@ -5220,6 +5354,9 @@ Status: VERIFIED
 
 - Aggregates server-name distribution from member profiles
 - Missing or blank `member.server` values are folded into unknown counts
+- 실제 Iris HTTP ingress에서 정확한 `/서버통계`만 후보로 등록하며 주입된 `prod`/`dev` 환경을 사용
+- 현대 경로는 레거시보다 강한 `stats.server.read` 활성 역할 및 deny override 권한을 적용
+- event replay fingerprint는 환경·메시지·actor·channel·destination을 고정
 
 ---
 
@@ -5730,6 +5867,7 @@ Status: VERIFIED
 - `/다이아상점구매` and `/다이아차감` save cumulative used diamond totals and usage history through `saveJsonFile(currencyLogData, currencyLogPath)`
 - `/맞짱` loads `homeDataFile` once for the command flow and passes the loaded data into battle calculation helpers
 - `/맞짱시간체크 [닉네임]` loads `homeDataFile` and measures the named user's 종합매력 runtime with detailed component timings
+- 현대 경로는 `MatzangTimeCheckService`가 활성 관리자 권한과 안정 player ID를 확인하고, 진단 source·receipt를 하나의 MariaDB transaction에서 처리한다.
 - `/참여` calculates and stores the user's `totalExp`; `/맞짱` uses the stored participant `totalExp` for faster battle resolution
 - 고도화 `/참여` provider는 `/참여`·`ㅊㅇ` 정확 일치 별칭, rollout, 참여 시점 종합매력·펫 타입·강화 수치 스냅샷, 멱등 replay, outbox·감사 원장을 하나의 MariaDB transaction으로 처리한다.
 - `/맞짱` only reloads `homeDataFile` to repair older active participant data when a participant has no stored `totalExp`
@@ -5764,6 +5902,8 @@ Status: VERIFIED
 - 맞짱은 참여 시점 종합매력에 상성·크리티컬을 적용한 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 상세보기는 양측 기본/상성/최종 매력, 크리티컬, 비교식과 매력 차이를 카드형 UI로 표시한다.
 - `/맞짱시간체크 [닉네임]` measures only the named user's 종합매력 calculation and reports response-entry total, diagnostic-branch, home-load, total calculation, response common processing timings for data loads/normalizers, and detailed component timings for castle, raid, equipment, home, pet, mini-pet, intimacy, pet skill, and upgrade bonus; 0ms detail rows are hidden; it does not select an opponent or run `runMatzangBattle`
+- 현대 진단도 캐슬 공격아이템·장비·펫·미니펫·홈·친밀도·비티어 펫스킬, 레이드 장비·펫·미니펫·홈·비티어 펫스킬, 강화 보너스를 같은 레거시 식으로 합산한다. 캐슬/레이드 큐브·티어 스킬·레이드 친밀도는 진단 합계에서 제외한다.
+- 동일 닉네임이 둘 이상이면 fail closed하며, 환경·event·actor·channel·message가 다른 operation replay를 거부한다.
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
@@ -6321,6 +6461,8 @@ Status: VERIFIED
 - `개발환경_고도화/runtime/src/signup/site-signup-web-assets.ts`
 - `개발환경_고도화/runtime/src/user-auth/routes.ts`
 - `개발환경_고도화/runtime/src/user-auth/provider-verification-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-platform-challenge-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/maria-account-platform-repository.ts`
 
 ## Related Helpers
 
@@ -6329,20 +6471,24 @@ Status: VERIFIED
 - `registerSiteSignupWebRoutes`
 - `UserAuthService.signup`
 - `ProviderVerificationService.verifyInitialKakao`
+- `AccountPlatformChallengeService.issue`
+- `AccountPlatformChallengeService.verify`
 - `createInitialPlayer`
 
 ## Data Usage
 
 - Modern DB: `user_accounts`, `user_terms_acceptances`, `user_verification_challenges`
-- Modern DB after Kakao verification: `external_identities`, `players`, `player_profiles`, `player_pets`, `currency_accounts`, `player_counters`
+- Account-platform DB after Kakao verification: `canonical_portal_accounts`, `portal_game_account_links`, `account_platform_identities`, `account_platform_contexts`, `account_platform_context_memberships`, `account_platform_active_player_selections`, `account_platform_nickname_observations`
+- New game-account verification creates `players`, `player_profiles`, `player_pets`, `currency_accounts`, and `player_counters`; legacy verification preserves the selected existing `player_id` and its game data.
 - Modern operation evidence: `operations`, `command_audit`, `command_executions`, `outbox_messages`
 - Legacy Gate 8 source remains in `main.js` and its JSON member flow is unchanged.
 
 ## Save Flow
 
 - The modern exact `/가입` command queues only the `/signup` web guidance reply; it does not create a legacy `player_signup_requests` row.
-- `POST /api/v1/user-accounts` creates the pending account, terms acceptance, and one-time challenge in the existing transaction.
-- Exact `/인증 [A-Z2-9 8자리]` links the Kakao identity and calls `createInitialPlayer` in the existing provider-verification transaction.
+- `POST /api/v1/user-accounts` creates the pending account, terms acceptance, and a hashed `NEW_GAME_ACCOUNT` or `LEGACY_GAME_ACCOUNT_LINK` challenge in one transaction. The web form requires an existing numeric `player_id` only for legacy linking.
+- A web-issued challenge intentionally leaves room context empty. Exact `/인증 [A-Z2-9 8자리]` binds it to the first Kakao room, then atomically creates or preserves the game account, assigns `REPRESENTATIVE`/`SUB`, records the room membership and active `player_id`, consumes the challenge, and writes audit/outbox evidence.
+- Pre-migration pending `initial_link` codes remain consumable through the compatibility verifier; reissue supersedes them with the new challenge model.
 - `/가입한다` remains the guild join confirmation command and is not treated as the web signup entry.
 
 ## Related Commands
@@ -6360,6 +6506,68 @@ Status: VERIFIED
 - The generated code alphabet excludes ambiguous `0`, `1`, `I`, and `O` values.
 - Exact 8-character signup codes are reserved for user verification; other `/인증 [대상]` inputs retain the existing administrator RBAC path.
 - Public signup uses the same-origin `/signup` shell and existing authentication APIs. Do not invent a production hostname before Gate 8.
+
+---
+
+# /계정변경 [게임계정]
+
+Status: VERIFIED
+
+## Files
+
+- `개발환경_고도화/runtime/src/account-platform/account-platform-command-context-provider.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-platform-iris-context-provider.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-platform-actor-context-resolver.ts`
+- `개발환경_고도화/runtime/src/account-platform/player-context-provider.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-switch-command-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/account-platform-service.ts`
+- `개발환경_고도화/runtime/src/account-platform/maria-account-platform-repository.ts`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/test/account-platform-app-ingress.test.ts`
+
+## Related Helpers
+
+- `AccountPlatformCommandContextProvider.prepare`
+- `AccountPlatformIrisContextProvider.prepareKakao`
+- `AccountPlatformIrisContextProvider.dispatchAccountSwitch`
+- `dispatchAccountSwitchCommand`
+- `AccountPlatformActorContextResolver.resolve`
+- `MariaPlayerContextProvider.resolveSelf`
+- `MariaPlayerContextProvider.resolveUniqueLegacyDisplayTarget`
+- `isAccountSwitchCommandCandidate`
+- `readAccountSwitchSelector`
+- `AccountSwitchCommandService.handleKakaoFromSnapshot`
+- `AccountPlatformService.switchActiveGameAccount`
+
+## Data Usage
+
+- Portal ownership: `canonical_portal_accounts`, `portal_game_account_links`
+- Kakao room context: `account_platform_identities`, `account_platform_contexts`, `account_platform_context_memberships`
+- Active account state: `account_platform_active_player_selections`
+- Canonical consumer identity bridge: `external_identities`, `canonical_player_identity_crosswalks`, `canonical_players`
+- Replay and audit evidence: `account_platform_switch_receipts`, `operations`, `command_audit`, `command_executions`, `outbox_messages`
+
+## Save Flow
+
+- The exact command accepts `/계정변경 [player_id 또는 현재 게임계정 닉네임]`; 닉네임은 공백을 포함할 수 있지만 선행 공백·빈 선택자·줄바꿈 입력은 실행하지 않는다.
+- Iris event normalization supplies the event/user/room keys. `prepareKakao` resolves and freezes the room-scoped active player once at command start.
+- The platform-neutral context provider uses the same snapshot contract for Kakao rooms and Discord servers; Discord keeps one platform identity while resolving a separate active player per server.
+- `dispatchAccountSwitch` passes the frozen membership and `selection_version` to the switch transaction without resolving the active player again.
+- The transaction verifies that the requested player belongs to the same portal account, applies optimistic selection-version locking, and records replay-safe receipt/audit/outbox evidence.
+
+## Related Commands
+
+- `/가입`
+- `/인증 [8자리 코드]`
+
+## AI Notes
+
+- The provider, transaction path, and `app.ts` Iris ingress are verified, including MariaDB restart/replay and operational-channel/non-duplicate command gating. The broader active-player snapshot propagation to other game-command consumers remains pending behind WBS743.
+- No Discord webhook ingress exists in the current runtime. The shared provider and service/DB tests cover Discord server scoping without inventing an unowned transport route.
+- Do not fall back to legacy `external_identities.player_id` for `/계정변경`; a verified modern room context is required.
+- When an active room/server selection exists, a missing or mismatched caller portal link is mapping drift and must fail closed instead of falling back to the legacy identity path.
+- After a legacy player is linked to a portal account, an unverified room/server cannot recover that player through the legacy fallback path; it must establish its own active context first.
+- Keep the event-start actor snapshot fixed through the transaction so a concurrent room selection change cannot alter command ownership mid-event.
 
 ---
 
@@ -7529,3 +7737,78 @@ Status: VERIFIED
 - 신규 Runtime의 단일 MariaDB transaction과 동일 event·동시 전달·재시작 결과 replay
 - outbox 실패 시 quota·반응·배지·알림·원장 전체 rollback
 - 레거시 `main.js`와 운영 JSON은 변경하지 않음
+# /펫타이틀동기화
+
+Status: VERIFIED
+
+## Files
+- `main.js`
+- `개발환경_고도화/runtime/src/admin/pet-title-admin-app-wiring-ingress.ts`
+- `개발환경_고도화/runtime/src/account-platform/active-member-authority-provider.ts`
+- `개발환경_고도화/runtime/src/pet/pet-title-canonical-mutation-provider.ts`
+
+## Related Helpers
+- `PetTitleAdminAppWiringIngress.sync`
+- `AccountPlatformActiveMemberAuthorityProvider.lockSnapshot`
+- `PetTitleCanonicalMutationProvider.adminSync`
+
+## Data Usage
+- 활성 legacy `players`와 `player_profiles`를 회원 권위로 사용
+- canonical player source/crosswalk를 양방향 대사
+- `canonical_owned_pet_title_instances`의 비활성 회원 보유 행만 soft remove
+- ADMIN_SYNC 대상은 `canonical_pet_title_batch_operation_targets.member_key_before`에 실행 당시 회원 표시명을 스냅샷으로 보존하고, 표시명을 쓰지 않는 ADMIN_RESET 대상은 `NULL` 유지
+- ADMIN_SYNC에서 profile/linked identity 표시값이 없으면 내부 CUID를 닉네임으로 대체하지 않고 명시적으로 실패하며, LEGACY_JSON 표시값 적재는 별도 운영 데이터 이관 WBS가 선행
+
+## Save Flow
+- legacy 경로는 기존 JSON load/save 흐름 유지
+- MODERN 경로는 account-authority mutex → PET_TITLE mutex → context/회원 권위 → typed receipt/outbox를 한 transaction으로 처리
+- typed receipt의 target/result fingerprint와 outbox 응답은 실행 당시 표시명을 사용하며, 재시작 뒤 닉네임이 바뀌어도 최초 응답을 그대로 replay
+- `result_contract_version`의 `LEGACY`/`MEMBER_KEY_V1`/`RESET_V1`별 fingerprint 계약을 검증해 migration 474 이전 완료 receipt와 reset 원응답도 그대로 replay
+
+# /선물전달
+
+Status: VERIFIED
+
+## Files
+- `개발환경_고도화/runtime/src/admin/admin-global-gift-service.ts`
+- `개발환경_고도화/runtime/src/app.ts`
+
+## Related Helpers
+- `isAdminGlobalGiftCommand`
+- `dispatchAdminGlobalGiftCommand`
+- `AdminGlobalGiftService.handle`
+
+## Data Usage
+- `LEGACY_JS/member.bag/호이응원패키지(무료)🐹[2]` source binding으로 canonical `item_id`를 해석
+- 실행 시작 시 활성 legacy 회원과 연결된 canonical `player_id`를 잠그고 수신자 snapshot 고정
+- `canonical_owned_item_stacks`에 대상별 정확히 1개 증가
+- 합성 설정된 11개 채널을 `channel_sequence` 순서로 snapshot하고 동일 원문을 outbox에 저장
+
+## Save Flow
+- RFA01 request/result fingerprint, 전용 typed receipt, 수신자/채널 snapshot, ownership 증가, 11건 outbox를 한 transaction으로 commit
+- 같은 event replay와 재시작 replay는 저장된 terminal을 검증하고 추가 지급·추가 outbox를 만들지 않음
+- SHADOW route는 service에 진입하지 않아 mutation/outbox가 없음
+
+# 공용 READ_ONLY SHADOW 복구 경계
+
+Status: VERIFIED
+
+## Files
+- `개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts`
+- `개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts`
+- `개발환경_고도화/runtime/src/integration/event-processing-service.ts`
+
+## Related Helpers
+- `MariaAppWiringReadOnlyRecoveryProvider.execute`
+- `MariaAppWiringOperationProvider.executeAtomicReadOnlyShadowInTransaction`
+- `ProcessIrisEventService.executeAtomicCommandInTransaction`
+
+## Data Usage
+- verified environment/database와 event/message/actor/channel/dev-context fingerprint를 하나의 claim에 고정
+- 기존 `event_inbox`, `canonical_app_wiring_operations`, `operations`, `command_executions`만 사용하며 outbox는 생성하지 않음
+
+## Save Flow
+- event inbox claim부터 READ_ONLY callback projection hash와 terminal `NO_REPLY` receipt까지 repeatable-read consistent root transaction 하나에서 확정
+- MariaDB 1205/1213만 최대 3회 재시도하고 transient FAILED 재시작은 기존 failed operation/execution을 fenced update로 재사용
+- completed replay는 callback 없이 exact 1 operation, exact 1 command execution, outbox 0과 저장 projection 재해시를 검증
+- 공용 provider seam만 제공하며 개별 명령 consumer와 DIRECT/외부 reply는 연결하지 않음

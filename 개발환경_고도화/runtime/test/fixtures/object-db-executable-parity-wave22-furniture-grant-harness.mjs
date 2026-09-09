@@ -1,0 +1,33 @@
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { projectObjectDbMutationActualResult,projectObjectDbMutationOracleResult,validateObjectDbMutationScenarioEvidence } from "../../src/data-migration/object-db-consumer-mutation-evidence.js";
+const hash=value=>createHash("sha256").update(value.replace(/\r\n?/g,"\n"),"utf8").digest("hex");
+const assert=(condition,message)=>{if(!condition)throw new Error(message);};
+const [inputPath,outputDirectory,targetPath]=process.argv.slice(2);if(!inputPath||!outputDirectory||!targetPath)throw new Error("Wave22 harness arguments missing");
+const input=JSON.parse(readFileSync(resolve(inputPath),"utf8")),fixture=input.fixturePayload,binding=input.binding;
+assert(binding.consumerId==="sql-repository-6a8f4b07e980a91f","Wave22 consumer binding drift");
+assert(binding.exportName==="executeWave22FurnitureGrant","Wave22 export binding drift");
+assert(binding.harnessCaseId==="case:wave22:furniture-grant","Wave22 case binding drift");
+assert(input.invocation.targetPath==="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave22-furniture-grant.mjs","Wave22 target path drift");
+assert(hash(readFileSync(resolve(targetPath),"utf8"))===input.invocation.targetSourceSha256,"Wave22 target hash drift");
+assert(fixture.fixtureId==="fixture:object-db-executable-parity:wave22:furniture-grant:v1"&&fixture.sliceId==="WBS786","Wave22 fixture identity drift");
+assert(Array.isArray(fixture.runtimeSourcePaths)&&fixture.runtimeSourcePaths.length===7,"Wave22 runtime source chain drift");
+assert(fixture.receiptContract.locatorProjectionMode==="RAW_COMPOSITE_DB_PROJECTION","Wave22 locator projection contract drift");
+const repositoryRoot=resolve(import.meta.dirname,"../../../..");
+for(const source of input.runtimeSourceHashes){
+  assert(fixture.runtimeSourcePaths.includes(source.path),`Wave22 unexpected runtime source: ${source.path}`);
+  const committed=execFileSync("git",["show",`${input.evidenceCommit}:${source.path}`],{cwd:repositoryRoot,encoding:"utf8",maxBuffer:16*1024*1024});
+  assert(hash(committed)===source.sha256,`Wave22 committed source drift: ${source.path}`);
+  assert(hash(readFileSync(resolve(repositoryRoot,source.path),"utf8"))===source.sha256,`Wave22 worktree source drift: ${source.path}`);
+}
+const repositorySource=readFileSync(resolve(repositoryRoot,fixture.mutationContract.source.path),"utf8").replace(/\r\n?/g,"\n");
+assert(hash(repositorySource)===fixture.mutationContract.source.sha256,"Wave22 repository source hash drift");
+assert(hash(repositorySource.slice(fixture.mutationContract.source.spanStart,fixture.mutationContract.source.spanEnd))===fixture.mutationContract.source.spanSha256,"Wave22 repository source span drift");
+const observation=fixture.sealedObservations.find(candidate=>candidate.scenarioKind===binding.scenarioKind);assert(observation!==undefined,"Wave22 sealed observation missing");
+const verified=validateObjectDbMutationScenarioEvidence(fixture.mutationContract,observation);
+const oracle=fixture.mutationContract.scenarios.find(candidate=>candidate.scenarioKind===binding.scenarioKind);assert(oracle!==undefined,"Wave22 oracle missing");
+const expected=projectObjectDbMutationOracleResult(oracle),actual=projectObjectDbMutationActualResult(observation,verified.primary);assert(JSON.stringify(expected)===JSON.stringify(actual),"Wave22 independent oracle mismatch");
+writeFileSync(resolve(outputDirectory,"reply.raw"),"NO_REPLY","utf8");writeFileSync(resolve(outputDirectory,"result.raw"),JSON.stringify(actual),"utf8");writeFileSync(resolve(outputDirectory,"trace.json"),JSON.stringify(observation),"utf8");
+writeFileSync(resolve(outputDirectory,"case-result.json"),JSON.stringify({format:"hoibot-object-db-consumer-parity-case-result-v1",passed:true,assertionCount:28,executedConsumerId:binding.consumerId,executedCaseId:binding.harnessCaseId,fixtureId:fixture.fixtureId,scenarioId:binding.scenarioId,scenarioKind:binding.scenarioKind,invocation:input.invocation,artifacts:{replyPath:"reply.raw",resultPath:"result.raw",tracePath:"trace.json"}}),"utf8");

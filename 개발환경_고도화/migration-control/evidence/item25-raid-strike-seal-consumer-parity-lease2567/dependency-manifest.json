@@ -1,0 +1,39 @@
+{
+  "format": "hoibot-item25-raid-strike-seal-consumer-parity-dependencies-v1",
+  "wbs": 754,
+  "lease": 2567,
+  "reused": [
+    "source audit commit 3b3bdb33",
+    "migration 386 raid item bonus catalog (read-only)",
+    "migration 387 territory item catalog (read-only)",
+    "item25 canonical definition provider lease2556",
+    "CanonicalItemInventoryRepository",
+    "canonical_player_identity_crosswalks",
+    "canonical_item_definition_imports",
+    "object_identity_crosswalks",
+    "canonical_owned_item_stacks",
+    "migration 424 package typed reward target catalog (read-only)",
+    "migration 428 home building recipe parity (read-only)",
+    "migration 429 tower reward target parity (read-only)",
+    "RFA01 createRequestReuseEnvelope",
+    "existing root transaction, audit and outbox flow",
+    "existing focused RFA02/RFA03 compatibility tests"
+  ],
+  "canonicalTargetWrites": [
+    "canonical_owned_item_stacks",
+    "canonical_item_inventory_operations",
+    "canonical_item_inventory_ledger_entries"
+  ],
+  "unchangedNonTargetWrites": [
+    "legacy inventory_stacks for junk, tower helper items and all non-target package items",
+    "legacy currency_accounts for point",
+    "operations, inventory_ledger, currency_ledger, package_item_effects, outbox_messages, command_executions, command_audit"
+  ],
+  "notAdded": ["schema", "migration", "catalog rule", "acquisition rule", "effect rule", "consumer rule", "probability rule", "duplicate ownership provider"],
+  "limitations": [
+    "No active modern home-building command consumer was found in this slice; no consumer was invented.",
+    "The existing MariaCanonicalBuildingRecipeRepository is the validated canonical CUID ownership boundary for the 140 preserved typed home requirements.",
+    "Production activation requires the separately planned operational ownership import of the audited 308 owners / 7,342 quantity into canonical stacks; this lease does not migrate operating data.",
+    "This slice adopts RFA01 for craft replay; it does not claim a new RFA02 or RFA03 adapter adoption."
+  ]
+}

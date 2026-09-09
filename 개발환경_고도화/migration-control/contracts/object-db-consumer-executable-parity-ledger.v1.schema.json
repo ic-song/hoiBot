@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hoibot.local/contracts/object-db-consumer-executable-parity-ledger.v1.schema.json",
+  "title": "hoiBot object DB consumer executable parity ledger v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "catalogVersion", "classificationBaseCommit", "evidenceCommit", "sourceTextNormalization", "sources", "registrySourceMismatchResolution", "coverage", "entries", "entrySetSha256"],
+  "properties": {
+    "format": { "const": "hoibot-object-db-consumer-executable-parity-ledger-v1" },
+    "catalogVersion": { "const": "SC-20260902-1" },
+    "classificationBaseCommit": { "$ref": "#/$defs/commit" },
+    "evidenceCommit": { "$ref": "#/$defs/commit" },
+    "sourceTextNormalization": { "const": "CRLF_AND_CR_TO_LF_BEFORE_HASH" },
+    "sources": { "$ref": "#/$defs/sources" },
+    "registrySourceMismatchResolution": { "$ref": "#/$defs/mismatchResolution" },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "entries": { "type": "array", "minItems": 1133, "maxItems": 1133, "items": { "$ref": "#/$defs/entry" } },
+    "entrySetSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "commit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nullableSha256": { "oneOf": [{ "$ref": "#/$defs/sha256" }, { "type": "null" }] },
+    "consumerId": { "type": "string", "pattern": "^(legacy|automatic-callback|runtime-dispatch|admin-command|http-web-route|app-wiring|sql-repository)-[a-f0-9]{16}$" },
+    "sourceHash": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+      "properties": { "path": { "$ref": "#/$defs/nonEmptyString" }, "sha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "sources": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ledgerSchema", "executionReceiptSchema", "consumerManifest", "consumerIdRegistry", "transitionContract", "executionReceipts", "classificationSources"],
+      "properties": {
+        "ledgerSchema": { "$ref": "#/$defs/sourceHash" },
+        "executionReceiptSchema": { "$ref": "#/$defs/sourceHash" },
+        "consumerManifest": {
+          "type": "object", "additionalProperties": false, "required": ["path", "sha256", "consumerSetSha256"],
+          "properties": { "path": { "$ref": "#/$defs/nonEmptyString" }, "sha256": { "$ref": "#/$defs/sha256" }, "consumerSetSha256": { "$ref": "#/$defs/sha256" } }
+        },
+        "consumerIdRegistry": { "$ref": "#/$defs/sourceHash" },
+        "transitionContract": { "$ref": "#/$defs/sourceHash" },
+        "executionReceipts": { "$ref": "#/$defs/sourceHash" },
+        "classificationSources": { "type": "array", "minItems": 0, "items": { "$ref": "#/$defs/sourceHash" } }
+      }
+    },
+    "mismatchResolution": {
+      "type": "object", "additionalProperties": false, "required": ["bindings", "unattributed"],
+      "properties": {
+        "bindings": { "type": "array", "items": { "$ref": "#/$defs/mismatchBinding" } },
+        "unattributed": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true }
+      }
+    },
+    "mismatchBinding": {
+      "type": "object", "additionalProperties": false, "required": ["registrySourceMismatch", "consumerId", "sourceSpanSha256"],
+      "properties": { "registrySourceMismatch": { "$ref": "#/$defs/nonEmptyString" }, "consumerId": { "$ref": "#/$defs/consumerId" }, "sourceSpanSha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "verdictCounts": {
+      "type": "object", "additionalProperties": false, "required": ["STATIC_ONLY", "BLOCKED_DYNAMIC", "BLOCKED_REGISTRY_MISMATCH", "PARTIAL", "DIRECT_PASS", "EQUIVALENT_PASS"],
+      "properties": {
+        "STATIC_ONLY": { "type": "integer", "minimum": 0 }, "BLOCKED_DYNAMIC": { "type": "integer", "minimum": 0 },
+        "BLOCKED_REGISTRY_MISMATCH": { "type": "integer", "minimum": 0 }, "PARTIAL": { "type": "integer", "minimum": 0 },
+        "DIRECT_PASS": { "type": "integer", "minimum": 0 }, "EQUIVALENT_PASS": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["manifestConsumers", "ledgerEntries", "missingConsumerIds", "duplicateConsumerIds", "unknownConsumerIds", "readConsumers", "mutationConsumers", "unresolvedDynamicConsumers", "unresolvedDynamicCallCount", "registrySourceMismatchCount", "registrySourceMismatchAttributedCount", "registrySourceMismatchUnattributedCount", "provenConsumers", "unprovenConsumers", "directPassConsumers", "equivalentPassConsumers", "verdicts"],
+      "properties": {
+        "manifestConsumers": { "const": 1133 }, "ledgerEntries": { "const": 1133 }, "missingConsumerIds": { "const": 0 },
+        "duplicateConsumerIds": { "const": 0 }, "unknownConsumerIds": { "const": 0 }, "readConsumers": { "const": 504 },
+        "mutationConsumers": { "const": 629 }, "unresolvedDynamicConsumers": { "const": 82 }, "unresolvedDynamicCallCount": { "const": 82 },
+        "registrySourceMismatchCount": { "const": 0 }, "registrySourceMismatchAttributedCount": { "const": 0 },
+        "registrySourceMismatchUnattributedCount": { "const": 0 }, "provenConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 },
+        "unprovenConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 }, "directPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 },
+        "equivalentPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 }, "verdicts": { "$ref": "#/$defs/verdictCounts" }
+      }
+    },
+    "classification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "file", "symbol", "triggerOrPredicate", "access", "accessClass", "interfaceId", "unresolvedDynamicCallCount", "registrySourceMismatchLabels", "sourceSpanSha256", "classificationSha256"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/nonEmptyString" }, "file": { "$ref": "#/$defs/nonEmptyString" }, "symbol": { "$ref": "#/$defs/nonEmptyString" },
+        "triggerOrPredicate": { "$ref": "#/$defs/nonEmptyString" }, "access": { "enum": ["READ", "WRITE", "READ_WRITE"] },
+        "accessClass": { "enum": ["READ", "MUTATION"] }, "interfaceId": { "$ref": "#/$defs/nonEmptyString" },
+        "unresolvedDynamicCallCount": { "type": "integer", "minimum": 0 }, "registrySourceMismatchLabels": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "sourceSpanSha256": { "$ref": "#/$defs/sha256" }, "classificationSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "scenarioKind": {
+      "enum": ["READ_POSITIVE", "NEGATIVE_GUARD", "AUTH_DENIED", "WRONG_ROOM_REJECTED", "EXACT_OUTPUT", "SOURCE_DOMAIN_DML_ZERO", "RESTART_CONSISTENCY", "MUTATION_SUCCESS", "DOMAIN_FAILURE_ROLLBACK", "DUPLICATE_REPLAY_DML_ZERO", "PAYLOAD_DRIFT_FAIL_CLOSED", "RESTART_REPLAY", "CONCURRENCY_SINGLE_WRITER"]
+    },
+    "notApplicable": {
+      "type": "object", "additionalProperties": false, "required": ["ruleId", "reasonCode", "reason", "sourceEvidenceSha256"],
+      "properties": {
+        "ruleId": { "enum": ["SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1", "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1"] },
+        "reasonCode": { "enum": ["NO_AUTH_GUARD", "NO_ROOM_GUARD"] }, "reason": { "$ref": "#/$defs/nonEmptyString" }, "sourceEvidenceSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "scenarioRequirement": {
+      "type": "object", "additionalProperties": false, "required": ["scenarioKind", "disposition", "notApplicable"],
+      "properties": { "scenarioKind": { "$ref": "#/$defs/scenarioKind" }, "disposition": { "enum": ["REQUIRED", "NOT_APPLICABLE"] }, "notApplicable": { "oneOf": [{ "$ref": "#/$defs/notApplicable" }, { "type": "null" }] } }
+    },
+    "hashComparison": {
+      "type": "object", "additionalProperties": false, "required": ["expectedSha256", "actualSha256", "match"],
+      "properties": { "expectedSha256": { "$ref": "#/$defs/sha256" }, "actualSha256": { "$ref": "#/$defs/sha256" }, "match": { "const": true } }
+    },
+    "dmlComparison": {
+      "type": "object", "additionalProperties": false, "required": ["expectedSha256", "actualSha256", "match", "expectedNormalizedStatements", "actualNormalizedStatements", "expectedRowCount", "actualRowCount"],
+      "properties": {
+        "expectedSha256": { "$ref": "#/$defs/sha256" }, "actualSha256": { "$ref": "#/$defs/sha256" }, "match": { "const": true },
+        "expectedNormalizedStatements": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }, "actualNormalizedStatements": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "expectedRowCount": { "type": "integer", "minimum": 0 }, "actualRowCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "sequenceComparison": {
+      "type": "object", "additionalProperties": false, "required": ["expected", "actual", "match"],
+      "properties": { "expected": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }, "actual": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }, "match": { "const": true } }
+    },
+    "transactionComparison": {
+      "type": "object", "additionalProperties": false, "required": ["expected", "actual", "match", "expectedTimeline", "actualTimeline"],
+      "properties": {
+        "expected": { "enum": ["READ_ONLY", "COMMIT", "ROLLBACK"] }, "actual": { "enum": ["READ_ONLY", "COMMIT", "ROLLBACK"] }, "match": { "const": true },
+        "expectedTimeline": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }, "actualTimeline": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
+    "expectedActual": {
+      "type": "object", "additionalProperties": false, "required": ["reply", "result", "dml", "lockOrder", "transaction"],
+      "properties": { "reply": { "$ref": "#/$defs/hashComparison" }, "result": { "$ref": "#/$defs/hashComparison" }, "dml": { "$ref": "#/$defs/dmlComparison" }, "lockOrder": { "$ref": "#/$defs/sequenceComparison" }, "transaction": { "$ref": "#/$defs/transactionComparison" } }
+    },
+    "harness": {
+      "type": "object", "additionalProperties": false, "required": ["harnessId", "runner", "path", "sha256"],
+      "properties": { "harnessId": { "type": ["string", "null"] }, "runner": { "type": ["string", "null"] }, "path": { "type": ["string", "null"] }, "sha256": { "$ref": "#/$defs/nullableSha256" } }
+    },
+    "fixture": {
+      "type": "object", "additionalProperties": false, "required": ["fixtureId", "path", "sha256"],
+      "properties": { "fixtureId": { "type": ["string", "null"] }, "path": { "type": ["string", "null"] }, "sha256": { "$ref": "#/$defs/nullableSha256" } }
+    },
+    "invocation": {
+      "type": "object", "additionalProperties": false, "required": ["targetPath", "targetSourceSha256", "exportName"],
+      "properties": { "targetPath": { "type": ["string", "null"] }, "targetSourceSha256": { "$ref": "#/$defs/nullableSha256" }, "exportName": { "type": ["string", "null"] } }
+    },
+    "scenario": {
+      "type": "object", "additionalProperties": false, "required": ["receiptId", "scenarioId", "scenarioKind", "harnessCaseId", "attributedConsumerIds", "expectedActual"],
+      "properties": {
+        "receiptId": { "$ref": "#/$defs/nonEmptyString" }, "scenarioId": { "$ref": "#/$defs/nonEmptyString" }, "scenarioKind": { "$ref": "#/$defs/scenarioKind" },
+        "harnessCaseId": { "$ref": "#/$defs/nonEmptyString" }, "attributedConsumerIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/consumerId" } },
+        "expectedActual": { "$ref": "#/$defs/expectedActual" }
+      }
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false, "required": ["evidenceIds", "attributedConsumerIds", "hashes"],
+      "properties": {
+        "evidenceIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "attributedConsumerIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/consumerId" } },
+        "hashes": { "type": "array", "maxItems": 3, "items": { "$ref": "#/$defs/sourceHash" } }
+      }
+    },
+    "equivalenceRule": {
+      "type": "object", "additionalProperties": false, "required": ["ruleId", "ruleVersion", "mechanical", "equivalenceKey", "variantConsumerIds"],
+      "properties": {
+        "ruleId": { "const": "SAME_INTERFACE_ACCESS_V1" }, "ruleVersion": { "const": "1" }, "mechanical": { "const": true }, "equivalenceKey": { "$ref": "#/$defs/sha256" },
+        "variantConsumerIds": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/consumerId" } }
+      }
+    },
+    "entry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["consumerId", "classification", "verdict", "harness", "fixture", "invocation", "scenarioRequirements", "scenarios", "evidence", "equivalenceRule"],
+      "properties": {
+        "consumerId": { "$ref": "#/$defs/consumerId" }, "classification": { "$ref": "#/$defs/classification" },
+        "verdict": { "enum": ["STATIC_ONLY", "BLOCKED_DYNAMIC", "BLOCKED_REGISTRY_MISMATCH", "PARTIAL", "DIRECT_PASS", "EQUIVALENT_PASS"] },
+        "harness": { "$ref": "#/$defs/harness" }, "fixture": { "$ref": "#/$defs/fixture" }, "invocation": { "$ref": "#/$defs/invocation" },
+        "scenarioRequirements": { "type": "array", "minItems": 7, "maxItems": 8, "items": { "$ref": "#/$defs/scenarioRequirement" } },
+        "scenarios": { "type": "array", "maxItems": 8, "items": { "$ref": "#/$defs/scenario" } },
+        "evidence": { "$ref": "#/$defs/evidence" }, "equivalenceRule": { "oneOf": [{ "$ref": "#/$defs/equivalenceRule" }, { "type": "null" }] }
+      }
+    }
+  }
+}

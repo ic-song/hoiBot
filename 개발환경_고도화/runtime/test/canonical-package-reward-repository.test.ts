@@ -25,7 +25,7 @@ function input(overrides: Partial<CanonicalPackageImportInput> = {}): CanonicalP
   };
 }
 
-function database(options: { replay?: Record<string, string>; imported?: Record<string, string>; deadlockOnce?: boolean; unsafeNested?: Record<string, string | number>; forceUnsafeNested?: boolean; invalidDetail?: boolean } = {}): { client: DatabaseClient; writes: Array<{ sql: string; values: readonly unknown[] }>; attempts: () => number } {
+function database(options: { replay?: Record<string, string>; imported?: Record<string, string>; deadlockOnce?: boolean; deadlockAttempts?: number; unsafeNested?: Record<string, string | number>; forceUnsafeNested?: boolean; invalidDetail?: boolean } = {}): { client: DatabaseClient; writes: Array<{ sql: string; values: readonly unknown[] }>; attempts: () => number } {
   const writes: Array<{ sql: string; values: readonly unknown[] }> = [];
   let attempts = 0;
   const query = async <T>(sql: string, values: readonly unknown[] = []): Promise<T> => {
@@ -48,7 +48,7 @@ function database(options: { replay?: Record<string, string>; imported?: Record<
   const transaction: DatabaseTransaction = { query, execute };
   return {
     writes, attempts: () => attempts,
-    client: { ping: async () => undefined, verifyRollback: async () => true, query, execute, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { attempts += 1; if (options.deadlockOnce && attempts === 1) throw Object.assign(new Error("deadlock"), { code: "ER_LOCK_DEADLOCK", errno: 1213 }); return work(transaction); }, close: async () => undefined },
+    client: { ping: async () => undefined, verifyRollback: async () => true, query, execute, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => { attempts += 1; if ((options.deadlockOnce && attempts === 1) || attempts <= (options.deadlockAttempts ?? 0)) throw Object.assign(new Error("deadlock"), { code: "ER_LOCK_DEADLOCK", errno: 1213 }); return work(transaction); }, close: async () => undefined },
   };
 }
 
@@ -143,6 +143,16 @@ test("retries a deadlock and preserves one transaction boundary", async () => {
   const mock = database({ deadlockOnce: true });
   await new MariaCanonicalPackageRewardRepository(mock.client).importDefinition(input());
   assert.equal(mock.attempts(), 2);
+});
+
+test("reconciles the committed replay after bounded deadlock retries are exhausted", async () => {
+  const seed=database();
+  await new MariaCanonicalPackageRewardRepository(seed.client).importDefinition(input());
+  const fingerprint=String(seed.writes.find((row)=>row.sql.includes("INSERT INTO canonical_package_definition_replays"))?.values[4]);
+  const mock=database({deadlockAttempts:3,replay:{package_definition_operation_id:"oper0001",package_id:"pack0001",payload_fingerprint:fingerprint}});
+  const result=await new MariaCanonicalPackageRewardRepository(mock.client).importDefinition(input());
+  assert.deepEqual(result,{packageDefinitionOperationId:"oper0001",packageId:"pack0001",replayed:true});
+  assert.equal(mock.attempts(),3);
 });
 
 test("verifies exactly one typed detail per reward entry before commit", async () => {

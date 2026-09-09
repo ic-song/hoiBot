@@ -1,0 +1,31 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-data-migration-object-domain-import-contract-v4",
+  "migration": "460_data_migration_object_domain_import.sql",
+  "baseContract": "data-migration-object-domain-import.v3.json",
+  "profileContract": "object-domain-import-profile.v4.json",
+  "profileSemanticSha256": "e33533d670338c8665c2ba36aed5ff291852aa8bc1e5a00e48c9c6952f10b97f",
+  "amendmentSemanticSha256": {
+    "disposition": "15d15fdd450fab707ef94ffdcf1a1613ea1db271f302fcfc9c01d90e26063968",
+    "targetSchema": "4f9f93c6befa0cfb0d424e897cb6a9dbce6e09435fba054cd93870820cd9da4f",
+    "fieldMap": "73cfe78b51f357db0ef9fbff3e0233df11afbebe2fe4815a1130e6fa8a333745"
+  },
+  "componentSemanticSha256": {
+    "identityBindings": "62abfb152b0a9ee195b23c56aa3a379127990bd81c8f4d7ddae88fc9f42c7e9b",
+    "objectModel": "3f25620eedec682fb93c19858cf4bc8450706290f05c9aac3a8d7d9aa5f65092",
+    "disposition": "3ef51bf4212d1f71b7f4caff7453870b75073e2332256f5125831d270c598797",
+    "fieldMap": "42b430fb91c8930bbdb3cfd545c3d2779e6c471a226d1bbf9b28af30b608760b"
+  },
+  "semanticHashPolicy": {
+    "projectionVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V4",
+    "importContractProjection": "all top-level import behavior fields except semanticHashPolicy",
+    "currentImportContractProjectionSha256": "8fd9c2157e4fe49a23c0a3b4e94783113b46e38a54419f25108598a289681e48",
+    "acceptedCompatibleImportContractSha256": [],
+    "compatibilityBoundary": "V4 accepts only its current semantic contract. Existing V1, V2 and V3 COMPLETE runs replay or roll back only through their creating profile."
+  },
+  "registeredMigrationSeal": ["484_pet_skill_info_shadow_ingress.sql", "485_pet_skill_info_admin_bag_projection.sql"],
+  "registeredTableDisposition": "all 119 object-data-model contract tables are classified exactly once across the immutable V1 disposition and the V4 additions",
+  "petSkillDefinitionAmendment": "eleven columns introduced by migrations 481 and 484 are bound by the V4 target-schema and field-map amendments; migration 482 preserves UTF-8 grade values and migration 485 remains runtime projection state",
+  "directTargetCount": 47,
+  "operationalDataAllowed": false
+}

@@ -1,0 +1,3014 @@
+{
+  "format": "hoibot-object-db-consumer-execution-receipts-v1",
+  "catalogVersion": "SC-20260902-1",
+  "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
+  "evidenceCommit": "3c724f52c257f87f50805ff0957ba9e0a59d0d96",
+  "receipts": [
+    {
+      "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:exact_output",
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "actualSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "actualSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "f4819216be8cd05924adaa89b5ff3d5ed2f404e45efb1b4497888f885ec579ce"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:negative_guard",
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "actualSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "actualSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "9c64460d5b5145d8f3af7f20b8c4adcc8121b6a4d6465822334d4503cf9bc89b"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:read_positive",
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "actualSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "actualSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "9677a1144bb0ed3e1087c2d281dde77b4d2806982e7e2aee8e645e6d15aee748"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:restart_consistency",
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "actualSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "7c3dbcdf22666114e6549fcabaa33ea58e5d7f5468a019d87ec46235f2dca038",
+          "actualSha256": "7c3dbcdf22666114e6549fcabaa33ea58e5d7f5468a019d87ec46235f2dca038",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "eb011fc579ee1aac98c2da8d8b486407b78eae0e4f4576b8e5b877b26c03f7b1"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-0dc3c380c54081a2:source_domain_dml_zero",
+      "consumerId": "sql-repository-0dc3c380c54081a2",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "actualSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "actualSha256": "ee4584e8b0cdf207061c71a131185e12ff3adcd8cbf158b8ccaae70f35f25a4a",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "a5093bffbd0fdb744bdf8aaf0cec224cea2abff4a9702957572049829e20ac1b"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:exact_output",
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "actualSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "actualSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "d110b0e2421e2d486aaccedb05d716d18cd1730ad3a23934d19bcb39e46ced33"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:negative_guard",
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "actualSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "actualSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "57ded91bbc713da5127ba495664990d3447c640eb813b04d428eabd4567358c3"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:read_positive",
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "actualSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "actualSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "ac021ec712e7cfc8a78a00e227d9b766716d81629ecba5ea504196c1a16da21d"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:restart_consistency",
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "actualSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "3a099fb7193de46577bd0eab777214c315e56940f8cc1c0675a48f627fc051a2",
+          "actualSha256": "3a099fb7193de46577bd0eab777214c315e56940f8cc1c0675a48f627fc051a2",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "91f3dd3aa7eece9345727cdb53217d1fcff277b19fa8e7bed759804771685a82"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-6a1bdfaafba10749:source_domain_dml_zero",
+      "consumerId": "sql-repository-6a1bdfaafba10749",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "actualSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "actualSha256": "1cf3375f7ccdf4a33a94963e4ec3dfb51f96af7704d25860b6b40fb87b17aec5",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "ab83a7f991c32bc33c7e39f61a2aca5fc39266ea5d696ce55d494b642a960169"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:exact_output",
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "actualSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "actualSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "efca161f100cddd6ca74f8a4de04667cc9871ee42f2b4ec32bd7d5408ef98755"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:negative_guard",
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "actualSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "actualSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "21ef3e16a65b3704046048f1676bc0cb76653a9fb9f412fd693eb1e200dd02f6"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:read_positive",
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "actualSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "actualSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "8f2b549543ff190b3aaa02b4dcbcac56897e07159c31b9fe06a8ea2573351a05"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:restart_consistency",
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "actualSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "3454fe2045d2fca93dfb2381bb2cb321bf98ee2aacb8a58359ba690e22497a1a",
+          "actualSha256": "3454fe2045d2fca93dfb2381bb2cb321bf98ee2aacb8a58359ba690e22497a1a",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "8450151e82296a5cea373b24fe6b0eccd9e3b364d89a39f42da1c4ed85303a33"
+    },
+    {
+      "receiptId": "receipt:wave1:sql-repository-a0a5f5d8f3338d7b:source_domain_dml_zero",
+      "consumerId": "sql-repository-a0a5f5d8f3338d7b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave1",
+        "harnessCaseId": "case:canonical-title-list-owned",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:wave1:canonical-title-list-owned:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave1-title-list-owned-v1.json",
+        "sha256": "e69bb41cd41442741014394812faf7acf5411e4d59ed758f649ddf0a5b29e94d"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave1-title-list-owned.mjs",
+        "targetSourceSha256": "cf1d6e72f4574ee0b2a85318fd6dfded7bb94a97b006943dce046b95d2f6f0fa",
+        "exportName": "executeWave1TitleListOwned"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "actualSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "actualSha256": "0130df0e30aae1a8804d7efb02d22b46debc5085025d54dd7d51188cb580c05e",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "5a0b3baf4ec6702bbc127cf38d87db242788b156a0d29769f9598ce0b350d82a"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:exact_output",
+      "consumerId": "sql-repository-520566e376bf7ee8",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "faa9c568421fb763ef8bff7c4c6d48d333e1d33dd35020693a2d27c9e80e91c2"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:negative_guard",
+      "consumerId": "sql-repository-520566e376bf7ee8",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "89115086c80a3fef39d8c11a0901bb20e82fd5fe5b4fa3cb05ee2d8471a741f1",
+          "actualSha256": "89115086c80a3fef39d8c11a0901bb20e82fd5fe5b4fa3cb05ee2d8471a741f1",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "2e34ec3f498584b136a7652327c7a3024132c41f0392f8033692e711ea4cf307",
+          "actualSha256": "2e34ec3f498584b136a7652327c7a3024132c41f0392f8033692e711ea4cf307",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "f5ba326f079b580613dceafbca8381177349c0639da3da3cf2732094325dc775"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:read_positive",
+      "consumerId": "sql-repository-520566e376bf7ee8",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "dc7e6f0a693bb88377e84a72577473243fb25b54c79329508ccb62651107f1eb"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:restart_consistency",
+      "consumerId": "sql-repository-520566e376bf7ee8",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "b402b5dd049d5ed5a7f29f285297bf261a4e37294a25ad1a5c4df79f36bc8928",
+          "actualSha256": "b402b5dd049d5ed5a7f29f285297bf261a4e37294a25ad1a5c4df79f36bc8928",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "cae9c3de5064b6dbae0e23dcda05369185d50f93d93c4c29f96a6b3f64cfa37d"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-520566e376bf7ee8:source_domain_dml_zero",
+      "consumerId": "sql-repository-520566e376bf7ee8",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "1961a6e000b101e28623d07bfbbec6f5b7f1ee5f4dcbcfdc04bc21e2129a0531"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:exact_output",
+      "consumerId": "sql-repository-aa5b2d6d12d1268b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "625658e5953216a312f7e5004dab9ef01bb014f3bf47d6b63ea62e7dd2854cbb"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:negative_guard",
+      "consumerId": "sql-repository-aa5b2d6d12d1268b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "e8da89402098e0939e2d47354408e7ceb7ec8c0c5332de3c8fbe6d38280aacc1",
+          "actualSha256": "e8da89402098e0939e2d47354408e7ceb7ec8c0c5332de3c8fbe6d38280aacc1",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "f1a718b33683e62cfdf7217dada5204443df50a23a1d4a5d32bbfe23d075aeb3",
+          "actualSha256": "f1a718b33683e62cfdf7217dada5204443df50a23a1d4a5d32bbfe23d075aeb3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "5af260d7fc5d4ca19ae60d4d9e95cdfac0ade813d19a54cba3e0d6e22e2da688"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:read_positive",
+      "consumerId": "sql-repository-aa5b2d6d12d1268b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "6f3210a5574850c161041afef211cfbf5d9440ae581722661ba6b64980c299db"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:restart_consistency",
+      "consumerId": "sql-repository-aa5b2d6d12d1268b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "b402b5dd049d5ed5a7f29f285297bf261a4e37294a25ad1a5c4df79f36bc8928",
+          "actualSha256": "b402b5dd049d5ed5a7f29f285297bf261a4e37294a25ad1a5c4df79f36bc8928",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "3771e4fd7bccddd645130b011375fadc5b27d7205785df40894cf2feaf18aeaf"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-aa5b2d6d12d1268b:source_domain_dml_zero",
+      "consumerId": "sql-repository-aa5b2d6d12d1268b",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "bdd3c3c1ade827ad14b9f0838b382d6fca240aa06da106321356857725515010"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:exact_output",
+      "consumerId": "sql-repository-fd1e8659cff045f9",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "3c7d6b74bb183024b0e776a5c032d7c044641a1da60a2fc832d10afe4120fdb5"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:negative_guard",
+      "consumerId": "sql-repository-fd1e8659cff045f9",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "765947a0707a31bbd04edfd526fe405de3e6d5de1138e95d5ec610527ffa4587",
+          "actualSha256": "765947a0707a31bbd04edfd526fe405de3e6d5de1138e95d5ec610527ffa4587",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "a166c8708cd8f856aa6fb421fd9e74ca8cfcb229db66bc43739b462c79722f66",
+          "actualSha256": "a166c8708cd8f856aa6fb421fd9e74ca8cfcb229db66bc43739b462c79722f66",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "1f7ecc42beca36023ff3ab66d2205e28b2bc7646413ddf9cf38f7a440c4f8bbb"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:read_positive",
+      "consumerId": "sql-repository-fd1e8659cff045f9",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "7976ac2755b62e054259935ead133a84e584a7838e648ae836b5c342754c50bf"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:restart_consistency",
+      "consumerId": "sql-repository-fd1e8659cff045f9",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "b402b5dd049d5ed5a7f29f285297bf261a4e37294a25ad1a5c4df79f36bc8928",
+          "actualSha256": "b402b5dd049d5ed5a7f29f285297bf261a4e37294a25ad1a5c4df79f36bc8928",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "54994179519b16fdcb1ec13851387e41c147de4ca1b9f265ba2a45c5475d66ef"
+    },
+    {
+      "receiptId": "receipt:wave2:sql-repository-fd1e8659cff045f9:source_domain_dml_zero",
+      "consumerId": "sql-repository-fd1e8659cff045f9",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave2",
+        "harnessCaseId": "case:object-catalog-compatibility-resolver",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave2:compatibility-resolver:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave2-compatibility-resolver-v1.json",
+        "sha256": "2295237baa1f19a402325c55154977d8bde35bd69e786d4819f15e650f01a954"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave2-compatibility-resolver.mjs",
+        "targetSourceSha256": "d72664cf17821ed2a84b7540929ee6cf7363a6eeb81f73340c2f87c2ebe525ba",
+        "exportName": "executeWave2CompatibilityResolver"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "actualSha256": "95ece8542d55803b2096656581b2b2b105e733899a84bc91074684c4fbdbe6d3",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "eb2b42c06c1e885a8330e9e7a0ca7247ecd00fd62aa589ef1c26d1209cbf2678"
+    },
+    {
+      "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:exact_output",
+      "consumerId": "sql-repository-261eb97022941f77",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave3",
+        "harnessCaseId": "case:player-target",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json",
+        "sha256": "ce356b584f9ad930e6e736b8fab1dcacb7e695fe3d96daf56078ac158584eae6"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
+        "targetSourceSha256": "ba0af2eaac32ab1d15900945ac0f68c1a621385b4512738463638dc211a437cf",
+        "exportName": "executeWave3PlayerTarget"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "b6c51320f4f6c72eb42b71802bf6e3aca1993ce00db100913e3ea29943823ee0"
+    },
+    {
+      "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:negative_guard",
+      "consumerId": "sql-repository-261eb97022941f77",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave3",
+        "harnessCaseId": "case:player-target",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json",
+        "sha256": "ce356b584f9ad930e6e736b8fab1dcacb7e695fe3d96daf56078ac158584eae6"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
+        "targetSourceSha256": "ba0af2eaac32ab1d15900945ac0f68c1a621385b4512738463638dc211a437cf",
+        "exportName": "executeWave3PlayerTarget"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "ce4daa29d40adb4ed28da6deaa5cdb70b248b71331047cb5bcf2290da891c60c",
+          "actualSha256": "ce4daa29d40adb4ed28da6deaa5cdb70b248b71331047cb5bcf2290da891c60c",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "b8b176fac12a74e1f72ee8c78b82daa9198435484d8864262c49d86e370b7087",
+          "actualSha256": "b8b176fac12a74e1f72ee8c78b82daa9198435484d8864262c49d86e370b7087",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "54daddcbfe26a04c42e0d582f5dfca7afd770ebcdcd55a1ba66e8b24894d62d3"
+    },
+    {
+      "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:read_positive",
+      "consumerId": "sql-repository-261eb97022941f77",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave3",
+        "harnessCaseId": "case:player-target",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json",
+        "sha256": "ce356b584f9ad930e6e736b8fab1dcacb7e695fe3d96daf56078ac158584eae6"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
+        "targetSourceSha256": "ba0af2eaac32ab1d15900945ac0f68c1a621385b4512738463638dc211a437cf",
+        "exportName": "executeWave3PlayerTarget"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "c6f9d732f6f8ce350784e8ab0d93454e24fb8b9d58f37c7ad6f3a6e90414455e"
+    },
+    {
+      "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:restart_consistency",
+      "consumerId": "sql-repository-261eb97022941f77",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave3",
+        "harnessCaseId": "case:player-target",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json",
+        "sha256": "ce356b584f9ad930e6e736b8fab1dcacb7e695fe3d96daf56078ac158584eae6"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
+        "targetSourceSha256": "ba0af2eaac32ab1d15900945ac0f68c1a621385b4512738463638dc211a437cf",
+        "exportName": "executeWave3PlayerTarget"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "d615548e527179d0b18aab739e69a1281be5a1326f58da0b0790a23c880a9f61",
+          "actualSha256": "d615548e527179d0b18aab739e69a1281be5a1326f58da0b0790a23c880a9f61",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "f3d1aa449f451519ef0f9ee0879d59e7a7d1981f6367424ed173efb44d2a99bf"
+    },
+    {
+      "receiptId": "receipt:wave3:sql-repository-261eb97022941f77:source_domain_dml_zero",
+      "consumerId": "sql-repository-261eb97022941f77",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave3",
+        "harnessCaseId": "case:player-target",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave3:player-target:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json",
+        "sha256": "ce356b584f9ad930e6e736b8fab1dcacb7e695fe3d96daf56078ac158584eae6"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave3-player-target.mjs",
+        "targetSourceSha256": "ba0af2eaac32ab1d15900945ac0f68c1a621385b4512738463638dc211a437cf",
+        "exportName": "executeWave3PlayerTarget"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "actualSha256": "7ec1f66779e4545ca4876641d8f70cfcb59e86e91bab5f4fa5d9fff58dce85b6",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "cce57ee1ff2bdd68563f422ab444cd863b6e3d3fae98d58c9ff117c31add4ccc"
+    },
+    {
+      "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:exact_output",
+      "consumerId": "sql-repository-9cfe67ded7b1e5b0",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave4",
+        "harnessCaseId": "case:pet-title-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave4-pet-title-read-v1.json",
+        "sha256": "bfe53eba349bf34d82da8904a944a8e6aa4319dad7df0928e30e5d762e727434"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs",
+        "targetSourceSha256": "ba2fbfd9cba70a152d044d81b74bee15dc5665530e091c313eb8c497f5606193",
+        "exportName": "executeWave4PetTitleRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "actualSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "actualSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "fa4268b03c84f0267174ea1dd35b513283e7864938fd3d675e1969fe47acc192"
+    },
+    {
+      "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:negative_guard",
+      "consumerId": "sql-repository-9cfe67ded7b1e5b0",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave4",
+        "harnessCaseId": "case:pet-title-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave4-pet-title-read-v1.json",
+        "sha256": "bfe53eba349bf34d82da8904a944a8e6aa4319dad7df0928e30e5d762e727434"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs",
+        "targetSourceSha256": "ba2fbfd9cba70a152d044d81b74bee15dc5665530e091c313eb8c497f5606193",
+        "exportName": "executeWave4PetTitleRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "actualSha256": "b0d9b29cbd36975d787eda485241dd17b7b7caf2c9fba1433280347dbae233e9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "actualSha256": "743b2b72e74a7fc149a9b43a51b4019d38ec5f5f2241608a1b5080bbfdce17fd",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "ec4d66ef78c7cbeeda7245e7880142dd1ab3252582a92a3b1b91c3e78d576b8c"
+    },
+    {
+      "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:read_positive",
+      "consumerId": "sql-repository-9cfe67ded7b1e5b0",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave4",
+        "harnessCaseId": "case:pet-title-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave4-pet-title-read-v1.json",
+        "sha256": "bfe53eba349bf34d82da8904a944a8e6aa4319dad7df0928e30e5d762e727434"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs",
+        "targetSourceSha256": "ba2fbfd9cba70a152d044d81b74bee15dc5665530e091c313eb8c497f5606193",
+        "exportName": "executeWave4PetTitleRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "actualSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "actualSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "e6bb0396179dd30b894fc1e58e8057c21a549a016024f34956c2fd4af6b30966"
+    },
+    {
+      "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:restart_consistency",
+      "consumerId": "sql-repository-9cfe67ded7b1e5b0",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave4",
+        "harnessCaseId": "case:pet-title-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave4-pet-title-read-v1.json",
+        "sha256": "bfe53eba349bf34d82da8904a944a8e6aa4319dad7df0928e30e5d762e727434"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs",
+        "targetSourceSha256": "ba2fbfd9cba70a152d044d81b74bee15dc5665530e091c313eb8c497f5606193",
+        "exportName": "executeWave4PetTitleRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "actualSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "5314b82c2ac98968ae3fa38c5c8d9118fe5962cb0f324b9d1c7354edf587a7ba",
+          "actualSha256": "5314b82c2ac98968ae3fa38c5c8d9118fe5962cb0f324b9d1c7354edf587a7ba",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "d1ec7cedfa36c40d30c3170c6bcaac9a9f3fc142e104dbc8dfa2a0e3919d02fe"
+    },
+    {
+      "receiptId": "receipt:wave4:sql-repository-9cfe67ded7b1e5b0:source_domain_dml_zero",
+      "consumerId": "sql-repository-9cfe67ded7b1e5b0",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave4",
+        "harnessCaseId": "case:pet-title-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave4:pet-title-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave4-pet-title-read-v1.json",
+        "sha256": "bfe53eba349bf34d82da8904a944a8e6aa4319dad7df0928e30e5d762e727434"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave4-pet-title-read.mjs",
+        "targetSourceSha256": "ba2fbfd9cba70a152d044d81b74bee15dc5665530e091c313eb8c497f5606193",
+        "exportName": "executeWave4PetTitleRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "actualSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "actualSha256": "afe615ee9ebbeb638a8bc931f314e8a1c10ec58fbdad0c481daa04333bd16de9",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "7d619955d6027b811e86bfcd3b6f287faa416122ccf8b674f90d0ea45d14eb00"
+    },
+    {
+      "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:exact_output",
+      "consumerId": "sql-repository-13888c58966b6d56",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave5",
+        "harnessCaseId": "case:placed-furniture-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave5-placed-furniture-read-v1.json",
+        "sha256": "3809399a3d8b34597795c71ac283ea14874e92cb4a71ab477e6f3f32124ecef0"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs",
+        "targetSourceSha256": "3a661de1cebf30f2b6e3ed1327d610b27c1e9d9d4699e7b613b44ea8a64a4b12",
+        "exportName": "executeWave5PlacedFurnitureRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:exact-output",
+        "scenarioKind": "EXACT_OUTPUT"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "actualSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "actualSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "e30c26b2c36bb59cce876b6863aae05c9abd3f8aa76ec3ce4bac828800acf010"
+    },
+    {
+      "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:negative_guard",
+      "consumerId": "sql-repository-13888c58966b6d56",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave5",
+        "harnessCaseId": "case:placed-furniture-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave5-placed-furniture-read-v1.json",
+        "sha256": "3809399a3d8b34597795c71ac283ea14874e92cb4a71ab477e6f3f32124ecef0"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs",
+        "targetSourceSha256": "3a661de1cebf30f2b6e3ed1327d610b27c1e9d9d4699e7b613b44ea8a64a4b12",
+        "exportName": "executeWave5PlacedFurnitureRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:negative-guard",
+        "scenarioKind": "NEGATIVE_GUARD"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "36330256efca4b1eb2f8d585032edb24c8000a5e2188cc8bafb169205310fdc6",
+          "actualSha256": "36330256efca4b1eb2f8d585032edb24c8000a5e2188cc8bafb169205310fdc6",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "9e04ac7648d30d206013eef279299d5f90ad52992bb11da9b5987e5d0fdc8383",
+          "actualSha256": "9e04ac7648d30d206013eef279299d5f90ad52992bb11da9b5987e5d0fdc8383",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "GUARD_REJECTED"
+          ],
+          "actualTimeline": [
+            "GUARD_REJECTED"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "6570221947ca457afc8841fa91be31d6aa396956060b9151162d4c61878f06a5"
+    },
+    {
+      "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:read_positive",
+      "consumerId": "sql-repository-13888c58966b6d56",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave5",
+        "harnessCaseId": "case:placed-furniture-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave5-placed-furniture-read-v1.json",
+        "sha256": "3809399a3d8b34597795c71ac283ea14874e92cb4a71ab477e6f3f32124ecef0"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs",
+        "targetSourceSha256": "3a661de1cebf30f2b6e3ed1327d610b27c1e9d9d4699e7b613b44ea8a64a4b12",
+        "exportName": "executeWave5PlacedFurnitureRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:read-positive",
+        "scenarioKind": "READ_POSITIVE"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "actualSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "actualSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "9e4d3dc0240c87fd026c898b234f08240de14ea37cf8791177e6d895405a23dc"
+    },
+    {
+      "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:restart_consistency",
+      "consumerId": "sql-repository-13888c58966b6d56",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave5",
+        "harnessCaseId": "case:placed-furniture-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave5-placed-furniture-read-v1.json",
+        "sha256": "3809399a3d8b34597795c71ac283ea14874e92cb4a71ab477e6f3f32124ecef0"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs",
+        "targetSourceSha256": "3a661de1cebf30f2b6e3ed1327d610b27c1e9d9d4699e7b613b44ea8a64a4b12",
+        "exportName": "executeWave5PlacedFurnitureRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:restart-consistency",
+        "scenarioKind": "RESTART_CONSISTENCY"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "actualSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "d45a9568f85df73ab0597f974530fb79009416bb404452a000ed09270142e830",
+          "actualSha256": "d45a9568f85df73ab0597f974530fb79009416bb404452a000ed09270142e830",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ],
+          "actualTimeline": [
+            "CHILD_PROCESS_1:READ",
+            "RESTART",
+            "CHILD_PROCESS_2:READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "42227e323e75669b7bd0a8189e3fe4efeaed02a72657a349757de288bf97456a"
+    },
+    {
+      "receiptId": "receipt:wave5:sql-repository-13888c58966b6d56:source_domain_dml_zero",
+      "consumerId": "sql-repository-13888c58966b6d56",
+      "proofMode": "DIRECT",
+      "harness": {
+        "harnessId": "harness:object-db-executable-parity:wave5",
+        "harnessCaseId": "case:placed-furniture-read",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-harness.mjs",
+        "sourceSha256": "bc1eea0a3d301679faba753c0922e9d7de3e1a67842372e74d545b10784b2ed5"
+      },
+      "fixture": {
+        "fixtureId": "fixture:object-db-executable-parity:wave5:placed-furniture-read:v1",
+        "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave5-placed-furniture-read-v1.json",
+        "sha256": "3809399a3d8b34597795c71ac283ea14874e92cb4a71ab477e6f3f32124ecef0"
+      },
+      "invocation": {
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave5-placed-furniture-read.mjs",
+        "targetSourceSha256": "3a661de1cebf30f2b6e3ed1327d610b27c1e9d9d4699e7b613b44ea8a64a4b12",
+        "exportName": "executeWave5PlacedFurnitureRead"
+      },
+      "scenario": {
+        "scenarioId": "scenario:source-domain-dml-zero",
+        "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+      },
+      "expectedActual": {
+        "reply": {
+          "expectedSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "actualSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "match": true
+        },
+        "result": {
+          "expectedSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "actualSha256": "11bed26dc9335cbe71bf146cc1f59e6e950d782118c2e3a0920272fa2a1bc1ec",
+          "match": true
+        },
+        "dml": {
+          "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+          "match": true,
+          "expectedNormalizedStatements": [],
+          "actualNormalizedStatements": [],
+          "expectedRowCount": 0,
+          "actualRowCount": 0
+        },
+        "lockOrder": {
+          "expected": [],
+          "actual": [],
+          "match": true
+        },
+        "transaction": {
+          "expected": "READ_ONLY",
+          "actual": "READ_ONLY",
+          "match": true,
+          "expectedTimeline": [
+            "READ"
+          ],
+          "actualTimeline": [
+            "READ"
+          ]
+        }
+      },
+      "equivalenceRule": null,
+      "verdict": "PASS",
+      "receiptSha256": "48b818e40251b712992211de65be7e0a5abddacf560ceaadf36a0cbeaaf8033c"
+    }
+  ]
+}

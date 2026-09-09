@@ -4,94 +4,119 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 정리 후보 기준 커밋:
-- 체크포인트 버전: 8
-- 마지막 갱신: 2026-09-03 23:58 KST
+- 체크포인트 버전: 25
+- 마지막 갱신: 2026-09-09 12:03:00 KST
 
 ## 현재 목표
 
-- WBS730~744 Gate 1~7 구현·검증 후 WBS745 운영배포 자동화를 최종 Gate 8에서 수행한다.
+- WBS730~744 Gate 1~7을 완료하고 마지막에 WBS745 Gate 8 비운영 배포·복구 준비만 수행한다.
+- 운영 데이터 최종 적재, 운영 cutover, 실운영방·운영 DB·feature/prod 반영은 별도 승인 전 금지한다.
 
-## 사용자 요청과 승인 범위
+## 전체 감사 현황
 
-- 최신 요청: 오브젝트 DB화 개발을 병렬로 계속 진행한다.
-- 허용된 변경: 계약, migration, provider/repository/service, 합성 fixture, 테스트, 검증 근거, WBS 현행화.
-- 별도 승인이 필요한 작업: 운영 DB 쓰기, 운영 배포, 저장소 운영 snapshot 변경, feature/prod 반영.
-- 선언된 파일 범위: `.codex/checkpoints/object-db-migration.md`; `개발환경_고도화/migration-control`; `개발환경_고도화/runtime`.
+- WBS730~732: 완료.
+- WBS733~741: Gate1~4 완료, Gate5~7 잔여.
+- WBS742: 초기 canonical 65개 중 직접 이관은 45개이고, 현행 V4 표준은 119개 중 직접 이관 47개다. sealed RAW→실제 WBS724 staging provider→실제 WBS725 projection provider 연쇄 증거를 완료하고 독립 Gate GO를 받았다. 전체 fresh migration은 기존 migration 490 DELIMITER driver parse 문제로 별도 잔여다.
+- WBS743: 공식 ledger는 1,133건, receipts 243, DIRECT_PASS 44, STATIC_ONLY 1,007, BLOCKED_DYNAMIC 82이며 미증명 consumer 1,089건이다. 잔여 작업표는 재사용 증명 자산 2, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 완전 분할됐다.
+- WBS744: 현행 62.5%, Gate6~7 잔여.
+- WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
+- WBS779~785: Gate1~7 완료, 공식 검증과 Lease 종료. WBS785 aggregate `8cf572b4`는 origin과 일치한다.
+- WBS786: Gate1~7 완료, 공식 종료. source `4f481a7d`, aggregate `24fac92e`, focused20/20, Maria6, receipts225, DIRECT_PASS 41이다.
+- WBS787~789: 가구 배치·미니펫 획득·펫스킬 지급 증분 구현과 격리 검증을 완료하고 Wave23 공용 원장에 각 6개, 총 18개 receipt를 승격했다. 독립 Gate GO와 통합 브랜치 재검증을 통과했다.
+- WBS790~791: 아이템 스택 수량 mutation과 app-wiring 상위 root retry를 구현·검증해 aggregate `4dc632fb`에 통합했다. WBS790 focused44/44+Maria8, WBS791 focused70/70+typecheck/build이며 둘 다 Gate1~5, 62.5%다.
 
-## 작업 위치
+## 현재 작업 위치
 
-- 저장소: hoiBot
-- 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-db-import-v1-20260903`
-- 브랜치: `codex/object-db-import-v1-20260903`
-- 마지막 기준 커밋: `f8a767c3`
-- 마지막 푸시 커밋: 없음
-- 원격 동기화 상태: 미확인·미푸시
-- 체크포인트 Git 추적: 아니요
-- 체크포인트 포함 푸시 커밋: 없음
+- 통합 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
+- 통합 브랜치: `codex/item-bag-canonical-read-v1-20260908`
+- 통합 현재 SHA: 체크포인트 커밋 직전 `bfd61aa8`; 이 문서 커밋 후 Git HEAD를 권위값으로 사용한다.
+- 현재 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
+- 현재 실행 브랜치: `codex/item-bag-canonical-read-v1-20260908`
+- 현재 실행: 복구 완료 지점 고정 및 다음 MINI-PET-TITLE-COLLECTION Gate1 경계 준비
+- 상태: Wave23과 Lease2620 체인 증거를 독립 GO 후 통합했다. cherry-pick으로 끊긴 evidenceCommit 조상 관계는 원본 브랜치 ancestry-only merge로 복구했고 Wave23 전용 검증 2/2가 다시 통과했다.
+- 체크포인트 Git 추적: 기존 추적 파일
+- 원격 상태: 체크포인트 커밋과 함께 통합 브랜치 push 예정. 원본 Wave23 `b28469de`, 체인 `a4ae7d57`, 잔여 작업표 `8a50eab4`는 각 원격 브랜치에 push 완료됐다.
 
-## 완료된 작업
+## 완료된 현재 슬라이스 작업
 
-- WBS742 Gate1/2에서 65개 disposition과 45개 직접 대상 테이블을 분류했다.
-- 45개 테이블의 비감사 컬럼 241개에 실제 SQL type/nullability/migration 계약을 추가했다.
-- 타이틀 1-based, 장착 미니펫 별도 occurrence, 가구 rate=뽑기 확률 해석을 실제 코드·snapshot 테스트로 고정했다.
-- 40개 generated CUID PK와 5개 reused PK의 locator binding 계약을 추가했다.
-- migration 454에서 crosswalk payload fingerprint와 caller transaction 기반 import binding을 추가했다.
-- migration 455에서 타이틀 3종 occurrence별 acquisition_price를 분리했다.
-- migration 456에서 미니펫 custom_name/custom_emoji와 item/pet/equipment ownership 상태 CHECK를 추가했다.
-- 건물 중복 floor의 첫 행 우선, 미니펫 자동 정의 추론 금지, 가구 정의 미해결/모호 격리 경계를 실제 snapshot 수치로 고정했다.
-- WBS724 Common Staging `c9db0e82`와 WBS725 Catalog Projection 및 구 migration 458 재생 호환성 보정 `d6a62104`를 fast-forward로 통합했다.
-- WBS742 Gate3 비식별 합성 fixture와 Gate4 atomic domain importer를 구현했다. 45개 직접 대상, 241개 필드, 23개 정의/규칙 대상을 축소 없이 사전 검증하고 정의를 보유보다 먼저 기록한다.
-- migration 460에 import run/decision/record 영수증 3개 테이블과 역순 rollback을 추가했다. exact replay는 canonical row까지 재검증하고 쓰기 0건으로 종료하며, 중간 실패는 identity/target/receipt/run 전체를 rollback한다.
-- Catalog Projection COMPLETE envelope, 별도 migration 458 manifest hash, migration 459 upstream envelope, decision/record fingerprint를 독립적으로 재검증한다.
-- WBS725 portable schema-hash correction `69a72a2d`를 fast-forward 통합하고, importer도 동일한 canonical semantic target-schema SHA-256 helper를 사용하도록 맞췄다.
-- WBS742 Gate3/4를 독립 reviewer P1/P2 0과 전체 회귀 후 `fd3f11a3`으로 커밋했다.
-- Gate5 격리 harness에서 신규 MariaDB 12.2에 migration 448개를 적용하고 forced-failure 원자 rollback, 47행→45 target 실이관, PID가 바뀐 재시작 후 exact replay 0-write, 47행 역순 rollback 및 upstream/identity 보존을 재현했다.
-- 실DB 재시작 대사로 DECIMAL scale 차이(`1` 대 `1.0000000000`)를 발견해 정밀도를 잃지 않는 SQL-type 대칭 canonical comparator와 회귀 반례를 추가했다.
-- WBS742 Gate5를 독립 reviewer P1/P2 0과 전체 회귀 후 `10690cf0`으로 커밋했다.
-- Gate6 독립 oracle은 importer replay 검증을 재사용하지 않고 projection 47행의 identity/PK/FK와 45개 target, 241개 schema field를 실제 격리 MariaDB에서 전수 대사한다.
-- Gate5 decision `12=12/0/0`과 Gate6 decision `14=12/1/1`은 별도의 새 DB fixture 목적 차이로 구분했고, 두 경우 모두 projection record는 47개이다.
-- WBS742 Gate6를 독립 reviewer P1/P2 0과 전체 회귀 후 `f8a767c3`으로 커밋했다.
-- Gate7은 WBS724/WBS725의 합성 1-row provider Shadow 계약을 연결하고, 같은 fresh MariaDB에서 WBS742 full projection 47행→45 canonical target과 독립 oracle을 재검증한다.
-- 운영 유사 snapshot 13개는 원본 byte를 변경하지 않는 inventory로만 읽었다. 승인되지 않은 실제 값을 PROJECT하지 않고 가구와 미니펫의 resolved/missing/ambiguous aggregate 및 SHA-256만 증빙한다.
+- `/가방|ㄴㄴㄴ` 실제 Iris 유입을 command registry가 결정한 SHADOW 경로로 연결하고 canonical 평가 이후의 legacy reply와 SHADOW receipt를 단일 root transaction으로 묶었다. LEGACY_ONLY는 기존 legacy 경로를 유지한다.
+- SHADOW 평가 오류와 silent 결정은 transitional legacy outbox를 만들지 않으며 MODERN 경로는 노출하지 않는다.
+- active 부계정, world castle, owner marker/rank, operation notice, import readiness를 fail-close로 조립했다.
+- Maria 테스트는 전용 `ITEM_BAG_TEST_DB_*`, exact destructive arming, 로컬 host/port/user/schema, seed 전·pool 재구성 후 DB identity 검증을 요구한다.
+- 기존 Wave6 `BagShadowParityProvider.compare`는 baseline과 byte-exact 복원했다.
+- owner/import 신규 SQL consumer 2개를 ITEM/READ `STATIC_ONLY`로 registry에 additive 등록했다.
+- 공식 manifest: 1133 consumers, SQL_REPOSITORY 84, consumer set SHA-256 `015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a`.
+- 공식 ledger: 1133 entries, READ 504, MUTATION 629, DIRECT_PASS 33, STATIC_ONLY 1018, BLOCKED_DYNAMIC 82, missing/duplicate 0, entry set SHA-256 `775a00e4ef73f19361bab6d3a057984ffb4902a1afadc5167067edea7ce5a882`; builder/AJV validator PASS.
+- focused/shared 77/77 PASS; 강화된 격리 Maria guard+실증 4/4 PASS; transition 14/14, build, object-data validator, main/Info syntax, `git diff --check` PASS.
+- 완료 replay는 정상 root와 failure-reconciliation COMPLETED 분기 모두에서 연결된 legacy outbox를 검증한다. 누락·중복·payload·destination·status·type drift를 거부하며, linked import record의 불가능한 zero-row COMPLETE도 거부한다.
+- `COMMAND_INDEX.md`와 WBS776 evidence를 현재 SHADOW 경계로 동기화했다.
+- WBS777 아이템 가방 이관 완전성 기준선 보정을 독립 Gate7 GO로 확정하고 `a988742b`로 WBS776 브랜치에 통합했다.
+- WBS777 공식 WBS는 Gate1~7 TRUE, 100%, COMPLETE이며 lease2605는 RELEASED다.
+- WBS778의 initial lineage/Maria false-positive 차단점은 `6ff02522`, `c568ad86`, `4a8fe1b8` 보강과 독립 Maria 재실행으로 해소됐으며 해당 원본 브랜치 커밋은 origin에 포함됐다.
+- WBS776 분류 보정 addendum은 `/가방`의 실제 의존 범위를 ITEM_STACK_BAG + RANK_GUILD_PRESENTATION으로 좁히되 WBS778 증거가 없거나 변조되면 축소를 적용하지 않는다.
+- WBS776 addendum은 WBS778 runtime contract, projector, readiness provider, migration의 exact path·canonical SHA-256과 version/NO_WRITE/schema 의미, 실제 `main.js` 함수·가방 anchor 재추출을 fail-close로 결박했고 독립 검토 GO를 받았다.
+- 실제 app wiring은 `LegacyRankLabelSideEffectReadinessProvider`가 준비되지 않으면 bag parity 실행 전 `LEGACY_SIDE_EFFECT_PARITY_UNPROVEN`으로 무응답 처리하도록 연결됐다.
+- manifest production re-derive는 WBS778 통합 후 PASS했고 신규 SQL consumer `sql-repository-3b23c2f0f5501988`를 포함해 1133 consumers / SQL_REPOSITORY 84로 계산됐다.
+- WBS778 CRLF/LF 보정은 새 `core.autocrlf=true` checkout 독립 GO까지 완료했고 공식 WBS778 Gate1~7은 TRUE, 100%, COMPLETE, lease2606 RELEASED다.
+- Wave17은 evidence commit `5e8495e2`에 대해 Wave16 167 receipt 불변 prefix와 신규 15 receipt를 합쳐 총 182개를 봉인했다. 세 ITEM READ SQL provider는 exact output, wrong environment/operation, tamper, child restart를 모두 READ_ONLY/DML0으로 통과했다.
+- Wave6 `sql-repository-3001ad9fc2f36d01`의 과거 receipt는 current source span과 달라 provenance만 보존하고 current ledger에서는 STATIC_ONLY로 유지한다.
+- 1차 독립 Gate7이 찾은 manifest count, app/current source hash, readiness source term, stable-ID lifecycle 불일치를 보정했다. 제거된 pet-skill runtime identity 6개는 TOMBSTONE으로 예약하며 targeted stable/transition test는 23/23 PASS다.
+- 동일한 독립 검토 focused 명령을 재실행해 transition/ledger/Wave17/stable-ID/WBS777/WBS778/실제 SHADOW ingress 65/65 PASS를 확인했다. typecheck, build, object-data 119, main/Info syntax, diff check도 PASS다.
+- origin `909fc1ab`의 fresh detached checkout 독립 재검토는 GO이며 P0/P1/P2가 모두 0이다.
+- 공식 시트 WBS776은 Gate1~7 TRUE, Gate8 FALSE, 100%, `최종 검증 완료`로 갱신했고 검증11226은 완료, Lease2604는 RELEASED다. 기존 CONTROL5625는 SUPERSEDED, CONTROL5626은 WBS730~744 전체 감사 ACTIVE로 승계했다.
+- 전체 감사 P1 세 건을 WBS779/Lease2607로 분리했다. exact migration 계약은 현행 39개와 484/485를 포함하며, additive V4 disposition은 V1 90개와 후속 29개를 합쳐 등록 테이블 119개를 정확히 한 번씩 분류한다.
+- V4 target-schema/field-map은 `canonical_pet_skill_definitions`의 후속 11컬럼을 결박하고, migration 482 Unicode grade amendment와 migration 485 admin projection 경계를 명시한다. 불변 V1/V2 계약과 적용 migration은 수정하지 않았다.
+- importer CLI는 V1~V4를 명시 선택한다. V1 pre-466 호환 allowlist는 유지하고 V2/V3/V4는 각 생성 profile의 current semantic contract만 허용한다.
+- WBS779 1차 독립 검토가 실제 V4 policy의 effective V2 component hash 불일치, 263컬럼 preflight 부재, V2 semantic freeze 훼손, catalog-projection V4 upstream 부재를 P1으로 재현했다. 이를 보정해 두 CLI가 V4를 선택하고 동일한 263컬럼 schema hash를 사용하며, 실제 CLI-equivalent policy가 importer preflight를 통과한다.
+- WBS779 focused `88/88`, V2/V3/V4 profile subset `19/19`, disposable MariaDB `4/4`, typecheck/build/object validator 119/main·Info syntax가 통과했다. 운영 데이터·DB·실방·외부 전송·feature/prod·Sheets는 변경하지 않았다.
+- WBS780 V4 target/schema manifest 불일치 8건을 0건으로 보정하고 aggregate `7f38cf28`에 통합했다.
+- WBS782 격리 MariaDB fresh rerun에서 migration 478, max 490, replay 0, 등록 migration 39, tables 119, effective columns 263, direct 47, shadow 45를 확인했고 WBS744 Gate5를 완료했다.
+- WBS781 Wave18 READ4는 202 receipts, DIRECT 37, STATIC 1,014, BLOCKED 82로 독립 Gate7 GO를 받았다.
+- WBS783 Wave19 PACKAGE 상태 조회는 5 receipts를 추가해 총 207, DIRECT 38, STATIC 1,013, BLOCKED 82를 만들었다. ancestry-only merge 뒤 source `7186b012`, aggregate `78f3740e`, 독립 재검토 27/27 PASS와 P0/P1/P2 0건을 확인했다.
+- WBS784 Wave20 PACKAGE import는 공용 mutation evidence를 추가하고 실제 repository를 격리 MariaDB에서 success 26 committed rows, 중간 DML 13 전량 rollback, duplicate·drift·restart DML0, concurrency writer 1로 증명했다. 초기 독립 재검토의 P1 3건을 repository-local retry/reconciliation·module identity·immutable oracle로 보정한 뒤 fresh Maria 5/5, tamper 11/11, full ledger 16/16을 통과했다. receipts 213, DIRECT 39, STATIC 1,012이며 aggregate `549a173b`가 origin과 일치한다.
+- WBS785 Wave21 PET_EQUIPMENT assign은 requestKey 182자까지 legacy raw locator를 보존하고 183자부터 SHA-256으로 전환한다. replay-first 잠금, player/pet/equipment 소유·활성 fail-close, exact 1062와 1213/1205 transaction retry/reconciliation을 적용했다.
+- WBS785는 repository 8/8, mutation 15/15, 구현자 full ledger 17/17, 격리 Maria 구현자 5회와 독립 1회를 통과했다. success DML 6, 중간 DML 4 전량 rollback, replay·drift·restart DML0, concurrency writer 1이며 receipts 219, DIRECT 40, STATIC 1,011, BLOCKED 82다. source `a9f2cb51`, aggregate `8cf572b4`는 origin과 일치한다.
+- WBS786은 FURNITURE grant mutation 6개 시나리오를 Wave22 shared ledger에 승격해 receipts225, DIRECT41, STATIC1,010, BLOCKED82를 확정했다.
+- WBS787~789는 가구 배치·미니펫 획득·펫스킬 지급의 success/rollback/replay/drift/restart/concurrency를 집중 검증했고 source와 aggregate를 origin에 push했다. 전체 회귀는 수행하지 않았다.
+- WBS790은 item stack quantity mutation을 focused44/44와 격리 Maria8/8로, WBS791은 app-wiring opt-in root retry를 focused70/70과 typecheck/build로 검증했다. exhaustion은 exact 1213/1205 최대3, committed DML0, provider.fail0, reconciliation read0을 보장하며 aggregate `4dc632fb`가 origin과 일치한다.
+- Wave23은 Wave22 225건/919,668 bytes/SHA-256 `1a7bec9fefe0c009012fbaa3286f987a1ae8b8d279cbd23ab0870e4919d83809` prefix를 byte-exact 보존하고 WBS787~789 각 6개, 총 18개를 추가했다. receipts243, DIRECT44, STATIC1007, BLOCKED82이며 WBS790 receipt는 0개다.
+- WBS742 연쇄 증거는 실제 `extractAndStage→project`를 사용해 PROJECT/QUARANTINE/IGNORE 1/1/1, 동일 run/envelope/SHA/fingerprint, 재실행 DML0, 중간 실패 residue0을 격리 Maria에서 증명했다. child는 연결 전 loopback·비3306·격리 DB명을 자체 검사하며 독립 GO를 받았다.
+- 잔여 작업표는 manifest/ledger 전체 ID 집합·중복·내부 SHA·base commit·verdict를 fail-close로 검증한다. 1,089건을 재사용 증명 자산 2, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 정확히 한 번씩 분류하며 결정적 재생성 4/4를 통과했다. 재사용 자산은 완료 증거가 아니라 재실행 또는 공식 재봉인 대상이다.
 
-## 진행 중인 작업
+## 현재 변경 범위
 
-- WBS742 Gate7 combined Shadow harness/evidence를 구현하고 독립 reviewer 판정을 준비한다.
+- `COMMAND_INDEX.md`
+- `개발환경_고도화/migration-control/contracts/object-db-consumer-*.json`
+- `개발환경_고도화/migration-control/evidence/item-bag-canonical-shadow-lease2604/`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/dispatch/app-wiring-read-only-recovery-provider.ts`
+- `개발환경_고도화/runtime/src/inventory/*item-bag*`, `legacy-bag-owner-label-provider.ts`
+- 관련 runtime tests
+- `.codex/checkpoints/object-db-migration.md`
+- 체크포인트 반영 대상: 이 문서와 WBS776 최종 evidence 현행화
 
-## 변경 파일
+## 미완료 검증과 주의점
 
-- `개발환경_고도화/migration-control/contracts/object-domain-import-*.v1.json`
-- `개발환경_고도화/migration-control/evidence/object-db-domain-import/*`
-- `개발환경_고도화/runtime/test/object-domain-import-*.test.ts`
-- `개발환경_고도화/runtime/migrations/454*`, `455*`, `456*`
-- `개발환경_고도화/runtime/src/identity/object-identity-audit-provider.ts`
-- `개발환경_고도화/runtime/src/data-migration/object-domain-importer.ts`
-- `개발환경_고도화/runtime/scripts/import-object-domain.ts`
-- `개발환경_고도화/runtime/migrations/460*`
-- `개발환경_고도화/migration-control/contracts/data-migration-object-domain-import.v1.json`
-- `개발환경_고도화/migration-control/fixtures/synthetic-relational/data-migration-object-domain-import-v1.json`
-- `개발환경_고도화/runtime/scripts/rehearse-object-domain-import-gate5.ps1`
-- `개발환경_고도화/runtime/src/data-migration/object-domain-parity-verifier.ts`
-- `개발환경_고도화/runtime/test/object-domain-import-parity-verifier.test.ts`
-- `tools/test-wbs724-gate7-shadow.mts`, `tools/test-wbs724-gate7-shadow.ps1`
-- `개발환경_고도화/runtime/test/data-migration-catalog-projection-*.test.ts`
-- `개발환경_고도화/runtime/test/object-domain-import-shadow-snapshot.test.ts`
-- `개발환경_고도화/runtime/scripts/rehearse-*-gate7.ps1`
+- WBS776 공식 진척은 Gate1~7 TRUE, Gate8 FALSE, 100%이며 WBS776 범위는 COMPLETE다.
+- 1차 독립 Gate7의 P1은 `c5518e6d`에서 보정했고, `909fc1ab` fresh detached 재검토에서 focused 65/65 및 보조 검증이 모두 통과해 최종 GO를 받았다.
+- `data-migration-object-domain-import.v3.json`은 Git 상태에 수정으로 보이지만 내용 diff는 없었다. 재개 시 line-ending 상태를 확인하고 의미 변경 없이 보존한다.
+- 같은 Node 프로세스의 app/pool 재구성만 증명했으므로 문서에서 실제 process restart라고 주장하지 않는다.
+- 전체 도메인 DML0/network0이 아니라 read-only evaluator, fixture quantity 불변, immediate Iris reply callback 0으로만 주장한다.
+- WBS777은 zero-row/post-import continuation completeness를, WBS778은 rank/guild presentation no-write side effect를 증명한다. ITEM_BAG MODERN, 외부 DIRECT reply, 운영 데이터/DB/실방/Gate8은 이 Gate7 완료 주장에 포함하지 않는다.
+- WBS787~789는 shared executable parity ledger 승격과 독립 검토를 완료했다. WBS790~791은 아직 Gate6과 Gate7을 완료로 표시하지 않는다.
+- WBS791 독립 검토는 GO, P0/P1 0건, P2 3건이다. P2는 durable attempt_count 관측, lease 만료 경계, 전용 Maria harness 부재다.
+- 전체 회귀는 각 증분에서 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
 
-## 검증
+## 정확한 다음 행동
 
-- 실행 명령: Gate7 snapshot inventory, combined isolated MariaDB Shadow harness, startup-failure cleanup, full npm test, object-data validator, typecheck, build, diff-check.
-- 현재 결과: actual inventory 13파일 source hash before=after, approved PROJECT 0. 가구 `3525/1715/87`, 미니펫 `3601/239/50` unique-candidate/missing/ambiguous이며 unique candidate도 승인 전에는 PROJECT하지 않는다. port3323 fresh DB migration448 후 WBS724 synthetic Raw→Common3→Projection1, WBS725 Common3→Projection1→canonical1, WBS742 full47→45를 연결했다. 재시작 oracle `47/47`, 45 tables, 241 fields/250 values, hash 동일/diff0, DML0; rollback 뒤 target0, upstream `1/14/47`, identity/crosswalk `43/43` 보존. PID `17400→17168→11048→7548`, cleanup에서 모든 owned PID 종료·3323 listener/temp 제거·3306 PID5328 불변을 재검증했다. forced startup failure도 동일 cleanup assertions PASS. focused `4/4`, 전체 `1793 PASS / 8 SKIP / 0 FAIL`(`1801` tests), validator73/typecheck/build/diff PASS.
+1. Lease2619와 Lease2620을 공식 시트에서 검증 결과와 함께 종료하고 Wave23/체인 통합 SHA를 기록한다.
+2. MINI-PET-TITLE-COLLECTION 14개 소비자의 Gate1 분류를 보정한다: add/remove 인증 분류, repository receipt/replay owner, sale/collection composite transaction owner graph, legacy runtime port를 확정한다.
+3. 공유 원장 lease를 새로 확보한 뒤 MINI-PET-TITLE-COLLECTION을 Gate2~7까지 작은 단위로 실행한다.
+4. WBS790은 raw transaction owner 후속 보완과 sealed trace가 모두 끝난 뒤 별도 6개 receipt를 추가한다. 그 전에는 Gate6을 열지 않는다.
+5. 다음 묶음은 MEMBER-TITLE 23이며 CONTEXT-BRIDGE 12는 공유 경계 lease로 직렬화한다.
+6. 전체 회귀는 증분마다 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
 
-## 충돌·막힘·미승인 사항
+## 승인 경계
 
-- 운영 DB/운영 배포/feature-prod 반영은 승인되지 않았다.
-
-## 다음 행동
-
-1. 독립 reviewer 승인 후 WBS742 Gate7을 한국어 커밋으로 고정한다.
-
-## 보안
-
-- 비밀 값, 평문 자격 증명과 불필요한 개인정보를 기록하지 않는다.
+- 운영 DB·운영 JSON 쓰기, 실운영방, feature/prod, 운영 배포·cutover는 승인되지 않았다.
+- 비밀 값과 평문 자격 증명은 체크포인트에 기록하지 않는다.

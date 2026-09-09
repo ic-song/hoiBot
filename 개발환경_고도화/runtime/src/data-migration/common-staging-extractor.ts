@@ -69,7 +69,7 @@ export interface CommonStagingResult {
   replayed: boolean;
 }
 
-interface RawRunRow { id: bigint; snapshot_manifest_sha256: string; bundle_sha256: string; expected_file_count: number; expected_total_bytes: bigint; run_status: string; }
+interface RawRunRow { raw_landing_run_id: string; snapshot_manifest_sha256: string; bundle_sha256: string; expected_file_count: number; expected_total_bytes: bigint; run_status: string; }
 interface RawFileRow { source_content_sha256: string; payload: Buffer; payload_sha256: string; }
 interface CommonRunRow { common_staging_run_id: string; snapshot_manifest_sha256: string; staging_sha256: string; expected_file_count: number; expected_total_bytes: bigint; expected_record_count: number; projected_file_count: number; ignored_file_count: number; run_status: string; }
 interface StoredRecordRow {
@@ -311,7 +311,7 @@ export class MariaCommonStagingRepository {
   private async extractAndStageTransaction(manifest: CommonStagingExtractionManifest): Promise<CommonStagingResult> {
     return this.database.withTransaction(async (transaction) => {
       const rawRun = (await transaction.query<RawRunRow[]>(
-        "SELECT id,snapshot_manifest_sha256,bundle_sha256,expected_file_count,expected_total_bytes,run_status FROM data_migration_raw_runs WHERE bundle_sha256=? FOR UPDATE",
+        "SELECT raw_landing_run_id,snapshot_manifest_sha256,bundle_sha256,expected_file_count,expected_total_bytes,run_status FROM data_migration_raw_runs WHERE bundle_sha256=? FOR UPDATE",
         [manifest.rawBundleSha256]
       ))[0];
       if (rawRun === undefined || rawRun.run_status !== "COMPLETE") throw new Error("COMMON_STAGING_RAW_RUN_NOT_COMPLETE");
@@ -321,8 +321,8 @@ export class MariaCommonStagingRepository {
       const payloadByPath = new Map<string, Buffer>();
       for (const entry of manifest.entries) {
         const rawFile = (await transaction.query<RawFileRow[]>(
-          "SELECT source_content_sha256,payload,SHA2(payload,256) payload_sha256 FROM data_migration_raw_files WHERE run_id=? AND source_path_sha256=?",
-          [rawRun.id, entry.sourcePathSha256]
+          "SELECT source_content_sha256,payload,SHA2(payload,256) payload_sha256 FROM data_migration_raw_files WHERE raw_landing_run_id=? AND source_path_sha256=?",
+          [rawRun.raw_landing_run_id, entry.sourcePathSha256]
         ))[0];
         if (rawFile === undefined || rawFile.source_content_sha256 !== entry.sourceContentSha256 || rawFile.payload_sha256 !== entry.sourceContentSha256) throw new Error("COMMON_STAGING_RAW_FILE_MISMATCH");
         payloadByPath.set(entry.sourcePathSha256, rawFile.payload);

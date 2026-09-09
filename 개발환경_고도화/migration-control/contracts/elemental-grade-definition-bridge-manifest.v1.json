@@ -1,0 +1,15 @@
+{
+  "catalogVersion":"SC-20260902-1",
+  "format":"hoibot-elemental-grade-definition-bridge-manifest-contract-v1",
+  "expectedCount":61,
+  "sourceIdentifier":"sha256(sourceLocatorSha256 + NUL + sourcePointer + NUL + canonical_equipment_grade_definitions)",
+  "entryFields":["gradeOrder","sourceIdentifier","numericTupleSha256","bindingFingerprint"],
+  "numericTupleOrder":["upgrade","drop","itemCost","pointCost","maxLevel","battleExp","battleUpgradeExp","raidExp","raidUpgradeExp","castleExp","castleUpgradeExp"],
+  "numericOrderSha256":"sha256(stable JSON of 61 ordered gradeOrder/numericTupleSha256 pairs)",
+  "bindingFingerprint":"sha256(stable JSON of catalogVersion/gradeOrder/sourceIdentifier/numericTupleSha256/numericOrderSha256)",
+  "manifestSha256":"sha256(stable JSON of the manifest excluding manifestSha256)",
+  "containsDisplayNames":false,
+  "containsAliases":false,
+  "containsRawNumericValues":false,
+  "operationalDataAllowed":false
+}

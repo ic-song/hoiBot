@@ -1,0 +1,37 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-item-bag-import-completeness-schema-plan-v1",
+  "migration": "488_item_bag_import_completeness.sql",
+  "rollback": "488_item_bag_import_completeness.rollback.sql",
+  "forwardCorrection": {
+    "migration": "490_item_bag_import_baseline_ordering.sql",
+    "rollback": "490_item_bag_import_baseline_ordering.rollback.sql",
+    "reservedPredecessor": "489 is owned by WBS778 and is not modified by WBS777",
+    "alters": ["canonical_item_inventory_ledger_entries", "player_item_bag_import_completeness_projections"],
+    "creates": ["canonical_item_inventory_ledger_heads", "canonical_item_inventory_ledger_orderings", "player_item_bag_import_stack_baselines", "player_item_bag_import_ledger_baselines"],
+    "preflight": "refuse when any V3 projection row already exists; migration 488 remains sealed",
+    "backfill": "existing ledger IDs receive a deterministic dense ordinal only; it is not historical time order",
+    "insertOrdering": "AFTER INSERT atomically serializes same-player sequence allocation through the player head row",
+    "deletePolicy": "ordering FK blocks general ledger DELETE; approved import rollback may remove only an exact locked tail and atomically rewind the head without renumbering",
+    "rollbackPreflight": "refuse while any projection, typed baseline, or canonical ledger/ordering evidence exists"
+  },
+  "table": "player_item_bag_import_completeness_projections",
+  "role": "relation",
+  "primaryKey": { "column": "player_item_bag_import_completeness_projection_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "generator": "CUID2_8_COLLISION_RETRY" },
+  "foreignKeys": [
+    { "column": "player_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "referencesTable": "canonical_players", "referencesColumn": "player_id", "onDelete": "RESTRICT" },
+    { "column": "object_domain_import_run_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "referencesTable": "data_migration_object_domain_import_runs", "referencesColumn": "object_domain_import_run_id", "onDelete": "RESTRICT" },
+    { "column": "common_staging_record_id", "sqlType": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin", "referencesTable": "data_migration_common_staging_records", "referencesColumn": "common_staging_record_id", "onDelete": "RESTRICT" }
+  ],
+  "uniqueKeys": [["player_id", "active_player_guard"], ["object_domain_import_run_id", "player_id"], ["object_domain_import_run_id", "common_staging_record_id"], ["player_id", "revision"]],
+  "zeroSourceRowsAllowed": true,
+  "completeCheck": "projected_stack_count=expected_source_key_count AND quarantined_source_key_count=0 AND ignored_source_key_count=0",
+  "baselineColumns": ["stack_set_fingerprint", "item_ledger_entry_count", "baseline_ledger_head_sequence", "item_ledger_set_fingerprint"],
+  "typedBaselines": {
+    "stack": "player/item/owned stack/baseline quantity/exact typed fingerprint",
+    "ledger": "ledger entry ID/operation ID/player/item/stack-or-instance/delta/reason/baseline sequence/exact typed fingerprint"
+  },
+  "readinessProof": "exact typed baseline child sets plus gap-free sequence 1..head and baseline quantity plus post-baseline deltas equals current canonical stack set; new post-baseline stacks are eligible",
+  "audit": { "columns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"], "timeFormat": "KST_YYYY-MM-DD HH:MM:SS" },
+  "rollbackPreflight": "488 refuses DROP while any projection exists; 490 additionally refuses rollback while sequence or baseline evidence exists"
+}

@@ -1,4 +1,4 @@
-# WBS725 Catalog Projection Gate 1~5 검증
+# WBS725 Catalog Projection Gate 1~7 검증
 
 - 슬라이스: `SL-DATA-MIGRATION-CATALOG-PROJECTION-01`
 - 실행 ID: `카탈로그투영DB-SL-DATA-MIGRATION-CATALOG-PROJECTION-01-202609031600`
@@ -70,8 +70,27 @@
 - `RUN_MARIADB_INTEGRATION=true` 관련 회귀는 `59/59 PASS`, 실제 MariaDB suite 2개도 skip 없이 통과했다.
 - 운영 3306 서비스와 DB, 운영 JSON, Docker, `feature/prod`, Sheet, Gate 8은 변경하지 않았다. 종료 시 captured restart PID와 port listener를 대사하고 작업트리 내부 exact 임시 경로만 삭제한다.
 
+## Gate 6 WBS742 Domain Importer 소비 대사
+
+- 독립 승인된 WBS742 Gate3/4 commit `fd3f11a3`만 WBS725 portability commit `69a72a2d`의 직계 후속으로 단독 반영했다. 브랜치 전체 merge는 하지 않았으며 WBS725 브랜치의 대응 commit은 `7f13dc21`이다.
+- 정식 parity test `data-migration-catalog-projection-importer-parity.test.ts`가 disposition의 definition/state/ledger/quarantine 합집합 `45`개와 target schema의 고유 필드 `241`개, 합성 projection row 계약 `47`개, definition `23`개를 전수 대사한다.
+- identity binding, object model, disposition, field map은 파일 바이트가 아니라 WBS742 canonical semantic JSON SHA-256으로 독립 계산해 import contract에 봉인된 네 component hash와 일치함을 검증한다.
+- target schema는 WBS725가 export하는 `calculateCatalogTargetSchemaSha256`을 단일 기준으로 사용하며 LF/CRLF가 같은 canonical hash를 생성하고 Catalog manifest와 Importer policy가 정확히 같은 hash를 소비함을 검증한다.
+- 실제 Catalog plan의 PROJECT/QUARANTINE/IGNORE 결정 3개와 typed record 1개를 DB row envelope로 변환해 WBS742 `buildObjectDomainImportPlan`에 직접 입력했다. source locator/payload fingerprint, decision fingerprint, projection hash, identity, payload/value-origin/reference fingerprint를 다시 계산하지 않고 그대로 전달했으며 importer preflight가 성공했다. exact 아이템명 `다이아상자💎(/다이아상자오픈)`도 보존됐다.
+- target schema hash 또는 component semantic hash drift 반례는 canonical write 전 각각 `OBJECT_DOMAIN_IMPORT_PROJECTION_RUN_INVALID`, `OBJECT_DOMAIN_IMPORT_COMPONENT_CONTRACT_DRIFT`로 fail-closed했다.
+- Gate6 focused `3/3 PASS`, WBS725 projection+WBS742 importer 관련 `38/38 PASS`, 전체 저장소 `1790 PASS / 8 SKIP / 0 FAIL` (`1798` tests), typecheck/build/등록 대상 `73` validator/git diff-check PASS다. SKIP 8건은 환경변수·MariaDB가 필요한 기존 integration이며 WBS725 Gate5 actual MariaDB 검증은 위 절에서 별도로 완료했다. shared migration/provider/app 구현 충돌과 운영 영향은 없다.
+
+## Gate 7 격리 Shadow
+
+- WBS742 Gate5 승인 commit `10690cf0`의 실이관 comparator·fixture·harness·test·evidence 5파일만 WBS725 branch commit `b1db18f0`으로 반영했다. shared checkpoint는 제외했으며 WBS742의 45-target/241-field oracle을 복제하지 않았다.
+- 정식 harness `rehearse-catalog-projection-gate7.ps1`은 작업트리 내부 fresh datadir, loopback `127.0.0.1:3322`, allowlist DB `hoibot_rehearsal_wbs725_gate7`만 사용한다. migration 총 `448`개 및 Common/Catalog/Envelope/Importer `457~460` 각 1개를 실제 DB에서 assert한다.
+- `data-migration-catalog-projection-shadow-mariadb.integration.test.ts`는 비식별 fixture의 독립 고정 oracle과 실제 DB를 대사한다. run의 Common FK/catalog version/raw·snapshot·extraction·target-schema·manifest·projection·upstream-envelope hash와 file/source/decision/record count 전부, decision 3개의 locator/payload/status/reason/count/fingerprint 전부, record 1개의 identity/target/approval/payload/value-origin/reference fingerprint 전부가 diff `0`이다.
+- 최초 PROJECT/QUARANTINE/IGNORE `1/1/1`, projection record `1`을 적재한 뒤 Domain Importer가 실제 canonical item definition `1`과 decision receipt `3`을 적재해도 projection snapshot은 byte-semantic 동등했다. exact 표시명 `다이아상자💎(/다이아상자오픈)`도 유지됐다.
+- MariaDB PID `15628→17940` 재시작 후 같은 Catalog manifest와 importer 입력은 각각 decision/record `0/0`, canonical/receipt `0/0`, `replayed=true`였다. `Com_insert/update/delete/replace` 증가량은 모두 `0`이었다.
+- importer rollback 뒤 projection rollback과 synthetic Common Staging 정리를 검증했다. 종료 시 port `3322` listener와 exact `.tmp/wbs725-gate7-mariadb` 경로는 제거됐고 운영 `3306` listener PID `5328`은 전후 동일했다.
+- forced startup failure도 예상 오류 뒤 listener/temp 제거, 환경변수 원상 복원, 운영 `3306` 불변으로 종료했다. 저장된 password/token 문자열은 격리 fixture 전용 비밀이 아닌 값이며 실제 자격 증명·운영 경로는 사용하지 않았다.
+- 최종 검증은 actual prepare/restart replay 각 `1/1 PASS`, 관련 Catalog/Importer `39/39 PASS`, 전체 저장소 `1791 PASS / 8 SKIP / 0 FAIL` (`1799` tests), typecheck/build/등록 대상 `73` validator/PowerShell parser/git diff-check PASS다. SKIP 8건은 별도 환경변수·MariaDB가 필요한 기존 integration이며 Gate7 actual 2회는 skip 없이 별도 실행했다.
+
 ## 남은 Gate
 
-- Gate 6: downstream importer가 decision/record count와 fingerprint parity를 소비하는 계약 확인
-- Gate 7: 격리 Shadow와 작업반장 승인
 - Gate 8: 금지·미수행

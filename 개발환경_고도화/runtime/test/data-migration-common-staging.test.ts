@@ -8,7 +8,7 @@ import { assertCommonStagingDatabaseName, extractCommonStagingRecords, MariaComm
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/data-migration-common-staging-v1.json", import.meta.url), "utf8")) as CommonStagingExtractionManifest;
 const migration = readFileSync(new URL("../migrations/457_data_migration_common_staging.sql", import.meta.url), "utf8");
 const rollback = readFileSync(new URL("../migrations/rollback/457_data_migration_common_staging.rollback.sql", import.meta.url), "utf8");
-const contract = JSON.parse(readFileSync(new URL("../../migration-control/contracts/data-migration-common-staging.v1.json", import.meta.url), "utf8")) as { migration: string; rawProviderMigration: string; tables: Array<{ table: string; primaryKey: string; auditColumns: string[] }> };
+const contract = JSON.parse(readFileSync(new URL("../../migration-control/contracts/data-migration-common-staging.v1.json", import.meta.url), "utf8")) as { migration: string; rawProviderMigration: string; rawProviderAmendmentMigration: string; tables: Array<{ table: string; primaryKey: string; auditColumns: string[] }> };
 const payload = Buffer.from(JSON.stringify({ member: { alpha: { name: "사용자-A", bag: { "다이아상자💎(/다이아상자오픈)": "2" } } }, capturedAt: "2026-09-03 15:30:00" }), "utf8");
 const sha = (value: string | Buffer): string => createHash("sha256").update(value).digest("hex");
 
@@ -16,6 +16,7 @@ describe("data migration common staging contract", () => {
   it("uses specific CUID2 PKs, matching FK names and mandatory audit columns", () => {
     assert.equal(contract.migration, "457_data_migration_common_staging.sql");
     assert.equal(contract.rawProviderMigration, "442_data_migration_raw_landing.sql");
+    assert.equal(contract.rawProviderAmendmentMigration, "476_data_migration_raw_landing_standard_correction.sql");
     assert.deepEqual(contract.tables.map((table) => table.primaryKey), ["common_staging_run_id", "common_staging_record_id"]);
     for (const table of contract.tables) assert.deepEqual(table.auditColumns, ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]);
     assert.doesNotMatch(migration, /^\s*id\s+/im);
@@ -124,7 +125,7 @@ describe("MariaCommonStagingRepository", () => {
     }));
     let storedRunId: string | undefined;
     const first = new ScriptedDatabase((sql, values) => {
-      if (sql.includes("FROM data_migration_raw_runs")) return [{ id: 7n, snapshot_manifest_sha256: fixture.snapshotManifestSha256, bundle_sha256: fixture.rawBundleSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), run_status: "COMPLETE" }];
+      if (sql.includes("FROM data_migration_raw_runs")) return [{ raw_landing_run_id: "r1234567", snapshot_manifest_sha256: fixture.snapshotManifestSha256, bundle_sha256: fixture.rawBundleSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), run_status: "COMPLETE" }];
       if (sql.includes("FROM data_migration_raw_files")) return [{ source_content_sha256: sha(payload), payload, payload_sha256: sha(payload) }];
       if (sql.includes("FROM data_migration_common_staging_runs")) return [];
       if (sql.includes("FROM data_migration_common_staging_records")) {
@@ -141,7 +142,7 @@ describe("MariaCommonStagingRepository", () => {
     assert.equal(first.writes.filter((sql) => sql.startsWith("UPDATE data_migration_common_staging_runs")).length, 1);
 
     const replay = new ScriptedDatabase((sql) => {
-      if (sql.includes("FROM data_migration_raw_runs")) return [{ id: 7n, snapshot_manifest_sha256: fixture.snapshotManifestSha256, bundle_sha256: fixture.rawBundleSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), run_status: "COMPLETE" }];
+      if (sql.includes("FROM data_migration_raw_runs")) return [{ raw_landing_run_id: "r1234567", snapshot_manifest_sha256: fixture.snapshotManifestSha256, bundle_sha256: fixture.rawBundleSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), run_status: "COMPLETE" }];
       if (sql.includes("FROM data_migration_raw_files")) return [{ source_content_sha256: sha(payload), payload, payload_sha256: sha(payload) }];
       if (sql.includes("FROM data_migration_common_staging_runs")) return [{ common_staging_run_id: imported.commonStagingRunId, snapshot_manifest_sha256: fixture.snapshotManifestSha256, staging_sha256: extracted.stagingSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), expected_record_count: 1, projected_file_count: 1, ignored_file_count: 0, run_status: "COMPLETE" }];
       if (sql.includes("FROM data_migration_common_staging_records")) return storedRows;
@@ -152,7 +153,7 @@ describe("MariaCommonStagingRepository", () => {
     assert.equal(replay.writes.length, 0);
 
     const tampered = new ScriptedDatabase((sql) => {
-      if (sql.includes("FROM data_migration_raw_runs")) return [{ id: 7n, snapshot_manifest_sha256: fixture.snapshotManifestSha256, bundle_sha256: fixture.rawBundleSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), run_status: "COMPLETE" }];
+      if (sql.includes("FROM data_migration_raw_runs")) return [{ raw_landing_run_id: "r1234567", snapshot_manifest_sha256: fixture.snapshotManifestSha256, bundle_sha256: fixture.rawBundleSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), run_status: "COMPLETE" }];
       if (sql.includes("FROM data_migration_raw_files")) return [{ source_content_sha256: sha(payload), payload, payload_sha256: sha(payload) }];
       if (sql.includes("FROM data_migration_common_staging_runs")) return [{ common_staging_run_id: imported.commonStagingRunId, snapshot_manifest_sha256: fixture.snapshotManifestSha256, staging_sha256: extracted.stagingSha256, expected_file_count: 1, expected_total_bytes: BigInt(payload.byteLength), expected_record_count: 1, projected_file_count: 1, ignored_file_count: 0, run_status: "COMPLETE" }];
       if (sql.includes("FROM data_migration_common_staging_records")) return [{ ...storedRows[0], owner_locator_sha256: "0".repeat(64) }];

@@ -1,0 +1,428 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hoibot.local/schemas/object-db-consumer-mutation-evidence-wave22.v1.schema.json",
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "scenario": {
+      "enum": [
+        "MUTATION_SUCCESS",
+        "DOMAIN_FAILURE_ROLLBACK",
+        "DUPLICATE_REPLAY_DML_ZERO",
+        "PAYLOAD_DRIFT_FAIL_CLOSED",
+        "RESTART_REPLAY",
+        "CONCURRENCY_SINGLE_WRITER"
+      ]
+    },
+    "role": { "enum": ["PRIMARY", "SEED", "REPLAY", "CONCURRENT"] },
+    "postState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "object_owned_furniture_instances",
+        "object_furniture_operation_replays"
+      ],
+      "properties": {
+        "object_owned_furniture_instances": { "type": "integer", "minimum": 0 },
+        "object_furniture_operation_replays": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "exactRows": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["object_owned_furniture_instances", "object_furniture_operation_replays"],
+      "properties": {
+        "object_owned_furniture_instances": { "type": "array", "items": { "$ref": "#/$defs/ownedRow" } },
+        "object_furniture_operation_replays": { "type": "array", "items": { "$ref": "#/$defs/replayRow" } }
+      }
+    },
+    "ownedRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["owned_furniture_id","player_id","furniture_id","enhancement_level","ownership_status","INSERT_USER","INSERT_TIME","UPDATE_USER","UPDATE_TIME"],
+      "properties": {
+        "owned_furniture_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"}, "player_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"}, "furniture_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"},
+        "enhancement_level":{"type":"integer","minimum":0,"maximum":4294967295}, "ownership_status":{"type":"string"}, "INSERT_USER":{"type":"string"}, "INSERT_TIME":{"type":"string"}, "UPDATE_USER":{"type":"string"}, "UPDATE_TIME":{"type":"string"}
+      }
+    },
+    "replayRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["furniture_operation_id","player_id","idempotency_scope","idempotency_key","operation_kind","payload_fingerprint","owned_furniture_id","result_status","INSERT_USER","INSERT_TIME","UPDATE_USER","UPDATE_TIME"],
+      "properties": {
+        "furniture_operation_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"}, "player_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"}, "idempotency_scope":{"type":"string"}, "idempotency_key":{"type":"string"}, "operation_kind":{"type":"string"}, "payload_fingerprint":{"$ref":"#/$defs/sha256"}, "owned_furniture_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"}, "result_status":{"type":"string"}, "INSERT_USER":{"type":"string"}, "INSERT_TIME":{"type":"string"}, "UPDATE_USER":{"type":"string"}, "UPDATE_TIME":{"type":"string"}
+      }
+    },
+    "locatorRow": {
+      "type":"object", "additionalProperties":false,
+      "required":["furniture_operation_id","player_id","idempotency_scope","idempotency_key","operation_kind","payload_fingerprint","owned_furniture_id","result_status"],
+      "properties":{"furniture_operation_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"},"player_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"},"idempotency_scope":{"type":"string"},"idempotency_key":{"type":"string"},"operation_kind":{"type":"string"},"payload_fingerprint":{"$ref":"#/$defs/sha256"},"owned_furniture_id":{"type":"string","pattern":"^[a-z][a-z0-9]{7}$"},"result_status":{"type":"string"}}
+    },
+    "failure": {
+      "type":"object", "additionalProperties":false,
+      "required":["code","errno","errorKind","constraintName"],
+      "properties":{"code":{"type":["string","null"]},"errno":{"type":["integer","null"]},"errorKind":{"type":"string"},"constraintName":{"type":["string","null"]}}
+    },
+    "locatorProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "playerId", "idempotencyScope", "idempotencyKey", "rows", "locatorOK"],
+      "properties": {
+        "mode": { "const": "RAW_COMPOSITE" },
+        "playerId": { "type": "string", "pattern": "^[a-z][a-z0-9]{7}$" },
+        "idempotencyScope": { "type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,100}$" },
+        "idempotencyKey": { "type": "string", "minLength": 1, "maxLength": 191 },
+        "rows": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/locatorRow" } },
+        "locatorOK": { "const": true }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "spanStart",
+        "spanEnd",
+        "spanSha256",
+        "catalogSpanStart",
+        "catalogSpanEnd",
+        "catalogSpanSha256",
+        "relocationDiffSha256"
+      ],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "spanStart": { "type": "integer", "minimum": 0 },
+        "spanEnd": { "type": "integer", "minimum": 1 },
+        "spanSha256": { "$ref": "#/$defs/sha256" },
+        "catalogSpanStart": { "type": "integer", "minimum": 0 },
+        "catalogSpanEnd": { "type": "integer", "minimum": 1 },
+        "catalogSpanSha256": { "$ref": "#/$defs/sha256" },
+        "relocationDiffSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempt",
+        "outcome",
+        "attemptedDmlStatements",
+        "affectedDmlStatements",
+        "affectedRowCount",
+        "lockOrder",
+        "failure"
+      ],
+      "properties": {
+        "attempt": { "type": "integer", "minimum": 1 },
+        "outcome": { "enum": ["COMMIT", "ROLLBACK"] },
+        "attemptedDmlStatements": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "affectedDmlStatements": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "affectedRowCount": { "type": "integer", "minimum": 0 },
+        "lockOrder": { "type":"array", "uniqueItems":true, "items":{"type":"string","minLength":1} },
+        "failure": { "anyOf":[{"$ref":"#/$defs/failure"},{"type":"null"}] }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "processId",
+        "moduleExecutionId",
+        "role",
+        "source",
+        "database",
+        "transactionAttempts",
+        "committedDmlStatements",
+        "committedRowCount",
+        "rolledBackAffectedRowCount",
+        "lockOrder",
+        "before",
+        "after",
+        "replayed",
+        "errorCode",
+        "externalNetworkCalls",
+        "replyCalls",
+        "locatorProjection",
+        "beforeRows",
+        "afterRows",
+        "beforeSha256",
+        "afterSha256"
+      ],
+      "properties": {
+        "processId": { "type": "integer", "minimum": 1 },
+        "moduleExecutionId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "role": { "$ref": "#/$defs/role" },
+        "source": { "$ref": "#/$defs/source" },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host", "port", "name"],
+          "properties": {
+            "host": { "const": "127.0.0.1" },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535,
+              "not": { "const": 3306 }
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^hoibot_wave22_furniture_grant"
+            }
+          }
+        },
+        "transactionAttempts": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/attempt" }
+        },
+        "committedDmlStatements": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "committedRowCount": { "type": "integer", "minimum": 0 },
+        "rolledBackAffectedRowCount": { "type": "integer", "minimum": 0 },
+        "lockOrder": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "before": { "$ref": "#/$defs/postState" },
+        "after": { "$ref": "#/$defs/postState" },
+        "replayed": { "type": ["boolean", "null"] },
+        "errorCode": { "type": ["string", "null"] },
+        "externalNetworkCalls": { "const": 0 },
+        "replyCalls": { "const": 0 },
+        "locatorProjection": { "$ref": "#/$defs/locatorProjection" },
+        "beforeRows": { "$ref": "#/$defs/exactRows" },
+        "afterRows": { "$ref": "#/$defs/exactRows" },
+        "beforeSha256": { "$ref": "#/$defs/sha256" },
+        "afterSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenarioKind",
+        "traceRoles",
+        "primaryRole",
+        "primaryTransactionOutcome",
+        "primaryTransactionAttempts",
+        "expectedAttemptedDmlTableSequence",
+        "expectedAffectedDmlTableSequence",
+        "expectedDmlTableSequence",
+        "expectedLockOrder",
+        "expectedCommittedRowCount",
+        "expectedRolledBackAffectedRowCount",
+        "expectedBefore",
+        "expectedAfter",
+        "expectedReplayed",
+        "expectedErrorCode",
+        "expectedAttemptFailures",
+        "expectedLockOrderByAttempt",
+        "expectedBeforeRows",
+        "expectedAfterRows",
+        "expectedLocatorProjection",
+        "expectedBeforeSha256",
+        "expectedAfterSha256",
+        "distinctProcessRoles"
+      ],
+      "properties": {
+        "scenarioKind": { "$ref": "#/$defs/scenario" },
+        "traceRoles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/role" }
+        },
+        "primaryRole": { "$ref": "#/$defs/role" },
+        "primaryTransactionOutcome": { "enum": ["COMMIT", "ROLLBACK"] },
+        "primaryTransactionAttempts": { "type": "integer", "minimum": 1 },
+        "expectedAttemptedDmlTableSequence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expectedAffectedDmlTableSequence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expectedDmlTableSequence": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expectedLockOrder": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "expectedCommittedRowCount": { "type": "integer", "minimum": 0 },
+        "expectedRolledBackAffectedRowCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expectedBefore": { "$ref": "#/$defs/postState" },
+        "expectedAfter": { "$ref": "#/$defs/postState" },
+        "expectedReplayed": { "type": ["boolean", "null"] },
+        "expectedErrorCode": { "type": ["string", "null"] },
+        "expectedAttemptFailures": { "type":"array", "items":{"anyOf":[{"$ref":"#/$defs/failure"},{"type":"null"}]} },
+        "expectedLockOrderByAttempt": { "type":"array", "items":{"type":"array","uniqueItems":true,"items":{"type":"string","minLength":1}} },
+        "expectedBeforeRows": { "$ref":"#/$defs/exactRows" },
+        "expectedAfterRows": { "$ref":"#/$defs/exactRows" },
+        "expectedLocatorProjection": { "$ref":"#/$defs/locatorProjection" },
+        "expectedBeforeSha256": { "$ref":"#/$defs/sha256" },
+        "expectedAfterSha256": { "$ref":"#/$defs/sha256" },
+        "distinctProcessRoles": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/role" }
+        }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumerId", "scenarioId", "scenarioKind", "exportName", "harnessCaseId"],
+      "properties": {
+        "consumerId": { "const": "sql-repository-6a8f4b07e980a91f" },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "scenarioKind": { "$ref": "#/$defs/scenario" },
+        "exportName": { "const": "executeWave22FurnitureGrant" },
+        "harnessCaseId": { "const": "case:wave22:furniture-grant" }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenarioKind", "traces"],
+      "properties": {
+        "scenarioKind": { "$ref": "#/$defs/scenario" },
+        "traces": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/trace" }
+        }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "fixtureId",
+    "sliceId",
+    "consumerId",
+    "runtimeSourcePaths",
+    "receiptContract",
+    "mutationContract",
+    "bindings",
+    "sealedObservations"
+  ],
+  "properties": {
+    "format": { "const": "hoibot-object-db-consumer-parity-case-fixture-v1" },
+    "fixtureId": {
+      "const": "fixture:object-db-executable-parity:wave22:furniture-grant:v1"
+    },
+    "sliceId": { "const": "WBS786" },
+    "consumerId": { "const": "sql-repository-6a8f4b07e980a91f" },
+    "runtimeSourcePaths": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "receiptContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "transaction",
+        "externalNetworkCalls",
+        "replyCalls",
+        "restart",
+        "concurrency",
+        "sourceMethod",
+        "locatorProjectionMode"
+      ],
+      "properties": {
+        "version": {
+          "const": "WBS786_FURNITURE_GRANT_MUTATION_DIRECT_V1"
+        },
+        "transaction": { "const": "MUTATION" },
+        "externalNetworkCalls": { "const": 0 },
+        "replyCalls": { "const": 0 },
+        "restart": { "const": "DISTINCT_NODE_CHILD_PROCESSES" },
+        "concurrency": { "const": "EXACTLY_ONE_COMMITTED_WRITER" },
+        "sourceMethod": {
+          "const": "MariaCanonicalFurnitureHomeRepository.grantOwnedFurniture"
+        },
+        "locatorProjectionMode": { "const": "RAW_COMPOSITE_DB_PROJECTION" }
+      }
+    },
+    "mutationContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "consumerId",
+        "source",
+        "database",
+        "allowedTables",
+        "scenarios"
+      ],
+      "properties": {
+        "format": { "const": "hoibot-object-db-consumer-mutation-evidence-v1" },
+        "consumerId": { "const": "sql-repository-6a8f4b07e980a91f" },
+        "source": { "$ref": "#/$defs/source" },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["host", "forbiddenPort", "namePrefix"],
+          "properties": {
+            "host": { "const": "127.0.0.1" },
+            "forbiddenPort": { "const": 3306 },
+            "namePrefix": { "const": "hoibot_wave22_furniture_grant" }
+          }
+        },
+        "allowedTables": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [
+            { "const": "object_owned_furniture_instances" },
+            { "const": "object_furniture_operation_replays" }
+          ],
+          "items": false
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 6,
+          "maxItems": 6,
+          "items": { "$ref": "#/$defs/oracle" }
+        }
+      }
+    },
+    "bindings": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/binding" }
+    },
+    "sealedObservations": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": { "$ref": "#/$defs/observation" }
+    }
+  }
+}

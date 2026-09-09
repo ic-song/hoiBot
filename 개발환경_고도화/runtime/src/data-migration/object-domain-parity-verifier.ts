@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { DatabaseTransaction } from "../database.js";
-import type { DomainImportPolicy } from "./object-domain-importer.js";
+import { assertObjectDomainImportPolicy, type DomainImportPolicy } from "./object-domain-importer.js";
 
 interface ProjectionRunRow {
   common_staging_run_id: string; catalog_version: string; projection_manifest_sha256: string;
@@ -46,6 +46,13 @@ export interface ObjectDomainParityResult {
   lastDefinitionImportOrder: number; firstNonDefinitionImportOrder: number; rowDiffCount: 0;
 }
 
+export interface ObjectDomainParityImportFingerprintInput {
+  catalogProjectionRunId: string; projectionManifestSha256: string; projectionSha256: string;
+  upstreamEnvelopeSha256: string; targetSchemaSha256: string;
+  decisions: ReadonlyArray<{ id: string; fingerprint: string }>;
+  rows: ReadonlyArray<{ id: string; fingerprint: string }>;
+}
+
 const IDENTIFIER = /^[a-z][a-z0-9_]*$/;
 const HASH = /^[0-9a-f]{64}$/;
 
@@ -56,6 +63,26 @@ function stable(value: unknown): string {
 }
 
 function sha256(value: string): string { return createHash("sha256").update(value).digest("hex"); }
+
+// 저장된 계약 identity를 포함해 importer와 동일한 import fingerprint를 계산합니다.
+export function calculateObjectDomainParityImportSha256(input: ObjectDomainParityImportFingerprintInput, persistedImportContractSha256: string): string {
+  return sha256(stable({
+    catalogProjectionRunId: input.catalogProjectionRunId,
+    projectionManifestSha256: input.projectionManifestSha256,
+    projectionSha256: input.projectionSha256,
+    upstreamEnvelopeSha256: input.upstreamEnvelopeSha256,
+    targetSchemaSha256: input.targetSchemaSha256,
+    importContractSha256: persistedImportContractSha256,
+    decisions: [...input.decisions].sort((left, right) => left.id.localeCompare(right.id, "en")),
+    rows: input.rows
+  }));
+}
+
+// importer가 허용한 계약 identity만 인정하고 저장 fingerprint를 그 identity로 재검산합니다.
+export function assertObjectDomainParityImportFingerprint(importRun: Pick<ImportRunRow, "import_contract_sha256" | "import_sha256">, policy: DomainImportPolicy, input: ObjectDomainParityImportFingerprintInput): void {
+  if (!HASH.test(importRun.import_contract_sha256) || !policy.acceptedImportContractSha256.includes(importRun.import_contract_sha256)) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_CONTRACT_IDENTITY_INCOMPATIBLE");
+  if (calculateObjectDomainParityImportSha256(input, importRun.import_contract_sha256) !== importRun.import_sha256) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_FINGERPRINT_DRIFT");
+}
 
 function parseObject(value: string): Record<string, unknown> {
   let parsed: unknown;
@@ -99,6 +126,7 @@ function rowKey(table: string, pk: string): string { return `${table}\0${pk}`; }
 
 export class ObjectDomainParityVerifier {
   async verify(transaction: DatabaseTransaction, catalogProjectionRunId: string, policy: DomainImportPolicy): Promise<ObjectDomainParityResult> {
+    assertObjectDomainImportPolicy(policy);
     if (new Set(policy.directTargets).size !== 45 || policy.columns.length !== 241 || policy.definitionTargets.length !== 23) throw new Error("OBJECT_DOMAIN_PARITY_POLICY_SCOPE_INVALID");
     for (const key of ["identityBindings", "objectModel", "disposition", "fieldMap"] as const) if (!HASH.test(policy.componentSemanticSha256[key]) || policy.componentSemanticSha256[key] !== policy.contractComponentSemanticSha256[key]) throw new Error("OBJECT_DOMAIN_PARITY_COMPONENT_CONTRACT_DRIFT");
     for (const name of [...policy.directTargets, ...policy.columns.flatMap((column) => [column.table, column.column])]) if (!IDENTIFIER.test(name)) throw new Error("OBJECT_DOMAIN_PARITY_IDENTIFIER_INVALID");
@@ -135,7 +163,7 @@ export class ObjectDomainParityVerifier {
     const importRuns = await transaction.query<ImportRunRow[]>("SELECT object_domain_import_run_id,catalog_version,catalog_projection_sha256,upstream_envelope_sha256,target_schema_sha256,import_contract_sha256,import_sha256,expected_source_count,projected_source_count,quarantined_source_count,ignored_source_count,expected_row_count,imported_row_count,run_status FROM data_migration_object_domain_import_runs WHERE catalog_projection_run_id=?", [catalogProjectionRunId]);
     if (importRuns.length !== 1) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_RUN_INVALID");
     const importRun = importRuns[0]!;
-    if (importRun.run_status !== "COMPLETE" || importRun.catalog_version !== policy.catalogVersion || importRun.catalog_projection_sha256 !== run.projection_sha256 || importRun.upstream_envelope_sha256 !== run.upstream_envelope_sha256 || importRun.target_schema_sha256 !== policy.targetSchemaSha256 || importRun.import_contract_sha256 !== policy.importContractSha256 || Number(importRun.expected_source_count) !== decisions.length || Number(importRun.projected_source_count) !== decisionCounts.PROJECT || Number(importRun.quarantined_source_count) !== decisionCounts.QUARANTINE || Number(importRun.ignored_source_count) !== decisionCounts.IGNORE || Number(importRun.expected_row_count) !== 47 || Number(importRun.imported_row_count) !== 47) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_RUN_INVALID");
+    if (importRun.run_status !== "COMPLETE" || importRun.catalog_version !== policy.catalogVersion || importRun.catalog_projection_sha256 !== run.projection_sha256 || importRun.upstream_envelope_sha256 !== run.upstream_envelope_sha256 || importRun.target_schema_sha256 !== policy.targetSchemaSha256 || !HASH.test(importRun.import_contract_sha256) || !policy.acceptedImportContractSha256.includes(importRun.import_contract_sha256) || Number(importRun.expected_source_count) !== decisions.length || Number(importRun.projected_source_count) !== decisionCounts.PROJECT || Number(importRun.quarantined_source_count) !== decisionCounts.QUARANTINE || Number(importRun.ignored_source_count) !== decisionCounts.IGNORE || Number(importRun.expected_row_count) !== 47 || Number(importRun.imported_row_count) !== 47) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_RUN_INVALID");
     const decisionReceipts = await transaction.query<Array<Omit<DecisionRow, "source_payload_fingerprint" | "record_domain">>>("SELECT catalog_source_decision_id,source_locator_sha256,decision_status,decision_reason,projected_row_count,decision_fingerprint FROM data_migration_object_domain_import_decisions WHERE object_domain_import_run_id=? ORDER BY catalog_source_decision_id", [importRun.object_domain_import_run_id]);
     const expectedDecisionReceipts = decisions.map(({ catalog_source_decision_id, source_locator_sha256, decision_status, decision_reason, projected_row_count, decision_fingerprint }) => ({ catalog_source_decision_id, source_locator_sha256, decision_status, decision_reason, projected_row_count: Number(projected_row_count), decision_fingerprint }));
     if (stable(decisionReceipts.map((row) => ({ ...row, projected_row_count: Number(row.projected_row_count) }))) !== stable(expectedDecisionReceipts)) throw new Error("OBJECT_DOMAIN_PARITY_DECISION_RECEIPT_MISMATCH");
@@ -218,8 +246,15 @@ export class ObjectDomainParityVerifier {
     const definitionOrders = importRecords.filter((record) => policy.definitionTargets.includes(record.target_table_name)).map((record) => Number(record.import_order));
     const remainingOrders = importRecords.filter((record) => !policy.definitionTargets.includes(record.target_table_name)).map((record) => Number(record.import_order));
     if (definitionOrders.length === 0 || remainingOrders.length === 0 || Math.max(...definitionOrders) >= Math.min(...remainingOrders)) throw new Error("OBJECT_DOMAIN_PARITY_DEFINITION_ORDER_INVALID");
-    const importSha256 = sha256(stable({ catalogProjectionRunId, projectionManifestSha256: run.projection_manifest_sha256, projectionSha256: run.projection_sha256, upstreamEnvelopeSha256: run.upstream_envelope_sha256, targetSchemaSha256: policy.targetSchemaSha256, importContractSha256: policy.importContractSha256, decisions: decisions.map((decision) => ({ id: decision.catalog_source_decision_id, fingerprint: decision.decision_fingerprint })).sort((left, right) => left.id.localeCompare(right.id, "en")), rows: importRecords.map((record) => ({ id: record.catalog_projection_record_id, fingerprint: record.binding_fingerprint })) }));
-    if (importSha256 !== importRun.import_sha256) throw new Error("OBJECT_DOMAIN_PARITY_IMPORT_FINGERPRINT_DRIFT");
+    assertObjectDomainParityImportFingerprint(importRun, policy, {
+      catalogProjectionRunId,
+      projectionManifestSha256: run.projection_manifest_sha256,
+      projectionSha256: run.projection_sha256,
+      upstreamEnvelopeSha256: run.upstream_envelope_sha256,
+      targetSchemaSha256: policy.targetSchemaSha256,
+      decisions: decisions.map((decision) => ({ id: decision.catalog_source_decision_id, fingerprint: decision.decision_fingerprint })),
+      rows: importRecords.map((record) => ({ id: record.catalog_projection_record_id, fingerprint: record.binding_fingerprint }))
+    });
 
     const canonicalExpected = expectedRows.map(({ table, pk, values }) => ({ table, pk, values })).sort((left, right) => rowKey(left.table, left.pk).localeCompare(rowKey(right.table, right.pk), "en"));
     const canonicalActual = actualRows.sort((left, right) => rowKey(left.table, left.pk).localeCompare(rowKey(right.table, right.pk), "en"));

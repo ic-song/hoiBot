@@ -1,0 +1,12 @@
+SET @rollback_479_guard=IF(EXISTS(SELECT 1 FROM canonical_admin_global_gift_operations LIMIT 1),'SIGNAL SQLSTATE ''45000'' SET MESSAGE_TEXT=''ADMIN_GLOBAL_GIFT_DURABLE_STATE_EXISTS''','DO 0');
+PREPARE rollback_479_statement FROM @rollback_479_guard;
+EXECUTE rollback_479_statement;
+DEALLOCATE PREPARE rollback_479_statement;
+DELETE FROM command_aliases WHERE command_text='/선물전달' AND command_code='ADMIN_GLOBAL_GIFT';
+DELETE FROM command_registry WHERE command_code='ADMIN_GLOBAL_GIFT' AND handler_key='admin_global_gift';
+DELETE FROM admin_role_permissions WHERE permission_code='game.inventory.global_gift';
+DELETE FROM admin_permissions WHERE code='game.inventory.global_gift';
+DROP TABLE IF EXISTS canonical_admin_global_gift_channel_snapshots;
+DROP TABLE IF EXISTS canonical_admin_global_gift_recipients;
+DROP TABLE IF EXISTS canonical_admin_global_gift_operations;
+DROP TABLE IF EXISTS canonical_admin_global_gift_channel_configs;

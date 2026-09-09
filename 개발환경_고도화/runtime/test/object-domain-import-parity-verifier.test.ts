@@ -4,8 +4,19 @@ import { describe, it } from "node:test";
 import { loadConfig } from "../src/config.js";
 import { createDatabaseClient, type DatabaseClient, type DatabaseTransaction } from "../src/database.js";
 import { calculateCatalogTargetSchemaSha256 } from "../src/data-migration/catalog-projection-provider.js";
-import { assertObjectDomainImportDatabaseName, calculateObjectDomainImportSemanticSha256, type DomainImportPolicy } from "../src/data-migration/object-domain-importer.js";
-import { ObjectDomainParityVerifier } from "../src/data-migration/object-domain-parity-verifier.js";
+import {
+  assertObjectDomainImportDatabaseName,
+  calculateObjectDomainImportComponentSemanticSha256,
+  calculateObjectDomainImportContractSemanticSha256,
+  OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256,
+  type DomainImportPolicy
+} from "../src/data-migration/object-domain-importer.js";
+import {
+  assertObjectDomainParityImportFingerprint,
+  calculateObjectDomainParityImportSha256,
+  ObjectDomainParityVerifier,
+  type ObjectDomainParityImportFingerprintInput
+} from "../src/data-migration/object-domain-parity-verifier.js";
 
 const base = "../../migration-control/contracts/";
 const schemaText = readFileSync(new URL(`${base}object-domain-import-target-schema.v1.json`, import.meta.url), "utf8");
@@ -19,19 +30,26 @@ const identity = JSON.parse(identityText) as { generatedCuidBindings: DomainImpo
 const objectModel = JSON.parse(objectModelText) as { tables: Array<{ table: string; foreignKeys?: Array<{ column: string; referencesTable: string; referencesColumn: string }> }> };
 const disposition = JSON.parse(dispositionText) as { definitionSeed: string[]; stateImport: string[]; initialLedger: string[]; quarantineOnly: string[] };
 const fieldMap = JSON.parse(fieldMapText) as { mappings: Array<{ domain: string; targetTables: string[] }>; recordQuarantine: string[] };
-const contract = JSON.parse(contractText) as { componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"] };
+const contract = JSON.parse(contractText) as { componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; semanticHashPolicy: { acceptedCompatibleImportContractSha256: string[] } };
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/data-migration-object-domain-import-v1.json", import.meta.url), "utf8")) as { syntheticProjectionRowCount: number; directTargetCount: number; targetColumnCount: number; gate6SourceDecisionCount: number; gate6ProjectedDecisionCount: number; gate6QuarantinedDecisionCount: number; gate6IgnoredDecisionCount: number; gate6ComparedFieldValueCount: number };
+const directTargets = [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly];
 const policy: DomainImportPolicy = {
   catalogVersion: schema.catalogVersion,
   targetSchemaSha256: calculateCatalogTargetSchemaSha256(schemaText),
-  importContractSha256: calculateObjectDomainImportSemanticSha256(contractText),
-  componentSemanticSha256: { identityBindings: calculateObjectDomainImportSemanticSha256(identityText), objectModel: calculateObjectDomainImportSemanticSha256(objectModelText), disposition: calculateObjectDomainImportSemanticSha256(dispositionText), fieldMap: calculateObjectDomainImportSemanticSha256(fieldMapText) },
+  importContractSha256: calculateObjectDomainImportContractSemanticSha256(contractText),
+  acceptedImportContractSha256: [calculateObjectDomainImportContractSemanticSha256(contractText), OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256],
+  componentSemanticSha256: {
+    identityBindings: calculateObjectDomainImportComponentSemanticSha256("identityBindings", identityText, directTargets),
+    objectModel: calculateObjectDomainImportComponentSemanticSha256("objectModel", objectModelText, directTargets),
+    disposition: calculateObjectDomainImportComponentSemanticSha256("disposition", dispositionText, directTargets),
+    fieldMap: calculateObjectDomainImportComponentSemanticSha256("fieldMap", fieldMapText, directTargets)
+  },
   contractComponentSemanticSha256: contract.componentSemanticSha256,
   columns: schema.columns,
   generatedBindings: identity.generatedCuidBindings,
   reusedBindings: identity.reusedPrimaryKeys,
   foreignKeys: objectModel.tables.flatMap((table) => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey }))),
-  directTargets: [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly],
+  directTargets,
   definitionTargets: disposition.definitionSeed,
   domainTargets: Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables])),
   quarantineReasons: fieldMap.recordQuarantine
@@ -43,6 +61,39 @@ describe("object domain import Gate 6 parity contract", () => {
     assert.doesNotMatch(source, /\.verifyReplay\s*\(|buildObjectDomainImportPlan\s*\(/);
     assert.deepEqual([fixture.syntheticProjectionRowCount, fixture.directTargetCount, fixture.targetColumnCount, fixture.gate6ComparedFieldValueCount], [47, 45, 241, 250]);
     assert.deepEqual([fixture.gate6SourceDecisionCount, fixture.gate6ProjectedDecisionCount, fixture.gate6QuarantinedDecisionCount, fixture.gate6IgnoredDecisionCount], [14, 12, 1, 1]);
+  });
+
+  it("accepts current and pre-466 contract identities but rejects unknown identity and fingerprint drift", () => {
+    const fingerprintInput: ObjectDomainParityImportFingerprintInput = {
+      catalogProjectionRunId: "projection01",
+      projectionManifestSha256: "1".repeat(64),
+      projectionSha256: "2".repeat(64),
+      upstreamEnvelopeSha256: "3".repeat(64),
+      targetSchemaSha256: policy.targetSchemaSha256,
+      decisions: [{ id: "decision02", fingerprint: "5".repeat(64) }, { id: "decision01", fingerprint: "4".repeat(64) }],
+      rows: [{ id: "record01", fingerprint: "6".repeat(64) }]
+    };
+    const currentRun = {
+      import_contract_sha256: policy.importContractSha256,
+      import_sha256: calculateObjectDomainParityImportSha256(fingerprintInput, policy.importContractSha256)
+    };
+    assert.doesNotThrow(() => assertObjectDomainParityImportFingerprint(currentRun, policy, fingerprintInput));
+
+    const compatibleRun = {
+      import_contract_sha256: OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256,
+      import_sha256: calculateObjectDomainParityImportSha256(fingerprintInput, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256)
+    };
+    assert.doesNotThrow(() => assertObjectDomainParityImportFingerprint(compatibleRun, policy, fingerprintInput));
+
+    const unknownContract = "f".repeat(64);
+    assert.throws(() => assertObjectDomainParityImportFingerprint({
+      import_contract_sha256: unknownContract,
+      import_sha256: calculateObjectDomainParityImportSha256(fingerprintInput, unknownContract)
+    }, policy, fingerprintInput), /OBJECT_DOMAIN_PARITY_IMPORT_CONTRACT_IDENTITY_INCOMPATIBLE/);
+    assert.throws(() => assertObjectDomainParityImportFingerprint({
+      import_contract_sha256: OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256,
+      import_sha256: currentRun.import_sha256
+    }, policy, fingerprintInput), /OBJECT_DOMAIN_PARITY_IMPORT_FINGERPRINT_DRIFT/);
   });
 });
 

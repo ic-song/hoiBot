@@ -1,0 +1,2197 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+  "bindings": [
+    {
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "harnessId": "harness:object-db-executable-parity:wave13",
+      "harnessCaseId": "case:admin-server-stats-corrective",
+      "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+      "scenarioId": "scenario:read-positive",
+      "scenarioKind": "READ_POSITIVE"
+    },
+    {
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "harnessId": "harness:object-db-executable-parity:wave13",
+      "harnessCaseId": "case:admin-server-stats-corrective",
+      "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+      "scenarioId": "scenario:negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD"
+    },
+    {
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "harnessId": "harness:object-db-executable-parity:wave13",
+      "harnessCaseId": "case:admin-server-stats-corrective",
+      "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+      "scenarioId": "scenario:auth-denied",
+      "scenarioKind": "AUTH_DENIED"
+    },
+    {
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "harnessId": "harness:object-db-executable-parity:wave13",
+      "harnessCaseId": "case:admin-server-stats-corrective",
+      "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+      "scenarioId": "scenario:exact-output",
+      "scenarioKind": "EXACT_OUTPUT"
+    },
+    {
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "harnessId": "harness:object-db-executable-parity:wave13",
+      "harnessCaseId": "case:admin-server-stats-corrective",
+      "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+      "scenarioId": "scenario:source-domain-dml-zero",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO"
+    },
+    {
+      "consumerId": "admin-command-5e04d0767d4c2abc",
+      "harnessId": "harness:object-db-executable-parity:wave13",
+      "harnessCaseId": "case:admin-server-stats-corrective",
+      "fixtureId": "fixture:object-db-executable-parity:wave13:server-stats:v1",
+      "scenarioId": "scenario:restart-consistency",
+      "scenarioKind": "RESTART_CONSISTENCY"
+    }
+  ],
+  "payload": {
+    "cases": [
+      {
+        "caseId": "case:admin-server-stats-corrective",
+        "executablePath": "buildApp().inject Iris HTTP event→token→normalize→operational channel→ProcessIrisEventService inbox→partial dispatch→production server-stats service→outbox delivery callback",
+        "transactionPath": "actual ProcessIrisEventService and ServerStatsService transactions; callback stub only; external sender/network excluded",
+        "requiredScenarios": [
+          "READ_POSITIVE",
+          "NEGATIVE_GUARD",
+          "AUTH_DENIED",
+          "EXACT_OUTPUT",
+          "SOURCE_DOMAIN_DML_ZERO",
+          "RESTART_CONSISTENCY"
+        ],
+        "riskScenarios": [
+          "WRONG_OPERATIONAL_CHANNEL",
+          "APP_INBOX_DUPLICATE",
+          "SAME_EVENT_REPLAY",
+          "ROLLBACK",
+          "TRANSIENT_1213_RETRY",
+          "FINGERPRINT_DRIFT"
+        ],
+        "consumers": [
+          {
+            "consumerId": "admin-command-5e04d0767d4c2abc",
+            "sourceLocator": {
+              "file": "개발환경_고도화/runtime/src/admin/iris-admin-command-service.ts",
+              "start": 23321,
+              "end": 23356,
+              "sha256": "78b78d6bc40c70db82e1290ef266d6b9e7ceb5c9446bdbdf24a8d06d65ba6f8f",
+              "needle": "isServerStatsCommand(input.message)",
+              "symbol": "isServerStatsCommand",
+              "triggerOrPredicate": "ADMIN:isServerStatsCommand",
+              "interfaceId": "home-aggregate-rank.admin-command.fcd7f5a189f8",
+              "catalogSourceSpanSha256": "4a4885a70f4ee79941cc3e7dd41da3a5dd77620189beb592930739918e2f8b36",
+              "catalogSourceSpanStatus": "STALE_RELOCATED_AT_WAVE13"
+            },
+            "frozenSourceCommit": "b5b2600721526e35ff3f5037c10298bae86058ac",
+            "chainLocators": [
+              {
+                "file": "개발환경_고도화/runtime/src/app.ts",
+                "start": 140514,
+                "end": 140566,
+                "sha256": "123a05467859ce40ab02d5d7a759eaed407be376cf5857c70aaf20a23f4cd091",
+                "needle": "isPointEditCommandCandidate(normalizedEvent.message)"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/integration/event-processing-service.ts",
+                "start": 788,
+                "end": 824,
+                "sha256": "31c1764fc2fd248e374f5698ce9dcf803d031c987188f1e6d082b52b37902062",
+                "needle": "export class ProcessIrisEventService"
+              },
+              {
+                "file": "개발환경_고도화/runtime/src/admin/server-stats-service.ts",
+                "start": 1564,
+                "end": 1595,
+                "sha256": "128d7544ee99257bd679c6c1b8c89f0f76d3358b25421939764081584e13b9a3",
+                "needle": "export class ServerStatsService"
+              }
+            ],
+            "serviceCallsite": {
+              "file": "개발환경_고도화/runtime/src/admin/server-stats-service.ts",
+              "start": 3242,
+              "end": 3294,
+              "sha256": "e529ad1ad9a451b0da26bd3528f8bca1dcea226ae1e67f9df7d81f4ca6cebf70",
+              "needle": "withTransientRetry(()=>this.database.withTransaction"
+            },
+            "errorScenarios": [
+              "ROLLBACK"
+            ],
+            "scenarioInputsByScenario": {
+              "READ_POSITIVE": {
+                "providerEventId": "wave13-server-read_positive",
+                "eventId": "iris:wave13-server-read_positive",
+                "externalUserId": "wave13-admin",
+                "destinationId": "wave13-server-room",
+                "message": "/서버통계",
+                "environment": "dev"
+              },
+              "NEGATIVE_GUARD": {
+                "providerEventId": "wave13-server-negative_guard",
+                "eventId": "iris:wave13-server-negative_guard",
+                "externalUserId": "wave13-admin",
+                "destinationId": "wave13-server-room",
+                "message": "/서버통계 안내",
+                "environment": "dev"
+              },
+              "AUTH_DENIED": {
+                "providerEventId": "wave13-server-auth_denied",
+                "eventId": "iris:wave13-server-auth_denied",
+                "externalUserId": "wave13-admin",
+                "destinationId": "wave13-server-room",
+                "message": "/서버통계",
+                "environment": "dev"
+              },
+              "EXACT_OUTPUT": {
+                "providerEventId": "wave13-server-exact_output",
+                "eventId": "iris:wave13-server-exact_output",
+                "externalUserId": "wave13-admin",
+                "destinationId": "wave13-server-room",
+                "message": "/서버통계",
+                "environment": "prod"
+              },
+              "SOURCE_DOMAIN_DML_ZERO": {
+                "providerEventId": "wave13-server-source_domain_dml_zero",
+                "eventId": "iris:wave13-server-source_domain_dml_zero",
+                "externalUserId": "wave13-admin",
+                "destinationId": "wave13-server-room",
+                "message": "/서버통계",
+                "environment": "dev"
+              },
+              "RESTART_CONSISTENCY": {
+                "providerEventId": "wave13-server-restart_consistency",
+                "eventId": "iris:wave13-server-restart_consistency",
+                "externalUserId": "wave13-admin",
+                "destinationId": "wave13-server-room",
+                "message": "/서버통계",
+                "environment": "prod"
+              }
+            },
+            "queryPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/서버통계"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "ADMIN_SERVER_STATS",
+                      "handler_key": "admin_server_stats",
+                      "auth_scope": "ADMIN",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT operator.id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny') AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow') OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id)) ORDER BY operator.id LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "513901"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,status,result_json,TIMESTAMPDIFF(SECOND,created_at,UTC_TIMESTAMP(3)) age_seconds FROM operations WHERE idempotency_scope='stats.server.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "iris:wave13-server-read_positive"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "501"
+                      },
+                      "status": "processing",
+                      "result_json": {
+                        "requestFingerprint": "2ea24ae10c9d2915b2622718f5a6779c40b8ab066929aded8befc89df8256653"
+                      },
+                      "age_seconds": {
+                        "$bigint": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT database_identity,active_snapshot_set_id FROM legacy_snapshot_environments WHERE environment_code=? FOR UPDATE",
+                  "expectedValues": [
+                    "dev"
+                  ],
+                  "rows": [
+                    {
+                      "database_identity": "hoibot-dev",
+                      "active_snapshot_set_id": {
+                        "$bigint": "71"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,database_identity,snapshot_version,DATE_FORMAT(snapshot_at,'%Y-%m-%d %H:%i:%s') snapshot_at FROM legacy_snapshot_sets WHERE id=? AND environment_code=? AND snapshot_status='ready' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    },
+                    "dev"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "71"
+                      },
+                      "database_identity": "hoibot-dev",
+                      "snapshot_version": {
+                        "$bigint": "13001"
+                      },
+                      "snapshot_at": "2026-09-07 07:46:00"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT raw_json,content_sha256,read_status FROM legacy_source_snapshots WHERE snapshot_set_id=? AND source_code='member' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "raw_json": "{\"member\":{\"가\":{\"server\":\"나 서버\"},\"나\":{\"server\":\"가 서버\"},\"다\":{\"server\":\"가 서버\"},\"라\":{\"server\":\"\"},\"마\":{}}}",
+                      "content_sha256": "290dae3a8a40863fe3b2311aa465a6d3e8980355eecc03d2b76ac07faba2b30a",
+                      "read_status": "valid"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT attempt_count + 1 AS next_attempt FROM outbox_messages WHERE id = ? FOR UPDATE",
+                  "expectedValues": [
+                    "601"
+                  ],
+                  "rows": [
+                    {
+                      "next_attempt": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "AUTH_DENIED": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/서버통계"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "ADMIN_SERVER_STATS",
+                      "handler_key": "admin_server_stats",
+                      "auth_scope": "ADMIN",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT operator.id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny') AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow') OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id)) ORDER BY operator.id LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": []
+                }
+              ],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/서버통계"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "ADMIN_SERVER_STATS",
+                      "handler_key": "admin_server_stats",
+                      "auth_scope": "ADMIN",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT operator.id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny') AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow') OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id)) ORDER BY operator.id LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "513901"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,status,result_json,TIMESTAMPDIFF(SECOND,created_at,UTC_TIMESTAMP(3)) age_seconds FROM operations WHERE idempotency_scope='stats.server.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "iris:wave13-server-exact_output"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "501"
+                      },
+                      "status": "processing",
+                      "result_json": {
+                        "requestFingerprint": "e5dc2e3df63b9b1d9ef76a5fdd31cd59088e10e21e49e614884399421136c5b4"
+                      },
+                      "age_seconds": {
+                        "$bigint": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT database_identity,active_snapshot_set_id FROM legacy_snapshot_environments WHERE environment_code=? FOR UPDATE",
+                  "expectedValues": [
+                    "prod"
+                  ],
+                  "rows": [
+                    {
+                      "database_identity": "hoibot-prod",
+                      "active_snapshot_set_id": {
+                        "$bigint": "71"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,database_identity,snapshot_version,DATE_FORMAT(snapshot_at,'%Y-%m-%d %H:%i:%s') snapshot_at FROM legacy_snapshot_sets WHERE id=? AND environment_code=? AND snapshot_status='ready' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    },
+                    "prod"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "71"
+                      },
+                      "database_identity": "hoibot-prod",
+                      "snapshot_version": {
+                        "$bigint": "13001"
+                      },
+                      "snapshot_at": "2026-09-07 07:46:00"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT raw_json,content_sha256,read_status FROM legacy_source_snapshots WHERE snapshot_set_id=? AND source_code='member' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "raw_json": "{\"member\":{\"가\":{\"server\":\"나 서버\"},\"나\":{\"server\":\"가 서버\"},\"다\":{\"server\":\"가 서버\"},\"라\":{\"server\":\"\"},\"마\":{}}}",
+                      "content_sha256": "290dae3a8a40863fe3b2311aa465a6d3e8980355eecc03d2b76ac07faba2b30a",
+                      "read_status": "valid"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT attempt_count + 1 AS next_attempt FROM outbox_messages WHERE id = ? FOR UPDATE",
+                  "expectedValues": [
+                    "601"
+                  ],
+                  "rows": [
+                    {
+                      "next_attempt": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/서버통계"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "ADMIN_SERVER_STATS",
+                      "handler_key": "admin_server_stats",
+                      "auth_scope": "ADMIN",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT operator.id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny') AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow') OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id)) ORDER BY operator.id LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "513901"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,status,result_json,TIMESTAMPDIFF(SECOND,created_at,UTC_TIMESTAMP(3)) age_seconds FROM operations WHERE idempotency_scope='stats.server.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "iris:wave13-server-source_domain_dml_zero"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "501"
+                      },
+                      "status": "processing",
+                      "result_json": {
+                        "requestFingerprint": "82c05a078ba81ae6673bc150e7135ce43a9e831231a16b5eaeddd8dc97a14c20"
+                      },
+                      "age_seconds": {
+                        "$bigint": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT database_identity,active_snapshot_set_id FROM legacy_snapshot_environments WHERE environment_code=? FOR UPDATE",
+                  "expectedValues": [
+                    "dev"
+                  ],
+                  "rows": [
+                    {
+                      "database_identity": "hoibot-dev",
+                      "active_snapshot_set_id": {
+                        "$bigint": "71"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,database_identity,snapshot_version,DATE_FORMAT(snapshot_at,'%Y-%m-%d %H:%i:%s') snapshot_at FROM legacy_snapshot_sets WHERE id=? AND environment_code=? AND snapshot_status='ready' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    },
+                    "dev"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "71"
+                      },
+                      "database_identity": "hoibot-dev",
+                      "snapshot_version": {
+                        "$bigint": "13001"
+                      },
+                      "snapshot_at": "2026-09-07 07:46:00"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT raw_json,content_sha256,read_status FROM legacy_source_snapshots WHERE snapshot_set_id=? AND source_code='member' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "raw_json": "{\"member\":{\"가\":{\"server\":\"나 서버\"},\"나\":{\"server\":\"가 서버\"},\"다\":{\"server\":\"가 서버\"},\"라\":{\"server\":\"\"},\"마\":{}}}",
+                      "content_sha256": "290dae3a8a40863fe3b2311aa465a6d3e8980355eecc03d2b76ac07faba2b30a",
+                      "read_status": "valid"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT attempt_count + 1 AS next_attempt FROM outbox_messages WHERE id = ? FOR UPDATE",
+                  "expectedValues": [
+                    "601"
+                  ],
+                  "rows": [
+                    {
+                      "next_attempt": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "SELECT id FROM channels WHERE provider_code = ? AND external_channel_id = ?",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "11"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id FROM external_identities WHERE provider_code = 'kakao' AND external_user_id = ?",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "42"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT r.command_code, r.handler_key, r.auth_scope, r.rollout_state FROM command_aliases a JOIN command_registry r ON r.command_code = a.command_code WHERE a.command_text = ? AND a.active = 1 AND r.enabled = 1 LIMIT 1",
+                  "expectedValues": [
+                    "/서버통계"
+                  ],
+                  "rows": [
+                    {
+                      "command_code": "ADMIN_SERVER_STATS",
+                      "handler_key": "admin_server_stats",
+                      "auth_scope": "ADMIN",
+                      "rollout_state": "ACTIVE"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT operator.id FROM external_identities identity JOIN admin_operator_external_identities mapping ON mapping.external_identity_id=identity.id JOIN admin_operators operator ON operator.id=mapping.operator_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND operator.status='active' AND NOT EXISTS (SELECT 1 FROM admin_operator_permission_overrides denied WHERE denied.operator_id=operator.id AND denied.permission_code='stats.server.read' AND denied.effect='deny') AND (EXISTS (SELECT 1 FROM admin_operator_permission_overrides allowed WHERE allowed.operator_id=operator.id AND allowed.permission_code='stats.server.read' AND allowed.effect='allow') OR EXISTS (SELECT 1 FROM admin_operator_roles operator_role JOIN admin_roles role ON role.id=operator_role.role_id AND role.active=TRUE JOIN admin_role_permissions permission ON permission.role_id=role.id AND permission.permission_code='stats.server.read' WHERE operator_role.operator_id=operator.id)) ORDER BY operator.id LIMIT 1 FOR UPDATE",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "513901"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,status,result_json,TIMESTAMPDIFF(SECOND,created_at,UTC_TIMESTAMP(3)) age_seconds FROM operations WHERE idempotency_scope='stats.server.read' AND idempotency_key=? FOR UPDATE",
+                  "expectedValues": [
+                    "iris:wave13-server-restart_consistency"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "501"
+                      },
+                      "status": "processing",
+                      "result_json": {
+                        "requestFingerprint": "fe494842d67c4e3c9b97d9f3c6e8030f8e2a0374c1d3742720709e7af371c03b"
+                      },
+                      "age_seconds": {
+                        "$bigint": "0"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT database_identity,active_snapshot_set_id FROM legacy_snapshot_environments WHERE environment_code=? FOR UPDATE",
+                  "expectedValues": [
+                    "prod"
+                  ],
+                  "rows": [
+                    {
+                      "database_identity": "hoibot-prod",
+                      "active_snapshot_set_id": {
+                        "$bigint": "71"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT id,database_identity,snapshot_version,DATE_FORMAT(snapshot_at,'%Y-%m-%d %H:%i:%s') snapshot_at FROM legacy_snapshot_sets WHERE id=? AND environment_code=? AND snapshot_status='ready' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    },
+                    "prod"
+                  ],
+                  "rows": [
+                    {
+                      "id": {
+                        "$bigint": "71"
+                      },
+                      "database_identity": "hoibot-prod",
+                      "snapshot_version": {
+                        "$bigint": "13001"
+                      },
+                      "snapshot_at": "2026-09-07 07:46:00"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT raw_json,content_sha256,read_status FROM legacy_source_snapshots WHERE snapshot_set_id=? AND source_code='member' FOR UPDATE",
+                  "expectedValues": [
+                    {
+                      "$bigint": "71"
+                    }
+                  ],
+                  "rows": [
+                    {
+                      "raw_json": "{\"member\":{\"가\":{\"server\":\"나 서버\"},\"나\":{\"server\":\"가 서버\"},\"다\":{\"server\":\"가 서버\"},\"라\":{\"server\":\"\"},\"마\":{}}}",
+                      "content_sha256": "290dae3a8a40863fe3b2311aa465a6d3e8980355eecc03d2b76ac07faba2b30a",
+                      "read_status": "valid"
+                    }
+                  ]
+                },
+                {
+                  "expectedNormalizedSql": "SELECT attempt_count + 1 AS next_attempt FROM outbox_messages WHERE id = ? FOR UPDATE",
+                  "expectedValues": [
+                    "601"
+                  ],
+                  "rows": [
+                    {
+                      "next_attempt": {
+                        "$bigint": "1"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "mutationPlanByScenario": {
+              "READ_POSITIVE": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave13-server-read_positive",
+                    "iris",
+                    "wave13-server-read_positive",
+                    "wave13-server-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "wave13-admin",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "3c84f15bde0932327540ab37f115597f9f32a4dd915b68dcb3e981b5dd1373f3"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-read_positive",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave13-server-read_positive"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                  "expectedValues": [
+                    "iris:wave13-server-read_positive",
+                    "d5c40aaa2c73d7d8b0105232b42207919316a07c87b8ea06b25b454de2eade73",
+                    "ADMIN_SERVER_STATS",
+                    "MODERN",
+                    "MODERN_ROUTE_ALLOWED"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT IGNORE INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "iris:wave13-server-read_positive",
+                    {
+                      "$bigint": "513901"
+                    },
+                    "{\"requestFingerprint\":\"2ea24ae10c9d2915b2622718f5a6779c40b8ab066929aded8befc89df8256653\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                  "expectedValues": [
+                    "dev",
+                    "hoibot-dev",
+                    {
+                      "$bigint": "3"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "551"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-66823deb8264821b32de7dbf0907f9ea",
+                    "가 서버",
+                    {
+                      "$bigint": "2"
+                    },
+                    1
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "560"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-d4d26e5f2001bc0faabcbd434a0ec408",
+                    "나 서버",
+                    {
+                      "$bigint": "1"
+                    },
+                    2
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "561"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "wave13-server-room",
+                    "{\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-read_positive",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "2ea24ae10c9d2915b2622718f5a6779c40b8ab066929aded8befc89df8256653",
+                    "9d7e160e6ef8e7e530bebeccd310f7a4d8df45a90476d601a919480c4136cb7f"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "513901"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "{\"readOnly\":true,\"securityDivergence\":\"active role + deny override\",\"requestFingerprint\":\"2ea24ae10c9d2915b2622718f5a6779c40b8ab066929aded8befc89df8256653\",\"environment\":\"dev\",\"databaseIdentity\":\"hoibot-dev\",\"snapshotVersion\":\"13001\",\"memberCount\":5,\"registeredMemberCount\":\"3\",\"unregisteredMemberCount\":2}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"counted\",\"requestFingerprint\":\"2ea24ae10c9d2915b2622718f5a6779c40b8ab066929aded8befc89df8256653\",\"environment\":\"dev\",\"databaseIdentity\":\"hoibot-dev\",\"snapshotVersion\":\"13001\",\"snapshotAt\":\"2026-09-07 07:46:00\",\"memberCount\":\"5\",\"activeMemberCount\":\"3\",\"unregisteredMemberCount\":\"2\",\"rows\":[{\"serverCode\":\"legacy-66823deb8264821b32de7dbf0907f9ea\",\"serverDisplayName\":\"가 서버\",\"activeMemberCount\":\"2\"},{\"serverCode\":\"legacy-d4d26e5f2001bc0faabcbd434a0ec408\",\"serverDisplayName\":\"나 서버\",\"activeMemberCount\":\"1\"}],\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\",\"outboxId\":\"601\",\"auditId\":\"801\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                  "expectedValues": [
+                    "sent",
+                    {
+                      "$bigint": "1"
+                    },
+                    {},
+                    null,
+                    "sent",
+                    "601"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "601",
+                    {
+                      "$bigint": "1"
+                    },
+                    "sent",
+                    null
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "901"
+                }
+              ],
+              "NEGATIVE_GUARD": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave13-server-negative_guard",
+                    "iris",
+                    "wave13-server-negative_guard",
+                    "wave13-server-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "wave13-admin",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "cc14c016728d60ec271c59072376be7c07cf63387f02b4c36caed931a9646511"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-negative_guard",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave13-server-negative_guard"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "AUTH_DENIED": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied",
+                    "iris",
+                    "wave13-server-auth_denied",
+                    "wave13-server-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "wave13-admin",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "294976aa1aa00f450de987f613113713e78cf10ec2a9118027e5696992349aca"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                  "expectedValues": [
+                    "iris:wave13-server-auth_denied",
+                    "d5c40aaa2c73d7d8b0105232b42207919316a07c87b8ea06b25b454de2eade73",
+                    "ADMIN_SERVER_STATS",
+                    "MODERN",
+                    "MODERN_ROUTE_ALLOWED"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                }
+              ],
+              "EXACT_OUTPUT": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave13-server-exact_output",
+                    "iris",
+                    "wave13-server-exact_output",
+                    "wave13-server-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "wave13-admin",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "5fb1aed215d33ead766969703e10066e7132828cbdca36903e90a29beb93edb2"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-exact_output",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave13-server-exact_output"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                  "expectedValues": [
+                    "iris:wave13-server-exact_output",
+                    "d5c40aaa2c73d7d8b0105232b42207919316a07c87b8ea06b25b454de2eade73",
+                    "ADMIN_SERVER_STATS",
+                    "MODERN",
+                    "MODERN_ROUTE_ALLOWED"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT IGNORE INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "iris:wave13-server-exact_output",
+                    {
+                      "$bigint": "513901"
+                    },
+                    "{\"requestFingerprint\":\"e5dc2e3df63b9b1d9ef76a5fdd31cd59088e10e21e49e614884399421136c5b4\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                  "expectedValues": [
+                    "prod",
+                    "hoibot-prod",
+                    {
+                      "$bigint": "3"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "551"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-66823deb8264821b32de7dbf0907f9ea",
+                    "가 서버",
+                    {
+                      "$bigint": "2"
+                    },
+                    1
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "560"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-d4d26e5f2001bc0faabcbd434a0ec408",
+                    "나 서버",
+                    {
+                      "$bigint": "1"
+                    },
+                    2
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "561"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "wave13-server-room",
+                    "{\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-exact_output",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "e5dc2e3df63b9b1d9ef76a5fdd31cd59088e10e21e49e614884399421136c5b4",
+                    "9d7e160e6ef8e7e530bebeccd310f7a4d8df45a90476d601a919480c4136cb7f"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "513901"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "{\"readOnly\":true,\"securityDivergence\":\"active role + deny override\",\"requestFingerprint\":\"e5dc2e3df63b9b1d9ef76a5fdd31cd59088e10e21e49e614884399421136c5b4\",\"environment\":\"prod\",\"databaseIdentity\":\"hoibot-prod\",\"snapshotVersion\":\"13001\",\"memberCount\":5,\"registeredMemberCount\":\"3\",\"unregisteredMemberCount\":2}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"counted\",\"requestFingerprint\":\"e5dc2e3df63b9b1d9ef76a5fdd31cd59088e10e21e49e614884399421136c5b4\",\"environment\":\"prod\",\"databaseIdentity\":\"hoibot-prod\",\"snapshotVersion\":\"13001\",\"snapshotAt\":\"2026-09-07 07:46:00\",\"memberCount\":\"5\",\"activeMemberCount\":\"3\",\"unregisteredMemberCount\":\"2\",\"rows\":[{\"serverCode\":\"legacy-66823deb8264821b32de7dbf0907f9ea\",\"serverDisplayName\":\"가 서버\",\"activeMemberCount\":\"2\"},{\"serverCode\":\"legacy-d4d26e5f2001bc0faabcbd434a0ec408\",\"serverDisplayName\":\"나 서버\",\"activeMemberCount\":\"1\"}],\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\",\"outboxId\":\"601\",\"auditId\":\"801\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                  "expectedValues": [
+                    "sent",
+                    {
+                      "$bigint": "1"
+                    },
+                    {},
+                    null,
+                    "sent",
+                    "601"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "601",
+                    {
+                      "$bigint": "1"
+                    },
+                    "sent",
+                    null
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "901"
+                }
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave13-server-source_domain_dml_zero",
+                    "iris",
+                    "wave13-server-source_domain_dml_zero",
+                    "wave13-server-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "wave13-admin",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "756e1c3be8d691d52fd32cded5acaf9418346db870966137488dacc309e74ddc"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-source_domain_dml_zero",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave13-server-source_domain_dml_zero"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                  "expectedValues": [
+                    "iris:wave13-server-source_domain_dml_zero",
+                    "d5c40aaa2c73d7d8b0105232b42207919316a07c87b8ea06b25b454de2eade73",
+                    "ADMIN_SERVER_STATS",
+                    "MODERN",
+                    "MODERN_ROUTE_ALLOWED"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT IGNORE INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "iris:wave13-server-source_domain_dml_zero",
+                    {
+                      "$bigint": "513901"
+                    },
+                    "{\"requestFingerprint\":\"82c05a078ba81ae6673bc150e7135ce43a9e831231a16b5eaeddd8dc97a14c20\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                  "expectedValues": [
+                    "dev",
+                    "hoibot-dev",
+                    {
+                      "$bigint": "3"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "551"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-66823deb8264821b32de7dbf0907f9ea",
+                    "가 서버",
+                    {
+                      "$bigint": "2"
+                    },
+                    1
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "560"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-d4d26e5f2001bc0faabcbd434a0ec408",
+                    "나 서버",
+                    {
+                      "$bigint": "1"
+                    },
+                    2
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "561"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "wave13-server-room",
+                    "{\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-source_domain_dml_zero",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "82c05a078ba81ae6673bc150e7135ce43a9e831231a16b5eaeddd8dc97a14c20",
+                    "9d7e160e6ef8e7e530bebeccd310f7a4d8df45a90476d601a919480c4136cb7f"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "513901"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "{\"readOnly\":true,\"securityDivergence\":\"active role + deny override\",\"requestFingerprint\":\"82c05a078ba81ae6673bc150e7135ce43a9e831231a16b5eaeddd8dc97a14c20\",\"environment\":\"dev\",\"databaseIdentity\":\"hoibot-dev\",\"snapshotVersion\":\"13001\",\"memberCount\":5,\"registeredMemberCount\":\"3\",\"unregisteredMemberCount\":2}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"counted\",\"requestFingerprint\":\"82c05a078ba81ae6673bc150e7135ce43a9e831231a16b5eaeddd8dc97a14c20\",\"environment\":\"dev\",\"databaseIdentity\":\"hoibot-dev\",\"snapshotVersion\":\"13001\",\"snapshotAt\":\"2026-09-07 07:46:00\",\"memberCount\":\"5\",\"activeMemberCount\":\"3\",\"unregisteredMemberCount\":\"2\",\"rows\":[{\"serverCode\":\"legacy-66823deb8264821b32de7dbf0907f9ea\",\"serverDisplayName\":\"가 서버\",\"activeMemberCount\":\"2\"},{\"serverCode\":\"legacy-d4d26e5f2001bc0faabcbd434a0ec408\",\"serverDisplayName\":\"나 서버\",\"activeMemberCount\":\"1\"}],\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\",\"outboxId\":\"601\",\"auditId\":\"801\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                  "expectedValues": [
+                    "sent",
+                    {
+                      "$bigint": "1"
+                    },
+                    {},
+                    null,
+                    "sent",
+                    "601"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "601",
+                    {
+                      "$bigint": "1"
+                    },
+                    "sent",
+                    null
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "901"
+                }
+              ],
+              "RESTART_CONSISTENCY": [
+                {
+                  "expectedNormalizedSql": "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "kakao",
+                    "wave13-server-room",
+                    "open_group"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    "wave13-admin"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "11"
+                    },
+                    {
+                      "$bigint": "42"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                  "expectedValues": [
+                    "iris:wave13-server-restart_consistency",
+                    "iris",
+                    "wave13-server-restart_consistency",
+                    "wave13-server-room",
+                    {
+                      "$bigint": "11"
+                    },
+                    "wave13-admin",
+                    {
+                      "$bigint": "42"
+                    },
+                    "unknown",
+                    null,
+                    "incoming",
+                    "fa7c52f40ac6dd0cff678014104db3fa34f89219f9e0e85a89bcea70905215b2"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-restart_consistency",
+                    "iris.unknown",
+                    "unknown",
+                    "event",
+                    null,
+                    "{\"classificationStatus\":\"unknown\",\"classificationRule\":\"fallback.unknown\",\"attachmentKeys\":null,\"systemKeys\":null}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                  "expectedValues": [
+                    "iris:wave13-server-restart_consistency"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                  "expectedValues": [
+                    "iris:wave13-server-restart_consistency",
+                    "d5c40aaa2c73d7d8b0105232b42207919316a07c87b8ea06b25b454de2eade73",
+                    "ADMIN_SERVER_STATS",
+                    "MODERN",
+                    "MODERN_ROUTE_ALLOWED"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT IGNORE INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,result_json,created_at) VALUES (?,'stats.server.read',?,'admin_operator',?,'iris','processing',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "matcher": "UUID_V4"
+                    },
+                    "iris:wave13-server-restart_consistency",
+                    {
+                      "$bigint": "513901"
+                    },
+                    "{\"requestFingerprint\":\"fe494842d67c4e3c9b97d9f3c6e8030f8e2a0374c1d3742720709e7af371c03b\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "501"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_sets(environment_code,database_identity,snapshot_at,active_member_count) VALUES (?,?,UTC_TIMESTAMP(3),?)",
+                  "expectedValues": [
+                    "prod",
+                    "hoibot-prod",
+                    {
+                      "$bigint": "3"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "551"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-66823deb8264821b32de7dbf0907f9ea",
+                    "가 서버",
+                    {
+                      "$bigint": "2"
+                    },
+                    1
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "560"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_snapshot_rows(snapshot_set_id,server_code,server_display_name,active_member_count,display_order) VALUES (?,?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "551"
+                    },
+                    "legacy-d4d26e5f2001bc0faabcbd434a0ec408",
+                    "나 서버",
+                    {
+                      "$bigint": "1"
+                    },
+                    2
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "561"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    "wave13-server-room",
+                    "{\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "601"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,'ADMIN_SERVER_STATS',?,'completed','reply_queued',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "iris:wave13-server-restart_consistency",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO admin_server_stat_read_executions(operation_id,snapshot_set_id,request_sha256,result_sha256) VALUES (?,?,?,?)",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "fe494842d67c4e3c9b97d9f3c6e8030f8e2a0374c1d3742720709e7af371c03b",
+                    "9d7e160e6ef8e7e530bebeccd310f7a4d8df45a90476d601a919480c4136cb7f"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'server_stat_snapshot',?,'stats.server.read','success','Iris /서버통계',?,UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    {
+                      "$bigint": "501"
+                    },
+                    {
+                      "$bigint": "513901"
+                    },
+                    {
+                      "$bigint": "551"
+                    },
+                    "{\"readOnly\":true,\"securityDivergence\":\"active role + deny override\",\"requestFingerprint\":\"fe494842d67c4e3c9b97d9f3c6e8030f8e2a0374c1d3742720709e7af371c03b\",\"environment\":\"prod\",\"databaseIdentity\":\"hoibot-prod\",\"snapshotVersion\":\"13001\",\"memberCount\":5,\"registeredMemberCount\":\"3\",\"unregisteredMemberCount\":2}"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "801"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                  "expectedValues": [
+                    "{\"status\":\"counted\",\"requestFingerprint\":\"fe494842d67c4e3c9b97d9f3c6e8030f8e2a0374c1d3742720709e7af371c03b\",\"environment\":\"prod\",\"databaseIdentity\":\"hoibot-prod\",\"snapshotVersion\":\"13001\",\"snapshotAt\":\"2026-09-07 07:46:00\",\"memberCount\":\"5\",\"activeMemberCount\":\"3\",\"unregisteredMemberCount\":\"2\",\"rows\":[{\"serverCode\":\"legacy-66823deb8264821b32de7dbf0907f9ea\",\"serverDisplayName\":\"가 서버\",\"activeMemberCount\":\"2\"},{\"serverCode\":\"legacy-d4d26e5f2001bc0faabcbd434a0ec408\",\"serverDisplayName\":\"나 서버\",\"activeMemberCount\":\"1\"}],\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\",\"outboxId\":\"601\",\"auditId\":\"801\"}",
+                    {
+                      "$bigint": "501"
+                    }
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                  "expectedValues": [
+                    "sent",
+                    {
+                      "$bigint": "1"
+                    },
+                    {},
+                    null,
+                    "sent",
+                    "601"
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "0"
+                },
+                {
+                  "expectedNormalizedSql": "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                  "expectedValues": [
+                    "601",
+                    {
+                      "$bigint": "1"
+                    },
+                    "sent",
+                    null
+                  ],
+                  "affectedRows": 1,
+                  "insertId": "901"
+                }
+              ]
+            },
+            "expectedResultsByScenario": {
+              "READ_POSITIVE": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}",
+              "NEGATIVE_GUARD": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":0,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"sentReplies\":[]}",
+              "AUTH_DENIED": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"sentReplies\":[]}",
+              "EXACT_OUTPUT": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"prod\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}",
+              "SOURCE_DOMAIN_DML_ZERO": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"dev\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}",
+              "RESTART_CONSISTENCY": "{\"statusCode\":202,\"accepted\":true,\"ignored\":false,\"channelMode\":\"operational\",\"environment\":\"prod\",\"serviceInvocationCount\":1,\"evidenceRowsBefore\":{\"operations\":0,\"outbox_messages\":0,\"command_executions\":0,\"command_audit\":0,\"admin_server_stat_read_executions\":0,\"admin_server_stat_snapshot_sets\":0,\"admin_server_stat_snapshot_rows\":0},\"evidenceRowsAfter\":{\"operations\":2,\"outbox_messages\":2,\"command_executions\":1,\"command_audit\":1,\"admin_server_stat_read_executions\":1,\"admin_server_stat_snapshot_sets\":1,\"admin_server_stat_snapshot_rows\":2},\"sentReplies\":[{\"room\":\"wave13-server-room\",\"data\":\"📊 서버유저 통계 📊\\n\\n서버 전체인원: 3명\\n\\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\\n- 가 서버: 2명\\n- 나 서버: 1명\\n\\n※ 서버 미등록 인원: 2명\"}]}"
+            },
+            "expectedReplyByScenario": {
+              "READ_POSITIVE": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명",
+              "NEGATIVE_GUARD": "NO_REPLY",
+              "AUTH_DENIED": "NO_REPLY",
+              "EXACT_OUTPUT": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명",
+              "SOURCE_DOMAIN_DML_ZERO": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명",
+              "RESTART_CONSISTENCY": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명"
+            },
+            "httpOracleByScenario": {
+              "READ_POSITIVE": {
+                "statusCode": 202,
+                "accepted": true,
+                "ignored": false,
+                "channelMode": "operational",
+                "environment": "dev",
+                "serviceInvocationCount": 1,
+                "evidenceRowsBefore": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "evidenceRowsAfter": {
+                  "operations": 2,
+                  "outbox_messages": 2,
+                  "command_executions": 1,
+                  "command_audit": 1,
+                  "admin_server_stat_read_executions": 1,
+                  "admin_server_stat_snapshot_sets": 1,
+                  "admin_server_stat_snapshot_rows": 2
+                },
+                "sentReplies": [
+                  {
+                    "room": "wave13-server-room",
+                    "data": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명"
+                  }
+                ],
+                "noReplyCode": "NO_REPLY"
+              },
+              "NEGATIVE_GUARD": {
+                "statusCode": 202,
+                "accepted": true,
+                "ignored": false,
+                "channelMode": "operational",
+                "environment": "dev",
+                "serviceInvocationCount": 0,
+                "evidenceRowsBefore": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "evidenceRowsAfter": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "sentReplies": [],
+                "noReplyCode": "NO_REPLY"
+              },
+              "AUTH_DENIED": {
+                "statusCode": 202,
+                "accepted": true,
+                "ignored": false,
+                "channelMode": "operational",
+                "environment": "dev",
+                "serviceInvocationCount": 1,
+                "evidenceRowsBefore": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "evidenceRowsAfter": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "sentReplies": [],
+                "noReplyCode": "NO_REPLY"
+              },
+              "EXACT_OUTPUT": {
+                "statusCode": 202,
+                "accepted": true,
+                "ignored": false,
+                "channelMode": "operational",
+                "environment": "prod",
+                "serviceInvocationCount": 1,
+                "evidenceRowsBefore": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "evidenceRowsAfter": {
+                  "operations": 2,
+                  "outbox_messages": 2,
+                  "command_executions": 1,
+                  "command_audit": 1,
+                  "admin_server_stat_read_executions": 1,
+                  "admin_server_stat_snapshot_sets": 1,
+                  "admin_server_stat_snapshot_rows": 2
+                },
+                "sentReplies": [
+                  {
+                    "room": "wave13-server-room",
+                    "data": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명"
+                  }
+                ],
+                "noReplyCode": "NO_REPLY"
+              },
+              "SOURCE_DOMAIN_DML_ZERO": {
+                "statusCode": 202,
+                "accepted": true,
+                "ignored": false,
+                "channelMode": "operational",
+                "environment": "dev",
+                "serviceInvocationCount": 1,
+                "evidenceRowsBefore": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "evidenceRowsAfter": {
+                  "operations": 2,
+                  "outbox_messages": 2,
+                  "command_executions": 1,
+                  "command_audit": 1,
+                  "admin_server_stat_read_executions": 1,
+                  "admin_server_stat_snapshot_sets": 1,
+                  "admin_server_stat_snapshot_rows": 2
+                },
+                "sentReplies": [
+                  {
+                    "room": "wave13-server-room",
+                    "data": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명"
+                  }
+                ],
+                "noReplyCode": "NO_REPLY"
+              },
+              "RESTART_CONSISTENCY": {
+                "statusCode": 202,
+                "accepted": true,
+                "ignored": false,
+                "channelMode": "operational",
+                "environment": "prod",
+                "serviceInvocationCount": 1,
+                "evidenceRowsBefore": {
+                  "operations": 0,
+                  "outbox_messages": 0,
+                  "command_executions": 0,
+                  "command_audit": 0,
+                  "admin_server_stat_read_executions": 0,
+                  "admin_server_stat_snapshot_sets": 0,
+                  "admin_server_stat_snapshot_rows": 0
+                },
+                "evidenceRowsAfter": {
+                  "operations": 2,
+                  "outbox_messages": 2,
+                  "command_executions": 1,
+                  "command_audit": 1,
+                  "admin_server_stat_read_executions": 1,
+                  "admin_server_stat_snapshot_sets": 1,
+                  "admin_server_stat_snapshot_rows": 2
+                },
+                "sentReplies": [
+                  {
+                    "room": "wave13-server-room",
+                    "data": "📊 서버유저 통계 📊\n\n서버 전체인원: 3명\n\n​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​가능 서버:\n- 가 서버: 2명\n- 나 서버: 1명\n\n※ 서버 미등록 인원: 2명"
+                  }
+                ],
+                "noReplyCode": "NO_REPLY"
+              }
+            },
+            "transactionEventsByScenario": {
+              "READ_POSITIVE": [
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
+              ],
+              "NEGATIVE_GUARD": [
+                "BEGIN",
+                "COMMIT"
+              ],
+              "AUTH_DENIED": [
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
+              ],
+              "EXACT_OUTPUT": [
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
+              ],
+              "SOURCE_DOMAIN_DML_ZERO": [
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
+              ],
+              "RESTART_CONSISTENCY": [
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

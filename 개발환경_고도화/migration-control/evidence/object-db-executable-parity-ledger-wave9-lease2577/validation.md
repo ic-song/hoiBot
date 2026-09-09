@@ -1,0 +1,21 @@
+# Wave9 validation
+
+- Wave9 focused: PASS
+- required receipts: 25 PASS
+- risk scenarios: 15 PASS
+- concurrent same-event unit: 5/5, `FOR UPDATE` 획득·대기, 1 writer + 1 replay
+- middle-DML rollback unit: 5/5, persisted effect 0
+- isolated MariaDB repository risks: 10/10 PASS (생산 서비스 5개 concurrent + 5개 rollback)
+- isolated concurrency: 실제 pending `FOR UPDATE` 관찰, 두 번째 호출 미완료 확인, operations/outbox/execution/audit 각 1
+- isolated rollback: trigger 중간 실패 후 persisted 4-table snapshot 전후 0, `verifyRollback=true`
+- isolation safety: port 3330 임시 datadir 정리, 운영 3306 listener 불변
+- prior preservation: 94 → 119, hash/count/ID uniqueness/prefix PASS
+- strict AJV/receipt/ancestry/blob/hash validation: PASS
+- combined focused Wave0~9 + runner defense (concurrency 1): 36/36 PASS
+- object data model validation: 103 PASS
+- typecheck: PASS
+- build: PASS
+- independent mid review: P0=0, P1=2, P2=2 → 보정 완료
+- canonical hash tamper fail-close: consumer 5개 및 harness/target 각각 PASS
+- independent final review: P0=0, P1=0, P2=0
+- full suite/T3: 실행하지 않음

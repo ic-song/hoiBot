@@ -2,9 +2,14 @@ import { createHash } from "node:crypto";
 import type { DatabaseClient, DatabaseTransaction } from "../database.js";
 import { createScopedDatabaseClient } from "../database.js";
 import { assertObjectIdentityCandidate, MariaObjectIdentityAuditProvider } from "../identity/object-identity-audit-provider.js";
+import { isMariaBusinessUniqueConflict, isMariaTransactionRetryExhaustion, withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
 import { normalizeCanonicalPetSkillOptions } from "./canonical-pet-skill-handler-registry.js";
 
 const UINT64_MAX = 18_446_744_073_709_551_615n;
+const GRANT_TRANSACTION_MAX_ATTEMPTS = 3;
+const GRANT_REPLAY_READ_ATTEMPTS = 3;
+const GRANT_REPLAY_READ_DELAY_MS = 30;
+const GRANT_TRANSACTION_RETRY_EXHAUSTED = "CANONICAL_PET_SKILL_GRANT_TRANSACTION_RETRY_EXHAUSTED";
 
 export interface CanonicalPetSkillDefinitionInput {
   actor: string;
@@ -53,6 +58,13 @@ interface ReplayRow {
   resulting_quantity: bigint | null;
   owned_pet_skill_equipment_id: string | null;
 }
+interface GrantReplayRow extends ReplayRow {
+  player_id: string;
+  request_key: string;
+  pet_skill_id: string;
+  owned_pet_id: string | null;
+  operation_status: string;
+}
 
 function identifier(value: string): void {
   try { assertObjectIdentityCandidate(value); }
@@ -98,6 +110,20 @@ function replay(row: ReplayRow, kind: string, payloadFingerprint: string): Canon
   if (row.operation_kind !== kind || row.payload_fingerprint !== payloadFingerprint) throw new Error("CANONICAL_PET_SKILL_REQUEST_PAYLOAD_CONFLICT");
   if (row.resulting_quantity === null) throw new Error("CANONICAL_PET_SKILL_REPLAY_INCOMPLETE");
   return { petSkillOperationId: row.pet_skill_operation_id, resultingQuantity: row.resulting_quantity, ownedPetSkillEquipmentId: row.owned_pet_skill_equipment_id, replayed: true };
+}
+
+function grantReplay(row: GrantReplayRow, input: CanonicalPetSkillGrantInput, payloadFingerprint: string): CanonicalPetSkillMutationResult {
+  if (row.player_id !== input.playerId || row.request_key !== input.requestKey || row.pet_skill_id !== input.petSkillId || row.operation_kind !== "grant" || row.payload_fingerprint !== payloadFingerprint) {
+    throw new Error("CANONICAL_PET_SKILL_REQUEST_PAYLOAD_CONFLICT");
+  }
+  if (row.operation_status !== "completed" || !/^[a-z][a-z0-9]{7}$/.test(row.pet_skill_operation_id) || typeof row.resulting_quantity !== "bigint" || row.resulting_quantity < 1n || row.resulting_quantity > UINT64_MAX || row.owned_pet_id !== null || row.owned_pet_skill_equipment_id !== null) {
+    throw new Error("CANONICAL_PET_SKILL_REPLAY_INCOMPLETE");
+  }
+  return { petSkillOperationId: row.pet_skill_operation_id, resultingQuantity: row.resulting_quantity, ownedPetSkillEquipmentId: null, replayed: true };
+}
+
+async function waitBeforeGrantReplayRead(attempt: number): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, GRANT_REPLAY_READ_DELAY_MS * (attempt + 1)));
 }
 
 // 공용 CUID2·KST 감사 provider를 사용해 정의, 수량 보유, 펫 장착을 동일 transaction 경계에 기록합니다.
@@ -146,16 +172,29 @@ export class MariaCanonicalPetSkillRepository {
 
   public async grant(input: CanonicalPetSkillGrantInput): Promise<CanonicalPetSkillMutationResult> {
     identifier(input.playerId); identifier(input.petSkillId);
+    text(input.actor, 100, "CANONICAL_PET_SKILL_ACTOR_INVALID");
     text(input.requestKey, 191, "CANONICAL_PET_SKILL_REQUEST_KEY_INVALID");
-    if (input.quantity <= 0n || input.quantity > UINT64_MAX) throw new Error("CANONICAL_PET_SKILL_QUANTITY_INVALID");
+    if (typeof input.quantity !== "bigint" || input.quantity <= 0n || input.quantity > UINT64_MAX) throw new Error("CANONICAL_PET_SKILL_QUANTITY_INVALID");
     const payload = fingerprint({ kind: "grant", petSkillId: input.petSkillId, quantity: input.quantity.toString() });
-    return this.mutateWithReplay(input.playerId, input.requestKey, "grant", payload, (transaction) => this.grantInTransaction(transaction, input, payload));
+    try {
+      return await withMariaTransactionRetry(this.database, {
+        maxAttempts: GRANT_TRANSACTION_MAX_ATTEMPTS,
+        allowRetry: (kind) => kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT",
+        exhaustedErrorCode: GRANT_TRANSACTION_RETRY_EXHAUSTED,
+      }, (transaction) => this.grantInTransaction(transaction, input, payload));
+    } catch (error) {
+      if (isMariaBusinessUniqueConflict(error, "uq_canonical_pet_skill_operation_request") || isMariaTransactionRetryExhaustion(error, GRANT_TRANSACTION_RETRY_EXHAUSTED)) {
+        const committed = await this.findConcurrentGrantReplay(input, payload);
+        if (committed !== undefined) return committed;
+      }
+      throw error;
+    }
   }
 
   public async equip(input: CanonicalPetSkillEquipInput): Promise<CanonicalPetSkillMutationResult> {
     identifier(input.playerId); identifier(input.ownedPetId); identifier(input.petSkillId);
     text(input.requestKey, 191, "CANONICAL_PET_SKILL_REQUEST_KEY_INVALID");
-    if (!Number.isInteger(input.slotNumber) || input.slotNumber < 1 || input.slotNumber > 30) throw new Error("CANONICAL_PET_SKILL_SLOT_INVALID");
+    if (!Number.isInteger(input.slotNumber) || input.slotNumber < 1 || input.slotNumber > 40) throw new Error("CANONICAL_PET_SKILL_SLOT_INVALID");
     const payload = fingerprint({ kind: "equip", ownedPetId: input.ownedPetId, petSkillId: input.petSkillId, slotNumber: input.slotNumber });
     return this.mutateWithReplay(input.playerId, input.requestKey, "equip", payload, (transaction) => this.equipInTransaction(transaction, input, payload));
   }
@@ -186,25 +225,39 @@ export class MariaCanonicalPetSkillRepository {
   }
 
   private async grantInTransaction(transaction: DatabaseTransaction, input: CanonicalPetSkillGrantInput, payload: string): Promise<CanonicalPetSkillMutationResult> {
-    const prior = await this.prior(transaction, input.playerId, input.requestKey);
-    if (prior !== undefined) return replay(prior, "grant", payload);
+    const prior = (await transaction.query<GrantReplayRow[]>("SELECT pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status FROM canonical_pet_skill_operation_replays WHERE player_id=? AND request_key=? FOR UPDATE", [input.playerId, input.requestKey]))[0];
+    if (prior !== undefined) return grantReplay(prior, input, payload);
+    const player = (await transaction.query<Array<{ player_id: string }>>("SELECT player_id FROM canonical_players WHERE player_id=? FOR UPDATE", [input.playerId]))[0];
+    if (player === undefined) throw new Error("CANONICAL_PET_SKILL_PLAYER_NOT_FOUND");
     const definition = (await transaction.query<DefinitionRuntimeRow[]>("SELECT pet_skill_id,active_flag,handler_key,options_json FROM canonical_pet_skill_definitions WHERE pet_skill_id=? FOR UPDATE", [input.petSkillId]))[0];
     validateDefinition(definition);
+    let stack = (await transaction.query<StackRow[]>("SELECT owned_pet_skill_id,quantity FROM canonical_owned_pet_skill_stacks WHERE player_id=? AND pet_skill_id=? FOR UPDATE", [input.playerId, input.petSkillId]))[0];
+    const resultingQuantity = (stack?.quantity ?? 0n) + input.quantity;
+    if (resultingQuantity > UINT64_MAX) throw new Error("CANONICAL_PET_SKILL_QUANTITY_OVERFLOW");
     const identity = new MariaObjectIdentityAuditProvider(createScopedDatabaseClient(transaction));
     const operation = await identity.registerCrosswalk({ actor: input.actor, objectType: "PET_SKILL_OPERATION", sourceSystem: "CANONICAL_RUNTIME", sourceNamespace: "petSkillOperation", sourceIdentifier: sourceDigest(`${input.playerId}:${input.requestKey}`) });
-    let stack = (await transaction.query<StackRow[]>("SELECT owned_pet_skill_id,quantity FROM canonical_owned_pet_skill_stacks WHERE player_id=? AND pet_skill_id=? FOR UPDATE", [input.playerId, input.petSkillId]))[0];
     if (stack === undefined) {
       const owned = await identity.registerCrosswalk({ actor: input.actor, objectType: "OWNED_PET_SKILL", sourceSystem: "CANONICAL_RUNTIME", sourceNamespace: "ownedPetSkill", sourceIdentifier: `${input.playerId}:${input.petSkillId}` });
       const audit = owned.audit;
-      await transaction.execute("INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,0,?,?,?,?)", [owned.objectIdentityId, input.playerId, input.petSkillId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
-      stack = { owned_pet_skill_id: owned.objectIdentityId, quantity: 0n };
+      await transaction.execute("INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)", [owned.objectIdentityId, input.playerId, input.petSkillId, resultingQuantity, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+      stack = { owned_pet_skill_id: owned.objectIdentityId, quantity: resultingQuantity };
+    } else {
+      const audit = operation.audit;
+      const changed = await transaction.execute("UPDATE canonical_owned_pet_skill_stacks SET quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_pet_skill_id=? AND player_id=? AND pet_skill_id=?", [resultingQuantity, audit.UPDATE_USER, audit.UPDATE_TIME, stack.owned_pet_skill_id, input.playerId, input.petSkillId]);
+      if (changed.affectedRows !== 1n) throw new Error("CANONICAL_PET_SKILL_STACK_UPDATE_FAILED");
     }
-    const quantity = stack.quantity + input.quantity;
-    if (quantity > UINT64_MAX) throw new Error("CANONICAL_PET_SKILL_QUANTITY_OVERFLOW");
     const audit = operation.audit;
-    await transaction.execute("UPDATE canonical_owned_pet_skill_stacks SET quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_pet_skill_id=?", [quantity, audit.UPDATE_USER, audit.UPDATE_TIME, stack.owned_pet_skill_id]);
-    await transaction.execute("INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)", [operation.objectIdentityId, input.playerId, input.requestKey, "grant", payload, input.petSkillId, quantity, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
-    return { petSkillOperationId: operation.objectIdentityId, resultingQuantity: quantity, ownedPetSkillEquipmentId: null, replayed: false };
+    await transaction.execute("INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)", [operation.objectIdentityId, input.playerId, input.requestKey, "grant", payload, input.petSkillId, resultingQuantity, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]);
+    return { petSkillOperationId: operation.objectIdentityId, resultingQuantity, ownedPetSkillEquipmentId: null, replayed: false };
+  }
+
+  private async findConcurrentGrantReplay(input: CanonicalPetSkillGrantInput, payload: string): Promise<CanonicalPetSkillMutationResult | undefined> {
+    for (let attempt = 0; attempt < GRANT_REPLAY_READ_ATTEMPTS; attempt += 1) {
+      await waitBeforeGrantReplayRead(attempt);
+      const row = (await this.database.query<GrantReplayRow[]>("SELECT pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status FROM canonical_pet_skill_operation_replays WHERE player_id=? AND request_key=?", [input.playerId, input.requestKey]))[0];
+      if (row !== undefined) return grantReplay(row, input, payload);
+    }
+    return undefined;
   }
 
   private async equipInTransaction(transaction: DatabaseTransaction, input: CanonicalPetSkillEquipInput, payload: string): Promise<CanonicalPetSkillMutationResult> {

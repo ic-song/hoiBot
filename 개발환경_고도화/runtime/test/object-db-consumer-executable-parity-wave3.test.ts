@@ -1,0 +1,12 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, it } from "node:test";
+import { assertTrustedWave3ConsumerFixtureMapping } from "../src/data-migration/object-db-consumer-executable-parity-ledger.js";
+const runtimeRoot=resolve(import.meta.dirname,".."), repoRoot=resolve(runtimeRoot,"../.."), read=(p:string)=>JSON.parse(readFileSync(resolve(repoRoot,p),"utf8"));
+const id="sql-repository-261eb97022941f77", fixture=read("개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-executable-parity-wave3-player-target-v1.json"), manifest=read("개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json"), consumer=fixture.payload.cases[0].consumers[0], source=manifest.consumers.find((x:any)=>x.consumerId===id);
+describe("object DB executable parity Wave3 player target",()=>{
+ it("binds one source-derived consumer to five direct receipts",()=>{const ledger=read("개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json"), receipts=read("개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave3-v1.json");assert.equal(ledger.coverage.manifestConsumers,1111);assert.ok(ledger.coverage.provenConsumers>=18);assert.equal(ledger.coverage.unprovenConsumers,ledger.coverage.manifestConsumers-ledger.coverage.provenConsumers);assert.equal(receipts.receipts.length,35);assert.equal(receipts.receipts.filter((x:any)=>x.consumerId===id).length,5);assert.equal(ledger.entries.find((x:any)=>x.consumerId===id).verdict,"DIRECT_PASS");assert.doesNotThrow(()=>assertTrustedWave3ConsumerFixtureMapping(id,consumer,source));});
+ it("fails closed on locator, input, SQL, row, and result drift",()=>{for(const mutate of [(x:any)=>x.sourceLocator.symbol="resolveSelf",(x:any)=>x.input.targetKey="다른값",(x:any)=>x.expectedQueryValues[0]="다른값",(x:any)=>x.expectedNormalizedSql=x.expectedNormalizedSql.replace("player_profiles","players"),(x:any)=>x.mockRows[0].legacyPlayerId="43",(x:any)=>x.expectedRow.legacyPlayerId="43"]){const swapped=structuredClone(consumer);mutate(swapped);assert.throws(()=>assertTrustedWave3ConsumerFixtureMapping(id,swapped,source),/drift/);}});
+ it("rejects a query key that cannot produce the mocked exact-name row",()=>{const swapped=structuredClone(consumer);swapped.input.targetKey="대상";swapped.expectedQueryValues[0]="대상";assert.throws(()=>assertTrustedWave3ConsumerFixtureMapping(id,swapped,source),/lookup\/row equality drift/);});
+});

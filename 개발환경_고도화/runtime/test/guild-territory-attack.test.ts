@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   deterministicGuildTerritoryDrawBps,
   parseGuildTerritoryAttackCommand,
+  resolveGuildTerritoryItemDrawHit,
   resolveGuildTerritorySnapshotCombat,
 } from "../src/guild/guild-territory-attack-service.js";
 import { isPointEditCommandCandidate } from "../src/admin/iris-admin-command-service.js";
@@ -35,6 +36,12 @@ describe("guild territory attack boundary", () => {
     assert.equal(deterministicGuildTerritoryDrawBps(seed), first);
     assert.ok(first >= 0 && first < 10_000);
     assert.notEqual(deterministicGuildTerritoryDrawBps(`${seed}-other`), first);
+  });
+
+  it("keeps the legacy item <= boundary distinct from the strict cube boundary", () => {
+    assert.equal(resolveGuildTerritoryItemDrawHit(5_000, 5_000), true);
+    assert.equal(resolveGuildTerritoryItemDrawHit(5_001, 5_000), false);
+    assert.equal(resolveGuildTerritoryItemDrawHit(10_000, 10_000), true);
   });
 
   it("uses pinned snapshot critical values and lets the defender win ties", () => {

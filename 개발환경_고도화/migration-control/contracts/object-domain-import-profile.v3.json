@@ -1,0 +1,27 @@
+{
+  "format": "hoibot-object-domain-import-profile-v3",
+  "profileVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V3",
+  "catalogVersion": "SC-20260902-1",
+  "baseProfile": "object-domain-import-profile.v2.json",
+  "schemaPlan": "item-bag-import-completeness-schema-plan.v1.json",
+  "witnessManifest": "item-bag-import-completeness-manifest.v1.json",
+  "completenessProjection": {
+    "table": "player_item_bag_import_completeness_projections",
+    "migration": "488_item_bag_import_completeness.sql",
+    "forwardCorrectionMigration": "490_item_bag_import_baseline_ordering.sql",
+    "sourceNamespace": "member.bag",
+    "witnessRecordDomain": "item",
+    "witnessRecordKind": "BAG_CONTAINER",
+    "witnessCatalogDecision": { "status": "IGNORE", "reason": "NOT_OBJECT_DOMAIN_INPUT", "projectedRowCount": 0 },
+    "sourceKeyRecordKinds": ["ITEM_STACK"],
+    "playerBinding": "BAG_CONTAINER.owner_locator_sha256 equals canonical_players.source_identifier for source_system LEGACY_JSON and resolves player_id through that persisted unique pair",
+    "zeroSourceRows": "exactly one BAG_CONTAINER witness is required even when the bag object is empty",
+    "stateBinding": ["canonical_owned_item_stacks", "canonical_item_inventory_ledger_entries", "canonical_item_inventory_ledger_heads", "canonical_item_inventory_ledger_orderings", "player_item_bag_import_stack_baselines", "player_item_bag_import_ledger_baselines"],
+    "ownerSetBinding": "bidirectional exact set equality between imported LEGACY_JSON canonical player locators and BAG_CONTAINER owner locators; duplicates fail closed",
+    "stateBindingSemantics": "typed import-commit baseline children are exact; deterministic backfill ordinals do not claim historical time; only sequences after captured baseline head are monotonic, gap-free continuation and their deltas reconcile to current balances",
+    "rollbackBoundary": "approved import rollback deletes typed children and projection, proves imported ledger mappings are the locked exact tail with no post-import entry, deletes that tail, and rewinds head atomically; all other ledger DELETE is blocked",
+    "excludedActualReadState": "PET-EQUIPMENT is validated separately by the consumer actual-read path",
+    "transactionBoundary": "create after all imported targets and receipts and before marking the object-domain import run COMPLETE"
+  },
+  "compatibility": "v1 and v2 COMPLETE runs replay or roll back only through their creating profiles; v3 accepts only the v3 semantic contract"
+}

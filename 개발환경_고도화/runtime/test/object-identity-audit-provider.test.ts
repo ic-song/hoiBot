@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isCuid } from "@paralleldrive/cuid2";
-import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../src/database.js";
+import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult, RootTransactionDatabaseClient } from "../src/database.js";
 import { createObjectAuditValues, createObjectIdentityCandidate, formatKstDateTime, MariaObjectIdentityAuditProvider } from "../src/identity/object-identity-audit-provider.js";
 
 function scriptedDatabase(queries: unknown[], execute: (sql: string) => DatabaseWriteResult | Error): DatabaseClient {
@@ -13,7 +13,9 @@ function scriptedDatabase(queries: unknown[], execute: (sql: string) => Database
       return result;
     }
   };
-  return { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => work(transaction), close: async () => undefined };
+  const withRootTransaction = async <T>(work: (tx: DatabaseTransaction) => Promise<T>) => work(transaction);
+  const database: DatabaseClient & RootTransactionDatabaseClient = { ping: async () => undefined, verifyRollback: async () => true, query: transaction.query, execute: transaction.execute, withTransaction: withRootTransaction, withRootTransaction, close: async () => undefined };
+  return database;
 }
 
 describe("object identity and audit provider", () => {
@@ -29,9 +31,14 @@ describe("object identity and audit provider", () => {
     for (const value of values) assert.equal(isCuid(value, { minLength: 8, maxLength: 8 }), true);
   });
 
+  it("rejects retry limits above the shared CUID8 policy", () => {
+    const database = scriptedDatabase([], () => ({ affectedRows: 1n, insertId: 0n }));
+    assert.throws(() => new MariaObjectIdentityAuditProvider(database, undefined, 9), /MAX_ATTEMPTS_INVALID/);
+  });
+
   it("retries a confirmed PK collision and persists source text without parsing", async () => {
     let writes = 0;
-    const duplicate = Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" });
+    const duplicate = Object.assign(new Error("Duplicate entry for key 'PRIMARY'"), { code: "ER_DUP_ENTRY", errno: 1062 });
     const database = scriptedDatabase([[]], () => (++writes === 1 ? duplicate : { affectedRows: 1n, insertId: 0n }));
     const candidates = ["a1234567", "b1234567", "c1234567"];
     const provider = new MariaObjectIdentityAuditProvider(database, () => candidates.shift()!, 3, () => new Date("2026-06-22T14:30:00.000Z"));
@@ -42,10 +49,20 @@ describe("object identity and audit provider", () => {
   });
 
   it("fails closed when all collision retries are exhausted", async () => {
-    const duplicate = Object.assign(new Error("Duplicate entry"), { code: "ER_DUP_ENTRY" });
+    const duplicate = Object.assign(new Error("Duplicate entry for key 'PRIMARY'"), { code: "ER_DUP_ENTRY", errno: 1062 });
     const database = scriptedDatabase([[]], () => duplicate);
     const provider = new MariaObjectIdentityAuditProvider(database, () => "a1234567", 2);
     await assert.rejects(provider.registerCrosswalk({ actor: "migration", objectType: "ITEM", sourceSystem: "LEGACY_JSON", sourceNamespace: "itemInfo", sourceIdentifier: "상자" }), /COLLISION_RETRY_EXHAUSTED/);
+  });
+
+  it("retries MariaDB deadlock and lock-timeout conflicts before allocating once", async () => {
+    for(const conflict of [Object.assign(new Error("deadlock"),{code:"ER_LOCK_DEADLOCK",errno:1213}),Object.assign(new Error("timeout"),{code:"ER_LOCK_WAIT_TIMEOUT",errno:1205})]){
+      let writes=0;
+      const database=scriptedDatabase([[],[],[]],(sql)=>{if(sql.includes("object_identities")&&writes++===0)return conflict;return {affectedRows:1n,insertId:0n};});
+      const candidates=["a1234567","b1234567","c1234567"];
+      const result=await new MariaObjectIdentityAuditProvider(database,()=>candidates.shift()!,3).registerCrosswalk({actor:"migration",objectType:"ITEM",sourceSystem:"LEGACY_JSON",sourceNamespace:"itemInfo",sourceIdentifier:String(conflict.code)});
+      assert.equal(result.replayed,false);
+    }
   });
 
   it("returns an existing source mapping without creating another canonical identity", async () => {
@@ -58,7 +75,7 @@ describe("object identity and audit provider", () => {
   });
 
   it("treats concurrent source-unique conflicts as an idempotent replay, not a PK retry", async () => {
-    const sourceDuplicate = Object.assign(new Error("Duplicate entry for key 'uq_object_identity_crosswalk_source'"), { code: "ER_DUP_ENTRY" });
+    const sourceDuplicate = Object.assign(new Error("Duplicate entry for key 'uq_object_identity_crosswalk_source'"), { code: "ER_DUP_ENTRY", errno: 1062 });
     let committedIdentities = 0;
     let committedCrosswalks = 0;
     let rolledBack = 0;
@@ -70,30 +87,31 @@ describe("object identity and audit provider", () => {
         return { affectedRows: 1n, insertId: 0n };
       }
     };
-    const database: DatabaseClient = {
+    const runRoot = async <T>(work: (tx: DatabaseTransaction) => Promise<T>): Promise<T> => {
+      let stagedIdentities = 0;
+      let stagedCrosswalks = 0;
+      const staged: DatabaseTransaction = {
+        query: transaction.query,
+        execute: async (sql: string): Promise<DatabaseWriteResult> => {
+          if (sql.includes("object_identity_crosswalks")) { stagedCrosswalks += 1; throw sourceDuplicate; }
+          if (sql.includes("object_identities")) stagedIdentities += 1;
+          return { affectedRows: 1n, insertId: 0n };
+        }
+      };
+      try {
+        const result = await work(staged);
+        committedIdentities += stagedIdentities;
+        committedCrosswalks += stagedCrosswalks;
+        return result;
+      } catch (error) {
+        rolledBack += 1;
+        throw error;
+      }
+    };
+    const database: DatabaseClient & RootTransactionDatabaseClient = {
       ping: async () => undefined, verifyRollback: async () => true, execute: transaction.execute, close: async () => undefined,
       query: async <T>(): Promise<T> => { externalReads += 1; return [{ object_identity_crosswalk_id: "c1234567", object_identity_id: "a1234567", INSERT_USER: "persisted", INSERT_TIME: "2026-06-22 23:00:00", UPDATE_USER: "persisted", UPDATE_TIME: "2026-06-22 23:00:00" }] as T; },
-      withTransaction: async <T>(work: (tx: DatabaseTransaction) => Promise<T>): Promise<T> => {
-        let stagedIdentities = 0;
-        let stagedCrosswalks = 0;
-        const staged: DatabaseTransaction = {
-          query: transaction.query,
-          execute: async (sql: string): Promise<DatabaseWriteResult> => {
-            if (sql.includes("object_identity_crosswalks")) { stagedCrosswalks += 1; throw sourceDuplicate; }
-            if (sql.includes("object_identities")) stagedIdentities += 1;
-            return { affectedRows: 1n, insertId: 0n };
-          }
-        };
-        try {
-          const result = await work(staged);
-          committedIdentities += stagedIdentities;
-          committedCrosswalks += stagedCrosswalks;
-          return result;
-        } catch (error) {
-          rolledBack += 1;
-          throw error;
-        }
-      }
+      withTransaction: runRoot, withRootTransaction: runRoot
     };
     const candidates = ["a1234567", "b1234567"];
     const provider = new MariaObjectIdentityAuditProvider(database, () => candidates.shift()!, 2);

@@ -2,11 +2,14 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import cookie from "@fastify/cookie";
 import Fastify, { LogController, type FastifyError, type FastifyReply, type FastifyRequest } from "fastify";
 import type { AppConfig } from "./config.js";
-import type { DatabaseClient } from "./database.js";
+import { createScopedDatabaseClient, hasDatabaseTransactionCapabilities, type DatabaseClient } from "./database.js";
+import type { VerifiedEnvironmentContext } from "./runtime/environment-context.js";
 import { RecentEventStore } from "./recent-events.js";
 import { ApplicationError } from "./shared/application-error.js";
 import { normalizeIrisEvent, type IrisPayload, type NormalizedIrisEvent } from "./integration/iris-normalizer.js";
-import { ProcessIrisEventService, recordOutboxDelivery, type PendingReply } from "./integration/event-processing-service.js";
+import { ProcessIrisEventService, recordOutboxDelivery, type ChannelNameObservation, type EventProcessingResult, type PendingReply } from "./integration/event-processing-service.js";
+import { PrivateChatDenialNotificationService } from "./integration/private-chat-denial-notification-service.js";
+import { withMariaTransactionRetry } from "./shared/maria-database-error-policy.js";
 import {
   formatIrisKakaoDiagnostic,
   IrisKakaoDatabaseInspector,
@@ -50,9 +53,13 @@ import { MariaProfileRepository } from "./player/maria-profile-repository.js";
 import { ChangePlayerServerService } from "./player/change-player-server-service.js";
 import { DailyPrayerIrisCommandService, isDailyPrayerCommand } from "./player/daily-prayer-service.js";
 import { AutoExploreFixedConfigService, isAutoExploreFixedConfigCommand } from "./pet/auto-explore-fixed-config-service.js";
-import { PetExploreSettlementCommandConsumer, isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-command-consumer.js";
-import { PetExploreSettlementInputSnapshotProvider } from "./pet/pet-explore-settlement-input-snapshot-provider.js";
-import { isPetExploreEventControlCommand, PetExploreEventControlCommandService } from "./pet/pet-explore-event-control-command-service.js";
+import { isPetExploreSettlementCommand } from "./pet/pet-explore-settlement-command-consumer.js";
+import { isPetExploreEventControlCommand } from "./pet/pet-explore-event-control-command-service.js";
+import { PetExploreAppWiringIngress } from "./pet/pet-explore-app-wiring-ingress.js";
+import { PetTitleAppWiringIngress, PetTitleShadowEvaluator, PetTitleShadowReadAuthorityProvider } from "./pet/pet-title-app-wiring-ingress.js";
+import { PetTitleCanonicalMutationProvider } from "./pet/pet-title-canonical-mutation-provider.js";
+import { PetTitleCanonicalReadProvider } from "./pet/pet-title-canonical-read-provider.js";
+import { MariaPlayerContextProvider } from "./account-platform/player-context-provider.js";
 import { InventoryBulkSellService, isInventoryBulkSellCommand } from "./inventory/bulk-sell-service.js";
 import { InventoryCleanupIrisHandler } from "./inventory/inventory-cleanup-iris-handler.js";
 import { DiamondBoxCraftService, isDiamondBoxCraftCommand, normalizeDiamondBoxCraftDispatchMessage } from "./crafting/diamond-box-craft-service.js";
@@ -94,12 +101,16 @@ import { ManagedBackupCommandService } from "./admin/managed-backup-command-serv
 import { DataBackupService } from "./admin/data-backup-service.js";
 import { DataRestoreService } from "./admin/data-restore-service.js";
 import { IrisAdminCommandService, isPointEditCommandCandidate } from "./admin/iris-admin-command-service.js";
+import { PetTitleAdminAppWiringIngress } from "./admin/pet-title-admin-app-wiring-ingress.js";
+import { PetDataCompareAppWiringIngress } from "./admin/pet-data-compare-app-wiring-ingress.js";
+import { isPetDataCompareCommand } from "./admin/pet-data-compare-service.js";
 import { AdminDiamondEditService, isAdminDiamondEditCommand, normalizeAdminDiamondEditDispatchMessage } from "./admin/admin-diamond-edit-service.js";
 
 import { AdminAccountSuspensionService, isAdminAccountSuspensionCommand, normalizeAdminAccountSuspensionDispatchMessage } from "./admin/admin-account-suspension-service.js";
 import { AdminDiamondResetAllService, isAdminDiamondResetAllCommand, normalizeAdminDiamondResetAllDispatchMessage } from "./admin/admin-diamond-reset-all-service.js";
 import { createTierCommandService, isTierCommandCandidate, isTierCommandDispatch, isTierCommandHandler } from "./player/tier-command-dispatch.js";
 import { AdminPackageDeleteService, isAdminPackageDeleteCommand, normalizeAdminPackageDeleteDispatchMessage } from "./admin/admin-package-delete-service.js";
+import { dispatchAdminGlobalGiftCommand, isAdminGlobalGiftCommand, normalizeAdminGlobalGiftDispatchMessage } from "./admin/admin-global-gift-service.js";
 import { MiniPetRankRewardPayoutService, isMiniPetRankRewardPayoutCommand, normalizeMiniPetRankRewardPayoutDispatchMessage } from "./mini-pet/mini-pet-rank-reward-payout-service.js";
 import { TierRewardPayoutService, isTierRewardPayoutCommand, normalizeTierRewardPayoutDispatchMessage } from "./player/tier-reward-payout-service.js";
 import { MiniPetBindingReleaseService, isMiniPetBindingReleaseCommand, normalizeMiniPetBindingReleaseDispatchMessage } from "./mini-pet/mini-pet-binding-release-service.js";
@@ -108,10 +119,18 @@ import { SignupService } from "./signup/signup-service.js";
 import { isSignupCommand } from "./signup/signup-policy.js";
 import { buildSiteSignupEntryMessage, isSiteSignupEntryCommand } from "./signup/site-signup-entry.js";
 import {
+  AccountPlatformIrisContextProvider,
+  type AccountPlatformKakaoEventContext
+} from "./account-platform/account-platform-iris-context-provider.js";
+import { isAccountSwitchCommandCandidate } from "./account-platform/account-switch-command-service.js";
+import {
   CommandDispatcher,
   MariaCommandDispatchRepository,
+  MariaCommandRouteReader,
   parseCanaryUserIds
 } from "./dispatch/command-dispatcher.js";
+import { MariaAppWiringOperationProvider } from "./dispatch/app-wiring-operation-provider.js";
+import { MariaAppWiringReadOnlyRecoveryProvider } from "./dispatch/app-wiring-read-only-recovery-provider.js";
 import { isPetCreationCommandCandidate, PetCreationService } from "./pet/pet-creation-service.js";
 import { isPetRenameCommandCandidate, PetRenameService } from "./pet/pet-rename-service.js";
 import { isPetRenameTicketCraftCommand, PetRenameTicketCraftService } from "./pet/pet-rename-ticket-craft-service.js";
@@ -179,6 +198,11 @@ import { MariaPetTitleDefinitionLinkRepository } from "./pet/maria-pet-title-def
 import { isPetRebirthCommandCandidate, normalizePetRebirthDispatchMessage, PetRebirthService } from "./pet/pet-rebirth-service.js";
 import { isPetDuelEmoteCommandCandidate, normalizePetDuelEmoteDispatchMessage, PetDuelEmoteService } from "./pet/pet-duel-emote-service.js";
 import { isPetSkillReadCommand, PetSkillReadService } from "./pet/pet-skill-read-service.js";
+import { isPetSkillProbabilityCommand } from "./pet/pet-skill-probability-service.js";
+import { PetSkillProbabilityAtomicService } from "./pet/pet-skill-probability-atomic-service.js";
+import { normalizePetSkillInfoDispatchMessage } from "./pet/pet-skill-info-shadow-service.js";
+import { executePetSkillInfoReadOnlyRecovery, resolvePetSkillInfoIngressCommand } from "./pet/pet-skill-info-read-only-recovery-ingress.js";
+import type { MariaPetSkillInfoActorContextProvider } from "./pet/pet-skill-info-actor-context-provider.js";
 import { isPetSkillBagReadCommand, PetSkillBagReadService } from "./pet/pet-skill-bag-read-service.js";
 import { isPetSkillDuplicateReadCommand, PetSkillDuplicateReadService } from "./pet/pet-skill-duplicate-read-service.js";
 import { isPetSkillExtinctionCandidate, normalizePetSkillExtinctionDispatchMessage, PetSkillExtinctionService } from "./pet/pet-skill-extinction-service.js";
@@ -238,6 +262,13 @@ import { BagAddService, isBagAddCommandCandidate } from "./inventory/bag-add-ser
 import { MariaBagAddRepository } from "./inventory/maria-bag-add-repository.js";
 import { GetBagService, isBagCommand } from "./inventory/get-bag-service.js";
 import { MariaBagRepository } from "./inventory/maria-bag-repository.js";
+import { CanonicalItemBagDirectReadService, isCanonicalItemBagCommand } from "./inventory/canonical-item-bag-direct-read-service.js";
+import { CanonicalItemBagImportReadinessProvider } from "./inventory/canonical-item-bag-import-readiness-provider.js";
+import { LegacyBagOwnerLabelProvider } from "./inventory/legacy-bag-owner-label-provider.js";
+import { MariaBagShadowParityProvider } from "./inventory/bag-shadow-parity-provider.js";
+import { CanonicalItemBagShadowReadProvider } from "./inventory/canonical-item-bag-shadow-read-provider.js";
+import { LegacyRankLabelSideEffectReadinessProvider } from "./inventory/legacy-rank-label-side-effect-readiness-provider.js";
+import { executeItemBagReadOnlyRecovery } from "./inventory/item-bag-read-only-recovery-ingress.js";
 import { InventorySnapshotService, isInventorySnapshotCommand } from "./inventory/inventory-snapshot-service.js";
 import { MariaInventorySnapshotRepository } from "./inventory/maria-inventory-snapshot-repository.js";
 import { formatLegacyBag } from "./inventory/legacy-bag-formatter.js";
@@ -359,7 +390,25 @@ export interface AppDependencies {
   inspectIrisChannel?: (event: NormalizedIrisEvent) => Promise<IrisChannelAccessDecision>;
   retainIrisEventContent?: (payload: IrisPayload, event: NormalizedIrisEvent) => Promise<number>;
   database?: DatabaseClient;
+  environmentContext?: VerifiedEnvironmentContext;
+  appWiringOperationProvider?: MariaAppWiringOperationProvider;
+  petSkillInfoReadOnlyRecoveryProvider?: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  itemBagReadOnlyRecoveryProvider?: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  canonicalItemBagService?: Pick<CanonicalItemBagDirectReadService,"execute">;
+  petSkillInfoActorContextProvider?: Pick<MariaPetSkillInfoActorContextProvider,"resolve">;
+  privateChatDenialNotificationService?: Pick<PrivateChatDenialNotificationService,"processEvent">;
+  petExploreAppWiringIngress?: Pick<PetExploreAppWiringIngress, "handle">;
+  petDataCompareAppWiringIngress?: Pick<PetDataCompareAppWiringIngress, "handle">;
+  petTitleAppWiringIngress?: Pick<PetTitleAppWiringIngress, "handle">;
+  irisAdminCommandService?: Pick<IrisAdminCommandService, "changePlayerPoint">;
+  accountPlatformIrisContextProvider?: Pick<AccountPlatformIrisContextProvider, "prepareKakao" | "dispatchAccountSwitch">;
   dailyPrayerRandom?: () => number;
+  adminDiagnosticNow?: () => number;
+  runAccountCleanupMaintenance?: () => Promise<{
+    pending: { processed: number; failed: number };
+    deleted: { processed: number; failed: number };
+  }>;
+  purgeRetainedEventContent?: () => Promise<number>;
 }
 
 // KakaoTalk DB 대상 행 조회 결과를 원문 표시 상태로 변환합니다.
@@ -686,48 +735,233 @@ async function dispatchMiniPetEquipOrBulkCleanup(input: {
   }
 }
 
-// 펫탐험 정산 exact 명령을 app 본문 제어흐름과 분리해 registry consumer로 전달합니다.
-async function dispatchPetExploreSettlementCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
-  if (database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
-    || event.direction !== "incoming" || !isPetExploreSettlementCommand(event.message)
-    || event.userId === undefined || event.channelId === undefined || replies === undefined) return;
+// 운영 Kakao 이벤트의 고정된 방별 player snapshot으로 /계정변경을 한 번만 실행합니다.
+export async function dispatchAccountSwitchCommand(
+  provider: Pick<AccountPlatformIrisContextProvider, "prepareKakao" | "dispatchAccountSwitch"> | undefined,
+  eventProcessor: Pick<ProcessIrisEventService, "queueCommandReply"> | undefined,
+  isOperationalChannel: boolean,
+  duplicate: boolean | undefined,
+  event: NormalizedIrisEvent,
+  replies: PendingReply[] | undefined,
+): Promise<AccountPlatformKakaoEventContext | null> {
+  if (provider === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
+    || replies === undefined || !isAccountSwitchCommandCandidate(event.message)) return null;
+  const context = await provider.prepareKakao(event);
+  if (context === null) return null;
   try {
-    const result = await new PetExploreSettlementCommandConsumer(database, new PetExploreSettlementInputSnapshotProvider(database)).handleIris(event);
-    if ("message" in result) replies.push({ outboxId: result.outboxId ?? "", room: result.room, data: result.message });
-  } catch (error) {
-    if (error instanceof ApplicationError && [403,404,409,422].includes(error.statusCode)) replies.push(await eventProcessor.queueCommandReply(event,"pet_explore_settlement_error",error.message));
-    else throw error;
-  }
-}
-
-// 펫탐험 이벤트 제어 exact 명령을 공용 provider 소비자로 전달합니다.
-async function dispatchPetExploreEventControlCommand(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
-  if (database === undefined || eventProcessor === undefined || !isOperationalChannel || duplicate !== false
-    || event.direction !== "incoming" || !isPetExploreEventControlCommand(event.message)
-    || event.userId === undefined || event.channelId === undefined || replies === undefined) return;
-  try {
-    const result = await new PetExploreEventControlCommandService(database).handleDispatchedIris({
-      eventId: event.eventId,
-      externalUserId: event.userId,
-      channelId: event.channelId,
-      message: event.message!,
-    });
-    if (result.status === "changed") {
-      replies.push(await eventProcessor.queueCommandReply(event, "PET_EXPLORE_EVENT_CONTROL", result.data));
+    const result = await provider.dispatchAccountSwitch(context);
+    if (result !== null) {
+      replies.push(await eventProcessor.queueCommandReply(event, "ACCOUNT_PLATFORM_SWITCH", result.data));
     }
   } catch (error) {
     if (error instanceof ApplicationError && [403, 404, 409, 422].includes(error.statusCode)) {
-      replies.push(await eventProcessor.queueCommandReply(event, "pet_explore_event_control_error", error.message));
+      replies.push(await eventProcessor.queueCommandReply(event, "account_platform_switch_error", error.message));
     } else {
       throw error;
     }
   }
+  return context;
+}
+
+// 펫탐험 정산 exact 명령을 app 본문 제어흐름과 분리해 registry consumer로 전달합니다.
+async function dispatchPetExploreSettlementCommand(ingress: Pick<PetExploreAppWiringIngress, "handle"> | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent): Promise<void> {
+  if (ingress === undefined || !isOperationalChannel || duplicate !== false
+    || event.direction !== "incoming" || !isPetExploreSettlementCommand(event.message)
+    || event.userId === undefined || event.channelId === undefined) return;
+  await ingress.handle(event);
+}
+
+// 펫탐험 이벤트 제어 exact 명령을 공용 provider 소비자로 전달합니다.
+async function dispatchPetExploreEventControlCommand(ingress: Pick<PetExploreAppWiringIngress, "handle"> | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent): Promise<void> {
+  if (ingress === undefined || !isOperationalChannel || duplicate !== false
+    || event.direction !== "incoming" || !isPetExploreEventControlCommand(event.message)
+    || event.userId === undefined || event.channelId === undefined) return;
+  await ingress.handle(event);
 }
 
 // 펫탐험 명령 소비자들을 app 본문의 단일 호출 경계로 묶습니다.
-async function dispatchPetExploreCommandConsumers(database: DatabaseClient | undefined, eventProcessor: ProcessIrisEventService | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent, replies: PendingReply[] | undefined): Promise<void> {
-  await dispatchPetExploreSettlementCommand(database,eventProcessor,isOperationalChannel,duplicate,event,replies);
-  await dispatchPetExploreEventControlCommand(database, eventProcessor, isOperationalChannel, duplicate, event, replies);
+async function dispatchPetExploreCommandConsumers(ingress: Pick<PetExploreAppWiringIngress, "handle"> | undefined, isOperationalChannel: boolean, duplicate: boolean | undefined, event: NormalizedIrisEvent): Promise<void> {
+  await dispatchPetExploreSettlementCommand(ingress,isOperationalChannel,duplicate,event);
+  await dispatchPetExploreEventControlCommand(ingress,isOperationalChannel,duplicate,event);
+}
+
+function isPetSkillBulkGrantOrProbabilityCandidate(message: string | undefined): boolean {
+  return isPetSkillBulkGrantCandidate(message) || isPetSkillProbabilityCommand(message) || resolvePetSkillInfoIngressCommand(message)!==undefined;
+}
+
+function resolvePetSkillDispatchMessage(message: string | undefined): string | undefined {
+  const value = message ?? "";
+  const petSkillInfoCommand=resolvePetSkillInfoIngressCommand(message);
+  if (petSkillInfoCommand!==undefined) return normalizePetSkillInfoDispatchMessage(petSkillInfoCommand.effectiveMessage);
+  if (isPetSkillSaleCandidate(message)) return normalizePetSkillSaleDispatchMessage(value);
+  if (isPetSkillEquipCandidate(message)) return normalizePetSkillEquipDispatchMessage(value);
+  if (isPetSkillBulkGrantCandidate(message)) return normalizePetSkillBulkGrantDispatchMessage(value);
+  if (isPetSkillOpenCandidate(message)) return normalizePetSkillOpenDispatchMessage(value);
+  if (isPetSkillMarketListingCandidate(message)) return normalizePetSkillMarketListingDispatchMessage(value);
+  if (isPetSkillCarrotTradeCandidate(message)) return normalizePetSkillCarrotTradeDispatchMessage(value);
+  if (isPetSkillBookCombineCandidate(message)) return normalizePetSkillBookCombineDispatchMessage(value);
+  if (isPetSkillExtinctionCandidate(message)) return normalizePetSkillExtinctionDispatchMessage(value);
+  return undefined;
+}
+
+// 정확한 확률 명령은 inbox claim부터 outbox까지 하나의 root transaction으로 처리합니다.
+async function processPetSkillProbabilityAtomicIngress(input: {
+  database: DatabaseClient;
+  event: NormalizedIrisEvent;
+  replyIdentity: NormalizedIrisEvent;
+  environmentContext: VerifiedEnvironmentContext;
+  channelType: "open_group" | "open_direct";
+  channelName?: ChannelNameObservation;
+}): Promise<EventProcessingResult> {
+  if (input.event.channelId === undefined) throw new Error("PET_SKILL_PROBABILITY_CHANNEL_REQUIRED");
+  const destinationId = input.event.channelId;
+  return withMariaTransactionRetry(input.database, {
+    maxAttempts: 3,
+    allowRetry: () => true,
+    exhaustedErrorCode: "PET_SKILL_PROBABILITY_TRANSACTION_RETRY_EXHAUSTED"
+  }, async (transaction) => {
+    const scopedDatabase = createScopedDatabaseClient(transaction);
+    const processing = await new ProcessIrisEventService(scopedDatabase).executeAtomicCommandInTransaction(
+      transaction,input.event,input.replyIdentity,input.channelType,
+      input.channelName === undefined ? {} : { channelName: input.channelName }
+    );
+    const result = await new PetSkillProbabilityAtomicService(scopedDatabase).executeInTransaction(transaction, {
+      event: input.event,
+      environment: input.environmentContext.environmentCode,
+      databaseIdentity: input.environmentContext.databaseIdentity,
+      destinationId,
+      duplicateClaim: processing.duplicate
+    });
+    if (!result.replayed && result.data !== null && result.outboxId !== null) {
+      processing.replies.push({ outboxId: result.outboxId, room: destinationId, data: result.data });
+    }
+    return processing;
+  });
+}
+
+// SHADOW receipt와 독립적으로 기존 legacy reply를 inbox claim과 같은 transaction에서 1회만 outbox에 확정합니다.
+async function processItemBagShadowIngress(input: {
+  database: DatabaseClient;
+  recovery: Pick<MariaAppWiringReadOnlyRecoveryProvider,"execute">;
+  canonical: Pick<CanonicalItemBagDirectReadService,"execute">;
+  environmentContext: VerifiedEnvironmentContext;
+  event: NormalizedIrisEvent;
+  replyIdentity: NormalizedIrisEvent;
+  channelType: "open_group"|"open_direct";
+  reasonCode: "ROLLOUT_SHADOW";
+  channelName?: ChannelNameObservation;
+}): Promise<EventProcessingResult> {
+  const recovered = await executeItemBagReadOnlyRecovery({database:input.database,recovery:input.recovery,canonical:input.canonical,environmentContext:input.environmentContext,event:input.event,replyIdentity:input.replyIdentity,channelType:input.channelType,reasonCode:input.reasonCode,...(input.channelName===undefined?{}:{channelName:input.channelName})});
+  return recovered.processing;
+}
+
+async function verifyPetSkillProbabilityCompletedReplay(
+  database: DatabaseClient | undefined,
+  event: NormalizedIrisEvent,
+  environmentContext: VerifiedEnvironmentContext | undefined
+): Promise<boolean> {
+  if (!isPetSkillProbabilityCommand(event.message)) return false;
+  if (database === undefined || event.channelId === undefined) return false;
+  if (environmentContext === undefined) {
+    throw new Error("PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED");
+  }
+  return withMariaTransactionRetry(database, {
+    maxAttempts: 3,
+    allowRetry: () => true,
+    exhaustedErrorCode: "PET_SKILL_PROBABILITY_REPLAY_RETRY_EXHAUSTED"
+  }, transaction => new PetSkillProbabilityAtomicService(database).verifyCompletedReplayInTransaction(transaction, {
+    event,environment:environmentContext.environmentCode,databaseIdentity:environmentContext.databaseIdentity,destinationId:event.channelId!
+  }));
+}
+
+async function dispatchPetSkillReadCommands(input: {
+  database: DatabaseClient | undefined;
+  eventProcessor: Pick<ProcessIrisEventService, "queueCommandReply"> | undefined;
+  isOperationalChannel: boolean;
+  duplicate: boolean | undefined;
+  route: string | undefined;
+  handlerKey: string | undefined;
+  event: NormalizedIrisEvent;
+  replies: PendingReply[] | undefined;
+}): Promise<void> {
+  if (input.handlerKey === "pet_skill_probability") {
+    return;
+  }
+  if (input.database === undefined || input.eventProcessor === undefined || input.replies === undefined
+    || !input.isOperationalChannel || input.duplicate !== false || input.route !== "MODERN"
+    || input.handlerKey !== "pet_skill_read" || !isPetSkillReadCommand(input.event.message)
+    || input.event.userId === undefined || input.event.channelId === undefined) return;
+  try {
+    const result = await new PetSkillReadService(input.database).read({
+      eventId:input.event.eventId, externalUserId:input.event.userId,
+      destinationId:input.event.channelId, message:input.event.message!
+    });
+    input.replies.push(await input.eventProcessor.queueCommandReply(input.event,"pet_skill_read",result.reply));
+  } catch (error) {
+    if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
+      input.replies.push(await input.eventProcessor.queueCommandReply(input.event,"pet_skill_read_error",error.message));
+    } else throw error;
+  }
+}
+
+async function dispatchPetSkillMutationCommands(input:{database:DatabaseClient|undefined;eventProcessor:ProcessIrisEventService|undefined;isOperationalChannel:boolean;processing:EventProcessingResult|undefined;route:string|undefined;handlerKey:string|undefined;event:NormalizedIrisEvent}):Promise<void>{
+  const {database,eventProcessor,isOperationalChannel,processing,route,handlerKey,event}=input;
+  if(database===undefined||eventProcessor===undefined||!isOperationalChannel||processing===undefined||processing.duplicate||route!=="MODERN"||event.userId===undefined||event.channelId===undefined)return;
+  if(isPetSkillExtinctionCandidate(event.message)&&handlerKey==="pet_skill_extinction"){
+    const result=await new PetSkillExtinctionService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    processing.replies.push(await eventProcessor.queueCommandReply(event,"pet_skill_extinction",result.reply));
+  }else if(isPetSkillOpenCandidate(event.message)&&handlerKey==="pet_skill_open"){
+    try{const result=await new PetSkillOpenService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});if("reply" in result)processing.replies.push(await eventProcessor.queueCommandReply(event,"pet_skill_open",result.reply));}
+    catch(error){if(error instanceof ApplicationError&&[409,422].includes(error.statusCode))processing.replies.push(await eventProcessor.queueCommandReply(event,"pet_skill_open_error",error.message));else throw error;}
+  }else if(isPetSkillBulkGrantCandidate(event.message)&&handlerKey==="pet_skill_bulk_grant"){
+    const result=await new PetSkillBulkGrantService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    if(result.status!=="silent")processing.replies.push({outboxId:result.outboxId!,room:event.channelId,data:result.reply!});
+  }else if(isPetSkillEquipCandidate(event.message)&&handlerKey==="pet_skill_equip"){
+    const result=await new PetSkillEquipService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    processing.replies.push({outboxId:result.outboxId,room:event.channelId,data:result.reply});
+  }else if(isPetSkillSaleCandidate(event.message)&&handlerKey==="pet_skill_sale_lifecycle"){
+    const result=await new PetSkillSaleLifecycleService(database).handle({eventId:event.eventId,externalUserId:event.userId,destinationId:event.channelId,message:event.message!});
+    processing.replies.push({outboxId:result.outboxId,room:event.channelId,data:result.reply});
+  }
+}
+
+export type PetDataCompareAppWiringDisposition = "not_applicable" | "legacy_fallback" | "claimed";
+
+// exact ADMIN 명령만 app-wiring에 전달하고 claim 여부를 레거시 실행 경계에 반환합니다.
+export async function dispatchPetDataCompareCommand(
+  ingress: Pick<PetDataCompareAppWiringIngress, "handle"> | undefined,
+  isOperationalChannel: boolean,
+  duplicate: boolean | undefined,
+  event: NormalizedIrisEvent,
+): Promise<PetDataCompareAppWiringDisposition> {
+  if (ingress === undefined || !isOperationalChannel || duplicate !== false
+    || event.direction !== "incoming" || !isPetDataCompareCommand(event.message)
+    || event.userId === undefined || event.channelId === undefined) return "not_applicable";
+  const result = await ingress.handle(event);
+  if (result.status === "ignored") return "not_applicable";
+  if (result.status === "legacy_fallback") return "legacy_fallback";
+  return "claimed";
+}
+
+export type PetTitleAppWiringDisposition = "not_applicable" | "legacy_fallback" | "shadow" | "claimed";
+
+// SHADOW는 기존 명령을 계속 실행하고, MODERN/NO_REPLY/REJECT claim만 레거시 실행을 차단합니다.
+export async function dispatchPetTitleCommand(
+  ingress:Pick<PetTitleAppWiringIngress,"handle">|undefined,
+  isOperationalChannel:boolean,
+  duplicate:boolean|undefined,
+  event:NormalizedIrisEvent,
+  replies:PendingReply[]|undefined,
+):Promise<PetTitleAppWiringDisposition>{
+  if(ingress===undefined||!isOperationalChannel||duplicate!==false||replies===undefined
+    ||event.direction!=="incoming"||!isPetTitleCommandCandidate(event.message)
+    ||event.userId===undefined||event.channelId===undefined)return "not_applicable";
+  const result=await ingress.handle(event);
+  if(result.status==="ignored")return "not_applicable";
+  if(result.status==="legacy_fallback")return "legacy_fallback";
+  if(result.status==="shadow")return "shadow";
+  if(result.status==="modern")replies.push(result.reply);
+  return "claimed";
 }
 
 // 후원패스 registry 후보 판정과 alias 정규화를 app 본문 밖의 단일 경계로 묶습니다.
@@ -785,6 +1019,82 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     ?? ((event: NormalizedIrisEvent) => new IrisChannelPolicyInspector(config.irisBaseUrl)
       .inspect(event, designatedChannelIds, diagnosticChannelIds, config.irisOpenChatObservationMode));
   const database = dependencies.database;
+  const appWiringOperationProvider = dependencies.appWiringOperationProvider
+    ?? (database !== undefined && dependencies.environmentContext !== undefined && hasDatabaseTransactionCapabilities(database)
+      ? new MariaAppWiringOperationProvider(database, dependencies.environmentContext)
+      : undefined);
+  const petSkillInfoReadOnlyRecoveryProvider=dependencies.petSkillInfoReadOnlyRecoveryProvider
+    ??(database!==undefined&&appWiringOperationProvider!==undefined
+      ?new MariaAppWiringReadOnlyRecoveryProvider(database,appWiringOperationProvider):undefined);
+  const itemBagReadOnlyRecoveryProvider=dependencies.itemBagReadOnlyRecoveryProvider
+    ??(database!==undefined&&appWiringOperationProvider!==undefined
+      ?new MariaAppWiringReadOnlyRecoveryProvider(database,appWiringOperationProvider):undefined);
+  const canonicalItemBagService=dependencies.canonicalItemBagService??new CanonicalItemBagDirectReadService(
+    new CanonicalItemBagShadowReadProvider(new MariaPlayerContextProvider(),new MariaBagShadowParityProvider(),new LegacyBagOwnerLabelProvider(),new CanonicalItemBagImportReadinessProvider(),new LegacyRankLabelSideEffectReadinessProvider())
+  );
+  const privateChatDenialNotificationService=dependencies.privateChatDenialNotificationService
+    ??(database!==undefined&&dependencies.environmentContext!==undefined
+      ?new PrivateChatDenialNotificationService(database,dependencies.environmentContext):undefined);
+  const petExploreAppWiringIngress = dependencies.petExploreAppWiringIngress
+    ?? (database !== undefined && appWiringOperationProvider !== undefined
+      ? new PetExploreAppWiringIngress(
+        appWiringOperationProvider,
+        new CommandDispatcher(new MariaCommandRouteReader(database), {
+          enabled: true,
+          allowAllCanaries: config.nodeEnv !== "production",
+          canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
+        }),
+      )
+      : undefined);
+  const petDataCompareAppWiringIngress = dependencies.petDataCompareAppWiringIngress
+    ?? (database !== undefined && appWiringOperationProvider !== undefined
+      ? new PetDataCompareAppWiringIngress(
+        appWiringOperationProvider,
+        new CommandDispatcher(new MariaCommandRouteReader(database), {
+          enabled: true,
+          allowAllCanaries: config.nodeEnv !== "production",
+          canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
+        }),
+      )
+      : undefined);
+  const petTitleContextProvider=new MariaPlayerContextProvider();
+  const petTitleAppWiringIngress=dependencies.petTitleAppWiringIngress
+    ??(database!==undefined&&appWiringOperationProvider!==undefined
+      ?(()=>{
+        return new PetTitleAppWiringIngress(
+          appWiringOperationProvider,
+          new CommandDispatcher(new MariaCommandRouteReader(database),{
+            enabled:true,
+            allowAllCanaries:config.nodeEnv!=="production",
+            canaryUserIds:parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS),
+          }),
+          new PetTitleShadowEvaluator(petTitleContextProvider,new PetTitleShadowReadAuthorityProvider(),new PetTitleCanonicalReadProvider()),
+          petTitleContextProvider,
+          new PetTitleCanonicalMutationProvider(),
+        );
+      })()
+      :undefined);
+  const petTitleAdminAppWiringIngress=database!==undefined&&appWiringOperationProvider!==undefined
+    ?new PetTitleAdminAppWiringIngress(
+      appWiringOperationProvider,
+      new CommandDispatcher(new MariaCommandRouteReader(database),{
+        enabled:true,
+        allowAllCanaries:false,
+        canaryUserIds:new Set(),
+      }),
+      petTitleContextProvider,
+      new PetTitleCanonicalMutationProvider(),
+    )
+    :undefined;
+  const diagnosticRuntime=config.environmentCode===undefined?undefined:{
+    environmentCode:config.environmentCode,
+    ...(dependencies.environmentContext===undefined?{}:{databaseIdentity:dependencies.environmentContext.databaseIdentity}),
+    ...(dependencies.adminDiagnosticNow===undefined?{}:{now:dependencies.adminDiagnosticNow})
+  };
+  const irisAdminCommandService = dependencies.irisAdminCommandService
+    ?? (database === undefined ? undefined : new IrisAdminCommandService(database,config.irisAllowedOpenChatIds,petTitleAdminAppWiringIngress,diagnosticRuntime));
+  const accountPlatformIrisContextProvider = dependencies.accountPlatformIrisContextProvider
+    ?? (database === undefined ? undefined : new AccountPlatformIrisContextProvider(database));
   const retainedEventContents = database === undefined ? undefined : new RetainedEventContentService(database, {
     enabled: config.retainedEventContentEnabled,
     retentionDays: config.retainedEventContentDays,
@@ -863,33 +1173,38 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       secureCookies: config.nodeEnv === "production"
     });
     if (config.nodeEnv !== "test") {
-      const cleanup = new AccountCleanupService(database);
-      void cleanup.runMaintenance().then((result) => {
-        if (result.pending.processed > 0 || result.pending.failed > 0
-          || result.deleted.processed > 0 || result.deleted.failed > 0) {
-          app.log.info(result, "account_cleanup.completed");
-        }
-      }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
-      accountCleanupTimer = setInterval(() => {
-        void cleanup.runMaintenance().then((result) => {
+      const cleanup = dependencies.runAccountCleanupMaintenance
+        ?? (() => new AccountCleanupService(database).runMaintenance());
+      const purgeRetainedContent = dependencies.purgeRetainedEventContent
+        ?? (retainedEventContents === undefined ? undefined : () => retainedEventContents.purgeExpired());
+      app.addHook("onListen", async () => {
+        void cleanup().then((result) => {
           if (result.pending.processed > 0 || result.pending.failed > 0
             || result.deleted.processed > 0 || result.deleted.failed > 0) {
             app.log.info(result, "account_cleanup.completed");
           }
         }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
-      }, 3_600_000);
-      accountCleanupTimer.unref();
-      if (config.retainedEventContentEnabled && retainedEventContents !== undefined) {
-        void retainedEventContents.purgeExpired()
-          .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
-          .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
-        retainedContentCleanupTimer = setInterval(() => {
-          void retainedEventContents.purgeExpired()
+        accountCleanupTimer = setInterval(() => {
+          void cleanup().then((result) => {
+            if (result.pending.processed > 0 || result.pending.failed > 0
+              || result.deleted.processed > 0 || result.deleted.failed > 0) {
+              app.log.info(result, "account_cleanup.completed");
+            }
+          }).catch((error) => app.log.error({ err: error }, "account_cleanup.failed"));
+        }, 3_600_000);
+        accountCleanupTimer.unref();
+        if (config.retainedEventContentEnabled && purgeRetainedContent !== undefined) {
+          void purgeRetainedContent()
             .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
             .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
-        }, 3_600_000);
-        retainedContentCleanupTimer.unref();
-      }
+          retainedContentCleanupTimer = setInterval(() => {
+            void purgeRetainedContent()
+              .then((purged) => { if (purged > 0) app.log.info({ purged }, "retained_content_cleanup.completed"); })
+              .catch((error) => app.log.error({ err: error }, "retained_content_cleanup.failed"));
+          }, 3_600_000);
+          retainedContentCleanupTimer.unref();
+        }
+      });
     }
   }
 
@@ -1025,7 +1340,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
     async (request, reply) => {
       const normalizedEvent = normalizeIrisEvent(request.body);
       const channelAccess = await inspectIrisChannel(normalizedEvent);
-      if (channelAccess.mode === "denied") {
+      const petSkillInfoIngressCommand=resolvePetSkillInfoIngressCommand(normalizedEvent.message);
+      const isPetSkillInfoPrivateChannel=channelAccess.mode==="denied"&&channelAccess.channelClass==="open_direct"
+        &&channelAccess.reason==="open_direct_unverified"&&petSkillInfoIngressCommand!==undefined;
+      if (channelAccess.mode === "denied"&&!isPetSkillInfoPrivateChannel) {
         request.log.info(
           { requestId: request.id, reason: channelAccess.reason, channelClass: channelAccess.channelClass },
           "iris.event_ignored_by_channel_policy"
@@ -1057,6 +1375,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       const isOperationalChannel = channelAccess.mode === "operational";
       const isObservationChannel = channelAccess.mode === "observation";
       const isInteractiveChannel = isOperationalChannel || channelAccess.mode === "diagnostic";
+      if (isOperationalChannel
+        && await verifyPetSkillProbabilityCompletedReplay(database, normalizedEvent, dependencies.environmentContext)) {
+        return reply.code(202).send({ ok: true, accepted: true, ignored: false, duplicate: true, requestId: request.id });
+      }
       const verificationCode = readKakaoVerificationCode(normalizedEvent.message);
       const moderationIncidentNumber = readModerationIncidentNumber(normalizedEvent.message);
       const shouldCreateEventMonitorMessage = config.nodeEnv !== "production"
@@ -1069,6 +1391,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || (normalizedEvent.direction === "incoming" && (normalizedEvent.message === "/ping"
           || verificationCode !== null
           || isSignupCommand(normalizedEvent.message)
+          || isPetSkillInfoPrivateChannel
           || (normalizedEvent.message === "/info" && config.nodeEnv !== "production")
           || shouldCreateEventMonitorMessage));
       const kakaoDatabaseSnapshot = requiresKakaoDatabaseLookup
@@ -1174,13 +1497,14 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         ? new PackageCatalogAddWizardIrisHandler(database)
         : undefined;
       const packageCatalogWizardControlCandidate = packageCatalogWizardHandler !== undefined
-        && isPackageCatalogWizardControl(normalizedEvent.message ?? "");
-      const packageCatalogWizardActiveInput = packageCatalogWizardHandler !== undefined
+        && isPackageCatalogWizardControl(normalizedEvent.message ?? ""),
+        packageCatalogWizardActiveInput = packageCatalogWizardHandler !== undefined
         && normalizedEvent.direction === "incoming"
         && normalizedEvent.message !== undefined
         && !normalizedEvent.message.startsWith("/")
         && await packageCatalogWizardHandler.hasActiveSession(normalizedEvent);
       const partialDispatchCandidate = normalizedEvent.message === "/내정보"
+        || isCanonicalItemBagCommand(normalizedEvent.message)
         || isSignupCommand(normalizedEvent.message ?? "")
         || isInventoryBulkSellCommand(normalizedEvent.message)
         || isDiamondBoxCraftCommand(normalizedEvent.message)
@@ -1189,9 +1513,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || isAdminDiamondResetAllCommand(normalizedEvent.message)
         || isTierCommandCandidate(normalizedEvent.message)
         || isAdminPackageDeleteCommand(normalizedEvent.message)
+        || isAdminGlobalGiftCommand(normalizedEvent.message)
         || isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
         || isTierRewardPayoutCommand(normalizedEvent.message)
         || isMiniPetBindingReleaseCommand(normalizedEvent.message)
+        || isSpiritInfoCommand(normalizedEvent.message)
         || isOperationNoticeCommandCandidate(normalizedEvent.message)
         || isFirstSponsorCommandCandidate(normalizedEvent.message)
         || isHappyFoundationCommand(normalizedEvent.message)
@@ -1233,7 +1559,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
          || isPendantProbabilityCommand(normalizedEvent.message)
         || isSpiritNameCommandCandidate(normalizedEvent.message)
         || isSpiritNameCombineCommand(normalizedEvent.message)
-        || isPetSkillBulkGrantCandidate(normalizedEvent.message)
+        || isPetSkillBulkGrantOrProbabilityCandidate(normalizedEvent.message)
         || isPetSkillEquipCandidate(normalizedEvent.message)
         || isPetSkillSaleCandidate(normalizedEvent.message)
         || isHopePremiumDeleteCandidate(normalizedEvent.message)
@@ -1327,14 +1653,17 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         || packageCatalogWizardActiveInput;
       const partialDispatchEnabled = process.env.PARTIAL_COMMAND_DISPATCH_ENABLED === "true"
         || (config.nodeEnv !== "production" && process.env.PARTIAL_COMMAND_DISPATCH_ENABLED !== "false");
+      const petSkillDispatchMessage = resolvePetSkillDispatchMessage(normalizedEvent.message);
       const partialDispatchDecision = database !== undefined
         && normalizedEvent.direction === "incoming"
         && partialDispatchCandidate
-        ? await new CommandDispatcher(new MariaCommandDispatchRepository(database), {
-          enabled: partialDispatchEnabled,
-          allowAllCanaries: config.nodeEnv !== "production",
-          canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
-        }).resolve({
+        ? await (() => {
+          const dispatcher = new CommandDispatcher(new MariaCommandDispatchRepository(database), {
+            enabled: partialDispatchEnabled,
+            allowAllCanaries: config.nodeEnv !== "production",
+            canaryUserIds: parseCanaryUserIds(process.env.PARTIAL_COMMAND_CANARY_USER_IDS)
+          });
+          const dispatchInput = {
           eventId: normalizedEvent.eventId,
           message: isSocialOwnHeartCandidate(normalizedEvent.message)
             ? normalizeSocialOwnHeartDispatchMessage(normalizedEvent.message ?? "")
@@ -1412,22 +1741,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
             ? normalizeHomeFurnitureBagDispatchMessage(normalizedEvent.message ?? "")
             : isHopePremiumDeleteCandidate(normalizedEvent.message)
             ? normalizeHopePremiumDeleteDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillSaleCandidate(normalizedEvent.message)
-            ? normalizePetSkillSaleDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillEquipCandidate(normalizedEvent.message)
-            ? normalizePetSkillEquipDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillBulkGrantCandidate(normalizedEvent.message)
-            ? normalizePetSkillBulkGrantDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillOpenCandidate(normalizedEvent.message)
-            ? normalizePetSkillOpenDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillMarketListingCandidate(normalizedEvent.message)
-            ? normalizePetSkillMarketListingDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillCarrotTradeCandidate(normalizedEvent.message)
-            ? normalizePetSkillCarrotTradeDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillBookCombineCandidate(normalizedEvent.message)
-            ? normalizePetSkillBookCombineDispatchMessage(normalizedEvent.message ?? "")
-            : isPetSkillExtinctionCandidate(normalizedEvent.message)
-            ? normalizePetSkillExtinctionDispatchMessage(normalizedEvent.message ?? "")
+            : petSkillDispatchMessage !== undefined
+            ? petSkillDispatchMessage
             : isGuildPetSkillStockGrantCandidate(normalizedEvent.message)
             ? normalizeGuildPetSkillStockGrantDispatchMessage(normalizedEvent.message ?? "")
             : isPetDuelEmoteCommandCandidate(normalizedEvent.message)
@@ -1560,6 +1875,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeAdminDiamondResetAllDispatchMessage(normalizedEvent.message ?? "")
               : isAdminPackageDeleteCommand(normalizedEvent.message)
                 ? normalizeAdminPackageDeleteDispatchMessage(normalizedEvent.message ?? "")
+              : isAdminGlobalGiftCommand(normalizedEvent.message)
+                ? normalizeAdminGlobalGiftDispatchMessage(normalizedEvent.message ?? "")
               : isMiniPetRankRewardPayoutCommand(normalizedEvent.message)
                 ? normalizeMiniPetRankRewardPayoutDispatchMessage(normalizedEvent.message ?? "")
               : isTierRewardPayoutCommand(normalizedEvent.message)
@@ -1572,32 +1889,69 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
                 ? normalizeFirstSponsorDispatchMessage(normalizedEvent.message ?? "")
                 : normalizedEvent.message ?? "",
           userId: normalizedEvent.userId,
-          hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
-        })
+            hasTrustedDisplayName: commandEvent.displayNameTrust === "trusted"
+          };
+          return petSkillInfoIngressCommand === undefined && !isCanonicalItemBagCommand(normalizedEvent.message)
+            ? dispatcher.resolve(dispatchInput)
+            : dispatcher.resolveReadOnly(dispatchInput);
+        })()
         : undefined;
       const isDiagnosticMembership = channelAccess.mode === "diagnostic" && isMembershipEvent;
       const eventProcessor = database === undefined
         || (!isOperationalChannel && !isObservationChannel && !isDiagnosticModeration && !isDiagnosticMembership)
         ? undefined
         : new ProcessIrisEventService(database);
-      const processing = eventProcessor === undefined
+      const channelNameObservation: ChannelNameObservation | undefined = kakaoDatabaseSnapshot?.roomName === undefined
+        || kakaoDatabaseSnapshot.roomNameSource === "unavailable"
+        ? undefined
+        : { displayName: kakaoDatabaseSnapshot.roomName, sourceCode: kakaoDatabaseSnapshot.roomNameSource === "open_link" ? "kakao_open_link" : "kakao_chat_room_meta" };
+      const atomicPetSkillProbability = database !== undefined && isOperationalChannel
+        && partialDispatchDecision?.route === "MODERN"
+        && partialDispatchDecision.handlerKey === "pet_skill_probability"
+        && isPetSkillProbabilityCommand(normalizedEvent.message);
+      const atomicPetSkillInfo=database!==undefined&&petSkillInfoReadOnlyRecoveryProvider!==undefined&&(isOperationalChannel||isPetSkillInfoPrivateChannel)
+        &&(partialDispatchDecision?.route==="SHADOW"||partialDispatchDecision?.route==="MODERN")&&partialDispatchDecision.handlerKey==="pet_skill_info"
+        &&petSkillInfoIngressCommand!==undefined&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
+      const atomicItemBag=database!==undefined&&itemBagReadOnlyRecoveryProvider!==undefined&&isOperationalChannel
+        &&partialDispatchDecision?.route==="SHADOW"&&partialDispatchDecision.commandCode==="ITEM_BAG_READ"
+        &&partialDispatchDecision.handlerKey==="item_bag_canonical_read"
+        &&isCanonicalItemBagCommand(normalizedEvent.message)&&commandEvent.userId!==undefined&&commandEvent.channelId!==undefined;
+      if(isPetSkillInfoPrivateChannel&&!atomicPetSkillInfo)return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:channelAccess.reason,requestId:request.id});
+      if ((atomicPetSkillProbability||atomicPetSkillInfo||atomicItemBag) && dependencies.environmentContext === undefined) {
+        throw new Error(atomicPetSkillProbability?"PET_SKILL_PROBABILITY_VERIFIED_ENVIRONMENT_REQUIRED":atomicPetSkillInfo?"PET_SKILL_INFO_VERIFIED_ENVIRONMENT_REQUIRED":"ITEM_BAG_VERIFIED_ENVIRONMENT_REQUIRED");
+      }
+      if(atomicPetSkillInfo&&petSkillInfoIngressCommand!.devContext==="DEV_PREFIX"&&dependencies.environmentContext!.environmentCode!=="dev")return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:"PET_SKILL_INFO_DEV_ENVIRONMENT_REQUIRED",requestId:request.id});
+      let petSkillInfoRejectedReason:string|undefined;
+      const processing = atomicPetSkillProbability
+        ? await processPetSkillProbabilityAtomicIngress({
+            database: database!, event: normalizedEvent, replyIdentity: commandEvent,
+            environmentContext: dependencies.environmentContext!,
+            channelType: channelAccess.channelClass === "open_direct" ? "open_direct" : "open_group",
+            ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
+          })
+        :atomicPetSkillInfo
+        ?await executePetSkillInfoReadOnlyRecovery({database:database!,recovery:petSkillInfoReadOnlyRecoveryProvider!,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",route:partialDispatchDecision!.route as "SHADOW"|"MODERN",reasonCode:partialDispatchDecision!.reasonCode,...(dependencies.petSkillInfoActorContextProvider===undefined?{}:{actorContext:dependencies.petSkillInfoActorContextProvider}),...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})}).then(async recovered=>{petSkillInfoRejectedReason=recovered.denialReason;if(recovered.privateDenialNotificationRequired===true){if(privateChatDenialNotificationService===undefined)throw new Error("PRIVATE_CHAT_DENIAL_NOTIFICATION_SERVICE_REQUIRED");await privateChatDenialNotificationService.processEvent(normalizedEvent.eventId);}return recovered.processing;}).catch(error=>{const message=error instanceof Error?error.message:"",prefix="APP_WIRING_READ_ONLY_PREVIOUSLY_FAILED:",reason=message.startsWith(prefix)?message.slice(prefix.length):message;if(isPetSkillInfoPrivateChannel&&new Set(["PET_SKILL_INFO_PRIVATE_IDENTITY_REQUIRED","PET_SKILL_INFO_PRIVATE_PASS_REQUIRED"]).has(reason)){petSkillInfoRejectedReason=reason;return undefined;}throw error;})
+        :atomicItemBag
+        ?await processItemBagShadowIngress({database:database!,recovery:itemBagReadOnlyRecoveryProvider!,canonical:canonicalItemBagService,environmentContext:dependencies.environmentContext!,event:normalizedEvent,replyIdentity:commandEvent,channelType:channelAccess.channelClass==="open_direct"?"open_direct":"open_group",reasonCode:"ROLLOUT_SHADOW",...(channelNameObservation===undefined?{}:{channelName:channelNameObservation})})
+        : eventProcessor === undefined
         ? undefined
         : isOperationalChannel || isObservationChannel || isDiagnosticMembership
           ? await eventProcessor.execute(normalizedEvent, commandEvent, channelAccess.channelClass === "open_direct"
             ? "open_direct"
             : "open_group", {
               allowCommands: isOperationalChannel,
-              channelName: kakaoDatabaseSnapshot?.roomName === undefined
-                || kakaoDatabaseSnapshot.roomNameSource === "unavailable"
-                ? undefined
-                : {
-                    displayName: kakaoDatabaseSnapshot.roomName,
-                    sourceCode: kakaoDatabaseSnapshot.roomNameSource === "open_link"
-                      ? "kakao_open_link"
-                      : "kakao_chat_room_meta"
-                  }
+              ...(channelNameObservation === undefined ? {} : { channelName: channelNameObservation })
             })
           : await eventProcessor.executeDiagnosticModeration(normalizedEvent);
+      if(petSkillInfoRejectedReason!==undefined)return reply.code(202).send({ok:true,accepted:true,ignored:true,ignoreReason:petSkillInfoRejectedReason,requestId:request.id});
+      await dispatchAccountSwitchCommand(
+        accountPlatformIrisContextProvider,
+        eventProcessor,
+        isOperationalChannel,
+        processing?.duplicate,
+        commandEvent,
+        processing?.replies,
+      );
       if (database !== undefined
         && eventProcessor !== undefined
         && processing !== undefined
@@ -1986,7 +2340,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
+      if (!atomicItemBag && isOperationalChannel && processing !== undefined && !processing.duplicate && isBagCommand(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
           const bag = await new GetBagService(new MariaBagRepository(database!))
@@ -2005,7 +2359,13 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      await dispatchPetExploreCommandConsumers(database,eventProcessor,isOperationalChannel,processing?.duplicate,normalizedEvent,processing?.replies);
+      await dispatchPetExploreCommandConsumers(petExploreAppWiringIngress,isOperationalChannel,processing?.duplicate,normalizedEvent);
+      const petDataCompareDisposition = await dispatchPetDataCompareCommand(
+        petDataCompareAppWiringIngress,
+        isOperationalChannel,
+        processing?.duplicate,
+        normalizedEvent,
+      );
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isBagAttributeCommandCandidate(normalizedEvent.message)
@@ -2073,10 +2433,11 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
+        && petDataCompareDisposition !== "claimed"
         && isPointEditCommandCandidate(normalizedEvent.message)
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         try {
-          const result = await new IrisAdminCommandService(database!, config.irisAllowedOpenChatIds).changePlayerPoint({
+          const result = await irisAdminCommandService!.changePlayerPoint({
             externalUserId: normalizedEvent.userId,
             channelId: normalizedEvent.channelId,
             message: normalizedEvent.message!,
@@ -2146,6 +2507,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           } else throw error;
         }
       }
+
+      processing?.replies.push(...await dispatchAdminGlobalGiftCommand({database:database!,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,eventId:normalizedEvent.eventId,externalUserId:normalizedEvent.userId,channelId:normalizedEvent.channelId,message:normalizedEvent.message,queueError:(code,message)=>eventProcessor!.queueCommandReply(normalizedEvent,code,message)}));
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && ((isAdminDiamondResetAllCommand(normalizedEvent.message) && partialDispatchDecision?.handlerKey === "admin_diamond_reset_all")
@@ -2464,7 +2827,15 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
+      const petTitleDisposition=await dispatchPetTitleCommand(
+        petTitleAppWiringIngress,
+        isOperationalChannel,
+        processing?.duplicate,
+        normalizedEvent,
+        processing?.replies,
+      );
+
+      if (petTitleDisposition!=="claimed"&&isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetTitleCommandCandidate(normalizedEvent.message)
         && partialDispatchDecision?.route === "MODERN"
         && partialDispatchDecision.handlerKey === "pet_title_lifecycle"
@@ -2536,62 +2907,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillExtinctionCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_extinction"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillExtinctionService(database!).handle({
-          eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-          destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-        });
-        processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_extinction",result.reply));
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillOpenCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_open"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        try {
-          const result = await new PetSkillOpenService(database!).handle({
-            eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-          });
-          if ("reply" in result) {
-            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_open",result.reply));
-          }
-        } catch (error) {
-          if (error instanceof ApplicationError && [409,422].includes(error.statusCode)) {
-            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_open_error",error.message));
-          } else throw error;
-        }
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillBulkGrantCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_bulk_grant"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillBulkGrantService(database!).handle({
-          eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-          destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-        });
-        if (result.status !== "silent") processing.replies.push({ outboxId: result.outboxId!, room: normalizedEvent.channelId, data: result.reply! });
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillEquipCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_equip"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillEquipService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
-        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
-      }
-
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillSaleCandidate(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_sale_lifecycle"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        const result = await new PetSkillSaleLifecycleService(database!).handle({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message! });
-        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.reply });
-      }
+      await dispatchPetSkillMutationCommands({database,eventProcessor,isOperationalChannel,processing,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:normalizedEvent});
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isHopePremiumDeleteCandidate(normalizedEvent.message)
@@ -3036,22 +3352,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         }
       }
 
-      if (isOperationalChannel && processing !== undefined && !processing.duplicate
-        && isPetSkillReadCommand(normalizedEvent.message)
-        && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "pet_skill_read"
-        && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
-        try {
-          const result = await new PetSkillReadService(database!).read({
-            eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId,
-            destinationId: normalizedEvent.channelId, message: normalizedEvent.message!,
-          });
-          processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_read",result.reply));
-        } catch (error) {
-          if (error instanceof ApplicationError && [404,409,422].includes(error.statusCode)) {
-            processing.replies.push(await eventProcessor!.queueCommandReply(normalizedEvent,"pet_skill_read_error",error.message));
-          } else throw error;
-        }
-      }
+      await dispatchPetSkillReadCommands({database,eventProcessor,isOperationalChannel,duplicate:processing?.duplicate,route:partialDispatchDecision?.route,handlerKey:partialDispatchDecision?.handlerKey,event:normalizedEvent,replies:processing?.replies});
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
         && isPetDuelEmoteCommandCandidate(normalizedEvent.message)
@@ -3123,7 +3424,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision.handlerKey === "spirit_info_read"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new SpiritInfoService(database!).read({ eventId: normalizedEvent.eventId,
-          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId });
+          externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId,
+          displayName: commandEvent.displayName, displayNameTrust: commandEvent.displayNameTrust });
         for (const reply of result.replies) processing.replies.push({ outboxId: reply.outboxId, room: normalizedEvent.channelId, data: reply.data });
       }
 

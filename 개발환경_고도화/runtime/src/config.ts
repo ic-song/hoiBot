@@ -1,5 +1,6 @@
 export interface AppConfig {
   nodeEnv: string;
+  environmentCode?: "dev" | "prod";
   host: string;
   port: number;
   irisSharedToken: string;
@@ -105,6 +106,16 @@ function readRequiredString(value: string | undefined, name: string): string {
   return result;
 }
 
+// DB 경계는 NODE_ENV와 독립적인 명시적 dev/prod 값만 허용합니다.
+function readEnvironmentCode(value: string | undefined, databaseEnabled: boolean): "dev" | "prod" | undefined {
+  if (!databaseEnabled && (value === undefined || value.trim() === "")) return undefined;
+  const code = value?.trim();
+  if (code !== "dev" && code !== "prod") {
+    throw new Error("HOIBOT_ENVIRONMENT_CODE must be explicitly set to dev or prod when DATABASE_ENABLED is true.");
+  }
+  return code;
+}
+
 // 서버 실행에 필요한 환경 설정을 구성하고 검증합니다.
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const irisSharedToken = env.IRIS_SHARED_TOKEN?.trim() ?? "";
@@ -119,6 +130,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error("USER_VERIFICATION_PEPPER must contain at least 32 characters in production.");
   }
   const databaseEnabled = readBoolean(env.DATABASE_ENABLED, false);
+  const environmentCode = readEnvironmentCode(env.HOIBOT_ENVIRONMENT_CODE, databaseEnabled);
   const irisAllowedOpenChatIds = readExternalIdList(env.IRIS_ALLOWED_OPEN_CHAT_IDS);
   const retainedEventContentChannelIds = env.RETAINED_EVENT_CONTENT_CHANNEL_IDS === undefined
     ? irisAllowedOpenChatIds
@@ -126,6 +138,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   return {
     nodeEnv,
+    environmentCode,
     host: env.HOST?.trim() || "0.0.0.0",
     port: readPositiveInteger(env.PORT, 3002, "PORT"),
     irisSharedToken,

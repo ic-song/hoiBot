@@ -18,7 +18,9 @@ import {
   type CatalogTargetSchemaColumn
 } from "../src/data-migration/catalog-projection-provider.js";
 import {
-  calculateObjectDomainImportSemanticSha256,
+  calculateObjectDomainImportComponentSemanticSha256,
+  calculateObjectDomainImportContractSemanticSha256,
+  OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256,
   MariaObjectDomainImporter,
   stableDomainImportJson,
   type DomainImportPolicy
@@ -40,7 +42,7 @@ const disposition = JSON.parse(dispositionText) as { definitionSeed: string[]; s
 const fieldMapText = read("object-domain-import-field-map.v1.json");
 const fieldMap = JSON.parse(fieldMapText) as { recordQuarantine: string[]; mappings: Array<{ domain: string; targetTables: string[] }> };
 const importContractText = read("data-migration-object-domain-import.v1.json");
-const importContract = JSON.parse(importContractText) as { componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"] };
+const importContract = JSON.parse(importContractText) as { componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; semanticHashPolicy: { acceptedCompatibleImportContractSha256: string[] } };
 const base = JSON.parse(readFileSync(new URL("data-migration-catalog-projection-v1.json", fixtureRoot), "utf8")) as CatalogProjectionManifest;
 const foreignKeys = objectModel.tables.flatMap((table) => (table.foreignKeys ?? []).map((foreignKey) => ({ table: table.table, ...foreignKey })));
 const domainTargets = Object.fromEntries(fieldMap.mappings.map((mapping) => [mapping.domain, mapping.targetTables]));
@@ -56,15 +58,16 @@ const catalogPolicy: CatalogProjectionPolicy = {
   quarantineReasons: fieldMap.recordQuarantine
 };
 const componentSemanticSha256 = {
-  identityBindings: calculateObjectDomainImportSemanticSha256(identityText),
-  objectModel: calculateObjectDomainImportSemanticSha256(objectModelText),
-  disposition: calculateObjectDomainImportSemanticSha256(dispositionText),
-  fieldMap: calculateObjectDomainImportSemanticSha256(fieldMapText)
+  identityBindings: calculateObjectDomainImportComponentSemanticSha256("identityBindings", identityText, [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly]),
+  objectModel: calculateObjectDomainImportComponentSemanticSha256("objectModel", objectModelText, [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly]),
+  disposition: calculateObjectDomainImportComponentSemanticSha256("disposition", dispositionText, [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly]),
+  fieldMap: calculateObjectDomainImportComponentSemanticSha256("fieldMap", fieldMapText, [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly])
 };
 const importPolicy: DomainImportPolicy = {
   catalogVersion: "SC-20260902-1",
   targetSchemaSha256,
-  importContractSha256: calculateObjectDomainImportSemanticSha256(importContractText),
+  importContractSha256: calculateObjectDomainImportContractSemanticSha256(importContractText),
+  acceptedImportContractSha256: [calculateObjectDomainImportContractSemanticSha256(importContractText), OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256],
   componentSemanticSha256,
   contractComponentSemanticSha256: importContract.componentSemanticSha256,
   columns: schema.columns,
@@ -187,7 +190,7 @@ shadow("WBS725 Gate 7 isolated projection Shadow", () => {
       [config.database.host, config.database.port, config.database.name],
       combinedGate7
         ? ["127.0.0.1", 3323, "hoibot_rehearsal_wbs742_gate7"]
-        : ["127.0.0.1", 3322, "hoibot_rehearsal_wbs725_gate7"]
+         : ["127.0.0.1", 3322, "hoibot_rehearsal_wbs725_gate7"]
     );
     database = createDatabaseClient(config.database);
     if (process.env.CATALOG_PROJECTION_GATE7_PHASE === "prepare") {

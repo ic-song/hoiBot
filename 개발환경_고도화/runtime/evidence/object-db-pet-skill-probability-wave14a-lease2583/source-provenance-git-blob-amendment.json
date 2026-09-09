@@ -1,0 +1,19 @@
+{
+  "amendmentType": "GIT_BLOB_SOURCE_HASH_SUPERSESSION",
+  "supersedesEvidenceFiles": ["source-provenance.json", "source-provenance-amendment.json"],
+  "reason": "Earlier byte counts and hashes were captured from a mixed working-tree/line-ending state. This amendment preserves those historical files while replacing every source hash with bytes read directly from the pinned commit's Git blobs.",
+  "sourceCommit": "3232b907edad21b78e2303f778e8e7eff32fbb02",
+  "sourceTree": "9899e5fbd7d79bcf6029eebb058bc45e4e1fba1e",
+  "hashAlgorithm": "sha256",
+  "byteSource": "git cat-file blob <sourceCommit>:<path>",
+  "orderedSources": [
+    {"path":"main.js","byteCount":2586224,"sha256":"d8541a602a5fda8a2d6d20f7f0214d42c4285775c595816deda7355605e1e6c0"},
+    {"path":"개발환경_고도화/runtime/migrations/483_pet_skill_probability_actual_ingress.sql","byteCount":544,"sha256":"2ccb77bc5067ec08ad0a3e295aa8080d42c5f93656ade868227b6474cf71e1fc"},
+    {"path":"개발환경_고도화/runtime/migrations/rollback/483_pet_skill_probability_actual_ingress.rollback.sql","byteCount":499,"sha256":"cc385521d95cba8de3c35c3a5751336918ae53c0c0c8daede143d3f2277764ba"},
+    {"path":"개발환경_고도화/runtime/src/app.ts","byteCount":269584,"sha256":"3e3acb95f3c7fabe9605098efa736e9e25c8eef9373297baeed21ff57b776119"},
+    {"path":"개발환경_고도화/runtime/src/pet/canonical-pet-skill-read-provider.ts","byteCount":9952,"sha256":"76a4eb75771b9f210e0cd49687206ca321195022e1947574dbe176f6ab46cd57"},
+    {"path":"개발환경_고도화/runtime/src/pet/pet-skill-probability-service.ts","byteCount":3657,"sha256":"1c2510a94102533d3896b00fbd52a81e0d9ce16dbf339658e99bfa7bb1e79dd7"},
+    {"path":"개발환경_고도화/runtime/test/pet-skill-probability-http-mariadb.integration.test.ts","byteCount":8780,"sha256":"5895cb56dc467b4ea210955b38ef560aed6b49f10bd1efa4d9831f248b2d82ab"},
+    {"path":"개발환경_고도화/runtime/test/pet-skill-probability-migration.test.ts","byteCount":1437,"sha256":"371f96447bbb6dd2fff0be6c319b140ff21f50156b0acfccac405d1004f69629"}
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "catalogVersion":"SC-20260902-1",
+  "format":"hoibot-object-domain-import-target-schema-equipment-grade-extension-v1",
+  "migration":"475_equipment_grade_definition_extension.sql",
+  "auditColumnsExcluded":["INSERT_USER","INSERT_TIME","UPDATE_USER","UPDATE_TIME"],
+  "tableCount":2,
+  "columnCount":21,
+  "columns":[
+    {"table":"canonical_equipment_grade_definitions","column":"equipment_grade_definition_id","sqlType":"CHAR(8)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"source_definition_pointer","sqlType":"VARCHAR(512)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"equipment_family","sqlType":"VARCHAR(32)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"equipment_grade_name","sqlType":"VARCHAR(255)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"equipment_grade_emoji","sqlType":"VARCHAR(32)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"enhancement_success_probability","sqlType":"DECIMAL(31,30)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"enhancement_drop_probability","sqlType":"DECIMAL(31,30)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"item_cost_quantity","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"point_cost_amount","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"maximum_enhancement_level","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"battle_base_experience_amount","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"battle_experience_per_enhancement_amount","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"raid_base_experience_amount","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"raid_experience_per_enhancement_amount","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"castle_base_experience_amount","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"castle_experience_per_enhancement_amount","sqlType":"DECIMAL(65,0)","nullable":false},
+    {"table":"canonical_equipment_grade_definitions","column":"active_flag","sqlType":"BOOLEAN","nullable":false},
+    {"table":"canonical_equipment_grade_aliases","column":"equipment_grade_alias_id","sqlType":"CHAR(8)","nullable":false},
+    {"table":"canonical_equipment_grade_aliases","column":"equipment_grade_definition_id","sqlType":"CHAR(8)","nullable":false},
+    {"table":"canonical_equipment_grade_aliases","column":"alias_order","sqlType":"INT UNSIGNED","nullable":false},
+    {"table":"canonical_equipment_grade_aliases","column":"equipment_name","sqlType":"VARCHAR(255)","nullable":false}
+  ]
+}

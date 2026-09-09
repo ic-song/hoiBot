@@ -1,0 +1,10 @@
+{
+  "supersedesSourceCommit": "5d7fdb9b9744d07b962e342cdebb4d5da8425c07",
+  "currentSourceCommit": "2d7cc277454f2d3ddb465228fb93902570458b40",
+  "reason": "command routing history can retain a foreign key to the dedicated registry row; rollback now disables it fail-closed and deletes it only when unreferenced",
+  "changedSources": [
+    {"path":"개발환경_고도화/runtime/migrations/rollback/483_pet_skill_probability_actual_ingress.rollback.sql","byteCount":499,"sha256":"cc385521d95cba8de3c35c3a5751336918ae53c0c0c8daede143d3f2277764ba"},
+    {"path":"개발환경_고도화/runtime/test/pet-skill-probability-migration.test.ts","byteCount":1437,"sha256":"371f96447bbb6dd2fff0be6c319b140ff21f50156b0acfccac405d1004f69629"}
+  ],
+  "rehearsal": "isolated MariaDB rollback restored /펫스킬확률 to PET_SKILL_READ; forward restored PET_SKILL_PROBABILITY SHADOW while preserving command_routing_decisions"
+}

@@ -1,0 +1,47 @@
+{
+  "format": "hoibot-object-db-slice-source-provenance-v1",
+  "sliceId": "SL-PET-SKILL-INFO-DUAL-CONTEXT-ROUTER-01",
+  "wbsOrdinal": 769,
+  "leaseRow": 2597,
+  "executionId": "펫스킬이중컨텍스트DB-SL-PET-SKILL-INFO-DUAL-CONTEXT-ROUTER-01-202609080210",
+  "baselineCommit": "ed5255bcfc8aa2a2ba4367cf49a54c7df8413119",
+  "sourceContracts": [
+    "docs/database/OBJECT_DATA_MODEL_STANDARD.md",
+    "개발환경_고도화/runtime/src/account/maria-player-context-provider.ts",
+    "개발환경_고도화/runtime/src/pet/pet-skill-info-read-only-recovery-ingress.ts",
+    "개발환경_고도화/runtime/src/pet/pet-skill-info-shadow-service.ts"
+  ],
+  "actorContract": {
+    "selectedGameAccount": "platform context membership active selection",
+    "entitlementAuthority": "active portal representative player",
+    "legacyFallback": "selected player only when no portal link exists",
+    "snapshot": "one recovery transaction",
+    "replay": "frozen receipt without actor re-resolution"
+  },
+  "receiptVersions": [
+    "PET_SKILL_INFO_DUAL_CONTEXT_RECEIPT_V1",
+    "PET_SKILL_INFO_DUAL_CONTEXT_READINESS_RECEIPT_V1",
+    "PET_SKILL_INFO_DUAL_CONTEXT_DENIAL_RECEIPT_V1",
+    "PET_SKILL_INFO_PRIVATE_DENIAL_RECEIPT_V3"
+  ],
+  "historicalReceiptPolicy": "V1/V2 receipts remain replayable without reinterpretation",
+  "mariaRehearsal": {
+    "engine": "MariaDB 12.2",
+    "host": "127.0.0.1",
+    "port": 3339,
+    "database": "hoibot_wbs769_actor_context",
+    "migrations": 474,
+    "targetedIntegrationTests": 1,
+    "actorProviderUnitTests": 4,
+    "temporaryDataRemoved": true,
+    "production3306Unchanged": true
+  },
+  "forbidden": [
+    "operating data migration",
+    "operating database mutation",
+    "live room reply",
+    "external network delivery",
+    "Gate8",
+    "feature/prod reflection"
+  ]
+}

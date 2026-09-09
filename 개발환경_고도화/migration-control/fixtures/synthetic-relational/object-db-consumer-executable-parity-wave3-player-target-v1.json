@@ -1,0 +1,20 @@
+{
+  "format":"hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId":"fixture:object-db-executable-parity:wave3:player-target:v1",
+  "bindings":[
+    {"consumerId":"sql-repository-261eb97022941f77","harnessId":"harness:object-db-executable-parity:wave3","harnessCaseId":"case:player-target","fixtureId":"fixture:object-db-executable-parity:wave3:player-target:v1","scenarioId":"scenario:exact-output","scenarioKind":"EXACT_OUTPUT"},
+    {"consumerId":"sql-repository-261eb97022941f77","harnessId":"harness:object-db-executable-parity:wave3","harnessCaseId":"case:player-target","fixtureId":"fixture:object-db-executable-parity:wave3:player-target:v1","scenarioId":"scenario:negative-guard","scenarioKind":"NEGATIVE_GUARD"},
+    {"consumerId":"sql-repository-261eb97022941f77","harnessId":"harness:object-db-executable-parity:wave3","harnessCaseId":"case:player-target","fixtureId":"fixture:object-db-executable-parity:wave3:player-target:v1","scenarioId":"scenario:read-positive","scenarioKind":"READ_POSITIVE"},
+    {"consumerId":"sql-repository-261eb97022941f77","harnessId":"harness:object-db-executable-parity:wave3","harnessCaseId":"case:player-target","fixtureId":"fixture:object-db-executable-parity:wave3:player-target:v1","scenarioId":"scenario:restart-consistency","scenarioKind":"RESTART_CONSISTENCY"},
+    {"consumerId":"sql-repository-261eb97022941f77","harnessId":"harness:object-db-executable-parity:wave3","harnessCaseId":"case:player-target","fixtureId":"fixture:object-db-executable-parity:wave3:player-target:v1","scenarioId":"scenario:source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO"}
+  ],
+  "payload":{"cases":[{"caseId":"case:player-target","executablePath":"MariaPlayerContextProvider.resolveUniqueLegacyDisplayTarget","transactionPath":"DatabaseClient.query:READ_ONLY","requiredScenarios":["READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"],"consumers":[{
+    "consumerId":"sql-repository-261eb97022941f77",
+    "sourceLocator":{"file":"개발환경_고도화/runtime/src/account-platform/player-context-provider.ts","symbol":"resolveUniqueLegacyDisplayTarget","triggerOrPredicate":"SQL_METHOD:resolveUniqueLegacyDisplayTarget","interfaceId":"context-bridge.repository.player-context-provider.resolveUniqueLegacyDisplayTarget","start":10853,"end":12269,"sha256":"5356bb4b337ca031c50622ce7a658fe98b42014bc5da5ca58c254a2e2e59a4e7"},
+    "input":{"targetKey":"대상유저"},"negativeInput":{"targetKey":""},"expectedQueryValues":["대상유저"],"expectedGuardError":"PLAYER_CONTEXT_TARGET_INVALID","databaseRowShape":"player-target-row",
+    "expectedNormalizedSql":"SELECT player.id AS legacy_player_id,canonical_player.player_id AS canonical_player_id, identity_row.id AS external_identity_id,profile.current_display_name AS display_name, rank_profile.rank_emoji,identity_row.provider_code FROM player_profiles profile JOIN players player ON player.id=profile.player_id AND player.status='active' AND player.deleted_at IS NULL LEFT JOIN player_legacy_rank_profiles rank_profile ON rank_profile.player_id=player.id LEFT JOIN external_identities identity_row ON identity_row.player_id=player.id AND identity_row.status='linked' LEFT JOIN canonical_player_identity_crosswalks crosswalk ON crosswalk.provider_code=identity_row.provider_code AND crosswalk.external_user_id=identity_row.external_user_id AND crosswalk.crosswalk_status='LINKED' LEFT JOIN canonical_players canonical_player ON canonical_player.player_id=crosswalk.player_id WHERE BINARY profile.current_display_name=BINARY ?",
+    "mockRows":[{"legacyPlayerId":"42","canonicalPlayerId":"player01","externalIdentityId":"7","displayName":"대상유저","rankEmoji":"🏆","providerCode":"kakao"}],
+    "expectedRow":{"canonicalPlayerId":"player01","legacyPlayerId":"42","displayName":"대상유저","rankEmoji":"🏆"},
+    "assertions":["player_profiles profile","players player","canonical_player_identity_crosswalks crosswalk","WHERE BINARY profile.current_display_name=BINARY ?"]
+  }]}]}
+}

@@ -56,6 +56,7 @@ export class AccountCleanupService {
       try {
         const deletedPasswordHash = await hash(randomUUID(), { type: argon2id });
         await this.database.withTransaction(async (transaction) => {
+          await transaction.query("SELECT lock_key FROM canonical_account_authority_global_locks WHERE lock_key='ACCOUNT_AUTHORITY' FOR UPDATE");
           const rows = await transaction.query<Array<{ user_account_id: bigint; player_id: bigint; login_id: string; system_account_name: string }>>(
             `SELECT deletion.user_account_id, deletion.player_id, account_row.login_id, account_row.system_account_name
              FROM account_deletion_requests deletion JOIN user_accounts account_row ON account_row.id = deletion.user_account_id

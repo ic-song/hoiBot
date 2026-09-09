@@ -1,0 +1,1107 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave21:pet-equipment-assign:v1",
+  "sliceId": "WBS785",
+  "consumerId": "sql-repository-4f896a4a6feb5ec1",
+  "runtimeSourcePaths": [
+    "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+    "개발환경_고도화/runtime/src/database.ts",
+    "개발환경_고도화/runtime/src/identity/object-identity-audit-provider.ts",
+    "개발환경_고도화/runtime/src/shared/maria-database-error-policy.ts",
+    "개발환경_고도화/runtime/migrations/443_object_identity_audit_provider.sql",
+    "개발환경_고도화/runtime/migrations/444_canonical_item_inventory.sql",
+    "개발환경_고도화/runtime/migrations/446_canonical_pet_equipment.sql",
+    "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json"
+  ],
+  "receiptContract": {
+    "version": "WBS785_PET_EQUIPMENT_ASSIGN_MUTATION_DIRECT_V1",
+    "transaction": "MUTATION",
+    "externalNetworkCalls": 0,
+    "replyCalls": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES",
+    "concurrency": "EXACTLY_ONE_COMMITTED_WRITER",
+    "sourceMethod": "MariaCanonicalPetEquipmentRepository.assign",
+    "locatorModes": [
+      "LEGACY_RAW",
+      "SHA256_OVERFLOW"
+    ]
+  },
+  "mutationContract": {
+    "format": "hoibot-object-db-consumer-mutation-evidence-v1",
+    "consumerId": "sql-repository-4f896a4a6feb5ec1",
+    "source": {
+      "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+      "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+      "spanStart": 3141,
+      "spanEnd": 3937,
+      "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+      "catalogSpanStart": 1867,
+      "catalogSpanEnd": 2474,
+      "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+      "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "forbiddenPort": 3306,
+      "namePrefix": "hoibot_wave21_pet_equipment_assign"
+    },
+    "allowedTables": [
+      "object_identities",
+      "object_identity_crosswalks",
+      "canonical_owned_pet_equipment",
+      "canonical_pet_equipment_operation_replays"
+    ],
+    "scenarios": [
+      {
+        "scenarioKind": "MUTATION_SUCCESS",
+        "traceRoles": [
+          "PRIMARY"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks",
+          "canonical_owned_pet_equipment",
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedAffectedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks",
+          "canonical_owned_pet_equipment",
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks",
+          "canonical_owned_pet_equipment",
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedLockOrder": [
+          "canonical_pet_equipment_operation_replays",
+          "canonical_players",
+          "canonical_owned_pet_instances",
+          "canonical_owned_equipment_instances",
+          "canonical_equipment_definitions",
+          "object_identity_crosswalks"
+        ],
+        "expectedCommittedRowCount": 6,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_identities": 0,
+          "object_identity_crosswalks": 0,
+          "canonical_owned_pet_equipment": 0,
+          "canonical_pet_equipment_operation_replays": 0
+        },
+        "expectedAfter": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedReplayed": false,
+        "expectedErrorCode": null,
+        "distinctProcessRoles": []
+      },
+      {
+        "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+        "traceRoles": [
+          "PRIMARY"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "ROLLBACK",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks",
+          "canonical_owned_pet_equipment"
+        ],
+        "expectedAffectedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks"
+        ],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "canonical_pet_equipment_operation_replays",
+          "canonical_players",
+          "canonical_owned_pet_instances",
+          "canonical_owned_equipment_instances",
+          "canonical_equipment_definitions",
+          "object_identity_crosswalks"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 4,
+        "expectedBefore": {
+          "object_identities": 0,
+          "object_identity_crosswalks": 0,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 0
+        },
+        "expectedAfter": {
+          "object_identities": 0,
+          "object_identity_crosswalks": 0,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 0
+        },
+        "expectedReplayed": null,
+        "expectedErrorCode": "MARIADB_1062_UQ_CANONICAL_OWNED_PET_EQUIPMENT_SLOT",
+        "distinctProcessRoles": []
+      },
+      {
+        "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+        "traceRoles": [
+          "SEED",
+          "REPLAY"
+        ],
+        "primaryRole": "REPLAY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [],
+        "expectedAffectedDmlTableSequence": [],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedAfter": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedReplayed": true,
+        "expectedErrorCode": null,
+        "distinctProcessRoles": [
+          "SEED",
+          "REPLAY"
+        ]
+      },
+      {
+        "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+        "traceRoles": [
+          "SEED",
+          "PRIMARY"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "ROLLBACK",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [],
+        "expectedAffectedDmlTableSequence": [],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedAfter": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedReplayed": null,
+        "expectedErrorCode": "CANONICAL_PET_EQUIPMENT_REQUEST_PAYLOAD_CONFLICT",
+        "distinctProcessRoles": [
+          "SEED",
+          "PRIMARY"
+        ]
+      },
+      {
+        "scenarioKind": "RESTART_REPLAY",
+        "traceRoles": [
+          "SEED",
+          "REPLAY"
+        ],
+        "primaryRole": "REPLAY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [],
+        "expectedAffectedDmlTableSequence": [],
+        "expectedDmlTableSequence": [],
+        "expectedLockOrder": [
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedCommittedRowCount": 0,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedAfter": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedReplayed": true,
+        "expectedErrorCode": null,
+        "distinctProcessRoles": [
+          "SEED",
+          "REPLAY"
+        ]
+      },
+      {
+        "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+        "traceRoles": [
+          "PRIMARY",
+          "CONCURRENT"
+        ],
+        "primaryRole": "PRIMARY",
+        "primaryTransactionOutcome": "COMMIT",
+        "primaryTransactionAttempts": 1,
+        "expectedAttemptedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks",
+          "canonical_owned_pet_equipment",
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedAffectedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks",
+          "canonical_owned_pet_equipment",
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedDmlTableSequence": [
+          "object_identities",
+          "object_identity_crosswalks",
+          "object_identities",
+          "object_identity_crosswalks",
+          "canonical_owned_pet_equipment",
+          "canonical_pet_equipment_operation_replays"
+        ],
+        "expectedLockOrder": [
+          "canonical_pet_equipment_operation_replays",
+          "canonical_players",
+          "canonical_owned_pet_instances",
+          "canonical_owned_equipment_instances",
+          "canonical_equipment_definitions",
+          "object_identity_crosswalks"
+        ],
+        "expectedCommittedRowCount": 6,
+        "expectedRolledBackAffectedRowCount": 0,
+        "expectedBefore": {
+          "object_identities": 0,
+          "object_identity_crosswalks": 0,
+          "canonical_owned_pet_equipment": 0,
+          "canonical_pet_equipment_operation_replays": 0
+        },
+        "expectedAfter": {
+          "object_identities": 2,
+          "object_identity_crosswalks": 2,
+          "canonical_owned_pet_equipment": 1,
+          "canonical_pet_equipment_operation_replays": 1
+        },
+        "expectedReplayed": false,
+        "expectedErrorCode": null,
+        "distinctProcessRoles": [
+          "PRIMARY",
+          "CONCURRENT"
+        ]
+      }
+    ]
+  },
+  "bindings": [
+    {
+      "consumerId": "sql-repository-4f896a4a6feb5ec1",
+      "scenarioId": "scenario:wave21:pet-equipment-assign:mutation_success",
+      "scenarioKind": "MUTATION_SUCCESS",
+      "exportName": "executeWave21PetEquipmentAssign"
+    },
+    {
+      "consumerId": "sql-repository-4f896a4a6feb5ec1",
+      "scenarioId": "scenario:wave21:pet-equipment-assign:domain_failure_rollback",
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+      "exportName": "executeWave21PetEquipmentAssign"
+    },
+    {
+      "consumerId": "sql-repository-4f896a4a6feb5ec1",
+      "scenarioId": "scenario:wave21:pet-equipment-assign:duplicate_replay_dml_zero",
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+      "exportName": "executeWave21PetEquipmentAssign"
+    },
+    {
+      "consumerId": "sql-repository-4f896a4a6feb5ec1",
+      "scenarioId": "scenario:wave21:pet-equipment-assign:payload_drift_fail_closed",
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "exportName": "executeWave21PetEquipmentAssign"
+    },
+    {
+      "consumerId": "sql-repository-4f896a4a6feb5ec1",
+      "scenarioId": "scenario:wave21:pet-equipment-assign:restart_replay",
+      "scenarioKind": "RESTART_REPLAY",
+      "exportName": "executeWave21PetEquipmentAssign"
+    },
+    {
+      "consumerId": "sql-repository-4f896a4a6feb5ec1",
+      "scenarioId": "scenario:wave21:pet-equipment-assign:concurrency_single_writer",
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+      "exportName": "executeWave21PetEquipmentAssign"
+    }
+  ],
+  "sealedObservations": [
+    {
+      "scenarioKind": "MUTATION_SUCCESS",
+      "traces": [
+        {
+          "processId": 20068,
+          "moduleExecutionId": "41ecdd6f-8cee-4bb0-8702-cb6b462aba27",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedRowCount": 6
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+          ],
+          "committedRowCount": 6,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays",
+            "canonical_players",
+            "canonical_owned_pet_instances",
+            "canonical_owned_equipment_instances",
+            "canonical_equipment_definitions",
+            "object_identity_crosswalks"
+          ],
+          "before": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 0,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "LEGACY_RAW",
+          "beforeSha256": "cb871e428c8cd4b5c1e62c40f185317c6cec183f608becff273351a18e963098",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+      "traces": [
+        {
+          "processId": 22608,
+          "moduleExecutionId": "416f7edc-07f5-4e02-a1e9-c6071e8e79e6",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)"
+              ],
+              "affectedRowCount": 4
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 4,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays",
+            "canonical_players",
+            "canonical_owned_pet_instances",
+            "canonical_owned_equipment_instances",
+            "canonical_equipment_definitions",
+            "object_identity_crosswalks"
+          ],
+          "before": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "after": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "replayed": null,
+          "errorCode": "MARIADB_1062_UQ_CANONICAL_OWNED_PET_EQUIPMENT_SLOT",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "SHA256_OVERFLOW",
+          "beforeSha256": "a62d6eb4cd316b60f0a69d67c65750bc77f68815bc30120c584a1f144b62614d",
+          "afterSha256": "a62d6eb4cd316b60f0a69d67c65750bc77f68815bc30120c584a1f144b62614d"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+      "traces": [
+        {
+          "processId": 10692,
+          "moduleExecutionId": "40aa90e4-931d-4d64-99a5-12a8a42f848d",
+          "role": "SEED",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedRowCount": 6
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+          ],
+          "committedRowCount": 6,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays",
+            "canonical_players",
+            "canonical_owned_pet_instances",
+            "canonical_owned_equipment_instances",
+            "canonical_equipment_definitions",
+            "object_identity_crosswalks"
+          ],
+          "before": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 0,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "LEGACY_RAW",
+          "beforeSha256": "cb871e428c8cd4b5c1e62c40f185317c6cec183f608becff273351a18e963098",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        },
+        {
+          "processId": 16932,
+          "moduleExecutionId": "5cf21de4-3b77-470c-8320-1b717742860c",
+          "role": "REPLAY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays"
+          ],
+          "before": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": true,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "LEGACY_RAW",
+          "beforeSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "traces": [
+        {
+          "processId": 6636,
+          "moduleExecutionId": "49716a0c-4738-46dc-a832-9ef34279caf4",
+          "role": "SEED",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedRowCount": 6
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+          ],
+          "committedRowCount": 6,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays",
+            "canonical_players",
+            "canonical_owned_pet_instances",
+            "canonical_owned_equipment_instances",
+            "canonical_equipment_definitions",
+            "object_identity_crosswalks"
+          ],
+          "before": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 0,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "SHA256_OVERFLOW",
+          "beforeSha256": "cb871e428c8cd4b5c1e62c40f185317c6cec183f608becff273351a18e963098",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        },
+        {
+          "processId": 5452,
+          "moduleExecutionId": "e5498788-bcec-4f1d-ac66-c274ccb8fddb",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays"
+          ],
+          "before": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": null,
+          "errorCode": "CANONICAL_PET_EQUIPMENT_REQUEST_PAYLOAD_CONFLICT",
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "SHA256_OVERFLOW",
+          "beforeSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "RESTART_REPLAY",
+      "traces": [
+        {
+          "processId": 28384,
+          "moduleExecutionId": "3bb5f76e-ad41-4f38-a304-bd4f6b8b2bd3",
+          "role": "SEED",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedRowCount": 6
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+          ],
+          "committedRowCount": 6,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays",
+            "canonical_players",
+            "canonical_owned_pet_instances",
+            "canonical_owned_equipment_instances",
+            "canonical_equipment_definitions",
+            "object_identity_crosswalks"
+          ],
+          "before": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 0,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "LEGACY_RAW",
+          "beforeSha256": "cb871e428c8cd4b5c1e62c40f185317c6cec183f608becff273351a18e963098",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        },
+        {
+          "processId": 23524,
+          "moduleExecutionId": "f1d8d2d1-7abc-4a60-a00b-ade2f4798c1e",
+          "role": "REPLAY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays"
+          ],
+          "before": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": true,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "LEGACY_RAW",
+          "beforeSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        }
+      ]
+    },
+    {
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+      "traces": [
+        {
+          "processId": 28408,
+          "moduleExecutionId": "31290c42-22a0-44f1-8df2-5978aaf64343",
+          "role": "PRIMARY",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedDmlStatements": [
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+              ],
+              "affectedRowCount": 6
+            }
+          ],
+          "committedDmlStatements": [
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO object_identities(object_identity_id,object_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO object_identity_crosswalks(object_identity_crosswalk_id,object_identity_id,source_system,source_namespace,source_identifier,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_owned_pet_equipment(owned_pet_equipment_id,owned_pet_id,owned_equipment_id,player_id,equipment_slot,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_pet_equipment_operation_replays(pet_equipment_operation_id,player_id,request_key,owned_pet_id,owned_equipment_id,equipment_slot,operation_status,owned_pet_equipment_id,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,'completed',?,?,?,?,?)"
+          ],
+          "committedRowCount": 6,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays",
+            "canonical_players",
+            "canonical_owned_pet_instances",
+            "canonical_owned_equipment_instances",
+            "canonical_equipment_definitions",
+            "object_identity_crosswalks"
+          ],
+          "before": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 0,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": false,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "LEGACY_RAW",
+          "beforeSha256": "cb871e428c8cd4b5c1e62c40f185317c6cec183f608becff273351a18e963098",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        },
+        {
+          "processId": 29140,
+          "moduleExecutionId": "0dbe0c4c-02fb-41ae-9584-7b883884e476",
+          "role": "CONCURRENT",
+          "source": {
+            "path": "개발환경_고도화/runtime/src/pet/maria-canonical-pet-equipment-repository.ts",
+            "sha256": "3955ce73cd390ab630ac77dc9d212d2f5684c6adddd7d57097df53964fe1d9ec",
+            "spanStart": 3141,
+            "spanEnd": 3937,
+            "spanSha256": "4c3d41d63f379c46055fbbfb224f35468ab59859590d601dd82fb4f236ed3a7b",
+            "catalogSpanStart": 1867,
+            "catalogSpanEnd": 2474,
+            "catalogSpanSha256": "c9fa87ef6a27d18ee4426d8253f503b7c7ff3579f23f5df1f54799e807b32a92",
+            "relocationDiffSha256": "5c22e40a8ff6df4add88f723c1a8f901bad1eaa9aae72d29a9a14a7560c0df05"
+          },
+          "database": {
+            "host": "127.0.0.1",
+            "port": 3343,
+            "name": "hoibot_wave21_pet_equipment_assign_2613"
+          },
+          "transactionAttempts": [
+            {
+              "attempt": 1,
+              "outcome": "ROLLBACK",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0
+            },
+            {
+              "attempt": 2,
+              "outcome": "COMMIT",
+              "attemptedDmlStatements": [],
+              "affectedDmlStatements": [],
+              "affectedRowCount": 0
+            }
+          ],
+          "committedDmlStatements": [],
+          "committedRowCount": 0,
+          "rolledBackAffectedRowCount": 0,
+          "lockOrder": [
+            "canonical_pet_equipment_operation_replays",
+            "canonical_players"
+          ],
+          "before": {
+            "object_identities": 0,
+            "object_identity_crosswalks": 0,
+            "canonical_owned_pet_equipment": 0,
+            "canonical_pet_equipment_operation_replays": 0
+          },
+          "after": {
+            "object_identities": 2,
+            "object_identity_crosswalks": 2,
+            "canonical_owned_pet_equipment": 1,
+            "canonical_pet_equipment_operation_replays": 1
+          },
+          "replayed": true,
+          "errorCode": null,
+          "externalNetworkCalls": 0,
+          "replyCalls": 0,
+          "locatorMode": "LEGACY_RAW",
+          "beforeSha256": "cb871e428c8cd4b5c1e62c40f185317c6cec183f608becff273351a18e963098",
+          "afterSha256": "82b534c805743b834b2ecf4266d5481133dfe8a0e389e575cd961762455113f4"
+        }
+      ]
+    }
+  ]
+}

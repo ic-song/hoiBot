@@ -1,0 +1,53 @@
+{
+  "contractVersion": "RFA01_REQUEST_REUSE_V1",
+  "lookup": {
+    "key": "requestKey",
+    "rule": "The atomic store locks and looks up the raw external request key so scope, actor, player, operation and target drift cannot create a second effect."
+  },
+  "identityFields": [
+    "contractVersion",
+    "scope",
+    "requestKey",
+    "sourceEventId",
+    "actor.actorType",
+    "actor.actorId",
+    "actor.playerId",
+    "operationKind",
+    "targetType",
+    "targetId"
+  ],
+  "payloadRule": "Object keys are sorted; array order is preserved; null, boolean, safe number, bigint and string have distinct type tags; proxies, unsupported prototypes, accessors, holes, symbols, undefined, unsafe integers, non-finite numbers, cycles and depth above 64 fail closed.",
+  "boundarySnapshotRule": "Input, actor, receipt and result boundaries accept only exact plain data objects, arrays and canonical primitives. Each boundary is descriptor-snapshotted once before fingerprinting, comparison or return; proxies, accessors, symbols and noncanonical extra fields fail closed, including nested actor, player, target and result data.",
+  "terminalReceipt": [
+    "contractVersion",
+    "requestKey",
+    "identityFingerprint",
+    "payloadFingerprint",
+    "requestFingerprint",
+    "resultFingerprint",
+    "result"
+  ],
+  "atomicStoreRule": "withLockedRequestKey must serialize the same requestKey and commit or roll back the business effect and terminal receipt together. Concrete database participant/outbox adoption belongs to RFA-02.",
+  "legacyCompatibility": {
+    "CURRENCY_V1": "Exact existing JSON tuple currencyId/deltaMinorAmount decimal string/operationKind/reasonKey only.",
+    "FURNITURE_V1": "Exact existing JSON array operationKind followed by operation-specific ordered string values only.",
+    "APP_WIRING_V1": "Exact existing request namespace/entrypoint/external id identity hash plus canonical normalized payload hash only.",
+    "notCompatible": [
+      "canonical item inventory receipt without payload fingerprint",
+      "legacy operations result_json without a request fingerprint"
+    ],
+    "boundary": "Legacy projectors validate only fields actually persisted by that version and never promote the receipt to complete RFA01 identity coverage."
+  },
+  "errorCodes": [
+    "REQUEST_REUSE_CONTRACT_CONFLICT",
+    "REQUEST_REUSE_IDENTITY_CONFLICT",
+    "REQUEST_REUSE_PAYLOAD_CONFLICT",
+    "REQUEST_REUSE_RESULT_CONFLICT",
+    "REQUEST_REUSE_VALUE_NOT_CANONICAL",
+    "REQUEST_REUSE_LEGACY_CURRENCY_CONFLICT",
+    "REQUEST_REUSE_LEGACY_FURNITURE_CONFLICT",
+    "REQUEST_REUSE_LEGACY_FURNITURE_SHAPE_INVALID",
+    "REQUEST_REUSE_LEGACY_APP_WIRING_CONFLICT",
+    "REQUEST_REUSE_LEGACY_APP_WIRING_SHAPE_INVALID"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "format": "hoibot-object-db-consumer-classification-addendum-v1",
+  "consumerId": "legacy-94904fa11988ff04",
+  "originalClassification": "FROZEN_PRESERVED",
+  "correctionKind": "OVER_APPROXIMATE_REACHABLE_HELPER_DEPENDENCY",
+  "frozenLocator": {
+    "kind": "LEGACY_COMMAND",
+    "file": "main.js",
+    "symbol": "response",
+    "triggerOrPredicate": "msg === \"/가방\" || msg === \"ㄴㄴㄴ\"",
+    "primarySlice": "ITEM",
+    "targetSelectorId": "selector:ITEM",
+    "interfaceId": "item.legacy-command.7fd30321f996",
+    "sourceSpan": {
+      "start": 884372,
+      "end": 885675,
+      "sha256": "2fb7e40c328fc01e0c12677fa6acc8424b638842b9d17e40cb4fa91226eb98fb"
+    },
+    "originalDependentSlices": ["PET-EQUIPMENT"]
+  },
+  "effectiveOutputDependencies": ["ITEM_STACK_BAG", "RANK_GUILD_PRESENTATION"],
+  "effectiveDependentSlices": [],
+  "effectiveReadTables": [
+    "canonical_item_definitions",
+    "canonical_owned_item_stacks",
+    "canonical_players"
+  ],
+  "excludedCompletenessDomains": [
+    "canonical_owned_item_instances",
+    "PET-EQUIPMENT"
+  ],
+  "reason": "petData is passed to checkRank but never dereferenced; generateBagOutput consumes only flat bag name and quantity",
+  "sideEffectCondition": {
+    "requiredContract": "legacy-rank-label-runtime-source.v1.json",
+    "requiredContractSha256": "8eb92b41c517d632b9daf5c5e235ba329964d34a362623af4a18f2ed52290b4d",
+    "requiredProjectionVersion": "LEGACY_RANK_LABEL_SIDE_EFFECT_V1",
+    "requiredDecision": "NO_WRITE",
+    "requiredFunctions": ["checkRank", "getMyGuildId", "getMyGuildInfo", "generateBagOutput"],
+    "requiredImplementationSources": [
+      {
+        "role": "PROJECTOR",
+        "path": "개발환경_고도화/runtime/src/data-migration/legacy-rank-label-side-effect-certificate-projector.ts",
+        "sha256": "05f22aaa5ae5c9304c53face8fdd08bb2ebbd5b136ba29df7a005eaf6fd9d36a"
+      },
+      {
+        "role": "READINESS_PROVIDER",
+        "path": "개발환경_고도화/runtime/src/inventory/legacy-rank-label-side-effect-readiness-provider.ts",
+        "sha256": "165d6ec1c736af03bb3043b41e33324deed9b402ee9c47ad8afe6cd8d1e4ec25"
+      },
+      {
+        "role": "SCHEMA_MIGRATION",
+        "path": "개발환경_고도화/runtime/migrations/489_legacy_rank_label_side_effect_certificate.sql",
+        "sha256": "3e80d77344d3707ff3a357853ec0020de2b8bc6ad0f4908fbabe8a0c0e091eef"
+      }
+    ]
+  },
+  "operationalDataAllowed": false
+}

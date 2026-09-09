@@ -165,6 +165,7 @@ export class AdminAccountSuspensionService {
   }): Promise<AccountSuspensionResult> {
     const scope = `admin.account_suspension.${input.parsed.kind}`;
     return this.database.withTransaction(async (transaction) => {
+      await transaction.query("SELECT lock_key FROM canonical_account_authority_global_locks WHERE lock_key='ACCOUNT_AUTHORITY' FOR UPDATE");
       const operation = await transaction.execute(
         `INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at)
          VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))

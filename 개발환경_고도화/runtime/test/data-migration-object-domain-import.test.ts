@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { createDatabaseClient, type DatabaseClient, type DatabaseTransaction, type DatabaseWriteResult } from "../src/database.js";
 import { loadConfig } from "../src/config.js";
 import { calculateCatalogTargetSchemaSha256 } from "../src/data-migration/catalog-projection-provider.js";
-import { assertObjectDomainImportDatabaseName, assertObjectDomainImportUpstreamEnvelope, buildObjectDomainImportPlan, calculateObjectDomainImportSemanticSha256, MariaObjectDomainImporter, stableDomainImportJson, type DomainImportPolicy } from "../src/data-migration/object-domain-importer.js";
+import { assertObjectDomainImportDatabaseName, assertObjectDomainImportUpstreamEnvelope, buildObjectDomainImportPlan, calculateObjectDomainImportComponentSemanticSha256, calculateObjectDomainImportContractSemanticSha256, calculateObjectDomainImportSemanticSha256, MariaObjectDomainImporter, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256, OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION, stableDomainImportJson, type DomainImportPolicy } from "../src/data-migration/object-domain-importer.js";
 
 const base = "../../migration-control/contracts/";
 const schemaBytes = readFileSync(new URL(`${base}object-domain-import-target-schema.v1.json`, import.meta.url));
@@ -19,17 +19,19 @@ const objectModel = JSON.parse(objectModelText) as { registeredMigrations: strin
 const disposition = JSON.parse(dispositionText) as { definitionSeed: string[]; stateImport: string[]; initialLedger: string[]; quarantineOnly: string[] };
 const fieldMap = JSON.parse(fieldMapText) as { recordQuarantine: string[]; mappings: Array<{ domain: string; targetTables: string[] }> };
 const contractBytes = readFileSync(new URL(`${base}data-migration-object-domain-import.v1.json`, import.meta.url));
-const contract = JSON.parse(contractBytes.toString("utf8")) as { migration: string; directTargetCount: number; targetColumnCount: number; definitionTargetCount: number; componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; tables: Array<{ primaryKey: string; auditColumns: string[] }> };
+const contract = JSON.parse(contractBytes.toString("utf8")) as { migration: string; directTargetCount: number; targetColumnCount: number; definitionTargetCount: number; componentSemanticSha256: DomainImportPolicy["contractComponentSemanticSha256"]; semanticHashPolicy: { projectionVersion: string; currentImportContractProjectionSha256: string; acceptedCompatibleImportContractSha256: string[]; preservedPre466FullDocumentComponentSha256: { objectModel: string; disposition: string } }; tables: Array<{ primaryKey: string; auditColumns: string[] }> };
 const fixture = JSON.parse(readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/data-migration-object-domain-import-v1.json", import.meta.url), "utf8")) as { directTargetCount: number; targetColumnCount: number; definitionTargetCount: number; syntheticProjectionRowCount: number; gate5SourceDecisionCount: number; gate6SourceDecisionCount: number; gate6ProjectedDecisionCount: number; gate6QuarantinedDecisionCount: number; gate6IgnoredDecisionCount: number; exactDisplayName: string; scenarios: string[] };
 const migration = readFileSync(new URL("../migrations/460_data_migration_object_domain_import.sql", import.meta.url), "utf8");
 const rollback = readFileSync(new URL("../migrations/rollback/460_data_migration_object_domain_import.rollback.sql", import.meta.url), "utf8");
 const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
 const directTargets = [...disposition.definitionSeed, ...disposition.stateImport, ...disposition.initialLedger, ...disposition.quarantineOnly];
+const importContractSha256 = calculateObjectDomainImportContractSemanticSha256(contractBytes.toString("utf8"));
 const policy: DomainImportPolicy = {
   catalogVersion: schema.catalogVersion,
   targetSchemaSha256: calculateCatalogTargetSchemaSha256(schemaBytes.toString("utf8")),
-  importContractSha256: calculateObjectDomainImportSemanticSha256(contractBytes.toString("utf8")),
-  componentSemanticSha256: { identityBindings: calculateObjectDomainImportSemanticSha256(identityText), objectModel: calculateObjectDomainImportSemanticSha256(objectModelText), disposition: calculateObjectDomainImportSemanticSha256(dispositionText), fieldMap: calculateObjectDomainImportSemanticSha256(fieldMapText) },
+  importContractSha256,
+  acceptedImportContractSha256: [importContractSha256, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256],
+  componentSemanticSha256: { identityBindings: calculateObjectDomainImportComponentSemanticSha256("identityBindings", identityText, directTargets), objectModel: calculateObjectDomainImportComponentSemanticSha256("objectModel", objectModelText, directTargets), disposition: calculateObjectDomainImportComponentSemanticSha256("disposition", dispositionText, directTargets), fieldMap: calculateObjectDomainImportComponentSemanticSha256("fieldMap", fieldMapText, directTargets) },
   contractComponentSemanticSha256: contract.componentSemanticSha256,
   columns: schema.columns,
   generatedBindings: identity.generatedCuidBindings,
@@ -276,6 +278,22 @@ class DomainImportDatabase implements DatabaseClient {
   }
 }
 
+function rewriteCompleteRunAsPre466(database: DomainImportDatabase): void {
+  assert.ok(database.prior);
+  const plan = buildObjectDomainImportPlan(database.input.run, database.input.decisions, database.input.rows, policy);
+  database.prior.import_contract_sha256 = OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256;
+  database.prior.import_sha256 = hash(stableDomainImportJson({
+    catalogProjectionRunId: database.input.run.catalog_projection_run_id,
+    projectionManifestSha256: database.input.run.projection_manifest_sha256,
+    projectionSha256: database.input.run.projection_sha256,
+    upstreamEnvelopeSha256: database.input.run.upstream_envelope_sha256,
+    targetSchemaSha256: policy.targetSchemaSha256,
+    importContractSha256: OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256,
+    decisions: plan.decisions.map((row) => ({ id: row.catalog_source_decision_id, fingerprint: row.decision_fingerprint })).sort((a, b) => a.id.localeCompare(b.id, "en")),
+    rows: plan.rows.map((row) => ({ id: row.catalog_projection_record_id, fingerprint: row.bindingFingerprint }))
+  }));
+}
+
 class RollbackDomainImportDatabase extends DomainImportDatabase {
   targetInsertCount = 0;
   override async withTransaction<T>(work: (transaction: DatabaseTransaction) => Promise<T>): Promise<T> {
@@ -351,12 +369,61 @@ describe("object domain import Gate 3/4", () => {
     assert.equal(calculateCatalogTargetSchemaSha256(schemaText.replace(/\r?\n/g, "\n")), policy.targetSchemaSha256);
     assert.equal(calculateCatalogTargetSchemaSha256(schemaText.replace(/\r?\n/g, "\r\n")), policy.targetSchemaSha256);
     const contractText = contractBytes.toString("utf8");
-    assert.equal(calculateObjectDomainImportSemanticSha256(contractText.replace(/\r?\n/g, "\n")), policy.importContractSha256);
-    assert.equal(calculateObjectDomainImportSemanticSha256(contractText.replace(/\r?\n/g, "\r\n")), policy.importContractSha256);
+    assert.equal(calculateObjectDomainImportContractSemanticSha256(contractText.replace(/\r?\n/g, "\n")), policy.importContractSha256);
+    assert.equal(calculateObjectDomainImportContractSemanticSha256(contractText.replace(/\r?\n/g, "\r\n")), policy.importContractSha256);
+    assert.equal(contract.semanticHashPolicy.projectionVersion, OBJECT_DOMAIN_IMPORT_SEMANTIC_PROJECTION_VERSION);
+    assert.equal(contract.semanticHashPolicy.currentImportContractProjectionSha256, policy.importContractSha256);
+    assert.deepEqual(policy.componentSemanticSha256, contract.componentSemanticSha256);
+    const runtimeOnlyObjectModel = JSON.parse(objectModelText) as any;
+    runtimeOnlyObjectModel.tables.push({ table: "canonical_runtime_only_probe", role: "operation", columns: [] });
+    assert.equal(calculateObjectDomainImportComponentSemanticSha256("objectModel", JSON.stringify(runtimeOnlyObjectModel), directTargets), policy.componentSemanticSha256.objectModel);
+    const runtimeOnlyDisposition = JSON.parse(dispositionText) as any;
+    runtimeOnlyDisposition.runtimeOnly.push("canonical_runtime_only_probe");
+    runtimeOnlyDisposition.objectContractMigrationBaseline.push("999_runtime_only_probe.sql");
+    assert.equal(calculateObjectDomainImportComponentSemanticSha256("disposition", JSON.stringify(runtimeOnlyDisposition), directTargets), policy.componentSemanticSha256.disposition);
+    const directDispositionDrift = structuredClone(runtimeOnlyDisposition);
+    directDispositionDrift.definitionSeed = directDispositionDrift.definitionSeed.slice().reverse();
+    assert.notEqual(calculateObjectDomainImportComponentSemanticSha256("disposition", JSON.stringify(directDispositionDrift), directTargets), policy.componentSemanticSha256.disposition);
+    assert.deepEqual(contract.semanticHashPolicy.preservedPre466FullDocumentComponentSha256, {
+      objectModel: "3243e74e6e444dcb57c5c592cadb8d3f439663d60fdc76b383aa376ace747647",
+      disposition: "9a7aeee6a699e1d17b0a4223a00379dea3b893954b8ad94d8bec003ffe246609"
+    });
+    const pre466Contract = JSON.parse(contractText) as any;
+    delete pre466Contract.semanticHashPolicy;
+    pre466Contract.componentSemanticSha256.objectModel = contract.semanticHashPolicy.preservedPre466FullDocumentComponentSha256.objectModel;
+    pre466Contract.componentSemanticSha256.disposition = contract.semanticHashPolicy.preservedPre466FullDocumentComponentSha256.disposition;
+    assert.equal(calculateObjectDomainImportSemanticSha256(JSON.stringify(pre466Contract)), contract.semanticHashPolicy.acceptedCompatibleImportContractSha256[0]);
+    const unversionedPolicy = JSON.parse(contractText) as any;
+    unversionedPolicy.semanticHashPolicy.projectionVersion = "UNVERSIONED";
+    assert.throws(() => calculateObjectDomainImportContractSemanticSha256(JSON.stringify(unversionedPolicy)), /SEMANTIC_HASH_POLICY_INVALID/);
+    const broadCompatibility = JSON.parse(contractText) as any;
+    broadCompatibility.semanticHashPolicy.acceptedCompatibleImportContractSha256.push(H(1888));
+    assert.throws(() => calculateObjectDomainImportContractSemanticSha256(JSON.stringify(broadCompatibility)), /SEMANTIC_HASH_POLICY_INVALID/);
+    const arbitraryCompatibility = JSON.parse(contractText) as any;
+    arbitraryCompatibility.semanticHashPolicy.acceptedCompatibleImportContractSha256 = [H(1889)];
+    assert.throws(() => calculateObjectDomainImportContractSemanticSha256(JSON.stringify(arbitraryCompatibility)), /SEMANTIC_HASH_POLICY_INVALID/);
+    const missingCompatibility = JSON.parse(contractText) as any;
+    missingCompatibility.semanticHashPolicy.acceptedCompatibleImportContractSha256 = [];
+    assert.throws(() => calculateObjectDomainImportContractSemanticSha256(JSON.stringify(missingCompatibility)), /SEMANTIC_HASH_POLICY_INVALID/);
+    const currentAsLegacy = JSON.parse(contractText) as any;
+    currentAsLegacy.semanticHashPolicy.acceptedCompatibleImportContractSha256 = [policy.importContractSha256];
+    assert.throws(() => calculateObjectDomainImportContractSemanticSha256(JSON.stringify(currentAsLegacy)), /SEMANTIC_HASH_POLICY_INVALID/);
+    const importBehaviorDrift = JSON.parse(contractText) as any;
+    importBehaviorDrift.transactionBoundary = "DRIFT";
+    assert.throws(() => calculateObjectDomainImportContractSemanticSha256(JSON.stringify(importBehaviorDrift)), /CONTRACT_PROJECTION_DRIFT/);
     const driftPolicy = structuredClone(policy);
     driftPolicy.componentSemanticSha256.fieldMap = H(1400);
     const input = completeInput();
     assert.throws(() => buildObjectDomainImportPlan(input.run, input.decisions, input.rows, driftPolicy), /COMPONENT_CONTRACT_DRIFT/);
+    for (const acceptedImportContractSha256 of [
+      [],
+      [policy.importContractSha256],
+      [policy.importContractSha256, H(1900)],
+      [policy.importContractSha256, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256, H(1901)],
+      [policy.importContractSha256, policy.importContractSha256]
+    ]) {
+      assert.throws(() => buildObjectDomainImportPlan(input.run, input.decisions, input.rows, { ...policy, acceptedImportContractSha256 }), /COMPATIBLE_CONTRACT_POLICY_INVALID/);
+    }
   });
 
   it("atomically imports all 45 targets and exact replay performs zero writes", async () => {
@@ -369,6 +436,35 @@ describe("object domain import Gate 3/4", () => {
     const replay = await importer.importProjection(database.input.run.catalog_projection_run_id, policy, "object-domain-import");
     assert.deepEqual(replay, { objectDomainImportRunId: first.objectDomainImportRunId, insertedCanonicalRows: 0, insertedDecisionReceipts: 0, replayed: true });
     assert.equal(database.writes.length, beforeReplay);
+  });
+
+  it("replays and rolls back the one explicitly accepted pre-466 COMPLETE contract identity", async () => {
+    assert.deepEqual(contract.semanticHashPolicy.acceptedCompatibleImportContractSha256, [OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256]);
+    assert.deepEqual(policy.acceptedImportContractSha256, [policy.importContractSha256, OBJECT_DOMAIN_IMPORT_PRE_466_COMPATIBLE_CONTRACT_SHA256]);
+
+    const replayDatabase = new DomainImportDatabase();
+    const replayImporter = new MariaObjectDomainImporter(replayDatabase, () => new Date("2026-09-03T09:00:00Z"));
+    const first = await replayImporter.importProjection(replayDatabase.input.run.catalog_projection_run_id, policy, "object-domain-import");
+    rewriteCompleteRunAsPre466(replayDatabase);
+    const beforeReplay = replayDatabase.writes.length;
+    assert.equal((await replayImporter.importProjection(replayDatabase.input.run.catalog_projection_run_id, policy, "object-domain-import")).objectDomainImportRunId, first.objectDomainImportRunId);
+    assert.equal(replayDatabase.writes.length, beforeReplay);
+
+    const rollbackDatabase = new DomainImportDatabase();
+    const rollbackImporter = new MariaObjectDomainImporter(rollbackDatabase, () => new Date("2026-09-03T09:00:00Z"));
+    await rollbackImporter.importProjection(rollbackDatabase.input.run.catalog_projection_run_id, policy, "object-domain-import");
+    rewriteCompleteRunAsPre466(rollbackDatabase);
+    assert.equal(await rollbackImporter.rollback(rollbackDatabase.input.run.catalog_projection_run_id, policy), 1);
+
+    const rejectedDatabase = new DomainImportDatabase();
+    const rejectedImporter = new MariaObjectDomainImporter(rejectedDatabase, () => new Date("2026-09-03T09:00:00Z"));
+    await rejectedImporter.importProjection(rejectedDatabase.input.run.catalog_projection_run_id, policy, "object-domain-import");
+    rewriteCompleteRunAsPre466(rejectedDatabase);
+    rejectedDatabase.prior.import_contract_sha256 = H(1777);
+    const writeCount = rejectedDatabase.writes.length;
+    await assert.rejects(() => rejectedImporter.importProjection(rejectedDatabase.input.run.catalog_projection_run_id, policy, "object-domain-import"), /CONTRACT_IDENTITY_INCOMPATIBLE/);
+    await assert.rejects(() => rejectedImporter.rollback(rejectedDatabase.input.run.catalog_projection_run_id, policy), /CONTRACT_IDENTITY_INCOMPATIBLE/);
+    assert.equal(rejectedDatabase.writes.length, writeCount);
   });
 
   it("compares database-scaled decimals without losing precision or treating scale as drift", async () => {
@@ -419,7 +515,7 @@ describe("object domain import Gate 3/4", () => {
     assert.equal(database.identities.size, identityCount);
     assert.equal(database.input.run, projectionRun);
     const deletes = database.writes.filter((write) => /^DELETE FROM (?!data_migration_)/.test(write.sql));
-    assert.equal(deletes.length, 47);
+    assert.equal(deletes.length, 48);
   });
 
   it("fails rollback before writes when a receipt is redirected to another allowed target", async () => {
@@ -562,6 +658,15 @@ describe("object domain import Gate 3/4", () => {
       refreshProjectionFingerprints(invalidOwnership);
       assert.throws(() => buildObjectDomainImportPlan(invalidOwnership.run, invalidOwnership.decisions, invalidOwnership.rows, policy), /DATABASE_CHECK_INVALID/);
     }
+  });
+
+  it("accepts canonical pet-skill equipment slots 31 through 40 and rejects 41", () => {
+    for (const slot_number of [31,40]) {
+      const input=completeInput();const row=input.rows.find((candidate)=>candidate.target_table_name==="canonical_owned_pet_skill_equipments")!;
+      setRowPayload(row,{slot_number:String(slot_number)});refreshProjectionFingerprints(input);assert.doesNotThrow(()=>buildObjectDomainImportPlan(input.run,input.decisions,input.rows,policy));
+    }
+    const invalid=completeInput();const row=invalid.rows.find((candidate)=>candidate.target_table_name==="canonical_owned_pet_skill_equipments")!;
+    setRowPayload(row,{slot_number:"41"});refreshProjectionFingerprints(invalid);assert.throws(()=>buildObjectDomainImportPlan(invalid.run,invalid.decisions,invalid.rows,policy),/DATABASE_CHECK_INVALID/);
   });
 
   it("requires an owned positive pet-skill stack for the same player and skill", () => {

@@ -1,0 +1,59 @@
+import assert from "node:assert/strict";
+import {buildApp} from "../src/app.js";
+import {loadConfig} from "../src/config.js";
+import {createDatabaseClient,type DatabaseClient} from "../src/database.js";
+import {createEnvironmentContext,verifyStartupDatabaseIdentity} from "../src/runtime/environment-context.js";
+
+const required=(name:string):string=>{const value=process.env[name];if(value===undefined||value==="")throw new Error(`${name} required`);return value;};
+const databaseIdentity=required("DATABASE_NAME"),token=required("IRIS_SHARED_TOKEN"),externalUserId="wbs765-private-user",roomId="990000000000765";
+const open=()=>createDatabaseClient({enabled:true,host:required("DATABASE_HOST"),port:Number(required("DATABASE_PORT")),user:required("DATABASE_USER"),password:required("DATABASE_PASSWORD"),name:databaseIdentity,connectionLimit:6,connectTimeoutMs:5000});
+const config=(environmentCode:"dev"|"prod")=>loadConfig({NODE_ENV:"test",HOIBOT_ENVIRONMENT_CODE:environmentCode,IRIS_SHARED_TOKEN:token,USER_VERIFICATION_PEPPER:required("USER_VERIFICATION_PEPPER"),DATABASE_ENABLED:"true",DATABASE_HOST:required("DATABASE_HOST"),DATABASE_PORT:required("DATABASE_PORT"),DATABASE_USER:required("DATABASE_USER"),DATABASE_PASSWORD:required("DATABASE_PASSWORD"),DATABASE_NAME:databaseIdentity});
+const send=(app:ReturnType<typeof buildApp>,id:string,message:string,userId=externalUserId)=>app.inject({method:"POST",url:`/api/v1/integrations/iris/events?token=${token}`,payload:{msg:message,room:"WBS765 합성 개인방",sender:"호이 남",json:{_id:id,chat_id:roomId,user_id:userId}}});
+const operationRows=(database:DatabaseClient,eventId:string)=>database.query<Array<{operation_id:bigint;operation_status:string;result_json:string|Record<string,unknown>;execution_status:string;result_code:string;outbox_count:bigint}>>(`SELECT operation.id operation_id,operation.status operation_status,operation.result_json,execution.execution_status,execution.result_code,(SELECT COUNT(*) FROM outbox_messages outbox WHERE outbox.operation_id=operation.id) outbox_count FROM command_executions execution JOIN operations operation ON operation.id=execution.operation_id WHERE execution.event_id=? AND execution.command_code='PET_SKILL_INFO'`,[`iris:${eventId}`]);
+const parse=(value:string|Record<string,unknown>)=>typeof value==="string"?JSON.parse(value)as Record<string,unknown>:value;
+
+async function application(database:DatabaseClient,environmentCode:"dev"|"prod",channel:"private"|"group"){
+  const environmentContext=await verifyStartupDatabaseIdentity(database,createEnvironmentContext({environmentCode,databaseIdentity}));
+  return buildApp(config(environmentCode),{database,environmentContext,inspectIrisChannel:async()=>channel==="private"
+    ?{mode:"denied",channelClass:"open_direct",reason:"open_direct_unverified",evidence:{roomType:"DirectChat",linkId:"wbs765-direct"}}
+    :{mode:"operational",channelClass:"open_group",reason:"allowed",evidence:{roomType:"OM",linkId:"wbs765-open",openLinkId:"wbs765-open",openLinkActive:true,openLinkExpired:false}},
+    sendIrisTextReply:async()=>{throw new Error("WBS765_SHADOW_MUST_NOT_REPLY");}});
+}
+
+async function main(){
+  let database=open();process.env.PARTIAL_COMMAND_DISPATCH_ENABLED="true";
+  try{
+    if(process.argv.includes("--verify-restart")){
+      const app=await application(database,"dev","private");try{const replay=await send(app,"wbs765-private-success","/펫스킬정보");assert.equal(replay.statusCode,202,replay.body);assert.equal(JSON.parse(replay.body).duplicate,true);assert.equal((await operationRows(database,"wbs765-private-success")).length,1);}finally{await app.close();database=open();}
+      console.log("WBS765_RESTART_REPLAY_PASS handler=0 operation=1 execution=1 outbox=0");return;
+    }
+    const seedOperation=await database.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,source_code,status,created_at,completed_at) VALUES(UUID(),'test.wbs765.seed','wbs765-seed','system','test','completed',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))");
+    const player=await database.execute("INSERT INTO players(status,version) VALUES('active',1)");
+    await database.execute("INSERT INTO player_profiles(player_id,current_display_name,version) VALUES(?,'호이 남',1)",[player.insertId]);
+    await database.execute("INSERT INTO external_identities(player_id,provider_code,external_user_id,display_name,status) VALUES(?,'kakao',?,'호이 남','linked')",[player.insertId,externalUserId]);
+    await database.execute("INSERT INTO player_support_passes(player_id,pass_code,entitlement_kind,end_date,status,version,created_operation_id,updated_operation_id,created_at,updated_at) VALUES(?,'hoi','permanent',NULL,'active',1,?,?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[player.insertId,seedOperation.insertId,seedOperation.insertId]);
+    const sourceBefore=(await database.query<Array<{players:bigint;passes:bigint;catalog:bigint}>>("SELECT (SELECT COUNT(*) FROM players) players,(SELECT COUNT(*) FROM player_support_passes) passes,(SELECT COUNT(*) FROM canonical_pet_skill_definitions) catalog"))[0]!;
+    const privateApp=await application(database,"dev","private");
+    try{
+      const first=await send(privateApp,"wbs765-private-success","/펫스킬정보");if(first.statusCode!==202)console.error(JSON.stringify(await database.query("SELECT event_id,processing_status,error_code FROM event_inbox WHERE event_id='iris:wbs765-private-success'"),(_key,value)=>typeof value==="bigint"?value.toString():value));assert.equal(first.statusCode,202,first.body);assert.equal(JSON.parse(first.body).ignored,false);
+      const receipt=(await operationRows(database,"wbs765-private-success"));assert.equal(receipt.length,1);assert.equal(receipt[0]!.operation_status,"completed");assert.equal(receipt[0]!.execution_status,"completed");assert.equal(receipt[0]!.result_code,"no_reply");assert.equal(receipt[0]!.outbox_count,0n);
+      const stored=parse(receipt[0]!.result_json),projection=stored.receiptProjection as {version:string;binding:{rawMessage:string;effectiveMessage:string;devContext:string;environmentCode:string;databaseIdentity:string;channelType:string};authorization:{mode:string;activePassCodes:string[]};value:{reply:string}};
+      assert.equal(projection.version,"PET_SKILL_INFO_PRIVATE_DEV_FORMAL_RECEIPT_V1");assert.deepEqual(projection.binding,{...projection.binding,rawMessage:"/펫스킬정보",effectiveMessage:"/펫스킬정보",devContext:"DEFAULT",environmentCode:"dev",databaseIdentity,channelType:"open_direct"});assert.deepEqual(projection.authorization.activePassCodes,["hoi"]);assert.match(projection.value.reply,/^사용법:/);
+      const replay=await send(privateApp,"wbs765-private-success","/펫스킬정보");assert.equal(replay.statusCode,202,replay.body);assert.equal(JSON.parse(replay.body).duplicate,true);assert.equal((await operationRows(database,"wbs765-private-success")).length,1);
+      const sibling=await send(privateApp,"wbs765-private-sibling","/펫스킬");assert.equal(sibling.statusCode,202);assert.equal(JSON.parse(sibling.body).ignored,true);
+      const drift=await send(privateApp,"wbs765-private-success","/펫스킬정보 청룡언월도");assert.equal(drift.statusCode,500,drift.body);
+    }finally{await privateApp.close();database=open();}
+    const deniedPlayer=await database.execute("INSERT INTO players(status,version) VALUES('active',1)");await database.execute("INSERT INTO player_profiles(player_id,current_display_name,version) VALUES(?,'거부자',1)",[deniedPlayer.insertId]);await database.execute("INSERT INTO external_identities(player_id,provider_code,external_user_id,display_name,status) VALUES(?,'kakao','wbs765-denied-user','거부자','linked')",[deniedPlayer.insertId]);
+    const deniedApp=await application(database,"dev","private");try{const denied=await send(deniedApp,"wbs765-private-denied","/펫스킬정보","wbs765-denied-user");assert.equal(denied.statusCode,202,denied.body);const body=JSON.parse(denied.body);assert.equal(body.ok,true);assert.equal(body.accepted,true);assert.equal(body.ignored,true);assert.equal(body.ignoreReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");assert.equal(typeof body.requestId,"string");const replay=await send(deniedApp,"wbs765-private-denied","/펫스킬정보","wbs765-denied-user"),replayBody=JSON.parse(replay.body);assert.equal(replay.statusCode,202,replay.body);assert.equal(replayBody.ignored,true);assert.equal(replayBody.ignoreReason,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");const rows=await operationRows(database,"wbs765-private-denied");assert.equal(rows.length,1);assert.equal(rows[0]!.operation_status,"failed");assert.equal(rows[0]!.result_code,"PET_SKILL_INFO_PRIVATE_PASS_REQUIRED");}finally{await deniedApp.close();database=open();}
+    const devApp=await application(database,"dev","group");try{const dev=await send(devApp,"wbs765-dev-header","dev/  펫스킬정보");assert.equal(dev.statusCode,202,dev.body);const row=(await operationRows(database,"wbs765-dev-header"))[0]!,projection=(parse(row.result_json).receiptProjection as {value:{reply:string}});assert.match(projection.value.reply,/^\[DEV 테스트환경\]\n사용법:/);}finally{await devApp.close();database=open();}
+    const prodApp=await application(database,"prod","group");try{const rejected=await send(prodApp,"wbs765-prod-dev-rejected","dev/펫스킬정보");assert.equal(rejected.statusCode,202,rejected.body);const body=JSON.parse(rejected.body);assert.equal(body.ok,true);assert.equal(body.accepted,true);assert.equal(body.ignored,true);assert.equal(body.ignoreReason,"PET_SKILL_INFO_DEV_ENVIRONMENT_REQUIRED");assert.equal(typeof body.requestId,"string");assert.equal((await operationRows(database,"wbs765-prod-dev-rejected")).length,0);}finally{await prodApp.close();database=open();}
+    const retryId="wbs765-private-retry",locker=open();let release!:()=>void,locked!:()=>void;const acquired=new Promise<void>(resolve=>{locked=resolve;}),gate=new Promise<void>(resolve=>{release=resolve;});
+    const holding=locker.withTransaction(async transaction=>{await transaction.execute("UPDATE external_identities SET display_name=display_name WHERE provider_code='kakao' AND external_user_id=?",[externalUserId]);locked();await gate;});await acquired;
+    const retryApp=await application(database,"dev","private");const timer=setTimeout(release,1250);try{const retried=await send(retryApp,retryId,"/펫스킬정보");assert.equal(retried.statusCode,202,retried.body);}finally{clearTimeout(timer);release();await holding;await retryApp.close();await locker.close();database=open();}
+    const attempts=(await database.query<Array<{attempt_count:bigint}>>("SELECT attempt_count FROM canonical_app_wiring_operations WHERE external_request_id=?",[`iris:${retryId}`]))[0]!;assert.ok(attempts.attempt_count>=2n);
+    const tamperId="wbs765-tamper",tamperApp=await application(database,"dev","group");try{assert.equal((await send(tamperApp,tamperId,"/펫스킬정보")).statusCode,202);const row=(await operationRows(database,tamperId))[0]!;await database.execute("UPDATE operations SET result_json=JSON_SET(result_json,'$.receiptProjection.binding.rawMessage','/변조') WHERE id=?",[row.operation_id]);const rejected=await send(tamperApp,tamperId,"/펫스킬정보");assert.equal(rejected.statusCode,500,rejected.body);}finally{await tamperApp.close();database=open();}
+    const sourceAfter=(await database.query<Array<{players:bigint;passes:bigint;catalog:bigint}>>("SELECT (SELECT COUNT(*) FROM players) players,(SELECT COUNT(*) FROM player_support_passes) passes,(SELECT COUNT(*) FROM canonical_pet_skill_definitions) catalog"))[0]!;assert.equal(sourceAfter.players,sourceBefore.players+1n);assert.equal(sourceAfter.passes,sourceBefore.passes);assert.equal(sourceAfter.catalog,sourceBefore.catalog);
+    console.log(`WBS765_SYNTHETIC_PASS private=true dev=true prodReject=true authDenied=true replay=true retry1205=true tamper=true drift=true sourceDomainDmlZero=true port=${required("DATABASE_PORT")}`);
+  }finally{delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED;await database.close();}
+}
+await main();

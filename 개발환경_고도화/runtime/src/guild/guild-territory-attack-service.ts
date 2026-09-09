@@ -2,7 +2,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { resolveCanonicalCurrencyCode } from "../currency/currency-code-scope-resolver.js";
 import { createScopedDatabaseClient, type DatabaseClient, type DatabaseTransaction } from "../database.js";
 import { ApplicationError } from "../shared/application-error.js";
+import { withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
+import { GuildTerritoryAttackRuntime4PolicyProvider } from "./guild-territory-attack-runtime4-policy-provider.js";
 import { GuildTerritoryWarFinishService, type GuildTerritoryWarFinishResult } from "./guild-territory-war-finish-service.js";
+import { resolveGuildTerritoryWarAuthority } from "./guild-territory-war-authority.js";
 
 const COMMAND_CODE = "GUILD_TERRITORY_ATTACK_EXECUTE";
 const IDEMPOTENCY_SCOPE = "guild.territory.attack.execute";
@@ -21,10 +24,6 @@ interface AttackPolicyRow {
   remember_success_bps: number;
   turn_fund: bigint;
   max_owned_fund_multiplier: number;
-  defense_ticket_item_code: string;
-  defense_ticket_bps: number;
-  attack_ticket_item_code: string;
-  attack_ticket_bps: number;
   contribution_medal_item_code: string;
   contribution_medal_bps: number | null;
   contribution_medal_quantity: bigint | null;
@@ -44,6 +43,7 @@ interface GuildStateRow { eliminated: number; version: bigint }
 interface OccupationRow { territory_no: bigint; territory_name: string; owner_guild_id: bigint | null; owner_player_id: bigint | null }
 interface SnapshotRow { player_id: bigint; guild_id: bigint; castle_charm: bigint; critical_bps: number; critical_multiplier_bps: number; surprise_defense_bonus_bps: number; pet_snapshot_json: string | Record<string, unknown> }
 interface ItemRow { id: bigint; quantity: bigint }
+interface SpecialItemCandidateRow { item_id: string; legacy_item_id: bigint; candidate_role: "DEFENSE" | "ATTACK"; priority_order: number; success_bps: number; quantity: bigint | null }
 
 export interface GuildTerritoryAttackCommand { targetNo: number }
 export interface GuildTerritoryAttackInput { eventId: string; externalUserId: string; channelId: string; targetNo: number }
@@ -87,6 +87,11 @@ export function deterministicGuildTerritoryDrawBps(seed: string): number {
   return digest.readUInt32BE(0) % 10000;
 }
 
+// 레거시 특수 아이템의 Math.random() <= successRate 경계를 basis-point draw에 보존합니다.
+export function resolveGuildTerritoryItemDrawHit(drawBps: number, thresholdBps: number): boolean {
+  return drawBps <= thresholdBps;
+}
+
 // snapshot 매력과 치명타 draw로 동률 시 방어자가 이기는 전투를 계산합니다.
 export function resolveGuildTerritorySnapshotCombat(input: { attacker: SnapshotRow; defender: SnapshotRow; attackerDrawBps: number; defenderDrawBps: number }): { attackerWins: boolean; attackerCritical: boolean; defenderCritical: boolean; attackerFinalCharm: bigint; defenderFinalCharm: bigint } {
   const attackerCritical = input.attackerDrawBps < input.attacker.critical_bps;
@@ -114,8 +119,13 @@ export class GuildTerritoryAttackService {
 
   // 교착 재시도와 event replay를 포함해 공격 전체 상태를 원자 변경합니다.
   async attack(input: GuildTerritoryAttackInput): Promise<GuildTerritoryAttackResult> {
+    await new GuildTerritoryAttackRuntime4PolicyProvider(this.database).apply("guild-territory-attack-runtime");
     const eventKey = normalizeEventKey(input.eventId);
-    return retryDeadlock(() => this.database.withTransaction(async (transaction) => {
+    return withMariaTransactionRetry(this.database, {
+      maxAttempts: 3,
+      allowRetry: () => true,
+      exhaustedErrorCode: "GUILD_TERRITORY_ATTACK_TRANSACTION_RETRY_EXHAUSTED",
+    }, async (transaction) => {
       const replay = await this.findReplay(transaction, eventKey);
       if (replay !== null) return replay;
       const policy = await this.loadActivePolicy(transaction);
@@ -127,7 +137,11 @@ export class GuildTerritoryAttackService {
       const war = (await transaction.query<WarRow[]>(
         "SELECT id,war_key,active,lifecycle_state,start_ready,current_turn_no,CAST(instability_adjust AS CHAR) instability_adjust,CAST(rift_bias AS CHAR) rift_bias,rift_event_count,rift_event_history_json,version FROM guild_territory_wars WHERE id=? FOR UPDATE", [scope.war_id]
       ))[0];
-      if (war === undefined || war.active !== 1 || war.start_ready !== 1 || war.lifecycle_state !== "ACTIVE_READY") {
+      if (war === undefined) {
+        throw new ApplicationError("GUILD_TERRITORY_ATTACK_WAR_REQUIRED", "길드 영지전 상태를 확인할 수 없습니다.", 409);
+      }
+      const active = resolveGuildTerritoryWarAuthority(war.active, war.lifecycle_state);
+      if (!active || war.start_ready !== 1 || war.lifecycle_state !== "ACTIVE_READY") {
         throw new ApplicationError("GUILD_TERRITORY_ATTACK_NOT_ACTIVE", "현재 공격 가능한 길드 영지전이 없습니다.", 409);
       }
       const replayAfterWarLock = await this.findReplay(transaction, eventKey);
@@ -265,7 +279,7 @@ export class GuildTerritoryAttackService {
       };
       await this.completeOperation(transaction, input.eventId, eventKey, operation.insertId, policy, actor, war, currentTurn.generation_version, input.targetNo, result);
       return result;
-    }));
+    });
   }
 
   // 이미 완료된 같은 event의 저장 결과를 그대로 반환합니다.
@@ -282,7 +296,6 @@ export class GuildTerritoryAttackService {
     const policy = (await transaction.query<AttackPolicyRow[]>(
       `SELECT policy_version,status,personal_attack_limit,max_owned_territories,wrong_turn_penalty,dimension_eliminate_bps,
               dimension_player_penalty,dimension_attack_penalty,remember_success_bps,turn_fund,max_owned_fund_multiplier,
-              defense_ticket_item_code,defense_ticket_bps,attack_ticket_item_code,attack_ticket_bps,
               contribution_medal_item_code,contribution_medal_bps,contribution_medal_quantity,evidence_label,
               rift_event_base_bps,instability_bps_per_point,normal_rift_base_bps,rift_bias_bps_per_point,rift_evidence_label
        FROM guild_territory_attack_policy_versions WHERE policy_scope_code=? AND status='ACTIVE'
@@ -470,17 +483,19 @@ export class GuildTerritoryAttackService {
     }
     const attacker = await this.loadSnapshot(transaction, war.id, generationVersion, actor.player_id, actor.guild_id);
     const defender = await this.loadSnapshot(transaction, war.id, generationVersion, target.owner_player_id, target.owner_guild_id);
-    const defenseAvailable = await this.hasStack(transaction, target.owner_player_id, policy.defense_ticket_item_code);
-    if (defenseAvailable) {
-      await this.consumeItem(transaction, operationId, target.owner_player_id, policy.defense_ticket_item_code, "guild_territory_defense_ticket", ledgerSequence);
-      const defense = await this.persistDraw(transaction, operationId, input, war, generationVersion, "defense_ticket", policy.defense_ticket_bps);
-      if (defense.hit) return { resultCode: "defense_ticket_win", winnerPlayerId: target.owner_player_id.toString() };
+    const defenseItem = await this.loadSpecialItemCandidate(transaction, policy, target.owner_player_id, "DEFENSE");
+    if (defenseItem !== null) {
+      const defense = await this.persistItemDraw(transaction, operationId, input, war, generationVersion, "defense_ticket", defenseItem.success_bps);
+      if (defense.hit) {
+        await this.consumeItemById(transaction, operationId, target.owner_player_id, defenseItem.legacy_item_id, "guild_territory_defense_ticket", ledgerSequence);
+        return { resultCode: "defense_ticket_win", winnerPlayerId: target.owner_player_id.toString() };
+      }
     }
-    const attackAvailable = await this.hasStack(transaction, actor.player_id, policy.attack_ticket_item_code);
-    if (attackAvailable) {
-      await this.consumeItem(transaction, operationId, actor.player_id, policy.attack_ticket_item_code, "guild_territory_attack_ticket", ledgerSequence);
-      const surprise = await this.persistDraw(transaction, operationId, input, war, generationVersion, "attack_ticket", policy.attack_ticket_bps);
+    const attackItem = await this.loadSpecialItemCandidate(transaction, policy, actor.player_id, "ATTACK");
+    if (attackItem !== null) {
+      const surprise = await this.persistItemDraw(transaction, operationId, input, war, generationVersion, "attack_ticket", attackItem.success_bps);
       if (surprise.hit) {
+        await this.consumeItemById(transaction, operationId, actor.player_id, attackItem.legacy_item_id, "guild_territory_attack_ticket", ledgerSequence);
         const contributionDefense = await this.persistDraw(transaction, operationId, input, war, generationVersion, "contribution_cube_defense", defender.surprise_defense_bonus_bps);
         if (contributionDefense.hit) return { resultCode: "contribution_cube_defense_win", winnerPlayerId: target.owner_player_id.toString() };
         await this.occupyTerritory(transaction, war.id, Number(target.territory_no), actor);
@@ -499,6 +514,28 @@ export class GuildTerritoryAttackService {
       return { resultCode: "snapshot_attacker_win", winnerPlayerId: actor.player_id.toString() };
     }
     return { resultCode: "snapshot_defender_win", winnerPlayerId: target.owner_player_id.toString() };
+  }
+
+  // 레거시 배열과 같이 role별 우선순위에서 보유 중인 첫 후보 하나만 선택합니다.
+  private async loadSpecialItemCandidate(transaction: DatabaseTransaction, policy: AttackPolicyRow, playerId: bigint, role: "DEFENSE" | "ATTACK"): Promise<SpecialItemCandidateRow | null> {
+    const candidates = await transaction.query<SpecialItemCandidateRow[]>(
+      `SELECT candidate.item_id,legacy_definition.id legacy_item_id,candidate.candidate_role,candidate.priority_order,candidate.success_bps,stack.quantity
+       FROM guild_territory_attack_item_candidates candidate
+       JOIN canonical_item_definitions definition_row ON definition_row.item_id=candidate.item_id AND definition_row.active_flag=TRUE
+       JOIN canonical_item_definition_imports import_row
+         ON import_row.item_id=candidate.item_id AND import_row.source_system='RUNTIME_DB' AND import_row.source_namespace='item_definitions'
+       JOIN item_definitions legacy_definition
+         ON legacy_definition.code=import_row.source_identifier AND legacy_definition.display_name=definition_row.item_name AND legacy_definition.active=TRUE
+       LEFT JOIN inventory_stacks stack ON stack.player_id=? AND stack.item_id=legacy_definition.id
+       WHERE candidate.policy_scope_code=? AND candidate.policy_version=? AND candidate.candidate_role=? AND candidate.active_flag=TRUE
+       ORDER BY candidate.priority_order
+       FOR UPDATE`,
+      [playerId, POLICY_SCOPE, policy.policy_version, role],
+    );
+    if (candidates.length !== 2 || candidates[0]!.priority_order !== 1 || candidates[1]!.priority_order !== 2) {
+      throw new ApplicationError("GUILD_TERRITORY_ATTACK_ITEM_POLICY_INCOMPLETE", "영지공격 특수 아이템 정책이 완전하지 않아 실행을 중단했습니다.", 503);
+    }
+    return candidates.find((candidate) => BigInt(candidate.quantity ?? 0n) > 0n) ?? null;
   }
 
   // 시작 시 고정된 전투 snapshot을 길드 일치까지 확인해 불러옵니다.
@@ -530,16 +567,33 @@ export class GuildTerritoryAttackService {
     return { id: definition.id, quantity: stack.quantity };
   }
 
-  // 확률 판정에 사용한 stack item 한 개를 차감하고 원장을 남깁니다.
-  private async consumeItem(transaction: DatabaseTransaction, operationId: bigint, playerId: bigint, itemCode: string, reasonCode: string, ledgerSequence: { value: number }): Promise<void> {
-    const item = await this.loadItemStack(transaction, playerId, itemCode);
-    if (item.quantity < 1n) throw new ApplicationError("GUILD_TERRITORY_ATTACK_ITEM_SHORTAGE", "영지공격 아이템 수량이 부족합니다.", 409);
-    await transaction.execute("UPDATE inventory_stacks SET quantity=quantity-1,version=version+1 WHERE player_id=? AND item_id=? AND quantity>=1", [playerId, item.id]);
+  // 이미 잠근 후보 PK로 한 개를 차감해 표시명이나 CODE 재해석을 피합니다.
+  private async consumeItemById(transaction: DatabaseTransaction, operationId: bigint, playerId: bigint, itemId: bigint, reasonCode: string, ledgerSequence: { value: number }): Promise<void> {
+    const item = (await transaction.query<Array<{ quantity: bigint }>>(
+      "SELECT quantity FROM inventory_stacks WHERE player_id=? AND item_id=? FOR UPDATE", [playerId, itemId]
+    ))[0];
+    if (item === undefined || item.quantity < 1n) throw new ApplicationError("GUILD_TERRITORY_ATTACK_ITEM_SHORTAGE", "영지공격 아이템 수량이 부족합니다.", 409);
+    const changed = await transaction.execute("UPDATE inventory_stacks SET quantity=quantity-1,version=version+1 WHERE player_id=? AND item_id=? AND quantity>=1", [playerId, itemId]);
+    if (changed.affectedRows !== 1n) throw new ApplicationError("GUILD_TERRITORY_ATTACK_ITEM_SHORTAGE", "영지공격 아이템 수량이 부족합니다.", 409);
     ledgerSequence.value++;
     await transaction.execute(
       "INSERT INTO inventory_ledger(operation_id,sequence_no,player_id,item_id,instance_id,quantity_delta,reason_code) VALUES (?,?,?,?,NULL,-1,?)",
-      [operationId, ledgerSequence.value, playerId, item.id, reasonCode]
+      [operationId, ledgerSequence.value, playerId, itemId, reasonCode]
     );
+  }
+
+  // 레거시 특수 아이템의 <= 경계를 그대로 적용해 0~9999 draw의 threshold 동등값도 성공시킵니다.
+  private async persistItemDraw(transaction: DatabaseTransaction, operationId: bigint, input: GuildTerritoryAttackInput, war: WarRow, generationVersion: bigint, drawCode: string, thresholdBps: number): Promise<{ bps: number; hit: boolean }> {
+    const count = (await transaction.query<Array<{ count_value: bigint }>>(
+      "SELECT COUNT(*) count_value FROM guild_territory_attack_random_draws WHERE operation_id=? FOR UPDATE", [operationId]
+    ))[0]!.count_value;
+    const bps = deterministicGuildTerritoryDrawBps(`${input.eventId}|${war.id}|${generationVersion}|${drawCode}`);
+    const hit = resolveGuildTerritoryItemDrawHit(bps, thresholdBps);
+    await transaction.execute(
+      "INSERT INTO guild_territory_attack_random_draws(operation_id,sequence_no,draw_code,draw_bps,outcome_code) VALUES (?,?,?,?,?)",
+      [operationId, Number(count) + 1, drawCode, bps, hit ? "hit" : "miss"]
+    );
+    return { bps, hit };
   }
 
   // 확정된 공헌훈장을 개인 stack과 원장에 지급합니다.
@@ -652,16 +706,4 @@ function decimalInteger(value: string): bigint {
 // 확률 계산 결과를 basis-point 유효 범위로 제한합니다.
 function clampBps(value: number): number {
   return Math.max(0, Math.min(10000, value));
-}
-
-// MariaDB deadlock과 lock timeout만 제한적으로 재시도합니다.
-async function retryDeadlock<T>(work: () => Promise<T>): Promise<T> {
-  for (let attempt = 0; ; attempt++) {
-    try { return await work(); }
-    catch (error) {
-      const databaseError = error as { errno?: number; code?: string };
-      if (attempt >= 2 || (databaseError.errno !== 1213 && databaseError.errno !== 1205 && databaseError.code !== "ER_LOCK_DEADLOCK" && databaseError.code !== "ER_LOCK_WAIT_TIMEOUT")) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 20 * (attempt + 1)));
-    }
-  }
 }
