@@ -33,6 +33,11 @@
       "wbs": "WBS796",
       "commit": "83648e269d2c87187b4994a1d46151b43887a1cd",
       "resolution": "HOME_BADGE_USAGE_DIRECT_RECEIPTS"
+    },
+    {
+      "wbs": "WBS797",
+      "commit": "d099b358352cfa3f22829b9d597f4d48959097d9",
+      "resolution": "PLAYER_TITLE_READ_RUNTIME_DISPATCH_DIRECT_RECEIPTS"
     }
   ],
   "sources": {
@@ -41,8 +46,8 @@
     "manifestSha256": "8cbce79761fdc4c75a02cb84153056c802f1d93867e48519a1d432ed7ee8b403",
     "manifestConsumerSetSha256": "d183ade67fa2aff0b7167327d9c6a1ed5ae689da0e060b7a093a88e1462e0e0b",
     "ledgerPath": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
-    "ledgerSha256": "0f11ee2b01afcda5e4d52a6e49b74b8f9ea868bc28e6fdc81042329b1b7d302f",
-    "ledgerEntrySetSha256": "614548f5d4af0df7b5988c811eb9a4493e112981c0d25f20c62f1e77a31a926c"
+    "ledgerSha256": "62af567bd5715e2ccd154e7bd98c6acc14fc7306359b358269224a91bdbc6d35",
+    "ledgerEntrySetSha256": "e29c4a35a575aaa8ed0d665c2514dddfe03000a721b8b476e1f5003e2c773f24"
   },
   "policy": {
     "A_REUSABLE_PROOF_ASSET": "A prior bundle, observation or harness is reusable input only; it is not completed proof and requires re-execution or exact resealing as official receipts.",
@@ -54,11 +59,11 @@
   "equivalenceCohorts": [],
   "summary": {
     "manifestConsumers": 1133,
-    "alreadyDirectOrEquivalent": 62,
-    "residualConsumers": 1071,
+    "alreadyDirectOrEquivalent": 64,
+    "residualConsumers": 1069,
     "categoryCounts": {
       "B_STRICT_EQUIVALENCE": 0,
-      "C_DIRECT_EXECUTION": 989,
+      "C_DIRECT_EXECUTION": 987,
       "D_PREREQUISITE": 82
     },
     "byDomain": {
@@ -71,7 +76,7 @@
       "HOME-AGGREGATE-RANK": 86,
       "ITEM": 147,
       "MARKET-ORCHESTRATOR": 95,
-      "MEMBER-TITLE": 23,
+      "MEMBER-TITLE": 21,
       "MINI-PET": 61,
       "MINI-PET-TITLE-COLLECTION": 14,
       "PACKAGE-CATALOG": 65,
@@ -86,12 +91,12 @@
       "AUTOMATIC_CALLBACK": 3,
       "HTTP_WEB_ROUTE": 81,
       "LEGACY_COMMAND": 665,
-      "RUNTIME_DISPATCH": 179,
+      "RUNTIME_DISPATCH": 177,
       "SQL_REPOSITORY": 60
     },
     "byAccessClass": {
       "MUTATION": 612,
-      "READ": 459
+      "READ": 457
     }
   },
   "entries": [
@@ -111651,172 +111656,6 @@
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
             "sourceEvidenceSha256": "98de26c5c1633ac860e0bd45d917385c65f7129d79c1c6381bc6b2d958237ccf"
-          }
-        },
-        {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        }
-      ],
-      "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "runtime-dispatch-e2445b135d4fb12c",
-      "category": "C_DIRECT_EXECUTION",
-      "domain": "MEMBER-TITLE",
-      "kind": "RUNTIME_DISPATCH",
-      "accessClass": "READ",
-      "interfaceId": "member-title.player-title-list-read.read",
-      "sourceSpanSha256": "91fa868bf84f6ed8a17999136ed156af6f48a1f24af6fca877c3e8d1b73efe24",
-      "targetTables": [
-        "canonical_member_title_definitions",
-        "canonical_member_title_selections",
-        "canonical_owned_member_title_instances",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_member_title_definitions.active_flag",
-        "canonical_member_title_definitions.base_sale_price",
-        "canonical_member_title_definitions.member_title_id",
-        "canonical_member_title_definitions.title_name",
-        "canonical_member_title_selections.owned_member_title_id",
-        "canonical_member_title_selections.player_id",
-        "canonical_owned_member_title_instances.acquisition_price",
-        "canonical_owned_member_title_instances.member_title_id",
-        "canonical_owned_member_title_instances.owned_member_title_id",
-        "canonical_owned_member_title_instances.ownership_status",
-        "canonical_owned_member_title_instances.player_id",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "READ_POSITIVE",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "NEGATIVE_GUARD",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "c93431424ba0414b1edd5ba2f14677da2ba447be1cf1120edbc58da19eae8668"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "c93431424ba0414b1edd5ba2f14677da2ba447be1cf1120edbc58da19eae8668"
-          }
-        },
-        {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        }
-      ],
-      "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "runtime-dispatch-e2dde461680d21ca",
-      "category": "C_DIRECT_EXECUTION",
-      "domain": "MEMBER-TITLE",
-      "kind": "RUNTIME_DISPATCH",
-      "accessClass": "READ",
-      "interfaceId": "member-title.player-title-info-read.read",
-      "sourceSpanSha256": "91fa868bf84f6ed8a17999136ed156af6f48a1f24af6fca877c3e8d1b73efe24",
-      "targetTables": [
-        "canonical_member_title_definitions",
-        "canonical_member_title_selections",
-        "canonical_owned_member_title_instances",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_member_title_definitions.active_flag",
-        "canonical_member_title_definitions.base_sale_price",
-        "canonical_member_title_definitions.member_title_id",
-        "canonical_member_title_definitions.title_name",
-        "canonical_member_title_selections.owned_member_title_id",
-        "canonical_member_title_selections.player_id",
-        "canonical_owned_member_title_instances.acquisition_price",
-        "canonical_owned_member_title_instances.member_title_id",
-        "canonical_owned_member_title_instances.owned_member_title_id",
-        "canonical_owned_member_title_instances.ownership_status",
-        "canonical_owned_member_title_instances.player_id",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "READ_POSITIVE",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "NEGATIVE_GUARD",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "544f283345848193c4887b6ef65fb8e46574e68811681e4432181b59028973db"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "544f283345848193c4887b6ef65fb8e46574e68811681e4432181b59028973db"
           }
         },
         {
