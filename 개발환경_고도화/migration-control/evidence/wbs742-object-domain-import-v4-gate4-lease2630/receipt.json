@@ -1,0 +1,34 @@
+{
+  "evidenceSchemaVersion": "object-domain-import-gate4-evidence-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WBS742-G4-20260909-1",
+  "leaseId": 2630,
+  "controlRow": 5642,
+  "baselineCommit": "e8503e637c926a2add62d91263a92a30688e99d6",
+  "gate": 4,
+  "tier": "T2",
+  "result": "PASS",
+  "executionMode": "IN_MEMORY_SYNTHETIC_NO_DB",
+  "implementation": {
+    "profileVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V4",
+    "directTargetCount": 47,
+    "targetColumnCount": 263,
+    "definitionTargetCount": 25,
+    "acceptedContractCount": 1,
+    "targetColumnAdditionCount": 11
+  },
+  "artifacts": {
+    "harnessSha256": "99ef42649070b1f1c932be436d76c37f2dba5a4703145bfd0e99496f75fcad5f",
+    "testSha256": "7e15ed744ef6f6331577cc780e8f0e0b9b5e4c68a3f00d9739dfb16973f0ea2f"
+  },
+  "verification": {
+    "gate4PolicyAndTamper": "2/2 PASS",
+    "gate3V2V4Regression": "14/14 PASS",
+    "combinedFocused": "16/16 PASS",
+    "typecheck": "PASS",
+    "build": "PASS"
+  },
+  "databaseAccess": false,
+  "operationalDataAccess": false,
+  "forbiddenChangesObserved": false
+}
