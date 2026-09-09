@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 23
-- 마지막 갱신: 2026-09-09 10:39:00 KST
+- 체크포인트 버전: 24
+- 마지막 갱신: 2026-09-09 11:11:00 KST
 
 ## 현재 목표
 
@@ -16,7 +16,7 @@
 
 - WBS730~732: 완료.
 - WBS733~741: Gate1~4 완료, Gate5~7 잔여.
-- WBS742: 현행 25%, 후속 검증 필요.
+- WBS742: 현행 25%. 초기 canonical 65개 중 직접 이관은 45개이고, 현행 V4 표준은 119개 중 직접 이관 47개다. WBS724·725 provider와 영속 인터페이스는 구현됐으며 실제 provider-to-provider 연쇄 증거만 잔여다.
 - WBS743: 공식 ledger는 1,133건, DIRECT_PASS 41, STATIC_ONLY 1,010, BLOCKED_DYNAMIC 82이며 미증명 consumer 1,092건이다. 잔여 작업표는 재사용 증명 자산 5, 엄격 동등성 10, 직접 실행 995, 선행 보완 82로 완전 분할됐고 WBS787~791 증분 증거는 아직 shared ledger 승격 전이다.
 - WBS744: 현행 62.5%, Gate6~7 잔여.
 - WBS745: 전체 Gate8 비운영 배포·복구 준비이며 WBS730~744 Gate1~7 종료 후 착수.
@@ -33,7 +33,7 @@
 - 현재 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-db-parity-wave23-v1-20260909`
 - 현재 실행 브랜치: `codex/object-db-parity-wave23-v1-20260909`
 - 현재 실행: WBS787~789 / Lease2619 범위 / Wave23 shared ledger receipt 18건 작성·봉인
-- 상태: 중단 당시의 Wave23 미커밋 7파일을 보존해 동일 에이전트가 재개함. 잔여 작업표와 통합 기준선은 완료 상태로 재사용하며 다시 만들지 않는다.
+- 상태: 중단 당시의 Wave23 변경을 보존해 동일 에이전트가 재개했고 evidence `5edc0b27`을 생성했다. Lease2619는 Wave23으로 갱신했으며 Lease2620에서 WBS742 staging→projection 연쇄 증거를 별도 작업 트리로 병렬 진행한다.
 - 체크포인트 Git 추적: 기존 추적 파일
 - 원격 상태: 통합 브랜치 `7f6e8547`까지 origin과 exact 일치. Wave23 변경은 아직 미커밋이며 별도 전용 브랜치에만 존재한다.
 
@@ -108,10 +108,11 @@
 ## 정확한 다음 행동
 
 1. Wave23 신규 schema·fixture·harness·sealer로 WBS787~789의 각 REQUIRED 6개, 총 18개 receipt를 새로 실행·봉인한다. 기존 Wave22 225건 prefix는 byte-exact 보존한다.
-2. WBS787~789를 shared ledger에 승격해 receipts 243, DIRECT_PASS 44, STATIC_ONLY 1,007, BLOCKED_DYNAMIC 82를 목표로 한다.
-3. WBS790은 raw transaction owner 후속 보완과 sealed trace가 모두 끝난 뒤 별도 6개 receipt를 추가한다. 그 전에는 Gate6을 열지 않는다.
-4. 잔여 작업표의 다음 작은 도메인 묶음은 MINI-PET-TITLE-COLLECTION 14 → MEMBER-TITLE 23 순으로 진행하며, CONTEXT-BRIDGE 12는 공유 경계 lease로 직렬화한다.
-5. 전체 회귀는 증분마다 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
+2. Lease2620은 sealed RAW→실제 WBS724 staging provider→실제 WBS725 projection provider를 격리 Maria에서 연속 실행해 수량·SHA·replay·rollback·restart를 봉인한다.
+3. WBS787~789를 shared ledger에 승격해 receipts 243, DIRECT_PASS 44, STATIC_ONLY 1,007, BLOCKED_DYNAMIC 82를 목표로 한다.
+4. WBS790은 raw transaction owner 후속 보완과 sealed trace가 모두 끝난 뒤 별도 6개 receipt를 추가한다. 그 전에는 Gate6을 열지 않는다.
+5. 잔여 작업표의 다음 작은 도메인 묶음은 MINI-PET-TITLE-COLLECTION 14 → MEMBER-TITLE 23 순으로 진행하며, CONTEXT-BRIDGE 12는 공유 경계 lease로 직렬화한다.
+6. 전체 회귀는 증분마다 반복하지 않고 최종 고정 통합 후보에서 1회 수행한다. 광범위 변경 또는 영향 불명확 시에만 범위를 확대한다.
 
 ## 승인 경계
 
