@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import type { AppWiringClaim, AppWiringMutationParticipant, AppWiringReadParticipant, MariaAppWiringOperationProvider } from "../src/dispatch/app-wiring-operation-provider.js";
+import type { AppWiringClaim, AppWiringMutationParticipant, AppWiringMutationRunOptions, AppWiringReadParticipant, MariaAppWiringOperationProvider } from "../src/dispatch/app-wiring-operation-provider.js";
 import type { NormalizedIrisEvent } from "../src/integration/iris-normalizer.js";
 import type { PlayerContext, PlayerContextPort } from "../src/account-platform/player-context-provider.js";
 import {
@@ -119,12 +119,13 @@ function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false,replayStatus="
   let previewCalls=0;
   let createCalls=0;
   let sellCalls=0;
+  const mutationRunOptions:AppWiringMutationRunOptions[]=[];
   const baseClaim:AppWiringClaim={appWiringOperationId:"claim001",requestIdentityFingerprint:"a".repeat(64),requestNamespace:"hoibot:dev:hoi_bot",entrypointKind:"IRIS",externalRequestId:"pet-title-1",requestKey:"IRIS:pet-title-1",payloadFingerprint:"b".repeat(64),route,effectMode:"READ_ONLY",reasonCode:route==="REJECT"?"AUTH_SCOPE_NOT_SATISFIED":"CANARY",handlerKey:"pet_title_lifecycle",claimState:replay?"COMPLETED":"CLAIMED",...(replay?{result:{status:replayStatus,referenceId:"petop001",resultFingerprint:"c".repeat(64)}}:{})};
   const provider={
     prepare:async(_input:unknown,resolveRoute:()=>Promise<{effectMode?:"READ_ONLY"|"MUTATION"}>|{effectMode?:"READ_ONLY"|"MUTATION"})=>{const decision=await resolveRoute();const claim={...baseClaim,effectMode:decision.effectMode??"READ_ONLY"} as AppWiringClaim;return replay?{claim,replayed:true as const}:{claim,replayed:false as const};},
     runReadOnlyReply:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>)=>{const outcome=await handler(database,prepared.claim);return {value:outcome.value,reply:{outboxId:"21",room:outcome.reply.destinationId,data:outcome.reply.data}};},
-    runMutationReply:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringMutationParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>)=>{const outcome=await handler(database as AppWiringMutationParticipant,prepared.claim);return {value:outcome.value,reply:{outboxId:"22",room:outcome.reply.destinationId,data:outcome.reply.data}};},
-    runMutationIrisOutcome:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringMutationParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply?:{destinationId:string;data:string};noReply?:{kind:"NO_REPLY"}}>)=>{const outcome=await handler(database as AppWiringMutationParticipant,prepared.claim);return outcome.reply===undefined?{value:outcome.value,noReply:{kind:"NO_REPLY"}}:{value:outcome.value,reply:{outboxId:"23",room:outcome.reply.destinationId,data:outcome.reply.data}};},
+    runMutationReply:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringMutationParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply:{destinationId:string;data:string}}>,options:AppWiringMutationRunOptions)=>{mutationRunOptions.push(options);const outcome=await handler(database as AppWiringMutationParticipant,prepared.claim);return {value:outcome.value,reply:{outboxId:"22",room:outcome.reply.destinationId,data:outcome.reply.data}};},
+    runMutationIrisOutcome:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringMutationParticipant,claim:AppWiringClaim)=>Promise<{value:unknown;reply?:{destinationId:string;data:string};noReply?:{kind:"NO_REPLY"}}>,options:AppWiringMutationRunOptions)=>{mutationRunOptions.push(options);const outcome=await handler(database as AppWiringMutationParticipant,prepared.claim);return outcome.reply===undefined?{value:outcome.value,noReply:{kind:"NO_REPLY"}}:{value:outcome.value,reply:{outboxId:"23",room:outcome.reply.destinationId,data:outcome.reply.data}};},
     runReadOnly:async(prepared:{claim:AppWiringClaim},handler:(database:AppWiringReadParticipant,claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(database,prepared.claim)).value,
     runReject:async(prepared:{claim:AppWiringClaim},handler:(claim:AppWiringClaim)=>Promise<{value:unknown}>)=>(await handler(prepared.claim)).value,
     replayReadOnlyReply:async()=>({outboxId:"21",room:"room-1",data:"목록"}),
@@ -146,7 +147,7 @@ function ingressFor(route:"MODERN"|"SHADOW"|"REJECT",replay=false,replayStatus="
        ?{operationId:"petop008",operationType:"SELL",outcomeCode:"SILENT_CASTLE_ACTIVE",salePoint:0n,resultFingerprint:"c".repeat(64),replayedDomainState:false}
        :{operationId:"petop002",operationType:"SELL",outcomeCode:"SOLD",ownedPetTitleId:"petown01",titleName:"별빛",salePoint:30_000_000n,currencyOperationId:"currop01",balanceAfterMinorAmount:30_000_000_000n,resultFingerprint:"c".repeat(64),replayedDomainState:false};}},
   );
-  return {ingress,previewCalls:()=>previewCalls,createCalls:()=>createCalls,sellCalls:()=>sellCalls};
+  return {ingress,previewCalls:()=>previewCalls,createCalls:()=>createCalls,sellCalls:()=>sellCalls,mutationRunOptions:()=>mutationRunOptions.slice()};
 }
 
 describe("PET-TITLE app-wiring ingress routes",()=>{
@@ -191,6 +192,7 @@ describe("PET-TITLE app-wiring ingress routes",()=>{
     assert.equal(result.reply.outboxId,"22");
     assert.equal(result.reply.data,"[👑호이] 님이 새로운 펫 타이틀을 생성완료!\n\n🎉 생성된 타이틀: [멋진 파트너]\n\n사용 아이템:\n 펫타이틀권🦊(/펫타이틀이름) -1 소모");
     assert.equal(fixture.createCalls(),1);
+    assert.deepEqual(fixture.mutationRunOptions(),[{retryTransientRootTransaction:true}]);
   });
 
   it("preserves the exact shortage reply and replays without another title creation",async()=>{
@@ -221,6 +223,7 @@ describe("PET-TITLE app-wiring ingress routes",()=>{
     const modern=ingressFor("MODERN");
     assert.deepEqual(await modern.ingress.handle(event("/펫타이틀판매 1")),{status:"modern",replayed:false,resultFingerprint:"c".repeat(64),reply:{outboxId:"23",room:"room-1",data:"[👑호이] 님의 펫 타이틀 [별빛] \n🅟30,000,000 포인트에 판매되었습니다."}});
     assert.equal(modern.sellCalls(),1);
+    assert.deepEqual(modern.mutationRunOptions(),[{retryTransientRootTransaction:true}]);
     const soldReplay=ingressFor("MODERN",true);
     assert.deepEqual(await soldReplay.ingress.handle(event("/펫타이틀판매 1")),{status:"modern",replayed:true,resultFingerprint:"c".repeat(64),reply:{outboxId:"23",room:"room-1",data:"저장된 판매 응답"}});
     assert.equal(soldReplay.sellCalls(),0);
@@ -232,6 +235,7 @@ describe("PET-TITLE app-wiring ingress routes",()=>{
     const silent=ingressFor("MODERN");
     assert.deepEqual(await silent.ingress.handle(event("/펫타이틀판매 8")),{status:"handled_no_reply",replayed:false,resultFingerprint:"c".repeat(64)});
     assert.equal(silent.sellCalls(),1);
+    assert.deepEqual(silent.mutationRunOptions(),[{retryTransientRootTransaction:true}]);
     const silentReplay=ingressFor("MODERN",true,"NO_REPLY");
     assert.deepEqual(await silentReplay.ingress.handle(event("/펫타이틀판매 8")),{status:"handled_no_reply",replayed:true,resultFingerprint:"c".repeat(64)});
     assert.equal(silentReplay.sellCalls(),0);

@@ -6,6 +6,7 @@ import type {
   AppWiringMutationIrisOutcome,
   AppWiringMutationReplyOutcome,
   AppWiringMutationReplyContext,
+  AppWiringMutationRunOptions,
   AppWiringMutationParticipant,
   AppWiringPersistedReply,
   AppWiringPersistedMutationIrisOutcome,
@@ -15,6 +16,7 @@ import type {
   AppWiringRouteDecision,
   MariaAppWiringOperationProvider
 } from "./app-wiring-operation-provider.js";
+import { isAppWiringMutationRootRetryExhaustion } from "./app-wiring-operation-provider.js";
 
 export type AppWiringEntrypointOutcome<T> = AppWiringHandlerOutcome<T>;
 
@@ -38,6 +40,7 @@ export interface AppWiringEntrypointInput<T> {
   readonly replayCompleted: (claim: AppWiringReplayClaim) => Promise<T>;
   readonly replayFailed: (claim: AppWiringReplayClaim) => Promise<T>;
   readonly errorCode: (error: unknown) => string;
+  readonly mutationRunOptions?: AppWiringMutationRunOptions;
 }
 
 export interface AppWiringReadOnlyReplyEntrypointInput<T> {
@@ -56,6 +59,7 @@ export interface AppWiringMutationReplyEntrypointInput<T> {
   readonly replayCompleted: (claim: AppWiringReplayClaim) => Promise<T>;
   readonly replayFailed: (claim: AppWiringReplayClaim) => Promise<never>;
   readonly errorCode: (error: unknown) => string;
+  readonly mutationRunOptions?: AppWiringMutationRunOptions;
 }
 
 export interface AppWiringMutationIrisEntrypointInput<T> {
@@ -65,6 +69,7 @@ export interface AppWiringMutationIrisEntrypointInput<T> {
   readonly replayCompleted: (claim: AppWiringReplayClaim) => Promise<T>;
   readonly replayFailed: (claim: AppWiringReplayClaim) => Promise<never>;
   readonly errorCode: (error: unknown) => string;
+  readonly mutationRunOptions?: AppWiringMutationRunOptions;
 }
 
 // READ_ONLY/REJECT도 저장된 reason/handler route audit를 재사용하지만 typed mutation receipt는 요구하지 않습니다.
@@ -77,13 +82,14 @@ export async function executeAppWiringEntrypoint<T>(provider: MariaAppWiringOper
       case "REJECT": return await provider.runReject(prepared, input.handlers.REJECT);
       case "SHADOW": return await provider.runReadOnly(prepared, input.handlers.SHADOW);
       case "MODERN": return prepared.claim.effectMode === "MUTATION"
-        ? await provider.runMutation(prepared, input.handlers.MODERN.MUTATION)
+        ? await provider.runMutation(prepared, input.handlers.MODERN.MUTATION,input.mutationRunOptions)
         : await provider.runReadOnly(prepared, input.handlers.MODERN.READ_ONLY);
       case "LEGACY_FALLBACK": return prepared.claim.effectMode === "MUTATION"
-        ? await provider.runMutation(prepared, input.handlers.LEGACY_FALLBACK.MUTATION)
+        ? await provider.runMutation(prepared, input.handlers.LEGACY_FALLBACK.MUTATION,input.mutationRunOptions)
         : await provider.runReadOnly(prepared, input.handlers.LEGACY_FALLBACK.READ_ONLY);
     }
   } catch (error) {
+    if(input.mutationRunOptions?.retryTransientRootTransaction===true&&isAppWiringMutationRootRetryExhaustion(error))throw error;
     try { await provider.fail(prepared, input.errorCode(error)); }
     catch (transitionError) { throw new AggregateError([error, transitionError], "APP_WIRING_ENTRYPOINT_FAILURE_TRANSITION_FAILED"); }
     throw error;
@@ -115,9 +121,10 @@ export async function executeAppWiringMutationReplyEntrypoint<T>(provider:MariaA
   }
   try{
     if(prepared.claim.route!=="MODERN"||prepared.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
-    return await provider.runMutationReply(prepared,input.handler);
+    return await provider.runMutationReply(prepared,input.handler,input.mutationRunOptions);
   }
   catch(error){
+    if(input.mutationRunOptions?.retryTransientRootTransaction===true&&isAppWiringMutationRootRetryExhaustion(error))throw error;
     try{await provider.fail(prepared,input.errorCode(error));}
     catch(transitionError){throw new AggregateError([error,transitionError],"APP_WIRING_ENTRYPOINT_FAILURE_TRANSITION_FAILED");}
     throw error;
@@ -136,9 +143,10 @@ export async function executeAppWiringMutationIrisEntrypoint<T>(provider:MariaAp
   }
   try{
     if(prepared.claim.route!=="MODERN"||prepared.claim.effectMode!=="MUTATION")throw new Error("APP_WIRING_MUTATION_REPLY_ROUTE_INVALID");
-    return await provider.runMutationIrisOutcome(prepared,input.handler);
+    return await provider.runMutationIrisOutcome(prepared,input.handler,input.mutationRunOptions);
   }
   catch(error){
+    if(input.mutationRunOptions?.retryTransientRootTransaction===true&&isAppWiringMutationRootRetryExhaustion(error))throw error;
     try{await provider.fail(prepared,input.errorCode(error));}
     catch(transitionError){throw new AggregateError([error,transitionError],"APP_WIRING_ENTRYPOINT_FAILURE_TRANSITION_FAILED");}
     throw error;

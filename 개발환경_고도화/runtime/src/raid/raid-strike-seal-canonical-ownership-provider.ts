@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../database.js";
+import type { CurrentTransactionDatabaseClient, DatabaseClient, DatabaseTransaction, DatabaseWriteResult } from "../database.js";
 import { assertItem25CanonicalDefinitionOptions } from "../data-migration/item25-canonical-definition-provider.js";
 import { assertObjectIdentityCandidate } from "../identity/object-identity-audit-provider.js";
 import { CanonicalItemInventoryRepository } from "../inventory/canonical-item-inventory-repository.js";
@@ -15,11 +15,11 @@ type PlayerRow = { player_id:string };
 type BalanceRow = { quantity:bigint|string };
 type CharmRow = { legacy_player_id:bigint|string;canonical_player_id:string;quantity:bigint|string };
 
-function scoped(transaction:DatabaseTransaction):DatabaseClient{return{
+function scoped(transaction:DatabaseTransaction):DatabaseClient&CurrentTransactionDatabaseClient{return{
   ping:async()=>undefined,verifyRollback:async()=>true,
   query:<T>(sql:string,values:readonly unknown[]=[])=>transaction.query<T>(sql,values),
   execute:(sql:string,values:readonly unknown[]=[])=>transaction.execute(sql,values),
-  withTransaction:<T>(work:(current:DatabaseTransaction)=>Promise<T>)=>work(transaction),close:async()=>undefined
+  withTransaction:<T>(work:(current:DatabaseTransaction)=>Promise<T>)=>work(transaction),withCurrentTransaction:<T>(work:(current:DatabaseTransaction)=>Promise<T>)=>work(transaction),close:async()=>undefined
 };}
 
 function exactDefinition(row:DefinitionRow|undefined):{itemId:string;raidCharmPerItem:600n}{

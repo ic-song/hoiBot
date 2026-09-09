@@ -200,6 +200,7 @@ export class PetTitleAppWiringIngress {
     if(command.kind==="create"&&decision.route==="MODERN"){
       const persisted=await executeAppWiringMutationReplyEntrypoint<{readonly status:"modern";readonly replayed:boolean;readonly resultFingerprint:string}>(this.provider,{
         claim,
+        mutationRunOptions:{retryTransientRootTransaction:true},
         resolveRoute:()=>route,
         handler:async(database,activeClaim)=>{
           // PET_TITLE 전역 scope 뒤 /계정변경과 같은 selection 행을 잠가 하나의 활성 계정만 사용하게 합니다.
@@ -230,6 +231,7 @@ export class PetTitleAppWiringIngress {
     if(command.kind==="sell"&&decision.route==="MODERN"){
       const persisted=await executeAppWiringMutationIrisEntrypoint<{readonly status:"modern"|"handled_no_reply";readonly replayed:boolean;readonly resultFingerprint:string}>(this.provider,{
         claim,
+        mutationRunOptions:{retryTransientRootTransaction:true},
         resolveRoute:()=>route,
         handler:async(database,activeClaim)=>{
           // PET_TITLE 전역 scope 뒤 /계정변경과 같은 selection 행을 잠가 판매 전체가 하나의 활성 계정만 사용하게 합니다.
