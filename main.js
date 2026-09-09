@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.469"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.483"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -903,7 +903,7 @@ const GLOBAL_CONFIG = {
         attackLimit: 4,
         bonusAttackSkillNames: ["무쌍신화", "무쌍귀신"],
         bonusAttackCount: 1,
-        startGraceMs: 30000,
+        startGraceMs: 60000,
         turnTimeoutMs: 12000,
         attackRewardPoint: 200000000,
         realFlagDiscoveryBonusPoint: 200000000,
@@ -952,6 +952,49 @@ const GLOBAL_CONFIG = {
         petSkillBookRate: 0.70,
         petSkillKeyRate: 0.25,
         miniPetKeyRate: 0.05
+    },
+    sealedVault: { // 호이의 봉인금고 확률·천장·부스터·보상 설정
+        vaultItemName: "호이의 봉인금고🔒(/봉인금고오픈 숫자)",
+        keyItemName: "해방의 열쇠🗝️(/봉인금고오픈 숫자)",
+        maxOpenCount: 100,
+        keyCombineVaultCost: 100, // 해방의 열쇠 1개 조합에 필요한 봉인금고 수
+        dailyQuestVaultReward: 1, // 일일퀘스트 완료 보상 수량
+        boosterCycle: 30,
+        platinumPityCount: 200,
+        maxAdminItemCount: 1000000000,
+        userRareLogMax: 50,
+        globalRareLogMax: 100,
+        adminLogMax: 100,
+        generalRewards: [
+            { weight: 250, rateText: "25%", type: "item", itemName: "미니펫뽑기🐹(/미니펫오픈)", count: 300 },
+            { weight: 250, rateText: "25%", type: "item", itemName: "펫스윗홈인테리어샵🖼️(/샵오픈)", count: 300 },
+            { weight: 150, rateText: "15%", type: "item", itemName: "펫 강화석⭐", count: 300 },
+            { weight: 120, rateText: "12%", type: "item", itemName: "미니펫 강화석💫", count: 100 },
+            { weight: 80, rateText: "8%", type: "item", itemName: "1억포인트상자🪙(/포인트상자오픈)", count: 3 },
+            { weight: 60, rateText: "6%", type: "item", itemName: "홈뱃지 큐브💟", count: 10 },
+            { weight: 40, rateText: "4%", type: "item", itemName: "펜던트뽑기💎(/펜던트오픈)", count: 10 },
+            { weight: 25, rateText: "2.5%", type: "item", itemName: "다이아상자💎(/다이아상자오픈)", count: 2 },
+            { weight: 15, rateText: "1.5%", type: "item", itemName: "홈뱃지 큐브💟", count: 50 },
+            { weight: 7, rateText: "0.7%", type: "item", itemName: "만능상자🔐(/만능상자오픈 숫자)", count: 1 },
+            { weight: 2, rateText: "0.2%", type: "platinum", itemName: "", count: 0 },
+            { weight: 1, rateText: "0.1%", type: "jackpot", itemName: "", count: 0 }
+        ],
+        platinumRewards: [
+            { weight: 30, rateText: "30%", itemName: "홈뱃지 큐브💟", count: 200 },
+            { weight: 25, rateText: "25%", itemName: "다이아상자💎(/다이아상자오픈)", count: 100 },
+            { weight: 20, rateText: "20%", itemName: "펜던트뽑기💎(/펜던트오픈)", count: 200 },
+            { weight: 10, rateText: "10%", itemName: "만능상자🔐(/만능상자오픈 숫자)", count: 2 },
+            { weight: 7, rateText: "7%", itemName: "펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)", count: 1 },
+            { weight: 5, rateText: "5%", itemName: "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)", count: 1 },
+            { weight: 3, rateText: "3%", itemName: "만능상자🔐(/만능상자오픈 숫자)", count: 5 }
+        ],
+        monthlyRewards: {
+            "2026-09": [
+                { itemName: "만능상자🔐(/만능상자오픈 숫자)", count: 5 },
+                { itemName: "홈뱃지 큐브💟", count: 1000 },
+                { itemName: "다이아상자💎(/다이아상자오픈)", count: 300 }
+            ]
+        }
     },
     diamondTycoon: { // 광산에서 재벌까지 한정판 펫스킬 설정
         skillName: "광산에서 재벌까지",
@@ -3073,7 +3116,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var matzangField = ensureMatzangFieldData(data);
         addResponseTiming("맞짱필드 보정", commonStepStart);
         var petMusou = ensurePetMusouData(data);
-        recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat);
+        var petMusouRecoveryHomeData = petMusou.active && !petMusou.startReady ? loadJsonFile(homeDataFile) : null; // 모집 종료 시점 참가자 능력치 계산용
+        recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat, petMusouRecoveryHomeData);
         petMusou = ensurePetMusouData(data);
         if (!ctx.isDev) ensurePetMusouScheduleTimer(replier);
         if (isHoiPassPremiumAutomationCommand(msg)) {
@@ -3146,6 +3190,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (isPetMusouBlockedDuringTournamentCommand(petMusou, msg, sender)) {
+            if (msg.charAt(0) === "/" || msg === "ㅈㅈㅈ" || msg === "ㅍㅍㅍ" || msg === "ㅁㅁㅁ") {
+                replier.reply("🗡️ 펫무쌍 대회 진행 중에는 펫무쌍 관련 명령어만 사용할 수 있습니다.\n\n허용 명령어: /펫무쌍공격 [1-10], /무쌍순위");
+            }
             return;
         }
         commonStepStart = Date.now();
@@ -7695,27 +7742,64 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     data.member[sender].cntlike = 0;
                 }
 
-                if (msg === "/선물전달" && sender == "호이 남") {
-                    for (let user in data.member) {
-                        if (data.member[user].bag["호이응원패키지(무료)🐹[2]"]) {
-                            data.member[user].bag["호이응원패키지(무료)🐹[2]"]++;
-                        } else {
-                            data.member[user].bag["호이응원패키지(무료)🐹[2]"] = 1;
-                        }
+                if (msg === "/선물전달" || /^\/선물전달\s+.+\/\d+$/.test(msg)) {
+                    if (sender !== "호이 남") {
+                        replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
+                        return;
                     }
-                    var message = "호이응원패키지(무료)🐹[2] 1개가 지급되었습니다.\n가방에 3개 소지시 잠수계정으로 인지하여 계정이 삭제 될수 있으니 오픈하여주세요!\n\n 사용 방법:\n1. /패키지가방\n/패키지사용 [가방번호] [오픈갯수]";
-                    Api.replyRoom(room1, message);
-                    Api.replyRoom(room2, message);
-                    Api.replyRoom(room3, message);
-                    Api.replyRoom(room5, message);
-                    Api.replyRoom(room6, message);
-                    Api.replyRoom(room7, message);
-                    Api.replyRoom(room10, message);
-                    //  Api.replyRoom(room9, message);
-                    Api.replyRoom(room11, message);
-                    Api.replyRoom(room12, message);
-                    Api.replyRoom(room13, message);
-                    Api.replyRoom(room90, message);
+                    var giftMatch = msg.match(/^\/선물전달\s+(.+)\/(\d+)$/);
+                    if (!giftMatch) {
+                        replier.reply("사용법: /선물전달 아이템이름/갯수\n예시: /선물전달 미니펫뽑기🐹(/미니펫오픈)/1000");
+                        return;
+                    }
+                    var giftItemName = giftMatch[1].trim();
+                    var giftItemCount = parseInt(giftMatch[2], 10);
+                    if (!giftItemName || !isFinite(giftItemCount) || giftItemCount < 1) {
+                        replier.reply("❌ 아이템이름과 1개 이상의 지급 수량을 확인해주세요.");
+                        return;
+                    }
+                    var giftRecipientCount = 0;
+                    for (var giftUser in data.member) {
+                        addItem(data, giftUser, giftItemName, giftItemCount);
+                        giftRecipientCount++;
+                    }
+                    if (giftRecipientCount < 1) {
+                        replier.reply("지급 가능한 사용자가 없습니다.");
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    var giftMessage = "🎁 호이가 여러분의 주머니에\n선물을 넣어드렸습니다.\nㄱ( ^ㅡ^)r ~ 덩 실 ㄱ( ^ㅡ^)r ~  덩실\n━━━━━━━━━━━━\n" + giftItemName + " " + numberWithCommas(giftItemCount) + "개가 지급되었습니다.\n\n/패키지가방 을 확인해주세요.";
+                    noticeMsg(giftMessage);
+                    replier.reply("✅ 전체 유저 선물 전달이 완료되었습니다.\n지급 대상: " + numberWithCommas(giftRecipientCount) + "명");
+                }
+                if (msg === "/프리미엄전달" || /^\/프리미엄전달\s+.+\/\d+$/.test(msg)) {
+                    if (sender !== "호이 남") {
+                        replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
+                        return;
+                    }
+                    var premiumGiftMatch = msg.match(/^\/프리미엄전달\s+(.+)\/(\d+)$/);
+                    if (!premiumGiftMatch) {
+                        replier.reply("📌 사용법\n/프리미엄전달 아이템이름/갯수\n\n📌 사용 예시\n/프리미엄전달 미니펫뽑기🐹(/미니펫오픈)/1000");
+                        return;
+                    }
+                    var premiumGiftItemName = premiumGiftMatch[1].trim();
+                    var premiumGiftItemCount = parseInt(premiumGiftMatch[2], 10);
+                    if (!premiumGiftItemName || !isFinite(premiumGiftItemCount) || premiumGiftItemCount < 1) {
+                        replier.reply("❌ 아이템이름과 1개 이상의 지급 수량을 확인해주세요.");
+                        return;
+                    }
+                    var premiumGiftUsers = getActiveSupportPassUsers(data, "premium");
+                    if (premiumGiftUsers.length < 1) {
+                        replier.reply("지급 가능한 호이패스 프리미엄 유저가 없습니다.");
+                        return;
+                    }
+                    for (var premiumGiftUserIndex = 0; premiumGiftUserIndex < premiumGiftUsers.length; premiumGiftUserIndex++) {
+                        addItem(data, premiumGiftUsers[premiumGiftUserIndex], premiumGiftItemName, premiumGiftItemCount);
+                    }
+                    saveJsonFile(data, filePath);
+                    var premiumGiftMessage = "👑 호이패스 프리미엄 👑\n\n👑 호이패스 프리미엄 전용 전체 선물입니다!\n🎩 “VIP 회원님, 이쪽으로 모시겠습니다.”\n\n어서 오세요! 자리는 미리 준비해두었습니다.\n오늘의 VIP 코스 요리는 바로… 🎁\n━━━━━━━━━━━━\n🎁 " + premiumGiftItemName + " " + numberWithCommas(premiumGiftItemCount) + "개가 지급되었습니다.\n━━━━━━━━━━━━\n맛있게 챙겨가시고, 계산은 호이가 하겠습니다. ( _ _)\n\n/패키지가방에서 선물을 확인해주세요!";
+                    noticeMsg(premiumGiftMessage);
+                    replier.reply("✅ 호이패스 프리미엄 선물 전달이 완료되었습니다.\n지급 대상: " + numberWithCommas(premiumGiftUsers.length) + "명");
                 }
                 if (msg === "/선물삭제" && (isAdmin(sender) || isMaster(sender))) {
                     var freeSupportPackageDeleteResult = removeAllHoiFreeSupportPackages(data);
@@ -18084,11 +18168,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("[" + targetUser + "] 이름을 가진 멤버가 존재하지 않습니다.");
                         return;
                     }
-                    if (!isMemberTierKing(data, targetUser)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, targetUser) + "]님은 티어 👑킹 미만이라 포인트를 받을 수 없습니다.");
-                        return;
-                    }
-
                     if (sender == targetUser) {
                         replier.reply("장난해?😤");
                         return;
@@ -24192,6 +24271,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath);
                     return;
                 }
+                if (isSealedVaultCommandMessage(msg)) {
+                    var sealedVaultResult = runSealedVaultCommand(sender, data, petData, guildData, msg);
+                    if (sealedVaultResult.changed) saveJsonFile(data, filePath);
+                    replier.reply(sealedVaultResult.message);
+                    for (var sealedVaultNoticeIndex = 0; sealedVaultNoticeIndex < sealedVaultResult.noticeMessages.length; sealedVaultNoticeIndex++) {
+                        try {
+                            noticeMsg(sealedVaultResult.noticeMessages[sealedVaultNoticeIndex]);
+                        } catch (sealedVaultNoticeError) {
+                            debuggerLog("[ERROR : 봉인금고 NoticeMsg] " + sealedVaultNoticeError.toString());
+                        }
+                    }
+                    return;
+                }
                 if (msg === "/다이아상자오픈" || /^\/다이아상자오픈\s+\d+$/.test(msg)) {
                     runDiamondBoxOpen(sender, data, petData, guildData, currencyLogData, msg, replier);
                     saveJsonFile(data, filePath);
@@ -29654,7 +29746,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/홈뱃지해제\s+\d+(?:\s+\d+)?$/.test(command) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(command) ||
         /^\/펜던트승급\s+\d+$/.test(command) || command === "승급할거임" || command === "쫄아뜸" ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
-        /^\/만능상자오픈\s+\d+$/.test(command) || command === "/재벌도전" || command === "/기도" ||
+        /^\/만능상자오픈\s+\d+$/.test(command) || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
@@ -35404,6 +35496,7 @@ function isPetMusouLightningRateCommand(msg) {
 // 펫무쌍 진행 중 일반 유저의 펫무쌍 외 입력 차단 여부를 확인하는 함수
 function isPetMusouBlockedDuringTournamentCommand(musou, msg, sender) {
     if (!musou || !musou.active || typeof msg !== "string") return false;
+    if (!musou.startReady && musou.signupOpen && msg === "/펫무쌍준비") return false;
     if (isPetMusouOperator(sender)) return false;
     if (msg === "/펫무쌍시작" && isPetMusouStartOperator(sender)) return false;
     return !isPetMusouAllowedDuringTournamentCommand(msg);
@@ -35459,7 +35552,7 @@ function buildPetMusouPreparedParticipantList(data, petData, guildData, musou) {
 // 펫무쌍 참가 신청을 저장하는 함수
 function joinPetMusou(data, petData, petSkillData, guildData, sender) {
     var musou = ensurePetMusouData(data);
-    if (musou.active || !musou.signupOpen) return { ok: false, message: "❌ 현재 펫무쌍 참가 신청을 받고 있지 않습니다." };
+    if (!musou.signupOpen || (musou.active && (musou.startReady || new Date().getTime() >= musou.startGraceDeadlineAt))) return { ok: false, message: "❌ 현재 펫무쌍 참가 신청을 받고 있지 않습니다." };
     if (isAccountSuspended(data, sender)) return { ok: false, message: "❌ 계정정지 상태에서는 펫무쌍에 참가할 수 없습니다." };
     var guildInfo = getPetMusouGuildInfo(data, guildData, sender);
     if (!guildInfo) return { ok: false, message: "❌ 길드에 가입된 유저만 펫무쌍에 참가할 수 있습니다." };
@@ -35498,9 +35591,32 @@ function joinPetMusou(data, petData, petSkillData, guildData, sender) {
 }
 
 // 펫무쌍 참가자 전원의 시작 시점 종합매력을 저장하고 대회를 시작하는 함수
-function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
+function beginPetMusou(data, petData, homeData, petSkillData, guildData, finalizeSignup) {
     var musou = ensurePetMusouData(data);
-    if (musou.active) return { ok: false, message: "❌ 이미 펫무쌍 대회가 진행 중입니다." };
+    if (!finalizeSignup) {
+        if (musou.active) return { ok: false, message: "❌ 이미 펫무쌍 대회가 진행 중입니다." };
+        var signupNow = new Date().getTime(); // 참가 모집 마감시각과 중복 타이머 방지 토큰 기준
+        musou.active = true;
+        musou.signupOpen = true;
+        musou.startReady = false;
+        musou.players = {};
+        musou.participants = {};
+        musou.turnQueue = [];
+        musou.currentHolder = "";
+        musou.roundId = musou.nextRoundId;
+        musou.startGraceToken = String(signupNow) + "_" + String(Math.random());
+        musou.startGraceDeadlineAt = signupNow + GLOBAL_CONFIG.petMusou.startGraceMs;
+        return {
+            ok: true,
+            message: "[⚔️전체알림⚔️]\n" +
+                "🗡️ 펫무쌍 대화 시작 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 전 🗡️\n" +
+                "/펫무쌍준비 를 입력하면 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 안에 대회에 참여할 수 있습니다.\n\n" +
+                "이미 준비한 참가자는 그대로 참여합니다.\n" +
+                "모집이 끝나면 참가자 명단과 함께 시작합니다.\n" +
+                "https://open.kakao.com/o/gaP4Xybh"
+        };
+    }
+    if (!musou.active || musou.startReady || !musou.signupOpen) return { ok: false, message: "❌ 참가 모집 중인 대회가 없습니다." };
     var preparedParticipants = musou.nextParticipants;
     var participantNames = Object.keys(preparedParticipants);
     var validUsers = [];
@@ -35560,7 +35676,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
     musou.lightningRate = GLOBAL_CONFIG.petMusou.lightningStartRate;
     musou.turnToken = "";
     musou.turnDeadlineAt = 0;
-    var startGraceNow = new Date().getTime(); // 30초 시작 유예 토큰과 마감시각의 공통 기준시각
+    var startGraceNow = new Date().getTime(); // 참가 확정 시각
     musou.startReady = false;
     musou.startGraceToken = String(startGraceNow) + "_" + String(Math.random());
     musou.startGraceDeadlineAt = startGraceNow + GLOBAL_CONFIG.petMusou.startGraceMs;
@@ -35572,9 +35688,8 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
             "━━━━━━━━━━━━━━━━\n" +
             "참가자: " + validUsers.length + "명\n" +
             "개인 공격권: 기본 " + GLOBAL_CONFIG.petMusou.attackLimit + "회 · " + GLOBAL_CONFIG.petMusou.bonusAttackSkillNames.join("·") + " 장착 시 " + (GLOBAL_CONFIG.petMusou.attackLimit + GLOBAL_CONFIG.petMusou.bonusAttackCount) + "회\n" +
-            "준비 유예시간: " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초\n" +
             "공격 제한시간: " + Math.floor(GLOBAL_CONFIG.petMusou.turnTimeoutMs / 1000) + "초\n\n" +
-            "⏳ 준비 시간이 끝난 뒤 첫 공격이 시작됩니다.\n\n" +
+            "참가 모집이 끝났습니다. 첫 공격을 시작합니다.\n\n" +
             "10개의 깃발 중 진짜 깃발은 단 1개!\n" +
             "처음 발견한 가짜 깃발은 공격권만 차감됩니다.\n" +
             "공개된 가짜를 다시 공격하면 즉시 탈락합니다.\n\n" +
@@ -35582,7 +35697,8 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData) {
             "━━━━━━━━━━━━━━━━\n" +
             "펫무쌍 공격은 공성전 방에서만 가능합니다.\n" +
             "https://open.kakao.com/o/gaP4Xybh" +
-            (excludedUsers.length > 0 ? "\n\n참가 조건 재확인 제외: " + excludedUsers.join(", ") : "")
+            (excludedUsers.length > 0 ? "\n\n참가 조건 재확인 제외: " + excludedUsers.join(", ") : "") +
+            "\n\n" + buildPetMusouAliveParticipantList(data, petData, guildData, musou)
     };
 }
 
@@ -35841,7 +35957,16 @@ function buildPetMusouAttackDetailMessage(data, petData, guildData, musou, attac
         "종합매력(시작 기준): " + numberWithCommas(snapshot.baseExp) + "💕";
 }
 
-// 펫무쌍 깃발 현황과 다음 공격자를 출력하는 함수
+// 현재 탈락하지 않은 펫무쌍 참가자 명단을 생성하는 함수
+function buildPetMusouAliveParticipantList(data, petData, guildData, musou) {
+    var names = [];
+    for (var user in musou.players) {
+        if (musou.players.hasOwnProperty(user) && musou.players[user].alive) names.push("• " + checkRank(data, petData, guildData, user));
+    }
+    return "👥 참가자 명단 (" + names.length + "명)" + allsee + "\n" + names.join("\n");
+}
+
+// 펫무쌍 현재 공격 차례와 깃발·생존 참가자 상태를 출력하는 함수
 function buildPetMusouStatusMessage(data, petData, guildData, musou) {
     var attacker = getPetMusouCurrentAttacker(musou);
     if (!attacker) return "";
@@ -35866,7 +35991,7 @@ function buildPetMusouStatusMessage(data, petData, guildData, musou) {
         }
         lines.push("[" + flagNo + "] " + getPetMusouFlagName(flagNo) + ": " + stateText);
     }
-    lines.push("━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.");
+    lines.push("━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, attacker) + "] 님의 공격 차례입니다.", buildPetMusouAliveParticipantList(data, petData, guildData, musou));
     return lines.join("\n");
 }
 
@@ -36042,10 +36167,27 @@ function clearPetMusouOpeningTimer(ctx) {
     }
 }
 
-// 펫무쌍 30초 준비 종료 후 첫 공격과 턴 타이머를 시작하는 함수
-function openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat) {
+// 펫무쌍 참가 모집 종료 후 참가자를 확정하고 첫 공격을 시작하는 함수
+function openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat, homeData) {
     var musou = ensurePetMusouData(data);
-    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return false;
+    if (!musou.active || musou.startReady) return false;
+    if (musou.signupOpen) {
+        var startResult = beginPetMusou(data, petData, homeData, petSkillData, guildData, true);
+        if (!startResult.ok) {
+            musou.active = false;
+            musou.startGraceToken = "";
+            musou.startGraceDeadlineAt = 0;
+            saveJsonFile(data, filePath);
+            castleMsg(startResult.message, replier, true);
+            return false;
+        }
+        musou.startReady = true;
+        musou.startGraceToken = "";
+        musou.startGraceDeadlineAt = 0;
+        saveJsonFile(data, filePath);
+        castleMsg(startResult.message, replier, true);
+    }
+    if (!getPetMusouCurrentAttacker(musou)) return false;
     musou.startReady = true;
     musou.startGraceToken = "";
     musou.startGraceDeadlineAt = 0;
@@ -36054,10 +36196,10 @@ function openPetMusouForAttacks(data, petData, petSkillData, guildData, replier,
     return true;
 }
 
-// 펫무쌍 저장 마감시각을 기준으로 30초 시작 유예 타이머를 예약하거나 복구하는 함수
+// 펫무쌍 저장 마감시각을 기준으로 참가 모집 타이머를 예약하거나 복구하는 함수
 function startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, preserveDeadline) {
     var musou = ensurePetMusouData(data);
-    if (!musou.active || musou.startReady || !getPetMusouCurrentAttacker(musou)) return;
+    if (!musou.active || musou.startReady) return;
     var timerCtx = getCurrentContext();
     var timerCtxKey = timerCtx.key();
     clearPetMusouOpeningTimer(timerCtx);
@@ -36085,7 +36227,8 @@ function startPetMusouOpeningTimer(data, petData, petSkillData, guildData, repli
             var latestGuildData = loadJsonFile(guildPath);
             var latestMusou = ensurePetMusouData(latestData);
             if (!latestMusou.active || latestMusou.startReady || latestMusou.startGraceToken !== token) return;
-            openPetMusouForAttacks(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat);
+            var latestHomeData = loadJsonFile(homeDataFile);
+            openPetMusouForAttacks(latestData, latestPetData, latestPetSkillData, latestGuildData, replier, isGroupChat, latestHomeData);
         } finally {
             if (timerTransactionEntered) endDataSaveTransaction();
             if (timerTransactionAcquired) dataTransactionLock.unlock();
@@ -36155,14 +36298,14 @@ function startPetMusouTurnTimer(data, petData, petSkillData, guildData, replier,
 }
 
 // 봇 재시작 후 저장된 펫무쌍 턴을 다음 수신 메시지에서 복구하는 함수
-function recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat) {
+function recoverPetMusouTurnIfNeeded(data, petData, petSkillData, guildData, replier, isGroupChat, homeData) {
     var musou = ensurePetMusouData(data);
-    if (!musou.active || !getPetMusouCurrentAttacker(musou)) return;
+    if (!musou.active) return;
     var ctx = getCurrentContext();
     if (!musou.startReady) {
         if (petMusouOpeningTimers[ctx.key()]) return;
         if (musou.startGraceDeadlineAt > 0 && musou.startGraceDeadlineAt <= new Date().getTime()) {
-            openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat);
+            openPetMusouForAttacks(data, petData, petSkillData, guildData, replier, isGroupChat, homeData);
             return;
         }
         startPetMusouOpeningTimer(data, petData, petSkillData, guildData, replier, isGroupChat, true);
@@ -38551,6 +38694,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 1);
         addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
         addItem(data, sender, "펫 강화석⭐", 30);
+        addItem(data, sender, GLOBAL_CONFIG.sealedVault.vaultItemName, GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward);
         member.dailyQuestCnt = (member.dailyQuestCnt || 0) + 1;
         member.weeklyQuestCnt = Math.min((parseInt(member.weeklyQuestCnt, 10) || 0) + 1, status.weeklyMax);
         status.weeklyUsed = member.weeklyQuestCnt;
@@ -38558,7 +38702,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         claimed = true;
         dailyClaimed = true;
 
-        messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개");
+        messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개");
     }
 
     if (status.passDailyComplete && !status.passDailyRewardDone) {
@@ -39938,6 +40082,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     lines.push("다이아상자💎(/다이아상자오픈) 1개");
     lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
     lines.push("펫 강화석⭐ 30개");
+    lines.push(GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개");
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【🦋주간 퀘스트 조건 】");
     lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
@@ -40241,6 +40386,8 @@ function generateBagOutput(bagItems) {
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
             "🚑 전쟁불안정 감소권(/안정)",
+            GLOBAL_CONFIG.sealedVault.vaultItemName,
+            GLOBAL_CONFIG.sealedVault.keyItemName,
             "만능상자🔐(/만능상자오픈 숫자)",
             "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)",
             "펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)",
@@ -43118,12 +43265,13 @@ function addPoint(data, user, delta) {
 }
 // 당근 거래가 불가능 아이템
 function isTradableItem(itemName) {
-    var itemListData = loadJsonFile(itemListPath);
-
     var raw = String(itemName || "");
     var base = normalizeItemName(raw);
 
     if (base === "펫 친밀도🐾") return false;
+    if (raw === GLOBAL_CONFIG.sealedVault.keyItemName || base === GLOBAL_CONFIG.sealedVault.keyItemName) return false;
+
+    var itemListData = loadJsonFile(itemListPath);
 
     var untradable = itemListData && itemListData.untradableList ? itemListData.untradableList : [];
 
@@ -49343,6 +49491,599 @@ function applyRewardGainItems(data, user, gainItems) {
     }
 }
 
+// 봉인금고 관련 명령어를 현재 응답에서 처리할지 확인하는 함수
+function isSealedVaultCommandMessage(msg) {
+    var command = String(msg || "");
+    if (command === "해방열쇠조합" || command === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(command)) return true;
+    return command === "/봉인금고" || command === "/봉인금고확률" || command === "/봉인금고기록" || command === "/봉인금고기록전체" ||
+        /^\/봉인금고오픈(?:\s+.*)?$/.test(command) || /^\/해방열쇠지급(?:\s+.*)?$/.test(command) ||
+        /^\/해방열쇠회수(?:\s+.*)?$/.test(command) || /^\/봉인금고상태(?:\s+.*)?$/.test(command) ||
+        /^\/봉인금고부스터설정(?:\s+.*)?$/.test(command) || /^\/봉인금고천장설정(?:\s+.*)?$/.test(command) ||
+        /^\/봉인금고보상설정(?:\s+.*)?$/.test(command);
+}
+
+// 봉인금고 데이터가 바뀌는 명령어인지 확인하는 함수
+function isSealedVaultMutationCommandMessage(msg) {
+    var command = String(msg || "");
+    if (/^\/해방열쇠조합\s+\d+$/.test(command)) return true;
+    return /^\/봉인금고오픈\s+\d+$/.test(command) || /^\/해방열쇠지급\s+.+\s+\d+$/.test(command) ||
+        /^\/해방열쇠회수\s+.+\s+\d+$/.test(command) || /^\/봉인금고부스터설정\s+.+\s+\d+$/.test(command) ||
+        /^\/봉인금고천장설정\s+.+\s+\d+$/.test(command) ||
+        /^\/봉인금고보상설정\s+\d{4}-(?:0[1-9]|1[0-2])\s+\d+\s+\d+\s+\d+$/.test(command);
+}
+
+// 봉인금고 공통 반환 객체를 생성하는 함수
+function createSealedVaultCommandResult(message, changed, noticeMessages) {
+    return {
+        message: String(message || ""),
+        changed: changed === true,
+        noticeMessages: noticeMessages instanceof Array ? noticeMessages : []
+    };
+}
+
+// 음수가 아닌 봉인금고 누적값을 안전한 정수로 정리하는 함수
+function normalizeSealedVaultCount(value, maxValue) {
+    var count = parseInt(value, 10);
+    if (isNaN(count) || count < 0) count = 0;
+    if (typeof maxValue === "number" && count > maxValue) count = maxValue;
+    return count;
+}
+
+// 회원의 봉인금고 누적 상태를 준비하는 함수
+function ensureSealedVaultUserState(data, user) {
+    if (!data || !data.member || !data.member[user]) return null;
+    var member = data.member[user];
+    if (!member.sealedVault || typeof member.sealedVault !== "object" || member.sealedVault instanceof Array) member.sealedVault = {};
+    var state = member.sealedVault;
+    state.totalOpenCount = normalizeSealedVaultCount(state.totalOpenCount);
+    state.boosterCount = normalizeSealedVaultCount(state.boosterCount, GLOBAL_CONFIG.sealedVault.boosterCycle - 1);
+    state.platinumMissCount = normalizeSealedVaultCount(state.platinumMissCount, GLOBAL_CONFIG.sealedVault.platinumPityCount - 1);
+    if (!(state.rareRecords instanceof Array)) state.rareRecords = [];
+    if (state.rareRecords.length > GLOBAL_CONFIG.sealedVault.userRareLogMax) state.rareRecords = state.rareRecords.slice(0, GLOBAL_CONFIG.sealedVault.userRareLogMax);
+    return state;
+}
+
+// 봉인금고 공용 설정·기록 저장 영역을 준비하는 함수
+function ensureSealedVaultRootData(data) {
+    if (!data.sealedVault || typeof data.sealedVault !== "object" || data.sealedVault instanceof Array) data.sealedVault = {};
+    if (!data.sealedVault.monthlyRewards || typeof data.sealedVault.monthlyRewards !== "object" || data.sealedVault.monthlyRewards instanceof Array) data.sealedVault.monthlyRewards = {};
+    if (!(data.sealedVault.rareRecords instanceof Array)) data.sealedVault.rareRecords = [];
+    if (!(data.sealedVault.adminLogs instanceof Array)) data.sealedVault.adminLogs = [];
+    return data.sealedVault;
+}
+
+// KST 기준 봉인금고 월 키를 반환하는 함수
+function getSealedVaultMonthKey(inputDate) {
+    var date = inputDate instanceof Date ? inputDate : new Date();
+    if (typeof java !== "undefined" && java.text && java.util) {
+        var formatter = new java.text.SimpleDateFormat("yyyy-MM");
+        formatter.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Seoul"));
+        return String(formatter.format(date));
+    }
+    var year = date.getFullYear();
+    var month = date.getMonth() + 1;
+    return year + "-" + (month < 10 ? "0" + month : String(month));
+}
+
+// 월 키를 사용자용 월 표시로 변환하는 함수
+function getSealedVaultMonthLabel(monthKey) {
+    var match = String(monthKey || "").match(/^\d{4}-(\d{2})$/);
+    return match ? parseInt(match[1], 10) + "월" : String(monthKey || "이번 달");
+}
+
+// 현재 월에 적용할 초대형 보상 구성을 반환하는 함수
+function getSealedVaultMonthlyRewards(data, monthKey) {
+    var stored = data && data.sealedVault && data.sealedVault.monthlyRewards ? data.sealedVault.monthlyRewards[monthKey] : null;
+    if (stored instanceof Array && stored.length > 0) return stored;
+    var defaults = GLOBAL_CONFIG.sealedVault.monthlyRewards[monthKey];
+    return defaults instanceof Array && defaults.length > 0 ? defaults : null;
+}
+
+// 봉인금고 부스터 진행률을 정수 백분율로 반환하는 함수
+function getSealedVaultBoosterPercent(state) {
+    return Math.floor((state.boosterCount * 100) / GLOBAL_CONFIG.sealedVault.boosterCycle);
+}
+
+// 현재값과 최대값으로 봉인금고 공용 진행 막대를 생성하는 함수
+function buildSealedVaultProgressBar(currentCount, maxCount) {
+    var current = normalizeSealedVaultCount(currentCount, maxCount);
+    var max = normalizeSealedVaultCount(maxCount);
+    var percent = max > 0 ? Math.floor((current * 100) / max) : 0;
+    var filled = Math.floor(percent / 10);
+    var bar = "[";
+    for (var i = 0; i < 10; i++) bar += i < filled ? "■" : "□";
+    return bar + "] " + percent + "% (" + current + "/" + max + ")";
+}
+
+// 보상 목록을 줄 단위 사용자 문구로 변환하는 함수
+function formatSealedVaultRewardLines(rewards) {
+    var lines = [];
+    for (var i = 0; rewards && i < rewards.length; i++) {
+        lines.push(rewards[i].itemName + " ×" + numberWithCommas(rewards[i].count));
+    }
+    return lines.join("\n");
+}
+
+// 봉인금고 가중치 목록에서 보상 하나를 추첨하는 함수
+function drawSealedVaultWeightedReward(rewards, randomFn) {
+    var totalWeight = 0;
+    for (var i = 0; i < rewards.length; i++) totalWeight += rewards[i].weight;
+    if (totalWeight <= 0) throw new Error("봉인금고 보상 가중치 합계 오류");
+    var roll = Math.floor(randomFn() * totalWeight);
+    if (roll < 0) roll = 0;
+    if (roll >= totalWeight) roll = totalWeight - 1;
+    var cumulative = 0;
+    for (var j = 0; j < rewards.length; j++) {
+        cumulative += rewards[j].weight;
+        if (roll < cumulative) return rewards[j];
+    }
+    throw new Error("봉인금고 보상 추첨 오류");
+}
+
+// 봉인금고 합산 보상에 아이템 수량을 추가하는 함수
+function addSealedVaultGain(gainMap, gainOrder, itemName, count) {
+    if (!gainMap.hasOwnProperty(itemName)) {
+        gainMap[itemName] = 0;
+        gainOrder.push(itemName);
+    }
+    gainMap[itemName] += count;
+}
+
+// 봉인금고 희귀 보상 기록을 회원과 전체 기록에 함께 남기는 함수
+function appendSealedVaultRareRecord(data, user, rareEvent) {
+    var state = ensureSealedVaultUserState(data, user);
+    var root = ensureSealedVaultRootData(data);
+    var record = {
+        at: formatDateTime(new Date()),
+        user: user,
+        type: rareEvent.type,
+        doubled: rareEvent.doubled === true,
+        guaranteed: rareEvent.guaranteed === true,
+        rewardText: formatSealedVaultRewardLines(rareEvent.rewards).replace(/\n/g, " / ")
+    };
+    state.rareRecords.unshift(record);
+    root.rareRecords.unshift(record);
+    if (state.rareRecords.length > GLOBAL_CONFIG.sealedVault.userRareLogMax) state.rareRecords.length = GLOBAL_CONFIG.sealedVault.userRareLogMax;
+    if (root.rareRecords.length > GLOBAL_CONFIG.sealedVault.globalRareLogMax) root.rareRecords.length = GLOBAL_CONFIG.sealedVault.globalRareLogMax;
+}
+
+// 봉인금고 관리자 변경 이력을 남기는 함수
+function appendSealedVaultAdminLog(data, operator, action, target, beforeValue, afterValue) {
+    var root = ensureSealedVaultRootData(data);
+    root.adminLogs.unshift({
+        at: formatDateTime(new Date()),
+        operator: operator,
+        action: action,
+        target: target,
+        beforeValue: beforeValue,
+        afterValue: afterValue
+    });
+    if (root.adminLogs.length > GLOBAL_CONFIG.sealedVault.adminLogMax) root.adminLogs.length = GLOBAL_CONFIG.sealedVault.adminLogMax;
+}
+
+// 봉인금고 현재 상태 UI를 생성하는 함수
+function buildSealedVaultStatusMessage(data, petData, guildData, user) {
+    var state = ensureSealedVaultUserState(data, user);
+    var config = GLOBAL_CONFIG.sealedVault;
+    var bag = data.member[user].bag || {};
+    var vaultCount = normalizeSealedVaultCount(bag[config.vaultItemName]);
+    var keyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
+    var monthKey = getSealedVaultMonthKey();
+    var monthlyRewards = getSealedVaultMonthlyRewards(data, monthKey);
+    var nextBoosterCount = config.boosterCycle - state.boosterCount; // 다음 2배 보상까지 남은 개봉 수
+    var pityRemaining = config.platinumPityCount - state.platinumMissCount; // 다음 플래티넘 확정까지 최대 남은 수
+    var lines = [];
+    lines.push("🔒 [" + checkRank(data, petData, guildData, user) + "] 님의 호이의 봉인금고");
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("보유 호봉금고🔐: " + numberWithCommas(vaultCount) + "개");
+    lines.push("보유 해방의 열쇠🗝️: " + numberWithCommas(keyCount) + "개");
+    lines.push("누적 개봉: " + numberWithCommas(state.totalOpenCount) + "회");
+    lines.push("");
+    lines.push("🔥 현재 2배 부스터까지: " + nextBoosterCount + "회 남음");
+    lines.push(buildSealedVaultProgressBar(state.boosterCount, config.boosterCycle));
+    lines.push("");
+    lines.push("💎 플래티넘 금고 확정까지: " + pityRemaining + "회 남음");
+    lines.push(buildSealedVaultProgressBar(state.platinumMissCount, config.platinumPityCount));
+    lines.push("━━━━━━━━━━━━━━━");
+    if (monthlyRewards) {
+        lines.push("👑 " + getSealedVaultMonthLabel(monthKey) + " 이달의 초대형 보상");
+        lines.push(formatSealedVaultRewardLines(monthlyRewards));
+    } else {
+        lines.push("⚠️ " + getSealedVaultMonthLabel(monthKey) + " 초대형 보상이 아직 설정되지 않았습니다.");
+    }
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("확인: /봉인금고");
+    lines.push("개봉: /봉인금고오픈 [숫자]");
+    lines.push("확률: /봉인금고확률");
+    lines.push("기록: /봉인금고기록");
+    lines.push("");
+    lines.push("※ 1회당 해방의 열쇠🗝️ 1개가 소모됩니다.");
+    return lines.join("\n");
+}
+
+// 봉인금고 확률 안내 UI를 생성하는 함수
+function buildSealedVaultProbabilityMessage() {
+    var config = GLOBAL_CONFIG.sealedVault;
+    var lines = [];
+    lines.push("🔒 호이의 봉인금고 확률 안내");
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("💎 플래티넘 금고: 0.2%");
+    lines.push("👑 이달의 초대형 보상: 0.1%");
+    lines.push("");
+    lines.push("🔥 2배 부스터");
+    lines.push(config.boosterCycle + "번째 개봉마다 해당 보상 2배 지급");
+    lines.push("");
+    lines.push("💎 플래티넘 확정");
+    lines.push((config.platinumPityCount - 1) + "회 연속 미등장 시 " + config.platinumPityCount + "번째 개봉 확정");
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("※ 각 일반 개봉 결과는 독립 확률로 결정됩니다.");
+    lines.push("※ 플래티넘 확정 카운트와 부스터는 계정별로 저장됩니다.");
+    lines.push("※ 일반·플래티넘·초대형 보상 모두 2배 대상입니다.");
+    lines.push("상세 확률 보기" + allsee);
+    lines.push("🔒 호이의 봉인금고 확률");
+    lines.push("━━━━━━━━━━━━━━━");
+    for (var i = 0; i < config.generalRewards.length; i++) {
+        var general = config.generalRewards[i];
+        var generalText = general.type === "platinum" ? "플래티넘 금고💎 보상 추첨" : (general.type === "jackpot" ? "이달의 초대형 보상👑" : general.itemName + " ×" + numberWithCommas(general.count));
+        lines.push(general.rateText + "  " + generalText);
+    }
+    lines.push("합계  100%");
+    lines.push("");
+    lines.push("💎 플래티넘 금고 확률");
+    lines.push("━━━━━━━━━━━━━━━");
+    for (var j = 0; j < config.platinumRewards.length; j++) {
+        var platinum = config.platinumRewards[j];
+        lines.push(platinum.rateText + "  " + platinum.itemName + " ×" + numberWithCommas(platinum.count));
+    }
+    lines.push("합계  100%");
+    return lines.join("\n");
+}
+
+// 봉인금고 희귀 기록 한 줄을 생성하는 함수
+function formatSealedVaultRareRecord(record, includeUser) {
+    var typeText = record.type === "jackpot" ? "👑 초대형" : "💎 플래티넘";
+    var prefix = includeUser ? "[" + record.user + "] " : "";
+    var detail = record.guaranteed ? " [확정]" : "";
+    if (record.doubled) detail += " [2배]";
+    return record.at + "\n" + prefix + typeText + detail + "\n└ " + record.rewardText;
+}
+
+// 개인 봉인금고 희귀 보상 기록 UI를 생성하는 함수
+function buildSealedVaultUserRecordMessage(data, petData, guildData, user) {
+    var state = ensureSealedVaultUserState(data, user);
+    var lines = ["🔒 [" + checkRank(data, petData, guildData, user) + "] 님의 봉인금고 희귀 기록", "━━━━━━━━━━━━━━━"];
+    if (state.rareRecords.length === 0) {
+        lines.push("아직 플래티넘 이상의 보상 기록이 없습니다.");
+        return lines.join("\n");
+    }
+    lines.push("최근 " + state.rareRecords.length + "건" + allsee);
+    for (var i = 0; i < state.rareRecords.length; i++) {
+        if (i > 0) lines.push("");
+        lines.push(formatSealedVaultRareRecord(state.rareRecords[i], false));
+    }
+    return lines.join("\n");
+}
+
+// 전체 봉인금고 희귀 보상 기록 UI를 생성하는 함수
+function buildSealedVaultAllRecordMessage(data) {
+    var root = ensureSealedVaultRootData(data);
+    var lines = ["🔒 봉인금고 전체 희귀 기록", "━━━━━━━━━━━━━━━"];
+    if (root.rareRecords.length === 0) {
+        lines.push("아직 플래티넘 이상의 보상 기록이 없습니다.");
+        return lines.join("\n");
+    }
+    lines.push("최근 " + root.rareRecords.length + "건" + allsee);
+    for (var i = 0; i < root.rareRecords.length; i++) {
+        if (i > 0) lines.push("");
+        lines.push(formatSealedVaultRareRecord(root.rareRecords[i], true));
+    }
+    return lines.join("\n");
+}
+
+// 봉인금고 희귀 보상 전체 공지 문구를 생성하는 함수
+function buildSealedVaultNoticeMessage(data, petData, guildData, user, rareEvent) {
+    var rankText = checkRank(data, petData, guildData, user);
+    var rewardText = formatSealedVaultRewardLines(rareEvent.rewards);
+    if (rareEvent.type === "jackpot") {
+        if (rareEvent.doubled) {
+            return "🔥💎 호이월드 역대급 2배 잭팟! 💎🔥\n" +
+                "━━━━━━━━━━━━━━━\n[" + rankText + "] 님의 2배 부스터가 폭발했습니다!\n\n" + rewardText;
+        }
+        return "🚨 호이월드 초대형 잭팟 발생! 🚨\n" +
+            "━━━━━━━━━━━━━━━\n[" + rankText + "] 님이 호이의 봉인금고에서\n" +
+            getSealedVaultMonthLabel(getSealedVaultMonthKey()) + " 이달의 초대형 보상👑을 획득했습니다!\n\n" + rewardText;
+    }
+    return "💎 플래티넘 금고 " + (rareEvent.guaranteed ? "확정!" : "발견!") + "\n" +
+        "━━━━━━━━━━━━━━━\n[" + rankText + "] 님이 호이의 봉인금고에서\n" + rewardText + "를 획득했습니다!" +
+        (rareEvent.doubled ? "\n🔥 2배 부스터가 적용되었습니다!" : "");
+}
+
+// 봉인금고를 여러 회 순서대로 추첨하고 보상을 합산하는 함수
+function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
+    var config = GLOBAL_CONFIG.sealedVault;
+    var match = String(msg || "").match(/^\/봉인금고오픈\s+(\d+)$/);
+    if (!match) return createSealedVaultCommandResult("🔒 봉인금고 이용 방법\n━━━━━━━━━━━━━━━\n개봉: /봉인금고오픈 [숫자]\n예시: /봉인금고오픈 10\n\n※ 한 번에 최대 " + config.maxOpenCount + "회까지 개봉할 수 있습니다.", false);
+    var openCount = parseInt(match[1], 10);
+    if (!openCount || openCount < 1 || openCount > config.maxOpenCount) {
+        return createSealedVaultCommandResult("❌ 봉인금고는 한 번에 1~" + config.maxOpenCount + "회까지 개봉할 수 있습니다.", false);
+    }
+    var member = data && data.member ? data.member[sender] : null;
+    if (!member) return createSealedVaultCommandResult("❌ 회원 정보를 찾을 수 없습니다.", false);
+    var bag = member.bag || (member.bag = {});
+    var haveVaultCount = normalizeSealedVaultCount(bag[config.vaultItemName]);
+    if (haveVaultCount < openCount) {
+        return createSealedVaultCommandResult(
+            "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n호이의 봉인금고가 부족합니다.\n" +
+            "━━━━━━━━━━━━━━━\n필요한 호봉금고: " + openCount + "개\n보유한 호봉금고: " + haveVaultCount + "개\n부족한 호봉금고: " + (openCount - haveVaultCount) + "개\n\n" +
+            "일일퀘스트 완료 보상으로 " + config.vaultItemName + " " + config.dailyQuestVaultReward + "개를 획득할 수 있습니다.",
+            false
+        );
+    }
+    var haveKeyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
+    if (haveKeyCount < openCount) {
+        return createSealedVaultCommandResult(
+            "❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n해방의 열쇠가 부족합니다.\n" +
+            "━━━━━━━━━━━━━━━\n필요한 열쇠: " + openCount + "개\n보유한 열쇠: " + haveKeyCount + "개\n부족한 열쇠: " + (openCount - haveKeyCount) + "개\n\n해방의 열쇠🗝️는 후원에서 구매할 수 있습니다.\nhttps://hoiland123.tistory.com/700\n\n아이템조합을 원하시면 \"해방열쇠조합\"을 적어보세요.",
+            false
+        );
+    }
+    var monthKey = getSealedVaultMonthKey();
+    var monthlyRewards = getSealedVaultMonthlyRewards(data, monthKey);
+    if (!monthlyRewards) {
+        return createSealedVaultCommandResult("⚠️ " + getSealedVaultMonthLabel(monthKey) + " 초대형 보상이 아직 설정되지 않아 봉인금고를 개봉할 수 없습니다.\n관리자에게 문의해 주세요.", false);
+    }
+
+    var state = ensureSealedVaultUserState(data, sender);
+    var rng = typeof randomFn === "function" ? randomFn : Math.random;
+    var gainMap = {};
+    var gainOrder = [];
+    var rareEvents = [];
+    var boosterTriggerCount = 0; // 요청 내 30회 주기 2배 발동 횟수
+    var platinumCount = 0; // 자연·확정을 합한 플래티넘 등장 횟수
+    var jackpotCount = 0; // 초대형 보상 등장 횟수
+
+    for (var i = 0; i < openCount; i++) {
+        var guaranteedPlatinum = state.platinumMissCount >= config.platinumPityCount - 1; // 이번 회차 200회 확정 여부
+        var outcome = guaranteedPlatinum ? { type: "platinum" } : drawSealedVaultWeightedReward(config.generalRewards, rng);
+        var eventRewards = [];
+        if (outcome.type === "platinum") {
+            var platinumReward = drawSealedVaultWeightedReward(config.platinumRewards, rng);
+            eventRewards.push({ itemName: platinumReward.itemName, count: platinumReward.count });
+            state.platinumMissCount = 0;
+            platinumCount++;
+        } else if (outcome.type === "jackpot") {
+            for (var monthlyIndex = 0; monthlyIndex < monthlyRewards.length; monthlyIndex++) {
+                eventRewards.push({ itemName: monthlyRewards[monthlyIndex].itemName, count: monthlyRewards[monthlyIndex].count });
+            }
+            state.platinumMissCount++;
+            jackpotCount++;
+        } else {
+            eventRewards.push({ itemName: outcome.itemName, count: outcome.count });
+            state.platinumMissCount++;
+        }
+
+        state.boosterCount++;
+        var doubled = state.boosterCount >= config.boosterCycle; // 30번째 회차의 최종 보상 2배 여부
+        if (doubled) {
+            state.boosterCount = 0;
+            boosterTriggerCount++;
+        }
+        var multiplier = doubled ? 2 : 1;
+        for (var rewardIndex = 0; rewardIndex < eventRewards.length; rewardIndex++) {
+            eventRewards[rewardIndex].count *= multiplier;
+            addSealedVaultGain(gainMap, gainOrder, eventRewards[rewardIndex].itemName, eventRewards[rewardIndex].count);
+        }
+        state.totalOpenCount++;
+
+        if (outcome.type === "platinum" || outcome.type === "jackpot") {
+            rareEvents.push({ type: outcome.type, rewards: eventRewards, doubled: doubled, guaranteed: guaranteedPlatinum });
+        }
+    }
+
+    removeItem(data, sender, config.vaultItemName, openCount);
+    removeItem(data, sender, config.keyItemName, openCount);
+    for (var gainIndex = 0; gainIndex < gainOrder.length; gainIndex++) {
+        addItem(data, sender, gainOrder[gainIndex], gainMap[gainOrder[gainIndex]]);
+    }
+    for (var rareIndex = 0; rareIndex < rareEvents.length; rareIndex++) appendSealedVaultRareRecord(data, sender, rareEvents[rareIndex]);
+    var boosterRemaining = config.boosterCycle - state.boosterCount; // 다음 2배 부스터까지 남은 개봉 수
+    var platinumRemaining = config.platinumPityCount - state.platinumMissCount; // 플래티넘 확정까지 최대 남은 개봉 수
+
+    var lines = [];
+    lines.push("🔒 [" + checkRank(data, petData, guildData, sender) + "] 님의");
+    lines.push("봉인금고🔒 " + openCount + "회 개봉 결과");
+    lines.push("확인: /봉인금고");
+    lines.push("※ 현재 부스터,플래티넘 보상 기록등 확인가능");
+    lines.push("━━━━━━━━━━━━━━━");
+    for (var outputIndex = 0; outputIndex < gainOrder.length; outputIndex++) {
+        var outputItemName = gainOrder[outputIndex];
+        lines.push(outputItemName + " ×" + numberWithCommas(gainMap[outputItemName]));
+    }
+    lines.push("");
+    lines.push("🔥 2배 부스터 발동: " + boosterTriggerCount + "회");
+    lines.push("💎 플래티넘 금고: " + (platinumCount > 0 ? "당첨" : "미당첨"));
+    lines.push("👑 초대형 보상: " + (jackpotCount > 0 ? "당첨" : "미당첨"));
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("사용한 열쇠: " + openCount + "개");
+    lines.push("남은 해방의 열쇠🗝️: " + numberWithCommas(normalizeSealedVaultCount(bag[config.keyItemName])) + "개");
+    lines.push("남은 호봉금고🔐: " + numberWithCommas(normalizeSealedVaultCount(bag[config.vaultItemName])) + "개");
+    lines.push("");
+    lines.push("🔥 현재 2배 부스터까지: " + boosterRemaining + "회 남음");
+    lines.push(buildSealedVaultProgressBar(state.boosterCount, config.boosterCycle));
+    lines.push("");
+    lines.push("💎 플래티넘 금고 확정까지: " + platinumRemaining + "회 남음");
+    lines.push(buildSealedVaultProgressBar(state.platinumMissCount, config.platinumPityCount));
+
+    var noticeMessages = [];
+    for (var noticeIndex = 0; noticeIndex < rareEvents.length; noticeIndex++) {
+        noticeMessages.push(buildSealedVaultNoticeMessage(data, petData, guildData, sender, rareEvents[noticeIndex]));
+    }
+    return createSealedVaultCommandResult(lines.join("\n"), true, noticeMessages);
+}
+
+// 관리자 명령 대상과 마지막 숫자 인자를 분리하는 함수
+function parseSealedVaultTargetNumberCommand(msg, commandName) {
+    var prefix = commandName + " ";
+    var text = String(msg || "");
+    if (text.indexOf(prefix) !== 0) return null;
+    var body = text.substring(prefix.length);
+    var match = body.match(/^(\S(?:[\s\S]*\S)?)\s+(\d+)$/);
+    if (!match) return null;
+    return { target: match[1], value: parseInt(match[2], 10) };
+}
+
+// 봉인금고 관리자 권한 여부를 확인하는 함수
+function isSealedVaultAdmin(user) {
+    return isAdmin(user) || isMaster(user);
+}
+
+// 봉인금고 관리자용 대상 상태 UI를 생성하는 함수
+function buildSealedVaultAdminStateMessage(data, petData, guildData, target) {
+    var state = ensureSealedVaultUserState(data, target);
+    var bag = data.member[target].bag || {};
+    var config = GLOBAL_CONFIG.sealedVault;
+    return "🔒 봉인금고 계정 상태\n━━━━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, target) + "]\n" +
+        "해방의 열쇠🗝️: " + numberWithCommas(normalizeSealedVaultCount(bag[config.keyItemName])) + "개\n" +
+        "누적 개봉: " + numberWithCommas(state.totalOpenCount) + "회\n" +
+        "2배 부스터: " + getSealedVaultBoosterPercent(state) + "% (" + state.boosterCount + "/" + config.boosterCycle + ")\n" +
+        "플래티넘 미등장: " + state.platinumMissCount + "/" + (config.platinumPityCount - 1) + "회";
+}
+
+// 봉인금고 월간 보상 설정 안내 UI를 생성하는 함수
+function buildSealedVaultRewardSettingMessage(data) {
+    var monthKey = getSealedVaultMonthKey();
+    var rewards = getSealedVaultMonthlyRewards(data, monthKey);
+    var lines = ["🔒 봉인금고 월간 보상 설정", "━━━━━━━━━━━━━━━", "현재 기준: " + monthKey];
+    lines.push(rewards ? formatSealedVaultRewardLines(rewards) : "설정된 보상 없음");
+    lines.push("");
+    lines.push("설정: /봉인금고보상설정 [YYYY-MM] [만능상자] [홈뱃지큐브] [다이아상자]");
+    lines.push("예시: /봉인금고보상설정 2026-10 5 1000 300");
+    return lines.join("\n");
+}
+
+// 봉인금고를 소모해 요청 수량의 해방의 열쇠를 조합하는 함수
+function runSealedVaultKeyCombine(sender, data, petData, guildData, msg) {
+    var config = GLOBAL_CONFIG.sealedVault;
+    var match = String(msg).match(/^\/해방열쇠조합\s+(\d+)$/);
+    if (!match) return createSealedVaultCommandResult("🗝️ 해방열쇠 조합\n" + config.vaultItemName + " " + config.keyCombineVaultCost + "개 → " + config.keyItemName + " 1개\n\n사용법: /해방열쇠조합 [숫자]\n예시: /해방열쇠조합 2 (열쇠 2개 조합)", false);
+    var count = Number(match[1]);
+    var cost = count * config.keyCombineVaultCost; // 요청한 열쇠 수량에 필요한 총 봉인금고 수
+    if (!isFinite(cost) || count < 1 || cost > 9007199254740991) return createSealedVaultCommandResult("❌ 조합 수량은 계산 가능한 1 이상의 정수로 입력해 주세요.", false);
+    var member = data && data.member ? data.member[sender] : null;
+    if (!member) return createSealedVaultCommandResult("❌ 회원 정보를 찾을 수 없습니다.", false);
+    var bag = member.bag || {};
+    var vaultCount = normalizeSealedVaultCount(bag[config.vaultItemName]);
+    var keyCount = normalizeSealedVaultCount(bag[config.keyItemName]);
+    if (vaultCount < cost) return createSealedVaultCommandResult("❌ 호이의 봉인금고가 부족합니다.\n필요: " + numberWithCommas(cost) + "개\n보유: " + numberWithCommas(vaultCount) + "개\n\n일일퀘스트 완료 보상으로 " + config.dailyQuestVaultReward + "개를 획득할 수 있습니다.", false);
+    if (keyCount + count > 9007199254740991) return createSealedVaultCommandResult("❌ 보유 가능한 열쇠 수량을 초과합니다.", false);
+    bag[config.vaultItemName] = vaultCount - cost;
+    bag[config.keyItemName] = keyCount + count;
+    member.bag = bag;
+    return createSealedVaultCommandResult(
+        "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+        "✅ 해방열쇠 조합 완료!\n" +
+        "소모: " + config.vaultItemName + " " + numberWithCommas(cost) + "개\n" +
+        "획득: " + config.keyItemName + " " + numberWithCommas(count) + "개\n\n" +
+        "남은 호봉🔒: " + numberWithCommas(bag[config.vaultItemName]) + "개\n" +
+        "현재 열쇠🗝️: " + numberWithCommas(bag[config.keyItemName]) + "개",
+        true
+    );
+}
+
+// 봉인금고 사용자·관리자 명령을 실행하는 함수
+function runSealedVaultCommand(sender, data, petData, guildData, msg) {
+    if (msg === "해방열쇠조합" || msg === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(msg)) return runSealedVaultKeyCombine(sender, data, petData, guildData, msg);
+    var config = GLOBAL_CONFIG.sealedVault;
+    if (msg === "/봉인금고") return createSealedVaultCommandResult(buildSealedVaultStatusMessage(data, petData, guildData, sender), false);
+    if (msg === "/봉인금고확률") return createSealedVaultCommandResult(buildSealedVaultProbabilityMessage(), false);
+    if (msg === "/봉인금고기록") return createSealedVaultCommandResult(buildSealedVaultUserRecordMessage(data, petData, guildData, sender), false);
+    if (/^\/봉인금고오픈(?:\s+.*)?$/.test(msg)) return runSealedVaultOpen(sender, data, petData, guildData, msg);
+
+    if (!isSealedVaultAdmin(sender)) return createSealedVaultCommandResult("❌ 해당 명령어를 사용할 권한이 없습니다.", false);
+    if (msg === "/봉인금고기록전체") return createSealedVaultCommandResult(buildSealedVaultAllRecordMessage(data), false);
+    if (msg === "/봉인금고보상설정") return createSealedVaultCommandResult(buildSealedVaultRewardSettingMessage(data), false);
+
+    var grant = parseSealedVaultTargetNumberCommand(msg, "/해방열쇠지급");
+    if (grant) {
+        if (!data.member[grant.target]) return createSealedVaultCommandResult("❌ 대상 회원을 찾을 수 없습니다: " + grant.target, false);
+        if (!grant.value || grant.value < 1 || grant.value > config.maxAdminItemCount) return createSealedVaultCommandResult("사용법: /해방열쇠지급 [아이디] [1~" + numberWithCommas(config.maxAdminItemCount) + "]", false);
+        var grantBag = data.member[grant.target].bag || (data.member[grant.target].bag = {});
+        var grantBefore = normalizeSealedVaultCount(grantBag[config.keyItemName]);
+        addItem(data, grant.target, config.keyItemName, grant.value);
+        appendSealedVaultAdminLog(data, sender, "해방열쇠지급", grant.target, grantBefore, grantBefore + grant.value);
+        return createSealedVaultCommandResult("✅ 해방의 열쇠 지급 완료\n대상: " + grant.target + "\n지급: " + numberWithCommas(grant.value) + "개\n보유: " + numberWithCommas(grantBefore + grant.value) + "개", true);
+    }
+    if (/^\/해방열쇠지급(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult("사용법: /해방열쇠지급 [아이디] [1 이상의 숫자]", false);
+
+    var recovery = parseSealedVaultTargetNumberCommand(msg, "/해방열쇠회수");
+    if (recovery) {
+        if (!data.member[recovery.target]) return createSealedVaultCommandResult("❌ 대상 회원을 찾을 수 없습니다: " + recovery.target, false);
+        if (!recovery.value || recovery.value < 1 || recovery.value > config.maxAdminItemCount) return createSealedVaultCommandResult("사용법: /해방열쇠회수 [아이디] [1~" + numberWithCommas(config.maxAdminItemCount) + "]", false);
+        var recoveryBag = data.member[recovery.target].bag || {};
+        var recoveryBefore = normalizeSealedVaultCount(recoveryBag[config.keyItemName]);
+        if (recoveryBefore < recovery.value) return createSealedVaultCommandResult("❌ 회수할 해방의 열쇠가 부족합니다.\n보유: " + recoveryBefore + "개", false);
+        removeItem(data, recovery.target, config.keyItemName, recovery.value);
+        appendSealedVaultAdminLog(data, sender, "해방열쇠회수", recovery.target, recoveryBefore, recoveryBefore - recovery.value);
+        return createSealedVaultCommandResult("✅ 해방의 열쇠 회수 완료\n대상: " + recovery.target + "\n회수: " + numberWithCommas(recovery.value) + "개\n보유: " + numberWithCommas(recoveryBefore - recovery.value) + "개", true);
+    }
+    if (/^\/해방열쇠회수(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult("사용법: /해방열쇠회수 [아이디] [1 이상의 숫자]", false);
+
+    var stateMatch = String(msg).match(/^\/봉인금고상태\s+(\S(?:[\s\S]*\S)?)$/);
+    if (stateMatch) {
+        if (!data.member[stateMatch[1]]) return createSealedVaultCommandResult("❌ 대상 회원을 찾을 수 없습니다: " + stateMatch[1], false);
+        return createSealedVaultCommandResult(buildSealedVaultAdminStateMessage(data, petData, guildData, stateMatch[1]), false);
+    }
+    if (/^\/봉인금고상태(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult("사용법: /봉인금고상태 [아이디]", false);
+
+    var booster = parseSealedVaultTargetNumberCommand(msg, "/봉인금고부스터설정");
+    if (booster) {
+        if (!data.member[booster.target]) return createSealedVaultCommandResult("❌ 대상 회원을 찾을 수 없습니다: " + booster.target, false);
+        if (booster.value < 0 || booster.value >= config.boosterCycle) return createSealedVaultCommandResult("사용법: /봉인금고부스터설정 [아이디] [0~" + (config.boosterCycle - 1) + "]", false);
+        var boosterState = ensureSealedVaultUserState(data, booster.target);
+        var boosterBefore = boosterState.boosterCount;
+        boosterState.boosterCount = booster.value;
+        appendSealedVaultAdminLog(data, sender, "봉인금고부스터설정", booster.target, boosterBefore, booster.value);
+        return createSealedVaultCommandResult("✅ 봉인금고 부스터 설정 완료\n대상: " + booster.target + "\n변경: " + boosterBefore + " → " + booster.value + "/" + config.boosterCycle, true);
+    }
+    if (/^\/봉인금고부스터설정(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult("사용법: /봉인금고부스터설정 [아이디] [0~" + (config.boosterCycle - 1) + "]", false);
+
+    var pity = parseSealedVaultTargetNumberCommand(msg, "/봉인금고천장설정");
+    if (pity) {
+        if (!data.member[pity.target]) return createSealedVaultCommandResult("❌ 대상 회원을 찾을 수 없습니다: " + pity.target, false);
+        if (pity.value < 0 || pity.value >= config.platinumPityCount) return createSealedVaultCommandResult("사용법: /봉인금고천장설정 [아이디] [0~" + (config.platinumPityCount - 1) + "]", false);
+        var pityState = ensureSealedVaultUserState(data, pity.target);
+        var pityBefore = pityState.platinumMissCount;
+        pityState.platinumMissCount = pity.value;
+        appendSealedVaultAdminLog(data, sender, "봉인금고천장설정", pity.target, pityBefore, pity.value);
+        return createSealedVaultCommandResult("✅ 봉인금고 천장 설정 완료\n대상: " + pity.target + "\n변경: " + pityBefore + " → " + pity.value + "/" + (config.platinumPityCount - 1), true);
+    }
+    if (/^\/봉인금고천장설정(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult("사용법: /봉인금고천장설정 [아이디] [0~" + (config.platinumPityCount - 1) + "]", false);
+
+    var rewardSetting = String(msg).match(/^\/봉인금고보상설정\s+(\d{4}-(?:0[1-9]|1[0-2]))\s+(\d+)\s+(\d+)\s+(\d+)$/);
+    if (rewardSetting) {
+        var universalBoxCount = parseInt(rewardSetting[2], 10);
+        var homeBadgeCubeCount = parseInt(rewardSetting[3], 10);
+        var diamondBoxCount = parseInt(rewardSetting[4], 10);
+        if (universalBoxCount > config.maxAdminItemCount || homeBadgeCubeCount > config.maxAdminItemCount || diamondBoxCount > config.maxAdminItemCount) {
+            return createSealedVaultCommandResult("❌ 월간 보상 수량은 항목별 " + numberWithCommas(config.maxAdminItemCount) + "개 이하로 설정해 주세요.", false);
+        }
+        var rewardRoot = ensureSealedVaultRootData(data);
+        var rewardMonthKey = rewardSetting[1];
+        var previousRewards = getSealedVaultMonthlyRewards(data, rewardMonthKey);
+        var nextRewards = [
+            { itemName: "만능상자🔐(/만능상자오픈 숫자)", count: universalBoxCount },
+            { itemName: "홈뱃지 큐브💟", count: homeBadgeCubeCount },
+            { itemName: "다이아상자💎(/다이아상자오픈)", count: diamondBoxCount }
+        ];
+        rewardRoot.monthlyRewards[rewardMonthKey] = nextRewards;
+        appendSealedVaultAdminLog(data, sender, "봉인금고보상설정", rewardMonthKey, previousRewards ? formatSealedVaultRewardLines(previousRewards) : "설정 없음", formatSealedVaultRewardLines(nextRewards));
+        return createSealedVaultCommandResult("✅ " + rewardMonthKey + " 봉인금고 초대형 보상 설정 완료\n━━━━━━━━━━━━━━━\n" + formatSealedVaultRewardLines(nextRewards), true);
+    }
+    if (/^\/봉인금고보상설정(?:\s+.*)?$/.test(msg)) return createSealedVaultCommandResult(buildSealedVaultRewardSettingMessage(data), false);
+
+    return createSealedVaultCommandResult("❌ 봉인금고 명령어 형식을 확인해 주세요.", false);
+}
+
 // 보상 아이템 묶음을 출력 문자열로 변환하는 함수
 function formatRewardGainItems(gainItems) {
     var lines = [];
@@ -50274,6 +51015,7 @@ function isNeverSellItemWithList(itemListData, itemName) {
 
     // 펫 친밀도는 무조건 판매 금지
     if (base === "펫 친밀도🐾") return true;
+    if (raw === GLOBAL_CONFIG.sealedVault.keyItemName || base === GLOBAL_CONFIG.sealedVault.keyItemName) return true;
 
     var nonItems = itemListData && itemListData.nonItems ? itemListData.nonItems : [];
     if (nonItems.indexOf(raw) !== -1) return true;

@@ -79,9 +79,17 @@ const GLOBAL_CONFIG = {
 	freeMarket: { // 자유시장 설정
 		memberTicketItemName: "자유시장회원권🏪"
 	},
+	sealedVault: { // 호이의 봉인금고 아이템명 설정
+		vaultItemName: "호이의 봉인금고🔒(/봉인금고오픈 숫자)",
+		keyItemName: "해방의 열쇠🗝️(/봉인금고오픈 숫자)"
+	},
 	items: { // 공통 아이템명 설정
 		carrotName: "🥕당근이세요?",
-		carrotThermometerName: "🌡️당근온도기(/온도 아이디)"
+		carrotThermometerName: "🌡️당근온도기(/온도 아이디)",
+		pendantOpenTicketName: "펜던트뽑기💎(/펜던트오픈)",
+		pendantEnhanceStoneName: "펜던트 강화석📿",
+		pendantRestoreStoneName: "펜던트 복원석🔷",
+		pendantUnbindItemName: "펜던트귀속해제💎(/펜던트해제)"
 	}
 };
 //랭크.txt 로드, 오류로그 세이브용
@@ -303,6 +311,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
+		// 펫무쌍 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 차단합니다.
+		if (data && data.petMusou && data.petMusou.active && !(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
 		if (!isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
 			return;
 		}
@@ -2449,6 +2459,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("다이아상자💎(/다이아상자오픈) 1개");
 	lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 	lines.push("펫 강화석⭐ 30개");
+	lines.push(GLOBAL_CONFIG.sealedVault.vaultItemName + " 1개");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("🦋주간 퀘스트 조건🦋");
 	lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
@@ -2689,7 +2700,7 @@ function generateBagOutput(bagItems) {
 	if (bagItems && Object.keys(bagItems).length > 0) {
 		bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
 
-	    var specialItems = [
+	       var specialItems = [
             "자동탐험권🌄",
             "자동일퀘권📝",
             GLOBAL_CONFIG.freeMarket.memberTicketItemName,
@@ -2860,6 +2871,8 @@ function generateBagOutput(bagItems) {
             "🌌 균열 유도권(/균열)",
             "🌪️ 전쟁불안정 증폭권(/불안정)",
             "🚑 전쟁불안정 감소권(/안정)",
+            GLOBAL_CONFIG.sealedVault.vaultItemName,
+            GLOBAL_CONFIG.sealedVault.keyItemName,
             "만능상자🔐(/만능상자오픈 숫자)",
             "미니펫컬렉션 만능 열쇠🗝️(/미니펫컬렉션만능 번호)",
             "펫스킬컬렉션 만능 열쇠📚(/펫스킬컬렉션만능 번호)",
