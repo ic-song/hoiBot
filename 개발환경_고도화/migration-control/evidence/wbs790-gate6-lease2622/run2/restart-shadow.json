@@ -1,0 +1,27 @@
+{
+  "format": "wbs790-lease2622-evidence-v1",
+  "phase": "restart-shadow",
+  "pid": 22060,
+  "priorPid": 19388,
+  "prefixHash": "c29a44052b2f33071a303bf647b69ca0911aeb265fc556ce9c53a00afc59ae91",
+  "sourceHashes": {
+    "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+    "개발환경_고도화/runtime/src/database.ts": "456e115704a867570413057926551c54102498c550a435769d2e32421382a54a",
+    "개발환경_고도화/runtime/src/shared/maria-database-error-policy.ts": "9a6bb0195e169a6831e35841ef1cce33139299182ad57e659914404bc35b4b82",
+    "개발환경_고도화/runtime/scripts/rehearse-wbs790-lease2622.ts": "2fe2d008c9d1dd68248d044fae0a87ec84cd8c3b069493edab94ba265114ae33",
+    "개발환경_고도화/runtime/scripts/rehearse-wbs790-lease2622.ps1": "54c0cac7fc21c4770caf67e5fcefa143738b882a85c28c081739f7f97fe47da7",
+    "개발환경_고도화/migration-control/contracts/object-data-model-standard.v1.json": "01cc4727b15878219384bc7a8295cb31151afdf3c5254fcd50ce7b0871055b96"
+  },
+  "restartReplay": {
+    "quantity": "5",
+    "replayed": true,
+    "dmlCalls": 0,
+    "snapshotEqual": true
+  },
+  "shadow": {
+    "scope": "READ_ONLY_SNAPSHOT_SMOKE",
+    "snapshotEqual": true,
+    "quantity": "5",
+    "gate7Complete": false
+  }
+}

@@ -1,0 +1,285 @@
+{
+  "format": "wbs790-lease2622-evidence-v1",
+  "phase": "mutation",
+  "pid": 17788,
+  "registeredTables": 119,
+  "migrations": 478,
+  "prefixHash": "c29a44052b2f33071a303bf647b69ca0911aeb265fc556ce9c53a00afc59ae91",
+  "outcomes": {
+    "MUTATION_SUCCESS": {
+      "operation_status": "completed",
+      "resulting_quantity": "5",
+      "quantity_delta": "3",
+      "player_id": "l2622p01",
+      "item_id": "l2622i01",
+      "reason_type": "REWARD",
+      "quantity": "5",
+      "ledger_sequence": "2",
+      "last_ledger_sequence": "2"
+    },
+    "DUPLICATE_REPLAY_DML_ZERO": {
+      "dmlCalls": 0,
+      "snapshotEqual": true
+    },
+    "PAYLOAD_DRIFT_FAIL_CLOSED": {
+      "variants": 3,
+      "dmlCalls": 0,
+      "snapshotEqual": true
+    },
+    "INSUFFICIENT_QUANTITY": {
+      "dmlCalls": 0,
+      "snapshotEqual": true
+    },
+    "DOMAIN_FAILURE_ROLLBACK": {
+      "snapshotEqual": true,
+      "includesLedgerOrdering": true
+    },
+    "CONCURRENCY_SINGLE_WRITER": {
+      "results": [
+        {
+          "quantity": "7",
+          "replayed": false
+        },
+        {
+          "quantity": "7",
+          "replayed": true
+        }
+      ],
+      "receipt": {
+        "operation_status": "completed",
+        "resulting_quantity": "7",
+        "quantity_delta": "7",
+        "player_id": "l2622p02",
+        "item_id": "l2622i01",
+        "reason_type": "REWARD",
+        "quantity": "7",
+        "ledger_sequence": "1",
+        "last_ledger_sequence": "1"
+      }
+    }
+  },
+  "snapshot": {
+    "canonical_players": [
+      {
+        "player_id": "l2622p01",
+        "source_system": "SYNTHETIC",
+        "source_identifier": "l2622p01",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:30:00",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:30:00"
+      },
+      {
+        "player_id": "l2622p02",
+        "source_system": "SYNTHETIC",
+        "source_identifier": "l2622p02",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:30:00",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:30:00"
+      },
+      {
+        "player_id": "l2622p03",
+        "source_system": "SYNTHETIC",
+        "source_identifier": "l2622p03",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:30:00",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:30:00"
+      }
+    ],
+    "canonical_item_definitions": [
+      {
+        "item_id": "j7uyw6vc",
+        "item_name": "호이응원패키지(무료)🐹[2]",
+        "item_description": null,
+        "item_kind": "PACKAGE_ITEM",
+        "item_grade": null,
+        "price_amount": null,
+        "price_currency_source_identifier": null,
+        "stackable_flag": 1,
+        "active_flag": 1,
+        "definition_options": {
+          "sourceObjectKey": "item.direct_bag.8349df1a3be0b247",
+          "legacyBoundaryCode": "ITEM-FREE-HOI-SUPPORT-02",
+          "legacySourceIndex": 165,
+          "legacySourceLines": [
+            6981,
+            6982,
+            6984
+          ],
+          "legacySourceHash": "10b21ddf32092b4b2c4450664694644f89bcb9991bc0bae436d9582fcad13d6a"
+        },
+        "INSERT_USER": "migration_479",
+        "INSERT_TIME": "2026-09-09 13:24:31",
+        "UPDATE_USER": "migration_479",
+        "UPDATE_TIME": "2026-09-09 13:24:31"
+      },
+      {
+        "item_id": "l2622i01",
+        "item_name": "합성 아이템",
+        "item_description": null,
+        "item_kind": "SYNTHETIC",
+        "item_grade": null,
+        "price_amount": null,
+        "price_currency_source_identifier": null,
+        "stackable_flag": 1,
+        "active_flag": 1,
+        "definition_options": null,
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:30:00",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:30:00"
+      }
+    ],
+    "canonical_owned_item_stacks": [
+      {
+        "owned_item_stack_id": "pc8p3jzs",
+        "player_id": "l2622p01",
+        "item_id": "l2622i01",
+        "quantity": "5",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "owned_item_stack_id": "yqgccg2s",
+        "player_id": "l2622p02",
+        "item_id": "l2622i01",
+        "quantity": "7",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      }
+    ],
+    "canonical_owned_item_instances": [],
+    "canonical_item_inventory_operations": [
+      {
+        "item_inventory_operation_id": "h1xjwryy",
+        "player_id": "l2622p01",
+        "request_key": "seed",
+        "operation_status": "completed",
+        "resulting_quantity": "2",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "item_inventory_operation_id": "h2i8ofs2",
+        "player_id": "l2622p02",
+        "request_key": "same-key",
+        "operation_status": "completed",
+        "resulting_quantity": "7",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "item_inventory_operation_id": "imkguist",
+        "player_id": "l2622p01",
+        "request_key": "restart",
+        "operation_status": "completed",
+        "resulting_quantity": "5",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      }
+    ],
+    "canonical_item_inventory_ledger_entries": [
+      {
+        "item_inventory_ledger_entry_id": "g44xm4sp",
+        "item_inventory_operation_id": "imkguist",
+        "player_id": "l2622p01",
+        "item_id": "l2622i01",
+        "owned_item_stack_id": "pc8p3jzs",
+        "owned_item_id": null,
+        "quantity_delta": "3",
+        "reason_type": "REWARD",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "item_inventory_ledger_entry_id": "ktuivce5",
+        "item_inventory_operation_id": "h1xjwryy",
+        "player_id": "l2622p01",
+        "item_id": "l2622i01",
+        "owned_item_stack_id": "pc8p3jzs",
+        "owned_item_id": null,
+        "quantity_delta": "2",
+        "reason_type": "REWARD",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "item_inventory_ledger_entry_id": "lukjq2ip",
+        "item_inventory_operation_id": "h2i8ofs2",
+        "player_id": "l2622p02",
+        "item_id": "l2622i01",
+        "owned_item_stack_id": "yqgccg2s",
+        "owned_item_id": null,
+        "quantity_delta": "7",
+        "reason_type": "REWARD",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      }
+    ],
+    "canonical_item_inventory_ledger_heads": [
+      {
+        "player_id": "l2622p01",
+        "last_ledger_sequence": "2",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "player_id": "l2622p02",
+        "last_ledger_sequence": "1",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      }
+    ],
+    "canonical_item_inventory_ledger_orderings": [
+      {
+        "item_inventory_ledger_entry_id": "g44xm4sp",
+        "player_id": "l2622p01",
+        "ledger_sequence": "2",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "item_inventory_ledger_entry_id": "ktuivce5",
+        "player_id": "l2622p01",
+        "ledger_sequence": "1",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      },
+      {
+        "item_inventory_ledger_entry_id": "lukjq2ip",
+        "player_id": "l2622p02",
+        "ledger_sequence": "1",
+        "INSERT_USER": "lease2622",
+        "INSERT_TIME": "2026-09-09 13:24:34",
+        "UPDATE_USER": "lease2622",
+        "UPDATE_TIME": "2026-09-09 13:24:34"
+      }
+    ]
+  }
+}

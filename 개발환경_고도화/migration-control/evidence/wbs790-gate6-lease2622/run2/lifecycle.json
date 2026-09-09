@@ -1,0 +1,10 @@
+﻿{
+    "port":  3358,
+    "protectedListenersUnchanged":  true,
+    "temporaryDataRetained":  "C:\\Users\\user\\.codex\\worktrees\\ba6d\\hoiBot\\.tmp\\wbs790-lease2622-run2",
+    "listenerRemoved":  true,
+    "startedPids":  [
+                        23632,
+                        29460
+                    ]
+}

@@ -1,0 +1,18 @@
+{
+  "format": "wbs790-lease2622-evidence-v1",
+  "phase": "restart-shadow",
+  "pid": 16272,
+  "priorPid": 17788,
+  "prefixHash": "c29a44052b2f33071a303bf647b69ca0911aeb265fc556ce9c53a00afc59ae91",
+  "restartReplay": {
+    "quantity": "5",
+    "replayed": true,
+    "dmlCalls": 0,
+    "snapshotEqual": true
+  },
+  "shadow": {
+    "snapshotEqual": true,
+    "quantity": "5",
+    "dmlAttempts": 0
+  }
+}

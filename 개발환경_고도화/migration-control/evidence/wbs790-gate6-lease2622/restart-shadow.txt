@@ -1,0 +1,1 @@
+WBS790_RESTART_SHADOW_PASS distinctPid=true replayDml=0 readOnlySnapshot=true snapshotEqual=true
