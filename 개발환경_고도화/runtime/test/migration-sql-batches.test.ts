@@ -42,6 +42,35 @@ CALL p_alpha();`;
     assert.match(batches[3]!, /^CREATE TRIGGER[\s\S]*END$/);
   });
 
+  it("does not split custom delimiters inside double quotes, backticks or hash comments", () => {
+    const sql = `DELIMITER //
+# ignored // delimiter
+CREATE PROCEDURE \`p//quoted\`()
+BEGIN
+  SELECT "double // quoted", \`column//quoted\`;
+  # another // ignored delimiter
+END//
+DELIMITER ;`;
+    const batches = createMigrationSqlBatches(sql);
+    assert.equal(batches.length, 1);
+    assert.match(batches[0]!, /`p\/\/quoted`/);
+    assert.match(batches[0]!, /"double \/\/ quoted"/);
+    assert.match(batches[0]!, /# another \/\/ ignored delimiter/);
+  });
+
+  it("does not split delimiters inside double quotes, backticks or hash comments", () => {
+    const sql = `DELIMITER //
+# // is not a terminator here
+CREATE PROCEDURE \`p//quoted\`()
+BEGIN
+  SELECT "double // quoted", \`column//quoted\`;
+END//
+DELIMITER ;`;
+    const batches = createMigrationSqlBatches(sql);
+    assert.equal(batches.length, 1);
+    assert.match(batches[0]!, /^# \/\/ is not a terminator here\nCREATE PROCEDURE `p\/\/quoted`\(\)[\s\S]*"double \/\/ quoted"[\s\S]*`column\/\/quoted`[\s\S]*END$/);
+  });
+
   it("fails closed on unterminated custom statements, quotes, block comments and directives", () => {
     assert.throws(() => createMigrationSqlBatches("DELIMITER //\nCREATE PROCEDURE broken() BEGIN SELECT 1; END"), /MIGRATION_SQL_UNTERMINATED_STATEMENT/);
     assert.throws(() => createMigrationSqlBatches("SELECT 'broken;"), /MIGRATION_SQL_UNTERMINATED_LITERAL_OR_COMMENT/);

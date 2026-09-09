@@ -1,0 +1,44 @@
+{
+  "receiptFormat": "hoibot-migration-delimiter-runner-evidence-v1",
+  "leaseId": "Lease2618",
+  "baselineCommit": "d99832c5",
+  "providerCommit": "38b266e3d511f471a1bece9c31d131b79da57acd",
+  "databaseIdentity": {
+    "engine": "MariaDB 11.8.8-MariaDB-ubu2404",
+    "host": "127.0.0.1",
+    "publishedPort": 3349,
+    "database": "hoibot_rehearsal_migration_delimiter_evidence",
+    "containerId": "4932d251f511",
+    "containerName": "hoibot-migration-delimiter-evidence"
+  },
+  "migration490": {
+    "fileSha256": "0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88",
+    "recordedChecksum": "0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88",
+    "appliedTime": "2026-09-09 03:34:44.933",
+    "triggerCount": 1,
+    "preflightRoutineCountAfterMigration": 0
+  },
+  "result": {
+    "freshMigrationCount": 478,
+    "freshFinalMigration": "490_item_bag_import_baseline_ordering.sql",
+    "rerunAppliedCount": 0,
+    "rerunMigrationCount": 478,
+    "rerunMaxAppliedTime": "2026-09-09 03:34:44.933",
+    "operatingDatabaseTouches": 0,
+    "networkCalls": 0,
+    "listenerBeforeRemoval": "127.0.0.1:3349->3306/tcp",
+    "listenerAfterRemoval": "none",
+    "containerRemoved": true
+  },
+  "resultHashPayload": {
+    "migrationCount": 478,
+    "replayApplied": 0,
+    "triggerCount": 1,
+    "preflightRoutineCount": 0,
+    "fileSha256": "0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88",
+    "host": "127.0.0.1",
+    "port": 3349,
+    "database": "hoibot_rehearsal_migration_delimiter_evidence"
+  },
+  "resultSha256": "08560bab02bdb385b302dc6e55fde68ee7109187f31128c366e890d7f951a095"
+}
