@@ -43,4 +43,6 @@ npm run db:migrate
 npm run db:migrate
 ```
 
-결과 요약 canonical JSON의 SHA-256은 `08560bab02bdb385b302dc6e55fde68ee7109187f31128c366e890d7f951a095`입니다. migration 490 파일 SHA-256과 `schema_migrations.checksum`은 모두 `0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88`로 일치했습니다.
+canonical JSON은 object key를 Unicode code point 순으로 재귀 정렬하고, array 순서를 보존하며, 공백 없는 UTF-8 JSON으로 직렬화해 SHA-256을 계산합니다. transcript SHA는 저장소 LF 바이트 기준이며 Windows checkout의 CRLF는 검증 전에 LF로 정규화합니다. 결과 hash payload에는 DB identity, host·외부/내부 port, fresh/rerun 수량, trigger/preflight, migration 원문/checksum, listener 시작·종료, 운영/network 0, container 제거와 transcript SHA가 모두 포함됩니다.
+
+결과 요약 canonical JSON의 SHA-256은 receipt의 `resultSha256`에 봉인했습니다. migration 490 파일 SHA-256과 `schema_migrations.checksum`은 모두 `0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88`로 일치했으며, transcript SHA-256은 `f8b599c00db073b04dd90e98a0fd25a594b6a859b2c17feb766d465a92045869`입니다.

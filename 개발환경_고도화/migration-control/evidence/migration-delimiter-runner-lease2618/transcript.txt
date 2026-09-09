@@ -1,0 +1,18 @@
+listener-start hoibot-migration-delimiter-evidence 127.0.0.1:3349->3306/tcp Up 20 seconds
+applied 484_pet_skill_info_shadow_ingress.sql
+applied 485_pet_skill_info_admin_bag_projection.sql
+applied 486_private_chat_denial_notice.sql
+applied 487_pet_skill_info_direct_reply_canary.sql
+applied 488_item_bag_import_completeness.sql
+applied 489_legacy_rank_label_side_effect_certificate.sql
+applied 490_item_bag_import_baseline_ordering.sql
+migration-count 478
+identity|11.8.8-MariaDB-ubu2404|4932d251f511|hoibot_rehearsal_migration_delimiter_evidence
+before|478|2026-09-09 03:34:44.933
+migration490|0550358c66a406dd2ab40e697a23e475a3950243c28bdfeaa8a028f6291a3e88|2026-09-09 03:34:44.933
+trigger|1
+preflight-routine|0
+rerun|migration-count 478
+after|478|2026-09-09 03:34:44.933
+listener-before-removal hoibot-migration-delimiter-evidence 127.0.0.1:3349->3306/tcp Up About a minute
+listener-after-removal|none
