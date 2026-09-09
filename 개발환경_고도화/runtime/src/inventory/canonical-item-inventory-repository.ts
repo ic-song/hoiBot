@@ -1,5 +1,6 @@
-import type { DatabaseClient, DatabaseTransaction } from "../database.js";
+import { hasRootTransactionCapability, type DatabaseClient, type DatabaseTransaction } from "../database.js";
 import { OBJECT_IDENTITY_MAX_ATTEMPTS, assertObjectIdentityCandidate, createObjectAuditValues, createObjectIdentityCandidate, type ObjectAuditValues, type ObjectIdentityCandidateGenerator } from "../identity/object-identity-audit-provider.js";
+import { insertWithCuid8CollisionRetry, isMariaBusinessUniqueConflict, withMariaTransactionRetry } from "../shared/maria-database-error-policy.js";
 
 export type CanonicalItemDefinitionInput = {
   actor: string;
@@ -34,8 +35,30 @@ export type CanonicalItemStackChangeResult = {
 
 type PlayerRow = { player_id: string };
 type DefinitionImportRow = { item_id: string };
-type OperationRow = { resulting_quantity: bigint };
+type OperationRow = {
+  item_inventory_operation_id: string;
+  operation_status: string;
+  resulting_quantity: bigint | string | null;
+  ledger_entry_id: string | null;
+  ledger_player_id: string | null;
+  ledger_item_id: string | null;
+  owned_item_stack_id: string | null;
+  owned_item_id: string | null;
+  quantity_delta: bigint | string | null;
+  reason_type: string | null;
+  ledger_count: bigint | string;
+};
 type StackRow = { owned_item_stack_id: string; quantity: bigint };
+type ActiveStackableDefinitionRow = { item_id: string };
+
+const STACK_TRANSACTION_MAX_ATTEMPTS = 3;
+const STACK_REPLAY_READ_ATTEMPTS = 3;
+const STACK_REPLAY_READ_DELAY_MS = 30;
+const MAX_SIGNED_BIGINT = 9_223_372_036_854_775_807n;
+const MIN_SIGNED_BIGINT = -9_223_372_036_854_775_808n;
+const MAX_UNSIGNED_BIGINT = 18_446_744_073_709_551_615n;
+const OPERATION_UNIQUE = "uq_canonical_item_inventory_operations_player_request";
+const STACK_UNIQUE = "uq_canonical_owned_item_stacks_player_item";
 
 function duplicateKey(error: unknown): string | null {
   if (typeof error !== "object" || error === null) return null;
@@ -154,52 +177,123 @@ export class CanonicalItemInventoryRepository {
 
   async changeStackQuantity(input: CanonicalItemStackChange): Promise<CanonicalItemStackChangeResult> {
     assertText(input.requestKey, "REQUEST_KEY", 191);
-    assertText(input.reasonType, "REASON_TYPE", 100);
+    try { assertObjectIdentityCandidate(input.playerId); assertObjectIdentityCandidate(input.itemId); }
+    catch { throw new Error("CANONICAL_ITEM_ID_INVALID"); }
+    if (!/^[A-Za-z0-9_.:-]{1,100}$/.test(input.reasonType)) throw new Error("CANONICAL_ITEM_REASON_TYPE_INVALID");
+    if (typeof input.quantityDelta !== "bigint" || input.quantityDelta < MIN_SIGNED_BIGINT || input.quantityDelta > MAX_SIGNED_BIGINT) throw new Error("CANONICAL_ITEM_QUANTITY_DELTA_INVALID");
     if (input.quantityDelta === 0n) throw new Error("CANONICAL_ITEM_QUANTITY_DELTA_ZERO");
     const audit = auditValues(input.actor, this.now);
-    for (let attempt = 0; attempt < this.maxAttempts; attempt += 1) {
+    const ownsRootTransaction = hasRootTransactionCapability(this.database);
+    for (let attempt = 0; attempt < STACK_TRANSACTION_MAX_ATTEMPTS; attempt += 1) {
       try {
-        return await this.database.withTransaction(async (transaction) => this.changeStackInTransaction(transaction, input, audit));
+        return await withMariaTransactionRetry(this.database, {
+          maxAttempts: STACK_TRANSACTION_MAX_ATTEMPTS,
+          allowCheckReadConflict: true,
+          allowRetry: (kind) => kind === "TRANSACTION_DEADLOCK" || kind === "TRANSACTION_LOCK_WAIT_TIMEOUT" || kind === "TRANSACTION_CHECK_READ_CONFLICT",
+          exhaustedErrorCode: "CANONICAL_ITEM_STACK_TRANSACTION_RETRY_EXHAUSTED",
+        }, async (transaction) => this.changeStackInTransaction(transaction, input, audit));
       } catch (error) {
-        if (!isBusinessUniqueDuplicate(error) || attempt + 1 === this.maxAttempts) throw error;
+        if (isMariaBusinessUniqueConflict(error, OPERATION_UNIQUE)) {
+          // current transaction에서는 선행 lock까지 포함한 상위 owner가 전체 transaction을 재시도해야 합니다.
+          if (!ownsRootTransaction) throw error;
+          const replay = await this.findConcurrentReplay(input);
+          if (replay !== undefined) return replay;
+          throw error;
+        }
+        // 첫 stack 경쟁은 operation insert까지 함께 rollback한 새 root transaction에서만 재시도합니다.
+        if (!isMariaBusinessUniqueConflict(error, STACK_UNIQUE) || !ownsRootTransaction || attempt + 1 === STACK_TRANSACTION_MAX_ATTEMPTS) throw error;
       }
     }
     throw new Error("CANONICAL_ITEM_OPERATION_RETRY_EXHAUSTED");
   }
 
   private async changeStackInTransaction(transaction: DatabaseTransaction, input: CanonicalItemStackChange, audit: ObjectAuditValues): Promise<CanonicalItemStackChangeResult> {
-    const existing = (await transaction.query<OperationRow[]>(
-      "SELECT resulting_quantity FROM canonical_item_inventory_operations WHERE player_id=? AND request_key=? FOR UPDATE",
+    const existingRows = await transaction.query<OperationRow[]>(
+      `SELECT operation.item_inventory_operation_id,operation.operation_status,operation.resulting_quantity,
+        ledger.item_inventory_ledger_entry_id ledger_entry_id,ledger.player_id ledger_player_id,ledger.item_id ledger_item_id,
+        ledger.owned_item_stack_id,ledger.owned_item_id,ledger.quantity_delta,ledger.reason_type,
+        (SELECT COUNT(*) FROM canonical_item_inventory_ledger_entries counted WHERE counted.item_inventory_operation_id=operation.item_inventory_operation_id) ledger_count
+       FROM canonical_item_inventory_operations operation
+       LEFT JOIN canonical_item_inventory_ledger_entries ledger ON ledger.item_inventory_operation_id=operation.item_inventory_operation_id
+       WHERE operation.player_id=? AND operation.request_key=? FOR UPDATE`,
       [input.playerId, input.requestKey]
+    );
+    if (existingRows.length > 0) return this.requireExactReplay(existingRows, input);
+    const player = (await transaction.query<PlayerRow[]>("SELECT player_id FROM canonical_players WHERE player_id=? FOR UPDATE", [input.playerId]))[0];
+    if (player === undefined) throw new Error("CANONICAL_ITEM_PLAYER_NOT_FOUND");
+    const definition = (await transaction.query<ActiveStackableDefinitionRow[]>(
+      "SELECT item_id FROM canonical_item_definitions WHERE item_id=? AND active_flag=TRUE AND stackable_flag=TRUE FOR UPDATE",
+      [input.itemId]
     ))[0];
-    if (existing !== undefined) return { quantity: existing.resulting_quantity, replayed: true };
-    const operationId = await insertWithCuidRetry((candidate) => transaction.execute(
-      "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
-      [candidate, input.playerId, input.requestKey, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
-    ).then(() => undefined), this.generate, this.maxAttempts);
+    if (definition === undefined) throw new Error("CANONICAL_ITEM_STACKABLE_DEFINITION_NOT_FOUND");
     const stack = (await transaction.query<StackRow[]>(
       "SELECT owned_item_stack_id,quantity FROM canonical_owned_item_stacks WHERE player_id=? AND item_id=? FOR UPDATE",
       [input.playerId, input.itemId]
     ))[0];
-    const previousQuantity = stack?.quantity ?? 0n;
+    const previousQuantity = BigInt(stack?.quantity ?? 0n);
     const quantity = previousQuantity + input.quantityDelta;
     if (quantity < 0n) throw new Error("CANONICAL_ITEM_INSUFFICIENT_QUANTITY");
-    const stackId = stack?.owned_item_stack_id ?? await insertWithCuidRetry((candidate) => transaction.execute(
-      "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,0,?,?,?,?)",
-      [candidate, input.playerId, input.itemId, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
-    ).then(() => undefined), this.generate, this.maxAttempts);
-    await transaction.execute(
-      "UPDATE canonical_owned_item_stacks SET quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_item_stack_id=?",
-      [quantity, audit.UPDATE_USER, audit.UPDATE_TIME, stackId]
-    );
-    await insertWithCuidRetry((candidate) => transaction.execute(
+    if (quantity > MAX_UNSIGNED_BIGINT) throw new Error("CANONICAL_ITEM_QUANTITY_OVERFLOW");
+    const operationId = await insertWithCuid8CollisionRetry((candidate) => transaction.execute(
+      "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+      [candidate, input.playerId, input.requestKey, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+    ).then(() => undefined), { generate: this.generate, maxAttempts: Math.min(this.maxAttempts, OBJECT_IDENTITY_MAX_ATTEMPTS), exhaustedErrorCode: "CANONICAL_ITEM_OPERATION_ID_COLLISION_RETRY_EXHAUSTED" });
+    let stackId: string;
+    if (stack === undefined) {
+      stackId = await insertWithCuid8CollisionRetry((candidate) => transaction.execute(
+        "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+        [candidate, input.playerId, input.itemId, quantity, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
+      ).then(() => undefined), { generate: this.generate, maxAttempts: Math.min(this.maxAttempts, OBJECT_IDENTITY_MAX_ATTEMPTS), exhaustedErrorCode: "CANONICAL_ITEM_STACK_ID_COLLISION_RETRY_EXHAUSTED" });
+    } else {
+      stackId = stack.owned_item_stack_id;
+      const changed = await transaction.execute(
+        "UPDATE canonical_owned_item_stacks SET quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_item_stack_id=? AND player_id=? AND item_id=?",
+        [quantity, audit.UPDATE_USER, audit.UPDATE_TIME, stackId, input.playerId, input.itemId]
+      );
+      if (changed.affectedRows !== 1n) throw new Error("CANONICAL_ITEM_STACK_UPDATE_CONFLICT");
+    }
+    await insertWithCuid8CollisionRetry((candidate) => transaction.execute(
       "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
       [candidate, operationId, input.playerId, input.itemId, stackId, input.quantityDelta, input.reasonType, audit.INSERT_USER, audit.INSERT_TIME, audit.UPDATE_USER, audit.UPDATE_TIME]
-    ).then(() => undefined), this.generate, this.maxAttempts);
-    await transaction.execute(
+    ).then(() => undefined), { generate: this.generate, maxAttempts: Math.min(this.maxAttempts, OBJECT_IDENTITY_MAX_ATTEMPTS), exhaustedErrorCode: "CANONICAL_ITEM_LEDGER_ID_COLLISION_RETRY_EXHAUSTED" });
+    const completed = await transaction.execute(
       "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
       [quantity, audit.UPDATE_USER, audit.UPDATE_TIME, operationId]
     );
+    if (completed.affectedRows !== 1n) throw new Error("CANONICAL_ITEM_OPERATION_COMPLETE_CONFLICT");
     return { quantity, replayed: false };
+  }
+
+  private requireExactReplay(rows: readonly OperationRow[], input: CanonicalItemStackChange): CanonicalItemStackChangeResult {
+    const row = rows[0];
+    if (rows.length !== 1 || row === undefined || row.operation_status !== "completed" || BigInt(row.ledger_count) !== 1n
+      || row.resulting_quantity === null || row.ledger_entry_id === null || row.ledger_player_id !== input.playerId
+      || row.ledger_item_id !== input.itemId || row.owned_item_stack_id === null || row.owned_item_id !== null
+      || row.quantity_delta === null || BigInt(row.quantity_delta) !== input.quantityDelta || row.reason_type !== input.reasonType) {
+      throw new Error("CANONICAL_ITEM_REPLAY_CORRUPTED");
+    }
+    try { assertObjectIdentityCandidate(row.item_inventory_operation_id); assertObjectIdentityCandidate(row.ledger_entry_id); assertObjectIdentityCandidate(row.owned_item_stack_id); }
+    catch { throw new Error("CANONICAL_ITEM_REPLAY_CORRUPTED"); }
+    const quantity = BigInt(row.resulting_quantity);
+    if (quantity < 0n || quantity > MAX_UNSIGNED_BIGINT) throw new Error("CANONICAL_ITEM_REPLAY_CORRUPTED");
+    return { quantity, replayed: true };
+  }
+
+  private async findConcurrentReplay(input: CanonicalItemStackChange): Promise<CanonicalItemStackChangeResult | undefined> {
+    for (let attempt = 0; attempt < STACK_REPLAY_READ_ATTEMPTS; attempt += 1) {
+      if (attempt > 0) await new Promise<void>((resolve) => setTimeout(resolve, STACK_REPLAY_READ_DELAY_MS * attempt));
+      const rows = await this.database.query<OperationRow[]>(
+        `SELECT operation.item_inventory_operation_id,operation.operation_status,operation.resulting_quantity,
+          ledger.item_inventory_ledger_entry_id ledger_entry_id,ledger.player_id ledger_player_id,ledger.item_id ledger_item_id,
+          ledger.owned_item_stack_id,ledger.owned_item_id,ledger.quantity_delta,ledger.reason_type,
+          (SELECT COUNT(*) FROM canonical_item_inventory_ledger_entries counted WHERE counted.item_inventory_operation_id=operation.item_inventory_operation_id) ledger_count
+         FROM canonical_item_inventory_operations operation
+         LEFT JOIN canonical_item_inventory_ledger_entries ledger ON ledger.item_inventory_operation_id=operation.item_inventory_operation_id
+         WHERE operation.player_id=? AND operation.request_key=?`,
+        [input.playerId, input.requestKey]
+      );
+      if (rows.length > 0) return this.requireExactReplay(rows, input);
+    }
+    return undefined;
   }
 }

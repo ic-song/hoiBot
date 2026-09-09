@@ -38,10 +38,11 @@ class CreateMutationParticipant extends MutationParticipant {
     if(sql.includes("canonical_pet_title_global_locks"))return [{lock_key:"PET_TITLE"}] as T;
     if (sql.includes("FROM canonical_players")) return [{ player_id: "player01" }] as T;
     if (sql.includes("FROM canonical_item_definition_imports")) return [{ item_id: "itemtick" }] as T;
+    if (sql.startsWith("SELECT item_id FROM canonical_item_definitions WHERE item_id=")) return [{ item_id: "itemtick" }] as T;
     if (sql.includes("SELECT quantity FROM canonical_owned_item_stacks")) {
       return (this.ticketQuantity === undefined ? [] : [{ quantity: this.ticketQuantity }]) as T;
     }
-    if (sql.includes("SELECT resulting_quantity FROM canonical_item_inventory_operations")) return [] as T;
+    if (sql.includes("canonical_item_inventory_operations operation")) return [] as T;
     if (sql.includes("SELECT owned_item_stack_id,quantity FROM canonical_owned_item_stacks")) {
       return (this.ticketQuantity === undefined ? [] : [{ owned_item_stack_id: "stack001", quantity: this.ticketQuantity }]) as T;
     }

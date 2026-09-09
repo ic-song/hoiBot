@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { ControlledDatabaseTransaction, DatabaseClient } from "../database.js";
+import type { ControlledDatabaseTransaction, CurrentTransactionDatabaseClient, DatabaseClient } from "../database.js";
 import type { AppWiringClaim, AppWiringMutationParticipant } from "../dispatch/app-wiring-operation-provider.js";
 import { CanonicalItemInventoryRepository } from "../inventory/canonical-item-inventory-repository.js";
 import { MariaCanonicalCurrencyRepository } from "../currency/maria-canonical-currency-repository.js";
@@ -84,13 +84,14 @@ function controlledParticipant(current:AppWiringMutationParticipant):ControlledD
   };
 }
 
-function scopedDatabase(participant: AppWiringMutationParticipant): DatabaseClient {
+function scopedDatabase(participant: AppWiringMutationParticipant): DatabaseClient & CurrentTransactionDatabaseClient {
   return {
     ping: async () => { await participant.query("SELECT 1"); },
     verifyRollback: async () => true,
     query: <T>(sql: string, values: readonly unknown[] = []) => participant.query<T>(sql, values),
     execute: (sql: string, values: readonly unknown[] = []) => participant.execute(sql, values),
     withTransaction: (work) => participant.withTransaction((nested)=>work(controlledParticipant(nested))),
+    withCurrentTransaction: (work) => work(controlledParticipant(participant)),
     close: async () => undefined,
   };
 }
