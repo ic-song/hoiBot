@@ -112,23 +112,24 @@ const categoryCounts = {
 };
 const expectedCounts = {
   B_STRICT_EQUIVALENCE: 0,
-  C_DIRECT_EXECUTION: 995,
+  C_DIRECT_EXECUTION: 991,
   D_PREREQUISITE: 82,
 };
-if (entries.length !== 1_077 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
+if (entries.length !== 1_073 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
   throw new Error(`Residual plan cardinality drift: ${JSON.stringify({ total: entries.length, categoryCounts })}`);
 }
 
 const output = {
   format: "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1",
   catalogVersion: ledger.catalogVersion,
-  frozenAt: "2026-09-09 16:58:00 KST",
-  integrationBaseline: "898e83896dd8279a0e055e68299d90cdf89d16d4",
+  frozenAt: "2026-09-09 19:10:00 KST",
+  integrationBaseline: "791e10408a3a923ca6903d5bc8a5727fb7c98b36",
   dependencyResolutions: [
     { wbs: "WBS791", commit: "854502debd9a7df249a022352468384bf1a42f4d", resolution: "APP_WIRING_ROOT_RETRY_COMPLETED" },
     { wbs: "WBS791", commit: "a91c2e3405ebc70b7c1301a563b0b216a1ddf4b3", resolution: "CHANGE_STACK_QUANTITY_OFFICIAL_RECEIPTS" },
     { wbs: "WBS792", commit: "6da64b77e14c4faa548e68cf0557527570d75e79", resolution: "ITEM_BAG_OFFICIAL_READ_RECEIPTS" },
     { wbs: "WBS793", commit: "898e83896dd8279a0e055e68299d90cdf89d16d4", resolution: "ROCKET_ADMIN_GRANT_STRICT_EQUIVALENCE_RECEIPTS" },
+    { wbs: "WBS794", commit: "791e10408a3a923ca6903d5bc8a5727fb7c98b36", resolution: "SLOT_NEWBIE_ADMIN_GRANT_STRICT_EQUIVALENCE_RECEIPTS" },
   ],
   sources: {
     textNormalization: "LF_UTF8",

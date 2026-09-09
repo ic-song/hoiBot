@@ -2,21 +2,21 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "898e83896dd8279a0e055e68299d90cdf89d16d4",
+  "evidenceCommit": "791e10408a3a923ca6903d5bc8a5727fb7c98b36",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.schema.json",
-      "sha256": "03567ec087ba657f57d9a03535188bd8f0b7ef0d9c5b4dd9a8a65d4d158e2244"
+      "sha256": "88a00737540de311c9761a003df3fa479334ddadf00b73b41720d3a30b262882"
     },
     "executionReceiptSchema": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-execution-receipt.v1.schema.json",
-      "sha256": "4b6c8f8ada428355e99202608a8911629a859ee87822f699871af700e712cca2"
+      "sha256": "38dd6a5be89854f54a112d7ee3ef9c0eb7768e3c370f26066f626d85b2351646"
     },
     "consumerManifest": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
-      "sha256": "dfe3273a722703a7837eaaf27780eb23bfccffc58bceee321964ffc978e6bd02",
-      "consumerSetSha256": "015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a"
+      "sha256": "8cbce79761fdc4c75a02cb84153056c802f1d93867e48519a1d432ed7ee8b403",
+      "consumerSetSha256": "d183ade67fa2aff0b7167327d9c6a1ed5ae689da0e060b7a093a88e1462e0e0b"
     },
     "consumerIdRegistry": {
       "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
@@ -27,8 +27,8 @@
       "sha256": "c64ab24eca8d97b2d99e4f78d6a00b5f061ef220d1b8f1ae5cebbb22a91ce411"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave26-v1.json",
-      "sha256": "a0411527c89f19228ea7dccd4bd39d7fbfacf059ff28832953cf0b66a4b356f6"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave27-v1.json",
+      "sha256": "1e2a701fc0f568be012f01c6477cefdb44d5525f767257448a51c610dbe69294"
     },
     "classificationSources": []
   },
@@ -42,24 +42,24 @@
     "missingConsumerIds": 0,
     "duplicateConsumerIds": 0,
     "unknownConsumerIds": 0,
-    "readConsumers": 504,
-    "mutationConsumers": 629,
+    "readConsumers": 500,
+    "mutationConsumers": 633,
     "unresolvedDynamicConsumers": 82,
     "unresolvedDynamicCallCount": 82,
     "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 0,
-    "provenConsumers": 56,
-    "unprovenConsumers": 1077,
-    "directPassConsumers": 47,
-    "equivalentPassConsumers": 9,
+    "provenConsumers": 60,
+    "unprovenConsumers": 1073,
+    "directPassConsumers": 48,
+    "equivalentPassConsumers": 12,
     "verdicts": {
-      "STATIC_ONLY": 995,
+      "STATIC_ONLY": 991,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 47,
-      "EQUIVALENT_PASS": 9
+      "DIRECT_PASS": 48,
+      "EQUIVALENT_PASS": 12
     }
   },
   "entries": [
@@ -17580,39 +17580,59 @@
         "file": "main.js",
         "symbol": "response",
         "triggerOrPredicate": "msg.startsWith(\"/슬롯초보2,\") && isMaster(sender)",
-        "access": "READ",
-        "accessClass": "READ",
-        "interfaceId": "package-use.legacy-command.d7387be1f5dd",
+        "access": "READ_WRITE",
+        "accessClass": "MUTATION",
+        "interfaceId": "item.admin-grant.execute",
         "unresolvedDynamicCallCount": 0,
         "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "7a54cacbd8f581d936ffb4d66a892cca786bdfc80b4628f67ec49000c07d8cb0",
-        "classificationSha256": "5b1320de48c688a3b15932f865e70e2396cd4da0a83b64e8c89068c35153a36b"
+        "classificationSha256": "3580885058125ca3bb41f5cfacf4c583d308bd5465edc66ea27cda20209cfa55"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "EQUIVALENT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave27:slot-newbie",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+        "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave27:slot-newbie:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+        "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+        "targetSourceSha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f",
+        "exportName": "executeWave27SlotNewbieProjection"
       },
       "scenarioRequirements": [
         {
-          "scenarioKind": "READ_POSITIVE",
+          "scenarioKind": "MUTATION_SUCCESS",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
         {
-          "scenarioKind": "NEGATIVE_GUARD",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "RESTART_REPLAY",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
@@ -17628,32 +17648,482 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "5b1320de48c688a3b15932f865e70e2396cd4da0a83b64e8c89068c35153a36b"
+            "sourceEvidenceSha256": "3580885058125ca3bb41f5cfacf4c583d308bd5465edc66ea27cda20209cfa55"
+          }
+        }
+      ],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave27:legacy-02d447882f335ea1:auth_denied",
+          "scenarioId": "scenario:wave27:legacy-02d447882f335ea1:auth_denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:wave27:legacy-02d447882f335ea1",
+          "attributedConsumerIds": [
+            "legacy-02d447882f335ea1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c26121140937db68ba6ff5c0cb0d15aa16662e842ea6762bb11aaeacd84b9cb4",
+              "actualSha256": "c26121140937db68ba6ff5c0cb0d15aa16662e842ea6762bb11aaeacd84b9cb4",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
           }
         },
         {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-02d447882f335ea1:concurrency_single_writer",
+          "scenarioId": "scenario:wave27:legacy-02d447882f335ea1:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave27:legacy-02d447882f335ea1",
+          "attributedConsumerIds": [
+            "legacy-02d447882f335ea1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "e301984dd89015361c0bf2c071a695af8acc469b6529a69c70e061ce6afdb9fa",
+              "actualSha256": "e301984dd89015361c0bf2c071a695af8acc469b6529a69c70e061ce6afdb9fa",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-02d447882f335ea1:domain_failure_rollback",
+          "scenarioId": "scenario:wave27:legacy-02d447882f335ea1:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave27:legacy-02d447882f335ea1",
+          "attributedConsumerIds": [
+            "legacy-02d447882f335ea1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "9d511ae71ed63df9a7e9ab70eec9cb4a758e738853d4fc65e4988aa5198ed4aa",
+              "actualSha256": "9d511ae71ed63df9a7e9ab70eec9cb4a758e738853d4fc65e4988aa5198ed4aa",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-02d447882f335ea1:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave27:legacy-02d447882f335ea1:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave27:legacy-02d447882f335ea1",
+          "attributedConsumerIds": [
+            "legacy-02d447882f335ea1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "516247c1555b031420323f1b0f03c5f27117c248f8cd1cdc7704de88244c992e",
+              "actualSha256": "516247c1555b031420323f1b0f03c5f27117c248f8cd1cdc7704de88244c992e",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-02d447882f335ea1:mutation_success",
+          "scenarioId": "scenario:wave27:legacy-02d447882f335ea1:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave27:legacy-02d447882f335ea1",
+          "attributedConsumerIds": [
+            "legacy-02d447882f335ea1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "d0615b5df599c86fac310d1a03c9132c7f9c7f94e565b69a78769a338c102952",
+              "actualSha256": "d0615b5df599c86fac310d1a03c9132c7f9c7f94e565b69a78769a338c102952",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-02d447882f335ea1:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave27:legacy-02d447882f335ea1:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave27:legacy-02d447882f335ea1",
+          "attributedConsumerIds": [
+            "legacy-02d447882f335ea1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "19556e14331f63176808e1355b1ef219a201d4c300c717e502ffa51d69287929",
+              "actualSha256": "19556e14331f63176808e1355b1ef219a201d4c300c717e502ffa51d69287929",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-02d447882f335ea1:restart_replay",
+          "scenarioId": "scenario:wave27:legacy-02d447882f335ea1:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave27:legacy-02d447882f335ea1",
+          "attributedConsumerIds": [
+            "legacy-02d447882f335ea1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "095e2ac6a9afd7100fd755b2685e93bf9dc810c9351b850061bcaf64dc52cea2",
+              "actualSha256": "095e2ac6a9afd7100fd755b2685e93bf9dc810c9351b850061bcaf64dc52cea2",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         }
       ],
-      "scenarios": [],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave27:legacy-02d447882f335ea1:auth_denied",
+          "receipt:wave27:legacy-02d447882f335ea1:concurrency_single_writer",
+          "receipt:wave27:legacy-02d447882f335ea1:domain_failure_rollback",
+          "receipt:wave27:legacy-02d447882f335ea1:duplicate_replay_dml_zero",
+          "receipt:wave27:legacy-02d447882f335ea1:mutation_success",
+          "receipt:wave27:legacy-02d447882f335ea1:payload_drift_fail_closed",
+          "receipt:wave27:legacy-02d447882f335ea1:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "legacy-02d447882f335ea1"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+            "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+            "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+            "sha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f"
+          }
+        ]
       },
-      "equivalenceRule": null
+      "equivalenceRule": {
+        "ruleId": "SLOT_NEWBIE_PARAMETER_PROJECTION_V1",
+        "ruleVersion": "1",
+        "mechanical": true,
+        "equivalenceKey": "90e5bc3abc01930c9abf44cfbf5041fd9801d4bb59a1b435dafcc62e063cd793",
+        "variantConsumerIds": [
+          "legacy-02d447882f335ea1",
+          "legacy-36588f6a2db3277d",
+          "legacy-ac46db2ac0deedf4",
+          "legacy-f51202b9335997d8"
+        ]
+      }
     },
     {
       "consumerId": "legacy-02e4139c698d1154",
@@ -30037,39 +30507,59 @@
         "file": "main.js",
         "symbol": "response",
         "triggerOrPredicate": "msg.startsWith(\"/슬롯초보,\") && isMaster(sender)",
-        "access": "READ",
-        "accessClass": "READ",
-        "interfaceId": "package-use.legacy-command.4d7c7d307615",
+        "access": "READ_WRITE",
+        "accessClass": "MUTATION",
+        "interfaceId": "item.admin-grant.execute",
         "unresolvedDynamicCallCount": 0,
         "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "cb783aaba0e86cec13e6096fafc9e34cbd04d00ea1280eb9d50389a52fc29c99",
-        "classificationSha256": "611fe73b12bdb6815c8521fa311299398ac11c57e76c908b6461c32f76f93529"
+        "classificationSha256": "b56248787966492e62436fd2bc8a95061f1abed5d766e46edd78167c20c9775b"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave27:slot-newbie",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+        "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave27:slot-newbie:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+        "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+        "targetSourceSha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f",
+        "exportName": "executeWave27SlotNewbieProjection"
       },
       "scenarioRequirements": [
         {
-          "scenarioKind": "READ_POSITIVE",
+          "scenarioKind": "MUTATION_SUCCESS",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
         {
-          "scenarioKind": "NEGATIVE_GUARD",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "RESTART_REPLAY",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
@@ -30085,30 +30575,469 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "611fe73b12bdb6815c8521fa311299398ac11c57e76c908b6461c32f76f93529"
+            "sourceEvidenceSha256": "b56248787966492e62436fd2bc8a95061f1abed5d766e46edd78167c20c9775b"
+          }
+        }
+      ],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave27:legacy-36588f6a2db3277d:auth_denied",
+          "scenarioId": "scenario:wave27:legacy-36588f6a2db3277d:auth_denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:wave27:legacy-36588f6a2db3277d",
+          "attributedConsumerIds": [
+            "legacy-36588f6a2db3277d"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "416d3db35f6962ea87f0250edf18b23f27b8e35acaf7ed33268f1268c2bdb3df",
+              "actualSha256": "416d3db35f6962ea87f0250edf18b23f27b8e35acaf7ed33268f1268c2bdb3df",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
           }
         },
         {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-36588f6a2db3277d:concurrency_single_writer",
+          "scenarioId": "scenario:wave27:legacy-36588f6a2db3277d:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave27:legacy-36588f6a2db3277d",
+          "attributedConsumerIds": [
+            "legacy-36588f6a2db3277d"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "4be1cece5b6038debc705fbc90fa5824c0f10bd728e3f87f7c7d54ac3454886a",
+              "actualSha256": "4be1cece5b6038debc705fbc90fa5824c0f10bd728e3f87f7c7d54ac3454886a",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-36588f6a2db3277d:domain_failure_rollback",
+          "scenarioId": "scenario:wave27:legacy-36588f6a2db3277d:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave27:legacy-36588f6a2db3277d",
+          "attributedConsumerIds": [
+            "legacy-36588f6a2db3277d"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "fbc65221446682978dc3198b17405b61d66eb44ea60ba964804e128446562160",
+              "actualSha256": "fbc65221446682978dc3198b17405b61d66eb44ea60ba964804e128446562160",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-36588f6a2db3277d:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave27:legacy-36588f6a2db3277d:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave27:legacy-36588f6a2db3277d",
+          "attributedConsumerIds": [
+            "legacy-36588f6a2db3277d"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "11be487d8635b6b2a8a1ac23d08feb74b4b9e67b52112742df52241668802c0c",
+              "actualSha256": "11be487d8635b6b2a8a1ac23d08feb74b4b9e67b52112742df52241668802c0c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-36588f6a2db3277d:mutation_success",
+          "scenarioId": "scenario:wave27:legacy-36588f6a2db3277d:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave27:legacy-36588f6a2db3277d",
+          "attributedConsumerIds": [
+            "legacy-36588f6a2db3277d"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "3530cb9e402ef0781e6c9a24c3da97733f57dc71495eb68715989e736e9f4ab4",
+              "actualSha256": "3530cb9e402ef0781e6c9a24c3da97733f57dc71495eb68715989e736e9f4ab4",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-36588f6a2db3277d:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave27:legacy-36588f6a2db3277d:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave27:legacy-36588f6a2db3277d",
+          "attributedConsumerIds": [
+            "legacy-36588f6a2db3277d"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "3b191866f57065f9da6b318327572a8c70611e15e6c350eab7a9ae1eb8091df1",
+              "actualSha256": "3b191866f57065f9da6b318327572a8c70611e15e6c350eab7a9ae1eb8091df1",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-36588f6a2db3277d:restart_replay",
+          "scenarioId": "scenario:wave27:legacy-36588f6a2db3277d:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave27:legacy-36588f6a2db3277d",
+          "attributedConsumerIds": [
+            "legacy-36588f6a2db3277d"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "ead8d8b57d8fff9108fed0e3a40f56b5f811ffe56655e1f39494a2fc93ac6732",
+              "actualSha256": "ead8d8b57d8fff9108fed0e3a40f56b5f811ffe56655e1f39494a2fc93ac6732",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         }
       ],
-      "scenarios": [],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave27:legacy-36588f6a2db3277d:auth_denied",
+          "receipt:wave27:legacy-36588f6a2db3277d:concurrency_single_writer",
+          "receipt:wave27:legacy-36588f6a2db3277d:domain_failure_rollback",
+          "receipt:wave27:legacy-36588f6a2db3277d:duplicate_replay_dml_zero",
+          "receipt:wave27:legacy-36588f6a2db3277d:mutation_success",
+          "receipt:wave27:legacy-36588f6a2db3277d:payload_drift_fail_closed",
+          "receipt:wave27:legacy-36588f6a2db3277d:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "legacy-36588f6a2db3277d"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+            "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+            "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+            "sha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -59567,39 +60496,59 @@
         "file": "main.js",
         "symbol": "response",
         "triggerOrPredicate": "msg.startsWith(\"/슬롯초보3,\") && isMaster(sender)",
-        "access": "READ",
-        "accessClass": "READ",
-        "interfaceId": "package-use.legacy-command.e590f484d2de",
+        "access": "READ_WRITE",
+        "accessClass": "MUTATION",
+        "interfaceId": "item.admin-grant.execute",
         "unresolvedDynamicCallCount": 0,
         "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "bb382111ab43b7cff7ae78aea0129a6214d6f988384547a39e9717d0a6ae911b",
-        "classificationSha256": "ef00e2cddf3859cf48f8eac75a7e04e3d1fbefbe1f7c470ddd12b607de01dc0b"
+        "classificationSha256": "65fa14d52330b4f673cf3d22656aa0013ea41ed3824c52e91c8835776b8e6f24"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "EQUIVALENT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave27:slot-newbie",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+        "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave27:slot-newbie:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+        "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+        "targetSourceSha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f",
+        "exportName": "executeWave27SlotNewbieProjection"
       },
       "scenarioRequirements": [
         {
-          "scenarioKind": "READ_POSITIVE",
+          "scenarioKind": "MUTATION_SUCCESS",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
         {
-          "scenarioKind": "NEGATIVE_GUARD",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "RESTART_REPLAY",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
@@ -59615,32 +60564,482 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "ef00e2cddf3859cf48f8eac75a7e04e3d1fbefbe1f7c470ddd12b607de01dc0b"
+            "sourceEvidenceSha256": "65fa14d52330b4f673cf3d22656aa0013ea41ed3824c52e91c8835776b8e6f24"
+          }
+        }
+      ],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave27:legacy-ac46db2ac0deedf4:auth_denied",
+          "scenarioId": "scenario:wave27:legacy-ac46db2ac0deedf4:auth_denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:wave27:legacy-ac46db2ac0deedf4",
+          "attributedConsumerIds": [
+            "legacy-ac46db2ac0deedf4"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "3250594f43214e4ae5efd7aad12ec6a258ee407cc2913882c00f5682f236e92e",
+              "actualSha256": "3250594f43214e4ae5efd7aad12ec6a258ee407cc2913882c00f5682f236e92e",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
           }
         },
         {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-ac46db2ac0deedf4:concurrency_single_writer",
+          "scenarioId": "scenario:wave27:legacy-ac46db2ac0deedf4:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave27:legacy-ac46db2ac0deedf4",
+          "attributedConsumerIds": [
+            "legacy-ac46db2ac0deedf4"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "ba707ff1777b5d15d1ca54151b6140cb3fe8358066d5251df659b37d21c5855e",
+              "actualSha256": "ba707ff1777b5d15d1ca54151b6140cb3fe8358066d5251df659b37d21c5855e",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-ac46db2ac0deedf4:domain_failure_rollback",
+          "scenarioId": "scenario:wave27:legacy-ac46db2ac0deedf4:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave27:legacy-ac46db2ac0deedf4",
+          "attributedConsumerIds": [
+            "legacy-ac46db2ac0deedf4"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "0152f1254206c3399df522f6e9a0c698e4b267788290a965fdf88abee367013c",
+              "actualSha256": "0152f1254206c3399df522f6e9a0c698e4b267788290a965fdf88abee367013c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-ac46db2ac0deedf4:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave27:legacy-ac46db2ac0deedf4:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave27:legacy-ac46db2ac0deedf4",
+          "attributedConsumerIds": [
+            "legacy-ac46db2ac0deedf4"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "4f17d388acb724ea18df5992549af976867b531cd4b0024d7b05d9c9e38a9332",
+              "actualSha256": "4f17d388acb724ea18df5992549af976867b531cd4b0024d7b05d9c9e38a9332",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-ac46db2ac0deedf4:mutation_success",
+          "scenarioId": "scenario:wave27:legacy-ac46db2ac0deedf4:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave27:legacy-ac46db2ac0deedf4",
+          "attributedConsumerIds": [
+            "legacy-ac46db2ac0deedf4"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "002323c78936dd9a52a33100cd689f6a5ad106b025d13dd57ba1a896f258a6fc",
+              "actualSha256": "002323c78936dd9a52a33100cd689f6a5ad106b025d13dd57ba1a896f258a6fc",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-ac46db2ac0deedf4:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave27:legacy-ac46db2ac0deedf4:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave27:legacy-ac46db2ac0deedf4",
+          "attributedConsumerIds": [
+            "legacy-ac46db2ac0deedf4"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "ca90418e41d6a9f9192b38415cdade85bc5dddc3fd7d4b23c5acfae7df91d9e3",
+              "actualSha256": "ca90418e41d6a9f9192b38415cdade85bc5dddc3fd7d4b23c5acfae7df91d9e3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-ac46db2ac0deedf4:restart_replay",
+          "scenarioId": "scenario:wave27:legacy-ac46db2ac0deedf4:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave27:legacy-ac46db2ac0deedf4",
+          "attributedConsumerIds": [
+            "legacy-ac46db2ac0deedf4"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "713c1792386e6c7161d1749d311a072ad36b2cdc6a2207fc38e5666d53ad14b9",
+              "actualSha256": "713c1792386e6c7161d1749d311a072ad36b2cdc6a2207fc38e5666d53ad14b9",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         }
       ],
-      "scenarios": [],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave27:legacy-ac46db2ac0deedf4:auth_denied",
+          "receipt:wave27:legacy-ac46db2ac0deedf4:concurrency_single_writer",
+          "receipt:wave27:legacy-ac46db2ac0deedf4:domain_failure_rollback",
+          "receipt:wave27:legacy-ac46db2ac0deedf4:duplicate_replay_dml_zero",
+          "receipt:wave27:legacy-ac46db2ac0deedf4:mutation_success",
+          "receipt:wave27:legacy-ac46db2ac0deedf4:payload_drift_fail_closed",
+          "receipt:wave27:legacy-ac46db2ac0deedf4:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "legacy-ac46db2ac0deedf4"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+            "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+            "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+            "sha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f"
+          }
+        ]
       },
-      "equivalenceRule": null
+      "equivalenceRule": {
+        "ruleId": "SLOT_NEWBIE_PARAMETER_PROJECTION_V1",
+        "ruleVersion": "1",
+        "mechanical": true,
+        "equivalenceKey": "90e5bc3abc01930c9abf44cfbf5041fd9801d4bb59a1b435dafcc62e063cd793",
+        "variantConsumerIds": [
+          "legacy-02d447882f335ea1",
+          "legacy-36588f6a2db3277d",
+          "legacy-ac46db2ac0deedf4",
+          "legacy-f51202b9335997d8"
+        ]
+      }
     },
     {
       "consumerId": "legacy-ac5439261f9c08ce",
@@ -81096,39 +82495,59 @@
         "file": "main.js",
         "symbol": "response",
         "triggerOrPredicate": "msg.startsWith(\"/슬롯초보4,\") && isMaster(sender)",
-        "access": "READ",
-        "accessClass": "READ",
-        "interfaceId": "package-use.legacy-command.624a9bbeb073",
+        "access": "READ_WRITE",
+        "accessClass": "MUTATION",
+        "interfaceId": "item.admin-grant.execute",
         "unresolvedDynamicCallCount": 0,
         "registrySourceMismatchLabels": [],
         "sourceSpanSha256": "e9219ebc644e982e7605be108bdc03e2bda4f30187da9e01d415fd4e81f873bb",
-        "classificationSha256": "d73961923466f55aeffacd9884b6d1b394f15dd50685a19a7b8ddf5eb9a80bac"
+        "classificationSha256": "3e8b9be57438c6860ab48132780aa014226691147a281d4234bd1b10d0d4d376"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "EQUIVALENT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave27:slot-newbie",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+        "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave27:slot-newbie:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+        "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+        "targetSourceSha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f",
+        "exportName": "executeWave27SlotNewbieProjection"
       },
       "scenarioRequirements": [
         {
-          "scenarioKind": "READ_POSITIVE",
+          "scenarioKind": "MUTATION_SUCCESS",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
         {
-          "scenarioKind": "NEGATIVE_GUARD",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "RESTART_REPLAY",
+          "disposition": "REQUIRED",
+          "notApplicable": null
+        },
+        {
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
           "disposition": "REQUIRED",
           "notApplicable": null
         },
@@ -81144,32 +82563,482 @@
             "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "d73961923466f55aeffacd9884b6d1b394f15dd50685a19a7b8ddf5eb9a80bac"
+            "sourceEvidenceSha256": "3e8b9be57438c6860ab48132780aa014226691147a281d4234bd1b10d0d4d376"
+          }
+        }
+      ],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave27:legacy-f51202b9335997d8:auth_denied",
+          "scenarioId": "scenario:wave27:legacy-f51202b9335997d8:auth_denied",
+          "scenarioKind": "AUTH_DENIED",
+          "harnessCaseId": "case:wave27:legacy-f51202b9335997d8",
+          "attributedConsumerIds": [
+            "legacy-f51202b9335997d8"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "39c6d089acebbf4ae0324ae5cb854f375457d471d3828f30468872451537d38d",
+              "actualSha256": "39c6d089acebbf4ae0324ae5cb854f375457d471d3828f30468872451537d38d",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [],
+              "actual": [],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
           }
         },
         {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-f51202b9335997d8:concurrency_single_writer",
+          "scenarioId": "scenario:wave27:legacy-f51202b9335997d8:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave27:legacy-f51202b9335997d8",
+          "attributedConsumerIds": [
+            "legacy-f51202b9335997d8"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "0d4f30561aab93932c01fbe8a45ed9947064d8d1855cd11d90b3392356510552",
+              "actualSha256": "0d4f30561aab93932c01fbe8a45ed9947064d8d1855cd11d90b3392356510552",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-f51202b9335997d8:domain_failure_rollback",
+          "scenarioId": "scenario:wave27:legacy-f51202b9335997d8:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave27:legacy-f51202b9335997d8",
+          "attributedConsumerIds": [
+            "legacy-f51202b9335997d8"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "0ec466695db6d8e7dc41d8f1d80c502a34efa47be20a873028e42cd10e78e693",
+              "actualSha256": "0ec466695db6d8e7dc41d8f1d80c502a34efa47be20a873028e42cd10e78e693",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
         },
         {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
+          "receiptId": "receipt:wave27:legacy-f51202b9335997d8:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave27:legacy-f51202b9335997d8:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave27:legacy-f51202b9335997d8",
+          "attributedConsumerIds": [
+            "legacy-f51202b9335997d8"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c665e99fdfa33139eaeb173a1ef551b2f2f43afefaf100ef3de18cb6a8d7882c",
+              "actualSha256": "c665e99fdfa33139eaeb173a1ef551b2f2f43afefaf100ef3de18cb6a8d7882c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-f51202b9335997d8:mutation_success",
+          "scenarioId": "scenario:wave27:legacy-f51202b9335997d8:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave27:legacy-f51202b9335997d8",
+          "attributedConsumerIds": [
+            "legacy-f51202b9335997d8"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "486f38ff52a391e3653d3c4fedf8ac59df5af5b38b0f6f0fae70651c6bcfc43b",
+              "actualSha256": "486f38ff52a391e3653d3c4fedf8ac59df5af5b38b0f6f0fae70651c6bcfc43b",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "actualSha256": "f04df5c85c07f14efdb898c8ab06d0af756c95a42bb21b3c1b54aeb55435983e",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'admin_operator',?,'iris','processing',UTC_TIMESTAMP(3))",
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'admin_operator',?,'canonical_player',NULL,?,?,?,?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?"
+              ],
+              "expectedRowCount": 9,
+              "actualRowCount": 9
+            },
+            "lockOrder": {
+              "expected": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "actual": [
+                "operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_owned_item_stacks"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-f51202b9335997d8:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave27:legacy-f51202b9335997d8:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave27:legacy-f51202b9335997d8",
+          "attributedConsumerIds": [
+            "legacy-f51202b9335997d8"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "4b5bac616ee2662401fd1b005d3faafc62252ff44a6d62c6b382e94da510670e",
+              "actualSha256": "4b5bac616ee2662401fd1b005d3faafc62252ff44a6d62c6b382e94da510670e",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave27:legacy-f51202b9335997d8:restart_replay",
+          "scenarioId": "scenario:wave27:legacy-f51202b9335997d8:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave27:legacy-f51202b9335997d8",
+          "attributedConsumerIds": [
+            "legacy-f51202b9335997d8"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "304ff2ef4cd2874dca26882cfb4d98367826fd775fb863a9681a3503e05d52cf",
+              "actualSha256": "304ff2ef4cd2874dca26882cfb4d98367826fd775fb863a9681a3503e05d52cf",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "operations"
+              ],
+              "actual": [
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
         }
       ],
-      "scenarios": [],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave27:legacy-f51202b9335997d8:auth_denied",
+          "receipt:wave27:legacy-f51202b9335997d8:concurrency_single_writer",
+          "receipt:wave27:legacy-f51202b9335997d8:domain_failure_rollback",
+          "receipt:wave27:legacy-f51202b9335997d8:duplicate_replay_dml_zero",
+          "receipt:wave27:legacy-f51202b9335997d8:mutation_success",
+          "receipt:wave27:legacy-f51202b9335997d8:payload_drift_fail_closed",
+          "receipt:wave27:legacy-f51202b9335997d8:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "legacy-f51202b9335997d8"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave27-slot-newbie-v1.json",
+            "sha256": "92a0d47c2f92ab2992e1b8fbe517c555582a7388c69e6cb1e9a9df6b3a86e957"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-harness.mjs",
+            "sha256": "002249e7786fad6772955091dd1066b8797da79a2048f39cf4064d6169e366b9"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave27-slot-newbie-projection-target.mjs",
+            "sha256": "3ceb4dc4c55fc5a4c136c0597992fc22b5afa5d6d25c9264bb8ca657d1f41a6f"
+          }
+        ]
       },
-      "equivalenceRule": null
+      "equivalenceRule": {
+        "ruleId": "SLOT_NEWBIE_PARAMETER_PROJECTION_V1",
+        "ruleVersion": "1",
+        "mechanical": true,
+        "equivalenceKey": "90e5bc3abc01930c9abf44cfbf5041fd9801d4bb59a1b435dafcc62e063cd793",
+        "variantConsumerIds": [
+          "legacy-02d447882f335ea1",
+          "legacy-36588f6a2db3277d",
+          "legacy-ac46db2ac0deedf4",
+          "legacy-f51202b9335997d8"
+        ]
+      }
     },
     {
       "consumerId": "legacy-f5fecffc8288d12f",
@@ -121035,5 +122904,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "15a660a69d630210cd71154c90c9e1c1e00c37c65962645c33bed2f664224bbf"
+  "entrySetSha256": "f1fc43763d9d29f5ae0f696c8b614da36357fff505ffb0b1ba2c02398119ad18"
 }
