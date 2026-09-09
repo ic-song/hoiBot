@@ -6,6 +6,70 @@ import { USER_SHELL_CLIENT, USER_SHELL_HTML, USER_SHELL_STYLES } from "../src/si
 
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'";
 
+class ShellElement {
+  hidden = false;
+  textContent = "";
+  value = "";
+  disabled = false;
+  children: ShellElement[] = [];
+  attributes = new Map<string, string>();
+  listeners = new Map<string, (event: { preventDefault(): void }) => Promise<void> | void>();
+
+  constructor(readonly id: string, private readonly focusLog: string[]) {}
+  addEventListener(type: string, listener: (event: { preventDefault(): void }) => Promise<void> | void) { this.listeners.set(type, listener); }
+  setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+  removeAttribute(name: string) { this.attributes.delete(name); }
+  replaceChildren() { this.children = []; }
+  append(...children: ShellElement[]) { this.children.push(...children); }
+  focus() { this.focusLog.push(this.id); }
+}
+
+function createShellHarness(responses: Array<{ status: number; payload?: Record<string, unknown> }>) {
+  const focusLog: string[] = [];
+  const ids = [
+    "loading-view", "login-view", "app-view", "login-form", "login-button", "login-id", "password",
+    "login-error-summary", "login-error-message", "app-error", "app-error-message", "logout-button", "retry-button",
+    "live-status", "header-session", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
+    "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "welcome-title", "login-title"
+  ];
+  const elements = new Map(ids.map((id) => [id, new ShellElement(id, focusLog)]));
+  ["login-view", "app-view", "login-error-summary", "app-error", "login-id-error", "password-error", "profile-empty"]
+    .forEach((id) => { const element = elements.get(id); if (element !== undefined) element.hidden = true; });
+  const calls: Array<{ url: string; options: Record<string, unknown> }> = [];
+  const history: string[] = [];
+  const document = {
+    getElementById: (id: string) => elements.get(id),
+    createElement: (tag: string) => new ShellElement(tag, focusLog)
+  };
+  const window = {
+    setTimeout: (callback: () => void) => { callback(); return 0; },
+    history: { replaceState: (_state: unknown, _title: string, url: string) => history.push(url) }
+  };
+  const fetch = async (url: string, options?: Record<string, unknown>) => {
+    calls.push({ url, options: options ?? {} });
+    const response = responses.shift();
+    if (response === undefined) throw new Error(`응답 fixture가 부족합니다: ${url}`);
+    return {
+      status: response.status,
+      ok: response.status >= 200 && response.status < 300,
+      json: async () => response.payload ?? {}
+    };
+  };
+  new Function("document", "window", "fetch", USER_SHELL_CLIENT)(document, window, fetch);
+  return { elements, calls, history, focusLog };
+}
+
+async function flushShellClient(): Promise<void> {
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  await new Promise<void>((resolve) => setImmediate(resolve));
+}
+
+async function click(element: ShellElement): Promise<void> {
+  const listener = element.listeners.get("click");
+  assert.ok(listener);
+  await listener({ preventDefault() {} });
+}
+
 async function buildShellApp() {
   const app = Fastify();
   await registerUserShellRoutes(app);
@@ -78,4 +142,42 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
   assert.doesNotMatch(USER_SHELL_CLIENT, /\/api\/v1\/admin/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /localStorage|sessionStorage|Authorization/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /console\./);
+});
+
+test("현재 사용자 프로필을 읽고 갱신된 CSRF로 로그아웃합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-before-profile" } },
+    { status: 200, payload: { profile: { nickname: "테스트용사", level: 27, tier: "골드", serverName: "호이월드 1" } } },
+    { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-after-profile" } },
+    { status: 204 }
+  ]);
+  await flushShellClient();
+  assert.deepEqual(harness.calls.slice(0, 3).map((call) => call.url), [
+    "/api/v1/sessions/current", "/api/v1/player-profiles/current", "/api/v1/sessions/current"
+  ]);
+  assert.equal(harness.elements.get("account-login-id")?.textContent, "pla*****");
+  assert.equal(harness.elements.get("account-id")?.textContent, "웹 계정 연결 확인됨");
+  assert.equal(harness.elements.get("player-id")?.textContent, "게임계정 연결 확인됨");
+  assert.equal(harness.elements.get("profile-list")?.children.length, 4);
+  const logout = harness.elements.get("logout-button");
+  assert.ok(logout);
+  await click(logout);
+  assert.equal(harness.calls[3]?.options.method, "DELETE");
+  assert.equal((harness.calls[3]?.options.headers as Record<string, string>)["x-csrf-token"], "csrf-after-profile");
+  assert.equal(harness.history.at(-1), "/login");
+  assert.equal(harness.elements.get("account-login-id")?.textContent, "—");
+});
+
+test("프로필 조회가 401이면 로그인 화면으로 전환하고 계정 표시를 지웁니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 401, payload: { error: { code: "UNAUTHENTICATED" } } }
+  ]);
+  await flushShellClient();
+  assert.equal(harness.history.at(-1), "/login");
+  assert.equal(harness.elements.get("login-view")?.hidden, false);
+  assert.equal(harness.elements.get("app-view")?.hidden, true);
+  assert.equal(harness.elements.get("account-login-id")?.textContent, "—");
+  assert.equal(harness.elements.get("system-account-name")?.textContent, "—");
+  assert.equal(harness.elements.get("profile-list")?.children.length, 0);
 });
