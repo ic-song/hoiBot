@@ -1,0 +1,27 @@
+{
+  "schema": "web-admin-reuse-evidence-v1",
+  "delta": "SCD-WEB-20260910-4",
+  "executionId": "관리자재사용-SL-COMMON-ADMIN-WEB-REUSE-EVIDENCE-01-20260910083825",
+  "wbs": "WEB-WBS-012",
+  "slice": "SL-COMMON-ADMIN-WEB-SHELL-READ-01",
+  "sourceBranch": "feature/web-portal",
+  "sourceHead": "ba74e66c8aa1f4401e41e7cd67b41866194622c9",
+  "sourceChanges": 0,
+  "validation": {
+    "focusedTests": { "command": "node --import tsx --test test/admin-web-shell.test.ts test/admin-authorization.test.ts test/site-web-app-wiring.test.ts", "total": 16, "passed": 16, "failed": 0, "skipped": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "clientForbiddenEndpointMatches": 0,
+    "registrarAudit": "PASS: one admin-web-shell registration and one admin REST registration in app.ts"
+  },
+  "shellRoutes": ["GET /admin", "GET /admin/", "GET /admin/assets/admin.css", "GET /admin/assets/admin.js"],
+  "sessionAndReadApis": ["/api/v1/admin/sessions", "/api/v1/admin/sessions/current", "/api/v1/admin/overview", "/api/v1/admin/players", "/api/v1/admin/players/:playerId", "/api/v1/admin/audit-entries", "/api/v1/admin/channel-activity", "/api/v1/admin/moderation-incidents", "/api/v1/admin/monitoring-events", "/api/v1/admin/delivery-failures"],
+  "historicalEvidence": {
+    "adminShellRead": "Gate7 shadow_complete; focused 6/6; typecheck/build pass; sourceCommit 7e607975",
+    "adminMvpIntegration": "Gate7 complete; focusedLatest 44/44; typecheck/build pass; default full regression 1270 pass; Gate8 false"
+  },
+  "operationalDatabaseUsed": false,
+  "featureProdTouched": false,
+  "gate8": false,
+  "conclusion": "Evidence-only reuse verification; administrator source, tests, and app registration were not modified. Current HEAD contains historical admin route/shell edits relative to the older evidence baseline and passes the focused current checks. WEB-WBS-015 must perform final integration and Shadow evidence."
+}
