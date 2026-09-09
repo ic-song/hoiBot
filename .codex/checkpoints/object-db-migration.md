@@ -4,8 +4,8 @@
 - 작업 이름: SC-20260902-1 오브젝트 데이터 DB화
 - 작업 상태: 진행 중
 - 정리 후보: 아니요
-- 체크포인트 버전: 22
-- 마지막 갱신: 2026-09-09 10:27:00 KST
+- 체크포인트 버전: 23
+- 마지막 갱신: 2026-09-09 10:39:00 KST
 
 ## 현재 목표
 
@@ -29,13 +29,13 @@
 
 - 통합 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\item-bag-canonical-read-v1-20260908`
 - 통합 브랜치: `codex/item-bag-canonical-read-v1-20260908`
-- 통합 현재 SHA: `42554daa002c8456a6f3166861224162df899637`
-- 직전 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\common-mutation-root-retry-v1-20260909`
-- 직전 실행 브랜치: `codex/common-mutation-root-retry-v1-20260909`
-- 직전 실행: WBS791 / Lease2619 / `SL-COMMON-APP-WIRING-MUTATION-ROOT-RETRY-01` Gate1~5 완료
-- 상태: WBS787~791 증분 구현·통합 완료, 잔여 1,092경로 유한 작업표 확정, Wave23 shared ledger 승격 진행
+- 통합 현재 SHA: `7f6e85477b7ff2e68e70ffd3211c21a376134ce4`
+- 현재 실행 작업 트리: `C:\Users\user\Desktop\hoiBot-worktrees\object-db-parity-wave23-v1-20260909`
+- 현재 실행 브랜치: `codex/object-db-parity-wave23-v1-20260909`
+- 현재 실행: WBS787~789 / Lease2619 범위 / Wave23 shared ledger receipt 18건 작성·봉인
+- 상태: 중단 당시의 Wave23 미커밋 7파일을 보존해 동일 에이전트가 재개함. 잔여 작업표와 통합 기준선은 완료 상태로 재사용하며 다시 만들지 않는다.
 - 체크포인트 Git 추적: 기존 추적 파일
-- 원격 상태: 통합 브랜치 `4dc632fb`까지 origin push 확인. 잔여 작업표 `42554daa`는 체크포인트와 함께 push 예정.
+- 원격 상태: 통합 브랜치 `7f6e8547`까지 origin과 exact 일치. Wave23 변경은 아직 미커밋이며 별도 전용 브랜치에만 존재한다.
 
 ## 완료된 현재 슬라이스 작업
 
