@@ -147,12 +147,11 @@ for (const entry of entries) {
 
 const categoryCounts = countBy(entries, (entry) => entry.category);
 const expectedCounts = {
-  A_REUSABLE_PROOF_ASSET: 1,
   B_STRICT_EQUIVALENCE: 10,
   C_DIRECT_EXECUTION: 995,
   D_PREREQUISITE: 82,
 };
-if (entries.length !== 1_088 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
+if (entries.length !== 1_087 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
   throw new Error(`Residual plan cardinality drift: ${JSON.stringify({ total: entries.length, categoryCounts })}`);
 }
 
@@ -160,10 +159,11 @@ const output = {
   format: "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1",
   catalogVersion: ledger.catalogVersion,
   frozenAt: "2026-09-09 14:40:00 KST",
-  integrationBaseline: "4dc632fb55aa0add134d0d0b0b4dcec9d4e2a894",
+  integrationBaseline: "6da64b77e14c4faa548e68cf0557527570d75e79",
   dependencyResolutions: [
     { wbs: "WBS791", commit: "854502debd9a7df249a022352468384bf1a42f4d", resolution: "APP_WIRING_ROOT_RETRY_COMPLETED" },
     { wbs: "WBS791", commit: "a91c2e3405ebc70b7c1301a563b0b216a1ddf4b3", resolution: "CHANGE_STACK_QUANTITY_OFFICIAL_RECEIPTS" },
+    { wbs: "WBS792", commit: "6da64b77e14c4faa548e68cf0557527570d75e79", resolution: "ITEM_BAG_OFFICIAL_READ_RECEIPTS" },
   ],
   sources: {
     textNormalization: "LF_UTF8",

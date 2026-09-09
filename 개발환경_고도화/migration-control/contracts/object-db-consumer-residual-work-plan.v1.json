@@ -2,7 +2,7 @@
   "format": "OBJECT_DB_CONSUMER_RESIDUAL_WORK_PLAN_V1",
   "catalogVersion": "SC-20260902-1",
   "frozenAt": "2026-09-09 14:40:00 KST",
-  "integrationBaseline": "4dc632fb55aa0add134d0d0b0b4dcec9d4e2a894",
+  "integrationBaseline": "6da64b77e14c4faa548e68cf0557527570d75e79",
   "dependencyResolutions": [
     {
       "wbs": "WBS791",
@@ -13,6 +13,11 @@
       "wbs": "WBS791",
       "commit": "a91c2e3405ebc70b7c1301a563b0b216a1ddf4b3",
       "resolution": "CHANGE_STACK_QUANTITY_OFFICIAL_RECEIPTS"
+    },
+    {
+      "wbs": "WBS792",
+      "commit": "6da64b77e14c4faa548e68cf0557527570d75e79",
+      "resolution": "ITEM_BAG_OFFICIAL_READ_RECEIPTS"
     }
   ],
   "sources": {
@@ -21,8 +26,8 @@
     "manifestSha256": "dfe3273a722703a7837eaaf27780eb23bfccffc58bceee321964ffc978e6bd02",
     "manifestConsumerSetSha256": "015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a",
     "ledgerPath": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
-    "ledgerSha256": "91d200558c1cf1b5c4e9912f893f4826c59c22a2f105a4a4afaaad55cec49565",
-    "ledgerEntrySetSha256": "0dd8d54a31bf12b7311b3f61bd51a4810e153cf7a616fbd5d9dab49828bf058f"
+    "ledgerSha256": "b344266b3fd12b64ea844ad7b860519f7f4370c0c3e63d380bfc932abd4fa1e0",
+    "ledgerEntrySetSha256": "8194d1840d03fc84b97664cf375f6fd6b6e576be6ee554a9fb4a58229ae5d6d0"
   },
   "policy": {
     "A_REUSABLE_PROOF_ASSET": "A prior bundle, observation or harness is reusable input only; it is not completed proof and requires re-execution or exact resealing as official receipts.",
@@ -142,10 +147,9 @@
   ],
   "summary": {
     "manifestConsumers": 1133,
-    "alreadyDirectOrEquivalent": 45,
-    "residualConsumers": 1088,
+    "alreadyDirectOrEquivalent": 46,
+    "residualConsumers": 1087,
     "categoryCounts": {
-      "A_REUSABLE_PROOF_ASSET": 1,
       "B_STRICT_EQUIVALENCE": 10,
       "C_DIRECT_EXECUTION": 995,
       "D_PREREQUISITE": 82
@@ -158,7 +162,7 @@
       "CURRENCY-SHOP": 73,
       "FURNITURE-HOME": 28,
       "HOME-AGGREGATE-RANK": 86,
-      "ITEM": 160,
+      "ITEM": 159,
       "MARKET-ORCHESTRATOR": 95,
       "MEMBER-TITLE": 23,
       "MINI-PET": 61,
@@ -174,13 +178,13 @@
       "APP_WIRING": 10,
       "AUTOMATIC_CALLBACK": 3,
       "HTTP_WEB_ROUTE": 81,
-      "LEGACY_COMMAND": 682,
+      "LEGACY_COMMAND": 681,
       "RUNTIME_DISPATCH": 179,
       "SQL_REPOSITORY": 60
     },
     "byAccessClass": {
       "MUTATION": 622,
-      "READ": 466
+      "READ": 465
     }
   },
   "entries": [
@@ -58942,94 +58946,6 @@
       ],
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
       "evidenceCandidate": null,
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-94904fa11988ff04",
-      "category": "A_REUSABLE_PROOF_ASSET",
-      "domain": "ITEM",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "READ",
-      "interfaceId": "item.legacy-command.7fd30321f996",
-      "sourceSpanSha256": "2fb7e40c328fc01e0c12677fa6acc8424b638842b9d17e40cb4fa91226eb98fb",
-      "targetTables": [
-        "canonical_item_definitions",
-        "canonical_owned_item_stacks",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_item_definitions.active_flag",
-        "canonical_item_definitions.item_description",
-        "canonical_item_definitions.item_grade",
-        "canonical_item_definitions.item_id",
-        "canonical_item_definitions.item_name",
-        "canonical_item_definitions.price_amount",
-        "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "READ_POSITIVE",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "NEGATIVE_GUARD",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "fc1d35dba85ed9307a62d6ceba6c0c660aa4f241c9059c6f720bdad192b1812a"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "fc1d35dba85ed9307a62d6ceba6c0c660aa4f241c9059c6f720bdad192b1812a"
-          }
-        },
-        {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        }
-      ],
-      "nextAction": "REEXECUTE_OR_RESEAL_AS_OFFICIAL_RECEIPTS",
-      "evidenceCandidate": {
-        "evidenceKind": "EVIDENCE_BUNDLE",
-        "evidenceCommit": "909fc1ab3ca3f39f1cdec14bb189b695404a9698",
-        "evidenceRefs": [
-          "개발환경_고도화/migration-control/evidence/item-bag-canonical-shadow-lease2604/"
-        ]
-      },
       "equivalenceCohortId": null,
       "blockers": []
     },
