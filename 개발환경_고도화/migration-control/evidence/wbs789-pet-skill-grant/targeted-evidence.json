@@ -1,0 +1,1391 @@
+{
+  "contractVersion": "WBS789_PET_SKILL_GRANT_TARGETED_V1",
+  "consumerId": "sql-repository-31c4099080d9c9c1",
+  "sliceId": "SL-PET-SKILL-GRANT-MUTATION-PARITY-01",
+  "executionId": "펫스킬지급DB-SL-PET-SKILL-GRANT-MUTATION-PARITY-01-20260909083514",
+  "leaseRow": 2617,
+  "baselineCommit": "2304dd0fc30984b5e31d58df3fbb36f5f77167a1",
+  "migrationClosure": [
+    "443_object_identity_audit_provider.sql",
+    "444_canonical_item_inventory.sql",
+    "446_canonical_pet_equipment.sql",
+    "449_canonical_pet_skill.sql"
+  ],
+  "scenarios": {
+    "success": {
+      "processId": 23268,
+      "moduleExecutionId": "415215d2-090e-413b-84f8-1be6eea6a934",
+      "scenario": "success",
+      "database": {
+        "host": "127.0.0.1",
+        "port": 3348,
+        "name": "hoibot_wbs789_pet_skill_grant_2617"
+      },
+      "attempts": [
+        {
+          "number": 1,
+          "outcome": "COMMIT",
+          "lockOrder": [
+            "canonical_pet_skill_operation_replays",
+            "canonical_players",
+            "canonical_pet_skill_definitions",
+            "canonical_owned_pet_skill_stacks",
+            "object_identity_crosswalks:petSkillOperation",
+            "object_identity_crosswalks:ownedPetSkill"
+          ],
+          "targetDml": [
+            "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+          ],
+          "targetAffectedRows": 2,
+          "failure": null
+        }
+      ],
+      "committedDml": [
+        "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+        "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+      ],
+      "committedRows": 2,
+      "rolledBackAffectedRows": 0,
+      "replayed": false,
+      "resultingQuantity": "3",
+      "operationId": "wz6h8y23",
+      "errorCode": null,
+      "beforeRows": {
+        "canonical_owned_pet_skill_stacks": [],
+        "canonical_pet_skill_operation_replays": []
+      },
+      "afterRows": {
+        "canonical_owned_pet_skill_stacks": [
+          {
+            "owned_pet_skill_id": "tcaitgep",
+            "player_id": "player01",
+            "pet_skill_id": "skill001",
+            "quantity": "3",
+            "INSERT_USER": "wbs789-fixture",
+            "INSERT_TIME": "2026-09-09 09:02:00",
+            "UPDATE_USER": "wbs789-fixture",
+            "UPDATE_TIME": "2026-09-09 09:02:00"
+          }
+        ],
+        "canonical_pet_skill_operation_replays": [
+          {
+            "pet_skill_operation_id": "wz6h8y23",
+            "player_id": "player01",
+            "request_key": "request-success",
+            "operation_kind": "grant",
+            "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+            "pet_skill_id": "skill001",
+            "owned_pet_id": null,
+            "owned_pet_skill_equipment_id": null,
+            "resulting_quantity": "3",
+            "operation_status": "completed",
+            "INSERT_USER": "wbs789-fixture",
+            "INSERT_TIME": "2026-09-09 09:02:00",
+            "UPDATE_USER": "wbs789-fixture",
+            "UPDATE_TIME": "2026-09-09 09:02:00"
+          }
+        ]
+      },
+      "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+      "afterSha256": "4c9c8a75f9b33afda9f0ab76ffb0c97ab6216a559d2a630626cb6aaa021a14ed",
+      "locatorProjection": {
+        "mode": "RAW_COMPOSITE",
+        "rows": [
+          {
+            "pet_skill_operation_id": "wz6h8y23",
+            "player_id": "player01",
+            "request_key": "request-success",
+            "operation_kind": "grant",
+            "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+            "pet_skill_id": "skill001",
+            "owned_pet_id": null,
+            "owned_pet_skill_equipment_id": null,
+            "resulting_quantity": "3",
+            "operation_status": "completed"
+          }
+        ],
+        "locatorOK": true
+      },
+      "externalNetworkCalls": 0,
+      "replyCalls": 0
+    },
+    "rollback": {
+      "processId": 22040,
+      "moduleExecutionId": "cf14777d-5487-48e9-8df4-87debc2c3803",
+      "scenario": "rollback",
+      "database": {
+        "host": "127.0.0.1",
+        "port": 3348,
+        "name": "hoibot_wbs789_pet_skill_grant_2617"
+      },
+      "attempts": [
+        {
+          "number": 1,
+          "outcome": "ROLLBACK",
+          "lockOrder": [
+            "canonical_pet_skill_operation_replays",
+            "canonical_players",
+            "canonical_pet_skill_definitions",
+            "canonical_owned_pet_skill_stacks",
+            "object_identity_crosswalks:petSkillOperation",
+            "object_identity_crosswalks:ownedPetSkill"
+          ],
+          "targetDml": [
+            "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)"
+          ],
+          "targetAffectedRows": 1,
+          "failure": null
+        }
+      ],
+      "committedDml": [],
+      "committedRows": 0,
+      "rolledBackAffectedRows": 1,
+      "replayed": null,
+      "resultingQuantity": null,
+      "operationId": null,
+      "errorCode": "(conn:28, no: 1644, SQLState: 45000) WBS789 forced replay failure\nsql: INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER...",
+      "beforeRows": {
+        "canonical_owned_pet_skill_stacks": [],
+        "canonical_pet_skill_operation_replays": []
+      },
+      "afterRows": {
+        "canonical_owned_pet_skill_stacks": [],
+        "canonical_pet_skill_operation_replays": []
+      },
+      "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+      "afterSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+      "locatorProjection": {
+        "mode": "RAW_COMPOSITE",
+        "rows": [],
+        "locatorOK": true
+      },
+      "externalNetworkCalls": 0,
+      "replyCalls": 0
+    },
+    "replay": [
+      {
+        "processId": 17296,
+        "moduleExecutionId": "243d0ff3-12f5-433a-97e0-11971df104c6",
+        "scenario": "replay",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players",
+              "canonical_pet_skill_definitions",
+              "canonical_owned_pet_skill_stacks",
+              "object_identity_crosswalks:petSkillOperation",
+              "object_identity_crosswalks:ownedPetSkill"
+            ],
+            "targetDml": [
+              "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+              "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+            ],
+            "targetAffectedRows": 2,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+        ],
+        "committedRows": 2,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "resultingQuantity": "3",
+        "operationId": "n0zrm56n",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [],
+          "canonical_pet_skill_operation_replays": []
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "heynkr2x",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:05",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:05"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "n0zrm56n",
+              "player_id": "player01",
+              "request_key": "request-replay",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:05",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:05"
+            }
+          ]
+        },
+        "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+        "afterSha256": "4e81414986100bcfcaced1045f5428d2388eb5dbf748c344fb64b88a0ea64909",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "n0zrm56n",
+              "player_id": "player01",
+              "request_key": "request-replay",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 25092,
+        "moduleExecutionId": "2525c349-aa28-48a2-8b9c-456c49f5aaf8",
+        "scenario": "replay",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays"
+            ],
+            "targetDml": [],
+            "targetAffectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": true,
+        "resultingQuantity": "3",
+        "operationId": "n0zrm56n",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "heynkr2x",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:05",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:05"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "n0zrm56n",
+              "player_id": "player01",
+              "request_key": "request-replay",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:05",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:05"
+            }
+          ]
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "heynkr2x",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:05",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:05"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "n0zrm56n",
+              "player_id": "player01",
+              "request_key": "request-replay",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:05",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:05"
+            }
+          ]
+        },
+        "beforeSha256": "4e81414986100bcfcaced1045f5428d2388eb5dbf748c344fb64b88a0ea64909",
+        "afterSha256": "4e81414986100bcfcaced1045f5428d2388eb5dbf748c344fb64b88a0ea64909",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "n0zrm56n",
+              "player_id": "player01",
+              "request_key": "request-replay",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ],
+    "drift": [
+      {
+        "processId": 14868,
+        "moduleExecutionId": "d216185c-633b-4f06-b18b-f7e3b7219cc3",
+        "scenario": "drift",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players",
+              "canonical_pet_skill_definitions",
+              "canonical_owned_pet_skill_stacks",
+              "object_identity_crosswalks:petSkillOperation",
+              "object_identity_crosswalks:ownedPetSkill"
+            ],
+            "targetDml": [
+              "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+              "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+            ],
+            "targetAffectedRows": 2,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+        ],
+        "committedRows": 2,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "resultingQuantity": "3",
+        "operationId": "g2w0t601",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [],
+          "canonical_pet_skill_operation_replays": []
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "jivv9ta6",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:08",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:08"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "g2w0t601",
+              "player_id": "player01",
+              "request_key": "request-drift",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:08",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:08"
+            }
+          ]
+        },
+        "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+        "afterSha256": "50e42d433da3462dc15c904054294d816b7c47ff731b6d1c3c753a4cdebf2bab",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "g2w0t601",
+              "player_id": "player01",
+              "request_key": "request-drift",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 16112,
+        "moduleExecutionId": "c8bb87db-c472-422e-8417-244b4b80c8dd",
+        "scenario": "drift",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "ROLLBACK",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays"
+            ],
+            "targetDml": [],
+            "targetAffectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": null,
+        "resultingQuantity": null,
+        "operationId": null,
+        "errorCode": "CANONICAL_PET_SKILL_REQUEST_PAYLOAD_CONFLICT",
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "jivv9ta6",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:08",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:08"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "g2w0t601",
+              "player_id": "player01",
+              "request_key": "request-drift",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:08",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:08"
+            }
+          ]
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "jivv9ta6",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:08",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:08"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "g2w0t601",
+              "player_id": "player01",
+              "request_key": "request-drift",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:08",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:08"
+            }
+          ]
+        },
+        "beforeSha256": "50e42d433da3462dc15c904054294d816b7c47ff731b6d1c3c753a4cdebf2bab",
+        "afterSha256": "50e42d433da3462dc15c904054294d816b7c47ff731b6d1c3c753a4cdebf2bab",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "g2w0t601",
+              "player_id": "player01",
+              "request_key": "request-drift",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ],
+    "restart": [
+      {
+        "processId": 15200,
+        "moduleExecutionId": "0bd68940-388e-4caa-9652-ce386f7ee3f9",
+        "scenario": "restart",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players",
+              "canonical_pet_skill_definitions",
+              "canonical_owned_pet_skill_stacks",
+              "object_identity_crosswalks:petSkillOperation",
+              "object_identity_crosswalks:ownedPetSkill"
+            ],
+            "targetDml": [
+              "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+              "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+            ],
+            "targetAffectedRows": 2,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+        ],
+        "committedRows": 2,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "resultingQuantity": "3",
+        "operationId": "p49lcujl",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [],
+          "canonical_pet_skill_operation_replays": []
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "kx6l309p",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:11",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:11"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "p49lcujl",
+              "player_id": "player01",
+              "request_key": "request-restart",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:11",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:11"
+            }
+          ]
+        },
+        "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+        "afterSha256": "6b7865fdfba331751869f50043cac2ccb3bfd0c0139a53e4d0edfef76cb2254b",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "p49lcujl",
+              "player_id": "player01",
+              "request_key": "request-restart",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 22696,
+        "moduleExecutionId": "f3be3e5c-a908-4af3-a123-f515bdc4bfdf",
+        "scenario": "restart",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays"
+            ],
+            "targetDml": [],
+            "targetAffectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": true,
+        "resultingQuantity": "3",
+        "operationId": "p49lcujl",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "kx6l309p",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:11",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:11"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "p49lcujl",
+              "player_id": "player01",
+              "request_key": "request-restart",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:11",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:11"
+            }
+          ]
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "kx6l309p",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:11",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:11"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "p49lcujl",
+              "player_id": "player01",
+              "request_key": "request-restart",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:11",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:11"
+            }
+          ]
+        },
+        "beforeSha256": "6b7865fdfba331751869f50043cac2ccb3bfd0c0139a53e4d0edfef76cb2254b",
+        "afterSha256": "6b7865fdfba331751869f50043cac2ccb3bfd0c0139a53e4d0edfef76cb2254b",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "p49lcujl",
+              "player_id": "player01",
+              "request_key": "request-restart",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ],
+    "sameKeyConcurrency": [
+      {
+        "processId": 3504,
+        "moduleExecutionId": "39f11cf4-6b16-4458-abe7-0eddd0b6b7d5",
+        "scenario": "same-key",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players",
+              "canonical_pet_skill_definitions",
+              "canonical_owned_pet_skill_stacks",
+              "object_identity_crosswalks:petSkillOperation",
+              "object_identity_crosswalks:ownedPetSkill"
+            ],
+            "targetDml": [
+              "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+              "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+            ],
+            "targetAffectedRows": 2,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+        ],
+        "committedRows": 2,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "resultingQuantity": "3",
+        "operationId": "fpe5s5n4",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [],
+          "canonical_pet_skill_operation_replays": []
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "ge0qp5dq",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:13",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:13"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "fpe5s5n4",
+              "player_id": "player01",
+              "request_key": "same-key",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:13",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:13"
+            }
+          ]
+        },
+        "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+        "afterSha256": "e4951527879317447fd36bbce310c40091664898ad2e0b107c045be40e8ba434",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "fpe5s5n4",
+              "player_id": "player01",
+              "request_key": "same-key",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 9340,
+        "moduleExecutionId": "34072034-621d-4411-ae1f-98f5a15771d6",
+        "scenario": "same-key",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "ROLLBACK",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players"
+            ],
+            "targetDml": [],
+            "targetAffectedRows": 0,
+            "failure": {
+              "code": "ER_LOCK_DEADLOCK",
+              "errno": 1213,
+              "errorKind": "TRANSACTION_DEADLOCK",
+              "constraintName": null
+            }
+          },
+          {
+            "number": 2,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays"
+            ],
+            "targetDml": [],
+            "targetAffectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": true,
+        "resultingQuantity": "3",
+        "operationId": "fpe5s5n4",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [],
+          "canonical_pet_skill_operation_replays": []
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "ge0qp5dq",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:13",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:13"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "fpe5s5n4",
+              "player_id": "player01",
+              "request_key": "same-key",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:13",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:13"
+            }
+          ]
+        },
+        "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+        "afterSha256": "e4951527879317447fd36bbce310c40091664898ad2e0b107c045be40e8ba434",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "fpe5s5n4",
+              "player_id": "player01",
+              "request_key": "same-key",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ],
+    "differentKeyConcurrency": [
+      {
+        "processId": 28516,
+        "moduleExecutionId": "a33b2b33-0ee1-425d-80a2-65dd35b3edf1",
+        "scenario": "different-key",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players",
+              "canonical_pet_skill_definitions",
+              "canonical_owned_pet_skill_stacks",
+              "object_identity_crosswalks:petSkillOperation",
+              "object_identity_crosswalks:ownedPetSkill"
+            ],
+            "targetDml": [
+              "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+              "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+            ],
+            "targetAffectedRows": 2,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+          "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+        ],
+        "committedRows": 2,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "resultingQuantity": "3",
+        "operationId": "dilbk63k",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [],
+          "canonical_pet_skill_operation_replays": []
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "cymg7ppl",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "3",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "dilbk63k",
+              "player_id": "player01",
+              "request_key": "request-different-key-a",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ]
+        },
+        "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+        "afterSha256": "05fa8fee823d5609b15f1ed9fc76ec906235ac6a413409746a7bf1a72af1db30",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "dilbk63k",
+              "player_id": "player01",
+              "request_key": "request-different-key-a",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 16972,
+        "moduleExecutionId": "72873696-cdab-4338-bd84-2a5bc9fae19c",
+        "scenario": "different-key",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "ROLLBACK",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players"
+            ],
+            "targetDml": [],
+            "targetAffectedRows": 0,
+            "failure": {
+              "code": "ER_LOCK_DEADLOCK",
+              "errno": 1213,
+              "errorKind": "TRANSACTION_DEADLOCK",
+              "constraintName": null
+            }
+          },
+          {
+            "number": 2,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays",
+              "canonical_players",
+              "canonical_pet_skill_definitions",
+              "canonical_owned_pet_skill_stacks",
+              "object_identity_crosswalks:petSkillOperation"
+            ],
+            "targetDml": [
+              "UPDATE canonical_owned_pet_skill_stacks SET quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_pet_skill_id=? AND player_id=? AND pet_skill_id=?",
+              "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+            ],
+            "targetAffectedRows": 2,
+            "failure": null
+          }
+        ],
+        "committedDml": [
+          "UPDATE canonical_owned_pet_skill_stacks SET quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE owned_pet_skill_id=? AND player_id=? AND pet_skill_id=?",
+          "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+        ],
+        "committedRows": 2,
+        "rolledBackAffectedRows": 0,
+        "replayed": false,
+        "resultingQuantity": "8",
+        "operationId": "iaeqm68f",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [],
+          "canonical_pet_skill_operation_replays": []
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "cymg7ppl",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "8",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "dilbk63k",
+              "player_id": "player01",
+              "request_key": "request-different-key-a",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            },
+            {
+              "pet_skill_operation_id": "iaeqm68f",
+              "player_id": "player01",
+              "request_key": "request-different-key-b",
+              "operation_kind": "grant",
+              "payload_fingerprint": "85e808670dfc9a41c00085f5473ec2cf89b6ab4014019c3570d618a162f6bb0f",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "8",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ]
+        },
+        "beforeSha256": "a28d0f2981c3f811048ef0579cc95fc282de78f43c0519dec2cdef9a66376444",
+        "afterSha256": "d2625d86fdbfa183f6b00c35384f017b849884d98544c337a42115fa54853e1f",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "iaeqm68f",
+              "player_id": "player01",
+              "request_key": "request-different-key-b",
+              "operation_kind": "grant",
+              "payload_fingerprint": "85e808670dfc9a41c00085f5473ec2cf89b6ab4014019c3570d618a162f6bb0f",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "8",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      },
+      {
+        "processId": 18816,
+        "moduleExecutionId": "c052ccc5-d830-4be1-a5f4-7db0c43a28e9",
+        "scenario": "different-key",
+        "database": {
+          "host": "127.0.0.1",
+          "port": 3348,
+          "name": "hoibot_wbs789_pet_skill_grant_2617"
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "outcome": "COMMIT",
+            "lockOrder": [
+              "canonical_pet_skill_operation_replays"
+            ],
+            "targetDml": [],
+            "targetAffectedRows": 0,
+            "failure": null
+          }
+        ],
+        "committedDml": [],
+        "committedRows": 0,
+        "rolledBackAffectedRows": 0,
+        "replayed": true,
+        "resultingQuantity": "3",
+        "operationId": "dilbk63k",
+        "errorCode": null,
+        "beforeRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "cymg7ppl",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "8",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "dilbk63k",
+              "player_id": "player01",
+              "request_key": "request-different-key-a",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            },
+            {
+              "pet_skill_operation_id": "iaeqm68f",
+              "player_id": "player01",
+              "request_key": "request-different-key-b",
+              "operation_kind": "grant",
+              "payload_fingerprint": "85e808670dfc9a41c00085f5473ec2cf89b6ab4014019c3570d618a162f6bb0f",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "8",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ]
+        },
+        "afterRows": {
+          "canonical_owned_pet_skill_stacks": [
+            {
+              "owned_pet_skill_id": "cymg7ppl",
+              "player_id": "player01",
+              "pet_skill_id": "skill001",
+              "quantity": "8",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ],
+          "canonical_pet_skill_operation_replays": [
+            {
+              "pet_skill_operation_id": "dilbk63k",
+              "player_id": "player01",
+              "request_key": "request-different-key-a",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            },
+            {
+              "pet_skill_operation_id": "iaeqm68f",
+              "player_id": "player01",
+              "request_key": "request-different-key-b",
+              "operation_kind": "grant",
+              "payload_fingerprint": "85e808670dfc9a41c00085f5473ec2cf89b6ab4014019c3570d618a162f6bb0f",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "8",
+              "operation_status": "completed",
+              "INSERT_USER": "wbs789-fixture",
+              "INSERT_TIME": "2026-09-09 09:02:14",
+              "UPDATE_USER": "wbs789-fixture",
+              "UPDATE_TIME": "2026-09-09 09:02:14"
+            }
+          ]
+        },
+        "beforeSha256": "d2625d86fdbfa183f6b00c35384f017b849884d98544c337a42115fa54853e1f",
+        "afterSha256": "d2625d86fdbfa183f6b00c35384f017b849884d98544c337a42115fa54853e1f",
+        "locatorProjection": {
+          "mode": "RAW_COMPOSITE",
+          "rows": [
+            {
+              "pet_skill_operation_id": "dilbk63k",
+              "player_id": "player01",
+              "request_key": "request-different-key-a",
+              "operation_kind": "grant",
+              "payload_fingerprint": "ee6bb6f22e4d6b6207cd9876a43920d064a58acca2bff8c774eeb86d679416a0",
+              "pet_skill_id": "skill001",
+              "owned_pet_id": null,
+              "owned_pet_skill_equipment_id": null,
+              "resulting_quantity": "3",
+              "operation_status": "completed"
+            }
+          ],
+          "locatorOK": true
+        },
+        "externalNetworkCalls": 0,
+        "replyCalls": 0
+      }
+    ]
+  }
+}
