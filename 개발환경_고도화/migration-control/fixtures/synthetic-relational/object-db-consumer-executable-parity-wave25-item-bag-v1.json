@@ -1,0 +1,27 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave25:item-bag:v1",
+  "sliceId": "WBS792",
+  "consumerId": "legacy-94904fa11988ff04",
+  "runtimeSourcePaths": [
+    "main.js",
+    "개발환경_고도화/runtime/src/inventory/canonical-item-bag-direct-read-service.ts",
+    "개발환경_고도화/runtime/src/inventory/legacy-bag-formatter.ts",
+    "개발환경_고도화/runtime/src/guild/guild-territory-war-authority.ts"
+  ],
+  "receiptContract": {
+    "version": "WBS792_ITEM_BAG_READ_DIRECT_V1",
+    "route": "SHADOW_EVALUATOR",
+    "transaction": "READ_ONLY",
+    "sourceDomainDmlCount": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES_AND_MODULES",
+    "externalNetworkCalls": 0
+  },
+  "bindings": [
+    {"consumerId":"legacy-94904fa11988ff04","scenarioId":"wave25-item-bag-read-positive","scenarioKind":"READ_POSITIVE","exportName":"executeWave25ItemBag","expectedResultSha256":"874f096568f700aa7a55f7589220c94f701c8c4687d31936d04a09e56e2e2579"},
+    {"consumerId":"legacy-94904fa11988ff04","scenarioId":"wave25-item-bag-negative-guard","scenarioKind":"NEGATIVE_GUARD","exportName":"executeWave25ItemBag","expectedResultSha256":"294ea6e6882b89e70d9265b1d451b1e7ba840d242f3b05eef0d1a023e2682980"},
+    {"consumerId":"legacy-94904fa11988ff04","scenarioId":"wave25-item-bag-exact-output","scenarioKind":"EXACT_OUTPUT","exportName":"executeWave25ItemBag","expectedResultSha256":"874f096568f700aa7a55f7589220c94f701c8c4687d31936d04a09e56e2e2579"},
+    {"consumerId":"legacy-94904fa11988ff04","scenarioId":"wave25-item-bag-source-domain-dml-zero","scenarioKind":"SOURCE_DOMAIN_DML_ZERO","exportName":"executeWave25ItemBag","expectedResultSha256":"874f096568f700aa7a55f7589220c94f701c8c4687d31936d04a09e56e2e2579"},
+    {"consumerId":"legacy-94904fa11988ff04","scenarioId":"wave25-item-bag-restart-consistency","scenarioKind":"RESTART_CONSISTENCY","exportName":"executeWave25ItemBag","expectedResultSha256":"874f096568f700aa7a55f7589220c94f701c8c4687d31936d04a09e56e2e2579"}
+  ]
+}
