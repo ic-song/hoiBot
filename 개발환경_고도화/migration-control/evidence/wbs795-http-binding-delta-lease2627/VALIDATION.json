@@ -139,8 +139,19 @@
     "baselineProof": "The implicated source files have identical current and HEAD hashes at 9f909288ba82ff6445e0a781d972153b45ed56f6."
   },
   "regression": {
+    "exactCommand": "node --import tsx --test test/http-route-surface-audit.test.ts test/object-db-consumer-stable-id.test.ts test/object-db-consumer-executable-parity-ledger.test.ts test/object-db-consumer-executable-parity-wave26.test.ts test/object-db-consumer-executable-parity-wave27.test.ts",
+    "tests": 34,
+    "suites": 6,
     "passed": 33,
     "failed": 1,
+    "durationMs": 750991.9768,
+    "onlyFailure": {
+      "file": "test/object-db-consumer-executable-parity-wave26.test.ts",
+      "line": 14,
+      "assertion": "ledger.coverage.directPassConsumers",
+      "actual": 48,
+      "expected": 47
+    },
     "baselineOnlyFailure": "Wave26 test expects directPassConsumers=47 while the unchanged HEAD ledger records 48; both the test and ledger are HEAD-identical.",
     "wbs795Regression": false
   },
@@ -160,5 +171,5 @@
     "featureProdTouched": false,
     "gate8Attempted": false
   },
-  "selfSha256": "d9059ea7eb94c9400431f4320457cd3bb3120e8e51d35969d9a13e3ebf12549d"
+  "selfSha256": "1d0e5f334d0eca4fb90d22e20445797d95502279a36a75a82f303f300e30cac7"
 }
