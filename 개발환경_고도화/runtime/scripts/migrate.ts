@@ -3,6 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import mariadb from "mariadb";
 import { loadConfig } from "../src/config.js";
+import { createMigrationSqlBatches } from "./migration-sql-batches.js";
 
 const config = loadConfig();
 if (!config.database.enabled) {
@@ -59,7 +60,8 @@ try {
       continue;
     }
 
-    await connection.query(sql);
+    const batches = createMigrationSqlBatches(sql);
+    for (const batch of batches) await connection.query(batch);
     await connection.query(
       "INSERT INTO schema_migrations (version, checksum, applied_at) VALUES (?, ?, UTC_TIMESTAMP(3))",
       [file, checksum]
