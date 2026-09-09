@@ -16682,7 +16682,7 @@
       "file": "main.js",
       "symbol": "response",
       "triggerOrPredicate": "msg.startsWith(\"/슬롯초보2,\") && isMaster(sender)",
-      "access": "READ",
+      "access": "READ_WRITE",
       "legacyPaths": [],
       "sqlTables": [],
       "observedSqlReadTables": [],
@@ -16699,7 +16699,8 @@
       "p1Bridges": [
         "P1-ENVIRONMENT-PARTITION",
         "P1-IDENTITY-CROSSWALK",
-        "P1-MISSING-PORTS"
+        "P1-MISSING-PORTS",
+        "P1-SINGLE-WRITER"
       ],
       "sourceSpan": {
         "start": 401652,
@@ -16750,14 +16751,15 @@
       ],
       "readTargetTables": [
         "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
         "canonical_package_definitions",
         "canonical_package_reward_entries",
         "canonical_package_reward_groups",
         "canonical_players"
       ],
-      "writeTargetTables": [],
+      "writeTargetTables": [
+        "canonical_owned_item_instances",
+        "canonical_owned_item_stacks"
+      ],
       "readTargetColumns": [
         "canonical_item_definitions.active_flag",
         "canonical_item_definitions.item_description",
@@ -16766,14 +16768,6 @@
         "canonical_item_definitions.item_name",
         "canonical_item_definitions.price_amount",
         "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
         "canonical_package_definitions.active_flag",
         "canonical_package_definitions.max_open_quantity",
         "canonical_package_definitions.package_description",
@@ -16789,13 +16783,32 @@
         "canonical_package_reward_groups.selection_mode",
         "canonical_players.player_id"
       ],
-      "writeTargetColumns": [],
-      "transactionalPortDependencies": [],
-      "interfaceId": "package-use.legacy-command.d7387be1f5dd",
-      "interfaceMethod": "READ",
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
+      "writeTargetColumns": [
+        "canonical_owned_item_instances.item_id",
+        "canonical_owned_item_instances.owned_item_id",
+        "canonical_owned_item_instances.ownership_status",
+        "canonical_owned_item_instances.player_id",
+        "canonical_owned_item_stacks.item_id",
+        "canonical_owned_item_stacks.owned_item_stack_id",
+        "canonical_owned_item_stacks.player_id",
+        "canonical_owned_item_stacks.quantity"
+      ],
+      "transactionalPortDependencies": [
+        "command_audit",
+        "command_executions",
+        "operations",
+        "outbox_messages"
+      ],
+      "interfaceId": "item.admin-grant.execute",
+      "interfaceMethod": "EXECUTE",
+      "transactionOwnerInterfaceId": "item.admin-grant.execute",
+      "transactionParticipantInterfaceIds": [
+        "item.inventory.mutate"
+      ],
+      "operationReceiptTables": [
+        "canonical_item_inventory_ledger_entries",
+        "canonical_item_inventory_operations"
+      ],
       "targetUsageMode": "ADDITIVE_PLAN"
     },
     {
@@ -39097,7 +39110,7 @@
       "file": "main.js",
       "symbol": "response",
       "triggerOrPredicate": "msg.startsWith(\"/슬롯초보,\") && isMaster(sender)",
-      "access": "READ",
+      "access": "READ_WRITE",
       "legacyPaths": [],
       "sqlTables": [],
       "observedSqlReadTables": [],
@@ -39114,7 +39127,8 @@
       "p1Bridges": [
         "P1-ENVIRONMENT-PARTITION",
         "P1-IDENTITY-CROSSWALK",
-        "P1-MISSING-PORTS"
+        "P1-MISSING-PORTS",
+        "P1-SINGLE-WRITER"
       ],
       "sourceSpan": {
         "start": 400947,
@@ -39165,14 +39179,15 @@
       ],
       "readTargetTables": [
         "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
         "canonical_package_definitions",
         "canonical_package_reward_entries",
         "canonical_package_reward_groups",
         "canonical_players"
       ],
-      "writeTargetTables": [],
+      "writeTargetTables": [
+        "canonical_owned_item_instances",
+        "canonical_owned_item_stacks"
+      ],
       "readTargetColumns": [
         "canonical_item_definitions.active_flag",
         "canonical_item_definitions.item_description",
@@ -39181,14 +39196,6 @@
         "canonical_item_definitions.item_name",
         "canonical_item_definitions.price_amount",
         "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
         "canonical_package_definitions.active_flag",
         "canonical_package_definitions.max_open_quantity",
         "canonical_package_definitions.package_description",
@@ -39204,13 +39211,32 @@
         "canonical_package_reward_groups.selection_mode",
         "canonical_players.player_id"
       ],
-      "writeTargetColumns": [],
-      "transactionalPortDependencies": [],
-      "interfaceId": "package-use.legacy-command.4d7c7d307615",
-      "interfaceMethod": "READ",
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
+      "writeTargetColumns": [
+        "canonical_owned_item_instances.item_id",
+        "canonical_owned_item_instances.owned_item_id",
+        "canonical_owned_item_instances.ownership_status",
+        "canonical_owned_item_instances.player_id",
+        "canonical_owned_item_stacks.item_id",
+        "canonical_owned_item_stacks.owned_item_stack_id",
+        "canonical_owned_item_stacks.player_id",
+        "canonical_owned_item_stacks.quantity"
+      ],
+      "transactionalPortDependencies": [
+        "command_audit",
+        "command_executions",
+        "operations",
+        "outbox_messages"
+      ],
+      "interfaceId": "item.admin-grant.execute",
+      "interfaceMethod": "EXECUTE",
+      "transactionOwnerInterfaceId": "item.admin-grant.execute",
+      "transactionParticipantInterfaceIds": [
+        "item.inventory.mutate"
+      ],
+      "operationReceiptTables": [
+        "canonical_item_inventory_ledger_entries",
+        "canonical_item_inventory_operations"
+      ],
       "targetUsageMode": "ADDITIVE_PLAN"
     },
     {
@@ -99356,7 +99382,7 @@
       "file": "main.js",
       "symbol": "response",
       "triggerOrPredicate": "msg.startsWith(\"/슬롯초보3,\") && isMaster(sender)",
-      "access": "READ",
+      "access": "READ_WRITE",
       "legacyPaths": [],
       "sqlTables": [],
       "observedSqlReadTables": [],
@@ -99373,7 +99399,8 @@
       "p1Bridges": [
         "P1-ENVIRONMENT-PARTITION",
         "P1-IDENTITY-CROSSWALK",
-        "P1-MISSING-PORTS"
+        "P1-MISSING-PORTS",
+        "P1-SINGLE-WRITER"
       ],
       "sourceSpan": {
         "start": 402366,
@@ -99424,14 +99451,15 @@
       ],
       "readTargetTables": [
         "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
         "canonical_package_definitions",
         "canonical_package_reward_entries",
         "canonical_package_reward_groups",
         "canonical_players"
       ],
-      "writeTargetTables": [],
+      "writeTargetTables": [
+        "canonical_owned_item_instances",
+        "canonical_owned_item_stacks"
+      ],
       "readTargetColumns": [
         "canonical_item_definitions.active_flag",
         "canonical_item_definitions.item_description",
@@ -99440,14 +99468,6 @@
         "canonical_item_definitions.item_name",
         "canonical_item_definitions.price_amount",
         "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
         "canonical_package_definitions.active_flag",
         "canonical_package_definitions.max_open_quantity",
         "canonical_package_definitions.package_description",
@@ -99463,13 +99483,32 @@
         "canonical_package_reward_groups.selection_mode",
         "canonical_players.player_id"
       ],
-      "writeTargetColumns": [],
-      "transactionalPortDependencies": [],
-      "interfaceId": "package-use.legacy-command.e590f484d2de",
-      "interfaceMethod": "READ",
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
+      "writeTargetColumns": [
+        "canonical_owned_item_instances.item_id",
+        "canonical_owned_item_instances.owned_item_id",
+        "canonical_owned_item_instances.ownership_status",
+        "canonical_owned_item_instances.player_id",
+        "canonical_owned_item_stacks.item_id",
+        "canonical_owned_item_stacks.owned_item_stack_id",
+        "canonical_owned_item_stacks.player_id",
+        "canonical_owned_item_stacks.quantity"
+      ],
+      "transactionalPortDependencies": [
+        "command_audit",
+        "command_executions",
+        "operations",
+        "outbox_messages"
+      ],
+      "interfaceId": "item.admin-grant.execute",
+      "interfaceMethod": "EXECUTE",
+      "transactionOwnerInterfaceId": "item.admin-grant.execute",
+      "transactionParticipantInterfaceIds": [
+        "item.inventory.mutate"
+      ],
+      "operationReceiptTables": [
+        "canonical_item_inventory_ledger_entries",
+        "canonical_item_inventory_operations"
+      ],
       "targetUsageMode": "ADDITIVE_PLAN"
     },
     {
@@ -140139,7 +140178,7 @@
       "file": "main.js",
       "symbol": "response",
       "triggerOrPredicate": "msg.startsWith(\"/슬롯초보4,\") && isMaster(sender)",
-      "access": "READ",
+      "access": "READ_WRITE",
       "legacyPaths": [],
       "sqlTables": [],
       "observedSqlReadTables": [],
@@ -140156,7 +140195,8 @@
       "p1Bridges": [
         "P1-ENVIRONMENT-PARTITION",
         "P1-IDENTITY-CROSSWALK",
-        "P1-MISSING-PORTS"
+        "P1-MISSING-PORTS",
+        "P1-SINGLE-WRITER"
       ],
       "sourceSpan": {
         "start": 403080,
@@ -140207,14 +140247,15 @@
       ],
       "readTargetTables": [
         "canonical_item_definitions",
-        "canonical_owned_item_instances",
-        "canonical_owned_item_stacks",
         "canonical_package_definitions",
         "canonical_package_reward_entries",
         "canonical_package_reward_groups",
         "canonical_players"
       ],
-      "writeTargetTables": [],
+      "writeTargetTables": [
+        "canonical_owned_item_instances",
+        "canonical_owned_item_stacks"
+      ],
       "readTargetColumns": [
         "canonical_item_definitions.active_flag",
         "canonical_item_definitions.item_description",
@@ -140223,14 +140264,6 @@
         "canonical_item_definitions.item_name",
         "canonical_item_definitions.price_amount",
         "canonical_item_definitions.price_currency_source_identifier",
-        "canonical_owned_item_instances.item_id",
-        "canonical_owned_item_instances.owned_item_id",
-        "canonical_owned_item_instances.ownership_status",
-        "canonical_owned_item_instances.player_id",
-        "canonical_owned_item_stacks.item_id",
-        "canonical_owned_item_stacks.owned_item_stack_id",
-        "canonical_owned_item_stacks.player_id",
-        "canonical_owned_item_stacks.quantity",
         "canonical_package_definitions.active_flag",
         "canonical_package_definitions.max_open_quantity",
         "canonical_package_definitions.package_description",
@@ -140246,13 +140279,32 @@
         "canonical_package_reward_groups.selection_mode",
         "canonical_players.player_id"
       ],
-      "writeTargetColumns": [],
-      "transactionalPortDependencies": [],
-      "interfaceId": "package-use.legacy-command.624a9bbeb073",
-      "interfaceMethod": "READ",
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
+      "writeTargetColumns": [
+        "canonical_owned_item_instances.item_id",
+        "canonical_owned_item_instances.owned_item_id",
+        "canonical_owned_item_instances.ownership_status",
+        "canonical_owned_item_instances.player_id",
+        "canonical_owned_item_stacks.item_id",
+        "canonical_owned_item_stacks.owned_item_stack_id",
+        "canonical_owned_item_stacks.player_id",
+        "canonical_owned_item_stacks.quantity"
+      ],
+      "transactionalPortDependencies": [
+        "command_audit",
+        "command_executions",
+        "operations",
+        "outbox_messages"
+      ],
+      "interfaceId": "item.admin-grant.execute",
+      "interfaceMethod": "EXECUTE",
+      "transactionOwnerInterfaceId": "item.admin-grant.execute",
+      "transactionParticipantInterfaceIds": [
+        "item.inventory.mutate"
+      ],
+      "operationReceiptTables": [
+        "canonical_item_inventory_ledger_entries",
+        "canonical_item_inventory_operations"
+      ],
       "targetUsageMode": "ADDITIVE_PLAN"
     },
     {
@@ -191094,7 +191146,7 @@
     "APP_WIRING": 10,
     "SQL_REPOSITORY": 84
   },
-  "consumerSetSha256": "015ed7d96a4579c84d170888151e44a36cf95192760555966ac47df0764ffb3a",
+  "consumerSetSha256": "d183ade67fa2aff0b7167327d9c6a1ed5ae689da0e060b7a093a88e1462e0e0b",
   "targetSelectors": {
     "selector:CONTEXT-BRIDGE": {
       "domains": [

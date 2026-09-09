@@ -582,6 +582,10 @@ function legacyAccessFor(text: string): DerivedConsumer["access"] {
   return persistedWrite ? "READ_WRITE" : "READ";
 }
 
+function isSlotNewbieGrantConsumer(consumer: Pick<DerivedConsumer, "kind" | "triggerOrPredicate">): boolean {
+  return consumer.kind === "LEGACY_COMMAND" && /msg\.startsWith\(["']\/슬롯초보(?:[2-4])?,/.test(consumer.triggerOrPredicate);
+}
+
 function p1For(primary: string, access: DerivedConsumer["access"], unresolvedDynamicCallCount = 0): string[] {
   const attached = (SLICE_P1[primary] ?? []).filter((condition) => {
     if (["P1-IDENTITY-CROSSWALK", "P1-MISSING-PORTS", "P1-ENVIRONMENT-PARTITION", "P1-SINGLE-WRITER"].includes(condition)) return false;
@@ -635,6 +639,7 @@ function legacyEvidencePaths(consumer: DerivedConsumer): string[] {
 function normalizeConsumerSemantics(consumer: DerivedConsumer): DerivedConsumer {
   const value = consumer.triggerOrPredicate;
   const handlerKey = value.match(/handlerKey=([A-Za-z0-9_]+)/)?.[1];
+  if (isSlotNewbieGrantConsumer(consumer)) return { ...consumer, access: "READ_WRITE" };
   if (handlerKey?.endsWith("_read") && handlerKey !== "home_activity_alert_read") return { ...consumer, access: "READ" };
   if (READ_ONLY_APP_TRIGGER.test(value)) return { ...consumer, access: "READ" };
   if (consumer.kind === "LEGACY_COMMAND" && /\/(?:좋아요순위|길드순위|펫친밀도순위|온도순위|채팅순위|레벨순위)/.test(value)) return { ...consumer, access: "READ" };
@@ -684,6 +689,7 @@ function normalizeConsumerSemantics(consumer: DerivedConsumer): DerivedConsumer 
 
 function explicitMutationSlices(consumer: DerivedConsumer): string[] {
   if (consumer.access === "READ") return [];
+  if (isSlotNewbieGrantConsumer(consumer)) return ["ITEM"];
   const handlerKey = consumer.triggerOrPredicate.match(/handlerKey=([a-zA-Z0-9_]+)/)?.[1];
   if (handlerKey !== undefined && APP_HANDLER_MUTATION_SLICES[handlerKey] !== undefined) return APP_HANDLER_MUTATION_SLICES[handlerKey]!;
   if (handlerKey === "PACKAGE_USE") return ["CURRENCY-SHOP", "FURNITURE-HOME", "ITEM", "MEMBER-TITLE", "MINI-PET", "PET-EQUIPMENT", "PET-TITLE"];
@@ -698,6 +704,7 @@ function consumerInterfaceContract(consumer: DerivedConsumer, writeTargetTables:
   let interfaceId: string;
   if (isPrayerConsumer(consumer)) interfaceId = "pet-skill.daily-prayer.execute";
   else if (/^\/로켓\d+,/.test(value)) interfaceId = "item.admin-grant.execute";
+  else if (isSlotNewbieGrantConsumer(consumer)) interfaceId = "item.admin-grant.execute";
   else if (isExploreSettlementConsumer(consumer)) interfaceId = "pet-explore.settlement.execute";
   else if (value === "MESSAGE:msg.length > 3 progression") interfaceId = "admin-lifecycle.message-progression.apply";
   else if (/^STATE:/.test(value)) interfaceId = `${consumer.primarySlice.toLowerCase()}.state-transition.${sha(value).slice(0, 12)}`;
