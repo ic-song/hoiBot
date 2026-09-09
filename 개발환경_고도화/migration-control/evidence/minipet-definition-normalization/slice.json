@@ -1,0 +1,68 @@
+{
+  "sliceId": "SL-ASSET-MINIPET-DEFINITION-CATALOG-SEED-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "7f8ecb51b6280762e78cccf813bbcce9591f1585",
+  "wbs": 614,
+  "dbMapping": 1892,
+  "lease": 2360,
+  "execution": "개발자-SL-ASSET-MINIPET-DEFINITION-CATALOG-SEED-01-20260830T2143",
+  "provenance": {
+    "inheritedDraft": "개발환경_고도화/runtime/scripts/generate-minipet-definition-normalization.mjs",
+    "authorization": "same Lease2360 prior-worker handoff"
+  },
+  "source": {
+    "rows": 1078,
+    "uniqueRows": 1078,
+    "rawHash": "b361e9d2922a9e7997416f49e49187fd6924642a5aec8018ab68d6c8c9d2b5a7",
+    "sourceHash": "7fd91bacee010ec3c4623ca34ddb92f647e7f30fa1d71a764eb38e320b79f644",
+    "gradeHash": "a5bf87def79ee1a57e56e50f6b88833076ed43eb3f47103d2c77529e48d19602",
+    "nameGradeComposite": 1055,
+    "collisionGroups": 22,
+    "collisionSurplus": 23,
+    "collisionHash": "781cec45e42fa86363e5868fbe2bddc72eb64fa5016aa2434c9ab740bb7d461f"
+  },
+  "mapping": {
+    "reusedExisting": 1078,
+    "newDefinitions": 0,
+    "finalDefinitionTotal": 1106,
+    "extraPreserved": 28,
+    "drawEligible": 1066,
+    "eliteCombine": 12,
+    "mappingHash": "bf7019c2eb619947994bde524be2fd2c8f40a5d8f9d19a0771028ad59f36f9bf"
+  },
+  "objectCatalog": {
+    "miniPetTypeAvailable": false,
+    "petMislabelAllowed": false,
+    "objectAliases": 0,
+    "objectSourceBindings": 0,
+    "compatibleBindingTable": "mini_pet_definition_source_bindings",
+    "compatibleBindings": 1078
+  },
+  "migration": "392_minipet_definition_catalog_normalization.sql",
+  "preserved": {
+    "extraInactiveCatalogElite": 12,
+    "extraLegacyStarter": 1,
+    "extraPackageReward": 15,
+    "dynamicDrawMembership": 1066,
+    "gradeWeights": true,
+    "ownedMiniPetsLedgerUpgradeEquip": true,
+    "packageCompatibility": true,
+    "legacyMainJs": true
+  },
+  "validation": {
+    "focused": "6/6 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "fullRegression": "1196 total / 1189 pass / 0 fail / 7 skip",
+    "migrationCount": 382,
+    "migrationReplay": "PASS twice / count 382 unchanged",
+    "mariaProbe": "7/7 PASS",
+    "definitionParity": "1106 definitions / 1078 source bindings",
+    "transactionRollback": "PASS",
+    "reconnectAfterDockerRestart": "PASS",
+    "shadow": "1078/1078 PASS"
+  },
+  "status": "gate7_verified_wbs_pending",
+  "sheetsEdited": false,
+  "gate8": false
+}

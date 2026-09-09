@@ -1,0 +1,31 @@
+{
+  "sourceSystem": "SYNTHETIC_JSON",
+  "sourceNamespace": "packageFixture",
+  "sourceIdentifier": "fixture-package-001",
+  "requestKey": "fixture-import-001",
+  "packageName": "다이아상자💎(/다이아상자오픈)",
+  "packageDescription": "표시 이름의 이모지와 명령 안내를 원문 그대로 보존하는 합성 패키지",
+  "maxOpenQuantity": 100,
+  "selectionMode": "all",
+  "resolvedRewards": [
+    { "kind": "item", "sourceRewardIdentifier": "reward-001", "rewardOrder": 1, "itemId": "item0001", "quantity": "3", "probability": "1" },
+    { "kind": "package", "sourceRewardIdentifier": "reward-002", "rewardOrder": 2, "packageId": "pack0002", "quantity": "1", "probability": "0.25" }
+  ],
+  "gapReward": {
+    "kind": "gap",
+    "sourceRewardIdentifier": "reward-003",
+    "rewardOrder": 3,
+    "targetKind": "item",
+    "targetSourceIdentifier": "legacy-missing-item",
+    "targetDisplayName": "미확인보상🎁(원문)",
+    "quarantineReason": "TARGET_UNMAPPED"
+  },
+  "expected": {
+    "definitionRows": 1,
+    "rewardEntryRows": 3,
+    "itemRewardRows": 1,
+    "nestedRewardRows": 1,
+    "quarantineRows": 1,
+    "legacyWrites": 0
+  }
+}

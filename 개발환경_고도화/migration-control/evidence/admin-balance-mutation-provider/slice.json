@@ -1,0 +1,61 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-BALANCE-MUTATION-PROVIDER-01",
+  "executionId": "개발자-SL-COMMON-ADMIN-BALANCE-MUTATION-PROVIDER-01-20260831T0920",
+  "baseline": "9f7197b22a40852dcdeb8c231fa49616c17016d1",
+  "wbs": 638,
+  "dbRow": 1916,
+  "lease": 2419,
+  "runtimeMode": "SHADOW",
+  "scope": {
+    "domains": ["home_badge", "home_furniture", "pendant"],
+    "operations": ["preview", "apply", "rollback"],
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "webConsumerChanges": 0,
+    "operationalRowsMutated": 0
+  },
+  "gate1": {
+    "status": "complete",
+    "reference": "개발환경_고도화/references/admin-balance-mutation-provider.md",
+    "approvedProviderCount": 3,
+    "excluded": ["generic SQL editor", "wallet RNG", "luck pouch", "main.js", "member lightningRate"]
+  },
+  "gate2": {
+    "status": "complete",
+    "mapping": "typed domain adapter + immutable version activation + common transaction orchestration",
+    "schema": "none"
+  },
+  "gate3": {
+    "status": "complete",
+    "fixture": "개발환경_고도화/runtime/test/fixtures/admin-balance-mutation-provider.ts",
+    "mariaFixture": "개발환경_고도화/runtime/test/admin-balance-mutation-provider-mariadb.integration.test.ts",
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "provider": "개발환경_고도화/runtime/src/admin/admin-balance-mutation-provider.ts",
+    "repository": "개발환경_고도화/runtime/src/admin/maria-admin-balance-mutation-repository.ts",
+    "webConsumerChanges": 0
+  },
+  "gate5": {
+    "status": "complete",
+    "focused": { "total": 27, "passed": 27, "failed": 0 },
+    "typecheck": "pass",
+    "build": "pass"
+  },
+  "gate6": {
+    "status": "complete",
+    "fullRegression": { "total": 1306, "passed": 1299, "failed": 0, "skipped": 7 },
+    "mariaTransaction": "outer rollback fixture; disabled unless DATABASE_INTEGRATION_ENABLED=true",
+    "precision": "decimal and bigint values remain exact strings"
+  },
+  "gate7": {
+    "status": "shadow_complete",
+    "sourceCommit": "branch HEAD",
+    "previewApplyRollback": "synthetic pass",
+    "replayRollbackReconnect": "synthetic pass",
+    "operationalDataTouched": false,
+    "productionBranchTouched": false
+  },
+  "gate8": false
+}

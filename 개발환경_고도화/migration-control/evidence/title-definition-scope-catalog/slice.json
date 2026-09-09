@@ -1,0 +1,42 @@
+{
+  "sliceId": "SL-COMMON-TITLE-DEFINITION-SCOPE-CATALOG-01",
+  "executionId": "개발자-SL-COMMON-TITLE-DEFINITION-SCOPE-CATALOG-01-20260831T0435",
+  "baseline": "8a087a69639540288a30048577aa8f1e5b63e83d",
+  "wbs": 645,
+  "dbRow": 1923,
+  "lease": 2391,
+  "migration": "402_title_definition_scope_catalog.sql",
+  "scope": {
+    "catalogCode": "TITLE_DEFINITION_SCOPE_LEGACY",
+    "catalogVersion": 1,
+    "publishState": "PUBLISHED",
+    "sourceHash": "4133ec435d454768a6f29b9a7d14a2b309be27e782f86b58ac33cca088ad4fb7",
+    "headerRows": 1,
+    "backfilledDefinitions": 5,
+    "sourceScopes": { "PLAYER": 2, "player": 3 },
+    "normalizedAssetScopes": { "PLAYER": 5 },
+    "activeDefinitions": 3,
+    "retiredDefinitions": 2,
+    "sameDisplayMerges": 0,
+    "mariaRepositoryIncluded": true,
+    "readProviderIncluded": true,
+    "legacyTitleDefinitionsChanged": 0,
+    "ownershipRowsMutated": 0,
+    "consumerTransitions": 0,
+    "miniCollectionDefinitionsSeeded": 0,
+    "guildRankDefinitionsSeeded": 0,
+    "objectLinksCreated": 0,
+    "mutationAdminChanges": 0
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration402ExactParityRollbackReapplyReconnect": "required",
+    "shadow5": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}

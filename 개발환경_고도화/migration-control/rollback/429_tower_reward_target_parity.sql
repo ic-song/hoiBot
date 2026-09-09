@@ -1,0 +1,12 @@
+SET NAMES utf8mb4;
+START TRANSACTION;
+SET @tower_reward_catalog_id_429=(SELECT id FROM tower_reward_policy_catalog_versions WHERE version_code='ASSET-FREEZE-v2.438-tower-reward-target-01' LIMIT 1);
+DELETE FROM tower_reward_target_occurrences WHERE catalog_version_id=@tower_reward_catalog_id_429;
+DELETE FROM tower_event_floor_occurrences WHERE catalog_version_id=@tower_reward_catalog_id_429;
+DELETE FROM tower_reward_policy_bosses WHERE catalog_version_id=@tower_reward_catalog_id_429;
+DELETE FROM tower_reward_policy_catalog_versions WHERE id=@tower_reward_catalog_id_429;
+DELETE binding_row FROM object_source_bindings binding_row JOIN object_registry object_row ON object_row.id=binding_row.object_id WHERE object_row.object_key IN('item.tower.newbie_support_fund','item.tower.pet_title_ticket');
+DELETE alias_row FROM object_aliases alias_row JOIN object_registry object_row ON object_row.id=alias_row.object_id WHERE object_row.object_key IN('item.tower.newbie_support_fund','item.tower.pet_title_ticket');
+DELETE FROM object_registry WHERE object_key IN('item.tower.newbie_support_fund','item.tower.pet_title_ticket');
+DELETE FROM item_definitions WHERE code IN('tower_newbie_support_fund','pet_title_ticket');
+COMMIT;

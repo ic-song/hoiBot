@@ -1,0 +1,14 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.400-badge-type-01",
+  "addedObjectType": "BADGE",
+  "existingTypes": ["ITEM", "PET", "FURNITURE", "TITLE", "PET_TITLE", "PACKAGE", "CURRENCY", "SKILL", "HOME_BUILDING", "MINI_PET"],
+  "runtimeObjectTypeCountBefore": 10,
+  "runtimeObjectTypeCountAfter": 11,
+  "badgeObjectsCreated": 0,
+  "badgeDefinitionsChanged": 0,
+  "ownershipRowsMutated": 0,
+  "providerChanged": false,
+  "runtimeConsumerChanged": false,
+  "mainChanged": false,
+  "uiChanged": false
+}

@@ -1,0 +1,65 @@
+{
+  "sliceId": "SL-ASSET-MINIPET-COLLECTION-STAGE-TITLE-BINDING-CORRECTION-01",
+  "executionId": "자산카탈로그-SL-ASSET-MINIPET-COLLECTION-STAGE-TITLE-BINDING-CORRECTION-01-202609012315",
+  "lease": 2487,
+  "wbsRow": 713,
+  "baselineRevision": "ee934c78e6503504ac35ce2aca6417605595e11e",
+  "migration": "437_asset_minipet_collection_stage_title_binding_correction.sql",
+  "migrationSha256": "d512c1da22061abc4b8ab232416634391c8cf469b530e4b1a354db47d1c0bf81",
+  "catalogVersion": "ASSET-FREEZE-v2.438-mini-pet-collection-reward-title-binding-01",
+  "sourcePath": "data/miniPetCollectionInfo.json#titles",
+  "sourceSha256": "3dadafd107bb82480d6d5218f98af2a31d0037af7c15b5fecaf8d3c62b9a4e39",
+  "domainKinds": [
+    "TITLE",
+    "MINI_PET_COLLECTION_REWARD"
+  ],
+  "identityContract": "source_file+source_section+source_row+definition_code",
+  "definitionBinding": {
+    "table": "title_definitions",
+    "scopeCode": "mini_pet_collection",
+    "stableCodePrefix": "MINI-PET-COLLECTION-TITLE-",
+    "count": 100
+  },
+  "sourceBinding": {
+    "sourceSystem": "LEGACY_JSON",
+    "sourceTable": "data/miniPetCollectionInfo.json#titles",
+    "sourceKey": "decimal sourceRow 1..100",
+    "objectType": "TITLE",
+    "count": 100
+  },
+  "parity": {
+    "titleObjects": 100,
+    "definitionCodes": 100,
+    "sourceRows": 100,
+    "sourceBindings": 100,
+    "oldCatalogOccurrences": 108,
+    "oldCatalogUnresolved": 100,
+    "newCatalogOccurrences": 108,
+    "newCatalogResolved": 100,
+    "newCatalogNotApplicable": 8,
+    "newCatalogConflicts": 0,
+    "newCatalogGaps": 0
+  },
+  "publicationStatus": "SHADOW",
+  "adminWebReuse": {
+    "existingObjectCatalogExactLookup": true,
+    "existingMiniPetCollectionRewardProvider": true,
+    "unifiedListSearchFilterConsumer": false,
+    "followUp": "SL-COMMON-ADMIN-WEB-ASSET-CATALOG-*"
+  },
+  "carryForward": [
+    "SL-COMMON-ASSET-PRESERVATION-INTEGRATION-01 Gate1~7",
+    "SL-ASSET-MINIPET-COLLECTION-REWARD-CATALOG-01 Gate1~7",
+    "SL-ASSET-MINIPET-COLLECTION-TITLE-DEFINITION-01 Gate1~7"
+  ],
+  "followUpDependency": "SL-ASSET-PACKAGE-CANONICAL-GAP-CORRECTION-01",
+  "scope": {
+    "schemaChanged": false,
+    "providerChanged": false,
+    "consumerChanged": false,
+    "ownershipChanged": false,
+    "operationalDataTouched": false,
+    "featureProdChanged": false,
+    "gate8": false
+  }
+}

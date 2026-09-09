@@ -1,0 +1,52 @@
+{
+  "sliceId": "SL-DATA-MIGRATION-ASSET-REFERENCE-QUARANTINE-01",
+  "executionId": "작업반장-SL-DATA-MIGRATION-ASSET-REFERENCE-QUARANTINE-01-2026090214",
+  "baselineCommit": "3f22dbc32d9229f926d290f03bbdf6ff15495765",
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "counts": {
+    "payloadFileCount": 753,
+    "referenceCount": 2055629,
+    "distinctReferenceCount": 6182,
+    "resolvedCount": 1499513,
+    "quarantinedIdentityCount": 3367,
+    "quarantinedCount": 556116,
+    "orphanCount": 0,
+    "ambiguousCount": 0,
+    "inactiveCount": 0,
+    "canonicalDuplicateCount": 0,
+    "canonicalCollisionCount": 0
+  },
+  "verification": {
+    "focused": "13/13 PASS",
+    "dataMigrationRuntimeFull": "38/38 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "modernizationRuntimeBaseline": "1576 PASS / 0 FAIL / 8 SKIP",
+    "migrationCount": 429,
+    "schemaMutationCount": 0,
+    "canonicalSha256": "055062decc7da0c4b8037935ec62af850f88681b52e251384188ab5d623502b8",
+    "quarantineManifestSha256": "cb8c1b5bb62a0eeaf150feb7ba82668d72452c00ac921f3e011523e3ec869a56",
+    "reportSha256": "bedec4fdcaa59d756ac105eb81e2aadb77ca1c22c8935ca8916e4b581fc84cc4"
+  },
+  "privacy": {
+    "rawIdentityCommitted": false,
+    "privateManifestCommitted": false,
+    "publicAggregateOnly": true
+  },
+  "dataMigrationReady": true,
+  "forbiddenMutations": {
+    "gate8": 0,
+    "featureProd": 0,
+    "operationalDatabase": 0,
+    "legacyMainOrData": 0
+  }
+}

@@ -1,0 +1,370 @@
+{
+  "format": "hoibot-object-db-transition-runtime-boundary-v1",
+  "catalogVersion": "SC-20260902-1",
+  "wbs": "WBS743-GATE2-RUNTIME-BOUNDARY",
+  "status": "PARTIALLY_IMPLEMENTED_BLOCKING_INGRESS_ADOPTION",
+  "scope": "Gate2 migrations 466, 470, 471, and 472, shared runtime primitives, three audited production IRIS ingress callsites, and isolated MariaDB P2 validation are implemented; PET_EXPLORE EVENT_CONTROL and PET_TITLE SELL have MODERN/MUTATION adoption, and the existing IRIS admin wrapper connects ADMIN_PET_TITLE_ADD, ADMIN_PET_TITLE_STORE_RESET, and WBS746-authorized ADMIN_PET_TITLE_SYNC to typed MODERN/MUTATION receipts, while SETTLEMENT MODERN, legacy handoff, AUTOMATIC, remaining ADMIN, WEB, and broader production cutover remain incomplete",
+  "environmentContext": {
+    "name": "EnvironmentContext",
+    "immutable": true,
+    "constructedOnceAtStartup": true,
+    "fields": {
+      "environmentCode": {
+        "type": "enum",
+        "allowed": ["dev", "prod"]
+      },
+      "databaseIdentity": {
+        "type": "non-empty-string",
+        "source": "DATABASE_NAME"
+      },
+      "requestNamespace": {
+        "type": "non-empty-string",
+        "grammar": "hoibot:<environmentCode>:<databaseIdentity>",
+        "pattern": "^hoibot:(dev|prod):[A-Za-z0-9_$-]{1,64}$",
+        "maxLength": 76,
+        "derivedOnlyFrom": ["environmentCode", "databaseIdentity"]
+      }
+    },
+    "forbidden": [
+      "mutation after construction",
+      "deriving environmentCode per request",
+      "using NODE_ENV as an implicit database selector",
+      "using a legacy path to infer databaseIdentity"
+    ]
+  },
+  "environmentBindings": [
+    {
+      "environmentCode": "dev",
+      "legacyDataRoot": "/sdcard/호이랜드_dev/",
+      "databaseIdentitySource": "DATABASE_NAME",
+      "requestNamespaceTemplate": "hoibot:dev:<databaseIdentity>"
+    },
+    {
+      "environmentCode": "prod",
+      "legacyDataRoot": "/sdcard/호이랜드/",
+      "databaseIdentitySource": "DATABASE_NAME",
+      "requestNamespaceTemplate": "hoibot:prod:<databaseIdentity>"
+    }
+  ],
+  "partitionRules": {
+    "databaseIdentitiesMustDiffer": true,
+    "legacyRootsMustDiffer": true,
+    "requestNamespacesMustDiffer": true,
+    "crossEnvironmentReuse": "REJECT",
+    "contextComparison": "environmentCode, databaseIdentity, and requestNamespace must all match the startup context exactly",
+    "requestNamespaceFormula": "requestNamespace = 'hoibot:' + environmentCode + ':' + databaseIdentity",
+    "requestNamespaceMismatch": "REJECT_BEFORE_CLAIM; the shared entrypoint provider must validate the formula before insert or replay lookup"
+  },
+  "startupDatabaseIdentityVerification": {
+    "query": "SELECT DATABASE() AS database_identity",
+    "expected": "the returned database_identity equals EnvironmentContext.databaseIdentity byte-for-byte",
+    "nullOrEmptyResult": "REJECT_STARTUP",
+    "mismatch": "REJECT_STARTUP",
+    "requiredBefore": [
+      "Iris ingress registration",
+      "automatic job or timer start",
+      "admin command dispatch",
+      "admin or user web route registration",
+      "any repository read or write other than this verification"
+    ],
+    "failureMode": "fail closed without registering an entrypoint or starting a mutation-capable background task"
+  },
+  "requestIdentity": {
+    "storageModel": "store requestNamespace, entrypointKind, externalRequestId, request_key, and requestIdentityFingerprint as separate columns; never persist an ambiguous concatenation as the unique identity",
+    "requestNamespace": {
+      "pattern": "^hoibot:(dev|prod):[A-Za-z0-9_$-]{1,64}$",
+      "maxLength": 76
+    },
+    "entrypointKinds": ["IRIS", "AUTOMATIC", "ADMIN", "WEB"],
+    "entrypointKindMaxLength": 9,
+    "externalRequestId": {
+      "pattern": "^[A-Za-z0-9._:@/-]{1,172}$",
+      "maxLength": 172
+    },
+    "externalRequestIdRequired": true,
+    "payloadFingerprintRequired": true,
+    "payloadFingerprint": "lowercase 64-character SHA-256 hex of the entrypoint-normalized mutation payload",
+    "normalization": "entrypoint adapters must supply a stable externalRequestId; repositories may not invent or rewrite it",
+    "requestKey": {
+      "column": "request_key",
+      "value": "<entrypointKind>:<externalRequestId>",
+      "maxLength": 182,
+      "semantics": "human-auditable adapter idempotency key scoped by request_namespace; it is not the cross-environment unique key and must not be hashed or rewritten by a repository"
+    },
+    "requestIdentityFingerprint": {
+      "algorithm": "SHA-256",
+      "encoding": "lowercase hexadecimal",
+      "length": 64,
+      "canonicalInput": "UTF-8 JSON array with no whitespace and this exact order: [requestNamespace,entrypointKind,externalRequestId]",
+      "formula": "sha256Hex(JSON.stringify([requestNamespace,entrypointKind,externalRequestId]))",
+      "persistenceRole": "the UNIQUE lookup key for claim acquisition and replay"
+    },
+    "collisionRule": "same requestIdentityFingerprint and same payloadFingerprint replays; same requestIdentityFingerprint and different payloadFingerprint rejects"
+  },
+  "singleWriterClaim": {
+    "owner": "ENTRYPOINT_ONLY",
+    "appliesTo": ["IRIS", "AUTOMATIC", "ADMIN", "WEB"],
+    "claimKey": "requestIdentityFingerprint",
+    "initialState": "CLAIMED",
+    "terminalStates": ["COMPLETED", "FAILED"],
+    "states": ["CLAIMED", "MUTATION_STARTED", "COMPLETED", "FAILED"],
+    "allowedTransitions": [
+      { "from": "CLAIMED", "to": "MUTATION_STARTED", "condition": "the persisted route is MODERN or LEGACY_FALLBACK, the selected route is mutation-capable for this request, and its sole writer is immediately about to perform the first write" },
+      { "from": "CLAIMED", "to": "COMPLETED", "condition": "the persisted route completes with zero writes: MODERN read, SHADOW comparison, REJECT, or explicitly read-only LEGACY_FALLBACK handoff" },
+      { "from": "CLAIMED", "to": "FAILED", "condition": "routing, authorization, validation, or pre-mutation execution fails closed" },
+      { "from": "MUTATION_STARTED", "to": "COMPLETED", "condition": "the selected writer commits its transaction and durable receipt" },
+      { "from": "MUTATION_STARTED", "to": "FAILED", "condition": "the selected writer rolls back or records a terminal failure" }
+    ],
+    "forbiddenTransitions": [
+      "MUTATION_STARTED->CLAIMED",
+      "MUTATION_STARTED->LEGACY_FALLBACK",
+      "COMPLETED->MUTATION_STARTED",
+      "FAILED->MUTATION_STARTED"
+    ],
+    "concurrency": "exactly one entrypoint claim may own a requestIdentityFingerprint; an unexpired lease rejects contenders, an expired CLAIMED lease is taken over only with the prior token and generation fence, and MUTATION_STARTED always requires explicit recovery",
+    "mutationBoundary": "T1 is one controlled database transaction containing CLAIMED-to-MUTATION_STARTED immediately before the first mutation, participant domain writes through savepoints, typed receipt verification and link insertion, and the fenced COMPLETED transition; rollback removes all T1 effects before a separate CLAIMED-to-FAILED transition",
+    "effectMode": {
+      "persisted": true,
+      "allowed": ["READ_ONLY", "MUTATION"],
+      "shadowAndReject": "READ_ONLY_ONLY",
+      "decisionOwner": "entrypoint adapter before claim insertion; repositories may not infer or change effect_mode"
+    },
+    "lease": {
+      "token": "lowercase 64-character random hexadecimal",
+      "generation": "starts at 1 and increments on an expired CLAIMED takeover",
+      "expiry": "KST YYYY-MM-DD HH:MM:SS",
+      "attemptCount": "starts at 1 and increments with each fenced takeover",
+      "fence": ["app_wiring_operation_id", "claim_state", "lease_token", "lease_generation"]
+    },
+    "recovery": {
+      "statuses": ["NONE", "PENDING", "RECOVERED", "FAILED"],
+      "expiredClaimed": "fenced takeover sets RECOVERED and EXPIRED_CLAIM_TAKEOVER",
+      "mutationStarted": "APP_WIRING_MUTATION_RECOVERY_REQUIRED; automatic retry or legacy fallback is forbidden",
+      "legacyDrain": "rows lacking effect_mode, lease_generation, attempt_count, or recovery_status fail closed; active rows additionally require lease metadata"
+    }
+  },
+  "routeDecision": {
+    "allowedRoutes": ["MODERN", "SHADOW", "LEGACY_FALLBACK", "REJECT"],
+    "persistBeforeExecution": true,
+    "persistedFields": [
+      "requestNamespace",
+      "entrypointKind",
+      "externalRequestId",
+      "request_key",
+      "requestIdentityFingerprint",
+      "payloadFingerprint",
+      "route",
+      "effectMode",
+      "reasonCode",
+      "commandCode",
+      "handlerKey",
+      "environmentCode",
+      "databaseIdentity"
+    ],
+    "replay": "an existing claim returns its stored route decision without consulting rollout, canary, aliases, or current configuration again",
+    "shadow": {
+      "mode": "READ_ONLY_COMPARISON",
+      "domainWritesAllowed": false,
+      "legacyWritesAllowed": false,
+      "controlPlaneClaimWriteRequired": true,
+      "completion": "compare modern read projection with the legacy read projection, write only canonical_app_wiring_operations control-plane claim/result fields, and transition CLAIMED to COMPLETED",
+      "forbidden": ["domain mutation", "legacy mutation", "MUTATION_STARTED transition"]
+    },
+    "legacyFallback": {
+      "allowedOnlyWhen": "the persisted route is LEGACY_FALLBACK; a read-only handoff may finish CLAIMED->COMPLETED, while a mutation-capable handoff must first transition CLAIMED->MUTATION_STARTED immediately before its first write",
+      "fallbackSelectionAfterMutationStarted": "FORBIDDEN",
+      "persistedLegacyWriterAfterMutationStarted": "CONTINUE_AS_SOLE_WRITER",
+      "modernFailure": "FAILED; never invoke legacy as recovery"
+    }
+  },
+  "claimReplayStore": {
+    "table": "canonical_app_wiring_operations",
+    "schemaStatus": "MIGRATION_462_PLUS_466_IMPLEMENTED_NOT_ADOPTED",
+    "purpose": "one shared entrypoint-owned claim, stored route decision, state transition, and replay result for IRIS, AUTOMATIC, ADMIN, and WEB",
+    "requiredColumns": [
+      "app_wiring_operation_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin",
+      "request_identity_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+      "request_namespace VARCHAR(76)",
+      "entrypoint_kind VARCHAR(9)",
+      "external_request_id VARCHAR(172)",
+      "request_key VARCHAR(182)",
+      "payload_fingerprint CHAR(64) CHARACTER SET ascii COLLATE ascii_bin",
+      "environment_code VARCHAR(4)",
+      "database_identity VARCHAR(64)",
+      "route VARCHAR(32)",
+      "reason_code VARCHAR(100)",
+      "command_code VARCHAR(100) NULL",
+      "handler_key VARCHAR(100) NULL",
+      "claim_state VARCHAR(32)",
+      "effect_mode VARCHAR(16)",
+      "lease_token CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL",
+      "lease_generation BIGINT UNSIGNED",
+      "lease_expires_time CHAR(19) NULL",
+      "attempt_count BIGINT UNSIGNED",
+      "recovery_status VARCHAR(32)",
+      "recovery_code VARCHAR(100) NULL",
+      "result_json LONGTEXT NULL",
+      "error_code VARCHAR(100) NULL",
+      "INSERT_USER VARCHAR(100)",
+      "INSERT_TIME CHAR(19)",
+      "UPDATE_USER VARCHAR(100)",
+      "UPDATE_TIME CHAR(19)"
+    ],
+    "requiredKeys": [
+      "PRIMARY KEY (app_wiring_operation_id)",
+      "UNIQUE KEY (request_identity_fingerprint)",
+      "UNIQUE KEY (request_namespace, request_key)"
+    ],
+    "unmatchedReject": "route REJECT may persist with both command_code and handler_key NULL because classification can fail before either identifier exists",
+    "namespaceInvariant": "request_namespace must equal CONCAT('hoibot:', environment_code, ':', database_identity); reject before claim on mismatch",
+    "ownership": "entrypoint boundary only; SQL domain repositories are transaction participants and cannot acquire or mutate this claim independently",
+    "migrationRule": "migration 462 creates the claim store and migration 466 adds lease, effect and recovery fields without editing applied migrations"
+  },
+  "typedReceiptLinkStore": {
+    "table": "canonical_app_wiring_receipt_links",
+    "schemaStatus": "MIGRATIONS_466_470_472_TYPED_RECEIPTS_ADOPTED_P2_VERIFIED",
+    "primaryKey": "canonical_app_wiring_receipt_link_id CHAR(8) CHARACTER SET ascii COLLATE ascii_bin",
+    "claimForeignKey": "app_wiring_operation_id -> canonical_app_wiring_operations.app_wiring_operation_id",
+    "receiptKinds": ["DAILY_PRAYER", "HOME_AGGREGATE", "MARKET", "MEMBER_TITLE", "MINI_PET_TITLE", "PACKAGE_USE", "PET_EXPLORE", "PET_EXPLORE_EVENT_CONTROL", "PET_TITLE", "PET_TITLE_BATCH", "PLAYER_IDENTITY"],
+    "cardinality": "exactly one typed operation FK is non-null and receipt_kind must select that FK",
+    "uniqueness": "one receipt_kind per app_wiring_operation_id and each typed operation receipt links at most once",
+    "fingerprint": "the linked typed operation result_fingerprint must equal both result_fingerprint and the allowlisted terminal result fingerprint",
+    "transaction": "inserted in T1 after FOR UPDATE verification of the typed receipt and before the fenced COMPLETED transition"
+  },
+  "writerRoles": {
+    "entrypoint": {
+      "role": "WRITER_SELECTOR",
+      "responsibilities": ["bind immutable EnvironmentContext", "claim request", "persist or replay route decision", "advance claim state", "select exactly one writer"]
+    },
+    "sqlRepository": {
+      "role": "TRANSACTION_PARTICIPANT",
+      "may": ["execute reads and writes selected by the entrypoint-owned transaction", "return domain results or errors"],
+      "mustNot": ["select MODERN versus LEGACY_FALLBACK", "create an independent writer claim", "change EnvironmentContext", "invoke legacy fallback", "recompute a stored route decision"]
+    }
+  },
+  "runtimeAdoptionAudit": {
+    "helper": "개발환경_고도화/runtime/src/data-migration/object-db-runtime-adoption-audit.ts:auditObjectDbRuntimeAdoption",
+    "reviewedSourceHashes": {
+      "appSourceSha256": "316d22f02d1d477eda9fec9e3d0148f412d42f9b7a6f3e19d231845540168df5",
+      "petExploreIngressSourceSha256": "d843190731458ce30f48a437d8930f99a5baeb86055df9f019a15f4518780262",
+      "petExploreEventControlProviderSourceSha256": "c85d46d3bb4d7361837c6736e1e406025f7dd59af933c26ec9ef253374840c24",
+      "appWiringOperationProviderSourceSha256": "bdaef4e0e89e780fb5693a18f7926c3a112d71ceee2332e5689bad34b8eb4a58",
+      "petExploreEventControlMigrationSourceSha256": "2ab904b3521cbf525f5165ee5d81b02da6f669a39fbc471aee84f3be01917ffa",
+      "petExploreEventControlRollbackSourceSha256": "9dfc1104abf459c4e9a2a903bdb1fff63d4b134a0c7dd3e4a0386fb4cfdb47e8",
+      "petDataCompareIngressSourceSha256": "10343fe9ee4f83b38090a861073a22b0a111758b10100d28847b09db260762cd",
+      "petDataCompareShadowEvaluatorSourceSha256": "51f0d2d4be3f68d6dfef1e0e7573cc564defa8637f74996e90e32162534b5b06",
+      "petTitleIngressSourceSha256": "cbcc61f070699033c98f81cd8ee5beeb32d489b82fee300816994f6680417a65",
+      "petTitleMutationProviderSourceSha256": "0fdfd18552c6267eab75d69529a523a6e207bf3116222d9698a4735948c2c239"
+    },
+    "productionSourceCallCount": 3,
+    "entrypointKind": "IRIS",
+    "domains": ["PET_EXPLORE", "ADMIN_PET_DATA_COMPARE", "PET_TITLE"],
+    "effectModes": ["MODERN_MUTATION", "SHADOW", "REJECT"],
+    "connectedIngressFamilies": ["EVENT_CONTROL", "SETTLEMENT", "ADMIN_PET_DATA_COMPARE", "PET_TITLE_SELL"]
+  },
+  "sourceEvidence": [
+    {
+      "file": "개발환경_고도화/runtime/src/database.ts",
+      "observed": ["legacy DatabaseClient remains source-compatible", "CapableDatabaseClient adds withReadOnlySnapshot and withControlledTransaction", "controlled nested work uses savepoints on one acquired connection"],
+      "missingRequired": ["remaining mutation-capable entrypoint adapters must require the capabilities instead of receiving an unchecked DatabaseClient"],
+      "blockingReason": "the accepted PET_EXPLORE ingress is read-only; remaining mutation-capable domains still need controlled participants"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/config.ts",
+      "observed": ["database-enabled startup requires explicit HOIBOT_ENVIRONMENT_CODE dev or prod", "NODE_ENV is not used as an implicit database selector"],
+      "missingRequired": ["none at configuration parsing; ingress adoption remains outside this file"],
+      "blockingReason": "configuration is accepted P0 evidence but does not itself bind an entrypoint claim"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/server.ts",
+      "observed": ["constructs EnvironmentContext and verifies SELECT DATABASE() before buildApp", "passes the verified context to buildApp", "starts the outbox worker only after listen"],
+      "missingRequired": ["extend the verified startup context and shared provider adoption to remaining ingress adapters"],
+      "blockingReason": "startup verification and one app-composed IRIS ingress are accepted, but remaining ingress families are not adopted"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts",
+      "observed": ["resolveReadOnly separates route lookup from the compatibility decision writer", "MariaCommandRouteReader needs query capability only"],
+      "missingRequired": ["extend read-only route resolution to remaining adopted ingress", "effect_mode is not present in CommandDefinition or command_registry"],
+      "blockingReason": "PET_EXPLORE resolves its route read-only before the app-wiring claim, but other runtime dispatch paths retain their prior decision flow"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/dispatch/app-wiring-operation-provider.ts",
+      "observed": ["implements canonical request and payload fingerprints", "implements effect_mode, lease token and generation fencing, expired CLAIMED takeover, legacy metadata drain, and mutation recovery refusal", "implements T1 controlled mutation, typed receipt verification and link insertion, and terminal reconciliation", "implements a MODERN IRIS mutation-reply coordinator that preserves the typed receipt reference and replays one exact outbox through the app-wiring operation identity"],
+      "missingRequired": ["production construction and calls from remaining IRIS, AUTOMATIC, ADMIN, and WEB paths", "typed receipt adapters for remaining mutation handlers"],
+      "blockingReason": "PET_EXPLORE EVENT_CONTROL has one typed mutation receipt; SETTLEMENT, legacy handoff, and remaining ingress adoption are incomplete"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/dispatch/app-wiring-entrypoint-runner.ts",
+      "observed": ["executes only the persisted route and effect through the minimum read or mutation capability", "replays terminal claims and records pre-terminal failures", "provides a specialized IRIS MODERN MUTATION reply runner without opening LEGACY_FALLBACK mutation"],
+      "missingRequired": ["production handler maps, replay loaders, normalized payload adapters, and error-code adapters for remaining families"],
+      "blockingReason": "audited PET_EXPLORE EVENT_CONTROL and PET_TITLE SELL MODERN handlers are accepted; SETTLEMENT MODERN, legacy handoff, and other ingress calls remain absent"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/catalog/canonical-object-shadow-read-provider.ts",
+      "observed": ["reads all canonical object domains in one repeatable-read read-only snapshot", "normalizes stable ordering and fingerprint"],
+      "missingRequired": ["adopt the generic canonical object shadow provider where its whole-catalog projection is required"],
+      "blockingReason": "PET_EXPLORE uses its settlement-specific read-only parity preview; generic object-catalog Shadow adoption remains incomplete"
+    },
+    {
+      "file": "개발환경_고도화/runtime/migrations/466_object_db_transition_recovery_receipt_links.sql",
+      "observed": ["adds effect, lease, generation, attempt and recovery fields with safe backfill", "creates the typed app-wiring receipt-link table", "defers mandatory active leases for pre-lease rows", "isolated MariaDB forward, replay, rollback and restart rehearsal passed with migration checksum verification"],
+      "missingRequired": ["remaining ingress adoption and typed mutation participants outside this migration"],
+      "blockingReason": "P2 is accepted, but Gate2 remains partial until the remaining ingress families adopt the shared boundary"
+    },
+    {
+      "file": "개발환경_고도화/runtime/migrations/470_pet_explore_event_control_app_wiring.sql",
+      "observed": ["creates the EVENT_CONTROL-specific canonical operation without fake player or owned-pet identity", "adds PET_EXPLORE_EVENT_CONTROL to the exactly-one typed receipt link", "isolated MariaDB forward, re-entry, guarded rollback, rollback re-entry, re-forward and restart persistence passed"],
+      "missingRequired": ["SETTLEMENT and remaining ingress typed operation schemas and adoption"],
+      "blockingReason": "migration 470 P2 evidence is accepted, but it covers only PET_EXPLORE EVENT_CONTROL"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/app.ts",
+      "observed": ["receives a VerifiedEnvironmentContext", "constructs one MariaAppWiringOperationProvider shared by PET_EXPLORE, ADMIN_PET_DATA_COMPARE, and PET_TITLE ingress when database capabilities are present", "routes accepted IRIS event-control, settlement, exact pet-data-compare, pet-title, and ADMIN_PET_TITLE_ADD/STORE_RESET/SYNC guards through those ingress", "requires WBS746 selected-context actor authorization and a global active-member authority snapshot before ADMIN_PET_TITLE_SYNC mutation", "retains automatic, remaining admin, web, and other IRIS paths outside the shared runner"],
+      "missingRequired": ["wrap remaining IRIS, AUTOMATIC, ADMIN, and WEB mutation paths through executeAppWiringEntrypoint", "inject transaction participants rather than raw DatabaseClient", "provide effect metadata, typed receipts and replay loaders"],
+      "blockingReason": "EVENT_CONTROL is claim-bound, but remaining mutation handlers can still reach repositories outside the shared claim"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/pet/pet-explore-app-wiring-ingress.ts",
+      "observed": ["calls executeAppWiringEntrypoint exactly once through the audited IRIS/PET_EXPLORE call graph", "permits EVENT_CONTROL alone as MODERN/MUTATION with a typed receipt", "keeps SETTLEMENT MODERN and every LEGACY_FALLBACK closed", "produces no user reply or domain mutation from Shadow"],
+      "missingRequired": ["adopt a typed aggregate operation and transaction participant before enabling SETTLEMENT MODERN", "define a durable legacy handoff before claiming LEGACY_FALLBACK"],
+      "blockingReason": "EVENT_CONTROL is adopted but SETTLEMENT mutation and legacy handoff remain closed"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/pet/pet-explore-event-control-app-wiring-provider.ts",
+      "observed": ["accepts only the app-wiring mutation participant", "writes config CAS, relocation evidence, audit, internal and Iris outbox, command execution and typed COMPLETED receipt in T1", "isolated MariaDB proved single-owner concurrency, lease fencing, mutation atomicity, terminal-fault rollback and restart replay with zero new DML"],
+      "missingRequired": ["typed mutation participants and replay loaders for the remaining ingress families"],
+      "blockingReason": "EVENT_CONTROL P2 is accepted, but broader ingress adoption remains incomplete"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/pet/pet-explore-settlement-input-snapshot-provider.ts",
+      "observed": ["previewSettlement reuses the fail-closed settlement read and buildPetExploreSettlementInput plan without writes", "validates one open round, pinned policy and destination snapshot, participant revisions and hashes, reward planning, and next-auto binding"],
+      "missingRequired": ["retain parity evidence while a later aggregate mutation schema and single transaction boundary are designed"],
+      "blockingReason": "read-only parity is accepted but the existing settlement write path spans multiple transactions"
+    },
+    {
+      "file": "개발환경_고도화/runtime/src/data-migration/object-db-runtime-adoption-audit.ts",
+      "observed": ["requires reviewed canonical-LF hashes for app.ts, all three accepted ingress, event-control and pet-title providers, app-wiring provider, migration 470, rollback 470, and the pet-data-compare evaluator", "derives EVENT_CONTROL and PET_TITLE_SELL MODERN/MUTATION plus exact SHADOW/REJECT semantics", "keeps SETTLEMENT MODERN and every runner LEGACY handler closed"],
+      "missingRequired": ["add separately reviewed hashes and call-graph rules for every future ingress adoption"],
+      "blockingReason": "the audit closes the accepted EVENT_CONTROL and PET_TITLE_SELL mutations plus the existing read-only adoption only"
+    },
+    {
+      "file": "main.js",
+      "observed": ["production root /sdcard/호이랜드/", "development root /sdcard/호이랜드_dev/"],
+      "missingRequired": ["a durable legacy handoff and acknowledgement protocol bound to the verified database identity and stored route"],
+      "blockingReason": "Rhino JSON mutation cannot participate in the Node MariaDB T1 transaction, so LEGACY_FALLBACK mutation adoption is not yet safe"
+    }
+  ],
+  "gate2Decision": {
+    "status": "PARTIALLY_IMPLEMENTED_BLOCKING_INGRESS_ADOPTION",
+    "promotionRequirement": "adopt SETTLEMENT MODERN and safe legacy handoff for IRIS/PET_EXPLORE, then adopt the provider and runner at remaining IRIS, AUTOMATIC, ADMIN, and WEB ingress with effect metadata, participant injection, typed receipts, replay loaders, and Shadow comparison",
+    "currentRuntimeCompliant": false,
+    "migrationFilesChanged": true,
+    "runtimeFilesChanged": true,
+    "acceptedEvidence": {
+      "P0": ["explicit environment configuration", "startup database identity verification", "controlled and read-only database capabilities"],
+      "P1": ["lease/effect/generation/recovery provider", "atomic T1 typed receipt link", "entrypoint runner", "read-only route split", "canonical shadow read provider", "IRIS PET_EXPLORE EVENT_CONTROL MODERN/MUTATION plus SHADOW+REJECT", "IRIS PET_EXPLORE SETTLEMENT SHADOW+REJECT", "IRIS ADMIN_PET_DATA_COMPARE SHADOW+REJECT ingress", "IRIS PET_TITLE SELL MODERN/MUTATION with SHADOW legacy fallback", "IRIS ADMIN_PET_TITLE_ADD and ADMIN_PET_TITLE_STORE_RESET typed MODERN/MUTATION with PET_TITLE/PET_TITLE_BATCH receipt replay"],
+      "P2": "VERIFIED_ISOLATED_MARIADB_FORWARD_REPLAY_ROLLBACK_RESTART"
+    },
+    "runtimeEntrypointCallCount": 3
+  }
+}

@@ -1,0 +1,219 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-object-domain-import-field-map-v1",
+  "actor": "object-domain-import",
+  "auditClock": "ONE_KST_YYYY-MM-DD HH:MM:SS_PER_TRANSACTION",
+  "targetSchemaContract": "object-domain-import-target-schema.v1.json",
+  "identityBindingContract": "object-domain-import-identity-bindings.v1.json",
+  "targetReferenceFormat": "TABLE.COLUMN",
+  "identityBinding": {
+    "providerTables": ["object_identities", "object_identity_crosswalks"],
+    "sourceSystem": "LEGACY_JSON",
+    "sourceNamespacePattern": "object-import.<domain>.<target-table>",
+    "sourceLocatorSha256": "SHA256(exact stable source locator UTF-8); excludes raw bundle hash and payload",
+    "payloadFingerprint": "SHA256(canonical typed source payload); stored and compared independently from the locator",
+    "targetIdentity": "The reserved object_identity_id is reused verbatim as the target row's domain-specific CHAR(8) PK",
+    "atomicity": "Lookup/reservation, payload fingerprint binding, target rows and the complete player graph MUST use one outer transaction through a transaction-scoped identity adapter; the standalone transaction-owning registerCrosswalk call is forbidden inside import",
+    "exactReplay": "Same namespace+locator+object_type+payload returns the existing target PK with zero INSERT and zero UPDATE. Locator payload drift, target type mismatch, missing target row or PK mismatch fails closed without canonical writes.",
+    "concurrency": "On duplicate reservation, rollback the whole attempt and re-read the binding; exactly one identity and one target graph may commit",
+    "requiredProviderCorrection": "A forward migration must persist payload_fingerprint on the crosswalk and a transaction-scoped import binding path must validate object_type before Gate 3 implementation"
+  },
+  "fatalPreflight": [
+    "RAW_BUNDLE_NOT_COMPLETE",
+    "RAW_MANIFEST_HASH_MISMATCH",
+    "LOGICAL_MANIFEST_INCOMPLETE",
+    "SOURCE_CONTENT_HASH_MISMATCH",
+    "SOURCE_UTF8_INVALID"
+  ],
+  "recordQuarantine": [
+    "SOURCE_SHAPE_MISMATCH",
+    "SOURCE_NUMBER_INVALID",
+    "SOURCE_ALIAS_CONFLICT",
+    "DEFINITION_REFERENCE_AMBIGUOUS",
+    "DEFINITION_REFERENCE_MISSING",
+    "CROSS_OWNER_REFERENCE",
+    "SOURCE_LOCATOR_PAYLOAD_DRIFT"
+  ],
+  "mappings": [
+    {
+      "domain": "player",
+      "sources": ["LEGACY_JSON:member.json#/member/{playerKey}"],
+      "targetTables": ["canonical_players"],
+      "transactionUnit": "one player source key",
+      "replayKey": "SHA256(rawBundleSha256|member|SHA256(exact UTF-8 playerKey))",
+      "instanceLocator": "none",
+      "fields": [
+        {"source":"{playerKey} exact UTF-8 bytes","targetColumns":["canonical_players.source_identifier"],"conversion":"lowercase SHA-256 hex"},
+        {"source":"constant LEGACY_JSON","targetColumns":["canonical_players.source_system"],"conversion":"identity"},
+        {"source":"identity binding for member.json#/member/{playerKey}","targetColumns":["canonical_players.player_id"],"conversion":"reuse the transaction-scoped 8-char object_identity_id"}
+      ]
+    },
+    {
+      "domain": "item",
+      "sources": ["LEGACY_JSON:member.json#/member/{playerKey}/bag/{itemDisplayName}", "LEGACY_JSON:itemInfo.json", "LEGACY_JSON:itemList.json", "CODE_SEED:validated item catalogs"],
+      "targetTables": ["canonical_item_definitions", "canonical_owned_item_stacks", "canonical_owned_item_instances"],
+      "transactionUnit": "one definition, then one player bag",
+      "replayKey": "SHA256(rawBundleSha256|item|source locator|payload fingerprint)",
+      "instanceLocator": "SHA256(playerSourceHash|bag|itemSourceHash|zero-based occurrence); used only when stackable_flag=false",
+      "fields": [
+        {"source":"definition identity binding","targetColumns":["canonical_item_definitions.item_id"],"conversion":"reuse definition object_identity_id"},
+        {"source":"definition display string exact bytes","targetColumns":["canonical_item_definitions.item_name"],"conversion":"preserve exact UTF-8 string"},
+        {"source":"WBS725 validated item catalog projection","targetColumns":["canonical_item_definitions.item_description","canonical_item_definitions.item_kind","canonical_item_definitions.item_grade","canonical_item_definitions.price_amount","canonical_item_definitions.price_currency_source_identifier","canonical_item_definitions.stackable_flag","canonical_item_definitions.active_flag","canonical_item_definitions.definition_options"],"conversion":"typed projection; schema-nullable values remain NULL only when the projection marks them absent"},
+        {"source":"stack locator identity, owning player and exact definition binding","targetColumns":["canonical_owned_item_stacks.owned_item_stack_id","canonical_owned_item_stacks.player_id","canonical_owned_item_stacks.item_id"],"conversion":"transaction-scoped identity plus exact FKs"},
+        {"source":"bag quantity for stackable definition","targetColumns":["canonical_owned_item_stacks.quantity"],"conversion":"lossless unsigned integer"},
+        {"source":"explicit individual-state item occurrence when present in an approved source projection","targetColumns":["canonical_owned_item_instances.owned_item_id","canonical_owned_item_instances.player_id","canonical_owned_item_instances.item_id","canonical_owned_item_instances.ownership_status","canonical_owned_item_instances.instance_options"],"conversion":"one identity binding per explicit occurrence; ownership_status=owned; current member bag scalar quantities are never expanded into invented instances"}
+      ]
+    },
+    {
+      "domain": "furniture",
+      "sources": ["LEGACY_JSON:petSweetHomeInfo.json#/furniture/{index}", "CODE_SEED:validated furniture catalogs", "WBS725:approved historical and legacy-recovered furniture definition crosswalk", "LEGACY_JSON:petSweetHomeData.json#/{playerKey}/furnitureBag/{index}", "LEGACY_JSON:petSweetHomeData.json#/{playerKey}/placedFurniture/{index}", "OPTIONAL_LEGACY_JSON:petHomePlacedFurniture.json#/{playerKey}/{index}", "LEGACY_JSON:freeMarket.json"],
+      "targetTables": ["object_furniture_definitions", "object_owned_furniture_instances", "object_home_furniture_placements", "object_furniture_market_listings"],
+      "transactionUnit": "one player home including bag and placements; one resolvable active listing",
+      "replayKey": "SHA256(rawBundleSha256|furniture|playerSourceHash|legacy furniture.id|payload fingerprint)",
+      "instanceLocator": "definition uses frozen catalog index; owned instance uses playerSourceHash|legacy furniture.id regardless of bag/placement path; placement uses playerSourceHash|placement|legacy furniture.id. Empty or duplicate legacy IDs are quarantined; never fall back to display name or array index.",
+      "fields": [
+        {"source":"catalog index identity and furniture[].display or name","targetColumns":["object_furniture_definitions.furniture_id","object_furniture_definitions.display_name"],"conversion":"identity uses frozen catalog index, never display name; display preserves validated text"},
+        {"source":"furniture[].exp","targetColumns":["object_furniture_definitions.base_charm"],"conversion":"lossless signed integer; rate is explicitly excluded because runtime uses it as draw probability"},
+        {"source":"WBS725 validated furniture balance projection","targetColumns":["object_furniture_definitions.purchase_price","object_furniture_definitions.charm_per_enhancement","object_furniture_definitions.active"],"conversion":"required typed values; current JSON has no purchase price or enhancement gain, so missing projection blocks the furniture definition transaction without defaults"},
+        {"source":"stable legacy furniture.id, owning player and exact catalog-index definition binding","targetColumns":["object_owned_furniture_instances.owned_furniture_id","object_owned_furniture_instances.player_id","object_owned_furniture_instances.furniture_id"],"conversion":"identity locator is playerSourceHash+legacy id and survives array sorting or bag/placement moves; empty or duplicate IDs quarantine"},
+        {"source":"legacy furniture has no individual enhancement field; source location determines status","targetColumns":["object_owned_furniture_instances.enhancement_level","object_owned_furniture_instances.ownership_status"],"conversion":"enhancement_level=0; furnitureBag=bag, placed source=placed, exact active market payload=listed; never use ACTIVE and never invert exp into a level"},
+        {"source":"placed legacy furniture.id and zero-based array index","targetColumns":["object_home_furniture_placements.home_furniture_placement_id","object_home_furniture_placements.owned_furniture_id","object_home_furniture_placements.placement_order"],"conversion":"same-owner instance resolved by legacy id; relation locator uses owned identity; placement_order=index"},
+        {"source":"freeMarket active furniture payload with legacy status SELLING","targetColumns":["object_furniture_market_listings.furniture_market_listing_id","object_furniture_market_listings.owned_furniture_id","object_furniture_market_listings.listing_price","object_furniture_market_listings.listing_status"],"conversion":"only exact source occurrence; legacy SELLING maps to canonical active; active relation table is a post-import derived projection and is not a direct target"}
+      ],
+      "sourcePrecedence": "When optional split file exists and passes its own seal, it is authoritative for placements; petSweetHomeData.placedFurniture is a fallback only. Both present with unequal occurrence fingerprints is quarantined, never deduplicated by name.",
+      "legacyMarketPolicy": "Current snapshot has no active furniture listing. Completed furniture summaries without instance payload are not imported into canonical listing tables and are recorded as unresolved migration evidence. Non-furniture listings remain outside these four direct furniture tables.",
+      "unmappedSourcePolicy": "furniture.rate is draw probability and has no column in the current canonical furniture tables; retain it in sealed source evidence for WBS743 draw-consumer parity, never map it to charm_per_enhancement.",
+      "ambiguousDefinitionPolicy": "Of 5,327 sealed owned occurrences, the current JSON catalog resolves 3,525 uniquely, leaves 87 owned occurrences ambiguous across two exact name+exp+grade signatures, and misses 1,715. Validated main.js CODE_SEED resolves 90 missing occurrences. Historical candidate commit 82a0373d3666b6afa29912ef9441273d20375266, path data/petSweetHomeInfo.json, SHA-256 9aa01517393750942992547223445ad0c77f0351d4a6700c05c36bd10cc7e288 can resolve 326 more only after WBS725 approval, leaving 1,299 occurrences across 789 signatures. WBS725 may resolve those only through an explicitly approved inactive legacy-recovered definition crosswalk with provenance and explicit purchase_price/charm_per_enhancement; otherwise quarantine them as DEFINITION_REFERENCE_MISSING. Quarantine the 87 ambiguous records as DEFINITION_REFERENCE_AMBIGUOUS unless WBS725 explicitly collapses identical business definitions while preserving draw multiplicity separately; never choose an arbitrary definition or claim zero-quarantine completeness."
+    },
+    {
+      "domain": "pet-equipment",
+      "sources": ["LEGACY_JSON:member_pet.json#/{playerKey}", "LEGACY_JSON:itemInfo.json#/elemental", "LEGACY_JSON:itemInfo.json#/ring", "CODE_SEED:validated pet catalogs"],
+      "targetTables": ["canonical_pet_definitions", "canonical_owned_pet_instances", "canonical_equipment_definitions", "canonical_owned_equipment_instances", "canonical_owned_pet_equipment"],
+      "transactionUnit": "one player pet with equipment",
+      "replayKey": "SHA256(rawBundleSha256|pet-equipment|playerSourceHash|payload fingerprint)",
+      "instanceLocator": "playerSourceHash|pet; equipment uses playerSourceHash|elemental or |ring",
+      "fields": [
+        {"source":"WBS725 validated pet definition projection","targetColumns":["canonical_pet_definitions.pet_id","canonical_pet_definitions.pet_name","canonical_pet_definitions.pet_description","canonical_pet_definitions.pet_grade","canonical_pet_definitions.base_charm","canonical_pet_definitions.charm_per_enhancement","canonical_pet_definitions.active_flag"],"conversion":"definition identity plus typed catalog values; never copied into ownership"},
+        {"source":"player pet occurrence, petname, pettype, upgrade and petexp","targetColumns":["canonical_owned_pet_instances.owned_pet_id","canonical_owned_pet_instances.player_id","canonical_owned_pet_instances.pet_id","canonical_owned_pet_instances.custom_name","canonical_owned_pet_instances.enhancement_level","canonical_owned_pet_instances.experience_amount","canonical_owned_pet_instances.ownership_status"],"conversion":"transaction-scoped occurrence identity, exact definition binding, ownership_status=owned"},
+        {"source":"WBS725 validated elemental/ring definition projection","targetColumns":["canonical_equipment_definitions.equipment_id","canonical_equipment_definitions.equipment_name","canonical_equipment_definitions.equipment_description","canonical_equipment_definitions.equipment_slot","canonical_equipment_definitions.equipment_grade","canonical_equipment_definitions.base_charm","canonical_equipment_definitions.charm_per_enhancement","canonical_equipment_definitions.active_flag"],"conversion":"definition identity; slot fixed by source branch"},
+        {"source":"elemental/ring occurrence, upgrade and available durability field","targetColumns":["canonical_owned_equipment_instances.owned_equipment_id","canonical_owned_equipment_instances.player_id","canonical_owned_equipment_instances.equipment_id","canonical_owned_equipment_instances.custom_name","canonical_owned_equipment_instances.enhancement_level","canonical_owned_equipment_instances.durability_amount","canonical_owned_equipment_instances.ownership_status"],"conversion":"transaction-scoped occurrence identity; ownership_status=owned; missing durability allowed only by an explicit WBS725 zero rule"},
+        {"source":"same-player pet/equipment relation and source slot","targetColumns":["canonical_owned_pet_equipment.owned_pet_equipment_id","canonical_owned_pet_equipment.owned_pet_id","canonical_owned_pet_equipment.owned_equipment_id","canonical_owned_pet_equipment.player_id","canonical_owned_pet_equipment.equipment_slot"],"conversion":"relation identity with composite owner validation"}
+      ]
+    },
+    {
+      "domain": "mini-pet",
+      "sources": ["LEGACY_JSON:miniPetData.json#/miniPet/{index}", "LEGACY_JSON:member_pet.json#/{playerKey}/miniPetBag/{index}", "LEGACY_JSON:member_pet.json#/{playerKey}/miniPet", "CODE_SEED:main.js validated mini-pet definitions/rewards and enhancement rules"],
+      "targetTables": ["canonical_mini_pet_definitions", "canonical_mini_pet_enhancement_rules", "canonical_owned_mini_pet_instances"],
+      "transactionUnit": "one definition/rule set, then one player mini-pet collection",
+      "replayKey": "SHA256(rawBundleSha256|mini-pet|source locator|payload fingerprint)",
+      "instanceLocator": "bag: playerSourceHash|miniPetBag|zero-based index; equipped: playerSourceHash|miniPet|equipped. They are separate occurrences because equip removes the object from miniPetBag.",
+      "fields": [
+        {"source":"definition identity and name,emoji,grade,battleExp,castleExp,raidExp plus WBS725 sale/max/active","targetColumns":["canonical_mini_pet_definitions.mini_pet_id","canonical_mini_pet_definitions.mini_pet_name","canonical_mini_pet_definitions.mini_pet_emoji","canonical_mini_pet_definitions.mini_pet_grade","canonical_mini_pet_definitions.sale_price","canonical_mini_pet_definitions.base_battle_charm","canonical_mini_pet_definitions.base_castle_charm","canonical_mini_pet_definitions.base_raid_charm","canonical_mini_pet_definitions.max_enhancement_level","canonical_mini_pet_definitions.active_flag"],"conversion":"exact definition identity and typed values; WBS725 values are required when absent from JSON"},
+        {"source":"WBS725 enhancement catalog level/gains/probability/cost","targetColumns":["canonical_mini_pet_enhancement_rules.mini_pet_enhancement_rule_id","canonical_mini_pet_enhancement_rules.mini_pet_id","canonical_mini_pet_enhancement_rules.target_enhancement_level","canonical_mini_pet_enhancement_rules.battle_charm_gain","canonical_mini_pet_enhancement_rules.castle_charm_gain","canonical_mini_pet_enhancement_rules.raid_charm_gain","canonical_mini_pet_enhancement_rules.success_probability","canonical_mini_pet_enhancement_rules.point_cost","canonical_mini_pet_enhancement_rules.stone_quantity"],"conversion":"rule identity plus typed decimal and integer values"},
+        {"source":"miniPetBag[{index}] occurrence, observed name/emoji and optional upgrade","targetColumns":["canonical_owned_mini_pet_instances.owned_mini_pet_id","canonical_owned_mini_pet_instances.player_id","canonical_owned_mini_pet_instances.mini_pet_id","canonical_owned_mini_pet_instances.custom_name","canonical_owned_mini_pet_instances.custom_emoji","canonical_owned_mini_pet_instances.enhancement_level","canonical_owned_mini_pet_instances.equipped_flag","canonical_owned_mini_pet_instances.bound_flag","canonical_owned_mini_pet_instances.ownership_status"],"conversion":"new occurrence identity; resolve mini_pet_id only through a WBS725-approved occurrence-level crosswalk keyed by the exact playerSourceHash+miniPetBag+zero-based index locator; every legacy occurrence without that explicit crosswalk is quarantined, including display-exact rows, because no immutable definition locator exists; after resolution set custom_name/custom_emoji to the exact observed value only when it differs from the bound definition, otherwise NULL; never infer a base definition from mutable name, emoji, grade, price, charm, upgrade, or proximity; enhancement_level=lossless unsigned upgrade when present and 0 when missing, matching legacy runtime; equipped_flag=false; bound_flag=false because bag entries are unbound; ownership_status=owned"},
+        {"source":"separate miniPet equipped occurrence, observed name/emoji and optional upgrade","targetColumns":["canonical_owned_mini_pet_instances.owned_mini_pet_id","canonical_owned_mini_pet_instances.player_id","canonical_owned_mini_pet_instances.mini_pet_id","canonical_owned_mini_pet_instances.custom_name","canonical_owned_mini_pet_instances.custom_emoji","canonical_owned_mini_pet_instances.enhancement_level","canonical_owned_mini_pet_instances.equipped_flag","canonical_owned_mini_pet_instances.bound_flag","canonical_owned_mini_pet_instances.ownership_status"],"conversion":"new occurrence identity distinct from every bag row; resolve mini_pet_id only through a WBS725-approved occurrence-level crosswalk keyed by the exact playerSourceHash+miniPet+equipped locator; every legacy occurrence without that explicit crosswalk is quarantined, including display-exact rows, because no immutable definition locator exists; after resolution set custom_name/custom_emoji to the exact observed value only when it differs from the bound definition, otherwise NULL; never infer a base definition from mutable name, emoji, grade, price, charm, upgrade, or proximity; enhancement_level=lossless unsigned upgrade when present and 0 when missing, matching legacy runtime; equipped_flag=true; bound_flag=true until legacy /귀속해제 returns it to the bag; ownership_status=owned; never fingerprint-match into miniPetBag"}
+      ]
+    },
+    {
+      "domain": "member-title",
+      "sources": ["LEGACY_JSON:member_title.json#/member/{playerKey}/title"],
+      "targetTables": ["canonical_member_title_definitions", "canonical_owned_member_title_instances", "canonical_member_title_selections"],
+      "transactionUnit": "one player title scope",
+      "replayKey": "SHA256(rawBundleSha256|member-title|playerSourceHash|payload fingerprint)",
+      "instanceLocator": "playerSourceHash|MEMBER_TITLE|list index",
+      "fields": [
+        {"source":"WBS725 validated member-title catalog projection","targetColumns":["canonical_member_title_definitions.member_title_id","canonical_member_title_definitions.title_name","canonical_member_title_definitions.base_sale_price","canonical_member_title_definitions.active_flag"],"conversion":"exact source binding; base_sale_price is required from the WBS725 catalog projection and never inferred from list[].price; definition dedupe never uses display name alone"},
+        {"source":"list occurrence identity, owner, definition, index, list[].inDate and list[].price","targetColumns":["canonical_owned_member_title_instances.owned_member_title_id","canonical_owned_member_title_instances.player_id","canonical_owned_member_title_instances.member_title_id","canonical_owned_member_title_instances.acquisition_sequence","canonical_owned_member_title_instances.acquired_time","canonical_owned_member_title_instances.acquisition_price","canonical_owned_member_title_instances.ownership_status"],"conversion":"acquisition_sequence=index+1; KST CHAR(19); acquisition_price=lossless unsigned integer list[].price; ownership_status=owned"},
+        {"source":"title.num","targetColumns":["canonical_member_title_selections.player_id","canonical_member_title_selections.owned_member_title_id"],"conversion":"one-based ordinal: null or 0 creates no selection row; 1..list.length selects the occurrence with acquisition_sequence=num; positive out-of-range quarantines only the selection"}
+      ]
+    },
+    {
+      "domain": "pet-title",
+      "sources": ["LEGACY_JSON:pet_title.json#/member/{playerKey}/title"],
+      "targetTables": ["canonical_pet_title_definitions", "canonical_owned_pet_title_instances", "canonical_pet_title_selections"],
+      "transactionUnit": "one player pet-title scope",
+      "replayKey": "SHA256(rawBundleSha256|pet-title|playerSourceHash|payload fingerprint)",
+      "instanceLocator": "playerSourceHash|PET_TITLE|list index",
+      "fields": [
+        {"source":"WBS725 validated pet-title catalog projection","targetColumns":["canonical_pet_title_definitions.pet_title_id","canonical_pet_title_definitions.title_name","canonical_pet_title_definitions.base_sale_price","canonical_pet_title_definitions.active_flag"],"conversion":"exact source binding; base_sale_price is required from the WBS725 catalog projection and never inferred from list[].price; no display-name-only dedupe"},
+        {"source":"list occurrence identity, owner, definition, index, list[].inDate and list[].price","targetColumns":["canonical_owned_pet_title_instances.owned_pet_title_id","canonical_owned_pet_title_instances.player_id","canonical_owned_pet_title_instances.pet_title_id","canonical_owned_pet_title_instances.acquisition_sequence","canonical_owned_pet_title_instances.acquired_time","canonical_owned_pet_title_instances.acquisition_price","canonical_owned_pet_title_instances.ownership_status"],"conversion":"acquisition_sequence=index+1; KST CHAR(19); acquisition_price=lossless unsigned integer list[].price; ownership_status=owned"},
+        {"source":"title.num","targetColumns":["canonical_pet_title_selections.player_id","canonical_pet_title_selections.owned_pet_title_id"],"conversion":"one-based ordinal: null or 0 means no row; valid num selects acquisition_sequence=num; out-of-range selection quarantined; player-scope schema does not persist a particular owned_pet_id"}
+      ]
+    },
+    {
+      "domain": "mini-pet-title",
+      "sources": ["LEGACY_JSON:miniPet_title.json#/member/{playerKey}/title", "LEGACY_JSON:miniPetCollectionInfo.json", "LEGACY_JSON:miniPet_collection.json"],
+      "targetTables": ["canonical_mini_pet_title_definitions", "canonical_owned_mini_pet_title_instances", "canonical_mini_pet_title_selections"],
+      "transactionUnit": "one player mini-pet-title scope",
+      "replayKey": "SHA256(rawBundleSha256|mini-pet-title|playerSourceHash|payload fingerprint)",
+      "instanceLocator": "playerSourceHash|MINI_PET_TITLE|list index",
+      "fields": [
+        {"source":"WBS725 validated mini-pet-title catalog projection","targetColumns":["canonical_mini_pet_title_definitions.mini_pet_title_id","canonical_mini_pet_title_definitions.title_name","canonical_mini_pet_title_definitions.base_sale_price","canonical_mini_pet_title_definitions.active_flag"],"conversion":"base_sale_price is required from the WBS725 catalog projection and never inferred from list[].price; collection files are definition eligibility evidence only; no display-name-only dedupe"},
+        {"source":"list occurrence identity, owner, definition, index, list[].inDate and list[].price","targetColumns":["canonical_owned_mini_pet_title_instances.owned_mini_pet_title_id","canonical_owned_mini_pet_title_instances.player_id","canonical_owned_mini_pet_title_instances.mini_pet_title_id","canonical_owned_mini_pet_title_instances.acquisition_sequence","canonical_owned_mini_pet_title_instances.acquired_time","canonical_owned_mini_pet_title_instances.acquisition_price","canonical_owned_mini_pet_title_instances.ownership_status"],"conversion":"acquisition_sequence=index+1; KST CHAR(19); acquisition_price=lossless unsigned integer list[].price; ownership_status=owned"},
+        {"source":"title.num","targetColumns":["canonical_mini_pet_title_selections.player_id","canonical_mini_pet_title_selections.owned_mini_pet_title_id"],"conversion":"one-based ordinal: null or 0 means no row; valid num selects acquisition_sequence=num; out-of-range selection quarantined; player-scope schema does not persist a particular owned_mini_pet_id"}
+      ]
+    },
+    {
+      "domain": "pet-skill",
+      "sources": ["LEGACY_JSON:petSkillData.json#/{playerKey}/petSkills", "CODE_SEED:main.js validated pet skill definition catalog"],
+      "targetTables": ["canonical_pet_skill_definitions", "canonical_owned_pet_skill_stacks", "canonical_owned_pet_skill_equipments"],
+      "transactionUnit": "one definition, then one player skill bag/equipment",
+      "replayKey": "SHA256(rawBundleSha256|pet-skill|playerSourceHash|payload fingerprint)",
+      "instanceLocator": "quantity stack by player+definition; equipment by player+owned pet+slot",
+      "fields": [
+        {"source":"definition identity/name/description/grade plus approved handler mapping","targetColumns":["canonical_pet_skill_definitions.pet_skill_id","canonical_pet_skill_definitions.pet_skill_name","canonical_pet_skill_definitions.pet_skill_description","canonical_pet_skill_definitions.pet_skill_grade","canonical_pet_skill_definitions.handler_key","canonical_pet_skill_definitions.options_json","canonical_pet_skill_definitions.active_flag"],"conversion":"data only; executable source is never stored"},
+        {"source":"stack identity, owner and bag.{skillName}","targetColumns":["canonical_owned_pet_skill_stacks.owned_pet_skill_id","canonical_owned_pet_skill_stacks.player_id","canonical_owned_pet_skill_stacks.pet_skill_id","canonical_owned_pet_skill_stacks.quantity"],"conversion":"exact definition binding and lossless unsigned quantity"},
+        {"source":"equipped[{index}] relation identity","targetColumns":["canonical_owned_pet_skill_equipments.owned_pet_skill_equipment_id","canonical_owned_pet_skill_equipments.owned_pet_id","canonical_owned_pet_skill_equipments.player_id","canonical_owned_pet_skill_equipments.pet_skill_id","canonical_owned_pet_skill_equipments.slot_number"],"conversion":"index+1; application verifies owned stack quantity>0; DB enforces player-owned pet and definition FK"}
+      ]
+    },
+    {
+      "domain": "currency",
+      "sources": ["LEGACY_JSON:member.json#/member/{playerKey}/point", "LEGACY_JSON:member.json#/member/{playerKey}/points", "LEGACY_JSON:member.json#/member/{playerKey}/diamond", "LEGACY_JSON:currencyLog.json (reconciliation only)"],
+      "targetTables": ["canonical_currency_definitions", "canonical_player_currency_balances", "canonical_currency_operations", "canonical_currency_ledger_entries"],
+      "transactionUnit": "one player and currency balance with initial operation+ledger",
+      "replayKey": "OBJECT_IMPORT|rawBundleSha256|playerSourceHash|currency source binding",
+      "instanceLocator": "one balance per player_id+currency_id",
+      "fields": [
+        {"source":"fixed point/diamond catalog identity and attributes","targetColumns":["canonical_currency_definitions.currency_id","canonical_currency_definitions.currency_name","canonical_currency_definitions.decimal_places","canonical_currency_definitions.active_flag"],"conversion":"definition seed; no CODE column"},
+        {"source":"balance identity, owner, definition and point/points or diamond","targetColumns":["canonical_player_currency_balances.player_currency_balance_id","canonical_player_currency_balances.player_id","canonical_player_currency_balances.currency_id","canonical_player_currency_balances.balance_minor_amount"],"conversion":"lossless integer multiplied by 10^decimal_places; alias conflict quarantined"},
+        {"source":"INITIAL_IMPORT operation identity and same balance","targetColumns":["canonical_currency_operations.currency_operation_id","canonical_currency_operations.player_id","canonical_currency_operations.currency_id","canonical_currency_operations.player_currency_balance_id","canonical_currency_operations.request_key","canonical_currency_operations.operation_kind","canonical_currency_operations.reason_key","canonical_currency_operations.payload_fingerprint","canonical_currency_operations.delta_minor_amount","canonical_currency_operations.balance_after_minor_amount","canonical_currency_operations.operation_status"],"conversion":"stable request key; INITIAL_IMPORT; sequence starts from zero balance"},
+        {"source":"initial ledger identity and operation result","targetColumns":["canonical_currency_ledger_entries.currency_ledger_entry_id","canonical_currency_ledger_entries.currency_operation_id","canonical_currency_ledger_entries.player_currency_balance_id","canonical_currency_ledger_entries.sequence_number","canonical_currency_ledger_entries.delta_minor_amount","canonical_currency_ledger_entries.balance_after_minor_amount"],"conversion":"single sequence_number=1 including explicitly selected zero-balance policy"}
+      ]
+    },
+    {
+      "domain": "package",
+      "sources": ["LEGACY_JSON:packageInfo.json#/{packageIndex}", "CODE_SEED:validated package reward catalog"],
+      "targetTables": ["canonical_package_definitions", "canonical_package_reward_groups", "canonical_package_reward_entries", "canonical_package_item_rewards", "canonical_package_nested_rewards", "canonical_package_reward_quarantines"],
+      "transactionUnit": "one package graph after referenced item/package definitions exist",
+      "replayKey": "SHA256(rawBundleSha256|package|exact package source locator|payload fingerprint)",
+      "instanceLocator": "package index; reward index within package",
+      "fields": [
+        {"source":"definition identity plus id,name,desc,enabled,maxUseOnce","targetColumns":["canonical_package_definitions.package_id","canonical_package_definitions.package_name","canonical_package_definitions.package_description","canonical_package_definitions.max_open_quantity","canonical_package_definitions.active_flag"],"conversion":"legacy id is source_identifier only, never PK/CODE"},
+        {"source":"reward group identity and package","targetColumns":["canonical_package_reward_groups.package_reward_group_id","canonical_package_reward_groups.package_id","canonical_package_reward_groups.selection_mode","canonical_package_reward_groups.active_flag"],"conversion":"typed group projection"},
+        {"source":"rewards[] identity/order/type","targetColumns":["canonical_package_reward_entries.package_reward_entry_id","canonical_package_reward_entries.package_reward_group_id","canonical_package_reward_entries.reward_order","canonical_package_reward_entries.target_kind"],"conversion":"index+1 and typed enum"},
+        {"source":"resolved item reward name/count/probability","targetColumns":["canonical_package_item_rewards.package_reward_entry_id","canonical_package_item_rewards.item_id","canonical_package_item_rewards.quantity","canonical_package_item_rewards.probability"],"conversion":"exact item source binding"},
+        {"source":"resolved nested package reward name/count/probability","targetColumns":["canonical_package_nested_rewards.package_reward_entry_id","canonical_package_nested_rewards.package_id","canonical_package_nested_rewards.quantity","canonical_package_nested_rewards.probability"],"conversion":"exact package source binding; cycle is fatal for package graph"},
+        {"source":"unresolved reward identity and evidence","targetColumns":["canonical_package_reward_quarantines.package_reward_quarantine_id","canonical_package_reward_quarantines.package_reward_entry_id","canonical_package_reward_quarantines.package_id","canonical_package_reward_quarantines.source_reward_identifier","canonical_package_reward_quarantines.target_kind","canonical_package_reward_quarantines.target_source_identifier","canonical_package_reward_quarantines.target_display_name","canonical_package_reward_quarantines.quarantine_reason","canonical_package_reward_quarantines.quarantine_status"],"conversion":"typed quarantine only; no target inference"}
+      ]
+    },
+    {
+      "domain": "building-recipe",
+      "sources": ["LEGACY_JSON:petSweetHomeInfo.json#/homeInfo/{index}", "CODE_SEED:validated craft recipe fixtures extracted from active command logic"],
+      "targetTables": ["canonical_building_definitions", "canonical_craft_recipe_definitions", "canonical_craft_recipe_item_inputs", "canonical_craft_recipe_currency_inputs", "canonical_craft_recipe_item_outputs", "canonical_craft_recipe_currency_outputs", "canonical_building_craft_recipes"],
+      "transactionUnit": "all definitions first; then one recipe graph",
+      "replayKey": "SHA256(catalogVersion|building-or-recipe source locator|payload fingerprint)",
+      "instanceLocator": "homeInfo index or frozen recipe identifier; source identifiers never become PK/CODE",
+      "fields": [
+        {"source":"building identity plus homeInfo[].display/floor/exp and source index","targetColumns":["canonical_building_definitions.building_id","canonical_building_definitions.building_name","canonical_building_definitions.floor_value","canonical_building_definitions.experience_required","canonical_building_definitions.active_flag"],"conversion":"preserve every source row with exact string and lossless integers; for a duplicated floor_value only the first source-index occurrence is active because legacy runtime returns the first match, and later duplicates are retained inactive"},
+        {"source":"homeInfo[{index}].required upgrade recipe plus other frozen recipes","targetColumns":["canonical_craft_recipe_definitions.craft_recipe_id","canonical_craft_recipe_definitions.craft_recipe_name","canonical_craft_recipe_definitions.craft_recipe_kind","canonical_craft_recipe_definitions.maximum_batch_count","canonical_craft_recipe_definitions.active_flag"],"conversion":"one building_upgrade recipe per source row, maximum_batch_count=1; recipe identity uses homeInfo index, not display name; active_flag mirrors the first-occurrence building winner for duplicated floors"},
+        {"source":"homeInfo[{index}].required[{requiredIndex}].item/count plus other typed item inputs","targetColumns":["canonical_craft_recipe_item_inputs.craft_recipe_item_input_id","canonical_craft_recipe_item_inputs.craft_recipe_id","canonical_craft_recipe_item_inputs.item_id","canonical_craft_recipe_item_inputs.quantity"],"conversion":"input locator includes homeInfo index and requiredIndex; item uses exact definition binding; count is lossless unsigned quantity"},
+        {"source":"currency input occurrence identity, recipe, currency and amount","targetColumns":["canonical_craft_recipe_currency_inputs.craft_recipe_currency_input_id","canonical_craft_recipe_currency_inputs.craft_recipe_id","canonical_craft_recipe_currency_inputs.currency_id","canonical_craft_recipe_currency_inputs.amount_minor"],"conversion":"exact currency binding"},
+        {"source":"item output occurrence identity, recipe, item and quantity","targetColumns":["canonical_craft_recipe_item_outputs.craft_recipe_item_output_id","canonical_craft_recipe_item_outputs.craft_recipe_id","canonical_craft_recipe_item_outputs.item_id","canonical_craft_recipe_item_outputs.quantity"],"conversion":"exact item binding"},
+        {"source":"currency output occurrence identity, recipe, currency and amount","targetColumns":["canonical_craft_recipe_currency_outputs.craft_recipe_currency_output_id","canonical_craft_recipe_currency_outputs.craft_recipe_id","canonical_craft_recipe_currency_outputs.currency_id","canonical_craft_recipe_currency_outputs.amount_minor"],"conversion":"exact currency binding"},
+        {"source":"source-row building and its homeInfo required recipe","targetColumns":["canonical_building_craft_recipes.building_craft_recipe_id","canonical_building_craft_recipes.building_id","canonical_building_craft_recipes.craft_recipe_id"],"conversion":"link each preserved source-row definition to its building_upgrade recipe; both definitions must preexist, while consumers select only the active first-occurrence row for a duplicated floor"}
+      ]
+    }
+  ],
+  "checkpointPolicy": "Preflight whole sealed bundle, commit definitions by domain in dependency order, then commit each player's ownership graph atomically. A failed player transaction writes no canonical rows; quarantine evidence is committed separately with the same source fingerprint. Resume skips only committed replay keys with identical fingerprints.",
+  "approvedInputPolicy": "Synthetic fixtures for Gate 3/4. Gate 5 may use only an explicitly approved, sealed RAW bundle in an isolated disposable database; never write to repository snapshots or an operating database."
+}

@@ -1,0 +1,27 @@
+{
+  "buildings": [
+    { "sourceIdentifier": "homeInfo[0]", "buildingId": "build001", "buildingName": "서울역 4번출구🚉", "floorValue": 1, "experienceRequired": "0" }
+  ],
+  "recipes": [
+    {
+      "sourceIdentifier": "command:/다이아조합", "craftRecipeId": "recipe01", "recipeName": "다이아상자 조합", "recipeKind": "item_exchange", "maximumBatchCount": "1000",
+      "itemInputs": [{ "itemId": "stone001", "itemName": "전설의 돌맹이🗿", "quantity": "1" }],
+      "currencyInputs": [{ "currencyId": "point001", "currencyName": "포인트", "amountMinor": "500000000" }],
+      "itemOutputs": [{ "itemId": "box00001", "itemName": "다이아상자💎(/다이아상자오픈)", "quantity": "1" }],
+      "currencyOutputs": []
+    },
+    {
+      "sourceIdentifier": "helper:runCombineAll", "craftRecipeId": "recipe02", "recipeName": "정령 강화석 조합", "recipeKind": "item_exchange", "maximumBatchCount": "18446744073709551615",
+      "itemInputs": [{ "itemId": "frag0001", "itemName": "정령조각🥀", "quantity": "10" }],
+      "currencyInputs": [],
+      "itemOutputs": [{ "itemId": "spirit01", "itemName": "정령 강화석🥀", "quantity": "1" }],
+      "currencyOutputs": []
+    },
+    {
+      "sourceIdentifier": "homeInfo[0].required", "craftRecipeId": "recipe03", "recipeName": "서울역 4번출구 승급", "recipeKind": "building_upgrade", "maximumBatchCount": "1", "buildingId": "build001",
+      "itemInputs": [{ "itemId": "stone001", "itemName": "전설의 돌맹이🗿", "quantity": "3" }],
+      "currencyInputs": [], "itemOutputs": [], "currencyOutputs": []
+    }
+  ],
+  "syntheticOnly": true
+}

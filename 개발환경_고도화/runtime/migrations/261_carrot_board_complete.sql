@@ -1,0 +1,2 @@
+INSERT INTO command_registry(command_code,handler_key,auth_scope,rollout_state,enabled,version) VALUES('MARKET_CARROT_BOARD_COMPLETE','carrot_board_complete','VERIFIED_USER','SHADOW',1,1) ON DUPLICATE KEY UPDATE handler_key=VALUES(handler_key),rollout_state=VALUES(rollout_state),enabled=VALUES(enabled),version=version+1;
+INSERT INTO command_aliases(command_text,command_code,active) VALUES('/당근완료','MARKET_CARROT_BOARD_COMPLETE',1) ON DUPLICATE KEY UPDATE command_code=VALUES(command_code),active=VALUES(active);

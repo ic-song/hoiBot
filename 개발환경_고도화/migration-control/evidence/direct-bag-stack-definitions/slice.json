@@ -1,0 +1,55 @@
+{
+  "sliceId": "SL-ASSET-DIRECT-BAG-STACK-DEFINITION-SEED-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "8112c9b1e51edde8a53a708a0a2dcfae4be96b0d",
+  "source": {
+    "uniqueLegacyNames": 182,
+    "occurrences": 689,
+    "hash": "10b21ddf32092b4b2c4450664694644f89bcb9991bc0bae436d9582fcad13d6a"
+  },
+  "mapping": {
+    "reusedExisting": 66,
+    "newDefinitions": 116,
+    "activeReused": 32,
+    "inactiveReused": 34,
+    "objects": 182,
+    "activeObjects": 148,
+    "inactiveObjects": 34,
+    "displayDrift": 1,
+    "multiCodeDecisions": 11,
+    "crosswalkHash": "ca1b7e5a26193e9d74fdc4cd1f812489b4b5ac847a18cab0774dd2ae06aab1c7",
+    "newDefinitionHash": "81acd708eed3a6e7bbe86860f48793b01115df82e01254bbbf89bdca6d0d6e16"
+  },
+  "migration": "391_direct_bag_stack_definition_seed.sql",
+  "validation": {
+    "focused": "5/5 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "fullRegression": "1190 total / 1183 pass / 0 fail / 7 skip",
+    "freshMigrations": 381,
+    "mariaProbe": "5/5 PASS",
+    "shadow": "182/182 PASS",
+    "replay": "applied 0 / migration-count 381",
+    "transactionRollback": "PASS",
+    "reconnectProbe": "5/5 PASS",
+    "finalCounts": {
+      "itemDefinitions": 407,
+      "objectRegistry": 342,
+      "objectAliases": 282,
+      "objectSourceBindings": 342
+    }
+  },
+  "preserved": {
+    "inventoryStacks": 0,
+    "inventoryInstances": 0,
+    "inventoryLedger": 0,
+    "packageCatalog": 59,
+    "packageItemDefinitions": 1260,
+    "packageContents": 0,
+    "packageRewards": 157
+  },
+  "ownershipOrLedgerChange": false,
+  "packageModelChange": false,
+  "legacyRuntimeChange": false,
+  "gate8": false
+}

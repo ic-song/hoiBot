@@ -1,0 +1,25 @@
+{
+  "sliceId": "SL-HOME-BADGE-CUBE",
+  "sourceContract": "v2.400",
+  "sourceCommit": "a286279b",
+  "baselineCommit": "4732b998ff995521b4112f39d3f870d1df7e8d14",
+  "catalogVersion": "FROZEN-20260820",
+  "definitionVersionId": "930000002",
+  "configVersionId": "930000003",
+  "commands": ["/홈뱃지큐브 [홈뱃지번호] [옵션번호] [횟수]"],
+  "optionCosts": { "castle": 1, "raid": 1, "petUpgrade": 2, "explore": 3 },
+  "optionMaximumTenths": { "castle": 500, "raid": 500, "petUpgrade": 300, "explore": 150 },
+  "rateBandCount": 51,
+  "rateWeightTotal": 100000000,
+  "rollout": "SHADOW",
+  "gate8": false,
+  "validation": {
+    "focused": { "tests": 4, "pass": 4, "fail": 0 },
+    "full": { "tests": 1125, "pass": 1118, "fail": 0, "skip": 7 },
+    "typecheck": "pass",
+    "build": "pass",
+    "migrationCount": 366,
+    "mariaDbScenarios": ["rollback", "same-event-concurrency", "tombstone-exclusion", "deterministic-two-stage-rng", "integer-protection", "milestone-ordered-outbox", "all-max-ordered-outbox", "restart-replay"]
+  },
+  "operationalDataTouched": false
+}

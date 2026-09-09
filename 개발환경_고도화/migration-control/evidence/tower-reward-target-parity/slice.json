@@ -1,0 +1,206 @@
+{
+  "sliceId": "SL-ASSET-TOWER-REWARD-TARGET-PARITY-01",
+  "catalogVersion": "ASSET-FREEZE-v2.438-tower-reward-target-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sources": {
+    "trial": {
+      "path": "data/trialTowerBoss.json",
+      "baselineSha256": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76",
+      "gitSha256": "b7f6155006e7c467e4f9c707882c9f7b86763c8b107e73aa70026486c603f5e5",
+      "operationalSha256": "363b92ed5a74c41e08fbf9f854a8eb7c008c45bb87cd27989dc30bf5d0eccb14"
+    },
+    "event": {
+      "path": "data/eventTowerBoss.json",
+      "baselineSha256": "9972af5fdee7b5fe2788d0d00e2464b693d5918d419abc5bdc29b5e7fec19ea2",
+      "gitSha256": "986146633ebb9e674feee06da191bac0f3381c6eec9f1ad5e44b2d7690b1498e",
+      "operationalSha256": "b5661ba8572db6bb24d2ac10121281149dd3a2fefe932edd78af0983e625abbf"
+    }
+  },
+  "counts": {
+    "trialBosses": 120,
+    "eventBosses": 7,
+    "bosses": 127,
+    "trialRewards": 377,
+    "eventRewards": 7,
+    "rewards": 384,
+    "eventFloorOccurrences": 368,
+    "uniqueEventFloors": 368,
+    "uniqueTargets": 24,
+    "newTargets": 2,
+    "trialChangedBossRewards": 120,
+    "trialAddedTargetOccurrences": 238,
+    "trialRemovedTargetOccurrences": 242,
+    "eventChangedRewards": 1,
+    "eventChangedFloorLists": 0
+  },
+  "itemOccurrences": [
+    {
+      "displayName": "전설의 돌맹이🗿",
+      "code": "ITEM-RWD-052",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "미니펫뽑기🐹(/미니펫오픈)",
+      "code": "mini_pet_draw",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+      "code": "ITEM-RWD-001",
+      "isNew": false,
+      "occurrenceCount": 34
+    },
+    {
+      "displayName": "펫 강화석⭐",
+      "code": "pet_enhance_stone",
+      "isNew": false,
+      "occurrenceCount": 99
+    },
+    {
+      "displayName": "양념치킨🐔",
+      "code": "legacy-seasoned-chicken",
+      "isNew": false,
+      "occurrenceCount": 2
+    },
+    {
+      "displayName": "경찰과 도둑🚨(/삐뽀삐뽀)",
+      "code": "police_thief_ticket",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "돌멩이🪨",
+      "code": "ITEM-RWD-041",
+      "isNew": false,
+      "occurrenceCount": 88
+    },
+    {
+      "displayName": "미니펫대전리셋권🐹",
+      "code": "ITEM-MINI-PET-DUEL-RESET-TICKET",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "캐슬대전리셋권🐶",
+      "code": "legacy-castle-battle-reset-ticket",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "시련의탑리셋권😈",
+      "code": "ITEM-RWD-TRIAL-TOWER-RESET",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "펫던전 입장권🌋",
+      "code": "ITEM-PET-DUNGEON-ENTRY-TICKET",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "레이드타격대인장👑(+600👾)",
+      "code": "ITEM-RWD-043",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "잡템상자☠",
+      "code": "ITEM-RWD-TRASH-BOX",
+      "isNew": false,
+      "occurrenceCount": 120
+    },
+    {
+      "displayName": "펫먹이🍼",
+      "code": "pet_food",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "펫스킬북📙(/펫스킬오픈)",
+      "code": "pet_skill_book",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "탐험확률UP🗻(50%)",
+      "code": "ITEM-RWD-030",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "땅문서📜",
+      "code": "land_document",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "신입지원금",
+      "code": "tower_newbie_support_fund",
+      "isNew": true,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "미니펫 강화석💫",
+      "code": "ITEM-RWD-018",
+      "isNew": false,
+      "occurrenceCount": 23
+    },
+    {
+      "displayName": "럭키박스🍀(/럭키오픈)",
+      "code": "reward_lucky_box",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "펫스킬북 조각📙",
+      "code": "pet_skill_book_fragment",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "잡템☠️",
+      "code": "junk",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "펫먹이상자📦(/상자오픈)",
+      "code": "ITEM-RWD-PET-FOOD-BOX",
+      "isNew": false,
+      "occurrenceCount": 1
+    },
+    {
+      "displayName": "펫타이틀권🦊(/펫타이틀이름)",
+      "code": "pet_title_ticket",
+      "isNew": true,
+      "occurrenceCount": 1
+    }
+  ],
+  "eventRewardReplacement": {
+    "boss": "🧙‍♂️할법사",
+    "before": {
+      "item": "마정석🔮",
+      "quantity": 100
+    },
+    "after": {
+      "item": "펫스킬북 조각📙",
+      "quantity": 3
+    }
+  },
+  "identityRule": "preserve source kind, boss order, event precedence, trial first-range order and ordered reward occurrences; target identity uses frozen canonical code plus exact source display",
+  "carryForward": [
+    "trial/event tower Gate1~7",
+    "existing item/object canonical truth",
+    "existing tower consumer/provider"
+  ],
+  "scope": {
+    "providerAdded": false,
+    "ownershipChanged": false,
+    "consumerChanged": false,
+    "operationalDataTouched": false,
+    "gate8": false
+  }
+}

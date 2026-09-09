@@ -1,0 +1,23 @@
+{
+  "sliceId": "SL-HOME-BADGE-GACHA-OPEN-01-03",
+  "sourceContract": "v2.400",
+  "sourceCommit": "a286279b",
+  "catalogVersion": "FROZEN-20260820",
+  "definitionVersionId": "930000002",
+  "definitionContentHash": "70d6731d0c5e2f72832fe70042ab1e0a7ba16d38af106b71617a31c33ed7932b",
+  "commands": ["/홈뱃지오픈", "/홈뱃지오픈 [숫자]", "/홈뱃지오픈2 [숫자]", "/홈뱃지오픈3"],
+  "catalogCounts": { "gacha": 57, "mbti": 20, "love": 50 },
+  "gradeWeights": { "C": 55, "B": 30, "A": 12, "S": 3 },
+  "duplicatePoint": 100000000,
+  "rollout": "SHADOW",
+  "gate8": false,
+  "validation": {
+    "focused": { "tests": 4, "pass": 4, "fail": 0 },
+    "full": { "tests": 1121, "pass": 1114, "fail": 0, "skip": 7 },
+    "typecheck": "pass",
+    "build": "pass",
+    "migrationCount": 365,
+    "mariaDbScenarios": ["rollback", "same-event-concurrency", "same-batch-duplicate", "permanent-delete-no-regrant", "deleted-s-ordered-notice", "restart-replay"]
+  },
+  "operationalDataTouched": false
+}

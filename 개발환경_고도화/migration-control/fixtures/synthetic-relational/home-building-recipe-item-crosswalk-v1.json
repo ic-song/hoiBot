@@ -1,0 +1,262 @@
+[
+  {
+    "legacyName": "돌멩이🪨",
+    "definitionCode": "ITEM-RWD-041",
+    "objectKey": "item.home_material.stone",
+    "decision": "REUSE_ACTIVATE",
+    "expectedHomeRows": 300,
+    "expectedTrialRows": 88,
+    "expectedCastleRows": 0,
+    "ownershipModel": "STACK",
+    "sellable": false,
+    "homeRecipe": {
+      "occurrenceCount": 300,
+      "minCount": 1000,
+      "maxCount": 300000,
+      "uniqueCounts": [
+        1000,
+        1500,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000,
+        11000,
+        20000,
+        30000,
+        35000,
+        40000,
+        50000,
+        80000,
+        100000,
+        120000,
+        200000,
+        250000,
+        300000
+      ]
+    },
+    "otherConsumers": {
+      "trialTowerRewardRows": 88,
+      "castleBattleRewardRows": 0,
+      "itemListNonItems": true,
+      "itemListUntradable": true
+    },
+    "sourceBindings": [
+      {
+        "system": "RUNTIME_DB",
+        "table": "item_definitions",
+        "key": "ITEM-RWD-041"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "petSweetHomeInfo.homeInfo.required",
+        "key": "돌멩이🪨"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "trialTowerBoss.reward",
+        "key": "돌멩이🪨"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "itemList.nonItems",
+        "key": "돌멩이🪨"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "itemList.untradableList",
+        "key": "돌멩이🪨"
+      }
+    ],
+    "sourceHashes": {
+      "home": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+      "trial": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76",
+      "itemList": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+      "castle": "5d840ce6417f371a0b0109af13e4895942cf027438fda24e8e8520c4048171be"
+    },
+    "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01"
+  },
+  {
+    "legacyName": "반지 강화석💍",
+    "definitionCode": "ITEM-RING-UPGRADE-STONE",
+    "objectKey": "item.ring.upgrade_stone",
+    "decision": "CREATE",
+    "expectedHomeRows": 300,
+    "expectedTrialRows": 1,
+    "expectedCastleRows": 0,
+    "ownershipModel": "STACK",
+    "sellable": false,
+    "homeRecipe": {
+      "occurrenceCount": 300,
+      "minCount": 50,
+      "maxCount": 100,
+      "uniqueCounts": [
+        50,
+        60,
+        70,
+        100
+      ]
+    },
+    "otherConsumers": {
+      "trialTowerRewardRows": 1,
+      "castleBattleRewardRows": 0,
+      "itemListNonItems": true,
+      "itemListUntradable": false
+    },
+    "sourceBindings": [
+      {
+        "system": "RUNTIME_DB",
+        "table": "item_definitions",
+        "key": "ITEM-RING-UPGRADE-STONE"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "petSweetHomeInfo.homeInfo.required",
+        "key": "반지 강화석💍"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "trialTowerBoss.reward",
+        "key": "반지 강화석💍"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "itemList.nonItems",
+        "key": "반지 강화석💍"
+      }
+    ],
+    "sourceHashes": {
+      "home": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+      "trial": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76",
+      "itemList": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+      "castle": "5d840ce6417f371a0b0109af13e4895942cf027438fda24e8e8520c4048171be"
+    },
+    "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01"
+  },
+  {
+    "legacyName": "캐슬코인🥇",
+    "definitionCode": "castle_coin",
+    "objectKey": "item.castle.coin",
+    "decision": "REUSE_ACTIVE",
+    "expectedHomeRows": 300,
+    "expectedTrialRows": 1,
+    "expectedCastleRows": 24,
+    "ownershipModel": "STACK",
+    "sellable": false,
+    "homeRecipe": {
+      "occurrenceCount": 300,
+      "minCount": 10,
+      "maxCount": 100,
+      "uniqueCounts": [
+        10,
+        20,
+        30,
+        40,
+        60,
+        100
+      ]
+    },
+    "otherConsumers": {
+      "trialTowerRewardRows": 1,
+      "castleBattleRewardRows": 24,
+      "itemListNonItems": true,
+      "itemListUntradable": false
+    },
+    "sourceBindings": [
+      {
+        "system": "RUNTIME_DB",
+        "table": "item_definitions",
+        "key": "castle_coin"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "petSweetHomeInfo.homeInfo.required",
+        "key": "캐슬코인🥇"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "trialTowerBoss.reward",
+        "key": "캐슬코인🥇"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "castleBattle2.rank.rewards.items",
+        "key": "캐슬코인🥇"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "itemList.nonItems",
+        "key": "캐슬코인🥇"
+      }
+    ],
+    "sourceHashes": {
+      "home": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+      "trial": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76",
+      "itemList": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+      "castle": "5d840ce6417f371a0b0109af13e4895942cf027438fda24e8e8520c4048171be"
+    },
+    "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01"
+  },
+  {
+    "legacyName": "전설의 돌맹이🗿",
+    "definitionCode": "ITEM-RWD-052",
+    "objectKey": "item.material.legendary_stone",
+    "decision": "REUSE_ACTIVE",
+    "expectedHomeRows": 251,
+    "expectedTrialRows": 1,
+    "expectedCastleRows": 0,
+    "consumerCorrectionDependency": "inventory.open_all:legendary_stone->ITEM-RWD-052",
+    "ownershipModel": "STACK",
+    "sellable": false,
+    "homeRecipe": {
+      "occurrenceCount": 251,
+      "minCount": 3,
+      "maxCount": 8,
+      "uniqueCounts": [
+        3,
+        5,
+        7,
+        8
+      ]
+    },
+    "otherConsumers": {
+      "trialTowerRewardRows": 1,
+      "castleBattleRewardRows": 0,
+      "itemListNonItems": true,
+      "itemListUntradable": false
+    },
+    "sourceBindings": [
+      {
+        "system": "RUNTIME_DB",
+        "table": "item_definitions",
+        "key": "ITEM-RWD-052"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "petSweetHomeInfo.homeInfo.required",
+        "key": "전설의 돌맹이🗿"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "trialTowerBoss.reward",
+        "key": "전설의 돌맹이🗿"
+      },
+      {
+        "system": "LEGACY_JSON",
+        "table": "itemList.nonItems",
+        "key": "전설의 돌맹이🗿"
+      }
+    ],
+    "sourceHashes": {
+      "home": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+      "trial": "d18ecd4d5a032f045bacfc1087e171a326f84979e60ce403447211ae6d65fa76",
+      "itemList": "915a5d8ba8ba19c78da124881a617514b1c0c56434af61d4db8bac0ccdb70e5f",
+      "castle": "5d840ce6417f371a0b0109af13e4895942cf027438fda24e8e8520c4048171be"
+    },
+    "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01"
+  }
+]

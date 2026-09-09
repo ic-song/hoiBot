@@ -1,0 +1,20 @@
+{
+  "format": "hoibot-public-asset-reference-quarantine-v1",
+  "catalogVersion": "ASSET-FREEZE-v2.438-bag-reference-01",
+  "payloadFileCount": 753,
+  "referenceCount": 2055629,
+  "distinctReferenceCount": 6182,
+  "resolvedCount": 1499513,
+  "quarantine": {
+    "identityCount": 3367,
+    "occurrenceCount": 556116,
+    "detectedOrphanOccurrences": 493928,
+    "detectedAmbiguousOccurrences": 21453,
+    "detectedInactiveOccurrences": 40735,
+    "unapprovedIssueOccurrences": 0
+  },
+  "canonicalDuplicateCount": 0,
+  "canonicalCollisionCount": 0,
+  "dataMigrationReady": true,
+  "containsRawIdentity": false
+}

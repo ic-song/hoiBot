@@ -1,0 +1,63 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-BALANCE-CONSUMER-01",
+  "executionId": "개발자-SL-COMMON-ADMIN-WEB-BALANCE-CONSUMER-01-20260831T0935",
+  "baseline": "b18b3efe59b17d2bb4dc51c0f88f439ee7f1600c",
+  "wbs": 639,
+  "dbRow": 1917,
+  "lease": 2421,
+  "runtimeMode": "SHADOW",
+  "scope": {
+    "domains": ["home_badge", "home_furniture", "pendant"],
+    "routes": ["read", "preview", "apply", "rollback"],
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "permissionSeedChanges": 0,
+    "operationalRowsMutated": 0
+  },
+  "permissionGap": {
+    "required": "admin.balance.manage",
+    "seeded": false,
+    "behavior": "fail-closed",
+    "rejectedReuse": ["package.catalog.manage", "point_shop.catalog.manage", "admin.request_monitor.configure"]
+  },
+  "gate1": {
+    "status": "complete",
+    "reference": "개발환경_고도화/references/admin-web-balance-consumer.md",
+    "existingProviders": ["AdminBalanceReadModelProvider", "AdminBalanceMutationProvider"]
+  },
+  "gate2": {
+    "status": "complete",
+    "mapping": "typed REST + permission-aware navigation + provider preview/apply/rollback",
+    "schema": "none"
+  },
+  "gate3": {
+    "status": "complete",
+    "fixture": "개발환경_고도화/runtime/test/support/admin-web-shell-preview.ts",
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "routes": "개발환경_고도화/runtime/src/admin/admin-balance-web-routes.ts",
+    "client": "개발환경_고도화/runtime/src/admin/web-shell-assets.ts"
+  },
+  "gate5": {
+    "status": "complete",
+    "focused": { "total": 28, "passed": 28, "failed": 0 },
+    "typecheck": "pass",
+    "build": "pass"
+  },
+  "gate6": {
+    "status": "complete",
+    "fullRegression": { "total": 1313, "passed": 1306, "failed": 0, "skipped": 7 },
+    "precision": "decimal and bigint values remain exact strings"
+  },
+  "gate7": {
+    "status": "shadow_complete",
+    "desktop": { "profile": "synthetic responsive contract", "status": "pass" },
+    "mobile": { "profile": "640px responsive contract", "status": "pass" },
+    "browserRuntime": { "status": "gap", "reason": "kernel asset path unavailable" },
+    "operationalDataTouched": false,
+    "productionBranchTouched": false
+  },
+  "gate8": false
+}

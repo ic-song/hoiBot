@@ -1,0 +1,33 @@
+{
+  "sliceId": "SL-TIER-ROSTER-READ",
+  "executionId": "작업반장-SL-TIER-ROSTER-READ-20260901T000200",
+  "wbsRow": 293,
+  "leaseRow": 2446,
+  "commands": ["/티어확인", "/티어순위"],
+  "baseline": "a04135f9",
+  "migration": 411,
+  "validation": {
+    "focused": { "pass": 3, "fail": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "mariadb": { "migrationCount": 401, "integrationPass": 1, "integrationFail": 0 },
+    "seedParity": { "commands": "2/2", "aliases": "2/2" },
+    "rollbackReplayRestartReconnectShadow": "PASS",
+    "full": { "tests": 1353, "pass": 1346, "fail": 0, "skip": 7 }
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "safety": {
+    "legacyChanged": false,
+    "featureProdChanged": false,
+    "operationalDatabaseChanged": false
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.400-currency-object-link-01",
+  "sourceHash": "09e9be41c9106aa5faf1ad7686aa00f20071e951522a6071a0671a6cc93d8466",
+  "sourceSystem": "RUNTIME_DB",
+  "sourceTable": "currency_definitions",
+  "objectType": "CURRENCY",
+  "definitionVersion": 1,
+  "definitions": 3,
+  "objects": 3,
+  "aliases": 0,
+  "sourceBindings": 3,
+  "ownershipRowsMutated": 0,
+  "excludedDefinitionCodes": ["POINT"],
+  "rows": [
+    { "code": "point", "display": "포인트", "scaleDigits": 3, "ownerScope": "PLAYER", "objectKey": "currency.player.point.v1" },
+    { "code": "diamond", "display": "다이아", "scaleDigits": 0, "ownerScope": "PLAYER", "objectKey": "currency.player.diamond.v1" },
+    { "code": "guild_fund", "display": "길드자금", "scaleDigits": 0, "ownerScope": "GUILD", "objectKey": "currency.guild.guild_fund.v1" }
+  ]
+}

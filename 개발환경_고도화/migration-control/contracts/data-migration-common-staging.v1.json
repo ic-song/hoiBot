@@ -1,0 +1,34 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-data-migration-common-staging-contract-v1",
+  "migration": "457_data_migration_common_staging.sql",
+  "rawProviderMigration": "442_data_migration_raw_landing.sql",
+  "inputFormat": "hoibot-common-staging-extraction-manifest-v1",
+  "sourceCoveragePolicy": "every RAW file appears exactly once as PROJECT with records or IGNORE with a reason",
+  "identityPolicy": {
+    "primaryKey": "CUID2_8",
+    "sourceLocator": "SHA256(logical_source_name + NUL + identity_pointer_with_owner_hash + NUL + record_kind + NUL + occurrence_index_or_projection_locator)",
+    "ownerLocator": "SHA256(exact decoded owner-key token after ownerPointer prefix equality and terminal-segment validation)",
+    "rawIdentityInPublicEvidence": false
+  },
+  "tables": [
+    {
+      "table": "data_migration_common_staging_runs",
+      "primaryKey": "common_staging_run_id",
+      "unique": ["raw_bundle_sha256", "extraction_manifest_sha256"],
+      "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
+    },
+    {
+      "table": "data_migration_common_staging_records",
+      "primaryKey": "common_staging_record_id",
+      "foreignKeys": [{ "column": "common_staging_run_id", "references": "data_migration_common_staging_runs.common_staging_run_id" }],
+      "unique": ["common_staging_run_id", "source_locator_sha256"],
+      "envelope": ["source_system", "source_namespace", "source_path_sha256", "source_content_sha256", "logical_source_name", "source_pointer", "identity_pointer", "source_locator_sha256", "owner_locator_sha256", "occurrence_index", "projection_locator", "record_domain", "record_kind", "projection_status", "quarantine_reason", "quantity_value", "observed_time", "payload_json", "payload_fingerprint"],
+      "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
+    }
+  ],
+  "replayPolicy": "same raw bundle and manifest returns existing run with zero writes; changed payload/hash/type fails closed",
+  "transactionBoundary": "one extraction manifest is preflighted and committed atomically",
+  "handoffParity": ["expected_file_count", "expected_total_bytes", "projected_file_count", "ignored_file_count", "expected_record_count", "staging_sha256"],
+  "operationalDataAllowed": false
+}

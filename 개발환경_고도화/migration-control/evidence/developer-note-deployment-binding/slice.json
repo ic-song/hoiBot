@@ -1,0 +1,21 @@
+{
+  "sliceId": "SL-ASSET-DEVELOPER-NOTE-DEPLOYMENT-BINDING-01",
+  "catalogVersion": "ASSET-FREEZE-v2.438-developer-note-deployment-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sourceGitObjectSha256": "f8b81bc64654acef926dfec92a00968937df9d8397a5463cfd70d37427b0e7f9",
+  "mainGitObjectSha256": "a6527cde8df4e413e3296da976b89a95f49101dfc0f5c226e822a17e91b5fb07",
+  "deployedVersion": "2.438",
+  "deploymentCommit": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "counts": {
+    "entries": 325,
+    "changes": 499,
+    "duplicateVersions": 0
+  },
+  "invariant": "latest developer-note version equals deployed HoiBotVersion",
+  "scope": {
+    "readConsumerChanged": false,
+    "productionReflectionPerformed": false,
+    "operationalDataTouched": false,
+    "gate8": false
+  }
+}

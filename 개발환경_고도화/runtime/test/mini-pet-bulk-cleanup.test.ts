@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import { describe,it } from "node:test";
+import { isMiniPetBulkCleanupCommand,normalizeMiniPetBulkCleanupDispatchMessage,planMiniPetBulkCleanup,type MiniPetBulkCleanupCandidate } from "../src/mini-pet/mini-pet-bulk-cleanup-service.js";
+function pet(overrides:Partial<MiniPetBulkCleanupCandidate>={}):MiniPetBulkCleanupCandidate{return{playerId:"1",playerName:"회원",ownedMiniPetId:"1",ownedVersion:"1",definitionId:"10",displayName:"미니펫",bagSequence:1n,keepCount:2n,equipped:false,reserved:false,manualProtected:false,pendingEquip:false,...overrides};}
+describe("mini pet bulk cleanup",()=>{
+ it("accepts only exact preview confirm and cancel commands",()=>{for(const command of ["/미니펫전체정리","/미니펫전체정리 확인","/미니펫전체정리 취소"])assert.equal(isMiniPetBulkCleanupCommand(command),true);assert.equal(isMiniPetBulkCleanupCommand("/미니펫전체정리 지금"),false);});
+ it("normalizes only executable commands",()=>{assert.equal(normalizeMiniPetBulkCleanupDispatchMessage("/미니펫전체정리 확인"),"/미니펫전체정리 확인");assert.equal(normalizeMiniPetBulkCleanupDispatchMessage("/미니펫전체정리 안내"),"");});
+ it("counts protected rows against capacity and never removes them",()=>{const rows=[pet({ownedMiniPetId:"1",manualProtected:true}),pet({ownedMiniPetId:"2",reserved:true,bagSequence:2n}),pet({ownedMiniPetId:"3",bagSequence:3n}),pet({ownedMiniPetId:"4",bagSequence:4n}),pet({ownedMiniPetId:"5",equipped:true,bagSequence:null})];const plan=planMiniPetBulkCleanup(rows);assert.deepEqual(plan.removed.map(row=>row.ownedMiniPetId),["3","4"]);assert.deepEqual(plan.preserved.map(row=>row.ownedMiniPetId),["1","2","5"]);});
+ it("keeps the first stable ordinary entries per player limit",()=>{const rows=[pet({ownedMiniPetId:"1",keepCount:2n}),pet({ownedMiniPetId:"2",bagSequence:2n,keepCount:2n}),pet({ownedMiniPetId:"3",bagSequence:3n,keepCount:2n}),pet({playerId:"2",ownedMiniPetId:"4",keepCount:1n}),pet({playerId:"2",ownedMiniPetId:"5",bagSequence:2n,keepCount:1n,pendingEquip:true})];const plan=planMiniPetBulkCleanup(rows);assert.deepEqual(plan.removed.map(row=>row.ownedMiniPetId),["3","4"]);});
+});

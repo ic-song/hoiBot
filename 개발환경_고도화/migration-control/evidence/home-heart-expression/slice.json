@@ -1,0 +1,20 @@
+{
+  "sliceId": "SL-HOME-HEART-EXPRESSION",
+  "sourceContract": "v2.400@a286279b",
+  "commands": ["/마음", "/사랑해", "/귀여워", "/멋져요", "/응원해"],
+  "rollout": "SHADOW",
+  "leaseRow": 2324,
+  "wbsRow": 263,
+  "commandMapRows": [1296, 1309, 1310, 1317, 1329],
+  "dbMapRows": [1276, 1289, 1290, 1297, 1309],
+  "migration": "380_home_heart_expression.sql",
+  "invariants": [
+    "exact five-command guard and longest display-name target resolution preserved",
+    "base, mutual, premium and equipped heartBonus quota is KST-date authoritative",
+    "fixed or deterministic random allocation, usage, totals, badges and alerts are atomic",
+    "same event, concurrent delivery and process restart replay one stored result",
+    "forced outbox failure rolls every domain mutation back",
+    "SHADOW dispatch observes without mutation and Gate 8 remains disabled",
+    "legacy main.js and operational data remain unchanged"
+  ]
+}

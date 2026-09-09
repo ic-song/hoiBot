@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-BADGE-PROVIDER-PARITY-01",
+  "executionId": "개발자-SL-BADGE-PROVIDER-PARITY-01-20260831T0610",
+  "baseline": "9899eac1f5de4bb9147a8af31788f0a0ececf5c7",
+  "canonical": {
+    "versionId": "930000002",
+    "definitions": 204,
+    "runtimeDisplay": 127,
+    "awardLifecycle": 77,
+    "contentHash": "70d6731d0c5e2f72832fe70042ab1e0a7ba16d38af106b71617a31c33ed7932b",
+    "seriesCounts": { "achievement": 64, "special": 13, "gacha": 57, "mbti": 20, "love": 50 }
+  },
+  "providers": [
+    {
+      "providerId": "inventory_award",
+      "boundary": "canonical204",
+      "sourcePath": "home/home-badge-inventory-service.ts",
+      "sourceTokens": ["SELECT badge_code FROM player_badge_assignments", "SELECT badge_code,owned,equipped FROM player_home_badges", "SELECT badge_code FROM player_home_badge_exclusions", "INSERT IGNORE INTO player_badge_assignments", "INSERT INTO player_home_badges"],
+      "line": "inventory_award|canonical204|assignment+home_projection|exclusion_guard|audit+outbox"
+    },
+    {
+      "providerId": "equip",
+      "boundary": "canonical204",
+      "sourcePath": "home/home-badge-equip-service.ts",
+      "sourceTokens": ["UPDATE player_home_badges SET equipped=FALSE", "UPDATE player_home_badge_cubes SET equipped=FALSE", "INSERT INTO player_badge_equipment", "home_badge_equipment_mutations"],
+      "line": "equip|canonical204|home+cube+equipment|owned_guard|audit+outbox"
+    },
+    {
+      "providerId": "permanent_delete",
+      "boundary": "canonical204",
+      "sourcePath": "home/home-badge-permanent-delete-service.ts",
+      "sourceTokens": ["DELETE FROM player_badge_assignments", "INSERT INTO player_home_badge_exclusions", "DELETE FROM player_home_badge_cubes", "home_badge_permanent_deletions"],
+      "line": "permanent_delete|canonical204|assignment_delete+home_disable+cube_delete+equipment_clear+exclusion|audit+outbox"
+    },
+    {
+      "providerId": "gacha_standard",
+      "boundary": "gacha57",
+      "sourcePath": "home/home-badge-gacha-service.ts",
+      "sourceTokens": ["home_badge_gacha_policies", "definitions.length !== expectedCount", "player_home_badge_exclusions", "home_badge_gacha_draw_results"],
+      "line": "gacha_standard|gacha57|assignment+home_projection|exclusion_guard|duplicate_point"
+    },
+    {
+      "providerId": "gacha_mbti",
+      "boundary": "mbti20",
+      "sourcePath": "home/home-badge-gacha-service.ts",
+      "sourceTokens": ["home_badge_gacha_policies", "definitions.length !== expectedCount", "player_home_badge_exclusions", "home_badge_gacha_draw_results"],
+      "line": "gacha_mbti|mbti20|assignment+home_projection|exclusion_guard|duplicate_point"
+    },
+    {
+      "providerId": "gacha_love",
+      "boundary": "love50",
+      "sourcePath": "home/home-badge-gacha-service.ts",
+      "sourceTokens": ["home_badge_gacha_policies", "definitions.length !== expectedCount", "player_home_badge_exclusions", "home_badge_gacha_draw_results"],
+      "line": "gacha_love|love50|assignment+home_projection|exclusion_guard|duplicate_point"
+    },
+    {
+      "providerId": "cube_effect",
+      "boundary": "canonical204",
+      "sourcePath": "home/home-badge-cube-service.ts",
+      "sourceTokens": ["UPDATE inventory_stacks SET quantity=?", "INSERT INTO inventory_ledger", "INSERT INTO player_home_badge_cubes", "home_badge_cube_executions"],
+      "line": "cube_effect|canonical204|inventory_stack+ledger|cube_projection|audit+outbox"
+    },
+    {
+      "providerId": "special_grant",
+      "boundary": "special13",
+      "sourcePath": "admin/special-badge-grant-service.ts",
+      "sourceTokens": ["badge_category='special'", "player_home_badge_exclusions", "INSERT INTO player_badge_assignments", "player_special_badge_mutations"],
+      "line": "special_grant|special13|assignment|exclusion_guard|audit+outbox"
+    },
+    {
+      "providerId": "special_revoke",
+      "boundary": "special13",
+      "sourcePath": "admin/special-badge-revoke-service.ts",
+      "sourceTokens": ["badge_category='special'", "DELETE FROM player_badge_assignments", "UPDATE player_badge_equipment SET equipped_badge_code=NULL", "player_special_badge_mutations"],
+      "line": "special_revoke|special13|assignment_delete+equipment_clear|audit+outbox"
+    },
+    {
+      "providerId": "social_achievement_migration",
+      "boundary": "achievement64",
+      "sourcePath": "home/home-social-badge-migration-service.ts",
+      "sourceTokens": ["badge_category='activity'", "INSERT INTO player_badge_assignments", "INSERT INTO player_home_badges", "player_home_badge_exclusions"],
+      "line": "social_achievement_migration|achievement64|assignment+home_projection|exclusion_guard|audit+outbox"
+    }
+  ],
+  "stateTables": ["player_badge_assignments", "player_home_badges", "player_home_badge_cubes", "player_badge_equipment", "player_home_badge_exclusions", "command_audit", "outbox_messages"],
+  "directServices": [
+    "runtime/src/admin/special-badge-grant-service.ts",
+    "runtime/src/admin/special-badge-revoke-service.ts",
+    "runtime/src/home/home-badge-cube-service.ts",
+    "runtime/src/home/home-badge-equip-service.ts",
+    "runtime/src/home/home-badge-gacha-service.ts",
+    "runtime/src/home/home-badge-inventory-service.ts",
+    "runtime/src/home/home-badge-permanent-delete-service.ts",
+    "runtime/src/home/home-social-badge-migration-service.ts"
+  ],
+  "requiredScenarios": ["normal", "dual_read", "ownership_consistency", "equipment_consistency", "deleted_no_regrant", "duplicate_point_reward", "replay", "idempotency", "transaction_rollback", "reconnect"],
+  "mariaExpected": {
+    "providerOperations": 12,
+    "auditRows": 12,
+    "outboxRows": 12,
+    "duplicatePointReward": "100000000",
+    "deletedBadgeRegrants": 0,
+    "rollbackResidue": 0,
+    "wrongSequenceRows": 0
+  },
+  "hashes": {
+    "providerMatrixSha256": "ddf52bb0906f4518e4190f63a0bb4748c4c0b86f7445c5afd8ca887fbd9365ee",
+    "stateTablesSha256": "403b72c502ff71cd4ce5fb3a98bfc518c7d4840f6161976d8bb155855a6dbbba",
+    "directServicesSha256": "9e28f7846798c50d5b4762d7b9a50e36c8c7bdb9b65f637b22553bbfebbea897"
+  },
+  "carryForward": [
+    "home-badge-inventory-mariadb.integration.test.ts",
+    "home-badge-equip-mariadb.integration.test.ts",
+    "home-badge-permanent-delete-mariadb.integration.test.ts",
+    "probe-home-badge-gacha-open-synthetic.ts",
+    "probe-home-badge-cube-synthetic.ts",
+    "special-badge-grant-mariadb.integration.test.ts",
+    "special-badge-revoke-mariadb.integration.test.ts",
+    "home-social-badge-migration-mariadb.integration.test.ts"
+  ],
+  "invariants": {
+    "assignmentAndLegacyProjectionDualRead": true,
+    "tombstoneBlocksRegrant": true,
+    "ownershipEquipmentConsistent": true,
+    "operationAuditOutboxAtomic": true,
+    "operationSequenceRequired": true,
+    "newOwnedBadges": 0,
+    "badgeTypeChanges": 0,
+    "objectChanges": 0,
+    "providerChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0,
+    "gate8": false
+  }
+}

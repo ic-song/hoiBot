@@ -1,0 +1,25 @@
+{
+  "sliceId": "CATALOG-BATCH-ASSET-MIGRATION-REFERENCE-GAP-CROSSWALK-01",
+  "executionId": "작업반장-CATALOG-BATCH-ASSET-MIGRATION-REFERENCE-GAP-CROSSWALK-01-2026090212",
+  "claimRow": 2501,
+  "baseline": "85bed32310cd356093567ce2f1732858f4ef8ea3",
+  "dependencies": ["WBS689", "WBS707", "WBS717"],
+  "catalogVersion": "ASSET-FREEZE-v2.438-data-migration-ready-01",
+  "scope": "WBS689 private gap identity와 canonical 후보를 read-only crosswalk로 동결하고 원문 없는 corrective lane을 분류",
+  "privacy": "exact identity crosswalk는 TEMP에만 저장하고 Git/WBS에는 집계·SHA-256만 기록",
+  "validation": {
+    "focused": { "pass": 8, "fail": 0 },
+    "rootRegression": { "pass": 30, "fail": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "payloadFileCount": 753,
+    "distinctReferenceCount": 7613,
+    "gapIdentityCount": 5737,
+    "gapOccurrenceCount": 763104,
+    "privateCrosswalkContentSha256": "1a96092261bc90a728f8d0d2c3b8476819925553f848dc06b67a1e6431e68559",
+    "classificationSha256": "3390421c61cd6d805c7b72138bc2b37b68948d298e2174bbb4fa1389c665a453",
+    "classificationReplay": "PASS"
+  },
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "forbidden": ["자동 이름 병합", "운영 DB", "feature/prod", "legacy main.js", "legacy data mutation", "schema/provider/migration", "Gate8"]
+}

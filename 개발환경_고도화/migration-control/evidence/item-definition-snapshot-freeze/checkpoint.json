@@ -1,0 +1,29 @@
+{
+  "sliceId": "SL-ASSET-ITEM-DEFINITION-SNAPSHOT-FREEZE-01",
+  "executionId": "개발자-SL-ASSET-ITEM-DEFINITION-SNAPSHOT-FREEZE-01-20260831T0320",
+  "baseline": "472ad5f7146fbd083b7c3193aad8f5307cbfcbea",
+  "wbs": 635,
+  "dbRow": 1913,
+  "lease": 2384,
+  "checkpoint": "Gate1~7 complete",
+  "assertions": {
+    "membership": 413,
+    "previousControlCorrected": 408,
+    "sourceEvidenceDelta": 5,
+    "membershipSha256": "cbf8ce772ac8b0f00ca3c35b8a85306a443e693efc3971aec9bb38da363ab816",
+    "pendantObjectLinkCarryForward": 13,
+    "definitionMembershipChangedByPendantLink": false,
+    "schemaProviderMigrationUiMainChanges": 0,
+    "operationalDbTouched": false
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  }
+}

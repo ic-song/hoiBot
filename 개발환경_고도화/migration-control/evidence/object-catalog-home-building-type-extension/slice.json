@@ -1,0 +1,39 @@
+{
+  "sliceId": "SL-COMMON-OBJECT-CATALOG-HOME-BUILDING-TYPE-EXTENSION-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "b27428a8188477398e7d083b0247ca9555d2fb69",
+  "wbs": 621,
+  "dbMapping": 1899,
+  "lease": 2364,
+  "execution": "개발자-SL-COMMON-OBJECT-CATALOG-HOME-BUILDING-TYPE-EXTENSION-01-20260830T2324",
+  "migration": "393_object_catalog_home_building_type_extension.sql",
+  "scope": {
+    "addedObjectType": "HOME_BUILDING",
+    "existingTypesPreserved": 8,
+    "providerOrModelIncluded": false,
+    "buildingDefinitionsIncluded": false,
+    "objectsOrBackfillIncluded": false,
+    "recipeItemsIncluded": false,
+    "apiOrUiIncluded": false,
+    "legacyOrOperationalDataIncluded": false
+  },
+  "focusedFixture": {
+    "registryObjects": 1,
+    "typedAliases": 1,
+    "sourceBindings": 1
+  },
+  "plannedValidation": [
+    "focused object catalog",
+    "typecheck",
+    "build",
+    "fresh isolated MariaDB migration on non-3306 port",
+    "migration reapply",
+    "migration rollback",
+    "reconnect",
+    "HOME_BUILDING registry/alias/source parity",
+    "Shadow",
+    "default full regression"
+  ],
+  "sheetsEdited": false,
+  "gate8": false
+}

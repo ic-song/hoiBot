@@ -1,0 +1,18 @@
+{
+  "sliceId": "SL-INVENTORY-FORTUNE-POUCH-OPEN",
+  "sourceContract": "v2.400@a286279b",
+  "command": "/복주머니",
+  "rollout": "SHADOW",
+  "leaseRow": 2323,
+  "wbsRow": 273,
+  "commandMapRow": 1313,
+  "dbMapRow": 1293,
+  "migration": "379_inventory_fortune_pouch_open.sql",
+  "invariants": [
+    "broad startsWith and split-parseInt quirks preserved",
+    "seven exact cumulative RNG tiers and allowance quantity five",
+    "consume, all rewards, ledgers, audit, outbox and result are atomic",
+    "same event and restart replay the stored result without reroll",
+    "legacy main.js and operational data remain unchanged"
+  ]
+}

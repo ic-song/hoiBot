@@ -1,0 +1,102 @@
+import { createHash, randomUUID } from "node:crypto";
+import type { DatabaseClient, DatabaseTransaction } from "../database.js";
+
+type Numeric = bigint | number | string;
+interface OwnerRow { identity_id: bigint; player_id: bigint; display_name: string; }
+interface OwnedRow { id: bigint; custom_name: string|null; custom_emoji: string|null; display_name: string; emoji_value: string|null; grade_display_name: string|null; enhancement_level: bigint; battle_experience: bigint; castle_experience: bigint; raid_experience: bigint; version: bigint; }
+interface GradePolicyRow { base_rate: string; max_level: bigint; success_charm_delta: bigint; }
+interface PointPolicyRow { min_target_level: bigint; max_target_level: bigint; point_cost: string; }
+interface StackRow { item_id: bigint; code: string; display_name: string; quantity: bigint; version: bigint; }
+interface AttemptRow { sequence:number;levelBefore:bigint;levelAfter:bigint;battleBefore:bigint;battleAfter:bigint;castleBefore:bigint;castleAfter:bigint;raidBefore:bigint;raidAfter:bigint;pointCost:bigint;stoneRequired:bigint;boostItemId:bigint|null;baseRate:number;skillBonusRate:number;boostRate:number;effectiveRate:number;successRoll:number;success:boolean; }
+
+const COMMAND_CODE="MINI_PET_UPGRADE",MAX_ATTEMPTS=100;
+const STONE_CODES=["mini_pet_enhance_stone","ITEM-RWD-018","ITEM-RWD-046"] as const;
+export interface MiniPetUpgradeCommand { targetBagSequence:bigint;count:number;capped:boolean; }
+export interface MiniPetUpgradeResult { status:"applied"|"usage"|"no_target"|"max_level"|"insufficient_point"|"insufficient_stone"|"silent";playerId?:string;ownedMiniPetId?:string;requested?:number;attempted?:number;succeeded?:number;failed?:number;level?:string;pointSpent?:string;stoneSpent?:string;boostSpent?:number;stopReason?:string;data?:string;outboxId?:string;auditId?:string;replayed?:boolean; }
+
+// 정확한 명령과 최대 두 개의 숫자 인자만 미니펫 강화 후보로 허용합니다.
+export function isMiniPetUpgradeCommand(message:string|undefined):boolean{return message!==undefined&&/^\/미니펫강화(?:\s+\d+){0,2}$/.test(message);}
+
+// 0번은 장착 미니펫, 양수는 가방번호로 해석하고 반복 횟수는 100회로 제한합니다.
+export function parseMiniPetUpgradeCommand(message:string):MiniPetUpgradeCommand|undefined{
+  const match=/^\/미니펫강화(?:\s+(\d+))?(?:\s+(\d+))?$/.exec(message);if(match===null)return undefined;
+  const target=BigInt(match[1]??"0"),rawCount=BigInt(match[2]??"1"),capped=rawCount>BigInt(MAX_ATTEMPTS);
+  return{targetBagSequence:target,count:rawCount===0n?0:capped?MAX_ATTEMPTS:Number(rawCount),capped};
+}
+
+// 등급·개통령·최고 보조 아이템 확률을 합산하고 RNG 표본을 증적으로 반환합니다.
+export function resolveMiniPetUpgradeAttempt(input:{baseRate:number;skillBonusRate:number;boostRate:number;random:()=>number}):{baseRate:number;skillBonusRate:number;boostRate:number;effectiveRate:number;successRoll:number;success:boolean}{
+  const boostRate=input.baseRate+input.skillBonusRate<1?input.boostRate:0,effectiveRate=Math.min(1,input.baseRate+input.skillBonusRate+boostRate),successRoll=input.random();
+  return{baseRate:input.baseRate,skillBonusRate:input.skillBonusRate,boostRate,effectiveRate,successRoll,success:successRoll<effectiveRate};
+}
+
+function idempotencyKey(value:string):string{return value.length<=191?value:`sha256:${createHash("sha256").update(value).digest("hex")}`;}
+function integer(value:Numeric):bigint{return BigInt(String(value).split(".")[0]??"0");}
+function fixed(value:number):string{return value.toFixed(17);}
+function commas(value:bigint):string{return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g,",");}
+function stored(value:string|MiniPetUpgradeResult):MiniPetUpgradeResult{return typeof value==="string"?JSON.parse(value) as MiniPetUpgradeResult:value;}
+function boostRate(name:string):number|null{const match=/^미니펫강화확률UP🐷\((\d+(?:\.\d+)?)%\)$/.exec(name);return match===null?null:Number(match[1])/100;}
+function bestBoost(rows:readonly StackRow[],spent:Map<bigint,bigint>):{row:StackRow;rate:number}|undefined{let best:{row:StackRow;rate:number}|undefined;for(const row of rows){if(BigInt(row.quantity)-(spent.get(BigInt(row.item_id))??0n)<=0n)continue;const rate=boostRate(row.display_name);if(rate!==null&&(best===undefined||rate>best.rate))best={row,rate};}return best;}
+function pointPolicy(target:bigint,rows:readonly PointPolicyRow[]):bigint{const row=rows.find(value=>target>=BigInt(value.min_target_level)&&target<=BigInt(value.max_target_level));if(row===undefined)throw new Error(`MINI_PET_UPGRADE_POINT_POLICY_REQUIRED:${target}`);return integer(row.point_cost);}
+function isRetryableTransactionConflict(error:unknown):boolean{if(typeof error!=="object"||error===null)return false;const value=error as{code?:unknown;errno?:unknown};return value.code==="ER_CHECKREAD"||value.code==="ER_LOCK_DEADLOCK"||value.errno===1020||value.errno===1213;}
+
+async function consume(t:DatabaseTransaction,operationId:bigint,sequence:number,playerId:bigint,row:StackRow,quantity:bigint,reason:string):Promise<void>{
+  if(quantity<=0n)return;const changed=quantity===BigInt(row.quantity)?await t.execute("DELETE FROM inventory_stacks WHERE player_id=? AND item_id=? AND version=?",[playerId,row.item_id,row.version]):await t.execute("UPDATE inventory_stacks SET quantity=quantity-?,version=version+1 WHERE player_id=? AND item_id=? AND version=?",[quantity,playerId,row.item_id,row.version]);
+  if(changed.affectedRows!==1n)throw new Error("MINI_PET_UPGRADE_INVENTORY_CONFLICT");
+  await t.execute("INSERT INTO inventory_ledger(operation_id,sequence_no,player_id,item_id,instance_id,quantity_delta,reason_code) VALUES (?,?,?,?,NULL,?,?)",[operationId,sequence,playerId,row.item_id,-quantity,reason]);
+}
+
+async function complete(t:DatabaseTransaction,input:{operationId:bigint;eventId:string;destinationId:string;owner:OwnerRow;ownedId:bigint|null;resultCode:string;data:string;result:MiniPetUpgradeResult;summary:Record<string,unknown>}):Promise<MiniPetUpgradeResult>{
+  const outbox=await t.execute("INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[input.operationId,input.destinationId,JSON.stringify({data:input.data})]);
+  await t.execute("INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",[input.eventId,COMMAND_CODE,input.operationId,input.resultCode]);
+  const audit=await t.execute("INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'owned_mini_pet',?,'mini_pet.upgrade',?,'Iris /미니펫강화',?,UTC_TIMESTAMP(3))",[input.operationId,input.owner.identity_id,input.ownedId,input.resultCode,JSON.stringify(input.summary)]);
+  const result={...input.result,playerId:input.owner.player_id.toString(),ownedMiniPetId:input.ownedId?.toString(),data:input.data,outboxId:outbox.insertId.toString(),auditId:audit.insertId.toString(),replayed:false};
+  await t.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",[JSON.stringify(result),input.operationId]);return result;
+}
+
+// stable 미니펫 ID와 포인트·재료·RNG·세 매력 수치를 한 transaction으로 강화합니다.
+export class MiniPetUpgradeService{
+  constructor(private readonly database:DatabaseClient,private readonly random:()=>number=Math.random){}
+  async handle(input:{eventId:string;externalUserId:string;destinationId:string;message:string}):Promise<MiniPetUpgradeResult>{
+    if(!isMiniPetUpgradeCommand(input.message))return{status:"silent"};
+    for(let retry=0;retry<3;retry++){try{return await this.handleOnce(input);}catch(error){if(retry===2||!isRetryableTransactionConflict(error))throw error;}}
+    throw new Error("MINI_PET_UPGRADE_RETRY_EXHAUSTED");
+  }
+  private handleOnce(input:{eventId:string;externalUserId:string;destinationId:string;message:string}):Promise<MiniPetUpgradeResult>{
+    return this.database.withTransaction(async t=>{
+      const siege=(await t.query<Array<{active:number}>>("SELECT active FROM guild_territory_wars WHERE active=TRUE LIMIT 1"))[0];if(siege?.active===1)return{status:"silent"};
+      const owner=(await t.query<OwnerRow[]>("SELECT identity.id identity_id,identity.player_id,profile.current_display_name display_name FROM external_identities identity JOIN player_profiles profile ON profile.player_id=identity.player_id WHERE identity.provider_code='kakao' AND identity.external_user_id=? AND identity.status='linked' AND identity.player_id IS NOT NULL FOR UPDATE",[input.externalUserId]))[0];if(owner===undefined)return{status:"silent"};
+      const scope=`mini-pet.upgrade:${owner.identity_id.toString()}`,key=idempotencyKey(input.eventId),claim=await t.execute("INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",[randomUUID(),scope,key,owner.identity_id]);
+      const prior=(await t.query<Array<{result_json:string|MiniPetUpgradeResult|null}>>("SELECT result_json FROM operations WHERE id=? FOR UPDATE",[claim.insertId]))[0];if(prior?.result_json!=null)return{...stored(prior.result_json),replayed:true};if(claim.affectedRows!==1n)throw new Error("MINI_PET_UPGRADE_OPERATION_IN_PROGRESS");
+      const command=parseMiniPetUpgradeCommand(input.message)!;
+      if(command.count<1)return complete(t,{operationId:claim.insertId,eventId:input.eventId,destinationId:input.destinationId,owner,ownedId:null,resultCode:"usage",data:"사용법: /미니펫강화 [미니펫가방번호] [시도횟수]",result:{status:"usage",requested:0},summary:{mutation:false,targetBagSequence:command.targetBagSequence.toString()}});
+      const targetSql=command.targetBagSequence===0n?`SELECT pet.id,pet.custom_name,pet.custom_emoji,definition.display_name,definition.emoji_value,COALESCE(definition.grade_display_name,definition.grade_code) grade_display_name,pet.enhancement_level,pet.battle_experience,pet.castle_experience,pet.raid_experience,pet.version FROM owned_mini_pets pet JOIN mini_pet_definitions definition ON definition.id=pet.mini_pet_definition_id WHERE pet.player_id=? AND pet.equipped=TRUE ORDER BY pet.id LIMIT 1 FOR UPDATE`:`SELECT pet.id,pet.custom_name,pet.custom_emoji,definition.display_name,definition.emoji_value,COALESCE(definition.grade_display_name,definition.grade_code) grade_display_name,pet.enhancement_level,pet.battle_experience,pet.castle_experience,pet.raid_experience,pet.version FROM owned_mini_pets pet JOIN mini_pet_definitions definition ON definition.id=pet.mini_pet_definition_id WHERE pet.player_id=? AND pet.equipped=FALSE AND pet.bag_sequence=? ORDER BY pet.id LIMIT 1 FOR UPDATE`;
+      const target=(await t.query<OwnedRow[]>(targetSql,command.targetBagSequence===0n?[owner.player_id]:[owner.player_id,command.targetBagSequence]))[0];
+      if(target===undefined)return complete(t,{operationId:claim.insertId,eventId:input.eventId,destinationId:input.destinationId,owner,ownedId:null,resultCode:"no_target",data:"올바른 가방 번호입니다. 미니펫을 확인해 주세요.",result:{status:"no_target",requested:command.count},summary:{mutation:false,targetBagSequence:command.targetBagSequence.toString()}});
+      const grade=(await t.query<GradePolicyRow[]>("SELECT CAST(base_rate AS CHAR) base_rate,max_level,success_charm_delta FROM mini_pet_upgrade_grade_policies WHERE grade_display_name=? AND active=TRUE FOR UPDATE",[target.grade_display_name]))[0];if(grade===undefined)throw new Error(`MINI_PET_UPGRADE_GRADE_POLICY_REQUIRED:${target.grade_display_name??"null"}`);
+      let level=BigInt(target.enhancement_level),battle=BigInt(target.battle_experience),castle=BigInt(target.castle_experience),raid=BigInt(target.raid_experience);const maxLevel=BigInt(grade.max_level);
+      if(level>=maxLevel)return complete(t,{operationId:claim.insertId,eventId:input.eventId,destinationId:input.destinationId,owner,ownedId:target.id,resultCode:"max_level",data:`이미 최대 강화 단계입니다. (${level}/${maxLevel})`,result:{status:"max_level",requested:command.count,attempted:0,level:level.toString()},summary:{mutation:false,stableOwnedMiniPetId:target.id.toString(),level:level.toString()}});
+      const points=await t.query<PointPolicyRow[]>("SELECT min_target_level,max_target_level,CAST(point_cost AS CHAR) point_cost FROM mini_pet_upgrade_point_policies WHERE active=TRUE ORDER BY min_target_level FOR UPDATE");
+      await t.execute("INSERT IGNORE INTO currency_accounts(player_id,currency_code,balance,version) VALUES (?,'point',0,1)",[owner.player_id]);const account=(await t.query<Array<{balance:string;version:bigint}>>("SELECT CAST(balance AS CHAR) balance,version FROM currency_accounts WHERE player_id=? AND currency_code='point' FOR UPDATE",[owner.player_id]))[0]!;let pointBalance=integer(account.balance);
+      const stones=await t.query<StackRow[]>(`SELECT item.id item_id,item.code,item.display_name,stack.quantity,stack.version FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND item.code IN (?,?,?) AND item.active=TRUE ORDER BY CASE item.code WHEN ? THEN 0 WHEN ? THEN 1 ELSE 2 END,item.id FOR UPDATE`,[owner.player_id,...STONE_CODES,STONE_CODES[0],STONE_CODES[1]]);let stoneBalance=stones.reduce((sum,row)=>sum+BigInt(row.quantity),0n);
+      const boosts=await t.query<StackRow[]>("SELECT item.id item_id,item.code,item.display_name,stack.quantity,stack.version FROM inventory_stacks stack JOIN item_definitions item ON item.id=stack.item_id WHERE stack.player_id=? AND item.display_name LIKE '미니펫강화확률UP🐷(%' AND item.active=TRUE FOR UPDATE",[owner.player_id]);
+      const skill=(await t.query<Array<{bonus_pct:string}>>(`SELECT CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(definition.rules_json,'$.miniPetSuccessBonusPct')),0) AS CHAR) bonus_pct FROM player_pets pet JOIN pet_skills assignment ON assignment.player_pet_id=pet.id AND assignment.equipped=TRUE JOIN skill_definitions definition ON definition.id=assignment.skill_id AND definition.active=TRUE WHERE pet.player_id=? AND definition.code='SKILL-MINI-PET-DOG-MASTER' ORDER BY assignment.slot_no LIMIT 1 FOR UPDATE`,[owner.player_id]))[0];const skillBonusRate=Number(skill?.bonus_pct??"0")/100,baseRate=Number(grade.base_rate),charmDelta=BigInt(grade.success_charm_delta);
+      const attempts:AttemptRow[]=[],boostUsage=new Map<bigint,bigint>();let pointSpent=0n,stoneSpent=0n,succeeded=0,failed=0,stopReason="";
+      for(let index=0;index<command.count;index++){
+        if(level>=maxLevel){stopReason="max_level";break;}const targetLevel=level+1n,cost=pointPolicy(targetLevel,points),required=targetLevel;
+        if(pointBalance<cost){stopReason="insufficient_point";break;}if(stoneBalance<required){stopReason="insufficient_stone";break;}
+        const selected=baseRate+skillBonusRate<1?bestBoost(boosts,boostUsage):undefined,outcome=resolveMiniPetUpgradeAttempt({baseRate,skillBonusRate,boostRate:selected?.rate??0,random:this.random});
+        const levelBefore=level,battleBefore=battle,castleBefore=castle,raidBefore=raid;pointBalance-=cost;pointSpent+=cost;stoneBalance-=required;stoneSpent+=required;if(selected!==undefined)boostUsage.set(selected.row.item_id,(boostUsage.get(selected.row.item_id)??0n)+1n);
+        if(outcome.success){level+=1n;battle+=charmDelta;castle+=charmDelta;raid+=charmDelta;succeeded++;}else failed++;
+        attempts.push({sequence:attempts.length+1,levelBefore,levelAfter:level,battleBefore,battleAfter:battle,castleBefore,castleAfter:castle,raidBefore,raidAfter:raid,pointCost:cost,stoneRequired:required,boostItemId:selected?.row.item_id??null,...outcome});
+      }
+      if(attempts.length===0){const status=stopReason==="insufficient_point"?"insufficient_point":"insufficient_stone",data=status==="insufficient_point"?`포인트가 부족합니다. 현재 포인트: 🅟${commas(pointBalance)}`:`미니펫 강화석💫이 부족합니다. 필요 수량: ${level+1n}개`;return complete(t,{operationId:claim.insertId,eventId:input.eventId,destinationId:input.destinationId,owner,ownedId:target.id,resultCode:status,data,result:{status,requested:command.count,attempted:0,level:level.toString(),stopReason},summary:{mutation:false,stableOwnedMiniPetId:target.id.toString(),pointBalance:pointBalance.toString(),stoneBalance:stoneBalance.toString()}});}
+      const currency=await t.execute("UPDATE currency_accounts SET balance=?,version=version+1,updated_at=UTC_TIMESTAMP(3) WHERE player_id=? AND currency_code='point' AND version=?",[pointBalance.toString(),owner.player_id,account.version]);if(currency.affectedRows!==1n)throw new Error("MINI_PET_UPGRADE_CURRENCY_CONFLICT");await t.execute("INSERT INTO currency_ledger(operation_id,sequence_no,player_id,currency_code,delta,balance_after,reason_code) VALUES (?,1,?,'point',?,?,'mini_pet_upgrade')",[claim.insertId,owner.player_id,(-pointSpent).toString(),pointBalance.toString()]);
+      let remainingStone=stoneSpent,inventorySequence=1;for(const row of stones){const amount=remainingStone>BigInt(row.quantity)?BigInt(row.quantity):remainingStone;await consume(t,claim.insertId,inventorySequence++,owner.player_id,row,amount,"MINI_PET_UPGRADE_STONE");remainingStone-=amount;}if(remainingStone!==0n)throw new Error("MINI_PET_UPGRADE_STONE_DISTRIBUTION");for(const row of boosts)await consume(t,claim.insertId,inventorySequence++,owner.player_id,row,boostUsage.get(row.item_id)??0n,"MINI_PET_UPGRADE_BOOST");
+      const changed=await t.execute("UPDATE owned_mini_pets SET enhancement_level=?,battle_experience=?,castle_experience=?,raid_experience=?,version=version+1 WHERE id=? AND player_id=? AND version=?",[level,battle,castle,raid,target.id,owner.player_id,target.version]);if(changed.affectedRows!==1n)throw new Error("MINI_PET_UPGRADE_TARGET_CONFLICT");
+      for(const attempt of attempts)await t.execute(`INSERT INTO mini_pet_upgrade_attempts(operation_id,sequence_no,player_id,owned_mini_pet_id,level_before,level_after,battle_experience_before,battle_experience_after,castle_experience_before,castle_experience_after,raid_experience_before,raid_experience_after,point_cost,stone_required,boost_item_id,base_rate,skill_bonus_rate,boost_rate,effective_rate,success_roll,success,mini_pet_version_before,mini_pet_version_after) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,[claim.insertId,attempt.sequence,owner.player_id,target.id,attempt.levelBefore,attempt.levelAfter,attempt.battleBefore,attempt.battleAfter,attempt.castleBefore,attempt.castleAfter,attempt.raidBefore,attempt.raidAfter,attempt.pointCost,attempt.stoneRequired,attempt.boostItemId,fixed(attempt.baseRate),fixed(attempt.skillBonusRate),fixed(attempt.boostRate),fixed(attempt.effectiveRate),fixed(attempt.successRoll),attempt.success,target.version,target.version+1n]);
+      const label=`${target.custom_emoji??target.emoji_value??""}${target.custom_name??target.display_name}`,cap=command.capped?"최대 100회까지만 진행했습니다.\n":"",partial=stopReason?`\n중간 종료: ${stopReason}`:"",data=`${cap}미니펫 강화 완료\n대상: ${label}\n안정 ID: ${target.id}\n시도: ${attempts.length}/${command.count}회\n성공: ${succeeded}회\n실패: ${failed}회\n강화: +${target.enhancement_level} → +${level}\n사용 포인트: 🅟${commas(pointSpent)}\n사용 강화석: ${commas(stoneSpent)}개${partial}`;
+      return complete(t,{operationId:claim.insertId,eventId:input.eventId,destinationId:input.destinationId,owner,ownedId:target.id,resultCode:"applied",data,result:{status:"applied",requested:command.count,attempted:attempts.length,succeeded,failed,level:level.toString(),pointSpent:pointSpent.toString(),stoneSpent:stoneSpent.toString(),boostSpent:[...boostUsage.values()].reduce((sum,value)=>sum+Number(value),0),stopReason:stopReason||undefined},summary:{mutation:true,stableOwnedMiniPetId:target.id.toString(),sourceBagSequence:command.targetBagSequence.toString(),attempted:attempts.length,succeeded,failed,levelBefore:target.enhancement_level.toString(),levelAfter:level.toString(),battleBefore:target.battle_experience.toString(),battleAfter:battle.toString(),castleBefore:target.castle_experience.toString(),castleAfter:castle.toString(),raidBefore:target.raid_experience.toString(),raidAfter:raid.toString(),pointSpent:pointSpent.toString(),stoneSpent:stoneSpent.toString(),boostSpent:[...boostUsage.entries()].map(([itemId,quantity])=>({itemId:itemId.toString(),quantity:quantity.toString()})),versionBefore:target.version.toString(),versionAfter:(target.version+1n).toString()}});
+    });
+  }
+}

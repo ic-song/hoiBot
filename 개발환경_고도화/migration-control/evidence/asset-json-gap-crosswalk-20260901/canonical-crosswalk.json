@@ -1,0 +1,272 @@
+{
+  "freezeId": "CATALOG-BATCH-ASSET-OPERATING-JSON-GAP-CROSSWALK-01",
+  "executionId": "개발자-CATALOG-BATCH-ASSET-OPERATING-JSON-GAP-CROSSWALK-01-202609010259",
+  "sourceOverlay": "ASSET-FREEZE-v2.435-OPERATING-JSON-DELTA-20260901-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "classificationRevision": "2e9d118e787e0eb1780be87b1e7426fa2b2137bc",
+  "scope": "READ_ONLY_CLASSIFICATION",
+  "gate8": false,
+  "sourceHashes": {
+    "itemList.json": "b6f4751f2faf7588c2e41c032bac4fc5b05ff6bd2c105ea0c57a0e072c60c402",
+    "miniPetCollectionInfo.json": "3dadafd107bb82480d6d5218f98af2a31d0037af7c15b5fecaf8d3c62b9a4e39",
+    "hoiBotChangeLog.json": "dc530a997ccc6575fa9792b9726eab9d4fadd2ac774559f9fc946d05c0e44fb8",
+    "packageInfo.json": "4d2072a8e829391cb2ad546ca9ba37d7081c677bdb9e2dedbc7e08e12697e7dc",
+    "petSweetHomeInfo.json": "726385f7c9b9aed94bcb62c2eb6f9267e32d6a90a4216b50175cdfded878744b",
+    "trialTowerBoss.json": "363b92ed5a74c41e08fbf9f854a8eb7c008c45bb87cd27989dc30bf5d0eccb14",
+    "eventTowerBoss.json": "b5661ba8572db6bb24d2ac10121281149dd3a2fefe932edd78af0983e625abbf",
+    "petExploreData.json": "5fd232c3840eb2a6b9628e703f505a9a1f98becd265c70b0914d524a3e4ba7f7"
+  },
+  "areas": {
+    "A": {
+      "source": "data/itemList.json",
+      "domain": "item restriction policy",
+      "counts": {
+        "nonItemsRows": 674,
+        "nonItemsUnique": 670,
+        "nonItemsDuplicateNames": 4,
+        "untradableRows": 504,
+        "untradableUnique": 503,
+        "untradableDuplicateNames": 1
+      },
+      "duplicateNames": {
+        "nonItems": [
+          "로켓배송패키지🚀[4](/호팡오픈4)",
+          "정령강화확률UP🥀(90%)",
+          "정령강화확률UP🥀(100%)",
+          "미니펫강화확률UP🐷(90%)"
+        ],
+        "untradableList": [
+          "초보자 스타터패키지🎁[17](/초보오픈17)"
+        ]
+      },
+      "observableSemantics": [
+        "list output preserves source row count and order",
+        "add rejects an already-present display name",
+        "remove deletes only the first matching occurrence, so a duplicate remains restricted after one removal"
+      ],
+      "canonicalDirection": "immutable policy version plus ordered occurrence rows that allow duplicate display names",
+      "carryForward": [
+        "SL-MARKET-CARROT-BAN-LIST-READ",
+        "SL-MARKET-CARROT-BAN-LIST-ADD",
+        "SL-MARKET-CARROT-BAN-LIST-REMOVE",
+        "item_restrictions CRUD evidence"
+      ],
+      "blocker": "the existing UNIQUE(restriction_kind,display_name) projection cannot represent current duplicate occurrence semantics"
+    },
+    "B": {
+      "source": "data/packageInfo.json",
+      "domain": "package catalog and reward targets",
+      "counts": {
+        "packages": 107,
+        "rewardRows": 557,
+        "rewardTypes": ["item"],
+        "uniqueRewardDisplayNames": 79,
+        "duplicateIds": 0,
+        "duplicateNames": 0,
+        "disabledPackages": 0,
+        "emptyRewardPackages": 0
+      },
+      "identity": {
+        "sourceIdNamespace": "package_*",
+        "canonicalIdNamespace": "PKG-*",
+        "inventoryKey": "itemName || name",
+        "displayOrder": "JSON array position"
+      },
+      "targetClassification": {
+        "migrationTextMatchedCandidates": 56,
+        "migrationTextMissingCandidates": 23,
+        "missingCandidateTypes": {
+          "nestedPackageDisplayNames": 21,
+          "stackItemDisplayNames": ["펜던트 복원석🔷"],
+          "commandShapedItemDisplayNames": ["아니 아이스아메리카노 주세요 ㅡㅡ(/아아 숫자)"]
+        }
+      },
+      "observableSemantics": [
+        "remove splices the source array and shifts later list numbers",
+        "reward item display names can themselves be nested package inventory keys",
+        "packageInfo.maxUseOnce is inert for use validation; GLOBAL_CONFIG.package.maxUseOnce is the active limit"
+      ],
+      "canonicalDirection": "sourceId and sourceOrder binding to existing package_catalog, with each reward target classified as STACK item or nested PACKAGE before canonical linking",
+      "carryForward": [
+        "SL-COMMON-ASSET-CATALOG-PACKAGE-ADAPTER-01",
+        "SL-COMMON-ASSET-CATALOG-PACKAGE-REWARD-GAP-01",
+        "existing package admin/provider Gate 1 through Gate 7"
+      ],
+      "stopConditions": [
+        "do not calculate a simple 107 minus 60 gap",
+        "do not merge by display name",
+        "do not flatten nested PACKAGE rewards into new STACK item identities"
+      ]
+    },
+    "C": {
+      "source": "data/petSweetHomeInfo.json#furniture",
+      "domain": "furniture definition, grade probability and draw pool",
+      "counts": {
+        "baselineSourceRows": 1551,
+        "currentSourceRows": 2447,
+        "sourceRowDelta": 896,
+        "baselineLogicalNames": 517,
+        "currentLogicalNames": 538,
+        "addedLogicalNames": 21,
+        "removedLogicalNames": 0,
+        "nameMultiplicityChanged": 86,
+        "baselineRowSignatureDefinitions": 1533,
+        "currentRowSignatureDefinitions": 2422,
+        "addedRowSignatures": 978,
+        "removedRowSignatures": 89,
+        "baselineGrades": 6,
+        "currentGrades": 7
+      },
+      "newGrade": {
+        "grade": "아르카나 루미에르",
+        "rate": "0.0000065"
+      },
+      "observableSemantics": [
+        "buildGradeRates uses only the first source row rate for each grade",
+        "grade is selected first",
+        "a source row is then selected uniformly inside that grade",
+        "duplicate source rows therefore act as draw weight occurrences"
+      ],
+      "canonicalDirection": "versioned furniture definitions plus ordered grade probability rows plus ordered draw-pool occurrence rows referencing definitions",
+      "carryForward": [
+        "SL-ASSET-FURNITURE-OBJECT-CATALOG-LINK-01",
+        "migration398 object, alias and source binding evidence"
+      ],
+      "stopConditions": [
+        "never DISTINCT source rows",
+        "never merge by name only",
+        "preserve the first-row-per-grade probability rule"
+      ]
+    },
+    "D": {
+      "source": "data/petSweetHomeInfo.json#homeInfo",
+      "domain": "home building definition and required-item recipe policy",
+      "counts": {
+        "sourceRows": 300,
+        "canonicalDefinitions": 299,
+        "requiredChangedRows": 299,
+        "experienceChangedRows": 0,
+        "uniqueRequiredItemNames": 10
+      },
+      "duplicateFloors": {
+        "190": "two different definitions; the first source row wins runtime lookup",
+        "263": "two exact duplicate source rows; the first source row wins runtime lookup"
+      },
+      "newRequiredItemDependencies": [
+        {
+          "displayName": "철근⛓️",
+          "occurrences": 300,
+          "counts": [20, 30, 50, 100]
+        },
+        {
+          "displayName": "목재🌳",
+          "occurrences": 300,
+          "counts": [10, 20, 30, 40, 60, 100]
+        }
+      ],
+      "observableSemantics": [
+        "findHomeInfoByFloor and getNextHomeInfoByFloor return the first matching source row"
+      ],
+      "canonicalDirection": "carry forward 299 definitions and 300 ordered progression rows, then attach a new immutable required-item policy version",
+      "carryForward": [
+        "SL-ASSET-HOME-BUILDING-DEFINITION-CATALOG-01",
+        "migration393 through migration395 evidence"
+      ],
+      "blocker": "철근⛓️ and 목재🌳 need canonical STACK item definitions and object links before recipe targets can be linked"
+    },
+    "E": {
+      "sources": ["data/trialTowerBoss.json", "data/eventTowerBoss.json"],
+      "domain": "ordered tower boss identity and reward policy",
+      "counts": {
+        "trialBossIdentities": 120,
+        "trialRewardTargetSequenceChanged": 120,
+        "trialAddedTargetOccurrences": 238,
+        "trialRemovedTargetOccurrences": 242,
+        "eventBossIdentities": 7,
+        "eventRewardChanged": 1,
+        "eventFloorListChanged": 0,
+        "currentUniqueRewardTargets": 24
+      },
+      "eventRewardReplacement": {
+        "boss": "🧙‍♂️할법사",
+        "before": {"item": "마정석🔮", "quantity": 100},
+        "after": {"item": "펫스킬북 조각📙", "quantity": 3}
+      },
+      "newItemDependencies": [
+        "신입지원금",
+        "펫타이틀권🦊(/펫타이틀이름)"
+      ],
+      "observableSemantics": [
+        "eventTowerBoss is searched in source order before trialTowerBoss",
+        "trialTowerBoss uses first matching range",
+        "신입지원금 is added to member.bag as a normal item key"
+      ],
+      "canonicalDirection": "keep boss identity, ranges and ordered precedence; replace the complete reward policy with a new immutable version",
+      "carryForward": [
+        "existing tower definition and consumer Gate 1 through Gate 7 evidence"
+      ],
+      "stopConditions": [
+        "do not implement this as a quantity-only patch",
+        "do not reorder overlapping ranges or event precedence"
+      ]
+    },
+    "F": {
+      "source": "data/miniPetCollectionInfo.json",
+      "domain": "mini-pet collection reward policy",
+      "counts": {
+        "gradeRewards": 8,
+        "stageRewards": 100,
+        "titleDefinitions": 100
+      },
+      "rewardTarget": {
+        "displayName": "펫먹이🍼",
+        "definitionCode": "pet_food",
+        "objectKey": "item.direct_bag.3076ae479a9eb44e",
+        "ownershipModel": "STACK"
+      },
+      "canonicalDirection": "domain-specific policy version with grade reward and stage reward child rows linked to the existing pet-food item; title definitions remain separate",
+      "carryForward": [
+        "existing mini-pet title definition catalog",
+        "existing title ownership link",
+        "existing pet-food item and object catalog"
+      ]
+    },
+    "G": {
+      "source": "data/petExploreData.json#notice",
+      "domain": "managed operation notice",
+      "counts": {"noticeValues": 1},
+      "canonicalDirection": "managed content/configuration record linked to the operation notice mutation provider",
+      "dependency": {
+        "activeLease": 2454,
+        "sliceId": "SL-PET-EXPLORE-GUILD-RAID-EVENT-CONTROL-01",
+        "rule": "no implementation or WBS mutation until Lease2454 is released and overlap is rechecked"
+      },
+      "carryForward": ["SL-OPERATION-NOTICE-MUTATE mapping history"]
+    },
+    "H": {
+      "source": "data/hoiBotChangeLog.json#entries",
+      "domain": "developer note managed content",
+      "counts": {
+        "entries": 325,
+        "changeRows": 499,
+        "duplicateVersions": 0
+      },
+      "canonicalDirection": "seed an immutable source snapshot into existing developer_note_entries and developer_note_changes, then add audited admin CRUD with draft/published or deployment binding",
+      "carryForward": [
+        "migration252 developer note schema",
+        "ADMIN_DEVELOPER_NOTE_READ service and Gate 1 through Gate 7 evidence"
+      ],
+      "invariant": "web CRUD must not make the published latest developer-note version disagree with the deployed main.js HoiBotVersion"
+    }
+  },
+  "forbiddenDuringFreeze": [
+    "schema changes",
+    "provider changes",
+    "migration changes",
+    "runtime or legacy changes",
+    "data JSON changes",
+    "feature/prod changes",
+    "operational database changes",
+    "Gate mutation"
+  ]
+}

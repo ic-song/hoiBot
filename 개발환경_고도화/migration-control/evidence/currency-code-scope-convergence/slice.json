@@ -1,0 +1,52 @@
+{
+  "sliceId": "SL-COMMON-CURRENCY-CODE-SCOPE-CONVERGENCE-01",
+  "executionId": "개발자-SL-COMMON-CURRENCY-CODE-SCOPE-CONVERGENCE-01-20260831T0455",
+  "wbs": 647,
+  "dbRow": 1925,
+  "lease": 2393,
+  "baseline": "3488e33222a97c7f2fac0840d7d0eb67ddae275d",
+  "scope": {
+    "resolverMatrix": 10,
+    "providerBindings": 4,
+    "playerPointResolution": "POINT -> point",
+    "guildPointResolution": "POINT -> guild_fund",
+    "packageResidueResolution": "ITEM-RWD-011 -> point",
+    "globalPointAliasCreated": false,
+    "inactiveResidueDeleted": false,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "objectChanges": 0,
+    "mainJsChanges": 0,
+    "uiChanges": 0,
+    "operationalDbTouched": false
+  },
+  "hashes": {
+    "resolverMatrixSha256": "6855602b5972e2abe95546673314886bd18f570dd862fcd2be1b170597aea598",
+    "currencyDefinitionSnapshotSha256": "20f4f8c54e9e9986eab67c7a6303be0267aa7f234b8570da04570c7c556a9f5d",
+    "packageBoundarySha256": "775a8f4118dd8206640ccdf666b330d119294bce7b79cf1bbd1bf0c466856d01"
+  },
+  "carryForward": [
+    "CATALOG-BATCH-ASSET-CURRENCY-DEFINITION-ACCOUNT-FREEZE-01 Lease2390",
+    "SL-ASSET-CURRENCY-DEFINITION-SNAPSHOT-FREEZE-01 Lease2392 commit 3488e332",
+    "SL-PACKAGE-CANONICAL-ITEM-DUAL-CONSUMER-PARITY-01 Lease2388"
+  ],
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaNormalReplayIdempotencyRollbackReconnect": "PASS",
+    "defaultFullRegression": "PASS",
+    "providerShadow": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "sheetsEdited": false
+}

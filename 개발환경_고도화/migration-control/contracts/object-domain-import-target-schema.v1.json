@@ -1,0 +1,1704 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-object-domain-import-target-schema-v1",
+  "derivedTablesExcluded": [
+    "object_furniture_active_market_listings"
+  ],
+  "auditColumnsExcluded": [
+    "INSERT_USER",
+    "INSERT_TIME",
+    "UPDATE_USER",
+    "UPDATE_TIME"
+  ],
+  "tableCount": 45,
+  "columnCount": 241,
+  "columns": [
+    {
+      "table": "canonical_building_craft_recipes",
+      "column": "building_craft_recipe_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_building_craft_recipes",
+      "column": "building_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_building_craft_recipes",
+      "column": "craft_recipe_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_building_definitions",
+      "column": "building_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_building_definitions",
+      "column": "building_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_building_definitions",
+      "column": "floor_value",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_building_definitions",
+      "column": "experience_required",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_building_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_inputs",
+      "column": "craft_recipe_currency_input_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_inputs",
+      "column": "craft_recipe_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_inputs",
+      "column": "currency_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_inputs",
+      "column": "amount_minor",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_outputs",
+      "column": "craft_recipe_currency_output_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_outputs",
+      "column": "craft_recipe_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_outputs",
+      "column": "currency_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_currency_outputs",
+      "column": "amount_minor",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_definitions",
+      "column": "craft_recipe_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_definitions",
+      "column": "craft_recipe_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_definitions",
+      "column": "craft_recipe_kind",
+      "sqlType": "VARCHAR(50)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_definitions",
+      "column": "maximum_batch_count",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_inputs",
+      "column": "craft_recipe_item_input_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_inputs",
+      "column": "craft_recipe_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_inputs",
+      "column": "item_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_inputs",
+      "column": "quantity",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_outputs",
+      "column": "craft_recipe_item_output_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_outputs",
+      "column": "craft_recipe_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_outputs",
+      "column": "item_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_craft_recipe_item_outputs",
+      "column": "quantity",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "453_canonical_building_recipe.sql"
+    },
+    {
+      "table": "canonical_currency_definitions",
+      "column": "currency_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_definitions",
+      "column": "currency_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_definitions",
+      "column": "decimal_places",
+      "sqlType": "TINYINT UNSIGNED",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_ledger_entries",
+      "column": "currency_ledger_entry_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_ledger_entries",
+      "column": "currency_operation_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_ledger_entries",
+      "column": "player_currency_balance_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_ledger_entries",
+      "column": "sequence_number",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_ledger_entries",
+      "column": "delta_minor_amount",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_ledger_entries",
+      "column": "balance_after_minor_amount",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "currency_operation_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "currency_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "player_currency_balance_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "request_key",
+      "sqlType": "VARCHAR(182)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "operation_kind",
+      "sqlType": "VARCHAR(50)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "reason_key",
+      "sqlType": "VARCHAR(100)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "payload_fingerprint",
+      "sqlType": "CHAR(64)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "delta_minor_amount",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "balance_after_minor_amount",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_currency_operations",
+      "column": "operation_status",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "equipment_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "equipment_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "equipment_description",
+      "sqlType": "TEXT",
+      "nullable": true,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "equipment_slot",
+      "sqlType": "VARCHAR(50)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "equipment_grade",
+      "sqlType": "VARCHAR(50)",
+      "nullable": true,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "base_charm",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "charm_per_enhancement",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_equipment_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "item_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "item_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "item_description",
+      "sqlType": "TEXT",
+      "nullable": true,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "item_kind",
+      "sqlType": "VARCHAR(50)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "item_grade",
+      "sqlType": "VARCHAR(50)",
+      "nullable": true,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "price_amount",
+      "sqlType": "DECIMAL(30,3)",
+      "nullable": true,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "price_currency_source_identifier",
+      "sqlType": "VARCHAR(191)",
+      "nullable": true,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "stackable_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_item_definitions",
+      "column": "definition_options",
+      "sqlType": "JSON",
+      "nullable": true,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_member_title_definitions",
+      "column": "member_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_member_title_definitions",
+      "column": "title_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_member_title_definitions",
+      "column": "base_sale_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_member_title_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_member_title_selections",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_member_title_selections",
+      "column": "owned_member_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "mini_pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "mini_pet_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "mini_pet_emoji",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "mini_pet_grade",
+      "sqlType": "VARCHAR(50)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "sale_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": true,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "base_battle_charm",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "base_castle_charm",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "base_raid_charm",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "max_enhancement_level",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "mini_pet_enhancement_rule_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "mini_pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "target_enhancement_level",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "battle_charm_gain",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "castle_charm_gain",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "raid_charm_gain",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "success_probability",
+      "sqlType": "DECIMAL(12,10)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "point_cost",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_enhancement_rules",
+      "column": "stone_quantity",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_mini_pet_title_definitions",
+      "column": "mini_pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_mini_pet_title_definitions",
+      "column": "title_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_mini_pet_title_definitions",
+      "column": "base_sale_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_mini_pet_title_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_mini_pet_title_selections",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_mini_pet_title_selections",
+      "column": "owned_mini_pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_equipment_instances",
+      "column": "owned_equipment_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_equipment_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_equipment_instances",
+      "column": "equipment_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_equipment_instances",
+      "column": "custom_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": true,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_equipment_instances",
+      "column": "enhancement_level",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_equipment_instances",
+      "column": "durability_amount",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": true,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_equipment_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_item_instances",
+      "column": "owned_item_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_instances",
+      "column": "item_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_instances",
+      "column": "instance_options",
+      "sqlType": "JSON",
+      "nullable": true,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_stacks",
+      "column": "owned_item_stack_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_stacks",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_stacks",
+      "column": "item_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_item_stacks",
+      "column": "quantity",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_owned_member_title_instances",
+      "column": "owned_member_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_member_title_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_member_title_instances",
+      "column": "member_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_member_title_instances",
+      "column": "acquisition_sequence",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_member_title_instances",
+      "column": "acquired_time",
+      "sqlType": "CHAR(19)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_member_title_instances",
+      "column": "acquisition_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": true,
+      "migration": "455_title_instance_acquisition_price.sql"
+    },
+    {
+      "table": "canonical_owned_member_title_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(16)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "owned_mini_pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "mini_pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "custom_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": true,
+      "migration": "456_owned_object_state_hardening.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "custom_emoji",
+      "sqlType": "VARCHAR(32)",
+      "nullable": true,
+      "migration": "456_owned_object_state_hardening.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "enhancement_level",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "equipped_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "bound_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "447_canonical_mini_pet.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_title_instances",
+      "column": "owned_mini_pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_title_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_title_instances",
+      "column": "mini_pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_title_instances",
+      "column": "acquisition_sequence",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_title_instances",
+      "column": "acquired_time",
+      "sqlType": "CHAR(19)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_title_instances",
+      "column": "acquisition_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": true,
+      "migration": "455_title_instance_acquisition_price.sql"
+    },
+    {
+      "table": "canonical_owned_mini_pet_title_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(16)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_pet_equipment",
+      "column": "owned_pet_equipment_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_equipment",
+      "column": "owned_pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_equipment",
+      "column": "owned_equipment_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_equipment",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_equipment",
+      "column": "equipment_slot",
+      "sqlType": "VARCHAR(50)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_instances",
+      "column": "owned_pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_instances",
+      "column": "pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_instances",
+      "column": "custom_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": true,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_instances",
+      "column": "enhancement_level",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_instances",
+      "column": "experience_amount",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_equipments",
+      "column": "owned_pet_skill_equipment_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_equipments",
+      "column": "owned_pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_equipments",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_equipments",
+      "column": "pet_skill_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_equipments",
+      "column": "slot_number",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_stacks",
+      "column": "owned_pet_skill_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_stacks",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_stacks",
+      "column": "pet_skill_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_skill_stacks",
+      "column": "quantity",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_owned_pet_title_instances",
+      "column": "owned_pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_pet_title_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_pet_title_instances",
+      "column": "pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_pet_title_instances",
+      "column": "acquisition_sequence",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_pet_title_instances",
+      "column": "acquired_time",
+      "sqlType": "CHAR(19)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_owned_pet_title_instances",
+      "column": "acquisition_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": true,
+      "migration": "455_title_instance_acquisition_price.sql"
+    },
+    {
+      "table": "canonical_owned_pet_title_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(16)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_package_definitions",
+      "column": "package_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_definitions",
+      "column": "package_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_definitions",
+      "column": "package_description",
+      "sqlType": "TEXT",
+      "nullable": true,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_definitions",
+      "column": "max_open_quantity",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_item_rewards",
+      "column": "package_reward_entry_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_item_rewards",
+      "column": "item_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_item_rewards",
+      "column": "quantity",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_item_rewards",
+      "column": "probability",
+      "sqlType": "DECIMAL(12,10)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_nested_rewards",
+      "column": "package_reward_entry_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_nested_rewards",
+      "column": "package_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_nested_rewards",
+      "column": "quantity",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_nested_rewards",
+      "column": "probability",
+      "sqlType": "DECIMAL(12,10)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_entries",
+      "column": "package_reward_entry_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_entries",
+      "column": "package_reward_group_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_entries",
+      "column": "reward_order",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_entries",
+      "column": "target_kind",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_groups",
+      "column": "package_reward_group_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_groups",
+      "column": "package_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_groups",
+      "column": "selection_mode",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_groups",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "package_reward_quarantine_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "package_reward_entry_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "package_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "source_reward_identifier",
+      "sqlType": "VARCHAR(191)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "target_kind",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "target_source_identifier",
+      "sqlType": "VARCHAR(191)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "target_display_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "quarantine_reason",
+      "sqlType": "VARCHAR(100)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_package_reward_quarantines",
+      "column": "quarantine_status",
+      "sqlType": "VARCHAR(32)",
+      "nullable": false,
+      "migration": "451_canonical_package_reward.sql"
+    },
+    {
+      "table": "canonical_pet_definitions",
+      "column": "pet_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_pet_definitions",
+      "column": "pet_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_pet_definitions",
+      "column": "pet_description",
+      "sqlType": "TEXT",
+      "nullable": true,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_pet_definitions",
+      "column": "pet_grade",
+      "sqlType": "VARCHAR(50)",
+      "nullable": true,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_pet_definitions",
+      "column": "base_charm",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_pet_definitions",
+      "column": "charm_per_enhancement",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_pet_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "446_canonical_pet_equipment.sql"
+    },
+    {
+      "table": "canonical_pet_skill_definitions",
+      "column": "pet_skill_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_pet_skill_definitions",
+      "column": "pet_skill_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_pet_skill_definitions",
+      "column": "pet_skill_description",
+      "sqlType": "TEXT",
+      "nullable": true,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_pet_skill_definitions",
+      "column": "pet_skill_grade",
+      "sqlType": "VARCHAR(50)",
+      "nullable": true,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_pet_skill_definitions",
+      "column": "handler_key",
+      "sqlType": "VARCHAR(100)",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_pet_skill_definitions",
+      "column": "options_json",
+      "sqlType": "JSON",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_pet_skill_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "449_canonical_pet_skill.sql"
+    },
+    {
+      "table": "canonical_pet_title_definitions",
+      "column": "pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_pet_title_definitions",
+      "column": "title_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_pet_title_definitions",
+      "column": "base_sale_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_pet_title_definitions",
+      "column": "active_flag",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_pet_title_selections",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_pet_title_selections",
+      "column": "owned_pet_title_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "448_canonical_title_domains.sql"
+    },
+    {
+      "table": "canonical_player_currency_balances",
+      "column": "player_currency_balance_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_player_currency_balances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_player_currency_balances",
+      "column": "currency_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_player_currency_balances",
+      "column": "balance_minor_amount",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "452_canonical_currency_ledger.sql"
+    },
+    {
+      "table": "canonical_players",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_players",
+      "column": "source_system",
+      "sqlType": "VARCHAR(50)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "canonical_players",
+      "column": "source_identifier",
+      "sqlType": "VARCHAR(191)",
+      "nullable": false,
+      "migration": "444_canonical_item_inventory.sql"
+    },
+    {
+      "table": "object_furniture_definitions",
+      "column": "furniture_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_definitions",
+      "column": "display_name",
+      "sqlType": "VARCHAR(255)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_definitions",
+      "column": "purchase_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_definitions",
+      "column": "base_charm",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_definitions",
+      "column": "charm_per_enhancement",
+      "sqlType": "BIGINT",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_definitions",
+      "column": "active",
+      "sqlType": "BOOLEAN",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_market_listings",
+      "column": "furniture_market_listing_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_market_listings",
+      "column": "owned_furniture_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_market_listings",
+      "column": "listing_price",
+      "sqlType": "BIGINT UNSIGNED",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_furniture_market_listings",
+      "column": "listing_status",
+      "sqlType": "VARCHAR(20)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_home_furniture_placements",
+      "column": "home_furniture_placement_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_home_furniture_placements",
+      "column": "owned_furniture_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_home_furniture_placements",
+      "column": "placement_order",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_owned_furniture_instances",
+      "column": "owned_furniture_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_owned_furniture_instances",
+      "column": "player_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_owned_furniture_instances",
+      "column": "furniture_id",
+      "sqlType": "CHAR(8)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_owned_furniture_instances",
+      "column": "enhancement_level",
+      "sqlType": "INT UNSIGNED",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    },
+    {
+      "table": "object_owned_furniture_instances",
+      "column": "ownership_status",
+      "sqlType": "VARCHAR(20)",
+      "nullable": false,
+      "migration": "445_object_furniture_home_canonical_model.sql"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "fixtureVersion": "canonical-item-inventory-seed-v1",
+  "purpose": "definition seed and user ownership import are deliberately separate",
+  "definitionSeeds": [
+    {
+      "sourceSystem": "LEGACY_JSON",
+      "sourceNamespace": "member.bag",
+      "sourceIdentifier": "다이아상자💎(/다이아상자오픈)",
+      "itemName": "다이아상자💎(/다이아상자오픈)",
+      "itemKind": "BOX",
+      "stackable": true
+    }
+  ],
+  "ownershipImports": [
+    {
+      "sourceSystem": "LEGACY_JSON",
+      "sourceIdentifier": "synthetic-player-1",
+      "itemSourceIdentifier": "다이아상자💎(/다이아상자오픈)",
+      "quantity": "2"
+    }
+  ],
+  "rules": [
+    "definition seeds run before ownership imports",
+    "sourceIdentifier and itemName preserve original Unicode, emoji, whitespace, and command guide text",
+    "unresolved source rows are quarantined instead of merged by display name"
+  ]
+}

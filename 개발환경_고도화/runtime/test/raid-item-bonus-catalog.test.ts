@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import test from "node:test";
+import { assertRaidItemBonusCatalog, type RaidItemBonusRecord } from "../src/catalog/raid-item-bonus-catalog.js";
+import { MariaRaidItemBonusRepository } from "../src/catalog/maria-raid-item-bonus-repository.js";
+const fixture=JSON.parse(fs.readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/iteminfo-raid-definitions-v1.json",import.meta.url),"utf8")) as {rows:RaidItemBonusRecord[]};
+test("raid catalog preserves dept1 eight and dept2 one",()=>{assert.deepEqual(assertRaidItemBonusCatalog(fixture.rows),{rows:9,dept1:8,dept2:1,reusedCanonical:1});});
+test("existing exact legacy raid seal keeps ITEM-RWD-043",()=>{const reused=fixture.rows.filter((row)=>row.reusedCanonical===true);assert.equal(reused.length,1);assert.equal(reused[0]?.itemCode,"ITEM-RWD-043");});
+test("source identity includes department",()=>{assert.equal(new Set(fixture.rows.map((row)=>row.department+"/"+row.sourceKey)).size,9);});
+test("catalog rejects duplicate department source",()=>{const rows=fixture.rows.map((row)=>({...row}));const first=rows[0];const second=rows[8];assert.ok(first!==undefined&&second!==undefined);rows[8]={...second,department:first.department,sourceKey:first.sourceKey};assert.throws(()=>assertRaidItemBonusCatalog(rows),/duplicate sourceIdentity/);});
+test("Maria repository uses active canonical joins and explicit composite source",async()=>{const statements:Array<{sql:string;params?:readonly unknown[]}>=[];const db={query:async<T>(sql:string,params?:readonly unknown[]):Promise<T>=>{statements.push({sql,params});return[] as T;}};const repo=new MariaRaidItemBonusRepository(db as never);await repo.listActive();await repo.findBySource("dept2","item_0");const list=statements[0];const find=statements[1];assert.ok(list!==undefined&&find!==undefined);assert.match(list.sql,/registry\.active=TRUE/);assert.match(list.sql,/ORDER BY bonus\.display_order/);assert.match(find.sql,/bonus\.department_code=\?/);assert.deepEqual(find.params,["dept2","item_0"]);});

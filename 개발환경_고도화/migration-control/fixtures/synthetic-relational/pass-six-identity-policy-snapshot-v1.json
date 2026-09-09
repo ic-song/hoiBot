@@ -1,0 +1,370 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-PASS-SIX-IDENTITY-POLICY-SNAPSHOT-01",
+  "executionId": "개발자-SL-PASS-SIX-IDENTITY-POLICY-SNAPSHOT-01-20260831T0740",
+  "wbs": 663,
+  "dbRow": 1941,
+  "lease": 2409,
+  "baseline": "283207277f464a7c0788e29857755d14770b6ed9",
+  "migrationChanges": 0,
+  "policyVersion": "PASS-SIX-v1-cdfd62d5a8f38662",
+  "policySha256": "cdfd62d5a8f38662132a63dfa9dc90d6c43f9928500e604079e255e92cd4f8c9",
+  "counts": {
+    "semanticIdentities": 6,
+    "commandNames": 7,
+    "newbieAliases": 2,
+    "currentDefinitions": 3,
+    "contributionRewards": 3,
+    "diamondRewards": 1,
+    "hoiRewards": 16,
+    "newbieRewards": 13,
+    "onedayRewards": 2,
+    "premiumRewards": 18,
+    "unifiedRewards": 51,
+    "exactDuplicateOneDaySeeds": 1,
+    "gaps": 0,
+    "duplicates": 1,
+    "conflicts": 0
+  },
+  "policy": {
+    "semanticIdentities": [
+      {
+        "semanticCode": "contribution",
+        "displayName": "길드공헌패스🎖️",
+        "commandNames": [
+          "공헌패스"
+        ],
+        "currentDefinitionCode": "contribution",
+        "ownershipModel": "player_support_passes"
+      },
+      {
+        "semanticCode": "diamond",
+        "displayName": "다이아패스💎",
+        "commandNames": [
+          "다이아패스"
+        ],
+        "currentDefinitionCode": "diamond",
+        "ownershipModel": "player_support_passes"
+      },
+      {
+        "semanticCode": "hoi",
+        "displayName": "호이패스🐶",
+        "commandNames": [
+          "호이패스"
+        ],
+        "currentDefinitionCode": null,
+        "ownershipModel": "player_passes",
+        "canonicalPlayerPassCode": "support"
+      },
+      {
+        "semanticCode": "newbie",
+        "displayName": "초보패스🐥",
+        "commandNames": [
+          "초보",
+          "초보패스"
+        ],
+        "currentDefinitionCode": null,
+        "ownershipModel": "player_passes",
+        "canonicalPlayerPassCode": "beginner"
+      },
+      {
+        "semanticCode": "oneday",
+        "displayName": "원데이패스🎲",
+        "commandNames": [
+          "원데이패스"
+        ],
+        "currentDefinitionCode": "oneday",
+        "ownershipModel": "player_support_passes"
+      },
+      {
+        "semanticCode": "premium",
+        "displayName": "호이패스 프리미엄👑",
+        "commandNames": [
+          "호패프리미엄"
+        ],
+        "currentDefinitionCode": null,
+        "ownershipModel": "player_passes",
+        "canonicalPlayerPassCode": "premium"
+      }
+    ],
+    "currentDefinitions": [
+      "contribution",
+      "diamond",
+      "oneday"
+    ],
+    "codeContracts": [
+      {
+        "legacyCode": "hoi",
+        "canonicalCode": "support"
+      },
+      {
+        "legacyCode": "newbie",
+        "canonicalCode": "beginner"
+      },
+      {
+        "legacyCode": "premium",
+        "canonicalCode": "premium"
+      }
+    ],
+    "rewardPolicies": {
+      "contribution": [
+        {
+          "name": "길드공헌훈장🌟(/길드공헌 숫자)",
+          "count": 3
+        },
+        {
+          "name": "길드창고패키지🧳(/길드창고패키지오픈)",
+          "count": 1
+        },
+        {
+          "name": "길드영지 부스터🔮(/길드부스터공헌 숫자)",
+          "count": 1
+        }
+      ],
+      "diamond": [
+        {
+          "name": "다이아상자💎(/다이아상자오픈)",
+          "count": 20
+        }
+      ],
+      "hoi": [
+        {
+          "name": "자동탐험권🌄",
+          "count": 1
+        },
+        {
+          "name": "미니펫뽑기🐹(/미니펫오픈)",
+          "count": 2
+        },
+        {
+          "name": "강화확률뽑기⚒️(/강화뽑기)",
+          "count": 1
+        },
+        {
+          "name": "럭키박스🍀(/럭키오픈)",
+          "count": 2
+        },
+        {
+          "name": "미니펫대전리셋권🐹",
+          "count": 2
+        },
+        {
+          "name": "펫먹이🍼",
+          "count": 100
+        },
+        {
+          "name": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+          "count": 2
+        },
+        {
+          "name": "펜던트 강화석📿",
+          "count": 1
+        },
+        {
+          "name": "펫 강화석⭐",
+          "count": 100
+        },
+        {
+          "name": "미니펫 강화석💫",
+          "count": 10
+        },
+        {
+          "name": "잡템☠️",
+          "count": 10
+        },
+        {
+          "name": "양념치킨🐔",
+          "count": 5
+        },
+        {
+          "name": "캐슬대전리셋권🐶",
+          "count": 2
+        },
+        {
+          "name": "티어 승급티켓🎟",
+          "count": 2
+        },
+        {
+          "name": "펫먹이특식🥡(/특식오픈)",
+          "count": 1
+        },
+        {
+          "name": "다이아상자💎(/다이아상자오픈)",
+          "count": 1
+        }
+      ],
+      "newbie": [
+        {
+          "name": "자동탐험권🌄",
+          "count": 1
+        },
+        {
+          "name": "미니펫뽑기🐹(/미니펫오픈)",
+          "count": 5
+        },
+        {
+          "name": "미니펫대전리셋권🐹",
+          "count": 5
+        },
+        {
+          "name": "펫먹이🍼",
+          "count": 100
+        },
+        {
+          "name": "펜던트 강화석📿",
+          "count": 1
+        },
+        {
+          "name": "미니펫 강화석💫",
+          "count": 10
+        },
+        {
+          "name": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+          "count": 2
+        },
+        {
+          "name": "펫 강화석⭐",
+          "count": 100
+        },
+        {
+          "name": "잡템☠️",
+          "count": 20
+        },
+        {
+          "name": "양념치킨🐔",
+          "count": 5
+        },
+        {
+          "name": "티어 승급티켓🎟",
+          "count": 5
+        },
+        {
+          "name": "캐슬대전리셋권🐶",
+          "count": 5
+        },
+        {
+          "name": "다이아상자💎(/다이아상자오픈)",
+          "count": 1
+        }
+      ],
+      "premium": [
+        {
+          "name": "홈뱃지 큐브💟",
+          "count": 1
+        },
+        {
+          "name": "펜던트뽑기💎(/펜던트오픈)",
+          "count": 10
+        },
+        {
+          "name": "미니펫뽑기🐹(/미니펫오픈)",
+          "count": 100
+        },
+        {
+          "name": "펫스윗홈인테리어샵🖼️(/샵오픈)",
+          "count": 100
+        },
+        {
+          "name": "자동탐험권🌄",
+          "count": 1
+        },
+        {
+          "name": "펫먹이🍼",
+          "count": 200
+        },
+        {
+          "name": "미니펫대전리셋권🐹",
+          "count": 4
+        },
+        {
+          "name": "펜던트 강화석📿",
+          "count": 2
+        },
+        {
+          "name": "미니펫 강화석💫",
+          "count": 20
+        },
+        {
+          "name": "펫 강화석⭐",
+          "count": 200
+        },
+        {
+          "name": "잡템☠️",
+          "count": 20
+        },
+        {
+          "name": "양념치킨🐔",
+          "count": 10
+        },
+        {
+          "name": "럭키박스🍀(/럭키오픈)",
+          "count": 4
+        },
+        {
+          "name": "강화확률뽑기⚒️(/강화뽑기)",
+          "count": 2
+        },
+        {
+          "name": "캐슬대전리셋권🐶",
+          "count": 4
+        },
+        {
+          "name": "펫먹이특식🥡(/특식오픈)",
+          "count": 2
+        },
+        {
+          "name": "티어 승급티켓🎟",
+          "count": 4
+        },
+        {
+          "name": "다이아상자💎(/다이아상자오픈)",
+          "count": 2
+        }
+      ],
+      "oneday": [
+        {
+          "rewardCode": "ONE_DOLLAR_STORE",
+          "itemCode": "one_dollar_store_package",
+          "quantity": 1
+        },
+        {
+          "rewardCode": "SPECIAL_PET_FOOD",
+          "itemCode": "pet_food_special",
+          "quantity": 1
+        }
+      ]
+    },
+    "oneDaySemantics": {
+      "exactlyOnceBoundary": "operation",
+      "idempotencyScope": "support.pass.oneday.subscription",
+      "grantUniqueKey": [
+        "operation_id",
+        "player_id",
+        "item_id"
+      ],
+      "calendarDaily": false
+    }
+  },
+  "sourceEvidence": [
+    "main.js",
+    "005_player_profile.sql",
+    "240_contribution_pass_registry.sql",
+    "241_diamond_pass_registry.sql",
+    "244_one_day_pass_subscription.sql",
+    "245_one_day_pass_registry.sql",
+    "one-day-pass-subscription-service.ts",
+    "auto-daily-quest-orchestration-service.ts"
+  ],
+  "scopeGuards": {
+    "providerChanges": 0,
+    "resolverChanges": 0,
+    "ownershipChanges": 0,
+    "schemaChanges": 0,
+    "migrationFilesAdded": 0,
+    "runtimeChanges": 0,
+    "retirementChanges": 0,
+    "mainChanges": 0,
+    "uiChanges": 0,
+    "databaseWrites": 0
+  }
+}

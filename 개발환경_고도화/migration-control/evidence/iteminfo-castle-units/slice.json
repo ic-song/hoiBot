@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-ASSET-ITEMINFO-CASTLE-UNIT-DEFINITIONS-01",
+  "executionId": "작업반장-SL-ASSET-ITEMINFO-CASTLE-UNIT-DEFINITIONS-01-20260830162101",
+  "claimRow": 2345,
+  "branch": "codex/modernization-iteminfo-castle-units-v2400-20260830",
+  "baseline": "02aef12e",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "sourcePath": "data/itemInfo.json#castleItem",
+  "sourceFileHash": "49ef9f7b39ffa5fab57c0d3759f8a682c7be759e4708f76744ae095fc673ffdc",
+  "sourceHash": "329b2cab1cee71cc558606312d871a747c2b51f6a1effd9c932f0db24d22f9c3",
+  "migration": "388_iteminfo_castle_unit_definitions.sql",
+  "scope": {
+    "definitions": 10,
+    "reusedCanonical": 7,
+    "newCanonicalItems": 3,
+    "charmTotal": 9661,
+    "ownership": "existing inventory_stacks/inventory_ledger",
+    "legacyMutation": false,
+    "featureProdMutation": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused": {"total": 5, "passed": 5, "failed": 0},
+    "typecheck": "passed",
+    "build": "passed",
+    "fullRegression": {
+      "total": 1181,
+      "passed": 1174,
+      "failed": 0,
+      "skipped": 7,
+      "durationMs": 317601.3656
+    },
+    "mariaDb": {
+      "host": "127.0.0.1",
+      "port": 33457,
+      "database": "hoibot_iteminfo_castle_units_388_01",
+      "migrationCount": 378,
+      "parityChecks": 10,
+      "definitions": 10,
+      "items": 10,
+      "objects": 10,
+      "aliases": 10,
+      "bindings": 10,
+      "reusedCanonical": 7,
+      "newCanonical": 3,
+      "rollback": "1->999->1",
+      "replay": "passed",
+      "reconnect": "2/2",
+      "shadow": "10/10"
+    }
+  },
+  "status": "gate7_verified_wbs_pending"
+}

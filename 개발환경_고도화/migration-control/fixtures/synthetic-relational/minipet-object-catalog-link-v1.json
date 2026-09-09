@@ -1,0 +1,22 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.400-mini-pet-object-link-01",
+  "sourceCatalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "sourceSystem": "LEGACY_JSON",
+  "sourceTable": "miniPetData.miniPet",
+  "objectKeyPrefix": "mini_pet.catalog_",
+  "objectType": "MINI_PET",
+  "aliasType": "legacy_code",
+  "sourceRows": 1078,
+  "objects": 1078,
+  "aliases": 1078,
+  "sourceBindings": 1078,
+  "definitionTotal": 1106,
+  "extraDefinitions": 28,
+  "drawDefinitions": 1066,
+  "eliteDefinitions": 12,
+  "nameGradeComposite": 1055,
+  "collisionGroups": 22,
+  "collisionSurplus": 23,
+  "sourceHash": "7fd91bacee010ec3c4623ca34ddb92f647e7f30fa1d71a764eb38e320b79f644",
+  "collisionHash": "781cec45e42fa86363e5868fbe2bddc72eb64fa5016aa2434c9ab740bb7d461f"
+}

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-CRAFT-COMBINE-ALL",
+  "status": "verified",
+  "execution": {
+    "worker": "윤슬",
+    "executionId": "윤슬-SL-CRAFT-COMBINE-ALL-20260818T060246Z-s545p4",
+    "claimRow": 33,
+    "branch": "feature/modernization-craft-combine-all-yoonseul-s545p4",
+    "implementationCommit": "5c0f205e5ad4949b322734d1501c3b47695ae9d5"
+  },
+  "commands": {
+    "names": ["/전체조합", "/전체조합2"],
+    "sourceFiles": ["main.js", "개발환경_고도화/runtime/src/app.ts"],
+    "guards": [
+      "/전체조합 is exact, silently blocks during castle siege, and silently ignores an unregistered sender",
+      "/전체조합2 is exact and is not inside the local castle-siege/member guard, while the common response member gate still silently blocks an unregistered sender",
+      "both commands return the exact no-material reply when fewer than ten fragments are held"
+    ],
+    "helpers": ["runCombineAll", "CombineAllService", "readCombineAllVariant"],
+    "supportDependencies": [
+      "/정리 and ㅇㅇㅇ automatically call runCombineAll in Rhino",
+      "cleanup open/sell/reward and guild-booster behavior is explicitly outside this slice"
+    ]
+  },
+  "legacyData": {
+    "files": ["data/member.json", "data/guild.json"],
+    "readPaths": ["member.<sender>.bag['정령조각🥀']", "member.<sender>.bag['정령 강화석🥀']", "guildData.castleSiegeFlag for /전체조합 only"],
+    "writePaths": [
+      "member.<sender>.bag['정령조각🥀'] maximum multiple-of-ten decrement and property deletion at zero",
+      "member.<sender>.bag['정령 강화석🥀'] increment by the maximum craft quantity"
+    ],
+    "saveOrder": ["outer response saveJsonFile(petData, memberPetPath)", "outer response saveJsonFile(data, filePath)"],
+    "devProdRoutingVerified": true,
+    "usageStatusChanged": false
+  },
+  "database": {
+    "migrations": ["005_player_profile.sql", "007_domain_foundations.sql", "028_complete_legacy_domains.sql"],
+    "tables": [
+      "external_identities", "item_definitions", "inventory_stacks", "inventory_ledger", "castle_battle_seasons",
+      "operations", "command_executions", "command_audit", "outbox_messages", "delivery_attempts"
+    ],
+    "itemCodes": {
+      "정령조각🥀": "bag_9b3e69dbd2e91260",
+      "정령 강화석🥀": "bag_55b34cbde0088b29"
+    },
+    "constraints": [
+      "one inventory stack per player and item",
+      "maximum craft quantity is floor(fragment quantity / 10)",
+      "exhausted fragment stack is deleted while a positive remainder is version-updated",
+      "idempotency scope is separate for primary and secondary legacy entrypoints"
+    ],
+    "transactionBoundary": "apply each legacy entrypoint guard, lock linked identity and shared item definitions/stacks, then persist balances, two ledgers, operation, execution, audit and outbox atomically"
+  },
+  "trialMigration": {
+    "sourceSnapshot": "synthetic-relational/functional-v1.sql sha256 da170d6cb8e3a71ec5f095a9d038028ebd39cdcd94733195b38ee413d1a34ea8",
+    "targetDatabase": "disposable hoibot_rehearsal_combine_all_s545p4",
+    "sourceReadOnly": true,
+    "replayPolicy": "33 migrations and the shared fixture are repeatable; each command has an independent event and operation idempotency scope",
+    "checks": [
+      "33 migrations applied and replayed without a second schema change",
+      "shared fixture applied twice and verify-only confirmed 35 representative tables and 12 initial stacks",
+      "both exact commands transformed fragments 20 to an absent stack and stones five to seven",
+      "each command persisted two inventory ledgers and one operation, execution, audit, outbox and delivery",
+      "same-process duplicate events and MariaDB restart replay did not duplicate mutation or delivery",
+      "the rehearsal schema was dropped and absence was verified",
+      "operational snapshots, rooms and databases were not read or mutated"
+    ],
+    "result": "passed"
+  },
+  "logicPort": {
+    "services": ["개발환경_고도화/runtime/src/crafting/combine-all-service.ts", "개발환경_고도화/runtime/src/app.ts"],
+    "repositories": ["개발환경_고도화/runtime/src/database.ts transaction client"],
+    "tests": [
+      "개발환경_고도화/runtime/test/combine-all.test.ts",
+      "개발환경_고도화/runtime/scripts/shadow-combine-all-synthetic.ts",
+      "개발환경_고도화/migration-control/fixtures/synthetic-relational/functional-v1.sql"
+    ],
+    "integrationDispatch": "the shared Iris app dispatch routes both exact commands, sends only crafted replies, and leaves each legacy guard visible"
+  },
+  "parity": {
+    "fixtures": ["scripted siege, unregistered, shortage, remainder and exhausted-fragment cases", "synthetic linked player with 20 fragments and five stones"],
+    "comparisonMode": "exact guards, entrypoint-specific siege/member behavior, exact replies, maximum conversion, stack deletion, ledgers, audit, outbox and duplicate event",
+    "result": "passed"
+  },
+  "shadow": {
+    "mode": "non-operational synthetic Iris HTTP dispatch",
+    "database": "disposable hoibot_rehearsal_combine_all_s545p4",
+    "eventIds": ["iris:combine-all-shadow-s545p4-primary", "iris:combine-all-shadow-s545p4-secondary"],
+    "checks": [
+      "both exact success replies were delivered once through shared app dispatch",
+      "duplicate HTTP events produced no second delivery",
+      "MariaDB restart replay preserved one operation and delivery per entrypoint",
+      "operational data and operational rooms were not accessed"
+    ],
+    "result": "passed"
+  },
+  "verification": {
+    "runtimeTests": 171,
+    "typecheck": "passed",
+    "build": "passed",
+    "rhinoSyntax": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "cutover": {
+    "status": "not_started_by_instruction",
+    "next": "final operational snapshot reconciliation, backup/restore, approved live-room smoke and cutover approval"
+  },
+  "risks": [
+    "/전체조합2 intentionally remains outside the local castle-siege/member guard while relying on the common response member gate",
+    "/정리 and ㅇㅇㅇ still depend on Rhino runCombineAll and require a separate cleanup slice",
+    "actual operational data import, live-room smoke and operational-readiness approval were not executed"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "sliceId": "SL-COMMON-ASSET-CATALOG-PROVIDER-01",
+  "catalogVersion": "ASSET-FREEZE-v2.400-a286279b-01",
+  "baseline": "ab8e9c94",
+  "scope": "W1_ITEM_PROVIDER_REWARD_TARGET_REGISTRY",
+  "runtimeMode": "SHADOW",
+  "gate8": false,
+  "constraints": [
+    "ItemProvider remains the sole upper-level asset mutation provider",
+    "Package domain mutation code is an ItemProvider store, not a fourth provider",
+    "No asset definition or ownership schema is added",
+    "Definition identity and draw-pool weight remain unchanged",
+    "Legacy compatibility models are not deleted"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-OBJECT-DB-CURRENCY-LEDGER-01",
+  "amountEncoding": "decimal source string -> definition decimal_places -> BIGINT minor unit",
+  "definitions": [
+    { "sourceIdentifier": "point", "currencyName": "포인트", "decimalPlaces": 3 },
+    { "sourceIdentifier": "diamond", "currencyName": "다이아", "decimalPlaces": 0 }
+  ],
+  "conversionCases": [
+    { "source": "1000311850886090.5", "decimalPlaces": 3, "minorAmount": "1000311850886090500", "disposition": "accept" },
+    { "source": "742", "decimalPlaces": 0, "minorAmount": "742", "disposition": "accept" },
+    { "source": "1.0001", "decimalPlaces": 3, "disposition": "quarantine_precision_exceeded" },
+    { "source": "-0.5", "decimalPlaces": 3, "disposition": "quarantine_negative_balance" },
+    { "source": "9223372036854775.808", "decimalPlaces": 3, "disposition": "quarantine_bigint_overflow" },
+    { "source": "not-a-number", "decimalPlaces": 3, "disposition": "quarantine_invalid_source" }
+  ],
+  "atomicScenario": {
+    "playerId": "a1b2c3d4",
+    "currencyId": "e5f6g7h8",
+    "balanceBeforeMinorAmount": "9007199254740993000",
+    "deltaMinorAmount": "5",
+    "balanceAfterMinorAmount": "9007199254740993005",
+    "sameRequestReplayWrites": 0
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-PACKAGE-CATALOG-MUTATE-01",
+  "wbs": "WBS615",
+  "lease": "Lease2368",
+  "baseline": "83a36b2ef100ba0aaf062f12a125e96f01a0d24d",
+  "scope": "ADMIN_PACKAGE_CATALOG_WEB_CONSUMER",
+  "runtimeMode": "SHADOW",
+  "gate8": false,
+  "constraints": [
+    "Consumer-only REST, app wiring and existing web shell UI",
+    "No permission, schema, migration, provider SQL or provider behavior changes",
+    "No publish or unsupported package lifecycle actions",
+    "No operational data, Google Sheets, legacy main.js or feature/prod access"
+  ],
+  "gate1": { "status": "complete", "existingShell": "개발환경_고도화/runtime/src/admin/web-shell-assets.ts", "sessionManager": "개발환경_고도화/runtime/src/admin/auth-service.ts", "providerCommit": "d5ebb88c", "providerWbs": "WBS619" },
+  "gate2": {
+    "status": "complete",
+    "databaseChanges": false,
+    "rest": [
+      "GET /api/v1/admin/package-catalog",
+      "POST /api/v1/admin/package-catalog/packages",
+      "PATCH /api/v1/admin/package-catalog/packages/:packageId",
+      "DELETE /api/v1/admin/package-catalog/packages/:packageId",
+      "POST /api/v1/admin/package-catalog/packages/:packageId/enable"
+    ]
+  },
+  "gate3": { "status": "complete", "fixture": "개발환경_고도화/runtime/test/fixtures/admin-package-catalog-web-consumer.ts", "operationalDataTouched": false },
+  "gate4": {
+    "status": "complete",
+    "implementation": [
+      "개발환경_고도화/runtime/src/admin/package-catalog-web-routes.ts",
+      "개발환경_고도화/runtime/src/admin/web-shell-assets.ts",
+      "개발환경_고도화/runtime/src/app.ts"
+    ],
+    "authorization": "AdminAuthService current package.catalog.manage recheck plus provider transaction recheck",
+    "serialization": "catalogVersion, expectedVersion and reward quantity use decimal strings"
+  },
+  "gate5": { "status": "complete", "focusedTests": ["test/admin-package-catalog-web-consumer.test.ts", "test/admin-web-shell.test.ts"], "typecheck": "pass", "build": "pass" },
+  "gate6": {
+    "status": "complete",
+    "providerParity": "WBS619 and commit d5ebb88c carry-forward",
+    "fullRegression": "default npm test pass",
+    "parity": [
+      "ADD, EDIT, REMOVE and ENABLE only",
+      "caller expectedCatalogVersion conflict remains HTTP 409",
+      "same-key namespaced fingerprint replay is surfaced",
+      "audit, configuration change log and transaction remain provider-owned"
+    ]
+  },
+  "gate7": { "status": "shadow_complete", "target": "synthetic Fastify admin web preview", "desktop": "pass", "mobile": "pass", "consoleErrors": 0, "overflowSafe": true, "operationalDataTouched": false, "productionBranchTouched": false, "sourceCommit": "recorded by final Git evidence" }
+}

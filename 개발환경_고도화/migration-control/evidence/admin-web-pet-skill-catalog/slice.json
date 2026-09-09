@@ -1,0 +1,73 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-PET-SKILL-CATALOG-01",
+  "executionId": "개발자-SL-COMMON-ADMIN-WEB-PET-SKILL-CATALOG-01-202609011830",
+  "baseline": "60285b8818eba1e1d38877c12b0fa27015fcadab",
+  "wbs": 709,
+  "lease": 2480,
+  "runtimeMode": "SHADOW",
+  "scope": {
+    "provider": "PetSkillCatalogCrudProvider",
+    "definitions": 93,
+    "routes": ["read", "readVersion", "draft", "publish", "rollback", "retire", "discard"],
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "operationalRowsMutated": 0
+  },
+  "identityBoundary": {
+    "definitionKey": "stable code plus source key and source hash",
+    "similarNamesMerged": false,
+    "managedPayload": ["catalogVersion", "definitions", "effects", "compatibilityGroups", "drawPolicy"],
+    "computedProjectionPersisted": false
+  },
+  "gate1": {
+    "status": "complete",
+    "existingProvider": "개발환경_고도화/runtime/src/pet/pet-skill-catalog.ts",
+    "existingConfigurationProvider": "개발환경_고도화/runtime/src/configuration/configuration-catalog.ts",
+    "providerEvidenceCarryForward": "WBS694 Gate1~7"
+  },
+  "gate2": {
+    "status": "complete",
+    "mapping": "typed pet-skill REST plus manager/super_admin RBAC, CSRF, Idempotency-Key, reason and confirmation",
+    "schema": "none"
+  },
+  "gate3": {
+    "status": "complete",
+    "fixture": "개발환경_고도화/runtime/test/admin-pet-skill-catalog-web-consumer.test.ts",
+    "precision": "configuration identifiers and versions remain decimal strings",
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "routes": "개발환경_고도화/runtime/src/admin/pet-skill-catalog-web-routes.ts",
+    "client": "개발환경_고도화/runtime/src/admin/web-shell-assets.ts",
+    "wiring": "개발환경_고도화/runtime/src/app.ts",
+    "ui": "93-definition search/table plus full validated draft and version lifecycle"
+  },
+  "gate5": {
+    "status": "complete",
+    "focused": { "total": 23, "passed": 23, "failed": 0 },
+    "mariaLifecycle": { "total": 3, "passed": 3, "failed": 0 },
+    "clientSyntax": "pass",
+    "typecheck": "pass",
+    "build": "pass"
+  },
+  "gate6": {
+    "status": "complete",
+    "freshMariaDb": "11.8.8",
+    "migrationCount": 425,
+    "replayApplied": 0,
+    "restartReconnect": "pass",
+    "postReconnectCounts": { "skillDefinitions": 96, "petSkillConfigurationSets": 1, "petSkillConfigurationValues": 4 },
+    "seededPetSkillDefinitions": 93,
+    "fullRegression": { "total": 1565, "passed": 1557, "failed": 0, "skipped": 8 }
+  },
+  "gate7": {
+    "status": "shadow_complete",
+    "desktop": "synthetic Fastify and admin shell contract pass",
+    "mobile": "existing 640px responsive contract pass",
+    "providerLifecycle": "93 seed read, publish, replay, rollback, transaction rollback and reconnect pass",
+    "operationalDataTouched": false,
+    "productionBranchTouched": false
+  },
+  "gate8": false
+}

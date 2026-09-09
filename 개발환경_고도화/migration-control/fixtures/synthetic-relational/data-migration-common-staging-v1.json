@@ -1,0 +1,27 @@
+{
+  "format": "hoibot-common-staging-extraction-manifest-v1",
+  "rawBundleSha256": "8c60557f1a8e42ea751bc25788feb62d67bddd792f5f9e663c3abdec880538ec",
+  "snapshotManifestSha256": "3f4e9327749f338a30109bfade408e69fb864ad73981490a07a7db2a3bc7c126",
+  "actor": "synthetic-test",
+  "entries": [
+    {
+      "sourcePathSha256": "295bd0ebe9fdea2b44576aecf739ac759359cc70a9b68fc2460a50d740d3a3d4",
+      "sourceContentSha256": "54cd3fdde4843e156351fa53f5631ef5770ab4b7556c4220d9867590a392fa19",
+      "logicalSourceName": "data/member.json",
+      "sourceNamespace": "member.json",
+      "disposition": "PROJECT",
+      "records": [
+        {
+          "sourcePointer": "/member/alpha/bag/다이아상자💎(~1다이아상자오픈)",
+          "ownerPathSegmentIndex": 1,
+          "ownerPointer": "/member/alpha",
+          "recordDomain": "INVENTORY",
+          "recordKind": "OWNERSHIP_QUANTITY",
+          "projectionStatus": "PROJECT",
+          "quantityPointer": "/member/alpha/bag/다이아상자💎(~1다이아상자오픈)",
+          "observedTimePointer": "/capturedAt"
+        }
+      ]
+    }
+  ]
+}

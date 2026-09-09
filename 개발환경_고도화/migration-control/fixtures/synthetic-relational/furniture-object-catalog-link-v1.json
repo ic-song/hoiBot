@@ -1,0 +1,29 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.400-furniture-object-link-01",
+  "sourceSystem": "LEGACY_JSON",
+  "sourceTable": "petSweetHomeInfo.furnitureDraw",
+  "sourceHash": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+  "objectKeyPrefix": "furniture.catalog_",
+  "objectType": "FURNITURE",
+  "aliasType": "legacy_code",
+  "sourceRows": 1551,
+  "physicalDefinitions": 1551,
+  "canonicalDefinitions": 1533,
+  "objects": 1533,
+  "aliases": 1551,
+  "sourceBindings": 1551,
+  "ordinarySourceRows": 1531,
+  "ordinaryObjects": 1531,
+  "duplicateSourceRows": 20,
+  "duplicateObjects": 2,
+  "duplicateGroups": 2,
+  "duplicateOccurrences": 18,
+  "displayOnlyCollisionGroups": 113,
+  "gradeRows": [600, 231, 181, 291, 207, 41],
+  "gradeCanonicalDefinitions": [600, 231, 181, 291, 207, 23],
+  "ownershipRowsMutated": 0,
+  "duplicateIdentities": [
+    { "canonicalCode": "HOME-DRAW-1511", "sourceStart": 1511, "sourceEnd": 1520, "occurrences": 10, "gradeOrdinal": 6, "charmValue": 130500 },
+    { "canonicalCode": "HOME-DRAW-1521", "sourceStart": 1521, "sourceEnd": 1530, "occurrences": 10, "gradeOrdinal": 6, "charmValue": 135500 }
+  ]
+}

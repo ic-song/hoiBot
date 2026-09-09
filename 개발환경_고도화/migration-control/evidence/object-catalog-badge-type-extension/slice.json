@@ -1,0 +1,34 @@
+{
+  "sliceId": "SL-COMMON-OBJECT-CATALOG-BADGE-TYPE-01",
+  "executionId": "개발자-SL-COMMON-OBJECT-CATALOG-BADGE-TYPE-01-20260831T0750",
+  "lease": 2410,
+  "wbs": 664,
+  "dbRow": 1942,
+  "baseline": "a2403252d43ba7b8614c61c7849ff39c46414eee",
+  "migration": "409_object_catalog_badge_type_extension.sql",
+  "catalogVersion": "ASSET-FREEZE-v2.400-badge-type-01",
+  "valReservation": "10552:10559",
+  "scope": {
+    "addedObjectType": "BADGE",
+    "existingTypesPreserved": 10,
+    "runtimeObjectTypeCount": 11,
+    "badgeObjectsIncluded": false,
+    "badgeDefinitionsIncluded": false,
+    "ownershipIncluded": false,
+    "providerIncluded": false,
+    "runtimeConsumerIncluded": false,
+    "mainIncluded": false,
+    "uiIncluded": false,
+    "sheetsEdited": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "rollbackReapplyReconnectReplay": "required",
+    "defaultFullRegression": "required",
+    "shadow": "required"
+  }
+}

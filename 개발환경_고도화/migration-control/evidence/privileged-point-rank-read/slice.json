@@ -1,0 +1,42 @@
+{
+  "sliceId": "SL-PRIVILEGED-POINT-RANK-READ",
+  "executionId": "작업반장-SL-PRIVILEGED-POINT-RANK-READ-20260901012759",
+  "catalogVersion": "SC-20260819-01",
+  "baseline": "50872fb924ffe86c11cf12032c8c16100f357c48",
+  "command": "/포인트확인",
+  "legacySource": {
+    "file": "Info.js",
+    "guard": "exact command and legacy privileged operator",
+    "projection": "member point descending with rank emoji and comma formatting"
+  },
+  "modernBoundary": {
+    "authorization": "active super_admin with player.point.rank.read",
+    "definition": "currency_definitions:point",
+    "ownership": "currency_accounts(player_id,point)",
+    "mutation": "operation, command_execution, command_audit and outbox evidence only",
+    "migration": "415_privileged_point_rank_read.sql"
+  },
+  "validation": {
+    "focused": { "pass": 3, "fail": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMariaMigrations": 402,
+    "migration415FirstApply": "PASS",
+    "migration415Reapply": "PASS",
+    "mariaIntegration": { "pass": 1, "fail": 0 },
+    "authorization": "PASS",
+    "zeroBalanceIncluded": "PASS",
+    "replay": "PASS",
+    "rollback": "PASS",
+    "reconnect": "PASS",
+    "containerRestart": "PASS",
+    "shadow": "PASS",
+    "full": { "tests": 1353, "pass": 1346, "fail": 0, "skip": 7 }
+  },
+  "safety": {
+    "legacyMainInfoDataChanged": false,
+    "featureProdChanged": false,
+    "operationalDatabaseChanged": false,
+    "gate8": false
+  }
+}

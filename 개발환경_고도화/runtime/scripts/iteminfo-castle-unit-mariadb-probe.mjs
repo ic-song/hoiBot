@@ -1,0 +1,16 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import mariadb from "mariadb";
+
+const fixture=JSON.parse(fs.readFileSync(new URL("../../migration-control/fixtures/synthetic-relational/iteminfo-castle-units-v1.json",import.meta.url),"utf8"));
+const reused=new Set(["ITEM-RWD-CASTLE-ADVANCED","ITEM-RWD-CASTLE-UNIQUE","ITEM-RWD-CASTLE-RARE","ITEM-RWD-CASTLE-HERO","ITEM-RWD-CASTLE-LEGEND","ITEM-RWD-CASTLE-MYTH","ITEM-RWD-CASTLE-IMMORTAL"]);
+const connection=await mariadb.createConnection({host:process.env.HOIBOT_DB_HOST||"127.0.0.1",port:Number(process.env.HOIBOT_DB_PORT||"3306"),user:process.env.HOIBOT_DB_USER||"root",password:process.env.HOIBOT_DB_PASSWORD||"",database:process.env.HOIBOT_DB_NAME});
+
+try {
+  const rows=await connection.query("SELECT JSON_UNQUOTE(JSON_EXTRACT(registry.metadata_json,'$.unitCode')) unit_code,registry.object_key,item.code item_code,binding.source_key,item.display_name,CAST(bonus.charm_per_unit AS CHAR) charm_per_unit,CAST(JSON_UNQUOTE(JSON_EXTRACT(registry.metadata_json,'$.displayOrder')) AS UNSIGNED) display_order,JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.sourceHash')) source_hash,JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.catalogVersion')) catalog_version FROM castle_battle_item_bonus_definitions bonus JOIN item_definitions item ON item.id=bonus.item_id JOIN object_aliases alias ON alias.object_type='ITEM' AND alias.alias_type='item_code' AND alias.alias_value=item.code JOIN object_registry registry ON registry.id=alias.object_id JOIN object_source_bindings binding ON binding.object_id=registry.id AND binding.source_table='data/itemInfo.json#castleItem' WHERE bonus.active=TRUE ORDER BY display_order");
+  const actual=rows.map((row)=>({unitCode:row.unit_code,objectKey:row.object_key,itemCode:row.item_code,sourceKey:row.source_key,displayName:row.display_name,charmPerUnit:Number(row.charm_per_unit),displayOrder:Number(row.display_order),sourceHash:row.source_hash,sourceFileHash:fixture.sourceFileHash,catalogVersion:row.catalog_version,reusedCanonical:reused.has(row.item_code)}));
+  assert.deepEqual(actual,fixture.rows);
+  const counts=(await connection.query("SELECT (SELECT COUNT(*) FROM castle_battle_item_bonus_definitions bonus JOIN item_definitions item ON item.id=bonus.item_id WHERE JSON_UNQUOTE(JSON_EXTRACT(item.metadata_json,'$.objectType'))='castle_unit' AND bonus.active=TRUE) definitions,(SELECT COUNT(*) FROM object_registry WHERE object_key LIKE 'item.castle.unit-item-%') objects,(SELECT COUNT(*) FROM object_aliases WHERE object_type='ITEM' AND alias_type='item_code' AND alias_value LIKE 'ITEM-RWD-CASTLE-%') aliases,(SELECT COUNT(*) FROM object_source_bindings WHERE source_table='data/itemInfo.json#castleItem') bindings,(SELECT COUNT(*) FROM item_definitions WHERE JSON_UNQUOTE(JSON_EXTRACT(metadata_json,'$.objectType'))='castle_unit' AND active=TRUE) items"))[0];
+  assert.deepEqual([Number(counts.definitions),Number(counts.objects),Number(counts.aliases),Number(counts.bindings),Number(counts.items)],[10,10,10,10,10]);
+  console.log(JSON.stringify({result:"passed",checks:10,definitions:10,items:10,objects:10,aliases:10,bindings:10,reused:7,newCanonical:3}));
+} finally { await connection.end(); }

@@ -1,0 +1,12 @@
+SET NAMES utf8mb4;
+START TRANSACTION;
+DELETE FROM object_source_bindings WHERE source_system='LEGACY_JSON' AND source_table='petSweetHomeInfo.homeInfo.v2_438';
+SET @home_building_recipe_catalog_id_428=(SELECT id FROM home_building_recipe_catalog_versions WHERE version_code='ASSET-FREEZE-v2.438-home-building-recipe-01' LIMIT 1);
+DELETE FROM home_building_recipe_requirements WHERE catalog_version_id=@home_building_recipe_catalog_id_428;
+DELETE FROM home_building_recipe_rows WHERE catalog_version_id=@home_building_recipe_catalog_id_428;
+DELETE FROM home_building_recipe_catalog_versions WHERE id=@home_building_recipe_catalog_id_428;
+DELETE binding_row FROM object_source_bindings binding_row JOIN object_registry object_row ON object_row.id=binding_row.object_id WHERE object_row.object_key IN ('item.home_material.iron','item.home_material.wood');
+DELETE alias_row FROM object_aliases alias_row JOIN object_registry object_row ON object_row.id=alias_row.object_id WHERE object_row.object_key IN ('item.home_material.iron','item.home_material.wood');
+DELETE FROM object_registry WHERE object_key IN ('item.home_material.iron','item.home_material.wood') AND object_type='ITEM';
+DELETE FROM item_definitions WHERE code IN ('home_material_iron','home_material_wood');
+COMMIT;

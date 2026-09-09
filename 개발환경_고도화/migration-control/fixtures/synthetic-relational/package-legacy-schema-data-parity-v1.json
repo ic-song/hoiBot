@@ -1,0 +1,73 @@
+{
+  "sliceId": "SL-PACKAGE-LEGACY-SCHEMA-DATA-PARITY-01",
+  "executionId": "개발자-SL-PACKAGE-LEGACY-SCHEMA-DATA-PARITY-01-20260831T0930",
+  "lease": 2420,
+  "wbs": 672,
+  "dbRow": 1950,
+  "baseline": "7172e9609139a0e0592230e0b75669a34e4b7f0f",
+  "databaseBoundary": {
+    "migrationCount": 390,
+    "oldTables": ["package_definitions", "package_contents", "package_purchases"],
+    "currentTables": ["package_catalog", "package_reward_rules"],
+    "readOnly": true
+  },
+  "counts": {
+    "oldDefinitions": 0,
+    "oldActiveDefinitions": 0,
+    "oldContents": 0,
+    "oldPurchases": 0,
+    "currentCatalogTotal": 60,
+    "currentActiveCatalog": 1,
+    "currentEnabledRules": 243,
+    "currentEffectiveRules": 1,
+    "directStableMappings": 0,
+    "oldActiveWithoutCurrent": 0,
+    "currentActiveWithoutOld": 1,
+    "sourceBackedCurrentWithoutOld": 1,
+    "oldContentOrphans": 0,
+    "oldPurchaseOrphans": 0,
+    "currentRuleOrphans": 0,
+    "oldCodeDuplicates": 0,
+    "currentPackageDuplicates": 0,
+    "currentRuleIdDuplicates": 0,
+    "oldSequenceGaps": 0,
+    "currentEffectiveSequenceGaps": 0,
+    "mappedSequenceMismatches": 0,
+    "runtimeSourceRefs": 0
+  },
+  "activeRows": {
+    "catalog": ["package_5|LEGACY-PACKAGEINFO-v1|package_5|100|READY|1"],
+    "effectiveRewards": ["package_5|1|ADD|USER|free_market_membership|1|1"]
+  },
+  "hashes": {
+    "emptySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oldDefinitionsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oldContentsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oldPurchasesSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "activeCatalogSha256": "2abbdbba865551ef666914775d2c6ae949510916064e65a148c59ef5dc3e0f52",
+    "effectiveRewardsSha256": "2e95eed64743ce748f9db9907a0412a590a79c4ed8f814101978fce35ac142e3",
+    "directMappingsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "dropAssessment": {
+    "dropReady": false,
+    "zeroRowsSufficient": false,
+    "runtimeRefsZeroSufficient": false,
+    "activeMappedParityComplete": false,
+    "purchaseHistoryPreservationRequired": true,
+    "productionSnapshotRequired": true,
+    "verifiedBackupRequired": true,
+    "verifiedRollbackRequired": true,
+    "currentOnlySourceDispositionRequired": true,
+    "reason": "fresh migration의 old row0과 runtime source ref0은 필요조건 일부일 뿐이며 active mapping, 운영 history snapshot, backup 및 rollback 증거가 없다"
+  },
+  "scopeGuards": {
+    "oldTableDrop": false,
+    "oldDataDelete": false,
+    "providerChanged": false,
+    "runtimeChanged": false,
+    "mainChanged": false,
+    "schemaChanged": false,
+    "migrationChanged": false,
+    "gate8": false
+  }
+}

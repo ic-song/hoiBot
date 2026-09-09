@@ -1,0 +1,42 @@
+{
+  "sliceId": "SL-ASSET-BADGE-OBJECT-CATALOG-LINK-01",
+  "executionId": "개발자-SL-ASSET-BADGE-OBJECT-CATALOG-LINK-01-20260831T0820",
+  "lease": 2413,
+  "wbs": 667,
+  "dbRow": 1945,
+  "baseline": "ef4cae5afd7f7913afc306aeb328aced79a9e482",
+  "migration": "410_badge_object_catalog_link.sql",
+  "catalogVersion": "ASSET-FREEZE-v2.400-badge-object-link-01",
+  "valReservation": "10568:10575",
+  "scope": {
+    "definitionVersion": 930000002,
+    "sourceHash": "70d6731d0c5e2f72832fe70042ab1e0a7ba16d38af106b71617a31c33ed7932b",
+    "canonicalDefinitions": 204,
+    "physicalVersionRows": 408,
+    "badgeObjects": 204,
+    "sourceBindings": 204,
+    "aliases": 0,
+    "awardLifecycle": 77,
+    "displayLifecycle": 127,
+    "ownershipRowsMutated": 0,
+    "equipChanged": false,
+    "deleteChanged": false,
+    "gachaChanged": false,
+    "cubeChanged": false,
+    "providerChanged": false,
+    "runtimeConsumerChanged": false,
+    "mainChanged": false,
+    "uiChanged": false,
+    "sheetsEdited": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "rollbackReapplyReconnectReplay": "required",
+    "defaultFullRegression": "required",
+    "shadow": "required"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "sliceId": "SL-PASS-TYPED-CODE-RESOLVER-01",
+  "executionId": "개발자-SL-PASS-TYPED-CODE-RESOLVER-01-20260831T0800",
+  "wbs": 665,
+  "dbRow": 1943,
+  "lease": 2411,
+  "baseline": "5665f6228e9385c354d7fef056421735f1eecd83",
+  "policyVersion": "PASS-SIX-v1-cdfd62d5a8f38662",
+  "policySha256": "cdfd62d5a8f38662132a63dfa9dc90d6c43f9928500e604079e255e92cd4f8c9",
+  "scope": {
+    "typedMappings": 3,
+    "passThroughCodes": 3,
+    "semanticAllowed": 6,
+    "compatibilityAllowed": 6,
+    "importerUsesResolver": true,
+    "profileReadUsesResolver": true,
+    "unknownMappingAllowed": false,
+    "nameMappingAllowed": false,
+    "implicitCrossScopeAllowed": false,
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "ownershipTableWriteChanges": 0,
+    "rewardChanges": 0,
+    "adminMutationChanges": 0,
+    "retirementChanges": 0,
+    "mainChanges": 0,
+    "uiChanges": 0
+  },
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "deterministicReplay": "PASS",
+    "syntheticDualReadShadow": "PASS",
+    "fullRegression": "PASS",
+    "mariaRequired": false
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "carryForward": {
+    "wbs663PolicySnapshot": true
+  },
+  "valRangeReserved": "10560:10567",
+  "sheetsEdited": false
+}

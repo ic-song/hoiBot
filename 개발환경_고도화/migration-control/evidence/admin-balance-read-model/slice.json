@@ -1,0 +1,62 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-BALANCE-READ-MODEL-01",
+  "executionId": "개발자-SL-COMMON-ADMIN-BALANCE-READ-MODEL-01-20260831T0910",
+  "baseline": "497457451803943be852b0f75173fe97127678d1",
+  "wbs": 637,
+  "dbRow": 1915,
+  "lease": 2418,
+  "runtimeMode": "SHADOW",
+  "scope": {
+    "domains": ["home_badge", "home_furniture", "pendant"],
+    "requiredFields": ["label", "value", "unit", "min", "max", "step", "version", "editable", "source"],
+    "homeBadgeSource": "current shadow home_badge_definition_versions",
+    "homeFurnitureSource": "current active home_furniture_draw_catalog_versions",
+    "pendantSource": "PendantPolicyCatalogReadProvider published policy",
+    "schemaChanges": 0,
+    "migrationChanges": 0,
+    "mutationRoutes": 0,
+    "operationalRowsMutated": 0
+  },
+  "gate1": {
+    "status": "complete",
+    "reference": "개발환경_고도화/references/admin-balance-read-model.md",
+    "approvedProviderCount": 3,
+    "excluded": ["wallet RNG", "luck pouch", "main.js", "member lightningRate"]
+  },
+  "gate2": {
+    "status": "complete",
+    "mapping": "domain+stable key+version+unit+group+sumGroup",
+    "schema": "none"
+  },
+  "gate3": {
+    "status": "complete",
+    "fixture": "개발환경_고도화/runtime/test/fixtures/admin-balance-read-model.ts",
+    "operationalDataTouched": false
+  },
+  "gate4": {
+    "status": "complete",
+    "implementation": "개발환경_고도화/runtime/src/admin/admin-balance-read-model.ts",
+    "readOnly": true
+  },
+  "gate5": {
+    "status": "complete",
+    "focused": { "total": 21, "passed": 21, "failed": 0 },
+    "typecheck": "pass",
+    "build": "pass"
+  },
+  "gate6": {
+    "status": "complete",
+    "fullRegression": { "total": 1300, "passed": 1293, "failed": 0, "skipped": 7 },
+    "precision": "decimal and bigint values remain strings"
+  },
+  "gate7": {
+    "status": "shadow_complete",
+    "sourceCommit": "branch HEAD",
+    "desktop": { "profile": "read-model", "status": "pass" },
+    "mobile": { "profile": "read-model", "status": "pass" },
+    "viewportInvariant": true,
+    "operationalDataTouched": false,
+    "productionBranchTouched": false
+  },
+  "gate8": false
+}

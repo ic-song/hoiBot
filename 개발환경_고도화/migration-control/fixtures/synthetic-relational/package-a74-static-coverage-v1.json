@@ -1,0 +1,1031 @@
+{
+  "schemaVersion": 1,
+  "sliceId": "SL-PACKAGE-A74-STATIC-COVERAGE-SNAPSHOT-01",
+  "executionId": "개발자-SL-PACKAGE-A74-STATIC-COVERAGE-SNAPSHOT-01-20260831T0720",
+  "wbs": 661,
+  "dbRow": 1939,
+  "lease": 2407,
+  "baseline": "90bdfa97c1e535b8c1ef02428f4bb2459e1a4bb7",
+  "migrationChanges": 0,
+  "hashAlgorithm": "SHA256 UTF-8; stable codes sorted and joined by LF; coverage rows use code|class|mode|definition files|catalog files|reward files",
+  "hashes": {
+    "membershipSha256": "4b7a0d117341a720d5f9ca8140c61cbee407cd85ab55790d2d092d224ee27bd2",
+    "coverageMatrixSha256": "944326b157fd25ed33332ad871f4f172c5704751e581ae42efcfa9a313f1c708",
+    "sourceMigrationSetSha256": "102f4f994be560196ea5ad875c22af57609ec05a4b3af5c4c2aecf07f0716997"
+  },
+  "counts": {
+    "membership": 74,
+    "definitionCoverage": 74,
+    "catalogConsumeCoverage": 21,
+    "rewardTargetCoverage": 45,
+    "productOnly": 19,
+    "rewardOnly": 43,
+    "both": 2,
+    "unbound": 10,
+    "duplicate": 0,
+    "conflict": 0,
+    "orphan": 0,
+    "gap": 0,
+    "extra": 0
+  },
+  "sourceMigrations": {
+    "036_independent_package_seed.sql": "b04e318f968c7dc5b98857608f54e3f29deb995d76b31cfece0e48d0877f53df",
+    "038_independent_package_rewards.sql": "9d27e7e2d265e22cf7570c6b9f8d335618d704ee5423c5a66903e57536483980",
+    "039_package_reward_rule_seed.sql": "9aa5153af5bd3ce3ed3bb08073cd1d3e73653b7c2c48d83c3cb8fd19e4db56cc",
+    "042_independent_package_exact_rewards.sql": "009cdb1783ce968feb4922a01c67c9ea619fe3170402e07cb94b2b3e6c47b3c9",
+    "050_chicken_card_package_catalog_seed.sql": "619330219a8447908a38e676b73a790b084f5ac1ecef535f637435c45c14d062",
+    "051_package_catalog_source_command_seed.sql": "d49ffb7841c6ca98b1286767d818b5a8d093967da764c0210d30ecb64d2c0833",
+    "073_package_archmage_ruins_seed.sql": "8215c46ab478a80b6257a002358af949661bf8e924b39b80dceb81edcc565ea8",
+    "074_package_land_document_box_seed.sql": "a633102e3086d46035d3ea532e77bbca7c691cb2a1298c78ae68a8dacfc99c75",
+    "075_package_fixed_dungeon_box_seed.sql": "21c7eca0706f587f245ef71374ee4033a0bfe458daa649481290f58a7f48d0b3",
+    "076_package_event_dungeon_box_seed.sql": "f9ba00de67d443cddbee935ba75b2f9301f3339a5bcbd5f527565da419083cee",
+    "077_package_jeondor_dungeon_box_seed.sql": "46ed4b3d0c5a05f98ab0c142d10901554106735ed06ce8b8518904fc59106224",
+    "078_package_lucky_box_seed.sql": "4f06006c4d5d53c88dc8c56fc52e42584e9ebc82e09919c727b9ebc76a5b2f3a",
+    "081_package_guild_raid_dungeon_box_seed.sql": "02c893a5b2d485ab0c3b967e822acd5b5423da0c3983270fe2d1d3d4477a49cc",
+    "082_package_castle_tier_box_seed.sql": "9428f2144e09f0a60a3c37663357b0887ebc5ee6c912da1d77105a7952d52801",
+    "084_package_junk_box_seed.sql": "74c4697b94ece9409d8b02c92ca64a79b5c586fb805b251b0251cf69672386d4",
+    "085_package_spirit_dungeon_box_seed.sql": "31f9dcd36d25742789e90d3af1861fcbcee617fd2ef93130d8e73d82c2d6bf5a",
+    "086_package_pendant_maze_box_seed.sql": "d52ed733fbca5b520e4d9d8b1ee1d21774dbe53c834dd822198adce725dc81a3",
+    "089_package_diamond_mine_box_seed.sql": "05bab40280e3b6ad2c0c3ca492b944fdc2f970e02e81d2780bcc31848a4109f7",
+    "091_package_castle_unit_box_seed.sql": "857b373a4e24627f7e0670ad1ece9f40c71e4e4666e041d11b3d11afae6f4644",
+    "092_package_point_box_100m_seed.sql": "6131d0fcb3245e6da8ffbbe5369b1ae43dbd4b218eb1299622c363c3bcf08e3f",
+    "093_package_lucky_reward_box_seed.sql": "19361315a6627d92b93b170d2f8344e496e5c3177e666aad36f24b26d0d4e10a",
+    "153_package_trial_box_seed.sql": "a40334228474ad3a0d953b8f13c3df0c72207171f2ef12baea324d7c199cd2c5",
+    "382_package_reward_canonical_gap.sql": "c811cfe9ba767ff9a48f086c658aea233c7dc5b319adca6a4ab53b10e70a52f4"
+  },
+  "rows": [
+    {
+      "code": "ITEM-DIAMOND-MINE-BOX",
+      "definitionMigrations": [
+        "089_package_diamond_mine_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "089_package_diamond_mine_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-DUNGEON-CHICKEN-BOX",
+      "definitionMigrations": [
+        "075_package_fixed_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "075_package_fixed_dungeon_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-DUNGEON-EVENT-BOX",
+      "definitionMigrations": [
+        "076_package_event_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "076_package_event_dungeon_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-DUNGEON-JEONDOR-BOX",
+      "definitionMigrations": [
+        "077_package_jeondor_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "077_package_jeondor_dungeon_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-DUNGEON-PENDANT-MAZE-BOX",
+      "definitionMigrations": [
+        "086_package_pendant_maze_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "086_package_pendant_maze_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-DUNGEON-SHOP-OPEN-BOX",
+      "definitionMigrations": [
+        "075_package_fixed_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "075_package_fixed_dungeon_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-DUNGEON-SPIRIT-BOX",
+      "definitionMigrations": [
+        "085_package_spirit_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "085_package_spirit_dungeon_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-093",
+      "definitionMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-100",
+      "definitionMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-103",
+      "definitionMigrations": [
+        "036_independent_package_seed.sql",
+        "081_package_guild_raid_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-105",
+      "definitionMigrations": [
+        "036_independent_package_seed.sql",
+        "081_package_guild_raid_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "BOTH",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-156",
+      "definitionMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-203",
+      "definitionMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-212",
+      "definitionMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "036_independent_package_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-ARCHMAGE-RUINS-BOX",
+      "definitionMigrations": [
+        "073_package_archmage_ruins_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "073_package_archmage_ruins_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-CASTLE-UNIT-BOX",
+      "definitionMigrations": [
+        "091_package_castle_unit_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "091_package_castle_unit_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-PACKAGE-LAND-DOCUMENT-DUNGEON-BOX",
+      "definitionMigrations": [
+        "074_package_land_document_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "074_package_land_document_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-002",
+      "definitionMigrations": [
+        "038_independent_package_rewards.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "039_package_reward_rule_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-003",
+      "definitionMigrations": [
+        "038_independent_package_rewards.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "039_package_reward_rule_seed.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-004",
+      "definitionMigrations": [
+        "038_independent_package_rewards.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "039_package_reward_rule_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-005",
+      "definitionMigrations": [
+        "038_independent_package_rewards.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "039_package_reward_rule_seed.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-012",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "039_package_reward_rule_seed.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-013",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "039_package_reward_rule_seed.sql",
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-019",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-023",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "085_package_spirit_dungeon_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-024",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "050_chicken_card_package_catalog_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-025",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "050_chicken_card_package_catalog_seed.sql",
+        "051_package_catalog_source_command_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-027",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-030",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-031",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-032",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-033",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "076_package_event_dungeon_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-035",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-036",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-037",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-038",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "153_package_trial_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-039",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql",
+        "081_package_guild_raid_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "074_package_land_document_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-042",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "051_package_catalog_source_command_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-047",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql",
+        "382_package_reward_canonical_gap.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "382_package_reward_canonical_gap.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-049",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-050",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-051",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-065",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "051_package_catalog_source_command_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-066",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [],
+      "bindingClass": "UNBOUND",
+      "sourceBindingMode": "DB_DRIVEN_LITERAL0",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-001",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-002",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-003",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-004",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-005",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-006",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-007",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-008",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-009",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-010",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-011",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-012",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-013",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-014",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-015",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-016",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-017",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-018",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-019",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-FISH-020",
+      "definitionMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "042_independent_package_exact_rewards.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-PET-SKILL-BOOK-FRAGMENT",
+      "definitionMigrations": [
+        "073_package_archmage_ruins_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "073_package_archmage_ruins_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-RANDOM-TERRITORY-ATTACK-10",
+      "definitionMigrations": [
+        "051_package_catalog_source_command_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "051_package_catalog_source_command_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-RANDOM-TERRITORY-DEFENSE-20",
+      "definitionMigrations": [
+        "051_package_catalog_source_command_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "051_package_catalog_source_command_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-TRIAL-TOWER-GUIDE",
+      "definitionMigrations": [
+        "153_package_trial_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "153_package_trial_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "ITEM-RWD-TRIAL-TOWER-RESET",
+      "definitionMigrations": [
+        "153_package_trial_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "153_package_trial_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "junk_box",
+      "definitionMigrations": [
+        "084_package_junk_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "084_package_junk_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "pet_enhance_rate_up_30",
+      "definitionMigrations": [
+        "082_package_castle_tier_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "082_package_castle_tier_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "point_box_100m",
+      "definitionMigrations": [
+        "092_package_point_box_100m_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "092_package_point_box_100m_seed.sql"
+      ],
+      "rewardTargetMigrations": [],
+      "bindingClass": "PRODUCT_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "reward_lucky_box",
+      "definitionMigrations": [
+        "078_package_lucky_box_seed.sql",
+        "093_package_lucky_reward_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [
+        "093_package_lucky_reward_box_seed.sql"
+      ],
+      "rewardTargetMigrations": [
+        "078_package_lucky_box_seed.sql"
+      ],
+      "bindingClass": "BOTH",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    },
+    {
+      "code": "trait_change_book",
+      "definitionMigrations": [
+        "081_package_guild_raid_dungeon_box_seed.sql"
+      ],
+      "catalogConsumeMigrations": [],
+      "rewardTargetMigrations": [
+        "081_package_guild_raid_dungeon_box_seed.sql"
+      ],
+      "bindingClass": "REWARD_ONLY",
+      "sourceBindingMode": "STATIC_LITERAL",
+      "orphan": false
+    }
+  ],
+  "scopeGuards": {
+    "d1Code": "free_market_membership",
+    "d1Changed": false,
+    "runtimeChanges": 0,
+    "providerChanges": 0,
+    "ownershipChanges": 0,
+    "schemaChanges": 0,
+    "migrationFilesAdded": 0,
+    "oldSchemaChanges": 0,
+    "mainChanges": 0,
+    "uiChanges": 0,
+    "databaseWrites": 0
+  }
+}

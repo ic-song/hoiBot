@@ -1,0 +1,72 @@
+{
+  "sliceId": "SL-PACKAGE-LEGACY-SCHEMA-DATA-PARITY-01",
+  "executionId": "개발자-SL-PACKAGE-LEGACY-SCHEMA-DATA-PARITY-01-20260831T0930",
+  "wbs": 672,
+  "dbRow": 1950,
+  "lease": 2420,
+  "baseline": "7172e9609139a0e0592230e0b75669a34e4b7f0f",
+  "scope": {
+    "oldDefinitions": 0,
+    "oldContents": 0,
+    "oldPurchases": 0,
+    "currentCatalogTotal": 60,
+    "currentActiveCatalog": 1,
+    "currentEnabledRules": 243,
+    "currentEffectiveRules": 1,
+    "directStableMappings": 0,
+    "currentActiveWithoutOld": 1,
+    "orphanTotal": 0,
+    "duplicateTotal": 0,
+    "sequenceMismatchTotal": 0,
+    "runtimeSourceRefs": 0,
+    "dropReady": false,
+    "oldTableDrops": 0,
+    "oldDataDeletes": 0,
+    "providerChanges": 0,
+    "runtimeChanges": 0,
+    "mainChanges": 0,
+    "schemaChanges": 0,
+    "migrationChanges": 0
+  },
+  "dropConditions": {
+    "activeMappedParity": "REQUIRED_NOT_PROVEN",
+    "purchaseHistorySnapshot": "REQUIRED_NOT_PROVEN",
+    "productionSnapshot": "REQUIRED_NOT_PROVEN",
+    "verifiedBackup": "REQUIRED_NOT_PROVEN",
+    "verifiedRollback": "REQUIRED_NOT_PROVEN",
+    "currentOnlySourceDisposition": "REQUIRED_NOT_PROVEN"
+  },
+  "hashes": {
+    "oldDefinitionsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oldContentsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "oldPurchasesSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "activeCatalogSha256": "2abbdbba865551ef666914775d2c6ae949510916064e65a148c59ef5dc3e0f52",
+    "effectiveRewardsSha256": "2e95eed64743ce748f9db9907a0412a590a79c4ed8f814101978fce35ac142e3",
+    "directMappingsSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "validation": {
+    "focused": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "freshMaria390Migrations": "PASS",
+    "readOnlyProbe": "PASS",
+    "reconnect": "PASS",
+    "restart": "PASS",
+    "defaultFullRegression": "PASS",
+    "syntheticShadow": "PASS"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "valRangeReserved": "10624:10631",
+  "sheetsEdited": false,
+  "featureProdChanged": false,
+  "operationalDatabaseUsed": false
+}

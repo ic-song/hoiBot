@@ -1,0 +1,27 @@
+{
+  "catalogVersion": "ASSET-FREEZE-v2.400-pendant-object-link-01",
+  "sourceSystem": "RUNTIME_DB",
+  "sourceTable": "item_definitions",
+  "objectType": "ITEM",
+  "objectKeyPrefix": "item.pendant.",
+  "definitions": 13,
+  "objects": 13,
+  "aliases": 0,
+  "sourceBindings": 13,
+  "ownershipRowsMutated": 0,
+  "rows": [
+    { "code": "ITEM-PENDANT-DRAW-QUIET", "key": "item.pendant.quiet", "display": "고요의 펜던트", "grade": "최하급", "charm": "200000", "explore": 0.3, "rate": 39.89, "drawOrder": 1, "gradeOrder": 13, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-OATH", "key": "item.pendant.oath", "display": "맹세의 펜던트", "grade": "하급", "charm": "500000", "explore": 0.4, "rate": 25, "drawOrder": 2, "gradeOrder": 12, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-RIFT", "key": "item.pendant.rift", "display": "균열의 펜던트", "grade": "하급+", "charm": "1000000", "explore": 0.5, "rate": 15, "drawOrder": 3, "gradeOrder": 11, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-STORM", "key": "item.pendant.storm", "display": "폭풍의 펜던트", "grade": "중급", "charm": "2000000", "explore": 0.6, "rate": 8, "drawOrder": 4, "gradeOrder": 10, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-CRUEL", "key": "item.pendant.cruel", "display": "잔혹한 펜던트", "grade": "중급+", "charm": "3000000", "explore": 0.7, "rate": 5, "drawOrder": 5, "gradeOrder": 9, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-STARS", "key": "item.pendant.stars", "display": "별무리 펜던트", "grade": "상급", "charm": "4000000", "explore": 0.9, "rate": 3, "drawOrder": 6, "gradeOrder": 8, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-GREED", "key": "item.pendant.greed", "display": "탐욕의 펜던트", "grade": "상급+", "charm": "5000000", "explore": 1, "rate": 2, "drawOrder": 7, "gradeOrder": 7, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-FATE", "key": "item.pendant.fate", "display": "운명의 펜던트", "grade": "최상급", "charm": "6000000", "explore": 1.1, "rate": 1.2, "drawOrder": 8, "gradeOrder": 6, "notice": false },
+    { "code": "ITEM-PENDANT-DRAW-JUDGMENT", "key": "item.pendant.judgment", "display": "심판의 펜던트", "grade": "최상급+", "charm": "7000000", "explore": 1.2, "rate": 0.6, "drawOrder": 9, "gradeOrder": 5, "notice": true },
+    { "code": "ITEM-PENDANT-DRAW-THRONE", "key": "item.pendant.throne", "display": "왕좌의 펜던트", "grade": "신화", "charm": "8000000", "explore": 1.3, "rate": 0.2, "drawOrder": 10, "gradeOrder": 4, "notice": true },
+    { "code": "ITEM-PENDANT-DRAW-SKY", "key": "item.pendant.sky", "display": "천공의 펜던트", "grade": "초월", "charm": "10000000", "explore": 1.5, "rate": 0.08, "drawOrder": 11, "gradeOrder": 3, "notice": true },
+    { "code": "ITEM-PENDANT-DRAW-GENESIS", "key": "item.pendant.genesis", "display": "창세의 펜던트", "grade": "창세", "charm": "15000000", "explore": 2, "rate": 0.02, "drawOrder": 12, "gradeOrder": 2, "notice": true },
+    { "code": "ITEM-PENDANT-DRAW-CREATION", "key": "item.pendant.creation", "display": "창조의 펜던트", "grade": "창조", "charm": "20000000", "explore": 2.5, "rate": 0.01, "drawOrder": 13, "gradeOrder": 1, "notice": true }
+  ]
+}

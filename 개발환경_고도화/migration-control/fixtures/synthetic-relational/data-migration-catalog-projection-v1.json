@@ -1,0 +1,84 @@
+{
+  "format": "hoibot-catalog-projection-manifest-v1",
+  "catalogVersion": "SC-20260902-1",
+  "commonStagingRunId": "a1234567",
+  "commonStagingSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "commonStagingEnvelope": {
+    "rawBundleSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "snapshotManifestSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "extractionManifestSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "expectedFileCount": 1,
+    "expectedTotalBytes": "1",
+    "projectedFileCount": 1,
+    "ignoredFileCount": 0
+  },
+  "targetSchemaSha256": "2d0229891ffaaf486ec9fe7f786d362b90d219bfb915ed2cdf54c1937fe4cf3a",
+  "actor": "catalog-projection-test",
+  "sources": [
+    {
+      "sourceLocatorSha256": "23ce607c538a0e92366943f859fb536f5601dbd3449da59a98d7d5e15c123fba",
+      "sourcePayloadFingerprint": "17cd16d63724fdd033af3d25c037749fba28ce171dc31bb7c68dcb2d58a267f3",
+      "recordDomain": "ITEM",
+      "decisionStatus": "PROJECT",
+      "outputs": [
+        {
+          "projectionLocator": "item-definition-0",
+          "identityMode": "GENERATED",
+          "targetTable": "canonical_item_definitions",
+          "targetPkColumn": "item_id",
+          "targetObjectType": "CANONICAL_ITEM_DEFINITIONS",
+          "targetSourceNamespace": "object-import.item.canonical_item_definitions",
+          "payload": {
+            "item_name": "다이아상자💎(/다이아상자오픈)",
+            "item_description": null,
+            "item_kind": "BOX",
+            "item_grade": null,
+            "price_amount": null,
+            "price_currency_source_identifier": null,
+            "stackable_flag": true,
+            "active_flag": true,
+            "definition_options": null
+          },
+          "valueOrigins": {
+            "item_name": "SOURCE_EXACT",
+            "item_description": "SOURCE_ABSENT",
+            "item_kind": "APPROVED_CATALOG",
+            "item_grade": "SOURCE_ABSENT",
+            "price_amount": "SOURCE_ABSENT",
+            "price_currency_source_identifier": "SOURCE_ABSENT",
+            "stackable_flag": "APPROVED_CATALOG",
+            "active_flag": "APPROVED_CATALOG",
+            "definition_options": "SOURCE_ABSENT"
+          },
+          "sourceBindings": {
+            "item_name": "/item_name",
+            "item_description": "/item_description",
+            "item_grade": "/item_grade",
+            "price_amount": "/price_amount",
+            "price_currency_source_identifier": "/price_currency_source_identifier",
+            "definition_options": "/definition_options"
+          },
+          "referenceBindings": [],
+          "approvalKind": "CATALOG_PROVENANCE",
+          "approvalSha256": "9197392772536e3bf093278a228f93ee0c94e043af1330b5743c4969b90a3182"
+        }
+      ]
+    },
+    {
+      "sourceLocatorSha256": "fc4ed10fa95e929161f5d56aed10c1ac56233f3e9951de4427c1bab409e02702",
+      "sourcePayloadFingerprint": "3783c2512b1fa6a92e744e404fb9ffcc1237b34682b32ae96c9f1758997f8265",
+      "recordDomain": "FURNITURE",
+      "decisionStatus": "QUARANTINE",
+      "decisionReason": "DEFINITION_REFERENCE_AMBIGUOUS",
+      "outputs": []
+    },
+    {
+      "sourceLocatorSha256": "e00d1d5c7f034956fb22318fbe3a6d42673f87c68508b6d7fa5a95d7a27a5f48",
+      "sourcePayloadFingerprint": "541cb2a020423ba2a17b9b337566c92f9b70c1bb8856f616428f056d9f80a107",
+      "recordDomain": "NON_OBJECT",
+      "decisionStatus": "IGNORE",
+      "decisionReason": "NOT_OBJECT_DOMAIN_INPUT",
+      "outputs": []
+    }
+  ]
+}

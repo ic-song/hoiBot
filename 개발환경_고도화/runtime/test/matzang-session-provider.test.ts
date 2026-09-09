@@ -1,0 +1,1 @@
+import assert from"node:assert/strict";import{describe,it}from"node:test";import{matzangRankReward}from"../src/battle/matzang-session-provider.js";describe("matzang session reward policy",()=>{it("preserves current source rank rewards",()=>{assert.deepEqual([1,10,11,20,21,30,31,100,101].map(x=>matzangRankReward(x)),[20n,11n,4n,4n,2n,2n,1n,1n,0n]);});});

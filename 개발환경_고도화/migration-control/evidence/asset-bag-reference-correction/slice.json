@@ -1,0 +1,53 @@
+{
+  "sliceId": "SL-ASSET-LEGACY-BAG-ITEM-REFERENCE-CORRECTION-01",
+  "executionId": "작업반장-SL-ASSET-LEGACY-BAG-ITEM-REFERENCE-CORRECTION-01-2026090214",
+  "catalogVersion": "ASSET-FREEZE-v2.438-bag-reference-01",
+  "baselineCommit": "0424ef6c8627ced8d648979cd31024b81de9d9dc",
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "counts": {
+    "dynamicProjectionIdentities": 3076,
+    "dynamicProjectionOccurrences": 21980,
+    "remainingItemIdentities": 230,
+    "remainingItemOccurrences": 234347,
+    "referenceCount": 2055629,
+    "distinctReferenceCount": 6182,
+    "resolvedCount": 1499513,
+    "orphanCount": 493928,
+    "ambiguousCount": 21453,
+    "inactiveCount": 40735,
+    "gapIdentityCount": 3367
+  },
+  "verification": {
+    "focused": "3/3 PASS",
+    "dataMigrationRuntimeFull": "35/35 PASS",
+    "modernizationRuntimeFull": "1576 PASS / 0 FAIL / 8 SKIP",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "migrationCount": 429,
+    "schemaMutationCount": 0,
+    "canonicalSha256": "055062decc7da0c4b8037935ec62af850f88681b52e251384188ab5d623502b8",
+    "reportSha256": "5bbb9bc6ab078cd49e3bcc71aa01bda434b633c4d8d32831c10da35f464183cb",
+    "normalizedCrosswalkReplaySha256": "b7e9271f00400ddaf8da0c735c12c6529b16b1434eb18446feb1c4ef32130b22"
+  },
+  "privacy": {
+    "rawNamesCommitted": false,
+    "privateCrosswalkCommitted": false,
+    "publicClassificationOnly": true
+  },
+  "dataMigrationReady": false,
+  "forbiddenMutations": {
+    "gate8": 0,
+    "featureProd": 0,
+    "operationalDatabase": 0,
+    "legacyMainOrData": 0
+  }
+}

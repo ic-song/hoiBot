@@ -1,0 +1,49 @@
+{
+  "standardVersion": "object-data-model-standard.v1",
+  "scope": "new_object_schema_only",
+  "registeredMigrations": ["999_synthetic_object_data_model_contract.sql"],
+  "forbiddenExecutableColumns": ["javascript", "js", "sql", "script", "executable_payload"],
+  "tables": [
+    {
+      "table": "players",
+      "role": "identity",
+      "columns": [
+        { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ],
+      "primaryKey": ["player_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "item_definitions",
+      "role": "definition",
+      "columns": [
+        { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "item_name", "type": "VARCHAR(255)" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ],
+      "primaryKey": ["item_id"], "foreignKeys": [], "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    },
+    {
+      "table": "owned_items",
+      "role": "ownership_quantity",
+      "columns": [
+        { "name": "player_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "item_id", "type": "CHAR(8)", "charset": "ascii", "collation": "ascii_bin" },
+        { "name": "quantity", "type": "BIGINT UNSIGNED" },
+        { "name": "INSERT_USER", "type": "VARCHAR(100)" }, { "name": "INSERT_TIME", "type": "CHAR(19)" },
+        { "name": "UPDATE_USER", "type": "VARCHAR(100)" }, { "name": "UPDATE_TIME", "type": "CHAR(19)" }
+      ],
+      "primaryKey": ["player_id", "item_id"],
+      "uniqueKeys": [["player_id", "item_id"]],
+      "foreignKeys": [
+        { "column": "player_id", "referencesTable": "players", "referencesColumn": "player_id" },
+        { "column": "item_id", "referencesTable": "item_definitions", "referencesColumn": "item_id" }
+      ],
+      "allowedStateColumns": ["quantity"],
+      "definitionOnlyColumns": ["item_name", "price", "base_charm"],
+      "auditTimeFormat": "KST_YYYY-MM-DD HH:MM:SS"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "sliceId": "SL-ASSET-DOMAIN-INSTANCE-REFERENCE-CORRECTION-01",
+  "executionId": "작업반장-SL-ASSET-DOMAIN-INSTANCE-REFERENCE-CORRECTION-01-2026090213",
+  "claimRow": 2503,
+  "baseline": "8319b09753ede89bb237b6c196e49e69fc80c9f3",
+  "dependencies": ["WBS718", "WBS722", "WBS629", "WBS709"],
+  "catalogVersion": "ASSET-FREEZE-v2.438-domain-instance-reference-01",
+  "scope": "가구 charm snapshot과 미니펫 legacy stat signature가 유일할 때만 기존 canonical definition에 연결",
+  "privacy": "exact instance identity와 crosswalk는 TEMP에만 저장하고 Git/WBS에는 집계와 SHA-256만 기록",
+  "canonical": {
+    "objectCount": 4821,
+    "miniPetCatalogCount": 1093,
+    "miniPetSignatureCount": 1066,
+    "bindingCount": 6728,
+    "canonicalSha256": "a184f22c1ae7c4ec4d7648fd2a3beea59db0d30cef77087f2fa5813bf466f58a"
+  },
+  "validation": {
+    "focused": { "pass": 13, "fail": 0 },
+    "rootRegression": { "pass": 32, "fail": 0 },
+    "developmentRegression": { "pass": 1575, "fail": 0, "skip": 8 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "migrationCountCarryForward": 429,
+    "restartReconnect": "PASS",
+    "payloadFileCount": 753,
+    "referenceCount": 2077609,
+    "distinctReferenceCount": 9258,
+    "resolvedCount": 1395208,
+    "orphanCount": 621560,
+    "ambiguousCount": 21453,
+    "inactiveCount": 39388,
+    "domainResolvedOccurrenceDelta": 56450,
+    "domainRemainingIdentityCount": 1104,
+    "domainRemainingOccurrenceCount": 59225,
+    "domainAmbiguousCount": 0,
+    "privateCrosswalkContentSha256": "6d386cea19f82c0b0c5438b91836abdf47901f5a986a63ca2e67f15e9cb5392e",
+    "reportSha256": "de680676bccb2741d1fbda83951c837e589828d0dc204ed5dace57b93e6ce502",
+    "classificationReplay": "PASS"
+  },
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": true, "gate8": false },
+  "forbidden": ["자동 이름 병합", "운영 보유·원장 변경", "신규 ownership model", "운영 DB", "feature/prod", "legacy main.js", "legacy data mutation", "Gate8"]
+}

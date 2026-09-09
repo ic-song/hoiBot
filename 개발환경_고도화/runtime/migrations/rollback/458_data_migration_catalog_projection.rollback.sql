@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS data_migration_catalog_projection_records;
+DROP TABLE IF EXISTS data_migration_catalog_source_decisions;
+DROP TABLE IF EXISTS data_migration_catalog_projection_runs;

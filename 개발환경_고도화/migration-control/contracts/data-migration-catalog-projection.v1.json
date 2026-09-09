@@ -1,0 +1,100 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-data-migration-catalog-projection-contract-v1",
+  "migration": "458_data_migration_catalog_projection.sql",
+  "correctionMigration": "459_catalog_projection_upstream_envelope.sql",
+  "commonStagingContract": "data-migration-common-staging.v1.json",
+  "targetSchemaContract": "object-domain-import-target-schema.v1.json",
+  "targetSchemaIntegrity": {
+    "algorithm": "SHA-256 over canonical semantic JSON",
+    "canonicalization": "parse JSON, recursively sort object keys, preserve array order, serialize logical UTF-8 values without insignificant whitespace",
+    "failurePolicy": "malformed JSON, unsafe numeric values, schema hash mismatch, or semantic drift fails closed before writes",
+    "legacy458Replay": "derive migration-458 aliases only from the parsed current schema reserialized as two-space pretty JSON with one trailing LF, then hash deterministic LF and CRLF byte forms; query canonical plus both aliases, require at most one match, and full stored parity before zero-write replay",
+    "newRunPolicy": "new projection runs store only the canonical semantic target schema SHA-256"
+  },
+  "identityBindingContract": "object-domain-import-identity-bindings.v1.json",
+  "objectDataModelContract": "object-data-model-standard.v1.json",
+  "inputFormat": "hoibot-catalog-projection-manifest-v1",
+  "commonStagingEnvelope": {
+    "requiredFields": ["rawBundleSha256", "snapshotManifestSha256", "extractionManifestSha256", "expectedFileCount", "expectedTotalBytes", "projectedFileCount", "ignoredFileCount"],
+    "fingerprintColumn": "upstream_envelope_sha256",
+    "fingerprintInput": "stable JSON of the seven required fields plus commonStagingSha256 as stagingSha256",
+    "countConsistency": "projectedFileCount + ignoredFileCount = expectedFileCount",
+    "manifestHashCompatibility": "projection_manifest_sha256 retains the immutable migration-458 algorithm and excludes this envelope; envelope drift is verified independently by upstream_envelope_sha256"
+  },
+  "sourceCoveragePolicy": "every row of one COMPLETE common staging run is decided exactly once as PROJECT, QUARANTINE, or IGNORE",
+  "projectionPolicy": {
+    "identity": "the projector emits GENERATED or REUSED identity mode plus a stable SHA-256 identity locator, target object type and target source namespace; WBS742 allocates or reuses the concrete CUID2 target PK atomically",
+    "payload": "only non-identity target columns declared by the frozen target schema are emitted as canonical typed JSON; CHAR(8) PK/FK values and audit columns are never embedded; every value carries a SOURCE_EXACT, SOURCE_ABSENT, APPROVED_CATALOG, EXPLICIT_RULE, DERIVED_INDEX, or CONSTANT_CONTRACT origin; SOURCE_EXACT and SOURCE_ABSENT columns carry an RFC 6901 sourceBindings pointer and are checked against the locked Common Staging payload_json",
+    "provenance": "APPROVED_CATALOG requires CATALOG_PROVENANCE, EXPLICIT_RULE requires RULE_PROVENANCE, and each requires an immutable approval SHA-256",
+    "references": "every target CHAR(8) identity column other than the row PK is represented by the exact FK target table/PK/source-locator binding declared by the object data model contract",
+    "displayName": "preserved as data only and never used alone as identity or an automatic join key",
+    "unresolved": "unknown, missing, ambiguous, cross-owner, type-drift, or payload-drift records are losslessly quarantined; values are never guessed",
+    "replay": "same COMPLETE staging run, catalog version, manifest and target schema returns the existing COMPLETE run with zero writes; any stored parity mismatch fails closed"
+  },
+  "tables": [
+    {
+      "table": "data_migration_catalog_projection_runs",
+      "primaryKey": "catalog_projection_run_id",
+      "foreignKeys": [{ "column": "common_staging_run_id", "references": "data_migration_common_staging_runs.common_staging_run_id" }],
+      "unique": ["common_staging_run_id", "catalog_version", "projection_manifest_sha256"],
+      "upstreamEnvelope": ["raw_bundle_sha256", "snapshot_manifest_sha256", "extraction_manifest_sha256", "expected_file_count", "expected_total_bytes", "projected_file_count", "ignored_file_count", "upstream_envelope_sha256"],
+      "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
+    },
+    {
+      "table": "data_migration_catalog_source_decisions",
+      "primaryKey": "catalog_source_decision_id",
+      "foreignKeys": [
+        { "column": "catalog_projection_run_id", "references": "data_migration_catalog_projection_runs.catalog_projection_run_id" },
+        { "column": "common_staging_record_id", "references": "data_migration_common_staging_records.common_staging_record_id" }
+      ],
+      "unique": [
+        ["catalog_source_decision_id", "catalog_projection_run_id"],
+        ["catalog_projection_run_id", "common_staging_record_id"],
+        ["catalog_projection_run_id", "source_locator_sha256"]
+      ],
+      "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
+    },
+    {
+      "table": "data_migration_catalog_projection_records",
+      "primaryKey": "catalog_projection_record_id",
+      "foreignKeys": [
+        { "column": "catalog_projection_run_id", "references": "data_migration_catalog_projection_runs.catalog_projection_run_id" },
+        { "column": "catalog_source_decision_id", "references": "data_migration_catalog_source_decisions.catalog_source_decision_id" }
+      ],
+      "unique": [
+        ["catalog_source_decision_id", "projection_locator", "target_table_name"],
+        ["catalog_projection_run_id", "target_source_namespace", "identity_locator_sha256"]
+      ],
+      "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"]
+    }
+  ],
+  "domainDecisions": {
+    "furniture": {
+      "definitionResolution": "approved immutable catalog-index or approved provenance-bearing historical/legacy-recovered crosswalk only",
+      "missing": "DEFINITION_REFERENCE_MISSING",
+      "ambiguous": "DEFINITION_REFERENCE_AMBIGUOUS",
+      "purchasePriceAndEnhancement": "required explicit typed projection; never default or derive from exp/rate",
+      "rate": "draw probability evidence only; never charm_per_enhancement"
+    },
+    "miniPet": {
+      "ownedOccurrenceResolution": "all 3890 sealed occurrences require an approved exact occurrence-locator crosswalk, including display-exact candidates",
+      "sourceRole": "MINI_PET_BAG and MINI_PET_EQUIPPED are explicit Common Staging record_kind values and must equal projection sourceRole; display or array proximity never selects the role",
+      "bagState": { "equipped_flag": false, "bound_flag": false, "missing_enhancement_level": "0" },
+      "equippedState": { "equipped_flag": true, "bound_flag": true, "missing_enhancement_level": "0" },
+      "definitionBalance": "sale_price, max_enhancement_level, active_flag and enhancement rule gains/probability/cost require explicit approved typed projections"
+    },
+    "titles": {
+      "domains": ["member-title", "pet-title", "mini-pet-title"],
+      "definitionPrice": "base_sale_price comes only from approved definition projection",
+      "occurrencePrice": "acquisition_price preserves exact list[].price and may be null only when the occurrence source is genuinely absent; never copy definition price",
+      "selection": "title.num is one-based; null or zero means no selection; out-of-range selection is quarantined"
+    },
+    "equipment": {
+      "durability": "preserve an available lossless source value; missing durability requires an explicitly approved zero rule or quarantine"
+    }
+  },
+  "forbiddenPayloadKeys": ["id", "code", "version", "javascript", "sql", "script", "handler_source", "executable_payload"],
+  "transactionBoundary": "one complete manifest is preflighted and committed atomically after locking its COMPLETE common staging run",
+  "operationalDataAllowed": false
+}

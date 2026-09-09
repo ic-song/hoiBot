@@ -1,0 +1,72 @@
+{
+  "sliceId": "SL-COMMON-ADMIN-WEB-MVP-INTEGRATION-01",
+  "wbs": "WBS627",
+  "lease": "Lease2376",
+  "baseline": "7ef39d2e103a62b728f07fd879a5171ed964c0c8",
+  "integratedSourceCommits": [
+    "d98cb609",
+    "82dc041e",
+    "deb24017",
+    "19158d2f",
+    "5c4f6693"
+  ],
+  "scope": [
+    "account restriction create/revoke",
+    "currency adjustment",
+    "managed/dev backup and restore",
+    "diamond/package/object catalog coexistence"
+  ],
+  "gates": {
+    "gate1": "complete",
+    "gate2": "complete",
+    "gate3": "complete",
+    "gate4": "complete",
+    "gate5": "complete",
+    "gate6": "complete",
+    "gate7": "complete",
+    "gate8": false
+  },
+  "checkpoint": {
+    "wbs": "WBS627",
+    "database": "DB1905",
+    "validation": "VAL",
+    "lease": "Lease2376",
+    "report": "REPORT",
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": true,
+    "gate8": false
+  },
+  "validationEvidence": {
+    "focusedControl": "41/41 PASS",
+    "focusedLatest": "44/44 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "defaultFullRegression": "1270 PASS, 0 FAIL",
+    "integrationSynthetic": "localhost HTTP 200 and exact DOM/navigation/endpoint/RBAC/CSRF/reason/idempotency/confirmation assertions PASS",
+    "shadowCarryForward": [
+      "WBS617 desktop 1440x900 and mobile 390x844 Shadow",
+      "account consumer Shadow/evidence",
+      "reward/currency consumer Shadow/evidence",
+      "backup/recovery consumer Shadow/evidence"
+    ]
+  },
+  "gate7ShadowSubstitute": {
+    "accepted": true,
+    "consoleAndOverflow": "carry-forward and synthetic exact assertions",
+    "infrastructureCaveats": [
+      "browser kernel asset path error reproduced in the current execution context",
+      "browser kernel asset path error reproduced in a second execution context"
+    ],
+    "codeWorkaroundAdded": false
+  },
+  "schemaChanges": 0,
+  "providerChanges": 0,
+  "migrations": 0,
+  "operationalDatabaseUsed": false,
+  "googleSheetsModified": false
+}

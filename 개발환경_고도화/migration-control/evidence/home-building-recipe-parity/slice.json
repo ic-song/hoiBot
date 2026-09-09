@@ -1,0 +1,240 @@
+{
+  "sliceId": "SL-ASSET-HOME-BUILDING-RECIPE-PARITY-01",
+  "catalogVersion": "ASSET-FREEZE-v2.438-home-building-recipe-01",
+  "sourceRevision": "5925b83b1dbfb78ef583354604e112b9430003f3",
+  "sourceSha256": "726385f7c9b9aed94bcb62c2eb6f9267e32d6a90a4216b50175cdfded878744b",
+  "sourceGitObjectSha256": "9aa01517393750942992547223445ad0c77f0351d4a6700c05c36bd10cc7e288",
+  "baselineSha256": "73c93af3f0a5d52e4539047a21ce0d08f33603275ca542974eb11f47f93b2195",
+  "counts": {
+    "baselineRows": 300,
+    "approvedRows": 300,
+    "baselineDefinitions": 299,
+    "approvedDefinitions": 299,
+    "reusedDefinitions": 299,
+    "changedRecipes": 300,
+    "requirements": 2683,
+    "itemTargets": 10,
+    "newItemTargets": 2,
+    "duplicateIdentityGroups": 1,
+    "duplicateIdentityRows": 2,
+    "duplicateIdentityOccurrences": 1,
+    "floor190Rows": 2,
+    "floor190Definitions": 2,
+    "floor263Rows": 2,
+    "floor263Definitions": 1
+  },
+  "itemOccurrences": [
+    {
+      "displayName": "땅문서📜",
+      "code": "land_document",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 300,
+      "minQuantity": 1,
+      "maxQuantity": 30,
+      "quantities": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30
+      ]
+    },
+    {
+      "displayName": "돌멩이🪨",
+      "code": "ITEM-RWD-041",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 300,
+      "minQuantity": 1000,
+      "maxQuantity": 300000,
+      "quantities": [
+        1000,
+        1500,
+        2000,
+        3000,
+        4000,
+        5000,
+        6000,
+        7000,
+        8000,
+        9000,
+        10000,
+        11000,
+        20000,
+        30000,
+        35000,
+        40000,
+        50000,
+        80000,
+        100000,
+        120000,
+        200000,
+        250000,
+        300000
+      ]
+    },
+    {
+      "displayName": "펫 강화석⭐",
+      "code": "pet_enhance_stone",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 300,
+      "minQuantity": 200,
+      "maxQuantity": 200,
+      "quantities": [
+        200
+      ]
+    },
+    {
+      "displayName": "철근⛓️",
+      "code": "home_material_iron",
+      "objectKey": "item.home_material.iron",
+      "isNew": true,
+      "occurrenceCount": 300,
+      "minQuantity": 20,
+      "maxQuantity": 100,
+      "quantities": [
+        20,
+        30,
+        50,
+        100
+      ]
+    },
+    {
+      "displayName": "양념치킨🐔",
+      "code": "legacy-seasoned-chicken",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 300,
+      "minQuantity": 10,
+      "maxQuantity": 300,
+      "quantities": [
+        10,
+        30,
+        50,
+        100,
+        150,
+        200,
+        250,
+        300
+      ]
+    },
+    {
+      "displayName": "목재🌳",
+      "code": "home_material_wood",
+      "objectKey": "item.home_material.wood",
+      "isNew": true,
+      "occurrenceCount": 300,
+      "minQuantity": 10,
+      "maxQuantity": 100,
+      "quantities": [
+        10,
+        20,
+        30,
+        40,
+        60,
+        100
+      ]
+    },
+    {
+      "displayName": "레이드타격대인장👑(+600👾)",
+      "code": "ITEM-RWD-043",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 140,
+      "minQuantity": 1,
+      "maxQuantity": 10,
+      "quantities": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        10
+      ]
+    },
+    {
+      "displayName": "잡템☠️",
+      "code": "junk",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 291,
+      "minQuantity": 10,
+      "maxQuantity": 70,
+      "quantities": [
+        10,
+        20,
+        30,
+        50,
+        70
+      ]
+    },
+    {
+      "displayName": "전설의 돌맹이🗿",
+      "code": "ITEM-RWD-052",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 251,
+      "minQuantity": 3,
+      "maxQuantity": 8,
+      "quantities": [
+        3,
+        5,
+        7,
+        8
+      ]
+    },
+    {
+      "displayName": "펫먹이🍼",
+      "code": "pet_food",
+      "objectKey": null,
+      "isNew": false,
+      "occurrenceCount": 201,
+      "minQuantity": 100,
+      "maxQuantity": 100,
+      "quantities": [
+        100
+      ]
+    }
+  ],
+  "identityRule": "building identity is exact name+emoji+display+floor+exp; ordered recipe requirements are versioned separately",
+  "carryForward": [
+    "home building definition Gate1~7",
+    "home recipe item gap Gate1~7",
+    "existing building and item ownership/provider"
+  ],
+  "scope": {
+    "providerAdded": false,
+    "ownershipChanged": false,
+    "consumerChanged": false,
+    "operationalDataTouched": false,
+    "gate8": false
+  }
+}

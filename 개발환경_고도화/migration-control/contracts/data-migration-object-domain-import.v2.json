@@ -1,0 +1,43 @@
+{
+  "catalogVersion": "SC-20260902-1",
+  "format": "hoibot-data-migration-object-domain-import-contract-v2",
+  "migration": "460_data_migration_object_domain_import.sql",
+  "baseContract": "data-migration-object-domain-import.v1.json",
+  "profileContract": "object-domain-import-profile.v2.json",
+  "profileSemanticSha256": "706f125de067f40f186cae9691410aa254e8dfcb3a33c2d225c49d40f683a58f",
+  "componentSemanticSha256": {
+    "identityBindings": "62abfb152b0a9ee195b23c56aa3a379127990bd81c8f4d7ddae88fc9f42c7e9b",
+    "objectModel": "d73f1ed740fb828a127223b4de8a0facca3ddfe43f4f928c37b2b237d9ab5671",
+    "disposition": "b79c61e64bded52edf849bd59fcf951dd4c6eb4bd5214a0041ef944b60d127bc",
+    "fieldMap": "42b430fb91c8930bbdb3cfd545c3d2779e6c471a226d1bbf9b28af30b608760b"
+  },
+  "semanticHashPolicy": {
+    "projectionVersion": "OBJECT_DOMAIN_IMPORT_RELEVANT_V2",
+    "importContractProjection": "all top-level import behavior fields except semanticHashPolicy",
+    "currentImportContractProjectionSha256": "f8f38912729ea5f8368387f0661b41d748eb5d5f93f477fbb6d6f053d0f82a98",
+    "componentProjection": {
+      "identityBindings": "v1 bindings plus the two v2 generated import bindings",
+      "objectModel": "the 47 v2 direct target table declarations selected from the canonical object model",
+      "disposition": "v1 disposition with both definition import tables moved from derived to definitionSeed",
+      "fieldMap": "v1 field map with exact definition import targets added to item and currency"
+    },
+    "acceptedCompatibleImportContractSha256": [],
+    "compatibilityBoundary": "V2 accepts only its current semantic contract. Existing V1 COMPLETE runs must replay or roll back through V1."
+  },
+  "directTargetCount": 47,
+  "targetColumnCount": 252,
+  "definitionTargetCount": 25,
+  "transactionBoundary": "one COMPLETE V2 catalog projection includes definition provenance imports, preflights all rows, inserts definitions before their import bindings and commits all targets plus receipts in one outer transaction",
+  "replay": "same V2 profile and semantic contract is zero-write replay; V1 and V2 identities are not interchangeable",
+  "rollback": "use the profile that created the run and delete imported target rows in reverse import order",
+  "exactDefinitionImports": [
+    { "table": "canonical_item_definition_imports", "sourceSystem": "LEGACY_JSON", "sourceNamespace": "member.bag", "sourceIdentifier": "펫타이틀권🦊(/펫타이틀이름)", "sourceIdentifierOrigin": "SOURCE_EXACT" },
+    { "table": "canonical_currency_definition_imports", "sourceSystem": "LEGACY_JSON", "sourceNamespace": "member.point", "sourceIdentifier": "point", "sourceIdentifierOrigin": "CONSTANT_CONTRACT" }
+  ],
+  "tables": [
+    { "table": "data_migration_object_domain_import_runs", "primaryKey": "object_domain_import_run_id", "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] },
+    { "table": "data_migration_object_domain_import_decisions", "primaryKey": "object_domain_import_decision_id", "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] },
+    { "table": "data_migration_object_domain_import_records", "primaryKey": "object_domain_import_record_id", "auditColumns": ["INSERT_USER", "INSERT_TIME", "UPDATE_USER", "UPDATE_TIME"] }
+  ],
+  "operationalDataAllowed": false
+}

@@ -1,0 +1,38 @@
+{
+  "sliceId": "SL-ASSET-FURNITURE-OBJECT-CATALOG-LINK-01",
+  "executionId": "개발자-SL-ASSET-FURNITURE-OBJECT-CATALOG-LINK-01-20260831T0216",
+  "catalogVersion": "ASSET-FREEZE-v2.400-furniture-object-link-01",
+  "baseline": "7ef39d2e103a62b728f07fd879a5171ed964c0c8",
+  "wbs": 629,
+  "dbRow": 1907,
+  "lease": 2378,
+  "migration": "398_furniture_object_catalog_link.sql",
+  "scope": {
+    "sourceRows": 1551,
+    "physicalDefinitionsPreserved": 1551,
+    "canonicalDefinitions": 1533,
+    "objects": 1533,
+    "aliases": 1551,
+    "sourceBindings": 1551,
+    "ordinarySourceRowsToObjects": "1531:1531",
+    "duplicateSourceRowsToObjects": "20:2",
+    "duplicateWeightOccurrencesPreserved": 18,
+    "displayOnlyCollisionGroupsPreserved": 113,
+    "nameOnlyMerges": 0,
+    "ownershipRowsMutated": 0,
+    "providerIncluded": false,
+    "adminIncluded": false,
+    "wbs625AdapterReused": true
+  },
+  "validation": {
+    "focused": "required",
+    "typecheck": "required",
+    "build": "required",
+    "freshMariaFullMigrations": "required",
+    "migration398ExactParityRollbackReapplyReconnect": "required",
+    "shadow1551": "required",
+    "defaultFullRegression": "required"
+  },
+  "sheetsEdited": false,
+  "gate8": false
+}
