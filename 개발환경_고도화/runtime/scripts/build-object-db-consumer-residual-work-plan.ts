@@ -16,9 +16,6 @@ const countBy = <T>(values: readonly T[], key: (value: T) => string): Record<str
 
 const reusableEvidence = new Map<string, { readonly evidenceKind: "EVIDENCE_BUNDLE" | "SEALED_OBSERVATION" | "REUSABLE_HARNESS"; readonly evidenceRefs: readonly string[]; readonly evidenceCommit: string }>([
   ["legacy-94904fa11988ff04", { evidenceKind: "EVIDENCE_BUNDLE", evidenceCommit: "909fc1ab3ca3f39f1cdec14bb189b695404a9698", evidenceRefs: ["개발환경_고도화/migration-control/evidence/item-bag-canonical-shadow-lease2604/"] }],
-  ["sql-repository-818137c4fb22037a", { evidenceKind: "SEALED_OBSERVATION", evidenceCommit: "d773af54996907b07a5cdfe5ae3ef8c2f3436311", evidenceRefs: ["개발환경_고도화/migration-control/evidence/wbs787-furniture-place/targeted-evidence.json"] }],
-  ["sql-repository-f6c531148a436a21", { evidenceKind: "REUSABLE_HARNESS", evidenceCommit: "db69cd8f59c90f8a2bd603abcc720252cc2af20a", evidenceRefs: ["개발환경_고도화/runtime/test/canonical-mini-pet-acquire-mariadb.integration.test.ts"] }],
-  ["sql-repository-31c4099080d9c9c1", { evidenceKind: "SEALED_OBSERVATION", evidenceCommit: "dd912eca5f7f926c1e5213cd64d46f5294ca5ea1", evidenceRefs: ["개발환경_고도화/migration-control/evidence/wbs789-pet-skill-grant/targeted-evidence.json"] }],
   ["sql-repository-87ed81931dd7417b", { evidenceKind: "REUSABLE_HARNESS", evidenceCommit: "c9f280a8bd21869ee067923413365099697f8d9f", evidenceRefs: ["개발환경_고도화/runtime/test/canonical-item-stack-change-mariadb.integration.test.ts", "개발환경_고도화/runtime/test/app-wiring-mutation-reply.test.ts"] }],
 ]);
 
@@ -151,12 +148,12 @@ for (const entry of entries) {
 
 const categoryCounts = countBy(entries, (entry) => entry.category);
 const expectedCounts = {
-  A_REUSABLE_PROOF_ASSET: 5,
+  A_REUSABLE_PROOF_ASSET: 2,
   B_STRICT_EQUIVALENCE: 10,
   C_DIRECT_EXECUTION: 995,
   D_PREREQUISITE: 82,
 };
-if (entries.length !== 1_092 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
+if (entries.length !== 1_089 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
   throw new Error(`Residual plan cardinality drift: ${JSON.stringify({ total: entries.length, categoryCounts })}`);
 }
 
