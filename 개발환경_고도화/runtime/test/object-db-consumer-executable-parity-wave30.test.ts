@@ -1,0 +1,19 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, it } from "node:test";
+import { parseObjectDbConsumerExecutionReceiptBundle } from "../src/data-migration/object-db-consumer-executable-parity-ledger.js";
+
+const root=resolve(import.meta.dirname,"../../..");
+const read=(path:string):any=>JSON.parse(readFileSync(resolve(root,path),"utf8"));
+const sha=(value:string)=>createHash("sha256").update(value.replace(/\r\n?/g,"\n")).digest("hex");
+const path="개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave30-v1.json";
+const ids=["runtime-dispatch-e2445b135d4fb12c","runtime-dispatch-e2dde461680d21ca"];
+const scenarios=["READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"];
+
+describe("Wave30 player title runtime-dispatch DIRECT parity",()=>{
+  it("keeps all historical receipt prefixes immutable",()=>{const current=read(path),prior=read("개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave29-v1.json"),prefix=JSON.stringify(current.receipts.slice(0,362));assert.equal(current.receipts.length,372);assert.deepEqual(current.receipts.slice(0,362),prior.receipts);assert.equal(Buffer.byteLength(prefix),1382594);assert.equal(sha(prefix),"5cf3063b351bc18a343b075997dead5769cde57d7a8854218c7b89e3abed7373");for(const [count,bytes,hash] of [[352,1361204,"70fca768ac020cc1b8dcbceb221c0beeba927e2b16e7bfc32ad09677b95cec5b"],[324,1260829,"72522ab348255c339dc2e4918fac6ab1702643e6ba8725b99e74ab3457b35adb"],[243,970854,"e21eeacea4c7c9b3fb733a349b928e0d1248579ddbb2cf770e20b1b0fd0b5f97"]] as const){const value=JSON.stringify(current.receipts.slice(0,count));assert.equal(Buffer.byteLength(value),bytes);assert.equal(sha(value),hash);}});
+  it("binds both handlers to five direct read receipts and exact output contracts",()=>{const bundle=read(path),fixture=read("개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave30-player-title-read-v1.json");assert.equal(fixture.bindings.length,10);for(const id of ids)assert.deepEqual(bundle.receipts.filter((r:any)=>r.consumerId===id).map((r:any)=>r.scenario.scenarioKind).sort(),scenarios.slice().sort());const outputs=fixture.bindings.map((b:any)=>b.expectedReply);for(const expected of ["[⭐조회회원]님의 타이틀 목록\n\n1. 첫 번째\n☞ 2. 두 번째","[🌙대상회원]님의 타이틀 목록\n\n1. 첫 번째/획득일:2026-08-27 23:00/가격: 🅟9,999","[⭐조회회원] 님의 타이틀 [두 번째] 상세정보\n획득일:2026-08-27 23:10\n구매액: 🅟15,000\n판매가: 🅟4,500","올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀정보 [번호]","해당 번호의 타이틀이 존재하지 않습니다."])assert.ok(outputs.includes(expected));assert.equal(fixture.receiptContract.transaction,"READ_ONLY");assert.equal(fixture.receiptContract.sourceDomainDmlCount,0);});
+  it("rejects immutable prefix tamper and retains direct ledger counts",()=>{const bundle=read(path);bundle.receipts[0].receiptSha256="0".repeat(64);assert.throws(()=>parseObjectDbConsumerExecutionReceiptBundle(bundle),/historical receipt fingerprint drift/);const ledger=read("개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json");assert.equal(ledger.coverage.directPassConsumers,52);assert.equal(ledger.coverage.provenConsumers,64);for(const id of ids)assert.equal(ledger.entries.find((e:any)=>e.consumerId===id).verdict,"DIRECT_PASS");});
+});
