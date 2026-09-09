@@ -92,7 +92,7 @@
     "baseConsumerSetSha256": "d183ade67fa2aff0b7167327d9c6a1ed5ae689da0e060b7a093a88e1462e0e0b",
     "consumerIdSetSha256": "b5c767587653eb6211dbbdade58d71642407be91dcb225b456c24f8e0d46a676",
     "nonHttpConsumersSha256": "a7eb0f3a18d889d0a0c30bef6d2b49bbe231bb143d1f354c3eb9d37a702cd3bf",
-    "effectiveConsumerSetSha256": "2abf54ab6e4f3917fd108f0015f1619b34be59b88ebecc26359b6953db4658eb",
+    "effectiveConsumerSetSha256": "6ba6a9c3b4396102d592226cc469cefcd434e05e2d160871f63b4b525707386c",
     "deltaSha256": "5b7f5fb587ab7fb6f0113bfeaa72e23583822d94ae81a3398be51b91f623b3fa"
   },
   "receiptPreservation": {
@@ -171,5 +171,5 @@
     "featureProdTouched": false,
     "gate8Attempted": false
   },
-  "selfSha256": "1d0e5f334d0eca4fb90d22e20445797d95502279a36a75a82f303f300e30cac7"
+  "selfSha256": "6e447d5c70aac4bf4745626d0a390b740ae4f2dbc1310b5926d36a3f40d97cee"
 }
