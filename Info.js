@@ -311,6 +311,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
+		// 펫무쌍 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 차단합니다.
+		if (data && data.petMusou && data.petMusou.active && !(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
 		if (!isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
 			return;
 		}
@@ -2457,6 +2459,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("다이아상자💎(/다이아상자오픈) 1개");
 	lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 	lines.push("펫 강화석⭐ 30개");
+	lines.push(GLOBAL_CONFIG.sealedVault.vaultItemName + " 1개");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("🦋주간 퀘스트 조건🦋");
 	lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
