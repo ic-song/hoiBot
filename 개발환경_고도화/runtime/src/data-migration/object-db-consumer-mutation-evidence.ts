@@ -9,6 +9,7 @@ const SEALED_ORACLE_SHA256_BY_CONSUMER: Readonly<Record<string, string>> = Objec
   "sql-repository-818137c4fb22037a": "022fba37efa29ff601b35a6e47ff85957b20c27c9bd7555e47f95f2d758f7ba6",
   "sql-repository-f6c531148a436a21": "202262ac9e504a89b2a7ba0f8d1af1c10c2d70f81fb6fdcbd48a2f4f02663249",
   "sql-repository-31c4099080d9c9c1": "cb503a649bd47dd07c23081afda753d2bc4c9231b4477f74b7a38e35f60f3fbc",
+  "sql-repository-87ed81931dd7417b": "6e752366c8679db31e7576196ad7e3036f32ad81c73ef5f192e68180359d05b8",
 });
 
 const STRENGTHENED_MUTATION_CONSUMERS = new Set([
@@ -16,6 +17,7 @@ const STRENGTHENED_MUTATION_CONSUMERS = new Set([
   "sql-repository-818137c4fb22037a",
   "sql-repository-f6c531148a436a21",
   "sql-repository-31c4099080d9c9c1",
+  "sql-repository-87ed81931dd7417b",
 ]);
 
 export const OBJECT_DB_MUTATION_SCENARIOS = [

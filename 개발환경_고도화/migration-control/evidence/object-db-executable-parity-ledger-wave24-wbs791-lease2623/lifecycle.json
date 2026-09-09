@@ -1,0 +1,9 @@
+{
+  "production3306Unchanged": true,
+  "startedPids": [
+    21656
+  ],
+  "temporaryDataRetained": "C:\\Users\\user\\Desktop\\hoiBot-worktrees\\wbs790-shared-receipt-provider-v1-20260909\\.tmp\\wave24-mutations-mariadb-run9",
+  "port": 3359,
+  "listenerRemoved": true
+}

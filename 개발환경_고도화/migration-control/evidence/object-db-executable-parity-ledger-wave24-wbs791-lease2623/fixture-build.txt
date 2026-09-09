@@ -1,0 +1,1 @@
+{"fixturePath":"C:\\Users\\user\\Desktop\\hoiBot-worktrees\\wbs790-shared-receipt-provider-v1-20260909\\개발환경_고도화\\migration-control\\contracts\\object-db-consumer-executable-parity-wave24-mutations-v1.json","consumers":1,"scenarios":0}

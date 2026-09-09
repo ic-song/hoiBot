@@ -1,0 +1,2461 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave24:mutations:v1",
+  "sliceId": "WBS791",
+  "consumerIds": [
+    "sql-repository-87ed81931dd7417b"
+  ],
+  "receiptContract": {
+    "version": "WBS791_WAVE24_MUTATION_DIRECT_V1",
+    "transaction": "MUTATION",
+    "externalNetworkCalls": 0,
+    "replyCalls": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES",
+    "concurrency": "EXACTLY_ONE_COMMITTED_WRITER",
+    "locatorProjectionMode": "RAW_COMPOSITE_DB_PROJECTION"
+  },
+  "shadowContract": {
+    "mode": "ROLLBACK_ONLY_ACTUAL_CONSUMER",
+    "route": "SHADOW",
+    "expectedCommittedRowCount": 0,
+    "externalNetworkCalls": 0,
+    "replyCalls": 0
+  },
+  "shadowObservation": {
+    "processId": 30872,
+    "moduleExecutionId": "6af4cf11-6389-4dfe-babd-1f7961e1adee",
+    "consumerId": "sql-repository-87ed81931dd7417b",
+    "route": "SHADOW",
+    "transactionOutcome": "ROLLBACK",
+    "committedRowCount": 0,
+    "rolledBackAffectedRowCount": 4,
+    "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+    "afterSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+    "result": {
+      "quantity": "3",
+      "replayed": false
+    },
+    "errorCode": "WAVE24_SHADOW_ROLLBACK",
+    "externalNetworkCalls": 0,
+    "replyCalls": 0
+  },
+  "cases": [
+    {
+      "consumerId": "sql-repository-87ed81931dd7417b",
+      "wbs": "WBS790",
+      "sourceMethod": {
+        "className": "CanonicalItemInventoryRepository",
+        "methodName": "changeStackQuantity"
+      },
+      "runtimeSourcePaths": [
+        "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+        "개발환경_고도화/runtime/src/database.ts",
+        "개발환경_고도화/runtime/src/shared/maria-database-error-policy.ts",
+        "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave24-target.mjs",
+        "개발환경_고도화/runtime/migrations/443_object_identity_audit_provider.sql",
+        "개발환경_고도화/runtime/migrations/444_canonical_item_inventory.sql",
+        "개발환경_고도화/runtime/migrations/490_item_bag_import_baseline_ordering.sql"
+      ],
+      "mutationContract": {
+        "format": "hoibot-object-db-consumer-mutation-evidence-v1",
+        "consumerId": "sql-repository-87ed81931dd7417b",
+        "source": {
+          "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+          "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+          "spanStart": 8731,
+          "spanEnd": 10866,
+          "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+          "catalogSpanStart": 7693,
+          "catalogSpanEnd": 8467,
+          "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+          "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+        },
+        "database": {
+          "host": "127.0.0.1",
+          "forbiddenPort": 3306,
+          "namePrefix": "hoibot_wave24_item_stack_quantity_"
+        },
+        "allowedTables": [
+          "canonical_owned_item_stacks",
+          "canonical_item_inventory_operations",
+          "canonical_item_inventory_ledger_entries"
+        ],
+        "scenarios": [
+          {
+            "scenarioKind": "MUTATION_SUCCESS",
+            "traceRoles": [
+              "PRIMARY"
+            ],
+            "primaryRole": "PRIMARY",
+            "primaryTransactionOutcome": "COMMIT",
+            "primaryTransactionAttempts": 1,
+            "expectedAttemptedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedAffectedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedLockOrder": [
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations",
+              "canonical_players",
+              "canonical_item_definitions",
+              "canonical_owned_item_stacks"
+            ],
+            "expectedCommittedRowCount": 4,
+            "expectedRolledBackAffectedRowCount": 0,
+            "expectedBefore": {
+              "canonical_owned_item_stacks": 0,
+              "canonical_item_inventory_operations": 0,
+              "canonical_item_inventory_ledger_entries": 0
+            },
+            "expectedAfter": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedReplayed": false,
+            "expectedErrorCode": null,
+            "distinctProcessRoles": [],
+            "expectedAttemptFailures": [
+              null
+            ],
+            "expectedLockOrderByAttempt": [
+              [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ]
+            ],
+            "expectedBeforeRows": {
+              "canonical_owned_item_stacks": [],
+              "canonical_item_inventory_operations": [],
+              "canonical_item_inventory_ledger_entries": []
+            },
+            "expectedAfterRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-success",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedLocatorProjection": {
+              "mode": "RAW_COMPOSITE",
+              "key": {
+                "player_id": "player01",
+                "request_key": "request-success"
+              },
+              "rows": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-success",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_id": "item0001",
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "owned_item_stack_id": "STACK_ID",
+                  "quantity": "3"
+                }
+              ],
+              "locatorOK": true
+            },
+            "expectedBeforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+            "expectedAfterSha256": "37d97c28da25300d79adde22b29e082950e04fcdb22fe7265bd501e4de369561"
+          },
+          {
+            "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+            "traceRoles": [
+              "PRIMARY"
+            ],
+            "primaryRole": "PRIMARY",
+            "primaryTransactionOutcome": "ROLLBACK",
+            "primaryTransactionAttempts": 1,
+            "expectedAttemptedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries"
+            ],
+            "expectedAffectedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries"
+            ],
+            "expectedDmlTableSequence": [],
+            "expectedLockOrder": [
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations",
+              "canonical_players",
+              "canonical_item_definitions",
+              "canonical_owned_item_stacks"
+            ],
+            "expectedCommittedRowCount": 0,
+            "expectedRolledBackAffectedRowCount": 2,
+            "expectedBefore": {
+              "canonical_owned_item_stacks": 0,
+              "canonical_item_inventory_operations": 0,
+              "canonical_item_inventory_ledger_entries": 0
+            },
+            "expectedAfter": {
+              "canonical_owned_item_stacks": 0,
+              "canonical_item_inventory_operations": 0,
+              "canonical_item_inventory_ledger_entries": 0
+            },
+            "expectedReplayed": null,
+            "expectedErrorCode": "(conn:27, no: 1644, SQLState: 45000) WAVE24 forced item ledger failure\nsql: INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?...",
+            "distinctProcessRoles": [],
+            "expectedAttemptFailures": [
+              {
+                "code": "(conn:27, no: 1644, SQLState: 45000) WAVE24 forced item ledger failure\nsql: INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?...",
+                "errno": null,
+                "errorKind": "OTHER",
+                "constraintName": null
+              }
+            ],
+            "expectedLockOrderByAttempt": [
+              [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ]
+            ],
+            "expectedBeforeRows": {
+              "canonical_owned_item_stacks": [],
+              "canonical_item_inventory_operations": [],
+              "canonical_item_inventory_ledger_entries": []
+            },
+            "expectedAfterRows": {
+              "canonical_owned_item_stacks": [],
+              "canonical_item_inventory_operations": [],
+              "canonical_item_inventory_ledger_entries": []
+            },
+            "expectedLocatorProjection": {
+              "mode": "RAW_COMPOSITE",
+              "key": {
+                "player_id": "player01",
+                "request_key": "request-rollback"
+              },
+              "rows": [],
+              "locatorOK": true
+            },
+            "expectedBeforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+            "expectedAfterSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902"
+          },
+          {
+            "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+            "traceRoles": [
+              "SEED",
+              "REPLAY"
+            ],
+            "primaryRole": "REPLAY",
+            "primaryTransactionOutcome": "COMMIT",
+            "primaryTransactionAttempts": 1,
+            "expectedAttemptedDmlTableSequence": [],
+            "expectedAffectedDmlTableSequence": [],
+            "expectedDmlTableSequence": [],
+            "expectedLockOrder": [
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedCommittedRowCount": 0,
+            "expectedRolledBackAffectedRowCount": 0,
+            "expectedBefore": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedAfter": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedReplayed": true,
+            "expectedErrorCode": null,
+            "distinctProcessRoles": [],
+            "expectedAttemptFailures": [
+              null
+            ],
+            "expectedLockOrderByAttempt": [
+              [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations"
+              ]
+            ],
+            "expectedBeforeRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-duplicate",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedAfterRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-duplicate",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedLocatorProjection": {
+              "mode": "RAW_COMPOSITE",
+              "key": {
+                "player_id": "player01",
+                "request_key": "request-duplicate"
+              },
+              "rows": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-duplicate",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_id": "item0001",
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "owned_item_stack_id": "STACK_ID",
+                  "quantity": "3"
+                }
+              ],
+              "locatorOK": true
+            },
+            "expectedBeforeSha256": "43f2e7697ac16103ea81702098aeb39aa4f4868a49fd1b7744ed407a8c51a5c3",
+            "expectedAfterSha256": "43f2e7697ac16103ea81702098aeb39aa4f4868a49fd1b7744ed407a8c51a5c3"
+          },
+          {
+            "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+            "traceRoles": [
+              "SEED",
+              "PRIMARY"
+            ],
+            "primaryRole": "PRIMARY",
+            "primaryTransactionOutcome": "ROLLBACK",
+            "primaryTransactionAttempts": 1,
+            "expectedAttemptedDmlTableSequence": [],
+            "expectedAffectedDmlTableSequence": [],
+            "expectedDmlTableSequence": [],
+            "expectedLockOrder": [
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedCommittedRowCount": 0,
+            "expectedRolledBackAffectedRowCount": 0,
+            "expectedBefore": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedAfter": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedReplayed": null,
+            "expectedErrorCode": "CANONICAL_ITEM_REPLAY_CORRUPTED",
+            "distinctProcessRoles": [],
+            "expectedAttemptFailures": [
+              {
+                "code": "CANONICAL_ITEM_REPLAY_CORRUPTED",
+                "errno": null,
+                "errorKind": "OTHER",
+                "constraintName": null
+              }
+            ],
+            "expectedLockOrderByAttempt": [
+              [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations"
+              ]
+            ],
+            "expectedBeforeRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-drift",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedAfterRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-drift",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedLocatorProjection": {
+              "mode": "RAW_COMPOSITE",
+              "key": {
+                "player_id": "player01",
+                "request_key": "request-drift"
+              },
+              "rows": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-drift",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_id": "item0001",
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "owned_item_stack_id": "STACK_ID",
+                  "quantity": "3"
+                }
+              ],
+              "locatorOK": true
+            },
+            "expectedBeforeSha256": "0ace2261cf630e56360552344f9051dca304baeb1d6f34e439db0d495f86747b",
+            "expectedAfterSha256": "0ace2261cf630e56360552344f9051dca304baeb1d6f34e439db0d495f86747b"
+          },
+          {
+            "scenarioKind": "RESTART_REPLAY",
+            "traceRoles": [
+              "SEED",
+              "REPLAY"
+            ],
+            "primaryRole": "REPLAY",
+            "primaryTransactionOutcome": "COMMIT",
+            "primaryTransactionAttempts": 1,
+            "expectedAttemptedDmlTableSequence": [],
+            "expectedAffectedDmlTableSequence": [],
+            "expectedDmlTableSequence": [],
+            "expectedLockOrder": [
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedCommittedRowCount": 0,
+            "expectedRolledBackAffectedRowCount": 0,
+            "expectedBefore": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedAfter": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedReplayed": true,
+            "expectedErrorCode": null,
+            "distinctProcessRoles": [
+              "SEED",
+              "REPLAY"
+            ],
+            "expectedAttemptFailures": [
+              null
+            ],
+            "expectedLockOrderByAttempt": [
+              [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations"
+              ]
+            ],
+            "expectedBeforeRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-restart",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedAfterRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-restart",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedLocatorProjection": {
+              "mode": "RAW_COMPOSITE",
+              "key": {
+                "player_id": "player01",
+                "request_key": "request-restart"
+              },
+              "rows": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-restart",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_id": "item0001",
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "owned_item_stack_id": "STACK_ID",
+                  "quantity": "3"
+                }
+              ],
+              "locatorOK": true
+            },
+            "expectedBeforeSha256": "a9f533d2f01427a2fee1829f943092ab497ff8bc4c3c6bd512f09264b5ecaf3b",
+            "expectedAfterSha256": "a9f533d2f01427a2fee1829f943092ab497ff8bc4c3c6bd512f09264b5ecaf3b"
+          },
+          {
+            "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+            "traceRoles": [
+              "PRIMARY",
+              "CONCURRENT"
+            ],
+            "primaryRole": "PRIMARY",
+            "primaryTransactionOutcome": "COMMIT",
+            "primaryTransactionAttempts": 1,
+            "expectedAttemptedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedAffectedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedDmlTableSequence": [
+              "canonical_item_inventory_operations",
+              "canonical_owned_item_stacks",
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations"
+            ],
+            "expectedLockOrder": [
+              "canonical_item_inventory_ledger_entries",
+              "canonical_item_inventory_operations",
+              "canonical_players",
+              "canonical_item_definitions",
+              "canonical_owned_item_stacks"
+            ],
+            "expectedCommittedRowCount": 4,
+            "expectedRolledBackAffectedRowCount": 0,
+            "expectedBefore": {
+              "canonical_owned_item_stacks": 0,
+              "canonical_item_inventory_operations": 0,
+              "canonical_item_inventory_ledger_entries": 0
+            },
+            "expectedAfter": {
+              "canonical_owned_item_stacks": 1,
+              "canonical_item_inventory_operations": 1,
+              "canonical_item_inventory_ledger_entries": 1
+            },
+            "expectedReplayed": false,
+            "expectedErrorCode": null,
+            "distinctProcessRoles": [
+              "PRIMARY",
+              "CONCURRENT"
+            ],
+            "expectedAttemptFailures": [
+              null
+            ],
+            "expectedLockOrderByAttempt": [
+              [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ]
+            ],
+            "expectedBeforeRows": {
+              "canonical_owned_item_stacks": [],
+              "canonical_item_inventory_operations": [],
+              "canonical_item_inventory_ledger_entries": []
+            },
+            "expectedAfterRows": {
+              "canonical_owned_item_stacks": [
+                {
+                  "owned_item_stack_id": "STACK_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_operations": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-concurrency",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ],
+              "canonical_item_inventory_ledger_entries": [
+                {
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "item_id": "item0001",
+                  "owned_item_stack_id": "STACK_ID",
+                  "owned_item_id": null,
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "INSERT_USER": "wave24-fixture",
+                  "INSERT_TIME": "2026-09-09 14:00:00",
+                  "UPDATE_USER": "wave24-fixture",
+                  "UPDATE_TIME": "2026-09-09 14:00:00"
+                }
+              ]
+            },
+            "expectedLocatorProjection": {
+              "mode": "RAW_COMPOSITE",
+              "key": {
+                "player_id": "player01",
+                "request_key": "request-concurrency"
+              },
+              "rows": [
+                {
+                  "item_inventory_operation_id": "OPERATION_ID",
+                  "player_id": "player01",
+                  "request_key": "request-concurrency",
+                  "operation_status": "completed",
+                  "resulting_quantity": "3",
+                  "item_inventory_ledger_entry_id": "LEDGER_ID",
+                  "item_id": "item0001",
+                  "quantity_delta": "3",
+                  "reason_type": "REWARD",
+                  "owned_item_stack_id": "STACK_ID",
+                  "quantity": "3"
+                }
+              ],
+              "locatorOK": true
+            },
+            "expectedBeforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+            "expectedAfterSha256": "7154656b1b41943a9ac1bb84678c590f9d7af7127e8e47ea155dd38e91cf5afa"
+          }
+        ]
+      },
+      "bindings": [
+        {
+          "consumerId": "sql-repository-87ed81931dd7417b",
+          "scenarioId": "scenario:wave24:sql-repository-87ed81931dd7417b:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "exportName": "executeWave24Mutation",
+          "harnessCaseId": "case:wave24:sql-repository-87ed81931dd7417b"
+        },
+        {
+          "consumerId": "sql-repository-87ed81931dd7417b",
+          "scenarioId": "scenario:wave24:sql-repository-87ed81931dd7417b:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "exportName": "executeWave24Mutation",
+          "harnessCaseId": "case:wave24:sql-repository-87ed81931dd7417b"
+        },
+        {
+          "consumerId": "sql-repository-87ed81931dd7417b",
+          "scenarioId": "scenario:wave24:sql-repository-87ed81931dd7417b:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "exportName": "executeWave24Mutation",
+          "harnessCaseId": "case:wave24:sql-repository-87ed81931dd7417b"
+        },
+        {
+          "consumerId": "sql-repository-87ed81931dd7417b",
+          "scenarioId": "scenario:wave24:sql-repository-87ed81931dd7417b:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "exportName": "executeWave24Mutation",
+          "harnessCaseId": "case:wave24:sql-repository-87ed81931dd7417b"
+        },
+        {
+          "consumerId": "sql-repository-87ed81931dd7417b",
+          "scenarioId": "scenario:wave24:sql-repository-87ed81931dd7417b:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "exportName": "executeWave24Mutation",
+          "harnessCaseId": "case:wave24:sql-repository-87ed81931dd7417b"
+        },
+        {
+          "consumerId": "sql-repository-87ed81931dd7417b",
+          "scenarioId": "scenario:wave24:sql-repository-87ed81931dd7417b:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "exportName": "executeWave24Mutation",
+          "harnessCaseId": "case:wave24:sql-repository-87ed81931dd7417b"
+        }
+      ],
+      "sealedObservations": [
+        {
+          "scenarioKind": "MUTATION_SUCCESS",
+          "traces": [
+            {
+              "processId": 30912,
+              "moduleExecutionId": "64300e86-45fe-4192-9b93-4ff43fd3a5a2",
+              "role": "PRIMARY",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedRowCount": 4,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations",
+                    "canonical_players",
+                    "canonical_item_definitions",
+                    "canonical_owned_item_stacks"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+              ],
+              "committedRowCount": 4,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": false,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-success"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-success",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-success",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+              "afterSha256": "37d97c28da25300d79adde22b29e082950e04fcdb22fe7265bd501e4de369561"
+            }
+          ]
+        },
+        {
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "traces": [
+            {
+              "processId": 20792,
+              "moduleExecutionId": "41954431-dbda-4775-866a-4f08c7cc58ed",
+              "role": "PRIMARY",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "ROLLBACK",
+                  "attemptedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)"
+                  ],
+                  "affectedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)"
+                  ],
+                  "affectedRowCount": 2,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations",
+                    "canonical_players",
+                    "canonical_item_definitions",
+                    "canonical_owned_item_stacks"
+                  ],
+                  "failure": {
+                    "code": "(conn:27, no: 1644, SQLState: 45000) WAVE24 forced item ledger failure\nsql: INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?...",
+                    "errno": null,
+                    "errorKind": "OTHER",
+                    "constraintName": null
+                  }
+                }
+              ],
+              "committedDmlStatements": [],
+              "committedRowCount": 0,
+              "rolledBackAffectedRowCount": 2,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "after": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "replayed": null,
+              "errorCode": "(conn:27, no: 1644, SQLState: 45000) WAVE24 forced item ledger failure\nsql: INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?...",
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-rollback"
+                },
+                "rows": [],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+              "afterSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902"
+            }
+          ]
+        },
+        {
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "traces": [
+            {
+              "processId": 20396,
+              "moduleExecutionId": "23faa635-04fb-4e1f-88a7-a73dba7d79c8",
+              "role": "SEED",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedRowCount": 4,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations",
+                    "canonical_players",
+                    "canonical_item_definitions",
+                    "canonical_owned_item_stacks"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+              ],
+              "committedRowCount": 4,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": false,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-duplicate"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-duplicate",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-duplicate",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+              "afterSha256": "43f2e7697ac16103ea81702098aeb39aa4f4868a49fd1b7744ed407a8c51a5c3"
+            },
+            {
+              "processId": 1840,
+              "moduleExecutionId": "97f3d4a5-0caf-47b2-8381-3533db2acb2e",
+              "role": "REPLAY",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [],
+                  "affectedDmlStatements": [],
+                  "affectedRowCount": 0,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [],
+              "committedRowCount": 0,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": true,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-duplicate"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-duplicate",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-duplicate",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-duplicate",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "43f2e7697ac16103ea81702098aeb39aa4f4868a49fd1b7744ed407a8c51a5c3",
+              "afterSha256": "43f2e7697ac16103ea81702098aeb39aa4f4868a49fd1b7744ed407a8c51a5c3"
+            }
+          ]
+        },
+        {
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "traces": [
+            {
+              "processId": 22748,
+              "moduleExecutionId": "f962e887-3f53-4e3f-ab6a-e88771f4b08b",
+              "role": "SEED",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedRowCount": 4,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations",
+                    "canonical_players",
+                    "canonical_item_definitions",
+                    "canonical_owned_item_stacks"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+              ],
+              "committedRowCount": 4,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": false,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-drift"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-drift",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-drift",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+              "afterSha256": "0ace2261cf630e56360552344f9051dca304baeb1d6f34e439db0d495f86747b"
+            },
+            {
+              "processId": 18108,
+              "moduleExecutionId": "af6dfb17-df62-471d-a969-cdc71dc43d4e",
+              "role": "PRIMARY",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "ROLLBACK",
+                  "attemptedDmlStatements": [],
+                  "affectedDmlStatements": [],
+                  "affectedRowCount": 0,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations"
+                  ],
+                  "failure": {
+                    "code": "CANONICAL_ITEM_REPLAY_CORRUPTED",
+                    "errno": null,
+                    "errorKind": "OTHER",
+                    "constraintName": null
+                  }
+                }
+              ],
+              "committedDmlStatements": [],
+              "committedRowCount": 0,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": null,
+              "errorCode": "CANONICAL_ITEM_REPLAY_CORRUPTED",
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-drift"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-drift",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-drift",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-drift",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "0ace2261cf630e56360552344f9051dca304baeb1d6f34e439db0d495f86747b",
+              "afterSha256": "0ace2261cf630e56360552344f9051dca304baeb1d6f34e439db0d495f86747b"
+            }
+          ]
+        },
+        {
+          "scenarioKind": "RESTART_REPLAY",
+          "traces": [
+            {
+              "processId": 21736,
+              "moduleExecutionId": "28342daa-287a-450a-8c2a-2521415ae385",
+              "role": "SEED",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedRowCount": 4,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations",
+                    "canonical_players",
+                    "canonical_item_definitions",
+                    "canonical_owned_item_stacks"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+              ],
+              "committedRowCount": 4,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": false,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-restart"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-restart",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-restart",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+              "afterSha256": "a9f533d2f01427a2fee1829f943092ab497ff8bc4c3c6bd512f09264b5ecaf3b"
+            },
+            {
+              "processId": 30208,
+              "moduleExecutionId": "dae5336d-522d-4ede-a519-dabc2e112e58",
+              "role": "REPLAY",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [],
+                  "affectedDmlStatements": [],
+                  "affectedRowCount": 0,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [],
+              "committedRowCount": 0,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": true,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-restart"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-restart",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-restart",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-restart",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "a9f533d2f01427a2fee1829f943092ab497ff8bc4c3c6bd512f09264b5ecaf3b",
+              "afterSha256": "a9f533d2f01427a2fee1829f943092ab497ff8bc4c3c6bd512f09264b5ecaf3b"
+            }
+          ]
+        },
+        {
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "traces": [
+            {
+              "processId": 2652,
+              "moduleExecutionId": "e2cac474-3711-46dc-babb-7c13f694c187",
+              "role": "PRIMARY",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedDmlStatements": [
+                    "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                    "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                    "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                    "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+                  ],
+                  "affectedRowCount": 4,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations",
+                    "canonical_players",
+                    "canonical_item_definitions",
+                    "canonical_owned_item_stacks"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [
+                "INSERT INTO canonical_item_inventory_operations(item_inventory_operation_id,player_id,request_key,operation_status,resulting_quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'processing',NULL,?,?,?,?)",
+                "INSERT INTO canonical_owned_item_stacks(owned_item_stack_id,player_id,item_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_item_inventory_ledger_entries(item_inventory_ledger_entry_id,item_inventory_operation_id,player_id,item_id,owned_item_stack_id,owned_item_id,quantity_delta,reason_type,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,NULL,?,?,?,?,?,?)",
+                "UPDATE canonical_item_inventory_operations SET operation_status='completed',resulting_quantity=?,UPDATE_USER=?,UPDATE_TIME=? WHERE item_inventory_operation_id=?"
+              ],
+              "committedRowCount": 4,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations",
+                "canonical_players",
+                "canonical_item_definitions",
+                "canonical_owned_item_stacks"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": false,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-concurrency"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-concurrency",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-concurrency",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+              "afterSha256": "7154656b1b41943a9ac1bb84678c590f9d7af7127e8e47ea155dd38e91cf5afa"
+            },
+            {
+              "processId": 25704,
+              "moduleExecutionId": "d86d40b4-a0df-42f0-8c1a-40433bbc7585",
+              "role": "CONCURRENT",
+              "source": {
+                "path": "개발환경_고도화/runtime/src/inventory/canonical-item-inventory-repository.ts",
+                "sha256": "168acc078d439b119f1b78c6fc1205490122fb396d652706eed884f2e470004f",
+                "spanStart": 8731,
+                "spanEnd": 10866,
+                "spanSha256": "68ace8ef1936c604d5f29a54a6059bee2b20932f5135d5708c82a146f9fdc520",
+                "catalogSpanStart": 7693,
+                "catalogSpanEnd": 8467,
+                "catalogSpanSha256": "551253fd8898676a437a59d3477f01ab6322aab97332fc3a7b7425517eaeb2ec",
+                "relocationDiffSha256": "744bdebbc84ea96c23a8afbea05ab66d82490593fcba56525285d2f523428fc0"
+              },
+              "database": {
+                "host": "127.0.0.1",
+                "port": 3359,
+                "name": "hoibot_wave24_item_stack_quantity_2623"
+              },
+              "transactionAttempts": [
+                {
+                  "attempt": 1,
+                  "outcome": "COMMIT",
+                  "attemptedDmlStatements": [],
+                  "affectedDmlStatements": [],
+                  "affectedRowCount": 0,
+                  "lockOrder": [
+                    "canonical_item_inventory_ledger_entries",
+                    "canonical_item_inventory_operations"
+                  ],
+                  "failure": null
+                }
+              ],
+              "committedDmlStatements": [],
+              "committedRowCount": 0,
+              "rolledBackAffectedRowCount": 0,
+              "lockOrder": [
+                "canonical_item_inventory_ledger_entries",
+                "canonical_item_inventory_operations"
+              ],
+              "before": {
+                "canonical_owned_item_stacks": 0,
+                "canonical_item_inventory_operations": 0,
+                "canonical_item_inventory_ledger_entries": 0
+              },
+              "after": {
+                "canonical_owned_item_stacks": 1,
+                "canonical_item_inventory_operations": 1,
+                "canonical_item_inventory_ledger_entries": 1
+              },
+              "replayed": true,
+              "errorCode": null,
+              "externalNetworkCalls": 0,
+              "replyCalls": 0,
+              "locatorProjection": {
+                "mode": "RAW_COMPOSITE",
+                "key": {
+                  "player_id": "player01",
+                  "request_key": "request-concurrency"
+                },
+                "rows": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-concurrency",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_id": "item0001",
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "owned_item_stack_id": "STACK_ID",
+                    "quantity": "3"
+                  }
+                ],
+                "locatorOK": true
+              },
+              "beforeRows": {
+                "canonical_owned_item_stacks": [],
+                "canonical_item_inventory_operations": [],
+                "canonical_item_inventory_ledger_entries": []
+              },
+              "afterRows": {
+                "canonical_owned_item_stacks": [
+                  {
+                    "owned_item_stack_id": "STACK_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_operations": [
+                  {
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "request_key": "request-concurrency",
+                    "operation_status": "completed",
+                    "resulting_quantity": "3",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ],
+                "canonical_item_inventory_ledger_entries": [
+                  {
+                    "item_inventory_ledger_entry_id": "LEDGER_ID",
+                    "item_inventory_operation_id": "OPERATION_ID",
+                    "player_id": "player01",
+                    "item_id": "item0001",
+                    "owned_item_stack_id": "STACK_ID",
+                    "owned_item_id": null,
+                    "quantity_delta": "3",
+                    "reason_type": "REWARD",
+                    "INSERT_USER": "wave24-fixture",
+                    "INSERT_TIME": "2026-09-09 14:00:00",
+                    "UPDATE_USER": "wave24-fixture",
+                    "UPDATE_TIME": "2026-09-09 14:00:00"
+                  }
+                ]
+              },
+              "beforeSha256": "e73eb2d7307cb1d756a4f7c13d7030e2db0d868a88fa55c33be1b678f3cb6902",
+              "afterSha256": "7154656b1b41943a9ac1bb84678c590f9d7af7127e8e47ea155dd38e91cf5afa"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

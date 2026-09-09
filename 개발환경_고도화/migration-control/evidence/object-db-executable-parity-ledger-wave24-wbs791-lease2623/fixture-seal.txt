@@ -1,0 +1,2 @@
+{"consumerId":"sql-repository-87ed81931dd7417b","oracleSha256":"6e752366c8679db31e7576196ad7e3036f32ad81c73ef5f192e68180359d05b8"}
+{"status":"PASS","consumers":1,"scenarios":6}
