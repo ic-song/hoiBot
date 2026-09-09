@@ -1,13 +1,18 @@
 import { loadConfig } from "../../src/config.js";
 import { createDatabaseClient } from "../../src/database.js";
-import { MariaCatalogProjectionRepository } from "../../src/data-migration/catalog-projection-provider.js";
-import { MariaCommonStagingRepository } from "../../src/data-migration/common-staging-extractor.js";
+import { assertCatalogProjectionDatabaseName, MariaCatalogProjectionRepository } from "../../src/data-migration/catalog-projection-provider.js";
+import { assertCommonStagingDatabaseName, MariaCommonStagingRepository } from "../../src/data-migration/common-staging-extractor.js";
 import { createStagingProjectionChainFixture } from "./data-migration-staging-projection-chain.fixture.js";
 
 const nonce = process.env.LEASE2620_CHAIN_NONCE ?? "";
 const expectedRunId = process.env.LEASE2620_COMMON_RUN_ID ?? "";
 if (nonce === "" || expectedRunId === "") throw new Error("LEASE2620_CHILD_INPUT_REQUIRED");
-const database = createDatabaseClient(loadConfig().database);
+const config = loadConfig();
+if (!["127.0.0.1", "localhost", "::1"].includes(config.database.host)) throw new Error("LEASE2620_CHILD_LOOPBACK_DATABASE_REQUIRED");
+if (config.database.port === 3306) throw new Error("LEASE2620_CHILD_OPERATING_DATABASE_PORT_REFUSED");
+assertCommonStagingDatabaseName(config.database.name);
+assertCatalogProjectionDatabaseName(config.database.name);
+const database = createDatabaseClient(config.database);
 try {
   const initial = createStagingProjectionChainFixture(nonce, expectedRunId);
   const staging = await new MariaCommonStagingRepository(database).extractAndStage(initial.commonManifest);
