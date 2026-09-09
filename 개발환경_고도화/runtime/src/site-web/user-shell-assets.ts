@@ -207,7 +207,7 @@ main { min-height: calc(100vh - 112px); }
 .login-intro { padding: 38px 24px 34px; color: #fff; background: linear-gradient(145deg, var(--navy), #17346d); }
 .eyebrow { margin: 0 0 12px; color: #d8c89b; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
 .eyebrow.dark { color: var(--gold); }
-.login-intro h1 { max-width: 520px; margin: 0; font-size: clamp(32px, 7vw, 48px); line-height: 1.13; letter-spacing: -.05em; }
+.login-intro h1 { max-width: 520px; margin: 0; font-size: clamp(32px, 7vw, 48px); line-height: 1.13; letter-spacing: -.05em; word-break: keep-all; text-wrap: balance; }
 .intro-copy { max-width: 510px; margin: 18px 0 26px; color: #dbe6ff; line-height: 1.65; }
 .trust-list { display: grid; gap: 13px; max-width: 600px; margin: 0; padding: 0; list-style: none; }
 .trust-list li { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
