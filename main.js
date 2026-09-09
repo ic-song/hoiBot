@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.480"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.481"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -49959,7 +49959,7 @@ function buildSealedVaultRewardSettingMessage(data) {
 }
 
 // 봉인금고를 소모해 요청 수량의 해방의 열쇠를 조합하는 함수
-function runSealedVaultKeyCombine(sender, data, msg) {
+function runSealedVaultKeyCombine(sender, data, petData, guildData, msg) {
     var config = GLOBAL_CONFIG.sealedVault;
     var match = String(msg).match(/^\/해방열쇠조합\s+(\d+)$/);
     if (!match) return createSealedVaultCommandResult("🗝️ 해방열쇠 조합\n" + config.vaultItemName + " " + config.keyCombineVaultCost + "개 → " + config.keyItemName + " 1개\n\n사용법: /해방열쇠조합 [숫자]\n예시: /해방열쇠조합 2 (열쇠 2개 조합)", false);
@@ -49976,12 +49976,20 @@ function runSealedVaultKeyCombine(sender, data, msg) {
     bag[config.vaultItemName] = vaultCount - cost;
     bag[config.keyItemName] = keyCount + count;
     member.bag = bag;
-    return createSealedVaultCommandResult("✅ 해방열쇠 조합 완료!\n소모: " + config.vaultItemName + " " + numberWithCommas(cost) + "개\n획득: " + config.keyItemName + " " + numberWithCommas(count) + "개", true);
+    return createSealedVaultCommandResult(
+        "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
+        "✅ 해방열쇠 조합 완료!\n" +
+        "소모: " + config.vaultItemName + " " + numberWithCommas(cost) + "개\n" +
+        "획득: " + config.keyItemName + " " + numberWithCommas(count) + "개\n\n" +
+        "남은 호봉🔒: " + numberWithCommas(bag[config.vaultItemName]) + "개\n" +
+        "현재 열쇠🗝️: " + numberWithCommas(bag[config.keyItemName]) + "개",
+        true
+    );
 }
 
 // 봉인금고 사용자·관리자 명령을 실행하는 함수
 function runSealedVaultCommand(sender, data, petData, guildData, msg) {
-    if (msg === "해방열쇠조합" || msg === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(msg)) return runSealedVaultKeyCombine(sender, data, msg);
+    if (msg === "해방열쇠조합" || msg === "/해방열쇠조합" || /^\/해방열쇠조합\s+\d+$/.test(msg)) return runSealedVaultKeyCombine(sender, data, petData, guildData, msg);
     var config = GLOBAL_CONFIG.sealedVault;
     if (msg === "/봉인금고") return createSealedVaultCommandResult(buildSealedVaultStatusMessage(data, petData, guildData, sender), false);
     if (msg === "/봉인금고확률") return createSealedVaultCommandResult(buildSealedVaultProbabilityMessage(), false);
