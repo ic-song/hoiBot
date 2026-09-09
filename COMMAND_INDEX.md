@@ -1885,6 +1885,8 @@ Status: VERIFIED
 ## Files
 
 - `main.js`
+- `개발환경_고도화/runtime/src/home/home-furniture-rank-read-service.ts`
+- `개발환경_고도화/runtime/migrations/200_home_furniture_rank_read.sql`
 
 ## Related Helpers
 
@@ -1895,10 +1897,13 @@ Status: VERIFIED
 - `placedFurnitureData[*]`
 - `data.member`
 - `petData`
+- Modern DB: `furniture_placements`, `owned_furniture`, `furniture_definitions`
+- Modern DB: `player_profiles`, `player_legacy_rank_profiles`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- 현대화 SHADOW 경로는 읽기 전용 MariaDB transaction에서 operation, audit, execution, outbox 증거만 기록한다.
 
 ## Related Commands
 
@@ -4886,18 +4891,26 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/player/player-cumulative-like-rank-read-service.ts`
 
 ## Related Helpers
 
 - `generatelike2Ranking`
+- `formatPlayerCumulativeLikeRanking`
+- `PlayerCumulativeLikeRankReadService.read`
 
 ## Data Usage
 
 - `data.member`
+- Modern canonical: `player_counters(like:lifetime)`
+- Modern fallback: `player_counters(like:current + like0:lifetime)`
+- Grade display: `player_legacy_rank_profiles.rank_emoji`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- 현대화 경로는 회원 좋아요 counter를 변경하지 않고 operation, command audit, execution, outbox만 원자 기록한다.
 
 ## Related Commands
 
@@ -4922,18 +4935,26 @@ Status: VERIFIED
 ## Files
 
 - `Info.js`
+- `개발환경_고도화/runtime/src/app.ts`
+- `개발환경_고도화/runtime/src/player/player-cumulative-level-rank-read-service.ts`
 
 ## Related Helpers
 
 - `generate2Ranking`
+- `formatPlayerCumulativeLevelRanking`
+- `PlayerCumulativeLevelRankReadService.read`
 
 ## Data Usage
 
 - `data.member`
+- Legacy: `data.member[*].lv + data.member[*].lv0`
+- Modern: `player_profiles.level + player_profiles.accumulated_level_offset`
+- Grade display: `player_legacy_rank_profiles.rank_emoji`
 
 ## Save Flow
 
 - Read-only in the confirmed branch
+- 현대화 경로는 회원 레벨 데이터를 변경하지 않고 operation, command audit, execution, outbox만 원자 기록한다.
 
 ## Related Commands
 
@@ -7419,6 +7440,9 @@ Status: VERIFIED
 - 여러 칸과 끝 공백은 허용하지만 명령 직후에는 일반 공백이 하나 이상 있어야 한다.
 - `YYYYMMDD - (일수 - 1)` 숫자 비교와 등록 순서를 보존하며 응답을 두 번 보낸다.
 - 미출석자가 없어도 `미출첵 명단 \n\n` 빈 두 번째 응답을 보낸다.
+
+---
+
 # /퀘스트|ㄹㄹㄹ|/ㅋ
 
 Status: VERIFIED
@@ -7707,8 +7731,6 @@ Status: VERIFIED
 
 ---
 
----
-
 # /펫스킬소멸 [장착스킬번호]
 
 Status: VERIFIED
@@ -7754,21 +7776,6 @@ Status: VERIFIED (modern SHADOW)
 
 ## Save Flow
 - MariaDB transaction: stable owner transfer + carrot fee + thermometer reward + ledgers + audit/execution/outbox
-# /가구순위
-
-Status: VERIFIED (modern SHADOW)
-
-## Files
-- main.js
-- 개발환경_고도화/runtime/src/home/home-furniture-rank-read-service.ts
-- 개발환경_고도화/runtime/migrations/200_home_furniture_rank_read.sql
-
-## Data Usage
-- furniture_placements / owned_furniture / furniture_definitions
-- player_profiles / player_legacy_rank_profiles
-
-## Save Flow
-- read-only MariaDB transaction with operation, audit, execution and outbox evidence
 # /투수던집니다
 
 Status: VERIFIED
@@ -7889,59 +7896,6 @@ Status: VERIFIED (modern SHADOW)
 ## AI Notes
 - 활성 핀이 가리키는 댓글과 핀 행은 변경하지 않는다.
 - 강제 실패 시 backup, 댓글 상태, 좋아홈, marker와 모든 증거가 함께 rollback된다.
-# /누렙순위
-
-Status: VERIFIED
-
-## Files
-- Info.js
-- 개발환경_고도화/runtime/src/app.ts
-- 개발환경_고도화/runtime/src/player/player-cumulative-level-rank-read-service.ts
-
-## Related Helpers
-- generate2Ranking
-- formatPlayerCumulativeLevelRanking
-- PlayerCumulativeLevelRankReadService.read
-
-## Data Usage
-- 레거시: data.member[*].lv + data.member[*].lv0
-- 현대화: player_profiles.level + player_profiles.accumulated_level_offset
-- 등급 표시: player_legacy_rank_profiles.rank_emoji
-
-## Save Flow
-- 회원 레벨 데이터는 읽기 전용
-- 현대화 operation, command_audit, command_executions, outbox_messages만 원자 기록
-
-## Related Commands
-- /레벨순위
-- /내정보
-# /누좋순위
-
-Status: VERIFIED
-
-## Files
-- Info.js
-- 개발환경_고도화/runtime/src/app.ts
-- 개발환경_고도화/runtime/src/player/player-cumulative-like-rank-read-service.ts
-
-## Related Helpers
-- generatelike2Ranking
-- formatPlayerCumulativeLikeRanking
-- PlayerCumulativeLikeRankReadService.read
-
-## Data Usage
-- 레거시: data.member[*].like + data.member[*].like0
-- 현대화 canonical: player_counters(like:lifetime)
-- 현대화 fallback: player_counters(like:current + like0:lifetime)
-- 등급 표시: player_legacy_rank_profiles.rank_emoji
-
-## Save Flow
-- 회원 좋아요 counter는 읽기 전용
-- 현대화 operation, command_audit, command_executions, outbox_messages만 원자 기록
-
-## Related Commands
-- /누렙순위
-- /내정보
 # /다이아순위
 
 Status: VERIFIED

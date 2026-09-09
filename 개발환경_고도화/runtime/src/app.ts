@@ -29,6 +29,8 @@ import { registerAdminRoutes } from "./admin/routes.js";
 import { CurrencyService } from "./currency/currency-service.js";
 import { registerAdminWebShellRoutes } from "./admin/web-shell.js";
 import { registerSiteSignupWebRoutes } from "./signup/site-signup-web.js";
+import { registerUserShellRoutes } from "./site-web/user-shell.js";
+import { registerAccountRecoveryRoutes } from "./site-web/account-recovery.js";
 import { registerAdminDiamondShopCatalogWebRoutes } from "./admin/diamond-shop-catalog-web-routes.js";
 import { registerAdminPackageCatalogWebRoutes } from "./admin/package-catalog-web-routes.js";
 import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-routes.js";
@@ -933,6 +935,8 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
   void app.register(cookie);
   void registerAdminWebShellRoutes(app);
   void registerSiteSignupWebRoutes(app);
+  void registerUserShellRoutes(app);
+  void registerAccountRecoveryRoutes(app);
   if (database !== undefined) {
     const profiles = new MariaProfileRepository(database);
     const adminAuth = new AdminAuthService(database);

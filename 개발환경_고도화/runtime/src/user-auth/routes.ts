@@ -110,12 +110,18 @@ export async function registerUserAuthRoutes(app: FastifyInstance, dependencies:
   app.post<{ Body: { confirmed?: unknown } }>("/api/v1/account-deletion-requests", async (request, reply) => {
     if (request.body?.confirmed !== true) throw new ApplicationError("CONFIRMATION_REQUIRED", "탈퇴 내용을 다시 확인해 주세요.", 422);
     const result = await dependencies.auth.requestDeletion(request.cookies[USER_SESSION_COOKIE] ?? "", readRequiredCsrf(request));
+    reply.clearCookie(USER_SESSION_COOKIE, { path: "/" });
     return reply.code(201).send({ ok: true, deletionRequest: result, requestId: request.id });
   });
 
-  app.delete<{ Body: { loginId?: unknown; password?: unknown } }>("/api/v1/account-deletion-requests/current", async (request) => ({
-    ok: true,
-    deletionRequest: await dependencies.auth.recoverDeletion(readString(request.body?.loginId, "loginId"), readString(request.body?.password, "password")),
-    requestId: request.id
-  }));
+  app.delete<{ Body: { loginId?: unknown; password?: unknown } }>("/api/v1/account-deletion-requests/current", async (request) => {
+    const loginId = readString(request.body?.loginId, "loginId");
+    dependencies.rateLimiter.consume("account-recovery-account", loginId, { limit: 5, windowMs: USER_AUTH_RATE_WINDOW_MS });
+    dependencies.rateLimiter.consume("account-recovery-network", request.ip, { limit: 20, windowMs: USER_AUTH_RATE_WINDOW_MS });
+    return {
+      ok: true,
+      deletionRequest: await dependencies.auth.recoverDeletion(loginId, readString(request.body?.password, "password")),
+      requestId: request.id
+    };
+  });
 }

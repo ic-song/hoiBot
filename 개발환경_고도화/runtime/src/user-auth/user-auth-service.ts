@@ -392,22 +392,75 @@ export class UserAuthService {
   // 유예 중 계정의 자격 증명을 다시 확인하고 탈퇴 요청을 철회합니다.
   async recoverDeletion(loginIdValue: string, passwordValue: string): Promise<{ requestId: string; status: "recovered" }> {
     const loginId = validateLoginId(loginIdValue); validateUserPassword(passwordValue);
-    const rows = await this.database.query<Array<{ id: bigint; password_hash: string; status: string; request_id: bigint }>>(
-      `SELECT account_row.id, account_row.password_hash, account_row.status, deletion.id AS request_id
-       FROM user_accounts account_row JOIN account_deletion_requests deletion ON deletion.user_account_id = account_row.id
-       WHERE account_row.login_id = ? AND deletion.status = 'grace_period'`, [loginId]
-    );
-    const row = rows[0];
-    if (row === undefined || !await verify(row.password_hash, passwordValue)) throw new ApplicationError("INVALID_CREDENTIALS", "로그인 정보를 확인해 주세요.", 401);
-    if (row.status !== "deletion_grace") throw new ApplicationError("DELETION_REQUEST_NOT_RECOVERABLE", "복구할 수 있는 탈퇴 요청이 아닙니다.", 409);
-    await this.database.withTransaction(async (transaction) => {
+    const outcome = await this.database.withTransaction(async (transaction) => {
+      const authorityLocks = await transaction.query<Array<{ lock_key: string }>>(
+        "SELECT lock_key FROM canonical_account_authority_global_locks WHERE lock_key='ACCOUNT_AUTHORITY' FOR UPDATE"
+      );
+      if (authorityLocks[0]?.lock_key !== "ACCOUNT_AUTHORITY") {
+        throw new ApplicationError("ACCOUNT_AUTHORITY_UNAVAILABLE", "계정 복구 기준 잠금을 확인할 수 없습니다.", 503);
+      }
+      const rows = await transaction.query<Array<{
+        id: bigint;
+        password_hash: string;
+        status: string;
+        request_id: bigint;
+        deletion_expired: number;
+        account_locked: number;
+      }>>(
+        `SELECT account_row.id, account_row.password_hash, account_row.status, deletion.id AS request_id,
+          deletion.scheduled_delete_at <= UTC_TIMESTAMP(3) AS deletion_expired,
+          account_row.locked_until IS NOT NULL AND account_row.locked_until > UTC_TIMESTAMP(3) AS account_locked
+         FROM user_accounts account_row
+         JOIN account_deletion_requests deletion ON deletion.user_account_id = account_row.id
+         WHERE account_row.login_id = ? AND deletion.status = 'grace_period'
+         ORDER BY deletion.id DESC LIMIT 1 FOR UPDATE`,
+        [loginId]
+      );
+      const row = rows[0];
+      if (row === undefined) return { status: "invalid_credentials" as const };
+      if (Boolean(row.account_locked)) return { status: "account_locked" as const };
+      if (!await verify(row.password_hash, passwordValue)) {
+        await transaction.execute(
+          `UPDATE user_accounts SET failed_login_count = failed_login_count + 1,
+            locked_until = IF(failed_login_count + 1 >= ?, DATE_ADD(UTC_TIMESTAMP(3), INTERVAL ? MINUTE), locked_until),
+            updated_at = UTC_TIMESTAMP(3) WHERE id = ?`,
+          [USER_LOGIN_MAX_FAILURES, USER_LOGIN_LOCK_MINUTES, row.id]
+        );
+        return { status: "invalid_credentials" as const };
+      }
       await transaction.execute(
+        "UPDATE user_accounts SET failed_login_count = 0, locked_until = NULL, updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND (failed_login_count > 0 OR locked_until IS NOT NULL)",
+        [row.id]
+      );
+      if (row.status !== "deletion_grace" || Boolean(row.deletion_expired)) {
+        return { status: "not_recoverable" as const };
+      }
+      const deletion = await transaction.execute(
         `UPDATE account_deletion_requests SET status = 'recovered', recovered_at = UTC_TIMESTAMP(3),
           recovered_by_type = 'user_account', recovered_by_id = ?, updated_at = UTC_TIMESTAMP(3)
-         WHERE id = ? AND status = 'grace_period'`, [row.id, row.request_id]
+         WHERE id = ? AND status = 'grace_period' AND scheduled_delete_at > UTC_TIMESTAMP(3)`,
+        [row.id, row.request_id]
       );
-      await transaction.execute("UPDATE user_accounts SET status = 'active', updated_at = UTC_TIMESTAMP(3) WHERE id = ?", [row.id]);
+      if (deletion.affectedRows !== 1n) return { status: "not_recoverable" as const };
+      const account = await transaction.execute(
+        `UPDATE user_accounts SET status = 'active', updated_at = UTC_TIMESTAMP(3)
+         WHERE id = ? AND status = 'deletion_grace' AND deleted_at IS NULL`,
+        [row.id]
+      );
+      if (account.affectedRows !== 1n) {
+        throw new ApplicationError("DELETION_REQUEST_NOT_RECOVERABLE", "복구할 수 있는 탈퇴 요청이 아닙니다.", 409);
+      }
+      return { status: "recovered" as const, requestId: row.request_id.toString() };
     });
-    return { requestId: row.request_id.toString(), status: "recovered" };
+    if (outcome.status === "invalid_credentials") {
+      throw new ApplicationError("INVALID_CREDENTIALS", "로그인 정보를 확인해 주세요.", 401);
+    }
+    if (outcome.status === "account_locked") {
+      throw new ApplicationError("ACCOUNT_TEMPORARILY_LOCKED", "로그인 시도가 반복되어 계정이 잠겼습니다. 15분 후 다시 시도해 주세요.", 423);
+    }
+    if (outcome.status === "not_recoverable") {
+      throw new ApplicationError("DELETION_REQUEST_NOT_RECOVERABLE", "복구할 수 있는 탈퇴 요청이 아닙니다.", 409);
+    }
+    return { requestId: outcome.requestId, status: "recovered" };
   }
 }
