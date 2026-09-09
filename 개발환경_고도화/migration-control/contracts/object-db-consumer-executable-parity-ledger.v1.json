@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "da5532d80f9a8d313c75dd162340b1cd9ab0db1c",
+  "evidenceCommit": "5edc0b277f9ea9b8cd0e8ed97b3e2ba8dffcf203",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,8 +27,8 @@
       "sha256": "c64ab24eca8d97b2d99e4f78d6a00b5f061ef220d1b8f1ae5cebbb22a91ce411"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave22-v1.json",
-      "sha256": "13c5230cafe0b7e8bbfed00be51def744a78981a938c6659198fde6fcf1366b6"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave23-v1.json",
+      "sha256": "ec398ecddc1624d885b139fa4950db3ad36c2d89a61f40d62c3f8ca594fed71f"
     },
     "classificationSources": []
   },
@@ -49,16 +49,16 @@
     "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 0,
-    "provenConsumers": 41,
-    "unprovenConsumers": 1092,
-    "directPassConsumers": 41,
+    "provenConsumers": 44,
+    "unprovenConsumers": 1089,
+    "directPassConsumers": 44,
     "equivalentPassConsumers": 0,
     "verdicts": {
-      "STATIC_ONLY": 1010,
+      "STATIC_ONLY": 1007,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 41,
+      "DIRECT_PASS": 44,
       "EQUIVALENT_PASS": 0
     }
   },
@@ -104298,22 +104298,22 @@
         "sourceSpanSha256": "b572aa5281d29c1f853e727eaa5826d9626d70fcf26fa49e927fc5b2854b8eda",
         "classificationSha256": "1070f6afee6f0a659513a6e29c92696f3035e838d6d53d4134cf71eb01928efb"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave23:mutations",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-mutations-harness.mjs",
+        "sha256": "da6da94237a56ee67b28d6096f9f68b35739bfcda14076d6f7a1f61ed9bd5851"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave23:mutations:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave23-mutations-v1.json",
+        "sha256": "846c4ced7ee379edcb0c9bce466aa6213fc26b2afa06f13433be141dda86e8f6"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-target.mjs",
+        "targetSourceSha256": "8e2b43c32b9be23e604a90d1e580bd9ae068f156f903172233371e041a5bb907",
+        "exportName": "executeWave23Mutation"
       },
       "scenarioRequirements": [
         {
@@ -104367,11 +104367,388 @@
           }
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave23:sql-repository-31c4099080d9c9c1:concurrency_single_writer",
+          "scenarioId": "scenario:wave23:sql-repository-31c4099080d9c9c1:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave23:sql-repository-31c4099080d9c9c1",
+          "attributedConsumerIds": [
+            "sql-repository-31c4099080d9c9c1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "921433f80155e96ce79fe724ed063d0a52bb37f9c92dc10ae1b95fdeba183fea",
+              "actualSha256": "921433f80155e96ce79fe724ed063d0a52bb37f9c92dc10ae1b95fdeba183fea",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "78cea4a0877e148facf3ee18bcd45d00189892f327b16c9854a937969322515f",
+              "actualSha256": "78cea4a0877e148facf3ee18bcd45d00189892f327b16c9854a937969322515f",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_pet_skill_operation_replays",
+                "canonical_players",
+                "canonical_pet_skill_definitions",
+                "canonical_owned_pet_skill_stacks",
+                "object_identity_crosswalks:petSkillOperation",
+                "object_identity_crosswalks:ownedPetSkill"
+              ],
+              "actual": [
+                "canonical_pet_skill_operation_replays",
+                "canonical_players",
+                "canonical_pet_skill_definitions",
+                "canonical_owned_pet_skill_stacks",
+                "object_identity_crosswalks:petSkillOperation",
+                "object_identity_crosswalks:ownedPetSkill"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-31c4099080d9c9c1:domain_failure_rollback",
+          "scenarioId": "scenario:wave23:sql-repository-31c4099080d9c9c1:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave23:sql-repository-31c4099080d9c9c1",
+          "attributedConsumerIds": [
+            "sql-repository-31c4099080d9c9c1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "474689e95a5da95cacdcb74010cbcb3e3a1b948d2f53edd0282dccb7966401a3",
+              "actualSha256": "474689e95a5da95cacdcb74010cbcb3e3a1b948d2f53edd0282dccb7966401a3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_pet_skill_operation_replays",
+                "canonical_players",
+                "canonical_pet_skill_definitions",
+                "canonical_owned_pet_skill_stacks",
+                "object_identity_crosswalks:petSkillOperation",
+                "object_identity_crosswalks:ownedPetSkill"
+              ],
+              "actual": [
+                "canonical_pet_skill_operation_replays",
+                "canonical_players",
+                "canonical_pet_skill_definitions",
+                "canonical_owned_pet_skill_stacks",
+                "object_identity_crosswalks:petSkillOperation",
+                "object_identity_crosswalks:ownedPetSkill"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-31c4099080d9c9c1:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave23:sql-repository-31c4099080d9c9c1:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave23:sql-repository-31c4099080d9c9c1",
+          "attributedConsumerIds": [
+            "sql-repository-31c4099080d9c9c1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "3cc53bca63159958b7a227c17aaea82ea09a3d2feec8b9e52f967dd8cb84e2f0",
+              "actualSha256": "3cc53bca63159958b7a227c17aaea82ea09a3d2feec8b9e52f967dd8cb84e2f0",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_pet_skill_operation_replays"
+              ],
+              "actual": [
+                "canonical_pet_skill_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-31c4099080d9c9c1:mutation_success",
+          "scenarioId": "scenario:wave23:sql-repository-31c4099080d9c9c1:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave23:sql-repository-31c4099080d9c9c1",
+          "attributedConsumerIds": [
+            "sql-repository-31c4099080d9c9c1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "981fdc187dd00e5d5c980cf159c0c4bee9a09392d3c9944ce232567ff2452a96",
+              "actualSha256": "981fdc187dd00e5d5c980cf159c0c4bee9a09392d3c9944ce232567ff2452a96",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "78cea4a0877e148facf3ee18bcd45d00189892f327b16c9854a937969322515f",
+              "actualSha256": "78cea4a0877e148facf3ee18bcd45d00189892f327b16c9854a937969322515f",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO canonical_owned_pet_skill_stacks(owned_pet_skill_id,player_id,pet_skill_id,quantity,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,?)",
+                "INSERT INTO canonical_pet_skill_operation_replays(pet_skill_operation_id,player_id,request_key,operation_kind,payload_fingerprint,pet_skill_id,owned_pet_id,owned_pet_skill_equipment_id,resulting_quantity,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,NULL,NULL,?,'completed',?,?,?,?)"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_pet_skill_operation_replays",
+                "canonical_players",
+                "canonical_pet_skill_definitions",
+                "canonical_owned_pet_skill_stacks",
+                "object_identity_crosswalks:petSkillOperation",
+                "object_identity_crosswalks:ownedPetSkill"
+              ],
+              "actual": [
+                "canonical_pet_skill_operation_replays",
+                "canonical_players",
+                "canonical_pet_skill_definitions",
+                "canonical_owned_pet_skill_stacks",
+                "object_identity_crosswalks:petSkillOperation",
+                "object_identity_crosswalks:ownedPetSkill"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-31c4099080d9c9c1:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave23:sql-repository-31c4099080d9c9c1:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave23:sql-repository-31c4099080d9c9c1",
+          "attributedConsumerIds": [
+            "sql-repository-31c4099080d9c9c1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "bde63eb2b28c099b42ec9583ec82a796ef48bc0fddac60197f47793a265ba306",
+              "actualSha256": "bde63eb2b28c099b42ec9583ec82a796ef48bc0fddac60197f47793a265ba306",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_pet_skill_operation_replays"
+              ],
+              "actual": [
+                "canonical_pet_skill_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-31c4099080d9c9c1:restart_replay",
+          "scenarioId": "scenario:wave23:sql-repository-31c4099080d9c9c1:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave23:sql-repository-31c4099080d9c9c1",
+          "attributedConsumerIds": [
+            "sql-repository-31c4099080d9c9c1"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "569f35d48cd8919e0507740b100fd61f349ae51ea2f413bea3cce0965fdd0391",
+              "actualSha256": "569f35d48cd8919e0507740b100fd61f349ae51ea2f413bea3cce0965fdd0391",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_pet_skill_operation_replays"
+              ],
+              "actual": [
+                "canonical_pet_skill_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave23:sql-repository-31c4099080d9c9c1:concurrency_single_writer",
+          "receipt:wave23:sql-repository-31c4099080d9c9c1:domain_failure_rollback",
+          "receipt:wave23:sql-repository-31c4099080d9c9c1:duplicate_replay_dml_zero",
+          "receipt:wave23:sql-repository-31c4099080d9c9c1:mutation_success",
+          "receipt:wave23:sql-repository-31c4099080d9c9c1:payload_drift_fail_closed",
+          "receipt:wave23:sql-repository-31c4099080d9c9c1:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-31c4099080d9c9c1"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave23-mutations-v1.json",
+            "sha256": "846c4ced7ee379edcb0c9bce466aa6213fc26b2afa06f13433be141dda86e8f6"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-mutations-harness.mjs",
+            "sha256": "da6da94237a56ee67b28d6096f9f68b35739bfcda14076d6f7a1f61ed9bd5851"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-target.mjs",
+            "sha256": "8e2b43c32b9be23e604a90d1e580bd9ae068f156f903172233371e041a5bb907"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -110006,22 +110383,22 @@
         "sourceSpanSha256": "b24303b0f0b36db045cdbc5d243eea27e6abfe098b25304ba44c126c8ac5a7d9",
         "classificationSha256": "8d548f9ab77f08eb3345e1b775156c49d2111c426de83d920f3f5ed18809b530"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave23:mutations",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-mutations-harness.mjs",
+        "sha256": "da6da94237a56ee67b28d6096f9f68b35739bfcda14076d6f7a1f61ed9bd5851"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave23:mutations:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave23-mutations-v1.json",
+        "sha256": "846c4ced7ee379edcb0c9bce466aa6213fc26b2afa06f13433be141dda86e8f6"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-target.mjs",
+        "targetSourceSha256": "8e2b43c32b9be23e604a90d1e580bd9ae068f156f903172233371e041a5bb907",
+        "exportName": "executeWave23Mutation"
       },
       "scenarioRequirements": [
         {
@@ -110075,11 +110452,386 @@
           }
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave23:sql-repository-818137c4fb22037a:concurrency_single_writer",
+          "scenarioId": "scenario:wave23:sql-repository-818137c4fb22037a:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave23:sql-repository-818137c4fb22037a",
+          "attributedConsumerIds": [
+            "sql-repository-818137c4fb22037a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "dbf33a01a7b47d083686fa8ccedfa2fc81bebce132e968fe6e8d342f667cb4c3",
+              "actualSha256": "dbf33a01a7b47d083686fa8ccedfa2fc81bebce132e968fe6e8d342f667cb4c3",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "df0cf5bfff31f8fc39870ae58d78a771cfcb86121f3191f631b35684aff76242",
+              "actualSha256": "df0cf5bfff31f8fc39870ae58d78a771cfcb86121f3191f631b35684aff76242",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+                "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+                "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+                "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+                "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+              ],
+              "expectedRowCount": 4,
+              "actualRowCount": 4
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_home_furniture_placements"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_home_furniture_placements"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-818137c4fb22037a:domain_failure_rollback",
+          "scenarioId": "scenario:wave23:sql-repository-818137c4fb22037a:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave23:sql-repository-818137c4fb22037a",
+          "attributedConsumerIds": [
+            "sql-repository-818137c4fb22037a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5b878ed2a08c591b02d120d5ba0b556a4b7a1ff355feae2ac008b36955e422c2",
+              "actualSha256": "5b878ed2a08c591b02d120d5ba0b556a4b7a1ff355feae2ac008b36955e422c2",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_home_furniture_placements"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_home_furniture_placements"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-818137c4fb22037a:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave23:sql-repository-818137c4fb22037a:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave23:sql-repository-818137c4fb22037a",
+          "attributedConsumerIds": [
+            "sql-repository-818137c4fb22037a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "6a5a4063d5e681728864c2a971843b0dee4d26e40ab304288b120c3bc8cd15df",
+              "actualSha256": "6a5a4063d5e681728864c2a971843b0dee4d26e40ab304288b120c3bc8cd15df",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_ownership_history"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_ownership_history"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-818137c4fb22037a:mutation_success",
+          "scenarioId": "scenario:wave23:sql-repository-818137c4fb22037a:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave23:sql-repository-818137c4fb22037a",
+          "attributedConsumerIds": [
+            "sql-repository-818137c4fb22037a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "53c4dbcd92f64d62c57152a3f35efe5f13d9e10f76dde827c24cb03dae900915",
+              "actualSha256": "53c4dbcd92f64d62c57152a3f35efe5f13d9e10f76dde827c24cb03dae900915",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "df0cf5bfff31f8fc39870ae58d78a771cfcb86121f3191f631b35684aff76242",
+              "actualSha256": "df0cf5bfff31f8fc39870ae58d78a771cfcb86121f3191f631b35684aff76242",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+                "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+                "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO object_furniture_operation_replays(furniture_operation_id,player_id,idempotency_scope,idempotency_key,operation_kind,payload_fingerprint,owned_furniture_id,result_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?,'placed',?,?,?,?)",
+                "INSERT INTO object_home_furniture_placements(home_furniture_placement_id,owned_furniture_id,placement_order,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,?,?,?,?)",
+                "INSERT INTO object_furniture_ownership_history(furniture_ownership_history_id,owned_furniture_id,furniture_operation_id,status_before,status_after,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'bag','placed',?,?,?,?)",
+                "UPDATE object_owned_furniture_instances SET ownership_status='placed',UPDATE_USER=?,UPDATE_TIME=? WHERE owned_furniture_id=? AND player_id=? AND ownership_status='bag'"
+              ],
+              "expectedRowCount": 4,
+              "actualRowCount": 4
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_home_furniture_placements"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_home_furniture_placements"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-818137c4fb22037a:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave23:sql-repository-818137c4fb22037a:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave23:sql-repository-818137c4fb22037a",
+          "attributedConsumerIds": [
+            "sql-repository-818137c4fb22037a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "ca5879e6d96c13e09463eeb360e782c2e2cdc9047ffd550892500ac5b5426f9f",
+              "actualSha256": "ca5879e6d96c13e09463eeb360e782c2e2cdc9047ffd550892500ac5b5426f9f",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays"
+              ],
+              "actual": [
+                "object_furniture_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-818137c4fb22037a:restart_replay",
+          "scenarioId": "scenario:wave23:sql-repository-818137c4fb22037a:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave23:sql-repository-818137c4fb22037a",
+          "attributedConsumerIds": [
+            "sql-repository-818137c4fb22037a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "572c434933298c98de45b1f2539e0d97139cc17d13990830a60e3897e8911125",
+              "actualSha256": "572c434933298c98de45b1f2539e0d97139cc17d13990830a60e3897e8911125",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_ownership_history"
+              ],
+              "actual": [
+                "object_furniture_operation_replays",
+                "object_owned_furniture_instances",
+                "object_furniture_ownership_history"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave23:sql-repository-818137c4fb22037a:concurrency_single_writer",
+          "receipt:wave23:sql-repository-818137c4fb22037a:domain_failure_rollback",
+          "receipt:wave23:sql-repository-818137c4fb22037a:duplicate_replay_dml_zero",
+          "receipt:wave23:sql-repository-818137c4fb22037a:mutation_success",
+          "receipt:wave23:sql-repository-818137c4fb22037a:payload_drift_fail_closed",
+          "receipt:wave23:sql-repository-818137c4fb22037a:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-818137c4fb22037a"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave23-mutations-v1.json",
+            "sha256": "846c4ced7ee379edcb0c9bce466aa6213fc26b2afa06f13433be141dda86e8f6"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-mutations-harness.mjs",
+            "sha256": "da6da94237a56ee67b28d6096f9f68b35739bfcda14076d6f7a1f61ed9bd5851"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-target.mjs",
+            "sha256": "8e2b43c32b9be23e604a90d1e580bd9ae068f156f903172233371e041a5bb907"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -113885,22 +114637,22 @@
         "sourceSpanSha256": "20d39cc4886ac67218f1926afafff179d6768d7b1f2dca4751a2061c40c4082c",
         "classificationSha256": "482d520399fd484f1319e0bfec775eca7b73b6d6ec99822eb1eb5bae68e9551e"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave23:mutations",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-mutations-harness.mjs",
+        "sha256": "da6da94237a56ee67b28d6096f9f68b35739bfcda14076d6f7a1f61ed9bd5851"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave23:mutations:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave23-mutations-v1.json",
+        "sha256": "846c4ced7ee379edcb0c9bce466aa6213fc26b2afa06f13433be141dda86e8f6"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-target.mjs",
+        "targetSourceSha256": "8e2b43c32b9be23e604a90d1e580bd9ae068f156f903172233371e041a5bb907",
+        "exportName": "executeWave23Mutation"
       },
       "scenarioRequirements": [
         {
@@ -113954,11 +114706,382 @@
           }
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave23:sql-repository-f6c531148a436a21:concurrency_single_writer",
+          "scenarioId": "scenario:wave23:sql-repository-f6c531148a436a21:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave23:sql-repository-f6c531148a436a21",
+          "attributedConsumerIds": [
+            "sql-repository-f6c531148a436a21"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "837b1a0dba3dd278afd2bde656f61caa359d262bb5c0de5f00987f47bc2f1dd6",
+              "actualSha256": "837b1a0dba3dd278afd2bde656f61caa359d262bb5c0de5f00987f47bc2f1dd6",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "1d803b6af1475c1fda96e9cff4c9846c2339f4d03df74cbf91f1e74269474c7a",
+              "actualSha256": "1d803b6af1475c1fda96e9cff4c9846c2339f4d03df74cbf91f1e74269474c7a",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO canonical_owned_mini_pet_instances(owned_mini_pet_id,player_id,mini_pet_id,enhancement_level,equipped_flag,bound_flag,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,0,FALSE,?,'owned',?,?,?,?)",
+                "INSERT INTO canonical_mini_pet_operation_replays(mini_pet_operation_id,player_id,request_key,operation_kind,payload_fingerprint,owned_mini_pet_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'acquire',?,?,'completed',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO canonical_owned_mini_pet_instances(owned_mini_pet_id,player_id,mini_pet_id,enhancement_level,equipped_flag,bound_flag,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,0,FALSE,?,'owned',?,?,?,?)",
+                "INSERT INTO canonical_mini_pet_operation_replays(mini_pet_operation_id,player_id,request_key,operation_kind,payload_fingerprint,owned_mini_pet_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'acquire',?,?,'completed',?,?,?,?)"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_mini_pet_operation_replays",
+                "canonical_players",
+                "canonical_mini_pet_definitions",
+                "object_identity_crosswalks:miniPetOperation",
+                "object_identity_crosswalks:ownedMiniPet"
+              ],
+              "actual": [
+                "canonical_mini_pet_operation_replays",
+                "canonical_players",
+                "canonical_mini_pet_definitions",
+                "object_identity_crosswalks:miniPetOperation",
+                "object_identity_crosswalks:ownedMiniPet"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-f6c531148a436a21:domain_failure_rollback",
+          "scenarioId": "scenario:wave23:sql-repository-f6c531148a436a21:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave23:sql-repository-f6c531148a436a21",
+          "attributedConsumerIds": [
+            "sql-repository-f6c531148a436a21"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "fe3dd713a8729866bbe366b206c7d34eafa04a8e69ea0e03dcdd3ba87e3d742c",
+              "actualSha256": "fe3dd713a8729866bbe366b206c7d34eafa04a8e69ea0e03dcdd3ba87e3d742c",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_mini_pet_operation_replays",
+                "canonical_players",
+                "canonical_mini_pet_definitions",
+                "object_identity_crosswalks:miniPetOperation",
+                "object_identity_crosswalks:ownedMiniPet"
+              ],
+              "actual": [
+                "canonical_mini_pet_operation_replays",
+                "canonical_players",
+                "canonical_mini_pet_definitions",
+                "object_identity_crosswalks:miniPetOperation",
+                "object_identity_crosswalks:ownedMiniPet"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-f6c531148a436a21:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave23:sql-repository-f6c531148a436a21:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave23:sql-repository-f6c531148a436a21",
+          "attributedConsumerIds": [
+            "sql-repository-f6c531148a436a21"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "ce447ad059a167173ad01cd827ef4aed2d80f3a75e3f420abcbd5a70579360c0",
+              "actualSha256": "ce447ad059a167173ad01cd827ef4aed2d80f3a75e3f420abcbd5a70579360c0",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_mini_pet_operation_replays"
+              ],
+              "actual": [
+                "canonical_mini_pet_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-f6c531148a436a21:mutation_success",
+          "scenarioId": "scenario:wave23:sql-repository-f6c531148a436a21:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave23:sql-repository-f6c531148a436a21",
+          "attributedConsumerIds": [
+            "sql-repository-f6c531148a436a21"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "4526a23bf2da9f159fa67809b9ad2084138ef1c5d7fa1548c7d744b55d4b133d",
+              "actualSha256": "4526a23bf2da9f159fa67809b9ad2084138ef1c5d7fa1548c7d744b55d4b133d",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "1d803b6af1475c1fda96e9cff4c9846c2339f4d03df74cbf91f1e74269474c7a",
+              "actualSha256": "1d803b6af1475c1fda96e9cff4c9846c2339f4d03df74cbf91f1e74269474c7a",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "INSERT INTO canonical_owned_mini_pet_instances(owned_mini_pet_id,player_id,mini_pet_id,enhancement_level,equipped_flag,bound_flag,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,0,FALSE,?,'owned',?,?,?,?)",
+                "INSERT INTO canonical_mini_pet_operation_replays(mini_pet_operation_id,player_id,request_key,operation_kind,payload_fingerprint,owned_mini_pet_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'acquire',?,?,'completed',?,?,?,?)"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO canonical_owned_mini_pet_instances(owned_mini_pet_id,player_id,mini_pet_id,enhancement_level,equipped_flag,bound_flag,ownership_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,0,FALSE,?,'owned',?,?,?,?)",
+                "INSERT INTO canonical_mini_pet_operation_replays(mini_pet_operation_id,player_id,request_key,operation_kind,payload_fingerprint,owned_mini_pet_id,operation_status,INSERT_USER,INSERT_TIME,UPDATE_USER,UPDATE_TIME) VALUES (?,?,?,'acquire',?,?,'completed',?,?,?,?)"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_mini_pet_operation_replays",
+                "canonical_players",
+                "canonical_mini_pet_definitions",
+                "object_identity_crosswalks:miniPetOperation",
+                "object_identity_crosswalks:ownedMiniPet"
+              ],
+              "actual": [
+                "canonical_mini_pet_operation_replays",
+                "canonical_players",
+                "canonical_mini_pet_definitions",
+                "object_identity_crosswalks:miniPetOperation",
+                "object_identity_crosswalks:ownedMiniPet"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-f6c531148a436a21:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave23:sql-repository-f6c531148a436a21:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave23:sql-repository-f6c531148a436a21",
+          "attributedConsumerIds": [
+            "sql-repository-f6c531148a436a21"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "d07bcab03298ee02c03e211237875f98a68c21944ee118afaa720537efbb07a0",
+              "actualSha256": "d07bcab03298ee02c03e211237875f98a68c21944ee118afaa720537efbb07a0",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_mini_pet_operation_replays"
+              ],
+              "actual": [
+                "canonical_mini_pet_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave23:sql-repository-f6c531148a436a21:restart_replay",
+          "scenarioId": "scenario:wave23:sql-repository-f6c531148a436a21:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave23:sql-repository-f6c531148a436a21",
+          "attributedConsumerIds": [
+            "sql-repository-f6c531148a436a21"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "f2ade9075b181cf230ce5dfb1e8954b6bd1a0d147676d985b45d913ee479c0c1",
+              "actualSha256": "f2ade9075b181cf230ce5dfb1e8954b6bd1a0d147676d985b45d913ee479c0c1",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "canonical_mini_pet_operation_replays"
+              ],
+              "actual": [
+                "canonical_mini_pet_operation_replays"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave23:sql-repository-f6c531148a436a21:concurrency_single_writer",
+          "receipt:wave23:sql-repository-f6c531148a436a21:domain_failure_rollback",
+          "receipt:wave23:sql-repository-f6c531148a436a21:duplicate_replay_dml_zero",
+          "receipt:wave23:sql-repository-f6c531148a436a21:mutation_success",
+          "receipt:wave23:sql-repository-f6c531148a436a21:payload_drift_fail_closed",
+          "receipt:wave23:sql-repository-f6c531148a436a21:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "sql-repository-f6c531148a436a21"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave23-mutations-v1.json",
+            "sha256": "846c4ced7ee379edcb0c9bce466aa6213fc26b2afa06f13433be141dda86e8f6"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-mutations-harness.mjs",
+            "sha256": "da6da94237a56ee67b28d6096f9f68b35739bfcda14076d6f7a1f61ed9bd5851"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave23-target.mjs",
+            "sha256": "8e2b43c32b9be23e604a90d1e580bd9ae068f156f903172233371e041a5bb907"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -114582,5 +115705,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "980bce23b397c9426c0b9294002c815d88c5fb3e275dff887194131df80c400f"
+  "entrySetSha256": "7103871b3f92f6f1a5c14a4c81ba5e534d9f6888e8f3f45d8df48ac61d23e131"
 }
