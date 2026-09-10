@@ -1,0 +1,33 @@
+{
+  "workItem": "WEB-WBS-011D",
+  "slice": "SL-ITEM-USER-WEB-BAG-CATEGORY-UI-01",
+  "lease": "Lease2652",
+  "delta": "SCD-WEB-20260910-13",
+  "providerInputDelta": "SCD-WEB-20260910-12",
+  "evidenceSchemaVersion": "web-current-player-bag-category-ui-v1",
+  "executionProfile": "READ_UI",
+  "validationTier": "T1",
+  "baseCommit": "512db10f",
+  "routes": ["/account/inventory", "GET /api/v1/inventory/current?category=general|furniture"],
+  "validation": {
+    "focused": { "tests": 19, "pass": 19, "fail": 0, "skipped": 0 },
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diffCheck": "PASS",
+    "responsiveWidths": [375, 768, 1024, 1440],
+    "horizontalOverflowCount": 0,
+    "touchTargetPx": 44,
+    "shadow": "actual CurrentPlayerBagService fixture consumed through Chrome UI"
+  },
+  "preserved": ["general bag item rendering and pagination", "header point string", "header diamond string", "session-expiry sensitive clear"],
+  "furnitureFieldsRendered": ["displayName", "gradeDisplayName", "charm", "quantity=1"],
+  "excluded": ["internal identifiers", "name-based category inference", "other typed bag empty fallback"],
+  "gates": { "gate1": true, "gate2": true, "gate3": true, "gate4": true, "gate5": true, "gate6": true, "gate7": false, "gate8": false },
+  "sourceHashes": {
+    "runtime/src/site-web/user-shell-assets.ts": "12287ff775c15d0c217d1c76fc9c01ffd811b92773a502df005daf246a599348",
+    "runtime/src/site-web/user-shell.ts": "ac5175c51ff0da97bf870eeb5316e4e8b6e39cfd36e3a696702510bfa6e00cbe",
+    "runtime/test/user-shell.test.ts": "f958b25b7a0d4bef96e1a50f93faffdc9bbf7300d8aedd02f0aa689b98a6eeae",
+    "responsive-results.json": "a81c680d7c06ebce0127082410da562e07edbc1fbd102e10c272fd7ef5c4dad7"
+  },
+  "remaining": "Gate 7 independent review"
+}

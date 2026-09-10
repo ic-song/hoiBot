@@ -211,6 +211,11 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
         </div>
 
         <section class="inventory-card" aria-labelledby="inventory-list-title" aria-busy="true">
+          <div class="inventory-tabs" role="tablist" aria-label="가방 종류">
+            <button id="inventory-general-tab" class="inventory-tab active" type="button" role="tab" aria-selected="true" aria-controls="inventory-panel">일반 가방</button>
+            <button id="inventory-furniture-tab" class="inventory-tab" type="button" role="tab" aria-selected="false" aria-controls="inventory-panel" tabindex="-1">가구가방</button>
+          </div>
+          <div id="inventory-panel" role="tabpanel" aria-labelledby="inventory-general-tab">
           <div class="inventory-heading">
             <div>
               <p class="card-label">CURRENT PLAYER BAG</p>
@@ -220,13 +225,14 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
             <span id="inventory-state" class="status-text">조회 중</span>
           </div>
           <div id="inventory-loading" class="inventory-state" role="status"><span class="spinner small" aria-hidden="true"></span><p>가방을 불러오고 있어요.</p></div>
-          <div id="inventory-empty" class="empty-state" hidden><strong>가방에 표시할 아이템이 없어요.</strong><p>아이템을 획득하면 이곳에서 수량을 확인할 수 있어요.</p></div>
+          <div id="inventory-empty" class="empty-state" hidden><strong id="inventory-empty-title">일반 가방에 표시할 항목이 없어요.</strong><p id="inventory-empty-description">아이템을 획득하면 이곳에서 수량을 확인할 수 있어요.</p></div>
           <div id="inventory-error" class="inline-notice error" role="alert" hidden><div><strong>가방을 불러오지 못했어요.</strong><p id="inventory-error-message"></p></div><button id="inventory-retry-button" class="text-button" type="button">다시 시도</button></div>
           <ul id="inventory-list" class="inventory-list" aria-label="가방 아이템" tabindex="-1" hidden></ul>
           <div id="inventory-pagination" class="inventory-pagination" hidden>
             <button id="inventory-prev-button" class="secondary-button" type="button">이전 페이지</button>
             <p id="inventory-page-status" role="status" aria-live="polite"></p>
             <button id="inventory-next-button" class="secondary-button" type="button">다음 페이지</button>
+          </div>
           </div>
         </section>
       </div>
@@ -417,6 +423,10 @@ button:disabled { opacity: .58; cursor: wait; }
 .empty-state { padding: 28px 0 4px; text-align: left; }
 .empty-state p { margin: 7px 0 10px; color: var(--muted); line-height: 1.6; }
 .inventory-card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,.05); padding: 20px; }
+.inventory-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; padding: 4px; background: #e8eef8; border-radius: 12px; }
+.inventory-tab { min-width: 0; min-height: 44px; padding: 9px 12px; color: var(--muted); background: transparent; border: 1px solid transparent; border-radius: 9px; font-weight: 800; line-height: 1.4; }
+.inventory-tab:hover { color: var(--blue); background: rgba(255,255,255,.65); }
+.inventory-tab.active { color: var(--blue-dark); background: var(--surface); border-color: #cbd8ec; box-shadow: 0 2px 6px rgba(15,23,42,.08); }
 .inventory-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
 .inventory-heading h2 { margin: 6px 0 0; font-size: 24px; letter-spacing: -.03em; }
 .inventory-owner { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
@@ -426,6 +436,9 @@ button:disabled { opacity: .58; cursor: wait; }
 .inventory-list { display: grid; gap: 10px; margin: 0; padding: 20px 0 0; list-style: none; }
 .inventory-item { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 16px; background: var(--soft-blue); border: 1px solid #d5e3fb; border-radius: 10px; }
 .inventory-item-name { min-width: 0; color: var(--ink); font-weight: 800; line-height: 1.5; overflow-wrap: anywhere; }
+.inventory-item-identity { min-width: 0; display: grid; gap: 5px; }
+.inventory-item-details { display: flex; flex-wrap: wrap; gap: 6px 12px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.inventory-item-detail { white-space: nowrap; }
 .inventory-item-quantity { flex: 0 0 auto; color: var(--blue); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 850; white-space: nowrap; }
 .inventory-pagination { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 .inventory-pagination .secondary-button { min-width: 0; min-height: 44px; padding: 0 12px; }
@@ -493,7 +506,7 @@ export const USER_SHELL_CLIENT = String.raw`
 (function () {
   "use strict";
 
-  var state = { csrfToken: "", session: null, profile: null, inventoryOffset: 0, inventoryLimit: 20, inventory: null };
+  var state = { csrfToken: "", session: null, profile: null, inventoryCategory: "general", inventoryOffset: 0, inventoryLimit: 20, inventoryRequestId: 0, inventory: null };
   var loadingView = document.getElementById("loading-view");
   var loginView = document.getElementById("login-view");
   var appView = document.getElementById("app-view");
@@ -519,6 +532,8 @@ export const USER_SHELL_CLIENT = String.raw`
   var logoutButton = document.getElementById("logout-button");
   var retryButton = document.getElementById("retry-button");
   var inventoryRetryButton = document.getElementById("inventory-retry-button");
+  var inventoryGeneralTab = document.getElementById("inventory-general-tab");
+  var inventoryFurnitureTab = document.getElementById("inventory-furniture-tab");
   var inventoryPrevButton = document.getElementById("inventory-prev-button");
   var inventoryNextButton = document.getElementById("inventory-next-button");
   var liveStatus = document.getElementById("live-status");
@@ -654,6 +669,8 @@ export const USER_SHELL_CLIENT = String.raw`
     state.inventory = null;
     state.inventoryOffset = 0;
     state.inventoryLimit = 20;
+    state.inventoryRequestId += 1;
+    state.inventoryCategory = "general";
     ["account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server"].forEach(function (id) { text(id, "—"); });
     var list = document.getElementById("profile-list");
     list.replaceChildren();
@@ -667,6 +684,7 @@ export const USER_SHELL_CLIENT = String.raw`
     text("inventory-owner", "");
     text("inventory-count", "조회 준비 중");
     text("inventory-state", "조회 중");
+    setInventoryCategory("general", false);
     document.getElementById("currencies-list").replaceChildren();
     document.getElementById("currencies-list").hidden = true;
     document.getElementById("currencies-empty").hidden = true;
@@ -684,7 +702,11 @@ export const USER_SHELL_CLIENT = String.raw`
     var pagination = payload && payload.pagination ? payload.pagination : {};
     var items = payload && Array.isArray(payload.items) ? payload.items : [];
     var total = Number(pagination.total || 0);
-    text("inventory-owner", payload && payload.ownerLabel ? payload.ownerLabel + "의 가방" : "현재 연결된 계정의 가방");
+    var furniture = state.inventoryCategory === "furniture";
+    if ((furniture && (!payload || payload.category !== "furniture")) || (!furniture && payload && payload.category && payload.category !== "general")) {
+      throw new Error("선택한 가방 종류와 응답 정보가 일치하지 않아요. 다시 시도해 주세요.");
+    }
+    text("inventory-owner", payload && payload.ownerLabel ? payload.ownerLabel + "의 " + (furniture ? "가구가방" : "일반 가방") : "현재 연결된 계정의 " + (furniture ? "가구가방" : "일반 가방"));
     text("inventory-count", total + "개 항목");
     text("inventory-state", "조회 완료");
     state.inventoryLimit = Number(pagination.limit) > 0 ? Number(pagination.limit) : 20;
@@ -692,14 +714,30 @@ export const USER_SHELL_CLIENT = String.raw`
     list.replaceChildren();
     items.forEach(function (item) {
       var row = document.createElement("li");
+      var identity = document.createElement("div");
       var name = document.createElement("span");
       var quantity = document.createElement("span");
       row.setAttribute("class", "inventory-item");
       name.setAttribute("class", "inventory-item-name");
       quantity.setAttribute("class", "inventory-item-quantity");
       name.textContent = String(item && item.displayName || "이름 없는 아이템");
-      quantity.textContent = "수량 " + String(item && item.quantity || "0");
-      row.append(name, quantity);
+      quantity.textContent = furniture ? "수량 1" : "수량 " + String(item && item.quantity || "0");
+      if (furniture) {
+        var details = document.createElement("p");
+        var grade = document.createElement("span");
+        var charm = document.createElement("span");
+        identity.setAttribute("class", "inventory-item-identity");
+        details.setAttribute("class", "inventory-item-details");
+        grade.setAttribute("class", "inventory-item-detail");
+        charm.setAttribute("class", "inventory-item-detail");
+        grade.textContent = "등급 " + String(item && item.gradeDisplayName || "정보 없음");
+        charm.textContent = "매력도 " + String(item && item.charm || "0");
+        details.append(grade, charm);
+        identity.append(name, details);
+        row.append(identity, quantity);
+      } else {
+        row.append(name, quantity);
+      }
       list.append(row);
     });
     empty.hidden = items.length > 0;
@@ -710,6 +748,29 @@ export const USER_SHELL_CLIENT = String.raw`
     inventoryNextButton.disabled = !pagination.hasMore;
     inventoryPrevButton.setAttribute("aria-disabled", inventoryPrevButton.disabled ? "true" : "false");
     inventoryNextButton.setAttribute("aria-disabled", inventoryNextButton.disabled ? "true" : "false");
+  }
+
+  function inventoryCategoryLabel() {
+    return state.inventoryCategory === "furniture" ? "가구가방" : "일반 가방";
+  }
+
+  function setInventoryCategory(category, shouldLoad) {
+    state.inventoryCategory = category === "furniture" ? "furniture" : "general";
+    state.inventoryOffset = 0;
+    state.inventory = null;
+    var furniture = state.inventoryCategory === "furniture";
+    [[inventoryGeneralTab, !furniture], [inventoryFurnitureTab, furniture]].forEach(function (entry) {
+      entry[0].setAttribute("class", entry[1] ? "inventory-tab active" : "inventory-tab");
+      entry[0].setAttribute("aria-selected", entry[1] ? "true" : "false");
+      entry[0].setAttribute("tabindex", entry[1] ? "0" : "-1");
+    });
+    document.getElementById("inventory-panel").setAttribute("aria-labelledby", furniture ? "inventory-furniture-tab" : "inventory-general-tab");
+    document.getElementById("inventory-list").setAttribute("aria-label", inventoryCategoryLabel() + " 항목");
+    document.getElementById("inventory-empty-title").textContent = inventoryCategoryLabel() + "에 표시할 항목이 없어요.";
+    document.getElementById("inventory-empty-description").textContent = furniture ? "보유한 가구가 생기면 이곳에서 등급과 매력도를 확인할 수 있어요." : "아이템을 획득하면 이곳에서 수량을 확인할 수 있어요.";
+    text("inventory-count", "조회 준비 중");
+    text("inventory-state", "조회 중");
+    if (shouldLoad) loadInventory();
   }
 
   function currencyLabel(code) {
@@ -798,24 +859,31 @@ export const USER_SHELL_CLIENT = String.raw`
     document.getElementById("inventory-list").hidden = true;
     if (card) card.setAttribute("aria-busy", "true");
     text("inventory-state", "조회 중");
+    var requestId = state.inventoryRequestId + 1;
+    state.inventoryRequestId = requestId;
     try {
-      var payload = await api("/api/v1/inventory/current?limit=" + state.inventoryLimit + "&offset=" + state.inventoryOffset);
+      var requestedCategory = state.inventoryCategory;
+      var payload = await api("/api/v1/inventory/current?category=" + requestedCategory + "&limit=" + state.inventoryLimit + "&offset=" + state.inventoryOffset);
+      if (requestId !== state.inventoryRequestId || requestedCategory !== state.inventoryCategory) return false;
       state.inventory = payload;
       renderInventory(payload);
-      announce(Number(payload.pagination && payload.pagination.total || 0) ? "가방 항목 " + Number(payload.pagination && payload.pagination.total || 0) + "개를 표시합니다." : "가방이 비어 있어요.");
+      announce(Number(payload.pagination && payload.pagination.total || 0) ? inventoryCategoryLabel() + " 항목 " + Number(payload.pagination && payload.pagination.total || 0) + "개를 표시합니다." : inventoryCategoryLabel() + "이 비어 있어요.");
     } catch (error) {
       if (error.status === 401) {
         showLogin("세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true);
         return false;
       }
+      if (requestId !== state.inventoryRequestId) return false;
       state.inventory = null;
       text("inventory-state", "조회 실패");
       document.getElementById("inventory-error-message").textContent = error.message || "가방을 불러오지 못했어요. 네트워크 상태를 확인하고 다시 시도해 주세요.";
       errorView.hidden = false;
-      announce("가방을 불러오지 못했습니다. 다시 시도해 주세요.");
+      announce(inventoryCategoryLabel() + "을 불러오지 못했습니다. 다시 시도해 주세요.");
     } finally {
-      loading.hidden = true;
-      if (card) card.setAttribute("aria-busy", "false");
+      if (requestId === state.inventoryRequestId) {
+        loading.hidden = true;
+        if (card) card.setAttribute("aria-busy", "false");
+      }
     }
   }
 
@@ -1004,6 +1072,17 @@ export const USER_SHELL_CLIENT = String.raw`
 
   retryButton.addEventListener("click", loadProfile);
   inventoryRetryButton.addEventListener("click", loadInventory);
+  inventoryGeneralTab.addEventListener("click", function () { setInventoryCategory("general", true); });
+  inventoryFurnitureTab.addEventListener("click", function () { setInventoryCategory("furniture", true); });
+  [inventoryGeneralTab, inventoryFurnitureTab].forEach(function (tab) {
+    tab.addEventListener("keydown", function (event) {
+      var target = event.key === "ArrowLeft" || event.key === "Home" ? inventoryGeneralTab : event.key === "ArrowRight" || event.key === "End" ? inventoryFurnitureTab : null;
+      if (!target) return;
+      event.preventDefault();
+      target.focus();
+      target.click();
+    });
+  });
   inventoryPrevButton.addEventListener("click", function () {
     state.inventoryOffset = Math.max(0, state.inventoryOffset - state.inventoryLimit);
     loadInventory();

@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "web-current-player-bag-category-ui-shadow-v1",
+  "captureMethod": "actual CurrentPlayerBagService fixture + Chrome CDP",
+  "providerInput": {
+    "ownerLabel": "Shadow 용사",
+    "items": [
+      {
+        "displayName": "아주 긴 이름의 별빛 왕실 소파 가구",
+        "gradeDisplayName": "전설",
+        "charm": "18446744073709551615"
+      },
+      {
+        "displayName": "달빛 탁자",
+        "gradeDisplayName": "희귀",
+        "charm": "9"
+      }
+    ]
+  },
+  "viewports": [
+    {
+      "width": 375,
+      "height": 812,
+      "general": {
+        "requestCategory": "true",
+        "item": "일반 회귀 아이템",
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      },
+      "furniture": {
+        "innerWidth": 375,
+        "scrollWidth": 375,
+        "horizontalOverflow": false,
+        "selected": "true",
+        "tabHeight": 44,
+        "focusedHeading": "inventory-title",
+        "owner": "Shadow 용사의 가구가방",
+        "name": "아주 긴 이름의 별빛 왕실 소파 가구",
+        "grade": "등급 전설",
+        "charm": "매력도 18446744073709551615",
+        "quantity": "수량 1",
+        "exposedInternalId": false,
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      }
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "general": {
+        "requestCategory": "true",
+        "item": "일반 회귀 아이템",
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      },
+      "furniture": {
+        "innerWidth": 768,
+        "scrollWidth": 768,
+        "horizontalOverflow": false,
+        "selected": "true",
+        "tabHeight": 44,
+        "focusedHeading": "inventory-title",
+        "owner": "Shadow 용사의 가구가방",
+        "name": "아주 긴 이름의 별빛 왕실 소파 가구",
+        "grade": "등급 전설",
+        "charm": "매력도 18446744073709551615",
+        "quantity": "수량 1",
+        "exposedInternalId": false,
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      }
+    },
+    {
+      "width": 1024,
+      "height": 900,
+      "general": {
+        "requestCategory": "true",
+        "item": "일반 회귀 아이템",
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      },
+      "furniture": {
+        "innerWidth": 1024,
+        "scrollWidth": 1024,
+        "horizontalOverflow": false,
+        "selected": "true",
+        "tabHeight": 44,
+        "focusedHeading": "inventory-title",
+        "owner": "Shadow 용사의 가구가방",
+        "name": "아주 긴 이름의 별빛 왕실 소파 가구",
+        "grade": "등급 전설",
+        "charm": "매력도 18446744073709551615",
+        "quantity": "수량 1",
+        "exposedInternalId": false,
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      }
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "general": {
+        "requestCategory": "true",
+        "item": "일반 회귀 아이템",
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      },
+      "furniture": {
+        "innerWidth": 1440,
+        "scrollWidth": 1440,
+        "horizontalOverflow": false,
+        "selected": "true",
+        "tabHeight": 44,
+        "focusedHeading": "inventory-title",
+        "owner": "Shadow 용사의 가구가방",
+        "name": "아주 긴 이름의 별빛 왕실 소파 가구",
+        "grade": "등급 전설",
+        "charm": "매력도 18446744073709551615",
+        "quantity": "수량 1",
+        "exposedInternalId": false,
+        "point": "12345678901234567890",
+        "diamond": "7000"
+      }
+    }
+  ]
+}

@@ -31,7 +31,7 @@ function createShellHarness(responses: Array<{ status: number; payload?: Record<
     "login-error-summary", "login-error-message", "login-session-notice", "login-session-message", "app-error", "app-error-message", "logout-button", "retry-button",
     "live-status", "header-session", "header-balance-summary", "header-point-balance", "header-point-balance-value", "header-diamond-balance", "header-diamond-balance-value", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
     "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server", "welcome-title", "login-title",
-    "inventory-count", "inventory-state", "inventory-owner", "inventory-loading", "inventory-empty", "inventory-error", "inventory-error-message", "inventory-list", "inventory-pagination", "inventory-page-status", "inventory-retry-button", "inventory-prev-button", "inventory-next-button",
+    "inventory-count", "inventory-state", "inventory-owner", "inventory-loading", "inventory-empty", "inventory-empty-title", "inventory-empty-description", "inventory-error", "inventory-error-message", "inventory-list", "inventory-pagination", "inventory-page-status", "inventory-retry-button", "inventory-prev-button", "inventory-next-button", "inventory-general-tab", "inventory-furniture-tab", "inventory-panel",
     "currencies-count", "currencies-state", "currencies-loading", "currencies-empty", "currencies-error", "currencies-error-message", "currencies-list"
   ];
   const elements = new Map(ids.map((id) => [id, new ShellElement(id, focusLog)]));
@@ -143,6 +143,7 @@ test("로그인 화면은 키보드·스크린리더·비밀번호 관리자를 
   assert.match(USER_SHELL_STYLES, /\.summary-grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/);
   assert.match(USER_SHELL_STYLES, /@media \(max-width: 619px\)/);
   assert.match(USER_SHELL_STYLES, /\.inventory-card \{ min-width: 0;/);
+  assert.match(USER_SHELL_STYLES, /\.inventory-tab \{[^}]*min-height: 44px;/);
   assert.match(USER_SHELL_STYLES, /\.inventory-item-name \{ min-width: 0;[^}]*overflow-wrap: anywhere;/);
   assert.match(USER_SHELL_STYLES, /\.inventory-pagination \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); \}/);
   assert.match(USER_SHELL_STYLES, /\.header-balance-item b \{ min-width: 0;[^}]*overflow-wrap: anywhere;/);
@@ -159,7 +160,11 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
   assert.match(USER_SHELL_CLIENT, /POST/);
   assert.match(USER_SHELL_CLIENT, /\/api\/v1\/sessions/);
   assert.match(USER_SHELL_CLIENT, /\/api\/v1\/player-profiles\/current/);
-  assert.match(USER_SHELL_CLIENT, /\/api\/v1\/inventory\/current\?limit=" \+ state\.inventoryLimit \+ "&offset=/);
+  assert.match(USER_SHELL_CLIENT, /\/api\/v1\/inventory\/current\?category=" \+ requestedCategory \+ "&limit=" \+ state\.inventoryLimit \+ "&offset=/);
+  assert.match(USER_SHELL_HTML, /role="tablist" aria-label="가방 종류"/);
+  assert.match(USER_SHELL_HTML, /id="inventory-general-tab"[^>]*role="tab"[^>]*aria-selected="true"/);
+  assert.match(USER_SHELL_HTML, /id="inventory-furniture-tab"[^>]*role="tab"[^>]*aria-selected="false"/);
+  assert.match(USER_SHELL_CLIENT, /event\.key === "ArrowLeft"[^\n]*event\.key === "ArrowRight"/);
   assert.match(USER_SHELL_HTML, /id="inventory-list" class="inventory-list" aria-label="가방 아이템" tabindex="-1" hidden/);
   assert.match(USER_SHELL_HTML, /id="nav-currencies" class="nav-link" href="\/account\/currencies"/);
   assert.match(USER_SHELL_HTML, /id="currencies-list" class="currencies-list" aria-label="보유 재화" tabindex="-1" hidden/);
@@ -176,6 +181,7 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
   assert.doesNotMatch(USER_SHELL_CLIENT, /\/api\/v1\/admin/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /\/api\/v1\/currencies/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /localStorage|sessionStorage|Authorization/);
+  assert.doesNotMatch(USER_SHELL_CLIENT, /furnitureInstanceId|furnitureDefinitionId/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /innerHTML/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /console\./);
 });
@@ -279,12 +285,12 @@ test("가방 경로는 현재 사용자 가방 계약을 안전하게 렌더링�
   assert.equal(harness.elements.get("nav-inventory")?.attributes.get("aria-current"), "page");
   assert.equal(harness.elements.get("inventory-list")?.children[0]?.children[0]?.textContent, "안전한 <아이템>");
   assert.equal(harness.elements.get("inventory-next-button")?.disabled, false);
-  assert.equal(harness.calls[3]?.url, "/api/v1/inventory/current?limit=20&offset=0");
+  assert.equal(harness.calls[3]?.url, "/api/v1/inventory/current?category=general&limit=20&offset=0");
   const next = harness.elements.get("inventory-next-button");
   assert.ok(next);
   await click(next);
   await flushShellClient();
-  assert.equal(harness.calls[4]?.url, "/api/v1/inventory/current?limit=20&offset=20");
+  assert.equal(harness.calls[4]?.url, "/api/v1/inventory/current?category=general&limit=20&offset=20");
   assert.equal(harness.elements.get("inventory-prev-button")?.disabled, false);
   assert.equal(harness.elements.get("inventory-next-button")?.disabled, true);
   assert.equal(harness.focusLog.includes("inventory-title"), true);
@@ -348,7 +354,7 @@ test("빈 가방은 빈 상태와 최종 live announcement를 표시합니다", 
   assert.equal(harness.elements.get("inventory-empty")?.hidden, false);
   assert.equal(harness.elements.get("inventory-list")?.hidden, true);
   assert.equal(harness.elements.get("inventory-pagination")?.hidden, true);
-  assert.equal(harness.elements.get("live-status")?.textContent, "가방이 비어 있어요.");
+  assert.equal(harness.elements.get("live-status")?.textContent, "일반 가방이 비어 있어요.");
 });
 
 test("가방 오류는 표시하고 재시도 성공으로 안전하게 대체합니다", async () => {
@@ -366,10 +372,100 @@ test("가방 오류는 표시하고 재시도 성공으로 안전하게 대체�
   assert.ok(retry);
   await click(retry);
   await flushShellClient();
-  assert.equal(harness.calls[4]?.url, "/api/v1/inventory/current?limit=20&offset=0");
+  assert.equal(harness.calls[4]?.url, "/api/v1/inventory/current?category=general&limit=20&offset=0");
   assert.equal(harness.elements.get("inventory-error")?.hidden, true);
   assert.equal(harness.elements.get("inventory-list")?.children[0]?.children[0]?.textContent, "재시도 아이템");
-  assert.equal(harness.elements.get("live-status")?.textContent, "가방 항목 1개를 표시합니다.");
+  assert.equal(harness.elements.get("live-status")?.textContent, "일반 가방 항목 1개를 표시합니다.");
+});
+
+test("가방 탭은 명시적 category를 호출하고 가구 이름·등급·매력도·수량만 표시합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", currencyAccounts: [{ code: "point", balance: "900" }, { code: "diamond", balance: "7" }] } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 200, payload: { ownerLabel: "테스트용사", items: [{ displayName: "일반 아이템", quantity: "2" }], pagination: { limit: 20, offset: 0, total: 1, hasMore: false } } },
+    { status: 200, payload: { category: "furniture", ownerLabel: "테스트용사", items: [{ displayName: "별빛 소파", gradeDisplayName: "전설", charm: "18446744073709551615", quantity: "1", furnitureInstanceId: "do-not-show", furnitureDefinitionId: "also-private" }], pagination: { limit: 20, offset: 0, total: 21, hasMore: true } } },
+    { status: 200, payload: { category: "furniture", ownerLabel: "테스트용사", items: [{ displayName: "달빛 탁자", gradeDisplayName: "희귀", charm: "9", quantity: "1" }], pagination: { limit: 20, offset: 20, total: 21, hasMore: false } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  const furnitureTab = harness.elements.get("inventory-furniture-tab");
+  assert.ok(furnitureTab);
+  await click(furnitureTab);
+  await flushShellClient();
+  assert.equal(harness.calls[4]?.url, "/api/v1/inventory/current?category=furniture&limit=20&offset=0");
+  assert.equal(furnitureTab.attributes.get("aria-selected"), "true");
+  assert.equal(harness.elements.get("inventory-general-tab")?.attributes.get("aria-selected"), "false");
+  assert.equal(harness.elements.get("inventory-panel")?.attributes.get("aria-labelledby"), "inventory-furniture-tab");
+  const row = harness.elements.get("inventory-list")?.children[0];
+  assert.equal(row?.children[0]?.children[0]?.textContent, "별빛 소파");
+  assert.equal(row?.children[0]?.children[1]?.children[0]?.textContent, "등급 전설");
+  assert.equal(row?.children[0]?.children[1]?.children[1]?.textContent, "매력도 18446744073709551615");
+  assert.equal(row?.children[1]?.textContent, "수량 1");
+  assert.equal(harness.elements.get("header-point-balance-value")?.textContent, "900");
+  assert.equal(harness.elements.get("header-diamond-balance-value")?.textContent, "7");
+  assert.equal(row?.children.some((child) => child.textContent.includes("do-not-show") || child.textContent.includes("also-private")), false);
+  const next = harness.elements.get("inventory-next-button");
+  assert.ok(next);
+  await click(next);
+  await flushShellClient();
+  assert.equal(harness.calls[5]?.url, "/api/v1/inventory/current?category=furniture&limit=20&offset=20");
+});
+
+test("가구가방은 자체 빈 상태를 표시하고 일반 가방으로 돌아갈 때 페이지를 초기화합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사" } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 200, payload: { ownerLabel: "테스트용사", items: [], pagination: { limit: 20, offset: 0, total: 0, hasMore: false } } },
+    { status: 200, payload: { category: "furniture", ownerLabel: "테스트용사", items: [], pagination: { limit: 20, offset: 0, total: 0, hasMore: false } } },
+    { status: 200, payload: { ownerLabel: "테스트용사", items: [], pagination: { limit: 20, offset: 0, total: 0, hasMore: false } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  await click(harness.elements.get("inventory-furniture-tab")!);
+  await flushShellClient();
+  assert.equal(harness.elements.get("inventory-empty-title")?.textContent, "가구가방에 표시할 항목이 없어요.");
+  assert.match(harness.elements.get("inventory-empty-description")?.textContent ?? "", /등급과 매력도/);
+  assert.equal(harness.elements.get("live-status")?.textContent, "가구가방이 비어 있어요.");
+  await click(harness.elements.get("inventory-general-tab")!);
+  await flushShellClient();
+  assert.equal(harness.calls[5]?.url, "/api/v1/inventory/current?category=general&limit=20&offset=0");
+});
+
+test("선택한 탭과 다른 typed 응답은 빈 가방으로 위장하지 않고 오류로 표시합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사" } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 200, payload: { ownerLabel: "테스트용사", items: [], pagination: { limit: 20, offset: 0, total: 0, hasMore: false } } },
+    { status: 200, payload: { category: "general", ownerLabel: "테스트용사", items: [], pagination: { limit: 20, offset: 0, total: 0, hasMore: false } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  await click(harness.elements.get("inventory-furniture-tab")!);
+  await flushShellClient();
+  assert.equal(harness.elements.get("inventory-error")?.hidden, false);
+  assert.match(harness.elements.get("inventory-error-message")?.textContent ?? "", /응답 정보가 일치하지 않아요/);
+  assert.equal(harness.elements.get("inventory-empty")?.hidden, true);
+  assert.equal(harness.elements.get("inventory-list")?.hidden, true);
+});
+
+test("가구가방 조회의 세션 만료는 모든 가방·상단 잔액을 지우고 로그인으로 전환합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", currencyAccounts: [{ code: "point", balance: "900" }, { code: "diamond", balance: "7" }] } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 200, payload: { ownerLabel: "테스트용사", items: [{ displayName: "일반 아이템", quantity: "2" }], pagination: { limit: 20, offset: 0, total: 1, hasMore: false } } },
+    { status: 401, payload: { error: { code: "UNAUTHENTICATED" } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  await click(harness.elements.get("inventory-furniture-tab")!);
+  await flushShellClient();
+  assert.equal(harness.history.at(-1), "/login");
+  assert.equal(harness.elements.get("inventory-list")?.children.length, 0);
+  assert.equal(harness.elements.get("inventory-pagination")?.hidden, true);
+  assert.equal(harness.elements.get("header-balance-summary")?.hidden, true);
+  assert.equal(harness.elements.get("header-point-balance-value")?.textContent, "");
+  assert.equal(harness.elements.get("inventory-general-tab")?.attributes.get("aria-selected"), "true");
+  assert.equal(harness.focusLog.at(-1), "login-session-notice");
 });
 
 test("가방 경로에서 프로필 401 뒤에는 가방 요청을 시작하지 않습니다", async () => {
