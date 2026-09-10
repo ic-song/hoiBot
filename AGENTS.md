@@ -13,7 +13,7 @@ Project explanations for human operators/developers are managed in `README.md`.
   - `Info.js`: query/helper features
   - `data/`: game operation data snapshots (JSON/TXT)
   - `tools/`: local helper scripts for development/operation workflows
-  - `.codex/skills/`: deployment mirrors synchronized from the private `CODEX-CONFIG` canonical skill registry
+  - `.codex/skills/`: deployment mirrors synchronized from the private `AGENT-HUB` canonical skill registry
   - `.codex/skill-drafts-ko/`: Korean review drafts for hoiBot Codex skills, not auto-loaded skill sources
   - `COMMAND_INDEX.md`: AI-oriented command navigation index for exploration, helper discovery, and save-flow tracing
   - `COMMAND_REGISTRY.md`: human-facing command source, unused, removal, and note checklist
@@ -186,16 +186,17 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Prefer updating an existing skill when it can cover the pattern clearly. Create a new skill only when the workflow has a distinct trigger, reusable procedure, and independent responsibility.
 - Do not turn a single ordinary mistake into a skill. First improve the task capsule or existing rule; promote it to a skill after recurrence, cross-worker impact, or a high-cost/high-risk deterministic procedure is confirmed.
 - Skills must encode the decision procedure, required inputs, evidence checks, stop conditions, and report format. They must not hard-code one execution's row numbers, task IDs, worker names, commits, or results.
-- All hoiBot skill drafts and approved changes follow the Central Codex Skill Registry workflow. The canonical change is made under `CODEX-CONFIG/skills/projects/hoibot/`, validated and approved by the foreman, then synchronized to mirrors.
+- All hoiBot skill drafts and approved changes follow the Central Codex Skill Registry workflow. The canonical change is made under `AGENT-HUB/skills/projects/hoibot/`, validated and approved by the foreman, then synchronized to mirrors.
 
 ## Central Codex Skill Registry
 
-- The private `https://github.com/ic-song/CODEX-CONFIG.git` repository is the canonical source for user-authored hoiBot Codex skills.
-- Edit hoiBot skills only under `CODEX-CONFIG/skills/projects/hoibot/`. Do not make the first or only skill edit in this repository's `.codex/skills/` mirror or in `%USERPROFILE%/.codex/skills`.
-- Keep every hoiBot skill registered under the hoiBot entry in `CODEX-CONFIG/projects.json`.
-- Validate and push `CODEX-CONFIG/main` before synchronizing a project mirror.
-- Refresh this repository's `.codex/skills/` only with `CODEX-CONFIG/scripts/sync-skills.ps1 -ProjectPath <hoiBot-path> -Force`, then commit the generated mirror on `feature/workflow` and reflect the validated commit into `feature/prod`.
-- Installed personal skill folders must be junctions to their canonical `CODEX-CONFIG` folders. Use `link-skills.ps1 -MigrateExisting` for first-time conversion so existing directories are retained in the timestamped backup path.
+- The private `https://github.com/ic-song/AGENT-HUB.git` repository is the canonical source for user-authored hoiBot Codex skills.
+- Edit hoiBot skills only under `AGENT-HUB/skills/projects/hoibot/`. Do not make the first or only skill edit in this repository's `.codex/skills/` mirror or in `%USERPROFILE%/.codex/skills`.
+- Keep every hoiBot skill registered under the hoiBot entry in `AGENT-HUB/projects.json`.
+- Validate and push `AGENT-HUB/main` before synchronizing a project mirror.
+- Refresh this repository's `.codex/skills/` only with `AGENT-HUB/scripts/sync-skills.ps1 -ProjectPath <hoiBot-path> -Force`, then commit the generated mirror on `feature/workflow` and reflect the validated commit into `feature/prod`.
+- Installed personal skill folders must be junctions to their canonical `AGENT-HUB` folders. Use `link-skills.ps1 -MigrateExisting` for first-time conversion so existing directories are retained in the timestamped backup path.
+- Resolve the actual local AGENT-HUB checkout before using registry paths; the repository name does not require renaming an existing local directory. Use the common `skills/common/gemini-a2a` source through its personal junction and user-global MCP entry; never copy it into this project. Reuse existing authentication and check connection state before login or configuration changes.
 - Treat `.codex/skill-drafts-ko/` as human review drafts only; they are not canonical skill sources.
 - A skill change is complete only when the canonical repository is pushed, the project mirror has no drift, the personal junction target is correct, and required validation passes.
 - If the canonical repository is unavailable or dirty with unrelated work, do not bypass it by editing a mirror. Report the blocker.
@@ -393,8 +394,8 @@ head-agent
 - Before pushing, creating PRs, or merging, check the current branch and working tree status.
 - Commit messages should be written in Korean as clear, human-readable summaries of the change.
 - Keep `tools/*.bat`, `README.md`, and `AGENTS.md` synchronized when branch strategy changes.
-- Update user-authored Codex skills in `CODEX-CONFIG` first, then synchronize the generated `.codex/skills/` mirror on `feature/workflow`.
-- After `.codex/skills/` mirror changes reach `feature/prod`, verify the corresponding personal skill paths remain junctions to the same canonical `CODEX-CONFIG` folders; do not manually copy over those junctions.
+- Update user-authored Codex skills in `AGENT-HUB` first, then synchronize the generated `.codex/skills/` mirror on `feature/workflow`.
+- After `.codex/skills/` mirror changes reach `feature/prod`, verify the corresponding personal skill paths remain junctions to the same canonical `AGENT-HUB` folders; do not manually copy over those junctions.
 - PR titles and bodies must summarize:
   - changed files or areas
   - user-visible behavior changes

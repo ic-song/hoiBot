@@ -3,30 +3,39 @@ chcp 65001 > nul
 setlocal EnableExtensions EnableDelayedExpansion
 
 set "ROOT=%~dp0.."
-set "REGISTRY=%USERPROFILE%\CODEX-CONFIG"
-if defined CODEX_CONFIG_ROOT set "REGISTRY=%CODEX_CONFIG_ROOT%"
+set "REGISTRY="
+if defined AGENT_HUB_ROOT (
+  set "REGISTRY=%AGENT_HUB_ROOT%"
+) else if defined CODEX_CONFIG_ROOT (
+  rem Compatibility with existing local installations.
+  set "REGISTRY=%CODEX_CONFIG_ROOT%"
+) else (
+  for %%D in ("%USERPROFILE%\AGENT-HUB" "%USERPROFILE%\Desktop\AGENT-HUB" "%USERPROFILE%\CODEX-CONFIG" "%USERPROFILE%\Desktop\CODEX-CONFIG") do (
+    if not defined REGISTRY if exist "%%~D\.git" if exist "%%~D\scripts\sync-skills.ps1" set "REGISTRY=%%~D"
+  )
+)
 
-echo [hoiBot] CODEX-CONFIG skills install/update
+echo [hoiBot] AGENT-HUB skills install/update
 echo ROOT=%ROOT%
 echo REGISTRY=%REGISTRY%
 
 if not exist "%REGISTRY%\.git" (
-  echo [ERROR] CODEX-CONFIG repository not found: %REGISTRY%
-  echo Clone https://github.com/ic-song/CODEX-CONFIG.git first.
+  echo [ERROR] AGENT-HUB repository not found: %REGISTRY%
+  echo Clone https://github.com/ic-song/AGENT-HUB.git first.
   set "EXIT_CODE=1"
   goto finish
 )
 
 git -C "%REGISTRY%" pull --ff-only
 if errorlevel 1 (
-  echo [ERROR] CODEX-CONFIG update failed.
+  echo [ERROR] AGENT-HUB update failed.
   set "EXIT_CODE=1"
   goto finish
 )
 
 node "%REGISTRY%\scripts\validate.mjs"
 if errorlevel 1 (
-  echo [ERROR] CODEX-CONFIG validation failed.
+  echo [ERROR] AGENT-HUB validation failed.
   set "EXIT_CODE=1"
   goto finish
 )
@@ -50,7 +59,7 @@ if /I "!CURRENT_BRANCH!"=="feature/workflow" (
   echo [INFO] project mirror sync skipped on !CURRENT_BRANCH!; use feature/workflow.
 )
 
-echo [OK] CODEX-CONFIG and personal skill links are current.
+echo [OK] AGENT-HUB and personal skill links are current.
 set "EXIT_CODE=0"
 
 :finish

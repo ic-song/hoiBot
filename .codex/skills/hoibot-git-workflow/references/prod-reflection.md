@@ -81,8 +81,8 @@ after the validated commit has been pushed, reflected into `feature/prod`, and
 
 For workflow changes:
 
-1. for skill changes, update and validate the canonical `CODEX-CONFIG` folder and push its `main`
-2. synchronize the hoiBot `.codex/skills/` deployment mirror from `CODEX-CONFIG`
+1. for skill changes, update and validate the canonical `AGENT-HUB` folder and push its `main`
+2. synchronize the hoiBot `.codex/skills/` deployment mirror from `AGENT-HUB`
 3. commit and push the workflow change on `feature/workflow`
 4. switch to `feature/prod`
 5. pull `feature/prod`
@@ -90,7 +90,7 @@ For workflow changes:
 7. verify those commit(s) already exist on the pushed `feature/workflow`
 8. push `feature/prod`
 9. verify personal skill paths are junctions to the canonical folders and the project mirror has no drift
-10. report the `CODEX-CONFIG`, workflow source, and `feature/prod` commits plus junction and mirror verification
+10. report the `AGENT-HUB`, workflow source, and `feature/prod` commits plus junction and mirror verification
 
 ## Commit Messages
 
