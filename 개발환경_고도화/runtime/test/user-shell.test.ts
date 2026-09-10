@@ -27,13 +27,14 @@ class ShellElement {
 function createShellHarness(responses: Array<{ status: number; payload?: Record<string, unknown> }>, pathname = "/app") {
   const focusLog: string[] = [];
   const ids = [
-    "loading-view", "login-view", "app-view", "home-content", "account-content", "nav-home", "nav-account", "account-title", "login-form", "login-button", "login-id", "password",
+    "loading-view", "login-view", "app-view", "home-content", "account-content", "inventory-content", "nav-home", "nav-account", "nav-inventory", "account-title", "inventory-title", "login-form", "login-button", "login-id", "password",
     "login-error-summary", "login-error-message", "login-session-notice", "login-session-message", "app-error", "app-error-message", "logout-button", "retry-button",
     "live-status", "header-session", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
-    "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server", "welcome-title", "login-title"
+    "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server", "welcome-title", "login-title",
+    "inventory-count", "inventory-state", "inventory-owner", "inventory-loading", "inventory-empty", "inventory-error", "inventory-error-message", "inventory-list", "inventory-pagination", "inventory-page-status", "inventory-retry-button", "inventory-prev-button", "inventory-next-button"
   ];
   const elements = new Map(ids.map((id) => [id, new ShellElement(id, focusLog)]));
-  ["login-view", "app-view", "account-content", "login-error-summary", "login-session-notice", "app-error", "login-id-error", "password-error", "profile-empty"]
+  ["login-view", "app-view", "account-content", "inventory-content", "login-error-summary", "login-session-notice", "app-error", "login-id-error", "password-error", "profile-empty", "inventory-empty", "inventory-error", "inventory-list", "inventory-pagination"]
     .forEach((id) => { const element = elements.get(id); if (element !== undefined) element.hidden = true; });
   const calls: Array<{ url: string; options: Record<string, unknown> }> = [];
   const history: string[] = [];
@@ -87,17 +88,18 @@ function assertSecurityHeaders(headers: Record<string, string | string[] | numbe
 
 test("이용자 셸과 정적 자산을 보안 헤더와 함께 제공합니다", async () => {
   const app = await buildShellApp();
-  const [root, login, protectedApp, account, accountLinks, css, client] = await Promise.all([
+  const [root, login, protectedApp, account, inventory, accountLinks, css, client] = await Promise.all([
     app.inject({ method: "GET", url: "/" }),
     app.inject({ method: "GET", url: "/login" }),
     app.inject({ method: "GET", url: "/app" }),
     app.inject({ method: "GET", url: "/account" }),
+    app.inject({ method: "GET", url: "/account/inventory" }),
     app.inject({ method: "GET", url: "/account/links" }),
     app.inject({ method: "GET", url: "/site/assets/user-shell.css" }),
     app.inject({ method: "GET", url: "/site/assets/user-shell.js" })
   ]);
 
-  for (const response of [root, login, protectedApp, account, accountLinks, css, client]) {
+  for (const response of [root, login, protectedApp, account, inventory, accountLinks, css, client]) {
     assert.equal(response.statusCode, 200);
     assertSecurityHeaders(response.headers);
   }
@@ -108,6 +110,8 @@ test("이용자 셸과 정적 자산을 보안 헤더와 함께 제공합니다"
   assert.equal(login.body, USER_SHELL_HTML);
   assert.equal(protectedApp.body, USER_SHELL_HTML);
   assert.equal(account.body, USER_SHELL_HTML);
+  assert.equal(inventory.body, USER_SHELL_HTML);
+  assert.equal((await app.inject({ method: "GET", url: "/account/inventory/" })).body, USER_SHELL_HTML);
   assert.equal(accountLinks.body, USER_SHELL_HTML);
   assert.equal(css.body, USER_SHELL_STYLES);
   assert.equal(client.body, USER_SHELL_CLIENT);
@@ -134,6 +138,9 @@ test("로그인 화면은 키보드·스크린리더·비밀번호 관리자를 
   assert.match(USER_SHELL_STYLES, /grid-template-columns: 224px minmax\(0, 1fr\)/);
   assert.match(USER_SHELL_STYLES, /\.summary-grid \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/);
   assert.match(USER_SHELL_STYLES, /@media \(max-width: 619px\)/);
+  assert.match(USER_SHELL_STYLES, /\.inventory-card \{ min-width: 0;/);
+  assert.match(USER_SHELL_STYLES, /\.inventory-item-name \{ min-width: 0;[^}]*overflow-wrap: anywhere;/);
+  assert.match(USER_SHELL_STYLES, /\.inventory-pagination \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); \}/);
   assert.match(USER_SHELL_STYLES, /\.login-intro h1 \{[^}]*word-break: keep-all;[^}]*text-wrap: balance;/);
   assert.doesNotMatch(USER_SHELL_STYLES, /grid-template-rows: auto 1fr auto/);
   assert.match(USER_SHELL_HTML, /보안 상태/);
@@ -146,6 +153,10 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
   assert.match(USER_SHELL_CLIENT, /POST/);
   assert.match(USER_SHELL_CLIENT, /\/api\/v1\/sessions/);
   assert.match(USER_SHELL_CLIENT, /\/api\/v1\/player-profiles\/current/);
+  assert.match(USER_SHELL_CLIENT, /\/api\/v1\/inventory\/current\?limit=" \+ state\.inventoryLimit \+ "&offset=/);
+  assert.match(USER_SHELL_HTML, /id="inventory-list" class="inventory-list" aria-label="가방 아이템" tabindex="-1" hidden/);
+  assert.match(USER_SHELL_HTML, /id="inventory-pagination" class="inventory-pagination" hidden/);
+  assert.match(USER_SHELL_HTML, /aria-busy="true"/);
   assert.match(USER_SHELL_CLIENT, /DELETE/);
   assert.match(USER_SHELL_CLIENT, /credentials: "same-origin"/);
   assert.match(USER_SHELL_CLIENT, /"x-csrf-token"/);
@@ -156,6 +167,7 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
   assert.match(USER_SHELL_HTML, /href="\/signup"/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /\/api\/v1\/admin/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /localStorage|sessionStorage|Authorization/);
+  assert.doesNotMatch(USER_SHELL_CLIENT, /innerHTML/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /console\./);
 });
 
@@ -218,4 +230,43 @@ test("계정 연결 경로는 본인 세션과 현재 프로필만 마스킹해 
   assert.equal(harness.elements.get("link-player-server")?.textContent, "호이월드 1");
   assert.equal(harness.focusLog.includes("account-title"), true);
   assert.doesNotMatch(USER_SHELL_HTML, /id="link-account-id"|id="link-player-id"/);
+});
+
+test("가방 경로는 현재 사용자 가방 계약을 안전하게 렌더링하고 페이지를 전환합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", level: "27", accumulatedLevel: "35", server: { displayName: "호이월드 1" } } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 200, payload: { ownerLabel: "테스트용사", advertisement: "", items: [{ displayName: "안전한 <아이템>", quantity: "2" }], pagination: { limit: 20, offset: 0, total: 21, hasMore: true } } },
+    { status: 200, payload: { ownerLabel: "테스트용사", advertisement: "", items: [{ displayName: "다음 아이템", quantity: "1" }], pagination: { limit: 20, offset: 20, total: 21, hasMore: false } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  assert.equal(harness.history.at(-1), "/account/inventory");
+  assert.equal(harness.elements.get("inventory-content")?.hidden, false);
+  assert.equal(harness.elements.get("nav-inventory")?.attributes.get("aria-current"), "page");
+  assert.equal(harness.elements.get("inventory-list")?.children[0]?.children[0]?.textContent, "안전한 <아이템>");
+  assert.equal(harness.elements.get("inventory-next-button")?.disabled, false);
+  assert.equal(harness.calls[3]?.url, "/api/v1/inventory/current?limit=20&offset=0");
+  const next = harness.elements.get("inventory-next-button");
+  assert.ok(next);
+  await click(next);
+  await flushShellClient();
+  assert.equal(harness.calls[4]?.url, "/api/v1/inventory/current?limit=20&offset=20");
+  assert.equal(harness.elements.get("inventory-prev-button")?.disabled, false);
+  assert.equal(harness.elements.get("inventory-next-button")?.disabled, true);
+  assert.equal(harness.focusLog.includes("inventory-title"), true);
+});
+
+test("가방 조회의 세션 만료는 표시 데이터를 지우고 로그인 안내로 전환합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사" } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 401, payload: { error: { code: "UNAUTHENTICATED" } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  assert.equal(harness.elements.get("login-view")?.hidden, false);
+  assert.equal(harness.elements.get("inventory-list")?.children.length, 0);
+  assert.equal(harness.elements.get("inventory-pagination")?.hidden, true);
+  assert.equal(harness.elements.get("login-session-message")?.textContent, "세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.");
 });

@@ -29,7 +29,7 @@ test("이용자 셸과 계정 복구 셸을 기존 웹 경로와 충돌 없이 �
     await app.ready();
     const paths = [
       "/", "/login", "/login/", "/app", "/app/",
-      "/site/assets/user-shell.css", "/site/assets/user-shell.js",
+      "/site/assets/user-shell.css", "/site/assets/user-shell.js", "/account/inventory", "/account/inventory/",
       "/account/delete", "/account/delete/", "/recover-account", "/recover-account/",
       "/site/assets/account-recovery.css", "/site/assets/account-recovery.js",
       "/signup", "/signup/", "/admin", "/admin/"

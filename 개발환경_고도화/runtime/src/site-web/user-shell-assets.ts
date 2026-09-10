@@ -83,7 +83,7 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
         <nav aria-label="내 정보">
           <a id="nav-home" class="nav-link active" href="/app" aria-current="page"><span>홈</span><small>요약</small></a>
           <a id="nav-account" class="nav-link" href="/account"><span>계정 연결</span><small>상세</small></a>
-          <span class="nav-link disabled" aria-disabled="true">가방 <small>준비 중</small></span>
+          <a id="nav-inventory" class="nav-link" href="/account/inventory"><span>가방</span><small>내 아이템</small></a>
           <span class="nav-link disabled" aria-disabled="true">재화 <small>준비 중</small></span>
         </nav>
         <button id="logout-button" class="secondary-button" type="button">로그아웃</button>
@@ -192,6 +192,37 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
           </section>
         </div>
         <p class="account-footnote">연결 해제와 계정 전환 기능은 준비 중입니다.</p>
+      </div>
+
+      <div id="inventory-content" class="app-content" hidden>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow dark">MY INVENTORY</p>
+            <h2 id="inventory-title" tabindex="-1">가방</h2>
+            <p>현재 연결된 게임 계정의 아이템을 최신 순서로 확인할 수 있어요.</p>
+          </div>
+          <span id="inventory-count" class="status-badge">조회 준비 중</span>
+        </div>
+
+        <section class="inventory-card" aria-labelledby="inventory-list-title" aria-busy="true">
+          <div class="inventory-heading">
+            <div>
+              <p class="card-label">CURRENT PLAYER BAG</p>
+              <h2 id="inventory-list-title">내 아이템</h2>
+              <p id="inventory-owner" class="inventory-owner"></p>
+            </div>
+            <span id="inventory-state" class="status-text">조회 중</span>
+          </div>
+          <div id="inventory-loading" class="inventory-state" role="status"><span class="spinner small" aria-hidden="true"></span><p>가방을 불러오고 있어요.</p></div>
+          <div id="inventory-empty" class="empty-state" hidden><strong>가방에 표시할 아이템이 없어요.</strong><p>아이템을 획득하면 이곳에서 수량을 확인할 수 있어요.</p></div>
+          <div id="inventory-error" class="inline-notice error" role="alert" hidden><div><strong>가방을 불러오지 못했어요.</strong><p id="inventory-error-message"></p></div><button id="inventory-retry-button" class="text-button" type="button">다시 시도</button></div>
+          <ul id="inventory-list" class="inventory-list" aria-label="가방 아이템" tabindex="-1" hidden></ul>
+          <div id="inventory-pagination" class="inventory-pagination" hidden>
+            <button id="inventory-prev-button" class="secondary-button" type="button">이전 페이지</button>
+            <p id="inventory-page-status" role="status" aria-live="polite"></p>
+            <button id="inventory-next-button" class="secondary-button" type="button">다음 페이지</button>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -348,6 +379,21 @@ button:disabled { opacity: .58; cursor: wait; }
 .account-footnote { margin: 14px 2px 0; }
 .empty-state { padding: 28px 0 4px; text-align: left; }
 .empty-state p { margin: 7px 0 10px; color: var(--muted); line-height: 1.6; }
+.inventory-card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,.05); padding: 20px; }
+.inventory-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.inventory-heading h2 { margin: 6px 0 0; font-size: 24px; letter-spacing: -.03em; }
+.inventory-owner { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.inventory-state { min-height: 156px; display: grid; place-content: center; justify-items: center; gap: 10px; color: var(--muted); text-align: center; }
+.inventory-state p { margin: 0; line-height: 1.6; }
+.spinner.small { width: 24px; height: 24px; }
+.inventory-list { display: grid; gap: 10px; margin: 0; padding: 20px 0 0; list-style: none; }
+.inventory-item { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 15px 16px; background: var(--soft-blue); border: 1px solid #d5e3fb; border-radius: 10px; }
+.inventory-item-name { min-width: 0; color: var(--ink); font-weight: 800; line-height: 1.5; overflow-wrap: anywhere; }
+.inventory-item-quantity { flex: 0 0 auto; color: var(--blue); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 850; white-space: nowrap; }
+.inventory-pagination { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.inventory-pagination .secondary-button { min-width: 0; min-height: 44px; padding: 0 12px; }
+.inventory-pagination p { margin: 0; color: var(--muted); font-size: 13px; font-weight: 700; text-align: center; }
+.inventory-pagination #inventory-next-button { justify-self: end; }
 .site-footer { min-height: 48px; display: grid; place-items: center; padding: 10px 20px; color: var(--muted); background: var(--canvas); border-top: 1px solid var(--line); text-align: center; font-size: 11px; }
 .site-footer p { margin: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -374,6 +420,12 @@ button:disabled { opacity: .58; cursor: wait; }
   .nav-link small { display: none; }
   .account-detail-list { grid-template-columns: 1fr; }
   .page-heading { margin-top: 24px; }
+  .inventory-card { padding: 18px 14px; }
+  .inventory-item { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .inventory-pagination { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .inventory-pagination p { grid-column: 1 / -1; grid-row: 1; }
+  .inventory-pagination #inventory-prev-button { grid-column: 1; grid-row: 2; }
+  .inventory-pagination #inventory-next-button { grid-column: 2; grid-row: 2; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
@@ -384,14 +436,16 @@ export const USER_SHELL_CLIENT = String.raw`
 (function () {
   "use strict";
 
-  var state = { csrfToken: "", session: null, profile: null };
+  var state = { csrfToken: "", session: null, profile: null, inventoryOffset: 0, inventoryLimit: 20, inventory: null };
   var loadingView = document.getElementById("loading-view");
   var loginView = document.getElementById("login-view");
   var appView = document.getElementById("app-view");
   var homeContent = document.getElementById("home-content");
   var accountContent = document.getElementById("account-content");
+  var inventoryContent = document.getElementById("inventory-content");
   var navHome = document.getElementById("nav-home");
   var navAccount = document.getElementById("nav-account");
+  var navInventory = document.getElementById("nav-inventory");
   var requestedPath = window.location && window.location.pathname ? window.location.pathname : "/app";
   var loginForm = document.getElementById("login-form");
   var loginButton = document.getElementById("login-button");
@@ -405,6 +459,9 @@ export const USER_SHELL_CLIENT = String.raw`
   var appErrorMessage = document.getElementById("app-error-message");
   var logoutButton = document.getElementById("logout-button");
   var retryButton = document.getElementById("retry-button");
+  var inventoryRetryButton = document.getElementById("inventory-retry-button");
+  var inventoryPrevButton = document.getElementById("inventory-prev-button");
+  var inventoryNextButton = document.getElementById("inventory-next-button");
   var liveStatus = document.getElementById("live-status");
 
   function text(id, value) {
@@ -426,17 +483,15 @@ export const USER_SHELL_CLIENT = String.raw`
 
   function setAppSection(name) {
     var account = name === "account";
-    homeContent.hidden = account;
+    var inventory = name === "inventory";
+    homeContent.hidden = account || inventory;
     accountContent.hidden = !account;
-    navHome.setAttribute("class", account ? "nav-link" : "nav-link active");
-    navAccount.setAttribute("class", account ? "nav-link active" : "nav-link");
-    if (account) {
-      navHome.removeAttribute("aria-current");
-      navAccount.setAttribute("aria-current", "page");
-    } else {
-      navAccount.removeAttribute("aria-current");
-      navHome.setAttribute("aria-current", "page");
-    }
+    inventoryContent.hidden = !inventory;
+    [[navHome, !account && !inventory], [navAccount, account], [navInventory, inventory]].forEach(function (entry) {
+      entry[0].setAttribute("class", entry[1] ? "nav-link active" : "nav-link");
+      if (entry[1]) entry[0].setAttribute("aria-current", "page");
+      else entry[0].removeAttribute("aria-current");
+    });
   }
 
   function setBusy(button, busy, busyText, normalText) {
@@ -535,12 +590,88 @@ export const USER_SHELL_CLIENT = String.raw`
   }
 
   function clearSensitiveView() {
+    state.inventory = null;
+    state.inventoryOffset = 0;
+    state.inventoryLimit = 20;
     ["account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server"].forEach(function (id) { text(id, "—"); });
     var list = document.getElementById("profile-list");
     list.replaceChildren();
     list.hidden = true;
     document.getElementById("profile-empty").hidden = true;
+    document.getElementById("inventory-list").replaceChildren();
+    document.getElementById("inventory-list").hidden = true;
+    document.getElementById("inventory-empty").hidden = true;
+    document.getElementById("inventory-error").hidden = true;
+    document.getElementById("inventory-pagination").hidden = true;
+    text("inventory-owner", "");
+    text("inventory-count", "조회 준비 중");
+    text("inventory-state", "조회 중");
     appError.hidden = true;
+  }
+
+  function renderInventory(payload) {
+    var list = document.getElementById("inventory-list");
+    var empty = document.getElementById("inventory-empty");
+    var pagination = payload && payload.pagination ? payload.pagination : {};
+    var items = payload && Array.isArray(payload.items) ? payload.items : [];
+    var total = Number(pagination.total || 0);
+    text("inventory-owner", payload && payload.ownerLabel ? payload.ownerLabel + "의 가방" : "현재 연결된 계정의 가방");
+    text("inventory-count", total + "개 항목");
+    text("inventory-state", "조회 완료");
+    state.inventoryLimit = Number(pagination.limit) > 0 ? Number(pagination.limit) : 20;
+    text("inventory-page-status", total ? Math.floor(Number(pagination.offset || 0) / state.inventoryLimit) + 1 + " 페이지 / " + total + "개" : "가방이 비어 있어요");
+    list.replaceChildren();
+    items.forEach(function (item) {
+      var row = document.createElement("li");
+      var name = document.createElement("span");
+      var quantity = document.createElement("span");
+      row.setAttribute("class", "inventory-item");
+      name.setAttribute("class", "inventory-item-name");
+      quantity.setAttribute("class", "inventory-item-quantity");
+      name.textContent = String(item && item.displayName || "이름 없는 아이템");
+      quantity.textContent = "수량 " + String(item && item.quantity || "0");
+      row.append(name, quantity);
+      list.append(row);
+    });
+    empty.hidden = items.length > 0;
+    list.hidden = items.length === 0;
+    pagination = payload && payload.pagination ? payload.pagination : {};
+    document.getElementById("inventory-pagination").hidden = total === 0;
+    inventoryPrevButton.disabled = Number(pagination.offset || 0) <= 0;
+    inventoryNextButton.disabled = !pagination.hasMore;
+    inventoryPrevButton.setAttribute("aria-disabled", inventoryPrevButton.disabled ? "true" : "false");
+    inventoryNextButton.setAttribute("aria-disabled", inventoryNextButton.disabled ? "true" : "false");
+  }
+
+  async function loadInventory() {
+    var card = document.querySelector ? document.querySelector(".inventory-card") : null;
+    var loading = document.getElementById("inventory-loading");
+    var errorView = document.getElementById("inventory-error");
+    loading.hidden = false;
+    errorView.hidden = true;
+    document.getElementById("inventory-empty").hidden = true;
+    document.getElementById("inventory-list").hidden = true;
+    if (card) card.setAttribute("aria-busy", "true");
+    text("inventory-state", "조회 중");
+    try {
+      var payload = await api("/api/v1/inventory/current?limit=" + state.inventoryLimit + "&offset=" + state.inventoryOffset);
+      state.inventory = payload;
+      renderInventory(payload);
+      announce("가방 항목 " + Number(payload.pagination && payload.pagination.total || 0) + "개를 표시합니다.");
+    } catch (error) {
+      if (error.status === 401) {
+        showLogin("세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true);
+        return;
+      }
+      state.inventory = null;
+      text("inventory-state", "조회 실패");
+      document.getElementById("inventory-error-message").textContent = error.message || "가방을 불러오지 못했어요. 네트워크 상태를 확인하고 다시 시도해 주세요.";
+      errorView.hidden = false;
+      announce("가방을 불러오지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      loading.hidden = true;
+      if (card) card.setAttribute("aria-busy", "false");
+    }
   }
 
   function renderProfile(profile) {
@@ -625,12 +756,14 @@ export const USER_SHELL_CLIENT = String.raw`
     state.profile = null;
     setView("app");
     var accountRoute = /^\/account(?:\/links)?\/?$/.test(requestedPath);
-    setAppSection(accountRoute ? "account" : "home");
+    var inventoryRoute = /^\/account\/inventory\/?$/.test(requestedPath);
+    setAppSection(inventoryRoute ? "inventory" : accountRoute ? "account" : "home");
     renderSession();
-    window.history.replaceState({}, "", accountRoute ? "/account" : "/app");
-    document.getElementById(accountRoute ? "account-title" : "welcome-title").focus();
+    window.history.replaceState({}, "", inventoryRoute ? "/account/inventory" : accountRoute ? "/account" : "/app");
+    document.getElementById(inventoryRoute ? "inventory-title" : accountRoute ? "account-title" : "welcome-title").focus();
     await loadProfile();
-    announce(accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
+    if (inventoryRoute) await loadInventory();
+    announce(inventoryRoute ? "가방을 표시합니다." : accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
   }
 
   function showLogin(message, visibleNotice) {
@@ -716,6 +849,15 @@ export const USER_SHELL_CLIENT = String.raw`
   });
 
   retryButton.addEventListener("click", loadProfile);
+  inventoryRetryButton.addEventListener("click", loadInventory);
+  inventoryPrevButton.addEventListener("click", function () {
+    state.inventoryOffset = Math.max(0, state.inventoryOffset - state.inventoryLimit);
+    loadInventory();
+  });
+  inventoryNextButton.addEventListener("click", function () {
+    state.inventoryOffset += state.inventoryLimit;
+    loadInventory();
+  });
   restoreSession();
 }());
 `;
