@@ -1,0 +1,73 @@
+{
+  "evidenceSchemaVersion": "web-current-player-bag-provider-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-5",
+  "wbsId": "WEB-WBS-011A",
+  "sliceId": "SL-COMMON-INVENTORY-CURRENT-PLAYER-BAG-READ-01",
+  "lease": "Lease2641",
+  "control": "슬라이스_보고수신!5670 ACTIVE; supersedes 5668 and 5669; Lease2641 retained",
+  "executionProfile": "READ_UI",
+  "validationTier": "T1",
+  "assignedBaseline": "ae7665dc9519bde972f54995e1babbdc454ff2ff",
+  "verificationHead": "b51754890ae857b8dd71c852a83ac4d2a42e762c",
+  "scope": {
+    "currentPlayerSelfScope": true,
+    "activeUndeletedPlayerOnly": true,
+    "pagination": {
+      "limitMinimum": 1,
+      "limitMaximum": 100,
+      "offsetMinimum": 0,
+      "safeIntegerOnly": true
+    },
+    "quantityEncoding": "unsigned decimal string",
+    "legacyComparatorReused": "compareLegacyBagItems",
+    "emptyBag": "200-compatible empty items page",
+    "missingOrInactivePlayer": "CURRENT_PLAYER_NOT_AVAILABLE/404",
+    "responsePlayerIdExposed": false,
+    "responseLegacyOrderMetadataExposed": false,
+    "sqlDml": 0
+  },
+  "readTables": [
+    "players",
+    "player_profiles",
+    "inventory_stacks",
+    "item_definitions",
+    "configuration_sets",
+    "configuration_values"
+  ],
+  "validation": {
+    "focused": "node --test --import tsx test/current-player-bag.test.ts test/bag-read.test.ts: 9/9 PASS",
+    "typecheck": "npm.cmd run typecheck: PASS",
+    "build": "npm.cmd run build at b5175489: PASS",
+    "diffCheck": "git diff --check: PASS",
+    "scriptedSql": "all captured statements begin with SELECT; execute and transaction entrypoints fail if called",
+    "staticSql": "provider implementation DML token matches: 0"
+  },
+  "files": [
+    {
+      "path": "개발환경_고도화/runtime/src/inventory/current-player-bag-service.ts",
+      "sha256": "39b4753993127e06ce01fdd763cddd2529a259da080f36853b40793d9ef4ebb0"
+    },
+    {
+      "path": "개발환경_고도화/runtime/src/inventory/maria-bag-repository.ts",
+      "sha256": "ecd1d517ea2f9f13a8fb9e719916c1cbb53ae75f558457aefe7b73b59276438d"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/current-player-bag.test.ts",
+      "sha256": "ba241b9f705d87f419fb94ab1ed6ba581f35b697fefbe5e1e3b3855c9d618fb3"
+    }
+  ],
+  "excludes": [
+    "app.ts",
+    "user-auth routes",
+    "site-web UI",
+    "legacy /가방 renderer",
+    "writer",
+    "ledger",
+    "receipt",
+    "database schema or migration",
+    "operating database or data",
+    "feature/prod",
+    "Gate 8"
+  ]
+}
