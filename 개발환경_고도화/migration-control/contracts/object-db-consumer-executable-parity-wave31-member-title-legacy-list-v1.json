@@ -1,0 +1,767 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave31:member-title-legacy-list:v1",
+  "sliceId": "WBS798",
+  "consumerIds": [
+    "legacy-542e265c2135fb46",
+    "legacy-d04b5224bde6be54"
+  ],
+  "runtimeSourcePaths": [
+    "Info.js",
+    "개발환경_고도화/runtime/src/app.ts",
+    "개발환경_고도화/runtime/src/config.ts",
+    "개발환경_고도화/runtime/src/dispatch/command-dispatcher.ts",
+    "개발환경_고도화/runtime/src/integration/iris-normalizer.ts",
+    "개발환경_고도화/runtime/src/integration/event-processing-service.ts",
+    "개발환경_고도화/runtime/src/player/player-title-read-service.ts",
+    "개발환경_고도화/runtime/src/player/player-title-owned-projection.ts",
+    "개발환경_고도화/runtime/migrations/234_player_title_read.sql"
+  ],
+  "receiptContract": {
+    "version": "WBS798_MEMBER_TITLE_LEGACY_LIST_DIRECT_V1",
+    "route": "COMMITTED_INFO_JS_BRANCH_VS_BUILD_APP_IRIS_MODERN_PLAYER_TITLE_READ",
+    "transaction": "COMMIT",
+    "sourceDomainDmlCount": 0,
+    "restart": "DISTINCT_NODE_CHILD_PROCESSES_AND_MODULES_WITH_EQUAL_LEGACY_MODERN_RESULT",
+    "canonicalTarget": "Same fixture state is projected into actual committed Info.js handlers/checkRank helpers and actual PlayerTitleReadService relational queries"
+  },
+  "bindings": [
+    {
+      "consumerId": "legacy-542e265c2135fb46",
+      "scenarioId": "wave31-self-first-selected",
+      "scenarioKind": "READ_POSITIVE",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록",
+      "sender": "조회회원",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "조회회원": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "조회회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 1
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": true
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": false
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": false
+          }
+        ]
+      },
+      "expectedReply": "[⭐조회회원]님의 타이틀 목록\n\n☞ 1. 첫 번째\n2. 두 번째\n3. 세 번째"
+    },
+    {
+      "consumerId": "legacy-542e265c2135fb46",
+      "scenarioId": "wave31-self-negative-guard",
+      "scenarioKind": "NEGATIVE_GUARD",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록안내",
+      "sender": "조회회원",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "조회회원": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "조회회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 1
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": true
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": false
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": false
+          }
+        ]
+      },
+      "expectedReply": "NO_REPLY"
+    },
+    {
+      "consumerId": "legacy-542e265c2135fb46",
+      "scenarioId": "wave31-self-middle-selected",
+      "scenarioKind": "EXACT_OUTPUT",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록",
+      "sender": "조회회원",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "조회회원": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "조회회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 2
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": false
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": true
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": false
+          }
+        ]
+      },
+      "expectedReply": "[⭐조회회원]님의 타이틀 목록\n\n1. 첫 번째\n☞ 2. 두 번째\n3. 세 번째"
+    },
+    {
+      "consumerId": "legacy-542e265c2135fb46",
+      "scenarioId": "wave31-self-empty-list",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록",
+      "sender": "조회회원",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "조회회원": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "조회회원": {
+              "title": {
+                "list": [],
+                "num": 0
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": []
+      },
+      "expectedReply": "보유 타이틀이 없습니다."
+    },
+    {
+      "consumerId": "legacy-542e265c2135fb46",
+      "scenarioId": "wave31-self-last-selected-restart",
+      "scenarioKind": "RESTART_CONSISTENCY",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록",
+      "sender": "조회회원",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "조회회원": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "조회회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 3
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": false
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": false
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": true
+          }
+        ]
+      },
+      "expectedReply": "[⭐조회회원]님의 타이틀 목록\n\n1. 첫 번째\n2. 두 번째\n☞ 3. 세 번째"
+    },
+    {
+      "consumerId": "legacy-d04b5224bde6be54",
+      "scenarioId": "wave31-admin-first-selected",
+      "scenarioKind": "READ_POSITIVE",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록 대상회원추가",
+      "sender": "운영자",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "운영자": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            },
+            "대상회원": {
+              "rank": {
+                "emoji": "🌙"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "대상회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 1
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": true
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": false
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": false
+          }
+        ]
+      },
+      "expectedReply": "[🌙대상회원]님의 타이틀 목록\n\n☞ 1. 첫 번째/획득일:2026-08-27 23:00/가격: 🅟9,999\n2. 두 번째/획득일:2026-08-27 23:01/가격: 🅟15,000\n3. 세 번째/획득일:2026-08-27 23:02/가격: 🅟25,000"
+    },
+    {
+      "consumerId": "legacy-d04b5224bde6be54",
+      "scenarioId": "wave31-admin-auth-denied",
+      "scenarioKind": "NEGATIVE_GUARD",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록 대상회원추가",
+      "sender": "일반회원",
+      "authorized": false,
+      "legacy": {
+        "data": {
+          "member": {
+            "일반회원": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            },
+            "대상회원": {
+              "rank": {
+                "emoji": "🌙"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "대상회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 1
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": true
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": false
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": false
+          }
+        ]
+      },
+      "expectedReply": "NO_REPLY"
+    },
+    {
+      "consumerId": "legacy-d04b5224bde6be54",
+      "scenarioId": "wave31-admin-middle-selected-exact",
+      "scenarioKind": "EXACT_OUTPUT",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록 대상회원추가",
+      "sender": "운영자",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "운영자": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            },
+            "대상회원": {
+              "rank": {
+                "emoji": "🌙"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "대상회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 2
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": false
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": true
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": false
+          }
+        ]
+      },
+      "expectedReply": "[🌙대상회원]님의 타이틀 목록\n\n1. 첫 번째/획득일:2026-08-27 23:00/가격: 🅟9,999\n☞ 2. 두 번째/획득일:2026-08-27 23:01/가격: 🅟15,000\n3. 세 번째/획득일:2026-08-27 23:02/가격: 🅟25,000"
+    },
+    {
+      "consumerId": "legacy-d04b5224bde6be54",
+      "scenarioId": "wave31-admin-missing-inactive-target",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록 없는회원추가",
+      "sender": "운영자",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "운영자": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {}
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": false,
+        "targetKey": "없는회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": []
+      },
+      "expectedReply": "없는회원는(은) 존재하지 않는 사용자입니다."
+    },
+    {
+      "consumerId": "legacy-d04b5224bde6be54",
+      "scenarioId": "wave31-admin-last-selected-restart",
+      "scenarioKind": "RESTART_CONSISTENCY",
+      "exportName": "executeWave31MemberTitleLegacyList",
+      "input": "/타이틀목록 대상회원추가",
+      "sender": "운영자",
+      "authorized": true,
+      "legacy": {
+        "data": {
+          "member": {
+            "운영자": {
+              "rank": {
+                "emoji": "⭐"
+              }
+            },
+            "대상회원": {
+              "rank": {
+                "emoji": "🌙"
+              }
+            }
+          }
+        },
+        "titleData": {
+          "member": {
+            "대상회원": {
+              "title": {
+                "list": [
+                  {
+                    "name": "첫 번째",
+                    "inDate": "2026-08-27T23:00:00",
+                    "price": 9999
+                  },
+                  {
+                    "name": "두 번째",
+                    "inDate": "2026-08-27T23:01:00",
+                    "price": 15000
+                  },
+                  {
+                    "name": "세 번째",
+                    "inDate": "2026-08-27T23:02:00",
+                    "price": 25000
+                  }
+                ],
+                "num": 3
+              }
+            }
+          }
+        },
+        "guildData": {
+          "guilds": {}
+        }
+      },
+      "modern": {
+        "actorActive": true,
+        "targetActive": true,
+        "targetKey": "대상회원",
+        "actorRankEmoji": "⭐",
+        "targetRankEmoji": "🌙",
+        "titles": [
+          {
+            "name": "첫 번째",
+            "inDate": "2026-08-27T23:00:00",
+            "acquiredDisplay": "2026-08-27 23:00",
+            "price": 9999,
+            "equipped": false
+          },
+          {
+            "name": "두 번째",
+            "inDate": "2026-08-27T23:01:00",
+            "acquiredDisplay": "2026-08-27 23:01",
+            "price": 15000,
+            "equipped": false
+          },
+          {
+            "name": "세 번째",
+            "inDate": "2026-08-27T23:02:00",
+            "acquiredDisplay": "2026-08-27 23:02",
+            "price": 25000,
+            "equipped": true
+          }
+        ]
+      },
+      "expectedReply": "[🌙대상회원]님의 타이틀 목록\n\n1. 첫 번째/획득일:2026-08-27 23:00/가격: 🅟9,999\n2. 두 번째/획득일:2026-08-27 23:01/가격: 🅟15,000\n☞ 3. 세 번째/획득일:2026-08-27 23:02/가격: 🅟25,000"
+    }
+  ]
+}
