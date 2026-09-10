@@ -158,7 +158,7 @@ textarea { min-height: 86px; resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(24,118,109,.14); }
 .form-error { margin: 7px 0 0; padding: 10px 12px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 13px; }
 .primary-button, .secondary-button, .text-button, .icon-button {
-  min-height: 40px; border-radius: 7px; border: 1px solid transparent; font-weight: 700;
+  min-height: 44px; border-radius: 7px; border: 1px solid transparent; font-weight: 700;
 }
 .primary-button { margin-top: 18px; min-height: 48px; background: var(--accent); color: #fff; }
 .primary-button:hover { background: var(--accent-dark); }
@@ -183,7 +183,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .role-tag { padding: 3px 6px; border: 1px solid rgba(255,255,255,.16); border-radius: 4px; color: #dce5ec; font-size: 10px; }
 .primary-nav { display: grid; gap: 3px; padding: 10px; overflow-y: auto; }
 .nav-label { padding: 14px 10px 6px; color: #6f879b; font-size: 10px; font-weight: 800; letter-spacing: .12em; }
-.nav-button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 10px 12px; color: #c7d2dc; background: transparent; border: 0; border-radius: 6px; text-align: left; font-size: 13px; }
+.nav-button { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 44px; padding: 10px 12px; color: #c7d2dc; background: transparent; border: 0; border-radius: 6px; text-align: left; font-size: 13px; }
 .nav-button:hover { background: rgba(255,255,255,.07); color: #fff; }
 .nav-button[aria-current="page"] { background: #fff; color: var(--nav); font-weight: 800; }
 .nav-icon { width: 20px; text-align: center; font-size: 14px; }
@@ -199,7 +199,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .topbar h1 { margin: 0; font-size: 20px; letter-spacing: -.025em; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .last-updated { color: var(--muted); font-size: 11px; }
-.mobile-menu-button { display: none; grid-row: 1 / 3; grid-column: 1; width: 38px; background: #fff; border-color: var(--line); }
+.mobile-menu-button { display: none; grid-row: 1 / 3; grid-column: 1; width: 44px; background: #fff; border-color: var(--line); }
 .main-content { min-height: calc(100vh - 76px); padding: 26px 28px 56px; outline: none; }
 
 .view-intro { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
@@ -222,7 +222,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .toolbar { display: flex; gap: 8px; align-items: center; }
 .toolbar input { width: min(360px, 48vw); min-height: 40px; }
 .search-form { display: flex; align-items: center; gap: 8px; }
-.search-form .primary-button { min-height: 40px; margin: 0; padding: 0 18px; }
+.search-form .primary-button { min-height: 44px; margin: 0; padding: 0 18px; }
 .content-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .75fr); gap: 18px; align-items: start; }
 
 .table-wrap { width: 100%; overflow-x: auto; }
@@ -233,7 +233,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .data-table tbody tr:hover { background: #f8fafb; }
 .row-button { width: 100%; min-height: 44px; padding: 8px 0; color: var(--ink); background: none; border: 0; text-align: left; font-weight: 700; }
 .row-button:hover { color: var(--accent); text-decoration: underline; }
-.row-button:focus-visible, .secondary-button:focus-visible, .text-button:focus-visible, .icon-button:focus-visible, .nav-button:focus-visible {
+.row-button:focus-visible, button:focus-visible {
   outline: 3px solid rgba(24,118,109,.34); outline-offset: 2px;
 }
 .mono { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; }
@@ -306,10 +306,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .catalog-status { display: inline-flex; align-items: center; padding: 4px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); font-size: 10px; font-weight: 800; }
 .catalog-status.inactive { background: #f1f3f5; color: var(--muted); }
 .package-reward-guide { margin: 0; padding: 10px 12px; background: #f7f9fa; border-left: 3px solid var(--accent); color: var(--muted); font-size: 11px; line-height: 1.6; }
-.object-lookup-form { display: flex; align-items: center; gap: 8px; width: 100%; }
-.object-lookup-form input { min-width: 0; }
-.object-lookup-form .primary-button { flex: 0 0 auto; min-height: 40px; margin: 0; padding: 0 18px; }
-.object-json { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; line-height: 1.6; }
 .account-actions { margin: 20px -16px -16px; padding: 18px 16px; border-top: 1px solid var(--line); background: #fbfcfd; }
 .account-actions > h4 { margin: 0; font-size: 13px; }
 .account-actions > p { margin: 6px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.6; }
@@ -355,14 +351,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .risk-form { display: grid; gap: 10px; }
 .risk-form label:not(.confirm-row) { color: var(--muted); font-size: 11px; font-weight: 700; }
 .risk-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.risk-form-actions button { margin-top: 0; min-height: 42px; }
+.risk-form-actions button { margin-top: 0; min-height: 44px; }
 .dry-run-result { margin-top: 12px; padding: 12px; border: 1px solid var(--line); background: #f7f9fa; font-size: 11px; line-height: 1.65; }
 .dry-run-result strong { display: block; margin-bottom: 5px; }
 .dry-run-result .mono { overflow-wrap: anywhere; }
 
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .pagination span { color: var(--muted); font-size: 11px; }
-.pagination button { min-width: 34px; min-height: 32px; padding: 0 9px; background: #fff; border: 1px solid var(--line); border-radius: 5px; }
+.pagination button { min-width: 44px; min-height: 44px; padding: 0 9px; background: #fff; border: 1px solid var(--line); border-radius: 5px; }
 .pagination button:disabled { opacity: .4; cursor: default; }
 .tab-list { display: flex; gap: 2px; padding: 0 16px; border-bottom: 1px solid var(--line); background: #fff; overflow-x: auto; }
 .tab-button { min-height: 44px; padding: 0 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
@@ -407,8 +403,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 }
 
 @media (max-width: 640px) {
-  .object-lookup-form { align-items: stretch; flex-direction: column; }
-  .object-lookup-form .primary-button { width: 100%; }
   .login-copy { min-height: 44vh; padding: 32px 24px; }
   .login-copy h1 { font-size: 34px; }
   .login-description { margin: 20px 0 0; font-size: 14px; }
@@ -456,9 +450,6 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     configurationCatalogRetry: null,
     petSkillCatalogNotice: null,
     petSkillCatalogRetry: null,
-    objectCatalogNotice: null,
-    objectCatalogRetry: null,
-    objectCatalogKey: "",
     balanceSnapshot: null,
     balancePreviewRequest: null,
     balanceNotice: null,
@@ -475,11 +466,13 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     { id: "incidents", label: "운영 이슈", icon: "!", permission: "incident.read", group: "감사·모니터링", kicker: "MODERATION INCIDENTS" },
     { id: "monitoring", label: "이벤트 모니터링", icon: "◇", permission: "monitoring.read", group: "감사·모니터링", kicker: "EVENT MONITORING" },
     { id: "balance", label: "확률·수치 관리", icon: "±", permission: "admin.balance.manage", group: "게임 설정", kicker: "BALANCE CONTROL" },
-    { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG" },
+    { id: "diamond-catalog", label: "다이아상점", icon: "◆", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "DIAMOND CATALOG", path: "/admin/catalog/diamond-shop" },
+    { id: "pet-skill-catalog", label: "펫스킬", icon: "♘", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "PET SKILL CATALOG", path: "/admin/catalog/pet-skills" },
+    { id: "item-catalog", label: "아이템", icon: "◇", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "ITEM CATALOG", path: "/admin/catalog/items" },
+    { id: "furniture-catalog", label: "가구", icon: "□", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "FURNITURE CATALOG", path: "/admin/catalog/furniture" },
+    { id: "mini-pet-catalog", label: "미니펫", icon: "○", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "MINI PET CATALOG", path: "/admin/catalog/mini-pets" },
     { id: "package-catalog", label: "패키지 카탈로그", icon: "▣", permission: "package.catalog.manage", group: "카탈로그", kicker: "PACKAGE CATALOG" },
-    { id: "configuration-catalog", label: "설정 카탈로그", icon: "⚙", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "CONFIGURATION CATALOG" },
-    { id: "pet-skill-catalog", label: "펫스킬 카탈로그", icon: "♘", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "PET SKILL CATALOG" },
-    { id: "object-catalog", label: "오브젝트 카탈로그", icon: "◎", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "OBJECT CATALOG" }
+    { id: "configuration-catalog", label: "설정 카탈로그", icon: "⚙", roles: ["manager", "super_admin"], group: "카탈로그", kicker: "CONFIGURATION CATALOG" }
   ];
 
   var METRICS = [
@@ -500,10 +493,23 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     return match ? match[1] : null;
   }
 
+  // 현재 URL에 대응하는 카탈로그 메뉴를 찾습니다.
+  function catalogViewFromLocation() {
+    var item = NAV_ITEMS.find(function (candidate) { return candidate.path === window.location.pathname.replace(/\/$/, ""); });
+    return item ? item.id : null;
+  }
+
   // 선택한 회원의 계정 연결 URL을 브라우저 기록에 반영합니다.
   function updatePlayerLocation(playerId, replace) {
     var path = playerId ? "/admin/players/" + encodeURIComponent(playerId) + "/account-links" : "/admin";
     window.history[replace ? "replaceState" : "pushState"]({ playerId: playerId }, "", path);
+  }
+
+  // 선택한 운영 메뉴 URL을 브라우저 기록에 반영합니다.
+  function updateViewLocation(view, replace) {
+    var item = NAV_ITEMS.find(function (candidate) { return candidate.id === view; });
+    var path = item && item.path ? item.path : "/admin";
+    window.history[replace ? "replaceState" : "pushState"]({ view: view }, "", path);
   }
 
   // API 값을 안전한 HTML 텍스트로 변환합니다.
@@ -634,6 +640,8 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     if (deepLinkedPlayerId) {
       state.activeView = "players";
       state.selectedPlayerId = deepLinkedPlayerId;
+    } else {
+      state.activeView = catalogViewFromLocation() || "dashboard";
     }
     byId("boot-screen").hidden = true;
     byId("login-view").hidden = true;
@@ -644,11 +652,11 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       "<div class=\"role-list\">" + session.roleCodes.map(function (role) {
         return "<span class=\"role-tag\">" + escapeHtml(role) + "</span>";
       }).join("") + "</div>";
-    renderNavigation();
     var allowed = NAV_ITEMS.filter(canAccessItem);
     if (!allowed.some(function (item) { return item.id === state.activeView; })) {
       state.activeView = allowed.length ? allowed[0].id : "none";
     }
+    renderNavigation();
     renderActiveView();
   }
 
@@ -678,7 +686,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     state.activeView = view;
     if (view !== "players" || !state.selectedPlayerId) {
       state.selectedPlayerId = null;
-      if (window.location.pathname !== "/admin") updatePlayerLocation(null, false);
+      updateViewLocation(view, false);
     }
     document.querySelector(".sidebar").classList.remove("open");
     byId("mobile-menu-button").setAttribute("aria-expanded", "false");
@@ -748,7 +756,9 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     else if (item.id === "package-catalog") loadPackageCatalog();
     else if (item.id === "configuration-catalog") loadConfigurationCatalog();
     else if (item.id === "pet-skill-catalog") loadPetSkillCatalog();
-    else loadObjectCatalog(state.objectCatalogKey);
+    else if (item.id === "item-catalog") loadPendingCatalog("아이템", "아이템 목록을 연결할 준비를 하고 있습니다.");
+    else if (item.id === "furniture-catalog") loadPendingCatalog("가구", "가구 목록을 연결할 준비를 하고 있습니다.");
+    else loadPendingCatalog("미니펫", "미니펫 목록을 연결할 준비를 하고 있습니다.");
     window.setTimeout(function () { byId("main-content").focus(); }, 0);
   }
 
@@ -903,6 +913,14 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         "<section class=\"detail-section\"><h4>계정 제재 이력</h4>" + renderRestrictions(player.restrictions) + "</section>";
     }
     return sections;
+  }
+
+  // 전용 목록 연결 전 카탈로그 메뉴에 안전한 준비 상태를 표시합니다.
+  function loadPendingCatalog(title, description) {
+    state.refresh = function () { return loadPendingCatalog(title, description); };
+    byId("main-content").innerHTML = renderViewIntro(title, description, "준비 중") +
+      emptyState(title + " 목록을 준비하고 있습니다.", "조회와 변경 기능이 준비되면 이 화면에서 안내합니다.");
+    markUpdated();
   }
 
   // 계정 조치 폼의 오류 문구와 제출 상태를 갱신합니다.
@@ -1781,102 +1799,6 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     }
   }
 
-  // object mutation retry까지 동일하게 유지할 namespaced 멱등성 키를 생성합니다.
-  function objectCatalogIdempotencyKey() {
-    return "object-catalog:" + catalogIdempotencyKey();
-  }
-
-  // object catalog mutation 결과와 replay 상태를 공통 배너로 표시합니다.
-  function objectCatalogNotice() {
-    if (!state.objectCatalogNotice) return "<div id=\"object-catalog-message\"></div>";
-    return "<div id=\"object-catalog-message\" class=\"catalog-notice " + escapeHtml(state.objectCatalogNotice.kind || "") + "\"><strong>" + escapeHtml(state.objectCatalogNotice.title) + "</strong><span>" + escapeHtml(state.objectCatalogNotice.message) + "</span></div>";
-  }
-
-  // metadata 입력을 JSON object로만 제한합니다.
-  function parseObjectMetadata(value) {
-    var parsed;
-    try { parsed = JSON.parse(value || "{}"); }
-    catch (_) { throw new Error("metadata JSON 형식을 확인해 주세요."); }
-    if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("metadata는 JSON object여야 합니다.");
-    return parsed;
-  }
-
-  // 한 줄 SYSTEM|table|key 형식을 canonical source binding 배열로 변환합니다.
-  function parseObjectSources(value) {
-    var lines = value.split(/\r?\n/).map(function (line) { return line.trim(); }).filter(Boolean);
-    if (!lines.length) throw new Error("canonical source binding을 한 개 이상 입력해 주세요.");
-    return lines.map(function (line) {
-      var parts = line.split("|");
-      if (parts.length !== 3 || ["LEGACY_JSON", "LEGACY_DB", "RUNTIME_DB"].indexOf(parts[0]) < 0 || !parts[1].trim() || !parts[2].trim()) {
-        throw new Error("source binding은 SYSTEM|table|key 형식이어야 합니다.");
-      }
-      return { system: parts[0], table: parts[1].trim(), key: parts[2].trim() };
-    });
-  }
-
-  // exact object projection과 UPDATE·SET_ACTIVE 진입점을 생성합니다.
-  function objectCatalogDetail(object) {
-    var nextActive = !object.active;
-    return "<div class=\"detail-body\"><div class=\"detail-title\"><div><h3>" + escapeHtml(object.displayName) + "</h3><span class=\"mono\">" + escapeHtml(object.objectKey) + "</span></div><span class=\"catalog-status " + (object.active ? "" : "inactive") + "\">" + (object.active ? "활성" : "비활성") + "</span></div>" +
-      "<dl class=\"detail-list\"><div><dt>Definition ID</dt><dd class=\"mono\">" + escapeHtml(object.definitionId) + "</dd></div><div><dt>Object Type</dt><dd>" + escapeHtml(object.objectType) + "</dd></div><div><dt>Expected Version</dt><dd class=\"mono\">" + escapeHtml(object.version) + "</dd></div><div><dt>Stable Key</dt><dd class=\"mono\">" + escapeHtml(object.objectKey) + "</dd></div></dl>" +
-      "<form id=\"object-update-form\" class=\"catalog-form\"><h4>표시 정보 수정</h4><label>표시 이름<input name=\"displayName\" required maxlength=\"191\" value=\"" + escapeHtml(object.displayName) + "\"></label><label>Metadata JSON<textarea class=\"object-json\" name=\"metadata\" required>" + escapeHtml(JSON.stringify(object.metadata || {}, null, 2)) + "</textarea></label><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable objectKey와 expectedVersion을 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">오브젝트 수정</button></form>" +
-      "<form id=\"object-active-form\" class=\"catalog-form catalog-confirm\"><div><strong>" + (nextActive ? "오브젝트 활성화 확인" : "오브젝트 비활성화 확인") + "</strong><p class=\"muted\">삭제하지 않고 active 상태만 변경합니다.</p></div><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>" + (nextActive ? "활성화" : "비활성화") + " 후 영향과 현재 버전을 확인했습니다.</span></label><button class=\"" + (nextActive ? "primary-button" : "danger-button") + "\" type=\"submit\">" + (nextActive ? "활성화" : "비활성화") + "</button></form></div>";
-  }
-
-  // object provider 오류를 conflict·not-found·failure와 same-key retry 상태로 표시합니다.
-  function showObjectMutationFailure(error, retry) {
-    state.objectCatalogRetry = retry;
-    var target = byId("object-catalog-message");
-    if (!target) return;
-    var conflict = error && error.status === 409;
-    target.className = "catalog-notice error";
-    target.innerHTML = "<strong>" + (conflict ? "오브젝트가 먼저 변경되었습니다." : "오브젝트 요청을 완료하지 못했습니다.") + "</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" id=\"object-mutation-retry\">" + (conflict ? "최신 오브젝트 다시 조회" : "같은 요청 다시 보내기") + "</button>";
-    byId("object-mutation-retry").addEventListener("click", function () { if (conflict) loadObjectCatalog(state.objectCatalogKey); else if (state.objectCatalogRetry) state.objectCatalogRetry(); });
-  }
-
-  // CSRF, Idempotency-Key와 caller expectedVersion을 object REST mutation에 전달합니다.
-  async function mutateObjectCatalog(path, method, body, idempotencyKey) {
-    if (!state.csrfToken) { showObjectMutationFailure(new Error("보안 토큰이 없습니다. 다시 로그인해 주세요."), function () {}); return; }
-    var retry = function () { return mutateObjectCatalog(path, method, body, idempotencyKey); };
-    try {
-      var payload = await api(path, { method: method, headers: { "x-csrf-token": state.csrfToken, "idempotency-key": idempotencyKey }, body: JSON.stringify(body) });
-      state.objectCatalogKey = payload.result.object.objectKey;
-      state.objectCatalogRetry = null;
-      state.objectCatalogNotice = payload.result.replayed
-        ? { kind: "replay", title: "이미 완료된 오브젝트 요청입니다.", message: "같은 Idempotency-Key 결과를 안전하게 다시 표시했습니다." }
-        : { kind: "", title: "오브젝트 카탈로그를 반영했습니다.", message: payload.result.status + " · version " + payload.result.object.version };
-      showToast(payload.result.replayed ? "완료된 오브젝트 요청을 다시 불러왔습니다." : "오브젝트 카탈로그를 변경했습니다.", false);
-      await loadObjectCatalog(state.objectCatalogKey);
-    } catch (error) { showObjectMutationFailure(error, retry); }
-  }
-
-  // manager/super_admin에게 exact lookup과 REGISTER·UPDATE·SET_ACTIVE만 제공합니다.
-  async function loadObjectCatalog(objectKey) {
-    state.objectCatalogKey = objectKey || "";
-    state.refresh = function () { return loadObjectCatalog(state.objectCatalogKey); };
-    var main = byId("main-content");
-    var lookup = "<section class=\"panel\"><div class=\"panel-heading\"><form id=\"object-lookup-form\" class=\"object-lookup-form\"><label class=\"skip-link\" for=\"object-key-search\">Object key</label><input id=\"object-key-search\" name=\"objectKey\" required value=\"" + escapeHtml(state.objectCatalogKey) + "\" placeholder=\"예: currency.gold\"><button class=\"primary-button\" type=\"submit\">정확히 조회</button></form></div><div id=\"object-detail\">" + (state.objectCatalogKey ? loadingState("오브젝트를 불러오는 중") : emptyState("Object key를 입력하세요.", "목록 전체 조회 없이 stable key 한 건만 조회합니다.")) + "</div></section>";
-    var register = "<aside class=\"panel\"><div class=\"panel-heading\"><div><h3>오브젝트 등록</h3><p>canonical source가 존재하는 정의만 등록합니다.</p></div></div><form id=\"object-register-form\" class=\"catalog-form\"><label>Object key<input name=\"objectKey\" required placeholder=\"currency.lease2374_credit\"></label><label>Object type<select name=\"objectType\">" + ["ITEM","PET","FURNITURE","TITLE","PET_TITLE","PACKAGE","CURRENCY","SKILL","HOME_BUILDING","MINI_PET"].map(function (type) { return "<option value=\"" + type + "\">" + type + "</option>"; }).join("") + "</select></label><label>표시 이름<input name=\"displayName\" required maxlength=\"191\"></label><label>Metadata JSON<textarea class=\"object-json\" name=\"metadata\" required>{}</textarea></label><label>Canonical source<textarea class=\"object-json\" name=\"sourceBindings\" required placeholder=\"RUNTIME_DB|currency_definitions|lease2374_credit\"></textarea></label><label>변경 사유<textarea name=\"reason\" required maxlength=\"500\"></textarea></label><label class=\"checkbox-field\"><input name=\"active\" type=\"checkbox\" checked><span>등록 즉시 active 상태로 시작합니다.</span></label><label class=\"checkbox-field\"><input name=\"confirmed\" type=\"checkbox\" required><span>stable objectKey, objectType과 canonical source를 확인했습니다.</span></label><button class=\"primary-button\" type=\"submit\">오브젝트 등록</button></form></aside>";
-    main.innerHTML = renderViewIntro("오브젝트 카탈로그", "stable objectKey 단건 조회와 provider 지원 변경만 수행합니다.", "manager / super_admin") + objectCatalogNotice() + "<div class=\"catalog-layout\">" + lookup + register + "</div>";
-    byId("object-lookup-form").addEventListener("submit", function (event) { event.preventDefault(); loadObjectCatalog(new FormData(event.currentTarget).get("objectKey").toString().trim()); });
-    byId("object-register-form").addEventListener("submit", function (event) {
-      event.preventDefault(); var data = new FormData(event.currentTarget);
-      try { mutateObjectCatalog("/api/v1/admin/object-catalog/objects", "POST", { objectKey: data.get("objectKey").toString().trim(), objectType: data.get("objectType").toString(), displayName: data.get("displayName").toString().trim(), active: data.get("active") === "on", metadata: parseObjectMetadata(data.get("metadata").toString()), sourceBindings: parseObjectSources(data.get("sourceBindings").toString()), reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); }
-      catch (error) { showObjectMutationFailure(error, function () {}); }
-    });
-    if (state.objectCatalogKey) {
-      try {
-        var payload = await api("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(state.objectCatalogKey));
-        var object = payload.object;
-        byId("object-detail").innerHTML = objectCatalogDetail(object);
-        byId("object-update-form").addEventListener("submit", function (event) { event.preventDefault(); var data = new FormData(event.currentTarget); try { mutateObjectCatalog("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(object.objectKey), "PATCH", { objectType: object.objectType, expectedVersion: object.version, displayName: data.get("displayName").toString().trim(), metadata: parseObjectMetadata(data.get("metadata").toString()), reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); } catch (error) { showObjectMutationFailure(error, function () {}); } });
-        byId("object-active-form").addEventListener("submit", function (event) { event.preventDefault(); var data = new FormData(event.currentTarget); mutateObjectCatalog("/api/v1/admin/object-catalog/objects/" + encodeURIComponent(object.objectKey) + "/active", "POST", { objectType: object.objectType, expectedVersion: object.version, active: !object.active, reason: data.get("reason").toString().trim(), confirmed: data.get("confirmed") === "on" }, objectCatalogIdempotencyKey()); });
-        markUpdated();
-      } catch (error) { byId("object-detail").innerHTML = errorState(error, "object-catalog"); attachRetry(byId("object-detail")); }
-    }
-    state.objectCatalogNotice = null;
-  }
-
   // 수치 도메인 코드를 운영자용 이름으로 표시합니다.
   function balanceDomainLabel(domain) {
     return { home_badge: "홈뱃지 조건", home_furniture: "가구 뽑기", pendant: "펜던트 강화" }[domain] || domain;
@@ -2093,7 +2015,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
   });
   window.addEventListener("popstate", function () {
     state.selectedPlayerId = playerIdFromLocation();
-    state.activeView = state.selectedPlayerId ? "players" : "dashboard";
+    state.activeView = state.selectedPlayerId ? "players" : (catalogViewFromLocation() || "dashboard");
     if (state.session) {
       renderNavigation();
       renderActiveView();

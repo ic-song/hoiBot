@@ -16,6 +16,17 @@ export async function registerAdminWebShellRoutes(app: FastifyInstance): Promise
   app.get("/admin", async (_request, reply) => secureWebReply(reply).type("text/html; charset=utf-8").send(ADMIN_WEB_HTML));
   app.get("/admin/", async (_request, reply) => secureWebReply(reply).type("text/html; charset=utf-8").send(ADMIN_WEB_HTML));
   app.get("/admin/players/:playerId/account-links", async (_request, reply) => secureWebReply(reply).type("text/html; charset=utf-8").send(ADMIN_WEB_HTML));
+  for (const path of [
+    "/admin/catalog/diamond-shop",
+    "/admin/catalog/pet-skills",
+    "/admin/catalog/items",
+    "/admin/catalog/furniture",
+    "/admin/catalog/mini-pets"
+  ]) {
+    for (const route of [path, `${path}/`]) {
+      app.get(route, async (_request, reply) => secureWebReply(reply).type("text/html; charset=utf-8").send(ADMIN_WEB_HTML));
+    }
+  }
   app.get("/admin/assets/admin.css", async (_request, reply) => secureWebReply(reply).type("text/css; charset=utf-8").send(ADMIN_WEB_STYLES));
   app.get("/admin/assets/admin.js", async (_request, reply) => secureWebReply(reply).type("text/javascript; charset=utf-8").send(ADMIN_WEB_CLIENT));
 }

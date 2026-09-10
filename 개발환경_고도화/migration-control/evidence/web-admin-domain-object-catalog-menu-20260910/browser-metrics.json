@@ -1,0 +1,19 @@
+{
+  "checked_at_kst": "2026-09-10",
+  "browser": "Chrome",
+  "route": "/admin/catalog/items",
+  "results": [
+    { "viewport_width": 375, "overflow_x": 0, "minimum_visible_button_height": 44, "active_menu": "아이템", "heading": "아이템", "form_count": 0 },
+    { "viewport_width": 768, "overflow_x": 0, "minimum_visible_button_height": 44, "active_menu": "아이템", "heading": "아이템", "form_count": 0 },
+    { "viewport_width": 1024, "overflow_x": 0, "minimum_visible_button_height": 44, "active_menu": "아이템", "heading": "아이템", "form_count": 0 },
+    { "viewport_width": 1440, "overflow_x": 0, "minimum_visible_button_height": 44, "active_menu": "아이템", "heading": "아이템", "form_count": 0 }
+  ],
+  "deep_links": [
+    { "path": "/admin/catalog/diamond-shop", "active_menu": "다이아상점", "heading": "다이아상점", "generic_editor": false, "state": "success" },
+    { "path": "/admin/catalog/pet-skills", "active_menu": "펫스킬", "heading": "펫스킬", "generic_editor": false, "state": "error" },
+    { "path": "/admin/catalog/items", "active_menu": "아이템", "heading": "아이템", "generic_editor": false, "state": "empty" },
+    { "path": "/admin/catalog/furniture", "active_menu": "가구", "heading": "가구", "generic_editor": false, "state": "empty" },
+    { "path": "/admin/catalog/mini-pets", "active_menu": "미니펫", "heading": "미니펫", "generic_editor": false, "state": "empty" }
+  ],
+  "notes": "펫스킬 error 상태는 브라우저 검증용 서버에 해당 조회 fixture가 없는 조건에서 전용 UI 오류 처리가 표시된 결과다. 전용 API 계약 회귀는 focused 테스트 4/4로 별도 통과했다."
+}

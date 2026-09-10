@@ -41,6 +41,17 @@ describe("admin web shell", () => {
       const deepLink = await app.inject({ method: "GET", url: "/admin/players/40001/account-links" });
       assert.equal(deepLink.statusCode, 200);
       assert.equal(deepLink.body, ADMIN_WEB_HTML);
+      for (const path of [
+        "/admin/catalog/diamond-shop",
+        "/admin/catalog/pet-skills",
+        "/admin/catalog/items",
+        "/admin/catalog/furniture",
+        "/admin/catalog/mini-pets"
+      ]) {
+        const catalogDeepLink = await app.inject({ method: "GET", url: path });
+        assert.equal(catalogDeepLink.statusCode, 200);
+        assert.equal(catalogDeepLink.body, ADMIN_WEB_HTML);
+      }
     } finally {
       await app.close();
     }
@@ -75,7 +86,6 @@ describe("admin web shell", () => {
       "/api/v1/admin/package-catalog",
       "/api/v1/admin/configuration-catalog",
       "/api/v1/admin/pet-skill-catalog",
-      "/api/v1/admin/object-catalog/objects/",
       "/api/v1/admin/backups/managed",
       "/api/v1/admin/backups/dev-sync",
       "/api/v1/admin/restores/preview",
@@ -87,7 +97,7 @@ describe("admin web shell", () => {
     }
     assert.ok((ADMIN_WEB_CLIENT.match(/"POST"/g) ?? []).length >= 6);
     assert.equal((ADMIN_WEB_CLIENT.match(/method: "DELETE"/g) ?? []).length, 1);
-    assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 3);
+    assert.equal((ADMIN_WEB_CLIENT.match(/"PATCH"/g) ?? []).length, 2);
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /method: "PUT"/);
   });
 
@@ -210,14 +220,11 @@ describe("admin web shell", () => {
     assert.doesNotMatch(ADMIN_WEB_CLIENT, /패키지 카탈로그 발행|package-catalog\/publish/);
   });
 
-  it("exposes exact object lookup and only REGISTER, UPDATE and SET_ACTIVE states", () => {
-    assert.match(ADMIN_WEB_CLIENT, /오브젝트 등록/);
-    assert.match(ADMIN_WEB_CLIENT, /오브젝트 수정/);
-    assert.match(ADMIN_WEB_CLIENT, /오브젝트 비활성화 확인/);
-    assert.match(ADMIN_WEB_CLIENT, /object-catalog\/objects/);
-    assert.match(ADMIN_WEB_CLIENT, /expectedVersion/);
-    assert.match(ADMIN_WEB_CLIENT, /이미 완료된 오브젝트 요청입니다/);
-    assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/publish|오브젝트 영구 삭제|object-catalog\/objects\?page/);
+  it("keeps the generic object editor out of the operator shell", () => {
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /오브젝트 카탈로그|오브젝트 등록|오브젝트 수정/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /Object key|Object type|Metadata JSON|Canonical source/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /currency\.lease2374_credit|lease2374_credit/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /object-catalog\/objects/);
   });
 
   it("exposes versioned configuration draft, publish, rollback, retire and discard states", () => {

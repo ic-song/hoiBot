@@ -1,0 +1,35 @@
+{
+  "evidence_schema_version": "web-admin-domain-object-catalog-menu-v1",
+  "catalog_version": "SC-20260902-1",
+  "delta_id": "SCD-WEB-20260910-22",
+  "wbs_id": "WEB-WBS-016A",
+  "lease": "Lease2669",
+  "execution_profile": "READ_UI",
+  "validation_tier": "T1",
+  "baseline": "a5cc210443d6fbba3a40435eb29e632a1d7b1a6d",
+  "gates": {
+    "gate1": "PASS: 기존 다이아상점·펫스킬 전용 UI와 API 흐름, 패키지·설정 메뉴, 범용 편집기 노출을 재확인했다.",
+    "gate2": "PASS: 기존 전용 API 계약은 유지하고 아이템·가구·미니펫은 API 없는 준비 상태로 제한했다.",
+    "gate3": "PASS: 기존 다이아상점·펫스킬 테스트 fixture를 회귀 입력으로 재사용했다.",
+    "gate4": "PASS: 5개 도메인 메뉴, deep link, active 상태, 3개 준비 화면과 범용 편집기 제거를 구현했다.",
+    "gate5": "PASS: Fastify가 5개 직접 접근 경로와 trailing slash 경로에서 같은 보안 셸을 제공한다.",
+    "gate6": "PASS: focused 31개 테스트와 실제 Chrome 4개 viewport 검증을 통과했다.",
+    "gate7": false,
+    "gate8": false
+  },
+  "validation": {
+    "focused_tests": "31/31 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diff_check": "PASS",
+    "browser": "375, 768, 1024, 1440 viewport 모두 overflow=0, visible button minimum=44px",
+    "deep_links": "5/5 direct routes PASS; active navigation and heading matched",
+    "pending_domain_forms": 0,
+    "generic_editor_rendered": false,
+    "operational_data_touched": false,
+    "database_or_migration_touched": false,
+    "central_wbs_touched": false,
+    "feature_prod_touched": false
+  },
+  "remaining_risk": "아이템·가구·미니펫의 전용 조회·변경 기능은 identity/source resolver와 전용 API가 승인될 때까지 제공하지 않는다. Gate 7 독립 검수와 Gate 8 운영 준비는 미수행이다."
+}
