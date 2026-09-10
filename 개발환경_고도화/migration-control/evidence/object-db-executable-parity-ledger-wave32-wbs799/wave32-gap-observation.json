@@ -1,0 +1,107 @@
+{
+  "format": "HOIBOT_OBJECT_DB_WAVE32_GAP_OBSERVATION_V1",
+  "evidenceCommit": "c5203c1b1d9c58925d043823c38967ed297358f5",
+  "priorReceiptCount": 382,
+  "expectedNewReceiptCount": 5,
+  "generatedPassCandidateCount": 4,
+  "blocked": true,
+  "observations": [
+    {
+      "scenarioId": "wave32-info-index2-positive",
+      "scenarioKind": "READ_POSITIVE",
+      "expectedReply": "[⭐조회회원] 님의 타이틀 [두 번째] 상세정보\n획득일:2026-08-27 23:10\n구매액: 🅟15,000\n판매가: 🅟4,500",
+      "legacyReply": "[⭐조회회원] 님의 타이틀 [두 번째] 상세정보\n획득일:2026-08-27 23:10\n구매액: 🅟15,000\n판매가: 🅟4,500",
+      "modernReply": "[⭐조회회원] 님의 타이틀 [두 번째] 상세정보\n획득일:2026-08-27 23:10\n구매액: 🅟15,000\n판매가: 🅟4,500",
+      "parityMatch": true,
+      "route": "MODERN",
+      "handlerKey": "player_title_info_read",
+      "serviceInvocationCount": 1,
+      "sourceDomainDmlCount": 0,
+      "transaction": "COMMIT",
+      "restartProcessIds": [
+        12396
+      ],
+      "restartModuleIds": [
+        "801902ed-719f-440b-9b4f-b3355415194b"
+      ]
+    },
+    {
+      "scenarioId": "wave32-info-castle-siege-negative",
+      "scenarioKind": "NEGATIVE_GUARD",
+      "expectedReply": "NO_REPLY",
+      "legacyReply": "NO_REPLY",
+      "modernReply": "[⭐조회회원] 님의 타이틀 [두 번째] 상세정보\n획득일:2026-08-27 23:10\n구매액: 🅟15,000\n판매가: 🅟4,500",
+      "parityMatch": false,
+      "route": "MODERN",
+      "handlerKey": "player_title_info_read",
+      "serviceInvocationCount": 1,
+      "sourceDomainDmlCount": 0,
+      "transaction": "COMMIT",
+      "restartProcessIds": [
+        3924
+      ],
+      "restartModuleIds": [
+        "b422a333-8f42-4fe9-b02b-02edb463d721"
+      ]
+    },
+    {
+      "scenarioId": "wave32-info-price9999-boundary",
+      "scenarioKind": "EXACT_OUTPUT",
+      "expectedReply": "[⭐조회회원] 님의 타이틀 [경계 타이틀] 상세정보\n획득일:2026-08-27 23:00\n구매액: 🅟9,999\n판매가: 🅟1,000,000",
+      "legacyReply": "[⭐조회회원] 님의 타이틀 [경계 타이틀] 상세정보\n획득일:2026-08-27 23:00\n구매액: 🅟9,999\n판매가: 🅟1,000,000",
+      "modernReply": "[⭐조회회원] 님의 타이틀 [경계 타이틀] 상세정보\n획득일:2026-08-27 23:00\n구매액: 🅟9,999\n판매가: 🅟1,000,000",
+      "parityMatch": true,
+      "route": "MODERN",
+      "handlerKey": "player_title_info_read",
+      "serviceInvocationCount": 1,
+      "sourceDomainDmlCount": 0,
+      "transaction": "COMMIT",
+      "restartProcessIds": [
+        3256
+      ],
+      "restartModuleIds": [
+        "db9849e2-95a3-4c73-b945-419c6eaa0fa5"
+      ]
+    },
+    {
+      "scenarioId": "wave32-info-missing-index",
+      "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
+      "expectedReply": "해당 번호의 타이틀이 존재하지 않습니다.",
+      "legacyReply": "해당 번호의 타이틀이 존재하지 않습니다.",
+      "modernReply": "해당 번호의 타이틀이 존재하지 않습니다.",
+      "parityMatch": true,
+      "route": "MODERN",
+      "handlerKey": "player_title_info_read",
+      "serviceInvocationCount": 1,
+      "sourceDomainDmlCount": 0,
+      "transaction": "COMMIT",
+      "restartProcessIds": [
+        9620
+      ],
+      "restartModuleIds": [
+        "f4998695-f89c-4740-ba3e-a1e495692489"
+      ]
+    },
+    {
+      "scenarioId": "wave32-info-restart-index3",
+      "scenarioKind": "RESTART_CONSISTENCY",
+      "expectedReply": "[⭐조회회원] 님의 타이틀 [세 번째] 상세정보\n획득일:2026-08-27 23:20\n구매액: 🅟25,000\n판매가: 🅟7,500",
+      "legacyReply": "[⭐조회회원] 님의 타이틀 [세 번째] 상세정보\n획득일:2026-08-27 23:20\n구매액: 🅟25,000\n판매가: 🅟7,500",
+      "modernReply": "[⭐조회회원] 님의 타이틀 [세 번째] 상세정보\n획득일:2026-08-27 23:20\n구매액: 🅟25,000\n판매가: 🅟7,500",
+      "parityMatch": true,
+      "route": "MODERN",
+      "handlerKey": "player_title_info_read",
+      "serviceInvocationCount": 1,
+      "sourceDomainDmlCount": 0,
+      "transaction": "COMMIT",
+      "restartProcessIds": [
+        20172,
+        20796
+      ],
+      "restartModuleIds": [
+        "b8aa0f21-e4c1-46bf-ae0f-bbd1a6314c31",
+        "5d6b2782-27b3-4f0c-8ae8-6e6235d8d288"
+      ]
+    }
+  ]
+}
