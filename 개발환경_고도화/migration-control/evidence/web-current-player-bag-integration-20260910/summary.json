@@ -28,7 +28,8 @@
     "diffCheck": "PASS",
     "sameInputShadow": "all first/middle/last API pages concatenate to compareLegacyBagItems order over the same fixture",
     "sessionExpiry": "401 before provider access",
-    "sourceDomainMutation": "scripted provider execute and transaction entrypoints fail; all captured source-domain statements are SELECT"
+    "sourceDomainMutation": "scripted provider execute and transaction entrypoints fail; all captured source-domain statements are SELECT",
+    "independentGate7": "GO; P0=0, P1=0, P2=0; focused 25/25, typecheck/build and both target diff checks PASS"
   },
   "gates": {
     "gate1": true,
@@ -37,7 +38,7 @@
     "gate4": true,
     "gate5": true,
     "gate6": true,
-    "gate7": false,
+    "gate7": true,
     "gate8": false
   },
   "files": [
