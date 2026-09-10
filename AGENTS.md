@@ -148,8 +148,8 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - Treat the Notion planning-content synchronization, `상태`, `운영반영일`, and `운영반영버전` updates as one completion workflow; verify the content and all three properties. If any update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
 - Do not change the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` or `운영반영버전` before remote production reflection is verified.
 - For a production-facing code or data change that did not originate from a Notion item, search the confirmed planning data source for the exact feature or command before production reflection and reuse an existing matching page when one exists; do not create duplicates.
-- If no matching Notion page exists, create a planning page only after `origin/feature/prod` is verified. Base its planning content on the actual developed user-visible behavior: purpose, affected commands, UI, formulas and limits, rewards or costs, exception handling, acceptance criteria, and operational policy. Do not create a separate implementation record or include internal variable names, helper names, and storage schemas.
-- Create that post-reflection planning page with `상태 = 🧪 DEV`, the KST `운영반영일`, and `운영반영버전 = ver_<HoiBotVersion>` from the verified production commit, then verify its content and properties.
+- During production reflection, never create a new Notion page, knowledge entry, implementation record, or placeholder solely to document the reflected change unless the user explicitly requests that separate documentation work.
+- If no matching Notion page exists, skip Notion synchronization. Do not create or save a `대응 문서 없음` record or any equivalent absence marker.
 - Documentation-only, workflow-only, test-only, and internal agent-rule changes do not require a new Notion planning record unless the user explicitly requests one.
 
 ## Modernization WBS Short Commands
