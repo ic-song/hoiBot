@@ -55,10 +55,10 @@ describe("Wave32 committed main.js versus actual member-title info DIRECT parity
     bundle.receipts[0].receiptSha256 = "0".repeat(64);
     assert.throws(() => parseObjectDbConsumerExecutionReceiptBundle(bundle), /historical receipt fingerprint drift/);
     const ledger = read("개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json");
-    assert.equal(ledger.coverage.directPassConsumers, 57);
+    assert.equal(ledger.coverage.directPassConsumers, 59);
     assert.equal(ledger.coverage.equivalentPassConsumers, 12);
-    assert.equal(ledger.coverage.provenConsumers, 69);
-    assert.equal(ledger.coverage.verdicts.STATIC_ONLY, 982);
+    assert.equal(ledger.coverage.provenConsumers, 71);
+    assert.equal(ledger.coverage.verdicts.STATIC_ONLY, 980);
     assert.equal(ledger.coverage.verdicts.BLOCKED_DYNAMIC, 82);
     assert.equal(ledger.entries.find((entry: any) => entry.consumerId === consumerId).verdict, "DIRECT_PASS");
   });

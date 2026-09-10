@@ -49,8 +49,8 @@ describe("Wave31 committed Info.js versus modern member-title list DIRECT parity
     const bundle=read(receiptPath);bundle.receipts[0].receiptSha256="0".repeat(64);
     assert.throws(()=>parseObjectDbConsumerExecutionReceiptBundle(bundle),/historical receipt fingerprint drift/);
     const ledger=read("개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json");
-    assert.equal(ledger.coverage.directPassConsumers,57);assert.equal(ledger.coverage.provenConsumers,69);
-    assert.equal(ledger.coverage.unprovenConsumers,1064);
+    assert.equal(ledger.coverage.directPassConsumers,59);assert.equal(ledger.coverage.provenConsumers,71);
+    assert.equal(ledger.coverage.unprovenConsumers,1062);
     for(const id of [self,admin])assert.equal(ledger.entries.find((entry:any)=>entry.consumerId===id).verdict,"DIRECT_PASS");
   });
 });

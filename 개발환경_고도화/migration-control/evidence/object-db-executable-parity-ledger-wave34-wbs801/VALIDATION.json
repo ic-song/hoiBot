@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "sliceId": "SL-MEMBER-TITLE-LEGACY-SELECT-PARITY-01",
+  "executionId": "WBS801-TITLE-SELECT-CORRECTION-20260910",
+  "leaseId": "Lease2673",
+  "implementationCommit": "c448ef838aaeffc5c552eacce6383af550e1194f",
+  "evidenceCommit": "7c63144411a7aa2fd96080710d78d7673dc315b2",
+  "consumerIds": ["legacy-9cd62419b853c929", "runtime-dispatch-d9a426f3b9d18d3a"],
+  "receipts": { "prior": 401, "added": 12, "total": 413 },
+  "coverage": { "direct": 59, "equivalent": 12, "proven": 71, "staticOnly": 980, "blockedDynamic": 82, "residual": 1062 },
+  "residual": { "C_DIRECT_EXECUTION": 980, "D_PREREQUISITE": 82, "MEMBER_TITLE": 14 },
+  "entrySetSha256": "b35b9e1f659b4704aeed3a146642e213c3254c5f70f4c54eb62dc5d0bd0bafe5",
+  "checks": {
+    "actualFocused": "PASS",
+    "legacyBoundaryExecution": "PASS",
+    "siegeFirstQueryNoReplyDmlZero": "PASS",
+    "payloadDriftFailClosed": "PASS",
+    "restartReplayDmlZero": "PASS",
+    "concurrencySingleWriter": "PASS",
+    "auditRollback": "PASS",
+    "ajv2020Strict": "PASS",
+    "deterministicRebuild": "PASS",
+    "typecheck": "PASS",
+    "build": "PASS"
+  },
+  "protectedResources": { "operatingDataChanged": false, "operatingDatabaseChanged": false, "port3306Used": false, "featureProdChanged": false, "gate8Changed": false }
+}

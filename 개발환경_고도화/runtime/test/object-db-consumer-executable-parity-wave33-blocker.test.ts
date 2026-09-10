@@ -106,10 +106,10 @@ describe("WBS800 Wave33 title gift ticket parity evidence", () => {
       assert.ok(receipts.every((receipt: any) => receipt.proofMode === "DIRECT" && receipt.verdict === "PASS"));
     }
     const ledger = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json"), "utf8"));
-    assert.equal(ledger.coverage.directPassConsumers, 57);
+    assert.equal(ledger.coverage.directPassConsumers, 59);
     assert.equal(ledger.coverage.equivalentPassConsumers, 12);
-    assert.equal(ledger.coverage.provenConsumers, 69);
-    assert.equal(ledger.coverage.verdicts.STATIC_ONLY, 982);
+    assert.equal(ledger.coverage.provenConsumers, 71);
+    assert.equal(ledger.coverage.verdicts.STATIC_ONLY, 980);
   });
   it("validates the compatible classification delta without relabeling the frozen manifest", () => {
     const schema = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.schema.json"), "utf8"));

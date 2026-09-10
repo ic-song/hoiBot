@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "c80995907c472739e599412c38a2040aeb20b975",
+  "evidenceCommit": "7c63144411a7aa2fd96080710d78d7673dc315b2",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -27,13 +27,17 @@
       "sha256": "c64ab24eca8d97b2d99e4f78d6a00b5f061ef220d1b8f1ae5cebbb22a91ce411"
     },
     "executionReceipts": {
-      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave33-v1.json",
-      "sha256": "6b433fced0cd7abddd14fb1eda81524a18c7badfd832c614be8030128ff8542e"
+      "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave34-v1.json",
+      "sha256": "221f750cd8f0109a54fb46d2cf5df69abfe0be26ae92b1bc275e1d7e21ae3f4e"
     },
     "classificationSources": [
       {
         "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.json",
         "sha256": "fbc9bd5617f32c2ed3613b8dbcc77622641b1078a9902e4d58d8592e04d9430d"
+      },
+      {
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-34.v1.json",
+        "sha256": "4d3d0550f304fcc88277fc29e4e4da319ffffc54d2ee53b12a39ac742e2e9f5d"
       }
     ]
   },
@@ -54,16 +58,16 @@
     "registrySourceMismatchCount": 0,
     "registrySourceMismatchAttributedCount": 0,
     "registrySourceMismatchUnattributedCount": 0,
-    "provenConsumers": 69,
-    "unprovenConsumers": 1064,
-    "directPassConsumers": 57,
+    "provenConsumers": 71,
+    "unprovenConsumers": 1062,
+    "directPassConsumers": 59,
     "equivalentPassConsumers": 12,
     "verdicts": {
-      "STATIC_ONLY": 982,
+      "STATIC_ONLY": 980,
       "BLOCKED_DYNAMIC": 82,
       "BLOCKED_REGISTRY_MISMATCH": 0,
       "PARTIAL": 0,
-      "DIRECT_PASS": 57,
+      "DIRECT_PASS": 59,
       "EQUIVALENT_PASS": 12
     }
   },
@@ -57942,22 +57946,22 @@
         "sourceSpanSha256": "122c4ea1db48aa686e2a12ef5bc73c87942166851609601038bf202b471cbc2b",
         "classificationSha256": "68f1aeb8da41a128f724b6fc9ebb14ef324f614543a9fe251d0403e7f6e9c7d8"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave34:member-title-select",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-harness.mjs",
+        "sha256": "7bff8a94fe775e42e105ffb8e921eb3c2ed67f92975fb43d2946998b1a18f305"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave34-member-title-select-v1.json",
+        "sha256": "76175f66cc9ecc198fa60b7ab1641e6691bdac91a2e34b60a6b2c8f0ba70ed84"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-target.mjs",
+        "targetSourceSha256": "c89171836afb346228fbbefa23c28efb127bf3ed273295b2ab0c8824c9e1629b",
+        "exportName": "executeWave34MemberTitleSelect"
       },
       "scenarioRequirements": [
         {
@@ -58011,11 +58015,382 @@
           }
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave34:legacy-9cd62419b853c929:concurrency_single_writer",
+          "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+          "attributedConsumerIds": [
+            "legacy-9cd62419b853c929"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "ef379c29942189b5f374f7f9f216227aca3f6c88353c885d61b2e6451c8299aa",
+              "actualSha256": "ef379c29942189b5f374f7f9f216227aca3f6c88353c885d61b2e6451c8299aa",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "actualSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "actualNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:legacy-9cd62419b853c929:domain_failure_rollback",
+          "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+          "attributedConsumerIds": [
+            "legacy-9cd62419b853c929"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "2462d244636ab98ac6769b15adb1fbbacb889fa82b645912d063a856bb1bfd6b",
+              "actualSha256": "2462d244636ab98ac6769b15adb1fbbacb889fa82b645912d063a856bb1bfd6b",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "eca25f8fe99f7292612960b7e0907e8eb4865706180406defd2c29d5739f0290",
+              "actualSha256": "eca25f8fe99f7292612960b7e0907e8eb4865706180406defd2c29d5739f0290",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:legacy-9cd62419b853c929:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+          "attributedConsumerIds": [
+            "legacy-9cd62419b853c929"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "b0d45f8cd9be57bb717f8a5c229cd370825ac5213f8cc56598996c90398ca27f",
+              "actualSha256": "b0d45f8cd9be57bb717f8a5c229cd370825ac5213f8cc56598996c90398ca27f",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:legacy-9cd62419b853c929:mutation_success",
+          "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+          "attributedConsumerIds": [
+            "legacy-9cd62419b853c929"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "1203f7a4a31dede3ec1cd12bc98796d5b7f703df95af2828c5a0c73fa7876ad2",
+              "actualSha256": "1203f7a4a31dede3ec1cd12bc98796d5b7f703df95af2828c5a0c73fa7876ad2",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "actualSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "actualNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:legacy-9cd62419b853c929:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+          "attributedConsumerIds": [
+            "legacy-9cd62419b853c929"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "216e12a9615ea16027fd13930f29d2077785d74a7db6b441b2f3b47e8c4322d2",
+              "actualSha256": "216e12a9615ea16027fd13930f29d2077785d74a7db6b441b2f3b47e8c4322d2",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "3276ccaf5a12a2f0e4047273c04cf2d25ed2fa0ab4d0af24ae5b24ded7749fa7",
+              "actualSha256": "3276ccaf5a12a2f0e4047273c04cf2d25ed2fa0ab4d0af24ae5b24ded7749fa7",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:legacy-9cd62419b853c929:restart_replay",
+          "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+          "attributedConsumerIds": [
+            "legacy-9cd62419b853c929"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "a52bacdc4852cd77ad43c7969426c80336347d8c170ab3be00c17e0112d4fb00",
+              "actualSha256": "a52bacdc4852cd77ad43c7969426c80336347d8c170ab3be00c17e0112d4fb00",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave34:legacy-9cd62419b853c929:concurrency_single_writer",
+          "receipt:wave34:legacy-9cd62419b853c929:domain_failure_rollback",
+          "receipt:wave34:legacy-9cd62419b853c929:duplicate_replay_dml_zero",
+          "receipt:wave34:legacy-9cd62419b853c929:mutation_success",
+          "receipt:wave34:legacy-9cd62419b853c929:payload_drift_fail_closed",
+          "receipt:wave34:legacy-9cd62419b853c929:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "legacy-9cd62419b853c929"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave34-member-title-select-v1.json",
+            "sha256": "76175f66cc9ecc198fa60b7ab1641e6691bdac91a2e34b60a6b2c8f0ba70ed84"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-harness.mjs",
+            "sha256": "7bff8a94fe775e42e105ffb8e921eb3c2ed67f92975fb43d2946998b1a18f305"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-target.mjs",
+            "sha256": "c89171836afb346228fbbefa23c28efb127bf3ed273295b2ab0c8824c9e1629b"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -106620,22 +106995,22 @@
         "sourceSpanSha256": "55466c1ef9510ceded694fd21c0905743f2997d7ec0173c3add14eff7b9e5425",
         "classificationSha256": "82a3faaafbb36115cb4580f743e1c3889dcab04803570e08047b4a002e949541"
       },
-      "verdict": "STATIC_ONLY",
+      "verdict": "DIRECT_PASS",
       "harness": {
-        "harnessId": null,
-        "runner": null,
-        "path": null,
-        "sha256": null
+        "harnessId": "harness:wave34:member-title-select",
+        "runner": "NODE_OBJECT_DB_PARITY_V1",
+        "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-harness.mjs",
+        "sha256": "7bff8a94fe775e42e105ffb8e921eb3c2ed67f92975fb43d2946998b1a18f305"
       },
       "fixture": {
-        "fixtureId": null,
-        "path": null,
-        "sha256": null
+        "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+        "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave34-member-title-select-v1.json",
+        "sha256": "76175f66cc9ecc198fa60b7ab1641e6691bdac91a2e34b60a6b2c8f0ba70ed84"
       },
       "invocation": {
-        "targetPath": null,
-        "targetSourceSha256": null,
-        "exportName": null
+        "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-target.mjs",
+        "targetSourceSha256": "c89171836afb346228fbbefa23c28efb127bf3ed273295b2ab0c8824c9e1629b",
+        "exportName": "executeWave34MemberTitleSelect"
       },
       "scenarioRequirements": [
         {
@@ -106689,11 +107064,382 @@
           }
         }
       ],
-      "scenarios": [],
+      "scenarios": [
+        {
+          "receiptId": "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:concurrency_single_writer",
+          "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:concurrency_single_writer",
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+          "attributedConsumerIds": [
+            "runtime-dispatch-d9a426f3b9d18d3a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "357c78e41335e3a4b35a810bd3912f1ddb6092c4a7551945efe5a56380d193ea",
+              "actualSha256": "357c78e41335e3a4b35a810bd3912f1ddb6092c4a7551945efe5a56380d193ea",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "actualSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "actualNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:domain_failure_rollback",
+          "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:domain_failure_rollback",
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+          "attributedConsumerIds": [
+            "runtime-dispatch-d9a426f3b9d18d3a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "2462d244636ab98ac6769b15adb1fbbacb889fa82b645912d063a856bb1bfd6b",
+              "actualSha256": "2462d244636ab98ac6769b15adb1fbbacb889fa82b645912d063a856bb1bfd6b",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "599e003e7b7f3f7d25fcd8026efca76b07ee42d3759f8d5b34ebd2593fe51c5a",
+              "actualSha256": "599e003e7b7f3f7d25fcd8026efca76b07ee42d3759f8d5b34ebd2593fe51c5a",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:duplicate_replay_dml_zero",
+          "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:duplicate_replay_dml_zero",
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+          "attributedConsumerIds": [
+            "runtime-dispatch-d9a426f3b9d18d3a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c9bf6e8469899787ee30a4e926f46704abce87c637b09412d508bbe809f272ff",
+              "actualSha256": "c9bf6e8469899787ee30a4e926f46704abce87c637b09412d508bbe809f272ff",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:mutation_success",
+          "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:mutation_success",
+          "scenarioKind": "MUTATION_SUCCESS",
+          "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+          "attributedConsumerIds": [
+            "runtime-dispatch-d9a426f3b9d18d3a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "5d6de8d7b5caa3836f05c80afb60b3a7c7d12ddc50375a969a63bca9cb3d35cd",
+              "actualSha256": "5d6de8d7b5caa3836f05c80afb60b3a7c7d12ddc50375a969a63bca9cb3d35cd",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "actualSha256": "fe8c839f4efb0ac83334ff09f8cd72137cd9bca99062f2da92baf1a2cdf438bf",
+              "match": true,
+              "expectedNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "actualNormalizedStatements": [
+                "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+                "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+              ],
+              "expectedRowCount": 2,
+              "actualRowCount": 2
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations",
+                "external_identities",
+                "player_title_instances",
+                "player_titles"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:payload_drift_fail_closed",
+          "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:payload_drift_fail_closed",
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+          "attributedConsumerIds": [
+            "runtime-dispatch-d9a426f3b9d18d3a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "216e12a9615ea16027fd13930f29d2077785d74a7db6b441b2f3b47e8c4322d2",
+              "actualSha256": "216e12a9615ea16027fd13930f29d2077785d74a7db6b441b2f3b47e8c4322d2",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "c6a0e7847fa0c7b64ba2e437120b8870fc1975095362f7b8d366ef4f32905509",
+              "actualSha256": "c6a0e7847fa0c7b64ba2e437120b8870fc1975095362f7b8d366ef4f32905509",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "ROLLBACK",
+              "actual": "ROLLBACK",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_ROLLBACK"
+              ]
+            }
+          }
+        },
+        {
+          "receiptId": "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:restart_replay",
+          "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:restart_replay",
+          "scenarioKind": "RESTART_REPLAY",
+          "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+          "attributedConsumerIds": [
+            "runtime-dispatch-d9a426f3b9d18d3a"
+          ],
+          "expectedActual": {
+            "reply": {
+              "expectedSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "actualSha256": "f9de209d5a9a9b1bc3f506ce43500f2315db92aab48d963dcb968a31a6890e25",
+              "match": true
+            },
+            "result": {
+              "expectedSha256": "a9ad70b028bcf260a8870a4abec42612c73e191b802621571d7949e8667d946e",
+              "actualSha256": "a9ad70b028bcf260a8870a4abec42612c73e191b802621571d7949e8667d946e",
+              "match": true
+            },
+            "dml": {
+              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "match": true,
+              "expectedNormalizedStatements": [],
+              "actualNormalizedStatements": [],
+              "expectedRowCount": 0,
+              "actualRowCount": 0
+            },
+            "lockOrder": {
+              "expected": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "actual": [
+                "guild_territory_wars",
+                "operations"
+              ],
+              "match": true
+            },
+            "transaction": {
+              "expected": "COMMIT",
+              "actual": "COMMIT",
+              "match": true,
+              "expectedTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ],
+              "actualTimeline": [
+                "ATTEMPT_1_BEGIN",
+                "ATTEMPT_1_COMMIT"
+              ]
+            }
+          }
+        }
+      ],
       "evidence": {
-        "evidenceIds": [],
-        "attributedConsumerIds": [],
-        "hashes": []
+        "evidenceIds": [
+          "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:concurrency_single_writer",
+          "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:domain_failure_rollback",
+          "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:duplicate_replay_dml_zero",
+          "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:mutation_success",
+          "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:payload_drift_fail_closed",
+          "receipt:wave34:runtime-dispatch-d9a426f3b9d18d3a:restart_replay"
+        ],
+        "attributedConsumerIds": [
+          "runtime-dispatch-d9a426f3b9d18d3a"
+        ],
+        "hashes": [
+          {
+            "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave34-member-title-select-v1.json",
+            "sha256": "76175f66cc9ecc198fa60b7ab1641e6691bdac91a2e34b60a6b2c8f0ba70ed84"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-harness.mjs",
+            "sha256": "7bff8a94fe775e42e105ffb8e921eb3c2ed67f92975fb43d2946998b1a18f305"
+          },
+          {
+            "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave34-member-title-select-target.mjs",
+            "sha256": "c89171836afb346228fbbefa23c28efb127bf3ed273295b2ab0c8824c9e1629b"
+          }
+        ]
       },
       "equivalenceRule": null
     },
@@ -127071,5 +127817,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "a5ecac26e5fa03105a9fedaaaae05de1d84b54e20def64494970b27a3cd6fefa"
+  "entrySetSha256": "b35b9e1f659b4704aeed3a146642e213c3254c5f70f4c54eb62dc5d0bd0bafe5"
 }
