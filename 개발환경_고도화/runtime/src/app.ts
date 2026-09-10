@@ -37,6 +37,8 @@ import { registerAdminObjectCatalogWebRoutes } from "./admin/object-catalog-web-
 import { registerAdminBalanceWebRoutes } from "./admin/admin-balance-web-routes.js";
 import { registerAdminConfigurationCatalogWebRoutes } from "./admin/configuration-catalog-web-routes.js";
 import { registerAdminPetSkillCatalogWebRoutes } from "./admin/pet-skill-catalog-web-routes.js";
+import { registerAdminAccountLinkReadRoutes } from "./admin/admin-account-link-read-routes.js";
+import { AdminAccountLinkReadService } from "./admin/admin-account-link-read-service.js";
 import { AdminBalanceReadModelProvider } from "./admin/admin-balance-read-model.js";
 import { AdminBalanceMutationProvider } from "./admin/admin-balance-mutation-provider.js";
 import { MariaAdminBalanceMutationRepository } from "./admin/maria-admin-balance-mutation-repository.js";
@@ -985,6 +987,10 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
           new MariaConfigurationCatalogRepository(database)
         )
       )
+    });
+    void registerAdminAccountLinkReadRoutes(app, {
+      auth: adminAuth,
+      reader: new AdminAccountLinkReadService(database)
     });
     const adminBalanceRepository = new MariaAdminBalanceMutationRepository(database);
     void registerAdminBalanceWebRoutes(app, {

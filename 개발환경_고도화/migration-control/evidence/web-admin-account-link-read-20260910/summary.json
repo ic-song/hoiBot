@@ -1,0 +1,35 @@
+{
+  "evidenceSchemaVersion": "web-admin-account-link-read-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-11",
+  "wbsId": "WEB-WBS-013A",
+  "sliceId": "SL-ACCOUNT-ADMIN-WEB-LINK-READ-01",
+  "lease": "Lease2649",
+  "riskTier": "T1",
+  "baseline": "91440b47",
+  "route": "GET /api/v1/admin/players/:playerId/account-links",
+  "scope": [
+    "existing admin session authentication",
+    "existing player.read RBAC",
+    "WBS746 account-link read DTO",
+    "read-only database queries"
+  ],
+  "validation": {
+    "focusedTests": "4/4 PASS: auth, uint64 validation, absent player 404, empty success, masking, DML0",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diffCheck": "PASS",
+    "dml": false,
+    "csrf": false,
+    "idempotency": false,
+    "operationalDatabaseOrDataMutation": false,
+    "featureProdMutation": false,
+    "gate7": false,
+    "gate8": false
+  },
+  "dataDisclosure": {
+    "allowed": ["playerId", "opaque portal/link IDs", "role/status", "platform/context type", "active selection status/version", "masked login/external identifiers"],
+    "forbidden": ["raw login_id", "raw external_user_key", "identity_scope_key", "challenge details", "session details"]
+  },
+  "handoff": "HANDOFF_READY: admin shell UI consumer and independent Gate 7 review remain outside this backend subclaim."
+}
