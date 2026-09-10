@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.486"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.487"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36645,7 +36645,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, user, bagInfo) 
         "━━━━━━━━━━━━\n" +
         expSummary + "\n" +
         "🚀 경험치 2배 부스터:" + (boosterCount === 0 ? " 없음" : "") + "\n" +
-        "🚀 " + numberWithCommas(boosterCount) + "회\n" +
+        (boosterCount > 0 ? "🚀 " + numberWithCommas(boosterCount) + "회\n" : "") +
         "━━━━━━━━━━━━\n" +
         "👑 호패 프리미엄: 이용 중\n" +
         "📅 만료일: " + formatHoiPassPremiumBagExpiry(data, user) + "\n" +
