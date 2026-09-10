@@ -36,7 +36,7 @@
     },
     {
       "wbs": "WBS797",
-      "commit": "d099b358352cfa3f22829b9d597f4d48959097d9",
+      "commit": "98a442d09582b6dddcd4c8b6a2ea86e94e9480ad",
       "resolution": "PLAYER_TITLE_READ_RUNTIME_DISPATCH_DIRECT_RECEIPTS"
     }
   ],
@@ -46,8 +46,8 @@
     "manifestSha256": "8cbce79761fdc4c75a02cb84153056c802f1d93867e48519a1d432ed7ee8b403",
     "manifestConsumerSetSha256": "d183ade67fa2aff0b7167327d9c6a1ed5ae689da0e060b7a093a88e1462e0e0b",
     "ledgerPath": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
-    "ledgerSha256": "62af567bd5715e2ccd154e7bd98c6acc14fc7306359b358269224a91bdbc6d35",
-    "ledgerEntrySetSha256": "e29c4a35a575aaa8ed0d665c2514dddfe03000a721b8b476e1f5003e2c773f24"
+    "ledgerSha256": "49712a8cae9773b39839a5d0d76e40d97e547cd6d51649e3d7caf9449949f5f9",
+    "ledgerEntrySetSha256": "4a8860a796b8f621e688f6bb73fde9c4da65b94c1652ca19fc5a3e5db6425754"
   },
   "policy": {
     "A_REUSABLE_PROOF_ASSET": "A prior bundle, observation or harness is reusable input only; it is not completed proof and requires re-execution or exact resealing as official receipts.",

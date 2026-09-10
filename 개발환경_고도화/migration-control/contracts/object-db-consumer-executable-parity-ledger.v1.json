@@ -2,7 +2,7 @@
   "format": "hoibot-object-db-consumer-executable-parity-ledger-v1",
   "catalogVersion": "SC-20260902-1",
   "classificationBaseCommit": "f97be62292c3f7e8ea79b2d6f302dd25517584d4",
-  "evidenceCommit": "d099b358352cfa3f22829b9d597f4d48959097d9",
+  "evidenceCommit": "98a442d09582b6dddcd4c8b6a2ea86e94e9480ad",
   "sourceTextNormalization": "CRLF_AND_CR_TO_LF_BEFORE_HASH",
   "sources": {
     "ledgerSchema": {
@@ -28,7 +28,7 @@
     },
     "executionReceipts": {
       "path": "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave30-v1.json",
-      "sha256": "94f85c72463940775b77052b76527f1e92fa3f1a476e05c6702817fef9ac463a"
+      "sha256": "922682f2127b4d716c15b46391e59094b8ff01fd3c3e9a76abc33d5990471c62"
     },
     "classificationSources": []
   },
@@ -105002,16 +105002,16 @@
         "harnessId": "harness:wave30:player-title-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-harness.mjs",
-        "sha256": "228254618ca6dc8ce925ca5c7cf6609d663b46c42ddb99dcc5f886694f334ac4"
+        "sha256": "8b31467cf10bedd0fba75f361860591d78a4d8f7220578c83ffe70cba490e3c6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave30:player-title-read:v1",
         "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave30-player-title-read-v1.json",
-        "sha256": "06421534df0e839d0b28279f72284973f9f9495b58633d1627296045afcfaf0f"
+        "sha256": "4be59cc333adf777bcd0798a6d61022026fb49bc557f09fece09219a526b7533"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-target.mjs",
-        "targetSourceSha256": "11b0ded62abce52f3f3d8a8466ff6ac1c04db49cbcf8b01c8df27da517701b8e",
+        "targetSourceSha256": "026ee54df3c89ae3efdadf10d70b7d6539db22ad6f4429fdd942256ed817ed5c",
         "exportName": "executeWave30PlayerTitleRead"
       },
       "scenarioRequirements": [
@@ -105077,33 +105077,95 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
-              "actualSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
+              "expectedSha256": "639378b763e77887ccc8e096fc588493ad6bec811fb4f72f1479c29b5e7028a4",
+              "actualSha256": "639378b763e77887ccc8e096fc588493ad6bec811fb4f72f1479c29b5e7028a4",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
+              "actualSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 15,
+              "actualRowCount": 15
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105123,18 +105185,34 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "e44a2ec791982e45eefd2cd116ba859df522744adadb235a784603027b31b371",
-              "actualSha256": "e44a2ec791982e45eefd2cd116ba859df522744adadb235a784603027b31b371",
+              "expectedSha256": "9f0223ef8bf4e83692c39d41f6e47822f5187b2f400e45da194e9888b38bf6e7",
+              "actualSha256": "9f0223ef8bf4e83692c39d41f6e47822f5187b2f400e45da194e9888b38bf6e7",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "1761f445ceed99a013c807492df3001c295b79e11644366c47ffe8b17eeeb0c6",
+              "actualSha256": "1761f445ceed99a013c807492df3001c295b79e11644366c47ffe8b17eeeb0c6",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+              ],
+              "expectedRowCount": 7,
+              "actualRowCount": 7
             },
             "lockOrder": {
               "expected": [],
@@ -105142,14 +105220,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105169,33 +105249,95 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
-              "actualSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
+              "expectedSha256": "f8ef43fb256bb0005f3c67b691e608f28c3215b0511130186175353a5d086cd5",
+              "actualSha256": "f8ef43fb256bb0005f3c67b691e608f28c3215b0511130186175353a5d086cd5",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
+              "actualSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 15,
+              "actualRowCount": 15
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105215,33 +105357,141 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
-              "actualSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
+              "expectedSha256": "f8ef43fb256bb0005f3c67b691e608f28c3215b0511130186175353a5d086cd5",
+              "actualSha256": "f8ef43fb256bb0005f3c67b691e608f28c3215b0511130186175353a5d086cd5",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4ed984233497c303c7d94e9390d7e36c51a2c6067af5263c282c24f014a88704",
+              "actualSha256": "4ed984233497c303c7d94e9390d7e36c51a2c6067af5263c282c24f014a88704",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 30,
+              "actualRowCount": 30
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "CHILD_PROCESS_1",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "RESTART_CHILD_PROCESS_2",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "CHILD_PROCESS_1",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "RESTART_CHILD_PROCESS_2",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105261,33 +105511,95 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
-              "actualSha256": "a68c91a2209a4dbcf013daa02baf7106dd0b7680993b58fd19b4a302eab99727",
+              "expectedSha256": "f8ef43fb256bb0005f3c67b691e608f28c3215b0511130186175353a5d086cd5",
+              "actualSha256": "f8ef43fb256bb0005f3c67b691e608f28c3215b0511130186175353a5d086cd5",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
+              "actualSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 15,
+              "actualRowCount": 15
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105307,15 +105619,15 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave30-player-title-read-v1.json",
-            "sha256": "06421534df0e839d0b28279f72284973f9f9495b58633d1627296045afcfaf0f"
+            "sha256": "4be59cc333adf777bcd0798a6d61022026fb49bc557f09fece09219a526b7533"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-harness.mjs",
-            "sha256": "228254618ca6dc8ce925ca5c7cf6609d663b46c42ddb99dcc5f886694f334ac4"
+            "sha256": "8b31467cf10bedd0fba75f361860591d78a4d8f7220578c83ffe70cba490e3c6"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-target.mjs",
-            "sha256": "11b0ded62abce52f3f3d8a8466ff6ac1c04db49cbcf8b01c8df27da517701b8e"
+            "sha256": "026ee54df3c89ae3efdadf10d70b7d6539db22ad6f4429fdd942256ed817ed5c"
           }
         ]
       },
@@ -105341,16 +105653,16 @@
         "harnessId": "harness:wave30:player-title-read",
         "runner": "NODE_OBJECT_DB_PARITY_V1",
         "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-harness.mjs",
-        "sha256": "228254618ca6dc8ce925ca5c7cf6609d663b46c42ddb99dcc5f886694f334ac4"
+        "sha256": "8b31467cf10bedd0fba75f361860591d78a4d8f7220578c83ffe70cba490e3c6"
       },
       "fixture": {
         "fixtureId": "fixture:object-db-executable-parity:wave30:player-title-read:v1",
         "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave30-player-title-read-v1.json",
-        "sha256": "06421534df0e839d0b28279f72284973f9f9495b58633d1627296045afcfaf0f"
+        "sha256": "4be59cc333adf777bcd0798a6d61022026fb49bc557f09fece09219a526b7533"
       },
       "invocation": {
         "targetPath": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-target.mjs",
-        "targetSourceSha256": "11b0ded62abce52f3f3d8a8466ff6ac1c04db49cbcf8b01c8df27da517701b8e",
+        "targetSourceSha256": "026ee54df3c89ae3efdadf10d70b7d6539db22ad6f4429fdd942256ed817ed5c",
         "exportName": "executeWave30PlayerTitleRead"
       },
       "scenarioRequirements": [
@@ -105416,33 +105728,95 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
-              "actualSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
+              "expectedSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
+              "actualSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
+              "actualSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 15,
+              "actualRowCount": 15
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105457,23 +105831,41 @@
           ],
           "expectedActual": {
             "reply": {
-              "expectedSha256": "dd1c884dc0014256fab599bed8764f68d347d0d67b1b23da4e2b415eb9738c66",
-              "actualSha256": "dd1c884dc0014256fab599bed8764f68d347d0d67b1b23da4e2b415eb9738c66",
+              "expectedSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
+              "actualSha256": "b07800ad4773f8feebc6d0467596ecdf82f855d96b1b1a860e4f51462d288f89",
               "match": true
             },
             "result": {
-              "expectedSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
-              "actualSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
+              "expectedSha256": "72e055f386d5e3bb657868626686011549c0bbd16d2951d5889ee800a26c8b8d",
+              "actualSha256": "72e055f386d5e3bb657868626686011549c0bbd16d2951d5889ee800a26c8b8d",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "05a0fe7ac49bdea9705f5e06b7a90e918efa143bb6481026b5d0253feb65f3c1",
+              "actualSha256": "05a0fe7ac49bdea9705f5e06b7a90e918efa143bb6481026b5d0253feb65f3c1",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?"
+              ],
+              "expectedRowCount": 8,
+              "actualRowCount": 8
             },
             "lockOrder": {
               "expected": [],
@@ -105481,14 +105873,16 @@
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105508,33 +105902,95 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
-              "actualSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
+              "expectedSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
+              "actualSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
+              "actualSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 15,
+              "actualRowCount": 15
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105554,33 +106010,141 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
-              "actualSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
+              "expectedSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
+              "actualSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "4ed984233497c303c7d94e9390d7e36c51a2c6067af5263c282c24f014a88704",
+              "actualSha256": "4ed984233497c303c7d94e9390d7e36c51a2c6067af5263c282c24f014a88704",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 30,
+              "actualRowCount": 30
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "CHILD_PROCESS_1",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "RESTART_CHILD_PROCESS_2",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "CHILD_PROCESS_1",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "RESTART_CHILD_PROCESS_2",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105600,33 +106164,95 @@
               "match": true
             },
             "result": {
-              "expectedSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
-              "actualSha256": "5935c1ab4e093c71cb607dfb34374a17b61cc191c4f4865a9b18b6548033cfeb",
+              "expectedSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
+              "actualSha256": "26d71c0781fcd270b7e0cb4b7b421381670d2ce4824c7f545d44c5d9d873003f",
               "match": true
             },
             "dml": {
-              "expectedSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
-              "actualSha256": "217954ae86d3eb2e1a5093f4ef1d72d513b72ce127a286eff02970c2c634c750",
+              "expectedSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
+              "actualSha256": "b3a805f0bf22905bc8de444f38ff02498f8153aceecc18817f12ce27f526c88b",
               "match": true,
-              "expectedNormalizedStatements": [],
-              "actualNormalizedStatements": [],
-              "expectedRowCount": 0,
-              "actualRowCount": 0
+              "expectedNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "actualNormalizedStatements": [
+                "INSERT INTO command_routing_decisions (event_id, message_hash, command_code, route, reason_code) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE routing_decision_id = LAST_INSERT_ID(routing_decision_id)",
+                "INSERT INTO channels (provider_code, external_channel_id, channel_type, status, created_at, updated_at) VALUES (?, ?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE channel_type = VALUES(channel_type), status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO external_identities (provider_code, external_user_id, display_name, status, created_at, updated_at) VALUES ('kakao', ?, NULL, 'candidate', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)",
+                "INSERT INTO channel_memberships (channel_id, external_identity_id, status, joined_at, updated_at) VALUES (?, ?, 'active', UTC_TIMESTAMP(3), UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE status = 'active', updated_at = VALUES(updated_at)",
+                "INSERT INTO event_inbox ( event_id, provider_code, provider_event_id, external_channel_id, channel_id, external_user_id, external_identity_id, event_kind, event_origin, direction, payload_hash, parse_status, processing_status, received_at, attempt_count ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'parsed', 'processing', UTC_TIMESTAMP(3), 1)",
+                "INSERT INTO normalized_provider_events (event_id, event_code, event_category, monitoring_group, target_provider_event_id, metadata_json, created_at) VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))",
+                "INSERT INTO channel_activity_daily (channel_id, external_identity_id, activity_date, message_count, media_count, reply_count, mention_count, event_count, last_event_at) VALUES (?, ?, UTC_DATE(), ?, ?, ?, ?, 1, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE message_count = message_count + VALUES(message_count), media_count = media_count + VALUES(media_count), reply_count = reply_count + VALUES(reply_count), mention_count = mention_count + VALUES(mention_count), event_count = event_count + 1, last_event_at = VALUES(last_event_at)",
+                "UPDATE event_inbox SET processing_status = 'processed', processed_at = UTC_TIMESTAMP(3) WHERE event_id = ?",
+                "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
+                "INSERT INTO outbox_messages(operation_id,provider_code,destination_id,message_type,payload_json,status,available_at,created_at) VALUES (?,'iris',?,'text',?,'pending',UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_executions(event_id,command_code,operation_id,execution_status,result_code,created_at,completed_at) VALUES (?,?,?,'completed',?,UTC_TIMESTAMP(3),UTC_TIMESTAMP(3))",
+                "INSERT INTO command_audit(operation_id,actor_type,actor_id,target_type,target_id,action_code,result_code,reason,change_summary_json,created_at) VALUES (?,'external_identity',?,'player',?,?,?,'Iris 타이틀 조회',?,UTC_TIMESTAMP(3))",
+                "UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?",
+                "UPDATE outbox_messages SET status = ?, attempt_count = ?, sent_at = ?, last_error_code = ?, available_at = IF(? = 'failed', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 1 MINUTE), available_at) WHERE id = ?",
+                "INSERT INTO delivery_attempts (outbox_message_id, attempt_no, result_code, error_code, attempted_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))"
+              ],
+              "expectedRowCount": 15,
+              "actualRowCount": 15
             },
             "lockOrder": {
-              "expected": [],
-              "actual": [],
+              "expected": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
+              "actual": [
+                "external_identities",
+                "players",
+                "player_profiles",
+                "player_legacy_rank_profiles",
+                "operations",
+                "player_title_instances",
+                "title_definitions",
+                "player_titles",
+                "outbox_messages"
+              ],
               "match": true
             },
             "transaction": {
-              "expected": "READ_ONLY",
-              "actual": "READ_ONLY",
+              "expected": "COMMIT",
+              "actual": "COMMIT",
               "match": true,
               "expectedTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ],
               "actualTimeline": [
-                "READ_ONLY"
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT",
+                "BEGIN",
+                "COMMIT"
               ]
             }
           }
@@ -105646,15 +106272,15 @@
         "hashes": [
           {
             "path": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-wave30-player-title-read-v1.json",
-            "sha256": "06421534df0e839d0b28279f72284973f9f9495b58633d1627296045afcfaf0f"
+            "sha256": "4be59cc333adf777bcd0798a6d61022026fb49bc557f09fece09219a526b7533"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-harness.mjs",
-            "sha256": "228254618ca6dc8ce925ca5c7cf6609d663b46c42ddb99dcc5f886694f334ac4"
+            "sha256": "8b31467cf10bedd0fba75f361860591d78a4d8f7220578c83ffe70cba490e3c6"
           },
           {
             "path": "개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave30-player-title-read-target.mjs",
-            "sha256": "11b0ded62abce52f3f3d8a8466ff6ac1c04db49cbcf8b01c8df27da517701b8e"
+            "sha256": "026ee54df3c89ae3efdadf10d70b7d6539db22ad6f4429fdd942256ed817ed5c"
           }
         ]
       },
@@ -123912,5 +124538,5 @@
       "equivalenceRule": null
     }
   ],
-  "entrySetSha256": "e29c4a35a575aaa8ed0d665c2514dddfe03000a721b8b476e1f5003e2c773f24"
+  "entrySetSha256": "4a8860a796b8f621e688f6bb73fde9c4da65b94c1652ca19fc5a3e5db6425754"
 }
