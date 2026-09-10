@@ -1,0 +1,297 @@
+{
+  "evidenceSchemaVersion": "web-admin-account-link-correction-v1",
+  "captureMethod": "actual AdminAccountLinkReadService + actual registerAdminAccountLinkReadRoutes + actual admin web shell + Chrome CDP",
+  "serviceInput": {
+    "loginId": "operator-login-secret",
+    "externalUserKey": "kakao-external-secret"
+  },
+  "browserResults": [
+    {
+      "name": "success-375",
+      "playerId": "40001",
+      "session": "allowed",
+      "width": 375,
+      "height": 812,
+      "wait": "document.querySelectorAll(\".account-link-card\").length === 1",
+      "path": "/admin/players/40001/account-links",
+      "statusText": "KAKAOACTIVE로그인 IDo********t외부 사용자 키k********t계정 상태ACTIVE연결 역할REPRESENTATIVE연결 문맥ROOM선택 상태ACTIVE",
+      "focusedId": "account-link-title",
+      "cardCount": 1,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 0,
+      "maskedLoginVisible": true,
+      "maskedExternalVisible": true,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "success-768",
+      "playerId": "40001",
+      "session": "allowed",
+      "width": 768,
+      "height": 1024,
+      "wait": "document.querySelectorAll(\".account-link-card\").length === 1",
+      "path": "/admin/players/40001/account-links",
+      "statusText": "KAKAOACTIVE로그인 IDo********t외부 사용자 키k********t계정 상태ACTIVE연결 역할REPRESENTATIVE연결 문맥ROOM선택 상태ACTIVE",
+      "focusedId": "account-link-title",
+      "cardCount": 1,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 0,
+      "maskedLoginVisible": true,
+      "maskedExternalVisible": true,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "success-1024",
+      "playerId": "40001",
+      "session": "allowed",
+      "width": 1024,
+      "height": 900,
+      "wait": "document.querySelectorAll(\".account-link-card\").length === 1",
+      "path": "/admin/players/40001/account-links",
+      "statusText": "KAKAOACTIVE로그인 IDo********t외부 사용자 키k********t계정 상태ACTIVE연결 역할REPRESENTATIVE연결 문맥ROOM선택 상태ACTIVE",
+      "focusedId": "account-link-title",
+      "cardCount": 1,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 0,
+      "maskedLoginVisible": true,
+      "maskedExternalVisible": true,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "success-1440",
+      "playerId": "40001",
+      "session": "allowed",
+      "width": 1440,
+      "height": 1000,
+      "wait": "document.querySelectorAll(\".account-link-card\").length === 1",
+      "path": "/admin/players/40001/account-links",
+      "statusText": "KAKAOACTIVE로그인 IDo********t외부 사용자 키k********t계정 상태ACTIVE연결 역할REPRESENTATIVE연결 문맥ROOM선택 상태ACTIVE",
+      "focusedId": "account-link-title",
+      "cardCount": 1,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 0,
+      "maskedLoginVisible": true,
+      "maskedExternalVisible": true,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "empty",
+      "playerId": "40002",
+      "session": "allowed",
+      "width": 768,
+      "height": 900,
+      "wait": "document.querySelector(\"#player-account-links .empty-state\") !== null",
+      "path": "/admin/players/40002/account-links",
+      "statusText": "연결된 계정이 없습니다.이 회원에 등록된 웹 또는 플랫폼 연결이 없습니다.",
+      "focusedId": "account-link-title",
+      "cardCount": 0,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 0,
+      "maskedLoginVisible": false,
+      "maskedExternalVisible": false,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "unauthorized-401",
+      "playerId": "40001",
+      "session": "expired",
+      "width": 768,
+      "height": 900,
+      "wait": "document.querySelector(\"#login-view:not([hidden])\") !== null && document.activeElement?.id === \"login-id\"",
+      "path": "/admin/players/40001/account-links",
+      "statusText": "세션이 만료됐습니다. 다시 로그인해 주세요.",
+      "focusedId": "login-id",
+      "cardCount": 0,
+      "overflowX": 0,
+      "rowTargetHeight": 0,
+      "accountPanelMutationControls": 0,
+      "retryCount": 0,
+      "maskedLoginVisible": false,
+      "maskedExternalVisible": false,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "forbidden-403",
+      "playerId": "40001",
+      "session": "denied",
+      "width": 768,
+      "height": 900,
+      "wait": "document.querySelector(\"#player-account-links .error-state\")?.textContent.includes(\"권한\") === true",
+      "path": "/admin/players/40001/account-links",
+      "statusText": "계정 연결 조회 권한이 없습니다.이 작업을 수행할 권한이 없습니다.다시 시도",
+      "focusedId": "account-link-title",
+      "cardCount": 0,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 1,
+      "maskedLoginVisible": false,
+      "maskedExternalVisible": false,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "not-found-404",
+      "playerId": "49999",
+      "session": "allowed",
+      "width": 768,
+      "height": 900,
+      "wait": "document.querySelector(\"#player-account-links .error-state\")?.textContent.includes(\"찾을 수 없습니다\") === true",
+      "path": "/admin/players/49999/account-links",
+      "statusText": "대상 회원을 찾을 수 없습니다.대상 회원을 찾을 수 없습니다.다시 시도",
+      "focusedId": "account-link-title",
+      "cardCount": 0,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 1,
+      "maskedLoginVisible": false,
+      "maskedExternalVisible": false,
+      "forbiddenValuesVisible": []
+    },
+    {
+      "name": "server-error-500",
+      "playerId": "50000",
+      "session": "allowed",
+      "width": 768,
+      "height": 900,
+      "wait": "document.querySelector(\"#player-account-links .error-state\")?.textContent.includes(\"불러오지 못했습니다\") === true",
+      "path": "/admin/players/50000/account-links",
+      "statusText": "계정 연결 정보를 불러오지 못했습니다.서버가 요청을 처리하지 못했습니다.다시 시도",
+      "focusedId": "account-link-title",
+      "cardCount": 0,
+      "overflowX": 0,
+      "rowTargetHeight": 44,
+      "accountPanelMutationControls": 0,
+      "retryCount": 1,
+      "maskedLoginVisible": false,
+      "maskedExternalVisible": false,
+      "forbiddenValuesVisible": []
+    }
+  ],
+  "routeResponses": [
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/40001/account-links",
+      "statusCode": 200,
+      "payload": "{\"ok\":true,\"playerId\":\"40001\",\"accountLinks\":[{\"playerId\":\"40001\",\"playerRole\":\"REPRESENTATIVE\",\"linkStatus\":\"ACTIVE\",\"portalAccountStatus\":\"ACTIVE\",\"maskedLoginId\":\"o********t\",\"platformCode\":\"KAKAO\",\"contextType\":\"ROOM\",\"selectionStatus\":\"ACTIVE\",\"maskedExternalUserKey\":\"k********t\"}],\"requestId\":\"req-8\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/40001/account-links",
+      "statusCode": 200,
+      "payload": "{\"ok\":true,\"playerId\":\"40001\",\"accountLinks\":[{\"playerId\":\"40001\",\"playerRole\":\"REPRESENTATIVE\",\"linkStatus\":\"ACTIVE\",\"portalAccountStatus\":\"ACTIVE\",\"maskedLoginId\":\"o********t\",\"platformCode\":\"KAKAO\",\"contextType\":\"ROOM\",\"selectionStatus\":\"ACTIVE\",\"maskedExternalUserKey\":\"k********t\"}],\"requestId\":\"req-f\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/40001/account-links",
+      "statusCode": 200,
+      "payload": "{\"ok\":true,\"playerId\":\"40001\",\"accountLinks\":[{\"playerId\":\"40001\",\"playerRole\":\"REPRESENTATIVE\",\"linkStatus\":\"ACTIVE\",\"portalAccountStatus\":\"ACTIVE\",\"maskedLoginId\":\"o********t\",\"platformCode\":\"KAKAO\",\"contextType\":\"ROOM\",\"selectionStatus\":\"ACTIVE\",\"maskedExternalUserKey\":\"k********t\"}],\"requestId\":\"req-m\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/40001/account-links",
+      "statusCode": 200,
+      "payload": "{\"ok\":true,\"playerId\":\"40001\",\"accountLinks\":[{\"playerId\":\"40001\",\"playerRole\":\"REPRESENTATIVE\",\"linkStatus\":\"ACTIVE\",\"portalAccountStatus\":\"ACTIVE\",\"maskedLoginId\":\"o********t\",\"platformCode\":\"KAKAO\",\"contextType\":\"ROOM\",\"selectionStatus\":\"ACTIVE\",\"maskedExternalUserKey\":\"k********t\"}],\"requestId\":\"req-t\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/40002/account-links",
+      "statusCode": 200,
+      "payload": "{\"ok\":true,\"playerId\":\"40002\",\"accountLinks\":[],\"requestId\":\"req-10\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/40001/account-links",
+      "statusCode": 401,
+      "payload": "{\"ok\":false,\"error\":{\"code\":\"ADMIN_AUTH_REQUIRED\",\"message\":\"관리자 로그인이 필요합니다.\"},\"requestId\":\"req-17\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/40001/account-links",
+      "statusCode": 403,
+      "payload": "{\"ok\":false,\"error\":{\"code\":\"FORBIDDEN\",\"message\":\"이 작업을 수행할 권한이 없습니다.\"},\"requestId\":\"req-1e\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/49999/account-links",
+      "statusCode": 404,
+      "payload": "{\"ok\":false,\"error\":{\"code\":\"PLAYER_NOT_FOUND\",\"message\":\"대상 회원을 찾을 수 없습니다.\"},\"requestId\":\"req-1l\"}"
+    },
+    {
+      "method": "GET",
+      "url": "/api/v1/admin/players/50000/account-links",
+      "statusCode": 500,
+      "payload": "{\"ok\":false,\"error\":{\"code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"서버가 요청을 처리하지 못했습니다.\"},\"requestId\":\"req-1s\"}"
+    }
+  ],
+  "queries": [
+    {
+      "playerId": "40001",
+      "sql": "SELECT id AS player_id FROM players WHERE id=?"
+    },
+    {
+      "playerId": "40001",
+      "sql": "SELECT link.player_role,link.link_status, portal.portal_account_status,legacy_account.login_id,identity_row.platform_code,context_row.context_type, selection.selection_status,identity_row.external_user_key FROM portal_game_account_links link JOIN canonical_portal_accounts portal ON portal.portal_account_id=link.portal_account_id LEFT JOIN user_accounts legacy_account ON legacy_account.id=portal.legacy_user_account_id LEFT JOIN account_platform_identities identity_row ON identity_row.portal_account_id=portal.portal_account_id LEFT JOIN account_platform_context_memberships membership ON membership.platform_identity_id=identity_row.platform_identity_id LEFT JOIN account_platform_contexts context_row ON context_row.platform_context_id=membership.platform_context_id LEFT JOIN account_platform_active_player_selections selection ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.portal_game_account_link_id=link.portal_game_account_link_id WHERE link.player_id=? ORDER BY link.registration_sequence,identity_row.platform_code,context_row.context_type,selection.selection_version"
+    },
+    {
+      "playerId": "40001",
+      "sql": "SELECT id AS player_id FROM players WHERE id=?"
+    },
+    {
+      "playerId": "40001",
+      "sql": "SELECT link.player_role,link.link_status, portal.portal_account_status,legacy_account.login_id,identity_row.platform_code,context_row.context_type, selection.selection_status,identity_row.external_user_key FROM portal_game_account_links link JOIN canonical_portal_accounts portal ON portal.portal_account_id=link.portal_account_id LEFT JOIN user_accounts legacy_account ON legacy_account.id=portal.legacy_user_account_id LEFT JOIN account_platform_identities identity_row ON identity_row.portal_account_id=portal.portal_account_id LEFT JOIN account_platform_context_memberships membership ON membership.platform_identity_id=identity_row.platform_identity_id LEFT JOIN account_platform_contexts context_row ON context_row.platform_context_id=membership.platform_context_id LEFT JOIN account_platform_active_player_selections selection ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.portal_game_account_link_id=link.portal_game_account_link_id WHERE link.player_id=? ORDER BY link.registration_sequence,identity_row.platform_code,context_row.context_type,selection.selection_version"
+    },
+    {
+      "playerId": "40001",
+      "sql": "SELECT id AS player_id FROM players WHERE id=?"
+    },
+    {
+      "playerId": "40001",
+      "sql": "SELECT link.player_role,link.link_status, portal.portal_account_status,legacy_account.login_id,identity_row.platform_code,context_row.context_type, selection.selection_status,identity_row.external_user_key FROM portal_game_account_links link JOIN canonical_portal_accounts portal ON portal.portal_account_id=link.portal_account_id LEFT JOIN user_accounts legacy_account ON legacy_account.id=portal.legacy_user_account_id LEFT JOIN account_platform_identities identity_row ON identity_row.portal_account_id=portal.portal_account_id LEFT JOIN account_platform_context_memberships membership ON membership.platform_identity_id=identity_row.platform_identity_id LEFT JOIN account_platform_contexts context_row ON context_row.platform_context_id=membership.platform_context_id LEFT JOIN account_platform_active_player_selections selection ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.portal_game_account_link_id=link.portal_game_account_link_id WHERE link.player_id=? ORDER BY link.registration_sequence,identity_row.platform_code,context_row.context_type,selection.selection_version"
+    },
+    {
+      "playerId": "40001",
+      "sql": "SELECT id AS player_id FROM players WHERE id=?"
+    },
+    {
+      "playerId": "40001",
+      "sql": "SELECT link.player_role,link.link_status, portal.portal_account_status,legacy_account.login_id,identity_row.platform_code,context_row.context_type, selection.selection_status,identity_row.external_user_key FROM portal_game_account_links link JOIN canonical_portal_accounts portal ON portal.portal_account_id=link.portal_account_id LEFT JOIN user_accounts legacy_account ON legacy_account.id=portal.legacy_user_account_id LEFT JOIN account_platform_identities identity_row ON identity_row.portal_account_id=portal.portal_account_id LEFT JOIN account_platform_context_memberships membership ON membership.platform_identity_id=identity_row.platform_identity_id LEFT JOIN account_platform_contexts context_row ON context_row.platform_context_id=membership.platform_context_id LEFT JOIN account_platform_active_player_selections selection ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.portal_game_account_link_id=link.portal_game_account_link_id WHERE link.player_id=? ORDER BY link.registration_sequence,identity_row.platform_code,context_row.context_type,selection.selection_version"
+    },
+    {
+      "playerId": "40002",
+      "sql": "SELECT id AS player_id FROM players WHERE id=?"
+    },
+    {
+      "playerId": "40002",
+      "sql": "SELECT link.player_role,link.link_status, portal.portal_account_status,legacy_account.login_id,identity_row.platform_code,context_row.context_type, selection.selection_status,identity_row.external_user_key FROM portal_game_account_links link JOIN canonical_portal_accounts portal ON portal.portal_account_id=link.portal_account_id LEFT JOIN user_accounts legacy_account ON legacy_account.id=portal.legacy_user_account_id LEFT JOIN account_platform_identities identity_row ON identity_row.portal_account_id=portal.portal_account_id LEFT JOIN account_platform_context_memberships membership ON membership.platform_identity_id=identity_row.platform_identity_id LEFT JOIN account_platform_contexts context_row ON context_row.platform_context_id=membership.platform_context_id LEFT JOIN account_platform_active_player_selections selection ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.portal_game_account_link_id=link.portal_game_account_link_id WHERE link.player_id=? ORDER BY link.registration_sequence,identity_row.platform_code,context_row.context_type,selection.selection_version"
+    },
+    {
+      "playerId": "49999",
+      "sql": "SELECT id AS player_id FROM players WHERE id=?"
+    },
+    {
+      "playerId": "50000",
+      "sql": "SELECT id AS player_id FROM players WHERE id=?"
+    },
+    {
+      "playerId": "50000",
+      "sql": "SELECT link.player_role,link.link_status, portal.portal_account_status,legacy_account.login_id,identity_row.platform_code,context_row.context_type, selection.selection_status,identity_row.external_user_key FROM portal_game_account_links link JOIN canonical_portal_accounts portal ON portal.portal_account_id=link.portal_account_id LEFT JOIN user_accounts legacy_account ON legacy_account.id=portal.legacy_user_account_id LEFT JOIN account_platform_identities identity_row ON identity_row.portal_account_id=portal.portal_account_id LEFT JOIN account_platform_context_memberships membership ON membership.platform_identity_id=identity_row.platform_identity_id LEFT JOIN account_platform_contexts context_row ON context_row.platform_context_id=membership.platform_context_id LEFT JOIN account_platform_active_player_selections selection ON selection.platform_context_membership_id=membership.platform_context_membership_id AND selection.portal_game_account_link_id=link.portal_game_account_link_id WHERE link.player_id=? ORDER BY link.registration_sequence,identity_row.platform_code,context_row.context_type,selection.selection_version"
+    }
+  ],
+  "checks": {
+    "forbiddenProjectionCount": 0,
+    "rawResponseLeakCount": 0,
+    "mutationHttpRequestCount": 0
+  },
+  "pass": true
+}

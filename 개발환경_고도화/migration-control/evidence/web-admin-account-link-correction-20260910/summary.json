@@ -1,0 +1,62 @@
+{
+  "evidenceSchemaVersion": "web-admin-account-link-correction-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-11",
+  "wbsId": "WEB-WBS-013A",
+  "sliceId": "SL-ACCOUNT-ADMIN-WEB-LINK-READ-01",
+  "lease": "Lease2657",
+  "responsibleOwner": "/root/web_wbs013a_api",
+  "correctionImplementer": "/root/web_wbs013a_correction",
+  "executionProfile": "READ_UI",
+  "riskTier": "T1",
+  "baseline": "e0d3c871edacf8e75c976add53d76535ea507984",
+  "gates": {
+    "gate1": "PASS: actual shell consumer contract reverified",
+    "gate2": "PASS: three non-consumer internal fields removed from model, SELECT projection, and JSON mapping",
+    "gate3": "PASS: one raw identifier fixture enters the actual read service",
+    "gate4": "PASS: exact response-key and raw identifier leak regressions added",
+    "gate5": "PASS: actual service and actual route registered in the actual shell Fastify harness",
+    "gate6": "PASS: service-to-route-to-browser parity, state UI, responsive, focus, touch, and mutation0 verified",
+    "gate7": false,
+    "gate8": false
+  },
+  "allowedResponseFields": [
+    "playerId",
+    "playerRole",
+    "linkStatus",
+    "portalAccountStatus",
+    "maskedLoginId",
+    "platformCode",
+    "contextType",
+    "selectionStatus",
+    "maskedExternalUserKey"
+  ],
+  "removedResponseFields": ["portalAccountId", "portalGameAccountLinkId", "selectionVersion"],
+  "validation": {
+    "focusedBackendAndShell": "18/18 PASS",
+    "actualPathBrowserScenarios": "9/9 PASS",
+    "browserStates": ["success", "empty", "401", "403", "404", "500"],
+    "responsiveWidths": [375, 768, 1024, 1440],
+    "overflowX": 0,
+    "successFocusedElement": "account-link-title",
+    "unauthorizedFocusedElement": "login-id",
+    "minimumPlayerRowTargetPx": 44,
+    "accountLinkMutationControls": 0,
+    "mutationHttpRequests": 0,
+    "forbiddenSelectProjectionCount": 0,
+    "rawResponseLeakCount": 0,
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diffCheck": "PASS"
+  },
+  "sourceHashes": {
+    "admin-account-link-read-service.ts": "671f86081b6675f7f691e51b2f1301adc0ecc4f9068c74262e3c2edc2a48c69a",
+    "admin-account-link-read-routes.ts": "65d6c6e4cb0cef79963299a4fe7790af5c2e299453f6bb0810b76602cf83d04e",
+    "web-shell.ts": "31aaa5eeea60b8e60018ab0b41f6dd1d70e2bac4a149e304dc2dfe7e58cff55f",
+    "web-shell-assets.ts": "8b19b309f93b8c43858c9da6bebb38fe12446d9871f87ed876ca2e200d2499cf",
+    "admin-account-link-read.test.ts": "18481ef499befe0dffcb516b9e5370c81b34d0508abb74b5bc448f35c7e10651",
+    "correction-shadow.mjs": "0517706283f5ea9db8c20906d6c4e4e516b32a50138df7e197890c529eccb79a",
+    "raw-results.json": "b1094a3c3b9b99507a175024e5360a6f83fdbfa1a109716e8dc4a0755d5bc8fb"
+  },
+  "remaining": "Independent Gate 7 review by a non-owner and non-author reviewer."
+}

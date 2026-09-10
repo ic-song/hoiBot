@@ -63,9 +63,9 @@ describe("admin account-link read", () => {
         queries.push(sql);
         if (sql.includes("FROM players")) return [{ player_id: 9007199254740993n }] as T;
         return [{
-          portal_account_id: "portal01", portal_game_account_link_id: "link0001", player_role: "REPRESENTATIVE",
+          player_role: "REPRESENTATIVE",
           link_status: "ACTIVE", portal_account_status: "ACTIVE", login_id: "sensitive-login-id",
-          platform_code: "KAKAO", context_type: "ROOM", selection_status: "ACTIVE", selection_version: 7n,
+          platform_code: "KAKAO", context_type: "ROOM", selection_status: "ACTIVE",
           external_user_key: "sensitive-external-user-key",
         }] as T;
       },
@@ -75,8 +75,23 @@ describe("admin account-link read", () => {
     const body = response.body;
     assert.equal(response.statusCode, 200);
     assert.match(body, /s\*{8}d/);
-    assert.doesNotMatch(body, /sensitive-login-id|sensitive-external-user-key|identity_scope_key|challenge|session/i);
-    assert.equal(response.json().accountLinks[0].selectionVersion, "7");
+    assert.doesNotMatch(body, /sensitive-login-id|sensitive-external-user-key|portal01|link0001|identity_scope_key|challenge|session/i);
+    assert.deepEqual(response.json().accountLinks[0], {
+      playerId: "9007199254740993",
+      playerRole: "REPRESENTATIVE",
+      linkStatus: "ACTIVE",
+      portalAccountStatus: "ACTIVE",
+      maskedLoginId: "s********d",
+      platformCode: "KAKAO",
+      contextType: "ROOM",
+      selectionStatus: "ACTIVE",
+      maskedExternalUserKey: "s********y",
+    });
+    assert.equal("portalAccountId" in response.json().accountLinks[0], false);
+    assert.equal("portalGameAccountLinkId" in response.json().accountLinks[0], false);
+    assert.equal("selectionVersion" in response.json().accountLinks[0], false);
+    const accountLinkProjection = (queries[1] ?? "").split(/\sFROM\s/i)[0] ?? "";
+    assert.doesNotMatch(accountLinkProjection, /portal\.portal_account_id|link\.portal_game_account_link_id|selection\.selection_version/i);
     assert.equal(queries.length, 2);
     assert.equal(queries.every((sql) => /^\s*SELECT\b/i.test(sql)), true);
     assert.equal(queries.join(" ").match(/\b(?:INSERT|UPDATE|DELETE|REPLACE|ALTER|CREATE|DROP)\b/gi), null);

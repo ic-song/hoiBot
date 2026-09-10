@@ -6,8 +6,6 @@ interface PlayerRow {
 }
 
 interface AccountLinkRow {
-  portal_account_id: string;
-  portal_game_account_link_id: string;
   player_role: string;
   link_status: string;
   portal_account_status: string;
@@ -15,14 +13,11 @@ interface AccountLinkRow {
   platform_code: string | null;
   context_type: string | null;
   selection_status: string | null;
-  selection_version: bigint | null;
   external_user_key: string | null;
 }
 
 export interface AdminAccountLinkReadModel {
   playerId: string;
-  portalAccountId: string;
-  portalGameAccountLinkId: string;
   playerRole: string;
   linkStatus: string;
   portalAccountStatus: string;
@@ -30,7 +25,6 @@ export interface AdminAccountLinkReadModel {
   platformCode: string | null;
   contextType: string | null;
   selectionStatus: string | null;
-  selectionVersion: string | null;
   maskedExternalUserKey: string | null;
 }
 
@@ -56,9 +50,9 @@ export class AdminAccountLinkReadService {
     }
 
     const rows = await this.database.query<AccountLinkRow[]>(
-      `SELECT portal.portal_account_id,link.portal_game_account_link_id,link.player_role,link.link_status,
+      `SELECT link.player_role,link.link_status,
               portal.portal_account_status,legacy_account.login_id,identity_row.platform_code,context_row.context_type,
-              selection.selection_status,selection.selection_version,identity_row.external_user_key
+              selection.selection_status,identity_row.external_user_key
        FROM portal_game_account_links link
        JOIN canonical_portal_accounts portal ON portal.portal_account_id=link.portal_account_id
        LEFT JOIN user_accounts legacy_account ON legacy_account.id=portal.legacy_user_account_id
@@ -74,8 +68,6 @@ export class AdminAccountLinkReadService {
     );
     return rows.map((row) => ({
       playerId: playerId.toString(),
-      portalAccountId: row.portal_account_id,
-      portalGameAccountLinkId: row.portal_game_account_link_id,
       playerRole: row.player_role,
       linkStatus: row.link_status,
       portalAccountStatus: row.portal_account_status,
@@ -83,7 +75,6 @@ export class AdminAccountLinkReadService {
       platformCode: row.platform_code,
       contextType: row.context_type,
       selectionStatus: row.selection_status,
-      selectionVersion: row.selection_version?.toString() ?? null,
       maskedExternalUserKey: maskIdentifier(row.external_user_key),
     }));
   }
