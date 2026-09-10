@@ -260,7 +260,7 @@ export class UserAuthService {
         deletion.scheduled_delete_at
        FROM user_accounts account_row
        LEFT JOIN account_deletion_requests deletion ON deletion.user_account_id = account_row.id AND deletion.status = 'grace_period'
-       WHERE account_row.login_id = ?`,
+       WHERE account_row.login_id = ? AND account_row.deleted_at IS NULL`,
       [loginId]
     );
     const account = rows[0];
@@ -330,6 +330,7 @@ export class UserAuthService {
         account_row.login_id, account_row.system_account_name, session.csrf_secret_hash
        FROM user_sessions session JOIN user_accounts account_row ON account_row.id = session.user_account_id
        WHERE session.token_hash = ? AND session.revoked_at IS NULL AND account_row.status = 'active'
+         AND account_row.deleted_at IS NULL
          AND session.idle_expires_at > UTC_TIMESTAMP(3) AND session.absolute_expires_at > UTC_TIMESTAMP(3)`,
       [hashSecret(sessionToken)]
     );

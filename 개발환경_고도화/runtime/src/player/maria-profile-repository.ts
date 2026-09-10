@@ -78,7 +78,10 @@ function toIso(value: Date | null): string | null {
 async function hydrateProfile(database: Pick<DatabaseClient, "query">, row: ProfileRow): Promise<ProfileView> {
   const [currencies, counters, passes, ranks, badges] = await Promise.all([
     database.query<Array<{ code: string; balance: string; version: bigint }>>(
-      "SELECT currency_code AS code, CAST(balance AS CHAR) AS balance, version FROM currency_accounts WHERE player_id = ? ORDER BY currency_code",
+      `SELECT account.currency_code AS code, CAST(account.balance AS CHAR) AS balance, account.version
+       FROM currency_accounts account
+       JOIN currency_definitions definition ON definition.code = account.currency_code AND definition.active = TRUE
+       WHERE account.player_id = ? ORDER BY currency_code`,
       [row.player_id]
     ),
     database.query<Array<{ code: string; value: bigint }>>(
@@ -152,14 +155,15 @@ export class MariaProfileRepository implements ProfileRepository {
   constructor(private readonly database: Pick<DatabaseClient, "query">) {}
 
   async findByPlayerId(playerId: string): Promise<ProfileView | null> {
-    const rows = await this.database.query<ProfileRow[]>(`${PROFILE_SELECT} WHERE p.id = ? AND p.status = 'active'`, [playerId]);
+    const rows = await this.database.query<ProfileRow[]>(`${PROFILE_SELECT} WHERE p.id = ? AND p.status = 'active' AND p.deleted_at IS NULL`, [playerId]);
     return rows[0] === undefined ? null : hydrateProfile(this.database, rows[0]);
   }
 
   async findByExternalIdentity(providerCode: string, externalUserId: string): Promise<ProfileView | null> {
     const rows = await this.database.query<ProfileRow[]>(
       `${PROFILE_SELECT} JOIN external_identities ei ON ei.player_id = p.id
-       WHERE ei.provider_code = ? AND ei.external_user_id = ? AND ei.status = 'linked' AND p.status = 'active'`,
+       WHERE ei.provider_code = ? AND ei.external_user_id = ? AND ei.status = 'linked'
+         AND p.status = 'active' AND p.deleted_at IS NULL`,
       [providerCode, externalUserId]
     );
     return rows[0] === undefined ? null : hydrateProfile(this.database, rows[0]);
@@ -167,7 +171,7 @@ export class MariaProfileRepository implements ProfileRepository {
 
   async list(search: string | undefined, limit: number, offset: number): Promise<ProfileView[]> {
     const values: unknown[] = [];
-    let where = " WHERE p.status = 'active'";
+    let where = " WHERE p.status = 'active' AND p.deleted_at IS NULL";
     if (search !== undefined && search !== "") {
       where += " AND (pp.current_display_name LIKE ? OR CAST(p.id AS CHAR) = ?)";
       values.push(`%${search}%`, search);
@@ -179,7 +183,7 @@ export class MariaProfileRepository implements ProfileRepository {
 
   async count(search: string | undefined): Promise<number> {
     const values: unknown[] = [];
-    let where = " WHERE p.status = 'active'";
+    let where = " WHERE p.status = 'active' AND p.deleted_at IS NULL";
     if (search !== undefined && search !== "") {
       where += " AND (pp.current_display_name LIKE ? OR CAST(p.id AS CHAR) = ?)";
       values.push(`%${search}%`, search);
