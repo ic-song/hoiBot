@@ -270,3 +270,53 @@ test("가방 조회의 세션 만료는 표시 데이터를 지우고 로그인 
   assert.equal(harness.elements.get("inventory-pagination")?.hidden, true);
   assert.equal(harness.elements.get("login-session-message")?.textContent, "세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.");
 });
+
+test("빈 가방은 빈 상태와 최종 live announcement를 표시합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사" } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 200, payload: { ownerLabel: "테스트용사", items: [], pagination: { limit: 20, offset: 0, total: 0, hasMore: false } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  assert.equal(harness.elements.get("inventory-empty")?.hidden, false);
+  assert.equal(harness.elements.get("inventory-list")?.hidden, true);
+  assert.equal(harness.elements.get("inventory-pagination")?.hidden, true);
+  assert.equal(harness.elements.get("live-status")?.textContent, "가방이 비어 있어요.");
+});
+
+test("가방 오류는 표시하고 재시도 성공으로 안전하게 대체합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사" } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 500, payload: { error: { code: "BAG_READ_FAILED" } } },
+    { status: 200, payload: { ownerLabel: "테스트용사", items: [{ displayName: "재시도 아이템", quantity: "3" }], pagination: { limit: 20, offset: 0, total: 1, hasMore: false } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  assert.equal(harness.elements.get("inventory-error")?.hidden, false);
+  assert.match(harness.elements.get("inventory-error-message")?.textContent ?? "", /요청을 처리하지 못했어요/);
+  const retry = harness.elements.get("inventory-retry-button");
+  assert.ok(retry);
+  await click(retry);
+  await flushShellClient();
+  assert.equal(harness.calls[4]?.url, "/api/v1/inventory/current?limit=20&offset=0");
+  assert.equal(harness.elements.get("inventory-error")?.hidden, true);
+  assert.equal(harness.elements.get("inventory-list")?.children[0]?.children[0]?.textContent, "재시도 아이템");
+  assert.equal(harness.elements.get("live-status")?.textContent, "가방 항목 1개를 표시합니다.");
+});
+
+test("가방 경로에서 프로필 401 뒤에는 가방 요청을 시작하지 않습니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 401, payload: { error: { code: "UNAUTHENTICATED" } } },
+    { status: 200, payload: { ownerLabel: "후속 응답", items: [{ displayName: "표시되면 안 되는 아이템", quantity: "1" }], pagination: { limit: 20, offset: 0, total: 1, hasMore: false } } }
+  ], "/account/inventory");
+  await flushShellClient();
+  assert.deepEqual(harness.calls.map((call) => call.url), ["/api/v1/sessions/current", "/api/v1/player-profiles/current"]);
+  assert.equal(harness.history.at(-1), "/login");
+  assert.equal(harness.elements.get("login-view")?.hidden, false);
+  assert.equal(harness.elements.get("inventory-list")?.children.length, 0);
+  assert.equal(harness.elements.get("inventory-pagination")?.hidden, true);
+  assert.equal(harness.elements.get("inventory-count")?.textContent, "조회 준비 중");
+});

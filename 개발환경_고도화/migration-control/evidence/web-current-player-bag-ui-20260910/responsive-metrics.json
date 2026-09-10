@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "web-responsive-metrics-v1",
+  "capturedAtKst": "2026-09-10",
+  "captureMethod": "Chrome CDP Emulation.setDeviceMetricsOverride + DOM measurement",
+  "deviceScaleFactor": 1,
+  "mobileEmulation": true,
+  "sourceSha256": {
+    "runtime/src/site-web/user-shell-assets.ts": "4a083f344abbcbaa3f99c06c519b7b4802b04bd2216e1d711ddeefda05081a36",
+    "runtime/src/site-web/user-shell.ts": "d1187c7275962ab3487dc172f5fc67684bfb4089008b54b1b5a9d23248018822"
+  },
+  "viewports": [
+    {"width": 375, "height": 812, "innerWidth": 375, "innerHeight": 812, "bodyScrollWidth": 375, "documentScrollWidth": 375, "horizontalOverflow": false, "inventoryVisible": true, "itemCount": 8, "activeNav": "page", "focusedId": "inventory-title", "liveStatus": "가방 항목 8개를 표시합니다.", "longQuantityVisible": true},
+    {"width": 768, "height": 900, "innerWidth": 768, "innerHeight": 900, "bodyScrollWidth": 768, "documentScrollWidth": 768, "horizontalOverflow": false, "inventoryVisible": true, "itemCount": 8, "activeNav": "page", "focusedId": "inventory-title", "liveStatus": "가방 항목 8개를 표시합니다.", "longQuantityVisible": true},
+    {"width": 1024, "height": 900, "innerWidth": 1024, "innerHeight": 900, "bodyScrollWidth": 1024, "documentScrollWidth": 1024, "horizontalOverflow": false, "inventoryVisible": true, "itemCount": 8, "activeNav": "page", "focusedId": "inventory-title", "liveStatus": "가방 항목 8개를 표시합니다.", "longQuantityVisible": true},
+    {"width": 1440, "height": 900, "innerWidth": 1440, "innerHeight": 900, "bodyScrollWidth": 1440, "documentScrollWidth": 1440, "horizontalOverflow": false, "inventoryVisible": true, "itemCount": 8, "activeNav": "page", "focusedId": "inventory-title", "liveStatus": "가방 항목 8개를 표시합니다.", "longQuantityVisible": true}
+  ]
+}

@@ -657,11 +657,11 @@ export const USER_SHELL_CLIENT = String.raw`
       var payload = await api("/api/v1/inventory/current?limit=" + state.inventoryLimit + "&offset=" + state.inventoryOffset);
       state.inventory = payload;
       renderInventory(payload);
-      announce("가방 항목 " + Number(payload.pagination && payload.pagination.total || 0) + "개를 표시합니다.");
+      announce(Number(payload.pagination && payload.pagination.total || 0) ? "가방 항목 " + Number(payload.pagination && payload.pagination.total || 0) + "개를 표시합니다." : "가방이 비어 있어요.");
     } catch (error) {
       if (error.status === 401) {
         showLogin("세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true);
-        return;
+        return false;
       }
       state.inventory = null;
       text("inventory-state", "조회 실패");
@@ -724,7 +724,7 @@ export const USER_SHELL_CLIENT = String.raw`
     } catch (error) {
       if (error.status === 401) {
         showLogin("세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.", true);
-        return;
+        return false;
       }
       state.profile = null;
       renderProfile(null);
@@ -748,6 +748,7 @@ export const USER_SHELL_CLIENT = String.raw`
       appErrorMessage.textContent = profileError.message;
       appError.hidden = false;
     }
+    return true;
   }
 
   async function showAuthenticated(sessionPayload) {
@@ -761,9 +762,9 @@ export const USER_SHELL_CLIENT = String.raw`
     renderSession();
     window.history.replaceState({}, "", inventoryRoute ? "/account/inventory" : accountRoute ? "/account" : "/app");
     document.getElementById(inventoryRoute ? "inventory-title" : accountRoute ? "account-title" : "welcome-title").focus();
-    await loadProfile();
-    if (inventoryRoute) await loadInventory();
-    announce(inventoryRoute ? "가방을 표시합니다." : accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
+    var profileLoaded = await loadProfile();
+    if (inventoryRoute && profileLoaded) await loadInventory();
+    if (!inventoryRoute) announce(accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
   }
 
   function showLogin(message, visibleNotice) {

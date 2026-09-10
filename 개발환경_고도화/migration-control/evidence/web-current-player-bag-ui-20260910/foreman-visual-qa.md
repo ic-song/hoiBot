@@ -14,12 +14,12 @@
 
 ## 반응형 시각 검증
 
-Chrome viewport override로 375×812, 768×900, 1024×900, 1440×900을 순서대로 확인했다. 브라우저 배율이 적용된 실제 `innerWidth`는 각각 416, 853, 1137, 1600이었고, 각 구간에서 `documentElement.scrollWidth`가 `innerWidth`보다 작아 가로 넘침이 없었다. 모든 구간에서 가방 화면과 8개 mock 아이템이 유지됐다.
+Chrome CDP에서 `deviceScaleFactor=1`, mobile viewport emulation을 사용해 375×812, 768×900, 1024×900, 1440×900을 순서대로 확인했다. 네 구간 모두 요청한 width/height와 실제 `innerWidth`/`innerHeight`가 일치했고, `documentElement.scrollWidth === innerWidth`여서 가로 넘침이 없었다. 모든 구간에서 가방 화면과 8개 mock 아이템이 유지됐다. 원시 측정값과 대상 source SHA-256은 `responsive-metrics.json`에 기록했다.
 
 - 375px: 이용자 메뉴가 2열 버튼으로 재배치되고, 아이템명과 수량이 세로로 배치됐다.
 - 768px 이상: 좌측 메뉴와 본문 카드가 기존 셸 grid에 맞춰 표시됐다.
 - 1440px: 긴 unsigned 64-bit 수량과 긴 Unicode 아이템명이 카드 경계 안에서 표시됐다.
-- deep link 진입 시 `가방` 제목 포커스, 활성 내비게이션, 항목 수, 조회 상태가 접근성 트리에 노출됐다.
+- deep link 진입 시 `가방` 제목 포커스, 활성 내비게이션, 항목 수, 조회 상태가 접근성 트리에 노출됐다. 최종 live region은 `가방 항목 8개를 표시합니다.`를 유지했다.
 
 ## 제한과 다음 Gate
 

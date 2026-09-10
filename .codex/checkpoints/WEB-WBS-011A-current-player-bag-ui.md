@@ -19,4 +19,4 @@
 
 ## 다음 행동
 
-focused UI·wiring 테스트 9/9 및 `npm run typecheck`이 통과했다. diff·responsive CSS를 재검토한 뒤 책임자에게 변경 파일·검증 결과·provider integration 의존성을 전달한다. commit/push/Sheets 쓰기는 하지 않는다.
+focused UI·wiring 테스트 12/12, `npm run typecheck`, `npm run build`, `git diff --check`이 통과했다. profile 401 뒤 후속 가방 요청 차단, 빈 가방, 500 오류, 재시도 성공과 최종 live announcement 회귀 test를 포함한다. diff·responsive CSS를 재검토한 뒤 책임자에게 변경 파일·검증 결과·provider integration 의존성을 전달한다. commit/push/Sheets 쓰기는 하지 않는다.
