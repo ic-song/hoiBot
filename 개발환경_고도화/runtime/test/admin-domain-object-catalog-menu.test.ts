@@ -73,6 +73,8 @@ describe("admin domain object catalog menu", () => {
   it("keeps navigation and buttons keyboard visible with 44px minimum targets", () => {
     assert.match(ADMIN_WEB_STYLES, /\.nav-button \{[^}]*min-height: 44px/);
     assert.match(ADMIN_WEB_STYLES, /\.primary-button, \.secondary-button, \.text-button, \.icon-button \{\s*min-height: 44px/);
+    assert.match(ADMIN_WEB_STYLES, /\.checkbox-field \{[^}]*min-height: 44px/);
+    assert.match(ADMIN_WEB_STYLES, /\.danger-button \{[^}]*min-height: 44px; min-width: 44px/);
     assert.match(ADMIN_WEB_STYLES, /button:focus-visible/);
     assert.match(ADMIN_WEB_STYLES, /\.pagination button \{[^}]*min-height: 44px/);
     assert.match(ADMIN_WEB_STYLES, /@media \(max-width: 980px\)/);

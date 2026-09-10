@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .catalog-form { display: grid; gap: 13px; padding: 16px; }
 .catalog-form label { display: grid; gap: 6px; color: var(--ink); font-size: 12px; font-weight: 700; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.checkbox-field { display: flex !important; align-items: flex-start; gap: 9px !important; padding: 11px; background: #f7f9fa; border: 1px solid var(--line); border-radius: 7px; font-weight: 600 !important; line-height: 1.45; }
+.checkbox-field { display: flex !important; align-items: flex-start; min-height: 44px; gap: 9px !important; padding: 11px; background: #f7f9fa; border: 1px solid var(--line); border-radius: 7px; font-weight: 600 !important; line-height: 1.45; }
 .checkbox-field input { width: 17px; min-height: 17px; margin: 1px 0 0; accent-color: var(--accent); }
 .catalog-form .primary-button { margin-top: 0; }
 .danger-button { min-height: 34px; padding: 0 10px; color: var(--danger); background: #fff; border: 1px solid #e2b8b4; border-radius: 6px; font-size: 11px; font-weight: 800; }
@@ -339,7 +339,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .account-action-form textarea { min-height: 64px; }
 .confirm-row { display: flex; align-items: flex-start; gap: 8px; color: var(--ink); font-size: 10px; line-height: 1.45; }
 .confirm-row input { width: 16px; min-height: 16px; margin: 0; accent-color: var(--danger); }
-.danger-button { min-height: 44px; padding: 0 14px; color: #fff; background: var(--danger); border: 1px solid var(--danger); border-radius: 7px; font-weight: 800; }
+.danger-button { min-height: 44px; min-width: 44px; padding: 0 14px; color: #fff; background: var(--danger); border: 1px solid var(--danger); border-radius: 7px; font-weight: 800; }
 .danger-button:hover { background: #922f28; }
 .danger-button:disabled { opacity: .58; cursor: wait; }
 .inline-error { margin: 0; padding: 8px 10px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 10px; }

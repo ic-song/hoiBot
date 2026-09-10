@@ -1,0 +1,37 @@
+{
+  "catalog_version": "SC-20260902-1",
+  "delta_id": "SCD-WEB-20260910-22",
+  "evidence_schema_version": "web-admin-domain-object-catalog-menu-touch-correction-v1",
+  "lease": "Lease2674",
+  "baseline": "2b6e97fe1466e74b6071097ce7bac65c18ed64a1",
+  "result": "PASS",
+  "corrections": {
+    "checkbox_field_min_height_px": 44,
+    "danger_button_min_width_px": 44,
+    "danger_button_min_height_px": 44
+  },
+  "validation": {
+    "focused": { "passed": 31, "failed": 0 },
+    "admin_non_integration": { "files": 35, "passed": 138, "failed": 0 },
+    "typecheck": true,
+    "build": true,
+    "chrome_matrix": { "paths": 5, "viewports": [375, 768, 1024, 1440], "passed": 20, "failed": 0 }
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": false,
+    "gate8": false
+  },
+  "scope_guards": {
+    "independent_gate7_review_unchanged": true,
+    "existing_evidence_unchanged": true,
+    "web_shell_unchanged": true,
+    "central_sheets_unchanged": true,
+    "production_unchanged": true
+  }
+}

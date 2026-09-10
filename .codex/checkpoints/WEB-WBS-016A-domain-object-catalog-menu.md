@@ -32,3 +32,13 @@
 - Gate 7은 구현·evidence 작성자가 아닌 독립 검수자가 수행해야 하며 Gate 8은 범위 밖이다.
 
 중앙 Sheets, 운영 데이터, DB/migration, `app.ts`, provider, `feature/prod`, Gate 8은 변경하지 않았다.
+
+## Lease2674 P1 터치영역 보정
+
+- 기준: `2b6e97fe1466e74b6071097ce7bac65c18ed64a1`
+- evidence schema: `web-admin-domain-object-catalog-menu-touch-correction-v1`
+- 확인 label의 유효 높이와 공통 위험 버튼의 유효 너비·높이를 최소 44px로 보정했다.
+- focused 31/31, admin non-integration 138/138, typecheck, build를 통과했다.
+- Chrome 5 path × 4 exact viewport는 overflow 0, active/heading 20/20, 유효 타깃 44×44 이상 20/20, focus outline 20/20을 통과했다.
+- 메뉴 순서/deep link/화면 상태/form 수와 범용 오브젝트 UI 0건을 유지했다.
+- correction Gate 1~6은 TRUE 근거를 확보했고 Gate 7/8은 FALSE다. 기존 독립 검수 evidence는 변경하지 않았다.
