@@ -338,6 +338,46 @@ Status: VERIFIED
 
 ---
 
+# !알림내용|!알림시작|!알림초기화
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `notice.js`: `!알림내용`, `!알림시작`, `!알림초기화`
+
+## Files
+
+- `notice.js`
+
+## Related Helpers
+
+- `isNoticeCommand`
+- `isNoticeOperator`
+- `getNoticeContentArgument`
+- `broadcastNotice`
+- `createNoticeInterval`
+- `clearAllNoticeIntervals`
+
+## Data Usage
+
+- `/sdcard/호이랜드_notice/noticeData.json`
+- `noticeState.content`
+- `noticeTimerIds`
+
+## Save Flow
+
+- `!알림내용 내용`은 줄바꿈을 유지한 본문을 독립 데이터 파일에 저장한다.
+- 반복 예약은 신규 봇 실행 중 메모리에서 관리하며 알림 내용 변경 시 다음 발송부터 새 본문을 사용한다.
+
+## Notes
+
+- `NOTICE_CONFIG.operators`에서 운영자 계정을, `NOTICE_CONFIG.targetRooms`에서 전체 발송 대상 방을 관리한다.
+- `!알림시작`은 즉시 1회 발송한 뒤 독립된 70분 반복 예약을 추가하므로 재입력에 따른 중복 발송을 허용한다.
+- `!알림초기화`는 실행 중인 모든 반복 예약을 해제하고, 즉시 발송 없이 70분 뒤부터 하나의 반복 예약으로 다시 시작한다.
+
+---
+
 # /가방
 
 Status: VERIFIED
