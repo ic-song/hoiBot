@@ -354,17 +354,26 @@ Status: VERIFIED
 ## Related Helpers
 
 - `generateBagOutput`
+- `buildHoiPassPremiumBagMessage`
+- `formatHoiPassPremiumBagExpiry`
+- `isHoiPassPremiumActive`
 - `checkRank`
 
 ## Data Usage
 
 - `data.member[sender].bag`
+- `data.member[sender].point`
+- `data.member[sender].diamond`
+- `data.member[sender].lv`
+- `data.member[sender].exp`
+- `data.member[sender].boostercnt`
+- `data.member[sender].pass.premium`
 - `data.adv`
 
 ## Save Flow
 
-- No intended state mutation
-- Branch does not call `saveJsonFile` for member data
+- 일반 조회는 데이터를 변경하지 않는다.
+- 기존 만능열쇠 저장명 정규화가 필요한 경우에만 `member.json`을 저장한다.
 
 ## Related Commands
 
@@ -377,8 +386,10 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
+- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다.
+- 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
-- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `전쟁불안정 감소권` 다음에 `만능상자` → `미니펫컬렉션 만능 열쇠` → `펫스킬컬렉션 만능 열쇠` 순으로 표시한다.
+- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `호이의 봉인금고` → `해방의 열쇠` → `자동탐험권` → `자동일퀘권` 순으로 먼저 표시한다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
 ---
@@ -4145,6 +4156,41 @@ Status: VERIFIED
 ## Related Commands
 - `/미니펫컬렉션등록`
 - `/미니펫컬렉션순위`
+
+---
+
+# /미니펫컬렉션초기화 [아이디]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/미니펫컬렉션초기화`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `isMaster`
+- `getMiniPetCollectionData`
+
+## Data Usage
+
+- `miniPet_collection.json -> member[아이디].collection`
+- `userState[아이디].miniPetCollection`
+
+## Save Flow
+
+- MASTER가 지정한 가입 유저의 컬렉션 진행 상태만 삭제한 뒤 `miniPet_collection.json`을 한 번 저장한다.
+- 기존 지급 보상·미니펫 타이틀·소비된 미니펫은 변경하지 않는다.
+
+## Related Commands
+
+- `/미니펫컬렉션`
+- `/미니펫컬렉션등록`
+- `/미니펫컬렉션만능`
 
 ---
 
