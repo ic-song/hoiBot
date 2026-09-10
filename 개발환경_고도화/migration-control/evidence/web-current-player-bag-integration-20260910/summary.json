@@ -1,0 +1,50 @@
+{
+  "evidenceSchemaVersion": "web-current-player-bag-integration-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-9",
+  "carriedDeltas": ["SCD-WEB-20260910-5", "SCD-WEB-20260910-7"],
+  "wbsId": "WEB-WBS-011A",
+  "sliceId": "SL-ITEM-USER-WEB-BAG-READ-INTEGRATION-01",
+  "lease": "Lease2647",
+  "control": "슬라이스_보고수신!5684 ACTIVE",
+  "executionProfile": "SHARED_INTEGRATION",
+  "validationTier": "T2_HIGH",
+  "assignedBaseline": "0135d902b19a60a705162abc37fd92005f03c037",
+  "implementationCommit": "b1e6e6986e041e6bdd258da9c27cdb4258dac372",
+  "scope": {
+    "route": "GET /api/v1/inventory/current",
+    "sessionDerivedPlayerOnly": true,
+    "responsePlayerIdExposed": false,
+    "pageMatrix": ["first", "middle", "last", "empty", "missing-or-inactive", "expired-session", "invalid-pagination"],
+    "maximumQuantity": "18446744073709551615",
+    "sameInputLegacyShadow": true,
+    "sharedUserAuthInstance": true,
+    "sourceDomainDml": 0
+  },
+  "validation": {
+    "focused": "25/25 PASS: route integration, provider, legacy bag, UI consumer, app wiring",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diffCheck": "PASS",
+    "sameInputShadow": "all first/middle/last API pages concatenate to compareLegacyBagItems order over the same fixture",
+    "sessionExpiry": "401 before provider access",
+    "sourceDomainMutation": "scripted provider execute and transaction entrypoints fail; all captured source-domain statements are SELECT"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": false,
+    "gate8": false
+  },
+  "files": [
+    { "path": "개발환경_고도화/runtime/src/app.ts", "sha256": "ff1e66d82614c2164de49298245292b6357a61b44406bf1609279570563964e2" },
+    { "path": "개발환경_고도화/runtime/src/inventory/current-player-bag-web-routes.ts", "sha256": "5bf4c2d3af78332df5e3ec1f00766071db199e0c57bbd985c636fdcca400d323" },
+    { "path": "개발환경_고도화/runtime/test/current-player-bag-web-routes.test.ts", "sha256": "f8b9e62938dca82b4f9bbcf6e5942c7fa52e6c2ff06e7feb5c7199a62f25391d" },
+    { "path": "개발환경_고도화/runtime/test/site-web-app-wiring.test.ts", "sha256": "34da0a943fde9b75401d3e3dd382358fafa5b4620cdd061ec22434c80e2e031b" }
+  ],
+  "excludes": ["site-web writes", "provider logic rewrite", "database schema or migration", "operating database or data", "feature/prod", "Gate 8"]
+}
