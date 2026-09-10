@@ -40066,7 +40066,6 @@ function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResu
     lines.push("🆕 가장 최근 소식");
     lines.push("");
     lines.push(formatWorldNewsPost(posts[0], false));
-    lines.push("━━━━━━━━━━━━");
     lines.push("🗂 최근 등록된 소식: " + unreadCount + "개");
     if (posts.length > 1) {
         lines.push("📚 지난 소식은 전체보기로 확인하세요 👇");
