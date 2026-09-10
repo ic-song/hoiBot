@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.492"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.493"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -40066,6 +40066,7 @@ function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResu
     lines.push("🆕 가장 최근 소식");
     lines.push("");
     lines.push(formatWorldNewsPost(posts[0], false));
+    lines.push("━━━━━━━━━━━━");
     lines.push("🗂 최근 등록된 소식: " + unreadCount + "개");
     if (posts.length > 1) {
         lines.push("📚 지난 소식은 전체보기로 확인하세요 👇");
