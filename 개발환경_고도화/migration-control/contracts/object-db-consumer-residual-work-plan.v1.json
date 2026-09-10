@@ -38,6 +38,11 @@
       "wbs": "WBS797",
       "commit": "98a442d09582b6dddcd4c8b6a2ea86e94e9480ad",
       "resolution": "PLAYER_TITLE_READ_RUNTIME_DISPATCH_DIRECT_RECEIPTS"
+    },
+    {
+      "wbs": "WBS798",
+      "commit": "0ac62d6bc54c60b606afc40dc4d08bef55e45493",
+      "resolution": "MEMBER_TITLE_LEGACY_LIST_DIRECT_RECEIPTS"
     }
   ],
   "sources": {
@@ -46,8 +51,8 @@
     "manifestSha256": "8cbce79761fdc4c75a02cb84153056c802f1d93867e48519a1d432ed7ee8b403",
     "manifestConsumerSetSha256": "d183ade67fa2aff0b7167327d9c6a1ed5ae689da0e060b7a093a88e1462e0e0b",
     "ledgerPath": "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json",
-    "ledgerSha256": "49712a8cae9773b39839a5d0d76e40d97e547cd6d51649e3d7caf9449949f5f9",
-    "ledgerEntrySetSha256": "4a8860a796b8f621e688f6bb73fde9c4da65b94c1652ca19fc5a3e5db6425754"
+    "ledgerSha256": "c377c58f7eb9bc535053169b7302d78be82b6777c6f9bd6e410092627e78adc8",
+    "ledgerEntrySetSha256": "52f95816dbc2a526b392d22ac3030cf92f563e2bb1e391cc061f8945956c2529"
   },
   "policy": {
     "A_REUSABLE_PROOF_ASSET": "A prior bundle, observation or harness is reusable input only; it is not completed proof and requires re-execution or exact resealing as official receipts.",
@@ -59,11 +64,11 @@
   "equivalenceCohorts": [],
   "summary": {
     "manifestConsumers": 1133,
-    "alreadyDirectOrEquivalent": 64,
-    "residualConsumers": 1069,
+    "alreadyDirectOrEquivalent": 66,
+    "residualConsumers": 1067,
     "categoryCounts": {
       "B_STRICT_EQUIVALENCE": 0,
-      "C_DIRECT_EXECUTION": 987,
+      "C_DIRECT_EXECUTION": 985,
       "D_PREREQUISITE": 82
     },
     "byDomain": {
@@ -76,7 +81,7 @@
       "HOME-AGGREGATE-RANK": 86,
       "ITEM": 147,
       "MARKET-ORCHESTRATOR": 95,
-      "MEMBER-TITLE": 21,
+      "MEMBER-TITLE": 19,
       "MINI-PET": 61,
       "MINI-PET-TITLE-COLLECTION": 14,
       "PACKAGE-CATALOG": 65,
@@ -90,13 +95,13 @@
       "APP_WIRING": 10,
       "AUTOMATIC_CALLBACK": 3,
       "HTTP_WEB_ROUTE": 81,
-      "LEGACY_COMMAND": 665,
+      "LEGACY_COMMAND": 663,
       "RUNTIME_DISPATCH": 177,
       "SQL_REPOSITORY": 60
     },
     "byAccessClass": {
       "MUTATION": 612,
-      "READ": 457
+      "READ": 455
     }
   },
   "entries": [
@@ -37282,122 +37287,6 @@
             "reason": "Frozen consumer classification contains no room or channel guard.",
             "sourceEvidenceSha256": "1dfff3fa833b2a48417110d8ebfdc2334031661019edcae1edfe7760386ce4a4"
           }
-        }
-      ],
-      "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-542e265c2135fb46",
-      "category": "C_DIRECT_EXECUTION",
-      "domain": "MEMBER-TITLE",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "READ",
-      "interfaceId": "member-title.legacy-command.e76f104f3f90",
-      "sourceSpanSha256": "34f9986da3263e10c76ee9cf161a979027abd8cf0f3721b4899b2fdaeb6b19b3",
-      "targetTables": [
-        "canonical_equipment_definitions",
-        "canonical_member_title_definitions",
-        "canonical_member_title_selections",
-        "canonical_owned_equipment_instances",
-        "canonical_owned_member_title_instances",
-        "canonical_owned_pet_instances",
-        "canonical_pet_definitions",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_equipment_definitions.active_flag",
-        "canonical_equipment_definitions.base_charm",
-        "canonical_equipment_definitions.charm_per_enhancement",
-        "canonical_equipment_definitions.equipment_description",
-        "canonical_equipment_definitions.equipment_grade",
-        "canonical_equipment_definitions.equipment_id",
-        "canonical_equipment_definitions.equipment_name",
-        "canonical_equipment_definitions.equipment_slot",
-        "canonical_member_title_definitions.active_flag",
-        "canonical_member_title_definitions.base_sale_price",
-        "canonical_member_title_definitions.member_title_id",
-        "canonical_member_title_definitions.title_name",
-        "canonical_member_title_selections.owned_member_title_id",
-        "canonical_member_title_selections.player_id",
-        "canonical_owned_equipment_instances.custom_name",
-        "canonical_owned_equipment_instances.durability_amount",
-        "canonical_owned_equipment_instances.enhancement_level",
-        "canonical_owned_equipment_instances.equipment_id",
-        "canonical_owned_equipment_instances.owned_equipment_id",
-        "canonical_owned_equipment_instances.ownership_status",
-        "canonical_owned_equipment_instances.player_id",
-        "canonical_owned_member_title_instances.acquisition_price",
-        "canonical_owned_member_title_instances.member_title_id",
-        "canonical_owned_member_title_instances.owned_member_title_id",
-        "canonical_owned_member_title_instances.ownership_status",
-        "canonical_owned_member_title_instances.player_id",
-        "canonical_owned_pet_instances.custom_name",
-        "canonical_owned_pet_instances.enhancement_level",
-        "canonical_owned_pet_instances.experience_amount",
-        "canonical_owned_pet_instances.owned_pet_id",
-        "canonical_owned_pet_instances.ownership_status",
-        "canonical_owned_pet_instances.pet_id",
-        "canonical_owned_pet_instances.player_id",
-        "canonical_pet_definitions.active_flag",
-        "canonical_pet_definitions.base_charm",
-        "canonical_pet_definitions.charm_per_enhancement",
-        "canonical_pet_definitions.pet_description",
-        "canonical_pet_definitions.pet_grade",
-        "canonical_pet_definitions.pet_id",
-        "canonical_pet_definitions.pet_name",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "READ_POSITIVE",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "NEGATIVE_GUARD",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
-            "reasonCode": "NO_AUTH_GUARD",
-            "reason": "Frozen consumer classification contains no authentication or authorization guard.",
-            "sourceEvidenceSha256": "6d29976e0a2abd6a0d7e31ab053a0be1b0c0841057787aba9c17d3011b13918b"
-          }
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "6d29976e0a2abd6a0d7e31ab053a0be1b0c0841057787aba9c17d3011b13918b"
-          }
-        },
-        {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
         }
       ],
       "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
@@ -77829,117 +77718,6 @@
             "reasonCode": "NO_ROOM_GUARD",
             "reason": "Frozen consumer classification contains no room or channel guard.",
             "sourceEvidenceSha256": "f8941950402d8eb710d5b63d9551c96092e1acf2c89cbdd68a107a327e335809"
-          }
-        },
-        {
-          "scenarioKind": "EXACT_OUTPUT",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "SOURCE_DOMAIN_DML_ZERO",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "RESTART_CONSISTENCY",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        }
-      ],
-      "nextAction": "RUN_DIRECT_CONSUMER_PROOF",
-      "evidenceCandidate": null,
-      "equivalenceCohortId": null,
-      "blockers": []
-    },
-    {
-      "consumerId": "legacy-d04b5224bde6be54",
-      "category": "C_DIRECT_EXECUTION",
-      "domain": "MEMBER-TITLE",
-      "kind": "LEGACY_COMMAND",
-      "accessClass": "READ",
-      "interfaceId": "member-title.legacy-command.0a7258deb61a",
-      "sourceSpanSha256": "cf1187b5614be8f47e648e06cb90748a102e75c3e0ef0ed27b39415e114e0426",
-      "targetTables": [
-        "canonical_equipment_definitions",
-        "canonical_member_title_definitions",
-        "canonical_member_title_selections",
-        "canonical_owned_equipment_instances",
-        "canonical_owned_member_title_instances",
-        "canonical_owned_pet_instances",
-        "canonical_pet_definitions",
-        "canonical_players"
-      ],
-      "targetColumns": [
-        "canonical_equipment_definitions.active_flag",
-        "canonical_equipment_definitions.base_charm",
-        "canonical_equipment_definitions.charm_per_enhancement",
-        "canonical_equipment_definitions.equipment_description",
-        "canonical_equipment_definitions.equipment_grade",
-        "canonical_equipment_definitions.equipment_id",
-        "canonical_equipment_definitions.equipment_name",
-        "canonical_equipment_definitions.equipment_slot",
-        "canonical_member_title_definitions.active_flag",
-        "canonical_member_title_definitions.base_sale_price",
-        "canonical_member_title_definitions.member_title_id",
-        "canonical_member_title_definitions.title_name",
-        "canonical_member_title_selections.owned_member_title_id",
-        "canonical_member_title_selections.player_id",
-        "canonical_owned_equipment_instances.custom_name",
-        "canonical_owned_equipment_instances.durability_amount",
-        "canonical_owned_equipment_instances.enhancement_level",
-        "canonical_owned_equipment_instances.equipment_id",
-        "canonical_owned_equipment_instances.owned_equipment_id",
-        "canonical_owned_equipment_instances.ownership_status",
-        "canonical_owned_equipment_instances.player_id",
-        "canonical_owned_member_title_instances.acquisition_price",
-        "canonical_owned_member_title_instances.member_title_id",
-        "canonical_owned_member_title_instances.owned_member_title_id",
-        "canonical_owned_member_title_instances.ownership_status",
-        "canonical_owned_member_title_instances.player_id",
-        "canonical_owned_pet_instances.custom_name",
-        "canonical_owned_pet_instances.enhancement_level",
-        "canonical_owned_pet_instances.experience_amount",
-        "canonical_owned_pet_instances.owned_pet_id",
-        "canonical_owned_pet_instances.ownership_status",
-        "canonical_owned_pet_instances.pet_id",
-        "canonical_owned_pet_instances.player_id",
-        "canonical_pet_definitions.active_flag",
-        "canonical_pet_definitions.base_charm",
-        "canonical_pet_definitions.charm_per_enhancement",
-        "canonical_pet_definitions.pet_description",
-        "canonical_pet_definitions.pet_grade",
-        "canonical_pet_definitions.pet_id",
-        "canonical_pet_definitions.pet_name",
-        "canonical_players.player_id"
-      ],
-      "transactionOwnerInterfaceId": null,
-      "transactionParticipantInterfaceIds": [],
-      "operationReceiptTables": [],
-      "scenarioRequirements": [
-        {
-          "scenarioKind": "READ_POSITIVE",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "NEGATIVE_GUARD",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "AUTH_DENIED",
-          "disposition": "REQUIRED",
-          "notApplicable": null
-        },
-        {
-          "scenarioKind": "WRONG_ROOM_REJECTED",
-          "disposition": "NOT_APPLICABLE",
-          "notApplicable": {
-            "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
-            "reasonCode": "NO_ROOM_GUARD",
-            "reason": "Frozen consumer classification contains no room or channel guard.",
-            "sourceEvidenceSha256": "f1c69c0063d9e177428418460bec4fbaaa94aedf374000d3cf40f71e8e47d0a9"
           }
         },
         {

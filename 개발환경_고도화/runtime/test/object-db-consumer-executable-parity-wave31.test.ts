@@ -32,7 +32,7 @@ describe("Wave31 committed Info.js versus modern member-title list DIRECT parity
     assert.deepEqual(bundle.receipts.filter((r:any)=>r.consumerId===admin).map((r:any)=>r.scenario.scenarioKind).sort(),adminScenarios.slice().sort());
     const byId=Object.fromEntries(fixture.bindings.map((binding:any)=>[binding.scenarioId,binding]));
     assert.equal(byId["wave31-self-first-selected"].modern.titles[0].equipped,true);
-    assert.equal(byId["wave31-self-middle-selected-guild-rank"].modern.titles[1].equipped,true);
+    assert.equal(byId["wave31-self-middle-selected"].modern.titles[1].equipped,true);
     assert.equal(byId["wave31-self-last-selected-restart"].modern.titles[2].equipped,true);
     assert.equal(byId["wave31-self-empty-list"].expectedReply,"보유 타이틀이 없습니다.");
     assert.equal(byId["wave31-admin-missing-inactive-target"].expectedReply,"없는회원는(은) 존재하지 않는 사용자입니다.");
