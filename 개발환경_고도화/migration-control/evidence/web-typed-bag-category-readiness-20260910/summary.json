@@ -1,0 +1,90 @@
+{
+  "workItem": "WEB-WBS-011E",
+  "lease": "Lease2658",
+  "delta": "SCD-WEB-20260910-17",
+  "evidenceSchemaVersion": "web-typed-bag-category-readiness-v1",
+  "executionProfile": "READINESS_AUDIT",
+  "validationTier": "T0",
+  "assignedBaseCommit": "e0d3c871",
+  "observedHeadBeforeEvidence": "d4dc4050",
+  "currentWebContract": {
+    "route": "GET /api/v1/inventory/current",
+    "categories": ["general", "furniture"],
+    "scope": "refreshed session current player only"
+  },
+  "categories": [
+    {
+      "category": "miniPet",
+      "legacyCommand": "/미니펫가방",
+      "operatorTargetCommand": "/미니펫정보 <닉네임>",
+      "operatorTargetRoles": ["isAdmin", "isMaster"],
+      "source": "member_pet.json miniPetBag/miniPet + miniPetData/title/collection/member/pass/rank",
+      "capacity": "10 + premium 5",
+      "classification": "EXTEND_PLUS_NEW_CANONICAL_READ_PROVIDER",
+      "readiness": "BLOCKED_EXACT_OCCURRENCE_BINDING_AND_CONSUMER_PORT",
+      "predecessors": ["WBS736", "WBS742", "WBS743:MINI-PET", "WBS744", "WEB-WBS-011C", "WEB-WBS-011D"]
+    },
+    {
+      "category": "pendant",
+      "legacyCommand": "/펜던트가방 [닉네임]",
+      "operatorTargetRoles": ["isMaster"],
+      "source": "member_pet.json pendantBag/pendant",
+      "capacity": "50",
+      "classification": "NEW_CANONICAL_OWNERSHIP_PLUS_EXTEND",
+      "readiness": "BLOCKED_NO_CANONICAL_OWNED_PENDANT_OR_IMPORT_BINDING",
+      "predecessors": ["WBS735:PET-EQUIPMENT", "WBS743:PET-EQUIPMENT", "NEW_CANONICAL_PENDANT_SLICE", "WEB-WBS-011C", "WEB-WBS-011D"]
+    },
+    {
+      "category": "petSkill",
+      "legacyCommand": "/펫스킬가방",
+      "operatorTargetCommand": "/스킬정보|/펫스킬정보 <닉네임>",
+      "operatorTargetRoles": ["isAdmin", "isMaster"],
+      "source": "petSkillData.json petSkills.bag/equipped/lockedPremium",
+      "capacity": "100",
+      "classification": "EXTEND_PLUS_NEW_CANONICAL_READ_PROVIDER",
+      "readiness": "BLOCKED_CANONICAL_CONSUMER_PORT_AND_DISPLAY_ORDER",
+      "predecessors": ["WBS738", "WBS742", "WBS743:PET-SKILL", "WBS744", "WEB-WBS-011C", "WEB-WBS-011D"]
+    },
+    {
+      "category": "package",
+      "legacyCommand": "/패키지가방 [닉네임]",
+      "operatorTargetRoles": ["isAdmin", "isMaster"],
+      "source": "member.json general bag projected through packageInfo.json",
+      "typedInventory": false,
+      "capacity": null,
+      "classification": "EXTEND_GENERAL_STACK_PACKAGE_PROJECTION",
+      "readiness": "BLOCKED_CANONICAL_PACKAGE_TO_CONSUME_ITEM_RELATION",
+      "predecessors": ["WBS733", "WBS739", "WBS742", "WBS743:PACKAGE-CATALOG", "WBS743:PACKAGE-USE", "WEB-WBS-011C", "WEB-WBS-011D"]
+    }
+  ],
+  "recommendedOrder": ["petSkill", "miniPet", "package", "pendant"],
+  "forbiddenFallbacks": [
+    "unsupported category returned as empty",
+    "generic item display-name heuristic",
+    "display-name canonical identity inference",
+    "package-specific duplicate ownership table",
+    "target player id or nickname on current-player route"
+  ],
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": false,
+    "gate4": false,
+    "gate5": false,
+    "gate6": false,
+    "gate7": false,
+    "gate8": false
+  },
+  "sourceHashes": {
+    "main.js": "f673162accd216f8d22ccd45c026df6b6bce3ef191b67fd68459887ac2ebbbdd",
+    "runtime/src/inventory/current-player-bag-service.ts": "881bce90ee0165b225f4376a5dba1bf70552b7d22cf881caa0a44b8c48f7ab3c",
+    "runtime/src/pet/pendant-bag-service.ts": "4f440202a1d51088614e586d96e0886cdbd0b1d14270f18392d9afa8a2a9ac23",
+    "runtime/src/pet/pet-skill-bag-read-service.ts": "71852b57aca1d0ce75a1556250d4eeb341a5c3d73d1405efe1eb02c4595adf6b",
+    "runtime/src/package/maria-package-hub-application.ts": "81cbdef1a3535ff837f2c81c058476dcbb8f752914eac042e2b020736b030b8a",
+    "runtime/migrations/447_canonical_mini_pet.sql": "55cb58ffbbfbe89e347732171adedc57f1131c2d2273250e687c1844602d3dd9",
+    "runtime/migrations/449_canonical_pet_skill.sql": "0689bb72c87456e00e6e1e7b510c7dc6eed65b5d87f6bd808722b5a61196d942",
+    "runtime/migrations/451_canonical_package_reward.sql": "877fdc539b885575b150c6af641c69de36daafac70de5a7f22ca38296797b2f3",
+    "runtime/migrations/460_data_migration_object_domain_import.sql": "806638e029008b760b2df0390f7935ae7700b9ea760649fcf4dfebfdf257af9f"
+  },
+  "remaining": "category prerequisite slices, implementation, T1-T3 and independent Gate 7 review"
+}
