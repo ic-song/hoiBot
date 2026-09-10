@@ -1,0 +1,72 @@
+{
+  "workItem": "WEB-WBS-011F",
+  "lease": "Lease2664",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-20",
+  "evidenceSchemaVersion": "web-user-title-menu-readiness-v1",
+  "executionProfile": "READINESS_AUDIT",
+  "validationTier": "T0",
+  "assignedBaseCommit": "0e36833bc250e7dd857181f9cb7731d9aa087072",
+  "userDecision": {
+    "route": "/account/titles",
+    "navigation": "separate title menu",
+    "excludedFromBagTabs": true
+  },
+  "decision": "READY_AFTER_PREDECESSORS",
+  "predecessors": [
+    "WBS798 member title list parity Gate 7 retained",
+    "WBS799 info parity independent Gate 7 GO and integration",
+    "serialize against a future WEB-WBS-009A Lease if it claims shared user-shell files for write",
+    "strict canonical path requires exact current-player crosswalk and import/consumer binding"
+  ],
+  "api": {
+    "route": "GET /api/v1/titles/current",
+    "scope": "refreshed web session current player only",
+    "pagination": "limit 1..100, offset >=0",
+    "fields": [
+      "number",
+      "displayName",
+      "acquiredDisplay",
+      "acquisitionPrice",
+      "salePrice",
+      "equipped"
+    ],
+    "forbidden": [
+      "runtime or canonical player ID",
+      "title definition or instance ID",
+      "account or link ID",
+      "crosswalk or source locator",
+      "operation, audit, outbox, ledger or receipt ID"
+    ],
+    "dml": 0,
+    "forUpdate": 0
+  },
+  "implementationProfile": "READ_UI",
+  "implementationTier": "T1",
+  "canonicalCutoverProfile": "SHARED_PROVIDER",
+  "canonicalCutoverTier": "T2",
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": false,
+    "gate4": false,
+    "gate5": false,
+    "gate6": false,
+    "gate7": false,
+    "gate8": false
+  },
+  "changed": [
+    "개발환경_고도화/migration-control/evidence/web-user-title-menu-readiness-20260910/validation.md",
+    "개발환경_고도화/migration-control/evidence/web-user-title-menu-readiness-20260910/summary.json",
+    ".codex/checkpoints/WEB-WBS-011F-user-title-menu-readiness.md"
+  ],
+  "unchanged": [
+    "runtime source",
+    "runtime tests",
+    "database schema and data",
+    "migrations",
+    "operational data",
+    "feature/prod",
+    "Gate 8"
+  ]
+}
