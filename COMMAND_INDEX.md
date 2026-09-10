@@ -400,6 +400,7 @@ Status: VERIFIED
 
 - Search in `main.js`: `/가방`
 - Alias: `ㄴㄴㄴ`
+- Point visibility toggle: `/포인트잠금`
 
 ## Files
 
@@ -422,23 +423,27 @@ Status: VERIFIED
 - `data.member[sender].exp`
 - `data.member[sender].boostercnt`
 - `data.member[sender].pass.premium`
+- `data.member[sender].hidePremiumBagPoint`
 - `data.adv`
 
 ## Save Flow
 
 - 일반 조회는 데이터를 변경하지 않는다.
 - 기존 만능열쇠 저장명 정규화가 필요한 경우에만 `member.json`을 저장한다.
+- `/포인트잠금`은 프리미엄 전용 가방의 포인트 노출 설정을 토글하고 `member.json`을 한 번 저장한다.
 
 ## Related Commands
 
 - `/가방속성`
 - `/가방추가`
 - `/당근`
+- `/포인트잠금`
 
 ## AI Notes
 
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
+- 프리미엄 전용 가방은 포인트 공개 상태에서 `/포인트잠금` 안내를 표시하고, 잠금 상태에서는 포인트를 `쉿 비밀🤫`로 표시한다.
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
 - 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 경험치 부스터가 없으면 `🚀 경험치 2배 부스터: 없음`만 표시하고 `🚀 0회` 줄은 생략한다.
 - 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.

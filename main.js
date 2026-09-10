@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.493"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.494"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -17513,6 +17513,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                 }
+                if (msg === "/포인트잠금") {
+                    if (!data.member || !data.member[sender]) {
+                        return;
+                    }
+                    if (!isHoiPassPremiumActive(data, sender)) {
+                        replier.reply("❌ 호이패스 프리미엄 이용자만 사용할 수 있습니다.");
+                        return;
+                    }
+
+                    data.member[sender].hidePremiumBagPoint = data.member[sender].hidePremiumBagPoint !== true;
+                    saveJsonFile(data, filePath);
+                    if (data.member[sender].hidePremiumBagPoint) {
+                        replier.reply("🔒 포인트 잠금을 설정했습니다.\n/가방에서 포인트가 쉿 비밀🤫로 표시됩니다.");
+                    } else {
+                        replier.reply("🔓 포인트 잠금을 해제했습니다.\n/가방에서 포인트가 다시 표시됩니다.");
+                    }
+                    return;
+                }
                 if (msg === "/가방" || msg === "ㄴㄴㄴ") {
                     if (castleSiegeFlag) {
                         return;
@@ -29820,6 +29838,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
+        command === "/포인트잠금" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -36634,11 +36653,14 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, user, bagInfo) 
     var vaultCount = normalizeSealedVaultCount(bagItems[GLOBAL_CONFIG.sealedVault.vaultItemName]); // 실제 개봉에 사용하는 봉인금고 수량
     var keyCount = normalizeSealedVaultCount(bagItems[GLOBAL_CONFIG.sealedVault.keyItemName]); // 실제 개봉에 사용하는 해방의 열쇠 수량
     var itemOutput = bagInfo && bagInfo.bagOutput ? bagInfo.bagOutput : "가방이 비어 있습니다.";
+    var pointHidden = member.hidePremiumBagPoint === true; // 전용 가방에서 포인트 숨김 여부
+    var pointDisplay = pointHidden ? "쉿 비밀🤫" : numberWithCommas(member.point || 0); // 잠금 상태를 반영한 포인트 표시값
+    var pointLockGuide = pointHidden ? "" : "※ 포인트 안보이게 원하시면 /포인트잠금\n"; // 포인트 공개 상태에서만 표시하는 잠금 안내
 
     return getHoiPassPremiumHeader(data, user) +
         "[" + checkRank(data, petData, guildData, user) + "]의 호패프 전용가방🧳\n" +
         "━━━━━━━━━━━━\n" +
-        "🪙: " + numberWithCommas(member.point || 0) + "\n" +
+        "🪙: " + pointDisplay + "\n" +
         "💎 다이아: " + numberWithCommas(member.diamond || 0) + "개\n" +
         "🔒 호이의 봉인금고: " + numberWithCommas(vaultCount) + "개\n" +
         "🗝️ 해방의 열쇠: " + numberWithCommas(keyCount) + "개\n" +
@@ -36649,6 +36671,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, user, bagInfo) 
         "━━━━━━━━━━━━\n" +
         "👑 호패 프리미엄: 이용 중\n" +
         "📅 만료일: " + formatHoiPassPremiumBagExpiry(data, user) + "\n" +
+        pointLockGuide +
         "━━━━━━━━━━━━\n" +
         "【🎒 가방 보러가기 ·아이템 보유 " + sortedItemList.length + "개】" +
         allsee + "\n" + itemOutput;
