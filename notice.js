@@ -46,6 +46,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     try {
         var state = getNoticeState();
 
+        if (msg === "/알림정보") {
+            replier.reply(buildNoticeInfoMessage(state));
+            return;
+        }
+
         if (msg === "!알림내용" || msg.indexOf("!알림내용 ") === 0) {
             var content = getNoticeContentArgument(msg);
             if (!content || !content.replace(/[ \t\r\n]/g, "")) {
@@ -65,8 +70,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
 
-            var startResult = broadcastNotice(state.content, replier);
-            noticeTimerIds.push(createNoticeInterval(replier));
+            var startResult = broadcastNotice(state.content);
+            noticeTimerIds.push(createNoticeInterval());
             replier.reply(buildNoticeStartResultMessage(startResult));
             return;
         }
@@ -78,7 +83,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
 
             clearAllNoticeIntervals();
-            noticeTimerIds.push(createNoticeInterval(replier));
+            noticeTimerIds.push(createNoticeInterval());
             replier.reply("✅ 전체알림 발송 시간을 초기화했습니다.\n지금부터 70분 뒤에 발송하고 이후 70분마다 반복합니다.");
         }
     } catch (error) {
@@ -91,7 +96,8 @@ function isNoticeCommand(msg) {
     return msg === "!알림내용" ||
         msg.indexOf("!알림내용 ") === 0 ||
         msg === "!알림시작" ||
-        msg === "!알림초기화";
+        msg === "!알림초기화" ||
+        msg === "/알림정보";
 }
 
 // 설정된 전체알림 운영자인지 확인하는 함수
@@ -148,18 +154,15 @@ function buildNoticeMessage(content) {
 }
 
 // 설정된 전체 대상 방에 알림을 한 번씩 발송하는 함수
-function broadcastNotice(content, replier) {
+function broadcastNotice(content) {
     var message = buildNoticeMessage(content);
     var successCount = 0;
     var failedCount = 0;
 
     for (var i = 0; i < NOTICE_CONFIG.targetRooms.length; i++) {
         try {
-            if (replier.reply(NOTICE_CONFIG.targetRooms[i], message, true) === false) {
-                failedCount++;
-            } else {
-                successCount++;
-            }
+            Api.replyRoom(NOTICE_CONFIG.targetRooms[i], message);
+            successCount++;
         } catch (error) {
             failedCount++;
         }
@@ -169,26 +172,58 @@ function broadcastNotice(content, replier) {
 }
 
 // 현재 저장된 내용을 70분마다 전체 발송하는 반복 예약을 생성하는 함수
-function createNoticeInterval(replier) {
-    return setInterval(function () {
+function createNoticeInterval() {
+    var schedule = {
+        timerId: null,
+        nextRunAt: Date.now() + NOTICE_CONFIG.intervalMs
+    };
+    schedule.timerId = setInterval(function () {
+        schedule.nextRunAt = Date.now() + NOTICE_CONFIG.intervalMs;
         try {
             var state = getNoticeState();
             if (state.content) {
-                var result = broadcastNotice(state.content, replier);
+                var result = broadcastNotice(state.content);
                 if (result.failedCount > 0) {
-                    replier.reply(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 발송 실패: " + result.failedCount + "개 방", true);
+                    Api.replyRoom(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 발송 실패: " + result.failedCount + "개 방");
                 }
             }
         } catch (error) {
-            replier.reply(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 처리 중 오류가 발생했습니다.\n" + String(error), true);
+            Api.replyRoom(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 처리 중 오류가 발생했습니다.\n" + String(error));
         }
     }, NOTICE_CONFIG.intervalMs);
+    return schedule;
 }
 
 // 실행 중인 모든 전체알림 반복 예약을 해제하는 함수
 function clearAllNoticeIntervals() {
-    for (var i = 0; i < noticeTimerIds.length; i++) clearInterval(noticeTimerIds[i]);
+    for (var i = 0; i < noticeTimerIds.length; i++) clearInterval(noticeTimerIds[i].timerId);
     noticeTimerIds = [];
+}
+
+// 밀리초 단위 남은 시간을 시·분·초 문구로 변환하는 함수
+function formatNoticeRemainingTime(remainingMs) {
+    var totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+    var hours = Math.floor(totalSeconds / 3600);
+    var minutes = Math.floor((totalSeconds % 3600) / 60);
+    var seconds = totalSeconds % 60;
+    return hours + "시간 " + minutes + "분 " + seconds + "초";
+}
+
+// 저장된 알림 문구와 실행 중인 예약별 남은 시간을 안내하는 함수
+function buildNoticeInfoMessage(state) {
+    var lines = ["📢 전체알림 예약 정보", "━━━━━━━━━━━━", "📝 예약 문구"];
+    lines.push(state.content || "등록된 알림 문구가 없습니다.");
+    lines.push("━━━━━━━━━━━━");
+    lines.push("⏱️ 실행 중인 반복 예약: " + noticeTimerIds.length + "개");
+    if (noticeTimerIds.length === 0) {
+        lines.push("다음 발송: 예약 없음");
+    } else {
+        var now = Date.now();
+        for (var i = 0; i < noticeTimerIds.length; i++) {
+            lines.push((i + 1) + "번 예약: " + formatNoticeRemainingTime(noticeTimerIds[i].nextRunAt - now) + " 남음");
+        }
+    }
+    return lines.join("\n");
 }
 
 // 즉시 발송과 반복 시작 결과를 운영자에게 안내하는 함수

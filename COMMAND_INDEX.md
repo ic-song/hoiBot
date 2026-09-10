@@ -338,13 +338,13 @@ Status: VERIFIED
 
 ---
 
-# !알림내용|!알림시작|!알림초기화
+# !알림내용|!알림시작|!알림초기화|/알림정보
 
 Status: VERIFIED
 
 ## Command Anchors
 
-- Search in `notice.js`: `!알림내용`, `!알림시작`, `!알림초기화`
+- Search in `notice.js`: `!알림내용`, `!알림시작`, `!알림초기화`, `/알림정보`
 
 ## Files
 
@@ -358,6 +358,8 @@ Status: VERIFIED
 - `broadcastNotice`
 - `createNoticeInterval`
 - `clearAllNoticeIntervals`
+- `formatNoticeRemainingTime`
+- `buildNoticeInfoMessage`
 
 ## Data Usage
 
@@ -369,12 +371,15 @@ Status: VERIFIED
 
 - `!알림내용 내용`은 줄바꿈을 유지한 본문을 독립 데이터 파일에 저장한다.
 - 반복 예약은 신규 봇 실행 중 메모리에서 관리하며 알림 내용 변경 시 다음 발송부터 새 본문을 사용한다.
+- `/알림정보`는 저장 데이터를 변경하지 않고 현재 문구와 실행 중인 예약별 남은 시간을 조회한다.
 
 ## Notes
 
 - `NOTICE_CONFIG.operators`에서 운영자 계정을, `NOTICE_CONFIG.targetRooms`에서 전체 발송 대상 방을 관리한다.
+- 대상 방 발송과 반복 오류 보고는 기존 `noticeMsg`와 같은 `Api.replyRoom` 방식으로 처리한다.
 - `!알림시작`은 즉시 1회 발송한 뒤 독립된 70분 반복 예약을 추가하므로 재입력에 따른 중복 발송을 허용한다.
 - `!알림초기화`는 실행 중인 모든 반복 예약을 해제하고, 즉시 발송 없이 70분 뒤부터 하나의 반복 예약으로 다시 시작한다.
+- `/알림정보`는 현재 저장된 알림 문구, 반복 예약 수, 각 예약의 다음 발송까지 남은 시·분·초를 표시한다.
 
 ---
 
@@ -6597,6 +6602,7 @@ Status: VERIFIED
 - `buildPendantUpgradePreview`
 - `runPendantUpgradeFromState`
 - `ensurePendantIdsForUser`
+- `calculatePendantPromotionPointDeduction`
 - `buildPendantPromotionPreview`
 - `runPendantPromotionFromState`
 - `registerPendantFreeMarket`
@@ -6622,6 +6628,7 @@ Status: VERIFIED
 - 장착 펜던트가 이미 있는 `/펜던트장착 [번호]`는 `userState[user].pendantEquip`에 확인 대기를 저장하고, `장착할래` 확정 시 기존 장착 펜던트를 소멸시키고 선택한 가방 펜던트를 장착한 뒤 `petData`를 저장한다.
 - 펜던트 오픈, 해제, 복원, 판매, 당근거래, 자유시장 등록/구매/취소는 필요 시 `data`와 `petData`를 함께 저장한다.
 - `/펜던트승급`은 기존 펜던트 ID를 먼저 보완 저장하고, 30초 확인 후 회원 포인트·펜던트 강화석과 펫 데이터를 함께 변경한다. 두 파일 중 하나라도 저장에 실패하면 사용자 단위 스냅샷으로 양쪽을 복원하며 전체알림은 두 저장 성공 후에만 보낸다.
+- 안전 정수 상한을 넘은 기존 포인트 잔액도 승급 비용이 정확히 차감되는 경우에는 허용하고, 실제 차감액이 비용과 달라지는 정밀도 구간은 변경 전에 차단한다.
 - 자유시장 펜던트 등록/취소/구매는 `freeMarketData`도 저장한다.
 - `/펜던트전체정리`는 `petData[user].pendantBag`에서 51개 이상인 가방의 초과분을 삭제한 뒤 `member_pet.json`을 저장한다.
 
@@ -6639,6 +6646,7 @@ Status: VERIFIED
 - `/펜던트순위`는 장착 펜던트만 대상으로 등급 → 강화수치 → 닉네임 가나다순으로 100명까지 표시하고, 11등부터 `allsee` 뒤에 표시한다.
 - `/펜던트강화`는 펜던트가방 번호를 입력하며, 장착 펜던트는 숫자 `0`으로 강화한다.
 - `/펜던트승급`은 창조등급만 대상으로 하며 장착 펜던트는 `0`으로 선택한다. 목표 ★N 단계마다 다른 가방 창조 펜던트 1개, 펜던트 강화석 `N×10`개, 포인트 `N×100억`을 사용하고 100% 성공한다. 승급 1단계당 종합매력만 500만 증가하며 탐험 확률·강화·내구도는 유지한다. `/펫정보`의 기존 `펜던트💎:` 행에 `이름🪬[창조★N][⚒️현재/최대](+강화)` 형식으로 승급 단계를 표시하고 실제 캐슬·레이드 매력에도 승급 수치를 반영한다. 재료는 승급→강화→내구도→가방 번호 오름차순으로 자동 선택하고 확인 후에는 고유 `pendantId`로 같은 본체와 재료를 재검증한다.
+- 승급 조건 부족 화면은 다른 창조 펜던트, 포인트, 강화석 중 실제 충족하지 못한 항목만 구분해 표시한다.
 - `/펜던트거래정보 [자유시장번호]`는 자유시장 등록 목록의 펜던트 payload를 기존 펜던트 정보 형식으로 보여준다.
 - 펜던트 이름 끝에 이미 같은 이모지가 있으면 `formatPendantNameWithIcon`이 표시 이모지를 중복으로 붙이지 않는다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
