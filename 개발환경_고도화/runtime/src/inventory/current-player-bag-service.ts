@@ -7,15 +7,19 @@ const DEFAULT_PAGE_LIMIT = 20;
 
 export interface CurrentPlayerBagRepository {
   findCurrentPlayerBag(playerId: string): Promise<BagView | null>;
+  findCurrentPlayerFurnitureBag(playerId: string): Promise<CurrentPlayerFurnitureBagView | null>;
 }
+
+export type CurrentPlayerBagCategory = "general" | "furniture";
 
 export interface CurrentPlayerBagRequest {
   currentPlayerId: string;
+  category?: CurrentPlayerBagCategory;
   limit?: number;
   offset?: number;
 }
 
-export interface CurrentPlayerBagResponse {
+interface CurrentPlayerGeneralBagResponse {
   ownerLabel: string;
   advertisement: string;
   items: Array<{
@@ -29,6 +33,34 @@ export interface CurrentPlayerBagResponse {
     hasMore: boolean;
   };
 }
+
+export interface CurrentPlayerFurnitureBagView {
+  ownerLabel: string;
+  items: Array<{
+    displayName: string;
+    charm: string;
+    gradeDisplayName: string;
+  }>;
+}
+
+interface CurrentPlayerFurnitureBagResponse {
+  category: "furniture";
+  ownerLabel: string;
+  items: Array<{
+    displayName: string;
+    quantity: string;
+    charm: string;
+    gradeDisplayName: string;
+  }>;
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
+export type CurrentPlayerBagResponse = CurrentPlayerGeneralBagResponse | CurrentPlayerFurnitureBagResponse;
 
 // 세션에서 확정된 현재 player_id가 unsigned 64-bit 범위인지 검증합니다.
 function requireCurrentPlayerId(value: string): string {
@@ -49,7 +81,32 @@ export class CurrentPlayerBagService {
       throw new ApplicationError("BAG_PAGINATION_INVALID", "가방 페이지 범위를 확인해 주세요.", 422);
     }
 
-    const bag = await this.repository.findCurrentPlayerBag(requireCurrentPlayerId(input.currentPlayerId));
+    const currentPlayerId = requireCurrentPlayerId(input.currentPlayerId);
+    if (input.category === "furniture") {
+      const bag = await this.repository.findCurrentPlayerFurnitureBag(currentPlayerId);
+      if (bag === null) {
+        throw new ApplicationError("CURRENT_PLAYER_NOT_AVAILABLE", "현재 게임계정을 찾을 수 없습니다.", 404);
+      }
+      const items = bag.items.slice(offset, offset + limit).map((item) => ({
+        displayName: item.displayName,
+        quantity: "1",
+        charm: item.charm,
+        gradeDisplayName: item.gradeDisplayName
+      }));
+      return {
+        category: "furniture",
+        ownerLabel: bag.ownerLabel,
+        items,
+        pagination: {
+          limit,
+          offset,
+          total: bag.items.length,
+          hasMore: offset + items.length < bag.items.length
+        }
+      };
+    }
+
+    const bag = await this.repository.findCurrentPlayerBag(currentPlayerId);
     if (bag === null) {
       throw new ApplicationError("CURRENT_PLAYER_NOT_AVAILABLE", "현재 게임계정을 찾을 수 없습니다.", 404);
     }

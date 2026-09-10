@@ -18,7 +18,20 @@ const ITEMS = [
   { display_name: "펫 친밀도🐾 [Lv.2](3/1000)+4💕", quantity: 1n, legacy_bag_order: null }
 ] as const;
 
-function databaseFixture(active: boolean, items: readonly object[]) {
+const FURNITURE_ITEMS = [
+  { display_name: "가구 C", charm_snapshot: 18_446_744_073_709_551_615n, grade_display_name: "에픽", status: "bag" },
+  { display_name: "가구 A", charm_snapshot: 9n, grade_display_name: "레어", status: "bag" },
+  { display_name: "가구 B", charm_snapshot: 4n, grade_display_name: "일반", status: "bag" },
+  { display_name: "가구 D", charm_snapshot: 1n, grade_display_name: "등급없음", status: "bag" }
+] as const;
+
+const FURNITURE_ITEMS_WITH_NON_BAG_STATES = [
+  ...FURNITURE_ITEMS,
+  { display_name: "배치된 가구", charm_snapshot: 100n, grade_display_name: "전설", status: "placed" },
+  { display_name: "판매된 가구", charm_snapshot: 99n, grade_display_name: "전설", status: "sold" }
+] as const;
+
+function databaseFixture(active: boolean, items: readonly object[], furnitureItems: readonly { status?: string }[] = FURNITURE_ITEMS) {
   const sql: string[] = [];
   const failWrite = async (): Promise<DatabaseWriteResult> => { throw new Error("DML_NOT_ALLOWED"); };
   const database: DatabaseClient = {
@@ -30,6 +43,9 @@ function databaseFixture(active: boolean, items: readonly object[]) {
         return (active ? [{ player_id: 18_446_744_073_709_551_615n, display_name: "현재유저" }] : []) as T;
       }
       if (statement.includes("FROM inventory_stacks stack")) return [...items] as T;
+      if (statement.includes("FROM furniture_inventory_instances instance")) {
+        return furnitureItems.filter((item) => item.status === "bag") as T;
+      }
       if (statement.includes("FROM configuration_sets config")) return [{ string_value: "합성 광고" }] as T;
       throw new Error(`UNEXPECTED_SQL: ${statement}`);
     },
@@ -57,9 +73,9 @@ function authFixture(expired = false) {
   return { auth, tokens };
 }
 
-async function createApp(active = true, items: readonly object[] = ITEMS, expired = false) {
+async function createApp(active = true, items: readonly object[] = ITEMS, expired = false, furnitureItems: readonly { status?: string }[] = FURNITURE_ITEMS) {
   const app = Fastify();
-  const database = databaseFixture(active, items);
+  const database = databaseFixture(active, items, furnitureItems);
   const auth = authFixture(expired);
   await app.register(cookie);
   await registerCurrentPlayerBagWebRoutes(app, {
@@ -124,10 +140,88 @@ describe("current player bag web route integration", () => {
     }
   });
 
+  it("keeps omitted and general category API responses in exact parity", async () => {
+    const fixture = await createApp();
+    try {
+      const omitted = await fixture.app.inject({ method: "GET", url: "/api/v1/inventory/current?limit=2&offset=1", headers: { cookie: "hoibot_user_session=a" } });
+      const general = await fixture.app.inject({ method: "GET", url: "/api/v1/inventory/current?category=general&limit=2&offset=1", headers: { cookie: "hoibot_user_session=a" } });
+      assert.equal(omitted.statusCode, 200);
+      assert.equal(general.statusCode, 200);
+      const { requestId: omittedRequestId, ...omittedBody } = omitted.json();
+      const { requestId: generalRequestId, ...generalBody } = general.json();
+      assert.equal(typeof omittedRequestId, "string");
+      assert.equal(typeof generalRequestId, "string");
+      assert.deepEqual(generalBody, omittedBody);
+      assert.equal(Object.hasOwn(omittedBody, "category"), false);
+    } finally {
+      await fixture.app.close();
+    }
+  });
+
+  it("serves furniture first, middle, and last pages without exposing stable IDs", async () => {
+    const fixture = await createApp();
+    try {
+      const pages = [];
+      for (const offset of [0, 1, 3]) {
+        const response = await fixture.app.inject({
+          method: "GET",
+          url: `/api/v1/inventory/current?category=furniture&limit=1&offset=${offset}`,
+          headers: { cookie: "hoibot_user_session=session-token" }
+        });
+        assert.equal(response.statusCode, 200);
+        pages.push(response.json());
+      }
+      assert.deepEqual(pages.map((page) => page.pagination), [
+        { limit: 1, offset: 0, total: 4, hasMore: true },
+        { limit: 1, offset: 1, total: 4, hasMore: true },
+        { limit: 1, offset: 3, total: 4, hasMore: false }
+      ]);
+      assert.deepEqual(pages.map((page) => page.items[0]), [
+        { displayName: "가구 C", quantity: "1", charm: PLAYER_ID, gradeDisplayName: "에픽" },
+        { displayName: "가구 A", quantity: "1", charm: "9", gradeDisplayName: "레어" },
+        { displayName: "가구 D", quantity: "1", charm: "1", gradeDisplayName: "등급없음" }
+      ]);
+      assert.equal(pages.every((page) => page.category === "furniture"), true);
+      assert.equal(JSON.stringify(pages).includes("playerId"), false);
+      assert.equal(fixture.database.sql.every((statement) => /^\s*SELECT\b/i.test(statement)), true);
+      const furnitureSql = fixture.database.sql.find((statement) => statement.includes("FROM furniture_inventory_instances instance"));
+      assert.match(furnitureSql ?? "", /instance\.status = 'bag'/);
+      assert.match(furnitureSql ?? "", /ORDER BY instance\.charm_snapshot DESC, definition\.display_name COLLATE utf8mb4_unicode_ci, instance\.id/);
+    } finally {
+      await fixture.app.close();
+    }
+  });
+
+  it("returns empty furniture pages, excludes non-bag state fixtures, and fails unavailable furniture owners closed", async () => {
+    const empty = await createApp(true, ITEMS, false, []);
+    const inactive = await createApp(false, ITEMS, false, FURNITURE_ITEMS);
+    const filtered = await createApp(true, ITEMS, false, FURNITURE_ITEMS_WITH_NON_BAG_STATES);
+    try {
+      const emptyResponse = await empty.app.inject({ method: "GET", url: "/api/v1/inventory/current?category=furniture", headers: { cookie: "hoibot_user_session=a" } });
+      assert.equal(emptyResponse.statusCode, 200);
+      assert.deepEqual(emptyResponse.json().items, []);
+      assert.deepEqual(emptyResponse.json().pagination, { limit: 20, offset: 0, total: 0, hasMore: false });
+
+      const filteredResponse = await filtered.app.inject({ method: "GET", url: "/api/v1/inventory/current?category=furniture&limit=100", headers: { cookie: "hoibot_user_session=c" } });
+      assert.equal(filteredResponse.statusCode, 200);
+      assert.equal(filteredResponse.json().pagination.total, 4);
+      assert.equal(filteredResponse.json().items.some((item: { displayName: string }) => item.displayName === "배치된 가구" || item.displayName === "판매된 가구"), false);
+
+      const inactiveResponse = await inactive.app.inject({ method: "GET", url: "/api/v1/inventory/current?category=furniture", headers: { cookie: "hoibot_user_session=b" } });
+      assert.equal(inactiveResponse.statusCode, 404);
+      assert.equal(inactiveResponse.json().code, "CURRENT_PLAYER_NOT_AVAILABLE");
+      assert.equal(inactive.database.sql.length, 1);
+    } finally {
+      await empty.app.close();
+      await inactive.app.close();
+      await filtered.app.close();
+    }
+  });
+
   it("stops before provider access for an expired session", async () => {
     const fixture = await createApp(true, ITEMS, true);
     try {
-      const response = await fixture.app.inject({ method: "GET", url: "/api/v1/inventory/current", headers: { cookie: "hoibot_user_session=expired" } });
+      const response = await fixture.app.inject({ method: "GET", url: "/api/v1/inventory/current?category=furniture", headers: { cookie: "hoibot_user_session=expired" } });
       assert.equal(response.statusCode, 401);
       assert.equal(response.json().code, "USER_SESSION_INVALID");
       assert.deepEqual(fixture.auth.tokens, ["expired"]);
@@ -148,6 +242,24 @@ describe("current player bag web route integration", () => {
         });
         assert.equal(response.statusCode, 422, query);
         assert.equal(response.json().code, "BAG_PAGINATION_INVALID");
+      }
+      assert.deepEqual(fixture.database.sql, []);
+    } finally {
+      await fixture.app.close();
+    }
+  });
+
+  it("rejects unknown category values before reading the bag", async () => {
+    const fixture = await createApp();
+    try {
+      for (const category of ["Furniture", "pet", "가구", "furniture%20bag"]) {
+        const response = await fixture.app.inject({
+          method: "GET",
+          url: `/api/v1/inventory/current?category=${category}`,
+          headers: { cookie: "hoibot_user_session=session-token" }
+        });
+        assert.equal(response.statusCode, 422, category);
+        assert.equal(response.json().code, "BAG_CATEGORY_INVALID");
       }
       assert.deepEqual(fixture.database.sql, []);
     } finally {

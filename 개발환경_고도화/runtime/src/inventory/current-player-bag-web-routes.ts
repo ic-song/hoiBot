@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { ApplicationError } from "../shared/application-error.js";
 import type { UserAuthService } from "../user-auth/user-auth-service.js";
-import { CurrentPlayerBagService, type CurrentPlayerBagRepository } from "./current-player-bag-service.js";
+import { CurrentPlayerBagService, type CurrentPlayerBagCategory, type CurrentPlayerBagRepository } from "./current-player-bag-service.js";
 
 interface CurrentPlayerBagWebDependencies {
   auth: Pick<UserAuthService, "refreshSession">;
@@ -9,8 +9,16 @@ interface CurrentPlayerBagWebDependencies {
 }
 
 interface CurrentPlayerBagQuery {
+  category?: string;
   limit?: string;
   offset?: string;
+}
+
+// 허용된 가방 분류만 provider에 전달하고 이름·이모지 기반 분류 추론은 하지 않습니다.
+function readBagCategory(value: string | undefined): CurrentPlayerBagCategory | undefined {
+  if (value === undefined || value === "general") return value;
+  if (value === "furniture") return value;
+  throw new ApplicationError("BAG_CATEGORY_INVALID", "가방 분류를 확인해 주세요.", 422);
 }
 
 const USER_SESSION_COOKIE = "hoibot_user_session";
@@ -38,6 +46,7 @@ export async function registerCurrentPlayerBagWebRoutes(
     const refreshed = await dependencies.auth.refreshSession(request.cookies[USER_SESSION_COOKIE] ?? "");
     const result = await service.execute({
       currentPlayerId: refreshed.session.playerId,
+      ...(request.query.category === undefined ? {} : { category: readBagCategory(request.query.category) }),
       ...(request.query.limit === undefined ? {} : { limit: readPageInteger(request.query.limit) }),
       ...(request.query.offset === undefined ? {} : { offset: readPageInteger(request.query.offset) })
     });

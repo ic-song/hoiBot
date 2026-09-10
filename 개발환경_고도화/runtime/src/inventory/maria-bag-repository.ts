@@ -1,6 +1,6 @@
 import type { DatabaseClient } from "../database.js";
 import type { BagItemView, BagRepository, BagView } from "./bag.js";
-import type { CurrentPlayerBagRepository } from "./current-player-bag-service.js";
+import type { CurrentPlayerBagRepository, CurrentPlayerFurnitureBagView } from "./current-player-bag-service.js";
 
 interface IdentityRow {
   player_id: bigint;
@@ -11,6 +11,12 @@ interface BagItemRow {
   display_name: string;
   quantity: bigint;
   legacy_bag_order: string | null;
+}
+
+interface FurnitureBagItemRow {
+  display_name: string;
+  charm_snapshot: bigint;
+  grade_display_name: string;
 }
 
 // 외부 identity의 인벤토리 stack을 레거시 가방 출력용 읽기 모델로 조회합니다.
@@ -93,6 +99,37 @@ export class MariaBagRepository implements BagRepository, CurrentPlayerBagReposi
         displayName: row.display_name,
         quantity: row.quantity.toString(),
         legacyBagOrder: row.legacy_bag_order === null ? null : Number(row.legacy_bag_order)
+      }))
+    };
+  }
+
+  // 인증 세션의 현재 player_id에 한정해 가구 가방 인스턴스 읽기 모델을 조회합니다.
+  async findCurrentPlayerFurnitureBag(playerId: string): Promise<CurrentPlayerFurnitureBagView | null> {
+    const players = await this.database.query<IdentityRow[]>(
+      `SELECT player.id AS player_id, profile.current_display_name AS display_name
+         FROM players player
+         JOIN player_profiles profile ON profile.player_id = player.id
+        WHERE player.id = ? AND player.status = 'active' AND player.deleted_at IS NULL
+        LIMIT 1`,
+      [playerId]
+    );
+    const player = players[0];
+    if (player === undefined) return null;
+
+    const rows = await this.database.query<FurnitureBagItemRow[]>(
+      `SELECT definition.display_name, instance.charm_snapshot, instance.grade_display_name
+         FROM furniture_inventory_instances instance
+         JOIN furniture_definitions definition ON definition.id = instance.furniture_definition_id
+        WHERE instance.player_id = ? AND instance.status = 'bag'
+        ORDER BY instance.charm_snapshot DESC, definition.display_name COLLATE utf8mb4_unicode_ci, instance.id`,
+      [player.player_id]
+    );
+    return {
+      ownerLabel: player.display_name,
+      items: rows.map((row) => ({
+        displayName: row.display_name,
+        charm: row.charm_snapshot.toString(),
+        gradeDisplayName: row.grade_display_name
       }))
     };
   }
