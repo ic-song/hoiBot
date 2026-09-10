@@ -4217,6 +4217,8 @@ Status: VERIFIED
 
 - `ensureWorldNewsData`
 - `drawWorldNewsReward`
+- `getWorldNewsUnreadCount`
+- `markWorldNewsPostsRead`
 - `buildWorldNewsUserMessage`
 - `buildWorldNewsJackpotBroadcast`
 - `buildWorldNewsManageMessage`
@@ -4229,12 +4231,13 @@ Status: VERIFIED
 - `data.worldNews.posts`
 - `data.worldNews.nextId`
 - `data.member[sender].worldNewsLotteryPlayed`
+- `data.member[sender].worldNewsLastReadId`
 - `data.member[sender].point`
 - `worldNewsDraftState` (작성·수정 중인 5분 임시 상태만 메모리 보관)
 
 ## Save Flow
 
-- `/소식`의 첫 참여는 포인트와 참여 완료 상태를 함께 변경하고 `member.json`을 한 번 저장한다.
+- `/소식`은 조회 전 미확인 소식 수를 표시한 뒤 현재 가장 큰 글번호를 마지막 확인 번호로 기록하며, 복권 첫 참여 시 포인트와 참여 완료 상태도 함께 변경해 `member.json`을 한 번 저장한다.
 - `/리셋`은 전 유저의 소식복권 참여 완료 상태를 다른 일일 횟수와 함께 제거한다.
 - 게시글 등록·수정·삭제는 소식 저장 구조를 변경하고 `member.json`을 한 번 저장한다.
 - 제목·내용·링크 입력과 미리보기 단계는 영구 데이터를 변경하지 않는다.
@@ -4244,6 +4247,8 @@ Status: VERIFIED
 
 - 복권은 계정당 `/리셋` 주기마다 1회이며 1,000만 50%, 5,000만 30%, 1억 15%, 5억 4%, 10억 1%로 꽝 없이 지급한다. 자정이 지나도 `/리셋` 전에는 다시 참여할 수 없다.
 - 최신 글 1개는 기본 화면에 표시하고 이전 글은 `allsee` 뒤에 최신순으로 표시한다.
+- `최근 등록된 소식`은 전체 보관 글 수가 아니라 유저별 미확인 글 수다. 첫 조회에는 조회 전 개수를 보여주고, 같은 소식을 다시 조회하면 0개로 표시하며 새 글 등록 후 다시 증가한다.
+- 소식 수정은 기존 글번호를 유지하므로 미확인 수를 늘리지 않으며, 마지막 확인 번호는 일일 `/리셋` 대상이 아니다.
 - 게시글은 최대 100개를 보관하며 101번째 등록부터 가장 오래된 글을 제거한다. 삭제된 글번호는 재사용하지 않는다.
 - 수정은 글번호·최초 작성일·작성자 수식어·노출 순서를 유지한다.
 - 관리자 작성 상태는 관리자 계정과 채팅방 조합별로 분리하며 5분 미입력 시 폐기한다.
