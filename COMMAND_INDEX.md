@@ -386,7 +386,7 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
-- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다.
+- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 경험치 부스터가 없으면 `🚀 경험치 2배 부스터: 없음`만 표시하고 `🚀 0회` 줄은 생략한다.
 - 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `호이의 봉인금고` → `해방의 열쇠` → `자동탐험권` → `자동일퀘권` 순으로 먼저 표시한다.
