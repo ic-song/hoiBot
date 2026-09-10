@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.491"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.492"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -40017,8 +40017,33 @@ function formatWorldNewsPost(post, includeId) {
     return lines.join("\n");
 }
 
+// 현재 소식 목록에서 유저가 확인하지 않은 글 개수를 반환하는 함수
+function getWorldNewsUnreadCount(posts, member) {
+    var lastReadId = parseInt(member.worldNewsLastReadId, 10); // 유저가 마지막으로 확인한 소식 번호
+    var unreadCount = 0;
+    if (isNaN(lastReadId)) lastReadId = 0;
+    for (var i = 0; i < posts.length; i++) {
+        var postId = parseInt(posts[i] && posts[i].id, 10);
+        if (!isNaN(postId) && postId > lastReadId) unreadCount++;
+    }
+    return unreadCount;
+}
+
+// 현재 소식 목록의 가장 큰 글번호를 유저의 마지막 확인 번호로 저장하는 함수
+function markWorldNewsPostsRead(posts, member) {
+    var latestId = parseInt(member.worldNewsLastReadId, 10); // 기존 마지막 확인 소식 번호
+    if (isNaN(latestId)) latestId = 0;
+    for (var i = 0; i < posts.length; i++) {
+        var postId = parseInt(posts[i] && posts[i].id, 10);
+        if (!isNaN(postId) && postId > latestId) latestId = postId;
+    }
+    if (parseInt(member.worldNewsLastReadId, 10) === latestId) return false;
+    member.worldNewsLastReadId = latestId;
+    return true;
+}
+
 // 소식복권 결과와 최신·지난 소식을 하나의 유저 화면으로 만드는 함수
-function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResult) {
+function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResult, unreadCount) {
     var news = ensureWorldNewsData(data);
     var posts = news.posts;
     var lines = ["📢 잠깐! 호이월드 소식 왔어요 👀", "━━━━━━━━━━━━"];
@@ -40041,8 +40066,7 @@ function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResu
     lines.push("🆕 가장 최근 소식");
     lines.push("");
     lines.push(formatWorldNewsPost(posts[0], false));
-    lines.push("━━━━━━━━━━━━");
-    lines.push("🗂 최근 등록된 소식: " + posts.length + "개");
+    lines.push("🗂 최근 등록된 소식: " + unreadCount + "개");
     if (posts.length > 1) {
         lines.push("📚 지난 소식은 전체보기로 확인하세요 👇");
         lines.push(allsee);
@@ -40126,6 +40150,7 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
     if (msg === "/소식") {
         var member = data.member[sender];
         var firstEntry = member.worldNewsLotteryPlayed !== true;
+        var unreadCount = getWorldNewsUnreadCount(news.posts, member); // 이번 조회 전에 확인하지 않은 소식 개수
         var reward = null;
         if (firstEntry) {
             reward = drawWorldNewsReward();
@@ -40135,7 +40160,8 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
             if (reward.broadcast) result.broadcastMessage = buildWorldNewsJackpotBroadcast(data, petData, guildData, sender);
         }
         result.handled = true;
-        result.message = buildWorldNewsUserMessage(data, petData, guildData, sender, { firstEntry: firstEntry, reward: reward });
+        result.message = buildWorldNewsUserMessage(data, petData, guildData, sender, { firstEntry: firstEntry, reward: reward }, unreadCount);
+        if (markWorldNewsPostsRead(news.posts, member)) result.changed = true;
         return result;
     }
 
