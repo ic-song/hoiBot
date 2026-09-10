@@ -1,0 +1,69 @@
+{
+  "evidenceSchemaVersion": "web-current-player-currency-provider-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-8",
+  "wbsId": "WEB-WBS-011P",
+  "sliceId": "SL-COMMON-CURRENCY-CURRENT-BALANCE-READ-PROVIDER-01",
+  "lease": "Lease2645",
+  "control": "슬라이스_보고수신!5678 ACTIVE",
+  "executionProfile": "SHARED_PROVIDER_CONTRACT_HARDENING",
+  "validationTier": "T2_HIGH",
+  "assignedBaseline": "ef049e9d19ff97c60d85af58cea2f45a0defb3aa",
+  "implementationCommit": "f00f679d5e18ad7a19de962c2fc2e7f3f5026211",
+  "scope": {
+    "existingProviderReused": true,
+    "newProviderClasses": 0,
+    "newApiRoutes": 0,
+    "currentPlayerSelfScope": true,
+    "activeUndeletedPlayerOnly": true,
+    "activeUndeletedUserAccountOnly": true,
+    "allowedCurrencyDefinition": "currency_definitions.active = TRUE",
+    "balanceEncoding": "DECIMAL(30,3) string",
+    "versionAndPlayerIdEncoding": "BIGINT string",
+    "sqlDml": 0
+  },
+  "validation": {
+    "focused": "13/13 PASS: current-player-currency-read, admin-web-reward-currency-profile, user-auth-recovery",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diffCheck": "PASS",
+    "routeSelfScope": "query-string player override ignored; authenticated session playerId used",
+    "largeNumberRoundTrip": "PASS for DECIMAL beyond Number safe integer and unsigned BIGINT max",
+    "inactiveCurrencyExclusion": "active definition INNER JOIN asserted",
+    "mutation": "changed provider/auth SQL adds SELECT predicates and JOIN only; DML 0"
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": false,
+    "gate8": false
+  },
+  "files": [
+    {
+      "path": "개발환경_고도화/runtime/src/player/maria-profile-repository.ts",
+      "sha256": "76264b0117bc46df3f1827a93682bea140d096f1d9a71d41df4d1d50ab4806d2"
+    },
+    {
+      "path": "개발환경_고도화/runtime/src/user-auth/user-auth-service.ts",
+      "sha256": "0d6ae2438ebf6419844dd3d3fb5f9ada3cc6a4acb8335b57aaa6f59c5bdc1a93"
+    },
+    {
+      "path": "개발환경_고도화/runtime/test/current-player-currency-read.test.ts",
+      "sha256": "aa2ba657792e49ad86461073a237d157b73218bf10c842fba4522e2dc4362136"
+    }
+  ],
+  "excludes": [
+    "app.ts",
+    "site-web UI",
+    "new provider class",
+    "new route",
+    "database schema or migration",
+    "operating database or data",
+    "feature/prod",
+    "Gate 8"
+  ]
+}
