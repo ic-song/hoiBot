@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.483"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.484"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -17489,10 +17489,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (data.member && data.member[sender]) {
                         let memberInfo = data.member[sender];
                         if (memberInfo) {
-                            let bagItems = memberInfo.bag;
+                            let bagItems = memberInfo.bag || {};
                             if (normalizeUniversalCollectionKeyBagItems(bagItems)) saveJsonFile(data, filePath);
-                            let bagOutput = generateBagOutput(bagItems).bagOutput;
-                            let sortedItemList = generateBagOutput(bagItems).sortedItemList;
+                            var premiumBagActive = isHoiPassPremiumActive(data, sender);
+                            var bagInfo = generateBagOutput(bagItems, !premiumBagActive);
+                            let bagOutput = bagInfo.bagOutput;
+                            let sortedItemList = bagInfo.sortedItemList;
+                            if (premiumBagActive) {
+                                replier.reply(buildHoiPassPremiumBagMessage(data, petData, guildData, sender, bagInfo));
+                                return;
+                            }
                             if (bagOutput) {
                                 let responseMessage = "[" + checkRank(data, petData, guildData, sender) + "]의 가방🧳\n";
                                 if (sortedItemList.length > 10) {
@@ -28617,6 +28623,52 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (/^\/미니펫컬렉션초기화\s+\S(?:.*\S)?$/.test(msg)) {
+                    if (!isMaster(sender)) {
+                        replier.reply("❌ MASTER 전용 명령어입니다.");
+                        return;
+                    }
+
+                    var miniPetCollectionResetTarget = msg.replace(/^\/미니펫컬렉션초기화\s+/, "").trim();
+                    if (!data.member || !data.member[miniPetCollectionResetTarget]) {
+                        replier.reply("❌ 존재하지 않는 유저입니다: " + miniPetCollectionResetTarget);
+                        return;
+                    }
+
+                    var miniPetCollectionResetData = loadJsonFile(miniPetCollectionPath);
+                    var miniPetCollectionResetMember = miniPetCollectionResetData && miniPetCollectionResetData.member ? miniPetCollectionResetData.member[miniPetCollectionResetTarget] : null;
+                    if (!miniPetCollectionResetMember || !miniPetCollectionResetMember.collection) {
+                        replier.reply("❌ 초기화할 미니펫 컬렉션 기록이 없습니다: " + miniPetCollectionResetTarget);
+                        return;
+                    }
+
+                    var miniPetCollectionResetBefore = getMiniPetCollectionData(miniPetCollectionResetData, miniPetCollectionResetTarget); // 초기화 전 단계와 등록 수
+                    delete miniPetCollectionResetMember.collection;
+                    if (Object.keys(miniPetCollectionResetMember).length === 0) delete miniPetCollectionResetData.member[miniPetCollectionResetTarget];
+                    saveJsonFile(miniPetCollectionResetData, miniPetCollectionPath);
+                    if (userState[miniPetCollectionResetTarget] && userState[miniPetCollectionResetTarget].miniPetCollection) {
+                        delete userState[miniPetCollectionResetTarget].miniPetCollection;
+                    }
+
+                    replier.reply(
+                        "✅ 미니펫 컬렉션 초기화 완료\n" +
+                        "대상: " + miniPetCollectionResetTarget + "\n" +
+                        "기존 진행 단계: +" + miniPetCollectionResetBefore.stage + "💫\n" +
+                        "기존 완료 단계: +" + miniPetCollectionResetBefore.completedStage + "💫\n" +
+                        "기존 등록 수: " + miniPetCollectionResetBefore.registeredCount + "/" + miniPetCollectionResetBefore.maxCount + "\n" +
+                        "※ 지급된 보상·타이틀과 소비된 미니펫은 변경하지 않습니다."
+                    );
+                    return;
+                }
+                if (msg === "/미니펫컬렉션초기화" || /^\/미니펫컬렉션초기화\s+.*$/.test(msg)) {
+                    if (!isMaster(sender)) {
+                        replier.reply("❌ MASTER 전용 명령어입니다.");
+                        return;
+                    }
+                    replier.reply("사용법: /미니펫컬렉션초기화 [아이디]");
+                    return;
+                }
+
                 if (msg === "/미니펫컬렉션") {
                     if (castleSiegeFlag) return;
 
@@ -36510,6 +36562,63 @@ function getHoiPassPremiumHeader(data, user) {
     return isHoiPassPremiumActive(data, user) ? "[👑호이패스 프리미엄👑]\n" : "";
 }
 
+// 호이패스 프리미엄 종료일을 가방 표시 형식으로 변환하는 함수
+function formatHoiPassPremiumBagExpiry(data, user) {
+    var member = data.member && data.member[user] ? data.member[user] : null;
+    var pass = member && member.pass ? member.pass.premium : null;
+    if (!pass) return "정보 확인 불가";
+    if (pass.permanent === true || !String(pass.endDate || "").trim()) return "영구권";
+
+    var match = String(pass.endDate).match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+    if (!match) return "정보 확인 불가";
+    return (2000 + parseInt(match[1], 10)) + "년 " + parseInt(match[2], 10) + "월 " + parseInt(match[3], 10) + "일까지";
+}
+
+// 호이패스 프리미엄 이용자의 전용 가방 요약과 전체 아이템 목록을 만드는 함수
+function buildHoiPassPremiumBagMessage(data, petData, guildData, user, bagInfo) {
+    var member = data.member[user];
+    var bagItems = member.bag || {};
+    var sortedItemList = bagInfo && bagInfo.sortedItemList ? bagInfo.sortedItemList : [];
+    var currentLevel = parseInt(member.lv, 10); // 현재 레벨 표시값
+    var currentExp = Number(member.exp); // 현재 단계 경험치
+    var requiredExp = !isNaN(currentLevel) ? 6 * currentLevel + 84 : 0; // 다음 레벨 필요 경험치
+    var boosterCount = parseInt(member.boostercnt, 10);
+    var expSummary = "🌟 현재 레벨: 경험치 정보 확인 불가";
+
+    if (!isNaN(currentLevel) && currentLevel >= 0 && isFinite(currentExp) && currentExp >= 0 && requiredExp > 0) {
+        var expRatio = currentExp / requiredExp; // 경험치 게이지와 퍼센트의 원본 비율
+        var filledCount = Math.floor(expRatio * 10); // 원본 비율을 버림한 채움 칸 수
+        if (filledCount < 0) filledCount = 0;
+        if (filledCount > 10) filledCount = 10;
+        var expGauge = "";
+        for (var gaugeIndex = 0; gaugeIndex < 10; gaugeIndex++) expGauge += gaugeIndex < filledCount ? "■" : "□";
+        expSummary = "🌟 현재 레벨: Lv." + numberWithCommas(currentLevel) + "\n[" + expGauge + "] " + (expRatio * 100).toFixed(2) + "%";
+    }
+
+    if (isNaN(boosterCount) || boosterCount < 0) boosterCount = 0;
+    var vaultCount = normalizeSealedVaultCount(bagItems[GLOBAL_CONFIG.sealedVault.vaultItemName]); // 실제 개봉에 사용하는 봉인금고 수량
+    var keyCount = normalizeSealedVaultCount(bagItems[GLOBAL_CONFIG.sealedVault.keyItemName]); // 실제 개봉에 사용하는 해방의 열쇠 수량
+    var itemOutput = bagInfo && bagInfo.bagOutput ? bagInfo.bagOutput : "가방이 비어 있습니다.";
+
+    return getHoiPassPremiumHeader(data, user) +
+        "[" + checkRank(data, petData, guildData, user) + "]의 가방🧳\n" +
+        "━━━━━━━━━━━━\n" +
+        "🪙: " + numberWithCommas(member.point || 0) + "\n" +
+        "💎 다이아: " + numberWithCommas(member.diamond || 0) + "개\n" +
+        "🔒 호이의 봉인금고: " + numberWithCommas(vaultCount) + "개\n" +
+        "🗝️ 해방의 열쇠: " + numberWithCommas(keyCount) + "개\n" +
+        "━━━━━━━━━━━━\n" +
+        expSummary + "\n" +
+        "🚀 경험치 부스터:\n" +
+        "🚀 " + numberWithCommas(boosterCount) + "회\n" +
+        "━━━━━━━━━━━━\n" +
+        "👑 호패 프리미엄: 이용 중\n" +
+        "📅 만료일: " + formatHoiPassPremiumBagExpiry(data, user) + "\n" +
+        "━━━━━━━━━━━━\n" +
+        "【🎒 가방 보러가기 ·아이템 보유 " + sortedItemList.length + "개】" +
+        allsee + "\n" + itemOutput;
+}
+
 // 호이패스 프리미엄 적용 여부에 따른 가구 가방 최대 칸 수를 반환하는 함수
 function getFurnitureBagLimit(data, user) {
     var config = GLOBAL_CONFIG.supportPass.premium;
@@ -40208,12 +40317,12 @@ function checkRank(data, petData, guildData, user) {
 
 // 전제: normalizeItemName(itemName) 함수가 이미 존재해야 함.
 //  - 펫 친밀도🐾(숫자/1000)+숫자💕  => "펫 친밀도🐾" 로 정규화
-function generateBagOutput(bagItems) {
+function generateBagOutput(bagItems, includeDonationNotice) {
     var bagOutput = "";
     var sortedItemList = [];
 
     if (bagItems && Object.keys(bagItems).length > 0) {
-        bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
+        if (includeDonationNotice !== false) bagOutput = "(알림📢)후원은 봇 개발에 많은 도움이됩니다.\n";
 
         var specialItems = [
             GLOBAL_CONFIG.sealedVault.vaultItemName,
