@@ -6,8 +6,8 @@
   "sliceId": "SL-COMMON-INVENTORY-CURRENT-PLAYER-BAG-READ-01",
   "lease": "Lease2641",
   "control": "슬라이스_보고수신!5670 ACTIVE; supersedes 5668 and 5669; Lease2641 retained",
-  "executionProfile": "READ_UI",
-  "validationTier": "T1",
+  "executionProfile": "SHARED_PROVIDER",
+  "validationTier": "T2",
   "assignedBaseline": "ae7665dc9519bde972f54995e1babbdc454ff2ff",
   "verificationHead": "b51754890ae857b8dd71c852a83ac4d2a42e762c",
   "scope": {

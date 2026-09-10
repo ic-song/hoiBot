@@ -4,6 +4,7 @@
 - Lease: `Lease2641`
 - CONTROL: `슬라이스_보고수신!5670` ACTIVE; Lease2641 유지 및 다른 W claim과 비중첩
 - 기준: `SC-20260902-1` / `SCD-WEB-20260910-5` / `web-current-player-bag-provider-v1`
+- 실행 profile/tier: `SHARED_PROVIDER` / `T2`
 - 배정 기준 commit: `ae7665dc9519bde972f54995e1babbdc454ff2ff`
 - 검증 HEAD: `b51754890ae857b8dd71c852a83ac4d2a42e762c`
 

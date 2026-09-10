@@ -6,6 +6,7 @@
 - Lease: `Lease2641` ACTIVE; exact claim re-read at `슬라이스_선점!2641`
 - CONTROL: issued at row 5667; corrective row 5670 is ACTIVE, supersedes rows 5668/5669, and retains Lease2641 without resource overlap
 - Catalog/delta/schema: `SC-20260902-1` / `SCD-WEB-20260910-5` / `web-current-player-bag-provider-v1`
+- Execution profile/tier: `SHARED_PROVIDER` / `T2`
 - Worktree/branch: `C:\Users\user\Desktop\hoiBot-worktrees\web-portal-v1-20260909` / `feature/web-portal`
 - Assigned baseline: `ae7665dc9519bde972f54995e1babbdc454ff2ff`
 - Verification HEAD: `b51754890ae857b8dd71c852a83ac4d2a42e762c`
