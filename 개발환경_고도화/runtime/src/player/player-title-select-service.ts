@@ -21,6 +21,19 @@ export interface PlayerTitleSelectResult {
   outboxId: string;
 }
 
+interface StoredPlayerTitleSelectResult {
+  version: "PLAYER_TITLE_SELECT_RESULT_V1";
+  commandIdentity: "PLAYER_TITLE_SELECT";
+  normalizedSelectedIndex: string | null;
+  payloadSha256: string;
+  result: PlayerTitleSelectResult;
+}
+
+interface ParsedPlayerTitleSelectIndex {
+  normalized: string;
+  arrayIndex: number | null;
+}
+
 // 레거시 `/타이틀 ` 실행 분기만 후보로 인정해 쉼표형 운영 지급 명령과 분리합니다.
 export function isPlayerTitleSelectCandidate(message: string | undefined): boolean {
   return message !== undefined && message.startsWith("/타이틀 ");
@@ -35,20 +48,61 @@ export function normalizePlayerTitleSelectDispatchMessage(message: string): stri
 export function parsePlayerTitleSelectIndex(message: string): number | null {
   const match = message.match(/^\/타이틀\s+(\d+)\s*$/u);
   if (match === null) return null;
-  const index = Number(match[1]);
-  return Number.isSafeInteger(index) && index > 0 ? index : null;
+  return Number(match[1]);
+}
+
+// 숫자 형식과 실제 배열 인덱스 가능 여부를 분리해 레거시의 0·초과 숫자 응답을 보존합니다.
+function parseNormalizedPlayerTitleSelectIndex(message: string): ParsedPlayerTitleSelectIndex | null {
+  const match = message.match(/^\/타이틀\s+(\d+)\s*$/u);
+  if (match === null) return null;
+  const normalized = BigInt(match[1]!).toString();
+  const numeric = Number(normalized);
+  return { normalized, arrayIndex: Number.isSafeInteger(numeric) && numeric > 0 ? numeric : null };
+}
+
+function playerTitleSelectPayloadFingerprint(parsed: ParsedPlayerTitleSelectIndex | null): string {
+  return createHash("sha256").update(JSON.stringify({
+    commandIdentity: "PLAYER_TITLE_SELECT",
+    normalizedSelectedIndex: parsed?.normalized ?? null
+  })).digest("hex");
+}
+
+function replayPlayerTitleSelectResult(value: string | StoredPlayerTitleSelectResult | PlayerTitleSelectResult, expectedPayloadSha256: string): PlayerTitleSelectResult {
+  const stored = typeof value === "string" ? JSON.parse(value) as StoredPlayerTitleSelectResult | PlayerTitleSelectResult : value;
+  if (!("version" in stored) || stored.version !== "PLAYER_TITLE_SELECT_RESULT_V1"
+    || !("payloadSha256" in stored) || stored.payloadSha256 !== expectedPayloadSha256
+    || !("commandIdentity" in stored) || stored.commandIdentity !== "PLAYER_TITLE_SELECT"
+    || !("result" in stored)) {
+    throw new Error("PLAYER_TITLE_SELECT_PAYLOAD_DRIFT");
+  }
+  return stored.result;
 }
 
 // 고정 표시 순서로 보유 타이틀 하나를 선택하고 감사·outbox를 원자 기록합니다.
 export class PlayerTitleSelectService {
   constructor(private readonly database: DatabaseClient) {}
 
-  async select(input: { eventId: string; externalUserId: string; destinationId: string; message: string; senderDisplayName: string }): Promise<PlayerTitleSelectResult> {
+  async select(input: { eventId: string; externalUserId: string; destinationId: string; message: string; senderDisplayName: string }): Promise<PlayerTitleSelectResult | null> {
     return this.database.withTransaction(async (transaction) => {
       const scope = `player.title.select:${input.externalUserId}`;
       const idempotencyKey = input.eventId.length <= 191
         ? input.eventId
         : `sha256:${createHash("sha256").update(input.eventId).digest("hex")}`;
+      const activeWar = (await transaction.query<Array<{ id: bigint }>>(
+        "SELECT id FROM guild_territory_wars WHERE active=TRUE ORDER BY id LIMIT 1 FOR UPDATE"
+      ))[0];
+      if (activeWar !== undefined) return null;
+
+      const parsedIndex = parseNormalizedPlayerTitleSelectIndex(input.message);
+      const payloadSha256 = playerTitleSelectPayloadFingerprint(parsedIndex);
+      const prior = (await transaction.query<Array<{ result_json: string | StoredPlayerTitleSelectResult | PlayerTitleSelectResult | null }>>(
+        "SELECT result_json FROM operations WHERE idempotency_scope=? AND idempotency_key=? FOR UPDATE",
+        [scope, idempotencyKey]
+      ))[0];
+      if (prior?.result_json !== null && prior?.result_json !== undefined) {
+        return replayPlayerTitleSelectResult(prior.result_json, payloadSha256);
+      }
+
       const owner = (await transaction.query<Array<{
         external_identity_id: bigint;
         player_id: bigint;
@@ -73,20 +127,23 @@ export class PlayerTitleSelectService {
         rankEmoji: owner.rank_emoji
       };
 
+      // 레거시는 0번에서 저장 전에 예외가 나며 사용자 응답과 영속 변경을 남기지 않습니다.
+      if (mappedOwner !== undefined && parsedIndex?.normalized === "0") return null;
+
       await transaction.execute(
         "INSERT INTO operations(operation_key,idempotency_scope,idempotency_key,actor_type,actor_id,source_code,status,created_at) VALUES (?,?,?,'external_identity',?,'iris','processing',UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)",
         [randomUUID(), scope, idempotencyKey, mappedOwner?.externalIdentityId ?? null]
       );
-      const operation = (await transaction.query<Array<{ id: bigint; result_json: string | PlayerTitleSelectResult | null }>>(
+      const operation = (await transaction.query<Array<{ id: bigint; result_json: string | StoredPlayerTitleSelectResult | PlayerTitleSelectResult | null }>>(
         "SELECT id,result_json FROM operations WHERE idempotency_scope=? AND idempotency_key=? FOR UPDATE",
         [scope, idempotencyKey]
       ))[0];
       if (operation === undefined) throw new Error("Player title select operation claim failed.");
       if (operation.result_json !== null) {
-        return typeof operation.result_json === "string" ? JSON.parse(operation.result_json) : operation.result_json;
+        return replayPlayerTitleSelectResult(operation.result_json, payloadSha256);
       }
 
-      const requestedIndex = parsePlayerTitleSelectIndex(input.message);
+      const requestedIndex = parsedIndex?.arrayIndex ?? null;
       let status: PlayerTitleSelectResult["status"];
       let data: string;
       let selected: OwnedTitleRow | undefined;
@@ -94,12 +151,12 @@ export class PlayerTitleSelectService {
       if (mappedOwner === undefined) {
         status = "player_not_found";
         data = `${input.senderDisplayName}는(은) 존재하지 않는 사용자입니다.`;
-      } else if (requestedIndex === null) {
+      } else if (parsedIndex === null) {
         status = "invalid_format";
         data = "올바른 타이틀 설정 명령어 형식을 사용해주세요. 예: /타이틀 [번호]";
       } else {
         titles = await lockPlayerTitleOwnedProjection(transaction,mappedOwner.playerId);
-        selected = titles[requestedIndex - 1];
+        selected = requestedIndex === null ? undefined : titles[requestedIndex - 1];
         if (selected === undefined) {
           status = "title_not_found";
           data = "해당 번호의 타이틀이 존재하지 않습니다.";
@@ -133,7 +190,14 @@ export class PlayerTitleSelectService {
         selectedIndex: selected === undefined ? null : requestedIndex,
         outboxId: outbox.insertId.toString()
       };
-      await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?", [JSON.stringify(result), operation.id]);
+      const stored: StoredPlayerTitleSelectResult = {
+        version: "PLAYER_TITLE_SELECT_RESULT_V1",
+        commandIdentity: "PLAYER_TITLE_SELECT",
+        normalizedSelectedIndex: parsedIndex?.normalized ?? null,
+        payloadSha256,
+        result
+      };
+      await transaction.execute("UPDATE operations SET status='completed',result_json=?,completed_at=UTC_TIMESTAMP(3) WHERE id=?", [JSON.stringify(stored), operation.id]);
       return result;
     });
   }

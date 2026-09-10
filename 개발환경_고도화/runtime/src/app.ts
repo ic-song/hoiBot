@@ -3216,7 +3216,7 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
         && partialDispatchDecision?.route === "MODERN" && partialDispatchDecision.handlerKey === "player_title_select"
         && normalizedEvent.userId !== undefined && normalizedEvent.channelId !== undefined) {
         const result = await new PlayerTitleSelectService(database!).select({ eventId: normalizedEvent.eventId, externalUserId: normalizedEvent.userId, destinationId: normalizedEvent.channelId, message: normalizedEvent.message!, senderDisplayName: commandEvent.displayName ?? normalizedEvent.userId });
-        processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
+        if (result !== null) processing.replies.push({ outboxId: result.outboxId, room: normalizedEvent.channelId, data: result.data });
       }
 
       if (isOperationalChannel && processing !== undefined && !processing.duplicate
