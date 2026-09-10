@@ -5,7 +5,7 @@
   "wbsId": "WEB-WBS-011P",
   "sliceId": "SL-COMMON-CURRENCY-CURRENT-BALANCE-READ-PROVIDER-01",
   "lease": "Lease2645",
-  "control": "슬라이스_보고수신!5678 ACTIVE",
+  "control": "슬라이스_보고수신!5681 ACTIVE at independent review; row5678 superseded",
   "executionProfile": "SHARED_PROVIDER_CONTRACT_HARDENING",
   "validationTier": "T2_HIGH",
   "assignedBaseline": "ef049e9d19ff97c60d85af58cea2f45a0defb3aa",
@@ -30,7 +30,8 @@
     "routeSelfScope": "query-string player override ignored; authenticated session playerId used",
     "largeNumberRoundTrip": "PASS for DECIMAL beyond Number safe integer and unsigned BIGINT max",
     "inactiveCurrencyExclusion": "active definition INNER JOIN asserted",
-    "mutation": "changed provider/auth SQL adds SELECT predicates and JOIN only; DML 0"
+    "mutation": "changed provider/auth SQL adds SELECT predicates and JOIN only; DML 0",
+    "independentGate7": "GO; P0=0, P1=0, P2=2; focused 13/13, broader 49/49, typecheck/build/diff PASS, hashes 3/3"
   },
   "gates": {
     "gate1": true,
@@ -39,7 +40,7 @@
     "gate4": true,
     "gate5": true,
     "gate6": true,
-    "gate7": false,
+    "gate7": true,
     "gate8": false
   },
   "files": [
