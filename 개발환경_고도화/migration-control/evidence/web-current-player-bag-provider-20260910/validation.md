@@ -6,7 +6,8 @@
 - 기준: `SC-20260902-1` / `SCD-WEB-20260910-5` / `web-current-player-bag-provider-v1`
 - 실행 profile/tier: `SHARED_PROVIDER` / `T2`
 - 배정 기준 commit: `ae7665dc9519bde972f54995e1babbdc454ff2ff`
-- 검증 HEAD: `b51754890ae857b8dd71c852a83ac4d2a42e762c`
+- 구현 commit: `5c9b0b7f5bf71d515c7c79bc4a2f8385084f083d`
+- 검증 HEAD: `32934cdf2540cbd3aa47192a7837bba4b31a2d45`
 
 ## 계약 검증
 
@@ -28,7 +29,7 @@ npm.cmd run typecheck
 PASS
 
 npm.cmd run build
-PASS (HEAD b5175489 포함)
+PASS (clean HEAD 32934cdf에서 provider 구현 5c9b0b7f 포함)
 
 git diff --check
 PASS
@@ -49,5 +50,13 @@ PASS
 - Gate 4: 전용 service와 MariaDB read-only method 구현.
 - Gate 5: concrete repository와 service 결합 focused test 통과. app/API/UI 연결은 별도 consumer Lease 대상.
 - Gate 6: 기존 comparator 및 기존 `/가방` 테스트를 함께 실행해 ordering 회귀 0.
-- Gate 7: 독립 검토 전이므로 확정하지 않음.
+- Gate 7: `NO-GO`. 실제 API/UI consumer matrix와 동일 입력 Shadow가 아직 없어 P1을 유지한다.
 - Gate 8: 범위 제외.
+
+## T2 consumer handoff
+
+- Lease2642의 `app.ts` R이 해제된 뒤 별도 consumer Lease에서 현재 세션의 player ID만 route에 전달한다.
+- public query/body에는 target player ID를 허용하지 않는다.
+- first/middle/last page, empty bag, inactive/missing player, expired session, unsigned 64-bit 수량을 실제 API와 UI에서 검증한다.
+- 같은 fixture를 provider와 legacy comparator에 입력해 page 순서·수량을 Shadow 비교한다.
+- 위 matrix와 Shadow가 모두 PASS한 뒤 독립 검토자가 provider/consumer 결합 Gate 7을 다시 판정한다.

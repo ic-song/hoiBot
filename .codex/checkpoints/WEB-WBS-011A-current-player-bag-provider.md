@@ -9,7 +9,8 @@
 - Execution profile/tier: `SHARED_PROVIDER` / `T2`
 - Worktree/branch: `C:\Users\user\Desktop\hoiBot-worktrees\web-portal-v1-20260909` / `feature/web-portal`
 - Assigned baseline: `ae7665dc9519bde972f54995e1babbdc454ff2ff`
-- Verification HEAD: `b51754890ae857b8dd71c852a83ac4d2a42e762c`
+- Implementation commit: `5c9b0b7f5bf71d515c7c79bc4a2f8385084f083d`
+- Verification HEAD: `32934cdf2540cbd3aa47192a7837bba4b31a2d45`
 
 ## Completed provider scope
 
@@ -22,7 +23,7 @@
 
 - Focused provider + legacy bag tests: `9/9 PASS`.
 - TypeScript typecheck: `PASS`.
-- Build at `b5175489`: `PASS`.
+- Build at clean `32934cdf`: `PASS`.
 - `git diff --check`: `PASS`.
 - Provider SQL DML: scripted 0 and static 0.
 - Evidence: `개발환경_고도화/migration-control/evidence/web-current-player-bag-provider-20260910/summary.json`, `validation.md`.
@@ -30,10 +31,10 @@
 ## Gate and handoff
 
 - Provider Gate 1~6 evidence is prepared; canonical WBS/REPORT writes were not performed during corrective CONTROL.
-- Gate 7 remains FALSE until an independent reviewer checks this implementation and evidence.
+- Gate 7 is `NO-GO` with P1: actual API/UI consumer matrix and same-input Shadow remain pending.
 - Gate 8 remains FALSE and out of scope.
-- No commit or push was made.
-- Next consumer Lease may wire app/API/UI using the provider response. It must keep the authenticated current player as the only owner scope and must not add a target player ID to the public API.
+- Provider implementation is committed at `5c9b0b7f` and present on `origin/feature/web-portal`.
+- Next consumer Lease must wire app/API/UI using the provider response, keep the authenticated current player as the only owner scope, reject public target player IDs, and close the T2 matrix/Shadow before Gate 7 re-review.
 
 ## Preserved exclusions
 

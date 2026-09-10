@@ -9,7 +9,8 @@
   "executionProfile": "SHARED_PROVIDER",
   "validationTier": "T2",
   "assignedBaseline": "ae7665dc9519bde972f54995e1babbdc454ff2ff",
-  "verificationHead": "b51754890ae857b8dd71c852a83ac4d2a42e762c",
+  "implementationCommit": "5c9b0b7f5bf71d515c7c79bc4a2f8385084f083d",
+  "verificationRunHead": "32934cdf2540cbd3aa47192a7837bba4b31a2d45",
   "scope": {
     "currentPlayerSelfScope": true,
     "activeUndeletedPlayerOnly": true,
@@ -38,10 +39,20 @@
   "validation": {
     "focused": "node --test --import tsx test/current-player-bag.test.ts test/bag-read.test.ts: 9/9 PASS",
     "typecheck": "npm.cmd run typecheck: PASS",
-    "build": "npm.cmd run build at b5175489: PASS",
+    "build": "npm run build at clean 32934cdf: PASS",
     "diffCheck": "git diff --check: PASS",
     "scriptedSql": "all captured statements begin with SELECT; execute and transaction entrypoints fail if called",
-    "staticSql": "provider implementation DML token matches: 0"
+    "staticSql": "provider implementation DML token matches: 0",
+    "t2ConsumerMatrix": "PENDING actual WEB-WBS-011A API/UI consumer",
+    "shadow": "PENDING actual authenticated-session consumer; provider Gate7 remains NO-GO"
+  },
+  "gate7": {
+    "status": "NO-GO",
+    "findings": [
+      "actual consumer matrix is not available before API/UI wiring",
+      "same-input provider-to-consumer Shadow evidence is pending"
+    ],
+    "closure": "After Lease2642 releases app.ts R, wire the authenticated current-session API and responsive inventory UI, verify first/middle/last/empty/missing/expired cases, and compare API pages with the legacy comparator over the same fixture before independent re-review."
   },
   "files": [
     {
