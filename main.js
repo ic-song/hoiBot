@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.485"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.486"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -36636,7 +36636,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, user, bagInfo) 
     var itemOutput = bagInfo && bagInfo.bagOutput ? bagInfo.bagOutput : "가방이 비어 있습니다.";
 
     return getHoiPassPremiumHeader(data, user) +
-        "[" + checkRank(data, petData, guildData, user) + "]의 가방🧳\n" +
+        "[" + checkRank(data, petData, guildData, user) + "]의 호패프 전용가방🧳\n" +
         "━━━━━━━━━━━━\n" +
         "🪙: " + numberWithCommas(member.point || 0) + "\n" +
         "💎 다이아: " + numberWithCommas(member.diamond || 0) + "개\n" +
@@ -36644,7 +36644,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, user, bagInfo) 
         "🗝️ 해방의 열쇠: " + numberWithCommas(keyCount) + "개\n" +
         "━━━━━━━━━━━━\n" +
         expSummary + "\n" +
-        "🚀 경험치 부스터:\n" +
+        "🚀 경험치 2배 부스터:" + (boosterCount === 0 ? " 없음" : "") + "\n" +
         "🚀 " + numberWithCommas(boosterCount) + "회\n" +
         "━━━━━━━━━━━━\n" +
         "👑 호패 프리미엄: 이용 중\n" +
