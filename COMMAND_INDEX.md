@@ -338,13 +338,13 @@ Status: VERIFIED
 
 ---
 
-# !알림내용|!알림시작|!알림초기화
+# !알림내용|!알림시작|!알림초기화|/알림정보
 
 Status: VERIFIED
 
 ## Command Anchors
 
-- Search in `notice.js`: `!알림내용`, `!알림시작`, `!알림초기화`
+- Search in `notice.js`: `!알림내용`, `!알림시작`, `!알림초기화`, `/알림정보`
 
 ## Files
 
@@ -358,6 +358,8 @@ Status: VERIFIED
 - `broadcastNotice`
 - `createNoticeInterval`
 - `clearAllNoticeIntervals`
+- `formatNoticeRemainingTime`
+- `buildNoticeInfoMessage`
 
 ## Data Usage
 
@@ -369,6 +371,7 @@ Status: VERIFIED
 
 - `!알림내용 내용`은 줄바꿈을 유지한 본문을 독립 데이터 파일에 저장한다.
 - 반복 예약은 신규 봇 실행 중 메모리에서 관리하며 알림 내용 변경 시 다음 발송부터 새 본문을 사용한다.
+- `/알림정보`는 저장 데이터를 변경하지 않고 현재 문구와 실행 중인 예약별 남은 시간을 조회한다.
 
 ## Notes
 
@@ -376,6 +379,7 @@ Status: VERIFIED
 - 대상 방 발송과 반복 오류 보고는 기존 `noticeMsg`와 같은 `Api.replyRoom` 방식으로 처리한다.
 - `!알림시작`은 즉시 1회 발송한 뒤 독립된 70분 반복 예약을 추가하므로 재입력에 따른 중복 발송을 허용한다.
 - `!알림초기화`는 실행 중인 모든 반복 예약을 해제하고, 즉시 발송 없이 70분 뒤부터 하나의 반복 예약으로 다시 시작한다.
+- `/알림정보`는 현재 저장된 알림 문구, 반복 예약 수, 각 예약의 다음 발송까지 남은 시·분·초를 표시한다.
 
 ---
 
