@@ -23,8 +23,7 @@ const NOTICE_CONFIG = {
     dataPath: "/sdcard/호이랜드_notice/noticeData.json"
 };
 
-var noticeState = null;
-var noticeTimerIds = [];
+var noticeRuntimeSchedule = null;
 
 /**
  * (string) room
@@ -47,6 +46,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var state = getNoticeState();
 
         if (msg === "/알림정보") {
+            ensureNoticeRuntimeSchedule(state);
             replier.reply(buildNoticeInfoMessage(state));
             return;
         }
@@ -71,19 +71,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
 
             var startResult = broadcastNotice(state.content);
-            noticeTimerIds.push(createNoticeInterval());
+            replaceNoticeSchedule(state);
             replier.reply(buildNoticeStartResultMessage(startResult));
             return;
         }
 
         if (msg === "!알림초기화") {
-            if (noticeTimerIds.length === 0) {
+            if (state.scheduleActive !== true) {
                 replier.reply("현재 실행 중인 알림이 없습니다.");
                 return;
             }
 
-            clearAllNoticeIntervals();
-            noticeTimerIds.push(createNoticeInterval());
+            replaceNoticeSchedule(state);
             replier.reply("✅ 전체알림 발송 시간을 초기화했습니다.\n지금부터 70분 뒤에 발송하고 이후 70분마다 반복합니다.");
         }
     } catch (error) {
@@ -118,15 +117,13 @@ function ensureNoticeDataDirectory() {
     }
 }
 
-// 저장된 알림 내용을 최초 한 번 불러오는 함수
-function getNoticeState() {
-    if (noticeState !== null) return noticeState;
-
+// 알림 파일을 새로 읽어 저장 구조와 예약 상태를 검증하는 함수
+function loadNoticeStateFromFile() {
     var dataFile = new java.io.File(NOTICE_CONFIG.dataPath);
     if (!dataFile.exists()) {
-        noticeState = { content: "" };
-        saveNoticeState(noticeState);
-        return noticeState;
+        var initialState = { content: "", scheduleActive: false, scheduleToken: "", nextRunAt: 0 };
+        saveNoticeState(initialState);
+        return initialState;
     }
 
     var fileContent = FileStream.read(NOTICE_CONFIG.dataPath, "utf-8");
@@ -135,15 +132,26 @@ function getNoticeState() {
         throw new Error("알림 데이터 형식이 올바르지 않습니다.");
     }
 
-    noticeState = loadedState;
-    return noticeState;
+    if (loadedState.scheduleActive !== true) {
+        loadedState.scheduleActive = false;
+        loadedState.scheduleToken = "";
+        loadedState.nextRunAt = 0;
+    } else if (typeof loadedState.scheduleToken !== "string" || !loadedState.scheduleToken || typeof loadedState.nextRunAt !== "number" || !isFinite(loadedState.nextRunAt)) {
+        throw new Error("알림 예약 데이터 형식이 올바르지 않습니다.");
+    }
+
+    return loadedState;
+}
+
+// 저장된 알림 내용을 최신 파일 기준으로 불러오는 함수
+function getNoticeState() {
+    return loadNoticeStateFromFile();
 }
 
 // 알림 내용을 독립 데이터 파일에 저장하는 함수
 function saveNoticeState(state) {
     ensureNoticeDataDirectory();
     FileStream.write(NOTICE_CONFIG.dataPath, JSON.stringify(state), "utf-8");
-    noticeState = state;
 }
 
 // 유저에게 표시할 고정 헤더와 알림 본문을 결합하는 함수
@@ -171,33 +179,68 @@ function broadcastNotice(content) {
     return { successCount: successCount, failedCount: failedCount };
 }
 
-// 현재 저장된 내용을 70분마다 전체 발송하는 반복 예약을 생성하는 함수
-function createNoticeInterval() {
-    var schedule = {
-        timerId: null,
-        nextRunAt: Date.now() + NOTICE_CONFIG.intervalMs
-    };
-    schedule.timerId = setInterval(function () {
-        schedule.nextRunAt = Date.now() + NOTICE_CONFIG.intervalMs;
-        try {
-            var state = getNoticeState();
-            if (state.content) {
-                var result = broadcastNotice(state.content);
-                if (result.failedCount > 0) {
-                    Api.replyRoom(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 발송 실패: " + result.failedCount + "개 방");
-                }
-            }
-        } catch (error) {
-            Api.replyRoom(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 처리 중 오류가 발생했습니다.\n" + String(error));
-        }
-    }, NOTICE_CONFIG.intervalMs);
-    return schedule;
+// 새 실행 컨텍스트를 구분할 예약 토큰을 만드는 함수
+function createNoticeScheduleToken() {
+    return String(Date.now()) + "_" + String(Math.random());
 }
 
-// 실행 중인 모든 전체알림 반복 예약을 해제하는 함수
-function clearAllNoticeIntervals() {
-    for (var i = 0; i < noticeTimerIds.length; i++) clearInterval(noticeTimerIds[i].timerId);
-    noticeTimerIds = [];
+// 저장된 다음 발송 시각에 맞춰 단일 실행 타이머를 예약하는 함수
+function createNoticeTimeout(state) {
+    var scheduleToken = state.scheduleToken;
+    var nextRunAt = state.nextRunAt;
+    var delayMs = Math.max(1, nextRunAt - Date.now());
+    noticeRuntimeSchedule = {
+        timerId: setTimeout(function () {
+            noticeRuntimeSchedule = null;
+            try {
+                var latestState = loadNoticeStateFromFile();
+                if (latestState.scheduleActive !== true || latestState.scheduleToken !== scheduleToken) return;
+                if (latestState.content) {
+                    var result = broadcastNotice(latestState.content);
+                    if (result.failedCount > 0) {
+                        Api.replyRoom(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 발송 실패: " + result.failedCount + "개 방");
+                    }
+                }
+                latestState.nextRunAt = Date.now() + NOTICE_CONFIG.intervalMs;
+                saveNoticeState(latestState);
+                createNoticeTimeout(latestState);
+            } catch (error) {
+                Api.replyRoom(NOTICE_CONFIG.errorRoom, "❌ 반복 전체알림 처리 중 오류가 발생했습니다.\n" + String(error));
+            }
+        }, delayMs),
+        scheduleToken: scheduleToken,
+        nextRunAt: nextRunAt
+    };
+}
+
+// 현재 실행 컨텍스트가 저장된 예약을 인계하고 이전 컨텍스트 타이머를 무효화하는 함수
+function ensureNoticeRuntimeSchedule(state) {
+    if (state.scheduleActive !== true) {
+        clearNoticeRuntimeSchedule();
+        return;
+    }
+    if (noticeRuntimeSchedule !== null && noticeRuntimeSchedule.scheduleToken === state.scheduleToken) return;
+    clearNoticeRuntimeSchedule();
+    state.scheduleToken = createNoticeScheduleToken();
+    if (state.nextRunAt <= Date.now()) state.nextRunAt = Date.now() + NOTICE_CONFIG.intervalMs;
+    saveNoticeState(state);
+    createNoticeTimeout(state);
+}
+
+// 현재 실행 컨텍스트가 보유한 전체알림 타이머를 해제하는 함수
+function clearNoticeRuntimeSchedule() {
+    if (noticeRuntimeSchedule !== null) clearTimeout(noticeRuntimeSchedule.timerId);
+    noticeRuntimeSchedule = null;
+}
+
+// 기존 예약을 무효화하고 지금부터 70분 뒤의 단일 예약으로 교체하는 함수
+function replaceNoticeSchedule(state) {
+    clearNoticeRuntimeSchedule();
+    state.scheduleActive = true;
+    state.scheduleToken = createNoticeScheduleToken();
+    state.nextRunAt = Date.now() + NOTICE_CONFIG.intervalMs;
+    saveNoticeState(state);
+    createNoticeTimeout(state);
 }
 
 // 밀리초 단위 남은 시간을 시·분·초 문구로 변환하는 함수
@@ -214,14 +257,11 @@ function buildNoticeInfoMessage(state) {
     var lines = ["📢 전체알림 예약 정보", "━━━━━━━━━━━━", "📝 예약 문구"];
     lines.push(state.content || "등록된 알림 문구가 없습니다.");
     lines.push("━━━━━━━━━━━━");
-    lines.push("⏱️ 실행 중인 반복 예약: " + noticeTimerIds.length + "개");
-    if (noticeTimerIds.length === 0) {
+    lines.push("⏱️ 실행 중인 반복 예약: " + (state.scheduleActive === true ? 1 : 0) + "개");
+    if (state.scheduleActive !== true) {
         lines.push("다음 발송: 예약 없음");
     } else {
-        var now = Date.now();
-        for (var i = 0; i < noticeTimerIds.length; i++) {
-            lines.push((i + 1) + "번 예약: " + formatNoticeRemainingTime(noticeTimerIds[i].nextRunAt - now) + " 남음");
-        }
+        lines.push("다음 발송: " + formatNoticeRemainingTime(state.nextRunAt - Date.now()) + " 남음");
     }
     return lines.join("\n");
 }
@@ -231,7 +271,7 @@ function buildNoticeStartResultMessage(result) {
     var message = "✅ 전체알림을 즉시 발송하고 70분 반복을 시작했습니다.\n" +
         "발송 성공: " + result.successCount + "개 방";
     if (result.failedCount > 0) message += "\n발송 실패: " + result.failedCount + "개 방";
-    if (noticeTimerIds.length > 1) message += "\n실행 중인 반복 예약: " + noticeTimerIds.length + "개";
+    message += "\n실행 중인 반복 예약: 1개";
     return message;
 }
 
