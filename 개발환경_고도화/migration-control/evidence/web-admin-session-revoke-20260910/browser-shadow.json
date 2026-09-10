@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "web-admin-session-revoke-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-18",
+  "leaseId": "Lease2661",
+  "url": "http://127.0.0.1:3312/admin",
+  "browser": "Chrome",
+  "fixture": "synthetic service-route-shell browser fixture",
+  "flow": [
+    "super_admin login",
+    "player directory",
+    "member detail",
+    "linked account availability",
+    "reason and confirmation",
+    "POST /api/v1/admin/players/40001/session-revocations",
+    "2 active sessions revoked status"
+  ],
+  "responseKeys": ["sessionRevocation"],
+  "sessionRevocationKeys": ["playerId", "revokedSessionCount", "replayed", "auditId"],
+  "sensitiveIdentifierLeaks": 0,
+  "viewports": [
+    { "width": 375, "horizontalOverflow": 0, "actionVisible": true, "buttonHeight": 44 },
+    { "width": 768, "horizontalOverflow": 0, "actionVisible": true, "buttonHeight": 44 },
+    { "width": 1024, "horizontalOverflow": 0, "actionVisible": true, "buttonHeight": 44 },
+    { "width": 1440, "horizontalOverflow": 0, "actionVisible": true, "buttonHeight": 44 }
+  ],
+  "result": "PASS"
+}

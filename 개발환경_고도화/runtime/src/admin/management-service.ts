@@ -5,6 +5,13 @@ import { ApplicationError } from "../shared/application-error.js";
 
 type Actor = { operatorId: string; idempotencyKey: string; reason: string };
 
+export interface AdminSessionRevocationResult {
+  playerId: string;
+  revokedSessionCount: number;
+  replayed: boolean;
+  auditId: string;
+}
+
 function asJson<T>(value: string | T): T {
   return typeof value === "string" ? JSON.parse(value) as T : value;
 }
@@ -16,32 +23,65 @@ function readDate(value: string | undefined, fieldName: string): Date | undefine
   return parsed;
 }
 
+// MariaDB의 idempotency unique-key 경합만 안전하게 재조회 대상으로 분류합니다.
+function isDuplicateKeyError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null) return false;
+  const candidate = error as { code?: unknown; errno?: unknown };
+  return candidate.code === "ER_DUP_ENTRY" || candidate.errno === 1062;
+}
+
 export class AdminManagementService {
   constructor(private readonly database: DatabaseClient) {}
 
   // 관리자 변경을 멱등 operation과 감사 기록으로 한 트랜잭션에 묶습니다.
-  private async mutate<T extends Record<string, unknown>>(
-    input: Actor & { scope: string; actionCode: string; targetType: string; targetId?: string },
-    work: (transaction: DatabaseTransaction) => Promise<T>
-  ): Promise<T & { auditId: string }> {
+  private async mutate<TWork extends Record<string, unknown>, TResult extends Record<string, unknown> = TWork>(
+    input: Actor & {
+      scope: string;
+      actionCode: string;
+      targetType: string;
+      targetId?: string;
+      toResult?: (value: TWork) => TResult;
+      toAuditSummary?: (value: TWork) => Record<string, unknown>;
+      markReplayed?: (value: TResult & { auditId: string }) => TResult & { auditId: string };
+      concurrentReplay?: boolean;
+    },
+    work: (transaction: DatabaseTransaction) => Promise<TWork>
+  ): Promise<TResult & { auditId: string }> {
     return this.database.withTransaction(async (transaction) => {
-      const previous = await transaction.query<Array<{ result_json: string | (T & { auditId: string }) }>>(
-        "SELECT result_json FROM operations WHERE idempotency_scope = ? AND idempotency_key = ? FOR UPDATE",
+      const previous = await transaction.query<Array<{ result_json: string | (TResult & { auditId: string }) }>>(
+        `SELECT result_json FROM operations WHERE idempotency_scope = ? AND idempotency_key = ?${input.concurrentReplay ? "" : " FOR UPDATE"}`,
         [input.scope, input.idempotencyKey]
       );
-      if (previous[0]?.result_json !== undefined) return asJson(previous[0].result_json);
-      const operation = await transaction.execute(
-        `INSERT INTO operations
-          (operation_key, idempotency_scope, idempotency_key, actor_type, actor_id, source_code, status, created_at)
-         VALUES (?, ?, ?, 'admin_operator', ?, 'admin_api', 'processing', UTC_TIMESTAMP(3))`,
-        [randomUUID(), input.scope, input.idempotencyKey, input.operatorId]
-      );
-      const result = await work(transaction);
+      if (previous[0]?.result_json !== undefined) {
+        const prior = asJson<TResult & { auditId: string }>(previous[0].result_json);
+        return input.markReplayed?.(prior) ?? prior;
+      }
+      let operation;
+      try {
+        operation = await transaction.execute(
+          `INSERT INTO operations
+            (operation_key, idempotency_scope, idempotency_key, actor_type, actor_id, source_code, status, created_at)
+           VALUES (?, ?, ?, 'admin_operator', ?, 'admin_api', 'processing', UTC_TIMESTAMP(3))`,
+          [randomUUID(), input.scope, input.idempotencyKey, input.operatorId]
+        );
+      } catch (error) {
+        if (!isDuplicateKeyError(error)) throw error;
+        const concurrent = await transaction.query<Array<{ result_json: string | (TResult & { auditId: string }) }>>(
+          "SELECT result_json FROM operations WHERE idempotency_scope = ? AND idempotency_key = ? FOR UPDATE",
+          [input.scope, input.idempotencyKey]
+        );
+        if (concurrent[0]?.result_json === undefined) throw error;
+        const prior = asJson<TResult & { auditId: string }>(concurrent[0].result_json);
+        return input.markReplayed?.(prior) ?? prior;
+      }
+      const workResult = await work(transaction);
+      const result = input.toResult?.(workResult) ?? workResult as unknown as TResult;
+      const auditSummary = input.toAuditSummary?.(workResult) ?? result;
       const audit = await transaction.execute(
         `INSERT INTO command_audit
           (operation_id, actor_type, actor_id, target_type, target_id, action_code, result_code, reason, change_summary_json, created_at)
          VALUES (?, 'admin_operator', ?, ?, ?, ?, 'success', ?, ?, UTC_TIMESTAMP(3))`,
-        [operation.insertId, input.operatorId, input.targetType, input.targetId ?? null, input.actionCode, input.reason, JSON.stringify(result)]
+        [operation.insertId, input.operatorId, input.targetType, input.targetId ?? null, input.actionCode, input.reason, JSON.stringify(auditSummary)]
       );
       const completed = { ...result, auditId: audit.insertId.toString() };
       await transaction.execute(
@@ -242,6 +282,46 @@ export class AdminManagementService {
       await transaction.execute("UPDATE user_accounts SET status = 'suspended', updated_at = UTC_TIMESTAMP(3) WHERE player_id = ?", [input.playerId]);
       await transaction.execute("UPDATE user_sessions session JOIN user_accounts account_row ON account_row.id = session.user_account_id SET session.revoked_at = UTC_TIMESTAMP(3) WHERE account_row.player_id = ? AND session.revoked_at IS NULL", [input.playerId]);
       return { restrictionId: created.insertId.toString(), playerId: input.playerId, restrictionType: input.restrictionType, endsAt: endsAt?.toISOString() ?? null };
+    });
+  }
+
+  // 회원 상태를 바꾸지 않고 연결된 웹 계정의 활성 사용자 세션만 원자적으로 회수합니다.
+  async revokePlayerSessions(input: Actor & { playerId: string }): Promise<AdminSessionRevocationResult> {
+    type WorkResult = { playerId: string; revokedSessionCount: number; noOpReason: "none" | "no_linked_account" | "no_active_session" };
+    type PublicResult = Omit<AdminSessionRevocationResult, "auditId">;
+    return this.mutate<WorkResult, PublicResult>({
+      ...input,
+      scope: `admin.user_session_revoke:${input.playerId}`,
+      actionCode: "admin.user_sessions.revoked",
+      targetType: "player",
+      targetId: input.playerId,
+      toResult: (value) => ({ playerId: value.playerId, revokedSessionCount: value.revokedSessionCount, replayed: false }),
+      toAuditSummary: (value) => ({ playerId: value.playerId, revokedSessionCount: value.revokedSessionCount, outcome: value.noOpReason }),
+      markReplayed: (value) => ({ ...value, replayed: true }),
+      concurrentReplay: true
+    }, async (transaction) => {
+      const players = await transaction.query<Array<{ id: bigint }>>(
+        "SELECT id FROM players WHERE id = ? FOR UPDATE",
+        [input.playerId]
+      );
+      if (players[0] === undefined) throw new ApplicationError("PLAYER_NOT_FOUND", "회원을 찾을 수 없습니다.", 404);
+      const accounts = await transaction.query<Array<{ id: bigint }>>(
+        "SELECT id FROM user_accounts WHERE player_id = ? ORDER BY id FOR UPDATE",
+        [input.playerId]
+      );
+      const revoked = await transaction.execute(
+        `UPDATE user_sessions session
+         JOIN user_accounts account_row ON account_row.id = session.user_account_id
+         SET session.revoked_at = UTC_TIMESTAMP(3)
+         WHERE account_row.player_id = ? AND session.revoked_at IS NULL`,
+        [input.playerId]
+      );
+      const revokedSessionCount = Number(revoked.affectedRows);
+      return {
+        playerId: input.playerId,
+        revokedSessionCount,
+        noOpReason: accounts.length === 0 ? "no_linked_account" : revokedSessionCount === 0 ? "no_active_session" : "none"
+      };
     });
   }
 

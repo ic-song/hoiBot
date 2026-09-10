@@ -1,0 +1,56 @@
+▶ admin account-link read
+  ✔ requires existing player.read authorization before reading (489.0614ms)
+  ✔ validates uint64 player IDs and returns an empty successful list (12.0279ms)
+  ✔ preserves 404 for an absent player (7.3772ms)
+  ✔ masks account identifiers and performs no DML (13.7988ms)
+✔ admin account-link read (524.9049ms)
+▶ admin authorization
+  ✔ applies deny before personal allow and role permissions (2.3307ms)
+  ✔ rejects a permission removed by an override (0.8154ms)
+  ✔ exposes noun-based REST session and administration resources only (26.1763ms)
+✔ admin authorization (31.1939ms)
+▶ admin web account actions existing REST integration
+  ✔ links GET detail, POST create, PATCH revoke, replay, audit, session revoke, and no-outbox GAP (563.982ms)
+  ✔ enforces csrf and account.restrict and rolls back the whole transaction on command_audit failure (33.6603ms)
+✔ admin web account actions existing REST integration (599.8835ms)
+▶ admin web account actions
+  ✔ freezes the permission, confirmation, csrf, idempotency, and notification-gap client contract (1.9793ms)
+  ✔ covers temporary, permanent, revoke, not-found, replay, permission, csrf, and rollback scenarios (534.4789ms)
+✔ admin web account actions (538.8876ms)
+▶ admin user session revoke service-route transaction
+  ✔ revokes N sessions, replays one UPDATE/audit across restart, and leaks no identifiers (535.5735ms)
+  ✔ serializes different keys to N/0 and audits no-link/no-active outcomes (20.1888ms)
+  ✔ returns 404 without residue and rolls back session, audit, and operation failures (19.2371ms)
+  ✔ limits DML to operations, user_sessions, and command_audit (13.7639ms)
+✔ admin user session revoke service-route transaction (590.8638ms)
+▶ admin user session revoke route and UI contract
+  ✔ requires cookie, csrf, idempotency, reason, confirmation, permission, and super_admin (585.0744ms)
+  ✔ preserves uint64 IDs and exposes only the approved response DTO (13.7663ms)
+  ✔ keeps migration grant super_admin-only and provides a narrow rollback (1.7176ms)
+  ✔ recovers a concurrent unique-key loser by replaying the winner without new DML (1.54ms)
+  ✔ ships a 44px, permission-gated, accessible member-detail action with retry-safe mutation input (3.9427ms)
+✔ admin user session revoke route and UI contract (607.5045ms)
+▶ admin web shell
+  ✔ serves the shell and assets with no-store browser security headers (475.5979ms)
+  ✔ provides accessible login, navigation, and status regions (0.3117ms)
+  ✔ connects the approved read APIs, session lifecycle, and leased admin mutations (1.8082ms)
+  ✔ freezes synthetic Gate 3 session and read-response fixtures (1.3264ms)
+  ✔ keeps the account-link detail read-only, masked, deep-linkable, and keyboard reachable (2.2652ms)
+  ✔ shadows account-link success, empty, 404, error, session, and permission states with the same fixture (44.8185ms)
+  ✔ serves every approved view from synthetic APIs without a database (15.5891ms)
+  ✔ keeps permission-aware navigation and failure states in the client contract (0.4626ms)
+  ✔ provides responsive add, explicit soft-disable, conflict, failure, and replay states (0.3173ms)
+  ✔ exposes only package adapter ADD, EDIT, REMOVE and ENABLE states (0.6474ms)
+  ✔ exposes exact object lookup and only REGISTER, UPDATE and SET_ACTIVE states (0.7349ms)
+  ✔ exposes versioned configuration draft, publish, rollback, retire and discard states (0.3146ms)
+  ✔ exposes stable pet-skill definitions, effects, draw policy and version lifecycle (0.2218ms)
+  ✔ exposes grouped balance search, preview diff, apply and rollback only (0.7031ms)
+✔ admin web shell (547.1226ms)
+ℹ tests 34
+ℹ suites 7
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1820.3637

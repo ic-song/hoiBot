@@ -64,6 +64,14 @@ function requireSuperAdmin(session: AdminSession): void {
   if (!session.roleCodes.includes("super_admin")) throw new ApplicationError("SUPER_ADMIN_REQUIRED", "최고관리자만 수행할 수 있습니다.", 403);
 }
 
+// 관리자 mutation 경로에서 lossless unsigned bigint 회원 ID만 허용합니다.
+function readPlayerId(value: string): string {
+  if (!/^(?:0|[1-9]\d*)$/.test(value)) throw new ApplicationError("PLAYER_ID_INVALID", "회원 식별자가 올바르지 않습니다.", 422);
+  const parsed = BigInt(value);
+  if (parsed < 1n || parsed > 18_446_744_073_709_551_615n) throw new ApplicationError("PLAYER_ID_INVALID", "회원 식별자가 올바르지 않습니다.", 422);
+  return value;
+}
+
 function requireBackupDependency<T>(value: T | undefined): T {
   if (value === undefined) throw new ApplicationError("BACKUP_RECOVERY_UNAVAILABLE", "백업·복구 웹 연결이 준비되지 않았습니다.", 503);
   return value;
@@ -320,6 +328,20 @@ export async function registerAdminRoutes(app: FastifyInstance, dependencies: Ad
     const session = await authenticate(request, dependencies, true); requirePermission(session, "account.restrict"); const mutation = readMutation(request, request.body);
     if (request.body?.status !== "revoked") throw new ApplicationError("INVALID_RESTRICTION_STATUS", "제재 상태는 revoked로만 변경할 수 있습니다.", 422);
     return { ok: true, ...await dependencies.management.updateRestriction({ ...mutation, operatorId: session.operatorId, restrictionId: request.params.restrictionId, status: "revoked" }), requestId: request.id };
+  });
+
+  app.post<{ Params: { playerId: string }; Body: MutationBody }>("/api/v1/admin/players/:playerId/session-revocations", async (request) => {
+    const session = await authenticate(request, dependencies, true);
+    requirePermission(session, "account.session.revoke");
+    requireSuperAdmin(session);
+    const mutation = readMutation(request, request.body);
+    const playerId = readPlayerId(request.params.playerId);
+    const sessionRevocation = await dependencies.management.revokePlayerSessions({
+      ...mutation,
+      operatorId: session.operatorId,
+      playerId
+    });
+    return { sessionRevocation };
   });
 
   app.get("/api/v1/admin/account-deletion-requests", async (request) => {

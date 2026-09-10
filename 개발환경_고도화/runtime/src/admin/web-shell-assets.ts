@@ -313,6 +313,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .account-actions { margin: 20px -16px -16px; padding: 18px 16px; border-top: 1px solid var(--line); background: #fbfcfd; }
 .account-actions > h4 { margin: 0; font-size: 13px; }
 .account-actions > p { margin: 6px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.session-revocation-status { margin: 0; padding: 9px 10px; border-left: 3px solid var(--accent); background: #f2f7fb; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.session-revocation-status.unavailable { border-left-color: #9aa6b2; background: #f5f6f7; }
+.session-revocation-result { margin: 0; color: var(--success); font-size: 11px; font-weight: 800; }
 .restriction-list { display: grid; gap: 8px; margin-bottom: 16px; }
 .restriction-card { padding: 11px; background: #fff; border: 1px solid var(--line); border-left: 3px solid #9aa6b2; }
 .restriction-card.active { border-left-color: var(--danger); }
@@ -340,7 +343,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .account-action-form textarea { min-height: 64px; }
 .confirm-row { display: flex; align-items: flex-start; gap: 8px; color: var(--ink); font-size: 10px; line-height: 1.45; }
 .confirm-row input { width: 16px; min-height: 16px; margin: 0; accent-color: var(--danger); }
-.danger-button { min-height: 40px; padding: 0 14px; color: #fff; background: var(--danger); border: 1px solid var(--danger); border-radius: 7px; font-weight: 800; }
+.danger-button { min-height: 44px; padding: 0 14px; color: #fff; background: var(--danger); border: 1px solid var(--danger); border-radius: 7px; font-weight: 800; }
 .danger-button:hover { background: #922f28; }
 .danger-button:disabled { opacity: .58; cursor: wait; }
 .inline-error { margin: 0; padding: 8px 10px; color: var(--danger); background: #fff2f0; border-left: 3px solid var(--danger); font-size: 10px; }
@@ -883,14 +886,23 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     }).join("") + "</div>";
   }
 
-  // account.restrict 권한이 있는 운영자에게 새 계정 조치 폼을 표시합니다.
+  // 권한별로 세션 회수와 계정 제재 조치를 회원 상세에 표시합니다.
   function renderAccountActions(player) {
-    if (!hasPermission("account.restrict")) return "";
-    return "<section class=\"detail-section account-actions\"><h4>계정 조치</h4><p class=\"action-gap-note\">이 조치는 감사 기록에 남지만 별도 알림은 발송하지 않습니다.</p>" +
-      "<form id=\"restriction-create-form\" class=\"account-action-form\"><label>조치 유형<select name=\"restrictionType\"><option value=\"temporary_suspension\">기간 정지</option><option value=\"permanent_suspension\">영구 정지</option></select></label>" +
-      "<label data-ends-at-field>종료 시각<input type=\"datetime-local\" name=\"endsAt\" required></label><label>조치 사유<textarea name=\"reason\" rows=\"3\" required placeholder=\"정지가 필요한 운영 근거를 입력하세요.\"></textarea></label>" +
-      "<label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 회원 계정 상태와 세션에 영향을 주는 조치임을 확인했습니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"danger-button\" type=\"submit\">계정 정지 적용</button></form></section>" +
-      "<section class=\"detail-section\"><h4>계정 제재 이력</h4>" + renderRestrictions(player.restrictions) + "</section>";
+    var sections = "";
+    if (hasPermission("account.session.revoke") && hasAnyRole(["super_admin"])) {
+      sections += "<section class=\"detail-section account-actions session-revocation-card\" aria-labelledby=\"session-revocation-title\"><h4 id=\"session-revocation-title\">사용자 세션 회수</h4><p>이 회원의 웹 로그인 세션을 모두 종료합니다. 계정 상태와 제재 상태는 변경하지 않습니다.</p>" +
+        "<form id=\"session-revoke-form\" class=\"account-action-form\"><p id=\"session-revoke-availability\" class=\"session-revocation-status unavailable\" role=\"status\" aria-live=\"polite\">연결 계정을 확인하는 중입니다.</p>" +
+        "<label>회수 사유<textarea name=\"reason\" rows=\"3\" required maxlength=\"500\" placeholder=\"세션 종료가 필요한 운영 근거를 입력하세요.\"></textarea></label>" +
+        "<label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 사용자가 다시 로그인해야 함을 확인했습니다.</label><p class=\"inline-error\" data-action-error role=\"alert\" hidden></p><p id=\"session-revoke-result\" class=\"session-revocation-result\" role=\"status\" aria-live=\"polite\" hidden></p><button class=\"danger-button\" type=\"submit\" disabled>활성 세션 모두 회수</button></form></section>";
+    }
+    if (hasPermission("account.restrict")) {
+      sections += "<section class=\"detail-section account-actions\"><h4>계정 조치</h4><p class=\"action-gap-note\">이 조치는 감사 기록에 남지만 별도 알림은 발송하지 않습니다.</p>" +
+        "<form id=\"restriction-create-form\" class=\"account-action-form\"><label>조치 유형<select name=\"restrictionType\"><option value=\"temporary_suspension\">기간 정지</option><option value=\"permanent_suspension\">영구 정지</option></select></label>" +
+        "<label data-ends-at-field>종료 시각<input type=\"datetime-local\" name=\"endsAt\" required></label><label>조치 사유<textarea name=\"reason\" rows=\"3\" required placeholder=\"정지가 필요한 운영 근거를 입력하세요.\"></textarea></label>" +
+        "<label class=\"confirm-row\"><input type=\"checkbox\" name=\"confirmed\" required> 회원 계정 상태와 세션에 영향을 주는 조치임을 확인했습니다.</label><p class=\"inline-error\" data-action-error hidden></p><button class=\"danger-button\" type=\"submit\">계정 정지 적용</button></form></section>" +
+        "<section class=\"detail-section\"><h4>계정 제재 이력</h4>" + renderRestrictions(player.restrictions) + "</section>";
+    }
+    return sections;
   }
 
   // 계정 조치 폼의 오류 문구와 제출 상태를 갱신합니다.
@@ -905,6 +917,37 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
 
   // 회원 상세의 신규 정지와 기존 제재 해제 폼을 API에 연결합니다.
   function attachAccountActions(player) {
+    var sessionForm = byId("session-revoke-form");
+    if (sessionForm) {
+      var sessionButton = sessionForm.querySelector("button[type=submit]");
+      sessionButton.dataset.label = "활성 세션 모두 회수";
+      sessionForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var data = new FormData(sessionForm);
+        var reason = data.get("reason").toString().trim();
+        var resultNode = byId("session-revoke-result");
+        if (!reason || !data.get("confirmed")) {
+          setActionState(sessionForm, "회수 사유와 확인 항목을 모두 입력해 주세요.", false);
+          return;
+        }
+        var scope = "session.revoke:" + player.playerId + ":" + reason;
+        setActionState(sessionForm, "", true);
+        if (resultNode) resultNode.hidden = true;
+        try {
+          var payload = await mutateAccount("/api/v1/admin/players/" + encodeURIComponent(player.playerId) + "/session-revocations", "POST", { reason: reason, confirmed: true }, scope);
+          var count = payload.sessionRevocation.revokedSessionCount;
+          if (resultNode) {
+            resultNode.textContent = count > 0 ? count + "개 활성 세션을 회수했습니다." : "회수할 활성 세션이 없습니다.";
+            resultNode.hidden = false;
+          }
+          showToast(count > 0 ? count + "개 사용자 세션을 회수했습니다." : "활성 사용자 세션이 없습니다.");
+          sessionForm.reset();
+          setActionState(sessionForm, "", false);
+        } catch (error) {
+          setActionState(sessionForm, errorMessage(error), false);
+        }
+      });
+    }
     var createForm = byId("restriction-create-form");
     if (createForm) {
       var type = createForm.elements.restrictionType;
@@ -1016,17 +1059,35 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     container.innerHTML = loadingState("계정 연결 정보를 불러오는 중");
     try {
       var payload = await api("/api/v1/admin/players/" + encodeURIComponent(playerId) + "/account-links");
-      container.innerHTML = renderAccountLinks(payload.accountLinks || []);
+      var accountLinks = payload.accountLinks || [];
+      container.innerHTML = renderAccountLinks(accountLinks);
+      syncSessionRevocationAvailability(accountLinks.length > 0);
     } catch (error) {
       var title = error && error.status === 404 ? "대상 회원을 찾을 수 없습니다." : error && error.status === 403 ? "계정 연결 조회 권한이 없습니다." : "계정 연결 정보를 불러오지 못했습니다.";
       container.innerHTML = "<div class=\"error-state\" role=\"alert\"><div><strong>" + escapeHtml(title) + "</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" data-account-link-retry>다시 시도</button></div></div>";
       var retry = container.querySelector("[data-account-link-retry]");
       if (retry) retry.addEventListener("click", function () { loadPlayerAccountLinks(playerId, true); });
+      syncSessionRevocationAvailability(null);
     }
     if (moveFocus) {
       var heading = byId("account-link-title");
       if (heading) window.setTimeout(function () { heading.focus(); }, 0);
     }
+  }
+
+  // 계정 연결 조회 결과에 따라 위험한 세션 회수 제출 가능 여부를 동기화합니다.
+  function syncSessionRevocationAvailability(hasLinkedAccount) {
+    var form = byId("session-revoke-form");
+    if (!form) return;
+    var status = byId("session-revoke-availability");
+    var button = form.querySelector("button[type=submit]");
+    button.disabled = hasLinkedAccount !== true;
+    status.classList.toggle("unavailable", hasLinkedAccount !== true);
+    status.textContent = hasLinkedAccount === true
+      ? "연결 계정이 확인됐습니다. 현재 활성 세션만 회수됩니다."
+      : hasLinkedAccount === false
+        ? "연결 계정이 없어 세션을 회수할 수 없습니다."
+        : "연결 계정 상태를 확인하지 못해 세션 회수를 잠갔습니다.";
   }
 
   // 선택한 회원의 프로필과 마스킹된 계정 연결 패널을 표시합니다.
