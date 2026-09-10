@@ -45,6 +45,7 @@ function createStatefulDatabase(binding) {
         lastHandlerKey = rows[0]?.handler_key ?? null;
       } else if (n.startsWith("SELECT id FROM channels")) rows = [{ id: 1n }];
       else if (n.startsWith("SELECT id FROM external_identities")) rows = [{ id: 10n }];
+      else if (n.startsWith("SELECT id FROM guild_territory_wars WHERE active=TRUE")) rows = binding.castleSiegeFlag ? [{ id: 30n }] : [];
       else if (n.includes("FROM external_identities identity") && n.includes("JOIN players player")) {
         rows = binding.modern.actorActive ? [{ external_identity_id: 10n, player_id: 20n, display_name: binding.sender, rank_emoji: binding.modern.actorRankEmoji }] : [];
       } else if (n.includes("FROM player_title_read_delegates")) rows = binding.authorized ? [{ allowed: 1 }] : [];

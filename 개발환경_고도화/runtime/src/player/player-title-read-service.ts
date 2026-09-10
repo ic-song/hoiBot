@@ -89,6 +89,11 @@ export class PlayerTitleReadService {
     const parsed = parsePlayerTitleReadCommand(input.message);
     if (parsed === null) return null;
     return this.database.withTransaction(async (transaction) => {
+      const activeWar = (await transaction.query<Array<{ id: bigint }>>(
+        "SELECT id FROM guild_territory_wars WHERE active=TRUE ORDER BY id LIMIT 1 FOR UPDATE"
+      ))[0];
+      if (activeWar !== undefined) return null;
+
       const actor = (await transaction.query<Array<{ external_identity_id: bigint; player_id: bigint; display_name: string; rank_emoji: string | null }>>(
         `SELECT identity.id external_identity_id,player.id player_id,profile.current_display_name display_name,rank_profile.rank_emoji
            FROM external_identities identity
