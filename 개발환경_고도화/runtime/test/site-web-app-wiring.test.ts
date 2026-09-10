@@ -19,6 +19,10 @@ test("이용자 셸과 계정 복구 셸을 기존 웹 경로와 충돌 없이 �
   const source = readFileSync(new URL("../src/app.ts", import.meta.url), "utf8");
   assert.equal(source.match(/registerUserShellRoutes\(app\);/g)?.length, 1);
   assert.equal(source.match(/registerAccountRecoveryRoutes\(app\);/g)?.length, 1);
+  assert.equal(source.match(/registerCurrentPlayerBagWebRoutes\(app,/g)?.length, 1);
+  assert.equal(source.match(/const userAuth = new UserAuthService/g)?.length, 1);
+  assert.match(source, /registerUserAuthRoutes\(app, \{\s*auth: userAuth,/);
+  assert.match(source, /registerCurrentPlayerBagWebRoutes\(app, \{\s*auth: userAuth,\s*bags: new MariaBagRepository\(database\)/);
 
   const app = buildApp(loadConfig({
     NODE_ENV: "test",

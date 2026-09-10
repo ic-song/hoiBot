@@ -239,6 +239,7 @@ import { isConstructionEditCommandCandidate } from "./home/construction-edit-pol
 import { MariaConstructionEditRepository } from "./home/maria-construction-edit-repository.js";
 import { UserAuthService } from "./user-auth/user-auth-service.js";
 import { registerUserAuthRoutes } from "./user-auth/routes.js";
+import { registerCurrentPlayerBagWebRoutes } from "./inventory/current-player-bag-web-routes.js";
 import { AccountCleanupService } from "./user-auth/account-cleanup-service.js";
 import { ProviderVerificationService } from "./user-auth/provider-verification-service.js";
 import { readKakaoVerificationCode } from "./user-auth/policy.js";
@@ -991,11 +992,16 @@ export function buildApp(config: AppConfig, dependencies: AppDependencies = {}) 
       reader: new AdminBalanceReadModelProvider(database),
       mutation: new AdminBalanceMutationProvider(database, adminBalanceRepository)
     });
+    const userAuth = new UserAuthService(database, config.userVerificationPepper, config.nodeEnv);
     void registerUserAuthRoutes(app, {
-      auth: new UserAuthService(database, config.userVerificationPepper, config.nodeEnv),
+      auth: userAuth,
       profiles,
       rateLimiter: new RequestRateLimiter(config.userVerificationPepper),
       secureCookies: config.nodeEnv === "production"
+    });
+    void registerCurrentPlayerBagWebRoutes(app, {
+      auth: userAuth,
+      bags: new MariaBagRepository(database)
     });
     if (config.nodeEnv !== "test") {
       const cleanup = dependencies.runAccountCleanupMaintenance
