@@ -4159,6 +4159,57 @@ Status: VERIFIED
 
 ---
 
+# /소식 및 소식 관리 명령
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `processWorldNewsCommand`
+- User command: `/소식`
+- Admin/Master commands: `/소식작성`, `/소식관리`, `/소식수정 [번호]`, `/소식삭제 [번호]`, `/소식등록`, `/소식취소`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `ensureWorldNewsData`
+- `drawWorldNewsReward`
+- `buildWorldNewsUserMessage`
+- `buildWorldNewsJackpotBroadcast`
+- `buildWorldNewsManageMessage`
+- `processWorldNewsCommand`
+- `noticeMsg`
+- `checkRank`
+
+## Data Usage
+
+- `data.worldNews.posts`
+- `data.worldNews.nextId`
+- `data.member[sender].worldNewsLotteryPlayed`
+- `data.member[sender].point`
+- `worldNewsDraftState` (작성·수정 중인 5분 임시 상태만 메모리 보관)
+
+## Save Flow
+
+- `/소식`의 첫 참여는 포인트와 참여 완료 상태를 함께 변경하고 `member.json`을 한 번 저장한다.
+- `/리셋`은 전 유저의 소식복권 참여 완료 상태를 다른 일일 횟수와 함께 제거한다.
+- 게시글 등록·수정·삭제는 소식 저장 구조를 변경하고 `member.json`을 한 번 저장한다.
+- 제목·내용·링크 입력과 미리보기 단계는 영구 데이터를 변경하지 않는다.
+- 10억 당첨 전체알림은 포인트와 참여 날짜 저장 성공 뒤에만 전송한다.
+
+## Notes
+
+- 복권은 계정당 `/리셋` 주기마다 1회이며 1,000만 50%, 5,000만 30%, 1억 15%, 5억 4%, 10억 1%로 꽝 없이 지급한다. 자정이 지나도 `/리셋` 전에는 다시 참여할 수 없다.
+- 최신 글 1개는 기본 화면에 표시하고 이전 글은 `allsee` 뒤에 최신순으로 표시한다.
+- 게시글은 최대 100개를 보관하며 101번째 등록부터 가장 오래된 글을 제거한다. 삭제된 글번호는 재사용하지 않는다.
+- 수정은 글번호·최초 작성일·작성자 수식어·노출 순서를 유지한다.
+- 관리자 작성 상태는 관리자 계정과 채팅방 조합별로 분리하며 5분 미입력 시 폐기한다.
+
+---
+
 # /미니펫컬렉션초기화 [아이디]
 
 Status: VERIFIED

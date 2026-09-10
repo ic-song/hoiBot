@@ -1,9 +1,10 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.484"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.485"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
+var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
 let privateChatBlockedTracker = {}; // 패스 미사용 유저별 1:1톡 차단 횟수
 let requestMonitorConfig = null;
@@ -799,6 +800,29 @@ const GLOBAL_CONFIG = {
     },
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
+    },
+    worldNews: { // 호이월드 소식·소식복권 설정
+        maxPosts: 100,
+        draftTimeoutMs: 300000,
+        rewards: [
+            { point: 10000000, rate: 50, label: "🪙 1,000만 포인트" },
+            { point: 50000000, rate: 30, label: "💰 5,000만 포인트" },
+            { point: 100000000, rate: 15, label: "💎 1억 포인트" },
+            { point: 500000000, rate: 4, label: "🔥 5억 포인트" },
+            { point: 1000000000, rate: 1, label: "👑 10억 포인트", broadcast: true }
+        ],
+        authorAdjectives: [
+            "귀여운", "멋진", "깜찍한", "앙증맞은", "사랑스러운", "애교 많은", "잔망스러운", "해맑은", "다정한", "포근한",
+            "말랑말랑한", "폭신폭신한", "동글동글한", "볼이 빵빵한", "눈이 초롱초롱한", "미소가 예쁜", "웃음이 많은", "꼬물꼬물한", "발랄한", "반짝반짝한",
+            "장난이 심한", "장난기가 넘치는", "까불까불한", "능청스러운", "얄미운데 귀여운", "몰래 웃는", "놀릴 준비가 된", "웃음을 참는", "딴청 피우는", "모른 척하는",
+            "괜히 당당한", "살짝 뻔뻔한", "허세를 부리는", "깐족거리는", "삐졌다가 풀린", "삐진 척하는", "눈치를 살피는", "사고 치고 온", "반성하는 척하는", "오늘도 들킨",
+            "배고픈", "간식이 필요한", "볼에 간식을 숨긴", "해바라기씨를 모으는", "해바라기씨 부자인", "치즈를 사랑하는", "밥 먹고 온", "입가에 부스러기 묻은", "야식이 당기는", "냉장고를 기웃대는",
+            "과자 봉지를 뜯은", "디저트 배가 따로 있는", "다이어트를 내일로 미룬", "마지막 한입을 노리는", "한입만 달라는", "배불러서 행복한", "간식을 지키는", "먹을 때 진지한", "맛집을 찾아다니는", "오늘도 잘 먹는",
+            "방금 일어난", "아직 졸린", "하품하는", "이불 밖이 무서운", "낮잠이 필요한", "커피가 필요한", "월요일이 싫은", "금요일만 기다리는", "퇴근이 급한", "칼퇴를 꿈꾸는",
+            "출근하다 길을 잃은", "알람을 못 들은", "딴생각 중인", "집에 가고 싶은", "주말을 기다리는", "배터리가 부족한", "충전이 필요한", "오늘도 버티는", "잠깐 쉬고 온", "휴가를 꿈꾸는",
+            "열일하는", "의욕이 넘치는", "자신감이 넘치는", "은근히 똑똑한", "허당미 넘치는", "계획은 완벽한", "일단 해보는", "칭찬이 고픈", "관심이 필요한", "박수를 기다리는",
+            "혼자 신난", "갑자기 진지한", "쓸데없이 비장한", "비밀이 많은", "주인공이 되고 싶은", "행운을 배달하는", "대박을 꿈꾸는", "소식을 물고 온", "공지를 들고 온", "여러분을 기다린"
+        ]
     },
     package: { // 통합 패키지 설정
         maxUseOnce: 1000 // 한 번에 사용할 수 있는 최대 패키지 수량
@@ -3112,6 +3136,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         var restoredExpiredPremiumSkillCount = data.member[sender] ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 기존 잠금 중 현재 빈 슬롯에 복구된 스킬 수
         if (restoredExpiredPremiumSkillCount > 0) saveJsonFile(petSkillData, petSkillDataPath);
+        var worldNewsResult = processWorldNewsCommand(data, petData, guildData, sender, room, msg);
+        if (worldNewsResult.handled) {
+            if (worldNewsResult.changed) saveJsonFile(data, filePath);
+            if (worldNewsResult.message) replier.reply(worldNewsResult.message);
+            if (worldNewsResult.broadcastMessage) noticeMsg(worldNewsResult.broadcastMessage);
+            return;
+        }
         commonStepStart = Date.now();
         var matzangField = ensureMatzangFieldData(data);
         addResponseTiming("맞짱필드 보정", commonStepStart);
@@ -29803,6 +29834,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
+        command === "/소식" || command === "/소식등록" || /^\/소식삭제\s+\d+$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
@@ -33484,6 +33516,9 @@ function resetAttendance(petData, data, replier) {
         }
         if (data.member[user].diamondTycoon !== undefined) {
             delete data.member[user].diamondTycoon;
+        }
+        if (data.member[user].worldNewsLotteryPlayed !== undefined) {
+            delete data.member[user].worldNewsLotteryPlayed;
         }
         data.member[user].battle.ticket = 0;
         data.member[user].battle.count = 0;
@@ -39904,6 +39939,359 @@ function setPackageEnabledByCommand(sender, msg, enabled, packageInfoData) {
         message: lines.join("\n"),
         packageInfoData: packageInfoData
     };
+}
+
+// 호이월드 소식 저장 구조를 보장하는 함수
+function ensureWorldNewsData(data) {
+    if (!data.worldNews || typeof data.worldNews !== "object" || data.worldNews instanceof Array) data.worldNews = {};
+    if (!(data.worldNews.posts instanceof Array)) data.worldNews.posts = [];
+    var nextId = parseInt(data.worldNews.nextId, 10);
+    if (isNaN(nextId) || nextId < 1) {
+        nextId = 1;
+        for (var i = 0; i < data.worldNews.posts.length; i++) {
+            var postId = parseInt(data.worldNews.posts[i] && data.worldNews.posts[i].id, 10);
+            if (!isNaN(postId) && postId >= nextId) nextId = postId + 1;
+        }
+    }
+    data.worldNews.nextId = nextId;
+    return data.worldNews;
+}
+
+// 한국 시간 기준 소식 작성 일시를 반환하는 함수
+function getWorldNewsKstDateTime() {
+    var formatter = new java.text.SimpleDateFormat("yyyy.MM.dd HH:mm");
+    formatter.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Seoul"));
+    return String(formatter.format(new Date()));
+}
+
+// 소식 작성 상태를 관리자와 채팅방 조합으로 구분하는 함수
+function getWorldNewsDraftKey(sender, room) {
+    return String(sender) + "\u0000" + String(room);
+}
+
+// 소식 작성 상태의 5분 만료를 예약하는 함수
+function scheduleWorldNewsDraftTimeout(draftKey, room, updatedAt) {
+    setTimeout(function () {
+        var draft = worldNewsDraftState[draftKey];
+        if (!draft || draft.updatedAt !== updatedAt) return;
+        if (Date.now() - draft.updatedAt < GLOBAL_CONFIG.worldNews.draftTimeoutMs) return;
+        delete worldNewsDraftState[draftKey];
+        Api.replyRoom(room, "⌛ 5분간 입력이 없어 소식 작성이 종료되었습니다.\n\n새 글 작성: /소식작성\n기존 글 수정: /소식수정 [번호]");
+    }, GLOBAL_CONFIG.worldNews.draftTimeoutMs + 100);
+}
+
+// 소식 작성 상태의 입력 시각을 갱신하고 만료를 다시 예약하는 함수
+function refreshWorldNewsDraft(draftKey, room) {
+    var draft = worldNewsDraftState[draftKey];
+    if (!draft) return;
+    draft.updatedAt = Date.now();
+    scheduleWorldNewsDraftTimeout(draftKey, room, draft.updatedAt);
+}
+
+// 소식복권 확률표에서 당첨 보상을 선택하는 함수
+function drawWorldNewsReward() {
+    var roll = Math.random() * 100;
+    var cumulative = 0;
+    for (var i = 0; i < GLOBAL_CONFIG.worldNews.rewards.length; i++) {
+        cumulative += GLOBAL_CONFIG.worldNews.rewards[i].rate;
+        if (roll < cumulative) return GLOBAL_CONFIG.worldNews.rewards[i];
+    }
+    return GLOBAL_CONFIG.worldNews.rewards[GLOBAL_CONFIG.worldNews.rewards.length - 1];
+}
+
+// 소식 게시글 한 건을 유저 화면 형식으로 만드는 함수
+function formatWorldNewsPost(post, includeId) {
+    var lines = [];
+    if (includeId) lines.push("🔢 글번호: #" + post.id);
+    lines.push("📌 " + post.title);
+    lines.push("━━━━━━━━━━━━");
+    lines.push("👤 작성자: " + post.authorAdjective + " 호월이🐹");
+    lines.push("🗓️ 작성일: " + post.createdAt);
+    lines.push("");
+    lines.push(post.content);
+    if (post.link) {
+        lines.push("");
+        lines.push("🔗 안내 링크");
+        lines.push(post.link);
+    }
+    return lines.join("\n");
+}
+
+// 소식복권 결과와 최신·지난 소식을 하나의 유저 화면으로 만드는 함수
+function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResult) {
+    var news = ensureWorldNewsData(data);
+    var posts = news.posts;
+    var lines = ["📢 잠깐! 호이월드 소식 왔어요 👀", "━━━━━━━━━━━━"];
+    if (lotteryResult.firstEntry) {
+        lines.push("🎰 [" + checkRank(data, petData, guildData, sender) + "] 님");
+        lines.push(lotteryResult.reward.label + " 당첨! 지급 완료 ✅");
+        lines.push("🍀 하루 1회 · 최대 10억 포인트");
+    } else {
+        lines.push("🎰 [" + checkRank(data, petData, guildData, sender) + "] 님 · 오늘 참여 완료 ✅");
+        lines.push("🍀 내일 다시 도전하세요!");
+    }
+    lines.push("━━━━━━━━━━━━");
+
+    if (posts.length < 1) {
+        lines.push("📭 아직 등록된 소식이 없습니다.");
+        lines.push("🗂 최근 등록된 소식: 0개");
+        return lines.join("\n");
+    }
+
+    lines.push("🆕 가장 최근 소식");
+    lines.push("");
+    lines.push(formatWorldNewsPost(posts[0], false));
+    lines.push("━━━━━━━━━━━━");
+    lines.push("🗂 최근 등록된 소식: " + posts.length + "개");
+    if (posts.length > 1) {
+        lines.push("📚 지난 소식은 전체보기로 확인하세요 👇");
+        lines.push(allsee);
+        for (var i = 1; i < posts.length; i++) {
+            if (i > 1) lines.push("");
+            lines.push("━━━━━━━━━━━━");
+            lines.push(formatWorldNewsPost(posts[i], false));
+        }
+        lines.push("━━━━━━━━━━━━");
+    }
+    return lines.join("\n");
+}
+
+// 10억 포인트 당첨 전체알림 문구를 만드는 함수
+function buildWorldNewsJackpotBroadcast(data, petData, guildData, sender) {
+    return "📢 소식복권 10억 포인트 당첨 소식!\n" +
+        "━━━━━━━━━━━━\n" +
+        "👑 [" + checkRank(data, petData, guildData, sender) + "] 님!\n\n" +
+        "🎉 소식복권 10억 포인트 당첨입니다!\n" +
+        "축하드려요! 🥳\n\n" +
+        "💰 당첨 포인트가 지급되었습니다.\n" +
+        "━━━━━━━━━━━━\n" +
+        "🍀 다음 행운의 주인공은?\n" +
+        "지금 /소식 입력하고 도전하세요!\n\n" +
+        "🎰 하루 1회 · 꽝 없이 최대 10억 포인트";
+}
+
+// 관리자 소식 전체 목록을 관리 화면 형식으로 만드는 함수
+function buildWorldNewsManageMessage(data) {
+    var posts = ensureWorldNewsData(data).posts;
+    var lines = ["📋 소식 관리", "🗂 최근 등록된 소식: " + posts.length + "개"];
+    if (posts.length < 1) {
+        lines.push("📭 아직 등록된 소식이 없습니다.");
+        return lines.join("\n");
+    }
+    lines.push(allsee);
+    for (var i = 0; i < posts.length; i++) {
+        lines.push("━━━━━━━━━━━━");
+        lines.push(formatWorldNewsPost(posts[i], true));
+        if (i < posts.length - 1) lines.push("");
+    }
+    lines.push("━━━━━━━━━━━━");
+    lines.push("✏️ 수정: /소식수정 [번호]");
+    lines.push("🗑️ 삭제: /소식삭제 [번호]");
+    return lines.join("\n");
+}
+
+// 소식 작성·수정 미리보기 화면을 만드는 함수
+function buildWorldNewsDraftPreview(draft) {
+    var post = {
+        id: draft.targetId || "",
+        title: draft.title,
+        content: draft.content,
+        link: draft.link,
+        createdAt: draft.mode === "edit" ? draft.createdAt : "등록 시 자동 기록",
+        authorAdjective: draft.authorAdjective
+    };
+    var lines = [draft.mode === "edit" ? "📝 소식 수정 완료! 저장 전 확인해주세요." : "📝 소식 작성 완료! 등록 전 확인해주세요.", "━━━━━━━━━━━━"];
+    lines.push(formatWorldNewsPost(post, false));
+    lines.push("━━━━━━━━━━━━");
+    if (draft.mode === "edit") {
+        lines.push("✅ 수정 저장: /소식등록");
+        lines.push("🔄 처음부터 다시 수정: /소식수정 " + draft.targetId);
+        lines.push("❌ 수정 취소: /소식취소");
+    } else {
+        lines.push("✅ 최종 등록: /소식등록");
+        lines.push("🔄 처음부터 다시 작성: /소식작성");
+        lines.push("❌ 작성 취소: /소식취소");
+    }
+    return lines.join("\n");
+}
+
+// 소식 명령과 관리자 작성 상태 입력을 처리하는 함수
+function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
+    var result = { handled: false, changed: false, message: "", broadcastMessage: "" };
+    var news = ensureWorldNewsData(data);
+    var isOperator = isAdmin(sender) || isMaster(sender);
+    var draftKey = getWorldNewsDraftKey(sender, room);
+    var draft = worldNewsDraftState[draftKey];
+
+    if (msg === "/소식") {
+        var member = data.member[sender];
+        var firstEntry = member.worldNewsLotteryPlayed !== true;
+        var reward = null;
+        if (firstEntry) {
+            reward = drawWorldNewsReward();
+            member.point = (Number(member.point) || 0) + reward.point;
+            member.worldNewsLotteryPlayed = true;
+            result.changed = true;
+            if (reward.broadcast) result.broadcastMessage = buildWorldNewsJackpotBroadcast(data, petData, guildData, sender);
+        }
+        result.handled = true;
+        result.message = buildWorldNewsUserMessage(data, petData, guildData, sender, { firstEntry: firstEntry, reward: reward });
+        return result;
+    }
+
+    var isAdminCommand = /^\/소식(?:작성|관리|등록|취소)(?:\s+.*)?$/.test(msg) || /^\/소식(?:삭제|수정)(?:\s+.*)?$/.test(msg);
+    if (isAdminCommand && !isOperator) {
+        result.handled = true;
+        result.message = "❌ 소식 관리 명령어를 사용할 권한이 없습니다.";
+        return result;
+    }
+
+    if (msg === "/소식작성") {
+        var adjectives = GLOBAL_CONFIG.worldNews.authorAdjectives;
+        worldNewsDraftState[draftKey] = {
+            mode: "create",
+            step: "title",
+            authorAdjective: adjectives[Math.floor(Math.random() * adjectives.length)]
+        };
+        refreshWorldNewsDraft(draftKey, room);
+        result.handled = true;
+        result.message = "📝 소식 추가 [1/3] · 제목\n\n소식의 제목을 입력해주세요.\n\n❌ 취소: /소식취소";
+        return result;
+    }
+
+    if (msg === "/소식관리") {
+        result.handled = true;
+        result.message = buildWorldNewsManageMessage(data);
+        return result;
+    }
+
+    var deleteMatch = msg.match(/^\/소식삭제\s+(\d+)$/);
+    if (deleteMatch) {
+        var deleteId = parseInt(deleteMatch[1], 10);
+        var deleteIndex = -1;
+        for (var di = 0; di < news.posts.length; di++) if (parseInt(news.posts[di].id, 10) === deleteId) deleteIndex = di;
+        result.handled = true;
+        if (deleteIndex < 0) {
+            result.message = "❌ 해당 번호의 소식을 찾을 수 없습니다.\n/소식관리에서 글번호를 확인해주세요.";
+            return result;
+        }
+        news.posts.splice(deleteIndex, 1);
+        result.changed = true;
+        result.message = "🗑️ 소식이 삭제되었습니다.\n\n🔢 삭제한 글번호: #" + deleteId;
+        return result;
+    }
+
+    var editMatch = msg.match(/^\/소식수정\s+(\d+)$/);
+    if (editMatch) {
+        var editId = parseInt(editMatch[1], 10);
+        var editPost = null;
+        for (var ei = 0; ei < news.posts.length; ei++) if (parseInt(news.posts[ei].id, 10) === editId) editPost = news.posts[ei];
+        result.handled = true;
+        if (!editPost) {
+            result.message = "❌ 해당 번호의 소식을 찾을 수 없습니다.\n/소식관리에서 글번호를 확인해주세요.";
+            return result;
+        }
+        worldNewsDraftState[draftKey] = {
+            mode: "edit",
+            step: "title",
+            targetId: editId,
+            authorAdjective: editPost.authorAdjective,
+            createdAt: editPost.createdAt
+        };
+        refreshWorldNewsDraft(draftKey, room);
+        result.message = "📝 소식 수정 [1/3] · 글번호 #" + editId + "\n\n새 제목을 입력해주세요.\n\n❌ 취소: /소식취소";
+        return result;
+    }
+
+    if (msg === "/소식취소") {
+        result.handled = true;
+        if (worldNewsDraftState[draftKey]) delete worldNewsDraftState[draftKey];
+        result.message = "❌ 진행 중인 소식 작성·수정을 취소했습니다.";
+        return result;
+    }
+
+    if (msg === "/소식등록") {
+        result.handled = true;
+        draft = worldNewsDraftState[draftKey];
+        if (!draft || draft.step !== "preview") {
+            result.message = "❌ 등록할 소식 미리보기가 없습니다.\n새 글 작성: /소식작성";
+            return result;
+        }
+        if (draft.mode === "edit") {
+            var targetPost = null;
+            for (var ti = 0; ti < news.posts.length; ti++) if (parseInt(news.posts[ti].id, 10) === draft.targetId) targetPost = news.posts[ti];
+            if (!targetPost) {
+                delete worldNewsDraftState[draftKey];
+                result.message = "❌ 수정 대상 소식을 찾을 수 없습니다.\n새 글로 등록하지 않았습니다.";
+                return result;
+            }
+            targetPost.title = draft.title;
+            targetPost.content = draft.content;
+            targetPost.link = draft.link;
+            delete worldNewsDraftState[draftKey];
+            result.changed = true;
+            result.message = "✅ 소식이 수정되었습니다!\n\n🔢 글번호: #" + targetPost.id + "\n📌 " + targetPost.title;
+            return result;
+        }
+        var newPost = {
+            id: news.nextId++,
+            title: draft.title,
+            content: draft.content,
+            link: draft.link,
+            createdAt: getWorldNewsKstDateTime(),
+            authorAdjective: draft.authorAdjective
+        };
+        news.posts.unshift(newPost);
+        while (news.posts.length > GLOBAL_CONFIG.worldNews.maxPosts) news.posts.pop();
+        delete worldNewsDraftState[draftKey];
+        result.changed = true;
+        result.message = "✅ 새로운 소식이 등록되었습니다!\n\n📌 " + newPost.title + "\n🔢 글번호: #" + newPost.id + "\n\n/소식 입력 시 가장 최근 글로 표시됩니다.";
+        return result;
+    }
+
+    if (/^\/소식(?:작성|관리|등록|취소)\s+.*$/.test(msg) || /^\/소식삭제(?:\s+.*)?$/.test(msg) || /^\/소식수정(?:\s+.*)?$/.test(msg)) {
+        result.handled = true;
+        result.message = "사용법: /소식작성, /소식관리, /소식수정 [번호], /소식삭제 [번호], /소식등록, /소식취소";
+        return result;
+    }
+
+    draft = worldNewsDraftState[draftKey];
+    if (!draft || !isOperator || String(msg).charAt(0) === "/") return result;
+    result.handled = true;
+    if (draft.step === "title") {
+        draft.title = String(msg).trim();
+        if (!draft.title) {
+            result.message = "❌ 제목을 입력해주세요.";
+            return result;
+        }
+        draft.step = "content";
+        refreshWorldNewsDraft(draftKey, room);
+        result.message = "📝 소식 " + (draft.mode === "edit" ? "수정" : "추가") + " [2/3] · 내용\n\n📌 제목: " + draft.title + "\n\n소식의 내용을 입력해주세요.\n줄바꿈을 포함해 한 메시지로 보내주세요.\n\n❌ 취소: /소식취소";
+        return result;
+    }
+    if (draft.step === "content") {
+        draft.content = String(msg).trim();
+        if (!draft.content) {
+            result.message = "❌ 소식 내용을 입력해주세요.";
+            return result;
+        }
+        draft.step = "link";
+        refreshWorldNewsDraft(draftKey, room);
+        result.message = "📝 소식 " + (draft.mode === "edit" ? "수정" : "추가") + " [3/3] · 안내 링크\n\n🔗 안내 링크를 입력해주세요.\n입력한 링크는 본문 아래에 표시됩니다.\n\n링크가 없으면 ‘없음’을 입력해주세요.\n\n❌ 취소: /소식취소";
+        return result;
+    }
+    if (draft.step === "link") {
+        draft.link = String(msg).trim() === "없음" ? "" : String(msg).trim();
+        if (!draft.link && String(msg).trim() !== "없음") {
+            result.message = "❌ 안내 링크를 입력하거나 ‘없음’을 입력해주세요.";
+            return result;
+        }
+        draft.step = "preview";
+        refreshWorldNewsDraft(draftKey, room);
+        result.message = buildWorldNewsDraftPreview(draft);
+        return result;
+    }
+    return result;
 }
 
 // 운영 알림 저장소를 보장하는 함수
