@@ -1,78 +1,74 @@
-# WBS799 Wave32 실행 체크포인트
+# WBS799 Wave32 correction checkpoint
 
-- 작업 키: `object-db-wave32-wbs799`
+- 작업 키: `object-db-wave32-wbs799-correction`
 - 표시 이름: `SL-MEMBER-TITLE-LEGACY-INFO-READ-PARITY-01`
 - 실행 프로필/등급: `STANDARD_CONSUMER / T1`
 - consumer: `legacy-798257cac0e93e27`
-- Lease: `Lease2654`
+- Lease: `Lease2660`
+- worktree: `C:\Users\user\.codex\worktrees\w799\hoiBot`
 - branch: `codex/object-db-wave32-member-title-legacy-info-read-parity-v1-20260910`
-- base: `3ce2e0cd2c52d863534bb068312637c3e3f4f0cd`
+- correction base: `691eec82dbbf6c5ed604cbb33e0b8c112e2fe127`
+- committed executable evidence: `33852aa0abe42d56ec71983565cebc17b4d0a254`
+- 마지막 갱신: `2026-09-10 14:30:07 KST`
+- 상태: `Gate 3~6 correction 검증 완료`
 - 운영 자산: 변경 없음
-- Gate 8: `FALSE`, 승인 전 변경 금지
+- Gate 8: `FALSE`, 수행하지 않음
 
-## Gate 상태
+## correction과 실제 실행
 
-- Gate 1 현행 조사: 기존 WBS evidence에 따라 `TRUE`
-- Gate 2 DB 매핑: 기존 WBS evidence에 따라 `TRUE`
-- Gate 3 합성데이터: `FALSE` — 표준 5개 fixture는 작성했지만 P1 해소 후 최종 확정 필요
-- Gate 4 구현: `FALSE` — 이번 Lease는 runtime source R-only이며 correction 구현 권한 없음
-- Gate 5 통합: `FALSE` — provider guard가 없어 같은 운영 상태 통합 불가
-- Gate 6 parity: `FALSE` — castle siege active 입력에서 legacy/modern reply 불일치
-- Gate 7 Shadow: 수행·판정하지 않음
-- Gate 8 운영 준비: 수행하지 않음
+- committed `main.js`의 `/타이틀정보` 분기 선두 `if (castleSiegeFlag) return;`을 source oracle로 사용했다.
+- `PlayerTitleReadService.read()` transaction 첫 query에서 `guild_territory_wars WHERE active=TRUE`를 잠금 조회하고, 활성 row가 있으면 actor·title·operation·outbox 처리 전에 `null`을 반환한다.
+- 실제 `buildApp` Iris ingress와 실제 `PlayerTitleReadService`를 사용한 동일 입력 5개가 committed legacy branch/helper와 exact reply parity를 통과했다.
+- siege-active `NEGATIVE_GUARD`는 legacy/modern 모두 `NO_REPLY`, MODERN route 및 service invocation 1회를 확인했다.
+- 모든 시나리오에서 source-domain DML `0`; 실행 감사·outbox DML만 transaction `COMMIT`으로 관찰했다.
+- `RESTART_CONSISTENCY`는 서로 다른 child process ID와 module UUID에서 reply/result 동일성을 확인했다.
+- `main.js`와 `runtime/src/app.ts`는 correction base 대비 diff `0`이다.
 
-## P1 gap
+## 확정 수치
 
-- committed `main.js`의 `msg.startsWith("/타이틀정보")` 분기는 `if (castleSiegeFlag) return;`으로 siege-active 상태에서 `NO_REPLY`를 반환한다.
-- `runtime/src/app.ts`는 `player_title_info_read` 별칭을 MODERN으로 선택한 뒤 `PlayerTitleReadService.read()`를 직접 호출한다.
-- `runtime/src/player/player-title-read-service.ts`에는 `guild_territory_wars`, `castle_battle_seasons`, `blocked_by_castle_siege` 또는 같은 의미의 운영 상태 guard가 없다.
-- 실제 `buildApp` Iris ingress에서 같은 `/타이틀정보 2`와 siege-active evidence를 사용하면 legacy는 `NO_REPLY`, modern은 상세정보 reply를 생성한다.
-- Wave32 generator는 이 mismatch가 존재하는 동안 cumulative receipt387과 ledger/residual을 쓰지 않고 `P1_CASTLE_SIEGE_PARITY_GAP`으로 종료한다.
+- receipts: `387` (`Wave31 382 + Wave32 5`), file SHA-256 `7272abf6957451483ba76e09e0eade87d3743d1941f233cf79f3387f76602163`
+- ledger: manifest/entries `1133/1133`, DIRECT `55`, EQUIVALENT `12`, proven `67`, STATIC `984`, BLOCKED `82`
+- ledger entrySet SHA-256: `44b864278ec996c34d13ee287d4c067190f6174a0b5160a2039676ea513a7bbe`
+- ledger file SHA-256: `39a52d6be2fa1c99997dfd861e96e8ade06ab114aeca08ea58314527fcc2d5e3`
+- residual: total `1066`, C_DIRECT_EXECUTION `984`, D_PREREQUISITE `82`, MEMBER-TITLE `18`
+- residual file SHA-256: `86355b965ab32d1fb1b57270c9a6214aff052bb0cb1d0d1eac109bf58996d356`
 
-## 실제 실행 결과
+## 불변 prefix
 
-- evidence input commit: `c5203c1b1d9c58925d043823c38967ed297358f5`
-- generator: exit `1`, `P1_CASTLE_SIEGE_PARITY_GAP: 1 of 5 Wave32 receipts blocked; cumulative ledger was not generated`
-- 일반 시나리오 4개: legacy/modern exact reply parity `PASS`
-- siege-active NEGATIVE_GUARD: legacy `NO_REPLY`, modern `player_title_info_read` MODERN route/service 1회 및 상세 reply, parity `FAIL`
-- 모든 5개 실행: transaction `COMMIT`, source-domain DML `0`
-- restart: child PID 2개와 module UUID 2개가 서로 다르고 reply/result가 동일
-- pass candidate는 4개지만 표준 5 receipts가 완결되지 않아 어느 것도 cumulative receipt로 승격하지 않았다.
-- Wave32 cumulative receipt 파일: 생성되지 않음
+- prefix 243: bytes `970854`, SHA-256 `e21eeacea4c7c9b3fb733a349b928e0d1248579ddbb2cf770e20b1b0fd0b5f97`
+- prefix 324: bytes `1260829`, SHA-256 `72522ab348255c339dc2e4918fac6ab1702643e6ba8725b99e74ab3457b35adb`
+- prefix 352: bytes `1361204`, SHA-256 `70fca768ac020cc1b8dcbceb221c0beeba927e2b16e7bfc32ad09677b95cec5b`
+- prefix 362: bytes `1382594`, SHA-256 `5cf3063b351bc18a343b075997dead5769cde57d7a8854218c7b89e3abed7373`
+- prefix 372: bytes `1485238`, SHA-256 `f9b490aaea9ea67ece2188fcc1424b1c46c36871606d525ce1c0620a2d818546`
+- prefix 382: bytes `1588071`, SHA-256 `df05843c2df41428086464814adab831961f78d784100b5e9eda962cc106b506`
 
-## 파일 SHA-256
+## 주요 파일 SHA-256
 
+- main.js: `91bd1c772aeb0979359ff2af86320850b77a738c1ddee295ae843ca5bcb10495`
+- app.ts: `0d5f3da935e027a6e17b219e35524041c3b50beff1e220412425238aec8d14b8`
 - contract: `cbaf8bfc0ef150840d9d6fef7109ec8c9b2db5a3c636eae5a324ee6f0fe2c189`
-- harness: `6a6593563766775cb1578b64f7aa7b4aed98c20f656c587df5136395592a155a`
+- harness: `11b922ab216a8940a7e8bfca645ac2dfef49f4c92b828b54dbb6ef00a8bb1617`
 - target: `56478c95c81083030642a93ef7b0b38bdfab9fed41cfc2a07cd9a376c65c8274`
-- generator: `5847c2984c71a50a4ed578b58e0107228224615dcab2e3c6ef9fa5f3de4db4db`
-- focused test: `3774d6d57de97aca9790ad07c273a06698d027a80774b0425c6a09f989a1b2ab`
-- gap observation: `6cbb5d0d3a77480882927cb2542910cc64e01deecc7c0aaa34c2f215e81345fb`
+- player-title-read-service.ts: `b57e9d19275d7f7adf2e18b085054490f49ead8815b943a7c086d70113c644a8`
+- ledger validator source: `dd25fd0cd72f492d7ffb620d90b189db1c1765d7f0f20380f90cb3ecc7ac96a9`
+- generator: `fb50ec3d8ffc4f292733ba530069e2657de1a49c6626570898e1d655a8cafcb3`
+- Wave32 focused test: `8e4b8e247179fe2a0264a25ffae4e2867d1a143bc98bb774c63a75c059917f48`
+- player-title focused test: `4cd490cddd232e69c9ba9108cff855cb1dc018ca935aa93c958a695c54444f90`
+- 기존 blocker observation은 수정하지 않았다.
 
-## 최소 correction 제안
+## 실행 명령과 결과
 
-- 책임 자원: `개발환경_고도화/runtime/src/player/player-title-read-service.ts`와 기존 siege 상태 provider/DB read contract.
-- `PlayerTitleReadService.read()` transaction 선두에서 기존 조회 서비스와 같은 `guild_territory_wars WHERE active=TRUE LIMIT 1` 상태를 읽고 active이면 `null`을 반환해 outbox reply와 title-domain query를 만들지 않는다.
-- app.ts 공용 dispatch 변경은 필요하지 않으며, 서비스 경계에서 legacy의 운영 guard를 보존하는 것이 최소 범위다.
-- provider correction은 별도 W Lease와 별도 책임자가 수행해야 한다. 해소 후 이 Wave32 5개 scenario를 재실행하고 receipts387, ledger, residual을 생성한다.
+- `node --import tsx scripts/generate-object-db-consumer-executable-parity-wave32-member-title-legacy-info.ts 33852aa0abe42d56ec71983565cebc17b4d0a254`: exit `0`, `PASS`, preserved `382`, added `5`, total `387`.
+- `node --import tsx scripts/build-object-db-consumer-executable-parity-ledger.ts`: exit `0`, 목표 coverage exact.
+- `node --import tsx scripts/build-object-db-consumer-residual-work-plan.ts`: exit `0`, residual `1066(C984/D82)`, MEMBER-TITLE `18`.
+- `node --import tsx scripts/validate-object-db-consumer-executable-parity-ledger.ts`: exit `0`, `AJV2020_STRICT_PASS`, receipt schema strict PASS, actual Wave32 replay PASS.
+- `node --import tsx --test test/player-title-read.test.ts test/object-db-consumer-executable-parity-wave30.test.ts test/object-db-consumer-executable-parity-wave31.test.ts test/object-db-consumer-executable-parity-wave32.test.ts test/object-db-consumer-residual-work-plan.test.ts`: exit `0`, `17/17 PASS`.
+- `node --import tsx scripts/build-object-db-consumer-residual-work-plan.ts --check`: exit `0`, deterministic current.
+- `npm run typecheck`: exit `0`.
+- `npm run build`: exit `0`.
+- `git diff --numstat 691eec82dbbf6c5ed604cbb33e0b8c112e2fe127 -- main.js 개발환경_고도화/runtime/src/app.ts`: 출력 없음.
 
-## 불변 기준
+## 제한과 인계
 
-- Wave31 receipts: `382`
-- Wave31 prefix bytes: `1,588,071`
-- Wave31 prefix SHA-256: `df05843c2df41428086464814adab831961f78d784100b5e9eda962cc106b506`
-- 과거 prefix 243/324/352/362/372/382는 수정하지 않는다.
-- `main.js`, `Info.js`, `app.ts`, player-title service/projection, migration, 운영 DB/data/3306, `feature/prod`는 변경하지 않는다.
-
-## 검증
-
-- Wave32 deterministic blocker focused test: `2/2 PASS`
-- Wave31 cumulative regression: `3/3 PASS`
-- residual plan + player-title unit regression: `7/7 PASS`, MariaDB integration `SKIP`(외부 DB 미사용)
-- current Wave31 strict validator: `PASS`
-- AJV2020 ledger schema: `PASS`
-- AJV2020 receipt schema: `PASS`
-- immutable ledger entry set: `52f95816dbc2a526b392d22ac3030cf92f563e2bb1e391cc061f8945956c2529`
-- immutable coverage: manifest/ledger `1133/1133`, DIRECT `54`, EQUIVALENT `12`, proven `66`, residual `1067`
-- `npm run typecheck`: `PASS`
-- `npm run build`: `PASS`
+- 운영 DB/data/3306, migration, `feature/prod`, Gate 8, Google Sheets는 수정하거나 실행하지 않았다.
+- Gate 7은 현재·이전 구현 및 evidence 작성자가 아닌 독립 검수자가 판정한다.

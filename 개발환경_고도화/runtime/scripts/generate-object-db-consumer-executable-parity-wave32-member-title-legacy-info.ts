@@ -59,5 +59,6 @@ const observation = { format: "HOIBOT_OBJECT_DB_WAVE32_GAP_OBSERVATION_V1", evid
 if (observationPath !== undefined) writeFileSync(resolve(root, observationPath), `${JSON.stringify(observation, null, 2)}\n`, "utf8");
 if (added.length !== 5) throw new Error(`P1_CASTLE_SIEGE_PARITY_GAP: ${5 - added.length} of 5 Wave32 receipts blocked; cumulative ledger was not generated`);
 const receipts = [...prior.receipts, ...added];
+if (receipts.length !== 387 || new Set(receipts.map((receipt: ObjectDbConsumerExecutionReceipt) => receipt.receiptId)).size !== 387) throw new Error("Wave32 receipt cardinality drift");
 writeFileSync(resolve(root, outputPath), JSON.stringify({ format: prior.format, catalogVersion: prior.catalogVersion, classificationBaseCommit: prior.classificationBaseCommit, evidenceCommit, receipts }, null, 2) + "\n");
-console.log(JSON.stringify({ status: "PASS", preservedWave31: 382, addedWave32: 5, total: receipts.length, direct: 1 }));
+console.log(JSON.stringify({ status: "PASS", preservedWave31: 382, prefix382Bytes: Buffer.byteLength(prefix), prefix382Sha256: sha256CanonicalText(prefix), addedWave32: 5, total: receipts.length, direct: 1 }));
