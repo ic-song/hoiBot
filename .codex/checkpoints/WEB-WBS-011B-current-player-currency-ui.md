@@ -21,4 +21,4 @@
 
 ## 검증과 다음 행동
 
-전체 `user-shell.test.ts` 14/14와 diff check은 통과했다. typecheck와 build는 병행 Lease2649의 `test/admin-account-link-read.test.ts` 타입 오류로 실패했고, 해당 admin 파일과 `app.ts`는 범위 밖이므로 수정·stage하지 않았다. Gate 7은 독립 검수자 검증이 필요하며 Gate 8은 운영 준비 wave까지 FALSE로 유지한다. Sheets에는 쓰지 않았다.
+병행 Lease2649가 `50b5f176`으로 오류를 해소한 뒤 작업반장이 `user-shell.test.ts` 14건과 `site-web-app-wiring.test.ts` 1건을 함께 재실행해 15/15 통과를 확인했다. `npm run typecheck`, `npm run build`, `git diff --check`도 모두 통과했다. Gate 7은 독립 검수자 검증이 필요하며 Gate 8은 운영 준비 wave까지 FALSE로 유지한다. Sheets에는 쓰지 않았다.

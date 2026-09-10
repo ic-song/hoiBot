@@ -32,4 +32,4 @@ Gate 7은 독립 검수자가 확정해야 하며, Gate 8 운영 준비는 이 U
 
 로그인 뒤 모든 주요 화면의 헤더에 `point`와 `diamond` 잔액을 compact summary로 표시했다. 기존 profile payload만 재사용하며 초대형 잔액도 원문 문자열 그대로 보인다. summary는 profile 응답 전·로그인 화면·세션 만료·로그아웃에서 숨기고 내부 텍스트도 비운다. 좁은 화면에서는 header와 summary가 wrap하며 잔액에는 `overflow-wrap: anywhere`를 적용한다. `user-shell.test.ts`는 14/14 통과했고 상단 표시, huge string, logout clear, profile 401 clear를 검증한다.
 
-이번 follow-up의 `npm run typecheck`와 `npm run build`는 현재 worktree에 병행 중인 Lease2649의 `test/admin-account-link-read.test.ts` 타입 오류(`Promise<unknown>` 반환)로 실패했다. 해당 admin 파일과 `app.ts`는 Lease2648 범위 밖이므로 수정·stage하지 않았다. `git diff --check`은 통과했다.
+병행 Lease2649가 `50b5f176`으로 오류를 해소하고 원격에 반영된 뒤 작업반장이 전체 검증을 다시 실행했다. `user-shell.test.ts` 14건과 `site-web-app-wiring.test.ts` 1건, 합계 15/15가 통과했고 `npm run typecheck`, `npm run build`, `git diff --check`도 모두 통과했다. 검증 시점의 `feature/web-portal` HEAD는 `50b5f176`이며 Lease2648 구현 `91440b47`과 상단 잔액 후속 `04297e5c`를 포함한다.
