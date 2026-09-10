@@ -1,0 +1,68 @@
+{
+  "wbsId": "WEB-WBS-016A",
+  "lease": "Lease2667",
+  "executionId": "개발자-WEB-WBS-016A-20260910",
+  "baseline": "3dc59c41b8a0f8e5959d5f7c5cdb474a182b72c5",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-21",
+  "evidenceSchemaVersion": "web-admin-domain-object-catalog-ux-readiness-v1",
+  "result": "PARTIAL_EXTENSION",
+  "executionProfile": "SHARED_PROVIDER",
+  "validationTier": "T0_READINESS",
+  "gate": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": false,
+    "gate4": false,
+    "gate5": false,
+    "gate6": false,
+    "gate7": false,
+    "gate8": false
+  },
+  "screenshotFact": {
+    "objectKey": "currency.lease2374_credit",
+    "fixture": "runtime/test/fixtures/admin-object-catalog-web-consumer.ts",
+    "previewPersistence": "PROCESS_LOCAL_MAP_ONLY",
+    "runtimePersistence": [
+      "operations",
+      "object_registry",
+      "object_aliases",
+      "object_source_bindings",
+      "object_catalog_change_log",
+      "command_audit",
+      "outbox_messages"
+    ],
+    "inventoryLedgerMutation": false,
+    "canonicalDefinitionMutation": false
+  },
+  "domains": {
+    "diamond-shop": "READY_REUSE",
+    "pet-skill": "READY_REUSE",
+    "item": "READ_READY_WRITE_BLOCKED_IDENTITY_POLICY",
+    "furniture": "READ_READY_WRITE_BLOCKED_SOURCE_POLICY",
+    "mini-pet": "READ_READY_WRITE_BLOCKED_SOURCE_INDEX_POLICY"
+  },
+  "uiPolicy": {
+    "menus": ["diamond-shop", "pet-skill", "item", "furniture", "mini-pet"],
+    "operatorRawInputs": [],
+    "serverGenerated": ["objectKey", "objectType", "canonicalSource", "metadata"],
+    "syntheticPlaceholderCount": 0,
+    "developerDetail": "READ_ONLY_DISCLOSURE",
+    "titleMenu": "SEPARATE_WBS",
+    "packageMenu": "EXISTING_DEDICATED_MENU"
+  },
+  "nextWbs": [
+    { "id": "WEB-WBS-016A1", "profile": "READ_UI", "tier": "T1", "state": "READY_AFTER_013B_GATE7" },
+    { "id": "WEB-WBS-016A2", "profile": "SHARED_PROVIDER", "tier": "T1", "state": "READY_AFTER_CANONICAL_READ_AUTHORITY" },
+    { "id": "WEB-WBS-016A3", "profile": "MUTATION_TRANSACTIONAL", "tier": "T2", "state": "BLOCKED_BY_DOMAIN_IDENTITY_RESOLVERS" }
+  ],
+  "changes": {
+    "source": 0,
+    "test": 0,
+    "database": 0,
+    "migration": 0,
+    "centralSheets": 0,
+    "production": 0
+  }
+}
+
