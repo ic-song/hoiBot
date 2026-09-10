@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hoibot-object-db-consumer-classification-delta-scd-obj-20260910-33-v1",
+  "type": "object",
+  "required": ["format", "evidenceSchemaVersion", "baseCatalogVersion", "deltaId", "scope", "operations", "preservation"],
+  "properties": {
+    "format": { "const": "hoibot-object-db-consumer-compatible-delta-v1" },
+    "evidenceSchemaVersion": { "const": "object-db-consumer-delta-v1" },
+    "baseCatalogVersion": { "const": "SC-20260902-1" },
+    "deltaId": { "const": "SCD-OBJ-20260910-33" },
+    "scope": {
+      "type": "object",
+      "required": ["kind", "consumerIds", "reason"],
+      "properties": {
+        "kind": { "const": "CONSUMER_CLASSIFICATION_CORRECTION" },
+        "consumerIds": { "const": ["legacy-bda1428003a5b522"] },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["operation", "consumerId", "before", "after", "scenarioRequirements", "sourceEvidence"],
+        "properties": {
+          "operation": { "const": "REPLACE_CLASSIFICATION" },
+          "consumerId": { "const": "legacy-bda1428003a5b522" },
+          "before": {
+            "type": "object",
+            "required": ["access", "accessClass", "interfaceMethod"],
+            "properties": {
+              "access": { "const": "READ" },
+              "accessClass": { "const": "READ" },
+              "interfaceMethod": { "const": "READ" }
+            },
+            "additionalProperties": false
+          },
+          "after": {
+            "type": "object",
+            "required": ["access", "accessClass", "interfaceMethod", "interfaceId", "readTargetTables", "writeTargetTables", "transactionOwnerInterfaceId", "transactionParticipantInterfaceIds", "operationReceiptTables"],
+            "properties": {
+              "access": { "const": "READ_WRITE" },
+              "accessClass": { "const": "MUTATION" },
+              "interfaceMethod": { "const": "EXECUTE" },
+              "interfaceId": { "const": "member-title.admin-title-gift-ticket-grant.execute" },
+              "readTargetTables": { "const": ["canonical_item_definitions", "canonical_owned_item_stacks", "canonical_players"] },
+              "writeTargetTables": { "const": ["canonical_owned_item_stacks"] },
+              "transactionOwnerInterfaceId": { "const": "member-title.admin-title-gift-ticket-grant.execute" },
+              "transactionParticipantInterfaceIds": { "const": ["item.inventory.mutate"] },
+              "operationReceiptTables": { "const": ["canonical_item_inventory_ledger_entries", "canonical_item_inventory_operations"] }
+            },
+            "additionalProperties": false
+          },
+          "scenarioRequirements": {
+            "type": "array",
+            "minItems": 8,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "required": ["scenarioKind", "disposition", "notApplicable"],
+              "properties": {
+                "scenarioKind": { "enum": ["MUTATION_SUCCESS", "DOMAIN_FAILURE_ROLLBACK", "DUPLICATE_REPLAY_DML_ZERO", "PAYLOAD_DRIFT_FAIL_CLOSED", "RESTART_REPLAY", "CONCURRENCY_SINGLE_WRITER", "AUTH_DENIED", "WRONG_ROOM_REJECTED"] },
+                "disposition": { "enum": ["REQUIRED", "NOT_APPLICABLE"] },
+                "notApplicable": { "type": ["object", "null"] }
+              },
+              "additionalProperties": false
+            }
+          },
+          "sourceEvidence": {
+            "type": "object",
+            "required": ["path", "sourceSpanSha256", "facts"],
+            "properties": {
+              "path": { "const": "main.js" },
+              "sourceSpanSha256": { "const": "f496b073056dbf662515378fcd304b1e7af97e5da411feec255dfe468272a003" },
+              "facts": { "type": "array", "minItems": 4, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "preservation": {
+      "type": "object",
+      "required": ["frozenManifestModified", "receiptCount", "prefixCounts"],
+      "properties": {
+        "frozenManifestModified": { "const": false },
+        "receiptCount": { "const": 387 },
+        "prefixCounts": { "const": [243, 324, 352, 362, 372, 382, 387] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

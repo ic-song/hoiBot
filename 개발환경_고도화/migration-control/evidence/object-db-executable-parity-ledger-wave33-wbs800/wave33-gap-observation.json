@@ -1,0 +1,112 @@
+{
+  "format": "HOIBOT_OBJECT_DB_WAVE33_GAP_OBSERVATION_V1",
+  "wbs": "WBS800",
+  "lease": "Lease2665",
+  "baseCommit": "f8d1b38cd8a96a5cde4fb049e81221364df42c75",
+  "baseCatalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-OBJ-20260910-33",
+  "consumers": ["legacy-bda1428003a5b522", "runtime-dispatch-948bbf36d6af623a"],
+  "blocked": true,
+  "blocker": {
+    "priority": "P1",
+    "code": "ADMIN_STACK_GRANT_PAYLOAD_DRIFT_NOT_FAIL_CLOSED",
+    "minimumWriteScope": ["개발환경_고도화/runtime/src/admin/admin-stack-grant-service.ts"],
+    "ownerNote": "TitleGiftTicketGrantService must use a payload-fingerprinted AdminStackGrantService path that rejects a reused eventId when amount or target changes."
+  },
+  "actualInvocation": {
+    "legacy": {
+      "consumerId": "legacy-bda1428003a5b522",
+      "targetPath": "main.js",
+      "symbol": "response /타이틀, branch",
+      "input": "/타이틀2, 합성 대상",
+      "authorized": true,
+      "reply": "합성 대상님에게 타이틀선물권💝(/타이틀선물 닉네임 내용) 2개를 지급했습니다.",
+      "quantityAfter": "2"
+    },
+    "runtime": {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "targetPath": "개발환경_고도화/runtime/src/app.ts",
+      "handlerKey": "admin_title_gift_ticket_grant",
+      "servicePath": "TitleGiftTicketGrantService.grant -> AdminStackGrantService.grant",
+      "input": "/타이틀2, 합성 대상",
+      "httpStatus": 202,
+      "reply": "합성 대상님에게 타이틀선물권💝(/타이틀선물 닉네임 내용) 2개를 지급했습니다.",
+      "quantityAfter": "2",
+      "parityMatch": true
+    }
+  },
+  "scenarioResults": [
+    {
+      "scenarioKind": "MUTATION_SUCCESS",
+      "status": "PASS",
+      "consumerSpecificInvocation": true,
+      "result": "Committed legacy branch and actual buildApp ingress produced the same reply and quantity for /타이틀2, 합성 대상."
+    },
+    {
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+      "status": "PASS",
+      "consumerSpecificInvocation": true,
+      "result": "The same eventId and same payload returned the stored result without additional inventory DML."
+    },
+    {
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "status": "FAIL",
+      "consumerSpecificInvocation": true,
+      "firstInput": "/타이틀2, 합성 대상",
+      "driftInput": "/타이틀3, 합성 대상",
+      "expected": "ADMIN_STACK_GRANT_PAYLOAD_DRIFT error and no second result",
+      "actual": "No error; the first 2-item granted result was replayed and inventory DML remained zero.",
+      "quantityAfter": "2"
+    },
+    {
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+      "status": "NOT_CERTIFIED_AFTER_P1",
+      "result": "The required cumulative matrix was aborted after the payload-drift mismatch."
+    },
+    {
+      "scenarioKind": "RESTART_REPLAY",
+      "status": "NOT_CERTIFIED_AFTER_P1",
+      "result": "The required cumulative matrix was aborted after the payload-drift mismatch."
+    },
+    {
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+      "status": "NOT_CERTIFIED_AFTER_P1",
+      "result": "The required cumulative matrix was aborted after the payload-drift mismatch."
+    },
+    {
+      "scenarioKind": "AUTH_DENIED",
+      "status": "NOT_CERTIFIED_AFTER_P1",
+      "result": "The delta keeps this scenario REQUIRED because committed main.js uses isMaster(sender) and runtime checks inventory.title_gift_ticket.grant."
+    },
+    {
+      "scenarioKind": "WRONG_ROOM_REJECTED",
+      "status": "NOT_APPLICABLE",
+      "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1",
+      "result": "The committed legacy command branch has no room or channel guard."
+    }
+  ],
+  "sourceHashes": {
+    "main.js": "91bd1c772aeb0979359ff2af86320850b77a738c1ddee295ae843ca5bcb10495",
+    "개발환경_고도화/runtime/src/app.ts": "0d5f3da935e027a6e17b219e35524041c3b50beff1e220412425238aec8d14b8",
+    "개발환경_고도화/runtime/src/admin/title-gift-ticket-grant-service.ts": "ddb51a9882e2a9747923b775a949be7053957f81fa656240ebadd8bccce9db71",
+    "개발환경_고도화/runtime/src/admin/admin-stack-grant-service.ts": "4ee91cc811231b30fcac59bfbd38a0e66c8d4aef5b3fa82278fb82396cc51f50"
+  },
+  "cumulativePreservation": {
+    "receiptCount": 387,
+    "receiptFileBytes": 2035119,
+    "receiptFileSha256": "7272abf6957451483ba76e09e0eade87d3743d1941f233cf79f3387f76602163",
+    "prefixes": {
+      "243": { "bytes": 970854, "sha256": "e21eeacea4c7c9b3fb733a349b928e0d1248579ddbb2cf770e20b1b0fd0b5f97" },
+      "324": { "bytes": 1260829, "sha256": "72522ab348255c339dc2e4918fac6ab1702643e6ba8725b99e74ab3457b35adb" },
+      "352": { "bytes": 1361204, "sha256": "70fca768ac020cc1b8dcbceb221c0beeba927e2b16e7bfc32ad09677b95cec5b" },
+      "362": { "bytes": 1382594, "sha256": "5cf3063b351bc18a343b075997dead5769cde57d7a8854218c7b89e3abed7373" },
+      "372": { "bytes": 1485238, "sha256": "f9b490aaea9ea67ece2188fcc1424b1c46c36871606d525ce1c0620a2d818546" },
+      "382": { "bytes": 1588071, "sha256": "df05843c2df41428086464814adab831961f78d784100b5e9eda962cc106b506" },
+      "387": { "bytes": 1639915, "sha256": "59a43f463dd33b1945c7e5d16c7c9da632c2075bbad57852d1b1092da78b7bfb" }
+    },
+    "ledgerSha256": "df55edac8fdfe269122738cad0b5d37c18af13f13aa329600d15c21f07e760d3",
+    "residualSha256": "77d629fb158d2de0cfe0f09b33d2de2eae83d3b91e717e0202a8e0d29bbf2cce",
+    "newReceiptCount": 0,
+    "coverageChange": { "direct": 0, "proven": 0, "residual": 0 }
+  }
+}

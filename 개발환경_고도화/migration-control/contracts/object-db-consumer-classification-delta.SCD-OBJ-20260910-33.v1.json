@@ -1,0 +1,49 @@
+{
+  "format": "hoibot-object-db-consumer-compatible-delta-v1",
+  "evidenceSchemaVersion": "object-db-consumer-delta-v1",
+  "baseCatalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-OBJ-20260910-33",
+  "scope": {
+    "kind": "CONSUMER_CLASSIFICATION_CORRECTION",
+    "consumerIds": ["legacy-bda1428003a5b522"],
+    "reason": "Committed main.js mutates the target member bag for /타이틀, and /타이틀N, after Master authorization."
+  },
+  "operations": [
+    {
+      "operation": "REPLACE_CLASSIFICATION",
+      "consumerId": "legacy-bda1428003a5b522",
+      "before": { "access": "READ", "accessClass": "READ", "interfaceMethod": "READ" },
+      "after": {
+        "access": "READ_WRITE",
+        "accessClass": "MUTATION",
+        "interfaceMethod": "EXECUTE",
+        "interfaceId": "member-title.admin-title-gift-ticket-grant.execute",
+        "readTargetTables": ["canonical_item_definitions", "canonical_owned_item_stacks", "canonical_players"],
+        "writeTargetTables": ["canonical_owned_item_stacks"],
+        "transactionOwnerInterfaceId": "member-title.admin-title-gift-ticket-grant.execute",
+        "transactionParticipantInterfaceIds": ["item.inventory.mutate"],
+        "operationReceiptTables": ["canonical_item_inventory_ledger_entries", "canonical_item_inventory_operations"]
+      },
+      "scenarioRequirements": [
+        { "scenarioKind": "MUTATION_SUCCESS", "disposition": "REQUIRED", "notApplicable": null },
+        { "scenarioKind": "DOMAIN_FAILURE_ROLLBACK", "disposition": "REQUIRED", "notApplicable": null },
+        { "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO", "disposition": "REQUIRED", "notApplicable": null },
+        { "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED", "disposition": "REQUIRED", "notApplicable": null },
+        { "scenarioKind": "RESTART_REPLAY", "disposition": "REQUIRED", "notApplicable": null },
+        { "scenarioKind": "CONCURRENCY_SINGLE_WRITER", "disposition": "REQUIRED", "notApplicable": null },
+        { "scenarioKind": "AUTH_DENIED", "disposition": "REQUIRED", "notApplicable": null },
+        { "scenarioKind": "WRONG_ROOM_REJECTED", "disposition": "NOT_APPLICABLE", "notApplicable": { "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1", "reasonCode": "NO_ROOM_GUARD", "reason": "The committed legacy branch has no room or channel guard." } }
+      ],
+      "sourceEvidence": {
+        "path": "main.js",
+        "sourceSpanSha256": "f496b073056dbf662515378fcd304b1e7af97e5da411feec255dfe468272a003",
+        "facts": ["isMaster(sender) authorizes execution", "amount defaults to one and rejects non-positive values", "target member bag quantity increases", "the outer response flow persists the mutated member data"]
+      }
+    }
+  ],
+  "preservation": {
+    "frozenManifestModified": false,
+    "receiptCount": 387,
+    "prefixCounts": [243, 324, 352, 362, 372, 382, 387]
+  }
+}
