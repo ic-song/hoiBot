@@ -2,16 +2,17 @@
 
 - 작업 키: `object-db-wave31-wbs798`
 - 표시 이름: `SL-MEMBER-TITLE-LEGACY-LIST-READ-PARITY-01`
-- 체크포인트 버전: `2`
-- 마지막 갱신: `2026-09-10 12:46:49 KST`
-- 상태: `검증 완료`
+- 체크포인트 버전: `3`
+- 마지막 갱신: `2026-09-10 12:49:00 KST`
+- 상태: `작업 완료`
 - 정리 후보: `아니요`
 - Lease: `Lease2650` ACTIVE (`Lease2646` HANDOFF_READY, recovery REPORT5691 ACKED)
 - worktree: `C:\Users\user\.codex\worktrees\w798\hoiBot`
 - branch: `codex/object-db-wave31-member-title-legacy-list-parity-v1-20260910`
 - base: `879746233ba67a11c4e66dda3373057aa39125ba`
 - committed executable evidence: `0ac62d6bc54c60b606afc40dc4d08bef55e45493`
-- remote persistence: 최종 Gate3~6 커밋·push 대기
+- Gate3~6 artifact commit: `627ff3d82b458a82c2bf26f6c45d13d443c487df`
+- remote persistence: 위 커밋까지 task branch push 및 HEAD=origin exact 확인
 
 ## 범위와 결과
 
@@ -46,7 +47,6 @@
 - `npm run typecheck`: exit `0`
 - `npm run build`: exit `0`
 
-## 남은 일
+## 다음 행동
 
-- Gate3~6 변경을 한국어 커밋으로 push하고 HEAD=origin exact 및 clean을 확인한다.
-- Gate7은 현재·이전 구현/증거 작성자가 아닌 독립 검수자가 판정한다.
+- 작업반장이 Gate3~6 보고를 반영하고, 현재·이전 구현/증거 작성자가 아닌 독립 검수자에게 Gate7을 배정한다.
