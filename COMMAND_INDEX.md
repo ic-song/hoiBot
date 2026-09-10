@@ -338,6 +338,60 @@ Status: VERIFIED
 
 ---
 
+# !알림내용|!알림시작|!알림초기화|/알림정보
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `notice.js`: `!알림내용`, `!알림시작`, `!알림초기화`, `/알림정보`
+
+## Files
+
+- `notice.js`
+
+## Related Helpers
+
+- `isNoticeCommand`
+- `isNoticeOperator`
+- `getNoticeContentArgument`
+- `loadNoticeStateFromFile`
+- `getNoticeState`
+- `saveNoticeState`
+- `broadcastNotice`
+- `createNoticeScheduleToken`
+- `createNoticeTimeout`
+- `ensureNoticeRuntimeSchedule`
+- `clearNoticeRuntimeSchedule`
+- `replaceNoticeSchedule`
+- `formatNoticeRemainingTime`
+- `buildNoticeInfoMessage`
+
+## Data Usage
+
+- `/sdcard/호이랜드_notice/noticeData.json`
+- `noticeState.content`
+- `noticeState.scheduleActive`
+- `noticeState.scheduleToken`
+- `noticeState.nextRunAt`
+- `noticeRuntimeSchedule`
+
+## Save Flow
+
+- `!알림내용 내용`은 줄바꿈을 유지한 본문을 독립 데이터 파일에 저장한다.
+- 반복 예약의 활성 여부·실행 토큰·다음 발송 시각은 독립 데이터 파일에 저장하며 알림 내용 변경 시 다음 발송부터 새 본문을 사용한다.
+- `/알림정보`는 현재 문구와 저장된 예약 상태·남은 시간을 조회하고, 재컴파일 뒤 새 실행 컨텍스트가 예약을 인계할 때 실행 토큰을 갱신해 이전 타이머를 무효화한다.
+
+## Notes
+
+- `NOTICE_CONFIG.operators`에서 운영자 계정을, `NOTICE_CONFIG.targetRooms`에서 전체 발송 대상 방을 관리한다.
+- 대상 방 발송과 반복 오류 보고는 기존 `noticeMsg`와 같은 `Api.replyRoom` 방식으로 처리한다.
+- `!알림시작`은 즉시 1회 발송한 뒤 기존 예약 토큰을 무효화하고 하나의 70분 반복 예약만 유지한다.
+- `!알림초기화`는 실행 중인 모든 반복 예약을 해제하고, 즉시 발송 없이 70분 뒤부터 하나의 반복 예약으로 다시 시작한다.
+- `/알림정보`는 현재 저장된 알림 문구, 실제 저장된 반복 예약 상태, 다음 발송까지 남은 시·분·초를 표시한다.
+
+---
+
 # /가방
 
 Status: VERIFIED
@@ -4177,6 +4231,8 @@ Status: VERIFIED
 
 - `ensureWorldNewsData`
 - `drawWorldNewsReward`
+- `getWorldNewsUnreadCount`
+- `markWorldNewsPostsRead`
 - `buildWorldNewsUserMessage`
 - `buildWorldNewsJackpotBroadcast`
 - `buildWorldNewsManageMessage`
@@ -4189,12 +4245,13 @@ Status: VERIFIED
 - `data.worldNews.posts`
 - `data.worldNews.nextId`
 - `data.member[sender].worldNewsLotteryPlayed`
+- `data.member[sender].worldNewsLastReadId`
 - `data.member[sender].point`
 - `worldNewsDraftState` (작성·수정 중인 5분 임시 상태만 메모리 보관)
 
 ## Save Flow
 
-- `/소식`의 첫 참여는 포인트와 참여 완료 상태를 함께 변경하고 `member.json`을 한 번 저장한다.
+- `/소식`은 조회 전 미확인 소식 수를 표시한 뒤 현재 가장 큰 글번호를 마지막 확인 번호로 기록하며, 복권 첫 참여 시 포인트와 참여 완료 상태도 함께 변경해 `member.json`을 한 번 저장한다.
 - `/리셋`은 전 유저의 소식복권 참여 완료 상태를 다른 일일 횟수와 함께 제거한다.
 - 게시글 등록·수정·삭제는 소식 저장 구조를 변경하고 `member.json`을 한 번 저장한다.
 - 제목·내용·링크 입력과 미리보기 단계는 영구 데이터를 변경하지 않는다.
@@ -4204,6 +4261,9 @@ Status: VERIFIED
 
 - 복권은 계정당 `/리셋` 주기마다 1회이며 1,000만 50%, 5,000만 30%, 1억 15%, 5억 4%, 10억 1%로 꽝 없이 지급한다. 자정이 지나도 `/리셋` 전에는 다시 참여할 수 없다.
 - 최신 글 1개는 기본 화면에 표시하고 이전 글은 `allsee` 뒤에 최신순으로 표시한다.
+- 최신 글의 안내 링크와 `최근 등록된 소식` 사이에는 별도 구분선을 표시하지 않는다.
+- `최근 등록된 소식`은 전체 보관 글 수가 아니라 유저별 미확인 글 수다. 첫 조회에는 조회 전 개수를 보여주고, 같은 소식을 다시 조회하면 0개로 표시하며 새 글 등록 후 다시 증가한다.
+- 소식 수정은 기존 글번호를 유지하므로 미확인 수를 늘리지 않으며, 마지막 확인 번호는 일일 `/리셋` 대상이 아니다.
 - 게시글은 최대 100개를 보관하며 101번째 등록부터 가장 오래된 글을 제거한다. 삭제된 글번호는 재사용하지 않는다.
 - 수정은 글번호·최초 작성일·작성자 수식어·노출 순서를 유지한다.
 - 관리자 작성 상태는 관리자 계정과 채팅방 조합별로 분리하며 5분 미입력 시 폐기한다.
@@ -6552,6 +6612,7 @@ Status: VERIFIED
 - `buildPendantUpgradePreview`
 - `runPendantUpgradeFromState`
 - `ensurePendantIdsForUser`
+- `calculatePendantPromotionPointDeduction`
 - `buildPendantPromotionPreview`
 - `runPendantPromotionFromState`
 - `registerPendantFreeMarket`
@@ -6577,6 +6638,7 @@ Status: VERIFIED
 - 장착 펜던트가 이미 있는 `/펜던트장착 [번호]`는 `userState[user].pendantEquip`에 확인 대기를 저장하고, `장착할래` 확정 시 기존 장착 펜던트를 소멸시키고 선택한 가방 펜던트를 장착한 뒤 `petData`를 저장한다.
 - 펜던트 오픈, 해제, 복원, 판매, 당근거래, 자유시장 등록/구매/취소는 필요 시 `data`와 `petData`를 함께 저장한다.
 - `/펜던트승급`은 기존 펜던트 ID를 먼저 보완 저장하고, 30초 확인 후 회원 포인트·펜던트 강화석과 펫 데이터를 함께 변경한다. 두 파일 중 하나라도 저장에 실패하면 사용자 단위 스냅샷으로 양쪽을 복원하며 전체알림은 두 저장 성공 후에만 보낸다.
+- 안전 정수 상한을 넘은 기존 포인트 잔액도 승급 비용이 정확히 차감되는 경우에는 허용하고, 실제 차감액이 비용과 달라지는 정밀도 구간은 변경 전에 차단한다.
 - 자유시장 펜던트 등록/취소/구매는 `freeMarketData`도 저장한다.
 - `/펜던트전체정리`는 `petData[user].pendantBag`에서 51개 이상인 가방의 초과분을 삭제한 뒤 `member_pet.json`을 저장한다.
 
@@ -6594,6 +6656,7 @@ Status: VERIFIED
 - `/펜던트순위`는 장착 펜던트만 대상으로 등급 → 강화수치 → 닉네임 가나다순으로 100명까지 표시하고, 11등부터 `allsee` 뒤에 표시한다.
 - `/펜던트강화`는 펜던트가방 번호를 입력하며, 장착 펜던트는 숫자 `0`으로 강화한다.
 - `/펜던트승급`은 창조등급만 대상으로 하며 장착 펜던트는 `0`으로 선택한다. 목표 ★N 단계마다 다른 가방 창조 펜던트 1개, 펜던트 강화석 `N×10`개, 포인트 `N×100억`을 사용하고 100% 성공한다. 승급 1단계당 종합매력만 500만 증가하며 탐험 확률·강화·내구도는 유지한다. `/펫정보`의 기존 `펜던트💎:` 행에 `이름🪬[창조★N][⚒️현재/최대](+강화)` 형식으로 승급 단계를 표시하고 실제 캐슬·레이드 매력에도 승급 수치를 반영한다. 재료는 승급→강화→내구도→가방 번호 오름차순으로 자동 선택하고 확인 후에는 고유 `pendantId`로 같은 본체와 재료를 재검증한다.
+- 승급 조건 부족 화면은 다른 창조 펜던트, 포인트, 강화석 중 실제 충족하지 못한 항목만 구분해 표시한다.
 - `/펜던트거래정보 [자유시장번호]`는 자유시장 등록 목록의 펜던트 payload를 기존 펜던트 정보 형식으로 보여준다.
 - 펜던트 이름 끝에 이미 같은 이모지가 있으면 `formatPendantNameWithIcon`이 표시 이모지를 중복으로 붙이지 않는다.
 - 펜던트 종합매력은 레이드/캐슬 매력에 절반씩 분배된다.
