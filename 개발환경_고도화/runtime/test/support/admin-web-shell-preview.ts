@@ -4,6 +4,7 @@ import { registerAdminWebShellRoutes } from "../../src/admin/web-shell.js";
 import { buildRestoreConfirmationToken } from "../../src/admin/data-restore-service.js";
 import {
   syntheticAdminAudit,
+  syntheticAdminAccountLinks,
   syntheticAdminOverview,
   syntheticAdminPlayer,
   syntheticAdminRestrictions,
@@ -123,6 +124,14 @@ export async function buildSyntheticAdminWebShellApp() {
   app.get<{ Params: { playerId: string } }>("/api/v1/admin/players/:playerId", async (request, reply) => request.params.playerId === syntheticAdminPlayer.playerId
     ? { ok: true, player: currentSyntheticPlayer(), requestId: "synthetic-player" }
     : reply.code(404).send({ ok: false, error: { code: "PLAYER_NOT_FOUND", message: "합성 회원을 찾을 수 없습니다." }, requestId: "synthetic-player" }));
+  app.get<{ Params: { playerId: string } }>("/api/v1/admin/players/:playerId/account-links", async (request, reply) => {
+    if (!loggedIn) return reply.code(401).send({ ok: false, error: { code: "AUTH_REQUIRED", message: "로그인이 필요합니다." }, requestId: "synthetic-account-links-session" });
+    if (request.headers["x-synthetic-permission"] === "deny") return reply.code(403).send({ ok: false, error: { code: "PERMISSION_DENIED", message: "player.read 권한이 필요합니다." }, requestId: "synthetic-account-links-permission" });
+    if (request.headers["x-synthetic-error"] === "true") return reply.code(500).send({ ok: false, error: { code: "SYNTHETIC_FAILURE", message: "합성 계정 연결 조회에 실패했습니다." }, requestId: "synthetic-account-links-error" });
+    if (request.params.playerId === "40002") return { ok: true, playerId: request.params.playerId, accountLinks: [], requestId: "synthetic-account-links-empty" };
+    if (request.params.playerId !== syntheticAdminPlayer.playerId) return reply.code(404).send({ ok: false, error: { code: "PLAYER_NOT_FOUND", message: "합성 회원을 찾을 수 없습니다." }, requestId: "synthetic-account-links-not-found" });
+    return { ok: true, playerId: request.params.playerId, accountLinks: syntheticAdminAccountLinks, requestId: "synthetic-account-links" };
+  });
   app.post<{ Params: { playerId: string }; Body: { restrictionType?: unknown; endsAt?: unknown; reason?: unknown; confirmed?: unknown } }>("/api/v1/admin/players/:playerId/restrictions", async (request, reply) => {
     const authorization = authorizeMutation(request, reply);
     if (authorization !== undefined) return authorization;

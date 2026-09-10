@@ -5,6 +5,7 @@ import { registerAdminWebShellRoutes } from "../src/admin/web-shell.js";
 import { ADMIN_WEB_CLIENT, ADMIN_WEB_HTML, ADMIN_WEB_STYLES } from "../src/admin/web-shell-assets.js";
 import {
   syntheticAdminAudit,
+  syntheticAdminAccountLinks,
   syntheticAdminOverview,
   syntheticAdminPlayer,
   syntheticAdminRestrictions,
@@ -37,6 +38,9 @@ describe("admin web shell", () => {
       assert.match(page.body, /hoiBot Operations/);
       assert.equal(styles.body, ADMIN_WEB_STYLES);
       assert.equal(client.body, ADMIN_WEB_CLIENT);
+      const deepLink = await app.inject({ method: "GET", url: "/admin/players/40001/account-links" });
+      assert.equal(deepLink.statusCode, 200);
+      assert.equal(deepLink.body, ADMIN_WEB_HTML);
     } finally {
       await app.close();
     }
@@ -57,6 +61,7 @@ describe("admin web shell", () => {
       "/api/v1/admin/overview",
       "/api/v1/admin/players",
       "/api/v1/admin/players/",
+      "/account-links",
       "/currencies/",
       "/adjustments",
       "/api/v1/admin/restrictions",
@@ -97,6 +102,47 @@ describe("admin web shell", () => {
     assert.equal(syntheticAdminAudit.resultCode, "success");
     assert.equal(syntheticMonitoringEvent.monitoringGroup, "media");
     assert.equal(syntheticAdminRestrictions[0].status, "active");
+    assert.deepEqual(syntheticAdminAccountLinks.map(({ maskedLoginId, maskedExternalUserKey }) => ({ maskedLoginId, maskedExternalUserKey })), [
+      { maskedLoginId: "s******r", maskedExternalUserKey: "k********y" }
+    ]);
+  });
+
+  it("keeps the account-link detail read-only, masked, deep-linkable, and keyboard reachable", () => {
+    assert.match(ADMIN_WEB_CLIENT, /\/admin\/players\/.*\/account-links/);
+    assert.match(ADMIN_WEB_CLIENT, /pushState/);
+    assert.match(ADMIN_WEB_CLIENT, /popstate/);
+    assert.match(ADMIN_WEB_CLIENT, /main-content"\)\.replaceChildren/);
+    assert.match(ADMIN_WEB_CLIENT, /id=\\"account-link-title\\" tabindex=\\"-1\\"/);
+    assert.match(ADMIN_WEB_CLIENT, /maskedLoginId/);
+    assert.match(ADMIN_WEB_CLIENT, /maskedExternalUserKey/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /portalAccountId|portalGameAccountLinkId|selectionVersion/);
+    assert.doesNotMatch(ADMIN_WEB_CLIENT, /account-links[^\n]*(?:POST|PATCH|PUT|DELETE)/);
+    assert.match(ADMIN_WEB_STYLES, /\.row-button \{[^}]*min-height: 44px/);
+    assert.match(ADMIN_WEB_STYLES, /\.account-link-fields dd \{[^}]*overflow-wrap: anywhere/);
+    assert.match(ADMIN_WEB_STYLES, /@media \(max-width: 640px\)[\s\S]*\.account-link-fields \{ grid-template-columns: 1fr; \}/);
+  });
+
+  it("shadows account-link success, empty, 404, error, session, and permission states with the same fixture", async () => {
+    const app = await buildSyntheticAdminWebShellApp();
+    try {
+      const expired = await app.inject({ method: "GET", url: "/api/v1/admin/players/40001/account-links" });
+      assert.equal(expired.statusCode, 401);
+      await app.inject({ method: "POST", url: "/api/v1/admin/sessions", payload: { loginId: "shadow.manager", password: "synthetic" } });
+      const [success, empty, missing, denied, failure] = await Promise.all([
+        app.inject({ method: "GET", url: "/api/v1/admin/players/40001/account-links" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/players/40002/account-links" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/players/49999/account-links" }),
+        app.inject({ method: "GET", url: "/api/v1/admin/players/40001/account-links", headers: { "x-synthetic-permission": "deny" } }),
+        app.inject({ method: "GET", url: "/api/v1/admin/players/40001/account-links", headers: { "x-synthetic-error": "true" } })
+      ]);
+      assert.deepEqual(success.json().accountLinks, syntheticAdminAccountLinks);
+      assert.deepEqual(empty.json().accountLinks, []);
+      assert.equal(missing.statusCode, 404);
+      assert.equal(denied.statusCode, 403);
+      assert.equal(failure.statusCode, 500);
+    } finally {
+      await app.close();
+    }
   });
 
   it("serves every approved view from synthetic APIs without a database", async () => {

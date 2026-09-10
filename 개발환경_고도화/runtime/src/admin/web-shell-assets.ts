@@ -231,8 +231,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .data-table td { padding: 11px 12px; border-bottom: 1px solid #e8ecf0; vertical-align: middle; }
 .data-table tbody tr:last-child td { border-bottom: 0; }
 .data-table tbody tr:hover { background: #f8fafb; }
-.row-button { width: 100%; padding: 0; color: var(--ink); background: none; border: 0; text-align: left; font-weight: 700; }
+.row-button { width: 100%; min-height: 44px; padding: 8px 0; color: var(--ink); background: none; border: 0; text-align: left; font-weight: 700; }
 .row-button:hover { color: var(--accent); text-decoration: underline; }
+.row-button:focus-visible, .secondary-button:focus-visible, .text-button:focus-visible, .icon-button:focus-visible, .nav-button:focus-visible {
+  outline: 3px solid rgba(24,118,109,.34); outline-offset: 2px;
+}
 .mono { font-family: "SFMono-Regular", Consolas, monospace; font-size: 11px; }
 .muted { color: var(--muted); }
 .status-text { font-weight: 700; }
@@ -257,6 +260,21 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
 .detail-list dd { margin: 4px 0 0; font-size: 12px; overflow-wrap: anywhere; }
 .detail-section { margin-top: 20px; }
 .detail-section h4 { margin: 0 0 8px; font-size: 12px; }
+.account-link-panel { border: 1px solid var(--line); background: #fbfcfd; }
+.account-link-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border-bottom: 1px solid var(--line); }
+.account-link-heading h4 { margin: 0; font-size: 12px; }
+.account-link-heading h4:focus { outline: 3px solid rgba(24,118,109,.34); outline-offset: 3px; border-radius: 2px; }
+.account-link-heading p { margin: 4px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.account-link-list { display: grid; gap: 10px; padding: 12px; }
+.account-link-card { min-width: 0; padding: 12px; border: 1px solid var(--line); background: var(--surface); }
+.account-link-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.account-link-summary strong { font-size: 12px; }
+.account-link-status { padding: 4px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); font-size: 10px; font-weight: 800; }
+.account-link-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.account-link-fields div { min-width: 0; padding: 8px; background: #f7f9fa; }
+.account-link-fields dt { color: var(--muted); font-size: 10px; }
+.account-link-fields dd { min-width: 0; margin: 4px 0 0; font-size: 11px; overflow-wrap: anywhere; }
+.account-link-panel .empty-state, .account-link-panel .error-state, .account-link-panel .loading-state { min-height: 150px; }
 .key-value-list { display: grid; gap: 6px; }
 .key-value-list div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 9px; background: #f7f9fa; font-size: 11px; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -404,6 +422,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); box-sha
   .toolbar, .search-form { width: 100%; }
   .toolbar input, .search-form input { width: 100%; }
   .detail-list { grid-template-columns: 1fr; }
+  .account-link-fields { grid-template-columns: 1fr; }
   .field-grid { grid-template-columns: 1fr; }
   .catalog-confirm-actions { flex-direction: column-reverse; }
   .catalog-confirm-actions button { width: 100%; }
@@ -424,6 +443,7 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     activeView: "dashboard",
     refresh: null,
     playerSearch: "",
+    selectedPlayerId: null,
     monitoringTab: "events",
     catalogNotice: null,
     catalogRetry: null,
@@ -470,6 +490,18 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
 
   // 고정 DOM 요소를 ID로 조회합니다.
   function byId(id) { return document.getElementById(id); }
+
+  // 관리자 회원 계정 연결 deep-link에서 lossless player ID 문자열을 읽습니다.
+  function playerIdFromLocation() {
+    var match = /^\/admin\/players\/(0|[1-9]\d*)\/account-links\/?$/.exec(window.location.pathname);
+    return match ? match[1] : null;
+  }
+
+  // 선택한 회원의 계정 연결 URL을 브라우저 기록에 반영합니다.
+  function updatePlayerLocation(playerId, replace) {
+    var path = playerId ? "/admin/players/" + encodeURIComponent(playerId) + "/account-links" : "/admin";
+    window.history[replace ? "replaceState" : "pushState"]({ playerId: playerId }, "", path);
+  }
 
   // API 값을 안전한 HTML 텍스트로 변환합니다.
   function escapeHtml(value) {
@@ -580,6 +612,9 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
   function showLogin(message) {
     state.session = null;
     state.refresh = null;
+    byId("main-content").replaceChildren();
+    byId("operator-summary").replaceChildren();
+    byId("last-updated").textContent = "";
     byId("boot-screen").hidden = true;
     byId("app-shell").hidden = true;
     byId("login-view").hidden = false;
@@ -592,6 +627,11 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
   // 인증된 운영자 정보와 권한별 앱 셸을 표시합니다.
   function showApp(session) {
     state.session = session;
+    var deepLinkedPlayerId = playerIdFromLocation();
+    if (deepLinkedPlayerId) {
+      state.activeView = "players";
+      state.selectedPlayerId = deepLinkedPlayerId;
+    }
     byId("boot-screen").hidden = true;
     byId("login-view").hidden = true;
     byId("app-shell").hidden = false;
@@ -633,6 +673,10 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
   // 메뉴 선택을 현재 뷰로 전환합니다.
   function activateView(view) {
     state.activeView = view;
+    if (view !== "players" || !state.selectedPlayerId) {
+      state.selectedPlayerId = null;
+      if (window.location.pathname !== "/admin") updatePlayerLocation(null, false);
+    }
     document.querySelector(".sidebar").classList.remove("open");
     byId("mobile-menu-button").setAttribute("aria-expanded", "false");
     renderNavigation();
@@ -776,9 +820,14 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
       var payload = await api("/api/v1/admin/players?" + query.toString());
       results.innerHTML = playerTable(payload.items) + pagination(payload.page, payload.total, "players");
       results.querySelectorAll("[data-player-id]").forEach(function (button) {
-        button.addEventListener("click", function () { loadPlayerDetail(button.dataset.playerId); });
+        button.addEventListener("click", function () {
+          state.selectedPlayerId = button.dataset.playerId;
+          updatePlayerLocation(state.selectedPlayerId, false);
+          loadPlayerDetail(state.selectedPlayerId, true);
+        });
       });
       attachPageButtons(results, loadPlayersView);
+      if (state.selectedPlayerId) loadPlayerDetail(state.selectedPlayerId, true);
       markUpdated();
     } catch (error) {
       results.innerHTML = errorState(error, "players");
@@ -946,8 +995,44 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     });
   }
 
-  // 선택한 회원의 프로필과 권한별 계정 조치 화면을 표시합니다.
-  async function loadPlayerDetail(playerId) {
+  // 관리자 API의 계정 연결 DTO를 내부 식별자 없이 읽기 전용 카드로 표시합니다.
+  function renderAccountLinks(accountLinks) {
+    if (!accountLinks.length) return emptyState("연결된 계정이 없습니다.", "이 회원에 등록된 웹 또는 플랫폼 연결이 없습니다.");
+    return "<div class=\"account-link-list\">" + accountLinks.map(function (link) {
+      return "<article class=\"account-link-card\"><div class=\"account-link-summary\"><strong>" + escapeHtml(link.platformCode || "웹 계정") + "</strong><span class=\"account-link-status\">" + escapeHtml(link.linkStatus || "상태 미확인") + "</span></div>" +
+        "<dl class=\"account-link-fields\"><div><dt>로그인 ID</dt><dd class=\"mono\">" + escapeHtml(link.maskedLoginId || "미등록") + "</dd></div>" +
+        "<div><dt>외부 사용자 키</dt><dd class=\"mono\">" + escapeHtml(link.maskedExternalUserKey || "미등록") + "</dd></div>" +
+        "<div><dt>계정 상태</dt><dd>" + escapeHtml(link.portalAccountStatus || "-") + "</dd></div>" +
+        "<div><dt>연결 역할</dt><dd>" + escapeHtml(link.playerRole || "-") + "</dd></div>" +
+        "<div><dt>연결 문맥</dt><dd>" + escapeHtml(link.contextType || "-") + "</dd></div>" +
+        "<div><dt>선택 상태</dt><dd>" + escapeHtml(link.selectionStatus || "-") + "</dd></div></dl></article>";
+    }).join("") + "</div>";
+  }
+
+  // 선택 회원의 마스킹된 계정 연결 정보를 별도 조회합니다.
+  async function loadPlayerAccountLinks(playerId, moveFocus) {
+    var container = byId("player-account-links");
+    if (!container) return;
+    container.innerHTML = loadingState("계정 연결 정보를 불러오는 중");
+    try {
+      var payload = await api("/api/v1/admin/players/" + encodeURIComponent(playerId) + "/account-links");
+      container.innerHTML = renderAccountLinks(payload.accountLinks || []);
+    } catch (error) {
+      var title = error && error.status === 404 ? "대상 회원을 찾을 수 없습니다." : error && error.status === 403 ? "계정 연결 조회 권한이 없습니다." : "계정 연결 정보를 불러오지 못했습니다.";
+      container.innerHTML = "<div class=\"error-state\" role=\"alert\"><div><strong>" + escapeHtml(title) + "</strong><span>" + escapeHtml(errorMessage(error)) + "</span><button class=\"secondary-button\" type=\"button\" data-account-link-retry>다시 시도</button></div></div>";
+      var retry = container.querySelector("[data-account-link-retry]");
+      if (retry) retry.addEventListener("click", function () { loadPlayerAccountLinks(playerId, true); });
+    }
+    if (moveFocus) {
+      var heading = byId("account-link-title");
+      if (heading) window.setTimeout(function () { heading.focus(); }, 0);
+    }
+  }
+
+  // 선택한 회원의 프로필과 마스킹된 계정 연결 패널을 표시합니다.
+  async function loadPlayerDetail(playerId, moveFocus) {
+    state.selectedPlayerId = playerId;
+    state.refresh = function () { return loadPlayerDetail(playerId, true); };
     var detail = byId("player-detail");
     detail.innerHTML = loadingState("회원 상세를 불러오는 중");
     try {
@@ -960,9 +1045,11 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
         "<div><dt>펫</dt><dd>" + escapeHtml(player.pet && player.pet.name ? player.pet.name : "-") + "</dd></div><div><dt>홈</dt><dd>" + escapeHtml(player.home && player.home.name ? player.home.name : "-") + "</dd></div></dl>" +
         "<section class=\"detail-section\"><h4>재화 현황</h4>" + renderCurrencyAccounts(player) + "</section>" +
         "<section class=\"detail-section\"><h4>주요 카운터</h4>" + keyValueRows(player.counters) + "</section>" +
-        "<section class=\"detail-section\"><h4>보유 배지</h4><div class=\"tag-list\">" + (player.badges.length ? player.badges.map(function (badge) { return "<span class=\"tag\">" + escapeHtml(badge) + "</span>"; }).join("") : "<span class=\"muted\">없음</span>") + "</div></section>" + renderAccountActions(player) + "</div>";
+        "<section class=\"detail-section\"><h4>보유 배지</h4><div class=\"tag-list\">" + (player.badges.length ? player.badges.map(function (badge) { return "<span class=\"tag\">" + escapeHtml(badge) + "</span>"; }).join("") : "<span class=\"muted\">없음</span>") + "</div></section>" +
+        "<section class=\"detail-section account-link-panel\" aria-labelledby=\"account-link-title\"><div class=\"account-link-heading\"><div><h4 id=\"account-link-title\" tabindex=\"-1\">계정 연결 정보</h4><p>보안을 위해 로그인 ID와 외부 사용자 키는 마스킹해 표시합니다.</p></div><span class=\"read-only-indicator\"><i aria-hidden=\"true\"></i>READ ONLY</span></div><div id=\"player-account-links\">" + loadingState("계정 연결 정보를 불러오는 중") + "</div></section>" + renderAccountActions(player) + "</div>";
       attachAccountActions(player);
       attachCurrencyActions(player);
+      await loadPlayerAccountLinks(player.playerId, moveFocus);
     } catch (error) {
       detail.innerHTML = errorState(error, "players");
       attachRetry(detail);
@@ -1942,6 +2029,14 @@ export const ADMIN_WEB_CLIENT = String.raw`(function () {
     var sidebar = document.querySelector(".sidebar");
     var open = sidebar.classList.toggle("open");
     byId("mobile-menu-button").setAttribute("aria-expanded", String(open));
+  });
+  window.addEventListener("popstate", function () {
+    state.selectedPlayerId = playerIdFromLocation();
+    state.activeView = state.selectedPlayerId ? "players" : "dashboard";
+    if (state.session) {
+      renderNavigation();
+      renderActiveView();
+    }
   });
 
   api("/api/v1/admin/sessions/current")

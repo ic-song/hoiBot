@@ -67,6 +67,23 @@ export const syntheticAdminPlayer: ProfileView = {
   badges: ["synthetic-reader"]
 };
 
+export const syntheticAdminAccountLinks = [
+  {
+    playerId: "40001",
+    portalAccountId: "portal-synthetic-01",
+    portalGameAccountLinkId: "link-synthetic-01",
+    playerRole: "primary",
+    linkStatus: "active",
+    portalAccountStatus: "active",
+    maskedLoginId: "s******r",
+    platformCode: "kakao",
+    contextType: "open_chat",
+    selectionStatus: "active",
+    selectionVersion: "18446744073709551614",
+    maskedExternalUserKey: "k********y"
+  }
+] as const;
+
 export const syntheticAdminAudit = {
   id: "81001",
   operationId: "71001",

@@ -1,0 +1,60 @@
+{
+  "evidenceSchemaVersion": "web-admin-account-link-ui-v1",
+  "catalogVersion": "SC-20260902-1",
+  "deltaId": "SCD-WEB-20260910-11",
+  "wbsId": "WEB-WBS-013A",
+  "sliceId": "SL-ACCOUNT-ADMIN-WEB-LINK-READ-01",
+  "lease": "Lease2653",
+  "executionProfile": "READ_UI",
+  "riskTier": "T1",
+  "baseline": "512db10fff923f5d731bbc6d0ae4ca9c240c798c",
+  "route": "/admin/players/:playerId/account-links",
+  "api": "GET /api/v1/admin/players/:playerId/account-links",
+  "gates": {
+    "gate1": "PASS: existing member detail shell, player.read navigation, and backend read DTO reverified",
+    "gate2": "PASS: existing admin session, player.read, masked identifier, empty/404/error contract frozen",
+    "gate3": "PASS: one masked account-link fixture shared by API replay and UI Shadow",
+    "gate4": "PASS: read-only panel, deep-link restore, refresh, focus, and responsive layout implemented",
+    "gate5": "PASS: synthetic Fastify shell serves the deep-link and account-link endpoint states",
+    "gate6": "PASS: same-input fixture parity and four-viewport browser replay verified",
+    "gate7": false,
+    "gate8": false
+  },
+  "validation": {
+    "focusedTests": "14/14 PASS",
+    "typecheck": "PASS",
+    "build": "PASS",
+    "diffCheck": "PASS",
+    "responsive": "4/4 PASS at 375, 768, 1024, 1440; overflowX=0",
+    "deepLinkAndRefresh": "PASS",
+    "focusedElement": "account-link-title",
+    "minimumPlayerRowTargetPx": 44,
+    "mutationControls": 0,
+    "operationalDataTouched": false,
+    "featureProdMutation": false
+  },
+  "renderedFields": [
+    "maskedLoginId",
+    "maskedExternalUserKey",
+    "platformCode",
+    "contextType",
+    "playerRole",
+    "linkStatus",
+    "portalAccountStatus",
+    "selectionStatus"
+  ],
+  "forbiddenRenderedFields": [
+    "portalAccountId",
+    "portalGameAccountLinkId",
+    "selectionVersion",
+    "raw login_id",
+    "raw external_user_key"
+  ],
+  "screenshots": {
+    "account-links-375.png": "580ff6733ced21904820e0bb6ce4cc4ff6bb481a3877756569a2e28320bd0889",
+    "account-links-768.png": "39c075cb66be22714d6f91729e391f7071832bfcff6084fa67427e8e3ddb17ba",
+    "account-links-1024.png": "3bb2aef9cc6e57c41ca322854d11abe668cdb37ba5093df145e818bd4094a9e1",
+    "account-links-1440.png": "d7e9799612acceac892670b39cf5283587bde69bbb3b71edf84d70ef1ce208e4"
+  },
+  "remaining": "Independent Gate 7 review by a non-owner/non-author reviewer."
+}

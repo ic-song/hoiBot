@@ -15,6 +15,7 @@ function secureWebReply(reply: FastifyReply): FastifyReply {
 export async function registerAdminWebShellRoutes(app: FastifyInstance): Promise<void> {
   app.get("/admin", async (_request, reply) => secureWebReply(reply).type("text/html; charset=utf-8").send(ADMIN_WEB_HTML));
   app.get("/admin/", async (_request, reply) => secureWebReply(reply).type("text/html; charset=utf-8").send(ADMIN_WEB_HTML));
+  app.get("/admin/players/:playerId/account-links", async (_request, reply) => secureWebReply(reply).type("text/html; charset=utf-8").send(ADMIN_WEB_HTML));
   app.get("/admin/assets/admin.css", async (_request, reply) => secureWebReply(reply).type("text/css; charset=utf-8").send(ADMIN_WEB_STYLES));
   app.get("/admin/assets/admin.js", async (_request, reply) => secureWebReply(reply).type("text/javascript; charset=utf-8").send(ADMIN_WEB_CLIENT));
 }

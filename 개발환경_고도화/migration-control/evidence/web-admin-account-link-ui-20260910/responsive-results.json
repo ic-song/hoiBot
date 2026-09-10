@@ -1,0 +1,78 @@
+{
+  "checkedAt": "2026-09-10T04:31:14.381Z",
+  "resultCount": 4,
+  "results": [
+    {
+      "viewport": {
+        "width": 375,
+        "height": 812
+      },
+      "path": "/admin/players/40001/account-links",
+      "documentWidth": 360,
+      "clientWidth": 360,
+      "panelVisible": true,
+      "cardCount": 1,
+      "focusedId": "account-link-title",
+      "loginText": "로그인 IDs******r외부 사용자 키k********y계정 상태active연결 역할primary연결 문맥open_chat선택 상태active",
+      "forbiddenRendered": false,
+      "mutationControlCount": 0,
+      "rowTargetHeight": 44,
+      "overflowX": 0,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "path": "/admin/players/40001/account-links",
+      "documentWidth": 753,
+      "clientWidth": 753,
+      "panelVisible": true,
+      "cardCount": 1,
+      "focusedId": "account-link-title",
+      "loginText": "로그인 IDs******r외부 사용자 키k********y계정 상태active연결 역할primary연결 문맥open_chat선택 상태active",
+      "forbiddenRendered": false,
+      "mutationControlCount": 0,
+      "rowTargetHeight": 44,
+      "overflowX": 0,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 1024,
+        "height": 900
+      },
+      "path": "/admin/players/40001/account-links",
+      "documentWidth": 1009,
+      "clientWidth": 1009,
+      "panelVisible": true,
+      "cardCount": 1,
+      "focusedId": "account-link-title",
+      "loginText": "로그인 IDs******r외부 사용자 키k********y계정 상태active연결 역할primary연결 문맥open_chat선택 상태active",
+      "forbiddenRendered": false,
+      "mutationControlCount": 0,
+      "rowTargetHeight": 44,
+      "overflowX": 0,
+      "pass": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "path": "/admin/players/40001/account-links",
+      "documentWidth": 1425,
+      "clientWidth": 1425,
+      "panelVisible": true,
+      "cardCount": 1,
+      "focusedId": "account-link-title",
+      "loginText": "로그인 IDs******r외부 사용자 키k********y계정 상태active연결 역할primary연결 문맥open_chat선택 상태active",
+      "forbiddenRendered": false,
+      "mutationControlCount": 0,
+      "rowTargetHeight": 44,
+      "overflowX": 0,
+      "pass": true
+    }
+  ]
+}
