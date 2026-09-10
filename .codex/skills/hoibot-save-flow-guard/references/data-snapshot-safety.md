@@ -6,7 +6,7 @@
 
 - Do not overwrite original snapshots.
 - Do not run mutation scripts directly against snapshots.
-- Use copies for parsing or mutation tests.
+- For ordinary legacy validation, use copies for mutation tests. For modernization slices, use non-identifying synthetic fixtures only; copying an operational snapshot does not make it permitted test input.
 - Validate JSON with read-only parsing when possible.
 
 ## Validation

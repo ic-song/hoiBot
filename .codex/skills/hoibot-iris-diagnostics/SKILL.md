@@ -67,9 +67,9 @@ Add `--show-content` only when the user explicitly wants plaintext displayed. Th
 2. Keep recovery failure non-fatal to event ingestion; show `not_found` and `failed` separately.
 3. Do not persist recovered message bodies in hoiBot MariaDB unless the user makes a new explicit retention decision.
 4. Run `npm.cmd test`, `npm.cmd run typecheck`, and `npm.cmd run build` in `개발환경_고도화/runtime`.
-5. Apply migrations twice and verify the second run is a no-op.
-6. Restart only the exact Node process listening on the configured hoiBot port; verify `/health/ready`.
-7. Perform one controlled live action and verify DB row, inbound event, normalization, transaction, outbox, and visible echo.
+5. When migrations changed, apply them twice in the authorized isolated test DB and verify the second run is a no-op. Modernization work must preserve operational data and follow the runner resource Lease rules.
+6. When a restart is within the current task authorization, restart only the verified target Node process and check `/health/ready`. Do not infer operational restart permission from a diagnostic request.
+7. Only when the user requested a live delivery test, perform one controlled live action and verify DB row, inbound event, normalization, transaction, outbox, and visible echo. Otherwise use synthetic fixtures/replay and report live delivery as unverified; do not fabricate an alert to complete the checklist.
 8. Update `DECISIONS.md`, `MEMORY.md`, and the relevant Iris reference only with verified facts.
 
 Do not commit or push unless the user explicitly requests it.

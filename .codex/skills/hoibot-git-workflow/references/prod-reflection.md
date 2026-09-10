@@ -55,13 +55,15 @@ If the task branch contains unrelated commits, cherry-pick only the validated ta
 
 After reflecting into `feature/prod`, run relevant validation and push `feature/prod`.
 
-After verifying the pushed `origin/feature/prod`, update every corresponding Notion READY/HOTFIX item as one operation:
+For non-Notion production-facing work, search the confirmed planning data source for the exact feature/command before reflection and reuse a matching page. If none exists, skip Notion synchronization without creating a page or absence marker. Workflow-only work does not require a planning page.
+
+After verifying the pushed `origin/feature/prod`, synchronize the existing planning content to the actual user-visible behavior without a separate implementation record, then update every corresponding Notion READY/HOTFIX item as one completion workflow:
 
 - set `상태` to `🧪 DEV`
 - set `운영반영일` to the production-reflection date in Korea Standard Time (`Asia/Seoul`)
 - set `운영반영버전` to the exact `ver_<HoiBotVersion>` verified in production
 
-Verify all three properties after updating. Do not write the date or version before remote production verification. If one production change implements multiple linked Notion items, apply the same verified production version to each corresponding item. Report any partial failure rather than claiming the Notion update completed.
+Verify the synchronized planning content and all three properties after updating. Do not write the date or version before remote production verification. If one production change implements multiple linked Notion items, apply the same verified production version to each corresponding item. Report any partial failure rather than claiming the Notion update completed.
 
 After verifying the pushed `origin/feature/prod`, when the PlayMCP KakaoTalk
 `나에게 보내기` tool is available, use the `hoibot-playmcp-version-notifier`

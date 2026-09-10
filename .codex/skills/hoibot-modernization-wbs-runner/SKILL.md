@@ -20,6 +20,8 @@ description: Run one assigned hoiBot bot-migration, web-portal, or shared-integr
 
 상세 작업과 evidence는 Sheets에, Notion에는 검증된 WBS 링크와 퍼센티지만 둔다.
 
+CONTROL·Lease를 대사하거나 WBS 쓰기·evidence 재사용을 하기 전 [공유 조정 계약](../hoibot-modernization-foreman/references/coordination-contract.md)을 반드시 읽는다. 작업반장 패키지와 함께 배포하며, 계약을 읽을 수 없으면 해당 쓰기를 보류한다.
+
 ## 작업 모드
 
 1. `BOOTSTRAP`: 최초 frozen catalog가 없을 때 전체 `사용` CMD를 분류한다.
@@ -45,10 +47,11 @@ description: Run one assigned hoiBot bot-migration, web-portal, or shared-integr
 ```text
 base_catalog_version=SC-YYYYMMDD-N
 pending_deltas=SCD-...
-active_lanes=BOT_...,WEB_...,SHARED_...
+active_lanes=<등록된 lane ID 목록>
+lane_workstreams=<lane ID와 workstream의 명시적 매핑>
 active_leases=n
 resource_lock_version=...
-evidence_schema_version=...
+evidence_schema_versions=<지원 schema ID 목록>
 supersedes=row...
 ```
 
@@ -105,7 +108,7 @@ mapped=total, unmapped=0, duplicate primary=0, orphan=0, 충돌=0과 validator �
 기존 `슬라이스_선점` A:N 형식을 유지한다.
 
 ```text
-C lane=BOT_*|WEB_*|SHARED_*
+C lane=<CONTROL 등록 ID; OBJECT_* 등 legacy ID 보존>
 M checkpoint=<manifest/evidence>
 N resources=<mode>:<type>:<key>,...
 ```
@@ -113,7 +116,7 @@ N resources=<mode>:<type>:<key>,...
 예: `resources=W:FILE:hoibot/admin/app.ts,R:DB:hoibot/catalog.item,W:PROVIDER:hoibot/ledger-receipt`
 
 - `mode`: `R` 또는 `W`
-- `type`: `FILE`, `DB`, `MIGRATION`, `ROUTE`, `PROVIDER`, `LEDGER`, `RECEIPT`, `WBS`
+- `type`: `FILE`, `DIR`, `SCRIPT`, `TEST`, `FIXTURE`, `EVIDENCE`, `DELTA`, `CONTRACT`, `DB`, `MIGRATION`, `ROUTE`, `PROVIDER`, `LEDGER`, `RECEIPT`, `WBS`. 논리·물리 자원 매핑과 type 간 충돌은 공유 조정 계약을 따른다.
 - 같은 key의 R/R은 병행하고, 하나라도 W이면 직렬화한다.
 - 디렉터리와 하위 파일, 중앙 shell entrypoint와 해당 route처럼 포함 관계인 key도 충돌한다.
 - key 앞에는 등록된 repository ID를 붙인다. FILE key는 `<repo>/<상대경로>`, `/` 구분자, `./` 제거와 Windows 대소문자 무시로 정규화한다. `..`와 절대경로 key를 금지한다.
@@ -121,13 +124,13 @@ N resources=<mode>:<type>:<key>,...
 - 같은 슬라이스라도 독립 전문 작업은 별도 sub-claim으로 범위를 제한한다.
 - 읽기 전용 조사·기획은 canonical WBS와 source를 쓰지 않으면 Lease 없이 할 수 있다.
 
-작업반장만 신규 Lease를 append한다. 작업자는 고정 행 번호나 다음 빈 행을 추정하지 않는다.
+지정된 단일 작업반장 writer만 신규 Lease와 canonical REPORT를 append한다. 작업자는 보고 요청을 task-scoped staging 또는 지정 작업반장 task에 전달하며 canonical REPORT를 직접 append하지 않는다. 자신의 claim Heartbeat와 배정된 WBS 행 변경은 기존 자원 권한 범위에서만 수행한다. 상태 전이는 공유 조정 계약을 따르며 REVIEW·CORRECT·HANDOFF_READY를 Lease 해제로 해석하지 않는다. 작업자는 고정 행 번호나 다음 빈 행을 추정하지 않는다.
 
 ### append 용량 사전 점검
 
 1. `슬라이스_선점` 또는 `슬라이스_보고수신`의 `rowCount`와 마지막 사용 행을 읽고 빈 행을 최소 100개 확보한다.
 2. 여유가 부족하면 작업반장만 행을 확장한다.
-3. `슬라이스_선점`을 확장할 수 없고 `슬라이스_보고수신`에는 여유가 있으면 `용량 차단` REPORT를 append하고 Lease를 발급하지 않는다.
+3. `슬라이스_선점`을 확장할 수 없고 `슬라이스_보고수신`에는 여유가 있으면 작업반장이 `용량 차단` REPORT를 append하고 Lease를 발급하지 않는다.
 4. append 결과가 반환한 실제 행을 사용한다.
 5. 해당 행과 같은 슬라이스의 유효 ACTIVE claim을 재읽어 단독 쓰기 권한을 확인한다.
 
@@ -170,7 +173,7 @@ Gate 1 현행 조사, Gate 4 구현과 Gate 5 통합은 모든 실행 profile에
 - `T2` mutation·shared provider: transaction, 멱등성, restart, migration, parity, Shadow
 - `T3` 통합 기준선·운영 준비: 전체 회귀, backup/restore, cutover, rollback
 
-동일한 source tree, schema, fixture, 설정과 test list는 evidence key로 재사용한다. 공용 계약 승격, 통합 후보 변경, 실패 또는 영향 범위 불명확 때 전체 회귀를 수행한다. N/A인 검증도 사유와 근거를 남겨야 Gate를 TRUE로 둘 수 있다.
+공유 조정 계약의 commit SHA, 입력·schema·fixture hash, 실행 환경과 결과 digest를 모두 검증한 evidence만 재사용한다. 공용 계약 승격, 통합 후보 변경, 실패 또는 영향 범위 불명확 때 전체 회귀를 수행한다. N/A인 검증도 사유와 근거를 남겨야 Gate를 TRUE로 둘 수 있다.
 
 순수 문서·workflow인 T0는 bot Gate 분모 밖에서 관리한다. 실행 슬라이스에 포함된 문서 변경은 해당 profile의 Gate evidence로 연결한다.
 
@@ -199,7 +202,7 @@ Gate 시작 때 모든 탭을 갱신하지 않는다. Gate 완료나 resource bo
 
 - 기능마다 책임 소유자 한 명을 유지한다.
 - 전문 작업자는 별도 resource sub-claim에서 조사·구현·검수 일부를 맡을 수 있다.
-- Gate 확정과 최종 통합은 책임 소유자가 수행한다.
+- 책임 소유자는 Gate 근거와 기록, 최종 통합을 정리한다. Gate 7은 독립 검수와 작업반장 ACK 이후에만 확정하며 Gate 8은 별도 운영 승인 범위를 따른다.
 - Gate 7 검수자는 현재·이전 책임 소유자와 검수 대상 구현·evidence 작성자를 제외한다. 이전 소유자는 사실을 제공할 수 있지만 ACK하지 않는다.
 - 책임 소유자 변경은 Gate 경계에서 checkpoint와 작업반장 ACK 후 수행한다. Gate 도중 인계하면 진행 중 Gate는 FALSE로 두고 완료된 원자 evidence만 넘겨 새 소유자가 그 Gate를 다시 확정한다.
 - 인계는 이전 claim 재읽기 → 이전 Lease `RELEASED` 또는 `REVOKED` 기록 → 종료 상태 사후 재읽기 → 새 Lease append → 새 소유자의 단독 ACTIVE 재읽기 순서다. 이전 Lease가 ACTIVE인 동안 동일 W claim의 새 Lease를 발급하지 않는다.
@@ -218,7 +221,7 @@ Gate 시작 때 모든 탭을 갱신하지 않는다. Gate 완료나 resource bo
 
 ## 보고와 완료
 
-REPORT 사건은 `bootstrap 완료`, `delta 검수 요청`, `공용 변경 요청`, `resource 충돌`, `용량 차단`, `인계`, `Gate7 완료`만 사용한다. 정상 Gate 1~6과 Heartbeat는 보고하지 않는다.
+REPORT 사건과 requested action을 먼저 분리한다. 보고는 새 구현 권한을 부여하지 않는다. REPORT 사건은 `bootstrap 완료`, `delta 검수 요청`, `공용 변경 요청`, `resource 충돌`, `용량 차단`, `인계`, `Gate7 완료`만 사용한다. 정상 Gate 1~6과 Heartbeat는 보고하지 않는다.
 
 Gate 7 REPORT에는 catalog/delta, 슬라이스, 실행·claim, resource, Gate evidence, commit·push, risk profile 검증, provider dependency, 운영 자산 불변과 Gate 8 위험을 기록한다.
 
