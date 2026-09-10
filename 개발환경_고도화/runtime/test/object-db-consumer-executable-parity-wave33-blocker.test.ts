@@ -13,14 +13,14 @@ const root = resolve(import.meta.dirname, "../../..");
 const Ajv2020 = createRequire(import.meta.url)("ajv/dist/2020").default;
 const normalize = (sql: string): string => sql.replace(/\s+/gu, " ").trim();
 
-function legacyExecute(source: string, message: string): { reply: string; quantity: number } {
+function legacyExecute(source: string, message: string, authorized = true): { reply: string; quantity: number } {
   const start = source.indexOf('if (msg.trim().startsWith("/타이틀,")');
   const end = source.indexOf('if (msg.trim().startsWith("/펫미니,")', start);
   assert.ok(start >= 0 && end > start, "committed legacy title-ticket branch missing");
   const data = { member: { "합성 대상": { bag: {} as Record<string, number> } } };
   const replies: string[] = [];
   const run = new Function("msg", "sender", "data", "replier", "isMaster", "GLOBAL_CONFIG", source.slice(start, end));
-  run(message, "합성 관리자", data, { reply: (value: unknown) => replies.push(String(value)) }, () => true,
+  run(message, "합성 관리자", data, { reply: (value: unknown) => replies.push(String(value)) }, () => authorized,
     { titleGift: { itemName: "타이틀선물권💝(/타이틀선물 닉네임 내용)" } });
   return { reply: replies[0] ?? "NO_REPLY", quantity: data.member["합성 대상"].bag["타이틀선물권💝(/타이틀선물 닉네임 내용)"] ?? 0 };
 }
@@ -30,7 +30,7 @@ function createDatabase(authorized = true): any {
   const outboxes = new Map<string, number>();
   const unexpected: string[] = [];
   const queries: string[] = [];
-  let nextId = 100n, quantity = 0n, inventoryDml = 0;
+  let nextId = 100n, quantity = 0n, inventoryDml = 0, failAudit = false, transactionTail = Promise.resolve();
   const database: any = {
     async ping() {}, async verifyRollback() { return true; }, async close() {},
     async query(sql: string, values: unknown[] = []) {
@@ -55,6 +55,7 @@ function createDatabase(authorized = true): any {
       else if (n.startsWith("UPDATE inventory_stacks SET quantity=")) { quantity = BigInt(values[0] as bigint); inventoryDml += 1; }
       else if (n.startsWith("INSERT INTO inventory_ledger")) inventoryDml += 1;
       else if (n.startsWith("INSERT INTO outbox_messages")) { insertId = nextId++; outboxes.set(insertId.toString(), 0); }
+      else if (n.startsWith("INSERT INTO command_audit") && failAudit) throw new Error("WAVE33_SYNTHETIC_AUDIT_FAILURE");
       else if (n.startsWith("UPDATE operations SET status='completed'")) { const row = [...operations.values()].find(value => value.id === values[1]); if (row) row.result = String(values[0]); }
       else if (n.startsWith("UPDATE outbox_messages SET status")) outboxes.set(String(values[5]), Number(values[1]));
       else if (n.startsWith("INSERT INTO command_routing_decisions") || n.startsWith("INSERT INTO command_executions") || n.startsWith("INSERT INTO command_audit")
@@ -64,14 +65,28 @@ function createDatabase(authorized = true): any {
       else unexpected.push(`DML ${n}`);
       return { affectedRows: 1n, insertId };
     },
-    async withTransaction<T>(work: (tx: any) => Promise<T>): Promise<T> { return work(database); },
+    async withTransaction<T>(work: (tx: any) => Promise<T>): Promise<T> {
+      const run = async () => {
+        const snapshot = { operations: new Map(operations), outboxes: new Map(outboxes), nextId, quantity, inventoryDml };
+        try { return await work(database); }
+        catch (error) {
+          operations.clear(); for (const [key, value] of snapshot.operations) operations.set(key, value);
+          outboxes.clear(); for (const [key, value] of snapshot.outboxes) outboxes.set(key, value);
+          nextId = snapshot.nextId; quantity = snapshot.quantity; inventoryDml = snapshot.inventoryDml;
+          throw error;
+        }
+      };
+      const current = transactionTail.then(run, run); transactionTail = current.then(() => undefined, () => undefined); return current;
+    },
+    seedRaw(eventId: string, result: object) { operations.set(`admin.title_gift_ticket.grant:${eventId}`, { id: nextId++, result: JSON.stringify(result) }); },
+    set failAudit(value: boolean) { failAudit = value; },
     get quantity() { return quantity; }, get inventoryDml() { return inventoryDml; }, get unexpected() { return unexpected; }, get queries() { return queries; }
   };
   database.withRootTransaction = database.withTransaction;
   return database;
 }
 
-describe("WBS800 Wave33 title gift ticket fail-closed evidence", () => {
+describe("WBS800 Wave33 title gift ticket parity evidence", () => {
   it("validates the compatible classification delta without relabeling the frozen manifest", () => {
     const schema = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.schema.json"), "utf8"));
     const delta = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.json"), "utf8"));
@@ -103,19 +118,49 @@ describe("WBS800 Wave33 title gift ticket fail-closed evidence", () => {
     } finally { await app.close(); if (previous === undefined) delete process.env.PARTIAL_COMMAND_DISPATCH_ENABLED; else process.env.PARTIAL_COMMAND_DISPATCH_ENABLED = previous; }
   });
 
-  it("proves actual service payload drift replays instead of failing closed", async () => {
+  it("fails closed on amount and target payload drift with business DML0", async () => {
     const database = createDatabase();
     const service = new TitleGiftTicketGrantService(database);
     const first = await service.grant({ eventId: "wave33-drift", externalUserId: "operator", destinationId: "room", message: "/타이틀2, 합성 대상" });
     const dmlAfterFirst = database.inventoryDml;
-    let drift: Awaited<ReturnType<TitleGiftTicketGrantService["grant"]>> | undefined;
-    let driftError: unknown = null;
-    try { drift = await service.grant({ eventId: "wave33-drift", externalUserId: "operator", destinationId: "room", message: "/타이틀3, 합성 대상" }); }
-    catch (error) { driftError = error; }
     assert.equal(first?.status, "granted");
-    assert.equal(driftError, null, "actual path unexpectedly failed closed");
-    assert.equal(drift?.data, first?.data);
+    await assert.rejects(service.grant({ eventId: "wave33-drift", externalUserId: "operator", destinationId: "room", message: "/타이틀3, 합성 대상" }), /ADMIN_STACK_GRANT_PAYLOAD_DRIFT/);
+    await assert.rejects(service.grant({ eventId: "wave33-drift", externalUserId: "operator", destinationId: "room", message: "/타이틀2, 다른 대상" }), /ADMIN_STACK_GRANT_PAYLOAD_DRIFT/);
     assert.equal(database.quantity, 2n);
     assert.equal(database.inventoryDml, dmlAfterFirst);
+  });
+
+  it("replays exact duplicates across service restart and serializes concurrent writers", async () => {
+    const database = createDatabase();
+    const input = { eventId: "wave33-replay", externalUserId: "operator", destinationId: "room", message: "/타이틀2, 합성 대상" };
+    const first = await new TitleGiftTicketGrantService(database).grant(input);
+    const dmlAfterFirst = database.inventoryDml;
+    const duplicate = await new TitleGiftTicketGrantService(database).grant(input);
+    assert.deepEqual(duplicate, first);
+    assert.equal(database.inventoryDml, dmlAfterFirst);
+    const concurrentInput = { ...input, eventId: "wave33-concurrent" };
+    const results = await Promise.all([new TitleGiftTicketGrantService(database).grant(concurrentInput), new TitleGiftTicketGrantService(database).grant(concurrentInput)]);
+    assert.deepEqual(results[1], results[0]);
+    assert.equal(database.quantity, 4n);
+  });
+
+  it("rolls back domain failure and keeps denied legacy/runtime invocations silent", async () => {
+    const database = createDatabase(); database.failAudit = true;
+    const service = new TitleGiftTicketGrantService(database);
+    await assert.rejects(service.grant({ eventId: "wave33-rollback", externalUserId: "operator", destinationId: "room", message: "/타이틀2, 합성 대상" }), /WAVE33_SYNTHETIC_AUDIT_FAILURE/);
+    assert.equal(database.quantity, 0n);
+    assert.equal(database.inventoryDml, 0);
+    const denied = await new TitleGiftTicketGrantService(createDatabase(false)).grant({ eventId: "wave33-denied", externalUserId: "operator", destinationId: "room", message: "/타이틀2, 합성 대상" });
+    assert.equal(denied, null);
+    const committedMain = execFileSync("git", ["show", "HEAD:main.js"], { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+    assert.deepEqual(legacyExecute(committedMain, "/타이틀2, 합성 대상", false), { reply: "NO_REPLY", quantity: 0 });
+  });
+
+  it("fails closed for pre-fingerprint raw stored results", async () => {
+    const database = createDatabase();
+    database.seedRaw("wave33-raw", { status: "granted", data: "과거 결과", outboxId: "1", quantity: "2" });
+    await assert.rejects(new TitleGiftTicketGrantService(database).grant({ eventId: "wave33-raw", externalUserId: "operator", destinationId: "room", message: "/타이틀2, 합성 대상" }), /ADMIN_STACK_GRANT_PAYLOAD_DRIFT/);
+    assert.equal(database.quantity, 0n);
+    assert.equal(database.inventoryDml, 0);
   });
 });

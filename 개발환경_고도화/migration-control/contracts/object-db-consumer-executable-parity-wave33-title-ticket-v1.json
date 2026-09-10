@@ -1,0 +1,310 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+  "bindings": [
+    {
+      "consumerId": "legacy-bda1428003a5b522",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:legacy-bda1428003a5b522",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:legacy-bda1428003a5b522:mutation_success",
+      "scenarioKind": "MUTATION_SUCCESS"
+    },
+    {
+      "consumerId": "legacy-bda1428003a5b522",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:legacy-bda1428003a5b522",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:legacy-bda1428003a5b522:domain_failure_rollback",
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK"
+    },
+    {
+      "consumerId": "legacy-bda1428003a5b522",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:legacy-bda1428003a5b522",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:legacy-bda1428003a5b522:duplicate_replay_dml_zero",
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO"
+    },
+    {
+      "consumerId": "legacy-bda1428003a5b522",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:legacy-bda1428003a5b522",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:legacy-bda1428003a5b522:payload_drift_fail_closed",
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED"
+    },
+    {
+      "consumerId": "legacy-bda1428003a5b522",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:legacy-bda1428003a5b522",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:legacy-bda1428003a5b522:restart_replay",
+      "scenarioKind": "RESTART_REPLAY"
+    },
+    {
+      "consumerId": "legacy-bda1428003a5b522",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:legacy-bda1428003a5b522",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:legacy-bda1428003a5b522:concurrency_single_writer",
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER"
+    },
+    {
+      "consumerId": "legacy-bda1428003a5b522",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:legacy-bda1428003a5b522",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:legacy-bda1428003a5b522:auth_denied",
+      "scenarioKind": "AUTH_DENIED"
+    },
+    {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:runtime-dispatch-948bbf36d6af623a",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:runtime-dispatch-948bbf36d6af623a:mutation_success",
+      "scenarioKind": "MUTATION_SUCCESS"
+    },
+    {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:runtime-dispatch-948bbf36d6af623a",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:runtime-dispatch-948bbf36d6af623a:domain_failure_rollback",
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK"
+    },
+    {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:runtime-dispatch-948bbf36d6af623a",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:runtime-dispatch-948bbf36d6af623a:duplicate_replay_dml_zero",
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO"
+    },
+    {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:runtime-dispatch-948bbf36d6af623a",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:runtime-dispatch-948bbf36d6af623a:payload_drift_fail_closed",
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED"
+    },
+    {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:runtime-dispatch-948bbf36d6af623a",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:runtime-dispatch-948bbf36d6af623a:restart_replay",
+      "scenarioKind": "RESTART_REPLAY"
+    },
+    {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:runtime-dispatch-948bbf36d6af623a",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:runtime-dispatch-948bbf36d6af623a:concurrency_single_writer",
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER"
+    },
+    {
+      "consumerId": "runtime-dispatch-948bbf36d6af623a",
+      "harnessId": "harness:wave33:title-ticket",
+      "harnessCaseId": "case:wave33:runtime-dispatch-948bbf36d6af623a",
+      "fixtureId": "fixture:object-db-executable-parity:wave33:title-ticket:v1",
+      "scenarioId": "scenario:wave33:runtime-dispatch-948bbf36d6af623a:auth_denied",
+      "scenarioKind": "AUTH_DENIED"
+    }
+  ],
+  "payload": {
+    "sliceId": "SL-MEMBER-TITLE-ADMIN-GIFT-TICKET-GRANT-PARITY-01",
+    "consumers": [
+      "legacy-bda1428003a5b522",
+      "runtime-dispatch-948bbf36d6af623a"
+    ],
+    "scenarioKinds": [
+      "MUTATION_SUCCESS",
+      "DOMAIN_FAILURE_ROLLBACK",
+      "DUPLICATE_REPLAY_DML_ZERO",
+      "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "RESTART_REPLAY",
+      "CONCURRENCY_SINGLE_WRITER",
+      "AUTH_DENIED"
+    ],
+    "wrongRoom": {
+      "disposition": "NOT_APPLICABLE",
+      "ruleId": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1"
+    },
+    "legacySource": {
+      "path": "main.js",
+      "command": "/타이틀2, 합성 대상",
+      "authorizedReply": "합성 대상님에게 타이틀선물권💝(/타이틀선물 닉네임 내용) 2개를 지급했습니다.",
+      "deniedReply": "NO_REPLY"
+    },
+    "runtimePath": "buildApp -> TitleGiftTicketGrantService.grant -> AdminStackGrantService.grant",
+    "storedResultCompatibility": "RAW_RESULT_WITHOUT_PAYLOAD_FINGERPRINT_FAILS_CLOSED",
+    "observations": [
+      {
+        "scenarioKind": "MUTATION_SUCCESS",
+        "reply": "합성 대상님에게 타이틀선물권💝(/타이틀선물 닉네임 내용) 2개를 지급했습니다.",
+        "result": {
+          "scenarioKind": "MUTATION_SUCCESS",
+          "status": "granted",
+          "quantity": "2",
+          "businessDmlCount": 3
+        },
+        "trace": {
+          "normalizedStatements": [
+            "INSERT IGNORE INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,0,0)",
+            "UPDATE inventory_stacks SET quantity=?,version=version+1 WHERE player_id=? AND item_id=?",
+            "INSERT INTO inventory_ledger(operation_id,sequence_no,player_id,item_id,quantity_delta,reason_code) VALUES (?,1,?,?,?,?)"
+          ],
+          "rowCount": 3,
+          "lockOrder": [
+            "operations",
+            "legacy_identity_map",
+            "players",
+            "player_profiles",
+            "item_definitions",
+            "inventory_stacks"
+          ],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+        "reply": "WAVE33_SYNTHETIC_AUDIT_FAILURE",
+        "result": {
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "status": "failed_closed",
+          "quantity": "0",
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [],
+          "transaction": "ROLLBACK",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_ROLLBACK"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+        "reply": "합성 대상님에게 타이틀선물권💝(/타이틀선물 닉네임 내용) 2개를 지급했습니다.",
+        "result": {
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "status": "granted",
+          "quantity": "2",
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+        "reply": "ADMIN_STACK_GRANT_PAYLOAD_DRIFT",
+        "result": {
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "status": "failed_closed",
+          "quantity": "0",
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [],
+          "transaction": "ROLLBACK",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_ROLLBACK"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "RESTART_REPLAY",
+        "reply": "합성 대상님에게 타이틀선물권💝(/타이틀선물 닉네임 내용) 2개를 지급했습니다.",
+        "result": {
+          "scenarioKind": "RESTART_REPLAY",
+          "status": "granted",
+          "quantity": "2",
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+        "reply": "합성 대상님에게 타이틀선물권💝(/타이틀선물 닉네임 내용) 2개를 지급했습니다.",
+        "result": {
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "status": "granted",
+          "quantity": "2",
+          "businessDmlCount": 3
+        },
+        "trace": {
+          "normalizedStatements": [
+            "INSERT IGNORE INTO inventory_stacks(player_id,item_id,quantity,version) VALUES (?,?,0,0)",
+            "UPDATE inventory_stacks SET quantity=?,version=version+1 WHERE player_id=? AND item_id=?",
+            "INSERT INTO inventory_ledger(operation_id,sequence_no,player_id,item_id,quantity_delta,reason_code) VALUES (?,1,?,?,?,?)"
+          ],
+          "rowCount": 3,
+          "lockOrder": [
+            "operations",
+            "legacy_identity_map",
+            "players",
+            "player_profiles",
+            "item_definitions",
+            "inventory_stacks"
+          ],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "AUTH_DENIED",
+        "reply": "NO_REPLY",
+        "result": {
+          "scenarioKind": "AUTH_DENIED",
+          "status": "denied",
+          "quantity": "0",
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      }
+    ]
+  }
+}

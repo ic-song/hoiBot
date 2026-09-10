@@ -67,8 +67,8 @@
       "required": ["manifestConsumers", "ledgerEntries", "missingConsumerIds", "duplicateConsumerIds", "unknownConsumerIds", "readConsumers", "mutationConsumers", "unresolvedDynamicConsumers", "unresolvedDynamicCallCount", "registrySourceMismatchCount", "registrySourceMismatchAttributedCount", "registrySourceMismatchUnattributedCount", "provenConsumers", "unprovenConsumers", "directPassConsumers", "equivalentPassConsumers", "verdicts"],
       "properties": {
         "manifestConsumers": { "const": 1133 }, "ledgerEntries": { "const": 1133 }, "missingConsumerIds": { "const": 0 },
-        "duplicateConsumerIds": { "const": 0 }, "unknownConsumerIds": { "const": 0 }, "readConsumers": { "const": 500 },
-        "mutationConsumers": { "const": 633 }, "unresolvedDynamicConsumers": { "const": 82 }, "unresolvedDynamicCallCount": { "const": 82 },
+        "duplicateConsumerIds": { "const": 0 }, "unknownConsumerIds": { "const": 0 }, "readConsumers": { "const": 499 },
+        "mutationConsumers": { "const": 634 }, "unresolvedDynamicConsumers": { "const": 82 }, "unresolvedDynamicCallCount": { "const": 82 },
         "registrySourceMismatchCount": { "const": 0 }, "registrySourceMismatchAttributedCount": { "const": 0 },
         "registrySourceMismatchUnattributedCount": { "const": 0 }, "provenConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 },
         "unprovenConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 }, "directPassConsumers": { "type": "integer", "minimum": 0, "maximum": 1133 },

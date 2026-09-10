@@ -11,7 +11,7 @@ const paths = {
   consumerManifest: "개발환경_고도화/migration-control/contracts/object-db-consumer-manifest.v1.json",
   consumerIdRegistry: "개발환경_고도화/migration-control/contracts/object-db-consumer-id-registry.v1.json",
   transitionContract: "개발환경_고도화/migration-control/contracts/object-db-consumer-transition.v1.json",
-  executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave32-v1.json",
+  executionReceipts: "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave33-v1.json",
 } as const;
 const output = resolve(repoRoot, "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json");
 const consumerManifestText = readFileSync(resolve(repoRoot, paths.consumerManifest), "utf8");
@@ -19,6 +19,8 @@ const manifest = JSON.parse(consumerManifestText);
 const executionReceiptsText = readFileSync(resolve(repoRoot, paths.executionReceipts), "utf8");
 const evidenceFileTexts = Object.fromEntries(listObjectDbExecutableParityEvidencePaths(executionReceiptsText).map((path) => [path, readFileSync(resolve(repoRoot, path), "utf8")]));
 const classificationSourcePaths = [...new Set<string>(manifest.audit.registrySourceMismatches.map((value: string) => value.slice(0, value.indexOf(":"))))].sort();
+classificationSourcePaths.push("개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.json");
+classificationSourcePaths.sort();
 const classificationSourceTexts = Object.fromEntries(classificationSourcePaths.map((path) => [path, readFileSync(resolve(repoRoot, path), "utf8")]));
 
 const ledger = buildObjectDbConsumerExecutableParityLedger({

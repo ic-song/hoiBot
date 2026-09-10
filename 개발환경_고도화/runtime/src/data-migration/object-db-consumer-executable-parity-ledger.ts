@@ -311,6 +311,11 @@ const OBJECT_DB_PARITY_WAVE31_FULL_RECEIPT_SHA256="df05843c2df41428086464814adab
 const OBJECT_DB_PARITY_WAVE32_CONSUMER_IDS=["legacy-798257cac0e93e27"] as string[];
 const OBJECT_DB_PARITY_WAVE32_SCENARIOS=["READ_POSITIVE","NEGATIVE_GUARD","EXACT_OUTPUT","SOURCE_DOMAIN_DML_ZERO","RESTART_CONSISTENCY"] as const;
 const OBJECT_DB_PARITY_WAVE32_RECEIPT_IDS=new Set(OBJECT_DB_PARITY_WAVE32_CONSUMER_IDS.flatMap(consumerId=>OBJECT_DB_PARITY_WAVE32_SCENARIOS.map(kind=>`receipt:wave32:${consumerId}:${kind.toLowerCase()}`)));
+const OBJECT_DB_PARITY_WAVE33_HARNESS_PATH="개발환경_고도화/runtime/test/fixtures/object-db-executable-parity-wave33-title-ticket-harness.mjs" as const;
+const OBJECT_DB_PARITY_WAVE33_FULL_RECEIPT_COUNT=401 as const;
+const OBJECT_DB_PARITY_WAVE33_CONSUMER_IDS=["legacy-bda1428003a5b522","runtime-dispatch-948bbf36d6af623a"].sort() as string[];
+const OBJECT_DB_PARITY_WAVE33_SCENARIOS=["MUTATION_SUCCESS","DOMAIN_FAILURE_ROLLBACK","DUPLICATE_REPLAY_DML_ZERO","PAYLOAD_DRIFT_FAIL_CLOSED","RESTART_REPLAY","CONCURRENCY_SINGLE_WRITER","AUTH_DENIED"] as const;
+const OBJECT_DB_PARITY_WAVE33_RECEIPT_IDS=new Set(OBJECT_DB_PARITY_WAVE33_CONSUMER_IDS.flatMap(consumerId=>OBJECT_DB_PARITY_WAVE33_SCENARIOS.map(kind=>`receipt:wave33:${consumerId}:${kind.toLowerCase()}`)));
 const OBJECT_DB_PARITY_HISTORICAL_EVIDENCE_COMMITS:Readonly<Record<string,string>>={
   wave1:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave2:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,
   wave3:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,wave4:OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT,
@@ -342,7 +347,9 @@ export const OBJECT_DB_EXECUTABLE_PARITY_VERDICTS = [
 ] as const;
 
 export function objectDbParityHarnessTimeoutMs(harnessPath: string): number {
-  return harnessPath === OBJECT_DB_PARITY_WAVE32_HARNESS_PATH
+  return harnessPath === OBJECT_DB_PARITY_WAVE33_HARNESS_PATH
+    ? OBJECT_DB_PARITY_WAVE27_CHILD_TIMEOUT_MS
+    : harnessPath === OBJECT_DB_PARITY_WAVE32_HARNESS_PATH
     ? OBJECT_DB_PARITY_WAVE27_CHILD_TIMEOUT_MS
     : harnessPath === OBJECT_DB_PARITY_WAVE31_HARNESS_PATH
     ? OBJECT_DB_PARITY_WAVE27_CHILD_TIMEOUT_MS
@@ -536,6 +543,37 @@ export type ConsumerManifestInput = {
     registrySourceMismatches: string[];
   };
 };
+
+const WAVE33_DELTA_PATH = "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.json";
+
+function applyCompatibleClassificationDeltas(
+  manifest: ConsumerManifestInput,
+  classificationSourceTexts: Readonly<Record<string, string>>,
+): ConsumerManifestInput {
+  const text = classificationSourceTexts[WAVE33_DELTA_PATH];
+  if (text === undefined) return manifest;
+  const delta = JSON.parse(canonicalizeObjectDbConsumerSourceText(text)) as Record<string, any>;
+  if (delta.format !== "hoibot-object-db-consumer-compatible-delta-v1" || delta.baseCatalogVersion !== "SC-20260902-1" || delta.deltaId !== "SCD-OBJ-20260910-33") {
+    throw new Error("Wave33 compatible classification delta provenance drift");
+  }
+  if (!Array.isArray(delta.operations) || delta.operations.length !== 1) throw new Error("Wave33 compatible classification delta operation drift");
+  const operation = delta.operations[0];
+  if (operation.operation !== "REPLACE_CLASSIFICATION" || operation.consumerId !== "legacy-bda1428003a5b522"
+    || operation.before?.access !== "READ" || operation.after?.access !== "READ_WRITE"
+    || operation.after?.accessClass !== "MUTATION" || operation.after?.interfaceMethod !== "EXECUTE"
+    || operation.after?.interfaceId !== "member-title.admin-title-gift-ticket-grant.execute") {
+    throw new Error("Wave33 compatible classification delta content drift");
+  }
+  let replaced = false;
+  const consumers = manifest.consumers.map(consumer => {
+    if (consumer.consumerId !== operation.consumerId) return consumer;
+    if (consumer.access !== operation.before.access) throw new Error("Wave33 compatible classification delta before-state drift");
+    replaced = true;
+    return { ...consumer, access: operation.after.access, interfaceId: operation.after.interfaceId };
+  });
+  if (!replaced) throw new Error("Wave33 compatible classification delta consumer missing");
+  return { ...manifest, consumers };
+}
 
 export type ExecutableParityLedgerEntry = {
   consumerId: string;
@@ -803,6 +841,7 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
     const hasWave30=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave30:"));
     const hasWave31=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave31:"));
     const hasWave32=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave32:"));
+    const hasWave33=value.receipts.some(receipt=>isRecord(receipt)&&typeof receipt.receiptId==="string"&&receipt.receiptId.startsWith("receipt:wave33:"));
     if(hasWave15&&hasWave16)throw new Error("Wave15 SHADOW and Wave16 DIRECT receipts cannot be active together");
     if(hasWave17&&!hasWave16)throw new Error("Wave17 receipt bundle must preserve Wave16 receipts");
     if(hasWave18&&!hasWave17)throw new Error("Wave18 receipt bundle must preserve Wave17 receipts");
@@ -819,7 +858,8 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
     if(hasWave30&&!hasWave29)throw new Error("Wave30 receipt bundle must preserve Wave29 receipts");
     if(hasWave31&&!hasWave30)throw new Error("Wave31 receipt bundle must preserve Wave30 receipts");
     if(hasWave32&&!hasWave31)throw new Error("Wave32 receipt bundle must preserve Wave31 receipts");
-    if(value.receipts.length!==(hasWave32?OBJECT_DB_PARITY_WAVE32_FULL_RECEIPT_COUNT:hasWave31?OBJECT_DB_PARITY_WAVE31_FULL_RECEIPT_COUNT:hasWave30?OBJECT_DB_PARITY_WAVE30_FULL_RECEIPT_COUNT:hasWave29?OBJECT_DB_PARITY_WAVE29_FULL_RECEIPT_COUNT:hasWave27?OBJECT_DB_PARITY_WAVE27_FULL_RECEIPT_COUNT:hasWave26?OBJECT_DB_PARITY_WAVE26_FULL_RECEIPT_COUNT:hasWave25?OBJECT_DB_PARITY_WAVE25_FULL_RECEIPT_COUNT:hasWave24?OBJECT_DB_PARITY_WAVE24_FULL_RECEIPT_COUNT:hasWave23?OBJECT_DB_PARITY_WAVE23_FULL_RECEIPT_COUNT:hasWave22?OBJECT_DB_PARITY_WAVE22_FULL_RECEIPT_COUNT:hasWave21?OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_COUNT:hasWave20?OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_COUNT:hasWave19?OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_COUNT:hasWave18?OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_COUNT:hasWave17?OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave32?"Wave32":hasWave31?"Wave31":hasWave30?"Wave30":hasWave29?"Wave29":hasWave27?"Wave27":hasWave26?"Wave26":hasWave25?"Wave25":hasWave24?"Wave24":hasWave23?"Wave23":hasWave22?"Wave22":hasWave21?"Wave21":hasWave20?"Wave20":hasWave19?"Wave19":hasWave18?"Wave18":hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
+    if(hasWave33&&!hasWave32)throw new Error("Wave33 receipt bundle must preserve Wave32 receipts");
+    if(value.receipts.length!==(hasWave33?OBJECT_DB_PARITY_WAVE33_FULL_RECEIPT_COUNT:hasWave32?OBJECT_DB_PARITY_WAVE32_FULL_RECEIPT_COUNT:hasWave31?OBJECT_DB_PARITY_WAVE31_FULL_RECEIPT_COUNT:hasWave30?OBJECT_DB_PARITY_WAVE30_FULL_RECEIPT_COUNT:hasWave29?OBJECT_DB_PARITY_WAVE29_FULL_RECEIPT_COUNT:hasWave27?OBJECT_DB_PARITY_WAVE27_FULL_RECEIPT_COUNT:hasWave26?OBJECT_DB_PARITY_WAVE26_FULL_RECEIPT_COUNT:hasWave25?OBJECT_DB_PARITY_WAVE25_FULL_RECEIPT_COUNT:hasWave24?OBJECT_DB_PARITY_WAVE24_FULL_RECEIPT_COUNT:hasWave23?OBJECT_DB_PARITY_WAVE23_FULL_RECEIPT_COUNT:hasWave22?OBJECT_DB_PARITY_WAVE22_FULL_RECEIPT_COUNT:hasWave21?OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_COUNT:hasWave20?OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_COUNT:hasWave19?OBJECT_DB_PARITY_WAVE19_FULL_RECEIPT_COUNT:hasWave18?OBJECT_DB_PARITY_WAVE18_FULL_RECEIPT_COUNT:hasWave17?OBJECT_DB_PARITY_WAVE17_FULL_RECEIPT_COUNT:hasWave16?167:hasWave15?167:hasWave14?160:hasWave13?155:149))throw new Error(`${hasWave33?"Wave33":hasWave32?"Wave32":hasWave31?"Wave31":hasWave30?"Wave30":hasWave29?"Wave29":hasWave27?"Wave27":hasWave26?"Wave26":hasWave25?"Wave25":hasWave24?"Wave24":hasWave23?"Wave23":hasWave22?"Wave22":hasWave21?"Wave21":hasWave20?"Wave20":hasWave19?"Wave19":hasWave18?"Wave18":hasWave17?"Wave17":hasWave16?"Wave16":hasWave15?"Wave15":hasWave14?"Wave14":hasWave13?"Wave13":"Wave12"} receipt bundle cardinality drift`);
     const historicalPrefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_COUNT));
     if(Buffer.byteLength(historicalPrefix,"utf8")!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_BYTES||sha256CanonicalText(historicalPrefix)!==OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_PREFIX_SHA256)throw new Error(`historical receipt fingerprint drift at ${OBJECT_DB_EXECUTABLE_PARITY_WAVE11_RECEIPT_EVIDENCE_COMMIT}`);
     const wave12Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_EXECUTABLE_PARITY_WAVE12_RECEIPT_PREFIX_COUNT));
@@ -837,6 +877,7 @@ export function parseObjectDbConsumerExecutionReceiptBundle(value: unknown): Obj
     if(hasWave30){const wave29Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE29_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave29Prefix,"utf8")!==1_382_594||sha256CanonicalText(wave29Prefix)!=="5cf3063b351bc18a343b075997dead5769cde57d7a8854218c7b89e3abed7373")throw new Error("historical Wave29 receipt fingerprint drift");}
     if(hasWave31){const wave30Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE30_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave30Prefix,"utf8")!==OBJECT_DB_PARITY_WAVE30_FULL_RECEIPT_BYTES||sha256CanonicalText(wave30Prefix)!==OBJECT_DB_PARITY_WAVE30_FULL_RECEIPT_SHA256)throw new Error("historical Wave30 receipt fingerprint drift");}
     if(hasWave32){const wave31Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE31_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave31Prefix,"utf8")!==OBJECT_DB_PARITY_WAVE31_FULL_RECEIPT_BYTES||sha256CanonicalText(wave31Prefix)!==OBJECT_DB_PARITY_WAVE31_FULL_RECEIPT_SHA256)throw new Error("historical Wave31 receipt fingerprint drift");}
+    if(hasWave33){const wave32Prefix=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE32_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave32Prefix,"utf8")!==1_639_915||sha256CanonicalText(wave32Prefix)!=="59a43f463dd33b1945c7e5d16c7c9da632c2075bbad57852d1b1092da78b7bfb")throw new Error("historical Wave32 receipt fingerprint drift");}
     if(hasWave21||hasWave22){const wave20Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave20Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_BYTES||sha256CanonicalText(wave20Receipts)!==OBJECT_DB_PARITY_WAVE20_FULL_RECEIPT_SHA256)throw new Error("historical Wave20 receipt fingerprint drift");}
     if(hasWave22){const wave21Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave21Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_BYTES||sha256CanonicalText(wave21Receipts)!==OBJECT_DB_PARITY_WAVE21_FULL_RECEIPT_SHA256)throw new Error("historical Wave21 receipt fingerprint drift");}
     if(hasWave23){const wave22Receipts=JSON.stringify(value.receipts.slice(0,OBJECT_DB_PARITY_WAVE22_FULL_RECEIPT_COUNT));if(Buffer.byteLength(wave22Receipts,"utf8")!==OBJECT_DB_PARITY_WAVE22_FULL_RECEIPT_BYTES||sha256CanonicalText(wave22Receipts)!==OBJECT_DB_PARITY_WAVE22_FULL_RECEIPT_SHA256)throw new Error("historical Wave22 receipt fingerprint drift");}
@@ -1681,7 +1722,9 @@ function assertReceiptExecutableBinding(
     : fixtureBindings.some((candidate) => isRecord(candidate) && JSON.stringify(candidate) === exactBinding);
   if (!hasExactBinding) throw new Error(`${receipt.receiptId} unrelated fixture lacks exact receipt binding`);
   if (receipt.harness.runner !== OBJECT_DB_PARITY_RUNNER) throw new Error(`${receipt.receiptId} runner metadata is not allowlisted`);
-  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave32:")
+  const expectedHarnessPath = receipt.receiptId.startsWith("receipt:wave33:")
+    ? OBJECT_DB_PARITY_WAVE33_HARNESS_PATH
+    : receipt.receiptId.startsWith("receipt:wave32:")
     ? OBJECT_DB_PARITY_WAVE32_HARNESS_PATH
     : receipt.receiptId.startsWith("receipt:wave31:")
     ? OBJECT_DB_PARITY_WAVE31_HARNESS_PATH
@@ -2090,6 +2133,7 @@ export function buildObjectDbConsumerExecutableParityLedger(input: {
   if (!isRecord(manifest.audit) || !Number.isSafeInteger(manifest.audit.registrySourceMismatchCount) || manifest.audit.registrySourceMismatchCount < 0) throw new Error("invalid registrySourceMismatchCount");
   if (!Array.isArray(manifest.audit.registrySourceMismatches) || manifest.audit.registrySourceMismatches.length !== manifest.audit.registrySourceMismatchCount) throw new Error("registry source mismatch detail/count drift");
   if (sha256CanonicalJson(manifest.consumers) !== manifest.consumerSetSha256) throw new Error("consumer manifest consumerSetSha256 drift");
+  const effectiveManifest = applyCompatibleClassificationDeltas(manifest, input.classificationSourceTexts);
 
   const registry = parseConsumerIdRegistry(JSON.parse(canonicalizeObjectDbConsumerSourceText(input.consumerIdRegistryText)), manifest.baseCommit);
   const resolveStableId = createConsumerIdResolver(registry);
@@ -2104,7 +2148,7 @@ export function buildObjectDbConsumerExecutableParityLedger(input: {
     manifestIds.add(consumer.consumerId);
     if (resolveStableId(consumer) !== consumer.consumerId) throw new Error(`stable consumer ID registry drift: ${consumer.consumerId}`);
   }
-  const manifestById = new Map(manifest.consumers.map((consumer) => [consumer.consumerId, consumer]));
+  const manifestById = new Map(effectiveManifest.consumers.map((consumer) => [consumer.consumerId, consumer]));
   const mismatchResolution = deriveRegistrySourceMismatchResolution(manifest, input.classificationSourceTexts);
   const mismatchLabelsByConsumer = new Map<string, string[]>();
   for (const binding of mismatchResolution.bindings) mismatchLabelsByConsumer.set(binding.consumerId, [...(mismatchLabelsByConsumer.get(binding.consumerId) ?? []), binding.registrySourceMismatch].sort());
@@ -2126,7 +2170,7 @@ export function buildObjectDbConsumerExecutableParityLedger(input: {
     receiptsByConsumer.set(receipt.consumerId, [...(receiptsByConsumer.get(receipt.consumerId) ?? []), receipt]);
   }
 
-  const entries = manifest.consumers.map((consumer): ExecutableParityLedgerEntry => {
+  const entries = effectiveManifest.consumers.map((consumer): ExecutableParityLedgerEntry => {
     const mismatchLabels = mismatchLabelsByConsumer.get(consumer.consumerId) ?? [];
     const classification = classificationProjection(consumer, mismatchLabels);
     const requirements = scenarioRequirementsFor(consumer, classification.classificationSha256,consumer.consumerId);
@@ -2164,7 +2208,7 @@ export function buildObjectDbConsumerExecutableParityLedger(input: {
 
   const verdicts = Object.fromEntries(OBJECT_DB_EXECUTABLE_PARITY_VERDICTS.map((verdict) => [verdict, entries.filter((entry) => entry.verdict === verdict).length])) as Record<ObjectDbExecutableParityVerdict, number>;
   const coverage: ExecutableParityCoverage = {
-    manifestConsumers: manifest.consumers.length, ledgerEntries: entries.length, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
+    manifestConsumers: effectiveManifest.consumers.length, ledgerEntries: entries.length, missingConsumerIds: 0, duplicateConsumerIds: 0, unknownConsumerIds: 0,
     readConsumers: entries.filter(({ classification }) => classification.accessClass === "READ").length,
     mutationConsumers: entries.filter(({ classification }) => classification.accessClass === "MUTATION").length,
     unresolvedDynamicConsumers: entries.filter(({ classification }) => classification.unresolvedDynamicCallCount > 0).length,
@@ -2358,6 +2402,7 @@ export function validateObjectDbConsumerExecutableParityLedger(
     classificationSourceTexts?: Readonly<Record<string, string>>;
   },
 ): ExecutableParityLedger {
+  const effectiveInputManifest = inputs === undefined ? undefined : applyCompatibleClassificationDeltas(inputs.manifest, inputs.classificationSourceTexts ?? {});
   if (!isRecord(value)) throw new Error("executable parity ledger must be an object");
   assertExactKeys(value, ["format", "catalogVersion", "classificationBaseCommit", "evidenceCommit", "sourceTextNormalization", "sources", "registrySourceMismatchResolution", "coverage", "entries", "entrySetSha256"], "ledger");
   if (value.format !== OBJECT_DB_EXECUTABLE_PARITY_LEDGER_FORMAT) throw new Error("unsupported executable parity ledger format");
@@ -2412,7 +2457,7 @@ export function validateObjectDbConsumerExecutableParityLedger(
   const entries = value.entries as ExecutableParityLedgerEntry[];
   const ids = entries.map(({ consumerId }) => consumerId);
   assertSortedUniqueStrings(ids, "ledger consumerIds");
-  const manifestIds = inputs === undefined ? new Set(ids) : new Set(inputs.manifest.consumers.map(({ consumerId }) => consumerId));
+  const manifestIds = effectiveInputManifest === undefined ? new Set(ids) : new Set(effectiveInputManifest.consumers.map(({ consumerId }) => consumerId));
   for (const binding of mismatchResolution.bindings) if (!manifestIds.has(binding.consumerId)) throw new Error(`registry source mismatch binds unknown consumerId: ${binding.consumerId}`);
   for (const [index, entry] of entries.entries()) {
     if (!isRecord(entry)) throw new Error(`ledger entry ${index} invalid`);
@@ -2491,7 +2536,7 @@ export function validateObjectDbConsumerExecutableParityLedger(
   const coverage = value.coverage as unknown as ExecutableParityCoverage;
   const verdicts = Object.fromEntries(OBJECT_DB_EXECUTABLE_PARITY_VERDICTS.map((verdict) => [verdict, entries.filter((entry) => entry.verdict === verdict).length])) as Record<ObjectDbExecutableParityVerdict, number>;
   const calculated: ExecutableParityCoverage = {
-    manifestConsumers: inputs?.manifest.consumers.length ?? entries.length,
+    manifestConsumers: effectiveInputManifest?.consumers.length ?? entries.length,
     ledgerEntries: entries.length,
     missingConsumerIds: inputs === undefined ? 0 : [...manifestIds].filter((id) => !ids.includes(id)).length,
     duplicateConsumerIds: ids.length - new Set(ids).size,
@@ -2515,7 +2560,7 @@ export function validateObjectDbConsumerExecutableParityLedger(
     if (value.classificationBaseCommit !== inputs.manifest.baseCommit || sources.consumerManifest.consumerSetSha256 !== inputs.manifest.consumerSetSha256) throw new Error("classification provenance drift");
     const resolveStableId = createConsumerIdResolver(parseConsumerIdRegistry(inputs.registry, inputs.manifest.baseCommit));
     const byId = new Map(entries.map((entry) => [entry.consumerId, entry]));
-    for (const consumer of inputs.manifest.consumers) {
+    for (const consumer of effectiveInputManifest!.consumers) {
       if (resolveStableId(consumer) !== consumer.consumerId) throw new Error(`stable ID drift: ${consumer.consumerId}`);
       const entry = byId.get(consumer.consumerId);
       const sourceMismatchLabels = mismatchResolution.bindings.filter(({ consumerId }) => consumerId === consumer.consumerId).map(({ registrySourceMismatch }) => registrySourceMismatch);
@@ -2529,11 +2574,11 @@ export function validateObjectDbConsumerExecutableParityLedger(
       const bundleReceiptIds = new Set<string>();
       const seenBundleReceiptIds = new Set<string>();
       for (const rawReceipt of bundle.receipts) {
-        const receipt = validateExecutionReceipt(rawReceipt, new Map(inputs.manifest.consumers.map((consumer) => [consumer.consumerId, consumer])), inputs.evidenceFileTexts ?? {}, inputs.executionReceiptsPath, bundle.evidenceCommit);
+        const receipt = validateExecutionReceipt(rawReceipt, new Map(effectiveInputManifest!.consumers.map((consumer) => [consumer.consumerId, consumer])), inputs.evidenceFileTexts ?? {}, inputs.executionReceiptsPath, bundle.evidenceCommit);
         if (seenBundleReceiptIds.has(receipt.receiptId)) throw new Error(`duplicate execution receiptId: ${receipt.receiptId}`);
         seenBundleReceiptIds.add(receipt.receiptId);
         if (receipt.consumerId === "admin-command-5e04d0767d4c2abc" && !receipt.receiptId.startsWith("receipt:wave13:")) continue;
-        if(receipt.consumerId==="sql-repository-3001ad9fc2f36d01"&&receipt.receiptId.startsWith("receipt:wave6:")&&inputs.manifest.consumers.find(consumer=>consumer.consumerId===receipt.consumerId)?.sourceSpan.sha256!=="b19de38cf45d65786fa679411313cf3249c159d685af0a4b6c64b4e565656144")continue;
+        if(receipt.consumerId==="sql-repository-3001ad9fc2f36d01"&&receipt.receiptId.startsWith("receipt:wave6:")&&effectiveInputManifest!.consumers.find(consumer=>consumer.consumerId===receipt.consumerId)?.sourceSpan.sha256!=="b19de38cf45d65786fa679411313cf3249c159d685af0a4b6c64b4e565656144")continue;
         bundleReceiptIds.add(receipt.receiptId);
         const entry = byId.get(receipt.consumerId);
         const scenario = entry?.scenarios.find(({ receiptId }) => receiptId === receipt.receiptId);
