@@ -354,17 +354,26 @@ Status: VERIFIED
 ## Related Helpers
 
 - `generateBagOutput`
+- `buildHoiPassPremiumBagMessage`
+- `formatHoiPassPremiumBagExpiry`
+- `isHoiPassPremiumActive`
 - `checkRank`
 
 ## Data Usage
 
 - `data.member[sender].bag`
+- `data.member[sender].point`
+- `data.member[sender].diamond`
+- `data.member[sender].lv`
+- `data.member[sender].exp`
+- `data.member[sender].boostercnt`
+- `data.member[sender].pass.premium`
 - `data.adv`
 
 ## Save Flow
 
-- No intended state mutation
-- Branch does not call `saveJsonFile` for member data
+- 일반 조회는 데이터를 변경하지 않는다.
+- 기존 만능열쇠 저장명 정규화가 필요한 경우에만 `member.json`을 저장한다.
 
 ## Related Commands
 
@@ -377,8 +386,10 @@ Status: VERIFIED
 - Primary read-only inventory output command
 - Good entry point for bag item shape and numbering logic
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
+- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 경험치 부스터가 없으면 `🚀 경험치 2배 부스터: 없음`만 표시하고 `🚀 0회` 줄은 생략한다.
+- 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
-- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `전쟁불안정 감소권` 다음에 `만능상자` → `미니펫컬렉션 만능 열쇠` → `펫스킬컬렉션 만능 열쇠` 순으로 표시한다.
+- `main.js`와 `Info.js`의 특별 아이템 정렬에서 `호이의 봉인금고` → `해방의 열쇠` → `자동탐험권` → `자동일퀘권` 순으로 먼저 표시한다.
 - During the pendant transition, legacy `반지 강화석💍` remains separate; `generateBagOutput` must not show old quantities as `펜던트 강화석📿`.
 
 ---
@@ -4145,6 +4156,92 @@ Status: VERIFIED
 ## Related Commands
 - `/미니펫컬렉션등록`
 - `/미니펫컬렉션순위`
+
+---
+
+# /소식 및 소식 관리 명령
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `processWorldNewsCommand`
+- User command: `/소식`
+- Admin/Master commands: `/소식작성`, `/소식관리`, `/소식수정 [번호]`, `/소식삭제 [번호]`, `/소식등록`, `/소식취소`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `ensureWorldNewsData`
+- `drawWorldNewsReward`
+- `buildWorldNewsUserMessage`
+- `buildWorldNewsJackpotBroadcast`
+- `buildWorldNewsManageMessage`
+- `processWorldNewsCommand`
+- `noticeMsg`
+- `checkRank`
+
+## Data Usage
+
+- `data.worldNews.posts`
+- `data.worldNews.nextId`
+- `data.member[sender].worldNewsLotteryPlayed`
+- `data.member[sender].point`
+- `worldNewsDraftState` (작성·수정 중인 5분 임시 상태만 메모리 보관)
+
+## Save Flow
+
+- `/소식`의 첫 참여는 포인트와 참여 완료 상태를 함께 변경하고 `member.json`을 한 번 저장한다.
+- `/리셋`은 전 유저의 소식복권 참여 완료 상태를 다른 일일 횟수와 함께 제거한다.
+- 게시글 등록·수정·삭제는 소식 저장 구조를 변경하고 `member.json`을 한 번 저장한다.
+- 제목·내용·링크 입력과 미리보기 단계는 영구 데이터를 변경하지 않는다.
+- 10억 당첨 전체알림은 포인트와 참여 날짜 저장 성공 뒤에만 전송한다.
+
+## Notes
+
+- 복권은 계정당 `/리셋` 주기마다 1회이며 1,000만 50%, 5,000만 30%, 1억 15%, 5억 4%, 10억 1%로 꽝 없이 지급한다. 자정이 지나도 `/리셋` 전에는 다시 참여할 수 없다.
+- 최신 글 1개는 기본 화면에 표시하고 이전 글은 `allsee` 뒤에 최신순으로 표시한다.
+- 게시글은 최대 100개를 보관하며 101번째 등록부터 가장 오래된 글을 제거한다. 삭제된 글번호는 재사용하지 않는다.
+- 수정은 글번호·최초 작성일·작성자 수식어·노출 순서를 유지한다.
+- 관리자 작성 상태는 관리자 계정과 채팅방 조합별로 분리하며 5분 미입력 시 폐기한다.
+
+---
+
+# /미니펫컬렉션초기화 [아이디]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/미니펫컬렉션초기화`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `isMaster`
+- `getMiniPetCollectionData`
+
+## Data Usage
+
+- `miniPet_collection.json -> member[아이디].collection`
+- `userState[아이디].miniPetCollection`
+
+## Save Flow
+
+- MASTER가 지정한 가입 유저의 컬렉션 진행 상태만 삭제한 뒤 `miniPet_collection.json`을 한 번 저장한다.
+- 기존 지급 보상·미니펫 타이틀·소비된 미니펫은 변경하지 않는다.
+
+## Related Commands
+
+- `/미니펫컬렉션`
+- `/미니펫컬렉션등록`
+- `/미니펫컬렉션만능`
 
 ---
 
