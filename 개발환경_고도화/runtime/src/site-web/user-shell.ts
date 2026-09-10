@@ -25,6 +25,8 @@ export async function registerUserShellRoutes(app: FastifyInstance): Promise<voi
   app.get("/account/", serveShell);
   app.get("/account/inventory", serveShell);
   app.get("/account/inventory/", serveShell);
+  app.get("/account/currencies", serveShell);
+  app.get("/account/currencies/", serveShell);
   app.get("/account/links", serveShell);
   app.get("/account/links/", serveShell);
   app.get("/site/assets/user-shell.css", async (_request, reply) =>

@@ -27,14 +27,15 @@ class ShellElement {
 function createShellHarness(responses: Array<{ status: number; payload?: Record<string, unknown> }>, pathname = "/app") {
   const focusLog: string[] = [];
   const ids = [
-    "loading-view", "login-view", "app-view", "home-content", "account-content", "inventory-content", "nav-home", "nav-account", "nav-inventory", "account-title", "inventory-title", "login-form", "login-button", "login-id", "password",
+    "loading-view", "login-view", "app-view", "home-content", "account-content", "inventory-content", "currencies-content", "nav-home", "nav-account", "nav-inventory", "nav-currencies", "account-title", "inventory-title", "currencies-title", "login-form", "login-button", "login-id", "password",
     "login-error-summary", "login-error-message", "login-session-notice", "login-session-message", "app-error", "app-error-message", "logout-button", "retry-button",
     "live-status", "header-session", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
     "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server", "welcome-title", "login-title",
-    "inventory-count", "inventory-state", "inventory-owner", "inventory-loading", "inventory-empty", "inventory-error", "inventory-error-message", "inventory-list", "inventory-pagination", "inventory-page-status", "inventory-retry-button", "inventory-prev-button", "inventory-next-button"
+    "inventory-count", "inventory-state", "inventory-owner", "inventory-loading", "inventory-empty", "inventory-error", "inventory-error-message", "inventory-list", "inventory-pagination", "inventory-page-status", "inventory-retry-button", "inventory-prev-button", "inventory-next-button",
+    "currencies-count", "currencies-state", "currencies-loading", "currencies-empty", "currencies-error", "currencies-error-message", "currencies-list"
   ];
   const elements = new Map(ids.map((id) => [id, new ShellElement(id, focusLog)]));
-  ["login-view", "app-view", "account-content", "inventory-content", "login-error-summary", "login-session-notice", "app-error", "login-id-error", "password-error", "profile-empty", "inventory-empty", "inventory-error", "inventory-list", "inventory-pagination"]
+  ["login-view", "app-view", "account-content", "inventory-content", "currencies-content", "login-error-summary", "login-session-notice", "app-error", "login-id-error", "password-error", "profile-empty", "inventory-empty", "inventory-error", "inventory-list", "inventory-pagination", "currencies-empty", "currencies-error", "currencies-list"]
     .forEach((id) => { const element = elements.get(id); if (element !== undefined) element.hidden = true; });
   const calls: Array<{ url: string; options: Record<string, unknown> }> = [];
   const history: string[] = [];
@@ -88,18 +89,19 @@ function assertSecurityHeaders(headers: Record<string, string | string[] | numbe
 
 test("이용자 셸과 정적 자산을 보안 헤더와 함께 제공합니다", async () => {
   const app = await buildShellApp();
-  const [root, login, protectedApp, account, inventory, accountLinks, css, client] = await Promise.all([
+  const [root, login, protectedApp, account, inventory, currencies, accountLinks, css, client] = await Promise.all([
     app.inject({ method: "GET", url: "/" }),
     app.inject({ method: "GET", url: "/login" }),
     app.inject({ method: "GET", url: "/app" }),
     app.inject({ method: "GET", url: "/account" }),
     app.inject({ method: "GET", url: "/account/inventory" }),
+    app.inject({ method: "GET", url: "/account/currencies" }),
     app.inject({ method: "GET", url: "/account/links" }),
     app.inject({ method: "GET", url: "/site/assets/user-shell.css" }),
     app.inject({ method: "GET", url: "/site/assets/user-shell.js" })
   ]);
 
-  for (const response of [root, login, protectedApp, account, inventory, accountLinks, css, client]) {
+  for (const response of [root, login, protectedApp, account, inventory, currencies, accountLinks, css, client]) {
     assert.equal(response.statusCode, 200);
     assertSecurityHeaders(response.headers);
   }
@@ -112,6 +114,8 @@ test("이용자 셸과 정적 자산을 보안 헤더와 함께 제공합니다"
   assert.equal(account.body, USER_SHELL_HTML);
   assert.equal(inventory.body, USER_SHELL_HTML);
   assert.equal((await app.inject({ method: "GET", url: "/account/inventory/" })).body, USER_SHELL_HTML);
+  assert.equal(currencies.body, USER_SHELL_HTML);
+  assert.equal((await app.inject({ method: "GET", url: "/account/currencies/" })).body, USER_SHELL_HTML);
   assert.equal(accountLinks.body, USER_SHELL_HTML);
   assert.equal(css.body, USER_SHELL_STYLES);
   assert.equal(client.body, USER_SHELL_CLIENT);
@@ -155,6 +159,8 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
   assert.match(USER_SHELL_CLIENT, /\/api\/v1\/player-profiles\/current/);
   assert.match(USER_SHELL_CLIENT, /\/api\/v1\/inventory\/current\?limit=" \+ state\.inventoryLimit \+ "&offset=/);
   assert.match(USER_SHELL_HTML, /id="inventory-list" class="inventory-list" aria-label="가방 아이템" tabindex="-1" hidden/);
+  assert.match(USER_SHELL_HTML, /id="nav-currencies" class="nav-link" href="\/account\/currencies"/);
+  assert.match(USER_SHELL_HTML, /id="currencies-list" class="currencies-list" aria-label="보유 재화" tabindex="-1" hidden/);
   assert.match(USER_SHELL_HTML, /id="inventory-pagination" class="inventory-pagination" hidden/);
   assert.match(USER_SHELL_HTML, /aria-busy="true"/);
   assert.match(USER_SHELL_CLIENT, /DELETE/);
@@ -166,6 +172,7 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
   assert.match(USER_SHELL_CLIENT, /error\.status !== 403/);
   assert.match(USER_SHELL_HTML, /href="\/signup"/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /\/api\/v1\/admin/);
+  assert.doesNotMatch(USER_SHELL_CLIENT, /\/api\/v1\/currencies/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /localStorage|sessionStorage|Authorization/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /innerHTML/);
   assert.doesNotMatch(USER_SHELL_CLIENT, /console\./);
@@ -209,6 +216,8 @@ test("프로필 조회가 401이면 로그인 화면으로 전환하고 계정 �
   assert.equal(harness.elements.get("account-login-id")?.textContent, "—");
   assert.equal(harness.elements.get("system-account-name")?.textContent, "—");
   assert.equal(harness.elements.get("profile-list")?.children.length, 0);
+  assert.equal(harness.elements.get("currencies-list")?.children.length, 0);
+  assert.equal(harness.elements.get("currencies-list")?.hidden, true);
   assert.equal(harness.elements.get("login-session-notice")?.hidden, false);
   assert.equal(harness.elements.get("login-session-message")?.textContent, "세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.");
   assert.equal(harness.focusLog.at(-1), "login-session-notice");
@@ -255,6 +264,39 @@ test("가방 경로는 현재 사용자 가방 계약을 안전하게 렌더링�
   assert.equal(harness.elements.get("inventory-prev-button")?.disabled, false);
   assert.equal(harness.elements.get("inventory-next-button")?.disabled, true);
   assert.equal(harness.focusLog.includes("inventory-title"), true);
+});
+
+test("재화 경로는 현재 프로필 재화만 사용해 큰 잔액 문자열을 그대로 표시합니다", async () => {
+  const hugeBalance = "123456789012345678901234567890.123456789";
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", currencyAccounts: [{ code: "point", balance: hugeBalance, version: "9" }, { code: "diamond", balance: "7.000", version: "1" }, { code: "event_token", balance: "2", version: "3" }] } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } }
+  ], "/account/currencies");
+  await flushShellClient();
+  assert.deepEqual(harness.calls.map((call) => call.url), ["/api/v1/sessions/current", "/api/v1/player-profiles/current", "/api/v1/sessions/current"]);
+  assert.equal(harness.history.at(-1), "/account/currencies");
+  assert.equal(harness.elements.get("currencies-content")?.hidden, false);
+  assert.equal(harness.elements.get("nav-currencies")?.attributes.get("aria-current"), "page");
+  assert.equal(harness.elements.get("currencies-list")?.children.length, 3);
+  assert.equal(harness.elements.get("currencies-list")?.children[0]?.children[0]?.children[0]?.textContent, "포인트");
+  assert.equal(harness.elements.get("currencies-list")?.children[0]?.children[1]?.children[0]?.textContent, hugeBalance);
+  assert.equal(harness.elements.get("currencies-list")?.children[1]?.children[0]?.children[0]?.textContent, "다이아");
+  assert.equal(harness.elements.get("currencies-list")?.children[2]?.children[0]?.children[0]?.textContent, "event_token");
+  assert.equal(harness.focusLog.includes("currencies-title"), true);
+});
+
+test("재화 계정이 비어 있으면 빈 상태를 표시합니다", async () => {
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", currencyAccounts: [] } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } }
+  ], "/account/currencies");
+  await flushShellClient();
+  assert.equal(harness.elements.get("currencies-empty")?.hidden, false);
+  assert.equal(harness.elements.get("currencies-list")?.hidden, true);
+  assert.equal(harness.elements.get("currencies-count")?.textContent, "0종");
+  assert.equal(harness.elements.get("live-status")?.textContent, "현재 보유 재화를 표시합니다.");
 });
 
 test("가방 조회의 세션 만료는 표시 데이터를 지우고 로그인 안내로 전환합니다", async () => {

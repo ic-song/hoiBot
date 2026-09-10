@@ -84,7 +84,7 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
           <a id="nav-home" class="nav-link active" href="/app" aria-current="page"><span>홈</span><small>요약</small></a>
           <a id="nav-account" class="nav-link" href="/account"><span>계정 연결</span><small>상세</small></a>
           <a id="nav-inventory" class="nav-link" href="/account/inventory"><span>가방</span><small>내 아이템</small></a>
-          <span class="nav-link disabled" aria-disabled="true">재화 <small>준비 중</small></span>
+          <a id="nav-currencies" class="nav-link" href="/account/currencies"><span>재화</span><small>내 잔액</small></a>
         </nav>
         <button id="logout-button" class="secondary-button" type="button">로그아웃</button>
       </aside>
@@ -145,7 +145,7 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
             <ul class="guide-list">
               <li><span aria-hidden="true">1</span><div><strong>계정 확인</strong><small>웹 계정과 게임 계정의 연결 상태를 확인하세요.</small></div></li>
               <li><span aria-hidden="true">2</span><div><strong>프로필 확인</strong><small>연결된 캐릭터의 주요 정보를 확인하세요.</small></div></li>
-              <li><span aria-hidden="true">3</span><div><strong>추가 메뉴</strong><small>가방과 재화 조회도 순차적으로 제공될 예정입니다.</small></div></li>
+              <li><span aria-hidden="true">3</span><div><strong>가방·재화 확인</strong><small>가방의 아이템과 현재 보유 재화를 메뉴에서 확인하세요.</small></div></li>
             </ul>
             <a class="guide-link" href="/signup">가입·인증 상태 확인</a>
           </aside>
@@ -222,6 +222,32 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
             <p id="inventory-page-status" role="status" aria-live="polite"></p>
             <button id="inventory-next-button" class="secondary-button" type="button">다음 페이지</button>
           </div>
+        </section>
+      </div>
+
+      <div id="currencies-content" class="app-content" hidden>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow dark">MY CURRENCIES</p>
+            <h2 id="currencies-title" tabindex="-1">재화</h2>
+            <p>현재 연결된 게임 계정의 보유 재화를 확인할 수 있어요.</p>
+          </div>
+          <span id="currencies-count" class="status-badge">조회 준비 중</span>
+        </div>
+
+        <section class="currencies-card" aria-labelledby="currencies-list-title" aria-busy="true">
+          <div class="currencies-heading">
+            <div>
+              <p class="card-label">CURRENT PLAYER CURRENCIES</p>
+              <h2 id="currencies-list-title">내 재화</h2>
+              <p class="currencies-description">잔액은 게임 데이터에 저장된 값 그대로 표시합니다.</p>
+            </div>
+            <span id="currencies-state" class="status-text" aria-live="polite">조회 중</span>
+          </div>
+          <div id="currencies-loading" class="currencies-state" role="status"><span class="spinner small" aria-hidden="true"></span><p>재화를 불러오고 있어요.</p></div>
+          <div id="currencies-empty" class="empty-state" hidden><strong>표시할 재화가 없어요.</strong><p>현재 계정에 생성된 재화가 없거나 아직 표시할 정보가 없어요.</p></div>
+          <div id="currencies-error" class="inline-notice error" role="alert" hidden><div><strong>재화를 불러오지 못했어요.</strong><p id="currencies-error-message"></p></div></div>
+          <ul id="currencies-list" class="currencies-list" aria-label="보유 재화" tabindex="-1" hidden></ul>
         </section>
       </div>
     </section>
@@ -394,6 +420,19 @@ button:disabled { opacity: .58; cursor: wait; }
 .inventory-pagination .secondary-button { min-width: 0; min-height: 44px; padding: 0 12px; }
 .inventory-pagination p { margin: 0; color: var(--muted); font-size: 13px; font-weight: 700; text-align: center; }
 .inventory-pagination #inventory-next-button { justify-self: end; }
+.currencies-card { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 6px 20px rgba(15,23,42,.05); padding: 20px; }
+.currencies-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+.currencies-heading h2 { margin: 6px 0 0; font-size: 24px; letter-spacing: -.03em; }
+.currencies-description { margin: 7px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.currencies-state { min-height: 156px; display: grid; place-content: center; justify-items: center; gap: 10px; color: var(--muted); text-align: center; }
+.currencies-state p { margin: 0; line-height: 1.6; }
+.currencies-list { display: grid; gap: 10px; margin: 0; padding: 20px 0 0; list-style: none; }
+.currency-item { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; padding: 16px; background: var(--soft-blue); border: 1px solid #d5e3fb; border-radius: 10px; }
+.currency-name { min-width: 0; color: var(--ink); font-weight: 850; line-height: 1.5; overflow-wrap: anywhere; }
+.currency-code { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.currency-balance { min-width: 0; display: grid; align-content: center; justify-items: end; gap: 3px; color: var(--blue); font-variant-numeric: tabular-nums; font-weight: 850; text-align: right; }
+.currency-balance strong { max-width: 100%; font-size: clamp(17px, 4vw, 24px); overflow-wrap: anywhere; }
+.currency-balance small { color: var(--muted); font-size: 12px; font-weight: 700; }
 .site-footer { min-height: 48px; display: grid; place-items: center; padding: 10px 20px; color: var(--muted); background: var(--canvas); border-top: 1px solid var(--line); text-align: center; font-size: 11px; }
 .site-footer p { margin: 0; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -426,6 +465,9 @@ button:disabled { opacity: .58; cursor: wait; }
   .inventory-pagination p { grid-column: 1 / -1; grid-row: 1; }
   .inventory-pagination #inventory-prev-button { grid-column: 1; grid-row: 2; }
   .inventory-pagination #inventory-next-button { grid-column: 2; grid-row: 2; }
+  .currencies-card { padding: 18px 14px; }
+  .currency-item { grid-template-columns: 1fr; gap: 8px; }
+  .currency-balance { justify-items: start; text-align: left; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
@@ -443,9 +485,11 @@ export const USER_SHELL_CLIENT = String.raw`
   var homeContent = document.getElementById("home-content");
   var accountContent = document.getElementById("account-content");
   var inventoryContent = document.getElementById("inventory-content");
+  var currenciesContent = document.getElementById("currencies-content");
   var navHome = document.getElementById("nav-home");
   var navAccount = document.getElementById("nav-account");
   var navInventory = document.getElementById("nav-inventory");
+  var navCurrencies = document.getElementById("nav-currencies");
   var requestedPath = window.location && window.location.pathname ? window.location.pathname : "/app";
   var loginForm = document.getElementById("login-form");
   var loginButton = document.getElementById("login-button");
@@ -484,10 +528,12 @@ export const USER_SHELL_CLIENT = String.raw`
   function setAppSection(name) {
     var account = name === "account";
     var inventory = name === "inventory";
-    homeContent.hidden = account || inventory;
+    var currencies = name === "currencies";
+    homeContent.hidden = account || inventory || currencies;
     accountContent.hidden = !account;
     inventoryContent.hidden = !inventory;
-    [[navHome, !account && !inventory], [navAccount, account], [navInventory, inventory]].forEach(function (entry) {
+    currenciesContent.hidden = !currencies;
+    [[navHome, !account && !inventory && !currencies], [navAccount, account], [navInventory, inventory], [navCurrencies, currencies]].forEach(function (entry) {
       entry[0].setAttribute("class", entry[1] ? "nav-link active" : "nav-link");
       if (entry[1]) entry[0].setAttribute("aria-current", "page");
       else entry[0].removeAttribute("aria-current");
@@ -606,6 +652,13 @@ export const USER_SHELL_CLIENT = String.raw`
     text("inventory-owner", "");
     text("inventory-count", "조회 준비 중");
     text("inventory-state", "조회 중");
+    document.getElementById("currencies-list").replaceChildren();
+    document.getElementById("currencies-list").hidden = true;
+    document.getElementById("currencies-empty").hidden = true;
+    document.getElementById("currencies-error").hidden = true;
+    document.getElementById("currencies-loading").hidden = true;
+    text("currencies-count", "조회 준비 중");
+    text("currencies-state", "조회 중");
     appError.hidden = true;
   }
 
@@ -641,6 +694,65 @@ export const USER_SHELL_CLIENT = String.raw`
     inventoryNextButton.disabled = !pagination.hasMore;
     inventoryPrevButton.setAttribute("aria-disabled", inventoryPrevButton.disabled ? "true" : "false");
     inventoryNextButton.setAttribute("aria-disabled", inventoryNextButton.disabled ? "true" : "false");
+  }
+
+  function currencyLabel(code) {
+    var labels = { point: "포인트", diamond: "다이아" };
+    var value = String(code == null ? "" : code);
+    return labels[value] || value || "알 수 없는 재화";
+  }
+
+  function renderCurrencies(profile, failed) {
+    var card = document.querySelector ? document.querySelector(".currencies-card") : null;
+    var loading = document.getElementById("currencies-loading");
+    var list = document.getElementById("currencies-list");
+    var empty = document.getElementById("currencies-empty");
+    var errorView = document.getElementById("currencies-error");
+    var accounts = profile && Array.isArray(profile.currencyAccounts) ? profile.currencyAccounts : [];
+    loading.hidden = true;
+    list.replaceChildren();
+    empty.hidden = true;
+    errorView.hidden = true;
+    if (card) card.setAttribute("aria-busy", "false");
+    if (failed) {
+      text("currencies-count", "조회 실패");
+      text("currencies-state", "조회 실패");
+      document.getElementById("currencies-error-message").textContent = "프로필 정보를 불러오지 못해 재화를 표시할 수 없어요. 잠시 후 다시 시도해 주세요.";
+      errorView.hidden = false;
+      return;
+    }
+    if (!profile) {
+      text("currencies-count", "정보 없음");
+      text("currencies-state", "정보 없음");
+      empty.hidden = false;
+      return;
+    }
+    accounts.forEach(function (account) {
+      var row = document.createElement("li");
+      var identity = document.createElement("div");
+      var name = document.createElement("strong");
+      var code = document.createElement("small");
+      var balance = document.createElement("div");
+      var value = document.createElement("strong");
+      var label = document.createElement("small");
+      var currencyCode = account && account.code;
+      row.setAttribute("class", "currency-item");
+      name.setAttribute("class", "currency-name");
+      code.setAttribute("class", "currency-code");
+      balance.setAttribute("class", "currency-balance");
+      name.textContent = currencyLabel(currencyCode);
+      code.textContent = String(currencyCode == null || currencyCode === "" ? "unknown" : currencyCode);
+      value.textContent = String(account && account.balance != null ? account.balance : "0");
+      label.textContent = "현재 잔액";
+      identity.append(name, code);
+      balance.append(value, label);
+      row.append(identity, balance);
+      list.append(row);
+    });
+    text("currencies-count", accounts.length + "종");
+    text("currencies-state", accounts.length ? "조회 완료" : "정보 없음");
+    empty.hidden = accounts.length !== 0;
+    list.hidden = accounts.length === 0;
   }
 
   async function loadInventory() {
@@ -711,11 +823,16 @@ export const USER_SHELL_CLIENT = String.raw`
     text("link-login-id", maskLoginId(session.loginId));
     text("link-system-account", session.systemAccountName);
     renderProfile(state.profile);
+    renderCurrencies(state.profile, false);
   }
 
   async function loadProfile() {
     appError.hidden = true;
     text("profile-state", "조회 중");
+    text("currencies-state", "조회 중");
+    document.getElementById("currencies-loading").hidden = false;
+    var currenciesCard = document.querySelector ? document.querySelector(".currencies-card") : null;
+    if (currenciesCard) currenciesCard.setAttribute("aria-busy", "true");
     var profileError = null;
     try {
       var payload = await api("/api/v1/player-profiles/current");
@@ -728,6 +845,7 @@ export const USER_SHELL_CLIENT = String.raw`
       }
       state.profile = null;
       renderProfile(null);
+      renderCurrencies(null, error.status !== 404);
       if (error.status !== 404) profileError = error;
     }
 
@@ -758,13 +876,14 @@ export const USER_SHELL_CLIENT = String.raw`
     setView("app");
     var accountRoute = /^\/account(?:\/links)?\/?$/.test(requestedPath);
     var inventoryRoute = /^\/account\/inventory\/?$/.test(requestedPath);
-    setAppSection(inventoryRoute ? "inventory" : accountRoute ? "account" : "home");
+    var currenciesRoute = /^\/account\/currencies\/?$/.test(requestedPath);
+    setAppSection(currenciesRoute ? "currencies" : inventoryRoute ? "inventory" : accountRoute ? "account" : "home");
     renderSession();
-    window.history.replaceState({}, "", inventoryRoute ? "/account/inventory" : accountRoute ? "/account" : "/app");
-    document.getElementById(inventoryRoute ? "inventory-title" : accountRoute ? "account-title" : "welcome-title").focus();
+    window.history.replaceState({}, "", currenciesRoute ? "/account/currencies" : inventoryRoute ? "/account/inventory" : accountRoute ? "/account" : "/app");
+    document.getElementById(currenciesRoute ? "currencies-title" : inventoryRoute ? "inventory-title" : accountRoute ? "account-title" : "welcome-title").focus();
     var profileLoaded = await loadProfile();
     if (inventoryRoute && profileLoaded) await loadInventory();
-    if (!inventoryRoute) announce(accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
+    if (!inventoryRoute) announce(currenciesRoute ? "현재 보유 재화를 표시합니다." : accountRoute ? "연결된 계정 정보를 표시합니다." : "로그인했습니다. 계정 요약을 표시합니다.");
   }
 
   function showLogin(message, visibleNotice) {
