@@ -37,14 +37,15 @@ README에서는 사람이 전체 협업 구조를 빠르게 이해할 수 있도
 | `Info.js` | 정보 조회용 보조 스크립트입니다. 회원/펫/아이템 등 조회성 기능을 담당합니다. |
 | `data/` | 봇이 사용하는 JSON/TXT 데이터 예시 및 운영 데이터 확인용 폴더입니다. |
 | `tools/` | Git 작업, 운영 반영 등 로컬 개발/운영 보조 배치파일을 모아둔 폴더입니다. |
-| `.codex/skills/` | 중앙 `CODEX-CONFIG`에서 동기화된 hoiBot 전용 skill 배포 미러입니다. |
+| `.codex/skills/` | 중앙 `AGENT-HUB`에서 동기화된 hoiBot 전용 skill 배포 미러입니다. |
 | `.codex/skill-drafts-ko/` | 사람이 검토하기 위한 hoiBot skill 한글판 초안입니다. Codex 자동 로딩용이 아닙니다. |
 
 ## Codex Skills
 
-hoiBot 반복 작업용 Codex skill 원본은 비공개 `CODEX-CONFIG` 저장소에서 중앙 관리합니다.
+hoiBot 반복 작업용 Codex skill 원본은 비공개 `AGENT-HUB` 저장소에서 중앙 관리합니다.
 이 저장소의 `.codex/skills/`는 중앙 원본에서 생성된 배포 미러이므로 직접 수정하지 않습니다.
-새 작업 환경에서는 `CODEX-CONFIG`를 `%USERPROFILE%\CODEX-CONFIG`에 복제한 뒤 아래 배치파일을 실행합니다.
+새 작업 환경에서는 `https://github.com/ic-song/AGENT-HUB.git`를 복제한 뒤 아래 배치파일을 실행합니다.
+설치 경로는 `AGENT_HUB_ROOT`, 기존 `CODEX_CONFIG_ROOT`, 사용자 홈/바탕화면의 `AGENT-HUB`, 기존 `CODEX-CONFIG` 폴더 순으로 확인합니다. 현재 환경에서는 `C:\Users\user\Desktop\AGENT-HUB` junction이 실제 `C:\Users\user\Desktop\CODEX-CONFIG` 폴더를 가리킵니다. Git 원격과 개인 스킬·MCP 연결은 `AGENT-HUB` 이름을 사용합니다.
 배치파일은 로컬 junction을 갱신하며, 프로젝트 미러는 `feature/workflow` 브랜치에서 실행할 때만 갱신합니다.
 
 ```bat
@@ -54,11 +55,13 @@ tools\05_skills_설치.bat
 중앙화 구조:
 
 ```text
-중앙 원본:   %USERPROFILE%\CODEX-CONFIG\skills\
+중앙 원본:   <실제로 확인한 AGENT-HUB 경로>\skills\
 프로젝트 미러: .codex/skills/
 로컬 사용:   %USERPROFILE%\.codex\skills\ → 중앙 원본 junction
 한글 검토본: .codex/skill-drafts-ko/
 ```
+
+공통 Gemini A2A는 중앙 `skills/common/gemini-a2a` 원본을 개인 junction과 사용자 공통 MCP 설정으로 사용하며 프로젝트에 복제하지 않습니다. 기존 인증을 재사용하고, CLI/연결 상태를 확인한 뒤 필요한 설정만 변경합니다.
 
 ## 데이터 파일
 

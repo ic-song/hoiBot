@@ -23,9 +23,9 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Local `feature/prod` is the active operational baseline for production-facing and bug-fix work.
 - Documentation, workflow, branch strategy, and tools changes belong on `feature/workflow`.
 - Validated `feature/workflow` changes should be reflected into `feature/prod` by default after `feature/workflow` is pushed, unless the user explicitly says not to reflect them.
-- `CODEX-CONFIG` is the canonical source for user-authored hoiBot skills. Do not edit `.codex/skills/` or installed personal skill folders as the first or only source change.
-- For skill changes, update and validate `CODEX-CONFIG`, push its `main`, then run its `sync-skills.ps1 -ProjectPath <hoiBot-path> -Force` so `.codex/skills/` is a generated deployment mirror.
-- Installed personal skill folders should be junctions to `CODEX-CONFIG`; verify the junction target after central skill changes instead of manually copying files.
+- `AGENT-HUB` is the canonical source for user-authored hoiBot skills. Do not edit `.codex/skills/` or installed personal skill folders as the first or only source change.
+- For skill changes, update and validate `AGENT-HUB`, push its `main`, then run its `sync-skills.ps1 -ProjectPath <hoiBot-path> -Force` so `.codex/skills/` is a generated deployment mirror.
+- Installed personal skill folders should be junctions to `AGENT-HUB`; verify the junction target after central skill changes instead of manually copying files.
 - Bug fixes belong on a freshly created `feature/bugFix` from the latest `feature/prod` unless the user explicitly requests another exact branch; if both `feature/bugFix` and `feature/bugfix` exist, verify the exact casing requested by the user.
 - Treat `feature/bugFix` as short-lived: after the validated bug-fix commit is pushed and reflected into `feature/prod`, delete local and remote `feature/bugFix` by default so the next bug fix starts cleanly from `feature/prod`.
 - If `feature/bugFix` already exists when starting a new bug fix, verify whether its previous commits are already reflected into `feature/prod`; then delete/recreate it from latest `feature/prod` unless the user asks to preserve it.
@@ -66,7 +66,7 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 
 1. Classify the changed files before touching `feature/prod`.
 2. Treat the user's production-reflection keyword as a request for the work to end up on `feature/prod`; do not stop after pushing only the source task branch unless you explicitly tell the user `feature/prod` was not updated.
-3. If the change is documentation, workflow, branch strategy, or tools work, commit and push it on `feature/workflow` first. For Codex skill work, update, validate, commit, and push `CODEX-CONFIG` first, then synchronize the generated `.codex/skills/` mirror and commit that mirror on `feature/workflow`.
+3. If the change is documentation, workflow, branch strategy, or tools work, commit and push it on `feature/workflow` first. For Codex skill work, update, validate, commit, and push `AGENT-HUB` first, then synchronize the generated `.codex/skills/` mirror and commit that mirror on `feature/workflow`.
 4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow unless the user explicitly says not to.
 5. For production-facing code/data work, commit and push the current task branch first.
 6. For production-facing code/data/bug-fix work, verify `data/hoiBotChangeLog.json` has a new top entry before reflection: latest version + `0.001`, reflection date, and a concise user-visible `changes` summary for `/개발자노트`.
@@ -87,7 +87,7 @@ When the user says "prod까지 올려줘" or "운영반영해줘", or when valid
 13. Re-check `origin/feature/prod` and confirm the reflected production-facing commit includes the developer-note/version update; report the reflected `/개발자노트` version.
 14. For every corresponding Notion READY/HOTFIX development item, update `상태 = 🧪 DEV`, `운영반영일` to the KST reflection date, and `운영반영버전 = ver_<HoiBotVersion>` only after step 13 succeeds. Treat and verify the three properties as one operation; when one production change implements multiple linked items, apply the same verified version to each.
 15. After the remote `feature/prod` verification succeeds, use the `hoibot-playmcp-version-notifier` skill when available. When the PlayMCP KakaoTalk `나에게 보내기` tool is available, send exactly `ver_<HoiBotVersion>` and no other text. Do not send when production was not updated or verification failed. If the tool is unavailable, skip the notification without failing production reflection and report that it was skipped; if the available tool fails, retry once when safe and report the failure.
-16. If `.codex/skills/` changed, verify it matches `CODEX-CONFIG` and confirm the installed personal skill is a junction to the same canonical folder.
+16. If `.codex/skills/` changed, verify it matches `AGENT-HUB` and confirm the installed personal skill is a junction to the same canonical folder.
 17. In the final response, explicitly state whether `feature/prod` was updated, which commit(s) were reflected, which `/개발자노트` version is current, which Notion items received the production date/version, whether the KakaoTalk version notification succeeded, and whether local skills were updated.
 
 ## Merge Versus Cherry-Pick
