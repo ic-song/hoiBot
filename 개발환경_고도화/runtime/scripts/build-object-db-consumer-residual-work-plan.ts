@@ -112,10 +112,10 @@ const categoryCounts = {
 };
 const expectedCounts = {
   B_STRICT_EQUIVALENCE: 0,
-  C_DIRECT_EXECUTION: 984,
+  C_DIRECT_EXECUTION: 982,
   D_PREREQUISITE: 82,
 };
-if (entries.length !== 1_066 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
+if (entries.length !== 1_064 || JSON.stringify(categoryCounts) !== JSON.stringify(expectedCounts)) {
   throw new Error(`Residual plan cardinality drift: ${JSON.stringify({ total: entries.length, categoryCounts })}`);
 }
 
@@ -134,6 +134,7 @@ const output = {
     { wbs: "WBS797", commit: "98a442d09582b6dddcd4c8b6a2ea86e94e9480ad", resolution: "PLAYER_TITLE_READ_RUNTIME_DISPATCH_DIRECT_RECEIPTS" },
     { wbs: "WBS798", commit: "0ac62d6bc54c60b606afc40dc4d08bef55e45493", resolution: "MEMBER_TITLE_LEGACY_LIST_DIRECT_RECEIPTS" },
     { wbs: "WBS799", commit: "33852aa0abe42d56ec71983565cebc17b4d0a254", resolution: "MEMBER_TITLE_LEGACY_INFO_DIRECT_RECEIPTS" },
+    { wbs: "WBS800", commit: "c80995907c472739e599412c38a2040aeb20b975", resolution: "MEMBER_TITLE_ADMIN_GIFT_TICKET_DIRECT_RECEIPTS" },
   ],
   sources: {
     textNormalization: "LF_UTF8",

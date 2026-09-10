@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -12,6 +13,7 @@ import { createEnvironmentContext, verifyStartupDatabaseIdentity } from "../src/
 const root = resolve(import.meta.dirname, "../../..");
 const Ajv2020 = createRequire(import.meta.url)("ajv/dist/2020").default;
 const normalize = (sql: string): string => sql.replace(/\s+/gu, " ").trim();
+const sha = (value: string): string => createHash("sha256").update(value.replace(/\r\n?/g, "\n")).digest("hex");
 
 function legacyExecute(source: string, message: string, authorized = true): { reply: string; quantity: number } {
   const start = source.indexOf('if (msg.trim().startsWith("/타이틀,")');
@@ -87,6 +89,28 @@ function createDatabase(authorized = true): any {
 }
 
 describe("WBS800 Wave33 title gift ticket parity evidence", () => {
+  it("preserves receipt387 exactly and promotes two consumer-specific matrices", () => {
+    const current = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave33-v1.json"), "utf8"));
+    const prior = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/fixtures/synthetic-relational/object-db-consumer-execution-receipts-wave32-v1.json"), "utf8"));
+    assert.equal(current.receipts.length, 401);
+    assert.deepEqual(current.receipts.slice(0, 387), prior.receipts);
+    const prefix = JSON.stringify(current.receipts.slice(0, 387));
+    assert.equal(Buffer.byteLength(prefix), 1_639_915);
+    assert.equal(sha(prefix), "59a43f463dd33b1945c7e5d16c7c9da632c2075bbad57852d1b1092da78b7bfb");
+    const added = current.receipts.slice(387);
+    assert.equal(new Set(added.map((receipt: any) => receipt.receiptId)).size, 14);
+    for (const consumerId of ["legacy-bda1428003a5b522", "runtime-dispatch-948bbf36d6af623a"]) {
+      const receipts = added.filter((receipt: any) => receipt.consumerId === consumerId);
+      assert.equal(receipts.length, 7);
+      assert.equal(new Set(receipts.map((receipt: any) => receipt.scenario.scenarioKind)).size, 7);
+      assert.ok(receipts.every((receipt: any) => receipt.proofMode === "DIRECT" && receipt.verdict === "PASS"));
+    }
+    const ledger = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/contracts/object-db-consumer-executable-parity-ledger.v1.json"), "utf8"));
+    assert.equal(ledger.coverage.directPassConsumers, 57);
+    assert.equal(ledger.coverage.equivalentPassConsumers, 12);
+    assert.equal(ledger.coverage.provenConsumers, 69);
+    assert.equal(ledger.coverage.verdicts.STATIC_ONLY, 982);
+  });
   it("validates the compatible classification delta without relabeling the frozen manifest", () => {
     const schema = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.schema.json"), "utf8"));
     const delta = JSON.parse(readFileSync(resolve(root, "개발환경_고도화/migration-control/contracts/object-db-consumer-classification-delta.SCD-OBJ-20260910-33.v1.json"), "utf8"));
