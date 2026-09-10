@@ -45,9 +45,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     try {
         var state = getNoticeState();
 
-        if (msg === "/알림정보") {
+        if (msg === "!알림정보") {
             ensureNoticeRuntimeSchedule(state);
             replier.reply(buildNoticeInfoMessage(state));
+            return;
+        }
+
+        if (msg === "/알림리셋") {
+            clearNoticeRuntimeSchedule();
+            state.content = "";
+            state.scheduleActive = false;
+            state.scheduleToken = "";
+            state.nextRunAt = 0;
+            saveNoticeState(state);
+            replier.reply("✅ 전체알림을 초기화했습니다.\n저장된 알림 문구를 삭제하고 반복 예약을 중지했습니다.");
             return;
         }
 
@@ -96,7 +107,8 @@ function isNoticeCommand(msg) {
         msg.indexOf("!알림내용 ") === 0 ||
         msg === "!알림시작" ||
         msg === "!알림초기화" ||
-        msg === "/알림정보";
+        msg === "!알림정보" ||
+        msg === "/알림리셋";
 }
 
 // 설정된 전체알림 운영자인지 확인하는 함수
