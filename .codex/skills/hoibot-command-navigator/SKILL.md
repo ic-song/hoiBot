@@ -48,7 +48,7 @@ When `명령어_이관` usage status is involved:
 ## Guard Rules
 
 For mutation-heavy or execution commands, prefer exact or full-pattern command guards over broad prefix checks.
-When creating a new slash command, choose the guard before implementing the body and make the guard match the documented usage exactly.
+When creating or modifying a slash command, choose the guard before implementing the body and make it match the documented usage exactly. No-argument commands use exact equality; numeric-argument commands use a full anchored pattern, allowing the bare command only when its argument is optional. Free-form suffixes are accepted only when explicitly part of that command contract.
 Do not use `msg.startsWith("/명령어")` or `msg.indexOf("/명령어") === 0` for commands that consume items, spend points, sell, remove, equip, open, combine, clean up, or mutate data.
 
 Risky:

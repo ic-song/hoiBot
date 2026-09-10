@@ -45,7 +45,9 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - Treat `운영 반영예정일` as a text planning field. If it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only; leave the Notion property blank and preserve explicit values.
 - Keep `운영 반영예정일` separate from the date-type `운영반영일` and text-type `운영반영버전`; never store `즉시 반영 필요` in either actual-reflection property.
 - After a Notion READY/HOTFIX development item is implemented, validated, pushed on the source branch, reflected into `feature/prod`, and verified on `origin/feature/prod`, update that Notion item status from READY/HOTFIX to DEV, set `운영반영일` to the production-reflection date in Korea Standard Time (`Asia/Seoul`), and set `운영반영버전` to `ver_<HoiBotVersion>` from the verified production commit.
-- Treat the Notion `상태`, `운영반영일`, and `운영반영버전` updates as one operation, verify all three values, and report any partial failure.
+- After remote production verification, first synchronize the existing planning page with the developed user-visible behavior (commands, formulas, limits, UI, exceptions and acceptance criteria), then update status/date/version. Do not add an implementation-record section or internal storage/helper details.
+- For a production-facing change without an originating Notion item, search the confirmed planning data source for the exact feature or command before reflection and reuse a matching page. If none exists, skip synchronization; do not create a page, placeholder or absence record unless separately requested. Workflow-only changes do not require a planning page.
+- Treat planning-content synchronization and the Notion `상태`, `운영반영일`, and `운영반영버전` updates as one completion workflow; verify the content and all three properties and report partial failure.
 - Do not move the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` or `운영반영버전` before remote production reflection is verified.
 
 ## Starting Work On A Branch

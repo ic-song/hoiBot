@@ -7,6 +7,8 @@ description: Coordinate hoiBot bot migration, web portal work, and shared integr
 
 고도화를 독립 작업흐름과 공유 자원으로 나누어 운영한다. 기존 Gate와 evidence는 보존하고, 실제로 겹치는 자원만 직렬화한다.
 
+CONTROL·Lease·REPORT 쓰기, 상태 대사와 evidence 재사용 전 [조정 계약](references/coordination-contract.md)을 반드시 읽는다. 실행자와 공유하는 단일 계약이며 아래 요약보다 상세 판정에 우선한다.
+
 ## 시작 판단
 
 1. `hoibot-modernization-wbs-runner`, 저장소 `AGENTS.md`, Git 상태와 현재 Codex 작업을 확인한다.
@@ -22,7 +24,7 @@ description: Coordinate hoiBot bot migration, web portal work, and shared integr
 
 - 최초 전체 카탈로그가 없을 때만 `phase=CLASSIFY`로 bootstrap한다.
 - 동결 카탈로그가 있으면 `phase=EXECUTE`를 유지하고 신규·변경 범위만 catalog delta로 분류한다.
-- CONTROL에는 최소한 `base_catalog_version`, `pending_deltas`, `active_lanes`, `active_leases`, `resource_lock_version`, `evidence_schema_version`을 기록한다.
+- CONTROL에는 최소한 `base_catalog_version`, `pending_deltas`, `active_lanes`, `active_leases`, `resource_lock_version`, `evidence_schema_versions`, `lane_workstreams`을 기록한다.
 - 과거 CONTROL은 다음 CONTROL의 `supersedes=<row>`로 종료 이력을 남긴다. 과거 행에 `ACTIVE` 문자열이 남아 있다는 이유만으로 현재 CONTROL을 복수로 계산하지 않는다.
 - 최신 non-superseded CONTROL이 없거나 둘 이상이면 신규 Lease와 canonical WBS 쓰기만 중단한다. 읽기 전용 조사, Git 확인과 복구 진단은 계속한다.
 - `catalog_version`은 frozen mapping 내용, `delta_id`는 변경 제안, `evidence_schema_version`은 증거 파일 형식을 뜻한다. 세 값을 서로 대신 사용하지 않는다.
@@ -35,7 +37,7 @@ description: Coordinate hoiBot bot migration, web portal work, and shared integr
 - `미사용`은 Rhino source를 유지하고 분류·이관 진행률에서 제외한다.
 - 운영 JSON, 운영 DB, 3306, 실운영방과 `feature/prod`를 작업자에게 허용하지 않는다.
 - 검증된 Gate와 evidence를 삭제하거나 근거 없이 승계하지 않는다.
-- 작업반장만 신규 Lease와 canonical REPORT를 append한다.
+- 지정된 단일 작업반장 writer만 조정 계약의 FOREMAN_LEASE 또는 검증된 단일 writer fallback 아래 신규 Lease와 canonical REPORT를 append한다.
 - 같은 쓰기 자원, migration 번호, 공용 dispatch, fixture loader, ledger/receipt 또는 DB 객체를 둘 이상에게 동시에 맡기지 않는다.
 - mutation은 transaction, 멱등성, restart replay와 Shadow 근거를 유지한다.
 - Gate 8은 별도 운영 준비와 승인 범위가 확인될 때만 진행한다.
@@ -83,13 +85,13 @@ description: Coordinate hoiBot bot migration, web portal work, and shared integr
 
 기존 `슬라이스_선점` A:N을 유지한다.
 
-- C `작업 레인`: `BOT_*`, `WEB_*`, `SHARED_*` lane ID
+- C `작업 레인`: CONTROL에 등록된 lane ID (`BOT_*`, `OBJECT_*`, `WEB_*`, `SHARED_*` 등); workstream은 명시적 매핑으로 판정
 - M `체크포인트`: manifest와 evidence 위치
 - N `비고`: `resources=<mode>:<type>:<key>,...`
 
 예: `resources=W:FILE:hoibot/admin/app.ts,R:DB:hoibot/catalog.item,W:PROVIDER:hoibot/ledger-receipt`
 
-`mode`는 `R` 또는 `W`, `type`은 `FILE`, `DB`, `MIGRATION`, `ROUTE`, `PROVIDER`, `LEDGER`, `RECEIPT`, `WBS`를 사용한다.
+`mode`는 `R` 또는 `W`, `type`은 `FILE`, `DIR`, `SCRIPT`, `TEST`, `FIXTURE`, `EVIDENCE`, `DELTA`, `CONTRACT`, `DB`, `MIGRATION`, `ROUTE`, `PROVIDER`, `LEDGER`, `RECEIPT`, `WBS`를 사용한다. 논리 type의 실제 파일·DB 매핑과 type 간 충돌은 조정 계약을 따른다.
 
 - 같은 정규화 key에서 둘 다 R이면 병행한다.
 - 같은 key에서 하나라도 W이면 직렬화한다.
@@ -101,7 +103,7 @@ description: Coordinate hoiBot bot migration, web portal work, and shared integr
 
 ## Lease 발급과 용량
 
-1. dependency, ACTIVE Lease와 resource claim의 R/W 충돌을 확인한다.
+1. 조정 writer 소유권을 검증한 뒤 dependency, 유효 예약·ACTIVE Lease와 resource claim의 R/W 충돌을 확인한다.
 2. append 전에 대상 탭의 `rowCount`와 마지막 사용 행을 확인하고 빈 행을 최소 100개 확보한다.
 3. 여유가 부족하면 작업반장만 행을 확장한다. `슬라이스_선점`을 확장할 수 없고 REPORT 탭에는 여유가 있으면 `용량 차단` REPORT를 append하고 Lease를 발급하지 않는다.
 4. 실행 ID, branch, worktree, lane과 resource claim을 append한다.
@@ -139,7 +141,7 @@ Gate 1~8 열과 진행률 수식은 유지한다. 등급은 Gate 수를 줄이�
 - `T2`: DB mutation·공용 provider. transaction, 멱등성, restart, migration, 소비자 parity와 Shadow를 검증한다.
 - `T3`: 통합 기준선·운영 준비. 전체 회귀, backup/restore, cutover와 rollback을 검증한다.
 
-동일한 source tree, schema, fixture, 설정과 test list의 검증 결과는 evidence key로 재사용한다. 공용 계약 승격, 통합 후보 변경, 실패 또는 영향 범위 불명확 때만 전체 회귀를 다시 수행한다.
+조정 계약의 commit SHA, 입력·schema·fixture hash, 실행 환경과 결과 digest를 모두 검증한 evidence만 재사용한다. 공용 계약 승격, 통합 후보 변경, 실패 또는 영향 범위 불명확 때만 전체 회귀를 다시 수행한다.
 
 순수 문서·workflow인 T0는 bot Gate 분모 밖에서 관리한다. 실행 슬라이스에 포함된 문서 변경은 해당 profile의 Gate evidence로 연결한다.
 
@@ -155,7 +157,7 @@ Gate 1~8 열과 진행률 수식은 유지한다. 등급은 Gate 수를 줄이�
 
 ## 보고 사건
 
-REPORT는 `bootstrap 완료`, `delta 검수 요청`, `공용 변경 요청`, `resource 충돌`, `용량 차단`, `인계`, `Gate7 완료`에만 사용한다. 정상 Gate 1~6과 Heartbeat는 보고하지 않는다.
+REPORT의 사건과 requested action을 먼저 분리하고, 처리 상태는 조정 계약을 따른다. REPORT는 `bootstrap 완료`, `delta 검수 요청`, `공용 변경 요청`, `resource 충돌`, `용량 차단`, `인계`, `Gate7 완료`에만 사용한다. 정상 Gate 1~6과 Heartbeat는 보고하지 않는다.
 
 작업자는 사건 직전 최신 CONTROL을 읽고 관련 원장을 먼저 갱신한다. 작업반장은 지정 REPORT, claim, 변경 행, Git과 provider 근거만 읽어 같은 회차에 ACKED 또는 REJECTED와 다음 행동을 기록한다.
 
