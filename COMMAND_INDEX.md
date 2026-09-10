@@ -373,6 +373,7 @@ Status: VERIFIED
 ## Notes
 
 - `NOTICE_CONFIG.operators`에서 운영자 계정을, `NOTICE_CONFIG.targetRooms`에서 전체 발송 대상 방을 관리한다.
+- 대상 방 발송과 반복 오류 보고는 기존 `noticeMsg`와 같은 `Api.replyRoom` 방식으로 처리한다.
 - `!알림시작`은 즉시 1회 발송한 뒤 독립된 70분 반복 예약을 추가하므로 재입력에 따른 중복 발송을 허용한다.
 - `!알림초기화`는 실행 중인 모든 반복 예약을 해제하고, 즉시 발송 없이 70분 뒤부터 하나의 반복 예약으로 다시 시작한다.
 
