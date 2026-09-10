@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.489"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.490"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -49043,6 +49043,20 @@ function getPendantPromotionCosts(nextLevel) {
     return { level: level, stones: stones, points: points, charm: charm };
 }
 
+// 고액 포인트에서도 승급 비용이 정확히 차감되는지 계산하는 함수
+function calculatePendantPromotionPointDeduction(currentValue, costValue) {
+    var currentPoint = Number(currentValue);
+    var costPoint = Number(costValue);
+    if (!isFinite(currentPoint) || currentPoint < 0 || Math.floor(currentPoint) !== currentPoint) return { ok: false, reason: "invalid" };
+    if (!isSafePointValue(costPoint) || costPoint <= 0) return { ok: false, reason: "invalid" };
+    if (currentPoint < costPoint) return { ok: false, reason: "insufficient" };
+    var nextPoint = currentPoint - costPoint; // 승급 비용 차감 후 잔액
+    if (!isFinite(nextPoint) || nextPoint < 0 || Math.floor(nextPoint) !== nextPoint || currentPoint - nextPoint !== costPoint) {
+        return { ok: false, reason: "inexact" };
+    }
+    return { ok: true, nextPoint: nextPoint };
+}
+
 // 승급 재료로 사용할 다른 창조 펜던트를 우선순위에 따라 선택하는 함수
 function selectPendantPromotionMaterial(petData, user, targetId) {
     var bag = getPendantBag(petData, user);
@@ -49339,13 +49353,15 @@ function buildPendantPromotionPreview(data, petData, guildData, sender, index) {
     if (!costs) return { ok: false, message: "❌ 다음 승급 단계가 안전한 계산 범위를 초과하여 진행할 수 없습니다." };
     var materialInfo = selectPendantPromotionMaterial(petData, sender, target.pendantId);
     var pointHave = Number(data.member[sender].point) || 0;
+    var pointDeduction = calculatePendantPromotionPointDeduction(pointHave, costs.points); // 현재 잔액에서 승급 비용을 정확히 차감할 수 있는지 확인
     var stoneName = GLOBAL_CONFIG.items.pendantEnhanceStoneName;
     var stoneHave = data.member[sender].bag && data.member[sender].bag[stoneName] ? parseInt(data.member[sender].bag[stoneName], 10) || 0 : 0;
     var shortageLines = [];
     if (!materialInfo) shortageLines.push("창조의 펜던트🪬: 필요 1개 / 보유 0개");
-    if (!isSafePointValue(pointHave) || pointHave < costs.points) shortageLines.push("포인트💸: 필요 🅟" + numberWithCommas(costs.points) + " / 보유 🅟" + numberWithCommas(pointHave));
+    if (!pointDeduction.ok && pointDeduction.reason === "insufficient") shortageLines.push("포인트💸: 필요 🅟" + numberWithCommas(costs.points) + " / 보유 🅟" + numberWithCommas(pointHave));
+    if (!pointDeduction.ok && pointDeduction.reason !== "insufficient") shortageLines.push("포인트💸: 현재 잔액에서 승급 비용을 정확히 차감할 수 없습니다.");
     if (stoneHave < costs.stones) shortageLines.push(stoneName + ": 필요 " + numberWithCommas(costs.stones) + "개 / 보유 " + numberWithCommas(stoneHave) + "개");
-    if (shortageLines.length) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 펜던트 승급 재료가 부족합니다.\n━━━━━━━━━━━━━\n" + shortageLines.join("\n") };
+    if (shortageLines.length) return { ok: false, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n❌ 펜던트 승급 조건을 충족하지 못했습니다.\n━━━━━━━━━━━━━\n" + shortageLines.join("\n") };
     var beforeStats = calculatePendantStats(target);
     var afterTarget = cloneFreeMarketObject(target);
     afterTarget.promotionLevel = costs.level;
@@ -49378,11 +49394,12 @@ function runPendantPromotionFromState(sender, data, petData, guildData) {
     var costs = getPendantPromotionCosts(currentLevel + 1);
     if (!costs) return { ok: false, message: "다음 승급 단계가 안전한 계산 범위를 초과했습니다." };
     var currentPoint = Number(data.member[sender].point) || 0;
-    var nextPoint = currentPoint - costs.points;
-    if (!isSafePointValue(currentPoint) || !isSafePointValue(nextPoint) || nextPoint < 0) return { ok: false, message: "포인트가 부족하거나 안전 범위를 벗어났습니다." };
+    var pointDeduction = calculatePendantPromotionPointDeduction(currentPoint, costs.points); // 확정 시점의 포인트 차감 가능 여부 재검증
+    if (!pointDeduction.ok && pointDeduction.reason === "insufficient") return { ok: false, message: "포인트가 부족합니다." };
+    if (!pointDeduction.ok) return { ok: false, message: "현재 포인트에서 승급 비용을 정확히 차감할 수 없어 승급을 취소했습니다." };
     var stoneName = GLOBAL_CONFIG.items.pendantEnhanceStoneName;
     if (!hasItem(data, sender, stoneName, costs.stones)) return { ok: false, message: stoneName + "이 부족합니다." };
-    data.member[sender].point = nextPoint;
+    data.member[sender].point = pointDeduction.nextPoint;
     removeItem(data, sender, stoneName, costs.stones);
     getPendantBag(petData, sender).splice(materialInfo.arrayIndex, 1);
     targetInfo.pendant.promotionLevel = costs.level;
