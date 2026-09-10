@@ -1,0 +1,30 @@
+{
+  "workItem": "WEB-WBS-011C",
+  "slice": "SL-ITEM-USER-WEB-BAG-CATEGORY-READ-01",
+  "lease": "Lease2651",
+  "delta": "SCD-WEB-20260910-12",
+  "evidenceSchemaVersion": "web-current-player-bag-category-provider-v1",
+  "providerCommit": "eb542f2f140b7a8875cd6886de5756d6b066f2cb",
+  "route": "GET /api/v1/inventory/current",
+  "categories": {
+    "omitted": "general response parity preserved",
+    "general": "general response parity preserved",
+    "furniture": "current active and undeleted player furniture instances in bag status"
+  },
+  "furnitureResponse": {
+    "discriminant": "category=furniture",
+    "itemFields": ["displayName", "quantity", "charm", "gradeDisplayName"],
+    "excludedFields": ["playerId", "furnitureInstanceId", "furnitureDefinitionId"]
+  },
+  "gates": {
+    "gate1": true,
+    "gate2": true,
+    "gate3": true,
+    "gate4": true,
+    "gate5": true,
+    "gate6": true,
+    "gate7": false,
+    "gate8": false
+  },
+  "handoff": "HANDOFF_READY"
+}
