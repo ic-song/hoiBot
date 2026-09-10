@@ -29,13 +29,13 @@ function createShellHarness(responses: Array<{ status: number; payload?: Record<
   const ids = [
     "loading-view", "login-view", "app-view", "home-content", "account-content", "inventory-content", "currencies-content", "nav-home", "nav-account", "nav-inventory", "nav-currencies", "account-title", "inventory-title", "currencies-title", "login-form", "login-button", "login-id", "password",
     "login-error-summary", "login-error-message", "login-session-notice", "login-session-message", "app-error", "app-error-message", "logout-button", "retry-button",
-    "live-status", "header-session", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
+    "live-status", "header-session", "header-balance-summary", "header-point-balance", "header-point-balance-value", "header-diamond-balance", "header-diamond-balance-value", "login-id-error", "password-error", "profile-list", "profile-empty", "profile-state",
     "account-login-id", "account-id", "system-account-name", "player-id", "account-name", "link-login-id", "link-system-account", "link-player-name", "link-player-server", "welcome-title", "login-title",
     "inventory-count", "inventory-state", "inventory-owner", "inventory-loading", "inventory-empty", "inventory-error", "inventory-error-message", "inventory-list", "inventory-pagination", "inventory-page-status", "inventory-retry-button", "inventory-prev-button", "inventory-next-button",
     "currencies-count", "currencies-state", "currencies-loading", "currencies-empty", "currencies-error", "currencies-error-message", "currencies-list"
   ];
   const elements = new Map(ids.map((id) => [id, new ShellElement(id, focusLog)]));
-  ["login-view", "app-view", "account-content", "inventory-content", "currencies-content", "login-error-summary", "login-session-notice", "app-error", "login-id-error", "password-error", "profile-empty", "inventory-empty", "inventory-error", "inventory-list", "inventory-pagination", "currencies-empty", "currencies-error", "currencies-list"]
+  ["login-view", "app-view", "account-content", "inventory-content", "currencies-content", "login-error-summary", "login-session-notice", "app-error", "header-balance-summary", "header-point-balance", "header-diamond-balance", "login-id-error", "password-error", "profile-empty", "inventory-empty", "inventory-error", "inventory-list", "inventory-pagination", "currencies-empty", "currencies-error", "currencies-list"]
     .forEach((id) => { const element = elements.get(id); if (element !== undefined) element.hidden = true; });
   const calls: Array<{ url: string; options: Record<string, unknown> }> = [];
   const history: string[] = [];
@@ -145,6 +145,8 @@ test("로그인 화면은 키보드·스크린리더·비밀번호 관리자를 
   assert.match(USER_SHELL_STYLES, /\.inventory-card \{ min-width: 0;/);
   assert.match(USER_SHELL_STYLES, /\.inventory-item-name \{ min-width: 0;[^}]*overflow-wrap: anywhere;/);
   assert.match(USER_SHELL_STYLES, /\.inventory-pagination \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); \}/);
+  assert.match(USER_SHELL_STYLES, /\.header-balance-item b \{ min-width: 0;[^}]*overflow-wrap: anywhere;/);
+  assert.match(USER_SHELL_STYLES, /\.header-account-status \{ max-width: 58%;/);
   assert.match(USER_SHELL_STYLES, /\.login-intro h1 \{[^}]*word-break: keep-all;[^}]*text-wrap: balance;/);
   assert.doesNotMatch(USER_SHELL_STYLES, /grid-template-rows: auto 1fr auto/);
   assert.match(USER_SHELL_HTML, /보안 상태/);
@@ -204,6 +206,26 @@ test("현재 사용자 프로필을 읽고 갱신된 CSRF로 로그아웃합니�
   assert.equal(harness.elements.get("account-login-id")?.textContent, "—");
 });
 
+test("상단 현재 잔액은 프로필 재화를 문자열 그대로 표시하고 세션 종료 때 지웁니다", async () => {
+  const hugeBalance = "123456789012345678901234567890.123456789";
+  const harness = createShellHarness([
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", currencyAccounts: [{ code: "point", balance: hugeBalance, version: "9" }, { code: "diamond", balance: "7.000", version: "1" }] } } },
+    { status: 200, payload: { session: { loginId: "player01", playerId: "101", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } },
+    { status: 204 }
+  ]);
+  await flushShellClient();
+  assert.equal(harness.elements.get("header-balance-summary")?.hidden, false);
+  assert.equal(harness.elements.get("header-point-balance-value")?.textContent, hugeBalance);
+  assert.equal(harness.elements.get("header-diamond-balance-value")?.textContent, "7.000");
+  const logout = harness.elements.get("logout-button");
+  assert.ok(logout);
+  await click(logout);
+  assert.equal(harness.elements.get("header-balance-summary")?.hidden, true);
+  assert.equal(harness.elements.get("header-point-balance-value")?.textContent, "");
+  assert.equal(harness.elements.get("header-diamond-balance-value")?.textContent, "");
+});
+
 test("프로필 조회가 401이면 로그인 화면으로 전환하고 계정 표시를 지웁니다", async () => {
   const harness = createShellHarness([
     { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
@@ -218,6 +240,8 @@ test("프로필 조회가 401이면 로그인 화면으로 전환하고 계정 �
   assert.equal(harness.elements.get("profile-list")?.children.length, 0);
   assert.equal(harness.elements.get("currencies-list")?.children.length, 0);
   assert.equal(harness.elements.get("currencies-list")?.hidden, true);
+  assert.equal(harness.elements.get("header-balance-summary")?.hidden, true);
+  assert.equal(harness.elements.get("header-point-balance-value")?.textContent, "");
   assert.equal(harness.elements.get("login-session-notice")?.hidden, false);
   assert.equal(harness.elements.get("login-session-message")?.textContent, "세션이 만료됐어요. 계속 이용하려면 다시 로그인해 주세요.");
   assert.equal(harness.focusLog.at(-1), "login-session-notice");

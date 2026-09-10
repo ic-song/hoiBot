@@ -27,3 +27,9 @@
 CSS source QA로 375/768/1024/1440 폭을 확인했다. 375px 이하에서는 `.currency-item`을 한 열로 전환하고 큰 잔액과 fallback 코드는 `min-width: 0` 및 `overflow-wrap: anywhere`로 컨테이너 안에서 줄바꿈한다. 620px 이상은 기존 셸 grid, 820px 이상은 224px sidebar와 `minmax(0, 1fr)` main column을 사용한다. 링크는 최소 46px, UI 버튼은 기존 최소 44px 이상이고 focus-visible outline 및 reduced-motion 규칙을 재사용한다. 수평 스크롤을 만드는 고정 폭·숫자 변환은 추가하지 않았다.
 
 Gate 7은 독립 검수자가 확정해야 하며, Gate 8 운영 준비는 이 UI subclaim 범위 밖이다.
+
+## CONTROL5690 후속: 상단 현재 잔액
+
+로그인 뒤 모든 주요 화면의 헤더에 `point`와 `diamond` 잔액을 compact summary로 표시했다. 기존 profile payload만 재사용하며 초대형 잔액도 원문 문자열 그대로 보인다. summary는 profile 응답 전·로그인 화면·세션 만료·로그아웃에서 숨기고 내부 텍스트도 비운다. 좁은 화면에서는 header와 summary가 wrap하며 잔액에는 `overflow-wrap: anywhere`를 적용한다. `user-shell.test.ts`는 14/14 통과했고 상단 표시, huge string, logout clear, profile 401 clear를 검증한다.
+
+이번 follow-up의 `npm run typecheck`와 `npm run build`는 현재 worktree에 병행 중인 Lease2649의 `test/admin-account-link-read.test.ts` 타입 오류(`Promise<unknown>` 반환)로 실패했다. 해당 admin 파일과 `app.ts`는 Lease2648 범위 밖이므로 수정·stage하지 않았다. `git diff --check`은 통과했다.

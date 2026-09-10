@@ -4,12 +4,12 @@
 - catalog / delta: `SC-20260902-1` / `SCD-WEB-20260910-10`
 - evidence schema: `web-current-player-currency-ui-v1`
 - slice / Lease: `SL-CURRENCY-USER-WEB-BALANCE-READ-01` / `Lease2648`
-- CONTROL: `5688` (scope expansion)
+- CONTROL: `5690` (상단 잔액 summary follow-up)
 - branch / worktree: `feature/web-portal` / `C:\Users\user\Desktop\hoiBot-worktrees\web-portal-v1-20260909`
 
 ## 완료 범위
 
-`/account/currencies`와 trailing slash shell route, 활성 재화 내비게이션, profile payload의 `currencyAccounts` read-only 렌더링, `point`/`diamond` Korean label 및 code fallback을 구현했다. 초대형 잔액은 문자열로 그대로 표시하며 로딩·빈 목록·조회 오류·세션 만료 상태, focus, aria-live, 375px 모바일 한 열 reflow를 포함한다.
+`/account/currencies`와 trailing slash shell route, 활성 재화 내비게이션, profile payload의 `currencyAccounts` read-only 렌더링, `point`/`diamond` Korean label 및 code fallback을 구현했다. 초대형 잔액은 문자열로 그대로 표시하며 로딩·빈 목록·조회 오류·세션 만료 상태, focus, aria-live, 375px 모바일 한 열 reflow를 포함한다. CONTROL5690 후속으로 모든 로그인 주요 화면의 header에 point·diamond compact 현재 잔액을 표시하고 세션 종료 때 값과 표시를 모두 지운다.
 
 ## 변경 파일
 
@@ -21,4 +21,4 @@
 
 ## 검증과 다음 행동
 
-`user-shell.test.ts` 13/13, site-web wiring 1/1, typecheck, build, diff check이 통과했다. Gate 7은 독립 검수자 검증이 필요하며 Gate 8은 운영 준비 wave까지 FALSE로 유지한다. Sheets에는 쓰지 않았다.
+전체 `user-shell.test.ts` 14/14와 diff check은 통과했다. typecheck와 build는 병행 Lease2649의 `test/admin-account-link-read.test.ts` 타입 오류로 실패했고, 해당 admin 파일과 `app.ts`는 범위 밖이므로 수정·stage하지 않았다. Gate 7은 독립 검수자 검증이 필요하며 Gate 8은 운영 준비 wave까지 FALSE로 유지한다. Sheets에는 쓰지 않았다.

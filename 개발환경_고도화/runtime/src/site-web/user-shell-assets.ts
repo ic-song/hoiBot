@@ -14,7 +14,13 @@ export const USER_SHELL_HTML = String.raw`<!doctype html>
       <span class="brand-mark" aria-hidden="true">H</span>
       <span><strong>호이월드</strong><small>이용자 포털</small></span>
     </a>
-    <p id="header-session" class="header-session" aria-live="polite">세션 확인 중</p>
+    <div class="header-account-status">
+      <div id="header-balance-summary" class="header-balance-summary" aria-label="현재 재화 잔액" aria-live="polite" hidden>
+        <span id="header-point-balance" class="header-balance-item" hidden><strong>포인트</strong><b id="header-point-balance-value"></b></span>
+        <span id="header-diamond-balance" class="header-balance-item" hidden><strong>다이아</strong><b id="header-diamond-balance-value"></b></span>
+      </div>
+      <p id="header-session" class="header-session" aria-live="polite">세션 확인 중</p>
+    </div>
   </header>
 
   <main id="main-content" tabindex="-1">
@@ -300,7 +306,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, [tabindex="-1"]:focu
 .brand > span:last-child { display: grid; gap: 1px; }
 .brand strong { font-size: 15px; letter-spacing: -.01em; }
 .brand small { color: #cbd5e1; font-size: 11px; }
+.header-account-status { min-width: 0; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; }
 .header-session { margin: 0; color: #cbd5e1; font-size: 12px; }
+.header-balance-summary { min-width: 0; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.header-balance-item { min-width: 0; display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 8px; color: #e2e8f0; background: #1e293b; border: 1px solid #334155; border-radius: 999px; font-size: 11px; line-height: 1.35; }
+.header-balance-item strong { color: #cbd5e1; font-size: 10px; white-space: nowrap; }
+.header-balance-item b { min-width: 0; color: #fff; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 main { min-height: calc(100vh - 112px); }
 .state-view { min-height: calc(100vh - 112px); display: grid; place-content: center; justify-items: center; gap: 10px; padding: 32px 20px; text-align: center; }
 .state-view h1 { margin: 4px 0 0; font-size: clamp(24px, 6vw, 34px); letter-spacing: -.04em; }
@@ -453,6 +464,10 @@ button:disabled { opacity: .58; cursor: wait; }
   .profile-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 619px) {
+  .site-header { align-items: flex-start; }
+  .header-account-status { max-width: 58%; gap: 5px; }
+  .header-balance-summary { justify-content: flex-end; }
+  .header-balance-item { max-width: 100%; white-space: normal; }
   .app-shell { width: min(calc(100% - 24px), 720px); margin-top: 12px; }
   .app-sidebar { border-radius: 14px; }
   .nav-link { padding-inline: 11px; }
@@ -659,6 +674,7 @@ export const USER_SHELL_CLIENT = String.raw`
     document.getElementById("currencies-loading").hidden = true;
     text("currencies-count", "조회 준비 중");
     text("currencies-state", "조회 중");
+    renderHeaderBalances(null);
     appError.hidden = true;
   }
 
@@ -700,6 +716,23 @@ export const USER_SHELL_CLIENT = String.raw`
     var labels = { point: "포인트", diamond: "다이아" };
     var value = String(code == null ? "" : code);
     return labels[value] || value || "알 수 없는 재화";
+  }
+
+  function renderHeaderBalances(profile) {
+    var summary = document.getElementById("header-balance-summary");
+    var accounts = profile && Array.isArray(profile.currencyAccounts) ? profile.currencyAccounts : [];
+    var accountByCode = {};
+    accounts.forEach(function (account) {
+      if (account && (account.code === "point" || account.code === "diamond")) accountByCode[account.code] = account;
+    });
+    ["point", "diamond"].forEach(function (code) {
+      var item = document.getElementById("header-" + code + "-balance");
+      var value = document.getElementById("header-" + code + "-balance-value");
+      var account = accountByCode[code];
+      if (value) value.textContent = account && account.balance != null ? String(account.balance) : "";
+      if (item) item.hidden = !account;
+    });
+    summary.hidden = !accountByCode.point && !accountByCode.diamond;
   }
 
   function renderCurrencies(profile, failed) {
@@ -824,6 +857,7 @@ export const USER_SHELL_CLIENT = String.raw`
     text("link-system-account", session.systemAccountName);
     renderProfile(state.profile);
     renderCurrencies(state.profile, false);
+    renderHeaderBalances(state.profile);
   }
 
   async function loadProfile() {
