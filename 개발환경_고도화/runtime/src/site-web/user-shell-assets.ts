@@ -507,13 +507,23 @@ export const USER_SHELL_CLIENT = String.raw`
     return payload;
   }
 
+  function profileDisplayName(profile) {
+    return profile && (profile.displayName || profile.nickname || profile.name || profile.playerName);
+  }
+
+  function profileServerName(profile) {
+    if (!profile) return null;
+    if (profile.server && typeof profile.server === "object") return profile.server.displayName || profile.server.code;
+    return profile.serverName || profile.server;
+  }
+
   function profileEntries(profile) {
     if (!profile || typeof profile !== "object") return [];
     var candidates = [
-      ["닉네임", profile.nickname || profile.name || profile.playerName],
+      ["닉네임", profileDisplayName(profile)],
       ["레벨", profile.level],
-      ["티어", profile.tier || profile.rank],
-      ["서버", profile.serverName || profile.server]
+      ["누적 레벨", profile.accumulatedLevel],
+      ["서버", profileServerName(profile)]
     ];
     return candidates.filter(function (entry) { return entry[1] !== undefined && entry[1] !== null && entry[1] !== ""; });
   }
@@ -537,8 +547,8 @@ export const USER_SHELL_CLIENT = String.raw`
     var list = document.getElementById("profile-list");
     var empty = document.getElementById("profile-empty");
     var entries = profileEntries(profile);
-    text("link-player-name", profile && (profile.nickname || profile.name || profile.playerName));
-    text("link-player-server", profile && (profile.serverName || profile.server));
+    text("link-player-name", profileDisplayName(profile));
+    text("link-player-server", profileServerName(profile));
     list.replaceChildren();
     if (!entries.length) {
       list.hidden = true;

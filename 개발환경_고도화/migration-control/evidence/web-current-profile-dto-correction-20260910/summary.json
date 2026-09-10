@@ -1,0 +1,32 @@
+{
+  "evidence_schema_version": "web-current-profile-dto-correction-v1",
+  "catalog_version": "SC-20260902-1",
+  "delta_id": "SCD-WEB-20260910-6",
+  "slice_id": "SL-PLAYER-USER-WEB-PROFILE-DTO-CORRECTION-01",
+  "wbs_id": "WEB-WBS-010",
+  "lease": "Lease2643",
+  "source_commit": "ae7665dc9519bde972f54995e1babbdc454ff2ff",
+  "risk_tier": "T1",
+  "contract": {
+    "actual_display_name_field": "displayName",
+    "actual_server_shape": "{ code, displayName } | null",
+    "player_scope": "current authenticated session only",
+    "mutation_count": 0
+  },
+  "validation": {
+    "focused_tests": "7/7 PASS",
+    "typecheck": "PASS",
+    "diff_check": "PASS",
+    "build": "PASS",
+    "independent_gate7": "PENDING"
+  },
+  "excluded": [
+    "app.ts",
+    "user-auth routes",
+    "provider or DB writes",
+    "migrations",
+    "operating DB/data",
+    "feature/prod",
+    "Gate8"
+  ]
+}

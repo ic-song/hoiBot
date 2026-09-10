@@ -162,7 +162,7 @@ test("브라우저는 기존 사용자 세션 API만 소비하고 비밀을 저�
 test("현재 사용자 프로필을 읽고 갱신된 CSRF로 로그아웃합니다", async () => {
   const harness = createShellHarness([
     { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-before-profile" } },
-    { status: 200, payload: { profile: { nickname: "테스트용사", level: 27, tier: "골드", serverName: "호이월드 1" } } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", level: "27", accumulatedLevel: "35", server: { code: "HOI-1", displayName: "호이월드 1" } } } },
     { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-after-profile" } },
     { status: 204 }
   ]);
@@ -174,6 +174,8 @@ test("현재 사용자 프로필을 읽고 갱신된 CSRF로 로그아웃합니�
   assert.equal(harness.elements.get("account-id")?.textContent, "웹 계정 연결 확인됨");
   assert.equal(harness.elements.get("player-id")?.textContent, "게임계정 연결 확인됨");
   assert.equal(harness.elements.get("profile-list")?.children.length, 4);
+  assert.equal(harness.elements.get("profile-list")?.children[0]?.children[1]?.textContent, "테스트용사");
+  assert.equal(harness.elements.get("profile-list")?.children[3]?.children[1]?.textContent, "호이월드 1");
   const logout = harness.elements.get("logout-button");
   assert.ok(logout);
   await click(logout);
@@ -203,7 +205,7 @@ test("프로필 조회가 401이면 로그인 화면으로 전환하고 계정 �
 test("계정 연결 경로는 본인 세션과 현재 프로필만 마스킹해 표시합니다", async () => {
   const harness = createShellHarness([
     { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-1" } },
-    { status: 200, payload: { profile: { nickname: "테스트용사", level: 27, tier: "골드", serverName: "호이월드 1" } } },
+    { status: 200, payload: { profile: { displayName: "테스트용사", level: "27", accumulatedLevel: "35", server: { code: "HOI-1", displayName: "호이월드 1" } } } },
     { status: 200, payload: { session: { loginId: "player01", accountId: "private-account", playerId: "private-player", systemAccountName: "호이월드" }, csrfToken: "csrf-2" } }
   ], "/account/links");
   await flushShellClient();
