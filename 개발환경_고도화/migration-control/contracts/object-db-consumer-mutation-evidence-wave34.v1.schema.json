@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hoibot-object-db-consumer-mutation-evidence-wave34-v1",
+  "type": "object",
+  "required": ["format", "fixtureId", "bindings", "payload"],
+  "properties": {
+    "format": { "const": "hoibot-object-db-consumer-parity-case-fixture-v1" },
+    "fixtureId": { "const": "fixture:object-db-executable-parity:wave34:member-title-select:v1" },
+    "bindings": { "type": "array", "minItems": 12, "maxItems": 12, "items": { "type": "object", "required": ["consumerId", "harnessId", "harnessCaseId", "fixtureId", "scenarioId", "scenarioKind"], "additionalProperties": false, "properties": { "consumerId": { "enum": ["legacy-9cd62419b853c929", "runtime-dispatch-d9a426f3b9d18d3a"] }, "harnessId": { "const": "harness:wave34:member-title-select" }, "harnessCaseId": { "type": "string", "minLength": 1 }, "fixtureId": { "const": "fixture:object-db-executable-parity:wave34:member-title-select:v1" }, "scenarioId": { "type": "string", "minLength": 1 }, "scenarioKind": { "enum": ["MUTATION_SUCCESS", "DOMAIN_FAILURE_ROLLBACK", "DUPLICATE_REPLAY_DML_ZERO", "PAYLOAD_DRIFT_FAIL_CLOSED", "RESTART_REPLAY", "CONCURRENCY_SINGLE_WRITER"] } } } },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hoibot-object-db-consumer-classification-delta-scd-obj-20260910-34-v1",
+  "type": "object",
+  "required": ["format", "evidenceSchemaVersion", "baseCatalogVersion", "deltaId", "scope", "operations", "preservation"],
+  "properties": {
+    "format": { "const": "hoibot-object-db-consumer-compatible-delta-v1" },
+    "evidenceSchemaVersion": { "const": "object-db-consumer-delta-v1" },
+    "baseCatalogVersion": { "const": "SC-20260902-1" },
+    "deltaId": { "const": "SCD-OBJ-20260910-34" },
+    "scope": {
+      "type": "object", "required": ["kind", "consumerIds", "reason"],
+      "properties": { "kind": { "const": "CONSUMER_EXECUTION_SCOPE_BINDING" }, "consumerIds": { "const": ["legacy-9cd62419b853c929", "runtime-dispatch-d9a426f3b9d18d3a"] }, "reason": { "type": "string", "minLength": 1 } },
+      "additionalProperties": false
+    },
+    "operations": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["operation", "consumerId", "classification", "transactionOwnerInterfaceId", "transactionParticipantInterfaceIds", "readDependencies", "writeTargets", "scenarioRequirements", "notApplicable", "sourceEvidence"],
+        "properties": {
+          "operation": { "const": "BIND_EXECUTION_SCOPE" },
+          "consumerId": { "enum": ["legacy-9cd62419b853c929", "runtime-dispatch-d9a426f3b9d18d3a"] },
+          "classification": { "type": "object", "required": ["access", "accessClass", "interfaceMethod", "interfaceId"], "properties": { "access": { "const": "READ_WRITE" }, "accessClass": { "const": "MUTATION" }, "interfaceMethod": { "const": "EXECUTE" }, "interfaceId": { "type": "string", "minLength": 1 } }, "additionalProperties": false },
+          "transactionOwnerInterfaceId": { "const": "member-title.player-title-select.execute" },
+          "transactionParticipantInterfaceIds": { "const": ["member-title.ownership.mutate"] },
+          "readDependencies": { "type": "array", "minItems": 4, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "writeTargets": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "scenarioRequirements": { "const": ["MUTATION_SUCCESS", "DOMAIN_FAILURE_ROLLBACK", "DUPLICATE_REPLAY_DML_ZERO", "PAYLOAD_DRIFT_FAIL_CLOSED", "RESTART_REPLAY", "CONCURRENCY_SINGLE_WRITER"] },
+          "notApplicable": { "type": "object", "required": ["AUTH_DENIED", "WRONG_ROOM_REJECTED"], "properties": { "AUTH_DENIED": { "const": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1" }, "WRONG_ROOM_REJECTED": { "const": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1" } }, "additionalProperties": false },
+          "sourceEvidence": { "type": "object", "required": ["path", "sourceSpanSha256"], "properties": { "path": { "type": "string", "minLength": 1 }, "sourceSpanSha256": { "type": "string", "pattern": "^[a-f0-9]{16,64}$" } }, "additionalProperties": false }
+        },
+        "additionalProperties": false
+      }
+    },
+    "preservation": { "type": "object", "required": ["frozenManifestModified", "priorReceiptCount", "prefixCounts"], "properties": { "frozenManifestModified": { "const": false }, "priorReceiptCount": { "const": 401 }, "prefixCounts": { "const": [243, 324, 352, 362, 372, 382, 387, 401] } }, "additionalProperties": false }
+  },
+  "additionalProperties": false
+}

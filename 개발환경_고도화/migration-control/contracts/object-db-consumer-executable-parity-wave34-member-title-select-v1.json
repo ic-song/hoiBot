@@ -1,0 +1,287 @@
+{
+  "format": "hoibot-object-db-consumer-parity-case-fixture-v1",
+  "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+  "bindings": [
+    {
+      "consumerId": "legacy-9cd62419b853c929",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:mutation_success",
+      "scenarioKind": "MUTATION_SUCCESS"
+    },
+    {
+      "consumerId": "legacy-9cd62419b853c929",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:domain_failure_rollback",
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK"
+    },
+    {
+      "consumerId": "legacy-9cd62419b853c929",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:duplicate_replay_dml_zero",
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO"
+    },
+    {
+      "consumerId": "legacy-9cd62419b853c929",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:payload_drift_fail_closed",
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED"
+    },
+    {
+      "consumerId": "legacy-9cd62419b853c929",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:restart_replay",
+      "scenarioKind": "RESTART_REPLAY"
+    },
+    {
+      "consumerId": "legacy-9cd62419b853c929",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:legacy-9cd62419b853c929",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:legacy-9cd62419b853c929:concurrency_single_writer",
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER"
+    },
+    {
+      "consumerId": "runtime-dispatch-d9a426f3b9d18d3a",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:mutation_success",
+      "scenarioKind": "MUTATION_SUCCESS"
+    },
+    {
+      "consumerId": "runtime-dispatch-d9a426f3b9d18d3a",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:domain_failure_rollback",
+      "scenarioKind": "DOMAIN_FAILURE_ROLLBACK"
+    },
+    {
+      "consumerId": "runtime-dispatch-d9a426f3b9d18d3a",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:duplicate_replay_dml_zero",
+      "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO"
+    },
+    {
+      "consumerId": "runtime-dispatch-d9a426f3b9d18d3a",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:payload_drift_fail_closed",
+      "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED"
+    },
+    {
+      "consumerId": "runtime-dispatch-d9a426f3b9d18d3a",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:restart_replay",
+      "scenarioKind": "RESTART_REPLAY"
+    },
+    {
+      "consumerId": "runtime-dispatch-d9a426f3b9d18d3a",
+      "harnessId": "harness:wave34:member-title-select",
+      "harnessCaseId": "case:wave34:runtime-dispatch-d9a426f3b9d18d3a",
+      "fixtureId": "fixture:object-db-executable-parity:wave34:member-title-select:v1",
+      "scenarioId": "scenario:wave34:runtime-dispatch-d9a426f3b9d18d3a:concurrency_single_writer",
+      "scenarioKind": "CONCURRENCY_SINGLE_WRITER"
+    }
+  ],
+  "payload": {
+    "sliceId": "SL-MEMBER-TITLE-LEGACY-SELECT-PARITY-01",
+    "consumers": [
+      "legacy-9cd62419b853c929",
+      "runtime-dispatch-d9a426f3b9d18d3a"
+    ],
+    "scenarioKinds": [
+      "MUTATION_SUCCESS",
+      "DOMAIN_FAILURE_ROLLBACK",
+      "DUPLICATE_REPLAY_DML_ZERO",
+      "PAYLOAD_DRIFT_FAIL_CLOSED",
+      "RESTART_REPLAY",
+      "CONCURRENCY_SINGLE_WRITER"
+    ],
+    "notApplicable": {
+      "AUTH_DENIED": "SOURCE_CLASSIFICATION_HAS_NO_AUTH_GUARD_V1",
+      "WRONG_ROOM_REJECTED": "SOURCE_CLASSIFICATION_HAS_NO_ROOM_GUARD_V1"
+    },
+    "runtimePath": "buildApp -> PlayerTitleSelectService.select -> player title projections",
+    "storedResultCompatibility": "RAW_RESULT_OR_CHANGED_NORMALIZED_INDEX_FAILS_CLOSED",
+    "siegeProbe": {
+      "firstQuery": "SELECT id FROM guild_territory_wars WHERE active=TRUE ORDER BY id LIMIT 1 FOR UPDATE",
+      "reply": "NO_REPLY",
+      "businessDmlCount": 0
+    },
+    "boundaryCorrection": {
+      "auditClaim": "/타이틀 0 replies title_not_found",
+      "committedActual": "/타이틀 0 raises TypeError before reply/save; response catch logs it",
+      "runtimeObservable": "NO_REPLY_AND_BUSINESS_DML_ZERO",
+      "overflow": "TITLE_NOT_FOUND",
+      "malformed": "INVALID_FORMAT"
+    },
+    "observations": [
+      {
+        "scenarioKind": "MUTATION_SUCCESS",
+        "reply": "[⭐타이틀회원] 님의 타이틀이\n[2번 타이틀] (으)로 적용되었습니다.",
+        "result": {
+          "scenarioKind": "MUTATION_SUCCESS",
+          "status": "selected",
+          "selectedIndex": 2,
+          "businessDmlCount": 2
+        },
+        "trace": {
+          "normalizedStatements": [
+            "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+            "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+          ],
+          "rowCount": 2,
+          "lockOrder": [
+            "guild_territory_wars",
+            "operations",
+            "external_identities",
+            "player_title_instances",
+            "player_titles"
+          ],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+        "reply": "WAVE34_SYNTHETIC_AUDIT_FAILURE",
+        "result": {
+          "scenarioKind": "DOMAIN_FAILURE_ROLLBACK",
+          "status": "failed_closed",
+          "selectedIndex": null,
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [
+            "guild_territory_wars",
+            "operations"
+          ],
+          "transaction": "ROLLBACK",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_ROLLBACK"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+        "reply": "[⭐타이틀회원] 님의 타이틀이\n[2번 타이틀] (으)로 적용되었습니다.",
+        "result": {
+          "scenarioKind": "DUPLICATE_REPLAY_DML_ZERO",
+          "status": "selected",
+          "selectedIndex": 2,
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [
+            "guild_territory_wars",
+            "operations"
+          ],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+        "reply": "PLAYER_TITLE_SELECT_PAYLOAD_DRIFT",
+        "result": {
+          "scenarioKind": "PAYLOAD_DRIFT_FAIL_CLOSED",
+          "status": "failed_closed",
+          "selectedIndex": null,
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [
+            "guild_territory_wars",
+            "operations"
+          ],
+          "transaction": "ROLLBACK",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_ROLLBACK"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "RESTART_REPLAY",
+        "reply": "[⭐타이틀회원] 님의 타이틀이\n[2번 타이틀] (으)로 적용되었습니다.",
+        "result": {
+          "scenarioKind": "RESTART_REPLAY",
+          "status": "selected",
+          "selectedIndex": 2,
+          "businessDmlCount": 0
+        },
+        "trace": {
+          "normalizedStatements": [],
+          "rowCount": 0,
+          "lockOrder": [
+            "guild_territory_wars",
+            "operations"
+          ],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      },
+      {
+        "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+        "reply": "[⭐타이틀회원] 님의 타이틀이\n[2번 타이틀] (으)로 적용되었습니다.",
+        "result": {
+          "scenarioKind": "CONCURRENCY_SINGLE_WRITER",
+          "status": "selected",
+          "selectedIndex": 2,
+          "businessDmlCount": 2
+        },
+        "trace": {
+          "normalizedStatements": [
+            "UPDATE player_title_instances SET equipped=(id=?) WHERE player_id=? AND status='owned'",
+            "UPDATE player_titles SET equipped=(title_id=?) WHERE player_id=?"
+          ],
+          "rowCount": 2,
+          "lockOrder": [
+            "guild_territory_wars",
+            "operations",
+            "external_identities",
+            "player_title_instances",
+            "player_titles"
+          ],
+          "transaction": "COMMIT",
+          "timeline": [
+            "ATTEMPT_1_BEGIN",
+            "ATTEMPT_1_COMMIT"
+          ]
+        }
+      }
+    ]
+  }
+}
