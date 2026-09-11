@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.503"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.504"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -31693,7 +31693,7 @@ function shuffleGuildTerritoryRows(rows) {
 
 // 길드 영지전 공격자 여부 확인 함수 (길드 마스터이면서 전투형 지휘관 스킬 보유 여부)
 function hasGuildTerritoryCommanderSkill(g, petSkillData, user) {
-    return !!(g && petSkillData && user && isGuildLeader(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
+    return !!(g && petSkillData && user && isGuildMaster(g, user) && g.members && g.members[user] && hasPetSkill(petSkillData, user, "전투형 지휘관"));
 }
 
 // 길드 영지전 공격자 여부 확인 함수 (소드마스터이면서 전투형 지휘관 스킬 보유 여부)
