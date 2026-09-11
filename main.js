@@ -49744,7 +49744,7 @@ function sellPendantFromBag(data, petData, guildData, sender, index) {
     sortPendantBagByGrade(bag);
     if (index < 1 || index > bag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
     var pendant = bag.splice(index - 1, 1)[0];
-    var price = 50000000;
+    var price = 20000000;
     data.member[sender].point = (data.member[sender].point || 0) + price;
     return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n" + formatPendantDisplay(pendant) + " 을(를) 판매했습니다.\n━━━━━━━━━━━━━\n획득 포인트💸: 🅟" + numberWithCommas(price) + "\n현재 포인트💸: 🅟" + numberWithCommas(data.member[sender].point || 0) };
 }
