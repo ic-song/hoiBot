@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.495"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.496"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -50160,10 +50160,10 @@ function buildSealedVaultProgressBar(currentCount, maxCount) {
 }
 
 // 보상 목록을 줄 단위 사용자 문구로 변환하는 함수
-function formatSealedVaultRewardLines(rewards) {
+function formatSealedVaultRewardLines(rewards, doubled) {
     var lines = [];
     for (var i = 0; rewards && i < rewards.length; i++) {
-        lines.push(rewards[i].itemName + " ×" + numberWithCommas(rewards[i].count));
+        lines.push(rewards[i].itemName + " ×" + numberWithCommas(rewards[i].count) + (doubled ? " 🔥2배" : ""));
     }
     return lines.join("\n");
 }
@@ -50185,12 +50185,13 @@ function drawSealedVaultWeightedReward(rewards, randomFn) {
 }
 
 // 봉인금고 합산 보상에 아이템 수량을 추가하는 함수
-function addSealedVaultGain(gainMap, gainOrder, itemName, count) {
+function addSealedVaultGain(gainMap, gainOrder, itemName, count, doubled) {
     if (!gainMap.hasOwnProperty(itemName)) {
-        gainMap[itemName] = 0;
+        gainMap[itemName] = { normal: 0, doubled: 0 };
         gainOrder.push(itemName);
     }
-    gainMap[itemName] += count;
+    if (doubled) gainMap[itemName].doubled += count;
+    else gainMap[itemName].normal += count;
 }
 
 // 봉인금고 희귀 보상 기록을 회원과 전체 기록에 함께 남기는 함수
@@ -50347,19 +50348,15 @@ function buildSealedVaultAllRecordMessage(data) {
 // 봉인금고 희귀 보상 전체 공지 문구를 생성하는 함수
 function buildSealedVaultNoticeMessage(data, petData, guildData, user, rareEvent) {
     var rankText = checkRank(data, petData, guildData, user);
-    var rewardText = formatSealedVaultRewardLines(rareEvent.rewards);
+    var rewardText = formatSealedVaultRewardLines(rareEvent.rewards, rareEvent.doubled);
     if (rareEvent.type === "jackpot") {
-        if (rareEvent.doubled) {
-            return "🔥💎 호이월드 역대급 2배 잭팟! 💎🔥\n" +
-                "━━━━━━━━━━━━━━━\n[" + rankText + "] 님의 2배 부스터가 폭발했습니다!\n\n" + rewardText;
-        }
         return "🚨 호이월드 초대형 잭팟 발생! 🚨\n" +
             "━━━━━━━━━━━━━━━\n[" + rankText + "] 님이 호이의 봉인금고에서\n" +
             getSealedVaultMonthLabel(getSealedVaultMonthKey()) + " 이달의 초대형 보상👑을 획득했습니다!\n\n" + rewardText;
     }
     return "💎 플래티넘 금고 " + (rareEvent.guaranteed ? "확정!" : "발견!") + "\n" +
-        "━━━━━━━━━━━━━━━\n[" + rankText + "] 님이 호이의 봉인금고에서\n" + rewardText + "를 획득했습니다!" +
-        (rareEvent.doubled ? "\n🔥 2배 부스터가 적용되었습니다!" : "");
+        "━━━━━━━━━━━━━━━\n[" + rankText + "] 님이 호이의 봉인금고에서\n" +
+        "플래티넘 금고 보상을 획득했습니다!\n\n" + rewardText;
 }
 
 // 봉인금고를 여러 회 순서대로 추첨하고 보상을 합산하는 함수
@@ -50435,7 +50432,7 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
         var multiplier = doubled ? 2 : 1;
         for (var rewardIndex = 0; rewardIndex < eventRewards.length; rewardIndex++) {
             eventRewards[rewardIndex].count *= multiplier;
-            addSealedVaultGain(gainMap, gainOrder, eventRewards[rewardIndex].itemName, eventRewards[rewardIndex].count);
+            addSealedVaultGain(gainMap, gainOrder, eventRewards[rewardIndex].itemName, eventRewards[rewardIndex].count, doubled);
         }
         state.totalOpenCount++;
 
@@ -50447,7 +50444,9 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     removeItem(data, sender, config.vaultItemName, openCount);
     removeItem(data, sender, config.keyItemName, openCount);
     for (var gainIndex = 0; gainIndex < gainOrder.length; gainIndex++) {
-        addItem(data, sender, gainOrder[gainIndex], gainMap[gainOrder[gainIndex]]);
+        var gainItemName = gainOrder[gainIndex];
+        var gainTotal = gainMap[gainItemName].normal + gainMap[gainItemName].doubled; // 일반·부스터 최종 지급량 합계
+        addItem(data, sender, gainItemName, gainTotal);
     }
     for (var rareIndex = 0; rareIndex < rareEvents.length; rareIndex++) appendSealedVaultRareRecord(data, sender, rareEvents[rareIndex]);
     var boosterRemaining = config.boosterCycle - state.boosterCount; // 다음 2배 부스터까지 남은 개봉 수
@@ -50457,16 +50456,18 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     lines.push("🔒 [" + checkRank(data, petData, guildData, sender) + "] 님의");
     lines.push("봉인금고🔒 " + openCount + "회 개봉 결과");
     lines.push("확인: /봉인금고");
-    lines.push("※ 현재 부스터,플래티넘 보상 기록등 확인가능");
+    lines.push("※ 부스터 진행도·플래티넘 보상 기록 확인 가능");
     lines.push("━━━━━━━━━━━━━━━");
     for (var outputIndex = 0; outputIndex < gainOrder.length; outputIndex++) {
         var outputItemName = gainOrder[outputIndex];
-        lines.push(outputItemName + " ×" + numberWithCommas(gainMap[outputItemName]));
+        var outputGain = gainMap[outputItemName];
+        if (outputGain.normal > 0) lines.push(outputItemName + " ×" + numberWithCommas(outputGain.normal));
+        if (outputGain.doubled > 0) lines.push(outputItemName + " ×" + numberWithCommas(outputGain.doubled) + " 🔥2배");
     }
     lines.push("");
     lines.push("🔥 2배 부스터 발동: " + boosterTriggerCount + "회");
-    lines.push("💎 플래티넘 금고: " + (platinumCount > 0 ? "당첨" : "미당첨"));
-    lines.push("👑 초대형 보상: " + (jackpotCount > 0 ? "당첨" : "미당첨"));
+    lines.push("💎 플래티넘 금고: " + (platinumCount > 0 ? "당첨 " + platinumCount + "회" : "미당첨"));
+    lines.push("👑 초대형 보상: " + (jackpotCount > 0 ? "당첨 " + jackpotCount + "회" : "미당첨"));
     lines.push("━━━━━━━━━━━━━━━");
     lines.push("사용한 열쇠: " + openCount + "개");
     lines.push("남은 해방의 열쇠🗝️: " + numberWithCommas(normalizeSealedVaultCount(bag[config.keyItemName])) + "개");
