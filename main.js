@@ -49765,7 +49765,7 @@ function cleanPendantBagRange(data, petData, guildData, sender, msg) {
     if (start < 1 || end > bag.length) return { ok: false, message: "정리 범위가 올바르지 않습니다." };
     var count = end - start + 1;
     bag.splice(start - 1, count);
-    var point = count * 100000000;
+    var point = count * 20000000;
     data.member[sender].point = (data.member[sender].point || 0) + point;
     return { ok: true, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n펜던트 " + count + "개를 정리했습니다.\n획득 포인트💸: 🅟" + numberWithCommas(point) };
 }
