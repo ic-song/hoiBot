@@ -50185,12 +50185,14 @@ function drawSealedVaultWeightedReward(rewards, randomFn) {
 }
 
 // 봉인금고 합산 보상에 아이템 수량을 추가하는 함수
-function addSealedVaultGain(gainMap, gainOrder, itemName, count, doubled) {
+function addSealedVaultGain(gainMap, gainOrder, itemName, count, doubled, rewardType) {
     if (!gainMap.hasOwnProperty(itemName)) {
-        gainMap[itemName] = { normal: 0, doubled: 0 };
+        gainMap[itemName] = { normal: 0, doubled: 0, platinum: 0, platinumDoubled: 0 };
         gainOrder.push(itemName);
     }
-    if (doubled) gainMap[itemName].doubled += count;
+    if (rewardType === "platinum" && doubled) gainMap[itemName].platinumDoubled += count;
+    else if (rewardType === "platinum") gainMap[itemName].platinum += count;
+    else if (doubled) gainMap[itemName].doubled += count;
     else gainMap[itemName].normal += count;
 }
 
@@ -50432,7 +50434,7 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
         var multiplier = doubled ? 2 : 1;
         for (var rewardIndex = 0; rewardIndex < eventRewards.length; rewardIndex++) {
             eventRewards[rewardIndex].count *= multiplier;
-            addSealedVaultGain(gainMap, gainOrder, eventRewards[rewardIndex].itemName, eventRewards[rewardIndex].count, doubled);
+            addSealedVaultGain(gainMap, gainOrder, eventRewards[rewardIndex].itemName, eventRewards[rewardIndex].count, doubled, outcome.type);
         }
         state.totalOpenCount++;
 
@@ -50445,7 +50447,7 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
     removeItem(data, sender, config.keyItemName, openCount);
     for (var gainIndex = 0; gainIndex < gainOrder.length; gainIndex++) {
         var gainItemName = gainOrder[gainIndex];
-        var gainTotal = gainMap[gainItemName].normal + gainMap[gainItemName].doubled; // 일반·부스터 최종 지급량 합계
+        var gainTotal = gainMap[gainItemName].normal + gainMap[gainItemName].doubled + gainMap[gainItemName].platinum + gainMap[gainItemName].platinumDoubled; // 출처별 최종 지급량 합계
         addItem(data, sender, gainItemName, gainTotal);
     }
     for (var rareIndex = 0; rareIndex < rareEvents.length; rareIndex++) appendSealedVaultRareRecord(data, sender, rareEvents[rareIndex]);
@@ -50463,6 +50465,14 @@ function runSealedVaultOpen(sender, data, petData, guildData, msg, randomFn) {
         var outputGain = gainMap[outputItemName];
         if (outputGain.normal > 0) lines.push(outputItemName + " ×" + numberWithCommas(outputGain.normal));
         if (outputGain.doubled > 0) lines.push(outputItemName + " ×" + numberWithCommas(outputGain.doubled) + " 🔥2배");
+        if (outputGain.platinum > 0) {
+            lines.push(outputItemName + " ×" + numberWithCommas(outputGain.platinum));
+            lines.push("└ 플래티넘 금고💎 당첨");
+        }
+        if (outputGain.platinumDoubled > 0) {
+            lines.push(outputItemName + " ×" + numberWithCommas(outputGain.platinumDoubled) + " 🔥2배");
+            lines.push("└ 플래티넘 금고💎 당첨");
+        }
     }
     lines.push("");
     lines.push("🔥 2배 부스터 발동: " + boosterTriggerCount + "회");
