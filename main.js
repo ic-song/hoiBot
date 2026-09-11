@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.499"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.500"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -107,6 +107,7 @@ const PET_SKILL_LIST = [
     { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "전설의 소매치기", grade: "한정판", limitedEdition: true, openable: false, effect: "/슈킹 아이디 입력 시 50% 확률로 해당 유저의 포인트 🅟1,000,000을 슈킹합니다.\n하루 2회까지 시도할 수 있으며, 동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n실패해도 일일 시도 횟수는 차감되며 포인트는 차감되지 않습니다.\n펫스킬을 해제하면 /슈킹을 사용할 수 없습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "광산에서 재벌까지", grade: "한정판", limitedEdition: true, openable: false, showUnopenableRate: true, effect: "하루 10회 [/재벌도전]을 사용할 수 있습니다.\n10% 확률로 다이아상자💎 1개를 획득합니다.\n0.1% 확률로 로또에 당첨되면 다이아상자💎 30개를 획득합니다.\n※ 결과와 관계없이 사용 횟수가 1회 차감됩니다." },
+    { name: "입찰의 귀재", grade: "한정판", limitedEdition: true, openable: false, effect: "호이상점 /입찰 시 입찰 포인트가 10% 할인됩니다.\n\n※ 펫스킬 해제 시 효과도 함께 회수됩니다." },
     { name: "VIP블랙카드", grade: "SS", rate: 0.1, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
@@ -6428,6 +6429,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         biditemName: biditemName,
                         highestBidder: "",
                         highestBid: 0,
+                        highestBidCost: 0,
                         endTime: auctionEndTime,
                         timeoutID: 0,
                         originalIndex: newItemIndex
@@ -19207,14 +19209,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply(resultMsg);
                     }
                 }
-                if (msg.startsWith("/입찰")) {
-                    let args = msg.split(" ");
-                    if (args.length !== 3) {
+                if (msg === "/입찰" || /^\/입찰\s+\d+\s+\d+$/.test(msg)) {
+                    var bidMatch = msg.match(/^\/입찰\s+(\d+)\s+(\d+)$/);
+                    if (!bidMatch) {
                         replier.reply("명령어 오류, /입찰 [아이템번호] [포인트]");
                         return;
                     }
-                    let biditemNumber = parseInt(args[1], 10);
-                    let bidAmount = parseInt(args[2], 10);
+                    let biditemNumber = parseInt(bidMatch[1], 10);
+                    let bidAmount = parseInt(bidMatch[2], 10);
                     if (isNaN(biditemNumber) || isNaN(bidAmount) || biditemNumber <= 0 || bidAmount <= 0) {
                         replier.reply("올바른 번호와 금액을 입력하세요.");
                         return;
@@ -19225,6 +19227,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     let highestBid = auctionItem.highestBid;
+                    let hasBidDiscount = hasPetSkill(petSkillData, sender, "입찰의 귀재");
+                    let bidDiscount = hasBidDiscount ? Math.round(bidAmount * 0.1) : 0; // 반올림한 입찰 할인 포인트
+                    let bidCost = bidAmount - bidDiscount; // 실제 차감할 할인 적용 입찰 포인트
                     let remainingTime = auctionItem.endTime - Date.now();
                     if (remainingTime <= 0) {
                         replier.reply("[" + auctionItem.biditemName + "] 경매 시간이 이미 마감되었습니다.");
@@ -19232,7 +19237,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (sender == auctionItem.highestBidder) {
                         replier.reply("자신이 이미 최상위 입찰자입니다.");
-                    } else if (bidAmount + 700000 > data.member[sender].point) {
+                    } else if (bidCost + 700000 > data.member[sender].point) {
                         replier.reply("포인트가 부족하여 입찰할 수 없습니다.");
                     } else if (bidAmount <= highestBid) {
                         replier.reply("더 높은 포인트로 입찰해야 합니다.");
@@ -19247,14 +19252,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("이미 해당 레이드장비를\nMax치 만큼 보유 중입니다.");
                     } else {
                         if (auctionItem.highestBidder !== "" && data.member[auctionItem.highestBidder]) {
-                            data.member[auctionItem.highestBidder].point += highestBid;
+                            var previousBidCost = typeof auctionItem.highestBidCost === "number" ? auctionItem.highestBidCost : highestBid; // 종전 최고 입찰자의 실제 차감액
+                            data.member[auctionItem.highestBidder].point += previousBidCost;
                         }
-                        data.member[sender].point -= bidAmount;
+                        data.member[sender].point -= bidCost;
                         data.member[sender].point -= 700000;
                         auctionItem.highestBid = bidAmount;
+                        auctionItem.highestBidCost = bidCost;
                         auctionItem.highestBidder = sender;
                         var message =
                             "🔔경매 아이템🔔\n[" + auctionItem.biditemName + "]\n최고 입찰자 [" + checkRank(data, petData, guildData, sender) + "]\n현재 입찰가 : 🅟" + numberWithCommas(bidAmount);
+                        if (hasBidDiscount) {
+                            message += "\n\n입찰의 귀재📙 입찰 할인 적용 (-10%)\n실제 소모 포인트: 🅟" + numberWithCommas(bidCost);
+                        }
                         Api.replyRoom(room1, message);
                         Api.replyRoom(room2, message);
                         Api.replyRoom(room3, message);
