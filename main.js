@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.504"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.505"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -49586,7 +49586,7 @@ function combineCreationPendant(data, petData, guildData, sender, indexTexts) {
     for (var j = 0; j < indexes.length; j++) {
         if (indexes[j] > bag.length) return { ok: false, message: "❌ 가방 " + indexes[j] + "번 펜던트가 존재하지 않습니다.\n펜던트가방에서 번호를 확인해주세요.\n재료는 소모되지 않았습니다." };
         var pendant = bag[indexes[j] - 1];
-        if (pendant.name !== "창세의 펜던트" || pendant.icon !== "🌠" || pendant.grade !== "창세") {
+        if (!pendant || pendant.grade !== "창세") {
             return { ok: false, message: "❌ 가방 " + indexes[j] + "번은 창세의 펜던트🌠[창세]가 아닙니다.\n재료는 소모되지 않았습니다." };
         }
         var upgrade = parseInt(pendant.upgrade || 0, 10);
