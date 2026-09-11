@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.500"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.501"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -640,7 +640,7 @@ const room8 = "공성전";
 const room10 = "🤩30대 월루 도파민 반말방❤️보룸,봇,친목";
 const room11 = "🐤30대 40대 반말방💛신생/친목/보룸/수다/벙/봇";
 const room12 = "🐹신생🐹 30대 반말방 보이스룸 수다 벙🍒";
-const room13 = "🌷20대 30대 반말🌻친목/보룸/봇/벙🌻";
+const room13 = "😎 2030 어 왔냐? 앉아 반말해🍿";
 const room90 = "호이월드 GM 관리자방";
 const room91 = "통합스텝";
 const room92 = "서버관리자";
@@ -1539,6 +1539,7 @@ blockedNicknameTerms: [
     pendant: { // 펜던트 시스템 설정
         equipConfirmStaleMs: 30000, // 펜던트 교체 확인 대기 만료 시간
         promotionConfirmStaleMs: 30000, // 창조 펜던트 승급 확인 대기 만료 시간
+        creationCombinationDuplicateMs: 2000, // 동일 창조조합 요청 중복 처리 방지 시간
         promotionCharmPerLevel: 5000000,
         promotionStonePerLevel: 10,
         promotionPointPerLevel: 10000000000,
@@ -19967,6 +19968,30 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         pendantBagTarget = msg.substring("/펜던트가방".length).trim();
                     }
                     replier.reply(buildPendantBagMessage(data, petData, guildData, pendantBagTarget));
+                    return;
+                }
+                if (msg === "/펜던트창조조합" || /^\/펜던트창조조합(?:\s+.*)?$/.test(msg)) {
+                    if (msg === "/펜던트창조조합") {
+                        replier.reply(buildPendantCreationCombinationGuide());
+                        return;
+                    }
+                    if (!/^\/펜던트창조조합\s+\d+\s+\d+\s+\d+$/.test(msg)) {
+                        replier.reply("❌ 가방 번호는 서로 다른 양의 정수 3개를 입력해주세요.\n예시: /펜던트창조조합 3 7 9\n재료는 소모되지 않았습니다.");
+                        return;
+                    }
+                    if (isDuplicatePendantCreationCombination(sender, msg)) {
+                        replier.reply("❌ 이미 처리된 펜던트 창조조합 요청입니다.\n펜던트가방을 확인해주세요.\n재료는 추가로 소모되지 않았습니다.");
+                        return;
+                    }
+                    var pendantCreationIndexes = msg.split(/\s+/).slice(1);
+                    var pendantCreationResult = combineCreationPendant(data, petData, guildData, sender, pendantCreationIndexes);
+                    if (!pendantCreationResult.ok) {
+                        replier.reply(pendantCreationResult.message);
+                        return;
+                    }
+                    saveJsonFile(petData, memberPetPath);
+                    markPendantCreationCombination(sender, msg);
+                    replier.reply(pendantCreationResult.message);
                     return;
                 }
                 if (msg === "/펜던트순위") {
@@ -39991,6 +40016,69 @@ function ensureWorldNewsData(data) {
     return data.worldNews;
 }
 
+// 현재 소식에 존재하는 픽 번호만 중복 없이 남기는 함수
+function sanitizeWorldNewsPickIds(news) {
+    if (!(news.pickIds instanceof Array)) return false;
+    var validPostIds = {};
+    var cleanPickIds = [];
+    for (var i = 0; i < news.posts.length; i++) {
+        var postId = parseInt(news.posts[i] && news.posts[i].id, 10);
+        if (!isNaN(postId) && postId > 0) validPostIds[postId] = true;
+    }
+    for (var j = 0; j < news.pickIds.length; j++) {
+        var pickId = parseInt(news.pickIds[j], 10);
+        if (!isNaN(pickId) && pickId > 0 && validPostIds[pickId] && cleanPickIds.indexOf(pickId) < 0) cleanPickIds.push(pickId);
+    }
+    var changed = cleanPickIds.length !== news.pickIds.length;
+    if (!changed) {
+        for (var k = 0; k < cleanPickIds.length; k++) {
+            if (cleanPickIds[k] !== news.pickIds[k]) {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (changed) news.pickIds = cleanPickIds;
+    return changed;
+}
+
+// 현재 유효한 소식픽 번호를 반환하는 함수
+function getWorldNewsValidPickIds(news) {
+    if (!(news.pickIds instanceof Array)) return [];
+    return news.pickIds.slice(0);
+}
+
+// 관리자 화면에 표시할 소식픽 상태를 반환하는 함수
+function formatWorldNewsPickStatus(news) {
+    var pickIds = getWorldNewsValidPickIds(news);
+    if (pickIds.length < 1) return "미설정 · 최신 소식 표시";
+    var labels = [];
+    for (var i = 0; i < pickIds.length; i++) labels.push("#" + pickIds[i]);
+    return labels.join(" · ");
+}
+
+// 소식픽 또는 최신 글에서 이번 조회의 대표 소식을 한 번 선택하는 함수
+function selectWorldNewsFeaturedPost(news) {
+    var pickIds = getWorldNewsValidPickIds(news);
+    if (pickIds.length < 1) return { post: news.posts.length ? news.posts[0] : null, picked: false };
+    var selectedId = pickIds[Math.floor(Math.random() * pickIds.length)];
+    for (var i = 0; i < news.posts.length; i++) {
+        if (parseInt(news.posts[i] && news.posts[i].id, 10) === selectedId) return { post: news.posts[i], picked: true };
+    }
+    return { post: news.posts.length ? news.posts[0] : null, picked: false };
+}
+
+// 소식픽 사용법과 현재 설정을 만드는 함수
+function buildWorldNewsPickGuide(news) {
+    return "🎯 소식픽 설정\n━━━━━━━━━━━━\n" +
+        "현재 소식픽: " + formatWorldNewsPickStatus(news) + "\n\n" +
+        "사용법: /소식픽 [번호] [번호] [번호]\n" +
+        "예시: /소식픽 4 3 1\n\n" +
+        "※ 서로 다른 소식관리번호 3개를 입력해주세요.\n" +
+        "※ 새 설정은 기존 소식픽 전체를 교체합니다.\n" +
+        "※ 해제: /소식픽해제";
+}
+
 // 한국 시간 기준 소식 작성 일시를 반환하는 함수
 function getWorldNewsKstDateTime() {
     var formatter = new java.text.SimpleDateFormat("yyyy.MM.dd HH:mm");
@@ -40051,18 +40139,6 @@ function formatWorldNewsPost(post, includeId) {
     return lines.join("\n");
 }
 
-// 현재 소식 목록에서 유저가 확인하지 않은 글 개수를 반환하는 함수
-function getWorldNewsUnreadCount(posts, member) {
-    var lastReadId = parseInt(member.worldNewsLastReadId, 10); // 유저가 마지막으로 확인한 소식 번호
-    var unreadCount = 0;
-    if (isNaN(lastReadId)) lastReadId = 0;
-    for (var i = 0; i < posts.length; i++) {
-        var postId = parseInt(posts[i] && posts[i].id, 10);
-        if (!isNaN(postId) && postId > lastReadId) unreadCount++;
-    }
-    return unreadCount;
-}
-
 // 현재 소식 목록의 가장 큰 글번호를 유저의 마지막 확인 번호로 저장하는 함수
 function markWorldNewsPostsRead(posts, member) {
     var latestId = parseInt(member.worldNewsLastReadId, 10); // 기존 마지막 확인 소식 번호
@@ -40077,9 +40153,10 @@ function markWorldNewsPostsRead(posts, member) {
 }
 
 // 소식복권 결과와 최신·지난 소식을 하나의 유저 화면으로 만드는 함수
-function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResult, unreadCount) {
+function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResult) {
     var news = ensureWorldNewsData(data);
     var posts = news.posts;
+    var featured = selectWorldNewsFeaturedPost(news); // 이번 응답에서 한 번만 선택한 대표 소식
     var lines = ["📢 잠깐! 호이월드 소식 왔어요 👀", "━━━━━━━━━━━━"];
     if (lotteryResult.firstEntry) {
         lines.push("🎰 [" + checkRank(data, petData, guildData, sender) + "] 님");
@@ -40097,18 +40174,21 @@ function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResu
         return lines.join("\n");
     }
 
-    lines.push("🆕 가장 최근 소식");
+    lines.push(featured.picked ? "🎯 소식픽" : "🆕 가장 최근 소식");
     lines.push("");
-    lines.push(formatWorldNewsPost(posts[0], false));
+    lines.push(formatWorldNewsPost(featured.post, false));
     lines.push("━━━━━━━━━━━━");
-    lines.push("🗂 최근 등록된 소식: " + unreadCount + "개");
+    lines.push("🗂 최근 등록된 소식: " + posts.length + "개");
     if (posts.length > 1) {
         lines.push("📚 지난 소식은 전체보기로 확인하세요 👇");
         lines.push(allsee);
-        for (var i = 1; i < posts.length; i++) {
-            if (i > 1) lines.push("");
+        var remainingCount = 0; // 대표 소식을 제외하고 출력한 글 수
+        for (var i = 0; i < posts.length; i++) {
+            if (featured.post && parseInt(posts[i].id, 10) === parseInt(featured.post.id, 10)) continue;
+            if (remainingCount > 0) lines.push("");
             lines.push("━━━━━━━━━━━━");
             lines.push(formatWorldNewsPost(posts[i], false));
+            remainingCount++;
         }
         lines.push("━━━━━━━━━━━━");
     }
@@ -40131,21 +40211,24 @@ function buildWorldNewsJackpotBroadcast(data, petData, guildData, sender) {
 
 // 관리자 소식 전체 목록을 관리 화면 형식으로 만드는 함수
 function buildWorldNewsManageMessage(data) {
-    var posts = ensureWorldNewsData(data).posts;
-    var lines = ["📋 소식 관리", "🗂 최근 등록된 소식: " + posts.length + "개"];
+    var news = ensureWorldNewsData(data);
+    var posts = news.posts;
+    var lines = ["📋 소식 관리", "🗂 최근 등록된 소식: " + posts.length + "개", "🎯 소식픽: " + formatWorldNewsPickStatus(news)];
     if (posts.length < 1) {
         lines.push("📭 아직 등록된 소식이 없습니다.");
-        return lines.join("\n");
-    }
-    lines.push(allsee);
-    for (var i = 0; i < posts.length; i++) {
-        lines.push("━━━━━━━━━━━━");
-        lines.push(formatWorldNewsPost(posts[i], true));
-        if (i < posts.length - 1) lines.push("");
+    } else {
+        lines.push(allsee);
+        for (var i = 0; i < posts.length; i++) {
+            lines.push("━━━━━━━━━━━━");
+            lines.push(formatWorldNewsPost(posts[i], true));
+            if (i < posts.length - 1) lines.push("");
+        }
     }
     lines.push("━━━━━━━━━━━━");
     lines.push("✏️ 수정: /소식수정 [번호]");
     lines.push("🗑️ 삭제: /소식삭제 [번호]");
+    lines.push("🎯 소식픽: /소식픽 [번호] [번호] [번호]");
+    lines.push("🔓 픽 해제: /소식픽해제");
     return lines.join("\n");
 }
 
@@ -40185,8 +40268,8 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
     if (msg === "/소식") {
         var member = data.member[sender];
         var firstEntry = member.worldNewsLotteryPlayed !== true;
-        var unreadCount = getWorldNewsUnreadCount(news.posts, member); // 이번 조회 전에 확인하지 않은 소식 개수
         var reward = null;
+        if (sanitizeWorldNewsPickIds(news)) result.changed = true;
         if (firstEntry) {
             reward = drawWorldNewsReward();
             member.point = (Number(member.point) || 0) + reward.point;
@@ -40195,12 +40278,12 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
             if (reward.broadcast) result.broadcastMessage = buildWorldNewsJackpotBroadcast(data, petData, guildData, sender);
         }
         result.handled = true;
-        result.message = buildWorldNewsUserMessage(data, petData, guildData, sender, { firstEntry: firstEntry, reward: reward }, unreadCount);
+        result.message = buildWorldNewsUserMessage(data, petData, guildData, sender, { firstEntry: firstEntry, reward: reward });
         if (markWorldNewsPostsRead(news.posts, member)) result.changed = true;
         return result;
     }
 
-    var isAdminCommand = /^\/소식(?:작성|관리|등록|취소)(?:\s+.*)?$/.test(msg) || /^\/소식(?:삭제|수정)(?:\s+.*)?$/.test(msg);
+    var isAdminCommand = /^\/소식(?:작성|관리|등록|취소|픽해제)(?:\s+.*)?$/.test(msg) || /^\/소식(?:삭제|수정|픽)(?:\s+.*)?$/.test(msg);
     if (isAdminCommand && !isOperator) {
         result.handled = true;
         result.message = "❌ 소식 관리 명령어를 사용할 권한이 없습니다.";
@@ -40221,8 +40304,55 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
     }
 
     if (msg === "/소식관리") {
+        if (sanitizeWorldNewsPickIds(news)) result.changed = true;
         result.handled = true;
         result.message = buildWorldNewsManageMessage(data);
+        return result;
+    }
+
+    if (msg === "/소식픽") {
+        if (sanitizeWorldNewsPickIds(news)) result.changed = true;
+        result.handled = true;
+        result.message = buildWorldNewsPickGuide(news);
+        return result;
+    }
+
+    if (msg === "/소식픽해제") {
+        if (sanitizeWorldNewsPickIds(news)) result.changed = true;
+        result.handled = true;
+        if (getWorldNewsValidPickIds(news).length < 1) {
+            result.message = "ℹ️ 소식픽이 이미 해제되어 있습니다.\n최신 소식을 표시하는 설정을 유지합니다.";
+            return result;
+        }
+        news.pickIds = [];
+        result.changed = true;
+        result.message = "🔓 소식픽을 해제했습니다.\n이제 /소식에서 가장 최근 소식을 표시합니다.";
+        return result;
+    }
+
+    var pickMatch = msg.match(/^\/소식픽\s+(\d+)\s+(\d+)\s+(\d+)$/);
+    if (pickMatch) {
+        var pickIds = [parseInt(pickMatch[1], 10), parseInt(pickMatch[2], 10), parseInt(pickMatch[3], 10)];
+        result.handled = true;
+        if (pickIds[0] < 1 || pickIds[1] < 1 || pickIds[2] < 1) {
+            result.message = "❌ 소식관리번호는 양의 정수로 입력해주세요.\n기존 소식픽 설정은 유지됩니다.";
+            return result;
+        }
+        if (pickIds[0] === pickIds[1] || pickIds[0] === pickIds[2] || pickIds[1] === pickIds[2]) {
+            result.message = "❌ 서로 다른 소식관리번호 3개를 입력해주세요.\n기존 소식픽 설정은 유지됩니다.";
+            return result;
+        }
+        var existingIds = {};
+        for (var pi = 0; pi < news.posts.length; pi++) existingIds[parseInt(news.posts[pi].id, 10)] = true;
+        var missingPickIds = [];
+        for (var pj = 0; pj < pickIds.length; pj++) if (!existingIds[pickIds[pj]]) missingPickIds.push("#" + pickIds[pj]);
+        if (missingPickIds.length > 0) {
+            result.message = "❌ 존재하지 않는 소식관리번호입니다: " + missingPickIds.join(" · ") + "\n/소식관리에서 글번호를 확인해주세요.\n기존 소식픽 설정은 유지됩니다.";
+            return result;
+        }
+        news.pickIds = pickIds;
+        result.changed = true;
+        result.message = "🎯 소식픽을 설정했습니다.\n━━━━━━━━━━━━\n소식픽: " + formatWorldNewsPickStatus(news) + "\n\n/소식에서 세 글 중 하나를 무작위로 보여줍니다.";
         return result;
     }
 
@@ -40237,6 +40367,7 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
             return result;
         }
         news.posts.splice(deleteIndex, 1);
+        sanitizeWorldNewsPickIds(news);
         result.changed = true;
         result.message = "🗑️ 소식이 삭제되었습니다.\n\n🔢 삭제한 글번호: #" + deleteId;
         return result;
@@ -40304,12 +40435,18 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
         };
         news.posts.unshift(newPost);
         while (news.posts.length > GLOBAL_CONFIG.worldNews.maxPosts) news.posts.pop();
+        sanitizeWorldNewsPickIds(news);
         delete worldNewsDraftState[draftKey];
         result.changed = true;
-        result.message = "✅ 새로운 소식이 등록되었습니다!\n\n📌 " + newPost.title + "\n🔢 글번호: #" + newPost.id + "\n\n/소식 입력 시 가장 최근 글로 표시됩니다.";
+        result.message = "✅ 새로운 소식이 등록되었습니다!\n\n📌 " + newPost.title + "\n🔢 글번호: #" + newPost.id + "\n\n/소식관리에서 등록 결과를 확인해주세요.";
         return result;
     }
 
+    if (/^\/소식픽(?:\s+.*)?$/.test(msg) || /^\/소식픽해제\s+.*$/.test(msg)) {
+        result.handled = true;
+        result.message = "사용법: /소식픽 [번호] [번호] [번호]\n서로 다른 기존 소식관리번호 3개를 입력해주세요.\n기존 소식픽 설정은 유지됩니다.";
+        return result;
+    }
     if (/^\/소식(?:작성|관리|등록|취소)\s+.*$/.test(msg) || /^\/소식삭제(?:\s+.*)?$/.test(msg) || /^\/소식수정(?:\s+.*)?$/.test(msg)) {
         result.handled = true;
         result.message = "사용법: /소식작성, /소식관리, /소식수정 [번호], /소식삭제 [번호], /소식등록, /소식취소";
@@ -49382,6 +49519,7 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
     out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] (장착 펜던트는 0)\n";
     out += "※ 창조 승급: /펜던트승급 [펜던트가방번호] (장착 펜던트는 0)\n";
+    out += "※ 창조 조합: /펜던트창조조합 [번호] [번호] [번호]\n";
     out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
     out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n";
     out += "━━━━━━━━━━━━━\n";
@@ -49391,6 +49529,88 @@ function buildPendantBagMessage(data, petData, guildData, user) {
         out += (i + 1) + ". " + formatPendantDisplay(bag[i]) + "\n";
     }
     return out.trim();
+}
+
+// 펜던트 창조조합 사용법을 만드는 함수
+function buildPendantCreationCombinationGuide() {
+    return "📿 펜던트 창조조합\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "창세의 펜던트🌠[창세] ×3\n" +
+        "             ↓\n" +
+        "창조의 펜던트🪬[창조] ×1\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "✅ 성공률: 100%\n" +
+        "💰 포인트 소모: 없음\n\n" +
+        "사용법:\n" +
+        "/펜던트창조조합 [펜던트가방번호] [펜던트가방번호] [펜던트가방번호]\n\n" +
+        "예시: /펜던트창조조합 3 7 9\n\n" +
+        "※ 서로 다른 가방 번호 3개를 입력해주세요.\n" +
+        "※ 장착·강화된 펜던트는 재료로 사용할 수 없습니다.\n" +
+        "※ 조합 시 선택한 창세의 펜던트 3개가 소모됩니다.";
+}
+
+// 최근 성공한 동일 펜던트 창조조합 요청인지 확인하는 함수
+function isDuplicatePendantCreationCombination(sender, msg) {
+    var state = userState[sender] && userState[sender].pendantCreationCombination;
+    return !!(state && state.command === msg && Date.now() - state.completedAt < GLOBAL_CONFIG.pendant.creationCombinationDuplicateMs);
+}
+
+// 성공한 펜던트 창조조합 요청을 잠시 기록하는 함수
+function markPendantCreationCombination(sender, msg) {
+    if (!userState[sender]) userState[sender] = {};
+    userState[sender].pendantCreationCombination = { command: msg, completedAt: Date.now() };
+}
+
+// 선택한 창세 펜던트 3개를 창조 펜던트 1개로 조합하는 함수
+function combineCreationPendant(data, petData, guildData, sender, indexTexts) {
+    var indexes = [];
+    var seenIndexes = {};
+    for (var i = 0; i < indexTexts.length; i++) {
+        var index = parseInt(indexTexts[i], 10);
+        if (isNaN(index) || index < 1) return { ok: false, message: "❌ 가방 번호는 양의 정수로 입력해주세요.\n재료는 소모되지 않았습니다." };
+        if (seenIndexes[index]) return { ok: false, message: "❌ 서로 다른 가방 번호 3개를 입력해주세요.\n재료는 소모되지 않았습니다." };
+        seenIndexes[index] = true;
+        indexes.push(index);
+    }
+    if (indexes.length !== 3) return { ok: false, message: "❌ 창세의 펜던트 3개를 선택해주세요.\n재료는 소모되지 않았습니다." };
+
+    var bag = getPendantBag(petData, sender);
+    sortPendantBagByGrade(bag);
+    var selected = [];
+    for (var j = 0; j < indexes.length; j++) {
+        if (indexes[j] > bag.length) return { ok: false, message: "❌ 가방 " + indexes[j] + "번 펜던트가 존재하지 않습니다.\n펜던트가방에서 번호를 확인해주세요.\n재료는 소모되지 않았습니다." };
+        var pendant = bag[indexes[j] - 1];
+        if (pendant.name !== "창세의 펜던트" || pendant.icon !== "🌠" || pendant.grade !== "창세") {
+            return { ok: false, message: "❌ 가방 " + indexes[j] + "번은 창세의 펜던트🌠[창세]가 아닙니다.\n재료는 소모되지 않았습니다." };
+        }
+        var upgrade = parseInt(pendant.upgrade || 0, 10);
+        if (isNaN(upgrade)) upgrade = 0;
+        if (upgrade !== 0 || normalizePendantPromotionLevel(pendant) !== 0) {
+            return { ok: false, message: "❌ 강화·승급된 펜던트는 조합 재료로 사용할 수 없습니다.\n가방 " + indexes[j] + "번을 확인해주세요.\n재료는 소모되지 않았습니다." };
+        }
+        selected.push({ arrayIndex: indexes[j] - 1, pendant: pendant });
+    }
+
+    selected.sort(function(a, b) { return b.arrayIndex - a.arrayIndex; });
+    for (var k = 0; k < selected.length; k++) bag.splice(selected[k].arrayIndex, 1);
+    var creationInfo = getPendantGradeInfo("창조");
+    bag.push(createPendantByGradeInfo(creationInfo));
+    sortPendantBagByGrade(bag);
+
+    var displayIndexes = indexes.slice(0).sort(function(a, b) { return a - b; });
+    return {
+        ok: true,
+        message: "📿 펜던트 창조조합 완료!\n[" + checkRank(data, petData, guildData, sender) + "]\n" +
+            "━━━━━━━━━━━━━━━\n" +
+            "소모한 재료\n" +
+            "가방 " + displayIndexes.join("번 · ") + "번\n" +
+            "창세의 펜던트🌠[창세] ×3\n\n" +
+            "🎉 획득 아이템\n" +
+            "창조의 펜던트🪬[창조] ×1\n" +
+            "━━━━━━━━━━━━━━━\n" +
+            "💰 소모 포인트: 0\n" +
+            "펜던트가방을 확인해주세요."
+    };
 }
 
 // 펜던트 번호로 장착/가방 펜던트 조회
