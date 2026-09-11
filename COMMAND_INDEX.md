@@ -6748,6 +6748,54 @@ Status: VERIFIED
 
 ---
 
+# /입찰 [아이템번호] [포인트]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `msg === "/입찰" || /^\/입찰\s+\d+\s+\d+$/.test(msg)`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `hasPetSkill`
+- `checkRank`
+- `numberWithCommas`
+- `saveJsonFile`
+
+## Data Usage
+
+- `data.auction[*].highestBid`: 화면 표시와 최고 입찰 판정에 사용하는 할인 전 금액
+- `data.auction[*].highestBidCost`: 최고 입찰자의 실제 차감액과 재입찰 환급액
+- `data.auction[*].highestBidder`
+- `data.member[sender].point`
+- `petSkillData[sender].petSkills.equipped`
+
+## Save Flow
+
+- 정상 입찰 시 할인 적용 여부에 따라 입찰 포인트와 수수료를 차감하고 경매 최고 입찰 정보를 갱신한 뒤 응답 마지막의 `saveJsonFile(data, filePath)`로 저장한다.
+- 기존 최고 입찰자가 밀리면 `highestBidCost`를 환급하며, 이 필드가 없는 기존 경매 데이터는 `highestBid`를 환급한다.
+
+## Related Commands
+
+- `/호이상점`
+- `/경매등록 [아이템명] [분]`
+- `/경매마감 [경매등록번호]`
+- `/펫스킬정보 입찰의 귀재`
+
+## AI Notes
+
+- `입찰의 귀재📙[한정판]`를 현재 장착한 입찰자는 입찰 금액의 10%를 반올림해 할인받는다.
+- 최고 입찰가 표시와 상위 입찰 판정에는 할인 전 금액을 사용하고, 잔액 확인·차감·재입찰 환급에는 실제 차감액을 사용한다.
+- 할인 적용 시에만 기존 경매 안내 아래에 할인 적용 문구와 실제 소모 포인트를 추가한다.
+- 입찰 수수료 🅟700,000은 할인하지 않는다.
+
+---
+
 # /기도
 
 Status: VERIFIED
