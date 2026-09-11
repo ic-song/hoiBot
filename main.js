@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.501"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.502"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -40326,7 +40326,7 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
         }
         news.pickIds = [];
         result.changed = true;
-        result.message = "🔓 소식픽을 해제했습니다.\n이제 /소식에서 가장 최근 소식을 표시합니다.";
+        result.message = "🔓 소식픽이 해제되었습니다.\n/소식 입력 시 최신 소식 1개가 표시됩니다.";
         return result;
     }
 
@@ -40352,7 +40352,13 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
         }
         news.pickIds = pickIds;
         result.changed = true;
-        result.message = "🎯 소식픽을 설정했습니다.\n━━━━━━━━━━━━\n소식픽: " + formatWorldNewsPickStatus(news) + "\n\n/소식에서 세 글 중 하나를 무작위로 보여줍니다.";
+        result.message = "🎯 소식픽 설정 완료!\n" +
+            "━━━━━━━━━━━━\n" +
+            "선택한 소식: " + formatWorldNewsPickStatus(news) + "\n\n" +
+            "/소식 입력 시 선택한 소식 중\n" +
+            "1개가 동일한 확률로 상단에 표시됩니다.\n" +
+            "━━━━━━━━━━━━\n" +
+            "설정 해제: /소식픽해제";
         return result;
     }
 
