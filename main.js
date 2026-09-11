@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.502"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.503"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -19970,13 +19970,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildPendantBagMessage(data, petData, guildData, pendantBagTarget));
                     return;
                 }
-                if (msg === "/펜던트창조조합" || /^\/펜던트창조조합(?:\s+.*)?$/.test(msg)) {
-                    if (msg === "/펜던트창조조합") {
+                if (msg === "/펜던트조합창조" || /^\/펜던트조합창조(?:\s+.*)?$/.test(msg)) {
+                    if (msg === "/펜던트조합창조") {
                         replier.reply(buildPendantCreationCombinationGuide());
                         return;
                     }
-                    if (!/^\/펜던트창조조합\s+\d+\s+\d+\s+\d+$/.test(msg)) {
-                        replier.reply("❌ 가방 번호는 서로 다른 양의 정수 3개를 입력해주세요.\n예시: /펜던트창조조합 3 7 9\n재료는 소모되지 않았습니다.");
+                    if (!/^\/펜던트조합창조\s+\d+\s+\d+\s+\d+$/.test(msg)) {
+                        replier.reply("❌ 가방 번호는 서로 다른 양의 정수 3개를 입력해주세요.\n예시: /펜던트조합창조 3 7 9\n재료는 소모되지 않았습니다.");
                         return;
                     }
                     if (isDuplicatePendantCreationCombination(sender, msg)) {
@@ -49525,7 +49525,7 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
     out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] (장착 펜던트는 0)\n";
     out += "※ 창조 승급: /펜던트승급 [펜던트가방번호] (장착 펜던트는 0)\n";
-    out += "※ 창조 조합: /펜던트창조조합 [번호] [번호] [번호]\n";
+    out += "※ 창조 조합: /펜던트조합창조 [번호] [번호] [번호]\n";
     out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
     out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n";
     out += "━━━━━━━━━━━━━\n";
@@ -49548,8 +49548,8 @@ function buildPendantCreationCombinationGuide() {
         "✅ 성공률: 100%\n" +
         "💰 포인트 소모: 없음\n\n" +
         "사용법:\n" +
-        "/펜던트창조조합 [펜던트가방번호] [펜던트가방번호] [펜던트가방번호]\n\n" +
-        "예시: /펜던트창조조합 3 7 9\n\n" +
+        "/펜던트조합창조 [펜던트가방번호] [펜던트가방번호] [펜던트가방번호]\n\n" +
+        "예시: /펜던트조합창조 3 7 9\n\n" +
         "※ 서로 다른 가방 번호 3개를 입력해주세요.\n" +
         "※ 장착·강화된 펜던트는 재료로 사용할 수 없습니다.\n" +
         "※ 조합 시 선택한 창세의 펜던트 3개가 소모됩니다.";
