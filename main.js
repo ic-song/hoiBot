@@ -983,7 +983,7 @@ const GLOBAL_CONFIG = {
         maxOpenCount: 100,
         keyCombineVaultCost: 100, // 해방의 열쇠 1개 조합에 필요한 봉인금고 수
         dailyQuestVaultReward: 1, // 일일퀘스트 완료 보상 수량
-        boosterCycle: 19,
+        boosterCycle: 23,
         platinumPityCount: 149,
         maxAdminItemCount: 1000000000,
         userRareLogMax: 50,
