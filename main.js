@@ -631,14 +631,14 @@ const towerTips = [
 //room
 const room1 = "🍶30대, 월급은 스쳐지나가도 우리는 남는다..!🌙";
 const room2 = "💕💜 2030 어차피 친해질 사이 💕💜";
-const room3 = "💖신생💖20대 30대 반말방🎙️보이스룸 수다 벙";
+const room3 = "🐰 2030, 여기 좀 귀엽다 너도 올래?🍓";
 const testRoom = "팻 테스트방";
 const room5 = "호이월드 커뮤니티[티어 킹 이상 입장가능]";
 const room6 = "💜3040대친목 반말방🐻 24시 보이스룸💜";
 const room7 = "💜20대 30대 반말방💙친목.보룸.수다";
 const room8 = "공성전";
-const room10 = "🤩30대 월루 도파민 반말방❤️보룸,봇,친목";
-const room11 = "🐤30대 40대 반말방💛신생/친목/보룸/수다/벙/봇";
+const room10 = "🌱 우리도 30대는 처음이라🎙️";
+const room11 = "🍺 3040, 인생 뭐 있어? 오늘도 수다 한 잔";
 const room12 = "🎀30대, 주파수가 맞는 사이🌙";
 const room13 = "😎 2030 어 왔냐? 앉아 반말해🍿";
 const room90 = "호이월드 GM 관리자방";
