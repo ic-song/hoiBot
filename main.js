@@ -630,7 +630,7 @@ const towerTips = [
 ];
 //room
 const room1 = "🍶30대, 월급은 스쳐지나가도 우리는 남는다..!🌙";
-const room2 = "💕💜 2030 어차피 친해질 사이 💕💜 ";
+const room2 = "💕💜 2030 어차피 친해질 사이 💕💜";
 const room3 = "💖신생💖20대 30대 반말방🎙️보이스룸 수다 벙";
 const testRoom = "팻 테스트방";
 const room5 = "호이월드 커뮤니티[티어 킹 이상 입장가능]";
