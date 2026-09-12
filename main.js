@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.505"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.506"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1539,7 +1539,7 @@ blockedNicknameTerms: [
     pendant: { // 펜던트 시스템 설정
         equipConfirmStaleMs: 30000, // 펜던트 교체 확인 대기 만료 시간
         promotionConfirmStaleMs: 30000, // 창조 펜던트 승급 확인 대기 만료 시간
-        creationCombinationDuplicateMs: 2000, // 동일 창조조합 요청 중복 처리 방지 시간
+        creationCombinationDuplicateMs: 2000, // 동일 펜던트 조합 요청 중복 처리 방지 시간
         promotionCharmPerLevel: 5000000,
         promotionStonePerLevel: 10,
         promotionPointPerLevel: 10000000000,
@@ -19970,6 +19970,30 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildPendantBagMessage(data, petData, guildData, pendantBagTarget));
                     return;
                 }
+                if (msg === "/펜던트조합창세" || /^\/펜던트조합창세(?:\s+.*)?$/.test(msg)) {
+                    if (msg === "/펜던트조합창세") {
+                        replier.reply(buildPendantGenesisCombinationGuide());
+                        return;
+                    }
+                    if (!/^\/펜던트조합창세\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+$/.test(msg)) {
+                        replier.reply("❌ 가방 번호는 서로 다른 양의 정수 6개를 입력해주세요.\n예시: /펜던트조합창세 1 2 3 4 5 6\n재료는 소모되지 않았습니다.");
+                        return;
+                    }
+                    if (isDuplicatePendantCombination(sender, msg)) {
+                        replier.reply("❌ 이미 처리된 펜던트 창세조합 요청입니다.\n펜던트가방을 확인해주세요.\n재료는 추가로 소모되지 않았습니다.");
+                        return;
+                    }
+                    var pendantGenesisIndexes = msg.split(/\s+/).slice(1);
+                    var pendantGenesisResult = combineGenesisPendant(data, petData, guildData, sender, pendantGenesisIndexes);
+                    if (!pendantGenesisResult.ok) {
+                        replier.reply(pendantGenesisResult.message);
+                        return;
+                    }
+                    saveJsonFile(petData, memberPetPath);
+                    markPendantCombination(sender, msg);
+                    replier.reply(pendantGenesisResult.message);
+                    return;
+                }
                 if (msg === "/펜던트조합창조" || /^\/펜던트조합창조(?:\s+.*)?$/.test(msg)) {
                     if (msg === "/펜던트조합창조") {
                         replier.reply(buildPendantCreationCombinationGuide());
@@ -19979,7 +20003,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 가방 번호는 서로 다른 양의 정수 3개를 입력해주세요.\n예시: /펜던트조합창조 3 7 9\n재료는 소모되지 않았습니다.");
                         return;
                     }
-                    if (isDuplicatePendantCreationCombination(sender, msg)) {
+                    if (isDuplicatePendantCombination(sender, msg)) {
                         replier.reply("❌ 이미 처리된 펜던트 창조조합 요청입니다.\n펜던트가방을 확인해주세요.\n재료는 추가로 소모되지 않았습니다.");
                         return;
                     }
@@ -19990,7 +20014,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     saveJsonFile(petData, memberPetPath);
-                    markPendantCreationCombination(sender, msg);
+                    markPendantCombination(sender, msg);
                     replier.reply(pendantCreationResult.message);
                     return;
                 }
@@ -49525,6 +49549,7 @@ function buildPendantBagMessage(data, petData, guildData, user) {
     out += "※ 펜던트 정보: /펜던트정보 [번호]\n";
     out += "※ 펜던트 강화: /펜던트강화 [펜던트가방번호] (장착 펜던트는 0)\n";
     out += "※ 창조 승급: /펜던트승급 [펜던트가방번호] (장착 펜던트는 0)\n";
+    out += "※ 창세 조합: /펜던트조합창세 [번호] [번호] [번호] [번호] [번호] [번호]\n";
     out += "※ 창조 조합: /펜던트조합창조 [번호] [번호] [번호]\n";
     out += "※ 펜던트 정리: /펜던트가방정리 [번호~번호]\n";
     out += "※ 펜던트 해제: /펜던트해제 (귀속권 필요)\n";
@@ -49551,20 +49576,85 @@ function buildPendantCreationCombinationGuide() {
         "/펜던트조합창조 [펜던트가방번호] [펜던트가방번호] [펜던트가방번호]\n\n" +
         "예시: /펜던트조합창조 3 7 9\n\n" +
         "※ 서로 다른 가방 번호 3개를 입력해주세요.\n" +
-        "※ 장착·강화된 펜던트는 재료로 사용할 수 없습니다.\n" +
+        "※ 강화된 창세 펜던트도 재료로 사용할 수 있습니다.\n" +
         "※ 조합 시 선택한 창세의 펜던트 3개가 소모됩니다.";
 }
 
-// 최근 성공한 동일 펜던트 창조조합 요청인지 확인하는 함수
-function isDuplicatePendantCreationCombination(sender, msg) {
-    var state = userState[sender] && userState[sender].pendantCreationCombination;
+// 최근 성공한 동일 펜던트 조합 요청인지 확인하는 함수
+function isDuplicatePendantCombination(sender, msg) {
+    var state = userState[sender] && userState[sender].pendantCombination;
     return !!(state && state.command === msg && Date.now() - state.completedAt < GLOBAL_CONFIG.pendant.creationCombinationDuplicateMs);
 }
 
-// 성공한 펜던트 창조조합 요청을 잠시 기록하는 함수
-function markPendantCreationCombination(sender, msg) {
+// 성공한 펜던트 조합 요청을 잠시 기록하는 함수
+function markPendantCombination(sender, msg) {
     if (!userState[sender]) userState[sender] = {};
-    userState[sender].pendantCreationCombination = { command: msg, completedAt: Date.now() };
+    userState[sender].pendantCombination = { command: msg, completedAt: Date.now() };
+}
+
+// 선택한 초월 펜던트 6개를 창세 펜던트 1개로 조합하는 함수
+function combineGenesisPendant(data, petData, guildData, sender, indexTexts) {
+    var indexes = [];
+    var seenIndexes = {};
+    for (var i = 0; i < indexTexts.length; i++) {
+        var index = parseInt(indexTexts[i], 10);
+        if (isNaN(index) || index < 1) return { ok: false, message: "❌ 가방 번호는 양의 정수로 입력해주세요.\n재료는 소모되지 않았습니다." };
+        if (seenIndexes[index]) return { ok: false, message: "❌ 서로 다른 가방 번호 6개를 입력해주세요.\n재료는 소모되지 않았습니다." };
+        seenIndexes[index] = true;
+        indexes.push(index);
+    }
+    if (indexes.length !== 6) return { ok: false, message: "❌ 천공의 펜던트 6개를 선택해주세요.\n재료는 소모되지 않았습니다." };
+
+    var bag = getPendantBag(petData, sender);
+    sortPendantBagByGrade(bag);
+    var selected = []; // 검증을 통과한 재료의 원본 가방 위치
+    for (var j = 0; j < indexes.length; j++) {
+        if (indexes[j] > bag.length) return { ok: false, message: "❌ 가방 " + indexes[j] + "번 펜던트가 존재하지 않습니다.\n펜던트가방에서 번호를 확인해주세요.\n재료는 소모되지 않았습니다." };
+        var pendant = bag[indexes[j] - 1];
+        if (!pendant || pendant.grade !== "초월") {
+            return { ok: false, message: "❌ 가방 " + indexes[j] + "번은 천공의 펜던트🪽[초월]가 아닙니다.\n재료는 소모되지 않았습니다." };
+        }
+        selected.push({ arrayIndex: indexes[j] - 1, pendant: pendant });
+    }
+
+    selected.sort(function(a, b) { return b.arrayIndex - a.arrayIndex; });
+    for (var k = 0; k < selected.length; k++) bag.splice(selected[k].arrayIndex, 1);
+    var genesisInfo = getPendantGradeInfo("창세");
+    bag.push(createPendantByGradeInfo(genesisInfo));
+    sortPendantBagByGrade(bag);
+
+    var displayIndexes = indexes.slice(0).sort(function(a, b) { return a - b; }); // 성공 메시지용 조합 전 가방 번호
+    return {
+        ok: true,
+        message: "📿 펜던트 창세조합 완료!\n[" + checkRank(data, petData, guildData, sender) + "]\n" +
+            "━━━━━━━━━━━━━━━\n" +
+            "소모한 재료\n" +
+            "가방 " + displayIndexes.join("번 · ") + "번\n" +
+            "천공의 펜던트🪽[초월] ×6\n\n" +
+            "🎉 획득 아이템\n" +
+            "창세의 펜던트🌠[창세] ×1\n" +
+            "━━━━━━━━━━━━━━━\n" +
+            "💰 소모 포인트: 0\n" +
+            "펜던트가방을 확인해주세요."
+    };
+}
+
+// 펜던트 창세조합 사용법을 만드는 함수
+function buildPendantGenesisCombinationGuide() {
+    return "📿 펜던트 창세조합\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "천공의 펜던트🪽[초월] ×6\n" +
+        "             ↓\n" +
+        "창세의 펜던트🌠[창세] ×1\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "✅ 성공률: 100%\n" +
+        "💰 포인트 소모: 없음\n\n" +
+        "사용법:\n" +
+        "/펜던트조합창세 [번호] [번호] [번호] [번호] [번호] [번호]\n\n" +
+        "예시: /펜던트조합창세 1 2 3 4 5 6\n\n" +
+        "※ 서로 다른 가방 번호 6개를 입력해주세요.\n" +
+        "※ 강화된 초월 펜던트도 재료로 사용할 수 있습니다.\n" +
+        "※ 조합 시 선택한 천공의 펜던트 6개가 소모됩니다.";
 }
 
 // 선택한 창세 펜던트 3개를 창조 펜던트 1개로 조합하는 함수
@@ -49588,11 +49678,6 @@ function combineCreationPendant(data, petData, guildData, sender, indexTexts) {
         var pendant = bag[indexes[j] - 1];
         if (!pendant || pendant.grade !== "창세") {
             return { ok: false, message: "❌ 가방 " + indexes[j] + "번은 창세의 펜던트🌠[창세]가 아닙니다.\n재료는 소모되지 않았습니다." };
-        }
-        var upgrade = parseInt(pendant.upgrade || 0, 10);
-        if (isNaN(upgrade)) upgrade = 0;
-        if (upgrade !== 0 || normalizePendantPromotionLevel(pendant) !== 0) {
-            return { ok: false, message: "❌ 강화·승급된 펜던트는 조합 재료로 사용할 수 없습니다.\n가방 " + indexes[j] + "번을 확인해주세요.\n재료는 소모되지 않았습니다." };
         }
         selected.push({ arrayIndex: indexes[j] - 1, pendant: pendant });
     }
