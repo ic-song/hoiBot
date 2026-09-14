@@ -2839,6 +2839,56 @@ Status: VERIFIED
 
 ---
 
+# /티어, /티어적용
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `msg === "/티어"`
+- Search in `main.js`: `msg === "/티어적용"`
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `buildTierProgressPlan`
+- `buildTierProgressMessage`
+- `applyRankBasedOnTicketsForUser`
+- `buildPointShopPurchaseQuote`
+- `addMemberExperienceWithTierBonus`
+
+## Data Usage
+
+- `data.member[sender].rank`
+- `data.member[sender].bag`
+- `data.member[sender].tierRewardClaims`
+- `data.member[sender].tierExperienceRemainder`
+- `petData[sender].petexp`
+
+## Save Flow
+
+- `/티어` is read-only.
+- `/티어적용` saves `data` and `petData` after a successful sender-only promotion, then sends the promotion notice.
+- Failed and same-tier applications do not mutate or save tier rewards.
+
+## Related Commands
+
+- `/고급티켓조합`
+- `/구매`
+- `/티어순위`
+- `/티어확인`
+
+## AI Notes
+
+- `/티어` shows the current tier, actual promotion target, shortages, ticket purchase estimate, benefits, and the next action; detailed rows follow `allsee`.
+- `/티어적용` supports multi-tier promotion for the sender and does not downgrade other members.
+- Tiers 42–51 add pet-exploration and account-experience bonuses; their charm rewards are claimed once per user and tier.
+
+---
+
 # /티어순위
 
 Status: VERIFIED
