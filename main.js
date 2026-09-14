@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.510"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.511"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -25110,10 +25110,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "/자동탐고정" || /^\/자동탐고정\s+\d+$/.test(msg)) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
-                    if (isChuseokExploreEventActive(petExploreData)) {
-                        replier.reply("🌕 추석 이벤트 기간에는 자동탐험 고정을 변경할 수 없습니다.\n🐰 참여방법: /탐 11");
-                        return;
-                    }
                     cleanupInvalidPetExploreUsers(petExploreData, data);
                     savePetExploreMigrationIfNeeded(petExploreData);
                     var result = handleAutoExploreFixCommand(petExploreData, data, sender, msg);
@@ -48956,6 +48952,7 @@ function clearPetExploreAutoFixedDungeons(petExploreData) {
 
 // 추석 이벤트 정각 탐험을 처리하는 함수
 function doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
+    petExploreData = autoExploreBetting(data, petExploreData);
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr) || arr.length < 1) return null;
@@ -49780,14 +49777,26 @@ function autoExploreBetting(data, petExploreData) {
         // 자동탐험권🌄 없으면 스킵
         if (!hasItem(data, user, "자동탐험권🌄", 1)) continue;
 
-        // 이미 배팅 상태면 스킵
-        if (petExploreData.userBet && petExploreData.userBet.hasOwnProperty(user)) continue;
-
-        // 고정 던전 우선 (이벤트 활성 시 0/10 포함), 없으면 1~3 랜덤
+        // 고정 던전 우선 (이벤트 활성 시 0/10/11 포함), 없으면 1~3 랜덤
         var fixed = petExploreData.autoFixedDungeon[user] !== undefined ? String(petExploreData.autoFixedDungeon[user]) : null;
-        var fixedNo = parseInt(fixed, 10);
-        var isFixedValid = (fixedNo >= GLOBAL_CONFIG.petExplore.slots.mineMin && fixedNo <= GLOBAL_CONFIG.petExplore.slots.regularMax) || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
-        var dungeonNo = isFixedValid ? String(fixed) : getRandomRegularMineExploreSlot();
+        var currentBet = petExploreData.userBet && petExploreData.userBet.hasOwnProperty(user) ? String(petExploreData.userBet[user]) : null;
+        var dungeonNo;
+        if (isChuseokExploreEventActive(petExploreData)) {
+            if (fixed !== GLOBAL_CONFIG.petExplore.chuseokEvent.slot) continue;
+            if (currentBet === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) continue;
+            if (currentBet && petExploreData.bet && Array.isArray(petExploreData.bet[currentBet])) {
+                for (var oldBetIndex = petExploreData.bet[currentBet].length - 1; oldBetIndex >= 0; oldBetIndex--) {
+                    if (petExploreData.bet[currentBet][oldBetIndex] && petExploreData.bet[currentBet][oldBetIndex].user === user) petExploreData.bet[currentBet].splice(oldBetIndex, 1);
+                }
+            }
+            if (currentBet) delete petExploreData.userBet[user];
+            dungeonNo = GLOBAL_CONFIG.petExplore.chuseokEvent.slot;
+        } else {
+            if (currentBet) continue;
+            var fixedNo = parseInt(fixed, 10);
+            var isFixedValid = (fixedNo >= GLOBAL_CONFIG.petExplore.slots.mineMin && fixedNo <= GLOBAL_CONFIG.petExplore.slots.regularMax) || (fixed === "0" && isPetExploreEventMineActive(petExploreData)) || (fixed === "10" && isGuildRaidExploreEventActive(petExploreData));
+            dungeonNo = isFixedValid ? String(fixed) : getRandomRegularMineExploreSlot();
+        }
 
         // 배열 보장
         if (!petExploreData.bet) {
@@ -52583,6 +52592,8 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender) {
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var myBet = petExploreData.userBet && petExploreData.userBet[sender] ? String(petExploreData.userBet[sender]) : null;
+    var myFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[sender] ? String(petExploreData.autoFixedDungeon[sender]) : null;
+    var myFixedName = myFixed ? getExploreDungeonName(myFixed, petExploreData) : "없음";
     var eventArr = petExploreData.bet && petExploreData.bet[config.slot] instanceof Array ? petExploreData.bet[config.slot] : [];
     var p;
     try {
@@ -52590,7 +52601,7 @@ function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSk
     } catch (e) {
         p = { totalP: 5 };
     }
-    var lines = ["🌕 추석 이벤트 탐험 지도 🌕", "📅 " + config.periodText, getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "🐰 【11】 " + config.name + "【/탐 11】", "현재 참여: " + eventArr.length + "명", "🏰 길드 가입 유저 전용", "💰 매시간 참가비: 🅟" + numberWithCommas(config.participationFee), "🌕 성공 보상: 황금당근 " + config.rewardMin + "~" + config.rewardMax + "개", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "현재 내 탐험지: " + (myBet === config.slot ? config.name : "없음"), "현재 성공확률: " + formatPercent1(p.totalP) + "%", "내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, sender, data)) + "개", "", "📋 성공확률 상세", "기본" + (p.baseP || 0) + "% + 티어" + (p.tierP || 0) + "% + 매력" + (p.expP || 0) + "% + 영주" + (p.lordP || 0) + "% + 펫스킬" + (p.traitP || 0) + "% + 펜던트" + (p.pendantP || 0) + "% + 호프" + (p.premiumP || 0) + "% + 홈뱃지" + (p.homeBadgeP || 0) + "% + 확률UP" + (p.itemP || 0) + "% - 디버프" + (p.penaltyP || 0) + "% = " + formatPercent1(p.totalP) + "%", "", "🛍️ 이벤트 상품 확인: /달토끼상점", "※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다."];
+    var lines = ["🌕 추석 이벤트 탐험 지도 🌕", "📅 " + config.periodText, getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "🐰 【11】 " + config.name + "【/탐 11】", "현재 참여: " + eventArr.length + "명", "🏰 길드 가입 유저 전용", "💰 매시간 참가비: 🅟" + numberWithCommas(config.participationFee), "🌕 성공 보상: 황금당근 " + config.rewardMin + "~" + config.rewardMax + "개", "━━━━━━━━━━━━", "[자동탐험권 고정⛰️: " + myFixedName + "]", "[/자동탐고정 11 입력시 고정]", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "현재 내 탐험지: " + (myBet === config.slot ? config.name : "없음"), "현재 성공확률: " + formatPercent1(p.totalP) + "%", "내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, sender, data)) + "개", "━━━━━━━━━━━━", "🛍️ 이벤트 상품 확인: /달토끼상점", "※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.", "", allsee, "📋 성공확률 상세", "기본" + (p.baseP || 0) + "% + 티어" + (p.tierP || 0) + "% + 매력" + (p.expP || 0) + "% + 영주" + (p.lordP || 0) + "% + 펫스킬" + (p.traitP || 0) + "% + 펜던트" + (p.pendantP || 0) + "% + 호프" + (p.premiumP || 0) + "% + 홈뱃지" + (p.homeBadgeP || 0) + "% + 확률UP" + (p.itemP || 0) + "% - 디버프" + (p.penaltyP || 0) + "% = " + formatPercent1(p.totalP) + "%"];
     return lines.join("\n");
 }
 
@@ -52686,20 +52697,20 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
 
     var parts = msg.trim().split(/\s+/);
     if (parts.length < 2) {
-        var usageRange = isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9";
-        if (isGuildRaidExploreEventActive(petExploreData)) usageRange += ", 10";
-        var usageExample = isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "4");
+        var usageRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9");
+        if (!isChuseokExploreEventActive(petExploreData) && isGuildRaidExploreEventActive(petExploreData)) usageRange += ", 10";
+        var usageExample = isChuseokExploreEventActive(petExploreData) ? "11" : (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "4"));
         var usageText = "사용법: /자동탐고정 " + usageRange + "\n(예: /자동탐고정 " + usageExample + ")";
         return { text: usageText, petExploreData: petExploreData, data: data };
     }
 
     var n = String(parts[1]);
     var fixedNo = parseInt(n, 10);
-    var isValid = (fixedNo >= GLOBAL_CONFIG.petExplore.slots.mineMin && fixedNo <= GLOBAL_CONFIG.petExplore.slots.regularMax) || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
+    var isValid = isChuseokExploreEventActive(petExploreData) ? n === GLOBAL_CONFIG.petExplore.chuseokEvent.slot : (fixedNo >= GLOBAL_CONFIG.petExplore.slots.mineMin && fixedNo <= GLOBAL_CONFIG.petExplore.slots.regularMax) || (n === "0" && isPetExploreEventMineActive(petExploreData)) || (n === "10" && isGuildRaidExploreEventActive(petExploreData));
     if (!isValid) {
-        var validRange = isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9";
-        if (isGuildRaidExploreEventActive(petExploreData)) validRange += ", 10";
-        var validExample = isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "2");
+        var validRange = isChuseokExploreEventActive(petExploreData) ? "11" : (isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9");
+        if (!isChuseokExploreEventActive(petExploreData) && isGuildRaidExploreEventActive(petExploreData)) validRange += ", 10";
+        var validExample = isChuseokExploreEventActive(petExploreData) ? "11" : (isGuildRaidExploreEventActive(petExploreData) ? "10" : (isPetExploreEventMineActive(petExploreData) ? "0" : "2"));
         var validText = validRange + " 중 하나만 입력해줘!\n예) /자동탐고정 " + validExample;
         return { text: validText, petExploreData: petExploreData, data: data };
     }
@@ -52715,7 +52726,8 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
-        10: "길드레이드던전👾"
+        10: "길드레이드던전👾",
+        11: "달토끼 탐색🐰"
     };
 
     // 동일 고정 재입력은 그냥 안내만(소모 없음)
@@ -52732,9 +52744,11 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
     petExploreData.autoFixedDungeon[sender] = n;
 
     // (선택) 안내 문구: 던전/미궁은 입장권 필요하다는 정보를 제공(소모X)
-    if (isRegularDungeonExploreSlot(n) || isMazeExploreSlot(n) || n === "10") {
+    if (isRegularDungeonExploreSlot(n) || isMazeExploreSlot(n) || n === "10" || n === "11") {
         var ticketGuide = "";
-        if (n === "10") {
+        if (n === "11") {
+            ticketGuide = "※ 탐11 자동탐험은 길드 가입과 매시간 1억 포인트가 필요합니다.\n포인트가 부족하면 참가비와 보상 없이 미참여 처리됩니다.";
+        } else if (n === "10") {
             ticketGuide = "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다.";
         } else if (isMazeExploreSlot(n)) {
             ticketGuide = "※ 탐" + n + " 자동탐험은 " + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n" + GLOBAL_CONFIG.petExplore.maze.ticketItemName + "이 부족하면 보상에서 제외됩니다.";
