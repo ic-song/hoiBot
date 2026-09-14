@@ -1699,6 +1699,28 @@ blockedNicknameTerms: [
             label: "🎉이벤트 던전👾",
             rewardItem: "길드레이드던전박스👾(/레이드박스오픈)"
         },
+        chuseokEvent: {
+            slot: "11",
+            name: "달토끼 탐색🐰",
+            currencyName: "황금당근🌕",
+            participationFee: 100000000,
+            rewardMin: 1,
+            rewardMax: 3,
+            periodText: "9월 16일 ~ 10월 10일",
+            defaultShop: [
+                { id: 1, name: "달토끼의 첫 선물🐰", price: 5, limit: 1, rewards: [{ name: "펫 강화석⭐", count: 100 }, { name: "미니펫 강화석💫", count: 300 }] },
+                { id: 2, name: "달빛 쑥쑥 성장팩⭐", price: 20, limit: 3, rewards: [{ name: "펫 강화석⭐", count: 500 }, { name: "미니펫 강화석💫", count: 500 }] },
+                { id: 3, name: "달토끼의 뽑기잔치🐹", price: 25, limit: 3, rewards: [{ name: "미니펫뽑기🐹(/미니펫오픈)", count: 1500 }, { name: "펫스윗홈인테리어샵🖼️(/샵오픈)", count: 1500 }] },
+                { id: 4, name: "보름달 포인트 주머니🪙", price: 15, limit: 3, rewards: [{ name: "1억포인트상자🪙(/포인트상자오픈)", count: 10 }] },
+                { id: 5, name: "반짝반짝 다이아 선물💎", price: 50, limit: 3, rewards: [{ name: "다이아상자💎(소)", count: 1 }] },
+                { id: 6, name: "달빛 가득 큐브상자💟", price: 50, limit: 5, rewards: [{ name: "홈뱃지 큐브💟", count: 250 }] },
+                { id: 7, name: "달토끼의 펜던트 공방📿", price: 150, limit: 10, rewards: [{ name: "펜던트뽑기💎(/펜던트오픈)", count: 100 }, { name: "펜던트 강화석📿", count: 10 }] },
+                { id: 8, name: "달토끼의 비밀금고🔒", price: 10, limit: 10, rewards: [{ name: "호이의 봉인금고🔒(/봉인금고오픈 숫자)", count: 3 }, { name: "해방의 열쇠🗝️(/봉인금고오픈 숫자)", count: 3 }] },
+                { id: 9, name: "소원을 담은 만능상자🔐", price: 100, limit: 1, rewards: [{ name: "만능상자🔐(/만능상자오픈 숫자)", count: 1 }] },
+                { id: 10, name: "한가위 도파민 대잔치🤩", price: 300, limit: 10, rewards: [{ name: "도파민패키지🤩[13]", count: 1 }] },
+                { id: 11, name: "달토끼의 전설 보물🌕", price: 50, limit: 2, rewards: [{ name: "전설의 돌맹이🗿", count: 50 }] }
+            ]
+        },
         maze: {
             ticketItemName: "미궁 입장권🕋",
             rewardItem: "펜던트미궁박스💎(/펜던트미궁박스오픈)",
@@ -7028,8 +7050,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     java.lang.Thread.sleep(10000);
 
-                    // 실제 탐험 참가자만 일일 탐험 카운트 증가
-                    incrementDailyExploreCountForParticipants(data, petExploreData);
+                    // 일반 탐험은 출발 시 카운트하고, 추석 이벤트는 실제 참가비 결제 성공 시 카운트한다.
+                    if (!isChuseokExploreEventActive(petExploreData)) incrementDailyExploreCountForParticipants(data, petExploreData);
 
                     //  doPetExploreInterval에 petExploreData 전달
                     var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
@@ -24894,6 +24916,91 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (msg === "/추석이벤트활성화" && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
+                    petExploreData.chuseokEvent.active = true;
+                    saveJsonFile(petExploreData, petExplorePath);
+                    replier.reply("✅ 추석 이벤트가 활성화되었습니다.\n\n🌕 기간: " + GLOBAL_CONFIG.petExplore.chuseokEvent.periodText + "\n🏰 참여 대상: 길드 가입 유저\n🐰 이벤트 탐험: /탐 11\n⏰ 탐험 시간: 24시간 / 매시간 정각\n💰 참가비: 탐험 1회당 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "\n🌕 성공 보상: 황금당근 1~3개\n🛍️ 이벤트 상점: /달토끼상점\n\n※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.");
+                    return;
+                }
+
+                if (msg === "/추석이벤트비활성화" && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
+                    petExploreData.chuseokEvent.active = false;
+                    petExploreData.chuseokEvent.balances = {};
+                    petExploreData.chuseokEvent.processedHours = {};
+                    var movedChuseokCount = moveChuseokBetsToRandomMine(petExploreData);
+                    saveJsonFile(petExploreData, petExplorePath);
+                    replier.reply("🌕 추석 이벤트가 종료되었습니다.\n\n🌕 전체 계정의 황금당근 회수 완료\n🐰 달토끼 탐색 참여자 랜덤 이동 완료: " + movedChuseokCount + "명\n🗺️ 일반 탐험 이용 재개\n🛍️ 달토끼상점 이용 종료");
+                    return;
+                }
+
+                if (msg === "/달토끼상점") {
+                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
+                    replier.reply(buildChuseokShopMessage(data, petData, guildData, petExploreData, sender));
+                    return;
+                }
+
+                if (/^\/달토끼상점구매\s+\d+\s+\d+$/.test(msg)) {
+                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
+                    var moonShopBuyParts = msg.trim().split(/\s+/);
+                    var moonShopBuyResult = purchaseChuseokShopItem(data, petExploreData, guildData, sender, moonShopBuyParts[1], moonShopBuyParts[2]);
+                    if (moonShopBuyResult.ok) {
+                        saveJsonFile(data, filePath);
+                        saveJsonFile(petExploreData, petExplorePath);
+                    }
+                    replier.reply(moonShopBuyResult.message);
+                    return;
+                }
+
+                if (msg === "/달토끼상점구매" || msg.indexOf("/달토끼상점구매 ") === 0) {
+                    replier.reply("사용법: /달토끼상점구매 [번호] [횟수]\n예: /달토끼상점구매 5 1");
+                    return;
+                }
+
+                if (/^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(msg) && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                    var moonShopAddMatch = msg.match(/^\/달토끼상점추가\s+(.+)\s+(\d+)\s+(\d+)\s+(\d+)$/);
+                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
+                    var moonShopProductName = moonShopAddMatch[1].trim();
+                    var moonShopItemId = petExploreData.chuseokEvent.nextShopId;
+                    var moonShopRewardCount = parseInt(moonShopAddMatch[2], 10);
+                    var moonShopPrice = parseInt(moonShopAddMatch[3], 10);
+                    var moonShopLimit = parseInt(moonShopAddMatch[4], 10);
+                    if (moonShopRewardCount < 1 || moonShopPrice < 1 || moonShopLimit < 1) {
+                        replier.reply("❌ 상품 수량, 황금당근 가격, 계정당 구매 한도는 모두 1 이상이어야 합니다.");
+                        return;
+                    }
+                    var moonShopRewards = createChuseokAdminShopRewards(moonShopProductName, moonShopRewardCount, loadJsonFile(itemListPath), loadJsonFile(packageInfoPath));
+                    if (!moonShopRewards) {
+                        replier.reply("❌ 지급 가능한 기존 상품·아이템·패키지를 찾을 수 없습니다.\n상품명을 정확히 확인해주세요.");
+                        return;
+                    }
+                    petExploreData.chuseokEvent.shop.push({ id: moonShopItemId, name: moonShopProductName, price: moonShopPrice, limit: moonShopLimit, rewards: moonShopRewards, active: true });
+                    petExploreData.chuseokEvent.nextShopId = moonShopItemId + 1;
+                    saveJsonFile(petExploreData, petExplorePath);
+                    replier.reply("✅ 달토끼상점 상품 추가 완료\n\n상품 번호: " + moonShopItemId + "번\n상품명: " + moonShopProductName + "\n지급 수량: " + moonShopRewardCount + "세트\n필요한 황금당근: " + moonShopPrice + "개\n계정당 구매 한도: " + moonShopLimit + "회");
+                    return;
+                }
+
+                if (msg === "/달토끼상점추가" || msg.indexOf("/달토끼상점추가 ") === 0) {
+                    if (sender == "호이 남" || isMaster(sender) || isAdmin(sender)) replier.reply("사용법: /달토끼상점추가 [상품명] [상품갯수] [황금당근필요갯수] [계정당구매횟수]");
+                    return;
+                }
+
+                if (/^\/달토끼상점삭제\s+\d+$/.test(msg) && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                    var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
+                    var moonShopDeleteId = parseInt(msg.trim().split(/\s+/)[1], 10);
+                    var moonShopDeleteItem = getChuseokShopItem(petExploreData, moonShopDeleteId);
+                    if (!moonShopDeleteItem || moonShopDeleteItem.active === false) {
+                        replier.reply("❌ 판매 중인 상품 번호가 아닙니다.");
+                        return;
+                    }
+                    moonShopDeleteItem.active = false;
+                    saveJsonFile(petExploreData, petExplorePath);
+                    replier.reply("✅ 달토끼상점 상품 삭제 완료\n\n" + moonShopDeleteId + "번. " + moonShopDeleteItem.name);
+                    return;
+                }
+
                 if (msg === "/지도") {
                     var homeData = loadJsonFile(homeDataFile);
                     var out = buildPetExploreStatusMessage(data, petData, homeData, guildData, petSkillData, sender);
@@ -24906,7 +25013,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(out);
                 }
 
-                if (msg === "/탐험유저확인" || /^\/탐험유저확인\s+(0|[1-9]|10)$/.test(msg)) {
+                if (msg === "/탐험유저확인" || /^\/탐험유저확인\s+(0|[1-9]|10|11)$/.test(msg)) {
                     if (!(sender == "호이 남" || isAdmin(sender) || isMaster(sender))) return;
                     var petExploreData = loadJsonFile(petExplorePath);
                     var cleanupResult = cleanupInvalidPetExploreUsers(petExploreData, data);
@@ -24977,6 +25084,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "/자동탐고정" || /^\/자동탐고정\s+\d+$/.test(msg)) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
+                    if (isChuseokExploreEventActive(petExploreData)) {
+                        replier.reply("🌕 추석 이벤트 기간에는 자동탐험 고정을 변경할 수 없습니다.\n🐰 참여방법: /탐 11");
+                        return;
+                    }
                     cleanupInvalidPetExploreUsers(petExploreData, data);
                     savePetExploreMigrationIfNeeded(petExploreData);
                     var result = handleAutoExploreFixCommand(petExploreData, data, sender, msg);
@@ -24998,9 +25109,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var parts = msg.trim().split(/\s+/);
                     var dungeonNo = null;
 
-                    if (parts.length === 1) {
+                    if (isChuseokExploreEventActive(petExploreData)) {
+                        if (parts.length !== 2 || parts[1] !== "11") {
+                            replier.reply("🌕 추석 이벤트 진행 중입니다.\n\n이벤트 기간에는 달토끼 탐색만 이용할 수 있어요.\n🐰 참여방법: /탐 11");
+                            return;
+                        }
+                        if (!isCurrentGuildMemberForChuseok(data, guildData, sender)) {
+                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🏰 길드 가입 유저만 참여할 수 있어요.\n/길드목록 으로 길드가입을 해보세요 :)\n\n길드 가입 후 달토끼 탐색과 이벤트 상품 교환을 이용해 주세요.");
+                            return;
+                        }
+                        dungeonNo = "11";
+                    }
+
+                    if (!dungeonNo && parts.length === 1) {
                         dungeonNo = getRandomRegularMineExploreSlot();
-                    } else {
+                    } else if (!dungeonNo) {
                         var n = parseInt(parts[1], 10);
                         var isGuildRaidInput = n === 10 && isGuildRaidExploreEventActive(petExploreData);
                         if (isNaN(n) || n < 0 || (n > GLOBAL_CONFIG.petExplore.slots.regularMax && !isGuildRaidInput) || (n === 0 && !isPetExploreEventMineActive(petExploreData))) {
@@ -48476,6 +48599,9 @@ function initPetExploreData(petExploreData) {
     if (!Array.isArray(petExploreData.bet["10"])) {
         petExploreData.bet["10"] = [];
     }
+    if (!Array.isArray(petExploreData.bet["11"])) {
+        petExploreData.bet["11"] = [];
+    }
 
     // 유저별 현재 배팅 던전
     if (!petExploreData.userBet) {
@@ -48506,6 +48632,9 @@ function initPetExploreData(petExploreData) {
 
     petExploreData = migratePetExploreContentSlots(petExploreData);
 
+    // 기존 탐험 슬롯 마이그레이션 뒤에도 추석 이벤트 전용 슬롯을 보장한다.
+    if (!Array.isArray(petExploreData.bet["11"])) petExploreData.bet["11"] = [];
+
     // 이벤트 광산 상태
     if (!petExploreData.eventMine || typeof petExploreData.eventMine !== "object") {
         petExploreData.eventMine = {};
@@ -48534,6 +48663,17 @@ function initPetExploreData(petExploreData) {
         petExploreData.guildRaidEvent.rewardItem = GLOBAL_CONFIG.petExplore.guildRaidEvent.rewardItem;
     }
 
+    // 추석 달토끼 이벤트 상태
+    if (!petExploreData.chuseokEvent || typeof petExploreData.chuseokEvent !== "object") petExploreData.chuseokEvent = {};
+    var chuseokEvent = petExploreData.chuseokEvent;
+    if (typeof chuseokEvent.active !== "boolean") chuseokEvent.active = false;
+    if (!chuseokEvent.balances || typeof chuseokEvent.balances !== "object" || chuseokEvent.balances instanceof Array) chuseokEvent.balances = {};
+    if (!chuseokEvent.purchases || typeof chuseokEvent.purchases !== "object" || chuseokEvent.purchases instanceof Array) chuseokEvent.purchases = {};
+    if (!chuseokEvent.processedHours || typeof chuseokEvent.processedHours !== "object" || chuseokEvent.processedHours instanceof Array) chuseokEvent.processedHours = {};
+    if (!(chuseokEvent.shop instanceof Array) || chuseokEvent.shop.length < 1) chuseokEvent.shop = createDefaultChuseokShop();
+    var nextChuseokShopId = parseInt(chuseokEvent.nextShopId, 10);
+    if (isNaN(nextChuseokShopId) || nextChuseokShopId < 1) chuseokEvent.nextShopId = getNextChuseokShopId(chuseokEvent.shop);
+
     return petExploreData;
 }
 
@@ -48556,6 +48696,217 @@ function isGuildRaidExploreEventActive(petExploreData) {
     return !!(petExploreData && petExploreData.guildRaidEvent && petExploreData.guildRaidEvent.active);
 }
 
+// 추석 이벤트 기본 상점 구성을 복사하는 함수
+function createDefaultChuseokShop() {
+    var defaults = GLOBAL_CONFIG.petExplore.chuseokEvent.defaultShop;
+    var shop = [];
+    for (var i = 0; i < defaults.length; i++) {
+        var rewards = [];
+        for (var j = 0; j < defaults[i].rewards.length; j++) rewards.push({ name: defaults[i].rewards[j].name, count: defaults[i].rewards[j].count });
+        shop.push({ id: defaults[i].id, name: defaults[i].name, price: defaults[i].price, limit: defaults[i].limit, rewards: rewards, active: true });
+    }
+    return shop;
+}
+
+// 추석 상점에서 다음에 사용할 고유 번호를 반환하는 함수
+function getNextChuseokShopId(shop) {
+    var maxId = 0;
+    for (var i = 0; i < shop.length; i++) {
+        var id = parseInt(shop[i] && shop[i].id, 10) || 0;
+        if (id > maxId) maxId = id;
+    }
+    return maxId + 1;
+}
+
+// 관리자 상품 추가 입력을 실제 지급 가능한 보상 구성으로 변환하는 함수
+function createChuseokAdminShopRewards(productName, setCount, itemListData, packageInfoData) {
+    var normalizedName = String(productName || "").replace(/\s+/g, "");
+    var defaults = GLOBAL_CONFIG.petExplore.chuseokEvent.defaultShop;
+    for (var i = 0; i < defaults.length; i++) {
+        if (String(defaults[i].name).replace(/\s+/g, "") !== normalizedName) continue;
+        var defaultRewards = [];
+        for (var j = 0; j < defaults[i].rewards.length; j++) defaultRewards.push({ name: defaults[i].rewards[j].name, count: defaults[i].rewards[j].count * setCount });
+        return defaultRewards;
+    }
+    var knownItems = [];
+    if (itemListData && itemListData.nonItems instanceof Array) knownItems = knownItems.concat(itemListData.nonItems);
+    if (itemListData && itemListData.untradableList instanceof Array) knownItems = knownItems.concat(itemListData.untradableList);
+    if (knownItems.indexOf(productName) !== -1) return [{ name: productName, count: setCount }];
+    if (packageInfoData instanceof Array) {
+        for (var p = 0; p < packageInfoData.length; p++) {
+            var packageInfo = packageInfoData[p];
+            if (!packageInfo) continue;
+            if (packageInfo.name === productName && packageInfo.enabled !== false) return [{ name: productName, count: setCount }];
+            var rewards = packageInfo.rewards instanceof Array ? packageInfo.rewards : [];
+            for (var r = 0; r < rewards.length; r++) {
+                if (rewards[r] && rewards[r].type === "item" && rewards[r].name === productName) return [{ name: productName, count: setCount }];
+            }
+        }
+    }
+    return null;
+}
+
+// 추석 이벤트 활성 여부를 반환하는 함수
+function isChuseokExploreEventActive(petExploreData) {
+    return !!(petExploreData && petExploreData.chuseokEvent && petExploreData.chuseokEvent.active);
+}
+
+// 최신 회원·길드 데이터를 함께 확인해 현재 길드 가입 여부를 판정하는 함수
+function isCurrentGuildMemberForChuseok(data, guildData, user) {
+    var guildId = getMyGuildId(data, user);
+    if (!guildId || !guildData || !guildData.guilds || !guildData.guilds[guildId]) return false;
+    var guild = guildData.guilds[guildId];
+    return !!(guild.members && guild.members[user]);
+}
+
+// 사용자의 황금당근 보유량을 반환하는 함수
+function getChuseokCarrotBalance(petExploreData, user) {
+    petExploreData = initPetExploreData(petExploreData);
+    return Math.max(0, parseInt(petExploreData.chuseokEvent.balances[user], 10) || 0);
+}
+
+// 추석 상점의 판매 상품을 고유 번호로 찾는 함수
+function getChuseokShopItem(petExploreData, itemId) {
+    var shop = petExploreData.chuseokEvent.shop;
+    for (var i = 0; i < shop.length; i++) {
+        if (parseInt(shop[i] && shop[i].id, 10) === parseInt(itemId, 10)) return shop[i];
+    }
+    return null;
+}
+
+// 사용자의 상품별 누적 구매 횟수를 반환하는 함수
+function getChuseokPurchaseCount(petExploreData, user, itemId) {
+    var userPurchases = petExploreData.chuseokEvent.purchases[user] || {};
+    return Math.max(0, parseInt(userPurchases[String(itemId)], 10) || 0);
+}
+
+// 추석 상점 상품의 보상 구성을 화면 문구로 만드는 함수
+function formatChuseokShopRewards(rewards, multiplier) {
+    var lines = [];
+    multiplier = Math.max(1, parseInt(multiplier, 10) || 1);
+    for (var i = 0; i < rewards.length; i++) lines.push(rewards[i].name + " ×" + numberWithCommas(rewards[i].count * multiplier));
+    return lines;
+}
+
+// 달토끼상점 전체보기 메시지를 만드는 함수
+function buildChuseokShopMessage(data, petData, guildData, petExploreData, user) {
+    petExploreData = initPetExploreData(petExploreData);
+    if (!isChuseokExploreEventActive(petExploreData)) return "🌕 현재 추석 이벤트가 진행 중이 아닙니다.";
+    var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
+    var lines = ["🐰🌕 호이월드 달토끼상점 🌕🐰", "", "달토끼가 준비한 풍성한 한가위 선물!", "황금당근🌕을 모아 원하는 상품과 교환하세요.", "", "📅 " + config.periodText, "🏰 길드 가입 유저만 참여 가능", "🌕 내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, user)) + "개", "", "🛍️ 구매방법", "/달토끼상점구매 [번호] [횟수]", "", "💡 입력 예시", "/달토끼상점구매 5 1", "", "📚 상품 목록은 전체보기로 확인하세요 👇", allsee, "🎁 달토끼상점 상품 목록", "", "※ 아래 구성은 상품 1회 구매 기준입니다.", "※ 상품 구매 시에도 길드 가입 상태여야 합니다.", "※ 구매 한도는 이벤트 전체 기간, 계정당 기준입니다.", "━━━━━━━━━━━━━━━"];
+    var shop = petExploreData.chuseokEvent.shop;
+    for (var i = 0; i < shop.length; i++) {
+        var item = shop[i];
+        if (!item || item.active === false) continue;
+        var bought = getChuseokPurchaseCount(petExploreData, user, item.id);
+        lines.push("");
+        lines.push(item.id + ". " + item.name);
+        var rewardLines = formatChuseokShopRewards(item.rewards, 1);
+        for (var j = 0; j < rewardLines.length; j++) lines.push(rewardLines[j]);
+        lines.push("🌕 " + numberWithCommas(item.price) + "개｜" + (bought >= item.limit ? "✅ 구매 완료 · " : "구매 ") + bought + "/" + item.limit + "회");
+    }
+    lines.push("");
+    lines.push("━━━━━━━━━━━━━━━");
+    lines.push("/탐 11 → 달토끼 탐색🐰");
+    lines.push("성공 시 황금당근 1~3개 획득!");
+    lines.push("💰 참가비: 탐험 1회당 🅟" + numberWithCommas(config.participationFee));
+    lines.push("📢 이벤트 종료 시 남은 황금당근은 모두 회수됩니다.");
+    return lines.join("\n");
+}
+
+// 달토끼상점 구매를 검증하고 한 번에 반영하는 함수
+function purchaseChuseokShopItem(data, petExploreData, guildData, user, itemId, count) {
+    petExploreData = initPetExploreData(petExploreData);
+    if (!isChuseokExploreEventActive(petExploreData)) return { ok: false, message: "🌕 현재 추석 이벤트가 진행 중이 아닙니다." };
+    if (!isCurrentGuildMemberForChuseok(data, guildData, user)) return { ok: false, message: "🏰 길드 가입 유저만 달토끼상점 상품을 구매할 수 있어요.\n/길드목록 으로 길드가입을 해보세요 :)" };
+    count = parseInt(count, 10);
+    if (isNaN(count) || count < 1) return { ok: false, message: "❌ 구매 횟수는 1 이상의 숫자로 입력해주세요." };
+    var item = getChuseokShopItem(petExploreData, itemId);
+    if (!item || item.active === false) return { ok: false, message: "❌ 판매 중인 상품 번호가 아닙니다." };
+    var bought = getChuseokPurchaseCount(petExploreData, user, item.id);
+    var remainingLimit = item.limit - bought;
+    if (count > remainingLimit) return { ok: false, message: "❌ 구매 가능한 횟수를 초과했어요.\n\n이 상품은 앞으로 " + Math.max(0, remainingLimit) + "회만 구매할 수 있어요." };
+    var balance = getChuseokCarrotBalance(petExploreData, user);
+    var cost = item.price * count;
+    if (balance < cost) return { ok: false, message: "🌕 황금당근이 부족해요.\n\n필요한 황금당근: " + cost + "개\n보유한 황금당근: " + balance + "개\n부족한 황금당근: " + (cost - balance) + "개" };
+    if (!data.member[user].bag || typeof data.member[user].bag !== "object") data.member[user].bag = {};
+    petExploreData.chuseokEvent.balances[user] = balance - cost;
+    if (!petExploreData.chuseokEvent.purchases[user]) petExploreData.chuseokEvent.purchases[user] = {};
+    petExploreData.chuseokEvent.purchases[user][String(item.id)] = bought + count;
+    for (var i = 0; i < item.rewards.length; i++) addItem(data, user, item.rewards[i].name, item.rewards[i].count * count);
+    var rewardLines = formatChuseokShopRewards(item.rewards, count);
+    var totalBought = bought + count;
+    var lines = ["🐰 달토끼상점 구매 완료!", "━━━━━━━━━━━━", item.name, "🛍️ 구매: " + count + "회", "", "🎁 받은 아이템"];
+    for (var j = 0; j < rewardLines.length; j++) lines.push(rewardLines[j]);
+    lines.push("━━━━━━━━━━━━");
+    lines.push("🌕 사용한 황금당근: " + cost + "개");
+    lines.push("🌕 남은 황금당근: " + (balance - cost) + "개");
+    lines.push("");
+    lines.push("📦 해당 상품 구매: " + totalBought + "/" + item.limit + "회");
+    if (totalBought >= item.limit) lines.push("✅ 구매 한도를 모두 사용했어요!");
+    return { ok: true, message: lines.join("\n") };
+}
+
+// 달토끼 탐색 참가자를 일반 광산 1~3번으로 랜덤 이동하는 함수
+function moveChuseokBetsToRandomMine(petExploreData) {
+    petExploreData = initPetExploreData(petExploreData);
+    var arr = petExploreData.bet["11"];
+    var moved = 0;
+    for (var i = 0; i < arr.length; i++) {
+        var entry = arr[i];
+        if (!entry || !entry.user) continue;
+        var target = getRandomRegularMineExploreSlot();
+        entry.dungeon = target;
+        petExploreData.bet[target].push(entry);
+        petExploreData.userBet[entry.user] = target;
+        moved++;
+    }
+    petExploreData.bet["11"] = [];
+    return moved;
+}
+
+// 추석 이벤트 정각 탐험을 처리하는 함수
+function doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
+    var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
+    var arr = petExploreData.bet[config.slot] || [];
+    if (!Array.isArray(arr) || arr.length < 1) return null;
+    var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 같은 정각 중복 처리 판정 키
+    var lines = [];
+    var participated = 0;
+    for (var i = 0; i < arr.length; i++) {
+        var entry = arr[i];
+        if (!entry || !entry.user || !data.member[entry.user]) continue;
+        var user = entry.user;
+        if (!isCurrentGuildMemberForChuseok(data, guildData, user)) {
+            lines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n🏰 길드 미가입: 참가비·보상 없음");
+            continue;
+        }
+        if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
+        petExploreData.chuseokEvent.processedHours[user] = hourKey;
+        var point = Number(data.member[user].point) || 0;
+        if (point < config.participationFee) {
+            lines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n💰 필요 포인트 🅟" + numberWithCommas(config.participationFee) + "\n포인트 부족: 참가비·보상 없음");
+            continue;
+        }
+        data.member[user].point = point - config.participationFee;
+        if (typeof data.member[user].exploreCnt !== "number") data.member[user].exploreCnt = 0;
+        data.member[user].exploreCnt++;
+        var successPercent = calcExploreSuccessPercent(data, petData, homeData, petSkillData, user, config.slot, guildData);
+        pickAndConsumeExploreUpItem(data, user);
+        var success = Math.random() * 100 < successPercent.totalP;
+        petExploreData = updatePetExploreRecord(petExploreData, user, success);
+        var reward = success ? Math.floor(Math.random() * (config.rewardMax - config.rewardMin + 1)) + config.rewardMin : 0;
+        if (reward > 0) petExploreData.chuseokEvent.balances[user] = getChuseokCarrotBalance(petExploreData, user) + reward;
+        lines.push("[" + checkRank(data, petData, guildData, user) + "] 달토끼 탐색 " + (success ? "성공(✅)" : "실패(❌)") + "\n🌕 획득 " + reward + "개 · 보유 " + getChuseokCarrotBalance(petExploreData, user) + "개\n💰 참가비 🅟" + numberWithCommas(config.participationFee));
+        participated++;
+    }
+    if (lines.length < 1) return null;
+    clearPetExploreTransientSaveFlags(petExploreData);
+    saveJsonFile(data, filePath);
+    saveJsonFile(petExploreData, petExplorePath);
+    return "🐰 달토끼 탐색 결과\n참여 " + participated + "명\n" + allsee + "\n" + lines.join("\n━━━━━━━━━━━━\n") + "\n\n🛍️ 아이템 교환: /달토끼상점";
+}
+
 // 펫탐험 마이그레이션 결과 저장 필요 여부를 처리하는 함수
 function savePetExploreMigrationIfNeeded(petExploreData) {
     if (!petExploreData || (!petExploreData._migrationSaveRequired && !petExploreData._cleanupSaveRequired)) return;
@@ -48572,7 +48923,7 @@ function clearPetExploreTransientSaveFlags(petExploreData) {
 
 // 삭제된 계정의 펫탐험 잔여 데이터를 정리하는 함수
 function cleanupInvalidPetExploreUsers(petExploreData, data) {
-    var result = { bet: 0, userBet: 0, autoFixed: 0, record: 0, total: 0 };
+    var result = { bet: 0, userBet: 0, autoFixed: 0, record: 0, chuseok: 0, total: 0 };
     if (!petExploreData || !data || !data.member) return result;
 
     if (petExploreData.bet && typeof petExploreData.bet === "object") {
@@ -48623,7 +48974,21 @@ function cleanupInvalidPetExploreUsers(petExploreData, data) {
         }
     }
 
-    result.total = result.bet + result.userBet + result.autoFixed + result.record;
+    if (petExploreData.chuseokEvent) {
+        var chuseokUserMaps = [petExploreData.chuseokEvent.balances, petExploreData.chuseokEvent.purchases, petExploreData.chuseokEvent.processedHours];
+        for (var chuseokMapIndex = 0; chuseokMapIndex < chuseokUserMaps.length; chuseokMapIndex++) {
+            var chuseokMap = chuseokUserMaps[chuseokMapIndex] || {};
+            for (var chuseokUser in chuseokMap) {
+                if (!chuseokMap.hasOwnProperty(chuseokUser)) continue;
+                if (!data.member[chuseokUser]) {
+                    delete chuseokMap[chuseokUser];
+                    result.chuseok++;
+                }
+            }
+        }
+    }
+
+    result.total = result.bet + result.userBet + result.autoFixed + result.record + result.chuseok;
     if (result.total > 0) petExploreData._cleanupSaveRequired = true;
     return result;
 }
@@ -48631,7 +48996,7 @@ function cleanupInvalidPetExploreUsers(petExploreData, data) {
 // 펫탐험 삭제 계정 정리 결과 문구를 만드는 함수
 function formatPetExploreCleanupSummary(result) {
     if (!result || result.total <= 0) return "";
-    return "🧹 삭제 계정 펫탐험 데이터 정리\n현재참여 " + result.bet + "건 / 현재탐험 " + result.userBet + "건 / 자동탐고정 " + result.autoFixed + "건 / 전적 " + result.record + "건";
+    return "🧹 삭제 계정 펫탐험 데이터 정리\n현재참여 " + result.bet + "건 / 현재탐험 " + result.userBet + "건 / 자동탐고정 " + result.autoFixed + "건 / 전적 " + result.record + "건 / 추석이벤트 " + result.chuseok + "건";
 }
 
 // 현재 지도 배팅 유저를 1~3번 탐험지로 한 번 재배치하는 함수
@@ -48975,6 +49340,7 @@ function getExploreDungeonName(no, petExploreData) {
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
         10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
+        11: GLOBAL_CONFIG.petExplore.chuseokEvent.name,
         E: "이벤트 던전✡️"
     };
     return map[no] || no + "번";
@@ -49051,6 +49417,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
 
     petExploreData = initPetExploreData(petExploreData);
     cleanupInvalidPetExploreUsers(petExploreData, data);
+    if (isChuseokExploreEventActive(petExploreData)) return doChuseokExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
     if (!petExploreData.bet) return null;
 
     var successLines = [];
@@ -49255,6 +49622,15 @@ function getExploreTotalCount(data, petExploreData) {
     petExploreData = initPetExploreData(petExploreData);
     cleanupInvalidPetExploreUsers(petExploreData, data);
     if (!petExploreData || !petExploreData.bet) return 0;
+
+    if (isChuseokExploreEventActive(petExploreData)) {
+        var chuseokArr = petExploreData.bet["11"] || [];
+        var chuseokCount = 0;
+        for (var c = 0; c < chuseokArr.length; c++) {
+            if (chuseokArr[c] && chuseokArr[c].user && data.member[chuseokArr[c].user]) chuseokCount++;
+        }
+        return chuseokCount;
+    }
 
     var cnt = 0;
 
@@ -51744,7 +52120,8 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
-        10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
+        10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
+        11: GLOBAL_CONFIG.petExplore.chuseokEvent.name
     };
     var targetName = dungeonNameMap[dungeonNo] || dungeonNo + "번 던전";
 
@@ -51754,6 +52131,19 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
         p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, dungeonNo, guildData);
     } catch (e) {
         p = { baseP: 5, tierP: 0, expP: 0, lordP: 0, traitP: 0, pendantP: 0, premiumP: 0, homeBadgeP: 0, itemP: 0, penaltyP: 0, totalP: 5 };
+    }
+
+    if (String(dungeonNo) === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) {
+        var eventConfig = GLOBAL_CONFIG.petExplore.chuseokEvent;
+        var eventOut = "🐰 [" + nickName + "] 님이\n" + targetName + " 준비를 마쳤어요.\n";
+        if (prevDungeon && String(prevDungeon) !== String(dungeonNo)) eventOut += "\n(탐험 변경: " + (dungeonNameMap[prevDungeon] || prevDungeon + "번") + " → " + targetName + ")\n";
+        eventOut += "\n⛰️ 탐험 성공확률: " + formatPercent1(p.totalP) + "%\n";
+        eventOut += "💰 정각 참가비: 🅟" + numberWithCommas(eventConfig.participationFee) + "\n";
+        eventOut += "🌕 성공 보상: 황금당근 " + eventConfig.rewardMin + "~" + eventConfig.rewardMax + "개\n";
+        eventOut += "⏰ 매시간 정각 자동 탐색\n";
+        eventOut += "🛍️ 보유 당근·상품 확인: /달토끼상점\n\n";
+        eventOut += "※ 정산 시 길드 가입과 참가비 보유 여부를 다시 확인합니다.";
+        return eventOut;
     }
 
     var upP = typeof p.itemP === "number" ? p.itemP : 0;
@@ -51816,7 +52206,7 @@ function buildExploreBetMessage(data, petData, homeData, guildData, petSkillData
 function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, msg) {
     var parts = String(msg || "").trim().split(/\s+/);
     var targetDungeon = parts.length >= 2 ? String(parts[1]) : null;
-    var dungeonKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"];
+    var dungeonKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"];
     var dungeonNameMap = {
         0: GLOBAL_CONFIG.petExplore.diamondMineEvent.name,
         1: "펫강화 광산⭐️",
@@ -51828,7 +52218,8 @@ function buildExploreUserCheckMessage(data, petData, guildData, petExploreData, 
         7: "샵오픈 던전🏡",
         8: "보물수호자 벨카르💎",
         9: "잊혀진 대마법사의 유적📙",
-        10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name
+        10: GLOBAL_CONFIG.petExplore.guildRaidEvent.name,
+        11: GLOBAL_CONFIG.petExplore.chuseokEvent.name
     };
     if (!petExploreData || typeof petExploreData !== "object") {
         return "❌ 펫탐험 데이터를 불러올 수 없습니다.";
@@ -51897,6 +52288,8 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     petExploreData = initPetExploreData(petExploreData);
     cleanupInvalidPetExploreUsers(petExploreData, data);
     savePetExploreMigrationIfNeeded(petExploreData);
+
+    if (isChuseokExploreEventActive(petExploreData)) return buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender);
 
     var LINE = "━━━━━━━━━━━━";
     var out = "";
@@ -52074,6 +52467,21 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     out += "※ 확률은 현재 보유 기준이며, 확률UP/보물지도/입장권은 실제 탐험 정산 시 다시 확인됩니다.\n";
 
     return out;
+}
+
+// 추석 이벤트 전용 탐험 지도를 만드는 함수
+function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender) {
+    var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
+    var myBet = petExploreData.userBet && petExploreData.userBet[sender] ? String(petExploreData.userBet[sender]) : null;
+    var eventArr = petExploreData.bet && petExploreData.bet[config.slot] instanceof Array ? petExploreData.bet[config.slot] : [];
+    var p;
+    try {
+        p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, config.slot, guildData);
+    } catch (e) {
+        p = { totalP: 5 };
+    }
+    var lines = ["🌕 추석 이벤트 탐험 지도 🌕", "📅 " + config.periodText, getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "🐰 【11】 " + config.name + "【/탐 11】", "현재 참여: " + eventArr.length + "명", "🏰 길드 가입 유저 전용", "💰 매시간 참가비: 🅟" + numberWithCommas(config.participationFee), "🌕 성공 보상: 황금당근 " + config.rewardMin + "~" + config.rewardMax + "개", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "현재 내 탐험지: " + (myBet === config.slot ? config.name : "없음"), "현재 성공확률: " + formatPercent1(p.totalP) + "%", "내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, sender)) + "개", "", "🛍️ 이벤트 상품 확인: /달토끼상점", "※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다."];
+    return lines.join("\n");
 }
 
 function getExploreTraitBonusPercent(petSkillData, user, dungeonKey) {

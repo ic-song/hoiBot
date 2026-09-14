@@ -5536,6 +5536,7 @@ Status: VERIFIED
 - `/탐 8`
 - `/탐 9`
 - `/탐 10` when the guild raid event is active
+- `/탐 11` when the Chuseok moon-rabbit event is active
 - `/지도`
 - `/탐험알림`
 - `/탐험유저확인`
@@ -5544,6 +5545,12 @@ Status: VERIFIED
 - `/펫탐험이벤트비활성화`
 - `/레이드이벤트활성화`
 - `/레이드이벤트비활성화`
+- `/추석이벤트활성화`
+- `/추석이벤트비활성화`
+- `/달토끼상점`
+- `/달토끼상점구매 [번호] [횟수]`
+- `/달토끼상점추가 [상품명] [상품수량] [가격] [계정당한도]`
+- `/달토끼상점삭제 [번호]`
 - `/레이드박스오픈`
 - `/펜던트미궁박스오픈`
 - `/대마법박스오픈`
@@ -5562,6 +5569,8 @@ Status: VERIFIED
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
+- 추석 이벤트가 활성화되면 일반 탐험 선택·정산과 자동탐고정을 일시 중지하고 길드 가입 유저의 `/탐 11`만 받는다. 매시간 정각 현재 길드 가입과 1억 포인트 보유를 다시 확인하며, 실제 참가자는 1억 포인트를 내고 기존 성공률로 황금당근 1~3개를 획득한다.
+- `/달토끼상점`은 비길드 유저도 열람할 수 있지만 구매는 현재 길드 가입 유저만 가능하다. 황금당근 차감, 계정별 누적 구매 한도, 구성품 지급을 한 번에 저장하며 이벤트 종료 시 당근과 정산 시간 기록을 비우고 `/탐 11` 참가자를 1~3번 광산으로 이동한다. 상품별 구매 이력과 비활성 상품 번호는 보존한다.
 - `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
 - Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket and applies a `-5%` success penalty.
 - Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-15%` success penalty and check `펫던전 입장권🌋` at settlement.
