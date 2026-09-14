@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.506"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.507"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -598,6 +598,126 @@ const ticketTierData = {
         low: 1.0,
         high: 1.5,
         bonusP: 0.7
+    },
+    스타로드: {
+        emoji: "🌠",
+        ticket: 2250000,
+        highticket: 6000,
+        exp: 2500000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 18,
+        experienceBonus: 1,
+        oneTimeReward: true
+    },
+    코스모스: {
+        emoji: "🪐",
+        ticket: 2500000,
+        highticket: 6500,
+        exp: 3000000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 18.5,
+        experienceBonus: 2,
+        oneTimeReward: true
+    },
+    갤럭시: {
+        emoji: "🌌",
+        ticket: 2750000,
+        highticket: 7000,
+        exp: 3500000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 19,
+        experienceBonus: 3,
+        oneTimeReward: true
+    },
+    초월자: {
+        emoji: "🔱",
+        ticket: 3000000,
+        highticket: 7500,
+        exp: 4000000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 19.5,
+        experienceBonus: 4,
+        oneTimeReward: true
+    },
+    창세자: {
+        emoji: "⚛️",
+        ticket: 3250000,
+        highticket: 8000,
+        exp: 4500000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 20,
+        experienceBonus: 5,
+        oneTimeReward: true
+    },
+    오리진: {
+        emoji: "🧬",
+        ticket: 3500000,
+        highticket: 8500,
+        exp: 5000000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 20.5,
+        experienceBonus: 6,
+        oneTimeReward: true
+    },
+    이터널: {
+        emoji: "♾️",
+        ticket: 3750000,
+        highticket: 9000,
+        exp: 5500000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 21,
+        experienceBonus: 7,
+        oneTimeReward: true
+    },
+    태양신: {
+        emoji: "☀️",
+        ticket: 4000000,
+        highticket: 9500,
+        exp: 6000000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 21.5,
+        experienceBonus: 8,
+        oneTimeReward: true
+    },
+    월광신: {
+        emoji: "🌙",
+        ticket: 4250000,
+        highticket: 10000,
+        exp: 6500000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 22,
+        experienceBonus: 9,
+        oneTimeReward: true
+    },
+    호월신: {
+        emoji: "🌟",
+        ticket: 4500000,
+        highticket: 10500,
+        exp: 7000000,
+        low: 1.0,
+        high: 1.5,
+        bonusP: 0.7,
+        exploreBonus: 22.5,
+        experienceBonus: 10,
+        oneTimeReward: true
     }
 };
 // 시련의탑 팁 리스트
@@ -5677,8 +5797,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (msg.length > 3) {
                     data.member[sender].point++;
-                    data.member[sender].exp++;
                     data.member[sender].chatcnt0++;
+                    var chatExperienceGain = 1; // 일반 채팅으로 얻는 기본 경험치
                     //서버데이터 넣기
                     if (!data.member[sender].server) {
                         if (roomToServer[room]) {
@@ -5686,12 +5806,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     if (data.member[sender].boostercnt > 0) {
-                        data.member[sender].exp++;
+                        chatExperienceGain++;
                         data.member[sender].boostercnt--;
                         if (data.member[sender].boostercnt == 0) {
                             replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n 경험치 부스터가 소진되었습니다.");
                         }
                     }
+                    addMemberExperienceWithTierBonus(data, sender, chatExperienceGain);
                 }
                 let requiredExp = 6 * data.member[sender].lv + 84;
                 let lvlupmsg = "";
@@ -17707,9 +17828,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (msg === "/티어") {
+                    replier.reply(buildTierProgressMessage(buildTierProgressPlan(data, petSkillData, sender), false));
+                    return;
+                }
                 if (msg === "/티어적용") {
-                    applyRanksBasedOnTickets(petData, data, replier);
-                    replier.reply("티어가 적용되었습니다.");
+                    var tierPlan = buildTierProgressPlan(data, petSkillData, sender);
+                    if (!tierPlan || !tierPlan.canPromote) {
+                        replier.reply(buildTierProgressMessage(tierPlan, true));
+                        return;
+                    }
+                    var tierApplyResult = applyRankBasedOnTicketsForUser(petData, data, sender);
+                    if (!tierApplyResult.ok || !tierApplyResult.changed) {
+                        replier.reply(tierApplyResult.message || buildTierProgressMessage(tierPlan, true));
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    saveJsonFile(petData, memberPetPath);
+                    replier.reply(buildTierPromotionSuccessMessage(data, sender, tierApplyResult));
+                    if (isTierKing(tierApplyResult.newTierName)) {
+                        noticeMsg("🎉 호이월드 티어 승급 소식!\n[" + sender + "] 님이\n" + formatTicketTierLabel(tierApplyResult.newTierName) + "를 달성했습니다!\n축하해주세요! 👏");
+                    }
+                    return;
                 }
                 if (msg == "/환생") {
                     if (data.member[sender].lv > 299 || data.member[sender].bag["환생버섯🍄"]) {
@@ -18403,32 +18543,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
 
                         var itemName = itemList[itemNumber - 1];
-                        var basePrice = data.shop[itemName] * quantity;
-                        var itemPrice = basePrice;
-                        var taxRate = data.HoiCastle && data.HoiCastle.taxRate ? data.HoiCastle.taxRate : 0;
-                        var baseTaxRate = parseInt(taxRate, 10) || 0;
-                        var taxAmount = 0;
-                        var itemTotalCost = 0;
-                        var taxExempt = false;
-                        var ticketEventCouponPlan = buildTicketEventCouponPurchasePlan(data, sender, itemName, quantity, data.shop[itemName]); // 티켓별 쿠폰 적용 가격과 차감 계획
-                        itemPrice = ticketEventCouponPlan.itemPrice;
-
-                        var pointShopDiscountSkill = "";
-                        if (hasPetSkill(petSkillData, sender, "VIP블랙카드")) {
-                            pointShopDiscountSkill = "VIP블랙카드";
-                            itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.vipBlackCardRate);
-                        } else if (hasPetSkill(petSkillData, sender, "쇼핑광")) {
-                            pointShopDiscountSkill = "쇼핑광";
-                            itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate);
-                        }
-
-                        if (hasPetSkill(petSkillData, sender, "탈세자")) {
-                            taxExempt = true;
-                        }
-
-                        taxRate = taxExempt ? Math.round(baseTaxRate * 0.3 * 10) / 10 : baseTaxRate;
-                        taxAmount = Math.round(itemPrice * (taxRate / 100));
-                        itemTotalCost = itemPrice + taxAmount;
+                        var purchaseQuote = buildPointShopPurchaseQuote(data, petSkillData, sender, itemName, quantity, data.shop[itemName]);
+                        var basePrice = purchaseQuote.basePrice;
+                        var itemPrice = purchaseQuote.itemPrice;
+                        var taxRate = purchaseQuote.taxRate;
+                        var baseTaxRate = purchaseQuote.baseTaxRate;
+                        var taxAmount = purchaseQuote.taxAmount;
+                        var itemTotalCost = purchaseQuote.totalCost;
+                        var taxExempt = purchaseQuote.taxExempt;
+                        var ticketEventCouponPlan = purchaseQuote.couponPlan;
+                        var pointShopDiscountSkill = purchaseQuote.discountSkill;
                         if (!hasPoint(data, sender, itemTotalCost)) {
                             replier.reply("❌ " + "[" + checkRank(data, petData, guildData, sender) + "]님 포인트가 부족합니다.\n필요: 🅟" + numberWithCommas(itemTotalCost));
                             return;
@@ -18898,8 +19022,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         expFromBooster = usedBooster; // 경험치 추가
                         data.member[sender].boostercnt -= usedBooster;
                     }
-                    data.member[sender].exp += expGain + expFromBooster;
-                    let finalExp = expGain + expFromBooster + "exp(" + expGain + "/" + expFromBooster + ")"; // 최종 경험치
+                    var castleTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
+                    let finalExp = castleTierExpResult.total + "exp(" + expGain + "/" + expFromBooster + "/티어+" + castleTierExpResult.bonus + ")"; // 최종 경험치
                     // 전투 메시지
                     let castleCompareSymbol = attackerPetExp > defenderPetExp ? ">" : attackerPetExp < defenderPetExp ? "<" : "=";
                     let castleExpGap = Math.abs(attackerPetExp - defenderPetExp); // 양측 최종 매력 차이
@@ -19538,8 +19662,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         expFromBooster = usedBooster; // 경험치 추가
                         data.member[sender].boostercnt -= usedBooster;
                     }
-                    data.member[sender].exp += expGain + expFromBooster;
-                    let finalExp = expGain + expFromBooster + "exp(" + expGain + "/" + expFromBooster + ")"; // 최종 경험치
+                    var miniTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
+                    let finalExp = miniTierExpResult.total + "exp(" + expGain + "/" + expFromBooster + "/티어+" + miniTierExpResult.bonus + ")"; // 최종 경험치
                     // 경험치 증가
                     // 아이템 지급
                     let selectedReward = rewards[Math.floor(Math.random() * rewards.length)];
@@ -33520,10 +33644,10 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
     member.today = (parseInt(member.today, 10) || 0) + 1;
     member.recent = getCurrentDate();
     member.point = (Number(member.point) || 0) + GLOBAL_CONFIG.attendance.bonusPoint;
-    member.exp = (Number(member.exp) || 0) + GLOBAL_CONFIG.attendance.bonusExp;
+    var attendanceExpResult = addMemberExperienceWithTierBonus(data, user, GLOBAL_CONFIG.attendance.bonusExp);
 
     var messages = [];
-    messages.push("[" + rankText + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치  " + GLOBAL_CONFIG.attendance.bonusExp + "exp 획득");
+    messages.push("[" + rankText + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치 " + attendanceExpResult.total + "exp 획득" + (attendanceExpResult.bonus > 0 ? "(티어 +" + attendanceExpResult.bonus + ")" : ""));
     var multiplier = rollAndCalculateMultiplier(); // 출석 응모 주사위 배율
     var dicePoint = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * multiplier).toFixed(0), 10); // 주사위 추가 포인트
     member.point += dicePoint;
@@ -34326,71 +34450,245 @@ function getNextIntervalTime(data, intervalMinutes) {
         return "⏱탐험 시간: " + remainingMinutes.toString().padStart(2, "0") + "분 " + remainingSeconds.toString().padStart(2, "0") + "초 후";
     }
 }
-// 랭크 적용 함수
-function applyRanksBasedOnTickets(petData, data, replier) {
-    let changedUsers = [];
-    Object.keys(data.member).forEach((userName) => {
-        let ticketCount = data.member[userName].bag["티어 승급티켓🎟"] || 0;
-        let highticketCount = data.member[userName].bag["고급 티어 승급티켓🎫"] || 0;
-        let originalRank = data.member[userName].rank.tier;
-        let rankName = getRankByTicketCount(ticketCount, highticketCount); // userName을 전달
-        // 랭크 업데이트
-        data.member[userName].rank.tier = rankName;
-        data.member[userName].rank.emoji = ticketTierData[rankName].emoji;
-        // 랭크 변경 확인
-        if (originalRank !== data.member[userName].rank.tier) {
-            changedUsers.push({
-                userName: userName,
-                originalRank: originalRank,
-                newRank: rankName
-            });
-        }
-    });
-    // 랭크 변경이 있을 경우에만 변경된 유저 목록 출력
-    if (changedUsers.length > 0) {
-        let resultMsg = "🔔 티어 변경 확인 🔔\n";
-        // 티어 리스트를 정렬 (낮은 → 높은 순)
-        const sortedTierNames = Object.keys(ticketTierData).sort((a, b) => {
-            return ticketTierData[a].ticket - ticketTierData[b].ticket || ticketTierData[a].highticket - ticketTierData[b].highticket;
-        });
-        changedUsers.forEach(function (user) {
-            const oldIndex = sortedTierNames.indexOf(user.originalRank);
-            const newIndex = sortedTierNames.indexOf(user.newRank);
-            let bonus = 0;
-            if (oldIndex !== -1 && newIndex !== -1) {
-                if (newIndex > oldIndex) {
-                    // 승급 시, 누적 보너스 계산
-                    for (let i = oldIndex + 1; i <= newIndex; i++) {
-                        bonus += ticketTierData[sortedTierNames[i]].exp;
-                    }
-                } else if (newIndex < oldIndex) {
-                    // 강등 시, 누적 차감
-                    for (let i = oldIndex; i > newIndex; i--) {
-                        bonus -= ticketTierData[sortedTierNames[i]].exp;
-                    }
+// 저장된 옛 표기를 현재 티어 키로 보정하는 함수
+function normalizeTicketTierName(tierName) {
+    if (tierName === "벚꽃") return "벛꽃";
+    return ticketTierData[tierName] ? tierName : "새싹";
+}
+
+// 티어의 단계 번호를 반환하는 함수
+function getTicketTierStage(tierName) {
+    return Object.keys(ticketTierData).indexOf(normalizeTicketTierName(tierName)) + 1;
+}
+
+// 티어 이름·이모지·단계를 한 줄로 표시하는 함수
+function formatTicketTierLabel(tierName) {
+    var normalizedTierName = normalizeTicketTierName(tierName);
+    var tier = ticketTierData[normalizedTierName];
+    return tier.emoji + " " + normalizedTierName + " · " + getTicketTierStage(normalizedTierName) + "단계";
+}
+
+// 현재 티어의 경험치 증가율을 반환하는 함수
+function getTierExperienceBonusPercent(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].rank) return 0;
+    var tier = ticketTierData[normalizeTicketTierName(data.member[user].rank.tier)];
+    return tier && Number(tier.experienceBonus) > 0 ? Number(tier.experienceBonus) : 0;
+}
+
+// 기본 경험치에 현재 티어 보너스를 누적 적용하는 함수
+function addMemberExperienceWithTierBonus(data, user, baseExperience) {
+    var member = data && data.member ? data.member[user] : null;
+    var base = Math.max(0, Number(baseExperience) || 0); // 이번 행동의 기본·부스터 포함 경험치
+    if (!member || base <= 0) return { base: base, bonus: 0, total: 0 };
+    var rate = getTierExperienceBonusPercent(data, user); // 현재 티어 하나의 경험치 증가율
+    var accumulated = (Number(member.tierExperienceRemainder) || 0) + base * rate / 100; // 1 미만 보너스 누적분
+    var bonus = Math.floor(accumulated);
+    member.tierExperienceRemainder = Math.round((accumulated - bonus) * 1000000) / 1000000;
+    member.exp = (Number(member.exp) || 0) + base + bonus;
+    return { base: base, bonus: bonus, total: base + bonus };
+}
+
+// 한 사용자의 다음 티어 준비량과 구매 견적을 계산하는 함수
+function buildTierProgressPlan(data, petSkillData, user) {
+    var member = data && data.member ? data.member[user] : null;
+    if (!member || !member.rank) return null;
+    var bag = member.bag || {};
+    var tierNames = Object.keys(ticketTierData);
+    var currentTierName = normalizeTicketTierName(member.rank.tier);
+    var currentIndex = tierNames.indexOf(currentTierName);
+    var regular = parseInt(bag["티어 승급티켓🎟"], 10) || 0;
+    var advanced = parseInt(bag["고급 티어 승급티켓🎫"], 10) || 0;
+    var eligibleTierName = getRankByTicketCount(regular, advanced);
+    var eligibleIndex = tierNames.indexOf(eligibleTierName);
+    var targetIndex = eligibleIndex > currentIndex ? eligibleIndex : currentIndex + 1;
+    var isMaxTier = currentIndex >= tierNames.length - 1;
+    if (isMaxTier) targetIndex = currentIndex;
+    var targetTierName = tierNames[targetIndex];
+    var targetTier = ticketTierData[targetTierName];
+    var combineCount = isMaxTier ? 0 : Math.max(0, targetTier.highticket - advanced); // 부족한 고급티켓 조합 수
+    var craftRegular = combineCount * 250;
+    var craftLegendStone = combineCount * 2;
+    var craftPetStone = combineCount * 150;
+    var additionalRegular = isMaxTier ? 0 : Math.max(0, targetTier.ticket + craftRegular - regular); // 승급 보유분과 조합 소모분을 합친 부족량
+    var additionalLegendStone = Math.max(0, craftLegendStone - (parseInt(bag["전설의 돌맹이🗿"], 10) || 0));
+    var additionalPetStone = Math.max(0, craftPetStone - (parseInt(bag["펫 강화석⭐"], 10) || 0));
+    var couponHoldings = [];
+    var tierCoupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    for (var couponIndex = 0; couponIndex < tierCoupons.length; couponIndex++) {
+        couponHoldings.push({ name: tierCoupons[couponIndex].name, count: parseInt(bag[tierCoupons[couponIndex].name], 10) || 0 });
+    }
+    var quote = null;
+    if (additionalRegular > 0 && data.shop && typeof data.shop["티어 승급티켓🎟"] === "number") {
+        quote = buildPointShopPurchaseQuote(data, petSkillData, user, "티어 승급티켓🎟", additionalRegular, data.shop["티어 승급티켓🎟"]);
+    }
+    return {
+        user: user,
+        currentTierName: currentTierName,
+        currentTier: ticketTierData[currentTierName],
+        targetTierName: targetTierName,
+        targetTier: targetTier,
+        isMaxTier: isMaxTier,
+        canPromote: eligibleIndex > currentIndex,
+        regular: regular,
+        advanced: advanced,
+        legendStone: parseInt(bag["전설의 돌맹이🗿"], 10) || 0,
+        petStone: parseInt(bag["펫 강화석⭐"], 10) || 0,
+        combineCount: combineCount,
+        craftRegular: craftRegular,
+        craftLegendStone: craftLegendStone,
+        craftPetStone: craftPetStone,
+        additionalRegular: additionalRegular,
+        additionalLegendStone: additionalLegendStone,
+        additionalPetStone: additionalPetStone,
+        craftReady: combineCount > 0 && additionalRegular === 0 && additionalLegendStone === 0 && additionalPetStone === 0,
+        currentExploreBonus: getExploreTierBonusPercent(data, user),
+        currentExperienceBonus: Number(ticketTierData[currentTierName].experienceBonus) || 0,
+        targetExploreBonus: getTierExploreBonusPercentByName(targetTierName),
+        targetExperienceBonus: Number(targetTier.experienceBonus) || 0,
+        couponHoldings: couponHoldings,
+        quote: quote
+    };
+}
+
+// 티어 준비 화면의 할인 적용 상태를 짧게 만드는 함수
+function buildTierQuoteStatusText(quote) {
+    if (!quote || !quote.available) return "";
+    var parts = [];
+    if (quote.discountSkill === "VIP블랙카드") parts.push("VIP블랙카드📙 30%");
+    else if (quote.discountSkill === "쇼핑광") parts.push("쇼핑광📙 20%");
+    if (quote.couponPlan && quote.couponPlan.usedCount > 0) {
+        var couponRates = [];
+        for (var i = 0; i < quote.couponPlan.usages.length; i++) couponRates.push(quote.couponPlan.usages[i].rate + "%");
+        parts.push("쿠폰 " + couponRates.join("·") + " 적용 예정");
+    }
+    if (parts.length === 0) return "할인 없음";
+    return parts.join(" · ");
+}
+
+// /티어와 승급 실패가 함께 사용하는 안내 메시지를 만드는 함수
+function buildTierProgressMessage(plan, isApplyFailure) {
+    if (!plan) return "티어 정보를 확인할 수 없습니다.";
+    var lines = [];
+    if (isApplyFailure && plan.isMaxTier) lines.push("🏆 이미 최고 티어예요");
+    else lines.push(isApplyFailure ? "❌ 승급 재료가 부족해요" : "🏅 " + plan.user + "님의 티어");
+    lines.push("현재 " + formatTicketTierLabel(plan.currentTierName));
+    lines.push("⛰️ 펫탐험 보너스: " + plan.currentExploreBonus + "% 적용 중");
+    if (plan.currentExperienceBonus > 0) lines.push("⚡ 경험치 보너스: +" + plan.currentExperienceBonus + "% 적용 중");
+    if (plan.isMaxTier) {
+        lines.push("━━━━━━━━━━━━━━━");
+        lines.push("🏆 현재 최고 티어입니다");
+    } else {
+        lines.splice(2, 0, "목표 " + formatTicketTierLabel(plan.targetTierName));
+        lines.push("━━━━━━━━━━━━━━━");
+        if (plan.canPromote) {
+            lines.push("✅ 승급 준비 완료! /티어적용");
+        } else if (plan.craftReady) {
+            lines.push("✅ 재료 준비 완료! /고급티켓조합 " + plan.combineCount + " → /티어적용");
+        } else {
+            lines.push("📦 추가로 필요한 재료");
+            if (plan.additionalRegular > 0) lines.push("티어 승급티켓🎟 x " + plan.additionalRegular);
+            if (plan.additionalLegendStone > 0) lines.push("전설의 돌맹이🗿 x " + plan.additionalLegendStone);
+            if (plan.additionalPetStone > 0) lines.push("펫 강화석⭐ x " + plan.additionalPetStone);
+            if (plan.additionalRegular > 0) {
+                lines.push("");
+                if (plan.quote && plan.quote.available) {
+                    lines.push("💰 티켓 " + plan.additionalRegular + "장 구매: 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
+                    lines.push(buildTierQuoteStatusText(plan.quote) + " · 세금 포함");
+                } else {
+                    lines.push("💰 티켓 구매비: 현재 확인할 수 없어요");
                 }
             }
-            resultMsg += user.userName + " - 이전 티어: " + user.originalRank + "\n새로운 티어: " + user.newRank + "\n\n";
-            if (petData[user.userName]) {
-                if (!petData[user.userName].petexp) petData[user.userName].petexp = 0;
-                petData[user.userName].petexp = Math.max(0, petData[user.userName].petexp + bonus);
-            }
-            if (bonus > 0) {
-                resultMsg += user.userName + "님 티어 승급을 축하드립니다.\n";
-                resultMsg += "티어업 보너스 매력💕을 획득합니다.\n";
-                resultMsg += "캐슬/레이드 매력추가💕 " + bonus + "\n";
-                resultMsg += "종합매력에x2배 매력이 반영됩니다.\n\n"
-            } else if (bonus < 0) {
-                resultMsg += user.userName + "님 티어가 하락되었습니다.\n";
-                resultMsg += "펫 매력이 회수됩니다.\n";
-                resultMsg += "캐슬/레이드 매력감소💔 " + Math.abs(bonus) + "\n";
-                resultMsg += "종합매력에x2배 매력이 반영됩니다.\n\n"
-            } else {
-                resultMsg += user.userName + "님의 티어는 변경되었지만 매력 변화는 없습니다.\n\n";
-            }
-        });
-        replier.reply(resultMsg);
+            lines.push("");
+            lines.push("준비 후" + (plan.combineCount > 0 ? " /고급티켓조합 " + plan.combineCount + " →" : "") + " /티어적용");
+        }
     }
+    if (isApplyFailure) lines.push("차감된 포인트·아이템은 없습니다.");
+    lines.push("📋 상세 정보는 전체보기");
+    lines.push(allsee);
+    lines.push("📋 티어 준비 상세");
+    lines.push("티어 승급티켓🎟 보유 " + plan.regular + " / 목표 " + plan.targetTier.ticket);
+    lines.push("고급 티어 승급티켓🎫 보유 " + plan.advanced + " / 목표 " + plan.targetTier.highticket);
+    if (plan.combineCount > 0) {
+        lines.push("");
+        lines.push("고급티켓 조합 " + plan.combineCount + "개");
+        lines.push("일반티켓 조합 소모 " + plan.craftRegular + "개");
+        lines.push("전설의 돌맹이 조합 소모 " + plan.craftLegendStone + "개");
+        lines.push("펫 강화석 조합 소모 " + plan.craftPetStone + "개");
+    }
+    if (plan.quote && plan.quote.available) {
+        lines.push("");
+        lines.push("💰 티켓 구매 견적");
+        lines.push("할인 전 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice)));
+        lines.push("할인액 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice - plan.quote.itemPrice)));
+        lines.push("세금 🅟" + numberWithCommas(Math.floor(plan.quote.taxAmount)) + " (" + plan.quote.taxRate + "%)");
+        lines.push("티켓 구매비 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
+        lines.push("※ 다른 조합 재료의 확보 비용은 포함하지 않습니다.");
+        for (var couponIndex = 0; couponIndex < plan.couponHoldings.length; couponIndex++) {
+            lines.push(plan.couponHoldings[couponIndex].name + " x " + plan.couponHoldings[couponIndex].count);
+        }
+    }
+    if (!plan.isMaxTier) {
+        lines.push("");
+        lines.push("🎁 다음 티어 혜택");
+        lines.push("매력 보상 +" + numberWithCommas(plan.targetTier.exp) + "💕");
+        lines.push("탐험 보너스 " + plan.currentExploreBonus + "% → " + plan.targetExploreBonus + "%");
+        if (plan.currentExperienceBonus > 0 || plan.targetExperienceBonus > 0) {
+            lines.push("경험치 보너스 +" + plan.currentExperienceBonus + "% → +" + plan.targetExperienceBonus + "%");
+        }
+    }
+    return lines.join("\n");
+}
+
+// 실제 승급 결과와 다음 목표를 표시하는 성공 메시지를 만드는 함수
+function buildTierPromotionSuccessMessage(data, user, result) {
+    var tierNames = Object.keys(ticketTierData);
+    var newTierIndex = tierNames.indexOf(result.newTierName);
+    var newTier = ticketTierData[result.newTierName];
+    var lines = [
+        "🎉 티어 승급 완료!",
+        "[" + user + "] 님",
+        formatTicketTierLabel(result.newTierName),
+        "매력 보상 +" + numberWithCommas(result.bonus) + "💕",
+        "탐험 보너스 " + getTierExploreBonusPercentByName(result.newTierName) + "%"
+    ];
+    if (Number(newTier.experienceBonus) > 0) lines.push("경험치 보너스 +" + Number(newTier.experienceBonus) + "%");
+    if (newTierIndex < tierNames.length - 1) {
+        lines.push("");
+        lines.push("다음 목표 " + formatTicketTierLabel(tierNames[newTierIndex + 1]));
+        lines.push("준비 확인: /티어");
+    } else {
+        lines.push("");
+        lines.push("🏆 현재 최고 티어입니다");
+    }
+    return lines.join("\n");
+}
+
+// 한 사용자의 승급과 매력 보상을 원자적으로 반영하는 함수
+function applyRankBasedOnTicketsForUser(petData, data, user) {
+    var member = data && data.member ? data.member[user] : null;
+    if (!member || !member.rank || !petData || !petData[user]) return { ok: false, changed: false, message: "회원 또는 펫 정보를 확인할 수 없습니다." };
+    var bag = member.bag || {};
+    var tierNames = Object.keys(ticketTierData);
+    var originalTierName = normalizeTicketTierName(member.rank.tier);
+    var newTierName = getRankByTicketCount(parseInt(bag["티어 승급티켓🎟"], 10) || 0, parseInt(bag["고급 티어 승급티켓🎫"], 10) || 0);
+    var oldIndex = tierNames.indexOf(originalTierName);
+    var newIndex = tierNames.indexOf(newTierName);
+    if (newIndex <= oldIndex) return { ok: true, changed: false, originalTierName: originalTierName, newTierName: originalTierName, bonus: 0 };
+    if (!member.tierRewardClaims || typeof member.tierRewardClaims !== "object" || member.tierRewardClaims instanceof Array) member.tierRewardClaims = {};
+    var bonus = 0;
+    for (var i = oldIndex + 1; i <= newIndex; i++) {
+        var crossedTierName = tierNames[i];
+        var crossedTier = ticketTierData[crossedTierName];
+        if (crossedTier.oneTimeReward) {
+            if (member.tierRewardClaims[crossedTierName]) continue;
+            member.tierRewardClaims[crossedTierName] = true;
+        }
+        bonus += crossedTier.exp;
+    }
+    member.rank.tier = newTierName;
+    member.rank.emoji = ticketTierData[newTierName].emoji;
+    petData[user].petexp = Math.max(0, (Number(petData[user].petexp) || 0) + bonus);
+    return { ok: true, changed: true, originalTierName: originalTierName, newTierName: newTierName, bonus: bonus };
 }
 // 티켓 수량에 따른 랭크 결정 함수
 function getRankByTicketCount(ticketCount, highticketCount) {
@@ -35406,6 +35704,42 @@ function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unit
         remainingQuantity -= useCount;
     }
     return plan;
+}
+
+// 포인트 상점 구매와 조회 화면이 함께 사용하는 최종 결제 견적을 계산하는 함수
+function buildPointShopPurchaseQuote(data, petSkillData, user, itemName, quantity, unitPrice) {
+    var parsedQuantity = parseInt(quantity, 10);
+    var parsedUnitPrice = Number(unitPrice);
+    if (!data || !data.member || !data.member[user] || parsedQuantity < 1 || !isFinite(parsedUnitPrice) || parsedUnitPrice < 0) {
+        return { available: false };
+    }
+    var basePrice = parsedUnitPrice * parsedQuantity;
+    var couponPlan = buildTicketEventCouponPurchasePlan(data, user, itemName, parsedQuantity, parsedUnitPrice);
+    var itemPrice = couponPlan.itemPrice;
+    var discountSkill = "";
+    if (hasPetSkill(petSkillData, user, "VIP블랙카드")) {
+        discountSkill = "VIP블랙카드";
+        itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.vipBlackCardRate);
+    } else if (hasPetSkill(petSkillData, user, "쇼핑광")) {
+        discountSkill = "쇼핑광";
+        itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate);
+    }
+    var baseTaxRate = data.HoiCastle && data.HoiCastle.taxRate ? parseInt(data.HoiCastle.taxRate, 10) || 0 : 0;
+    var taxExempt = hasPetSkill(petSkillData, user, "탈세자");
+    var taxRate = taxExempt ? Math.round(baseTaxRate * 0.3 * 10) / 10 : baseTaxRate;
+    var taxAmount = Math.round(itemPrice * (taxRate / 100));
+    return {
+        available: true,
+        basePrice: basePrice,
+        itemPrice: itemPrice,
+        taxRate: taxRate,
+        baseTaxRate: baseTaxRate,
+        taxAmount: taxAmount,
+        totalCost: itemPrice + taxAmount,
+        taxExempt: taxExempt,
+        discountSkill: discountSkill,
+        couponPlan: couponPlan
+    };
 }
 
 // 구매 성공 뒤 계산된 티켓 이벤트 쿠폰을 할인율별 수량만큼 차감하는 함수
@@ -48525,15 +48859,9 @@ function parseExploreUpPercent(itemName) {
     return parseInt(m[1], 10) || 0;
 }
 
-/** 티어 보너스(퍼센트포인트) */
-function getExploreTierBonusPercent(data, user) {
-    var tier = null;
-    if (data && data.member && data.member[user] && data.member[user].rank && data.member[user].rank.tier) {
-        tier = data.member[user].rank.tier;
-    }
-    if (!tier) return 0;
-
-    // 티어명 -> 보너스% 테이블 (네가 준 표 그대로)
+// 티어 이름에 해당하는 펫탐험 보너스 퍼센트포인트를 반환하는 함수
+function getTierExploreBonusPercentByName(tier) {
+    tier = normalizeTicketTierName(tier);
     var map = {
         새싹: 0,
         브론즈: 0.1,
@@ -48575,11 +48903,26 @@ function getExploreTierBonusPercent(data, user) {
         유령왕: 16,
         왕왕왕: 16.5,
         용용용: 17,
-        피닉스: 17.5
+        피닉스: 17.5,
+        스타로드: 18,
+        코스모스: 18.5,
+        갤럭시: 19,
+        초월자: 19.5,
+        창세자: 20,
+        오리진: 20.5,
+        이터널: 21,
+        태양신: 21.5,
+        월광신: 22,
+        호월신: 22.5
     };
-
     if (typeof map[tier] === "number") return map[tier];
     return 0;
+}
+
+/** 티어 보너스(퍼센트포인트) */
+function getExploreTierBonusPercent(data, user) {
+    if (!data || !data.member || !data.member[user] || !data.member[user].rank) return 0;
+    return getTierExploreBonusPercentByName(data.member[user].rank.tier);
 }
 
 /** 종합매력 보너스(퍼센트포인트) */
