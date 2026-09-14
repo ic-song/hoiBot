@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.509"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.510"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -24937,9 +24937,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         delete data.member[chuseokMemberName].bag[GLOBAL_CONFIG.petExplore.chuseokEvent.itemName];
                     }
                     var movedChuseokCount = moveChuseokBetsToRandomMine(petExploreData);
+                    var resetChuseokAutoFixedCount = clearPetExploreAutoFixedDungeons(petExploreData);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petExploreData, petExplorePath);
-                    replier.reply("🌕 추석 이벤트가 종료되었습니다.\n\n🌕 전체 계정의 황금당근 회수 완료\n🐰 달토끼 탐색 참여자 랜덤 이동 완료: " + movedChuseokCount + "명\n🗺️ 일반 탐험 이용 재개\n🛍️ 달토끼상점 이용 종료");
+                    replier.reply("🌕 추석 이벤트가 종료되었습니다.\n\n🌕 전체 계정의 황금당근 회수 완료\n🐰 달토끼 탐색 참여자 랜덤 이동 완료: " + movedChuseokCount + "명\n⛰️ 자동탐험 고정 초기화 완료: " + resetChuseokAutoFixedCount + "명\n🗺️ 일반 탐험 이용 재개\n🛍️ 달토끼상점 이용 종료");
                     return;
                 }
 
@@ -25141,6 +25142,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                         if (!isCurrentGuildMemberForChuseok(data, guildData, sender)) {
                             replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n🏰 길드 가입 유저만 참여할 수 있어요.\n/길드목록 으로 길드가입을 해보세요 :)\n\n길드 가입 후 달토끼 탐색과 이벤트 상품 교환을 이용해 주세요.");
+                            return;
+                        }
+                        var chuseokEntryPoint = Number(data.member[sender].point) || 0;
+                        if (chuseokEntryPoint < GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) {
+                            replier.reply("🐰 달토끼 탐색에 참여할 수 없어요.\n\n필요 포인트: 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "\n보유 포인트: 🅟" + numberWithCommas(chuseokEntryPoint) + "\n포인트가 부족합니다.");
                             return;
                         }
                         dungeonNo = "11";
@@ -48935,6 +48941,17 @@ function moveChuseokBetsToRandomMine(petExploreData) {
     }
     petExploreData.bet["11"] = [];
     return moved;
+}
+
+// 추석 이벤트 종료 시 전체 사용자의 자동탐험 고정 설정을 초기화하는 함수
+function clearPetExploreAutoFixedDungeons(petExploreData) {
+    petExploreData = initPetExploreData(petExploreData);
+    var resetCount = 0;
+    for (var user in petExploreData.autoFixedDungeon) {
+        if (petExploreData.autoFixedDungeon.hasOwnProperty(user)) resetCount++;
+    }
+    petExploreData.autoFixedDungeon = {};
+    return resetCount;
 }
 
 // 추석 이벤트 정각 탐험을 처리하는 함수
