@@ -181,6 +181,15 @@ function getInfoHoiPassPremiumHeader(data, user) {
 	return isInfoSupportPassActive(data, user, "premium") ? "[👑호이패스 프리미엄👑]\n" : "";
 }
 
+// Info 명령에서 추석 이벤트 황금당근 잔액을 반환하는 함수
+function getInfoChuseokCarrotBalance(data, petExploreData, user) {
+	if (!petExploreData || !petExploreData.chuseokEvent || !petExploreData.chuseokEvent.balances) return 0;
+	var eventBalance = Math.max(0, parseInt(petExploreData.chuseokEvent.balances[user], 10) || 0); // 이벤트 전용 파일 잔액
+	var member = data && data.member ? data.member[user] : null;
+	var legacyBalance = member && member.bag ? Math.max(0, parseInt(member.bag["황금당근🌕"], 10) || 0) : 0; // 기존 가방 저장 잔액
+	return eventBalance + legacyBalance;
+}
+
 // Info 명령에서 아직 읽지 않은 펫홈 활동 알림 개수를 반환하는 함수
 function getInfoUnreadPetHomeAlertCount(activityData, user) {
 	if (!activityData || typeof activityData !== "object" || activityData instanceof Array) throw new Error("Invalid pet home activity data");
@@ -475,6 +484,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (data.member && data.member[sender]) {
 				var pointDiamond = data.member[sender].diamond || 0;
 				var pointMessage = getInfoHoiPassPremiumHeader(data, sender) + "[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "\n💎: " + numberWithCommas(pointDiamond) + "개";
+				var pointExploreData = loadJsonFile(petExplorePath);
+				if (pointExploreData && pointExploreData.chuseokEvent && pointExploreData.chuseokEvent.active === true) pointMessage += "\n🌕: " + numberWithCommas(getInfoChuseokCarrotBalance(data, pointExploreData, sender)) + "개";
 				if (hasInfoPrivateChatPass(data, sender)) {
 					var pointActivityData = loadJsonFile(petHomeActivityFile);
 					var pointUnreadAlertCount = getInfoUnreadPetHomeAlertCount(pointActivityData, sender);
@@ -2627,6 +2638,15 @@ function addsingle(number) {
 	return number < 10 ? "  " + number : " " + number;
 }
 
+// 저장 티어를 기준으로 checkRank에 표시할 최신 이모지를 반환하는 함수
+function getCheckRankTierEmoji(data, user) {
+	var member = data && data.member ? data.member[user] : null;
+	if (!member || !member.rank) return "";
+	var tierName = member.rank.tier === "벚꽃" ? "벛꽃" : member.rank.tier;
+	var tier = ticketTierData[tierName];
+	return tier && tier.emoji ? tier.emoji : (member.rank.emoji || "");
+}
+
 function checkRank(data, petData, guildData, user) {
 	let userwithrank = user;
 
@@ -2669,7 +2689,7 @@ function checkRank(data, petData, guildData, user) {
 			//친밀도
 			userwithrank = "🍼" + userwithrank;
 		} else {
-			userwithrank = data.member[user].rank.emoji + userwithrank;
+			userwithrank = getCheckRankTierEmoji(data, user) + userwithrank;
 		}
 
 		// 길드 계급 이모지 추가

@@ -414,6 +414,7 @@ Status: VERIFIED
 - `buildHoiPassPremiumBagMessage`
 - `formatHoiPassPremiumBagExpiry`
 - `isHoiPassPremiumActive`
+- `getChuseokCarrotBalance`
 - `checkRank`
 
 ## Data Usage
@@ -426,6 +427,9 @@ Status: VERIFIED
 - `data.member[sender].boostercnt`
 - `data.member[sender].pass.premium`
 - `data.member[sender].hidePremiumBagPoint`
+- `petExploreData.chuseokEvent.active`
+- `petExploreData.chuseokEvent.balances[sender]`
+- `data.member[sender].bag["황금당근🌕(/황금당근오픈 숫자)"]`
 - `data.adv`
 
 ## Save Flow
@@ -447,7 +451,7 @@ Status: VERIFIED
 - Good entry point for bag item shape and numbering logic
 - 프리미엄 전용 가방은 포인트 공개 상태에서 `/포인트잠금` 안내를 표시하고, 잠금 상태에서는 포인트를 `쉿 비밀🤫`로 표시한다.
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
-- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 경험치 부스터가 없으면 `🚀 경험치 2배 부스터: 없음`만 표시하고 `🚀 0회` 줄은 생략한다.
+- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 이벤트 기간의 황금당근, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 황금당근은 달토끼상점과 같은 이벤트 잔액을 표시하며 기존 가방 저장 잔액도 전환 전까지 합산한다. 경험치 부스터가 없으면 `🚀 경험치 2배 부스터: 없음`만 표시하고 `🚀 0회` 줄은 생략한다.
 - 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `호이의 봉인금고` → `해방의 열쇠` → `자동탐험권` → `자동일퀘권` 순으로 먼저 표시한다.
@@ -2871,7 +2875,7 @@ Status: VERIFIED
 ## Save Flow
 
 - `/티어` is read-only.
-- `/티어적용` saves `data` and `petData` after a successful sender-only promotion, then sends the promotion notice.
+- `/티어적용`은 복합 데이터 변경 쓰기 잠금 안에서 성공한 사용자 본인의 `data`와 `petData`를 저장한 뒤 승급 알림을 보낸다.
 - Failed and same-tier applications do not mutate or save tier rewards.
 
 ## Related Commands
@@ -2884,7 +2888,9 @@ Status: VERIFIED
 ## AI Notes
 
 - `/티어` shows the current tier, actual promotion target, shortages, ticket purchase estimate, benefits, and the next action; detailed rows follow `allsee`.
+- `/티어`와 `/티어적용`의 티켓·재료·쿠폰 수량은 천 단위 쉼표로 표시한다.
 - `/티어적용` supports multi-tier promotion for the sender and does not downgrade other members.
+- `checkRank`는 저장된 티어 이름을 현재 티어 표와 대조해 최신 이모지를 표시하며, 옛 `벚꽃` 표기는 `벛꽃` 티어로 호환한다.
 - Tiers 42–51 add pet-exploration and account-experience bonuses; their charm rewards are claimed once per user and tier.
 
 ---
@@ -5549,6 +5555,7 @@ Status: VERIFIED
 - `/추석이벤트비활성화`
 - `/달토끼상점`
 - `/달토끼상점구매 [번호] [횟수]`
+- `/황금당근오픈 [숫자]`
 - `/달토끼상점추가 [상품명] [상품수량] [가격] [계정당한도]`
 - `/달토끼상점삭제 [번호]`
 - `/레이드박스오픈`
@@ -5564,13 +5571,15 @@ Status: VERIFIED
 - `doPetExploreInterval` uses the shared success-rate calculation immediately before consuming the selected probability-UP item and rolling the result, so premium, pendant, home-badge, and penalty values match the displayed formula and the final rate remains capped at 100%
 - 일반 광산 1~3에서 이벤트 던전 `E` 보상으로 전환되어도 성공률은 입장권 재확인까지 끝난 원래 광산 기준으로 계산하므로 `광산탐험가📙` 효과가 사라지지 않는다.
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
-- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3` and `던전탐험가📙` only to `/탐 4~7` plus event guild raid `/탐 10`
+- `getExploreTraitBonusPercent` applies `광산탐험가📙` only to `/탐 1~3`, `던전탐험가📙` only to `/탐 4~7` plus event guild raid `/탐 10`, and one +5% explorer bonus to `/탐 11` when either explorer skill is equipped.
 - The trait check must be based on the selected dungeon range first, so users with both `광산탐험가📙` and `던전탐험가📙` still receive the correct +5% for each range
 - Event mine slot `0` rewards `다이아광산박스💎(/다이아박스오픈)` and is shown above regular mines in `/지도` while active.
 - `/펫탐험이벤트활성화` and `/펫탐험이벤트비활성화` toggle `petExploreData.eventMine.active` and save `petExploreData`.
 - Guild raid uses separate dungeon key `10`, is entered with `/탐 10`, can be fixed with `/자동탐고정 10`, requires guild membership and `펫던전 입장권🌋`, rewards `길드레이드던전박스👾(/레이드박스오픈)`, and is toggled by `/레이드이벤트활성화` / `/레이드이벤트비활성화`.
-- 추석 이벤트가 활성화되면 일반 탐험 선택·정산과 자동탐고정을 일시 중지하고 길드 가입 유저의 `/탐 11`만 받는다. 매시간 정각 현재 길드 가입과 1억 포인트 보유를 다시 확인하며, 실제 참가자는 1억 포인트를 내고 기존 성공률로 황금당근 1~3개를 획득한다.
-- `/달토끼상점`은 비길드 유저도 열람할 수 있지만 구매는 현재 길드 가입 유저만 가능하다. 황금당근 차감, 계정별 누적 구매 한도, 구성품 지급을 한 번에 저장하며 이벤트 종료 시 당근과 정산 시간 기록을 비우고 `/탐 11` 참가자를 1~3번 광산으로 이동한다. 상품별 구매 이력과 비활성 상품 번호는 보존한다.
+- 추석 이벤트가 활성화되면 일반 탐험 선택·정산과 자동탐고정을 일시 중지하고 길드 가입 유저의 `/탐 11`만 받는다. 매시간 정각 현재 길드 가입과 1억 포인트 보유를 다시 확인하며, 실제 참가자는 1억 포인트를 내고 기존 유저별 성공률과 확률UP 로직을 적용한다. 성공하면 황금당근 1~3개를 같은 확률로 받고 실패하면 황금당근을 받지 않는다.
+- `/탐 11` 예약 화면과 이벤트 `/지도`는 기본·티어·매력·영주·펫스킬·펜던트·호이패스·홈뱃지·확률UP·디버프의 상세 성공률을 표시한다.
+- `/황금당근오픈 [숫자]`는 복합 데이터 변경 쓰기 잠금 안에서 `황금당근🌕(/황금당근오픈 숫자)` 아이템을 같은 수량의 달토끼상점 전용 잔액으로 바꾸고 `member.json`과 `petExploreData.json`을 한 번씩 저장한다. 추석 이벤트 활성화·비활성화, 상점 상품 추가·삭제·구매도 같은 쓰기 잠금을 사용한다.
+- `/달토끼상점`은 비길드 유저도 열람할 수 있지만 구매는 현재 길드 가입 유저만 가능하다. 이벤트 잔액과 기존 가방의 황금당근을 합산해 표시하고, 첫 구매나 이벤트 보상 지급 시 이벤트 잔액으로 옮긴다. 황금당근 차감, 계정별 누적 구매 한도, 구성품 지급을 한 번에 저장하며 이벤트 종료 시 이벤트 잔액·기존 잔액·미개봉 황금당근 아이템과 정산 시간 기록을 비우고 `/탐 11` 참가자를 1~3번 광산으로 이동한다. 상품별 구매 이력과 비활성 상품 번호는 보존한다.
 - `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
 - Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket and applies a `-5%` success penalty.
 - Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-15%` success penalty and check `펫던전 입장권🌋` at settlement.
