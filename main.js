@@ -19463,8 +19463,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (msg === "/레벨순위") {
                     let UsrRanking = generateRanking(data, petData, guildData, sender);
-                    let resultMsg = "🏆 레벨 순위 🏆\n\n";
-                    resultMsg += UsrRanking.rankingMsg1 + allsee + UsrRanking.rankingMsg2;
+                    let resultMsg = UsrRanking.rankingMsg1;
+                    if (UsrRanking.rankingMsg2) resultMsg += allsee + UsrRanking.rankingMsg2;
                     replier.reply(resultMsg);
                     if (UsrRanking.rows.length > 0) data.toplv = UsrRanking.rows[0].user;
                     saveJsonFile(data, filePath);
@@ -42726,21 +42726,43 @@ function generateRanking(data, petData, guildData, currentUser) {
         previousLevel = level;
         previousExp = exp;
     }
+    // 노션 레벨순위 형식으로 한 계정의 순위와 모험가 칭호를 만드는 함수
     function formatLevelRankRow(row) {
-        return getRankEmoji(row.rank) + checkRank(data, petData, guildData, row.user) + "\n   " + getAdventureLevelTitle(row.level) + " · Lv." + numberWithCommas(row.level) + " (EXP " + numberWithCommas(row.exp) + ")\n";
-    }
-    var rankingMsg1 = "";
-    var rankingMsg2 = "";
-    var visibleCount = Math.min(50, rows.length);
-    for (var rowIndex = 0; rowIndex < visibleCount; rowIndex++) {
-        if (rowIndex < 10) rankingMsg1 += formatLevelRankRow(rows[rowIndex]);
-        else rankingMsg2 += formatLevelRankRow(rows[rowIndex]);
+        var isOwnRow = row.user === currentUser;
+        var rankPrefix = row.rank === 1 ? "🥇 1위" : row.rank === 2 ? "🥈 2위" : row.rank === 3 ? "🥉 3위" : (isOwnRow ? "📍 " : "") + numberWithCommas(row.rank) + "위";
+        return rankPrefix + " [" + checkRank(data, petData, guildData, row.user) + "] · Lv." + numberWithCommas(row.level) + (isOwnRow ? " · 나" : "") + "\n└ " + getAdventureLevelTitle(row.level) + "\n";
     }
     var ownIndex = -1;
     for (var ownSearchIndex = 0; ownSearchIndex < rows.length; ownSearchIndex++) {
         if (rows[ownSearchIndex].user === currentUser) { ownIndex = ownSearchIndex; break; }
     }
-    if (ownIndex >= 50) rankingMsg1 = "내 순위\n" + formatLevelRankRow(rows[ownIndex]) + "\nTOP 50\n" + rankingMsg1;
+    var rankingMsg1 = ownIndex >= 0 ? "[" + checkRank(data, petData, guildData, currentUser) + "]님의 레벨순위 🏆\n" : "레벨순위 🏆\n";
+    rankingMsg1 += "━━━━━━━━━━━━\n";
+    if (ownIndex >= 0) {
+        var ownRow = rows[ownIndex];
+        rankingMsg1 += "🌟 Lv." + numberWithCommas(ownRow.level) + " · 전체 " + numberWithCommas(ownRow.rank) + "위 / " + numberWithCommas(rows.length) + "명\n";
+        var aboveIndex = ownIndex - 1;
+        while (aboveIndex >= 0 && rows[aboveIndex].rank === ownRow.rank) aboveIndex--;
+        if (aboveIndex >= 0) {
+            var aboveRow = rows[aboveIndex];
+            var levelGap = aboveRow.level - ownRow.level; // 바로 위 고유 순위와의 레벨 차이
+            rankingMsg1 += "🎯 바로 위 순위: Lv." + numberWithCommas(aboveRow.level) + " · ";
+            rankingMsg1 += levelGap > 0 ? numberWithCommas(levelGap) + "레벨 차이\n" : "EXP " + numberWithCommas(aboveRow.exp - ownRow.exp) + " 차이\n";
+        } else {
+            var hasJointFirst = (ownIndex > 0 && rows[ownIndex - 1].rank === 1) || (ownIndex + 1 < rows.length && rows[ownIndex + 1].rank === 1); // 본인과 같은 1위가 있는지 확인
+            rankingMsg1 += hasJointFirst ? "🎯 현재 공동 1위입니다.\n" : "🎯 현재 1위입니다.\n";
+        }
+    } else {
+        rankingMsg1 += "🌟 가입 계정의 순위를 확인할 수 있습니다.\n";
+    }
+    rankingMsg1 += "📚 순위 목록은 전체보기로 확인하세요 👇\n\n";
+    var rankingMsg2 = "";
+    var visibleCount = Math.min(50, rows.length);
+    for (var rowIndex = 0; rowIndex < visibleCount; rowIndex++) {
+        if (rowIndex < 5) rankingMsg1 += formatLevelRankRow(rows[rowIndex]);
+        else rankingMsg2 += formatLevelRankRow(rows[rowIndex]);
+    }
+    if (rankingMsg2) rankingMsg1 += "\n6위부터 ";
     return { rankingMsg1: rankingMsg1, rankingMsg2: rankingMsg2, rows: rows };
 }
 
