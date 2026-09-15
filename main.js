@@ -1711,6 +1711,11 @@ blockedNicknameTerms: [
     },
     petExplore: { // 펫탐험 설정
         boostItemNames: ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"], // 확률UP 아이템 후보(높은 것부터)
+        experienceRewards: {
+            mine: 3,
+            dungeon: 5,
+            maze: 7
+        },
         slots: {
             mineMin: 1,
             mineMax: 3,
@@ -50091,6 +50096,15 @@ function getExploreTreasureUsageInfo(data, petSkillData, user) {
     };
 }
 
+// 실제 정산된 펫탐험 종류에 맞는 기본 경험치를 반환하는 함수
+function getPetExploreBaseExperience(dungeon) {
+    var dungeonKey = String(dungeon);
+    if (dungeonKey === "0" || isRegularMineExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.experienceRewards.mine;
+    if (dungeonKey === "E" || dungeonKey === "10" || isRegularDungeonExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.experienceRewards.dungeon;
+    if (isMazeExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.experienceRewards.maze;
+    return 0;
+}
+
 /** 정산 1회 실행 */
 function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
     if (!data || !data.member) return null;
@@ -50244,10 +50258,16 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 rewardText = "펫먹이🍼 2개";
             }
 
+            var exploreBaseExperience = getPetExploreBaseExperience(finalDungeon); // 최종 실제 탐험지의 기본 경험치
+            var exploreBoosterResult = applyAdventureExperienceBooster(data.member[user], exploreBaseExperience); // 펫탐험 가호 적용·소모 결과
+            var exploreTierExpResult = addMemberExperienceWithTierBonus(data, user, exploreBoosterResult.totalExperience); // 가호 적용 후 티어 보너스와 레벨업 결과
+            var exploreExperienceMessage = buildBattleExperienceRewardMessage(exploreTierExpResult.total, exploreBaseExperience, exploreBoosterResult.extraExperience, exploreTierExpResult.bonus);
+
             // 결과 라인
             var memberFormat = checkRank(data, petData, guildData, user);
             var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon, petExploreData) + (success ? "성공(✅)" : "실패(❌)");
             line += "\n획득: " + rewardText;
+            line += "\n" + exploreExperienceMessage;
             if (bonusRewardText) {
                 line += "\n" + bonusRewardText;
             }
@@ -50257,6 +50277,9 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
             }
             if (usedTreasure && treasureDrop) {
                 line += " 보물🗺️:주간🦋";
+            }
+            if (exploreTierExpResult.levelUps.length > 0) {
+                line += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, user, exploreTierExpResult.levelUps);
             }
 
             if (success) {
