@@ -49718,12 +49718,12 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
             continue;
         }
         if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
-        petExploreData.chuseokEvent.processedHours[user] = hourKey;
         var point = Number(data.member[user].point) || 0;
         if (point < config.participationFee) {
             insufficientPointCount++;
             continue;
         }
+        petExploreData.chuseokEvent.processedHours[user] = hourKey; // 참가 조건을 통과한 실제 정산만 같은 정각 처리 완료로 기록
         data.member[user].point = point - config.participationFee;
         if (typeof data.member[user].exploreCnt !== "number") data.member[user].exploreCnt = 0;
         data.member[user].exploreCnt++;
