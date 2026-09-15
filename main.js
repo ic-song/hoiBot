@@ -25011,7 +25011,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
                     petExploreData.chuseokEvent.active = false;
                     petExploreData.chuseokEvent.balances = {};
-                    petExploreData.chuseokEvent.processedHours = {};
                     for (var chuseokMemberName in data.member) {
                         if (!data.member.hasOwnProperty(chuseokMemberName) || !data.member[chuseokMemberName].bag) continue;
                         delete data.member[chuseokMemberName].bag[GLOBAL_CONFIG.petExplore.chuseokEvent.currencyName];
@@ -49463,7 +49462,6 @@ function initPetExploreData(petExploreData) {
     if (typeof chuseokEvent.active !== "boolean") chuseokEvent.active = false;
     if (!chuseokEvent.balances || typeof chuseokEvent.balances !== "object" || chuseokEvent.balances instanceof Array) chuseokEvent.balances = {};
     if (!chuseokEvent.purchases || typeof chuseokEvent.purchases !== "object" || chuseokEvent.purchases instanceof Array) chuseokEvent.purchases = {};
-    if (!chuseokEvent.processedHours || typeof chuseokEvent.processedHours !== "object" || chuseokEvent.processedHours instanceof Array) chuseokEvent.processedHours = {};
     if (!(chuseokEvent.shop instanceof Array) || chuseokEvent.shop.length < 1) chuseokEvent.shop = createDefaultChuseokShop();
     var nextChuseokShopId = parseInt(chuseokEvent.nextShopId, 10);
     if (isNaN(nextChuseokShopId) || nextChuseokShopId < 1) chuseokEvent.nextShopId = getNextChuseokShopId(chuseokEvent.shop);
@@ -49855,7 +49853,7 @@ function cleanupInvalidPetExploreUsers(petExploreData, data) {
     }
 
     if (petExploreData.chuseokEvent) {
-        var chuseokUserMaps = [petExploreData.chuseokEvent.balances, petExploreData.chuseokEvent.purchases, petExploreData.chuseokEvent.processedHours];
+        var chuseokUserMaps = [petExploreData.chuseokEvent.balances, petExploreData.chuseokEvent.purchases];
         for (var chuseokMapIndex = 0; chuseokMapIndex < chuseokUserMaps.length; chuseokMapIndex++) {
             var chuseokMap = chuseokUserMaps[chuseokMapIndex] || {};
             for (var chuseokUser in chuseokMap) {
