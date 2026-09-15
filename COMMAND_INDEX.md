@@ -6935,6 +6935,9 @@ Status: VERIFIED
 - `getAdventureLevelCharmPercent`
 - `processAdventureLevelUps`
 - `inspectAdventureLevelRenewal`
+- `isExactJsonSnapshot`
+- `isAdventureLevelRenewalResultValid`
+- `isRebirthMushroomRecallResultValid`
 - `applyAdventureLevelRenewal`
 - `applyRebirthMushroomRecall`
 
@@ -6948,9 +6951,9 @@ Status: VERIFIED
 
 - 모든 경험치 유입은 초과 경험치를 유지하며 여러 레벨을 연속 처리하고 레벨당 1,000만 포인트를 지급한다.
 - 레벨업 알림 전 `member.json`을 저장한다.
-- `/레벨리뉴얼점검`은 가호 10만회 이상 계정 스냅샷을 별도 JSON으로 저장·재검증하며 보상 포인트는 지급하지 않는다.
-- `/레벨리뉴얼적용`은 현재 가호 보유 현황과 직전 스냅샷의 일치를 확인한 다음, 원본 전체 데이터를 별도 백업하고 다시 읽어 검증해 Lv.1·EXP 0·환생 기록 0으로 전환한다. 가호와 환생버섯 보유량은 유지한다.
-- `/환생회수`는 별도 원본 백업 후 환생버섯을 전량 회수하고 개당 30억 포인트를 환급하며, 계정별 지급 기록과 1회 실행 표식을 저장한다.
+- `/레벨리뉴얼점검`은 가호 10만회 이상 계정 스냅샷을 별도 JSON으로 저장·재검증하고, 환생버섯 환급 후 포인트가 JavaScript 안전 정수 범위를 넘는 계정도 집계한다. 보상 포인트는 지급하지 않는다.
+- `/레벨리뉴얼적용`은 현재 가호 보유 현황과 직전 스냅샷의 일치를 확인한 다음, 원본 전체 데이터가 백업과 완전히 일치하는지 검증해 Lv.1·EXP 0·환생 기록 0으로 전환한다. 저장 후 초기화 필드와 가호·환생버섯 보존값을 다시 검증한다.
+- `/환생회수`는 레벨 리뉴얼 전환이 완료되고 환급 정밀도 위험 계정이 없을 때만 실행된다. 별도 원본 전체 백업을 검증한 후 환생버섯을 전량 회수하고 개당 30억 포인트를 환급하며, 저장 후 계정별 지급액·회수량·1회 실행 표식을 다시 검증한다.
 
 ## AI Notes
 

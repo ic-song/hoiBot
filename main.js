@@ -7843,7 +7843,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var levelRenewalBackup = JSON.parse(JSON.stringify(data));
                     saveJsonFile(levelRenewalBackup, GLOBAL_CONFIG.level.migrationBackupPath, true);
                     var verifiedLevelRenewalBackup = loadJsonFile(GLOBAL_CONFIG.level.migrationBackupPath);
-                    if (!verifiedLevelRenewalBackup || !verifiedLevelRenewalBackup.member || Object.keys(verifiedLevelRenewalBackup.member).length !== Object.keys(data.member).length) {
+                    if (!isExactJsonSnapshot(levelRenewalBackup, verifiedLevelRenewalBackup)) {
                         replier.reply("❌ 원본 백업 검증에 실패해 레벨 리뉴얼 적용을 중단했습니다.");
                         return;
                     }
@@ -7854,7 +7854,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     saveJsonFile(data, filePath);
                     var verifiedLevelRenewalData = loadJsonFile(filePath);
-                    if (!verifiedLevelRenewalData || !verifiedLevelRenewalData.migrations || !verifiedLevelRenewalData.migrations[GLOBAL_CONFIG.level.migrationKey]) {
+                    if (!isAdventureLevelRenewalResultValid(levelRenewalBackup, verifiedLevelRenewalData)) {
                         replier.reply("❌ 전환 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 운영 반영을 중단했습니다.");
                         return;
                     }
@@ -7862,14 +7862,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/환생회수" && isMaster(sender)) {
+                    if (!data.migrations || !data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
+                        replier.reply("❌ 레벨 리뉴얼 전환이 완료되지 않았습니다.\n먼저 /레벨리뉴얼점검 후 /레벨리뉴얼적용 을 실행해주세요.");
+                        return;
+                    }
                     if (data.migrations && data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey]) {
                         replier.reply("❌ 이미 환생버섯 회수·환급이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey].appliedAt);
+                        return;
+                    }
+                    var rebirthRecallPrecheck = inspectAdventureLevelRenewal(data);
+                    if (rebirthRecallPrecheck.unsafeRefundUsers.length > 0) {
+                        replier.reply("❌ 환급 후 포인트가 안전한 정수 범위를 넘는 계정이 " + numberWithCommas(rebirthRecallPrecheck.unsafeRefundUsers.length) + "명 있어 회수를 중단했습니다.\n먼저 해당 계정의 포인트를 점검해주세요.");
                         return;
                     }
                     var rebirthRecallBackup = JSON.parse(JSON.stringify(data));
                     saveJsonFile(rebirthRecallBackup, GLOBAL_CONFIG.level.rebirthRecallBackupPath, true);
                     var verifiedRebirthRecallBackup = loadJsonFile(GLOBAL_CONFIG.level.rebirthRecallBackupPath);
-                    if (!verifiedRebirthRecallBackup || !verifiedRebirthRecallBackup.member || Object.keys(verifiedRebirthRecallBackup.member).length !== Object.keys(data.member).length) {
+                    if (!isExactJsonSnapshot(rebirthRecallBackup, verifiedRebirthRecallBackup)) {
                         replier.reply("❌ 원본 백업 검증에 실패해 환생버섯 회수를 중단했습니다.");
                         return;
                     }
@@ -7880,9 +7889,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     saveJsonFile(data, filePath);
                     var verifiedRebirthRecallData = loadJsonFile(filePath);
-                    var verifiedRebirthRecallMigration = verifiedRebirthRecallData && verifiedRebirthRecallData.migrations ? verifiedRebirthRecallData.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] : null;
-                    var verifiedRebirthRecallInspection = inspectAdventureLevelRenewal(verifiedRebirthRecallData);
-                    if (!verifiedRebirthRecallMigration || verifiedRebirthRecallInspection.mushroomTotal !== 0) {
+                    if (!isRebirthMushroomRecallResultValid(rebirthRecallBackup, verifiedRebirthRecallData)) {
                         replier.reply("❌ 환생버섯 회수 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 작업을 중단했습니다.");
                         return;
                     }
@@ -34662,7 +34669,7 @@ function getHighestMajorPromotionLevel(levelUps) {
 
 // 레벨 리뉴얼 전환 대상과 고액 부스터 보유 현황을 집계하는 함수
 function inspectAdventureLevelRenewal(data) {
-    var result = { memberCount: 0, highBoosterUsers: [], highBoosterTotal: 0, mushroomUserCount: 0, mushroomTotal: 0, mushroomRefundTotal: 0 };
+    var result = { memberCount: 0, highBoosterUsers: [], highBoosterTotal: 0, mushroomUserCount: 0, mushroomTotal: 0, mushroomRefundTotal: 0, unsafeRefundUsers: [] };
     var members = data && data.member ? data.member : {};
     for (var user in members) {
         if (!members.hasOwnProperty(user) || !members[user]) continue;
@@ -34677,6 +34684,8 @@ function inspectAdventureLevelRenewal(data) {
         if (mushroomCount > 0) {
             result.mushroomUserCount++;
             result.mushroomTotal += mushroomCount;
+            var pointAfterRefund = (Number(member.point) || 0) + mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint;
+            if (Math.floor(pointAfterRefund) !== pointAfterRefund || Math.abs(pointAfterRefund) > 9007199254740991) result.unsafeRefundUsers.push({ user: user, pointAfterRefund: pointAfterRefund });
         }
     }
     result.highBoosterUsers.sort(function (a, b) { return b.count - a.count; });
@@ -34698,6 +34707,71 @@ function isAdventureLevelRenewalSnapshotCurrent(snapshot, inspection) {
     return savedRows.join("\u0001") === currentRows.join("\u0001");
 }
 
+// 저장 후 다시 읽은 JSON이 저장 전 원본과 완전히 같은지 확인하는 함수
+function isExactJsonSnapshot(source, saved) {
+    if (!source || !saved) return false;
+    try {
+        return JSON.stringify(source) === JSON.stringify(saved);
+    } catch (error) {
+        return false;
+    }
+}
+
+// 레벨 리뉴얼 저장 결과의 초기화 필드와 보존 대상을 확인하는 함수
+function isAdventureLevelRenewalResultValid(before, after) {
+    if (!before || !before.member || !after || !after.member || !after.migrations || !after.migrations[GLOBAL_CONFIG.level.migrationKey]) return false;
+    var beforeUsers = Object.keys(before.member);
+    if (beforeUsers.length !== Object.keys(after.member).length) return false;
+    for (var i = 0; i < beforeUsers.length; i++) {
+        var user = beforeUsers[i];
+        var beforeMember = before.member[user];
+        var afterMember = after.member[user];
+        if (!beforeMember || !afterMember) return false;
+        if (Number(afterMember.lv) !== 1 || Number(afterMember.exp) !== 0 || Number(afterMember.tierExperienceRemainder) !== 0 || Number(afterMember.lv0) !== 0 || Number(afterMember.rebirthcnt) !== 0) return false;
+        if (JSON.stringify(beforeMember.boostercnt) !== JSON.stringify(afterMember.boostercnt)) return false;
+        var beforeMushroom = beforeMember.bag ? beforeMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem] : undefined;
+        var afterMushroom = afterMember.bag ? afterMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem] : undefined;
+        if (JSON.stringify(beforeMushroom) !== JSON.stringify(afterMushroom)) return false;
+    }
+    return true;
+}
+
+// 환생버섯 회수 저장 결과의 삭제 수량과 계정별 포인트 환급을 확인하는 함수
+function isRebirthMushroomRecallResultValid(before, after) {
+    if (!before || !before.member || !after || !after.member || !after.migrations) return false;
+    var migration = after.migrations[GLOBAL_CONFIG.level.rebirthRecallKey];
+    if (!migration || Object.prototype.toString.call(migration.accounts) !== "[object Array]") return false;
+    var inspection = inspectAdventureLevelRenewal(before);
+    if (Number(migration.accountCount) !== inspection.mushroomUserCount || Number(migration.mushroomCount) !== inspection.mushroomTotal || Number(migration.refundPoint) !== inspection.mushroomRefundTotal) return false;
+    var beforeUsers = Object.keys(before.member);
+    if (beforeUsers.length !== Object.keys(after.member).length || migration.accounts.length !== inspection.mushroomUserCount) return false;
+    var recordByUser = {};
+    for (var i = 0; i < migration.accounts.length; i++) {
+        var record = migration.accounts[i];
+        var recordKey = record ? "user:" + String(record.id) : "";
+        if (!record || recordByUser.hasOwnProperty(recordKey)) return false;
+        recordByUser[recordKey] = record;
+    }
+    for (var j = 0; j < beforeUsers.length; j++) {
+        var user = beforeUsers[j];
+        var beforeMember = before.member[user];
+        var afterMember = after.member[user];
+        if (!beforeMember || !afterMember) return false;
+        if (afterMember.bag && afterMember.bag.hasOwnProperty(GLOBAL_CONFIG.level.rebirthMushroomItem)) return false;
+        var mushroomCount = beforeMember.bag ? Math.max(0, parseInt(beforeMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem], 10) || 0) : 0;
+        var expectedPoint = mushroomCount > 0 ? (Number(beforeMember.point) || 0) + mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint : beforeMember.point;
+        if (JSON.stringify(afterMember.point) !== JSON.stringify(expectedPoint)) return false;
+        var userRecordKey = "user:" + String(user);
+        if (mushroomCount > 0) {
+            var userRecord = recordByUser[userRecordKey];
+            if (!userRecord || Number(userRecord.count) !== mushroomCount || Number(userRecord.refundPoint) !== mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint) return false;
+        } else if (recordByUser.hasOwnProperty(userRecordKey)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // 레벨 리뉴얼 전환 전 점검 결과를 운영자용 메시지로 만드는 함수
 function buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, inspection) {
     var message = "🔎 레벨 리뉴얼 전환 점검\n";
@@ -34708,7 +34782,8 @@ function buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, i
     message += "예정 보상: 계정당 🅟" + numberWithCommas(GLOBAL_CONFIG.level.plannedCompensationPoint) + " (점검만, 미지급)\n";
     message += "예정 보상 합계: 🅟" + numberWithCommas(inspection.highBoosterUsers.length * GLOBAL_CONFIG.level.plannedCompensationPoint) + "\n";
     message += "환생버섯: " + numberWithCommas(inspection.mushroomUserCount) + "명 / " + numberWithCommas(inspection.mushroomTotal) + "개\n";
-    message += "환생버섯 환급 예정: 🅟" + numberWithCommas(inspection.mushroomRefundTotal);
+    message += "환생버섯 환급 예정: 🅟" + numberWithCommas(inspection.mushroomRefundTotal) + "\n";
+    message += "환급 정밀도 위험 계정: " + numberWithCommas(inspection.unsafeRefundUsers.length) + "명";
     if (inspection.highBoosterUsers.length > 0) {
         message += allsee + "\n\n📋 가호 10만회 이상 계정";
         for (var i = 0; i < inspection.highBoosterUsers.length; i++) {
