@@ -9,7 +9,7 @@ const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
 	level: { // 모험가 레벨 표시 설정
 		expBase: 1000,
-		expPerLevel: 500,
+		expPerLevel: 1000,
 		baseCharmPercent: 0.15,
 		normalPromotionPercent: 0.5,
 		majorPromotionPercent: 5,
