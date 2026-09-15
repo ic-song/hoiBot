@@ -40531,8 +40531,10 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     if (rewardResult && rewardResult.autoDailyBoosterUsed > 0) lines.push("└ 가호 사용: " + numberWithCommas(rewardResult.autoDailyBoosterUsed) + "개");
     var autoDailyBoosterDepletionMessage = rewardResult ? buildAdventureBoosterDepletionMessage(after.data, after.petData, after.guildData, sender, { usedBooster: rewardResult.autoDailyBoosterUsed || 0 }) : "";
     if (autoDailyBoosterDepletionMessage) lines.push(autoDailyBoosterDepletionMessage);
-    if (rewardResult && rewardResult.autoDailyLevelUpPointReward > 0) lines.push("🌟 레벨업 포인트: 🅟" + numberWithCommas(rewardResult.autoDailyLevelUpPointReward) + " (" + numberWithCommas(rewardResult.autoDailyLevelUpCount) + "회)");
-    lines.push("🤑 총 포인트 변동: 🅟" + numberWithCommas(pointDelta) + " " + allsee);
+    var hasAutoDailyLevelUpPoint = rewardResult && rewardResult.autoDailyLevelUpPointReward > 0;
+    if (hasAutoDailyLevelUpPoint) lines.push("🌟 레벨업 포인트: 🅟" + numberWithCommas(rewardResult.autoDailyLevelUpPointReward) + " (" + numberWithCommas(rewardResult.autoDailyLevelUpCount) + "회)");
+    lines.push("🤑 총 포인트 변동: 🅟" + numberWithCommas(pointDelta));
+    lines.push((hasAutoDailyLevelUpPoint ? "└ 레벨업 포인트 포함" : "") + allsee);
     lines.push("━━━━━━━━━━━━");
     lines.push("😈 시련의탑");
     lines.push("- " + numberWithCommas(before.towerFloor) + "층 → " + numberWithCommas(after.towerFloor) + "층 도전");
