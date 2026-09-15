@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.514"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.515"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1711,6 +1711,11 @@ blockedNicknameTerms: [
     },
     petExplore: { // 펫탐험 설정
         boostItemNames: ["탐험확률UP🗻(50%)", "탐험확률UP🗻(40%)", "탐험확률UP🗻(30%)", "탐험확률UP🗻(20%)", "탐험확률UP🗻(10%)"], // 확률UP 아이템 후보(높은 것부터)
+        experienceRewards: {
+            mine: 3,
+            dungeon: 5,
+            maze: 7
+        },
         slots: {
             mineMin: 1,
             mineMax: 3,
@@ -5885,9 +5890,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var chatMajorLevel = getHighestMajorPromotionLevel(chatExpResult.levelUps);
                         if (chatMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + chatMajorLevel + " " + getAdventureLevelTitle(chatMajorLevel) + "에 도달했습니다!", room);
                     }
-                    if (data.member[sender].boostercnt === 0 && chatBoosterResult.usedBooster > 0) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + "가 소진되었습니다.");
-                    }
+                    var chatBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, chatBoosterResult);
+                    if (chatBoosterDepletionMessage) replier.reply(chatBoosterDepletionMessage);
                 }
 
 
@@ -19100,7 +19104,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         ((data.member[sender].exp / getLevelRequiredExperience(data.member[sender].lv)) * 100).toFixed(2) +
                         "%])";
                     if (data.member[sender].boostercnt === 0) {
-                        result += "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363";
+                        var castleBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, castleBoosterResult);
+                        result += castleBoosterDepletionMessage ? "\n" + castleBoosterDepletionMessage : "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.";
                     } else if (data.member[sender].boostercnt > 0) {
                         result += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
                     }
@@ -19751,8 +19756,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         ((data.member[sender].exp / getLevelRequiredExperience(data.member[sender].lv)) * 100).toFixed(2) +
                         "%])";
                     if (data.member[sender].boostercnt === 0) {
-                        resultMsg +=
-                            "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363 " + allsee + "";
+                        var miniBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, miniBoosterResult);
+                        resultMsg += miniBoosterDepletionMessage ? "\n" + miniBoosterDepletionMessage : "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.";
                     } else if (data.member[sender].boostercnt > 0) {
                         resultMsg += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
                     }
@@ -34670,13 +34675,13 @@ function getAdventureLevelCharmPercent(level) {
     return (currentLevel - 1) * GLOBAL_CONFIG.level.baseCharmPercent + counts.normal * GLOBAL_CONFIG.level.normalPromotionPercent + counts.major * GLOBAL_CONFIG.level.majorPromotionPercent;
 }
 
-// 기본 EXP를 3배로 만든 단위마다 가호 3개를 차감하는 함수
+// 가호가 남아 있으면 한 번의 기본 EXP 전체를 3배로 지급하고 최대 필요량까지 차감하는 함수
 function applyAdventureExperienceBooster(member, baseExperience) {
     var base = Math.max(0, Math.floor(Number(baseExperience) || 0));
     var availableBooster = member ? Math.max(0, parseInt(member.boostercnt, 10) || 0) : 0;
-    var consumptionPerBaseExp = GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp; // 기본 EXP 1을 3배 적용할 때 필요한 가호 수량
-    var boostedBaseExperience = Math.min(base, Math.floor(availableBooster / consumptionPerBaseExp)); // 가호로 완전히 3배 처리할 기본 EXP
-    var usedBooster = boostedBaseExperience * consumptionPerBaseExp;
+    var requiredBooster = base * GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp; // 이번 기본 EXP 전체의 3배 적용에 필요한 가호 수량
+    var boostedBaseExperience = base > 0 && availableBooster > 0 ? base : 0; // 남은 가호가 있으면 이번 정산 전체에 3배 적용
+    var usedBooster = Math.min(availableBooster, requiredBooster); // 마지막 사용은 남은 가호를 모두 소진
     var extraExperience = boostedBaseExperience * GLOBAL_CONFIG.level.boosterExtraMultiplier;
     if (member) member.boostercnt = availableBooster - usedBooster;
     return {
@@ -34696,9 +34701,16 @@ function buildBattleExperienceRewardMessage(totalExperience, baseExperience, boo
     return lines.join("\n");
 }
 
-// 퀘스트 완료 시 기본 경험치와 티어 추가분을 실제 지급량으로 표시하는 함수
-function buildQuestExperienceRewardMessage(experienceResult) {
-    return "📊 경험치: +" + numberWithCommas(experienceResult.total) + "exp\n└ 기본 " + numberWithCommas(experienceResult.base) + " + 티어 " + numberWithCommas(experienceResult.bonus);
+// 가호를 이번 경험치 정산에서 모두 사용했을 때 공통 소진 안내를 만드는 함수
+function buildAdventureBoosterDepletionMessage(data, petData, guildData, user, boosterResult) {
+    var member = data && data.member ? data.member[user] : null;
+    if (!member || Number(member.boostercnt) !== 0 || !boosterResult || boosterResult.usedBooster <= 0) return "";
+    return "[" + checkRank(data, petData, guildData, user) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.";
+}
+
+// 퀘스트 완료 시 기본·가호·티어 경험치를 실제 지급량으로 표시하는 함수
+function buildQuestExperienceRewardMessage(experienceResult, baseExperience, boosterExperience) {
+    return buildBattleExperienceRewardMessage(experienceResult.total, baseExperience, boosterExperience, experienceResult.bonus);
 }
 
 // 레벨 수정 전후 숫자의 상승·하락 차이를 운영자용으로 표시하는 함수
@@ -39914,10 +39926,14 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
     var passDailyClaimed = false; // 호이·초보패스 전용 일퀘 보상 지급 여부
     var premiumDailyClaimed = false; // 호이패스 프리미엄 전용 일퀘 보상 지급 여부
     var experienceRewardTotal = 0; // 이번 호출에서 퀘스트 보상으로 지급한 총 경험치
+    var experienceRewardBoosterTotal = 0; // 이번 호출에서 가호로 추가 지급한 퀘스트 경험치
 
     if (status.isComplete && !status.dailyRewardDone) {
-        var dailyExperienceResult = addMemberExperienceWithTierBonus(data, sender, GLOBAL_CONFIG.daily.dailyQuestExperienceReward);
+        var dailyBaseExperience = GLOBAL_CONFIG.daily.dailyQuestExperienceReward;
+        var dailyBoosterResult = applyAdventureExperienceBooster(member, dailyBaseExperience);
+        var dailyExperienceResult = addMemberExperienceWithTierBonus(data, sender, dailyBoosterResult.totalExperience);
         experienceRewardTotal += dailyExperienceResult.total;
+        experienceRewardBoosterTotal += dailyBoosterResult.extraExperience;
         addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 1);
         addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
         addItem(data, sender, "펫 강화석⭐", 30);
@@ -39929,7 +39945,9 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         claimed = true;
         dailyClaimed = true;
 
-        var dailyRewardMessage = "✅ 일일퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(dailyExperienceResult) + "\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개";
+        var dailyRewardMessage = "✅ 일일퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(dailyExperienceResult, dailyBaseExperience, dailyBoosterResult.extraExperience) + "\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개";
+        var dailyBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, dailyBoosterResult);
+        if (dailyBoosterDepletionMessage) dailyRewardMessage += "\n\n" + dailyBoosterDepletionMessage;
         if (dailyExperienceResult.levelUps.length > 0) dailyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, dailyExperienceResult.levelUps);
         messages.push(dailyRewardMessage);
     }
@@ -39943,20 +39961,28 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
     }
 
     if (status.premiumDailyComplete && !status.premiumDailyRewardDone) {
-        var premiumExperienceResult = addMemberExperienceWithTierBonus(data, sender, GLOBAL_CONFIG.supportPass.premium.questExperienceReward);
+        var premiumBaseExperience = GLOBAL_CONFIG.supportPass.premium.questExperienceReward;
+        var premiumBoosterResult = applyAdventureExperienceBooster(member, premiumBaseExperience);
+        var premiumExperienceResult = addMemberExperienceWithTierBonus(data, sender, premiumBoosterResult.totalExperience);
         experienceRewardTotal += premiumExperienceResult.total;
+        experienceRewardBoosterTotal += premiumBoosterResult.extraExperience;
         addItem(data, sender, GLOBAL_CONFIG.items.diamondBoxName, GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount);
         member.premiumDailyQuestCnt = (member.premiumDailyQuestCnt || 0) + 1;
         claimed = true;
         premiumDailyClaimed = true;
-        var premiumRewardMessage = "✅ 호이패스 프리미엄 추가 일퀘 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(premiumExperienceResult) + "\n보상 : 다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개";
+        var premiumRewardMessage = "✅ 호이패스 프리미엄 추가 일퀘 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(premiumExperienceResult, premiumBaseExperience, premiumBoosterResult.extraExperience) + "\n보상 : 다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개";
+        var premiumBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, premiumBoosterResult);
+        if (premiumBoosterDepletionMessage) premiumRewardMessage += "\n\n" + premiumBoosterDepletionMessage;
         if (premiumExperienceResult.levelUps.length > 0) premiumRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, premiumExperienceResult.levelUps);
         messages.push(premiumRewardMessage);
     }
 
     if (status.weeklyComplete) {
-        var weeklyExperienceResult = addMemberExperienceWithTierBonus(data, sender, GLOBAL_CONFIG.daily.weeklyQuestExperienceReward);
+        var weeklyBaseExperience = GLOBAL_CONFIG.daily.weeklyQuestExperienceReward;
+        var weeklyBoosterResult = applyAdventureExperienceBooster(member, weeklyBaseExperience);
+        var weeklyExperienceResult = addMemberExperienceWithTierBonus(data, sender, weeklyBoosterResult.totalExperience);
         experienceRewardTotal += weeklyExperienceResult.total;
+        experienceRewardBoosterTotal += weeklyBoosterResult.extraExperience;
         addItem(data, sender, GLOBAL_CONFIG.petSkill.bookItemName, 1);
         addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 2);
         addItem(data, sender, "땅문서📜", 1);
@@ -39965,7 +39991,9 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         member.weeklyQuestCnt = 0;
         claimed = true;
 
-        var weeklyRewardMessage = "🦋 주간퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(weeklyExperienceResult) + "\n보상 : " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개\n다이아상자💎(/다이아상자오픈) 2개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개";
+        var weeklyRewardMessage = "🦋 주간퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(weeklyExperienceResult, weeklyBaseExperience, weeklyBoosterResult.extraExperience) + "\n보상 : " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개\n다이아상자💎(/다이아상자오픈) 2개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개";
+        var weeklyBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, weeklyBoosterResult);
+        if (weeklyBoosterDepletionMessage) weeklyRewardMessage += "\n\n" + weeklyBoosterDepletionMessage;
         if (weeklyExperienceResult.levelUps.length > 0) weeklyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, weeklyExperienceResult.levelUps);
         messages.push(weeklyRewardMessage);
 
@@ -39990,6 +40018,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         passDailyClaimed: passDailyClaimed,
         premiumDailyClaimed: premiumDailyClaimed,
         experienceRewardTotal: experienceRewardTotal,
+        experienceRewardBoosterTotal: experienceRewardBoosterTotal,
         message: messages.join("\n\n")
     };
 }
@@ -40351,7 +40380,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     var miniWin = Math.max(0, after.miniWin - before.miniWin); // 미니펫대전 승리 횟수 계산
     var miniLose = Math.max(0, after.miniLose - before.miniLose); // 미니펫대전 패배 횟수 계산
     var earnedExp = sumAutoDailyBattleExp(capturedMessages) + (rewardResult ? rewardResult.experienceRewardTotal || 0 : 0); // 실제 대전·퀘스트 보상 경험치 합계
-    var boosterExp = sumAutoDailyBattleBoosterExp(capturedMessages); // 자동 대전에서 가호로 추가된 경험치 합계
+    var boosterExp = sumAutoDailyBattleBoosterExp(capturedMessages) + (rewardResult ? rewardResult.experienceRewardBoosterTotal || 0 : 0); // 자동 대전·퀘스트 보상에서 가호로 추가된 경험치 합계
     var pointDelta = after.point - before.point; // 자동일퀘 후 포인트 증감 계산
     var itemDelta = diffPositiveNumberMap(before.bag, after.bag); // 자동일퀘로 증가한 아이템 계산
     var progressed = towerAttempts + castleAttempts + miniAttempts > 0; // 자동 진행된 콘텐츠 존재 여부
@@ -50091,6 +50120,15 @@ function getExploreTreasureUsageInfo(data, petSkillData, user) {
     };
 }
 
+// 실제 정산된 펫탐험 종류에 맞는 기본 경험치를 반환하는 함수
+function getPetExploreBaseExperience(dungeon) {
+    var dungeonKey = String(dungeon);
+    if (dungeonKey === "0" || isRegularMineExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.experienceRewards.mine;
+    if (dungeonKey === "E" || dungeonKey === "10" || isRegularDungeonExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.experienceRewards.dungeon;
+    if (isMazeExploreSlot(dungeonKey)) return GLOBAL_CONFIG.petExplore.experienceRewards.maze;
+    return 0;
+}
+
 /** 정산 1회 실행 */
 function doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData) {
     if (!data || !data.member) return null;
@@ -50244,10 +50282,18 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
                 rewardText = "펫먹이🍼 2개";
             }
 
+            var exploreBaseExperience = getPetExploreBaseExperience(finalDungeon); // 최종 실제 탐험지의 기본 경험치
+            var exploreBoosterResult = applyAdventureExperienceBooster(data.member[user], exploreBaseExperience); // 펫탐험 가호 적용·소모 결과
+            var exploreTierExpResult = addMemberExperienceWithTierBonus(data, user, exploreBoosterResult.totalExperience); // 가호 적용 후 티어 보너스와 레벨업 결과
+            var exploreExperienceMessage = buildBattleExperienceRewardMessage(exploreTierExpResult.total, exploreBaseExperience, exploreBoosterResult.extraExperience, exploreTierExpResult.bonus);
+
             // 결과 라인
             var memberFormat = checkRank(data, petData, guildData, user);
             var line = "[" + memberFormat + "]" + getExploreDungeonName(finalDungeon, petExploreData) + (success ? "성공(✅)" : "실패(❌)");
             line += "\n획득: " + rewardText;
+            line += "\n" + exploreExperienceMessage;
+            var exploreBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, user, exploreBoosterResult);
+            if (exploreBoosterDepletionMessage) line += "\n\n" + exploreBoosterDepletionMessage;
             if (bonusRewardText) {
                 line += "\n" + bonusRewardText;
             }
@@ -50257,6 +50303,9 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
             }
             if (usedTreasure && treasureDrop) {
                 line += " 보물🗺️:주간🦋";
+            }
+            if (exploreTierExpResult.levelUps.length > 0) {
+                line += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, user, exploreTierExpResult.levelUps);
             }
 
             if (success) {
