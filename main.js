@@ -49703,7 +49703,8 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr) || arr.length < 1) return null;
     var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 같은 정각 중복 처리 판정 키
-    var lines = [];
+    var successLines = [];
+    var failLines = [];
     var levelUpMessages = [];
     var participated = 0;
     for (var i = 0; i < arr.length; i++) {
@@ -49711,14 +49712,14 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
         if (!entry || !entry.user || !data.member[entry.user]) continue;
         var user = entry.user;
         if (!isCurrentGuildMemberForChuseok(data, guildData, user)) {
-            lines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n🏰 길드 미가입: 참가비·보상 없음");
+            failLines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n🏰 길드 미가입: 참가비·보상 없음");
             continue;
         }
         if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
         petExploreData.chuseokEvent.processedHours[user] = hourKey;
         var point = Number(data.member[user].point) || 0;
         if (point < config.participationFee) {
-            lines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n💰 필요 포인트 🅟" + numberWithCommas(config.participationFee) + "\n포인트 부족: 참가비·보상 없음");
+            failLines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n💰 필요 포인트 🅟" + numberWithCommas(config.participationFee) + "\n포인트 부족: 참가비·보상 없음");
             continue;
         }
         data.member[user].point = point - config.participationFee;
@@ -49745,9 +49746,11 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
         if (chuseokExperienceReward.levelUpMessage) levelUpMessages.push(chuseokExperienceReward.levelUpMessage);
         if (usedUpItem) resultLine += "\n확률UP🗻: " + usedUpItem + " 1개 사용";
         resultLine += "\n💰 참가비 🅟" + numberWithCommas(config.participationFee);
-        lines.push(resultLine);
+        if (success) successLines.push(resultLine);
+        else failLines.push(resultLine);
         participated++;
     }
+    var lines = successLines.concat(failLines); // 성공 결과를 먼저, 실패·미참여 결과를 뒤에 표시
     if (lines.length < 1) return null;
     clearPetExploreTransientSaveFlags(petExploreData);
     saveJsonFile(data, filePath);
