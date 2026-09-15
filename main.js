@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.515"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.516"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -7852,6 +7852,47 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     replier.reply(buildAdventureLevelEditMessage(data, petData, guildData, levelEditTarget, levelEditBeforeLevel, levelEditValue, levelEditBeforeExp));
+                    return;
+                }
+                if (msg === "/경험치수정" && sender === "호이 남") {
+                    replier.reply("사용법: /경험치수정 [아이디] [경험치]\n예: /경험치수정 호이 남 1000");
+                    return;
+                }
+                if (/^\/경험치수정\s+.+\s+\d+$/.test(msg) && sender === "호이 남") {
+                    var experienceEditMatch = msg.match(/^\/경험치수정\s+(.+?)\s+(\d+)$/);
+                    var experienceEditTarget = experienceEditMatch ? experienceEditMatch[1].trim() : "";
+                    var experienceEditValue = experienceEditMatch ? Number(experienceEditMatch[2]) : -1;
+                    if (!experienceEditTarget || experienceEditValue < 0 || Math.floor(experienceEditValue) !== experienceEditValue || Math.abs(experienceEditValue) > 9007199254740991) {
+                        replier.reply("❌ 경험치는 0 이상의 안전한 정수로 입력해주세요.\n예: /경험치수정 호이 남 1000");
+                        return;
+                    }
+                    if (!data.member[experienceEditTarget]) {
+                        replier.reply("❌ 존재하지 않는 아이디입니다: " + experienceEditTarget);
+                        return;
+                    }
+                    var experienceEditBeforeMember = JSON.parse(JSON.stringify(data.member[experienceEditTarget])); // 저장 전 원본 계정 데이터
+                    var experienceEditCandidate = JSON.parse(JSON.stringify(data.member[experienceEditTarget])); // 레벨업 처리 후 저장할 후보 데이터
+                    var experienceEditBeforeLevel = Math.max(1, parseInt(experienceEditCandidate.lv, 10) || 1);
+                    var experienceEditBeforeExp = Math.max(0, Number(experienceEditCandidate.exp) || 0);
+                    var experienceEditBeforePoint = Number(experienceEditCandidate.point) || 0;
+                    experienceEditCandidate.exp = experienceEditValue;
+                    var experienceEditLevelUps = processAdventureLevelUps(experienceEditCandidate);
+                    if (experienceEditCandidate.exp >= getLevelRequiredExperience(experienceEditCandidate.lv) || Math.floor(experienceEditCandidate.point) !== experienceEditCandidate.point || Math.abs(experienceEditCandidate.point) > 9007199254740991) {
+                        replier.reply("❌ 처리 가능한 범위를 넘는 경험치입니다. 더 작은 값으로 나누어 입력해주세요.");
+                        return;
+                    }
+                    data.member[experienceEditTarget] = experienceEditCandidate;
+                    saveJsonFile(data, filePath);
+                    var verifiedExperienceEditData = loadJsonFile(filePath);
+                    var verifiedExperienceEditMember = verifiedExperienceEditData && verifiedExperienceEditData.member ? verifiedExperienceEditData.member[experienceEditTarget] : null;
+                    if (!isExactJsonSnapshot(experienceEditCandidate, verifiedExperienceEditMember)) {
+                        data.member[experienceEditTarget] = experienceEditBeforeMember;
+                        replier.reply("❌ 경험치 수정 저장 검증에 실패했습니다. 대상 계정 데이터를 확인해주세요.");
+                        return;
+                    }
+                    var experienceEditMessage = buildAdventureExperienceEditMessage(data, petData, guildData, experienceEditTarget, experienceEditBeforeLevel, experienceEditBeforeExp, experienceEditBeforePoint, experienceEditValue, experienceEditLevelUps);
+                    if (experienceEditLevelUps.length > 0) experienceEditMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, experienceEditTarget, experienceEditLevelUps);
+                    replier.reply(experienceEditMessage);
                     return;
                 }
                 if (msg === "/레벨초기화" && sender === "호이 남") {
@@ -30386,7 +30427,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -34748,6 +34789,29 @@ function buildAdventureLevelEditMessage(data, petData, guildData, user, beforeLe
     return message;
 }
 
+// 관리자 경험치 수정의 입력값·최종 EXP·레벨·포인트 변동을 상세히 만드는 함수
+function buildAdventureExperienceEditMessage(data, petData, guildData, user, beforeLevel, beforeExp, beforePoint, inputExp, levelUps) {
+    var member = data.member[user];
+    var afterLevel = Math.max(1, parseInt(member.lv, 10) || 1);
+    var afterExp = Math.max(0, Number(member.exp) || 0);
+    var afterPoint = Number(member.point) || 0;
+    var levelUpCount = levelUps ? levelUps.length : 0; // 입력 경험치로 실제 처리된 레벨업 횟수
+    var pointDifference = afterPoint - beforePoint; // 레벨업 보상으로 변동한 포인트
+    var pointDifferenceText = pointDifference > 0 ? "▲" + numberWithCommas(pointDifference) : pointDifference < 0 ? "▼" + numberWithCommas(Math.abs(pointDifference)) : "변동 없음";
+    var message = "✅ 모험가 경험치 수정 완료\n";
+    message += "[" + checkRank(data, petData, guildData, user) + "] (" + user + ")\n";
+    message += "━━━━━━━━━━━━\n";
+    message += "📊 기존 EXP: " + numberWithCommas(beforeExp) + "\n";
+    message += "🧪 입력 EXP: " + numberWithCommas(inputExp) + "\n";
+    message += "📚 최종 EXP: " + numberWithCommas(afterExp) + " / " + numberWithCommas(getLevelRequiredExperience(afterLevel)) + "\n";
+    message += "🌟 레벨: Lv." + numberWithCommas(beforeLevel) + " → Lv." + numberWithCommas(afterLevel) + " (" + formatAdventureLevelEditDifference(beforeLevel, afterLevel, "") + ")\n";
+    message += "🎯 레벨업: " + (levelUpCount > 0 ? numberWithCommas(levelUpCount) + "회" : "발생 없음") + "\n";
+    message += "🅟 포인트: " + numberWithCommas(beforePoint) + " → " + numberWithCommas(afterPoint) + " (" + pointDifferenceText + ")\n";
+    message += "━━━━━━━━━━━━\n";
+    message += "결과: 입력 EXP 기준 레벨업 처리 · 티어 경험치 잔여값 유지";
+    return message;
+}
+
 // 0.01% 정수 단위로 비율을 적용해 부동소수점 내림 오차를 막는 함수
 function applyPercentWithExactFloor(value, percent) {
     var baseValue = Math.max(0, Math.floor(Number(value) || 0));
@@ -34801,18 +34865,19 @@ function buildAdventureLevelUpMessage(data, petData, guildData, user, levelUps) 
         if (currentPriority > highestPriority || (currentPriority === highestPriority && levelUps[i].level > highest.level)) highest = levelUps[i];
     }
     var heading = highest.type === "major" ? "🏆 대승급 달성!" : highest.type === "normal" ? "🎖️ 승급 달성!" : "✨ 레벨업!";
+    var finalLevel = data && data.member && data.member[user] ? Math.max(1, parseInt(data.member[user].lv, 10) || 1) : levelUps[levelUps.length - 1].level; // 모든 레벨업 처리 후 실제 최종 레벨
     var totalCharmIncrease = 0; // 이번 다중 레벨업에서 캐슬·레이드 각각 증가한 누적 보너스
     for (var bonusIndex = 0; bonusIndex < levelUps.length; bonusIndex++) {
         totalCharmIncrease += GLOBAL_CONFIG.level.baseCharmPercent;
         if (levelUps[bonusIndex].type === "normal") totalCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
         else if (levelUps[bonusIndex].type === "major") totalCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
     }
-    var message = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\nLv." + highest.level + " " + highest.title;
+    var message = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\n🌟 현재 레벨: Lv." + finalLevel + "\n" + getAdventureLevelTitle(finalLevel);
     message += "\n레벨업 " + numberWithCommas(levelUps.length) + "회 · 포인트 🅟" + numberWithCommas(levelUps.length * GLOBAL_CONFIG.level.bonusPoint) + " 지급";
     message += "\n⚔️ 캐슬 +" + formatAdventureLevelPercent(totalCharmIncrease) + "% · 👾 레이드 +" + formatAdventureLevelPercent(totalCharmIncrease) + "%";
-    if (highest.type === "level") {
-        var nextPromotionLevel = Math.ceil(highest.level / 10) * 10; // 일반 레벨업 이후 가장 가까운 승급 레벨
-        message += "\n🎯 Lv." + nextPromotionLevel + " 승급까지 " + (nextPromotionLevel - highest.level) + "레벨!";
+    if (finalLevel % 10 !== 0) {
+        var nextPromotionLevel = Math.ceil(finalLevel / 10) * 10; // 최종 레벨 이후 가장 가까운 승급 레벨
+        message += "\n🎯 Lv." + nextPromotionLevel + " 승급까지 " + (nextPromotionLevel - finalLevel) + "레벨!";
     }
     message += allsee + "\n\n📋 이번 레벨업 상세";
     for (var detailIndex = 0; detailIndex < levelUps.length; detailIndex++) {
