@@ -2889,6 +2889,7 @@ Status: VERIFIED
 
 - `/티어` shows the current tier, actual promotion target, shortages, ticket purchase estimate, benefits, and the next action; detailed rows follow `allsee`.
 - `/티어`와 `/티어적용`의 티켓·재료·쿠폰 수량은 천 단위 쉼표로 표시한다.
+- `/티어`의 포인트 상점 견적은 `탈세자📙`의 세금 70% 면제와 `티어 상승론📙`의 티켓 1% 추가 획득을 반영해 실제 최소 구매 수량과 결제액을 표시한다.
 - `/티어적용` supports multi-tier promotion for the sender and does not downgrade other members.
 - `checkRank`는 저장된 티어 이름을 현재 티어 표와 대조해 최신 이모지를 표시하며, 옛 `벚꽃` 표기는 `벛꽃` 티어로 호환한다.
 - Tiers 42–51 add pet-exploration and account-experience bonuses; their charm rewards are claimed once per user and tier.
@@ -4522,8 +4523,8 @@ Status: VERIFIED
 - `쇼핑광📙`은 20%, `VIP블랙카드📙`는 30%를 할인하며 두 스킬은 호환 그룹으로 중복 장착할 수 없다. 기존 비정상 데이터에 둘 다 있으면 VIP 할인만 적용한다.
 - 티켓이벤트 쿠폰 할인은 티켓별로 높은 할인율부터 적용한 뒤 펫스킬 할인을 적용하고, 두 할인 뒤의 상품가를 기준으로 세금을 계산한다.
 - 펫스킬 할인 안내는 구매와 데이터 저장이 성공한 뒤에만 출력한다.
-- `탈세자📙` reduces point-shop tax by 70% for `/구매` only, so the user pays 30% of the original tax; it does not affect `/길드상점구매`
-- `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when `/구매` item is `티어 승급티켓🎟`
+- `탈세자📙` reduces tax by 70% only in the point-shop `/상점` → `/구매` flow, so the user pays 30% of the original tax.
+- `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when the point-shop `/구매` item is `티어 승급티켓🎟`.
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
 - Buying a point-shop item whose name contains both `다이아` and `상자` is limited to `GLOBAL_CONFIG.pointShop.limits.diamondBoxDailyBuy` per day before cost/tax processing.
 

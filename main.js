@@ -110,7 +110,7 @@ const PET_SKILL_LIST = [
     { name: "입찰의 귀재", grade: "한정판", limitedEdition: true, openable: false, effect: "호이상점 /입찰 시 입찰 포인트가 10% 할인됩니다.\n\n※ 펫스킬 해제 시 효과도 함께 회수됩니다." },
     { name: "VIP블랙카드", grade: "SS", rate: 0.1, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
-    { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
+    { name: "탈세자", grade: "SS", rate: 0.1, effect: "/상점의 /구매로 상품 구매 시 세금의 70%를 면제받습니다." },
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
@@ -137,7 +137,7 @@ const PET_SKILL_LIST = [
     { name: "아르카나 하우스", grade: "A", rate: 1.5, raidExp: 500000, castleExp: 500000, charmCondition: "arcanaFurniture", effect: "가구 [아르카나 루미에르]를 5개 이상 보유하면 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     // { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
     { name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점에서 상품 구매 시 20% 할인됩니다.\n※ VIP블랙카드📙와 중복되지 않습니다." },
-    { name: "티어 상승론", grade: "A", rate: 1.7, effect: "/상점에서 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
+    { name: "티어 상승론", grade: "A", rate: 0.4, effect: "/상점의 /구매로 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
     { name: "징집명령", grade: "A", rate: 1.7, effect: "길드마스터 전용 스킬입니다.\n길드에 가입할 수 있는 최대 인원이 1명 증가합니다." },
     { name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
     { name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
@@ -1995,6 +1995,10 @@ blockedNicknameTerms: [
     pointShop: { // 포인트 상점 설정
         limits: {
             diamondBoxDailyBuy: 100
+        },
+        petSkillBenefits: {
+            taxRelief: { skillName: "탈세자", payableTaxRate: 0.3 },
+            tierTicketBonus: { skillName: "티어 상승론", itemName: "티어 승급티켓🎟", bonusRate: 0.01 }
         }
     },
     guaranteedPackage: { // 확정 패키지 아이템·보상 설정
@@ -18768,11 +18772,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 data.member[sender].bag[itemName] += quantity;
                             }
                             replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
-                            if (itemName === "티어 승급티켓🎟" && hasPetSkill(petSkillData, sender, "티어 상승론")) {
-                                var bonusTicketCount = Math.floor(quantity * 0.01);
+                            var pointShopTierTicketBonus = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
+                            if (itemName === pointShopTierTicketBonus.itemName) {
+                                var bonusTicketCount = getPointShopTierTicketBonusCount(petSkillData, sender, itemName, quantity);
                                 if (bonusTicketCount > 0) {
                                     addItem(data, sender, itemName, bonusTicketCount);
-                                    replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "티어 상승론") + "\n티어 승급티켓🎟 " + numberWithCommas(bonusTicketCount) + "개를 추가로 획득했습니다.");
+                                    replier.reply(buildPetSkillMsg(data, petData, guildData, sender, pointShopTierTicketBonus.skillName) + "\n티어 승급티켓🎟 " + numberWithCommas(bonusTicketCount) + "개를 추가로 획득했습니다.");
                                 }
                             }
                             isBuyFlag = true;
@@ -34672,8 +34677,12 @@ function buildTierProgressPlan(data, petSkillData, user) {
         couponHoldings.push({ name: tierCoupons[couponIndex].name, count: parseInt(bag[tierCoupons[couponIndex].name], 10) || 0 });
     }
     var quote = null;
+    var tierTicketPurchaseQuantity = additionalRegular;
+    var tierTicketPurchaseBonus = 0;
     if (additionalRegular > 0 && data.shop && typeof data.shop["티어 승급티켓🎟"] === "number") {
-        quote = buildPointShopPurchaseQuote(data, petSkillData, user, "티어 승급티켓🎟", additionalRegular, data.shop["티어 승급티켓🎟"]);
+        tierTicketPurchaseQuantity = getPointShopTierTicketPurchaseQuantity(petSkillData, user, additionalRegular);
+        tierTicketPurchaseBonus = getPointShopTierTicketBonusCount(petSkillData, user, "티어 승급티켓🎟", tierTicketPurchaseQuantity);
+        quote = buildPointShopPurchaseQuote(data, petSkillData, user, "티어 승급티켓🎟", tierTicketPurchaseQuantity, data.shop["티어 승급티켓🎟"]);
     }
     return {
         user: user,
@@ -34692,6 +34701,8 @@ function buildTierProgressPlan(data, petSkillData, user) {
         craftLegendStone: craftLegendStone,
         craftPetStone: craftPetStone,
         additionalRegular: additionalRegular,
+        tierTicketPurchaseQuantity: tierTicketPurchaseQuantity,
+        tierTicketPurchaseBonus: tierTicketPurchaseBonus,
         additionalLegendStone: additionalLegendStone,
         additionalPetStone: additionalPetStone,
         craftReady: combineCount > 0 && additionalRegular === 0 && additionalLegendStone === 0 && additionalPetStone === 0,
@@ -34710,6 +34721,7 @@ function buildTierQuoteStatusText(quote) {
     var parts = [];
     if (quote.discountSkill === "VIP블랙카드") parts.push("VIP블랙카드📙 30%");
     else if (quote.discountSkill === "쇼핑광") parts.push("쇼핑광📙 20%");
+    if (quote.taxExempt && quote.baseTaxRate > 0) parts.push("탈세자📙 세금 70% 면제");
     if (quote.couponPlan && quote.couponPlan.usedCount > 0) {
         var couponRates = [];
         for (var i = 0; i < quote.couponPlan.usages.length; i++) couponRates.push(quote.couponPlan.usages[i].rate + "%");
@@ -34746,7 +34758,8 @@ function buildTierProgressMessage(plan, isApplyFailure) {
             if (plan.additionalRegular > 0) {
                 lines.push("");
                 if (plan.quote && plan.quote.available) {
-                    lines.push("💰 티켓 " + numberWithCommas(plan.additionalRegular) + "장 구매: 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
+                    var ticketPurchaseResultText = plan.tierTicketPurchaseBonus > 0 ? " → 총 " + numberWithCommas(plan.tierTicketPurchaseQuantity + plan.tierTicketPurchaseBonus) + "장 획득" : "";
+                    lines.push("💰 티켓 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장 구매" + ticketPurchaseResultText + ": 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
                     lines.push(buildTierQuoteStatusText(plan.quote) + " · 세금 포함");
                 } else {
                     lines.push("💰 티켓 구매비: 현재 확인할 수 없어요");
@@ -34772,6 +34785,9 @@ function buildTierProgressMessage(plan, isApplyFailure) {
     if (plan.quote && plan.quote.available) {
         lines.push("");
         lines.push("💰 티켓 구매 견적");
+        lines.push("부족 수량 " + numberWithCommas(plan.additionalRegular) + "장");
+        lines.push("실제 구매 수량 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장");
+        if (plan.tierTicketPurchaseBonus > 0) lines.push("티어 상승론📙 추가 " + numberWithCommas(plan.tierTicketPurchaseBonus) + "장");
         lines.push("할인 전 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice)));
         lines.push("할인액 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice - plan.quote.itemPrice)));
         lines.push("세금 🅟" + numberWithCommas(Math.floor(plan.quote.taxAmount)) + " (" + plan.quote.taxRate + "%)");
@@ -35860,6 +35876,30 @@ function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unit
     return plan;
 }
 
+// 포인트 상점의 티어 승급티켓 구매에만 티어 상승론 추가 수량을 계산하는 함수
+function getPointShopTierTicketBonusCount(petSkillData, user, itemName, quantity) {
+    var benefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
+    var parsedQuantity = Math.max(0, parseInt(quantity, 10) || 0);
+    if (itemName !== benefit.itemName || !hasPetSkill(petSkillData, user, benefit.skillName)) return 0;
+    return Math.floor(parsedQuantity * benefit.bonusRate);
+}
+
+// 티어 상승론 보너스를 포함해 부족 티켓을 채우는 최소 포인트 상점 구매 수량을 계산하는 함수
+function getPointShopTierTicketPurchaseQuantity(petSkillData, user, requiredQuantity) {
+    var required = Math.max(0, parseInt(requiredQuantity, 10) || 0);
+    var benefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
+    if (required < 1 || !hasPetSkill(petSkillData, user, benefit.skillName)) return required;
+    var low = 1;
+    var high = required;
+    while (low < high) {
+        var middle = Math.floor((low + high) / 2); // 보너스를 포함해 부족 수량을 충족하는 최소 구매량 탐색
+        var received = middle + getPointShopTierTicketBonusCount(petSkillData, user, benefit.itemName, middle);
+        if (received >= required) high = middle;
+        else low = middle + 1;
+    }
+    return low;
+}
+
 // 포인트 상점 구매와 조회 화면이 함께 사용하는 최종 결제 견적을 계산하는 함수
 function buildPointShopPurchaseQuote(data, petSkillData, user, itemName, quantity, unitPrice) {
     var parsedQuantity = parseInt(quantity, 10);
@@ -35879,8 +35919,9 @@ function buildPointShopPurchaseQuote(data, petSkillData, user, itemName, quantit
         itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate);
     }
     var baseTaxRate = data.HoiCastle && data.HoiCastle.taxRate ? parseInt(data.HoiCastle.taxRate, 10) || 0 : 0;
-    var taxExempt = hasPetSkill(petSkillData, user, "탈세자");
-    var taxRate = taxExempt ? Math.round(baseTaxRate * 0.3 * 10) / 10 : baseTaxRate;
+    var taxBenefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.taxRelief;
+    var taxExempt = hasPetSkill(petSkillData, user, taxBenefit.skillName);
+    var taxRate = taxExempt ? Math.round(baseTaxRate * taxBenefit.payableTaxRate * 10) / 10 : baseTaxRate;
     var taxAmount = Math.round(itemPrice * (taxRate / 100));
     return {
         available: true,
@@ -36261,7 +36302,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData, finaliz
         return {
             ok: true,
             message: "[⚔️전체알림⚔️]\n" +
-                "🗡️ 펫무쌍 대화 시작 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 전 🗡️\n" +
+                "🗡️ 펫무쌍 대회 시작 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 전 🗡️\n" +
                 "/펫무쌍준비 를 입력하면 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 안에 대회에 참여할 수 있습니다.\n\n" +
                 "이미 준비한 참가자는 그대로 참여합니다.\n" +
                 "모집이 끝나면 참가자 명단과 함께 시작합니다.\n" +
