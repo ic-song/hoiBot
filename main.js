@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.512"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.513"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -7848,6 +7848,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 개편 직전 " + GLOBAL_CONFIG.level.boosterName + " 보유량 스냅샷이 없거나 현재 데이터와 다릅니다.\n먼저 /레벨리뉴얼점검 을 실행해주세요.");
                         return;
                     }
+                    if (currentLevelRenewalInspection.unsafeBoosterCompensationUsers.length > 0) {
+                        replier.reply("❌ " + GLOBAL_CONFIG.level.boosterName + " 보상 후 포인트가 안전 정수 범위를 넘는 계정이 " + numberWithCommas(currentLevelRenewalInspection.unsafeBoosterCompensationUsers.length) + "명 있어 적용을 중단했습니다.");
+                        return;
+                    }
                     var levelRenewalBackup = JSON.parse(JSON.stringify(data));
                     saveJsonFile(levelRenewalBackup, GLOBAL_CONFIG.level.migrationBackupPath, true);
                     var verifiedLevelRenewalBackup = loadJsonFile(GLOBAL_CONFIG.level.migrationBackupPath);
@@ -7866,7 +7870,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 전환 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 운영 반영을 중단했습니다.");
                         return;
                     }
-                    replier.reply("✅ 레벨 리뉴얼 전환 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(levelRenewalResult.inspection.memberCount) + "명 Lv.1 / EXP 0 초기화\n환생 기록 폐기\n" + GLOBAL_CONFIG.level.boosterName + "와 환생버섯 보유 수량 보존\n환생버섯 회수·환급: /환생회수\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.migrationBackupPath));
+                    replier.reply("✅ 레벨 리뉴얼 전환 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(levelRenewalResult.inspection.memberCount) + "명 Lv.1 / EXP 0 초기화\n환생 기록 폐기\n" + GLOBAL_CONFIG.level.boosterName + " 전체 초기화\n10만회 이상 " + numberWithCommas(levelRenewalResult.migration.compensationAccountCount) + "명에게 계정당 🅟" + numberWithCommas(GLOBAL_CONFIG.level.plannedCompensationPoint) + " 지급\n보상 합계: 🅟" + numberWithCommas(levelRenewalResult.migration.compensationPoint) + "\n환생버섯 보유 수량 보존\n환생버섯 회수·환급: /환생회수\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.migrationBackupPath));
                     return;
                 }
                 if (msg === "/환생회수" && isMaster(sender)) {
@@ -34704,7 +34708,7 @@ function getHighestMajorPromotionLevel(levelUps) {
 
 // 레벨 리뉴얼 전환 대상과 고액 부스터 보유 현황을 집계하는 함수
 function inspectAdventureLevelRenewal(data) {
-    var result = { memberCount: 0, highBoosterUsers: [], highBoosterTotal: 0, mushroomUserCount: 0, mushroomTotal: 0, mushroomRefundTotal: 0, unsafeRefundUsers: [] };
+    var result = { memberCount: 0, highBoosterUsers: [], highBoosterTotal: 0, mushroomUserCount: 0, mushroomTotal: 0, mushroomRefundTotal: 0, unsafeRefundUsers: [], unsafeBoosterCompensationUsers: [] };
     var members = data && data.member ? data.member : {};
     for (var user in members) {
         if (!members.hasOwnProperty(user) || !members[user]) continue;
@@ -34714,6 +34718,8 @@ function inspectAdventureLevelRenewal(data) {
         if (boosterCount >= GLOBAL_CONFIG.level.highBoosterThreshold) {
             result.highBoosterUsers.push({ user: user, count: boosterCount });
             result.highBoosterTotal += boosterCount;
+            var pointAfterCompensation = (Number(member.point) || 0) + GLOBAL_CONFIG.level.plannedCompensationPoint;
+            if (Math.floor(pointAfterCompensation) !== pointAfterCompensation || Math.abs(pointAfterCompensation) > 9007199254740991) result.unsafeBoosterCompensationUsers.push({ user: user, pointAfterCompensation: pointAfterCompensation });
         }
         var mushroomCount = member.bag ? Math.max(0, parseInt(member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem], 10) || 0) : 0;
         if (mushroomCount > 0) {
@@ -34752,9 +34758,21 @@ function isExactJsonSnapshot(source, saved) {
     }
 }
 
-// 레벨 리뉴얼 저장 결과의 초기화 필드와 보존 대상을 확인하는 함수
+// 레벨 리뉴얼 저장 결과의 초기화 필드와 가호 보상 지급을 확인하는 함수
 function isAdventureLevelRenewalResultValid(before, after) {
     if (!before || !before.member || !after || !after.member || !after.migrations || !after.migrations[GLOBAL_CONFIG.level.migrationKey]) return false;
+    var migration = after.migrations[GLOBAL_CONFIG.level.migrationKey];
+    var inspection = inspectAdventureLevelRenewal(before);
+    if (!migration.boosterReset || migration.boosterPreserved) return false;
+    if (Number(migration.compensationAccountCount) !== inspection.highBoosterUsers.length || Number(migration.boosterCount) !== inspection.highBoosterTotal || Number(migration.compensationPoint) !== inspection.highBoosterUsers.length * GLOBAL_CONFIG.level.plannedCompensationPoint) return false;
+    if (Object.prototype.toString.call(migration.accounts) !== "[object Array]" || migration.accounts.length !== inspection.highBoosterUsers.length) return false;
+    var compensationByUser = {};
+    for (var recordIndex = 0; recordIndex < migration.accounts.length; recordIndex++) {
+        var record = migration.accounts[recordIndex];
+        var recordKey = record ? "user:" + String(record.id) : "";
+        if (!record || compensationByUser.hasOwnProperty(recordKey)) return false;
+        compensationByUser[recordKey] = record;
+    }
     var beforeUsers = Object.keys(before.member);
     if (beforeUsers.length !== Object.keys(after.member).length) return false;
     for (var i = 0; i < beforeUsers.length; i++) {
@@ -34763,7 +34781,17 @@ function isAdventureLevelRenewalResultValid(before, after) {
         var afterMember = after.member[user];
         if (!beforeMember || !afterMember) return false;
         if (Number(afterMember.lv) !== 1 || Number(afterMember.exp) !== 0 || Number(afterMember.tierExperienceRemainder) !== 0 || Number(afterMember.lv0) !== 0 || Number(afterMember.rebirthcnt) !== 0) return false;
-        if (JSON.stringify(beforeMember.boostercnt) !== JSON.stringify(afterMember.boostercnt)) return false;
+        if (Number(afterMember.boostercnt) !== 0) return false;
+        var beforeBoosterCount = Math.max(0, parseInt(beforeMember.boostercnt, 10) || 0);
+        var receivesCompensation = beforeBoosterCount >= GLOBAL_CONFIG.level.highBoosterThreshold;
+        var expectedPoint = receivesCompensation ? (Number(beforeMember.point) || 0) + GLOBAL_CONFIG.level.plannedCompensationPoint : beforeMember.point;
+        if (JSON.stringify(afterMember.point) !== JSON.stringify(expectedPoint)) return false;
+        var compensationRecord = compensationByUser["user:" + String(user)];
+        if (receivesCompensation) {
+            if (!compensationRecord || Number(compensationRecord.count) !== beforeBoosterCount || Number(compensationRecord.compensationPoint) !== GLOBAL_CONFIG.level.plannedCompensationPoint) return false;
+        } else if (compensationRecord) {
+            return false;
+        }
         var beforeMushroom = beforeMember.bag ? beforeMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem] : undefined;
         var afterMushroom = afterMember.bag ? afterMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem] : undefined;
         if (JSON.stringify(beforeMushroom) !== JSON.stringify(afterMushroom)) return false;
@@ -34816,6 +34844,7 @@ function buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, i
     message += GLOBAL_CONFIG.level.boosterName + " 10만회 이상: " + numberWithCommas(inspection.highBoosterUsers.length) + "명 / " + numberWithCommas(inspection.highBoosterTotal) + "회\n";
     message += "예정 보상: 계정당 🅟" + numberWithCommas(GLOBAL_CONFIG.level.plannedCompensationPoint) + " (점검만, 미지급)\n";
     message += "예정 보상 합계: 🅟" + numberWithCommas(inspection.highBoosterUsers.length * GLOBAL_CONFIG.level.plannedCompensationPoint) + "\n";
+    message += "보상 정밀도 위험 계정: " + numberWithCommas(inspection.unsafeBoosterCompensationUsers.length) + "명\n";
     message += "환생버섯: " + numberWithCommas(inspection.mushroomUserCount) + "명 / " + numberWithCommas(inspection.mushroomTotal) + "개\n";
     message += "환생버섯 환급 예정: 🅟" + numberWithCommas(inspection.mushroomRefundTotal) + "\n";
     message += "환급 정밀도 위험 계정: " + numberWithCommas(inspection.unsafeRefundUsers.length) + "명";
@@ -34829,14 +34858,22 @@ function buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, i
     return message;
 }
 
-// 전체 계정을 새 레벨 체계로 한 번만 전환하고 가호와 환생버섯 보유량을 유지하는 함수
+// 전체 계정을 새 레벨 체계로 전환하고 고액 가호 보상 후 가호를 초기화하는 함수
 function applyAdventureLevelRenewal(data) {
     if (!data.migrations || typeof data.migrations !== "object" || data.migrations instanceof Array) data.migrations = {};
     if (data.migrations[GLOBAL_CONFIG.level.migrationKey]) return { ok: false, message: "이미 레벨 리뉴얼 전환이 완료되었습니다." };
     var inspection = inspectAdventureLevelRenewal(data);
+    if (inspection.unsafeBoosterCompensationUsers.length > 0) return { ok: false, message: "가호 보상 후 포인트가 안전 정수 범위를 넘는 계정이 있어 적용할 수 없습니다." };
+    var compensationAccounts = [];
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
         var member = data.member[user];
+        var boosterCount = Math.max(0, parseInt(member.boostercnt, 10) || 0);
+        if (boosterCount >= GLOBAL_CONFIG.level.highBoosterThreshold) {
+            member.point = (Number(member.point) || 0) + GLOBAL_CONFIG.level.plannedCompensationPoint;
+            compensationAccounts.push({ id: user, count: boosterCount, compensationPoint: GLOBAL_CONFIG.level.plannedCompensationPoint });
+        }
+        member.boostercnt = 0;
         member.lv = 1;
         member.exp = 0;
         member.tierExperienceRemainder = 0;
@@ -34846,7 +34883,12 @@ function applyAdventureLevelRenewal(data) {
     data.migrations[GLOBAL_CONFIG.level.migrationKey] = {
         appliedAt: formatDateTime(new Date()),
         memberCount: inspection.memberCount,
-        boosterPreserved: true,
+        boosterPreserved: false,
+        boosterReset: true,
+        compensationAccountCount: compensationAccounts.length,
+        boosterCount: inspection.highBoosterTotal,
+        compensationPoint: compensationAccounts.length * GLOBAL_CONFIG.level.plannedCompensationPoint,
+        accounts: compensationAccounts,
         rebirthMushroomPreserved: true
     };
     return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.migrationKey] };
