@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.527"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.528"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -6963,8 +6963,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
-                    if (msg == "/펫탐험정산" && isChuseokExploreEventActive(petExploreData)) {
-                        petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동 정산은 새로운 탐험 회차로 실행
+                    if ((msg == "/펫탐험정산" || msg == "/자동탐험시작") && isChuseokExploreEventActive(petExploreData)) {
+                        petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동·자동탐험 시작 정산은 새로운 탐험 회차로 실행
                     }
                     if (isChuseokExploreEventActive(petExploreData)) petExploreData = autoExploreBetting(data, petExploreData); // 자동탐험권 보유자를 11번에 먼저 등록
                     // 현재 정산 조건을 충족한 실제 탐험 예정 인원을 계산한다.
