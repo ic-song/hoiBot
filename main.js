@@ -34719,6 +34719,10 @@ function getAdventureLevelCharmPercent(level) {
 // 가호가 남아 있으면 한 번의 기본 EXP 전체를 3배로 지급하고 최대 필요량까지 차감하는 함수
 function applyAdventureExperienceBooster(member, baseExperience) {
     var base = Math.max(0, Math.floor(Number(baseExperience) || 0));
+    var autoDailyBatch = getAutoDailyBatchContext();
+    if (autoDailyBatch && autoDailyBatch.deferExperienceBooster && !autoDailyBatch.applyingDeferredExperienceBooster) {
+        return { baseExperience: base, boostedBaseExperience: 0, usedBooster: 0, extraExperience: 0, totalExperience: base };
+    }
     var availableBooster = member ? Math.max(0, parseInt(member.boostercnt, 10) || 0) : 0;
     var requiredBooster = base * GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp; // 이번 기본 EXP 전체의 3배 적용에 필요한 가호 수량
     var boostedBaseExperience = base > 0 && availableBooster > 0 ? base : 0; // 남은 가호가 있으면 이번 정산 전체에 3배 적용
@@ -40109,7 +40113,9 @@ function beginAutoDailyBatch(snapshot, petSkillData) {
         managedPaths: {},
         files: {},
         dirtyPaths: {},
-        committing: false
+        committing: false,
+        deferExperienceBooster: true,
+        applyingDeferredExperienceBooster: false
     };
     var managedPaths = [filePath, memberPetPath, petSkillDataPath, guildPath, trialTowerPath, castleBattlePath, petExplorePath, memberTitlePath];
     for (var i = 0; i < managedPaths.length; i++) {
@@ -40418,16 +40424,25 @@ function sumAutoDailyBattleExp(messages) {
     return totalExp;
 }
 
-// 자동일퀘 내부 캐슬·미니펫대전에서 가호로 추가된 경험치를 합산하는 함수
-function sumAutoDailyBattleBoosterExp(messages) {
-    var totalBoosterExp = 0;
-    if (!(messages instanceof Array)) return totalBoosterExp;
-    for (var i = 0; i < messages.length; i++) {
-        var message = String(messages[i] || "");
-        var boosterMatch = message.match(/호월신의 가호 적용!\s*\(\+([\d,]+)exp\)/);
-        if (boosterMatch) totalBoosterExp += parseInt(boosterMatch[1].replace(/,/g, ""), 10) || 0;
+// 자동일퀘 전체 기본 경험치에 가호 3배를 한 번 적용하고 추가 경험치를 지급하는 함수
+function applyAutoDailyExperienceBooster(data, user, baseExperience) {
+    var member = data && data.member ? data.member[user] : null;
+    var batch = getAutoDailyBatchContext();
+    var result = { baseExperience: 0, boostedBaseExperience: 0, usedBooster: 0, extraExperience: 0, totalExperience: 0, levelUps: [] };
+    if (!member) return result;
+    if (batch) batch.applyingDeferredExperienceBooster = true;
+    try {
+        result = applyAdventureExperienceBooster(member, baseExperience);
+    } finally {
+        if (batch) batch.applyingDeferredExperienceBooster = false;
     }
-    return totalBoosterExp;
+    if (result.extraExperience > 0) {
+        member.exp = (Number(member.exp) || 0) + result.extraExperience;
+        result.levelUps = processAdventureLevelUps(member);
+    } else {
+        result.levelUps = [];
+    }
+    return result;
 }
 
 // 자동일퀘 진행 결과 요약 메시지 생성 함수
@@ -40444,8 +40459,9 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     var miniAttempts = Math.max(0, status.miniUsed - before.status.miniUsed); // 미니펫대전 진행 횟수 계산
     var miniWin = Math.max(0, after.miniWin - before.miniWin); // 미니펫대전 승리 횟수 계산
     var miniLose = Math.max(0, after.miniLose - before.miniLose); // 미니펫대전 패배 횟수 계산
-    var earnedExp = sumAutoDailyBattleExp(capturedMessages) + (rewardResult ? rewardResult.experienceRewardTotal || 0 : 0); // 실제 대전·퀘스트 보상 경험치 합계
-    var boosterExp = sumAutoDailyBattleBoosterExp(capturedMessages) + (rewardResult ? rewardResult.experienceRewardBoosterTotal || 0 : 0); // 자동 대전·퀘스트 보상에서 가호로 추가된 경험치 합계
+    var baseEarnedExp = rewardResult ? rewardResult.autoDailyBaseExperience || 0 : 0; // 가호 적용 전 자동 대전·퀘스트 경험치 합계
+    var boosterExp = rewardResult ? rewardResult.autoDailyBoosterExperience || 0 : 0; // 자동일퀘 전체에 3배 적용해 추가된 경험치
+    var earnedExp = baseEarnedExp + boosterExp; // 가호 적용 후 실제 총 지급 경험치
     var pointDelta = after.point - before.point; // 자동일퀘 후 포인트 증감 계산
     var itemDelta = diffPositiveNumberMap(before.bag, after.bag); // 자동일퀘로 증가한 아이템 계산
     var progressed = towerAttempts + castleAttempts + miniAttempts > 0; // 자동 진행된 콘텐츠 존재 여부
@@ -40466,8 +40482,12 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
         lines.push("⏳ 일일퀘스트 미완료");
     }
     lines.push("[😈시탑,🐹미대전,🏆캐대전]");
-    lines.push("✨ 총 획득 경험치: " + numberWithCommas(earnedExp) + " exp");
-    lines.push(boosterExp > 0 ? "└ 호월신의 가호 적용! (+" + numberWithCommas(boosterExp) + "exp)" : "└ 호월신의 가호 적용: 없음");
+    lines.push("📊 기본 경험치: " + numberWithCommas(baseEarnedExp) + " exp");
+    lines.push(boosterExp > 0 ? "✨ 호월신의 가호 적용! (+" + numberWithCommas(boosterExp) + "exp)" : "✨ 호월신의 가호 적용: 없음");
+    lines.push("└ 총 경험치: " + numberWithCommas(earnedExp) + " exp");
+    if (rewardResult && rewardResult.autoDailyBoosterUsed > 0) lines.push("└ 가호 사용: " + numberWithCommas(rewardResult.autoDailyBoosterUsed) + "개");
+    var autoDailyBoosterDepletionMessage = rewardResult ? buildAdventureBoosterDepletionMessage(after.data, after.petData, after.guildData, sender, { usedBooster: rewardResult.autoDailyBoosterUsed || 0 }) : "";
+    if (autoDailyBoosterDepletionMessage) lines.push(autoDailyBoosterDepletionMessage);
     lines.push("🤑 총 포인트 변동: 🅟" + numberWithCommas(pointDelta) + " " + allsee);
     lines.push("━━━━━━━━━━━━");
     lines.push("😈 시련의탑");
@@ -40486,6 +40506,10 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     lines.push(formatAutoDailyItemLines(itemDelta));
     lines.push("발동 펫스킬📙");
     lines.push(formatAutoDailyPetSkillActivationLines(capturedMessages));
+    if (rewardResult && rewardResult.autoDailyLevelUps && rewardResult.autoDailyLevelUps.length > 0) {
+        lines.push("");
+        lines.push(buildAdventureLevelUpMessage(after.data, after.petData, after.guildData, sender, rewardResult.autoDailyLevelUps));
+    }
     lines.push("━━━━━━━━━━━━");
     if (rewardResult && rewardResult.message) {
         lines.push(rewardResult.message);
@@ -40551,6 +40575,14 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
             }
             saveJsonFile(rewardData, filePath);
         }
+
+        var autoDailyBaseExperience = sumAutoDailyBattleExp(capturedMessages) + (rewardResult.experienceRewardTotal || 0); // 가호 적용 전 자동 대전·퀘스트 총 경험치
+        var autoDailyBoosterResult = applyAutoDailyExperienceBooster(rewardData, sender, autoDailyBaseExperience);
+        rewardResult.autoDailyBaseExperience = autoDailyBaseExperience;
+        rewardResult.autoDailyBoosterExperience = autoDailyBoosterResult.extraExperience;
+        rewardResult.autoDailyBoosterUsed = autoDailyBoosterResult.usedBooster;
+        rewardResult.autoDailyLevelUps = autoDailyBoosterResult.levelUps;
+        if (autoDailyBoosterResult.usedBooster > 0 || autoDailyBoosterResult.extraExperience > 0) saveJsonFile(rewardData, filePath);
 
         var after = getAutoDailyQuestSnapshot(sender);
         var resultMessage = buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages, autoDailyIssues);
@@ -50351,6 +50383,7 @@ function doPetExploreInterval(data, petData, homeData, guildData, petExploreData
             var exploreBoosterResult = applyAdventureExperienceBooster(data.member[user], exploreBaseExperience); // 펫탐험 가호 적용·소모 결과
             var exploreTierExpResult = addMemberExperienceWithTierBonus(data, user, exploreBoosterResult.totalExperience); // 가호 적용 후 티어 보너스와 레벨업 결과
             var exploreExperienceMessage = buildBattleExperienceRewardMessage(exploreTierExpResult.total, exploreBaseExperience, exploreBoosterResult.extraExperience, exploreTierExpResult.bonus);
+            exploreExperienceMessage = exploreExperienceMessage.replace("📊 경험치:", "📊 총 경험치:");
 
             // 결과 라인
             var memberFormat = checkRank(data, petData, guildData, user);

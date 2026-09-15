@@ -2078,7 +2078,7 @@ Status: VERIFIED
 - `buildAutoDailyQuestMessage`
 - `formatAutoDailyPetSkillActivationLines`
 - `sumAutoDailyBattleExp`
-- `sumAutoDailyBattleBoosterExp`
+- `applyAutoDailyExperienceBooster`
 - `buildQuestExperienceRewardMessage`
 - `buildAdventureBoosterDepletionMessage`
 - `isAutoDailyQuestRunComplete`
@@ -2110,6 +2110,7 @@ Status: VERIFIED
 - Sends an immediate "자동일퀘 계산 중" progress notice before long-running internal command execution
 - Compares in-memory snapshots immediately after each internal command without disk-flush sleep delays
 - Claims daily/weekly/premium quest experience rewards in the same memory batch before the final save
+- 자동일퀘 안에서는 개별 대전·퀘스트의 가호 적용을 미룬 뒤, 가호 적용 전 전체 경험치를 합산해 한 번에 3배로 지급하고 가호를 같은 정산에서 차감한다.
 
 ## Related Commands
 
@@ -2132,8 +2133,8 @@ Status: VERIFIED
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
-- 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과와 같은 실행에서 수령한 일일·주간·프리미엄 퀘스트 보상의 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
-- 자동일퀘 결과는 캐슬·미니펫대전과 같은 실행에서 수령한 일일·주간·프리미엄 퀘스트 보상에서 가호로 추가된 EXP를 모두 합산해 총 경험치 아래에 표시하며, 추가분이 없으면 `호월신의 가호 적용: 없음`으로 표시한다.
+- 자동일퀘 기본 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과와 같은 실행에서 수령한 일일·주간·프리미엄 퀘스트 보상의 가호 적용 전 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
+- 자동일퀘 결과는 `기본 경험치`, `호월신의 가호 추가 경험치`, `총 경험치`, `가호 사용량`을 분리한다. 가호가 있으면 전체 기본 경험치의 2배를 추가해 총 3배를 지급하고, 추가분이 없으면 `호월신의 가호 적용: 없음`으로 표시한다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - 활성 호이패스·초보패스 유저에게 펫홈 댓글·피드 글 작성·홈알림 열기 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 좋아홈·유저 좋아요는 이 일퀘에 반영하지 않으며 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
 - `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
@@ -5573,6 +5574,7 @@ Status: VERIFIED
 - `/달토끼상점`은 비길드 유저도 열람할 수 있지만 구매는 현재 길드 가입 유저만 가능하다. 이벤트 잔액과 기존 가방의 황금당근을 합산해 표시하고, 첫 구매나 이벤트 보상 지급 시 이벤트 잔액으로 옮긴다. 황금당근 차감, 계정별 누적 구매 한도, 구성품 지급을 한 번에 저장하며 이벤트 종료 시 이벤트 잔액·기존 잔액·미개봉 황금당근 아이템과 정산 시간 기록을 비우고 `/탐 11` 참가자를 1~3번 광산으로 이동하며 전체 자동탐험 고정 설정을 초기화한다. 상품별 구매 이력과 비활성 상품 번호는 보존한다.
 - `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
 - 펫탐험은 성공·실패와 관계없이 실제 정산까지 완료한 계정에 광산 3 EXP, 던전 5 EXP, 미궁 7 EXP를 지급한다. 입장 실패·미참여에는 지급하지 않으며, 입장권 부족으로 광산 이동 또는 이벤트 탐험지 진입이 발생하면 최종 실제 탐험지 종류를 기준으로 한다. 이벤트 광산은 광산, 이벤트 던전·길드레이드던전은 던전으로 처리하고 달토끼 탐색은 이 세 분류에서 제외한다. 경험치에는 호월신의 가호 3배와 현재 티어 보너스를 순서대로 반영한다.
+- 펫탐험 정산 메시지는 실제 기본·가호·티어 합산값을 `📊 총 경험치`로 표시한다.
 - Regular mines are `/탐 1~3`: 펫강화, 친밀도, 행운. Random `/탐` selects one of these three without an entry ticket and applies a `-5%` success penalty.
 - Dungeon entries are `/탐 4~7`: 전도르, 양계장, 땅문서, 샵오픈. They apply a `-15%` success penalty and check `펫던전 입장권🌋` at settlement.
 - `/탐 6` rewards `땅문서던전박스📜(/땅문서박스오픈)` 1개, and `/탐 7` rewards `샵오픈던전박스🏡(/샵오픈박스오픈)` 1개 on success.
