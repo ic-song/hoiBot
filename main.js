@@ -7816,6 +7816,37 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     replier.reply("리셋완.");
                 }
+                if (msg === "/레벨수정" && sender === "호이 남") {
+                    replier.reply("사용법: /레벨수정 [아이디] [레벨]\n예: /레벨수정 호이 남 265");
+                    return;
+                }
+                if (/^\/레벨수정\s+.+\s+\d+$/.test(msg) && sender === "호이 남") {
+                    var levelEditMatch = msg.match(/^\/레벨수정\s+(.+?)\s+(\d+)$/);
+                    var levelEditTarget = levelEditMatch ? levelEditMatch[1].trim() : "";
+                    var levelEditValue = levelEditMatch ? Number(levelEditMatch[2]) : 0;
+                    var levelEditRequiredExp = GLOBAL_CONFIG.level.expBase + (levelEditValue - 1) * GLOBAL_CONFIG.level.expPerLevel; // 수정 레벨의 다음 레벨 필요 경험치
+                    if (!levelEditTarget || levelEditValue < 1 || Math.floor(levelEditValue) !== levelEditValue || Math.abs(levelEditValue) > 9007199254740991 || Math.floor(levelEditRequiredExp) !== levelEditRequiredExp || Math.abs(levelEditRequiredExp) > 9007199254740991) {
+                        replier.reply("❌ 레벨은 1 이상의 안전한 정수로 입력해주세요.\n예: /레벨수정 호이 남 265");
+                        return;
+                    }
+                    if (!data.member[levelEditTarget]) {
+                        replier.reply("❌ 존재하지 않는 아이디입니다: " + levelEditTarget);
+                        return;
+                    }
+                    var levelEditBeforeLevel = Math.max(1, parseInt(data.member[levelEditTarget].lv, 10) || 1);
+                    var levelEditBeforeExp = Math.max(0, Number(data.member[levelEditTarget].exp) || 0);
+                    var levelEditBeforeTierRemainder = data.member[levelEditTarget].tierExperienceRemainder; // 레벨 수정에서 보존할 티어 경험치 잔여값
+                    data.member[levelEditTarget].lv = levelEditValue;
+                    saveJsonFile(data, filePath);
+                    var verifiedLevelEditData = loadJsonFile(filePath);
+                    var verifiedLevelEditMember = verifiedLevelEditData && verifiedLevelEditData.member ? verifiedLevelEditData.member[levelEditTarget] : null;
+                    if (!verifiedLevelEditMember || Number(verifiedLevelEditMember.lv) !== levelEditValue || JSON.stringify(verifiedLevelEditMember.exp) !== JSON.stringify(data.member[levelEditTarget].exp) || JSON.stringify(verifiedLevelEditMember.tierExperienceRemainder) !== JSON.stringify(levelEditBeforeTierRemainder)) {
+                        replier.reply("❌ 레벨 수정 저장 검증에 실패했습니다. 대상 계정 데이터를 확인해주세요.");
+                        return;
+                    }
+                    replier.reply(buildAdventureLevelEditMessage(data, petData, guildData, levelEditTarget, levelEditBeforeLevel, levelEditValue, levelEditBeforeExp));
+                    return;
+                }
                 if (msg === "/레벨리뉴얼점검" && isMaster(sender)) {
                     if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
                         replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되어 기준 스냅샷을 다시 생성할 수 없습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
@@ -30329,7 +30360,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -34616,6 +34647,41 @@ function getAdventureLevelCharmPercent(level) {
     var currentLevel = Math.max(1, parseInt(level, 10) || 1);
     var counts = getAdventurePromotionCounts(currentLevel);
     return (currentLevel - 1) * GLOBAL_CONFIG.level.baseCharmPercent + counts.normal * GLOBAL_CONFIG.level.normalPromotionPercent + counts.major * GLOBAL_CONFIG.level.majorPromotionPercent;
+}
+
+// 레벨 수정 전후 숫자의 상승·하락 차이를 운영자용으로 표시하는 함수
+function formatAdventureLevelEditDifference(beforeValue, afterValue, suffix) {
+    var difference = afterValue - beforeValue;
+    if (difference > 0) return "▲" + formatAdventureLevelPercent(difference) + suffix;
+    if (difference < 0) return "▼" + formatAdventureLevelPercent(Math.abs(difference)) + suffix;
+    return "변동 없음";
+}
+
+// 관리자 레벨 수정 전후의 칭호·승급·필요 경험치·매력 보너스를 상세히 만드는 함수
+function buildAdventureLevelEditMessage(data, petData, guildData, user, beforeLevel, afterLevel, beforeExp) {
+    var beforeCounts = getAdventurePromotionCounts(beforeLevel);
+    var afterCounts = getAdventurePromotionCounts(afterLevel);
+    var beforePromotionCount = Math.floor(beforeLevel / 10); // 수정 전 전체 승급 차수
+    var afterPromotionCount = Math.floor(afterLevel / 10); // 수정 후 전체 승급 차수
+    var beforeCharmPercent = getAdventureLevelCharmPercent(beforeLevel); // 수정 전 캐슬·레이드 공통 보너스
+    var afterCharmPercent = getAdventureLevelCharmPercent(afterLevel); // 수정 후 캐슬·레이드 공통 보너스
+    var levelDifference = afterLevel - beforeLevel; // 요청 레벨과 기존 레벨의 차이
+    var directionText = levelDifference > 0 ? numberWithCommas(levelDifference) + "레벨 상승" : levelDifference < 0 ? numberWithCommas(Math.abs(levelDifference)) + "레벨 하락" : "레벨 변동 없음";
+    var message = "✅ 모험가 레벨 수정 완료\n";
+    message += "[" + checkRank(data, petData, guildData, user) + "] (" + user + ")\n";
+    message += "━━━━━━━━━━━━\n";
+    message += "🌟 레벨: Lv." + numberWithCommas(beforeLevel) + " → Lv." + numberWithCommas(afterLevel) + " (" + formatAdventureLevelEditDifference(beforeLevel, afterLevel, "") + ")\n";
+    message += "📊 보유 EXP: " + numberWithCommas(beforeExp) + " (유지)\n";
+    message += "🧭 칭호: " + getAdventureLevelTitle(beforeLevel) + " → " + getAdventureLevelTitle(afterLevel) + "\n";
+    message += "🎖️ 전체 승급: " + numberWithCommas(beforePromotionCount) + "차 → " + numberWithCommas(afterPromotionCount) + "차 (" + formatAdventureLevelEditDifference(beforePromotionCount, afterPromotionCount, "차") + ")\n";
+    message += "🏅 일반 승급: " + numberWithCommas(beforeCounts.normal) + "회 → " + numberWithCommas(afterCounts.normal) + "회 (" + formatAdventureLevelEditDifference(beforeCounts.normal, afterCounts.normal, "회") + ")\n";
+    message += "🏆 대승급: " + numberWithCommas(beforeCounts.major) + "회 → " + numberWithCommas(afterCounts.major) + "회 (" + formatAdventureLevelEditDifference(beforeCounts.major, afterCounts.major, "회") + ")\n";
+    message += "📚 다음 레벨 필요 EXP: " + numberWithCommas(getLevelRequiredExperience(beforeLevel)) + " → " + numberWithCommas(getLevelRequiredExperience(afterLevel)) + "\n";
+    message += "⚔️ 캐슬 보너스: +" + formatAdventureLevelPercent(beforeCharmPercent) + "% → +" + formatAdventureLevelPercent(afterCharmPercent) + "% (" + formatAdventureLevelEditDifference(beforeCharmPercent, afterCharmPercent, "%p") + ")\n";
+    message += "👾 레이드 보너스: +" + formatAdventureLevelPercent(beforeCharmPercent) + "% → +" + formatAdventureLevelPercent(afterCharmPercent) + "% (" + formatAdventureLevelEditDifference(beforeCharmPercent, afterCharmPercent, "%p") + ")\n";
+    message += "━━━━━━━━━━━━\n";
+    message += "결과: " + directionText + " · 보유 EXP와 티어 경험치 잔여값 유지";
+    return message;
 }
 
 // 0.01% 정수 단위로 비율을 적용해 부동소수점 내림 오차를 막는 함수
