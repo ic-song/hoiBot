@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.522"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.523"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -6956,19 +6956,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
-
                     // 현재 정산 조건을 충족한 실제 탐험 예정 인원을 계산한다.
                     var totalCnt = getExploreTotalCount(data, petExploreData, guildData);
-
-                    var message = "⛰️탐험 시작 5초 전⛰️";
-                    message += "\n이미지링크:https://ibb.co/d4zDKYsF";
-                    message += "\n👥" + totalCnt + "명의 탐험자들이 준비를 마치며";
-                    message += "\n광산(던전) 앞에서 출발을 알립니다!!";
-                    message += "\n\n뿌우📯 뿌우📯 뿌우📯 뿌우📯 뿌우우~📯";
-                    // message += "\n[[❌명령어를 절대 입력하지 말아주세요❌]]";
-                    noticeMsg(message);
-
-                    java.lang.Thread.sleep(10000);
+                    var shouldAnnounceExploreStart = shouldAnnouncePetExploreStart(petExploreData, totalCnt); // 달토끼 실제 참여자가 있을 때만 출발 알림·대기 적용
+                    if (shouldAnnounceExploreStart) {
+                        var message = "⛰️탐험 시작 5초 전⛰️";
+                        message += "\n이미지링크:https://ibb.co/d4zDKYsF";
+                        message += "\n👥" + totalCnt + "명의 탐험자들이 준비를 마치며";
+                        message += "\n광산(던전) 앞에서 출발을 알립니다!!";
+                        message += "\n\n뿌우📯 뿌우📯 뿌우📯 뿌우📯 뿌우우~📯";
+                        // message += "\n[[❌명령어를 절대 입력하지 말아주세요❌]]";
+                        noticeMsg(message);
+                        java.lang.Thread.sleep(10000);
+                    }
 
                     // 일반 탐험은 출발 시 카운트하고, 추석 이벤트는 실제 참가비 결제 성공 시 카운트한다.
                     if (!isChuseokExploreEventActive(petExploreData)) incrementDailyExploreCountForParticipants(data, petExploreData);
@@ -25011,7 +25011,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
                     petExploreData.chuseokEvent.active = false;
                     petExploreData.chuseokEvent.balances = {};
-                    petExploreData.chuseokEvent.processedHours = {};
                     for (var chuseokMemberName in data.member) {
                         if (!data.member.hasOwnProperty(chuseokMemberName) || !data.member[chuseokMemberName].bag) continue;
                         delete data.member[chuseokMemberName].bag[GLOBAL_CONFIG.petExplore.chuseokEvent.currencyName];
@@ -49463,7 +49462,6 @@ function initPetExploreData(petExploreData) {
     if (typeof chuseokEvent.active !== "boolean") chuseokEvent.active = false;
     if (!chuseokEvent.balances || typeof chuseokEvent.balances !== "object" || chuseokEvent.balances instanceof Array) chuseokEvent.balances = {};
     if (!chuseokEvent.purchases || typeof chuseokEvent.purchases !== "object" || chuseokEvent.purchases instanceof Array) chuseokEvent.purchases = {};
-    if (!chuseokEvent.processedHours || typeof chuseokEvent.processedHours !== "object" || chuseokEvent.processedHours instanceof Array) chuseokEvent.processedHours = {};
     if (!(chuseokEvent.shop instanceof Array) || chuseokEvent.shop.length < 1) chuseokEvent.shop = createDefaultChuseokShop();
     var nextChuseokShopId = parseInt(chuseokEvent.nextShopId, 10);
     if (isNaN(nextChuseokShopId) || nextChuseokShopId < 1) chuseokEvent.nextShopId = getNextChuseokShopId(chuseokEvent.shop);
@@ -49554,19 +49552,17 @@ function isCurrentGuildMemberForChuseok(data, guildData, user) {
 }
 
 // 현재 달토끼 탐색 참가 조건을 충족한 등록 인원을 반환하는 함수
-function getEligibleChuseokExploreCount(data, guildData, petExploreData, excludeProcessedCurrentHour) {
+function getEligibleChuseokExploreCount(data, guildData, petExploreData) {
     if (!data || !data.member || !petExploreData || !petExploreData.bet) return 0;
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr)) return 0;
-    var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 현재 정각 처리 여부 비교 키
     var count = 0;
     for (var i = 0; i < arr.length; i++) {
         var entry = arr[i];
         if (!entry || !entry.user || !data.member[entry.user]) continue;
         if (!isCurrentGuildMemberForChuseok(data, guildData, entry.user)) continue;
         if ((Number(data.member[entry.user].point) || 0) < config.participationFee) continue;
-        if (excludeProcessedCurrentHour && petExploreData.chuseokEvent.processedHours[entry.user] === hourKey) continue;
         count++;
     }
     return count;
@@ -49727,7 +49723,6 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr) || arr.length < 1) return null;
-    var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 같은 정각 중복 처리 판정 키
     var successLines = [];
     var failLines = [];
     var levelUpMessages = [];
@@ -49742,13 +49737,11 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
             nonGuildCount++;
             continue;
         }
-        if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
         var point = Number(data.member[user].point) || 0;
         if (point < config.participationFee) {
             insufficientPointCount++;
             continue;
         }
-        petExploreData.chuseokEvent.processedHours[user] = hourKey; // 참가 조건을 통과한 실제 정산만 같은 정각 처리 완료로 기록
         data.member[user].point = point - config.participationFee;
         if (typeof data.member[user].exploreCnt !== "number") data.member[user].exploreCnt = 0;
         data.member[user].exploreCnt++;
@@ -49860,7 +49853,7 @@ function cleanupInvalidPetExploreUsers(petExploreData, data) {
     }
 
     if (petExploreData.chuseokEvent) {
-        var chuseokUserMaps = [petExploreData.chuseokEvent.balances, petExploreData.chuseokEvent.purchases, petExploreData.chuseokEvent.processedHours];
+        var chuseokUserMaps = [petExploreData.chuseokEvent.balances, petExploreData.chuseokEvent.purchases];
         for (var chuseokMapIndex = 0; chuseokMapIndex < chuseokUserMaps.length; chuseokMapIndex++) {
             var chuseokMap = chuseokUserMaps[chuseokMapIndex] || {};
             for (var chuseokUser in chuseokMap) {
@@ -50548,7 +50541,7 @@ function getExploreTotalCount(data, petExploreData, guildData) {
     if (!petExploreData || !petExploreData.bet) return 0;
 
     if (isChuseokExploreEventActive(petExploreData)) {
-        return getEligibleChuseokExploreCount(data, guildData, petExploreData, true);
+        return getEligibleChuseokExploreCount(data, guildData, petExploreData);
     }
 
     var cnt = 0;
@@ -50582,6 +50575,11 @@ function getExploreTotalCount(data, petExploreData, guildData) {
     }
 
     return cnt;
+}
+
+// 달토끼 탐색의 0명 출발 알림·대기 생략 여부를 반환하는 함수
+function shouldAnnouncePetExploreStart(petExploreData, totalCount) {
+    return !isChuseokExploreEventActive(petExploreData) || totalCount > 0;
 }
 
 /** 자동탐험 배팅(정산 후 다음 라운드 세팅) */
@@ -53416,7 +53414,7 @@ function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSk
     var myBet = petExploreData.userBet && petExploreData.userBet[sender] ? String(petExploreData.userBet[sender]) : null;
     var myFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[sender] ? String(petExploreData.autoFixedDungeon[sender]) : null;
     var myFixedName = myFixed ? getExploreDungeonName(myFixed, petExploreData) : "없음";
-    var eligibleCount = getEligibleChuseokExploreCount(data, guildData, petExploreData, false); // 다음 정각 참가 조건을 충족한 인원
+    var eligibleCount = getEligibleChuseokExploreCount(data, guildData, petExploreData); // 다음 정각 참가 조건을 충족한 인원
     var p;
     try {
         p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, config.slot, guildData);
