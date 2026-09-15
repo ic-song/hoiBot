@@ -925,6 +925,8 @@ const GLOBAL_CONFIG = {
         boosterName: "호월신의 가호✨ (경험치 3배)",
         boosterExtraMultiplier: 2,
         boosterConsumptionPerBaseExp: 3,
+        oneTimeResetKey: "adventureLevelOneTimeReset20260915",
+        oneTimeResetBackupPath: "/sdcard/호이랜드/adventure_level_reset_backup_20260915.json",
         migrationKey: "adventurerLevelRenewal20260915",
         migrationBackupPath: "/sdcard/호이랜드/level_renewal_backup_20260915.json",
         boosterSnapshotPath: "/sdcard/호이랜드/level_renewal_booster_snapshot_20260915.json",
@@ -7848,6 +7850,36 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildAdventureLevelEditMessage(data, petData, guildData, levelEditTarget, levelEditBeforeLevel, levelEditValue, levelEditBeforeExp));
                     return;
                 }
+                if (msg === "/레벨초기화" && sender === "호이 남") {
+                    if (!data.migrations || !data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
+                        replier.reply("❌ 레벨 리뉴얼 적용이 완료되지 않았습니다.\n먼저 /레벨리뉴얼점검 후 /레벨리뉴얼적용 을 실행해주세요.");
+                        return;
+                    }
+                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.oneTimeResetKey]) {
+                        replier.reply("❌ 전체 레벨 초기화가 이미 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.oneTimeResetKey].appliedAt);
+                        return;
+                    }
+                    var oneTimeLevelResetBackup = JSON.parse(JSON.stringify(data));
+                    saveJsonFile(oneTimeLevelResetBackup, GLOBAL_CONFIG.level.oneTimeResetBackupPath, true);
+                    var verifiedOneTimeLevelResetBackup = loadJsonFile(GLOBAL_CONFIG.level.oneTimeResetBackupPath);
+                    if (!isExactJsonSnapshot(oneTimeLevelResetBackup, verifiedOneTimeLevelResetBackup)) {
+                        replier.reply("❌ 원본 백업 검증에 실패해 전체 레벨 초기화를 중단했습니다.");
+                        return;
+                    }
+                    var oneTimeLevelResetResult = applyOneTimeAdventureLevelReset(data);
+                    if (!oneTimeLevelResetResult.ok) {
+                        replier.reply("❌ " + oneTimeLevelResetResult.message);
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    var verifiedOneTimeLevelResetData = loadJsonFile(filePath);
+                    if (!isOneTimeAdventureLevelResetResultValid(oneTimeLevelResetBackup, verifiedOneTimeLevelResetData)) {
+                        replier.reply("❌ 전체 레벨 초기화 저장 검증에 실패했습니다. 원본 백업을 보존했습니다.");
+                        return;
+                    }
+                    replier.reply("✅ 리뉴얼 테스트 데이터 초기화 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(oneTimeLevelResetResult.memberCount) + "명\nLv.1 / EXP 0 초기화\n티어 EXP 잔여값·구 환생 기록 초기화\n" + GLOBAL_CONFIG.level.boosterName + " 0개 초기화\n기존 포인트·아이템 유지 / 보상 재지급 없음\n※ 이 명령은 다시 실행할 수 없습니다.\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.oneTimeResetBackupPath));
+                    return;
+                }
                 if (msg === "/레벨리뉴얼점검" && isMaster(sender)) {
                     if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
                         replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되어 기준 스냅샷을 다시 생성할 수 없습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
@@ -7869,7 +7901,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, levelRenewalInspection) + "\n스냅샷: " + resolveActiveDataPath(GLOBAL_CONFIG.level.boosterSnapshotPath));
                     return;
                 }
-                if ((msg === "/레벨리뉴얼적용" && isMaster(sender)) || (msg === "/레벨초기화" && sender === "호이 남")) {
+                if (msg === "/레벨리뉴얼적용" && isMaster(sender)) {
                     if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
                         replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
                         return;
@@ -34844,6 +34876,27 @@ function isExactJsonSnapshot(source, saved) {
     }
 }
 
+// 리뉴얼 테스트 후 일회성 레벨 초기화가 지정 필드만 변경했는지 확인하는 함수
+function isOneTimeAdventureLevelResetResultValid(before, after) {
+    if (!before || !before.member || !after || !after.member || !after.migrations || !after.migrations[GLOBAL_CONFIG.level.migrationKey] || !after.migrations[GLOBAL_CONFIG.level.oneTimeResetKey]) return false;
+    var expected = JSON.parse(JSON.stringify(before));
+    if (!expected.migrations || typeof expected.migrations !== "object" || expected.migrations instanceof Array) expected.migrations = {};
+    var users = Object.keys(expected.member);
+    if (users.length !== Object.keys(after.member).length) return false;
+    for (var i = 0; i < users.length; i++) {
+        var member = expected.member[users[i]];
+        if (!member || !after.member[users[i]]) return false;
+        member.lv = 1;
+        member.exp = 0;
+        member.tierExperienceRemainder = 0;
+        member.lv0 = 0;
+        member.rebirthcnt = 0;
+        member.boostercnt = 0;
+    }
+    expected.migrations[GLOBAL_CONFIG.level.oneTimeResetKey] = after.migrations[GLOBAL_CONFIG.level.oneTimeResetKey];
+    return JSON.stringify(expected) === JSON.stringify(after);
+}
+
 // 레벨 리뉴얼 저장 결과의 초기화 필드와 가호 보상 지급을 확인하는 함수
 function isAdventureLevelRenewalResultValid(before, after) {
     if (!before || !before.member || !after || !after.member || !after.migrations || !after.migrations[GLOBAL_CONFIG.level.migrationKey]) return false;
@@ -34978,6 +35031,31 @@ function applyAdventureLevelRenewal(data) {
         rebirthMushroomPreserved: true
     };
     return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.migrationKey] };
+}
+
+// 레벨 리뉴얼 테스트 후 전체 계정의 성장 상태를 한 번만 초기화하는 함수
+function applyOneTimeAdventureLevelReset(data) {
+    if (!data.migrations || typeof data.migrations !== "object" || data.migrations instanceof Array) data.migrations = {};
+    if (!data.migrations[GLOBAL_CONFIG.level.migrationKey]) return { ok: false, message: "레벨 리뉴얼 적용이 완료되지 않았습니다." };
+    if (data.migrations[GLOBAL_CONFIG.level.oneTimeResetKey]) return { ok: false, message: "전체 레벨 초기화가 이미 완료되었습니다." };
+    var memberCount = 0;
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var member = data.member[user];
+        member.lv = 1;
+        member.exp = 0;
+        member.tierExperienceRemainder = 0;
+        member.lv0 = 0;
+        member.rebirthcnt = 0;
+        member.boostercnt = 0;
+        memberCount++;
+    }
+    data.migrations[GLOBAL_CONFIG.level.oneTimeResetKey] = {
+        appliedAt: formatDateTime(new Date()),
+        memberCount: memberCount,
+        purpose: "postRenewalTestCleanup"
+    };
+    return { ok: true, memberCount: memberCount, migration: data.migrations[GLOBAL_CONFIG.level.oneTimeResetKey] };
 }
 
 // 전체 계정의 환생버섯을 한 번만 회수하고 개당 30억 포인트를 환급하는 함수
