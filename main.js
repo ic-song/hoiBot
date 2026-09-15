@@ -34876,14 +34876,14 @@ function buildAdventureLevelUpMessage(data, petData, guildData, user, levelUps) 
         if (levelUps[bonusIndex].type === "normal") totalCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
         else if (levelUps[bonusIndex].type === "major") totalCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
     }
-    var message = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\n🌟 현재 레벨: Lv." + finalLevel + "\n" + getAdventureLevelTitle(finalLevel);
+    var message = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\n🌟 현재 레벨: Lv." + finalLevel + "\n\n" + getAdventureLevelTitle(finalLevel);
     message += "\n레벨업 " + numberWithCommas(levelUps.length) + "회 · 포인트 🅟" + numberWithCommas(levelUps.length * GLOBAL_CONFIG.level.bonusPoint) + " 지급";
     message += "\n⚔️ 캐슬 +" + formatAdventureLevelPercent(totalCharmIncrease) + "% · 👾 레이드 +" + formatAdventureLevelPercent(totalCharmIncrease) + "%";
     if (finalLevel % 10 !== 0) {
         var nextPromotionLevel = Math.ceil(finalLevel / 10) * 10; // 최종 레벨 이후 가장 가까운 승급 레벨
         message += "\n🎯 Lv." + nextPromotionLevel + " 승급까지 " + (nextPromotionLevel - finalLevel) + "레벨!";
     }
-    message += allsee + "\n\n📋 이번 레벨업 상세";
+    message += "\n\n📋 이번 레벨업 상세" + allsee;
     for (var detailIndex = 0; detailIndex < levelUps.length; detailIndex++) {
         var detailCharmIncrease = GLOBAL_CONFIG.level.baseCharmPercent;
         if (levelUps[detailIndex].type === "normal") detailCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
