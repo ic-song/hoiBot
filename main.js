@@ -19016,7 +19016,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let castleBoosterResult = applyAdventureExperienceBooster(data.member[sender], expGain); // 캐슬대전 가호 적용·소모 결과
                     let expFromBooster = castleBoosterResult.extraExperience;
                     var castleTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
-                    let finalExp = castleTierExpResult.total + "exp(" + expGain + "/" + expFromBooster + "/티어+" + castleTierExpResult.bonus + ")"; // 최종 경험치
+                    let castleExperienceMessage = buildBattleExperienceRewardMessage(castleTierExpResult.total, expGain, expFromBooster, castleTierExpResult.bonus); // 캐슬대전 경험치 보상 UI
                     // 전투 메시지
                     let castleCompareSymbol = attackerPetExp > defenderPetExp ? ">" : attackerPetExp < defenderPetExp ? "<" : "=";
                     let castleExpGap = Math.abs(attackerPetExp - defenderPetExp); // 양측 최종 매력 차이
@@ -19049,7 +19049,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     result += isWinFlag ? "🏆 공격 승리\n" : "🛡️ 방어 승리\n";
                     result += isWinFlag ? checkRank(data, petData, guildData, attackerName) + " 님이 캐슬대전에서 승리했습니다!\n" : checkRank(data, petData, guildData, defenderName) + " 님이 캐슬대전에서 승리했습니다!\n";
                     result += "CP: " + (isWinFlag ? "+" + winnerScore : "-" + loseScore) + "🏆 · 누적 " + numberWithCommas(data.member[sender].battle.score) + "🏆\n";
-                    result += "경험치: " + finalExp + "(⤴️)\n";
+                    result += castleExperienceMessage + "\n";
                     result +=
                         "\n━ ✦ 획득포인트 및 경험치 상세정보✦ ━​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\n";
                     result += allsee + "\n";
@@ -19655,7 +19655,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let miniBoosterResult = applyAdventureExperienceBooster(data.member[sender], expGain); // 미니펫대전 가호 적용·소모 결과
                     let expFromBooster = miniBoosterResult.extraExperience;
                     var miniTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
-                    let finalExp = miniTierExpResult.total + "exp(" + expGain + "/" + expFromBooster + "/티어+" + miniTierExpResult.bonus + ")"; // 최종 경험치
+                    let miniExperienceMessage = buildBattleExperienceRewardMessage(miniTierExpResult.total, expGain, expFromBooster, miniTierExpResult.bonus); // 미니펫대전 경험치 보상 UI
                     // 경험치 증가
                     // 아이템 지급
                     let selectedReward = rewards[Math.floor(Math.random() * rewards.length)];
@@ -19699,7 +19699,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     resultMsg += "매력 차이: " + numberWithCommas(miniPetExpGap) + "💕\n\n";
                     resultMsg += isWin ? "🏆 공격 승리\n" : "🛡️ 방어 승리\n";
                     resultMsg += isWin ? checkRank(data, petData, guildData, sender) + " 님이 미니펫대전에서 승리했습니다!\n" : checkRank(data, petData, guildData, targetName) + " 님이 미니펫대전에서 승리했습니다!\n";
-                    resultMsg += "경험치: " + finalExp + "(⤴️)\n\n";
+                    resultMsg += miniExperienceMessage + "\n\n";
                     resultMsg +=
                         "━ ✦ 획득포인트 및 경험치 상세정보✦ ━​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​";
                     resultMsg += "\n" + allsee + "\n";
@@ -34653,6 +34653,14 @@ function applyAdventureExperienceBooster(member, baseExperience) {
     };
 }
 
+// 캐슬대전·미니펫대전의 경험치 보상 내역을 같은 형식으로 생성하는 함수
+function buildBattleExperienceRewardMessage(totalExperience, baseExperience, boosterExperience, tierExperience) {
+    var lines = ["📊 경험치: +" + numberWithCommas(totalExperience) + "exp"];
+    if (boosterExperience > 0) lines.push("✨ 호월신의 가호 적용! (+" + numberWithCommas(boosterExperience) + "exp)");
+    lines.push("└ 기본 " + numberWithCommas(baseExperience) + " + 티어 " + numberWithCommas(tierExperience));
+    return lines.join("\n");
+}
+
 // 레벨 수정 전후 숫자의 상승·하락 차이를 운영자용으로 표시하는 함수
 function formatAdventureLevelEditDifference(beforeValue, afterValue, suffix) {
     var difference = afterValue - beforeValue;
@@ -40210,7 +40218,7 @@ function sumAutoDailyBattleExp(messages) {
     if (!(messages instanceof Array)) return totalExp;
     for (var i = 0; i < messages.length; i++) {
         var message = String(messages[i] || "");
-        var expMatch = message.match(/경험치:\s*([\d,]+)exp\(/);
+        var expMatch = message.match(/경험치:\s*\+?([\d,]+)exp/);
         if (expMatch) totalExp += parseInt(expMatch[1].replace(/,/g, ""), 10) || 0;
     }
     return totalExp;
