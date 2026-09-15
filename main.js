@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.528"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.529"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -6946,9 +6946,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (msg == "/자동탐험시작" && (isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
                     stopAllIntervals(data);
-                    exploreInterval = true;
-                    replier.reply("✅ 자동탐험을 시작합니다.\n지금 1회 정산 후 60분마다 자동 정산합니다.");
                     startInterval(data, room, replier, setint, ctx.isDev);
+                    saveJsonFile(data, filePath);
+                    replier.reply("✅ 자동탐험을 시작합니다.\n첫 자동 정산은 60분 후 실행됩니다.\n즉시 정산: /펫탐험정산");
+                    return;
                 }
 
                 if (exploreInterval == true || (msg == "/펫탐험정산" && (isMaster(sender) || sender == "오픈채팅봇"))) {
@@ -6956,15 +6957,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var homeData = loadJsonFile(homeDataFile);
 
-                    if (msg != "/펫탐험시작") {
+                    var shouldUpdateExploreIntervalTime = msg != "/펫탐험정산"; // 수동 정산은 자동 타이머 기준 시각을 유지
+                    if (shouldUpdateExploreIntervalTime) {
                         data.previnterval = new Date().getTime();
                     }
 
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
-                    if ((msg == "/펫탐험정산" || msg == "/자동탐험시작") && isChuseokExploreEventActive(petExploreData)) {
-                        petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동·자동탐험 시작 정산은 새로운 탐험 회차로 실행
+                    if (msg == "/펫탐험정산" && isChuseokExploreEventActive(petExploreData)) {
+                        petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동 정산은 새로운 탐험 회차로 실행
                     }
                     if (isChuseokExploreEventActive(petExploreData)) petExploreData = autoExploreBetting(data, petExploreData); // 자동탐험권 보유자를 11번에 먼저 등록
                     // 현재 정산 조건을 충족한 실제 탐험 예정 인원을 계산한다.
@@ -6988,6 +6990,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
 
                     if (!out) {
+                        if (shouldUpdateExploreIntervalTime) saveJsonFile(data, filePath);
                         if (msg == "/펫탐험시작") replier.reply("현재 탐험 인원이 없습니다.");
                         return;
                     }
@@ -34659,9 +34662,7 @@ function intervalWithHours(hour, func) {
 }
 function startInterval(data, room, replier, intervalMinutes, isDev) {
     const previousValTime = new Date().getTime();
-    if (!data.previnterval) {
-        data.previnterval = previousValTime;
-    }
+    data.previnterval = previousValTime;
     let newInterval = intervalWithMinutes(intervalMinutes, function () {
         exploreInterval = true;
         response(room, isDev ? "dev/펫탐험자동정산" : "/펫탐험자동정산", "오픈채팅봇", true, replier, null, null);
