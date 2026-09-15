@@ -44,7 +44,8 @@ const GLOBAL_CONFIG = {
 		premium: {
 			skillSlotBonus: 7,
 			cubeOptionBonusPercent: 3,
-			questDiamondBoxCount: 5
+			questDiamondBoxCount: 5,
+			questExperienceReward: 50
 		}
 	},
 	daily: { // 일일 콘텐츠 진행 설정
@@ -57,7 +58,9 @@ const GLOBAL_CONFIG = {
 		passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
 		passFeedPostMax: 1, // 패스 전용 피드 작성 일퀘 횟수
 		passHomeAlertOpenMax: 1, // 패스 전용 홈알림 열기 일퀘 횟수
-		passDailyPointBoxReward: 2 // 패스 전용 일퀘 1억 포인트상자 보상 수량
+		passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
+		dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
+		weeklyQuestExperienceReward: 500 // 주간퀘스트 경험치 보상
 	},
 	command: { // 명령어 입력/실행 설정
 		batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
@@ -2475,6 +2478,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 		}
 		if (status.hasPremiumDailyQuest) {
 			lines.push("《👑 호이패스 프리미엄 추가 보상》");
+			lines.push("📊 경험치: +" + GLOBAL_CONFIG.supportPass.premium.questExperienceReward + "exp");
 			lines.push("다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개");
 			if (status.premiumDailyRewardDone) lines.push("[✅ 금일 프리미엄 일퀘 보상 지급 완료]");
 		}
@@ -2492,8 +2496,8 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]");
 	lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
 	lines.push("");
-	lines.push("일일퀘스트 보상 아이템👏🏻:");
-	lines.push("");
+	lines.push("《🎁 일일 퀘스트 보상》");
+	lines.push("📊 경험치: +" + GLOBAL_CONFIG.daily.dailyQuestExperienceReward + "exp");
 	lines.push("다이아상자💎(/다이아상자오픈) 1개");
 	lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 	lines.push("펫 강화석⭐ 30개");
@@ -2502,7 +2506,8 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("🦋주간 퀘스트 조건🦋");
 	lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
 	lines.push("");
-	lines.push("주간퀘스트 보상 아이템👏🏻:");
+	lines.push("《🎁 주간 퀘스트 보상》");
+	lines.push("📊 경험치: +" + GLOBAL_CONFIG.daily.weeklyQuestExperienceReward + "exp");
 	lines.push("펫스킬북📙(/펫스킬오픈) 1개");
 	lines.push("다이아상자💎(/다이아상자오픈) 2개");
 	lines.push("미니펫뽑기🐹(/미니펫오픈) 100개");

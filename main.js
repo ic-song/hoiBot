@@ -1053,6 +1053,7 @@ const GLOBAL_CONFIG = {
             freeNoticeDailyCount: 3,
             noticeMaxLength: 40,
             questDiamondBoxCount: 5,
+            questExperienceReward: 50,
             dailyRewards: [
                 { name: "홈뱃지 큐브💟", count: 1 },
                 { name: "펜던트뽑기💎(/펜던트오픈)", count: 10 },
@@ -1557,6 +1558,8 @@ const GLOBAL_CONFIG = {
         passFeedPostMax: 1, // 패스 전용 피드 작성 일퀘 횟수
         passHomeAlertOpenMax: 1, // 패스 전용 홈알림 열기 일퀘 횟수
         passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
+        dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
+        weeklyQuestExperienceReward: 500, // 주간퀘스트 경험치 보상
         autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정
@@ -16541,7 +16544,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                     statusMsg += status.passDailyRewardDone ? "[✅ 호패,초패 퀘스트 보상 지급 완료]\n" : "《🎁 호패,초패 퀘스트 보상》\n1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개\n";
                                 }
                                 if (status.hasPremiumDailyQuest) {
-                                    statusMsg += "\n" + (status.premiumDailyRewardDone ? "[✅ 호이패스 프리미엄 추가 보상 지급 완료]\n" : "《👑 호이패스 프리미엄 추가 보상》\n다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개\n");
+                                    statusMsg += "\n" + (status.premiumDailyRewardDone ? "[✅ 호이패스 프리미엄 추가 보상 지급 완료]\n" : "《👑 호이패스 프리미엄 추가 보상》\n📊 경험치: +" + GLOBAL_CONFIG.supportPass.premium.questExperienceReward + "exp\n다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개\n");
                                 }
                             }
                             statusMsg += "주간퀘스트🦋[" + status.weeklyUsed + "/" + status.weeklyMax + "]: " + getWeeklyQuestRemainText(status.weeklyUsed, status.weeklyMax) + "\n";
@@ -34661,6 +34664,11 @@ function buildBattleExperienceRewardMessage(totalExperience, baseExperience, boo
     return lines.join("\n");
 }
 
+// 퀘스트 완료 시 기본 경험치와 티어 추가분을 실제 지급량으로 표시하는 함수
+function buildQuestExperienceRewardMessage(experienceResult) {
+    return "📊 경험치: +" + numberWithCommas(experienceResult.total) + "exp\n└ 기본 " + numberWithCommas(experienceResult.base) + " + 티어 " + numberWithCommas(experienceResult.bonus);
+}
+
 // 레벨 수정 전후 숫자의 상승·하락 차이를 운영자용으로 표시하는 함수
 function formatAdventureLevelEditDifference(beforeValue, afterValue, suffix) {
     var difference = afterValue - beforeValue;
@@ -39827,8 +39835,11 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
     var dailyClaimed = false; // 기존 4종 일퀘 보상 지급 여부
     var passDailyClaimed = false; // 호이·초보패스 전용 일퀘 보상 지급 여부
     var premiumDailyClaimed = false; // 호이패스 프리미엄 전용 일퀘 보상 지급 여부
+    var experienceRewardTotal = 0; // 이번 호출에서 퀘스트 보상으로 지급한 총 경험치
 
     if (status.isComplete && !status.dailyRewardDone) {
+        var dailyExperienceResult = addMemberExperienceWithTierBonus(data, sender, GLOBAL_CONFIG.daily.dailyQuestExperienceReward);
+        experienceRewardTotal += dailyExperienceResult.total;
         addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 1);
         addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
         addItem(data, sender, "펫 강화석⭐", 30);
@@ -39840,7 +39851,9 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         claimed = true;
         dailyClaimed = true;
 
-        messages.push("✅ 일일퀘스트 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개");
+        var dailyRewardMessage = "✅ 일일퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(dailyExperienceResult) + "\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개";
+        if (dailyExperienceResult.levelUps.length > 0) dailyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, dailyExperienceResult.levelUps);
+        messages.push(dailyRewardMessage);
     }
 
     if (status.passDailyComplete && !status.passDailyRewardDone) {
@@ -39852,14 +39865,20 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
     }
 
     if (status.premiumDailyComplete && !status.premiumDailyRewardDone) {
+        var premiumExperienceResult = addMemberExperienceWithTierBonus(data, sender, GLOBAL_CONFIG.supportPass.premium.questExperienceReward);
+        experienceRewardTotal += premiumExperienceResult.total;
         addItem(data, sender, GLOBAL_CONFIG.items.diamondBoxName, GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount);
         member.premiumDailyQuestCnt = (member.premiumDailyQuestCnt || 0) + 1;
         claimed = true;
         premiumDailyClaimed = true;
-        messages.push("✅ 호이패스 프리미엄 추가 일퀘 보상 지급 완료!\n보상 : 다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개");
+        var premiumRewardMessage = "✅ 호이패스 프리미엄 추가 일퀘 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(premiumExperienceResult) + "\n보상 : 다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개";
+        if (premiumExperienceResult.levelUps.length > 0) premiumRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, premiumExperienceResult.levelUps);
+        messages.push(premiumRewardMessage);
     }
 
     if (status.weeklyComplete) {
+        var weeklyExperienceResult = addMemberExperienceWithTierBonus(data, sender, GLOBAL_CONFIG.daily.weeklyQuestExperienceReward);
+        experienceRewardTotal += weeklyExperienceResult.total;
         addItem(data, sender, GLOBAL_CONFIG.petSkill.bookItemName, 1);
         addItem(data, sender, "다이아상자💎(/다이아상자오픈)", 2);
         addItem(data, sender, "땅문서📜", 1);
@@ -39868,7 +39887,9 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         member.weeklyQuestCnt = 0;
         claimed = true;
 
-        messages.push("🦋 주간퀘스트 보상 지급 완료!\n보상 : " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개\n다이아상자💎(/다이아상자오픈) 2개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개");
+        var weeklyRewardMessage = "🦋 주간퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(weeklyExperienceResult) + "\n보상 : " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개\n다이아상자💎(/다이아상자오픈) 2개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개";
+        if (weeklyExperienceResult.levelUps.length > 0) weeklyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, weeklyExperienceResult.levelUps);
+        messages.push(weeklyRewardMessage);
 
         if (hasPetSkill(petSkillData, sender, "주간루틴")) {
             var weeklyRoutineBonusPoint = 1000000000;
@@ -39890,6 +39911,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         dailyClaimed: dailyClaimed,
         passDailyClaimed: passDailyClaimed,
         premiumDailyClaimed: premiumDailyClaimed,
+        experienceRewardTotal: experienceRewardTotal,
         message: messages.join("\n\n")
     };
 }
@@ -40224,6 +40246,18 @@ function sumAutoDailyBattleExp(messages) {
     return totalExp;
 }
 
+// 자동일퀘 내부 캐슬·미니펫대전에서 가호로 추가된 경험치를 합산하는 함수
+function sumAutoDailyBattleBoosterExp(messages) {
+    var totalBoosterExp = 0;
+    if (!(messages instanceof Array)) return totalBoosterExp;
+    for (var i = 0; i < messages.length; i++) {
+        var message = String(messages[i] || "");
+        var boosterMatch = message.match(/호월신의 가호 적용!\s*\(\+([\d,]+)exp\)/);
+        if (boosterMatch) totalBoosterExp += parseInt(boosterMatch[1].replace(/,/g, ""), 10) || 0;
+    }
+    return totalBoosterExp;
+}
+
 // 자동일퀘 진행 결과 요약 메시지 생성 함수
 function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages, autoDailyIssues) {
     var status = after.status; // 자동일퀘 실행 후 일퀘 진행 상태
@@ -40238,7 +40272,8 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     var miniAttempts = Math.max(0, status.miniUsed - before.status.miniUsed); // 미니펫대전 진행 횟수 계산
     var miniWin = Math.max(0, after.miniWin - before.miniWin); // 미니펫대전 승리 횟수 계산
     var miniLose = Math.max(0, after.miniLose - before.miniLose); // 미니펫대전 패배 횟수 계산
-    var earnedExp = sumAutoDailyBattleExp(capturedMessages); // 레벨업 초기화와 무관한 실제 대전 경험치 합계
+    var earnedExp = sumAutoDailyBattleExp(capturedMessages) + (rewardResult ? rewardResult.experienceRewardTotal || 0 : 0); // 실제 대전·퀘스트 보상 경험치 합계
+    var boosterExp = sumAutoDailyBattleBoosterExp(capturedMessages); // 자동 대전에서 가호로 추가된 경험치 합계
     var pointDelta = after.point - before.point; // 자동일퀘 후 포인트 증감 계산
     var itemDelta = diffPositiveNumberMap(before.bag, after.bag); // 자동일퀘로 증가한 아이템 계산
     var progressed = towerAttempts + castleAttempts + miniAttempts > 0; // 자동 진행된 콘텐츠 존재 여부
@@ -40248,7 +40283,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     lines.push("[" + nickName + "] 님");
     lines.push(rewardResult && rewardResult.dailyClaimed ? "자동 일퀘 보상 수령 완료 🐶" : "자동 일퀘 진행 결과 🐶");
     lines.push("[자동일퀘 보너스 발동!]");
-    lines.push("[시탑😈,🏆캐대,🐹미대 5판 추가 보상👌]");
+    lines.push("[😈시탑,🐹미대전,🏆캐대전 5판 추가 보상👌]");
     if (rewardResult && rewardResult.dailyClaimed) {
         lines.push("✅ 일일퀘스트 보상 지급 완료!");
     } else if (status.isComplete && status.dailyRewardDone) {
@@ -40260,6 +40295,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     }
     lines.push("[😈시탑,🐹미대전,🏆캐대전]");
     lines.push("✨ 총 획득 경험치: " + numberWithCommas(earnedExp) + " exp");
+    lines.push(boosterExp > 0 ? "└ 호월신의 가호 적용! (+" + numberWithCommas(boosterExp) + "exp)" : "└ 호월신의 가호 적용: 없음");
     lines.push("🤑 총 포인트 변동: 🅟" + numberWithCommas(pointDelta) + " " + allsee);
     lines.push("━━━━━━━━━━━━");
     lines.push("😈 시련의탑");
@@ -41697,6 +41733,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
         }
         if (status.hasPremiumDailyQuest) {
             lines.push("《👑 호이패스 프리미엄 추가 보상》");
+            lines.push("📊 경험치: +" + GLOBAL_CONFIG.supportPass.premium.questExperienceReward + "exp");
             lines.push("다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개");
             if (status.premiumDailyRewardDone) lines.push("[✅ 금일 프리미엄 일퀘 보상 지급 완료]");
         }
@@ -41715,6 +41752,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
     lines.push("");
     lines.push("《🎁 일일 퀘스트 보상》");
+    lines.push("📊 경험치: +" + GLOBAL_CONFIG.daily.dailyQuestExperienceReward + "exp");
     lines.push("다이아상자💎(/다이아상자오픈) 1개");
     lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
     lines.push("펫 강화석⭐ 30개");
@@ -41724,6 +41762,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
     lines.push("");
     lines.push("《🎁 주간 퀘스트 보상》");
+    lines.push("📊 경험치: +" + GLOBAL_CONFIG.daily.weeklyQuestExperienceReward + "exp");
     lines.push(GLOBAL_CONFIG.petSkill.bookItemName + " 1개");
     lines.push("다이아상자💎(/다이아상자오픈) 2개");
     lines.push("땅문서📜 1개");
