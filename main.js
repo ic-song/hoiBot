@@ -6959,16 +6959,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     // 현재 정산 조건을 충족한 실제 탐험 예정 인원을 계산한다.
                     var totalCnt = getExploreTotalCount(data, petExploreData, guildData);
-
-                    var message = "⛰️탐험 시작 5초 전⛰️";
-                    message += "\n이미지링크:https://ibb.co/d4zDKYsF";
-                    message += "\n👥" + totalCnt + "명의 탐험자들이 준비를 마치며";
-                    message += "\n광산(던전) 앞에서 출발을 알립니다!!";
-                    message += "\n\n뿌우📯 뿌우📯 뿌우📯 뿌우📯 뿌우우~📯";
-                    // message += "\n[[❌명령어를 절대 입력하지 말아주세요❌]]";
-                    noticeMsg(message);
-
-                    java.lang.Thread.sleep(10000);
+                    var shouldAnnounceExploreStart = shouldAnnouncePetExploreStart(petExploreData, totalCnt); // 달토끼 실제 참여자가 있을 때만 출발 알림·대기 적용
+                    if (shouldAnnounceExploreStart) {
+                        var message = "⛰️탐험 시작 5초 전⛰️";
+                        message += "\n이미지링크:https://ibb.co/d4zDKYsF";
+                        message += "\n👥" + totalCnt + "명의 탐험자들이 준비를 마치며";
+                        message += "\n광산(던전) 앞에서 출발을 알립니다!!";
+                        message += "\n\n뿌우📯 뿌우📯 뿌우📯 뿌우📯 뿌우우~📯";
+                        // message += "\n[[❌명령어를 절대 입력하지 말아주세요❌]]";
+                        noticeMsg(message);
+                        java.lang.Thread.sleep(10000);
+                    }
 
                     // 일반 탐험은 출발 시 카운트하고, 추석 이벤트는 실제 참가비 결제 성공 시 카운트한다.
                     if (!isChuseokExploreEventActive(petExploreData)) incrementDailyExploreCountForParticipants(data, petExploreData);
@@ -50582,6 +50583,11 @@ function getExploreTotalCount(data, petExploreData, guildData) {
     }
 
     return cnt;
+}
+
+// 달토끼 탐색의 0명 출발 알림·대기 생략 여부를 반환하는 함수
+function shouldAnnouncePetExploreStart(petExploreData, totalCount) {
+    return !isChuseokExploreEventActive(petExploreData) || totalCount > 0;
 }
 
 /** 자동탐험 배팅(정산 후 다음 라운드 세팅) */
