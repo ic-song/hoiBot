@@ -6956,7 +6956,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
-
                     // 현재 정산 조건을 충족한 실제 탐험 예정 인원을 계산한다.
                     var totalCnt = getExploreTotalCount(data, petExploreData, guildData);
                     var shouldAnnounceExploreStart = shouldAnnouncePetExploreStart(petExploreData, totalCnt); // 달토끼 실제 참여자가 있을 때만 출발 알림·대기 적용
@@ -49555,19 +49554,17 @@ function isCurrentGuildMemberForChuseok(data, guildData, user) {
 }
 
 // 현재 달토끼 탐색 참가 조건을 충족한 등록 인원을 반환하는 함수
-function getEligibleChuseokExploreCount(data, guildData, petExploreData, excludeProcessedCurrentHour) {
+function getEligibleChuseokExploreCount(data, guildData, petExploreData) {
     if (!data || !data.member || !petExploreData || !petExploreData.bet) return 0;
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr)) return 0;
-    var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 현재 정각 처리 여부 비교 키
     var count = 0;
     for (var i = 0; i < arr.length; i++) {
         var entry = arr[i];
         if (!entry || !entry.user || !data.member[entry.user]) continue;
         if (!isCurrentGuildMemberForChuseok(data, guildData, entry.user)) continue;
         if ((Number(data.member[entry.user].point) || 0) < config.participationFee) continue;
-        if (excludeProcessedCurrentHour && petExploreData.chuseokEvent.processedHours[entry.user] === hourKey) continue;
         count++;
     }
     return count;
@@ -49728,7 +49725,6 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr) || arr.length < 1) return null;
-    var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 같은 정각 중복 처리 판정 키
     var successLines = [];
     var failLines = [];
     var levelUpMessages = [];
@@ -49743,13 +49739,11 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
             nonGuildCount++;
             continue;
         }
-        if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
         var point = Number(data.member[user].point) || 0;
         if (point < config.participationFee) {
             insufficientPointCount++;
             continue;
         }
-        petExploreData.chuseokEvent.processedHours[user] = hourKey; // 참가 조건을 통과한 실제 정산만 같은 정각 처리 완료로 기록
         data.member[user].point = point - config.participationFee;
         if (typeof data.member[user].exploreCnt !== "number") data.member[user].exploreCnt = 0;
         data.member[user].exploreCnt++;
@@ -50549,7 +50543,7 @@ function getExploreTotalCount(data, petExploreData, guildData) {
     if (!petExploreData || !petExploreData.bet) return 0;
 
     if (isChuseokExploreEventActive(petExploreData)) {
-        return getEligibleChuseokExploreCount(data, guildData, petExploreData, true);
+        return getEligibleChuseokExploreCount(data, guildData, petExploreData);
     }
 
     var cnt = 0;
@@ -53422,7 +53416,7 @@ function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSk
     var myBet = petExploreData.userBet && petExploreData.userBet[sender] ? String(petExploreData.userBet[sender]) : null;
     var myFixed = petExploreData.autoFixedDungeon && petExploreData.autoFixedDungeon[sender] ? String(petExploreData.autoFixedDungeon[sender]) : null;
     var myFixedName = myFixed ? getExploreDungeonName(myFixed, petExploreData) : "없음";
-    var eligibleCount = getEligibleChuseokExploreCount(data, guildData, petExploreData, false); // 다음 정각 참가 조건을 충족한 인원
+    var eligibleCount = getEligibleChuseokExploreCount(data, guildData, petExploreData); // 다음 정각 참가 조건을 충족한 인원
     var p;
     try {
         p = calcExploreSuccessPercent(data, petData, homeData, petSkillData, sender, config.slot, guildData);
