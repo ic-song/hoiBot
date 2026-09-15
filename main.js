@@ -927,6 +927,8 @@ const GLOBAL_CONFIG = {
         migrationKey: "adventurerLevelRenewal20260915",
         migrationBackupPath: "/sdcard/호이랜드/level_renewal_backup_20260915.json",
         boosterSnapshotPath: "/sdcard/호이랜드/level_renewal_booster_snapshot_20260915.json",
+        rebirthRecallKey: "rebirthMushroomRecall20260915",
+        rebirthRecallBackupPath: "/sdcard/호이랜드/rebirth_mushroom_recall_backup_20260915.json",
         rebirthMushroomItem: "환생버섯🍄",
         rebirthMushroomRefundPoint: 3000000000,
         highBoosterThreshold: 100000,
@@ -7819,12 +7821,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         levelRenewalBoosterSnapshot.accounts.push({ id: levelRenewalSnapshotUser.user, checkRank: checkRank(data, petData, guildData, levelRenewalSnapshotUser.user), count: levelRenewalSnapshotUser.count, checkedAt: levelRenewalCheckedAt });
                     }
                     saveJsonFile(levelRenewalBoosterSnapshot, GLOBAL_CONFIG.level.boosterSnapshotPath, true);
+                    var verifiedLevelRenewalSnapshot = loadJsonFile(GLOBAL_CONFIG.level.boosterSnapshotPath);
+                    if (!isAdventureLevelRenewalSnapshotCurrent(verifiedLevelRenewalSnapshot, levelRenewalInspection)) {
+                        replier.reply("❌ 가호 보유자 스냅샷 저장 검증에 실패했습니다.");
+                        return;
+                    }
                     replier.reply(buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, levelRenewalInspection) + "\n스냅샷: " + resolveActiveDataPath(GLOBAL_CONFIG.level.boosterSnapshotPath));
                     return;
                 }
                 if (msg === "/레벨리뉴얼적용" && isMaster(sender)) {
                     if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
                         replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
+                        return;
+                    }
+                    var currentLevelRenewalInspection = inspectAdventureLevelRenewal(data);
+                    var savedLevelRenewalSnapshot = loadJsonFile(GLOBAL_CONFIG.level.boosterSnapshotPath);
+                    if (!isAdventureLevelRenewalSnapshotCurrent(savedLevelRenewalSnapshot, currentLevelRenewalInspection)) {
+                        replier.reply("❌ 개편 직전 가호 보유량 스냅샷이 없거나 현재 데이터와 다릅니다.\n먼저 /레벨리뉴얼점검 을 실행해주세요.");
                         return;
                     }
                     var levelRenewalBackup = JSON.parse(JSON.stringify(data));
@@ -7845,7 +7858,35 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 전환 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 운영 반영을 중단했습니다.");
                         return;
                     }
-                    replier.reply("✅ 레벨 리뉴얼 전환 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(levelRenewalResult.inspection.memberCount) + "명 Lv.1 / EXP 0 초기화\n환생 기록 폐기 및 환생버섯 " + numberWithCommas(levelRenewalResult.inspection.mushroomTotal) + "개 회수\n환급 포인트: 🅟" + numberWithCommas(levelRenewalResult.inspection.mushroomRefundTotal) + "\n호월신의 가호 보유 횟수 보존\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.migrationBackupPath));
+                    replier.reply("✅ 레벨 리뉴얼 전환 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(levelRenewalResult.inspection.memberCount) + "명 Lv.1 / EXP 0 초기화\n환생 기록 폐기\n호월신의 가호와 환생버섯 보유 수량 보존\n환생버섯 회수·환급: /환생회수\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.migrationBackupPath));
+                    return;
+                }
+                if (msg === "/환생회수" && isMaster(sender)) {
+                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey]) {
+                        replier.reply("❌ 이미 환생버섯 회수·환급이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey].appliedAt);
+                        return;
+                    }
+                    var rebirthRecallBackup = JSON.parse(JSON.stringify(data));
+                    saveJsonFile(rebirthRecallBackup, GLOBAL_CONFIG.level.rebirthRecallBackupPath, true);
+                    var verifiedRebirthRecallBackup = loadJsonFile(GLOBAL_CONFIG.level.rebirthRecallBackupPath);
+                    if (!verifiedRebirthRecallBackup || !verifiedRebirthRecallBackup.member || Object.keys(verifiedRebirthRecallBackup.member).length !== Object.keys(data.member).length) {
+                        replier.reply("❌ 원본 백업 검증에 실패해 환생버섯 회수를 중단했습니다.");
+                        return;
+                    }
+                    var rebirthRecallResult = applyRebirthMushroomRecall(data);
+                    if (!rebirthRecallResult.ok) {
+                        replier.reply("❌ " + rebirthRecallResult.message);
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    var verifiedRebirthRecallData = loadJsonFile(filePath);
+                    var verifiedRebirthRecallMigration = verifiedRebirthRecallData && verifiedRebirthRecallData.migrations ? verifiedRebirthRecallData.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] : null;
+                    var verifiedRebirthRecallInspection = inspectAdventureLevelRenewal(verifiedRebirthRecallData);
+                    if (!verifiedRebirthRecallMigration || verifiedRebirthRecallInspection.mushroomTotal !== 0) {
+                        replier.reply("❌ 환생버섯 회수 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 작업을 중단했습니다.");
+                        return;
+                    }
+                    replier.reply("✅ 환생버섯 회수·환급 완료\n━━━━━━━━━━━━\n대상 " + numberWithCommas(rebirthRecallResult.inspection.mushroomUserCount) + "명\n회수 " + numberWithCommas(rebirthRecallResult.inspection.mushroomTotal) + "개\n환급 포인트: 🅟" + numberWithCommas(rebirthRecallResult.inspection.mushroomRefundTotal) + "\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.rebirthRecallBackupPath));
                     return;
                 }
                 if (msg === "/r" && sender == "호이 남") {
@@ -30268,7 +30309,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -34576,6 +34617,11 @@ function processAdventureLevelUps(member) {
     return levelUps;
 }
 
+// 모험가 레벨 보너스율을 불필요한 소수점 없이 표시하는 함수
+function formatAdventureLevelPercent(value) {
+    return String(Math.round((Number(value) || 0) * 100) / 100);
+}
+
 // 한 번의 경험치 획득으로 발생한 최고 승급 알림과 상세 내역을 만드는 함수
 function buildAdventureLevelUpMessage(data, petData, guildData, user, levelUps) {
     if (!levelUps || levelUps.length === 0) return "";
@@ -34586,11 +34632,21 @@ function buildAdventureLevelUpMessage(data, petData, guildData, user, levelUps) 
         if (currentPriority > highestPriority || (currentPriority === highestPriority && levelUps[i].level > highest.level)) highest = levelUps[i];
     }
     var heading = highest.type === "major" ? "🏆 대승급 달성!" : highest.type === "normal" ? "🎖️ 승급 달성!" : "✨ 레벨업!";
+    var totalCharmIncrease = 0; // 이번 다중 레벨업에서 캐슬·레이드 각각 증가한 누적 보너스
+    for (var bonusIndex = 0; bonusIndex < levelUps.length; bonusIndex++) {
+        totalCharmIncrease += GLOBAL_CONFIG.level.baseCharmPercent;
+        if (levelUps[bonusIndex].type === "normal") totalCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
+        else if (levelUps[bonusIndex].type === "major") totalCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
+    }
     var message = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\nLv." + highest.level + " " + highest.title;
     message += "\n레벨업 " + numberWithCommas(levelUps.length) + "회 · 포인트 🅟" + numberWithCommas(levelUps.length * GLOBAL_CONFIG.level.bonusPoint) + " 지급";
+    message += "\n⚔️ 캐슬 +" + formatAdventureLevelPercent(totalCharmIncrease) + "% · 👾 레이드 +" + formatAdventureLevelPercent(totalCharmIncrease) + "%";
     message += allsee + "\n\n📋 이번 레벨업 상세";
     for (var detailIndex = 0; detailIndex < levelUps.length; detailIndex++) {
-        message += "\nLv." + levelUps[detailIndex].level + " · " + levelUps[detailIndex].title;
+        var detailCharmIncrease = GLOBAL_CONFIG.level.baseCharmPercent;
+        if (levelUps[detailIndex].type === "normal") detailCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
+        else if (levelUps[detailIndex].type === "major") detailCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
+        message += "\nLv." + levelUps[detailIndex].level + " · " + levelUps[detailIndex].title + " · 각각 +" + formatAdventureLevelPercent(detailCharmIncrease) + "%";
     }
     return message;
 }
@@ -34628,6 +34684,20 @@ function inspectAdventureLevelRenewal(data) {
     return result;
 }
 
+// 저장된 고액 가호 보유자 스냅샷이 현재 점검 결과와 같은지 확인하는 함수
+function isAdventureLevelRenewalSnapshotCurrent(snapshot, inspection) {
+    if (!snapshot || !inspection || snapshot.threshold !== GLOBAL_CONFIG.level.highBoosterThreshold) return false;
+    if (snapshot.accountCount !== inspection.highBoosterUsers.length || snapshot.totalCount !== inspection.highBoosterTotal) return false;
+    if (!(snapshot.accounts instanceof Array) || snapshot.accounts.length !== inspection.highBoosterUsers.length) return false;
+    var savedRows = [];
+    var currentRows = [];
+    for (var i = 0; i < snapshot.accounts.length; i++) savedRows.push(String(snapshot.accounts[i].id) + "\u0000" + String(parseInt(snapshot.accounts[i].count, 10) || 0));
+    for (var j = 0; j < inspection.highBoosterUsers.length; j++) currentRows.push(String(inspection.highBoosterUsers[j].user) + "\u0000" + String(inspection.highBoosterUsers[j].count));
+    savedRows.sort();
+    currentRows.sort();
+    return savedRows.join("\u0001") === currentRows.join("\u0001");
+}
+
 // 레벨 리뉴얼 전환 전 점검 결과를 운영자용 메시지로 만드는 함수
 function buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, inspection) {
     var message = "🔎 레벨 리뉴얼 전환 점검\n";
@@ -34649,7 +34719,7 @@ function buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, i
     return message;
 }
 
-// 전체 계정을 새 레벨 체계로 한 번만 전환하고 환생버섯을 포인트로 환급하는 함수
+// 전체 계정을 새 레벨 체계로 한 번만 전환하고 가호와 환생버섯 보유량을 유지하는 함수
 function applyAdventureLevelRenewal(data) {
     if (!data.migrations || typeof data.migrations !== "object" || data.migrations instanceof Array) data.migrations = {};
     if (data.migrations[GLOBAL_CONFIG.level.migrationKey]) return { ok: false, message: "이미 레벨 리뉴얼 전환이 완료되었습니다." };
@@ -34657,11 +34727,6 @@ function applyAdventureLevelRenewal(data) {
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
         var member = data.member[user];
-        var mushroomCount = member.bag ? Math.max(0, parseInt(member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem], 10) || 0) : 0;
-        if (mushroomCount > 0) {
-            member.point = (Number(member.point) || 0) + mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint;
-            delete member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem];
-        }
         member.lv = 1;
         member.exp = 0;
         member.lv0 = 0;
@@ -34670,11 +34735,38 @@ function applyAdventureLevelRenewal(data) {
     data.migrations[GLOBAL_CONFIG.level.migrationKey] = {
         appliedAt: formatDateTime(new Date()),
         memberCount: inspection.memberCount,
-        mushroomCount: inspection.mushroomTotal,
-        refundPoint: inspection.mushroomRefundTotal,
-        boosterPreserved: true
+        boosterPreserved: true,
+        rebirthMushroomPreserved: true
     };
     return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.migrationKey] };
+}
+
+// 전체 계정의 환생버섯을 한 번만 회수하고 개당 30억 포인트를 환급하는 함수
+function applyRebirthMushroomRecall(data) {
+    if (!data.migrations || typeof data.migrations !== "object" || data.migrations instanceof Array) data.migrations = {};
+    if (data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey]) return { ok: false, message: "이미 환생버섯 회수·환급이 완료되었습니다." };
+    var inspection = inspectAdventureLevelRenewal(data);
+    var accountRecords = [];
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var member = data.member[user];
+        var hasMushroomField = member.bag && member.bag.hasOwnProperty(GLOBAL_CONFIG.level.rebirthMushroomItem);
+        var mushroomCount = hasMushroomField ? Math.max(0, parseInt(member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem], 10) || 0) : 0;
+        if (mushroomCount > 0) {
+            var refundPoint = mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint;
+            member.point = (Number(member.point) || 0) + refundPoint;
+            accountRecords.push({ id: user, count: mushroomCount, refundPoint: refundPoint });
+        }
+        if (hasMushroomField) delete member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem];
+    }
+    data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] = {
+        appliedAt: formatDateTime(new Date()),
+        accountCount: inspection.mushroomUserCount,
+        mushroomCount: inspection.mushroomTotal,
+        refundPoint: inspection.mushroomRefundTotal,
+        accounts: accountRecords
+    };
+    return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] };
 }
 
 // 기본 경험치에 현재 티어 보너스를 누적 적용하고 레벨업을 처리하는 함수

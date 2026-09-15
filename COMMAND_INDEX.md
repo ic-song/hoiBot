@@ -6925,7 +6925,7 @@ Status: VERIFIED
 ## Command Anchors
 
 - `Info.js`: `/레벨`
-- `main.js`: `/레벨순위`, `/레벨리뉴얼점검`, `/레벨리뉴얼적용`
+- `main.js`: `/레벨순위`, `/레벨리뉴얼점검`, `/레벨리뉴얼적용`, `/환생회수`
 
 ## Related Helpers
 
@@ -6936,18 +6936,21 @@ Status: VERIFIED
 - `processAdventureLevelUps`
 - `inspectAdventureLevelRenewal`
 - `applyAdventureLevelRenewal`
+- `applyRebirthMushroomRecall`
 
 ## Data Usage
 
 - `data.member[user].lv`, `exp`, `point`, `boostercnt`, `bag`
 - `data.migrations.adventurerLevelRenewal20260915`
+- `data.migrations.rebirthMushroomRecall20260915`
 
 ## Save Flow
 
 - 모든 경험치 유입은 초과 경험치를 유지하며 여러 레벨을 연속 처리하고 레벨당 1,000만 포인트를 지급한다.
 - 레벨업 알림 전 `member.json`을 저장한다.
-- `/레벨리뉴얼점검`은 가호 10만회 이상 계정 스냅샷을 별도 JSON으로 저장하며 보상 포인트는 지급하지 않는다.
-- `/레벨리뉴얼적용`은 원본 전체 데이터를 별도 백업하고 다시 읽어 검증한 뒤 Lv.1·EXP 0·환생 기록 0으로 전환한다. 가호 횟수는 보존하고 환생버섯은 개당 30억 포인트로 환급한다.
+- `/레벨리뉴얼점검`은 가호 10만회 이상 계정 스냅샷을 별도 JSON으로 저장·재검증하며 보상 포인트는 지급하지 않는다.
+- `/레벨리뉴얼적용`은 현재 가호 보유 현황과 직전 스냅샷의 일치를 확인한 다음, 원본 전체 데이터를 별도 백업하고 다시 읽어 검증해 Lv.1·EXP 0·환생 기록 0으로 전환한다. 가호와 환생버섯 보유량은 유지한다.
+- `/환생회수`는 별도 원본 백업 후 환생버섯을 전량 회수하고 개당 30억 포인트를 환급하며, 계정별 지급 기록과 1회 실행 표식을 저장한다.
 
 ## AI Notes
 
