@@ -194,6 +194,11 @@ function getInfoAdventureLevelSummary(level) {
 	return { normalCount: normalCount, majorCount: majorCount, charmPercent: charmPercent };
 }
 
+// Info에서 모험가 보너스율을 셋째 자리에서 반올림해 불필요한 0 없이 표시하는 함수
+function formatInfoAdventureLevelPercent(value) {
+	return String(Math.round((Number(value) || 0) * 100) / 100);
+}
+
 // Info 매력 계산에서 0.01% 정수 단위로 비율을 적용하는 함수
 function applyInfoPercentWithExactFloor(value, percent) {
 	var baseValue = Math.max(0, Math.floor(Number(value) || 0));
@@ -224,8 +229,8 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		"📊 EXP: " + numberWithCommas(exp) + " / " + numberWithCommas(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
 		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n" +
 		"━━━━━━━━━━━━\n" +
-		"⚔️ 모험가 캐슬 보너스: +" + summary.charmPercent.toFixed(1) + "%\n" +
-		"👾 모험가 레이드 보너스: +" + summary.charmPercent.toFixed(1) + "%\n\n" +
+		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
+		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n\n" +
 		"🎯 다음 승급까지: Lv." + numberWithCommas(nextPromotion) + " · " + numberWithCommas(nextPromotion - level) + "레벨 남음\n" +
 		"🏆 다음 대승급까지: Lv." + numberWithCommas(nextMajor) + " · " + numberWithCommas(nextMajor - level) + "레벨 남음";
 }

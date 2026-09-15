@@ -35217,8 +35217,8 @@ function addMemberExperienceWithTierBonus(data, user, baseExperience) {
     var bonus = Math.floor(accumulated);
     member.tierExperienceRemainder = Math.round((accumulated - bonus) * 1000000) / 1000000;
     member.exp = (Number(member.exp) || 0) + base + bonus;
-    var autoDailyBatch = getAutoDailyBatchContext(); // 자동일퀘 중 레벨 상승 처리를 다음 일반 채팅까지 미룰지 확인
-    var levelUps = autoDailyBatch && autoDailyBatch.deferAdventureLevelUps ? [] : processAdventureLevelUps(member);
+    var levelUps = processAdventureLevelUps(member);
+    appendAutoDailyAdventureLevelUps(levelUps);
     return { base: base, bonus: bonus, total: base + bonus, levelUps: levelUps };
 }
 
@@ -40059,7 +40059,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         var dailyRewardMessage = "✅ 일일퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(dailyExperienceResult, dailyBaseExperience, dailyBoosterResult.extraExperience) + "\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개";
         var dailyBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, dailyBoosterResult);
         if (dailyBoosterDepletionMessage) dailyRewardMessage += "\n\n" + dailyBoosterDepletionMessage;
-        if (dailyExperienceResult.levelUps.length > 0) dailyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, dailyExperienceResult.levelUps);
+        if (dailyExperienceResult.levelUps.length > 0 && !getAutoDailyBatchContext()) dailyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, dailyExperienceResult.levelUps);
         messages.push(dailyRewardMessage);
     }
 
@@ -40084,7 +40084,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         var premiumRewardMessage = "✅ 호이패스 프리미엄 추가 일퀘 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(premiumExperienceResult, premiumBaseExperience, premiumBoosterResult.extraExperience) + "\n보상 : 다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개";
         var premiumBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, premiumBoosterResult);
         if (premiumBoosterDepletionMessage) premiumRewardMessage += "\n\n" + premiumBoosterDepletionMessage;
-        if (premiumExperienceResult.levelUps.length > 0) premiumRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, premiumExperienceResult.levelUps);
+        if (premiumExperienceResult.levelUps.length > 0 && !getAutoDailyBatchContext()) premiumRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, premiumExperienceResult.levelUps);
         messages.push(premiumRewardMessage);
     }
 
@@ -40105,7 +40105,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         var weeklyRewardMessage = "🦋 주간퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(weeklyExperienceResult, weeklyBaseExperience, weeklyBoosterResult.extraExperience) + "\n보상 : " + GLOBAL_CONFIG.petSkill.bookItemName + " 1개\n다이아상자💎(/다이아상자오픈) 2개\n땅문서📜 1개\n미니펫뽑기🐹(/미니펫오픈) 100개\n펫스윗홈인테리어샵🖼️(/샵오픈) 100개";
         var weeklyBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, weeklyBoosterResult);
         if (weeklyBoosterDepletionMessage) weeklyRewardMessage += "\n\n" + weeklyBoosterDepletionMessage;
-        if (weeklyExperienceResult.levelUps.length > 0) weeklyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, weeklyExperienceResult.levelUps);
+        if (weeklyExperienceResult.levelUps.length > 0 && !getAutoDailyBatchContext()) weeklyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, weeklyExperienceResult.levelUps);
         messages.push(weeklyRewardMessage);
 
         if (hasPetSkill(petSkillData, sender, "주간루틴")) {
@@ -40149,6 +40149,14 @@ function getAutoDailyBatchContext() {
     return autoDailyBatchThreadLocal.get();
 }
 
+// 자동일퀘 한 번에서 발생한 레벨 상승 내역을 최종 안내용으로 누적하는 함수
+function appendAutoDailyAdventureLevelUps(levelUps) {
+    var batch = getAutoDailyBatchContext();
+    if (!batch || !(levelUps instanceof Array) || levelUps.length < 1) return;
+    if (!(batch.levelUps instanceof Array)) batch.levelUps = [];
+    for (var i = 0; i < levelUps.length; i++) batch.levelUps.push(levelUps[i]);
+}
+
 // 자동일퀘 대상 데이터를 메모리에 고정해 반복 파일 입출력을 막는 함수
 function beginAutoDailyBatch(snapshot, petSkillData) {
     var batch = {
@@ -40157,7 +40165,7 @@ function beginAutoDailyBatch(snapshot, petSkillData) {
         dirtyPaths: {},
         committing: false,
         deferExperienceBooster: true,
-        deferAdventureLevelUps: true,
+        levelUps: [],
         applyingDeferredExperienceBooster: false
     };
     var managedPaths = [filePath, memberPetPath, petSkillDataPath, guildPath, trialTowerPath, castleBattlePath, petExplorePath, memberTitlePath];
@@ -40481,7 +40489,8 @@ function applyAutoDailyExperienceBooster(data, user, baseExperience) {
     }
     if (result.extraExperience > 0) {
         member.exp = (Number(member.exp) || 0) + result.extraExperience;
-        result.levelUps = batch && batch.deferAdventureLevelUps ? [] : processAdventureLevelUps(member);
+        result.levelUps = processAdventureLevelUps(member);
+        appendAutoDailyAdventureLevelUps(result.levelUps);
     } else {
         result.levelUps = [];
     }
@@ -40624,7 +40633,8 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
         rewardResult.autoDailyBaseExperience = autoDailyBaseExperience;
         rewardResult.autoDailyBoosterExperience = autoDailyBoosterResult.extraExperience;
         rewardResult.autoDailyBoosterUsed = autoDailyBoosterResult.usedBooster;
-        rewardResult.autoDailyLevelUps = autoDailyBoosterResult.levelUps;
+        var completedAutoDailyBatch = getAutoDailyBatchContext(); // 자동일퀘 전체에서 발생한 레벨 상승 내역
+        rewardResult.autoDailyLevelUps = completedAutoDailyBatch && completedAutoDailyBatch.levelUps ? completedAutoDailyBatch.levelUps.slice() : [];
         if (autoDailyBoosterResult.usedBooster > 0 || autoDailyBoosterResult.extraExperience > 0) saveJsonFile(rewardData, filePath);
 
         var after = getAutoDailyQuestSnapshot(sender);
