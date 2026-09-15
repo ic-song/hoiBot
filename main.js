@@ -917,7 +917,7 @@ const GLOBAL_CONFIG = {
     },
     level: { // 모험가 레벨 리뉴얼 설정
         expBase: 1000,
-        expPerLevel: 500,
+        expPerLevel: 1000,
         bonusPoint: 10000000,
         baseCharmPercent: 0.15,
         normalPromotionPercent: 0.5,
