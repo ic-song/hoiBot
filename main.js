@@ -19175,11 +19175,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     result += "\n🔸️캐슬대전 최종 매력 차이🔸️\n" + allsee + numberWithCommas(castleExpGap) + "💕";
                     result += "\n\n" + checkRank(data, petData, guildData, winnerName) + " 캐슬포인트(CP): +" + numberWithCommas(winnerScore) + "pt🏆";
                     result += "\n" + checkRank(data, petData, guildData, loseName) + " 캐슬포인트(CP): -" + numberWithCommas(loseScore) + "pt🏆";
+                    var castleLevelUpMessage = "";
                     if (castleTierExpResult.levelUps.length > 0) {
                         saveJsonFile(data, filePath);
-                        result += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, castleTierExpResult.levelUps);
+                        castleLevelUpMessage = buildAdventureLevelUpMessage(data, petData, guildData, sender, castleTierExpResult.levelUps);
                     }
                     replier.reply(result);
+                    if (castleLevelUpMessage && autoDailyQuestInternalDepth <= 0) replier.reply(castleLevelUpMessage);
                     var castleMajorLevel = getHighestMajorPromotionLevel(castleTierExpResult.levelUps);
                     if (castleMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + castleMajorLevel + " " + getAdventureLevelTitle(castleMajorLevel) + "에 도달했습니다!", room);
 
@@ -19824,11 +19826,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     } else if (data.member[sender].boostercnt > 0) {
                         resultMsg += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
                     }
+                    var miniLevelUpMessage = "";
                     if (miniTierExpResult.levelUps.length > 0) {
                         saveJsonFile(data, filePath);
-                        resultMsg += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, miniTierExpResult.levelUps);
+                        miniLevelUpMessage = buildAdventureLevelUpMessage(data, petData, guildData, sender, miniTierExpResult.levelUps);
                     }
                     replier.reply(resultMsg);
+                    if (miniLevelUpMessage && autoDailyQuestInternalDepth <= 0) replier.reply(miniLevelUpMessage);
                     var miniMajorLevel = getHighestMajorPromotionLevel(miniTierExpResult.levelUps);
                     if (miniMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + miniMajorLevel + " " + getAdventureLevelTitle(miniMajorLevel) + "에 도달했습니다!", room);
 
