@@ -49707,19 +49707,21 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     var failLines = [];
     var levelUpMessages = [];
     var participated = 0;
+    var nonGuildCount = 0;
+    var insufficientPointCount = 0;
     for (var i = 0; i < arr.length; i++) {
         var entry = arr[i];
         if (!entry || !entry.user || !data.member[entry.user]) continue;
         var user = entry.user;
         if (!isCurrentGuildMemberForChuseok(data, guildData, user)) {
-            failLines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n🏰 길드 미가입: 참가비·보상 없음");
+            nonGuildCount++;
             continue;
         }
         if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
         petExploreData.chuseokEvent.processedHours[user] = hourKey;
         var point = Number(data.member[user].point) || 0;
         if (point < config.participationFee) {
-            failLines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n💰 필요 포인트 🅟" + numberWithCommas(config.participationFee) + "\n포인트 부족: 참가비·보상 없음");
+            insufficientPointCount++;
             continue;
         }
         data.member[user].point = point - config.participationFee;
@@ -49750,13 +49752,15 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
         else failLines.push(resultLine);
         participated++;
     }
-    var lines = successLines.concat(failLines); // 성공 결과를 먼저, 실패·미참여 결과를 뒤에 표시
-    if (lines.length < 1) return null;
+    var lines = successLines.concat(failLines); // 성공 결과를 먼저, 실패 결과를 뒤에 표시
+    var nonParticipationCount = nonGuildCount + insufficientPointCount; // 길드·포인트 조건으로 정산하지 못한 인원
+    if (lines.length < 1 && nonParticipationCount < 1) return null;
     clearPetExploreTransientSaveFlags(petExploreData);
     saveJsonFile(data, filePath);
     saveJsonFile(petExploreData, petExplorePath);
     var chuseokLevelUpSummary = buildPetExploreLevelUpSummary(levelUpMessages);
-    return "🐰 달토끼 탐색 결과\n참여 " + participated + "명" + (chuseokLevelUpSummary ? "\n\n" + chuseokLevelUpSummary : "") + "\n" + allsee + "\n" + lines.join("\n━━━━━━━━━━━━\n") + "\n\n🛍️ 아이템 교환: /달토끼상점";
+    var nonParticipationSummary = nonParticipationCount > 0 ? "\n미참여 " + nonParticipationCount + "명 · 길드 미가입 " + nonGuildCount + "명 · 포인트 부족 " + insufficientPointCount + "명" : "";
+    return "🐰 달토끼 탐색 결과\n참여 " + participated + "명" + nonParticipationSummary + (chuseokLevelUpSummary ? "\n\n" + chuseokLevelUpSummary : "") + "\n" + allsee + (lines.length > 0 ? "\n" + lines.join("\n━━━━━━━━━━━━\n") : "") + "\n\n🛍️ 아이템 교환: /달토끼상점";
 }
 
 // 펫탐험 마이그레이션 결과 저장 필요 여부를 처리하는 함수
