@@ -7,6 +7,36 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+	level: { // 모험가 레벨 표시 설정
+		expBase: 1000,
+		expPerLevel: 500,
+		baseCharmPercent: 0.15,
+		normalPromotionPercent: 0.5,
+		majorPromotionPercent: 5,
+		boosterName: "호월신의 가호✨ (경험치 3배)",
+		titles: [
+			"🥾 견습 모험가", "🧭 길을 찾는 모험가", "🌲 숲길의 모험가", "⛰️ 산맥의 모험가", "🧭 숙련 모험가",
+			"🏺 유적 탐험가", "🗺️ 비경 탐험가", "🎒 노련한 모험가", "⚔️ 베테랑 모험가", "🏆🛡️ 정예 모험가",
+			"🚩 국경의 개척자", "🏜️ 황야의 개척자", "⛰️ 협곡의 개척자", "🐪 사막의 개척자", "⛵ 대양의 탐험가",
+			"❄️ 극지의 탐험가", "🏝️ 신대륙의 발견자", "🔭 미지의 개척자", "🗺️ 대륙의 길잡이", "🏆🏅 위대한 모험가",
+			"🛡️ 왕국의 구원자", "🏛️ 잊힌 도시의 발견자", "🏰 고대 왕국의 탐험가", "🐉 용의 계곡을 넘은 자", "🚩 금지된 땅의 개척자",
+			"🏺 잃어버린 역사의 추적자", "🗝️ 대륙의 비밀을 푼 자", "⚔️ 영웅의 길을 이은 자", "🌟 살아 있는 전설", "🏆📜 전설의 모험가",
+			"🔍 신화의 흔적을 찾는 자", "🔓 고대의 봉인을 푼 자", "🗿 거인의 땅을 누빈 자", "🌳 정령의 숲을 지난 자", "🏝️ 환상의 섬을 찾은 자",
+			"☁️ 천공의 문을 연 자", "🌠 별의 유적을 찾은 자", "🔱 신들의 길을 걸은 자", "📖 신화에 이름을 새긴 자", "🏆🔱 신화의 모험가",
+			"🔥 불꽃의 시련을 넘은 자", "🧊 얼음의 시련을 넘은 자", "🌪️ 폭풍의 시련을 넘은 자", "🌑 심연의 시련을 넘은 자", "💀 죽음의 경계를 넘은 자",
+			"🕯️ 망각의 길에서 돌아온 자", "🏮 영혼의 등불을 밝힌 자", "💍 영원한 서약의 모험가", "🔥 꺼지지 않는 전설", "🏆🔥 불멸의 모험가",
+			"💪 한계에 도전한 모험가", "🌍 대지의 경계를 넘은 자", "🌊 바다의 끝에 닿은 자", "☁️ 하늘의 끝에 닿은 자", "🌐 세계의 끝을 본 자",
+			"✨ 별빛의 길을 연 자", "🌌 별바다의 항해자", "🌌 은하의 탐험가", "💫 세계의 경계를 넘은 자", "🏆💠 초월의 모험가",
+			"⚡ 균열의 탐험가", "🌗 이면세계의 발견자", "🪞 거울세계의 개척자", "🌙 몽환세계의 개척자", "🌑 공허의 항해자",
+			"🚪 차원의 문을 연 자", "🔗 차원의 길을 잇는 자", "🌐 수많은 세계를 걸은 자", "🗺️ 차원지도의 기록자", "🏆🌀 차원의 개척자",
+			"⌛ 시간의 흔적을 좇는 자", "📜 잊힌 시대의 탐험가", "🕰️ 과거의 문을 연 자", "🔮 미래의 길을 찾은 자", "🌊 시간의 바다를 건넌 자",
+			"⏱️ 멈춘 시간을 깨운 자", "🌀 시간의 미궁을 벗어난 자", "🔗 시대와 시대를 잇는 자", "💫 시공의 경계를 넘은 자", "🏆⏳ 시공의 개척자",
+			"🧵 운명의 실을 좇는 자", "📖 세계의 기억을 읽는 자", "🏛️ 최초의 문명을 찾은 자", "🌟 별의 탄생을 지켜본 자", "💎 창세의 흔적을 찾은 자",
+			"🗿 태고의 비밀을 푼 자", "🌱 근원의 길을 걸은 자", "🚪 시작의 문을 연 자", "🌅 태초의 빛에 닿은 자", "🏆🌅 태초의 개척자",
+			"🔭 미지의 끝에 선 자", "🌌 세계 너머의 탐험가", "✨ 가능성의 길을 여는 자", "🧭 끝없는 길의 개척자", "♾️ 무한의 바다를 건넌 자",
+			"⌛ 영원을 여행하는 자", "🌠 운명 너머를 걷는 자", "📖 새로운 신화를 쓰는 자", "💠 모든 경계 너머의 모험가", "🏆👑 끝없는 모험의 주인"
+		]
+	},
 	display: { // 화면 표시 설정
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
 	},
@@ -135,6 +165,57 @@ function isAdmin(sender) {
 function isMaster(sender) {
 	var permissionRoom = getCurrentContext().permissionRoom;
 	return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
+}
+
+
+// Info에서 현재 레벨의 필요 경험치를 반환하는 함수
+function getInfoLevelRequiredExperience(level) {
+	var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+	return GLOBAL_CONFIG.level.expBase + (currentLevel - 1) * GLOBAL_CONFIG.level.expPerLevel;
+}
+
+// Info에서 현재 모험가 칭호를 반환하는 함수
+function getInfoAdventureLevelTitle(level) {
+	var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+	if (currentLevel < 10) return "🎒 초보 모험가";
+	var titleIndex = Math.min(100, Math.floor(currentLevel / 10)) - 1;
+	return GLOBAL_CONFIG.level.titles[titleIndex] || GLOBAL_CONFIG.level.titles[GLOBAL_CONFIG.level.titles.length - 1];
+}
+
+// Info에서 현재 레벨의 승급 횟수와 누적 매력 비율을 반환하는 함수
+function getInfoAdventureLevelSummary(level) {
+	var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+	var majorCount = Math.floor(currentLevel / 100); // 100레벨 단위 대승급 횟수
+	var normalCount = Math.floor(currentLevel / 10) - majorCount; // 대승급을 제외한 일반 승급 횟수
+	var charmPercent = (currentLevel - 1) * GLOBAL_CONFIG.level.baseCharmPercent + normalCount * GLOBAL_CONFIG.level.normalPromotionPercent + majorCount * GLOBAL_CONFIG.level.majorPromotionPercent; // 캐슬·레이드 각각의 누적 보너스
+	return { normalCount: normalCount, majorCount: majorCount, charmPercent: charmPercent };
+}
+
+// Info에서 /레벨 출력 메시지를 만드는 함수
+function buildInfoLevelMessage(data, petData, guildData, user) {
+	var member = data.member[user];
+	var level = Math.max(1, parseInt(member.lv, 10) || 1);
+	var exp = Math.max(0, Number(member.exp) || 0);
+	var required = getInfoLevelRequiredExperience(level);
+	var ratio = required > 0 ? exp / required : 0; // 현재 레벨 경험치 진행 비율
+	var filled = Math.max(0, Math.min(10, Math.floor(ratio * 10))); // 10칸 게이지 채움 수
+	var gauge = "";
+	for (var i = 0; i < 10; i++) gauge += i < filled ? "■" : "□";
+	var summary = getInfoAdventureLevelSummary(level);
+	var nextPromotion = (Math.floor(level / 10) + 1) * 10;
+	var nextMajor = (Math.floor(level / 100) + 1) * 100;
+	return "[" + checkRank(data, petData, guildData, user) + "] 님의 모험가 레벨\n" +
+		"━━━━━━━━━━━━\n" +
+		getInfoAdventureLevelTitle(level) + "\n" +
+		"승급 " + numberWithCommas(summary.normalCount) + "회 · 대승급 " + numberWithCommas(summary.majorCount) + "회\n" +
+		"🌟 Lv." + numberWithCommas(level) + "\n" +
+		"[" + gauge + "] " + (ratio * 100).toFixed(2) + "%\n" +
+		"EXP " + numberWithCommas(exp) + " / " + numberWithCommas(required) + "\n" +
+		"🚀 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(member.boostercnt || 0) + "회\n" +
+		"🏰 캐슬매력 보너스: +" + summary.charmPercent.toFixed(2) + "%\n" +
+		"👾 레이드매력 보너스: +" + summary.charmPercent.toFixed(2) + "%\n" +
+		"다음 승급: Lv." + numberWithCommas(nextPromotion) + "\n" +
+		"다음 대승급: Lv." + numberWithCommas(nextMajor);
 }
 
 // Info 명령에서 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
@@ -360,14 +441,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				let titleInfo = titleData.member[targetUser];
 				if (memberInfo) {
 					let currentExp = memberInfo.exp;
-					let nextLevelExp = 6 * memberInfo.lv + 84;
+					let nextLevelExp = getInfoLevelRequiredExperience(memberInfo.lv);
 					let totallike = memberInfo.like;
 					if (memberInfo.like0) {
 						totallike += memberInfo.like0;
-					}
-					let totallv = memberInfo.lv;
-					if (memberInfo.lv0) {
-						totallv += memberInfo.lv0;
 					}
 					let activeTitle = getTitle(memberInfo, titleInfo);
 					let bagItems = memberInfo.bag;
@@ -413,11 +490,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"• 길드: " +
 						(myGuildInfo ? myGuildInfo.guild.name + "(" + myGuildInfo.guild.mark + ")" : " 없음") +
 						"\n" +
-						"• 레벨: " +
-						memberInfo.lv +
-						" (누적 레벨 : " +
-						totallv +
-						")\n" +
+						"• 모험가 칭호: " + getInfoAdventureLevelTitle(memberInfo.lv) + "\n" +
+						"• 레벨: " + memberInfo.lv + "\n" +
 						"• 가입일: " +
 						formatDate(memberInfo.join) +
 						"\n" +
@@ -495,29 +569,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 		}
 		if (msg === "/레벨") {
-			if (data.member[sender]) {
-				let currentExp = data.member[sender].exp;
-				let nextLevelExp = 6 * data.member[sender].lv + 84;
-				let percentage = ((currentExp / nextLevelExp) * 100).toFixed(2);
-				let expbooster = "";
-				if (data.member[sender].boostercnt) {
-					expbooster += "\n남은 경험치 부스터 횟수 : " + numberWithCommas(data.member[sender].boostercnt);
-				}
-				replier.reply(
-					"[" +
-						checkRank(data, petData, guildData, sender) +
-						"] 님의 현재 레벨은 " +
-						data.member[sender].lv +
-						"입니다.\n(" +
-						currentExp +
-						" / " +
-						nextLevelExp +
-						" [" +
-						percentage +
-						"%])" +
-						expbooster
-				);
-			}
+			if (data.member[sender]) replier.reply(buildInfoLevelMessage(data, petData, guildData, sender));
 		}
 		if (msg === "/내정보") {
 			if (!data.member || !data.member[sender]) {
@@ -573,15 +625,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			let likeCnt = userHome.likeCnt || 0;
 
 			let currentExp = memberInfo.exp || 0;
-			let nextLevelExp = 6 * (memberInfo.lv || 0) + 84;
+			let nextLevelExp = getInfoLevelRequiredExperience(memberInfo.lv);
 			let totallike = memberInfo.like || 0;
 			if (memberInfo.like0) {
 				totallike += memberInfo.like0;
-			}
-
-			let totallv = memberInfo.lv || 0;
-			if (memberInfo.lv0) {
-				totallv += memberInfo.lv0;
 			}
 
 			// 길드
@@ -620,14 +667,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				"• 길드: " +
 				(myGuildInfo ? myGuildInfo.guild.name + "(" + myGuildInfo.guild.mark + ")" : " 없음") +
 				"\n" +
-				"• 인생:" +
-				(memberInfo.rebirthcnt || 0) +
-				"회차\n" +
-				"• 레벨: " +
-				(memberInfo.lv || 0) +
-				" (누적 레벨 : " +
-				totallv +
-				")\n" +
+				"• 모험가 칭호: " + getInfoAdventureLevelTitle(memberInfo.lv) + "\n" +
+				"• 레벨: " + (memberInfo.lv || 1) + "\n" +
 				"• 가입일: " +
 				formatDate(memberInfo.join) +
 				"\n" +
@@ -977,11 +1018,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			let like2Ranking = generatelike2Ranking(data.member);
 			let resultMsg = "💓 누적 좋아요 순위 💓\n\n";
 			resultMsg += like2Ranking.rankingMsg1 + allsee + like2Ranking.rankingMsg2;
-			replier.reply(resultMsg);
-		} else if (msg === "/누렙순위") {
-			let Usr2Ranking = generate2Ranking(data.member);
-			let resultMsg = "🏆 누적 레벨 순위 🏆\n\n";
-			resultMsg += Usr2Ranking.rankingMsg1 + allsee + Usr2Ranking.rankingMsg2;
 			replier.reply(resultMsg);
 		} else if (msg === "/영주수익순위") {
 			let rankData = generateEarningsRanking(data.member);
@@ -1704,36 +1740,6 @@ function generatelike2Ranking(data) {
 	};
 }
 
-// 누적렙순위
-function generate2Ranking(data) {
-	let sortedUsrs = Object.keys(data).sort((a, b) => {
-		const totalLvA = data[a].lv + (data[a].lv0 || 0);
-		const totalLvB = data[b].lv + (data[b].lv0 || 0);
-		return totalLvB - totalLvA;
-	});
-	let rankingMsg1 = "";
-	let rankingMsg2 = "";
-	for (let i = 0; i < 10 && i < sortedUsrs.length; i++) {
-		var username1 = sortedUsrs[i];
-		let Rsender1 = data[username1].rank.emoji + username1;
-		let UsrInfo1 = data[username1];
-		let rankEmoji1 = getRankEmoji(i + 1);
-		let totalLv1 = UsrInfo1.lv + (UsrInfo1.lv0 || 0);
-		rankingMsg1 += rankEmoji1 + Rsender1 + " - LV." + totalLv1 + "\n";
-	}
-	for (let i = 10; i < sortedUsrs.length; i++) {
-		var username2 = sortedUsrs[i];
-		let Rsender2 = data[username2].rank.emoji + username2;
-		let UsrInfo2 = data[username2];
-		let rankEmoji2 = getRankEmoji(i + 1);
-		let totalLv2 = UsrInfo2.lv + (UsrInfo2.lv0 || 0);
-		rankingMsg2 += rankEmoji2 + Rsender2 + " - LV." + totalLv2 + "\n";
-	}
-	return {
-		rankingMsg1: rankingMsg1,
-		rankingMsg2: rankingMsg2
-	};
-}
 
 /**
  * 영주수익순위
@@ -1874,6 +1880,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
 	var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
 	castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
+	castleCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
 	return Math.floor(castleTotal * (1 + castleCubePercent / 100));
 }
 
@@ -1901,6 +1908,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
 	var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
 	raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
+	raidCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
 	return Math.floor(raidTotal * (1 + raidCubePercent / 100));
 }
 

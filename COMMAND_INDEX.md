@@ -451,7 +451,7 @@ Status: VERIFIED
 - Good entry point for bag item shape and numbering logic
 - 프리미엄 전용 가방은 포인트 공개 상태에서 `/포인트잠금` 안내를 표시하고, 잠금 상태에서는 포인트를 `쉿 비밀🤫`로 표시한다.
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
-- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 이벤트 기간의 황금당근, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 황금당근은 달토끼상점과 같은 이벤트 잔액을 표시하며 기존 가방 저장 잔액도 전환 전까지 합산한다. 경험치 부스터가 없으면 `🚀 경험치 2배 부스터: 없음`만 표시하고 `🚀 0회` 줄은 생략한다.
+- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 이벤트 기간의 황금당근, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 황금당근은 달토끼상점과 같은 이벤트 잔액을 표시하며 기존 가방 저장 잔액도 전환 전까지 합산한다. `호월신의 가호✨ (경험치 3배)` 보유 횟수와 새 필요 경험치 공식, 모험가 칭호, 캐슬·레이드 레벨 보너스를 표시한다.
 - 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `호이의 봉인금고` → `해방의 열쇠` → `자동탐험권` → `자동일퀘권` 순으로 먼저 표시한다.
@@ -4767,33 +4767,15 @@ Status: VERIFIED
 
 ## Command Anchors
 
-- Search in `Info.js`: `/누렙순위`
+- 레벨 리뉴얼로 제거됨
 
 ## Files
 
 - `Info.js`
 
-## Related Helpers
-
-- `generate2Ranking`
-
-## Data Usage
-
-- `data.member`
-
-## Save Flow
-
-- Read-only in the confirmed branch
-
-## Related Commands
-
-- `/내정보`
-- `/종합순위`
-
 ## AI Notes
 
-- Legacy cumulative-level ranking output
-- Useful when user total-level ordering looks inconsistent with profile displays
+- 환생과 누적 레벨 체계 폐기에 따라 `/누렙순위`와 `generate2Ranking`을 제거했다.
 
 ---
 
@@ -6932,3 +6914,45 @@ Status: VERIFIED
 - 결과는 장착 스킬과 성공 여부별 10개 멘트 중 하나를 사용하며 실제 채크랭크를 표시한다.
 
 ---
+
+
+---
+
+# /레벨 · /레벨순위 · 레벨 리뉴얼 전환
+
+Status: VERIFIED
+
+## Command Anchors
+
+- `Info.js`: `/레벨`
+- `main.js`: `/레벨순위`, `/레벨리뉴얼점검`, `/레벨리뉴얼적용`
+
+## Related Helpers
+
+- `getLevelRequiredExperience`
+- `getAdventureLevelTitle`
+- `getAdventurePromotionCounts`
+- `getAdventureLevelCharmPercent`
+- `processAdventureLevelUps`
+- `inspectAdventureLevelRenewal`
+- `applyAdventureLevelRenewal`
+
+## Data Usage
+
+- `data.member[user].lv`, `exp`, `point`, `boostercnt`, `bag`
+- `data.migrations.adventurerLevelRenewal20260915`
+
+## Save Flow
+
+- 모든 경험치 유입은 초과 경험치를 유지하며 여러 레벨을 연속 처리하고 레벨당 1,000만 포인트를 지급한다.
+- 레벨업 알림 전 `member.json`을 저장한다.
+- `/레벨리뉴얼점검`은 가호 10만회 이상 계정 스냅샷을 별도 JSON으로 저장하며 보상 포인트는 지급하지 않는다.
+- `/레벨리뉴얼적용`은 원본 전체 데이터를 별도 백업하고 다시 읽어 검증한 뒤 Lv.1·EXP 0·환생 기록 0으로 전환한다. 가호 횟수는 보존하고 환생버섯은 개당 30억 포인트로 환급한다.
+
+## AI Notes
+
+- 필요 경험치: `1000 + (현재 레벨 - 1) × 500`.
+- 캐슬·레이드 각각의 레벨 보너스: `(레벨 - 1) × 0.15% + 일반 승급 × 0.5% + 대승급 × 5%`.
+- 10레벨마다 승급, 100레벨마다 대승급하며 1000레벨 이후에는 마지막 칭호를 유지하고 보상 주기는 계속된다.
+- `/레벨순위`는 레벨과 경험치 순으로 정렬하고 `1, 1, 3` 공동순위, TOP 50, 목록 밖 본인 순위를 표시한다.
+- 기존 `/환생`, `/레벨리셋`, `/누렙순위` 및 특수 레벨업 보상은 제거됐다.
