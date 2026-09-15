@@ -7869,7 +7869,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, levelRenewalInspection) + "\n스냅샷: " + resolveActiveDataPath(GLOBAL_CONFIG.level.boosterSnapshotPath));
                     return;
                 }
-                if (msg === "/레벨리뉴얼적용" && isMaster(sender)) {
+                if ((msg === "/레벨리뉴얼적용" && isMaster(sender)) || (msg === "/레벨초기화" && sender === "호이 남")) {
                     if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
                         replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
                         return;
@@ -30349,7 +30349,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
