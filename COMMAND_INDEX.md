@@ -199,6 +199,7 @@ Status: VERIFIED
 - `calculateCastleItem`
 - `calculateItemInfoAll`
 - `calculatePendantItemInfo`
+- `buildBattleExperienceRewardMessage`
 
 ## Data Usage
 
@@ -221,7 +222,7 @@ Status: VERIFIED
 - `/캐슬대전` 장비 매력 계산은 `calculateItemInfoAll(...).castleExp`를 사용해 펜던트 캐슬 매력을 함께 반영한다.
 - `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `miniPet.castleExp`를 사용한다.
 - 양측 모두 `calculateCastleExp`로 전체 캐슬매력을 계산해 장비·미니펫·홈·친밀도·일반/티어 전용 펫스킬을 동일하게 반영한 뒤 상성·크리티컬을 적용하며, 동률이면 방어자가 승리한다.
-- 출력은 공격·방어 펫이름 옆의 현재 외형(`newimg` 우선), 하늘·땅·바다 속성, 캐슬/상성/최종 매력, 크리티컬, 비교식, 매력 차이, 승패와 기존 CP·경험치·보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 출력은 공격·방어 펫이름 옆의 현재 외형(`newimg` 우선), 하늘·땅·바다 속성, 캐슬/상성/최종 매력, 크리티컬, 비교식, 매력 차이, 승패와 기존 CP·경험치·보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다. 경험치는 총 지급량, 가호 추가분, 기본·티어 보너스를 줄별로 표시한다.
 - 카드 상단의 대전횟수·리셋권 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`로 먼저 표시한다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
 - `COMMAND_REGISTRY.md` is the human-facing command checklist. This file is the AI-friendly code navigation index.
@@ -451,7 +452,7 @@ Status: VERIFIED
 - Good entry point for bag item shape and numbering logic
 - 프리미엄 전용 가방은 포인트 공개 상태에서 `/포인트잠금` 안내를 표시하고, 잠금 상태에서는 포인트를 `쉿 비밀🤫`로 표시한다.
 - For bag item numbering, inspect `generateBagOutput` in `main.js`
-- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 이벤트 기간의 황금당근, 봉인금고·열쇠, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 황금당근은 달토끼상점과 같은 이벤트 잔액을 표시하며 기존 가방 저장 잔액도 전환 전까지 합산한다. `호월신의 가호✨ (경험치 3배)` 보유 횟수와 새 필요 경험치 공식, 모험가 칭호, 캐슬·레이드 레벨 보너스를 표시한다.
+- 활성 호이패스 프리미엄 이용자는 공지·후원 문구 없이 포인트, 다이아, 이벤트 기간의 황금당근, 봉인금고·열쇠, 모험가 칭호, 레벨·경험치 게이지, 부스터, 만료일을 상단에 표시하고 기존 정렬의 전체 아이템 목록을 `allsee` 뒤에 유지한다. 황금당근은 달토끼상점과 같은 이벤트 잔액을 표시하며 기존 가방 저장 잔액도 전환 전까지 합산한다. 프리미엄 가방의 레벨 영역에는 캐슬·레이드 보너스를 표시하지 않는다.
 - 일반 이용자와 일반 호이패스 이용자는 기존 가방 공지·광고 출력을 유지한다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `자동일퀘권📝`은 `자동탐험권🌄` 바로 다음에 표시된다.
 - `main.js`와 `Info.js`의 특별 아이템 정렬에서 `호이의 봉인금고` → `해방의 열쇠` → `자동탐험권` → `자동일퀘권` 순으로 먼저 표시한다.
@@ -1939,6 +1940,7 @@ Status: VERIFIED
 - `getTotalMinipetExp`
 - `calculateCriticalDamage`
 - `hasPetSkill`
+- `buildBattleExperienceRewardMessage`
 
 ## Data Usage
 
@@ -1957,7 +1959,7 @@ Status: VERIFIED
 ## AI Notes
 
 - 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
-- 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/미니펫/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다.
+- 출력은 공격·방어 미니펫 이름 옆의 외형과 강화 수치, 등급, 장착/미니펫/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 카드형 UI로 표시하며 `최종 매력 비교` 뒤부터 `allsee`로 접는다. 경험치는 총 지급량, 가호 추가분, 기본·티어 보너스를 줄별로 표시한다.
 - 카드 상단의 대전횟수·리셋권 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`로 먼저 표시한다.
 - 기본 아이템 보상은 봉인금고를 제외한 기존 6종 중 1종을 같은 비율로 추첨한다. 봉인금고는 일일퀘스트 완료 보상으로 하루 1개 지급한다.
 - `약탈자`, `헌터`, `만렙헌터`, `야수의 본능`, `정신승리` 후속 펫스킬 판정과 저장 흐름을 유지한다.
@@ -2076,6 +2078,8 @@ Status: VERIFIED
 - `buildAutoDailyQuestMessage`
 - `formatAutoDailyPetSkillActivationLines`
 - `sumAutoDailyBattleExp`
+- `sumAutoDailyBattleBoosterExp`
+- `buildQuestExperienceRewardMessage`
 - `isAutoDailyQuestRunComplete`
 - `getDailyQuestStatus`
 - `claimQuestReward`
@@ -2104,7 +2108,7 @@ Status: VERIFIED
 - Silently executes existing `/시련의탑`, `/캐슬대전`, and `/미니펫대전` command paths for remaining daily counts
 - Sends an immediate "자동일퀘 계산 중" progress notice before long-running internal command execution
 - Compares in-memory snapshots immediately after each internal command without disk-flush sleep delays
-- Claims daily/weekly quest rewards in the same memory batch before the final save
+- Claims daily/weekly/premium quest experience rewards in the same memory batch before the final save
 
 ## Related Commands
 
@@ -2121,17 +2125,19 @@ Status: VERIFIED
 - 오늘 일일퀘스트 보상을 이미 받은 사용자는 자동 계산을 시작하지 않고 완료 안내를 즉시 표시한다.
 - 시탑·캐대전·미니펫대전을 자동일퀘 보너스 횟수까지 이미 완료한 사용자는 0회 결과표 대신 완료 안내를 즉시 표시한다.
 - `자동일퀘권📝` allows 5 additional reward runs for 시탑/캐대전/미대전, so automatic execution targets 20 while manual commands remain capped at 15
-- 자동일퀘 결과 제목 아래에 `[자동일퀘 보너스 발동!]`, `[시탑😈,🏆캐대,🐹미대 5판 추가 보상👌]` 안내를 표시한다.
+- 자동일퀘 결과 제목 아래에 `[자동일퀘 보너스 발동!]`, `[😈시탑,🐹미대전,🏆캐대전 5판 추가 보상👌]` 안내를 표시한다.
 - The 5 bonus runs reuse the existing battle flows, including reset-ticket/point costs, random rewards, win/loss records, and pet-skill effects
 - Pet exploration is intentionally excluded; daily quest reward is only claimed when all four daily quest categories are complete
 - Internal command execution is excluded from rapid request monitoring and command backup duplication
 - 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
-- 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과에 기록된 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
+- 총 획득 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과와 같은 실행에서 수령한 일일·주간·프리미엄 퀘스트 보상의 실제 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 초기화되어도 정확히 표시된다.
+- 자동일퀘 결과는 캐슬·미니펫대전에서 가호로 추가된 EXP를 별도로 합산해 총 경험치 아래에 표시하며, 추가분이 없으면 `호월신의 가호 적용: 없음`으로 표시한다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - 활성 호이패스·초보패스 유저에게 펫홈 댓글·피드 글 작성·홈알림 열기 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 좋아홈·유저 좋아요는 이 일퀘에 반영하지 않으며 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
 - `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
 - `/퀘스트`, `/ㅋ`, `ㄹㄹㄹ` 안내 화면은 첫 줄에 요청 유저의 `[checkRank] 님`을 표시한다.
+- `/퀘스트` 안내에는 일일 100 EXP, 주간 500 EXP, 프리미엄 전용 일퀘 50 EXP를 각 보상 영역에 표시한다. 완료 시 티어 경험치 보너스를 적용한 실제 지급량과 기본·티어 내역을 표시하며 레벨업도 기존 공통 흐름으로 처리한다.
 - 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 제목 다음 빈 줄에 세 조건을 `[호패,초패 회원전용]`으로 표시하고 마지막 조건 바로 아래에 구분선을 둔다.
 - `/퀘스트완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
 - 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`, 피드 글 작성은 저장에 성공한 `/피드`에서 `feedPostCnt`, 홈알림 열기는 정상 저장된 `/홈알림`에서 `homeAlertOpenCnt`를 증가시킨다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
@@ -6926,7 +6932,7 @@ Status: VERIFIED
 ## Command Anchors
 
 - `Info.js`: `/레벨`
-- `main.js`: `/레벨순위`, `/레벨리뉴얼점검`, `/레벨리뉴얼적용`, `/환생회수`
+- `main.js`: `/레벨순위`, `/레벨수정 [아이디] [레벨]`, `/레벨초기화`, `/레벨리뉴얼점검`, `/레벨리뉴얼적용`, `/환생회수`
 
 ## Related Helpers
 
@@ -6934,6 +6940,9 @@ Status: VERIFIED
 - `getAdventureLevelTitle`
 - `getAdventurePromotionCounts`
 - `getAdventureLevelCharmPercent`
+- `applyAdventureExperienceBooster`
+- `formatAdventureLevelEditDifference`
+- `buildAdventureLevelEditMessage`
 - `applyPercentWithExactFloor`
 - `removePercentWithExactCeil`
 - `applyInfoPercentWithExactFloor`
@@ -6954,8 +6963,12 @@ Status: VERIFIED
 ## Save Flow
 
 - 모든 경험치 유입은 초과 경험치를 유지하며 여러 레벨을 연속 처리하고 레벨당 1,000만 포인트를 지급한다.
+- 기존 가호 적용 대상인 일반 채팅·캐슬대전·미니펫대전은 기본 EXP 1을 3EXP로 만들 때 가호 3개를 차감한다. 보유 가호가 부족하면 3개 단위로 완전히 적용할 수 있는 기본 EXP까지만 3배 처리하고 나머지는 기본 EXP로 지급한다.
 - 레벨업 알림 전 `member.json`을 저장한다.
 - 일반 레벨업 알림은 다음 10레벨 단위 승급까지 남은 레벨을 표시하고, 상세에서는 기본·승급·대승급 증가분을 구분한다.
+- `/레벨`은 채크랭크, 현재 칭호와 전체 승급 차수, 레벨·게이지·EXP와 소수 셋째 자리 진행률, 가호 수량, 캐슬·레이드 보너스, 다음 승급과 대승급까지 남은 레벨을 한 화면에 표시한다.
+- `/레벨수정 [아이디] [레벨]`은 `호이 남`만 실행할 수 있다. 대상의 레벨만 정확히 변경하고 기존 EXP·티어 경험치 잔여값을 유지한 채 저장을 재검증하며, 레벨·칭호·전체/일반/대승급·필요 EXP·캐슬/레이드 보너스의 전후 값과 상승·하락 수치를 표시한다.
+- `/레벨초기화`는 `호이 남`만 실행할 수 있는 별도 일회성 명령이다. `/레벨리뉴얼점검` → `/레벨리뉴얼적용` 후 기능 테스트를 마친 상태에서만 실행되며, 전체 계정의 Lv·EXP·티어 EXP 잔여값·가호·구 환생 기록을 다시 0 기준으로 정리한다. 기존 포인트·아이템과 리뉴얼 보상은 유지하고 보상을 재지급하지 않으며, 독립 원본 백업과 저장 검증 후 재실행을 차단한다.
 - `/레벨리뉴얼점검`은 가호 10만회 이상 계정 스냅샷을 별도 JSON으로 저장·재검증하고, 환생버섯 환급 후 포인트가 JavaScript 안전 정수 범위를 넘는 계정도 집계한다. 보상 포인트는 지급하지 않으며 레벨 전환 완료 후에는 기준 스냅샷을 다시 생성하지 않는다.
 - `/레벨리뉴얼적용`은 현재 가호 보유 현황과 직전 스냅샷의 일치를 확인한 다음, 원본 전체 데이터가 백업과 완전히 일치하는지 검증해 Lv.1·EXP 0·환생 기록 0으로 전환한다. 개편 직전 가호 10만회 이상 계정에는 1,000억 포인트를 한 번 지급하고 전체 계정의 기존 가호를 0회로 초기화하며, 저장 후 대상별 지급액·초기화·환생버섯 보존값을 다시 검증한다.
 - `/환생회수`는 레벨 리뉴얼 전환이 완료되고 환급 정밀도 위험 계정이 없을 때만 실행된다. 별도 원본 전체 백업을 검증한 후 환생버섯을 전량 회수하고 개당 30억 포인트를 환급하며, 저장 후 계정별 지급액·회수량·1회 실행 표식을 다시 검증한다.
@@ -6967,5 +6980,5 @@ Status: VERIFIED
 - 캐슬·레이드 보너스 적용은 0.01% 정수 단위로 계산해 경계값의 부동소수점 내림 오차를 방지한다.
 - `/매력버프체크`의 계산 검증은 모험가 레벨·홈뱃지·길드큐브 비율을 같은 가산식으로 합산한다.
 - 10레벨마다 승급, 100레벨마다 대승급하며 1000레벨 이후에는 마지막 칭호를 유지하고 보상 주기는 계속된다.
-- `/레벨순위`는 레벨과 경험치 순으로 정렬하고 `1, 1, 3` 공동순위, TOP 50, 목록 밖 본인 순위를 표시한다.
+- `/레벨순위`는 본인의 레벨·전체 순위·전체 계정 수와 바로 위 고유 순위의 레벨 또는 EXP 차이를 상단에 표시한다. 목록은 레벨 내림차순, 동률이면 EXP 내림차순으로 정렬하며 `1, 1, 3` 공동순위와 TOP 50을 유지한다. 상위 5명은 기본 화면에, 6번째부터는 `allsee` 뒤에 표시하고 본인이 TOP 50 밖이어도 상단의 내 순위는 유지한다.
 - 기존 `/환생`, `/레벨리셋`, `/누렙순위` 및 특수 레벨업 보상은 제거됐다.
