@@ -6934,6 +6934,7 @@ Status: VERIFIED
 - `getAdventureLevelTitle`
 - `getAdventurePromotionCounts`
 - `getAdventureLevelCharmPercent`
+- `applyAdventureExperienceBooster`
 - `formatAdventureLevelEditDifference`
 - `buildAdventureLevelEditMessage`
 - `applyPercentWithExactFloor`
@@ -6956,6 +6957,7 @@ Status: VERIFIED
 ## Save Flow
 
 - 모든 경험치 유입은 초과 경험치를 유지하며 여러 레벨을 연속 처리하고 레벨당 1,000만 포인트를 지급한다.
+- 기존 가호 적용 대상인 일반 채팅·캐슬대전·미니펫대전은 기본 EXP 1을 3EXP로 만들 때 가호 3개를 차감한다. 보유 가호가 부족하면 3개 단위로 완전히 적용할 수 있는 기본 EXP까지만 3배 처리하고 나머지는 기본 EXP로 지급한다.
 - 레벨업 알림 전 `member.json`을 저장한다.
 - 일반 레벨업 알림은 다음 10레벨 단위 승급까지 남은 레벨을 표시하고, 상세에서는 기본·승급·대승급 증가분을 구분한다.
 - `/레벨`은 채크랭크, 현재 칭호와 전체 승급 차수, 레벨·게이지·EXP와 소수 셋째 자리 진행률, 가호 수량, 캐슬·레이드 보너스, 다음 승급과 대승급까지 남은 레벨을 한 화면에 표시한다.

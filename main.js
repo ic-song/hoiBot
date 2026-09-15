@@ -924,6 +924,7 @@ const GLOBAL_CONFIG = {
         majorPromotionPercent: 5,
         boosterName: "호월신의 가호✨ (경험치 3배)",
         boosterExtraMultiplier: 2,
+        boosterConsumptionPerBaseExp: 3,
         migrationKey: "adventurerLevelRenewal20260915",
         migrationBackupPath: "/sdcard/호이랜드/level_renewal_backup_20260915.json",
         boosterSnapshotPath: "/sdcard/호이랜드/level_renewal_booster_snapshot_20260915.json",
@@ -5863,16 +5864,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg.length > 3) {
                     data.member[sender].point++;
                     data.member[sender].chatcnt0++;
-                    var chatExperienceGain = 1; // 일반 채팅으로 얻는 기본 경험치
+                    var chatBoosterResult = applyAdventureExperienceBooster(data.member[sender], 1); // 일반 채팅의 가호 적용·소모 결과
+                    var chatExperienceGain = chatBoosterResult.totalExperience; // 가호 적용 후 일반 채팅 경험치
                     //서버데이터 넣기
                     if (!data.member[sender].server) {
                         if (roomToServer[room]) {
                             data.member[sender].server = roomToServer[room];
                         }
-                    }
-                    if (data.member[sender].boostercnt > 0) {
-                        chatExperienceGain += GLOBAL_CONFIG.level.boosterExtraMultiplier;
-                        data.member[sender].boostercnt--;
                     }
                     var chatExpResult = addMemberExperienceWithTierBonus(data, sender, chatExperienceGain);
                     if (chatExpResult.levelUps.length > 0) {
@@ -5882,7 +5880,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         var chatMajorLevel = getHighestMajorPromotionLevel(chatExpResult.levelUps);
                         if (chatMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + chatMajorLevel + " " + getAdventureLevelTitle(chatMajorLevel) + "에 도달했습니다!", room);
                     }
-                    if (data.member[sender].boostercnt === 0 && chatExperienceGain > 1) {
+                    if (data.member[sender].boostercnt === 0 && chatBoosterResult.usedBooster > 0) {
                         replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + "가 소진되었습니다.");
                     }
                 }
@@ -19015,14 +19013,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     // result += "\n*test*이전점수 : " +beforeScore + "/이후점수 : " +afterScore+"\n";
                     //경험치 보상
                     let expGain = isWinFlag ? 100 : 50;
-                    let booster = data.member[sender].boostercnt || 0;
-                    let expFromBooster = 0;
-                    if (booster > 0) {
-                        // 기존 소비 단위를 유지하며 1회당 기본 경험치 2를 추가
-                        let usedBooster = Math.min(booster, expGain); // 기존과 같은 최대 소비 횟수
-                        expFromBooster = usedBooster * GLOBAL_CONFIG.level.boosterExtraMultiplier; // 호월신의 가호 추가 경험치
-                        data.member[sender].boostercnt -= usedBooster;
-                    }
+                    let castleBoosterResult = applyAdventureExperienceBooster(data.member[sender], expGain); // 캐슬대전 가호 적용·소모 결과
+                    let expFromBooster = castleBoosterResult.extraExperience;
                     var castleTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
                     let finalExp = castleTierExpResult.total + "exp(" + expGain + "/" + expFromBooster + "/티어+" + castleTierExpResult.bonus + ")"; // 최종 경험치
                     // 전투 메시지
@@ -19660,14 +19652,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     petData[sender].miniPetBattle.count++; // 대전 횟수 증가
                     // 경험치 보상
                     let expGain = isWin ? 45 : 15;
-                    let booster = data.member[sender].boostercnt || 0;
-                    let expFromBooster = 0;
-                    if (booster > 0) {
-                        // 기존 소비 단위를 유지하며 1회당 기본 경험치 2를 추가
-                        let usedBooster = Math.min(booster, expGain); // 기존과 같은 최대 소비 횟수
-                        expFromBooster = usedBooster * GLOBAL_CONFIG.level.boosterExtraMultiplier; // 호월신의 가호 추가 경험치
-                        data.member[sender].boostercnt -= usedBooster;
-                    }
+                    let miniBoosterResult = applyAdventureExperienceBooster(data.member[sender], expGain); // 미니펫대전 가호 적용·소모 결과
+                    let expFromBooster = miniBoosterResult.extraExperience;
                     var miniTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
                     let finalExp = miniTierExpResult.total + "exp(" + expGain + "/" + expFromBooster + "/티어+" + miniTierExpResult.bonus + ")"; // 최종 경험치
                     // 경험치 증가
@@ -34647,6 +34633,24 @@ function getAdventureLevelCharmPercent(level) {
     var currentLevel = Math.max(1, parseInt(level, 10) || 1);
     var counts = getAdventurePromotionCounts(currentLevel);
     return (currentLevel - 1) * GLOBAL_CONFIG.level.baseCharmPercent + counts.normal * GLOBAL_CONFIG.level.normalPromotionPercent + counts.major * GLOBAL_CONFIG.level.majorPromotionPercent;
+}
+
+// 기본 EXP를 3배로 만든 단위마다 가호 3개를 차감하는 함수
+function applyAdventureExperienceBooster(member, baseExperience) {
+    var base = Math.max(0, Math.floor(Number(baseExperience) || 0));
+    var availableBooster = member ? Math.max(0, parseInt(member.boostercnt, 10) || 0) : 0;
+    var consumptionPerBaseExp = GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp; // 기본 EXP 1을 3배 적용할 때 필요한 가호 수량
+    var boostedBaseExperience = Math.min(base, Math.floor(availableBooster / consumptionPerBaseExp)); // 가호로 완전히 3배 처리할 기본 EXP
+    var usedBooster = boostedBaseExperience * consumptionPerBaseExp;
+    var extraExperience = boostedBaseExperience * GLOBAL_CONFIG.level.boosterExtraMultiplier;
+    if (member) member.boostercnt = availableBooster - usedBooster;
+    return {
+        baseExperience: base,
+        boostedBaseExperience: boostedBaseExperience,
+        usedBooster: usedBooster,
+        extraExperience: extraExperience,
+        totalExperience: base + extraExperience
+    };
 }
 
 // 레벨 수정 전후 숫자의 상승·하락 차이를 운영자용으로 표시하는 함수
