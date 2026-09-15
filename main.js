@@ -5891,7 +5891,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (chatMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + chatMajorLevel + " " + getAdventureLevelTitle(chatMajorLevel) + "에 도달했습니다!", room);
                     }
                     if (data.member[sender].boostercnt === 0 && chatBoosterResult.usedBooster > 0) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + "가 소진되었습니다.");
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.");
                     }
                 }
 
@@ -19105,7 +19105,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         ((data.member[sender].exp / getLevelRequiredExperience(data.member[sender].lv)) * 100).toFixed(2) +
                         "%])";
                     if (data.member[sender].boostercnt === 0) {
-                        result += "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363";
+                        result += castleBoosterResult.usedBooster > 0 ? "\n[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다." : "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.";
                     } else if (data.member[sender].boostercnt > 0) {
                         result += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
                     }
@@ -19756,8 +19756,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         ((data.member[sender].exp / getLevelRequiredExperience(data.member[sender].lv)) * 100).toFixed(2) +
                         "%])";
                     if (data.member[sender].boostercnt === 0) {
-                        resultMsg +=
-                            "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363 " + allsee + "";
+                        resultMsg += miniBoosterResult.usedBooster > 0 ? "\n[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다." : "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.";
                     } else if (data.member[sender].boostercnt > 0) {
                         resultMsg += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
                     }
@@ -34675,13 +34674,13 @@ function getAdventureLevelCharmPercent(level) {
     return (currentLevel - 1) * GLOBAL_CONFIG.level.baseCharmPercent + counts.normal * GLOBAL_CONFIG.level.normalPromotionPercent + counts.major * GLOBAL_CONFIG.level.majorPromotionPercent;
 }
 
-// 기본 EXP를 3배로 만든 단위마다 가호 3개를 차감하는 함수
+// 가호가 남아 있으면 한 번의 기본 EXP 전체를 3배로 지급하고 최대 필요량까지 차감하는 함수
 function applyAdventureExperienceBooster(member, baseExperience) {
     var base = Math.max(0, Math.floor(Number(baseExperience) || 0));
     var availableBooster = member ? Math.max(0, parseInt(member.boostercnt, 10) || 0) : 0;
-    var consumptionPerBaseExp = GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp; // 기본 EXP 1을 3배 적용할 때 필요한 가호 수량
-    var boostedBaseExperience = Math.min(base, Math.floor(availableBooster / consumptionPerBaseExp)); // 가호로 완전히 3배 처리할 기본 EXP
-    var usedBooster = boostedBaseExperience * consumptionPerBaseExp;
+    var requiredBooster = base * GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp; // 이번 기본 EXP 전체의 3배 적용에 필요한 가호 수량
+    var boostedBaseExperience = base > 0 && availableBooster > 0 ? base : 0; // 남은 가호가 있으면 이번 정산 전체에 3배 적용
+    var usedBooster = Math.min(availableBooster, requiredBooster); // 마지막 사용은 남은 가호를 모두 소진
     var extraExperience = boostedBaseExperience * GLOBAL_CONFIG.level.boosterExtraMultiplier;
     if (member) member.boostercnt = availableBooster - usedBooster;
     return {
