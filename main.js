@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.520"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.521"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -49703,22 +49703,25 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     var arr = petExploreData.bet[config.slot] || [];
     if (!Array.isArray(arr) || arr.length < 1) return null;
     var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 같은 정각 중복 처리 판정 키
-    var lines = [];
+    var successLines = [];
+    var failLines = [];
     var levelUpMessages = [];
     var participated = 0;
+    var nonGuildCount = 0;
+    var insufficientPointCount = 0;
     for (var i = 0; i < arr.length; i++) {
         var entry = arr[i];
         if (!entry || !entry.user || !data.member[entry.user]) continue;
         var user = entry.user;
         if (!isCurrentGuildMemberForChuseok(data, guildData, user)) {
-            lines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n🏰 길드 미가입: 참가비·보상 없음");
+            nonGuildCount++;
             continue;
         }
         if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
         petExploreData.chuseokEvent.processedHours[user] = hourKey;
         var point = Number(data.member[user].point) || 0;
         if (point < config.participationFee) {
-            lines.push("[" + checkRank(data, petData, guildData, user) + "] 미참여\n💰 필요 포인트 🅟" + numberWithCommas(config.participationFee) + "\n포인트 부족: 참가비·보상 없음");
+            insufficientPointCount++;
             continue;
         }
         data.member[user].point = point - config.participationFee;
@@ -49745,15 +49748,19 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
         if (chuseokExperienceReward.levelUpMessage) levelUpMessages.push(chuseokExperienceReward.levelUpMessage);
         if (usedUpItem) resultLine += "\n확률UP🗻: " + usedUpItem + " 1개 사용";
         resultLine += "\n💰 참가비 🅟" + numberWithCommas(config.participationFee);
-        lines.push(resultLine);
+        if (success) successLines.push(resultLine);
+        else failLines.push(resultLine);
         participated++;
     }
-    if (lines.length < 1) return null;
+    var lines = successLines.concat(failLines); // 성공 결과를 먼저, 실패 결과를 뒤에 표시
+    var nonParticipationCount = nonGuildCount + insufficientPointCount; // 길드·포인트 조건으로 정산하지 못한 인원
+    if (lines.length < 1 && nonParticipationCount < 1) return null;
     clearPetExploreTransientSaveFlags(petExploreData);
     saveJsonFile(data, filePath);
     saveJsonFile(petExploreData, petExplorePath);
     var chuseokLevelUpSummary = buildPetExploreLevelUpSummary(levelUpMessages);
-    return "🐰 달토끼 탐색 결과\n참여 " + participated + "명" + (chuseokLevelUpSummary ? "\n\n" + chuseokLevelUpSummary : "") + "\n" + allsee + "\n" + lines.join("\n━━━━━━━━━━━━\n") + "\n\n🛍️ 아이템 교환: /달토끼상점";
+    var nonParticipationSummary = nonParticipationCount > 0 ? "\n미참여 " + nonParticipationCount + "명 · 길드 미가입 " + nonGuildCount + "명 · 포인트 부족 " + insufficientPointCount + "명" : "";
+    return "🐰 달토끼 탐색 결과\n참여 " + participated + "명" + nonParticipationSummary + (chuseokLevelUpSummary ? "\n\n" + chuseokLevelUpSummary : "") + "\n" + allsee + (lines.length > 0 ? "\n" + lines.join("\n━━━━━━━━━━━━\n") : "") + "\n\n🛍️ 아이템 교환: /달토끼상점";
 }
 
 // 펫탐험 마이그레이션 결과 저장 필요 여부를 처리하는 함수
