@@ -191,6 +191,15 @@ function getInfoAdventureLevelSummary(level) {
 	return { normalCount: normalCount, majorCount: majorCount, charmPercent: charmPercent };
 }
 
+// Info 매력 계산에서 0.01% 정수 단위로 비율을 적용하는 함수
+function applyInfoPercentWithExactFloor(value, percent) {
+	var baseValue = Math.max(0, Math.floor(Number(value) || 0));
+	var basisPoints = Math.round((Number(percent) || 0) * 100); // 1 = 0.01%
+	var wholeUnits = Math.floor(baseValue / 10000); // 큰 수 곱셈을 피하기 위한 10000 단위 몫
+	var remainder = baseValue - wholeUnits * 10000; // 10000 미만 나머지
+	return baseValue + wholeUnits * basisPoints + Math.floor(remainder * basisPoints / 10000);
+}
+
 // Info에서 /레벨 출력 메시지를 만드는 함수
 function buildInfoLevelMessage(data, petData, guildData, user) {
 	var member = data.member[user];
@@ -1881,7 +1890,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
 	castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
 	castleCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
-	return Math.floor(castleTotal * (1 + castleCubePercent / 100));
+	return applyInfoPercentWithExactFloor(castleTotal, castleCubePercent);
 }
 
 function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
@@ -1909,7 +1918,7 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
 	raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
 	raidCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
-	return Math.floor(raidTotal * (1 + raidCubePercent / 100));
+	return applyInfoPercentWithExactFloor(raidTotal, raidCubePercent);
 }
 
 function generateRanking(data, petData, homeData, petSkillData, guildData) {
