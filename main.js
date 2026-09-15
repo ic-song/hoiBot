@@ -16411,7 +16411,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     replier.reply("⏳ 자동일퀘 계산 중입니다.\n시탑/캐대전/미대전을 순서대로 진행하고 있어요.\n잠시만 기다려주세요.");
-                    var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName);
+                    var autoDailyResult = runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName, replier);
                     replier.reply(autoDailyResult.message);
                     return;
                 }
@@ -34738,10 +34738,6 @@ function getAdventureLevelCharmPercent(level) {
 // 가호가 남아 있으면 한 번의 기본 EXP 전체를 3배로 지급하고 최대 필요량까지 차감하는 함수
 function applyAdventureExperienceBooster(member, baseExperience) {
     var base = Math.max(0, Math.floor(Number(baseExperience) || 0));
-    var autoDailyBatch = getAutoDailyBatchContext();
-    if (autoDailyBatch && autoDailyBatch.deferExperienceBooster && !autoDailyBatch.applyingDeferredExperienceBooster) {
-        return { baseExperience: base, boostedBaseExperience: 0, usedBooster: 0, extraExperience: 0, totalExperience: base };
-    }
     var availableBooster = member ? Math.max(0, parseInt(member.boostercnt, 10) || 0) : 0;
     var requiredBooster = base * GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp; // 이번 기본 EXP 전체의 3배 적용에 필요한 가호 수량
     var boostedBaseExperience = base > 0 && availableBooster > 0 ? base : 0; // 남은 가호가 있으면 이번 정산 전체에 3배 적용
@@ -35218,7 +35214,7 @@ function addMemberExperienceWithTierBonus(data, user, baseExperience) {
     member.tierExperienceRemainder = Math.round((accumulated - bonus) * 1000000) / 1000000;
     member.exp = (Number(member.exp) || 0) + base + bonus;
     var levelUps = processAdventureLevelUps(member);
-    appendAutoDailyAdventureLevelUps(levelUps);
+    replyAutoDailyAdventureLevelUps(data, user, levelUps);
     return { base: base, bonus: bonus, total: base + bonus, levelUps: levelUps };
 }
 
@@ -40149,24 +40145,23 @@ function getAutoDailyBatchContext() {
     return autoDailyBatchThreadLocal.get();
 }
 
-// 자동일퀘 한 번에서 발생한 레벨 상승 내역을 최종 안내용으로 누적하는 함수
-function appendAutoDailyAdventureLevelUps(levelUps) {
+// 자동일퀘에서 발생한 레벨 상승 안내를 해당 경험치 지급 시점에 바로 전송하는 함수
+function replyAutoDailyAdventureLevelUps(data, user, levelUps) {
     var batch = getAutoDailyBatchContext();
-    if (!batch || !(levelUps instanceof Array) || levelUps.length < 1) return;
-    if (!(batch.levelUps instanceof Array)) batch.levelUps = [];
-    for (var i = 0; i < levelUps.length; i++) batch.levelUps.push(levelUps[i]);
+    if (!batch || !batch.replier || !(levelUps instanceof Array) || levelUps.length < 1) return;
+    var petData = batch.files[resolveActiveDataPath(memberPetPath)];
+    var guildData = batch.files[resolveActiveDataPath(guildPath)];
+    batch.replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, user, levelUps));
 }
 
 // 자동일퀘 대상 데이터를 메모리에 고정해 반복 파일 입출력을 막는 함수
-function beginAutoDailyBatch(snapshot, petSkillData) {
+function beginAutoDailyBatch(snapshot, petSkillData, replier) {
     var batch = {
         managedPaths: {},
         files: {},
         dirtyPaths: {},
         committing: false,
-        deferExperienceBooster: true,
-        levelUps: [],
-        applyingDeferredExperienceBooster: false
+        replier: replier
     };
     var managedPaths = [filePath, memberPetPath, petSkillDataPath, guildPath, trialTowerPath, castleBattlePath, petExplorePath, memberTitlePath];
     for (var i = 0; i < managedPaths.length; i++) {
@@ -40239,6 +40234,7 @@ function getAutoDailyQuestSnapshot(sender) {
         status: getDailyQuestStatus(data, petData, guildData, sender),
         point: parseInt(member.point, 10) || 0,
         exp: parseInt(member.exp, 10) || 0,
+        boosterCount: Math.max(0, parseInt(member.boostercnt, 10) || 0),
         bag: copyNumberMap(bag),
         towerFloor: towerFloor,
         castleScore: parseInt(battle.score, 10) || 0,
@@ -40463,36 +40459,19 @@ function formatAutoDailyPetSkillActivationLines(messages) {
     return lines.length > 0 ? lines.join("\n") : "- 없음";
 }
 
-// 자동일퀘 내부 대전 결과에서 실제 지급된 경험치 총합을 계산하는 함수
-function sumAutoDailyBattleExp(messages) {
-    var totalExp = 0;
-    if (!(messages instanceof Array)) return totalExp;
+// 자동일퀘 내부 대전 결과에서 기본·가호·실제 지급 경험치를 각각 계산하는 함수
+function summarizeAutoDailyBattleExperience(messages) {
+    var result = { baseExperience: 0, boosterExperience: 0, totalExperience: 0 };
+    if (!(messages instanceof Array)) return result;
     for (var i = 0; i < messages.length; i++) {
         var message = String(messages[i] || "");
         var expMatch = message.match(/경험치:\s*\+?([\d,]+)exp/);
-        if (expMatch) totalExp += parseInt(expMatch[1].replace(/,/g, ""), 10) || 0;
-    }
-    return totalExp;
-}
-
-// 자동일퀘 전체 기본 경험치에 가호 3배를 한 번 적용하고 추가 경험치를 지급하는 함수
-function applyAutoDailyExperienceBooster(data, user, baseExperience) {
-    var member = data && data.member ? data.member[user] : null;
-    var batch = getAutoDailyBatchContext();
-    var result = { baseExperience: 0, boostedBaseExperience: 0, usedBooster: 0, extraExperience: 0, totalExperience: 0, levelUps: [] };
-    if (!member) return result;
-    if (batch) batch.applyingDeferredExperienceBooster = true;
-    try {
-        result = applyAdventureExperienceBooster(member, baseExperience);
-    } finally {
-        if (batch) batch.applyingDeferredExperienceBooster = false;
-    }
-    if (result.extraExperience > 0) {
-        member.exp = (Number(member.exp) || 0) + result.extraExperience;
-        result.levelUps = processAdventureLevelUps(member);
-        appendAutoDailyAdventureLevelUps(result.levelUps);
-    } else {
-        result.levelUps = [];
+        var boosterMatch = message.match(/호월신의 가호 적용!\s*\(\+([\d,]+)exp\)/);
+        var messageTotalExperience = expMatch ? parseInt(expMatch[1].replace(/,/g, ""), 10) || 0 : 0; // 이번 대전의 티어 포함 총 경험치
+        var messageBoosterExperience = boosterMatch ? parseInt(boosterMatch[1].replace(/,/g, ""), 10) || 0 : 0; // 이번 대전의 가호 추가 경험치
+        result.totalExperience += messageTotalExperience;
+        result.boosterExperience += messageBoosterExperience;
+        result.baseExperience += Math.max(0, messageTotalExperience - messageBoosterExperience);
     }
     return result;
 }
@@ -40558,10 +40537,6 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     lines.push(formatAutoDailyItemLines(itemDelta));
     lines.push("발동 펫스킬📙");
     lines.push(formatAutoDailyPetSkillActivationLines(capturedMessages));
-    if (rewardResult && rewardResult.autoDailyLevelUps && rewardResult.autoDailyLevelUps.length > 0) {
-        lines.push("");
-        lines.push(buildAdventureLevelUpMessage(after.data, after.petData, after.guildData, sender, rewardResult.autoDailyLevelUps));
-    }
     lines.push("━━━━━━━━━━━━");
     if (rewardResult && rewardResult.message) {
         lines.push(rewardResult.message);
@@ -40591,7 +40566,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
 }
 
 // 자동일퀘 전체 흐름 실행 함수
-function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
+function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName, replier) {
     var before = getAutoDailyQuestSnapshot(sender);
     if (!before.data.member || !before.data.member[sender]) {
         return { message: "❌ 등록된 유저 정보가 없습니다." };
@@ -40600,7 +40575,7 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
         return { message: "❌ [" + checkRank(before.data, before.petData, before.guildData, sender) + "]님\n자동일퀘권📝이 필요합니다." };
     }
     var beforePetSkillData = loadJsonFile(petSkillDataPath);
-    beginAutoDailyBatch(before, beforePetSkillData);
+    beginAutoDailyBatch(before, beforePetSkillData, replier);
     try {
         var capturedMessages = [];
         var autoDailyIssues = [];
@@ -40628,16 +40603,13 @@ function runAutoDailyQuest(room, sender, isGroupChat, imageDB, packageName) {
             saveJsonFile(rewardData, filePath);
         }
 
-        var autoDailyBaseExperience = sumAutoDailyBattleExp(capturedMessages) + (rewardResult.experienceRewardTotal || 0); // 가호 적용 전 자동 대전·퀘스트 총 경험치
-        var autoDailyBoosterResult = applyAutoDailyExperienceBooster(rewardData, sender, autoDailyBaseExperience);
+        var autoDailyBattleExperience = summarizeAutoDailyBattleExperience(capturedMessages); // 자동 대전에서 즉시 지급된 기본·가호·총 경험치
+        var autoDailyBaseExperience = autoDailyBattleExperience.baseExperience + Math.max(0, (rewardResult.experienceRewardTotal || 0) - (rewardResult.experienceRewardBoosterTotal || 0));
         rewardResult.autoDailyBaseExperience = autoDailyBaseExperience;
-        rewardResult.autoDailyBoosterExperience = autoDailyBoosterResult.extraExperience;
-        rewardResult.autoDailyBoosterUsed = autoDailyBoosterResult.usedBooster;
-        var completedAutoDailyBatch = getAutoDailyBatchContext(); // 자동일퀘 전체에서 발생한 레벨 상승 내역
-        rewardResult.autoDailyLevelUps = completedAutoDailyBatch && completedAutoDailyBatch.levelUps ? completedAutoDailyBatch.levelUps.slice() : [];
-        if (autoDailyBoosterResult.usedBooster > 0 || autoDailyBoosterResult.extraExperience > 0) saveJsonFile(rewardData, filePath);
+        rewardResult.autoDailyBoosterExperience = autoDailyBattleExperience.boosterExperience + (rewardResult.experienceRewardBoosterTotal || 0);
 
         var after = getAutoDailyQuestSnapshot(sender);
+        rewardResult.autoDailyBoosterUsed = Math.max(0, before.boosterCount - after.boosterCount);
         var resultMessage = buildAutoDailyQuestMessage(sender, before, after, rewardResult, capturedMessages, autoDailyIssues);
         commitAutoDailyBatch();
         return { message: resultMessage };

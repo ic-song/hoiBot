@@ -2077,8 +2077,8 @@ Status: VERIFIED
 - `commitAutoDailyBatch`
 - `buildAutoDailyQuestMessage`
 - `formatAutoDailyPetSkillActivationLines`
-- `sumAutoDailyBattleExp`
-- `applyAutoDailyExperienceBooster`
+- `summarizeAutoDailyBattleExperience`
+- `replyAutoDailyAdventureLevelUps`
 - `buildQuestExperienceRewardMessage`
 - `buildAdventureBoosterDepletionMessage`
 - `isAutoDailyQuestRunComplete`
@@ -2110,7 +2110,7 @@ Status: VERIFIED
 - Sends an immediate "자동일퀘 계산 중" progress notice before long-running internal command execution
 - Compares in-memory snapshots immediately after each internal command without disk-flush sleep delays
 - Claims daily/weekly/premium quest experience rewards in the same memory batch before the final save
-- 자동일퀘 안에서는 개별 대전·퀘스트의 가호 적용을 미룬 뒤, 가호 적용 전 전체 경험치를 합산해 한 번에 3배로 지급하고 가호를 같은 정산에서 차감한다.
+- 자동일퀘 안에서도 각 대전·퀘스트 EXP 지급 시 가호 3배와 티어 보너스, 레벨 상승, 레벨당 포인트 보상을 즉시 처리한다.
 
 ## Related Commands
 
@@ -2134,8 +2134,8 @@ Status: VERIFIED
 - 공통 카드형 UI로 바뀐 시탑·캐슬대전·미니펫대전 제목을 성공 결과로 인식해 정상 진행 결과가 중단 사유로 오인되지 않는다.
 - 내부 캐슬대전·미니펫대전은 장착 펫스킬 효과를 동일하게 적용하며, 실제 발동한 스킬과 횟수를 자동일퀘 결과에 표시한다. `약탈자`는 누적 획득 포인트, `숙련된 전사`는 누적 획득 매력을 함께 표시한다.
 - 자동일퀘 기본 경험치는 실행 전후의 잔여 경험치 차이가 아니라 내부 캐슬대전·미니펫대전 결과와 같은 실행에서 수령한 일일·주간·프리미엄 퀘스트 보상의 가호 적용 전 지급량을 합산하므로, 반복 중 레벨업으로 잔여 경험치가 차감되어도 정확히 표시된다.
-- 자동일퀘 결과는 `기본 경험치`, `호월신의 가호 추가 경험치`, `총 경험치`, `가호 사용량`을 분리한다. 가호가 있으면 전체 기본 경험치의 2배를 추가해 총 3배를 지급하고, 추가분이 없으면 `호월신의 가호 적용: 없음`으로 표시한다.
-- 자동일퀘 내부에서도 경험치가 필요량을 넘을 때마다 레벨과 레벨당 포인트 보상을 즉시 처리한다. 배치 안에서 발생한 전체 레벨 상승 내역을 모아 자동일퀘 최종 결과에 레벨업·승급·대승급 안내를 한 번 출력하며, 다음 채팅을 기다리지 않는다.
+- 자동일퀘 결과는 각 지급 시점에 적용된 `기본 경험치`, `호월신의 가호 추가 경험치`, `총 경험치`, `가호 사용량`을 합산해 분리한다. 추가분이 없으면 `호월신의 가호 적용: 없음`으로 표시한다.
+- 자동일퀘 내부에서도 경험치가 필요량을 넘는 즉시 레벨과 레벨당 포인트 보상을 처리하고, 해당 레벨업·승급·대승급 안내를 바로 출력한다. 최종 결과까지 문구를 모아두거나 다음 채팅을 기다리지 않는다.
 - Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
 - 활성 호이패스·초보패스 유저에게 펫홈 댓글·피드 글 작성·홈알림 열기 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 좋아홈·유저 좋아요는 이 일퀘에 반영하지 않으며 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
 - `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
