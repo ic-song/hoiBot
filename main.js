@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.511"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.512"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -110,7 +110,7 @@ const PET_SKILL_LIST = [
     { name: "입찰의 귀재", grade: "한정판", limitedEdition: true, openable: false, effect: "호이상점 /입찰 시 입찰 포인트가 10% 할인됩니다.\n\n※ 펫스킬 해제 시 효과도 함께 회수됩니다." },
     { name: "VIP블랙카드", grade: "SS", rate: 0.1, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
-    { name: "탈세자", grade: "SS", rate: 0.2, effect: "상점(길드상점 제외) 구매 시 세금의 70%를 면제받습니다." },
+    { name: "탈세자", grade: "SS", rate: 0.1, effect: "/상점의 /구매로 상품 구매 시 세금의 70%를 면제받습니다." },
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
@@ -137,7 +137,7 @@ const PET_SKILL_LIST = [
     { name: "아르카나 하우스", grade: "A", rate: 1.5, raidExp: 500000, castleExp: 500000, charmCondition: "arcanaFurniture", effect: "가구 [아르카나 루미에르]를 5개 이상 보유하면 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     // { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
     { name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점에서 상품 구매 시 20% 할인됩니다.\n※ VIP블랙카드📙와 중복되지 않습니다." },
-    { name: "티어 상승론", grade: "A", rate: 1.7, effect: "/상점에서 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
+    { name: "티어 상승론", grade: "A", rate: 0.4, effect: "/상점의 /구매로 티어 승급티켓🎟 구매 시 구매 수량의 1%를 추가로 획득합니다." },
     { name: "징집명령", grade: "A", rate: 1.7, effect: "길드마스터 전용 스킬입니다.\n길드에 가입할 수 있는 최대 인원이 1명 증가합니다." },
     { name: "보물 사냥꾼", grade: "A", rate: 1.7, effect: "/펫탐험 성공 시 15% 확률로 탐험보상 1개를 추가 획득합니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
     { name: "도굴꾼", grade: "A", rate: 1.7, effect: "펫탐험 보물지도🗺️ 아이템이 소모되지 않고 효과가 적용됩니다.\n※최초 적용시 /탐 [숫자]를 입력해야 적용됩니다." },
@@ -151,7 +151,7 @@ const PET_SKILL_LIST = [
     { name: "시련을 걷는 자", grade: "B", rate: 2.0, effect: "10% 확률로 시련의 탑 공략 성공" },
     { name: "결혼못한 대장장이", grade: "B", rate: 2.0, effect: "/펜던트강화 성공 확률 1% 증가" },
     { name: "구원", grade: "B", rate: 2.3, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
-    { name: "나 혼자만 레벨업", grade: "B", rate: 2.3, effect: "레벨업 시 3업당 매력 +10" },
+    { name: "나 혼자만 레벨업", grade: "B", rate: 2.3, effect: "레벨 리뉴얼로 레벨업 보상 효과가 종료되었습니다." },
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "펫강화/친밀도/행운 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
@@ -170,7 +170,7 @@ const PET_SKILL_LIST = [
     { name: "기도", grade: "C", rate: 1.5, effect: "하루 한 번 호월신에게 기도를 올립니다.\n3% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 신성한 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
     { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
-    { name: "초월성장", grade: "C", rate: 4.5, effect: "레벨업시 펫먹이🍼 10개 획득합니다." },
+    { name: "초월성장", grade: "C", rate: 4.5, effect: "레벨 리뉴얼로 레벨업 보상 효과가 종료되었습니다." },
     { name: "망므", grade: "C", rate: 4.0, heartBonus: 5, equipComment: "이건 내 망므야!", equipCommentNoColon: true, effect: "하루 마음 보내기 가능 횟수가 5회 증가합니다.\n펫스킬을 해제하면 추가된 일일 한도 5회는 회수됩니다." },
     { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
@@ -915,8 +915,46 @@ const GLOBAL_CONFIG = {
         bonusPoint: 1000000,
         bonusExp: 100
     },
-    level: { // 레벨업 보너스 설정
-        bonusPoint: 1200000
+    level: { // 모험가 레벨 리뉴얼 설정
+        expBase: 1000,
+        expPerLevel: 500,
+        bonusPoint: 10000000,
+        baseCharmPercent: 0.15,
+        normalPromotionPercent: 0.5,
+        majorPromotionPercent: 5,
+        boosterName: "호월신의 가호✨ (경험치 3배)",
+        boosterExtraMultiplier: 2,
+        migrationKey: "adventurerLevelRenewal20260915",
+        migrationBackupPath: "/sdcard/호이랜드/level_renewal_backup_20260915.json",
+        boosterSnapshotPath: "/sdcard/호이랜드/level_renewal_booster_snapshot_20260915.json",
+        rebirthRecallKey: "rebirthMushroomRecall20260915",
+        rebirthRecallBackupPath: "/sdcard/호이랜드/rebirth_mushroom_recall_backup_20260915.json",
+        rebirthMushroomItem: "환생버섯🍄",
+        rebirthMushroomRefundPoint: 3000000000,
+        highBoosterThreshold: 100000,
+        plannedCompensationPoint: 100000000000,
+        titles: [
+            "🥾 견습 모험가", "🧭 길을 찾는 모험가", "🌲 숲길의 모험가", "⛰️ 산맥의 모험가", "🧭 숙련 모험가",
+            "🏺 유적 탐험가", "🗺️ 비경 탐험가", "🎒 노련한 모험가", "⚔️ 베테랑 모험가", "🏆🛡️ 정예 모험가",
+            "🚩 국경의 개척자", "🏜️ 황야의 개척자", "⛰️ 협곡의 개척자", "🐪 사막의 개척자", "⛵ 대양의 탐험가",
+            "❄️ 극지의 탐험가", "🏝️ 신대륙의 발견자", "🔭 미지의 개척자", "🗺️ 대륙의 길잡이", "🏆🏅 위대한 모험가",
+            "🛡️ 왕국의 구원자", "🏛️ 잊힌 도시의 발견자", "🏰 고대 왕국의 탐험가", "🐉 용의 계곡을 넘은 자", "🚩 금지된 땅의 개척자",
+            "🏺 잃어버린 역사의 추적자", "🗝️ 대륙의 비밀을 푼 자", "⚔️ 영웅의 길을 이은 자", "🌟 살아 있는 전설", "🏆📜 전설의 모험가",
+            "🔍 신화의 흔적을 찾는 자", "🔓 고대의 봉인을 푼 자", "🗿 거인의 땅을 누빈 자", "🌳 정령의 숲을 지난 자", "🏝️ 환상의 섬을 찾은 자",
+            "☁️ 천공의 문을 연 자", "🌠 별의 유적을 찾은 자", "🔱 신들의 길을 걸은 자", "📖 신화에 이름을 새긴 자", "🏆🔱 신화의 모험가",
+            "🔥 불꽃의 시련을 넘은 자", "🧊 얼음의 시련을 넘은 자", "🌪️ 폭풍의 시련을 넘은 자", "🌑 심연의 시련을 넘은 자", "💀 죽음의 경계를 넘은 자",
+            "🕯️ 망각의 길에서 돌아온 자", "🏮 영혼의 등불을 밝힌 자", "💍 영원한 서약의 모험가", "🔥 꺼지지 않는 전설", "🏆🔥 불멸의 모험가",
+            "💪 한계에 도전한 모험가", "🌍 대지의 경계를 넘은 자", "🌊 바다의 끝에 닿은 자", "☁️ 하늘의 끝에 닿은 자", "🌐 세계의 끝을 본 자",
+            "✨ 별빛의 길을 연 자", "🌌 별바다의 항해자", "🌌 은하의 탐험가", "💫 세계의 경계를 넘은 자", "🏆💠 초월의 모험가",
+            "⚡ 균열의 탐험가", "🌗 이면세계의 발견자", "🪞 거울세계의 개척자", "🌙 몽환세계의 개척자", "🌑 공허의 항해자",
+            "🚪 차원의 문을 연 자", "🔗 차원의 길을 잇는 자", "🌐 수많은 세계를 걸은 자", "🗺️ 차원지도의 기록자", "🏆🌀 차원의 개척자",
+            "⌛ 시간의 흔적을 좇는 자", "📜 잊힌 시대의 탐험가", "🕰️ 과거의 문을 연 자", "🔮 미래의 길을 찾은 자", "🌊 시간의 바다를 건넌 자",
+            "⏱️ 멈춘 시간을 깨운 자", "🌀 시간의 미궁을 벗어난 자", "🔗 시대와 시대를 잇는 자", "💫 시공의 경계를 넘은 자", "🏆⏳ 시공의 개척자",
+            "🧵 운명의 실을 좇는 자", "📖 세계의 기억을 읽는 자", "🏛️ 최초의 문명을 찾은 자", "🌟 별의 탄생을 지켜본 자", "💎 창세의 흔적을 찾은 자",
+            "🗿 태고의 비밀을 푼 자", "🌱 근원의 길을 걸은 자", "🚪 시작의 문을 연 자", "🌅 태초의 빛에 닿은 자", "🏆🌅 태초의 개척자",
+            "🔭 미지의 끝에 선 자", "🌌 세계 너머의 탐험가", "✨ 가능성의 길을 여는 자", "🧭 끝없는 길의 개척자", "♾️ 무한의 바다를 건넌 자",
+            "⌛ 영원을 여행하는 자", "🌠 운명 너머를 걷는 자", "📖 새로운 신화를 쓰는 자", "💠 모든 경계 너머의 모험가", "🏆👑 끝없는 모험의 주인"
+        ]
     },
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
@@ -1995,6 +2033,10 @@ blockedNicknameTerms: [
     pointShop: { // 포인트 상점 설정
         limits: {
             diamondBoxDailyBuy: 100
+        },
+        petSkillBenefits: {
+            taxRelief: { skillName: "탈세자", payableTaxRate: 0.3 },
+            tierTicketBonus: { skillName: "티어 상승론", itemName: "티어 승급티켓🎟", bonusRate: 0.01 }
         }
     },
     guaranteedPackage: { // 확정 패키지 아이템·보상 설정
@@ -5829,158 +5871,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     if (data.member[sender].boostercnt > 0) {
-                        chatExperienceGain++;
+                        chatExperienceGain += GLOBAL_CONFIG.level.boosterExtraMultiplier;
                         data.member[sender].boostercnt--;
-                        if (data.member[sender].boostercnt == 0) {
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n 경험치 부스터가 소진되었습니다.");
-                        }
                     }
-                    addMemberExperienceWithTierBonus(data, sender, chatExperienceGain);
-                }
-                let requiredExp = 6 * data.member[sender].lv + 84;
-                let lvlupmsg = "";
-                let levelUpFlag = data.member[sender].exp >= requiredExp;
-                if (levelUpFlag) {
-                    data.member[sender].lv++;
-                    data.member[sender].point += parseInt(GLOBAL_CONFIG.level.bonusPoint);
-                    data.member[sender].exp = 0;
-                    lvlupmsg =
-                        "[" + checkRank(data, petData, guildData, sender) + "] 님\n✨레벨 " + data.member[sender].lv + " 달성, 축하합니다!\n보너스 포인트 🅟" + numberWithCommas(GLOBAL_CONFIG.level.bonusPoint) + " 지급";
-                    if (data.member[sender].lv % 3 === 0 && petData[sender]) {
-                        if (!petData[sender].petexp) {
-                            petData[sender].petexp = 0;
-                        }
-                        if (hasPetSkill(petSkillData, sender, "나 혼자만 레벨업")) {
-                            petData[sender].petexp += 10;
-                            lvlupmsg += "\n나 혼자만 레벨업✨ 💕10 지급";
-                        } else {
-                            petData[sender].petexp += 1;
-                            lvlupmsg += "\n보너스 펫매력 💕1 지급";
-                        }
+                    var chatExpResult = addMemberExperienceWithTierBonus(data, sender, chatExperienceGain);
+                    if (chatExpResult.levelUps.length > 0) {
+                        saveJsonFile(data, filePath);
+                        var chatLevelMessage = buildAdventureLevelUpMessage(data, petData, guildData, sender, chatExpResult.levelUps);
+                        replier.reply(chatLevelMessage);
+                        var chatMajorLevel = getHighestMajorPromotionLevel(chatExpResult.levelUps);
+                        if (chatMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + chatMajorLevel + " " + getAdventureLevelTitle(chatMajorLevel) + "에 도달했습니다!", room);
                     }
-                    const levelRewards = {
-                        10: [["럭키박스🍀(/럭키오픈)", 10]],
-                        30: [["럭키박스🍀(/럭키오픈)", 10]],
-                        50: [["럭키박스🍀(/럭키오픈)", 10]],
-                        80: [["럭키박스🍀(/럭키오픈)", 10]],
-                        100: [
-                            ["정령 강화석🥀", 30],
-                            ["펫먹이🍼", 5],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 5]
-                        ],
-                        125: [
-                            ["정령 강화석🥀", 30],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 5]
-                        ],
-                        150: [
-                            ["정령 강화석🥀", 40],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 10]
-                        ],
-                        170: [
-                            ["정령 강화석🥀", 40],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 20]
-                        ],
-                        175: [["쓰레기", 1000]],
-                        185: [
-                            ["정령 강화석🥀", 50],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 25]
-                        ],
-                        200: [
-                            ["정령 강화석🥀", 100],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 30]
-                        ],
-                        210: [
-                            ["정령 강화석🥀", 100],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 35]
-                        ],
-                        220: [
-                            ["정령 강화석🥀", 100],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 40]
-                        ],
-                        230: [
-                            ["극락상자👹", 5],
-                            ["정령 강화석🥀", 100],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 45]
-                        ],
-                        235: [["쓰레기", 2000]],
-                        240: [
-                            ["정령 강화석🥀", 130],
-                            ["펫먹이🍼", 10],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 50]
-                        ],
-                        250: [
-                            ["정령 강화석🥀", 130],
-                            ["펫먹이🍼", 20],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 50]
-                        ],
-                        260: [
-                            ["정령 강화석🥀", 130],
-                            ["펫먹이🍼", 20],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 60]
-                        ],
-                        270: [
-                            ["정령 강화석🥀", 130],
-                            ["펫먹이🍼", 20],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 70]
-                        ],
-                        280: [
-                            ["정령 강화석🥀", 130],
-                            ["펫먹이🍼", 30],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 70]
-                        ],
-                        290: [
-                            ["정령 강화석🥀", 140],
-                            ["펫먹이🍼", 30],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 80]
-                        ],
-                        300: [
-                            ["정령 강화석🥀", 500],
-                            ["펫먹이🍼", 35],
-                            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 100]
-                        ]
-                    };
-                    let congratmsg = "";
-                    let rewards = levelRewards[data.member[sender].lv];
-                    if (rewards) {
-                        congratmsg =
-                            "축하합니다! 레벨 " +
-                            data.member[sender].lv +
-                            "을 달성했습니다.\n" +
-                            rewards
-                                .map(function (item) {
-                                    return item[0] + " " + item[1] + "개";
-                                })
-                                .join(", ");
-                        rewards.forEach(function (item) {
-                            addRewards(data, sender, item[0], item[1]);
-                        });
-                    }
-                    if ((data.member[sender].lv + data.member[sender].lv0) % 500 === 0) {
-                        const additionalRewards = [["미니펫뽑기🐹(/미니펫오픈)", 300]];
-                        addRewards(data, sender, additionalRewards);
-                        congratmsg +=
-                            "\n누적 레벨이 500에 도달하여 보너스 보상을 획득하셨습니다.\n" +
-                            additionalRewards
-                                .map(function (item) {
-                                    return item[0] + " " + item[1] + "개";
-                                })
-                                .join(", ");
-                    }
-                    replier.reply(lvlupmsg);
-                    replier.reply(congratmsg);
-                    if (levelUpFlag && hasPetSkill(petSkillData, sender, "초월성장")) {
-                        addItem(data, sender, "펫먹이🍼", 10);
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n초월성장📙 응애! 응애! 펫먹이🍼 10개를 추가 획득합니다.");
+                    if (data.member[sender].boostercnt === 0 && chatExperienceGain > 1) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + "가 소진되었습니다.");
                     }
                 }
+
 
                 // ! -- 가입관련 start -- !
                 if (msg === "/가입" && !data.member[sender].agree) {
@@ -6019,6 +5925,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             for (var attendanceMessageIndex = 0; attendanceMessageIndex < attendanceResult.messages.length; attendanceMessageIndex++) {
                                 replier.reply(attendanceResult.messages[attendanceMessageIndex]);
                             }
+                            var attendanceMajorLevel = getHighestMajorPromotionLevel(attendanceResult.levelUps);
+                            if (attendanceMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + attendanceMajorLevel + " " + getAdventureLevelTitle(attendanceMajorLevel) + "에 도달했습니다!", room);
                         } else {
                             replier.reply(attendanceResult.message);
                         }
@@ -7362,18 +7270,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     data.member[sender].memo.push(memoContent);
                     replier.reply("메모가 저장되었습니다.");
                 }
-                if (msg.startsWith("/부스터 ") && isMaster(sender)) {
+                if (/^\/부스터\s+.+\s+\d+$/.test(msg) && isMaster(sender)) {
                     var regex = /\/부스터\s+([^]+)\s+(\d+)/;
                     var match = msg.match(regex);
                     if (match) {
                         var targetUserb = match[1];
                         const addboostcnts = match[2];
+                        if (!data.member[targetUserb]) {
+                            replier.reply("❌ 존재하지 않는 아이디입니다: " + targetUserb);
+                            return;
+                        }
                         if (data.member[targetUserb].boostercnt) {
                             data.member[targetUserb].boostercnt += parseInt(addboostcnts);
                         } else {
                             data.member[targetUserb].boostercnt = parseInt(addboostcnts);
                         }
-                        replier.reply("[" + checkRank(data, petData, guildData, targetUserb) + "] 님의\n경험치부스터 횟수가\n" + numberWithCommas(addboostcnts) + " 추가되었습니다.");
+                        replier.reply("[" + checkRank(data, petData, guildData, targetUserb) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + "가\n" + numberWithCommas(addboostcnts) + "회 추가되었습니다.");
                     }
                 }
                 if (msg.startsWith("/타이틀추가") && isMaster(sender)) {
@@ -7904,16 +7816,93 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     replier.reply("리셋완.");
                 }
-                if (msg === "/레벨리셋" && sender == "호이 남") {
-                    for (let user in data.member) {
-                        if (!data.member[user].lv0) {
-                            data.member[user].lv0 = data.member[user].lv;
-                        } else {
-                            data.member[user].lv0 += parseInt(data.member[user].lv);
-                        }
-                        data.member[user].lv = 1;
+                if (msg === "/레벨리뉴얼점검" && isMaster(sender)) {
+                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
+                        replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되어 기준 스냅샷을 다시 생성할 수 없습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
+                        return;
                     }
-                    replier.reply("리셋완.");
+                    var levelRenewalInspection = inspectAdventureLevelRenewal(data);
+                    var levelRenewalCheckedAt = formatDateTime(new Date());
+                    var levelRenewalBoosterSnapshot = { checkedAt: levelRenewalCheckedAt, threshold: GLOBAL_CONFIG.level.highBoosterThreshold, accountCount: levelRenewalInspection.highBoosterUsers.length, totalCount: levelRenewalInspection.highBoosterTotal, plannedCompensationPerAccount: GLOBAL_CONFIG.level.plannedCompensationPoint, plannedCompensationTotal: levelRenewalInspection.highBoosterUsers.length * GLOBAL_CONFIG.level.plannedCompensationPoint, accounts: [] };
+                    for (var levelRenewalSnapshotIndex = 0; levelRenewalSnapshotIndex < levelRenewalInspection.highBoosterUsers.length; levelRenewalSnapshotIndex++) {
+                        var levelRenewalSnapshotUser = levelRenewalInspection.highBoosterUsers[levelRenewalSnapshotIndex];
+                        levelRenewalBoosterSnapshot.accounts.push({ id: levelRenewalSnapshotUser.user, checkRank: checkRank(data, petData, guildData, levelRenewalSnapshotUser.user), count: levelRenewalSnapshotUser.count, checkedAt: levelRenewalCheckedAt });
+                    }
+                    saveJsonFile(levelRenewalBoosterSnapshot, GLOBAL_CONFIG.level.boosterSnapshotPath, true);
+                    var verifiedLevelRenewalSnapshot = loadJsonFile(GLOBAL_CONFIG.level.boosterSnapshotPath);
+                    if (!isAdventureLevelRenewalSnapshotCurrent(verifiedLevelRenewalSnapshot, levelRenewalInspection)) {
+                        replier.reply("❌ " + GLOBAL_CONFIG.level.boosterName + " 보유자 스냅샷 저장 검증에 실패했습니다.");
+                        return;
+                    }
+                    replier.reply(buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, levelRenewalInspection) + "\n스냅샷: " + resolveActiveDataPath(GLOBAL_CONFIG.level.boosterSnapshotPath));
+                    return;
+                }
+                if (msg === "/레벨리뉴얼적용" && isMaster(sender)) {
+                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
+                        replier.reply("❌ 이미 레벨 리뉴얼 전환이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.migrationKey].appliedAt);
+                        return;
+                    }
+                    var currentLevelRenewalInspection = inspectAdventureLevelRenewal(data);
+                    var savedLevelRenewalSnapshot = loadJsonFile(GLOBAL_CONFIG.level.boosterSnapshotPath);
+                    if (!isAdventureLevelRenewalSnapshotCurrent(savedLevelRenewalSnapshot, currentLevelRenewalInspection)) {
+                        replier.reply("❌ 개편 직전 " + GLOBAL_CONFIG.level.boosterName + " 보유량 스냅샷이 없거나 현재 데이터와 다릅니다.\n먼저 /레벨리뉴얼점검 을 실행해주세요.");
+                        return;
+                    }
+                    var levelRenewalBackup = JSON.parse(JSON.stringify(data));
+                    saveJsonFile(levelRenewalBackup, GLOBAL_CONFIG.level.migrationBackupPath, true);
+                    var verifiedLevelRenewalBackup = loadJsonFile(GLOBAL_CONFIG.level.migrationBackupPath);
+                    if (!isExactJsonSnapshot(levelRenewalBackup, verifiedLevelRenewalBackup)) {
+                        replier.reply("❌ 원본 백업 검증에 실패해 레벨 리뉴얼 적용을 중단했습니다.");
+                        return;
+                    }
+                    var levelRenewalResult = applyAdventureLevelRenewal(data);
+                    if (!levelRenewalResult.ok) {
+                        replier.reply("❌ " + levelRenewalResult.message);
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    var verifiedLevelRenewalData = loadJsonFile(filePath);
+                    if (!isAdventureLevelRenewalResultValid(levelRenewalBackup, verifiedLevelRenewalData)) {
+                        replier.reply("❌ 전환 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 운영 반영을 중단했습니다.");
+                        return;
+                    }
+                    replier.reply("✅ 레벨 리뉴얼 전환 완료\n━━━━━━━━━━━━\n전체 " + numberWithCommas(levelRenewalResult.inspection.memberCount) + "명 Lv.1 / EXP 0 초기화\n환생 기록 폐기\n" + GLOBAL_CONFIG.level.boosterName + "와 환생버섯 보유 수량 보존\n환생버섯 회수·환급: /환생회수\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.migrationBackupPath));
+                    return;
+                }
+                if (msg === "/환생회수" && isMaster(sender)) {
+                    if (!data.migrations || !data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
+                        replier.reply("❌ 레벨 리뉴얼 전환이 완료되지 않았습니다.\n먼저 /레벨리뉴얼점검 후 /레벨리뉴얼적용 을 실행해주세요.");
+                        return;
+                    }
+                    if (data.migrations && data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey]) {
+                        replier.reply("❌ 이미 환생버섯 회수·환급이 완료되었습니다.\n적용 시각: " + data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey].appliedAt);
+                        return;
+                    }
+                    var rebirthRecallPrecheck = inspectAdventureLevelRenewal(data);
+                    if (rebirthRecallPrecheck.unsafeRefundUsers.length > 0) {
+                        replier.reply("❌ 환급 후 포인트가 안전한 정수 범위를 넘는 계정이 " + numberWithCommas(rebirthRecallPrecheck.unsafeRefundUsers.length) + "명 있어 회수를 중단했습니다.\n먼저 해당 계정의 포인트를 점검해주세요.");
+                        return;
+                    }
+                    var rebirthRecallBackup = JSON.parse(JSON.stringify(data));
+                    saveJsonFile(rebirthRecallBackup, GLOBAL_CONFIG.level.rebirthRecallBackupPath, true);
+                    var verifiedRebirthRecallBackup = loadJsonFile(GLOBAL_CONFIG.level.rebirthRecallBackupPath);
+                    if (!isExactJsonSnapshot(rebirthRecallBackup, verifiedRebirthRecallBackup)) {
+                        replier.reply("❌ 원본 백업 검증에 실패해 환생버섯 회수를 중단했습니다.");
+                        return;
+                    }
+                    var rebirthRecallResult = applyRebirthMushroomRecall(data);
+                    if (!rebirthRecallResult.ok) {
+                        replier.reply("❌ " + rebirthRecallResult.message);
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    var verifiedRebirthRecallData = loadJsonFile(filePath);
+                    if (!isRebirthMushroomRecallResultValid(rebirthRecallBackup, verifiedRebirthRecallData)) {
+                        replier.reply("❌ 환생버섯 회수 데이터 저장 검증에 실패했습니다. 원본 백업을 보존한 채 작업을 중단했습니다.");
+                        return;
+                    }
+                    replier.reply("✅ 환생버섯 회수·환급 완료\n━━━━━━━━━━━━\n대상 " + numberWithCommas(rebirthRecallResult.inspection.mushroomUserCount) + "명\n회수 " + numberWithCommas(rebirthRecallResult.inspection.mushroomTotal) + "개\n환급 포인트: 🅟" + numberWithCommas(rebirthRecallResult.inspection.mushroomRefundTotal) + "\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.rebirthRecallBackupPath));
+                    return;
                 }
                 if (msg === "/r" && sender == "호이 남") {
                     data.member[sender].cntlike = 0;
@@ -7990,29 +7979,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     );
                     return;
                 }
-                if (msg.startsWith("/환생") && sender == "호이 남") {
-                    var regex = /^\/환생\s+([^]+)/;
-                    var match = msg.match(regex);
-                    if (match) {
-                        var targetUserr = match[1];
-                        if (data.member[targetUserr]) {
-                            if (!data.member[targetUserr].lv0) {
-                                data.member[targetUserr].lv0 = data.member[targetUserr].lv;
-                            } else {
-                                data.member[targetUserr].lv0 += parseInt(data.member[targetUserr].lv);
-                            }
-                            data.member[targetUserr].lv = 1;
-                            data.member[targetUserr].rebirthcnt++;
-                            // [FIX] 변수 누락 수정: rooms/message가 정의되지 않아 잘못된 메시지 전송되던 버그
-                            const rebirthRooms = [room1, room2, room3, room5, room6, room7, room10, room11, room12, room13];
-                            var rebirthMessage = "내게 호강 같은 평화! 넘치네!!\n호렐루야! [" + checkRank(data, petData, guildData, targetUserr) + "] 님이\n호신의 축복을 받고 다시 태어납니다.\n환생 완료!";
-                            rebirthRooms.forEach((room) => Api.replyRoom(room, rebirthMessage));
-                            replier.reply("내게 강 같은 평화! 내가 강 같은 평화! 넘치네!! 호렐루야!\n호신의 축복을 받고 다시 태어납니다.\n환생 완료!");
-                        } else {
-                            replier.reply("해당 유저가 존재하지 않습니다.");
-                        }
-                    }
-                }
+
 
                 if (msg === "/부방상여" || /^\/부방상여\s+.+\/\d+$/.test(msg)) {
                     const authorizedUser = "호이 남"; // 명령어를 사용할 수 있는 유일한 관리자
@@ -17875,33 +17842,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
-                if (msg == "/환생") {
-                    if (data.member[sender].lv > 299 || data.member[sender].bag["환생버섯🍄"]) {
-                        // 레벨이 300 이상이거나, 가방에 환생버섯이 있을 때 환생 가능
-                        if (data.member[sender].lv <= 299 && data.member[sender].bag["환생버섯🍄"]) {
-                            // 환생버섯을 소모하는 조건: 레벨이 300 이하일 때 환생버섯이 있는 경우
-                            if (data.member[sender].bag["환생버섯🍄"] > 1) {
-                                data.member[sender].bag["환생버섯🍄"]--; // 버섯 개수 감소
-                            } else {
-                                delete data.member[sender].bag["환생버섯🍄"]; // 버섯 개수 0개일 때 삭제
-                            }
-                        }
-                        if (!data.member[sender].lv0) {
-                            // 레벨 저장 및 환생 처리
-                            data.member[sender].lv0 = data.member[sender].lv; // 환생 전 레벨 저장
-                        } else {
-                            data.member[sender].lv0 += parseInt(data.member[sender].lv); // 누적 레벨 저장
-                        }
-                        data.member[sender].lv = 1; // 레벨 초기화
-                        data.member[sender].rebirthcnt++; // 환생 카운트 증가
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님이 환생하여\n레벨이 1로 감소되었습니다.🍼");
-                        const rooms = [room1, room2, room3, room5, room6, room7, room10, room11, room12];
-                        var message = "내게 호강 같은 평화! 넘치네!!\n호렐루야! [" + checkRank(data, petData, guildData, sender) + "] 님이\n호신의 축복을 받고 다시 태어납니다.\n환생 완료!";
-                        rooms.forEach((room) => Api.replyRoom(room, message));
-                    } else {
-                        replier.reply("현재 ✨️레벨 300 이상 또는\n환생버섯🍄이 필요합니다.");
-                    }
-                }
+
                 if (msg.startsWith("/펫생성 ")) {
                     var Petname = msg.substring("/펫생성 ".length).trim();
 
@@ -18768,11 +18709,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 data.member[sender].bag[itemName] += quantity;
                             }
                             replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
-                            if (itemName === "티어 승급티켓🎟" && hasPetSkill(petSkillData, sender, "티어 상승론")) {
-                                var bonusTicketCount = Math.floor(quantity * 0.01);
+                            var pointShopTierTicketBonus = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
+                            if (itemName === pointShopTierTicketBonus.itemName) {
+                                var bonusTicketCount = getPointShopTierTicketBonusCount(petSkillData, sender, itemName, quantity);
                                 if (bonusTicketCount > 0) {
                                     addItem(data, sender, itemName, bonusTicketCount);
-                                    replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "티어 상승론") + "\n티어 승급티켓🎟 " + numberWithCommas(bonusTicketCount) + "개를 추가로 획득했습니다.");
+                                    replier.reply(buildPetSkillMsg(data, petData, guildData, sender, pointShopTierTicketBonus.skillName) + "\n티어 승급티켓🎟 " + numberWithCommas(bonusTicketCount) + "개를 추가로 획득했습니다.");
                                 }
                             }
                             isBuyFlag = true;
@@ -19041,9 +18983,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let booster = data.member[sender].boostercnt || 0;
                     let expFromBooster = 0;
                     if (booster > 0) {
-                        // 부스터 가능한 만큼 적용 (1당 +1)
-                        let usedBooster = Math.min(booster, expGain); // expGain만큼까지만 2배 효과
-                        expFromBooster = usedBooster; // 경험치 추가
+                        // 기존 소비 단위를 유지하며 1회당 기본 경험치 2를 추가
+                        let usedBooster = Math.min(booster, expGain); // 기존과 같은 최대 소비 횟수
+                        expFromBooster = usedBooster * GLOBAL_CONFIG.level.boosterExtraMultiplier; // 호월신의 가호 추가 경험치
                         data.member[sender].boostercnt -= usedBooster;
                     }
                     var castleTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
@@ -19091,19 +19033,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         " (" +
                         numberWithCommas(data.member[sender].exp) +
                         "/" +
-                        numberWithCommas(6 * data.member[sender].lv + 84) +
+                        numberWithCommas(getLevelRequiredExperience(data.member[sender].lv)) +
                         "[" +
-                        ((data.member[sender].exp / (6 * data.member[sender].lv + 84)) * 100).toFixed(2) +
+                        ((data.member[sender].exp / getLevelRequiredExperience(data.member[sender].lv)) * 100).toFixed(2) +
                         "%])";
                     if (data.member[sender].boostercnt === 0) {
-                        result += "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n경험치 부스터가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363";
+                        result += "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363";
                     } else if (data.member[sender].boostercnt > 0) {
-                        result += "\n남은 경험치 부스터 횟수:  " + numberWithCommas(data.member[sender].boostercnt || 0);
+                        result += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
                     }
                     result += "\n🔸️캐슬대전 최종 매력 차이🔸️\n" + allsee + numberWithCommas(castleExpGap) + "💕";
                     result += "\n\n" + checkRank(data, petData, guildData, winnerName) + " 캐슬포인트(CP): +" + numberWithCommas(winnerScore) + "pt🏆";
                     result += "\n" + checkRank(data, petData, guildData, loseName) + " 캐슬포인트(CP): -" + numberWithCommas(loseScore) + "pt🏆";
+                    if (castleTierExpResult.levelUps.length > 0) {
+                        saveJsonFile(data, filePath);
+                        result += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, castleTierExpResult.levelUps);
+                    }
                     replier.reply(result);
+                    var castleMajorLevel = getHighestMajorPromotionLevel(castleTierExpResult.levelUps);
+                    if (castleMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + castleMajorLevel + " " + getAdventureLevelTitle(castleMajorLevel) + "에 도달했습니다!", room);
 
                     if (hasPetSkill(petSkillData, sender, "정신승리")) {
                         if (!isWinFlag) replier.reply("[" + checkRank(data, petData, guildData, sender) + "] : 지는 게 이기는 거야..");
@@ -19479,12 +19427,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/레벨순위") {
-                    let UsrRanking = generateRanking(data.member);
+                    let UsrRanking = generateRanking(data, petData, guildData, sender);
                     let resultMsg = "🏆 레벨 순위 🏆\n\n";
                     resultMsg += UsrRanking.rankingMsg1 + allsee + UsrRanking.rankingMsg2;
                     replier.reply(resultMsg);
-                    let toplvUser = getToplvUser(data.member);
-                    data.toplv = toplvUser.username;
+                    if (UsrRanking.rows.length > 0) data.toplv = UsrRanking.rows[0].user;
                     saveJsonFile(data, filePath);
                     return;
                 }
@@ -19681,9 +19628,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let booster = data.member[sender].boostercnt || 0;
                     let expFromBooster = 0;
                     if (booster > 0) {
-                        // 부스터 가능한 만큼 적용 (1당 +1)
-                        let usedBooster = Math.min(booster, expGain); // expGain만큼까지만 2배 효과
-                        expFromBooster = usedBooster; // 경험치 추가
+                        // 기존 소비 단위를 유지하며 1회당 기본 경험치 2를 추가
+                        let usedBooster = Math.min(booster, expGain); // 기존과 같은 최대 소비 횟수
+                        expFromBooster = usedBooster * GLOBAL_CONFIG.level.boosterExtraMultiplier; // 호월신의 가호 추가 경험치
                         data.member[sender].boostercnt -= usedBooster;
                     }
                     var miniTierExpResult = addMemberExperienceWithTierBonus(data, sender, expGain + expFromBooster);
@@ -19743,17 +19690,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         " (" +
                         numberWithCommas(data.member[sender].exp) +
                         "/" +
-                        numberWithCommas(6 * data.member[sender].lv + 84) +
+                        numberWithCommas(getLevelRequiredExperience(data.member[sender].lv)) +
                         "[" +
-                        ((data.member[sender].exp / (6 * data.member[sender].lv + 84)) * 100).toFixed(2) +
+                        ((data.member[sender].exp / getLevelRequiredExperience(data.member[sender].lv)) * 100).toFixed(2) +
                         "%])";
                     if (data.member[sender].boostercnt === 0) {
                         resultMsg +=
-                            "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n경험치 부스터가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363 " + allsee + "";
+                            "\n[" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "가 없습니다.\n경험치패스⭐️를 후원해보세요!\nhttps://hoiland123.tistory.com/363 " + allsee + "";
                     } else if (data.member[sender].boostercnt > 0) {
-                        resultMsg += "\n남은 경험치 부스터 횟수:  " + numberWithCommas(data.member[sender].boostercnt || 0);
+                        resultMsg += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
+                    }
+                    if (miniTierExpResult.levelUps.length > 0) {
+                        saveJsonFile(data, filePath);
+                        resultMsg += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, miniTierExpResult.levelUps);
                     }
                     replier.reply(resultMsg);
+                    var miniMajorLevel = getHighestMajorPromotionLevel(miniTierExpResult.levelUps);
+                    if (miniMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + miniMajorLevel + " " + getAdventureLevelTitle(miniMajorLevel) + "에 도달했습니다!", room);
 
                     let itemName = "미니펫뽑기🐹(/미니펫오픈)";
                     if (hasPetSkill(petSkillData, sender, "헌터")) {
@@ -29474,7 +29427,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "미니펫뽑기🐹(/미니펫오픈)": 4000,
                         "펫스윗홈인테리어샵🖼️(/샵오픈)": 7000,
                         "호이베이스볼⚾️(/투수던집니다)": 200,
-                        "환생버섯🍄": 1,
                         "강화확률뽑기⚒️(/강화뽑기)": 50
 
                     };
@@ -30373,7 +30325,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -33802,6 +33754,7 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
 
     var messages = [];
     messages.push("[" + rankText + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치 " + attendanceExpResult.total + "exp 획득" + (attendanceExpResult.bonus > 0 ? "(티어 +" + attendanceExpResult.bonus + ")" : ""));
+    if (attendanceExpResult.levelUps.length > 0) messages.push(buildAdventureLevelUpMessage(data, petData, guildData, user, attendanceExpResult.levelUps));
     var multiplier = rollAndCalculateMultiplier(); // 출석 응모 주사위 배율
     var dicePoint = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * multiplier).toFixed(0), 10); // 주사위 추가 포인트
     member.point += dicePoint;
@@ -33826,13 +33779,16 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
     }
 
     var totalPointReward = GLOBAL_CONFIG.attendance.bonusPoint + dicePoint + rankBonusPoint; // 이번 출석의 총 포인트 보상
+    var attendanceNoticeMessage = "[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + attendanceExpResult.total + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "");
+    if (attendanceExpResult.levelUps.length > 0) attendanceNoticeMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, user, attendanceExpResult.levelUps);
     return {
         ok: true,
         messages: messages,
         totalPointReward: totalPointReward,
         expReward: GLOBAL_CONFIG.attendance.bonusExp,
+        levelUps: attendanceExpResult.levelUps,
         openRunRewardGranted: openRunRewardGranted,
-        noticeMessage: "[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + GLOBAL_CONFIG.attendance.bonusExp + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "")
+        noticeMessage: attendanceNoticeMessage
     };
 }
 
@@ -34122,7 +34078,7 @@ function initializeMember(sender, data, petData) {
         join: currentDate,
         lv: 1,
         lv0: 0,
-        rebirthcnt: 1,
+        rebirthcnt: 0,
         exp: 0,
         point: 0,
         boostercnt: 0,
@@ -34629,17 +34585,312 @@ function getTierExperienceBonusPercent(data, user) {
     return tier && Number(tier.experienceBonus) > 0 ? Number(tier.experienceBonus) : 0;
 }
 
-// 기본 경험치에 현재 티어 보너스를 누적 적용하는 함수
+// 현재 레벨에서 다음 레벨까지 필요한 경험치를 반환하는 함수
+function getLevelRequiredExperience(level) {
+    var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+    return GLOBAL_CONFIG.level.expBase + (currentLevel - 1) * GLOBAL_CONFIG.level.expPerLevel;
+}
+
+// 현재 레벨의 모험가 칭호를 반환하는 함수
+function getAdventureLevelTitle(level) {
+    var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+    if (currentLevel < 10) return "🎒 초보 모험가";
+    var titleIndex = Math.min(100, Math.floor(currentLevel / 10)) - 1;
+    return GLOBAL_CONFIG.level.titles[titleIndex] || GLOBAL_CONFIG.level.titles[GLOBAL_CONFIG.level.titles.length - 1];
+}
+
+// 현재 레벨까지 달성한 일반·대승급 횟수를 반환하는 함수
+function getAdventurePromotionCounts(level) {
+    var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+    var majorCount = Math.floor(currentLevel / 100); // 100레벨 단위 대승급 횟수
+    var normalCount = Math.floor(currentLevel / 10) - majorCount; // 대승급을 제외한 10레벨 단위 일반 승급 횟수
+    return { normal: normalCount, major: majorCount };
+}
+
+// 현재 레벨이 캐슬·레이드 각각에 더하는 누적 매력 비율을 반환하는 함수
+function getAdventureLevelCharmPercent(level) {
+    var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+    var counts = getAdventurePromotionCounts(currentLevel);
+    return (currentLevel - 1) * GLOBAL_CONFIG.level.baseCharmPercent + counts.normal * GLOBAL_CONFIG.level.normalPromotionPercent + counts.major * GLOBAL_CONFIG.level.majorPromotionPercent;
+}
+
+// 0.01% 정수 단위로 비율을 적용해 부동소수점 내림 오차를 막는 함수
+function applyPercentWithExactFloor(value, percent) {
+    var baseValue = Math.max(0, Math.floor(Number(value) || 0));
+    var basisPoints = Math.round((Number(percent) || 0) * 100); // 1 = 0.01%
+    var wholeUnits = Math.floor(baseValue / 10000); // 큰 수 곱셈을 피하기 위한 10000 단위 몫
+    var remainder = baseValue - wholeUnits * 10000; // 10000 미만 나머지
+    return baseValue + wholeUnits * basisPoints + Math.floor(remainder * basisPoints / 10000);
+}
+
+// 적용된 0.01% 비율을 정수 연산으로 역산하는 함수
+function removePercentWithExactCeil(value, percent) {
+    var appliedValue = Math.max(0, Math.floor(Number(value) || 0));
+    var denominator = 10000 + Math.round((Number(percent) || 0) * 100); // 적용 배율의 0.01% 정수값
+    if (denominator <= 0) return appliedValue;
+    var wholeUnits = Math.floor(appliedValue / denominator); // 큰 수 곱셈을 피하기 위한 배율 단위 몫
+    var remainder = appliedValue - wholeUnits * denominator; // 배율 단위 미만 나머지
+    return wholeUnits * 10000 + Math.ceil(remainder * 10000 / denominator);
+}
+
+// 보유 경험치를 넘겨 다중 레벨업과 정규 포인트 보상을 처리하는 함수
+function processAdventureLevelUps(member) {
+    var levelUps = [];
+    if (!member) return levelUps;
+    member.lv = Math.max(1, parseInt(member.lv, 10) || 1);
+    member.exp = Math.max(0, Number(member.exp) || 0);
+    member.point = Number(member.point) || 0;
+    var safetyCount = 0;
+    while (member.exp >= getLevelRequiredExperience(member.lv) && safetyCount < 10000) {
+        member.exp -= getLevelRequiredExperience(member.lv);
+        member.lv++;
+        member.point += GLOBAL_CONFIG.level.bonusPoint;
+        var promotionType = member.lv % 100 === 0 ? "major" : member.lv % 10 === 0 ? "normal" : "level";
+        levelUps.push({ level: member.lv, type: promotionType, title: getAdventureLevelTitle(member.lv) });
+        safetyCount++;
+    }
+    return levelUps;
+}
+
+// 모험가 레벨 보너스율을 불필요한 소수점 없이 표시하는 함수
+function formatAdventureLevelPercent(value) {
+    return String(Math.round((Number(value) || 0) * 100) / 100);
+}
+
+// 한 번의 경험치 획득으로 발생한 최고 승급 알림과 상세 내역을 만드는 함수
+function buildAdventureLevelUpMessage(data, petData, guildData, user, levelUps) {
+    if (!levelUps || levelUps.length === 0) return "";
+    var highest = levelUps[0];
+    for (var i = 1; i < levelUps.length; i++) {
+        var currentPriority = levelUps[i].type === "major" ? 3 : levelUps[i].type === "normal" ? 2 : 1;
+        var highestPriority = highest.type === "major" ? 3 : highest.type === "normal" ? 2 : 1;
+        if (currentPriority > highestPriority || (currentPriority === highestPriority && levelUps[i].level > highest.level)) highest = levelUps[i];
+    }
+    var heading = highest.type === "major" ? "🏆 대승급 달성!" : highest.type === "normal" ? "🎖️ 승급 달성!" : "✨ 레벨업!";
+    var totalCharmIncrease = 0; // 이번 다중 레벨업에서 캐슬·레이드 각각 증가한 누적 보너스
+    for (var bonusIndex = 0; bonusIndex < levelUps.length; bonusIndex++) {
+        totalCharmIncrease += GLOBAL_CONFIG.level.baseCharmPercent;
+        if (levelUps[bonusIndex].type === "normal") totalCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
+        else if (levelUps[bonusIndex].type === "major") totalCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
+    }
+    var message = "[" + checkRank(data, petData, guildData, user) + "] 님\n" + heading + "\nLv." + highest.level + " " + highest.title;
+    message += "\n레벨업 " + numberWithCommas(levelUps.length) + "회 · 포인트 🅟" + numberWithCommas(levelUps.length * GLOBAL_CONFIG.level.bonusPoint) + " 지급";
+    message += "\n⚔️ 캐슬 +" + formatAdventureLevelPercent(totalCharmIncrease) + "% · 👾 레이드 +" + formatAdventureLevelPercent(totalCharmIncrease) + "%";
+    if (highest.type === "level") {
+        var nextPromotionLevel = Math.ceil(highest.level / 10) * 10; // 일반 레벨업 이후 가장 가까운 승급 레벨
+        message += "\n🎯 Lv." + nextPromotionLevel + " 승급까지 " + (nextPromotionLevel - highest.level) + "레벨!";
+    }
+    message += allsee + "\n\n📋 이번 레벨업 상세";
+    for (var detailIndex = 0; detailIndex < levelUps.length; detailIndex++) {
+        var detailCharmIncrease = GLOBAL_CONFIG.level.baseCharmPercent;
+        if (levelUps[detailIndex].type === "normal") detailCharmIncrease += GLOBAL_CONFIG.level.normalPromotionPercent;
+        else if (levelUps[detailIndex].type === "major") detailCharmIncrease += GLOBAL_CONFIG.level.majorPromotionPercent;
+        var detailBonusText = "기본 +" + formatAdventureLevelPercent(GLOBAL_CONFIG.level.baseCharmPercent) + "%";
+        if (levelUps[detailIndex].type === "normal") detailBonusText += " · 승급 추가 +" + formatAdventureLevelPercent(GLOBAL_CONFIG.level.normalPromotionPercent) + "%";
+        else if (levelUps[detailIndex].type === "major") detailBonusText += " · 대승급 추가 +" + formatAdventureLevelPercent(GLOBAL_CONFIG.level.majorPromotionPercent) + "%";
+        message += "\nLv." + levelUps[detailIndex].level + " · " + levelUps[detailIndex].title + " · " + detailBonusText + " · 각각 +" + formatAdventureLevelPercent(detailCharmIncrease) + "%";
+    }
+    return message;
+}
+
+// 한 번의 레벨업 목록에서 가장 높은 대승급 레벨을 반환하는 함수
+function getHighestMajorPromotionLevel(levelUps) {
+    var highestLevel = 0;
+    for (var i = 0; levelUps && i < levelUps.length; i++) {
+        if (levelUps[i].type === "major" && levelUps[i].level > highestLevel) highestLevel = levelUps[i].level;
+    }
+    return highestLevel;
+}
+
+// 레벨 리뉴얼 전환 대상과 고액 부스터 보유 현황을 집계하는 함수
+function inspectAdventureLevelRenewal(data) {
+    var result = { memberCount: 0, highBoosterUsers: [], highBoosterTotal: 0, mushroomUserCount: 0, mushroomTotal: 0, mushroomRefundTotal: 0, unsafeRefundUsers: [] };
+    var members = data && data.member ? data.member : {};
+    for (var user in members) {
+        if (!members.hasOwnProperty(user) || !members[user]) continue;
+        result.memberCount++;
+        var member = members[user];
+        var boosterCount = Math.max(0, parseInt(member.boostercnt, 10) || 0);
+        if (boosterCount >= GLOBAL_CONFIG.level.highBoosterThreshold) {
+            result.highBoosterUsers.push({ user: user, count: boosterCount });
+            result.highBoosterTotal += boosterCount;
+        }
+        var mushroomCount = member.bag ? Math.max(0, parseInt(member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem], 10) || 0) : 0;
+        if (mushroomCount > 0) {
+            result.mushroomUserCount++;
+            result.mushroomTotal += mushroomCount;
+            var pointAfterRefund = (Number(member.point) || 0) + mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint;
+            if (Math.floor(pointAfterRefund) !== pointAfterRefund || Math.abs(pointAfterRefund) > 9007199254740991) result.unsafeRefundUsers.push({ user: user, pointAfterRefund: pointAfterRefund });
+        }
+    }
+    result.highBoosterUsers.sort(function (a, b) { return b.count - a.count; });
+    result.mushroomRefundTotal = result.mushroomTotal * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint;
+    return result;
+}
+
+// 저장된 고액 가호 보유자 스냅샷이 현재 점검 결과와 같은지 확인하는 함수
+function isAdventureLevelRenewalSnapshotCurrent(snapshot, inspection) {
+    if (!snapshot || !inspection || snapshot.threshold !== GLOBAL_CONFIG.level.highBoosterThreshold) return false;
+    if (snapshot.accountCount !== inspection.highBoosterUsers.length || snapshot.totalCount !== inspection.highBoosterTotal) return false;
+    if (Object.prototype.toString.call(snapshot.accounts) !== "[object Array]" || snapshot.accounts.length !== inspection.highBoosterUsers.length) return false;
+    var savedRows = [];
+    var currentRows = [];
+    for (var i = 0; i < snapshot.accounts.length; i++) savedRows.push(String(snapshot.accounts[i].id) + "\u0000" + String(parseInt(snapshot.accounts[i].count, 10) || 0));
+    for (var j = 0; j < inspection.highBoosterUsers.length; j++) currentRows.push(String(inspection.highBoosterUsers[j].user) + "\u0000" + String(inspection.highBoosterUsers[j].count));
+    savedRows.sort();
+    currentRows.sort();
+    return savedRows.join("\u0001") === currentRows.join("\u0001");
+}
+
+// 저장 후 다시 읽은 JSON이 저장 전 원본과 완전히 같은지 확인하는 함수
+function isExactJsonSnapshot(source, saved) {
+    if (!source || !saved) return false;
+    try {
+        return JSON.stringify(source) === JSON.stringify(saved);
+    } catch (error) {
+        return false;
+    }
+}
+
+// 레벨 리뉴얼 저장 결과의 초기화 필드와 보존 대상을 확인하는 함수
+function isAdventureLevelRenewalResultValid(before, after) {
+    if (!before || !before.member || !after || !after.member || !after.migrations || !after.migrations[GLOBAL_CONFIG.level.migrationKey]) return false;
+    var beforeUsers = Object.keys(before.member);
+    if (beforeUsers.length !== Object.keys(after.member).length) return false;
+    for (var i = 0; i < beforeUsers.length; i++) {
+        var user = beforeUsers[i];
+        var beforeMember = before.member[user];
+        var afterMember = after.member[user];
+        if (!beforeMember || !afterMember) return false;
+        if (Number(afterMember.lv) !== 1 || Number(afterMember.exp) !== 0 || Number(afterMember.tierExperienceRemainder) !== 0 || Number(afterMember.lv0) !== 0 || Number(afterMember.rebirthcnt) !== 0) return false;
+        if (JSON.stringify(beforeMember.boostercnt) !== JSON.stringify(afterMember.boostercnt)) return false;
+        var beforeMushroom = beforeMember.bag ? beforeMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem] : undefined;
+        var afterMushroom = afterMember.bag ? afterMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem] : undefined;
+        if (JSON.stringify(beforeMushroom) !== JSON.stringify(afterMushroom)) return false;
+    }
+    return true;
+}
+
+// 환생버섯 회수 저장 결과의 삭제 수량과 계정별 포인트 환급을 확인하는 함수
+function isRebirthMushroomRecallResultValid(before, after) {
+    if (!before || !before.member || !after || !after.member || !after.migrations) return false;
+    var migration = after.migrations[GLOBAL_CONFIG.level.rebirthRecallKey];
+    if (!migration || Object.prototype.toString.call(migration.accounts) !== "[object Array]") return false;
+    var inspection = inspectAdventureLevelRenewal(before);
+    if (Number(migration.accountCount) !== inspection.mushroomUserCount || Number(migration.mushroomCount) !== inspection.mushroomTotal || Number(migration.refundPoint) !== inspection.mushroomRefundTotal) return false;
+    var beforeUsers = Object.keys(before.member);
+    if (beforeUsers.length !== Object.keys(after.member).length || migration.accounts.length !== inspection.mushroomUserCount) return false;
+    var recordByUser = {};
+    for (var i = 0; i < migration.accounts.length; i++) {
+        var record = migration.accounts[i];
+        var recordKey = record ? "user:" + String(record.id) : "";
+        if (!record || recordByUser.hasOwnProperty(recordKey)) return false;
+        recordByUser[recordKey] = record;
+    }
+    for (var j = 0; j < beforeUsers.length; j++) {
+        var user = beforeUsers[j];
+        var beforeMember = before.member[user];
+        var afterMember = after.member[user];
+        if (!beforeMember || !afterMember) return false;
+        if (afterMember.bag && afterMember.bag.hasOwnProperty(GLOBAL_CONFIG.level.rebirthMushroomItem)) return false;
+        var mushroomCount = beforeMember.bag ? Math.max(0, parseInt(beforeMember.bag[GLOBAL_CONFIG.level.rebirthMushroomItem], 10) || 0) : 0;
+        var expectedPoint = mushroomCount > 0 ? (Number(beforeMember.point) || 0) + mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint : beforeMember.point;
+        if (JSON.stringify(afterMember.point) !== JSON.stringify(expectedPoint)) return false;
+        var userRecordKey = "user:" + String(user);
+        if (mushroomCount > 0) {
+            var userRecord = recordByUser[userRecordKey];
+            if (!userRecord || Number(userRecord.count) !== mushroomCount || Number(userRecord.refundPoint) !== mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint) return false;
+        } else if (recordByUser.hasOwnProperty(userRecordKey)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// 레벨 리뉴얼 전환 전 점검 결과를 운영자용 메시지로 만드는 함수
+function buildAdventureLevelRenewalInspectionMessage(data, petData, guildData, inspection) {
+    var message = "🔎 레벨 리뉴얼 전환 점검\n";
+    message += "━━━━━━━━━━━━\n";
+    message += "점검 시각: " + formatDateTime(new Date()) + "\n";
+    message += "전체 계정: " + numberWithCommas(inspection.memberCount) + "명\n";
+    message += GLOBAL_CONFIG.level.boosterName + " 10만회 이상: " + numberWithCommas(inspection.highBoosterUsers.length) + "명 / " + numberWithCommas(inspection.highBoosterTotal) + "회\n";
+    message += "예정 보상: 계정당 🅟" + numberWithCommas(GLOBAL_CONFIG.level.plannedCompensationPoint) + " (점검만, 미지급)\n";
+    message += "예정 보상 합계: 🅟" + numberWithCommas(inspection.highBoosterUsers.length * GLOBAL_CONFIG.level.plannedCompensationPoint) + "\n";
+    message += "환생버섯: " + numberWithCommas(inspection.mushroomUserCount) + "명 / " + numberWithCommas(inspection.mushroomTotal) + "개\n";
+    message += "환생버섯 환급 예정: 🅟" + numberWithCommas(inspection.mushroomRefundTotal) + "\n";
+    message += "환급 정밀도 위험 계정: " + numberWithCommas(inspection.unsafeRefundUsers.length) + "명";
+    if (inspection.highBoosterUsers.length > 0) {
+        message += allsee + "\n\n📋 " + GLOBAL_CONFIG.level.boosterName + " 10만회 이상 계정";
+        for (var i = 0; i < inspection.highBoosterUsers.length; i++) {
+            var row = inspection.highBoosterUsers[i];
+            message += "\n" + (i + 1) + ". " + checkRank(data, petData, guildData, row.user) + " (" + row.user + ") · " + numberWithCommas(row.count) + "회";
+        }
+    }
+    return message;
+}
+
+// 전체 계정을 새 레벨 체계로 한 번만 전환하고 가호와 환생버섯 보유량을 유지하는 함수
+function applyAdventureLevelRenewal(data) {
+    if (!data.migrations || typeof data.migrations !== "object" || data.migrations instanceof Array) data.migrations = {};
+    if (data.migrations[GLOBAL_CONFIG.level.migrationKey]) return { ok: false, message: "이미 레벨 리뉴얼 전환이 완료되었습니다." };
+    var inspection = inspectAdventureLevelRenewal(data);
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var member = data.member[user];
+        member.lv = 1;
+        member.exp = 0;
+        member.tierExperienceRemainder = 0;
+        member.lv0 = 0;
+        member.rebirthcnt = 0;
+    }
+    data.migrations[GLOBAL_CONFIG.level.migrationKey] = {
+        appliedAt: formatDateTime(new Date()),
+        memberCount: inspection.memberCount,
+        boosterPreserved: true,
+        rebirthMushroomPreserved: true
+    };
+    return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.migrationKey] };
+}
+
+// 전체 계정의 환생버섯을 한 번만 회수하고 개당 30억 포인트를 환급하는 함수
+function applyRebirthMushroomRecall(data) {
+    if (!data.migrations || typeof data.migrations !== "object" || data.migrations instanceof Array) data.migrations = {};
+    if (data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey]) return { ok: false, message: "이미 환생버섯 회수·환급이 완료되었습니다." };
+    var inspection = inspectAdventureLevelRenewal(data);
+    var accountRecords = [];
+    for (var user in data.member) {
+        if (!data.member.hasOwnProperty(user) || !data.member[user]) continue;
+        var member = data.member[user];
+        var hasMushroomField = member.bag && member.bag.hasOwnProperty(GLOBAL_CONFIG.level.rebirthMushroomItem);
+        var mushroomCount = hasMushroomField ? Math.max(0, parseInt(member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem], 10) || 0) : 0;
+        if (mushroomCount > 0) {
+            var refundPoint = mushroomCount * GLOBAL_CONFIG.level.rebirthMushroomRefundPoint;
+            member.point = (Number(member.point) || 0) + refundPoint;
+            accountRecords.push({ id: user, count: mushroomCount, refundPoint: refundPoint });
+        }
+        if (hasMushroomField) delete member.bag[GLOBAL_CONFIG.level.rebirthMushroomItem];
+    }
+    data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] = {
+        appliedAt: formatDateTime(new Date()),
+        accountCount: inspection.mushroomUserCount,
+        mushroomCount: inspection.mushroomTotal,
+        refundPoint: inspection.mushroomRefundTotal,
+        accounts: accountRecords
+    };
+    return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] };
+}
+
+// 기본 경험치에 현재 티어 보너스를 누적 적용하고 레벨업을 처리하는 함수
 function addMemberExperienceWithTierBonus(data, user, baseExperience) {
     var member = data && data.member ? data.member[user] : null;
     var base = Math.max(0, Number(baseExperience) || 0); // 이번 행동의 기본·부스터 포함 경험치
-    if (!member || base <= 0) return { base: base, bonus: 0, total: 0 };
+    if (!member || base <= 0) return { base: base, bonus: 0, total: 0, levelUps: [] };
     var rate = getTierExperienceBonusPercent(data, user); // 현재 티어 하나의 경험치 증가율
     var accumulated = (Number(member.tierExperienceRemainder) || 0) + base * rate / 100; // 1 미만 보너스 누적분
     var bonus = Math.floor(accumulated);
     member.tierExperienceRemainder = Math.round((accumulated - bonus) * 1000000) / 1000000;
     member.exp = (Number(member.exp) || 0) + base + bonus;
-    return { base: base, bonus: bonus, total: base + bonus };
+    return { base: base, bonus: bonus, total: base + bonus, levelUps: processAdventureLevelUps(member) };
 }
 
 // 한 사용자의 다음 티어 준비량과 구매 견적을 계산하는 함수
@@ -34672,8 +34923,12 @@ function buildTierProgressPlan(data, petSkillData, user) {
         couponHoldings.push({ name: tierCoupons[couponIndex].name, count: parseInt(bag[tierCoupons[couponIndex].name], 10) || 0 });
     }
     var quote = null;
+    var tierTicketPurchaseQuantity = additionalRegular;
+    var tierTicketPurchaseBonus = 0;
     if (additionalRegular > 0 && data.shop && typeof data.shop["티어 승급티켓🎟"] === "number") {
-        quote = buildPointShopPurchaseQuote(data, petSkillData, user, "티어 승급티켓🎟", additionalRegular, data.shop["티어 승급티켓🎟"]);
+        tierTicketPurchaseQuantity = getPointShopTierTicketPurchaseQuantity(petSkillData, user, additionalRegular);
+        tierTicketPurchaseBonus = getPointShopTierTicketBonusCount(petSkillData, user, "티어 승급티켓🎟", tierTicketPurchaseQuantity);
+        quote = buildPointShopPurchaseQuote(data, petSkillData, user, "티어 승급티켓🎟", tierTicketPurchaseQuantity, data.shop["티어 승급티켓🎟"]);
     }
     return {
         user: user,
@@ -34692,6 +34947,8 @@ function buildTierProgressPlan(data, petSkillData, user) {
         craftLegendStone: craftLegendStone,
         craftPetStone: craftPetStone,
         additionalRegular: additionalRegular,
+        tierTicketPurchaseQuantity: tierTicketPurchaseQuantity,
+        tierTicketPurchaseBonus: tierTicketPurchaseBonus,
         additionalLegendStone: additionalLegendStone,
         additionalPetStone: additionalPetStone,
         craftReady: combineCount > 0 && additionalRegular === 0 && additionalLegendStone === 0 && additionalPetStone === 0,
@@ -34710,6 +34967,7 @@ function buildTierQuoteStatusText(quote) {
     var parts = [];
     if (quote.discountSkill === "VIP블랙카드") parts.push("VIP블랙카드📙 30%");
     else if (quote.discountSkill === "쇼핑광") parts.push("쇼핑광📙 20%");
+    if (quote.taxExempt && quote.baseTaxRate > 0) parts.push("탈세자📙 세금 70% 면제");
     if (quote.couponPlan && quote.couponPlan.usedCount > 0) {
         var couponRates = [];
         for (var i = 0; i < quote.couponPlan.usages.length; i++) couponRates.push(quote.couponPlan.usages[i].rate + "%");
@@ -34746,7 +35004,8 @@ function buildTierProgressMessage(plan, isApplyFailure) {
             if (plan.additionalRegular > 0) {
                 lines.push("");
                 if (plan.quote && plan.quote.available) {
-                    lines.push("💰 티켓 " + numberWithCommas(plan.additionalRegular) + "장 구매: 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
+                    var ticketPurchaseResultText = plan.tierTicketPurchaseBonus > 0 ? " → 총 " + numberWithCommas(plan.tierTicketPurchaseQuantity + plan.tierTicketPurchaseBonus) + "장 획득" : "";
+                    lines.push("💰 티켓 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장 구매" + ticketPurchaseResultText + ": 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
                     lines.push(buildTierQuoteStatusText(plan.quote) + " · 세금 포함");
                 } else {
                     lines.push("💰 티켓 구매비: 현재 확인할 수 없어요");
@@ -34772,6 +35031,9 @@ function buildTierProgressMessage(plan, isApplyFailure) {
     if (plan.quote && plan.quote.available) {
         lines.push("");
         lines.push("💰 티켓 구매 견적");
+        lines.push("부족 수량 " + numberWithCommas(plan.additionalRegular) + "장");
+        lines.push("실제 구매 수량 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장");
+        if (plan.tierTicketPurchaseBonus > 0) lines.push("티어 상승론📙 추가 " + numberWithCommas(plan.tierTicketPurchaseBonus) + "장");
         lines.push("할인 전 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice)));
         lines.push("할인액 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice - plan.quote.itemPrice)));
         lines.push("세금 🅟" + numberWithCommas(Math.floor(plan.quote.taxAmount)) + " (" + plan.quote.taxRate + "%)");
@@ -35090,27 +35352,27 @@ function sellAuctionItem(petData, data, subData, guildData, index, replier) {
                 Api.replyRoom(room5, message);
                 Api.replyRoom(room6, message);
                 Api.replyRoom(room7, message);
-            } else if (auctionedItem == "경험치 2배 부스터(소)") {
+            } else if (auctionedItem == "경험치 2배 부스터(소)" || auctionedItem == GLOBAL_CONFIG.level.boosterName + "(소)") {
                 data.member[highestBidder].boostercnt += 1000;
-                var message = "[" + checkRank(data, petData, guildData, highestBidder) + "] 님이\n[" + auctionedItem + "] 을(를)\n낙찰받았습니다.\n경험치부스터 1000회 추가.";
+                var message = "[" + checkRank(data, petData, guildData, highestBidder) + "] 님이\n[" + GLOBAL_CONFIG.level.boosterName + "(소)] 을(를)\n낙찰받았습니다.\n" + GLOBAL_CONFIG.level.boosterName + " 1,000회 추가.";
                 Api.replyRoom(room1, message);
                 Api.replyRoom(room2, message);
                 Api.replyRoom(room3, message);
                 Api.replyRoom(room5, message);
                 Api.replyRoom(room6, message);
                 Api.replyRoom(room7, message);
-            } else if (auctionedItem == "경험치 2배 부스터(중)") {
+            } else if (auctionedItem == "경험치 2배 부스터(중)" || auctionedItem == GLOBAL_CONFIG.level.boosterName + "(중)") {
                 data.member[highestBidder].boostercnt += 2500;
-                var message = "[" + checkRank(data, petData, guildData, highestBidder) + "] 님이\n[" + auctionedItem + "] 을(를)\n낙찰받았습니다.\n경험치부스터 2500회 추가.";
+                var message = "[" + checkRank(data, petData, guildData, highestBidder) + "] 님이\n[" + GLOBAL_CONFIG.level.boosterName + "(중)] 을(를)\n낙찰받았습니다.\n" + GLOBAL_CONFIG.level.boosterName + " 2,500회 추가.";
                 Api.replyRoom(room1, message);
                 Api.replyRoom(room2, message);
                 Api.replyRoom(room3, message);
                 Api.replyRoom(room5, message);
                 Api.replyRoom(room6, message);
                 Api.replyRoom(room7, message);
-            } else if (auctionedItem == "경험치 2배 부스터(대)") {
+            } else if (auctionedItem == "경험치 2배 부스터(대)" || auctionedItem == GLOBAL_CONFIG.level.boosterName + "(대)") {
                 data.member[highestBidder].boostercnt += 5000;
-                var message = "[" + checkRank(data, petData, guildData, highestBidder) + "] 님이\n[" + auctionedItem + "] 을(를)\n낙찰받았습니다.\n경험치부스터 5000회 추가.";
+                var message = "[" + checkRank(data, petData, guildData, highestBidder) + "] 님이\n[" + GLOBAL_CONFIG.level.boosterName + "(대)] 을(를)\n낙찰받았습니다.\n" + GLOBAL_CONFIG.level.boosterName + " 5,000회 추가.";
                 Api.replyRoom(room1, message);
                 Api.replyRoom(room2, message);
                 Api.replyRoom(room3, message);
@@ -35367,6 +35629,20 @@ function noticeMsg(msg) {
     Api.replyRoom(room12, msg);
     Api.replyRoom(room13, msg);
     Api.replyRoom(room90, msg);
+}
+
+// 대승급 공지를 원래 대화방과 중복되지 않게 전체 방에 전송하는 함수
+function noticeMsgExceptRoom(msg, originRoom) {
+    var ctx = getCurrentContext();
+    if (ctx.isDev) {
+        var devRoom = isDebuggerFlag ? testRoom : room8;
+        if (devRoom !== originRoom) Api.replyRoom(devRoom, ctx.header(msg));
+        return;
+    }
+    var rooms = [room1, room2, room3, room5, room6, room7, room8, room10, room11, room12, room13, room90];
+    for (var i = 0; i < rooms.length; i++) {
+        if (rooms[i] !== originRoom) Api.replyRoom(rooms[i], msg);
+    }
 }
 function debuggerToggle() {
     if (isDebuggerFlag) {
@@ -35860,6 +36136,30 @@ function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unit
     return plan;
 }
 
+// 포인트 상점의 티어 승급티켓 구매에만 티어 상승론 추가 수량을 계산하는 함수
+function getPointShopTierTicketBonusCount(petSkillData, user, itemName, quantity) {
+    var benefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
+    var parsedQuantity = Math.max(0, parseInt(quantity, 10) || 0);
+    if (itemName !== benefit.itemName || !hasPetSkill(petSkillData, user, benefit.skillName)) return 0;
+    return Math.floor(parsedQuantity * benefit.bonusRate);
+}
+
+// 티어 상승론 보너스를 포함해 부족 티켓을 채우는 최소 포인트 상점 구매 수량을 계산하는 함수
+function getPointShopTierTicketPurchaseQuantity(petSkillData, user, requiredQuantity) {
+    var required = Math.max(0, parseInt(requiredQuantity, 10) || 0);
+    var benefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
+    if (required < 1 || !hasPetSkill(petSkillData, user, benefit.skillName)) return required;
+    var low = 1;
+    var high = required;
+    while (low < high) {
+        var middle = Math.floor((low + high) / 2); // 보너스를 포함해 부족 수량을 충족하는 최소 구매량 탐색
+        var received = middle + getPointShopTierTicketBonusCount(petSkillData, user, benefit.itemName, middle);
+        if (received >= required) high = middle;
+        else low = middle + 1;
+    }
+    return low;
+}
+
 // 포인트 상점 구매와 조회 화면이 함께 사용하는 최종 결제 견적을 계산하는 함수
 function buildPointShopPurchaseQuote(data, petSkillData, user, itemName, quantity, unitPrice) {
     var parsedQuantity = parseInt(quantity, 10);
@@ -35879,8 +36179,9 @@ function buildPointShopPurchaseQuote(data, petSkillData, user, itemName, quantit
         itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate);
     }
     var baseTaxRate = data.HoiCastle && data.HoiCastle.taxRate ? parseInt(data.HoiCastle.taxRate, 10) || 0 : 0;
-    var taxExempt = hasPetSkill(petSkillData, user, "탈세자");
-    var taxRate = taxExempt ? Math.round(baseTaxRate * 0.3 * 10) / 10 : baseTaxRate;
+    var taxBenefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.taxRelief;
+    var taxExempt = hasPetSkill(petSkillData, user, taxBenefit.skillName);
+    var taxRate = taxExempt ? Math.round(baseTaxRate * taxBenefit.payableTaxRate * 10) / 10 : baseTaxRate;
     var taxAmount = Math.round(itemPrice * (taxRate / 100));
     return {
         available: true,
@@ -36261,7 +36562,7 @@ function beginPetMusou(data, petData, homeData, petSkillData, guildData, finaliz
         return {
             ok: true,
             message: "[⚔️전체알림⚔️]\n" +
-                "🗡️ 펫무쌍 대화 시작 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 전 🗡️\n" +
+                "🗡️ 펫무쌍 대회 시작 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 전 🗡️\n" +
                 "/펫무쌍준비 를 입력하면 " + Math.floor(GLOBAL_CONFIG.petMusou.startGraceMs / 1000) + "초 안에 대회에 참여할 수 있습니다.\n\n" +
                 "이미 준비한 참가자는 그대로 참여합니다.\n" +
                 "모집이 끝나면 참가자 명단과 함께 시작합니다.\n" +
@@ -37183,7 +37484,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, petExploreData,
     var sortedItemList = bagInfo && bagInfo.sortedItemList ? bagInfo.sortedItemList : [];
     var currentLevel = parseInt(member.lv, 10); // 현재 레벨 표시값
     var currentExp = Number(member.exp); // 현재 단계 경험치
-    var requiredExp = !isNaN(currentLevel) ? 6 * currentLevel + 84 : 0; // 다음 레벨 필요 경험치
+    var requiredExp = !isNaN(currentLevel) ? getLevelRequiredExperience(currentLevel) : 0; // 다음 레벨 필요 경험치
     var boosterCount = parseInt(member.boostercnt, 10);
     var expSummary = "🌟 현재 레벨: 경험치 정보 확인 불가";
 
@@ -37194,7 +37495,8 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, petExploreData,
         if (filledCount > 10) filledCount = 10;
         var expGauge = "";
         for (var gaugeIndex = 0; gaugeIndex < 10; gaugeIndex++) expGauge += gaugeIndex < filledCount ? "■" : "□";
-        expSummary = "🌟 현재 레벨: Lv." + numberWithCommas(currentLevel) + "\n[" + expGauge + "] " + (expRatio * 100).toFixed(2) + "%";
+        var premiumLevelBonus = getAdventureLevelCharmPercent(currentLevel); // 캐슬·레이드 각각의 레벨 누적 보너스
+        expSummary = getAdventureLevelTitle(currentLevel) + "\n🌟 현재 레벨: Lv." + numberWithCommas(currentLevel) + "\n[" + expGauge + "] " + (expRatio * 100).toFixed(2) + "%\nEXP " + numberWithCommas(currentExp) + " / " + numberWithCommas(requiredExp) + "\n🏰 캐슬 +" + premiumLevelBonus.toFixed(2) + "% · 👾 레이드 +" + premiumLevelBonus.toFixed(2) + "%";
     }
 
     if (isNaN(boosterCount) || boosterCount < 0) boosterCount = 0;
@@ -37216,7 +37518,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, petExploreData,
         "🗝️ 해방의 열쇠: " + numberWithCommas(keyCount) + "개\n" +
         "━━━━━━━━━━━━\n" +
         expSummary + "\n" +
-        "🚀 경험치 2배 부스터:" + (boosterCount === 0 ? " 없음" : "") + "\n" +
+        "🚀 " + GLOBAL_CONFIG.level.boosterName + ":" + (boosterCount === 0 ? " 없음" : "") + "\n" +
         (boosterCount > 0 ? "🚀 " + numberWithCommas(boosterCount) + "회\n" : "") +
         "━━━━━━━━━━━━\n" +
         "👑 호패 프리미엄: 이용 중\n" +
@@ -41750,7 +42052,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
     var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
     castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
-    return Math.floor(castleTotal * (1 + castleCubePercent / 100));
+    castleCubePercent += getAdventureLevelCharmPercent(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1);
+    return applyPercentWithExactFloor(castleTotal, castleCubePercent);
 }
 
 function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
@@ -41777,7 +42080,8 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
     var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
     raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
-    return Math.floor(raidTotal * (1 + raidCubePercent / 100));
+    raidCubePercent += getAdventureLevelCharmPercent(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1);
+    return applyPercentWithExactFloor(raidTotal, raidCubePercent);
 }
 function calculateItemInfoAll(memberName, data, petData) {
     let returnObj = {
@@ -42293,28 +42597,44 @@ function generatechatRanking(data) {
     };
 }
 // 레벨 순위 생성 함수
-function generateRanking(data) {
-    let sortedUsrs = Object.keys(data).sort((a, b) => (data[b].lv || 0) - (data[a].lv || 0));
-    let rankingMsg1 = "";
-    let rankingMsg2 = "";
-    for (let i = 0; i < 10; i++) {
-        var username1 = sortedUsrs[i];
-        let Rsender1 = data[username1].rank.emoji + username1;
-        let UsrInfo1 = data[username1];
-        let rankEmoji1 = getRankEmoji(i + 1);
-        rankingMsg1 += rankEmoji1 + Rsender1 + " - LV." + UsrInfo1.lv + "\n";
+function generateRanking(data, petData, guildData, currentUser) {
+    var members = data && data.member ? data.member : {};
+    var sortedUsers = Object.keys(members).filter(function (user) { return !!members[user]; }).sort(function (a, b) {
+        var levelDiff = (parseInt(members[b].lv, 10) || 1) - (parseInt(members[a].lv, 10) || 1);
+        if (levelDiff !== 0) return levelDiff;
+        var expDiff = (Number(members[b].exp) || 0) - (Number(members[a].exp) || 0);
+        if (expDiff !== 0) return expDiff;
+        return a.localeCompare(b, "ko");
+    });
+    var rows = [];
+    var previousLevel = null;
+    var previousExp = null;
+    var currentRank = 0;
+    for (var i = 0; i < sortedUsers.length; i++) {
+        var user = sortedUsers[i];
+        var level = parseInt(members[user].lv, 10) || 1;
+        var exp = Number(members[user].exp) || 0;
+        if (level !== previousLevel || exp !== previousExp) currentRank = i + 1;
+        rows.push({ user: user, level: level, exp: exp, rank: currentRank });
+        previousLevel = level;
+        previousExp = exp;
     }
-    for (let i = 10; i < sortedUsrs.length; i++) {
-        var username2 = sortedUsrs[i];
-        let Rsender2 = data[username2].rank.emoji + username2;
-        let UsrInfo2 = data[username2];
-        let rankEmoji2 = getRankEmoji(i + 1);
-        rankingMsg2 += rankEmoji2 + Rsender2 + " - LV." + UsrInfo2.lv + "\n";
+    function formatLevelRankRow(row) {
+        return getRankEmoji(row.rank) + checkRank(data, petData, guildData, row.user) + "\n   " + getAdventureLevelTitle(row.level) + " · Lv." + numberWithCommas(row.level) + " (EXP " + numberWithCommas(row.exp) + ")\n";
     }
-    return {
-        rankingMsg1: rankingMsg1,
-        rankingMsg2: rankingMsg2
-    };
+    var rankingMsg1 = "";
+    var rankingMsg2 = "";
+    var visibleCount = Math.min(50, rows.length);
+    for (var rowIndex = 0; rowIndex < visibleCount; rowIndex++) {
+        if (rowIndex < 10) rankingMsg1 += formatLevelRankRow(rows[rowIndex]);
+        else rankingMsg2 += formatLevelRankRow(rows[rowIndex]);
+    }
+    var ownIndex = -1;
+    for (var ownSearchIndex = 0; ownSearchIndex < rows.length; ownSearchIndex++) {
+        if (rows[ownSearchIndex].user === currentUser) { ownIndex = ownSearchIndex; break; }
+    }
+    if (ownIndex >= 50) rankingMsg1 = "내 순위\n" + formatLevelRankRow(rows[ownIndex]) + "\nTOP 50\n" + rankingMsg1;
+    return { rankingMsg1: rankingMsg1, rankingMsg2: rankingMsg2, rows: rows };
 }
 
 //상성 또는 치명타 메시지 생성 함수
@@ -45745,12 +46065,15 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     var upgradeHomeDetail = getHomeBadgeCubeOptionDebugDetail(data, user, "petUpgrade");
     var guildCastlePercent = getGuildContributionCubeMemberPercent(data, guildData, user, "castle");
     var guildRaidPercent = getGuildContributionCubeMemberPercent(data, guildData, user, "raid");
-    var castleBase = calculateCastleExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 적용 전 캐슬매력
-    var raidBase = calculateRaidExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 적용 전 레이드매력
-    var castleTotalPercent = castleHomeDetail.appliedPercent + guildCastlePercent; // 홈뱃지와 길드큐브 캐슬 합산 퍼센트
-    var raidTotalPercent = raidHomeDetail.appliedPercent + guildRaidPercent; // 홈뱃지와 길드큐브 레이드 합산 퍼센트
-    var expectedCastle = Math.floor(castleBase * (1 + castleTotalPercent / 100)); // 표시 수식으로 재계산한 캐슬매력
-    var expectedRaid = Math.floor(raidBase * (1 + raidTotalPercent / 100)); // 표시 수식으로 재계산한 레이드매력
+    var adventureLevelPercent = getAdventureLevelCharmPercent(data && data.member && data.member[user] ? data.member[user].lv : 1); // 모험가 레벨의 캐슬·레이드 공통 보너스
+    var castleWithLevel = calculateCastleExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 제외, 모험가 레벨 포함 캐슬매력
+    var raidWithLevel = calculateRaidExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 제외, 모험가 레벨 포함 레이드매력
+    var castleBase = removePercentWithExactCeil(castleWithLevel, adventureLevelPercent); // 정수 원본 캐슬매력 역산
+    var raidBase = removePercentWithExactCeil(raidWithLevel, adventureLevelPercent); // 정수 원본 레이드매력 역산
+    var castleTotalPercent = adventureLevelPercent + castleHomeDetail.appliedPercent + guildCastlePercent; // 레벨·홈뱃지·길드큐브 캐슬 합산 퍼센트
+    var raidTotalPercent = adventureLevelPercent + raidHomeDetail.appliedPercent + guildRaidPercent; // 레벨·홈뱃지·길드큐브 레이드 합산 퍼센트
+    var expectedCastle = applyPercentWithExactFloor(castleBase, castleTotalPercent); // 표시 수식으로 재계산한 캐슬매력
+    var expectedRaid = applyPercentWithExactFloor(raidBase, raidTotalPercent); // 표시 수식으로 재계산한 레이드매력
     var actualCastle = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
     var actualRaid = calculateRaidExp(user, data, petData, homeData, petSkillData, false, guildData);
     var baseUpgradeLevel = parseInt(pet.upgrade, 10) || 0;
@@ -45774,14 +46097,16 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     lines.push("펫강화: " + baseUpgradeLevel + "강 → " + actualUpgradeLevel + "강 / 종합매력 +" + numberWithCommas(upgradeCharm));
     lines.push("");
     lines.push("[캐슬매력]");
-    lines.push("큐브 전: " + numberWithCommas(castleBase));
+    lines.push("기본 매력: " + numberWithCommas(castleBase));
+    lines.push("모험가 레벨: +" + formatHomeBadgeCubeCardPercent(adventureLevelPercent));
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(castleHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildCastlePercent));
     lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(castleTotalPercent));
     lines.push("계산 검증: " + numberWithCommas(expectedCastle) + " / 공용함수 " + numberWithCommas(actualCastle) + (expectedCastle === actualCastle ? " [✅일치]" : " [❌불일치]"));
     lines.push("");
     lines.push("[레이드매력]");
-    lines.push("큐브 전: " + numberWithCommas(raidBase));
+    lines.push("기본 매력: " + numberWithCommas(raidBase));
+    lines.push("모험가 레벨: +" + formatHomeBadgeCubeCardPercent(adventureLevelPercent));
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(raidHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildRaidPercent));
     lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(raidTotalPercent));
