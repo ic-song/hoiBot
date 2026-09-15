@@ -35217,7 +35217,9 @@ function addMemberExperienceWithTierBonus(data, user, baseExperience) {
     var bonus = Math.floor(accumulated);
     member.tierExperienceRemainder = Math.round((accumulated - bonus) * 1000000) / 1000000;
     member.exp = (Number(member.exp) || 0) + base + bonus;
-    return { base: base, bonus: bonus, total: base + bonus, levelUps: processAdventureLevelUps(member) };
+    var autoDailyBatch = getAutoDailyBatchContext(); // 자동일퀘 중 레벨 상승 처리를 다음 일반 채팅까지 미룰지 확인
+    var levelUps = autoDailyBatch && autoDailyBatch.deferAdventureLevelUps ? [] : processAdventureLevelUps(member);
+    return { base: base, bonus: bonus, total: base + bonus, levelUps: levelUps };
 }
 
 // 한 사용자의 다음 티어 준비량과 구매 견적을 계산하는 함수
@@ -40155,6 +40157,7 @@ function beginAutoDailyBatch(snapshot, petSkillData) {
         dirtyPaths: {},
         committing: false,
         deferExperienceBooster: true,
+        deferAdventureLevelUps: true,
         applyingDeferredExperienceBooster: false
     };
     var managedPaths = [filePath, memberPetPath, petSkillDataPath, guildPath, trialTowerPath, castleBattlePath, petExplorePath, memberTitlePath];
@@ -40478,7 +40481,7 @@ function applyAutoDailyExperienceBooster(data, user, baseExperience) {
     }
     if (result.extraExperience > 0) {
         member.exp = (Number(member.exp) || 0) + result.extraExperience;
-        result.levelUps = processAdventureLevelUps(member);
+        result.levelUps = batch && batch.deferAdventureLevelUps ? [] : processAdventureLevelUps(member);
     } else {
         result.levelUps = [];
     }
