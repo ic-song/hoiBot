@@ -37537,8 +37537,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, petExploreData,
         if (filledCount > 10) filledCount = 10;
         var expGauge = "";
         for (var gaugeIndex = 0; gaugeIndex < 10; gaugeIndex++) expGauge += gaugeIndex < filledCount ? "■" : "□";
-        var premiumLevelBonus = getAdventureLevelCharmPercent(currentLevel); // 캐슬·레이드 각각의 레벨 누적 보너스
-        expSummary = getAdventureLevelTitle(currentLevel) + "\n🌟 현재 레벨: Lv." + numberWithCommas(currentLevel) + "\n[" + expGauge + "] " + (expRatio * 100).toFixed(2) + "%\nEXP " + numberWithCommas(currentExp) + " / " + numberWithCommas(requiredExp) + "\n🏰 캐슬 +" + premiumLevelBonus.toFixed(2) + "% · 👾 레이드 +" + premiumLevelBonus.toFixed(2) + "%";
+        expSummary = getAdventureLevelTitle(currentLevel) + "\n🌟 현재 레벨: Lv." + numberWithCommas(currentLevel) + "\n[" + expGauge + "] " + (expRatio * 100).toFixed(2) + "%\n📊 EXP " + numberWithCommas(currentExp) + " / " + numberWithCommas(requiredExp);
     }
 
     if (isNaN(boosterCount) || boosterCount < 0) boosterCount = 0;

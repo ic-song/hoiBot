@@ -211,20 +211,20 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	var gauge = "";
 	for (var i = 0; i < 10; i++) gauge += i < filled ? "■" : "□";
 	var summary = getInfoAdventureLevelSummary(level);
+	var promotionCount = Math.floor(level / 10); // 대승급을 포함한 전체 10레벨 단위 승급 차수
 	var nextPromotion = (Math.floor(level / 10) + 1) * 10;
 	var nextMajor = (Math.floor(level / 100) + 1) * 100;
-	return "[" + checkRank(data, petData, guildData, user) + "] 님의 모험가 레벨\n" +
+	return "[" + checkRank(data, petData, guildData, user) + "]님의 모험가 정보 🧭\n" +
+		getInfoAdventureLevelTitle(level) + " · " + numberWithCommas(promotionCount) + "차 승급\n" +
 		"━━━━━━━━━━━━\n" +
-		getInfoAdventureLevelTitle(level) + "\n" +
-		"승급 " + numberWithCommas(summary.normalCount) + "회 · 대승급 " + numberWithCommas(summary.majorCount) + "회\n" +
-		"🌟 Lv." + numberWithCommas(level) + "\n" +
-		"[" + gauge + "] " + (ratio * 100).toFixed(2) + "%\n" +
-		"EXP " + numberWithCommas(exp) + " / " + numberWithCommas(required) + "\n" +
-		"🚀 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(member.boostercnt || 0) + "회\n" +
-		"🏰 캐슬매력 보너스: +" + summary.charmPercent.toFixed(2) + "%\n" +
-		"👾 레이드매력 보너스: +" + summary.charmPercent.toFixed(2) + "%\n" +
-		"다음 승급: Lv." + numberWithCommas(nextPromotion) + "\n" +
-		"다음 대승급: Lv." + numberWithCommas(nextMajor);
+		"🌟 Lv." + numberWithCommas(level) + " [" + gauge + "]\n" +
+		"📊 EXP: " + numberWithCommas(exp) + " / " + numberWithCommas(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
+		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n" +
+		"━━━━━━━━━━━━\n" +
+		"⚔️ 모험가 캐슬 보너스: +" + summary.charmPercent.toFixed(1) + "%\n" +
+		"👾 모험가 레이드 보너스: +" + summary.charmPercent.toFixed(1) + "%\n\n" +
+		"🎯 다음 승급까지: Lv." + numberWithCommas(nextPromotion) + " · " + numberWithCommas(nextPromotion - level) + "레벨 남음\n" +
+		"🏆 다음 대승급까지: Lv." + numberWithCommas(nextMajor) + " · " + numberWithCommas(nextMajor - level) + "레벨 남음";
 }
 
 // Info 명령에서 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
