@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.526"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.527"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -6944,6 +6944,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (msg == "/자동탐험시작" && (isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
+                    stopAllIntervals(data);
+                    exploreInterval = true;
+                    replier.reply("✅ 자동탐험을 시작합니다.\n지금 1회 정산 후 60분마다 자동 정산합니다.");
+                    startInterval(data, room, replier, setint, ctx.isDev);
+                }
+
                 if (exploreInterval == true || (msg == "/펫탐험정산" && (isMaster(sender) || sender == "오픈채팅봇"))) {
                     exploreInterval = false;
 
@@ -7162,12 +7169,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         defenseCount: 0
                     };
                 }
-                if (msg == "/자동탐험시작" && (isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
-                    exploreInterval = true;
-                    replier.reply("/자동탐험시작");
-                    startInterval(data, replier, setint);
-                }
-
                 if (msg.startsWith("/상점추가") && isMaster(sender)) {
                     let regex = /\/상점추가\s+(.+)\s+(\d+)\s*$/;
                     let match = msg.match(regex);
@@ -34656,14 +34657,14 @@ function intervalWithMinutes(minute, func) {
 function intervalWithHours(hour, func) {
     return intervalWithMinutes(60 * hour, func);
 }
-function startInterval(data, replier, intervalMinutes) {
+function startInterval(data, room, replier, intervalMinutes, isDev) {
     const previousValTime = new Date().getTime();
     if (!data.previnterval) {
         data.previnterval = previousValTime;
     }
     let newInterval = intervalWithMinutes(intervalMinutes, function () {
-        replier.reply("startInterval");
         exploreInterval = true;
+        response(room, isDev ? "dev/펫탐험자동정산" : "/펫탐험자동정산", "오픈채팅봇", true, replier, null, null);
     });
     if (!data.intervalIDs) {
         data.intervalIDs = [];
