@@ -114,11 +114,11 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 ## Notion READY/HOTFIX Development Workflow
 
 - Treat a Notion planning document as the source of product intent, user-visible behavior, and operational policy, not as implementation authority.
-- Use explicit business formulas, probabilities, reward tables, limits, schedules, command behavior, UI intent, and exception policy as planning evidence. When a worked UI example conflicts with one unambiguous formula, follow the formula and calculate the displayed value correctly in code; update the planning example during documentation synchronization.
+- Use explicit business formulas, probabilities, reward tables, limits, schedules, command behavior, UI intent, and exception policy as planning evidence. When a worked UI example conflicts with one unambiguous formula, follow the formula and calculate the displayed value correctly in code; update the planning example only when the user explicitly requests a Notion body edit.
 - Treat variable names, helper names, JSON shapes, storage paths, locking primitives, save order, and code structure written in the initial Notion document as non-binding implementation suggestions unless the user explicitly confirms a specific detail as a requirement. Remove those suggestions from the planning content during planning review.
 - Derive implementation names, data structures, persistence locations, transaction boundaries, rollback behavior, and Rhino-compatible syntax from the verified current code and repository rules. Reuse current helpers and save flows where possible.
 - Do not block development merely because an initial Notion implementation suggestion does not match the repository. Block only when product intent is materially ambiguous, such as conflicting formulas, unresolved reward eligibility, user-visible policy, or operational behavior that would change the result.
-- When the current code establishes a safe precedent for a missing implementation detail, follow that precedent instead of asking the planner to design internal code. Reflect only the resulting user-visible behavior in the planning content during production synchronization.
+- When the current code establishes a safe precedent for a missing implementation detail, follow that precedent instead of asking the planner to design internal code.
 - When the user says "노션 확인", "노션 확인(핫픽스, ready)", or asks to check Notion HOTFIX/READY without explicitly requesting implementation, treat it as a request to count and list development-needed items in the Notion planning DB where `상태 = 🔥 HOTFIX` or `상태 = 🛠 READY`.
 - For Notion status checks, report counts by status and list matching page titles/links only after verifying the page properties; do not treat title text such as `(READY / date)` as the status source of truth.
 - Treat `운영 반영예정일` as a text planning field. If it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only; leave the Notion property blank and preserve any explicit planned date or text entered by the user.
@@ -136,16 +136,16 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
   8. Implement the requested change with minimal scope.
   9. Validate according to the touched files and runtime constraints.
   10. Update `COMMAND_INDEX.md`, `COMMAND_REGISTRY.md`, changelog/version files, or other docs only when the rules require synchronization.
-  11. Report the Notion document checked, changed files, validation result, and remaining risks. If production reflection was not requested, leave the planning document unchanged after the planning-review cleanup and report which planning sections must be synchronized after production reflection.
+  11. Report the Notion document checked, changed files, validation result, and remaining risks. Leave the planning document body unchanged unless the user explicitly requests a Notion body edit.
 - Prefer DB/data-source querying by the exact `상태` property. If DB querying is unavailable, report the tool limitation and use the narrowest available DB-scoped fallback: search only within the confirmed data source, fetch each candidate page, and verify the page properties contain the exact target status before treating it as a READY/HOTFIX item.
 - Never conclude that no HOTFIX exists from a text search for `HOTFIX` alone. A page can be grouped under `🔥 HOTFIX` by its status property even when the title/body does not contain the word `HOTFIX`.
 - If the user provides a screenshot or visible board card title, search that exact title within the confirmed data source, fetch the matching page, and verify its `상태` property.
 - If multiple READY/HOTFIX items are found and the user did not specify one, list the candidates and ask which item to implement first before editing.
 - If the Notion document conflicts with the current code, trust the current code for implementation details and report the mismatch.
 - Do not change runtime behavior while only checking Notion unless the user explicitly asked to proceed with development.
-- When a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, reflected into `feature/prod`, and verified on `origin/feature/prod`, synchronize the existing page's planning content with the actual developed user-visible behavior. Update the purpose, command syntax, formulas, limits, rewards or costs, UI, exceptions, acceptance criteria, and operational policy; remove behavior that was not developed. Do not add a separate implementation-record section and do not reintroduce internal variable names, helper names, or storage schemas.
-- After that planning-content synchronization, update the corresponding Notion item status from READY/HOTFIX to DEV, set `운영반영일` to the production-reflection date in Korea Standard Time (`Asia/Seoul`), and set `운영반영버전` to `ver_<HoiBotVersion>` from the verified production commit.
-- Treat the Notion planning-content synchronization, `상태`, `운영반영일`, and `운영반영버전` updates as one completion workflow; verify the content and all three properties. If any update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
+- After a Notion READY/HOTFIX development item has been implemented, validated, pushed on the source branch, reflected into `feature/prod`, and verified on `origin/feature/prod`, do not add, append, or rewrite the page body for production synchronization. Preserve the existing body unless the user explicitly requests a Notion body edit.
+- After verified production reflection, update the corresponding Notion item status from READY/HOTFIX to DEV, set `운영반영일` to the production-reflection date in Korea Standard Time (`Asia/Seoul`), and set `운영반영버전` to `ver_<HoiBotVersion>` from the verified production commit.
+- Treat the `상태`, `운영반영일`, and `운영반영버전` updates as one completion workflow and verify all three properties. If any update fails, report the partial failure and retry or leave a clear follow-up instead of reporting the Notion update as complete.
 - Do not change the Notion item from READY/HOTFIX to DEV or populate/change `운영반영일` or `운영반영버전` before remote production reflection is verified.
 - For a production-facing code or data change that did not originate from a Notion item, search the confirmed planning data source for the exact feature or command before production reflection and reuse an existing matching page when one exists; do not create duplicates.
 - During production reflection, never create a new Notion page, knowledge entry, implementation record, or placeholder solely to document the reflected change unless the user explicitly requests that separate documentation work.
@@ -696,7 +696,7 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 ## Modification Permission
 
 - May update the selected Notion item's `상태`, `운영 반영예정일`, `운영반영일`, and `운영반영버전` properties when the workflow rules authorize the change.
-- May remove non-binding implementation suggestions from the selected planning page during planning review and synchronize that page's planning content with verified user-visible behavior after production reflection.
+- May remove non-binding implementation suggestions from the selected planning page during an explicitly requested planning review. MUST NOT add, append, or rewrite the page body after production reflection unless the user explicitly requests a Notion body edit.
 - May rename a specifically requested Notion property or backfill that property across matching planning DB items only when the user explicitly requests the schema or bulk-data change.
 - MUST NOT modify repository files, Git branches, commits, or production state.
 - MUST NOT add internal variable names, helper names, storage schemas, save flows, or separate implementation-record sections to planning content.
@@ -709,7 +709,7 @@ node -e "const fs=require('fs'); console.log(JSON.stringify(fs.readFileSync('mai
 - Treat `운영 반영예정일` as text; when it is omitted, empty, or whitespace-only, interpret it as `즉시 반영 필요` for prioritization and reporting only, and do not write or backfill that phrase into Notion.
 - Never store `즉시 반영 필요` in the date-type `운영반영일` property.
 - During planning review, remove initial variable names, helper names, JSON or storage structures, locking, save-order, and code-structure suggestions. Do not replace them with guessed implementation details, and do not change READY/HOTFIX status merely because the cleanup is complete.
-- After `origin/feature/prod` verification, synchronize the same page's purpose, commands, formulas, limits, rewards or costs, UI, exceptions, acceptance criteria, and operational policy with the actual developed user-visible behavior. Remove planned behavior that was not developed.
+- After `origin/feature/prod` verification, preserve the same page's body and update only the workflow-authorized properties unless the user explicitly requests a Notion body edit.
 - Do not change READY/HOTFIX items to DEV until implementation, validation, source-branch push, and `feature/prod` reflection are all complete.
 - When changing `상태` from READY/HOTFIX to DEV after `origin/feature/prod` verification, set `운영반영일` to the same production-reflection date in Korea Standard Time (`Asia/Seoul`) and set `운영반영버전` to the exact `ver_<HoiBotVersion>` verified in production.
 - Treat the `상태`, `운영반영일`, and `운영반영버전` updates as one operation and verify all three values after updating.
