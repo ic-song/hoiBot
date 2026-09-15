@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.524"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.525"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -6956,8 +6956,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
-                    if (ctx.isDev && msg == "/펫탐험정산" && isChuseokExploreEventActive(petExploreData)) {
-                        petExploreData.chuseokEvent.processedHours = {}; // DEV 수동 정산은 다음 정각 회차로 시뮬레이션
+                    if (msg == "/펫탐험정산" && isChuseokExploreEventActive(petExploreData)) {
+                        petExploreData.chuseokEvent.processedHours = {}; // 관리자 수동 정산은 새로운 탐험 회차로 실행
                     }
                     // 현재 정산 조건을 충족한 실제 탐험 예정 인원을 계산한다.
                     var totalCnt = getExploreTotalCount(data, petExploreData, guildData);
@@ -49737,6 +49737,7 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     var participated = 0;
     var nonGuildCount = 0;
     var insufficientPointCount = 0;
+    var alreadyProcessedCount = 0; // 같은 정각의 자동 중복 호출로 제외된 인원
     for (var i = 0; i < arr.length; i++) {
         var entry = arr[i];
         if (!entry || !entry.user || !data.member[entry.user]) continue;
@@ -49745,7 +49746,10 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
             nonGuildCount++;
             continue;
         }
-        if (petExploreData.chuseokEvent.processedHours[user] === hourKey) continue;
+        if (petExploreData.chuseokEvent.processedHours[user] === hourKey) {
+            alreadyProcessedCount++;
+            continue;
+        }
         var point = Number(data.member[user].point) || 0;
         if (point < config.participationFee) {
             insufficientPointCount++;
@@ -49780,6 +49784,7 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
         else failLines.push(resultLine);
         participated++;
     }
+    if (participated < 1 && alreadyProcessedCount > 0) return null; // 이미 끝난 자동 회차의 0명 결과 재출력 방지
     var lines = successLines.concat(failLines); // 성공 결과를 먼저, 실패 결과를 뒤에 표시
     var nonParticipationCount = nonGuildCount + insufficientPointCount; // 길드·포인트 조건으로 정산하지 못한 인원
     if (lines.length < 1 && nonParticipationCount < 1) return null;
