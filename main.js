@@ -923,6 +923,7 @@ const GLOBAL_CONFIG = {
         normalPromotionPercent: 0.5,
         majorPromotionPercent: 5,
         boosterName: "호월신의 가호✨ (경험치 3배)",
+        boosterItemName: "호월신의 가호✨(/호여 숫자)",
         boosterExtraMultiplier: 2,
         boosterConsumptionPerBaseExp: 3,
         resetHistoryKey: "adventureLevelResetHistory",
@@ -7294,6 +7295,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                         replier.reply("[" + checkRank(data, petData, guildData, targetUserb) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + "가\n" + numberWithCommas(addboostcnts) + "회 추가되었습니다.");
                     }
+                }
+                if (msg === "/호여" || /^\/호여\s+\d+$/.test(msg)) {
+                    if (msg === "/호여") {
+                        replier.reply("사용법: /호여 숫자\n보유한 " + GLOBAL_CONFIG.level.boosterItemName + "를 같은 수량의 호월신의 가호로 바꿉니다.");
+                        return;
+                    }
+                    var blessingCount = parseInt(msg.split(/\s+/)[1], 10);
+                    if (!isFinite(blessingCount) || blessingCount < 1) {
+                        replier.reply("❌ 1개 이상의 수량을 입력해주세요.\n사용법: /호여 숫자");
+                        return;
+                    }
+                    var blessingItemCount = data.member[sender] && data.member[sender].bag ? parseInt(data.member[sender].bag[GLOBAL_CONFIG.level.boosterItemName], 10) || 0 : 0;
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.level.boosterItemName, blessingCount)) {
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님\n" + GLOBAL_CONFIG.level.boosterItemName + " 수량이 부족합니다.\n필요: " + numberWithCommas(blessingCount) + "개 · 보유: " + numberWithCommas(blessingItemCount) + "개");
+                        return;
+                    }
+                    removeItem(data, sender, GLOBAL_CONFIG.level.boosterItemName, blessingCount);
+                    data.member[sender].boostercnt = Math.max(0, parseInt(data.member[sender].boostercnt, 10) || 0) + blessingCount;
+                    saveJsonFile(data, filePath);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님에게\n호월신의 가호✨ " + numberWithCommas(blessingCount) + "개가 깃들었습니다!\n\n✨호렐루야✨");
+                    return;
                 }
                 if (msg.startsWith("/타이틀추가") && isMaster(sender)) {
                     var titleData = loadJsonFile(memberTitlePath);
@@ -30424,7 +30446,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/호여", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
