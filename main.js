@@ -34729,6 +34729,7 @@ function applyAdventureLevelRenewal(data) {
         var member = data.member[user];
         member.lv = 1;
         member.exp = 0;
+        member.tierExperienceRemainder = 0;
         member.lv0 = 0;
         member.rebirthcnt = 0;
     }

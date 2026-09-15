@@ -6940,7 +6940,7 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.member[user].lv`, `exp`, `point`, `boostercnt`, `bag`
+- `data.member[user].lv`, `exp`, `tierExperienceRemainder`, `point`, `boostercnt`, `bag`
 - `data.migrations.adventurerLevelRenewal20260915`
 - `data.migrations.rebirthMushroomRecall20260915`
 
