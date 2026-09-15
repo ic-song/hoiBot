@@ -203,6 +203,9 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 ## Branch Workflow
 
+- Codex runs only on the development PC. It MUST NOT connect to, control, upload files to, or request compilation from the production LDPlayer or MessengerBot runtime.
+- In Codex work, `운영반영`, `prod 반영`, and equivalent requests mean pushing the validated source branch, reflecting the validated commit into `feature/prod`, pushing `feature/prod`, and verifying `origin/feature/prod`. They do not include direct runtime upload or compilation.
+- Production runtime upload, compilation, restart, and reload are performed outside Codex by the operator. When runtime output differs from verified `origin/feature/prod`, report the Git/runtime version discrepancy without attempting direct access to the production environment.
 - `feature/prod` is the operational base branch for production-facing code.
 - `feature/hoi` is the primary hoi-managed task branch used by `tools/` upload and `feature/prod` direct-merge scripts.
 - `feature/workflow` is the branch for documentation, agent strategy, branch strategy, and `tools/` workflow changes.
