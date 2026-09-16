@@ -33,6 +33,19 @@ vm.createContext(context);
 vm.runInContext(extractFunction("applyAdventureExperienceBooster"), context);
 vm.runInContext(extractFunction("buildBattleExperienceRewardMessage"), context);
 
+const depletionContext = {
+    GLOBAL_CONFIG: { level: { boosterName: "호월신의 가호✨ (경험치 3배)" } },
+    checkRank: () => "💛호이 남_⚔︎"
+};
+vm.createContext(depletionContext);
+vm.runInContext(extractFunction("buildAdventureBoosterDepletionMessage"), depletionContext);
+const depletionMessage = depletionContext.buildAdventureBoosterDepletionMessage(
+    { member: { "호이 남": { boostercnt: 0 } } }, {}, {}, "호이 남", { usedBooster: 10 }
+);
+if (depletionMessage !== "[💛호이 남_⚔︎] 님의\n호월신의 가호✨ (경험치 3배) 이(가)\n모두 소진되었습니다.\n안내링크:") {
+    throw new Error("가호 별도 소진 문구 검증 실패: " + depletionMessage);
+}
+
 function verify(base, booster, expectedExtra, expectedUsed, expectedRemain) {
     const member = { boostercnt: booster };
     const result = context.applyAdventureExperienceBooster(member, base);
@@ -91,6 +104,16 @@ const consumptionMessageCallChecks = [
 ];
 for (const expected of consumptionMessageCallChecks) {
     if (source.indexOf(expected) < 0) throw new Error("가호 소비 문구 연결 검증 실패: " + expected);
+}
+
+const separateDepletionChecks = [
+    "if (castleBoosterDepletionMessage && autoDailyQuestInternalDepth <= 0) replier.reply(castleBoosterDepletionMessage)",
+    "if (miniBoosterDepletionMessage && autoDailyQuestInternalDepth <= 0) replier.reply(miniBoosterDepletionMessage)",
+    "if (rewardResult.boosterDepletionMessage) replier.reply(rewardResult.boosterDepletionMessage)",
+    "if (autoDailyResult.boosterDepletionMessage) replier.reply(autoDailyResult.boosterDepletionMessage)"
+];
+for (const expected of separateDepletionChecks) {
+    if (source.indexOf(expected) < 0) throw new Error("가호 별도 소진 출력 연결 검증 실패: " + expected);
 }
 
 const attendanceChecks = [
