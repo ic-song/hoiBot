@@ -749,7 +749,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; shows one placed furniture item before the `allsee` fold, migrates a legacy one-line review into the first feed when needed, then replies home body, latest feed, and guestbook comments separately. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; shows one placed furniture item before the `allsee` fold, migrates a legacy one-line review into feed storage when needed, then replies with the home body and guestbook comments without showing the latest feed. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
 - `/댓글`: active hoi/newbie pass users write up to 30 characters and pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
 - `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
@@ -771,7 +771,7 @@ Status: VERIFIED
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
 - `/홈알림` and `ㅎㄹ`: run under the response data write lock, read up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, show feed alerts with a leading `📰` marker, mark alerts read, and complete the pass `홈알림 열기` daily condition only after activity/member saves succeed; both files roll back together on failure.
-- `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. `/펫홈` shows the stored feed section only while the home owner has an active hoi/newbie pass.
+- `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. Stored feeds are not included in `/펫홈` output.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
 - `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/팔로워순위`는 실제 팔로워에 `인플루언서📙` 1,000명과 `셀럽📙` 2,000명을 합산하고, `/마음순위`는 각 유저의 귀여워·멋져요·응원해·사랑해 받은 수를 표시한다.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
@@ -797,7 +797,7 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/펫홈` output is split into three replies: home body first, latest feed second, comments third; feed viewing is available to all registered home users.
+- `/펫홈` output is split into two replies: home body first and comments second. Feed creation, deletion, alerts, and stored data remain available, but the latest feed is no longer shown by `/펫홈`.
 - Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
@@ -5563,6 +5563,7 @@ Status: VERIFIED
 - `/달토끼상점`
 - `/달토끼상점구매 [번호] [횟수]`
 - `/황금당근오픈 [숫자]`
+- `/황금당근수정 [아이디] [+|-수량]`
 - `/달토끼상점추가 [상품명] [상품수량] [가격] [계정당한도]`
 - `/달토끼상점삭제 [번호]`
 - `/레이드박스오픈`
@@ -5587,6 +5588,7 @@ Status: VERIFIED
 - 추석 이벤트가 활성화되면 일반 탐험 선택·정산을 일시 중지하고 길드 가입 유저의 `/탐 11`만 받는다. 수동 `/탐 11` 등록은 다음 정산 1회 후 초기화된다. 자동 참여는 자동탐험권을 보유하고 `/자동탐고정 11`을 설정한 사용자에게만 적용된다. 매시간 정각 현재 길드 가입과 5천만 포인트 보유를 다시 확인하며, 실제 참가자는 5천만 포인트를 내고 기존 유저별 성공률과 확률UP 로직을 적용한다. 성공하면 황금당근 1~3개를 같은 확률로 받고 실패하면 황금당근을 받지 않는다.
 - `/탐 11` 예약 화면은 상세 성공률을 표시한다. 이벤트 `/지도`는 저장된 수동 참여자와 `자동탐험권 보유 + /자동탐고정 11` 사용자를 합쳐 다음 정각의 현재 참여 인원을 계산하며, 자신의 자동고정 상태와 해제 명령을 함께 표시한다. 기본·티어·매력·영주·펫스킬·펜던트·호이패스·홈뱃지·확률UP·디버프의 상세 성공률은 `allsee` 뒤에 표시한다.
 - `/황금당근오픈 [숫자]`는 복합 데이터 변경 쓰기 잠금 안에서 `황금당근🌕(/황금당근오픈 숫자)` 아이템을 같은 수량의 달토끼상점 전용 잔액으로 바꾸고 `member.json`과 `petExploreData.json`을 한 번씩 저장한다. 추석 이벤트 활성화·비활성화, 상점 상품 추가·삭제·구매도 같은 쓰기 잠금을 사용한다.
+- `/황금당근수정 [아이디] [+|-수량]`은 Master 전용이며 복합 데이터 변경 쓰기 잠금 안에서 기존 가방 잔액을 이벤트 잔액으로 합친 뒤 황금당근을 증감한다. 음수 결과와 안전 정수 범위 초과는 저장 전에 차단하고 `member.json`과 `petExploreData.json`을 함께 저장한다.
 - `/탐 11`은 길드 가입 여부와 5천만 포인트 보유 여부를 선택 시점에 먼저 확인하며, 조건을 충족하지 못하면 탐험지에 등록하지 않는다.
 - `/달토끼상점`은 비길드 유저도 열람할 수 있지만 구매는 현재 길드 가입 유저만 가능하다. 이벤트 잔액과 기존 가방의 황금당근을 합산해 표시하고, 첫 구매나 이벤트 보상 지급 시 이벤트 잔액으로 옮긴다. 황금당근 차감, 계정별 누적 구매 한도, 구성품 지급을 한 번에 저장하며 이벤트 종료 시 이벤트 잔액·기존 잔액·미개봉 황금당근 아이템과 정산 시간 기록을 비우고 `/탐 11` 참가자를 1~3번 광산으로 이동하며 전체 자동탐험 고정 설정을 초기화한다. 상품별 구매 이력과 비활성 상품 번호는 보존한다.
 - `/자동탐고정` 안내는 자동탐험권 자격 패스로 호이패스, 초보패스, 호이패스 프리미엄을 함께 표시한다.
@@ -7011,5 +7013,6 @@ Status: VERIFIED
 - 캐슬·레이드 보너스 적용은 0.01% 정수 단위로 계산해 경계값의 부동소수점 내림 오차를 방지한다.
 - `/매력버프체크`의 계산 검증은 모험가 레벨·홈뱃지·길드큐브 비율을 같은 가산식으로 합산한다.
 - 10레벨마다 승급, 100레벨마다 대승급하며 1000레벨 이후에는 마지막 칭호를 유지하고 보상 주기는 계속된다.
-- `/레벨순위`는 본인의 레벨·전체 순위·전체 계정 수와 바로 위 고유 순위의 레벨 또는 EXP 차이를 상단에 표시한다. 목록은 레벨 내림차순, 동률이면 EXP 내림차순으로 정렬하며 `1, 1, 3` 공동순위와 TOP 50을 유지한다. 상위 5명은 기본 화면에, 6번째부터는 `allsee` 뒤에 표시하고 본인이 TOP 50 밖이어도 상단의 내 순위는 유지한다.
+- `/레벨순위`는 본인의 레벨·전체 순위·전체 계정 수와 바로 위 고유 순위의 레벨 또는 EXP 차이를 상단에 표시한다. 단독 1위는 현재 레벨 이전의 필요 EXP까지 합산한 누적 EXP로 2위와의 차이를 표시하고, 공동 1위는 차이 0으로 표시한다. 목록은 레벨 내림차순, 동률이면 EXP 내림차순으로 정렬하며 `1, 1, 3` 공동순위와 TOP 50을 유지한다. 상위 5명은 기본 화면에, 6번째부터는 `allsee` 뒤에 표시하고 본인이 TOP 50 밖이어도 상단의 내 순위는 유지한다.
+- 모험가 EXP의 계산·저장 정밀도는 유지하고 `/레벨`, 종합정보, 프리미엄 가방, 대전·탐험·출석·퀘스트·자동일퀘 결과, 관리자 수정 결과와 `/레벨순위`의 EXP 표시는 소수부를 제거한다. 자동일퀘 합계는 화면 문자열이 아니라 실제 지급값을 집계한다.
 - 기존 `/환생`, `/레벨리셋`, `/누렙순위` 및 특수 레벨업 보상은 제거됐다.
