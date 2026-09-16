@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.529"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.530"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -49561,18 +49561,26 @@ function isCurrentGuildMemberForChuseok(data, guildData, user) {
 
 // 현재 달토끼 탐색 참가 조건을 충족한 등록 인원을 반환하는 함수
 function getEligibleChuseokExploreCount(data, guildData, petExploreData, excludeProcessedCurrentHour) {
-    if (!data || !data.member || !petExploreData || !petExploreData.bet) return 0;
+    if (!data || !data.member || !petExploreData) return 0;
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
-    var arr = petExploreData.bet[config.slot] || [];
-    if (!Array.isArray(arr)) return 0;
+    var arr = petExploreData.bet && Array.isArray(petExploreData.bet[config.slot]) ? petExploreData.bet[config.slot] : [];
+    var processedHours = petExploreData.chuseokEvent && petExploreData.chuseokEvent.processedHours ? petExploreData.chuseokEvent.processedHours : {};
     var hourKey = getCurrentDate() + ("0" + new Date().getHours()).slice(-2); // 현재 정각 처리 여부 비교 키
-    var count = 0;
+    var candidateUsers = {}; // 수동 등록자와 자동탐험권 보유자를 합친 참여 후보
     for (var i = 0; i < arr.length; i++) {
         var entry = arr[i];
-        if (!entry || !entry.user || !data.member[entry.user]) continue;
-        if (!isCurrentGuildMemberForChuseok(data, guildData, entry.user)) continue;
-        if ((Number(data.member[entry.user].point) || 0) < config.participationFee) continue;
-        if (excludeProcessedCurrentHour && petExploreData.chuseokEvent.processedHours[entry.user] === hourKey) continue;
+        if (entry && entry.user && data.member[entry.user]) candidateUsers[entry.user] = true;
+    }
+    for (var autoUser in data.member) {
+        if (!data.member.hasOwnProperty(autoUser) || !data.member[autoUser]) continue;
+        if (hasItem(data, autoUser, "자동탐험권🌄", 1)) candidateUsers[autoUser] = true;
+    }
+    var count = 0;
+    for (var user in candidateUsers) {
+        if (!candidateUsers.hasOwnProperty(user)) continue;
+        if (!isCurrentGuildMemberForChuseok(data, guildData, user)) continue;
+        if ((Number(data.member[user].point) || 0) < config.participationFee) continue;
+        if (excludeProcessedCurrentHour && processedHours[user] === hourKey) continue;
         count++;
     }
     return count;
@@ -49743,10 +49751,13 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
     var nonGuildUsers = [];
     var insufficientPointUsers = [];
     var alreadyProcessedCount = 0; // 같은 정각의 자동 중복 호출로 제외된 인원
+    var settledUsers = {}; // 중복 등록 사용자의 이중 차감·집계 방지
     for (var i = 0; i < arr.length; i++) {
         var entry = arr[i];
         if (!entry || !entry.user || !data.member[entry.user]) continue;
         var user = entry.user;
+        if (settledUsers[user]) continue;
+        settledUsers[user] = true;
         if (!isCurrentGuildMemberForChuseok(data, guildData, user)) {
             nonGuildCount++;
             nonGuildUsers.push(user);
@@ -49791,21 +49802,23 @@ function doChuseokExploreInterval(data, petData, homeData, guildData, petExplore
         else failLines.push(resultLine);
         participated++;
     }
-    if (participated < 1 && alreadyProcessedCount > 0) return null; // 이미 끝난 자동 회차의 0명 결과 재출력 방지
     var lines = successLines.concat(failLines); // 성공 결과를 먼저, 실패 결과를 뒤에 표시
     var nonParticipationCount = nonGuildCount + insufficientPointCount; // 길드·포인트 조건으로 정산하지 못한 인원
+    if (participated < 1 && alreadyProcessedCount > 0 && nonParticipationCount < 1) return null; // 기존 처리자만 남은 자동 회차의 재출력 방지
     if (lines.length < 1 && nonParticipationCount < 1) return null;
+    petExploreData = resetChuseokExploreRound(petExploreData); // 수동 참여는 이번 회차로 종료
+    petExploreData = autoExploreBetting(data, petExploreData); // 자동탐험권 보유자만 다음 회차에 재등록
     clearPetExploreTransientSaveFlags(petExploreData);
     saveJsonFile(data, filePath);
     saveJsonFile(petExploreData, petExplorePath);
     var chuseokLevelUpSummary = buildPetExploreLevelUpSummary(levelUpMessages);
     var nonParticipationSummary = nonParticipationCount > 0 ? "\n미참여 " + nonParticipationCount + "명 · 길드 미가입 " + nonGuildCount + "명 · 포인트 부족 " + insufficientPointCount + "명" : "";
-    var resultHeader = "🐰 달토끼 탐색 결과\n참여 " + participated + "명" + nonParticipationSummary;
+    var resultHeader = "🐰 달토끼 탐색 결과\n참여 " + participated + "명 · 성공 " + successLines.length + "명 · 실패 " + failLines.length + "명" + nonParticipationSummary;
     var nonParticipationUsers = "";
     if (nonGuildCount > 0) nonParticipationUsers += "\n[길드미가입유저: " + nonGuildUsers.join(", ") + "]";
     if (insufficientPointCount > 0) nonParticipationUsers += "\n[포인트부족유저: " + insufficientPointUsers.join(", ") + "]";
     if (participated < 1) {
-        return resultHeader + nonParticipationUsers + "\n\n※ 탐험 선택은 유지됩니다. 길드 가입과 포인트 조건을 충족하면 다음 정각에 참여합니다.\n\n🛍️ 아이템 교환: /달토끼상점";
+        return resultHeader + nonParticipationUsers + "\n\n※ 자동탐험권 보유자는 다음 정각에 다시 자동 등록됩니다.\n※ 수동 참여는 정산 후 초기화됩니다.\n\n🛍️ 아이템 교환: /달토끼상점";
     }
     return resultHeader + (chuseokLevelUpSummary ? "\n\n" + chuseokLevelUpSummary : "") + nonParticipationUsers + "\n" + allsee + "\n" + lines.join("\n━━━━━━━━━━━━\n") + "\n\n🛍️ 아이템 교환: /달토끼상점";
 }
@@ -50105,6 +50118,19 @@ function resetPetExploreBet(petExploreData) {
     petExploreData.bet["10"] = [];
     petExploreData.userBet = {};
 
+    return petExploreData;
+}
+
+// 달토끼 수동 참여를 한 회차 후 초기화하는 함수
+function resetChuseokExploreRound(petExploreData) {
+    if (!petExploreData) return;
+    if (!petExploreData.bet) petExploreData.bet = {};
+    petExploreData.bet[GLOBAL_CONFIG.petExplore.chuseokEvent.slot] = [];
+    if (!petExploreData.userBet) petExploreData.userBet = {};
+    for (var user in petExploreData.userBet) {
+        if (!petExploreData.userBet.hasOwnProperty(user)) continue;
+        if (String(petExploreData.userBet[user]) === GLOBAL_CONFIG.petExplore.chuseokEvent.slot) delete petExploreData.userBet[user];
+    }
     return petExploreData;
 }
 
@@ -53436,6 +53462,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
 function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender) {
     var config = GLOBAL_CONFIG.petExplore.chuseokEvent;
     var myBet = petExploreData.userBet && petExploreData.userBet[sender] ? String(petExploreData.userBet[sender]) : null;
+    var hasAutoExploreTicket = !!(data.member && data.member[sender] && hasItem(data, sender, "자동탐험권🌄", 1)); // 저장 전 자동 참여 예정 포함
     var eligibleCount = getEligibleChuseokExploreCount(data, guildData, petExploreData, false); // 다음 정각 참가 조건을 충족한 인원
     var p;
     try {
@@ -53443,7 +53470,7 @@ function buildChuseokExploreMapMessage(data, petData, homeData, guildData, petSk
     } catch (e) {
         p = { totalP: 5 };
     }
-    var lines = ["🌕 추석 이벤트 탐험 지도 🌕", "📅 " + config.periodText, getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "🐰 【11】 " + config.name + "【/탐 11】", "현재 참여: " + eligibleCount + "명", "🏰 길드 가입 유저 전용", "💰 매시간 참가비: 🅟" + numberWithCommas(config.participationFee), "🌕 성공 보상: 황금당근 " + config.rewardMin + "~" + config.rewardMax + "개", "━━━━━━━━━━━━", "[자동탐험권🌄 보유 시 달토끼 탐색 자동 참여]", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "현재 내 탐험지: " + (myBet === config.slot ? config.name : "없음"), "현재 성공확률: " + formatPercent1(p.totalP) + "%", "내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, sender, data)) + "개", "━━━━━━━━━━━━", "🛍️ 이벤트 상품 확인: /달토끼상점", "※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.", "", allsee, "📋 성공확률 상세", "기본" + (p.baseP || 0) + "% + 티어" + (p.tierP || 0) + "% + 매력" + (p.expP || 0) + "% + 영주" + (p.lordP || 0) + "% + 펫스킬" + (p.traitP || 0) + "% + 펜던트" + (p.pendantP || 0) + "% + 호프" + (p.premiumP || 0) + "% + 홈뱃지" + (p.homeBadgeP || 0) + "% + 확률UP" + (p.itemP || 0) + "% - 디버프" + (p.penaltyP || 0) + "% = " + formatPercent1(p.totalP) + "%"];
+    var lines = ["🌕 추석 이벤트 탐험 지도 🌕", "📅 " + config.periodText, getNextIntervalTime(data, setint), "━━━━━━━━━━━━", "🐰 【11】 " + config.name + "【/탐 11】", "현재 참여: " + eligibleCount + "명", "🏰 길드 가입 유저 전용", "💰 매시간 참가비: 🅟" + numberWithCommas(config.participationFee), "🌕 성공 보상: 황금당근 " + config.rewardMin + "~" + config.rewardMax + "개", "━━━━━━━━━━━━", "[자동탐험권🌄 보유 시 달토끼 탐색 자동 참여]", "━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "] 님", "현재 내 탐험지: " + (myBet === config.slot || hasAutoExploreTicket ? config.name : "없음"), "현재 성공확률: " + formatPercent1(p.totalP) + "%", "내 황금당근: " + numberWithCommas(getChuseokCarrotBalance(petExploreData, sender, data)) + "개", "━━━━━━━━━━━━", "🛍️ 이벤트 상품 확인: /달토끼상점", "※ 이벤트 기간에는 달토끼 탐색만 이용할 수 있습니다.", "", allsee, "📋 성공확률 상세", "기본" + (p.baseP || 0) + "% + 티어" + (p.tierP || 0) + "% + 매력" + (p.expP || 0) + "% + 영주" + (p.lordP || 0) + "% + 펫스킬" + (p.traitP || 0) + "% + 펜던트" + (p.pendantP || 0) + "% + 호프" + (p.premiumP || 0) + "% + 홈뱃지" + (p.homeBadgeP || 0) + "% + 확률UP" + (p.itemP || 0) + "% - 디버프" + (p.penaltyP || 0) + "% = " + formatPercent1(p.totalP) + "%"];
     return lines.join("\n");
 }
 
