@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.535"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.536"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -25048,9 +25048,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if ((msg === "/황금당근수정" || msg.indexOf("/황금당근수정 ") === 0) && isMaster(sender)) {
-                    var goldenCarrotEditMatch = msg.match(/^\/황금당근수정\s+(.+?)\s+([+-]\d+)$/);
+                    var goldenCarrotEditMatch = msg.match(/^\/황금당근수정\s+(.+?)\s+([+-]?\d+)$/);
                     if (!goldenCarrotEditMatch) {
-                        replier.reply("사용법: /황금당근수정 [아이디] [+|-수량]\n예: /황금당근수정 호이 남 +10");
+                        replier.reply("사용법: /황금당근수정 [아이디] [수량|+수량|-수량]\n예: /황금당근수정 호이 남 10\n※ 부호가 없으면 증가로 처리합니다.");
                         return;
                     }
                     var goldenCarrotEditTarget = goldenCarrotEditMatch[1].trim();
@@ -30345,7 +30345,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        command === "/티어적용" || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]\d+$/.test(command) ||
+        command === "/티어적용" || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
         /^\/달토끼상점구매\s+\d+\s+\d+$/.test(command) ||
         command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
