@@ -134,6 +134,17 @@ for (const expected of onboardingChecks) {
     if (source.indexOf(expected) < 0) throw new Error("신규 모험가 친밀도 300 검증 실패: " + expected);
 }
 
+const boosterEditCommandChecks = [
+    'msg === "/부스터수정" || /^\\/부스터수정\\s+.+\\s+[+-]?\\d+$/.test(msg)',
+    "var boosterEditAfter = boosterEditBefore + boosterEditAmount",
+    "if (boosterEditAfter < 0",
+    "saveJsonFile(data, filePath)",
+    "Number(verifiedBoosterEditMember.boostercnt) !== boosterEditAfter"
+];
+for (const expected of boosterEditCommandChecks) {
+    if (source.indexOf(expected) < 0) throw new Error("/부스터수정 연결 검증 실패: " + expected);
+}
+
 const boosterHelperSource = extractFunction("applyAdventureExperienceBooster");
 if (boosterHelperSource.indexOf("loadJsonFile") >= 0 || boosterHelperSource.indexOf("saveJsonFile") >= 0) {
     throw new Error("가호 계산 helper 내부에 파일 IO가 포함되어 있습니다.");

@@ -1245,6 +1245,30 @@ Status: VERIFIED
 
 ---
 
+# /부스터수정 [아이디] [수량|+수량|-수량]
+
+Status: VERIFIED
+
+## Command Anchors
+
+- Search in `main.js`: `/부스터수정`
+
+## Files
+
+- `main.js`
+
+## Data Usage
+
+- `data.member[target].boostercnt`
+
+## Save Flow
+
+- Master 전용이며 부호가 없는 수량은 증가로 처리한다.
+- 변경 후 값이 0 미만이거나 안전 정수 범위를 넘으면 저장하지 않는다.
+- `member.json` 저장 후 다시 읽어 변경 수량이 일치하는지 검증한다.
+
+---
+
 # /부길마 [번호] ([번호])
 
 Status: VERIFIED
