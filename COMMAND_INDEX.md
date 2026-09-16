@@ -2907,6 +2907,7 @@ Status: VERIFIED
 - `/티어적용` supports multi-tier promotion for the sender and does not downgrade other members.
 - `checkRank`는 저장된 티어 이름을 현재 티어 표와 대조해 최신 이모지를 표시하며, 옛 `벚꽃` 표기는 `벛꽃` 티어로 호환한다.
 - `/티어`, `/티어적용` 성공·실패, 전체 티어 승급 소식은 모두 저장 반영 후 `checkRank` 결과를 출력해 변경된 티어 이모지를 즉시 표시한다.
+- `/티어` 제목은 `[checkRank]` 형식으로 표시하고, `/티어적용` 재료 부족 안내도 같은 사용자 표시명을 포함한다.
 - Tiers 42–51 add pet-exploration and account-experience bonuses; their charm rewards are claimed once per user and tier.
 
 ---
