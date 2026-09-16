@@ -3,7 +3,6 @@ Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
 const HoiBotVersion = "2.536"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
-let termsState = {}; // 약관 동의 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
 let privateChatBlockedTracker = {}; // 패스 미사용 유저별 1:1톡 차단 횟수
@@ -846,6 +845,7 @@ const petHomePassBenefitHomeBackupPath = "/sdcard/호이랜드/backups/petSweetH
 const petHomePassBenefitCommentsBackupPath = "/sdcard/호이랜드/backups/petHomeComments_beforePassBenefits20260726.json"; // 패스 혜택 개편 전 댓글 백업
 const petExplorePath = "/sdcard/호이랜드/petExploreData.json"; // 펫탐험
 const attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json"; // ㅊㅊ 경량 출석 데이터
+const adventureOnboardingPath = "/sdcard/호이랜드/adventureOnboarding.json"; // 신규 모험 시작 전 단계 데이터
 const itemListPath = "/sdcard/호이랜드/itemList.json"; // 아이템 목록
 const hoiBotChangeLogPath = "/sdcard/호이랜드/hoiBotChangeLog.json"; // 호이봇 수정 이력
 const freeMarketPath = "/sdcard/호이랜드/freeMarket.json"; // 자유시장 데이터
@@ -3275,9 +3275,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (invalidTerritoryAutoAttackUsers.length > 0) saveJsonFile(data, filePath);
         castleSiegeFlag = guildData.castleSiegeFlag || false;
         var isPreSignupAttendanceFlow = msg === "ㅊㅊ";
-        var hasPendingTerms = !!termsState[sender];
-        var isSignupTermsResponse = hasPendingTerms && (msg === "시작한다" || msg === "/시작한다" || msg === "거절한다" || msg === "/거절한다");
-        var isSignupFlow = msg === "/가입" || isSignupTermsResponse;
         if (!data.member[sender] && isPreSignupAttendanceFlow) {
             var attendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
             var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room);
@@ -3289,7 +3286,57 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             return;
         }
-        if (!data.member[sender] && !isSignupFlow) return;
+        if (msg === "/가입") {
+            replier.reply("호이월드 모험 시작 명령어가 변경되었습니다.\n채팅창에 /모험시작 을 입력해 주세요.");
+            return;
+        }
+        if (msg === "호월 봇 이용약관") {
+            replier.reply(buildHoiWorldTermsMessage());
+            return;
+        }
+        if (!data.member[sender]) {
+            var adventureOnboardingData = loadJsonFile(adventureOnboardingPath) || { users: {} };
+            if (!adventureOnboardingData.users || typeof adventureOnboardingData.users !== "object") adventureOnboardingData.users = {};
+            var preMemberOnboarding = adventureOnboardingData.users[sender];
+
+            if (msg === "/모험시작") {
+                var adventureNameValidation = validateSignupNickname(sender);
+                if (!adventureNameValidation.ok) {
+                    replier.reply(adventureNameValidation.message);
+                    return;
+                }
+                adventureOnboardingData.users[sender] = { stage: "WAIT_START", startedAt: formatDateTime(new Date()) };
+                saveJsonFile(adventureOnboardingData, adventureOnboardingPath);
+                replier.reply(buildAdventureStartMessage(sender));
+                return;
+            }
+
+            if (preMemberOnboarding && preMemberOnboarding.stage === "WAIT_START" && msg === "다음에 한다") {
+                delete adventureOnboardingData.users[sender];
+                saveJsonFile(adventureOnboardingData, adventureOnboardingPath);
+                replier.reply("[" + sender + "]님, 다음에 다시 만나요!\n모험을 시작하고 싶을 때 /모험시작 을 입력해 주세요.");
+                return;
+            }
+
+            if (preMemberOnboarding && preMemberOnboarding.stage === "WAIT_START" && msg === "출발한다") {
+                var departureNameValidation = validateSignupNickname(sender);
+                if (!departureNameValidation.ok) {
+                    replier.reply(departureNameValidation.message);
+                    return;
+                }
+                initializeMember(sender, data, petData);
+                data.member[sender].agree = true;
+                data.member[sender].adventureOnboarding = createAdventureOnboardingMemberState();
+                var signupAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+                if (migrateLightAttendanceToMember(data, signupAttendanceLightData, sender)) saveJsonFile(signupAttendanceLightData, attendanceLightPath);
+                saveJsonFile(data, filePath);
+                delete adventureOnboardingData.users[sender];
+                saveJsonFile(adventureOnboardingData, adventureOnboardingPath);
+                replier.reply(buildAdventurePetNamePromptMessage(sender));
+                return;
+            }
+            return;
+        }
         if (!ctx.isDev && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
             replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
             return;
@@ -4207,37 +4254,76 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         //var castleBattleData = loadJsonFile(castleBattlePath);
         //var titleData = loadJsonFile(memberTitlePath);
         {
-            var isSignupPetFlow = isSignupFlow;
+            var isSignupPetFlow = !!getAdventureOnboardingMemberState(data, sender) || msg === "/모험시작" || msg === "/호여!!";
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
-                if (!data.member[sender] && msg !== "/가입") {
-                    delete termsState[sender];
-                    return;
-                }
-                if (!data.member[sender] && msg === "/가입") {
-                    var signupNameValidation = validateSignupNickname(sender);
-                    if (!signupNameValidation.ok) {
-                        delete termsState[sender];
-                        replier.reply(signupNameValidation.message);
-                        return;
-                    }
-                }
-                if (!data.member[sender]) {
-                    initializeMember(sender, data, petData);
-                }
-                if (msg === "/가입") {
-                    var signupAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
-                    if (migrateLightAttendanceToMember(data, signupAttendanceLightData, sender)) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(signupAttendanceLightData, attendanceLightPath);
-                    }
-                }
-
                 if (data.member[sender] && !petData[sender]) {
                     initializePet(sender, petData);
                     if (!isSignupPetFlow) return;
                 }
 
                 initPetSkillUser(petSkillData, sender);
+
+                var adventureOnboarding = getAdventureOnboardingMemberState(data, sender);
+                if (msg === "/모험시작") {
+                    if (!adventureOnboarding && data.member[sender].agree !== true && (!petData[sender] || !petData[sender].petname)) {
+                        data.member[sender].agree = true;
+                        data.member[sender].adventureOnboarding = createAdventureOnboardingMemberState();
+                        saveJsonFile(data, filePath);
+                        replier.reply(buildAdventurePetNamePromptMessage(sender));
+                        return;
+                    }
+                    replier.reply(buildAdventureOnboardingResumeMessage(data, petData, sender));
+                    return;
+                }
+                if (adventureOnboarding && adventureOnboarding.stage === "WAIT_PET_NAME" && isAdventurePetNameInputCandidate(msg)) {
+                    var adventurePetName = sanitizeAdventurePetName(msg);
+                    if (!adventurePetName || adventurePetName.length > 6) {
+                        replier.reply("[" + sender + "]님, 펫 이름은 1~6글자로 입력해 주세요.\n따옴표로 감싼 이름도 사용할 수 있어요. 예: \"호이\"");
+                        return;
+                    }
+                    if (petData[sender] && petData[sender].petname) {
+                        adventureOnboarding.petName = petData[sender].petname;
+                    } else {
+                        var onboardingPet = createPet();
+                        onboardingPet.petname = adventurePetName;
+                        petData[sender] = onboardingPet;
+                        adventureOnboarding.petName = adventurePetName;
+                    }
+                    if (!data.member[sender].bag || typeof data.member[sender].bag !== "object") data.member[sender].bag = {};
+                    if (!data.member[sender].bag[getAdventureBlessingItemName()]) addItem(data, sender, getAdventureBlessingItemName(), 1);
+                    adventureOnboarding.stage = "WAIT_BLESSING";
+                    adventureOnboarding.petNamedAt = formatDateTime(new Date());
+                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(data, filePath);
+                    replier.reply(buildAdventurePetCreatedMessage(sender, adventureOnboarding.petName));
+                    return;
+                }
+                if (msg === "/호여!!") {
+                    if (!adventureOnboarding || adventureOnboarding.stage === "COMPLETE") {
+                        replier.reply(buildAdventureOnboardingResumeMessage(data, petData, sender));
+                        return;
+                    }
+                    if (adventureOnboarding.stage !== "WAIT_BLESSING" && adventureOnboarding.stage !== "APPLYING") {
+                        replier.reply(buildAdventureOnboardingResumeMessage(data, petData, sender));
+                        return;
+                    }
+                    if (!petData[sender] || !petData[sender].petname || !hasItem(data, sender, getAdventureBlessingItemName(), 1)) {
+                        replier.reply("❌ 호월신의 축복을 사용할 수 없습니다.\n/모험시작 을 입력해 현재 진행 단계를 확인해 주세요.");
+                        return;
+                    }
+                    var starterHomeData = loadJsonFile(homeDataFile);
+                    adventureOnboarding.stage = "APPLYING";
+                    if (applyAdventureStarterMemberRewards(data, sender)) saveJsonFile(data, filePath);
+                    if (applyAdventureStarterPetSettings(petData, sender)) saveJsonFile(petData, memberPetPath);
+                    if (applyAdventureStarterSkill(petSkillData, sender)) saveJsonFile(petSkillData, petSkillDataPath);
+                    if (applyAdventureStarterHome(starterHomeData, sender)) saveJsonFile(starterHomeData, homeDataFile);
+                    removeItem(data, sender, getAdventureBlessingItemName(), 1);
+                    adventureOnboarding.stage = "COMPLETE";
+                    adventureOnboarding.completedAt = formatDateTime(new Date());
+                    saveJsonFile(data, filePath);
+                    replier.reply(buildAdventureStarterCompleteMessage(sender, petData[sender].petname));
+                    return;
+                }
 
                 var moodSkillUsers = msg === "?" ? findPetSkillOwners(data, petSkillData, "기분탓") : [];
                 if (moodSkillUsers.length > 0) {
@@ -5903,35 +5989,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
 
-                // ! -- 가입관련 start -- !
-                if (msg === "/가입" && !data.member[sender].agree) {
-                    termsState[sender] = { step: "WAIT" };
-                    replier.reply(buildTermsMessage());
-                    return;
-                }
-
-                if (termsState[sender] && termsState[sender].step === "WAIT") {
-                    var isAccept = msg === "시작한다" || msg === "/시작한다";
-                    var isReject = msg === "거절한다" || msg === "/거절한다";
-
-                    if (isAccept) {
-                        data.member[sender].agree = true;
-                        saveJsonFile(data, filePath);
-                        delete termsState[sender];
-                        replier.reply(buildWelcomeMessage());
-                        return;
-                    }
-
-                    if (isReject) {
-                        delete termsState[sender];
-                        replier.reply("호월 봇: 다음에 다시 만나요..!");
-                        return;
-                    }
-
-                    return;
-                }
-                // ! -- 가입관련 end -- !
-                //
                 if (msg === "ㅊㅊ") {
                     if (!castleSiegeFlag) {
                         var attendanceResult = processAttendanceForUser(data, petData, petSkillData, guildData, sender);
@@ -18005,21 +18062,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     if (Petname.length <= 6) {
-                        let homeData = loadJsonFile(homeDataFile);
                         if (!petData[sender] || !petData[sender].petname) {
                             var newPetObj = createPet();
                             newPetObj.petname = Petname;
-
-                            newPetObj = applyStarterPet(newPetObj, sender, petSkillData);
-                            homeData = applyStarterHome(homeData, sender);
                             petData[sender] = newPetObj;
 
                             updateEmoji(petData[sender], replier);
 
                             // 저장
                             saveJsonFile(petData, memberPetPath);
-                            saveJsonFile(petSkillData, petSkillDataPath);
-                            saveJsonFile(homeData, homeDataFile);
 
                             replier.reply("[" + checkRank(data, petData, guildData, sender) + '] 님의 펫이 생성되었습니다!\n채팅창에 "펫정보 가이드"를 입력하시면 상세가이드 확인이 가능합니다.');
                         } else {
@@ -30330,7 +30381,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
-        command === "/포인트잠금" ||
+        command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "출발한다" || command === "다음에 한다" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -33958,11 +34009,17 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
     member.today = (parseInt(member.today, 10) || 0) + 1;
     member.recent = getCurrentDate();
     member.point = (Number(member.point) || 0) + GLOBAL_CONFIG.attendance.bonusPoint;
-    var attendanceExpResult = addMemberExperienceWithTierBonus(data, user, GLOBAL_CONFIG.attendance.bonusExp);
+    var attendanceBoosterResult = applyAdventureExperienceBooster(member, GLOBAL_CONFIG.attendance.bonusExp); // 출석 경험치 가호 적용·소모 결과
+    var attendanceExpResult = addMemberExperienceWithTierBonus(data, user, attendanceBoosterResult.totalExperience);
 
     var messages = [];
-    messages.push("[" + rankText + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치 " + formatAdventureExperience(attendanceExpResult.total) + "exp 획득" + (attendanceExpResult.bonus > 0 ? "(티어 +" + formatAdventureExperience(attendanceExpResult.bonus) + ")" : ""));
+    var attendanceRewardMessage = "[" + rankText + "] 님 출첵👏\n\n💰포인트 🅟" + GLOBAL_CONFIG.attendance.bonusPoint + " 획득\n⚡️경험치 " + formatAdventureExperience(attendanceExpResult.total) + "exp 획득";
+    if (attendanceBoosterResult.extraExperience > 0) attendanceRewardMessage += "\n✨ 호월신의 가호 적용! (+" + formatAdventureExperience(attendanceBoosterResult.extraExperience) + "exp)";
+    if (attendanceExpResult.bonus > 0) attendanceRewardMessage += "\n└ 티어 +" + formatAdventureExperience(attendanceExpResult.bonus) + "exp";
+    messages.push(attendanceRewardMessage);
     if (attendanceExpResult.levelUps.length > 0) messages.push(buildAdventureLevelUpMessage(data, petData, guildData, user, attendanceExpResult.levelUps));
+    var attendanceBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, user, attendanceBoosterResult);
+    if (attendanceBoosterDepletionMessage) messages.push(attendanceBoosterDepletionMessage);
     var multiplier = rollAndCalculateMultiplier(); // 출석 응모 주사위 배율
     var dicePoint = parseInt((GLOBAL_CONFIG.attendance.bonusPoint * multiplier).toFixed(0), 10); // 주사위 추가 포인트
     member.point += dicePoint;
@@ -33987,13 +34044,18 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
     }
 
     var totalPointReward = GLOBAL_CONFIG.attendance.bonusPoint + dicePoint + rankBonusPoint; // 이번 출석의 총 포인트 보상
-    var attendanceNoticeMessage = "[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + formatAdventureExperience(attendanceExpResult.total) + "exp" + (openRunRewardGranted ? "\n펫먹이🍼 1,000개 추가 획득" : "");
+    var attendanceNoticeMessage = "[" + rankText + "] 님 자동출첵이 완료되어 보상을 받았습니다.\n💰포인트: 🅟" + numberWithCommas(totalPointReward) + "\n⚡️경험치: " + formatAdventureExperience(attendanceExpResult.total) + "exp";
+    if (attendanceBoosterResult.extraExperience > 0) attendanceNoticeMessage += "\n✨ 호월신의 가호 적용! (+" + formatAdventureExperience(attendanceBoosterResult.extraExperience) + "exp)";
+    if (openRunRewardGranted) attendanceNoticeMessage += "\n펫먹이🍼 1,000개 추가 획득";
+    if (attendanceBoosterDepletionMessage) attendanceNoticeMessage += "\n\n" + attendanceBoosterDepletionMessage;
     if (attendanceExpResult.levelUps.length > 0) attendanceNoticeMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, user, attendanceExpResult.levelUps);
     return {
         ok: true,
         messages: messages,
         totalPointReward: totalPointReward,
         expReward: GLOBAL_CONFIG.attendance.bonusExp,
+        boosterUsed: attendanceBoosterResult.usedBooster,
+        boosterExperience: attendanceBoosterResult.extraExperience,
         levelUps: attendanceExpResult.levelUps,
         openRunRewardGranted: openRunRewardGranted,
         noticeMessage: attendanceNoticeMessage
@@ -34867,7 +34929,7 @@ function buildBattleExperienceRewardMessage(totalExperience, baseExperience, boo
 function buildAdventureBoosterDepletionMessage(data, petData, guildData, user, boosterResult) {
     var member = data && data.member ? data.member[user] : null;
     if (!member || Number(member.boostercnt) !== 0 || !boosterResult || boosterResult.usedBooster <= 0) return "";
-    return "[" + checkRank(data, petData, guildData, user) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.";
+    return "[" + checkRank(data, petData, guildData, user) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.\n안내링크:";
 }
 
 // 퀘스트 완료 시 기본·가호·티어 경험치를 실제 지급량으로 표시하는 함수
@@ -48828,42 +48890,38 @@ function getPetUpgradeCritMul(upgrade) {
 
 /**
  * 스타터팩 세팅
- * - 펫강화 30강(= 1.7배 구간)
- * - 펫특성: 이세계 용사✨ㅈ
- * - 정령/미니펫/스윗홈 초기 지급
- * - 가구는 "가구가방"을 비워둔 채(혹은 기본 0개) 스윗홈 등급(+4평)로 처리
+ * - 펫강화 90강, 펫매력 35,000
+ * - 정령왕 피닉스 +80강, 신화 초보자 미니펫 지급
+ * - 이미 더 높게 성장한 수치는 낮추지 않음
  */
 function applyStarterPet(pet, user, petSkillData) {
     // 펫강화
-    pet.upgrade = 90;
+    pet.upgrade = Math.max(parseInt(pet.upgrade, 10) || 0, 90);
     pet.upgradeDateTime = new Date().toISOString(); // member_pet.json 예시와 동일 형태
 
-    if (petSkillData) {
-        addPetSkillToBag(petSkillData, user, "십원✨", 1);
-    }
-
     // 정령(키 이름: elemental)
-    pet.elemental = {
-        upgrade: 80,
-        name: "피닉스🐦‍🔥",
-        grade: "정령왕"
-    };
+    if (!pet.elemental || typeof pet.elemental !== "object") pet.elemental = {};
+    pet.elemental.upgrade = Math.max(parseInt(pet.elemental.upgrade, 10) || 0, 80);
+    if (!pet.elemental.name) pet.elemental.name = "피닉스🐦‍🔥";
+    if (!pet.elemental.grade) pet.elemental.grade = "정령왕";
     // 펫매력
-    pet.petexp = 35000;
+    pet.petexp = Math.max(parseInt(pet.petexp, 10) || 0, 35000);
 
     // 미니펫 가방
     if (!pet.miniPetBag) pet.miniPetBag = [];
 
     // 초보자전용미니펫 추가
-    pet.miniPet = {
-        name: "초보자전용미니펫",
-        emoji: "🌱",
-        grade: "희귀",
-        price: 0,
-        battleExp: 100000,
-        castleExp: 100000,
-        raidExp: 100000
-    };
+    if (!pet.miniPet || pet.miniPet.name === "초보자전용미니펫") {
+        pet.miniPet = {
+            name: "초보자전용미니펫",
+            emoji: "🌱",
+            grade: "신화",
+            price: 0,
+            battleExp: 200000,
+            castleExp: 200000,
+            raidExp: 200000
+        };
+    }
     return pet;
 }
 
@@ -48879,9 +48937,9 @@ function applyStarterHome(homeData, userName) {
         u = homeData[userName];
     }
 
-    u.houseName = "산이 보이는 텐트집🏕️";
-    u.exp = 3510; // (+1940💕) → 네 UI에서 exp + furnitureExp로 totalExp 계산됨
-    u.floor = 18; // [+10평]
+    u.houseName = "귀신 나오는 단칸방👻";
+    u.exp = Math.max(parseInt(u.exp, 10) || 0, 5900);
+    u.floor = Math.max(parseInt(u.floor, 10) || 0, 25);
 
     // 기타 필드들 안전 초기화(없어도 되지만 스타터팩에서 깔끔하게)
     u.likeCnt = u.likeCnt || 0;
@@ -49026,40 +49084,216 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     return result;
 }
 
-// 가입관련
-
-// 약관 동의 여부
-function isTermsAgreed(data, sender) {
-    return !!(data && data.member && data.member[sender] && data.member[sender].agree === true);
+// 신규 모험 시작 회원 단계의 초기값을 생성하는 함수
+function createAdventureOnboardingMemberState() {
+    return {
+        version: 1,
+        stage: "WAIT_PET_NAME",
+        receipts: {},
+        characterCreatedAt: formatDateTime(new Date())
+    };
 }
 
-// 약관 문구(1번 문구)
-function buildTermsMessage() {
-    return (
-        "" +
-        "호이월드는\n" +
-        "호월 봇과 함께 펫을 키우고 성장시키는 RPG 게임 공간입니다.\n\n" +
-        "이용자는 자신만의 펫을 돌보고,\n" +
-        "다양한 활동과 상호작용을 통해\n" +
-        "펫의 성장을 경험하며 게임을 즐길 수 있습니다.\n\n" +
-        "게임 내에서 획득한 재화와 아이템은\n" +
-        "모두 게임 플레이와 펫 성장에만 사용되며,\n" +
-        "현실 세계의 재산적 가치와는 연동되지 않습니다.\n\n" +
-        "호이월드는 경쟁이나 순위보다\n" +
-        "펫과의 교감과 성장의 재미를 중심으로 구성된 게임으로,\n" +
-        "모든 이용자가 부담 없이 즐길 수 있도록 설계되었습니다.\n\n" +
-        "지금 호이월드에 가입하고\n" +
-        "나만의 호월 봇과 함께 RPG 세계를 시작해보세요.\n\n" +
-        "시작하시겠습니까?\n\n" +
-        "봇규칙 이용 약관을 확인하시려면 채팅창에\n" +
-        "'호월 봇 이용약관'을 적어주세요." +
-        "\nhttps://ibb.co/jkbgrzHt\n이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.\n\n" +
-        "[시작한다] / [거절한다]\n\n"
-    );
+// 신규 모험 시작 회원 단계를 반환하는 함수
+function getAdventureOnboardingMemberState(data, user) {
+    if (!data || !data.member || !data.member[user]) return null;
+    var state = data.member[user].adventureOnboarding;
+    return state && typeof state === "object" ? state : null;
 }
 
-function buildWelcomeMessage() {
-    return "" + "호이월드에 오신 것을 환영합니다\n" + '채팅창에 "가이드"를 입력하시면 가이드 확인이 가능합니다.\n' + "1. /펫생성 아이디\n" + "2. /시련의탑 *1회 [신입보상금 지원]을 받아보세요!";
+// 신입 지원용 호월신의 축복 아이템명을 반환하는 함수
+function getAdventureBlessingItemName() {
+    return "호월신의 축복✨(/호여!!)";
+}
+
+// 펫 이름 입력에서 앞뒤 공백과 감싼 따옴표를 제거하는 함수
+function sanitizeAdventurePetName(rawName) {
+    var name = String(rawName || "").trim();
+    if (name.length >= 2) {
+        var first = name.charAt(0);
+        var last = name.charAt(name.length - 1);
+        var quotePairs = { "\"": "\"", "'": "'", "“": "”", "‘": "’" };
+        if (quotePairs[first] === last) name = name.substring(1, name.length - 1).trim();
+    }
+    return name;
+}
+
+// 펫 이름 대기 중에도 기존 명령·가이드 입력을 정상 처리할지 확인하는 함수
+function isAdventurePetNameInputCandidate(message) {
+    var text = String(message || "").trim();
+    if (!text || text.charAt(0) === "/") return false;
+    if (text === "호월 봇 이용약관" || text.indexOf("가이드") >= 0) return false;
+    if (text === "출발한다" || text === "다음에 한다") return false;
+    if (ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(text) !== -1) return false;
+    return true;
+}
+
+// 신규 모험 시작 첫 안내 문구를 생성하는 함수
+function buildAdventureStartMessage(user) {
+    return "[" + user + "]님, 호이월드에 오신 것을 환영합니다! 🌏\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "호월신의 가호 아래,\n" +
+        "당신과 함께할 작은 펫이 기다리고 있습니다. 🐾\n\n" +
+        "모험가가 되어 나만의 펫과 세상을 여행하고,\n" +
+        "다양한 만남과 도전 속에서 함께 성장해 보세요.\n\n" +
+        "호이월드는 텍스트형 오픈월드 RPG를 지향합니다.\n" +
+        "━━━━━━━━━━━━━━━\n\n" +
+        "📖 이용약관: ‘호월 봇 이용약관’ 입력\n" +
+        "🎮 게임물관리위원회 전체이용가 등급\n" +
+        "안내 이미지: https://ibb.co/jkbgrzHt\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "✨ 펫과 함께 첫 여정을 떠나시겠습니까?\n\n" +
+        "‘출발한다’를 입력하면 캐릭터가 생성되고\n" +
+        "함께할 펫의 이름을 정하게 됩니다.\n\n" +
+        "[출발한다] / [다음에 한다]";
+}
+
+// 호이월드 이용약관 안내 문구를 생성하는 함수
+function buildHoiWorldTermsMessage() {
+    return "호이월드는 호월 봇과 함께 펫을 키우고 성장시키는 RPG 게임 공간입니다.\n\n" +
+        "이용자는 자신만의 펫을 돌보고 다양한 활동과 상호작용을 통해 펫의 성장을 경험하며 게임을 즐길 수 있습니다.\n\n" +
+        "게임 내에서 획득한 재화와 아이템은 게임 플레이와 펫 성장에만 사용되며 현실 세계의 재산적 가치와 연동되지 않습니다.\n\n" +
+        "모든 이용자가 부담 없이 즐길 수 있도록 운영 규칙과 이용 질서를 지켜주세요.\n\n" +
+        "https://ibb.co/jkbgrzHt\n" +
+        "이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.\n\n" +
+        "모험 시작 안내로 돌아가려면 /모험시작 을 입력해 주세요.";
+}
+
+// 캐릭터 생성 후 펫 이름 입력 안내 문구를 생성하는 함수
+function buildAdventurePetNamePromptMessage(user) {
+    return "[" + user + "]님, 호이월드에 첫발을 내디디셨습니다! 🌏\n\n" +
+        "🐾 작은 펫이 당신을 바라보고 있습니다.\n\n" +
+        "앞으로 함께 여행할 이 친구에게\n" +
+        "어떤 이름을 지어주시겠어요?\n\n" +
+        "✏️ 명령어 없이 펫 이름만 입력해 주세요.\n\n" +
+        "이름을 ‘호이’로 정하고 싶다면\n" +
+        "채팅창에 아래처럼 입력해 주세요.\n\n" +
+        "\"호이\"\n\n" +
+        "📌 펫 이름은 6글자 이내로 정해 주세요.";
+}
+
+// 펫 생성과 호월신의 축복 지급 안내 문구를 생성하는 함수
+function buildAdventurePetCreatedMessage(user, petName) {
+    return "[" + user + "]님, 새로운 동반자가 생겼습니다! 🐾\n\n" +
+        "당신이 지어준 이름, " + petName + "\n" +
+        "이제 이 친구와 함께 세상을 여행하게 됩니다.\n\n" +
+        "둘의 첫 만남을 축하하며\n" +
+        "호월신이 특별한 선물을 내려주었습니다.\n\n" +
+        "🎁 호월신의 축복✨ 지급 완료!\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "호월신의 축복✨(/호여!!)\n\n" +
+        "채팅창에 /호여!! 를 입력해 주세요.\n" +
+        "펫정보 기본 세팅과 모험에 필요한 재화가 지급됩니다.";
+}
+
+// 호월신의 축복 적용 완료 안내 문구를 생성하는 함수
+function buildAdventureStarterCompleteMessage(user, petName) {
+    return "[" + user + "]님에게 호월신의 축복✨이 깃듭니다!\n\n" +
+        "🐾 " + petName + "의 기본 세팅 완료!\n" +
+        "📙 펫스킬 학개론 장착 완료!\n" +
+        "💰 포인트 300억 지급 완료!\n" +
+        "🎁 모험에 필요한 아이템 지급 완료!\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "🐾 먼저, 함께할 펫을 만나보세요!\n\n" +
+        "채팅창에 /펫정보 를 입력하면\n" +
+        petName + "의 능력과 장착 정보를 확인할 수 있어요.\n" +
+        "━━━━━━━━━━━━━━━\n" +
+        "🎒 /가방 → 지급받은 재화와 아이템 확인\n" +
+        "🌟 /레벨 → 모험가 레벨 확인\n\n" +
+        "💡 게임 방법이 궁금하다면?\n" +
+        "채팅창에 ‘가이드’를 입력해 주세요.\n\n" +
+        "펫과 함께하는 당신만의 여정이 시작됩니다. 🌱";
+}
+
+// 저장된 신규 모험 시작 단계에 맞는 재안내 문구를 생성하는 함수
+function buildAdventureOnboardingResumeMessage(data, petData, user) {
+    var state = getAdventureOnboardingMemberState(data, user);
+    if (!state) return "[" + user + "]님은 이미 호이월드 모험을 시작했습니다.\n/펫정보 로 현재 동반자를 확인해 주세요.";
+    if (state.stage === "WAIT_PET_NAME") return buildAdventurePetNamePromptMessage(user);
+    if (state.stage === "WAIT_BLESSING" || state.stage === "APPLYING") {
+        var petName = petData && petData[user] ? petData[user].petname : state.petName;
+        return "[" + user + "]님, " + (petName || "펫") + "에게 지급된 호월신의 축복✨을 사용해 주세요.\n채팅창에 /호여!! 를 입력하면 중단된 단계부터 이어집니다.";
+    }
+    return "[" + user + "]님은 이미 호이월드 모험을 시작했습니다.\n/펫정보 로 현재 동반자를 확인해 주세요.";
+}
+
+// 신규 모험가의 포인트·가호·가방·친밀도 보상을 한 번만 지급하는 함수
+function applyAdventureStarterMemberRewards(data, user) {
+    var member = data.member[user];
+    var state = getAdventureOnboardingMemberState(data, user);
+    if (!member || !state) return false;
+    if (!state.receipts || typeof state.receipts !== "object") state.receipts = {};
+    if (state.receipts.memberRewards === true) return false;
+
+    addPoint(data, user, 30000000000);
+    member.boostercnt = Math.max(0, parseInt(member.boostercnt, 10) || 0) + 1000;
+    var rewards = [
+        ["전설의 돌맹이🗿", 50],
+        ["미니펫뽑기🐹(/미니펫오픈)", 10],
+        ["펫스윗홈인테리어샵🖼️(/샵오픈)", 8],
+        ["펫 강화석⭐", 3000],
+        ["양념치킨🐔", 700],
+        ["경찰과 도둑🚨(/삐뽀삐뽀)", 50],
+        ["돌멩이🪨", 30000],
+        ["미니펫대전리셋권🐹", 900],
+        ["캐슬대전리셋권🐶", 900],
+        ["시련의탑리셋권😈", 500],
+        ["펫던전 입장권🌋", 100],
+        ["레이드타격대인장👑(+600👾)", 10],
+        ["잡템상자☠", 100],
+        [GLOBAL_CONFIG.petSkill.bookItemName, 3],
+        ["탐험확률UP🗻(50%)", 200],
+        ["땅문서📜", 20],
+        ["펫 이름변경권🎫", 3]
+    ];
+    for (var i = 0; i < rewards.length; i++) addItem(data, user, rewards[i][0], rewards[i][1]);
+
+    var currentIntimacy = getUserIntimacyInfo(data, user);
+    if (!currentIntimacy.exists || currentIntimacy.level < 3000) {
+        if (currentIntimacy.itemKey) delete member.bag[currentIntimacy.itemKey];
+        member.bag[buildIntimacyItemName(3000, 0, 3300000)] = 1;
+    }
+    state.receipts.memberRewards = true;
+    return true;
+}
+
+// 신규 모험가의 펫·정령·미니펫·펜던트 세팅을 한 번만 적용하는 함수
+function applyAdventureStarterPetSettings(petData, user) {
+    var pet = petData && petData[user] ? petData[user] : null;
+    if (!pet || pet.starterBlessingApplied === true) return false;
+    var petName = pet.petname;
+    applyStarterPet(pet, user, null);
+    pet.petname = petName;
+    if (!pet.pendant) pet.pendant = createPendantByGradeInfo(getPendantGradeInfo("최하급"));
+    pet.starterBlessingApplied = true;
+    return true;
+}
+
+// 신규 모험가에게 펫스킬 학개론을 한 번만 자동 장착하는 함수
+function applyAdventureStarterSkill(petSkillData, user) {
+    if (!petSkillData[user]) petSkillData[user] = {};
+    if (petSkillData[user].starterBlessingApplied === true) return false;
+    var skills = initPetSkillUser(petSkillData, user);
+    var skillName = "펫스킬 학개론";
+    if (skills.equipped.indexOf(skillName) === -1) {
+        if ((parseInt(skills.bag[skillName], 10) || 0) > 0) {
+            skills.bag[skillName]--;
+            if (skills.bag[skillName] <= 0) delete skills.bag[skillName];
+        }
+        skills.equipped.push(skillName);
+    }
+    petSkillData[user].starterBlessingApplied = true;
+    return true;
+}
+
+// 신규 모험가의 펫홈 세팅을 한 번만 적용하는 함수
+function applyAdventureStarterHome(homeData, user) {
+    if (!homeData || typeof homeData !== "object") throw new Error("펫홈 데이터를 불러올 수 없습니다.");
+    homeData = initSweetHomeUser(homeData, user);
+    if (homeData[user].starterBlessingApplied === true) return false;
+    applyStarterHome(homeData, user);
+    homeData[user].starterBlessingApplied = true;
+    return true;
 }
 
 // 가입 닉네임이 이름 남/여 형식과 금칙어 조건을 통과하는지 확인하는 함수

@@ -6407,6 +6407,47 @@ Status: VERIFIED
 
 ---
 
+# /모험시작 · /호여!!
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- runtime `adventureOnboarding.json`
+
+## Related Helpers
+
+- `createAdventureOnboardingMemberState`
+- `getAdventureOnboardingMemberState`
+- `buildHoiWorldTermsMessage`
+- `sanitizeAdventurePetName`
+- `applyAdventureStarterMemberRewards`
+- `applyAdventureStarterPetSettings`
+- `applyAdventureStarterSkill`
+- `applyAdventureStarterHome`
+
+## Data Usage
+
+- `adventureOnboarding.users[사용자]`: 캐릭터 생성 전 시작 선택 대기 상태
+- `data.member[사용자].adventureOnboarding`: 캐릭터 생성 후 펫 이름·축복 적용·완료 단계와 회원 보상 영수증
+- `petData[사용자].starterBlessingApplied`
+- `petSkillData[사용자].starterBlessingApplied`
+- `homeData[사용자].starterBlessingApplied`
+
+## Save Flow
+
+- `/모험시작`은 계정을 만들지 않고 시작 선택 상태만 저장한다.
+- `호월 봇 이용약관`은 가입 단계와 회원 데이터에 영향을 주지 않고 이용약관만 출력한다.
+- `다음에 한다`는 시작 선택 상태만 삭제하며 회원·펫·보상을 생성하지 않는다.
+- `출발한다`는 회원을 생성하고 기존 미가입 출석을 이관한 뒤 펫 이름 입력 단계로 이동한다.
+- 펫 이름 확정 시 이름을 정리·검사하고 `호월신의 축복✨(/호여!!)`을 1개만 지급한다.
+- `/호여!!`은 회원 보상, 펫, 펫스킬, 펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다.
+- 기존 회원은 신규 지급 대상으로 자동 편입하지 않는다.
+- 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.
+
+---
+
 # ㅊㅊ
 
 Status: VERIFIED
@@ -6436,6 +6477,8 @@ Status: VERIFIED
 - `buildMissingAttendanceSignupSuccessMessage`
 - `validateSignupNickname`
 - `initializeMember`
+- `applyAdventureExperienceBooster`
+- `buildAdventureBoosterDepletionMessage`
 - `saveJsonFile`
 - `loadJsonFile`
 
@@ -6452,11 +6495,10 @@ Status: VERIFIED
 ## Save Flow
 
 - Existing member attendance continues to update normal member data
-- Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ` or the explicit `/가입` flow
-- Pending terms responses are allowed only for the exact accept/reject terms messages, and they do not create `data.member` unless `/가입` already created the member row
+- Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ` or the explicit `/모험시작` flow
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
-- `/가입` for new users validates the Kakao sender nickname before creating member data; invalid name/gender format or blocked profanity/political terms return with guidance and do not save data
-- `/가입` still migrates any older existing light attendance row into normal member data, then removes the light row
+- `/모험시작` validates the Kakao sender nickname before saving the start state; `출발한다` creates the member and migrates any older light-attendance row
+- Registered-user attendance applies `호월신의 가호✨` to the 100 base EXP, reports the added EXP, and uses the common depletion message when the count reaches zero
 - `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
 
 ## Related Commands
@@ -6469,7 +6511,7 @@ Status: VERIFIED
 ## AI Notes
 
 - `attendanceLightPath` is a lightweight operational snapshot for attendance-only pre-signup users; do not create rows from commands other than `ㅊㅊ`
-- 신규 `/가입` 닉네임은 `두 글자 이상 이름 + 공백 + 남/여` 형식이어야 한다.
+- 신규 `/모험시작` 닉네임은 `두 글자 이상 이름 + 공백 + 남/여` 형식이어야 한다.
 - `/미가입출첵` must not backfill missing server values from the command room because that can mislabel old rows as the room server.
 - `/미가입출첵서버초기화 호1` clears the stored server value for currently `호1`-displayed light rows so they become `미확인`; use only when the server was contaminated and no backup/manual edit is available.
 - Do not hide `loadJsonFile` parse failures; only missing/null light data falls back to `{ users: {} }`
