@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.540"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.541"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -7373,6 +7373,39 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                         replier.reply("[" + checkRank(data, petData, guildData, targetUserb) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + "가\n" + numberWithCommas(addboostcnts) + "회 추가되었습니다.");
                     }
+                }
+                if ((msg === "/부스터수정" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(msg)) && isMaster(sender)) {
+                    var boosterEditMatch = msg.match(/^\/부스터수정\s+(.+?)\s+([+-]?\d+)$/);
+                    if (!boosterEditMatch) {
+                        replier.reply("사용법: /부스터수정 [아이디] [+수량|-수량]\n예: /부스터수정 호이 남 +10\n※ 부호가 없으면 증가로 처리합니다.");
+                        return;
+                    }
+                    var boosterEditTarget = boosterEditMatch[1].trim();
+                    var boosterEditAmount = Number(boosterEditMatch[2]);
+                    if (!boosterEditTarget || !isFinite(boosterEditAmount) || boosterEditAmount === 0 || Math.floor(boosterEditAmount) !== boosterEditAmount || Math.abs(boosterEditAmount) > 9007199254740991) {
+                        replier.reply("❌ 변경 수량은 0이 아닌 안전한 정수로 입력해주세요.\n예: /부스터수정 호이 남 -10");
+                        return;
+                    }
+                    if (!data.member[boosterEditTarget]) {
+                        replier.reply("❌ 존재하지 않는 아이디입니다: " + boosterEditTarget);
+                        return;
+                    }
+                    var boosterEditBefore = Math.max(0, parseInt(data.member[boosterEditTarget].boostercnt, 10) || 0);
+                    var boosterEditAfter = boosterEditBefore + boosterEditAmount;
+                    if (boosterEditAfter < 0 || Math.floor(boosterEditAfter) !== boosterEditAfter || Math.abs(boosterEditAfter) > 9007199254740991) {
+                        replier.reply("❌ 보유한 가호보다 많이 차감할 수 없습니다.\n현재 보유: " + numberWithCommas(boosterEditBefore) + "개");
+                        return;
+                    }
+                    data.member[boosterEditTarget].boostercnt = boosterEditAfter;
+                    saveJsonFile(data, filePath);
+                    var verifiedBoosterEditData = loadJsonFile(filePath);
+                    var verifiedBoosterEditMember = verifiedBoosterEditData && verifiedBoosterEditData.member ? verifiedBoosterEditData.member[boosterEditTarget] : null;
+                    if (!verifiedBoosterEditMember || Number(verifiedBoosterEditMember.boostercnt) !== boosterEditAfter) {
+                        replier.reply("❌ 부스터 수정 저장 검증에 실패했습니다. 대상 계정 데이터를 확인해주세요.");
+                        return;
+                    }
+                    replier.reply("✅ 부스터 수정 완료\n[" + checkRank(data, petData, guildData, boosterEditTarget) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "\n변경: " + numberWithCommas(boosterEditBefore) + " → " + numberWithCommas(boosterEditAfter) + "개\n증감: " + (boosterEditAmount > 0 ? "+" : "") + numberWithCommas(boosterEditAmount) + "개");
+                    return;
                 }
                 if (msg === "/호여" || /^\/호여\s+\d+$/.test(msg)) {
                     if (msg === "/호여") {
@@ -30405,7 +30438,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        command === "/티어적용" || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
+        command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
         /^\/달토끼상점구매\s+\d+\s+\d+$/.test(command) ||
         command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
@@ -30593,7 +30626,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/호여", "/황금당근수정", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/호여", "/부스터수정", "/황금당근수정", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
