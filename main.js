@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.538"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.539"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -35481,7 +35481,7 @@ function buildTierProgressMessage(plan, isApplyFailure) {
     if (!plan) return "티어 정보를 확인할 수 없습니다.";
     var lines = [];
     if (isApplyFailure && plan.isMaxTier) lines.push("🏆 이미 최고 티어예요");
-    else lines.push(isApplyFailure ? "❌ 승급 재료가 부족해요" : "🏅 " + plan.user + "님의 티어");
+    else lines.push(isApplyFailure ? "❌ [" + plan.user + "] 님 승급 재료가 부족해요" : "🏅 [" + plan.user + "]님의 티어");
     lines.push("현재 " + formatTicketTierLabel(plan.currentTierName));
     lines.push("⛰️ 펫탐험 보너스: " + plan.currentExploreBonus + "% 적용 중");
     if (plan.currentExperienceBonus > 0) lines.push("⚡ 경험치 보너스: +" + plan.currentExperienceBonus + "% 적용 중");

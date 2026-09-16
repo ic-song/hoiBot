@@ -57,20 +57,37 @@ if (message.indexOf("호월신의 가호 적용! (+10exp)") < 0 || message.index
 const tierChecks = [
     'tierProgressPlan.user = checkRank(data, petData, guildData, sender)',
     'tierPlan.user = checkRank(data, petData, guildData, sender)',
-    'var promotedRankName = checkRank(data, petData, guildData, sender)'
+    'var promotedRankName = checkRank(data, petData, guildData, sender)',
+    '"❌ [" + plan.user + "] 님 승급 재료가 부족해요"',
+    '"🏅 [" + plan.user + "]님의 티어"'
 ];
 for (const expected of tierChecks) {
     if (source.indexOf(expected) < 0) throw new Error("checkRank 연결 검증 실패: " + expected);
 }
 
+const rankContext = {
+    ticketTierData: { 노랑하트: { emoji: "💛" }, 킹: { emoji: "👑" } },
+    guildPath: "",
+    loadJsonFile: () => ({}),
+    getMyGuildInfo: () => ({ error: true })
+};
+vm.createContext(rankContext);
+vm.runInContext(extractFunction("getCheckRankTierEmoji"), rankContext);
+vm.runInContext(extractFunction("checkRank"), rankContext);
+const rankData = { member: { "사람 남": { rank: { tier: "노랑하트", emoji: "💛" } } } };
+if (rankContext.checkRank(rankData, {}, {}, "사람 남") !== "💛사람 남") throw new Error("승급 전 checkRank 검증 실패");
+rankData.member["사람 남"].rank.tier = "킹";
+rankData.member["사람 남"].rank.emoji = "👑";
+if (rankContext.checkRank(rankData, {}, {}, "사람 남") !== "👑사람 남") throw new Error("승급 후 checkRank 재계산 검증 실패");
+
 const consumptionMessageCallChecks = [
-    "castleBoosterResult.usedBooster",
-    "miniBoosterResult.usedBooster",
-    "dailyBoosterResult.usedBooster",
-    "premiumBoosterResult.usedBooster",
-    "weeklyBoosterResult.usedBooster",
-    "boosterResult.usedBooster",
-    "attendanceBoosterResult.usedBooster"
+    "buildBattleExperienceRewardMessage(castleTierExpResult.total, expGain, expFromBooster, castleTierExpResult.bonus, castleBoosterResult.usedBooster)",
+    "buildBattleExperienceRewardMessage(miniTierExpResult.total, expGain, expFromBooster, miniTierExpResult.bonus, miniBoosterResult.usedBooster)",
+    "buildQuestExperienceRewardMessage(dailyExperienceResult, dailyBaseExperience, dailyBoosterResult.extraExperience, dailyBoosterResult.usedBooster)",
+    "buildQuestExperienceRewardMessage(premiumExperienceResult, premiumBaseExperience, premiumBoosterResult.extraExperience, premiumBoosterResult.usedBooster)",
+    "buildQuestExperienceRewardMessage(weeklyExperienceResult, weeklyBaseExperience, weeklyBoosterResult.extraExperience, weeklyBoosterResult.usedBooster)",
+    "buildBattleExperienceRewardMessage(experienceResult.total, baseExperience, boosterResult.extraExperience, experienceResult.bonus, boosterResult.usedBooster)",
+    'attendanceRewardMessage += "\\n└ 가호 사용: " + numberWithCommas(attendanceBoosterResult.usedBooster) + "개"'
 ];
 for (const expected of consumptionMessageCallChecks) {
     if (source.indexOf(expected) < 0) throw new Error("가호 소비 문구 연결 검증 실패: " + expected);
@@ -84,6 +101,14 @@ const attendanceChecks = [
 ];
 for (const expected of attendanceChecks) {
     if (source.indexOf(expected) < 0) throw new Error("출석 가호 적용 연결 검증 실패: " + expected);
+}
+
+const onboardingChecks = [
+    "currentIntimacy.level < 300",
+    "buildIntimacyItemName(300, 0, 330000)"
+];
+for (const expected of onboardingChecks) {
+    if (source.indexOf(expected) < 0) throw new Error("신규 모험가 친밀도 300 검증 실패: " + expected);
 }
 
 const boosterHelperSource = extractFunction("applyAdventureExperienceBooster");
