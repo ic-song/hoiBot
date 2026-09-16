@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.530"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.531"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -1757,7 +1757,7 @@ blockedNicknameTerms: [
             name: "달토끼 탐색🐰",
             currencyName: "황금당근🌕",
             itemName: "황금당근🌕(/황금당근오픈 숫자)",
-            participationFee: 100000000,
+            participationFee: 50000000,
             rewardMin: 1,
             rewardMax: 3,
             periodText: "9월 16일 ~ 10월 10일",
@@ -25207,6 +25207,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath);
                     saveJsonFile(petExploreData, petExplorePath);
                     replier.reply(result.text);
+                    return;
+                }
+
+                if (msg === "/자동탐고정해제") {
+                    var petExploreData = loadJsonFile(petExplorePath);
+                    petExploreData = initPetExploreData(petExploreData);
+                    cleanupInvalidPetExploreUsers(petExploreData, data);
+                    savePetExploreMigrationIfNeeded(petExploreData);
+                    var unfixResult = handleAutoExploreUnfixCommand(petExploreData, sender);
+                    petExploreData = unfixResult.petExploreData;
+                    saveJsonFile(petExploreData, petExplorePath);
+                    replier.reply(unfixResult.text);
                     return;
                 }
 
@@ -53407,6 +53419,7 @@ function buildPetExploreStatusMessage(data, petData, homeData, guildData, petSki
     var autoFixGuide = isPetExploreEventMineActive(petExploreData) ? "0~9" : "1~9";
     if (isGuildRaidExploreEventActive(petExploreData)) autoFixGuide += ", 10";
     out += "[/자동탐고정 " + autoFixGuide + " 입력시 고정]\n";
+    out += "[/자동탐고정해제 입력시 해제]\n";
     out += LINE + "\n";
 
     out += "아이템 보유 현황🛍️\n";
@@ -53624,7 +53637,7 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
     if (isRegularDungeonExploreSlot(n) || isMazeExploreSlot(n) || n === "10" || n === "11") {
         var ticketGuide = "";
         if (n === "11") {
-            ticketGuide = "※ 탐11 자동탐험은 길드 가입과 매시간 1억 포인트가 필요합니다.\n포인트가 부족하면 참가비와 보상 없이 미참여 처리됩니다.";
+            ticketGuide = "※ 탐11 자동탐험은 길드 가입과 매시간 🅟" + numberWithCommas(GLOBAL_CONFIG.petExplore.chuseokEvent.participationFee) + "가 필요합니다.\n포인트가 부족하면 참가비와 보상 없이 미참여 처리됩니다.";
         } else if (n === "10") {
             ticketGuide = "※ 탐10 자동탐험은 길드 가입과 펫던전 입장권🌋이 필요하며\n소모는 탐험 시작 시점에 처리됩니다.\n펫던전 입장권🌋이 부족하면 보상에서 제외됩니다.";
         } else if (isMazeExploreSlot(n)) {
@@ -53651,6 +53664,26 @@ function handleAutoExploreFixCommand(petExploreData, data, sender, msg) {
         text: "✅ 자동탐험 고정 완료!\n내 자동탐험지: " + nameMap[n] + " (탐" + n + ")\n\n*탐험고정은 자동탐험권🌄이 필요하며 호이패스, 초보패스, 호이패스 프리미엄 구독자가 이용할 수 있습니다.",
         petExploreData: petExploreData,
         data: data
+    };
+}
+
+// 사용자의 자동탐험 고정 설정을 해제하는 함수
+function handleAutoExploreUnfixCommand(petExploreData, sender) {
+    if (!petExploreData) petExploreData = {};
+    if (!petExploreData.autoFixedDungeon) petExploreData.autoFixedDungeon = {};
+    if (!petExploreData.autoFixedDungeon.hasOwnProperty(sender)) {
+        return {
+            text: "ℹ️ 설정된 자동탐험 고정이 없습니다.",
+            petExploreData: petExploreData
+        };
+    }
+    delete petExploreData.autoFixedDungeon[sender];
+    var guide = isChuseokExploreEventActive(petExploreData)
+        ? "추석 이벤트 중에는 자동탐험권🌄 보유 시 달토끼 탐색🐰에 자동 참여합니다."
+        : "다음 자동탐험부터 기본 탐험지 중 하나가 무작위로 선택됩니다.";
+    return {
+        text: "✅ 자동탐험 고정을 해제했습니다.\n" + guide,
+        petExploreData: petExploreData
     };
 }
 
