@@ -177,6 +177,13 @@ function getInfoLevelRequiredExperience(level) {
 	return GLOBAL_CONFIG.level.expBase + (currentLevel - 1) * GLOBAL_CONFIG.level.expPerLevel;
 }
 
+// Info에서 모험가 EXP를 소수점 없이 표시하는 함수
+function formatInfoAdventureExperience(value) {
+	var numericValue = Number(value);
+	if (!isFinite(numericValue)) numericValue = 0;
+	return numberWithCommas(numericValue < 0 ? Math.ceil(numericValue) : Math.floor(numericValue));
+}
+
 // Info에서 현재 모험가 칭호를 반환하는 함수
 function getInfoAdventureLevelTitle(level) {
 	var currentLevel = Math.max(1, parseInt(level, 10) || 1);
@@ -226,7 +233,7 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		getInfoAdventureLevelTitle(level) + " · " + numberWithCommas(promotionCount) + "차 승급\n" +
 		"━━━━━━━━━━━━\n" +
 		"🌟 Lv." + numberWithCommas(level) + " [" + gauge + "]\n" +
-		"📊 EXP: " + numberWithCommas(exp) + " / " + numberWithCommas(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
+		"📊 EXP: " + formatInfoAdventureExperience(exp) + " / " + formatInfoAdventureExperience(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
 		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n" +
 		"━━━━━━━━━━━━\n" +
 		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
@@ -527,9 +534,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						titleList.length +
 						"개\n" +
 						"• 경험치: " +
-						currentExp +
+						formatInfoAdventureExperience(currentExp) +
 						" / " +
-						nextLevelExp +
+						formatInfoAdventureExperience(nextLevelExp) +
 						" (" +
 						Math.floor((currentExp / nextLevelExp) * 100) +
 						"%)\n" +
@@ -705,9 +712,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				petTitleList.length +
 				"개\n" +
 				"• 경험치: " +
-				currentExp +
+				formatInfoAdventureExperience(currentExp) +
 				" / " +
-				nextLevelExp +
+				formatInfoAdventureExperience(nextLevelExp) +
 				" (" +
 				expPercent +
 				"%)\n" +
