@@ -4260,6 +4260,7 @@ Status: VERIFIED
 ## AI Notes
 - Collection registration auto-upgrade uses `MINI_PROB`, `MINI_COST`, and `getCharmGainFor`; these tables now support 1~300강
 - Auto-upgrade guard allows enough attempts for 300강 low-probability ranges before stopping as abnormal
+- 미니펫 컬렉션 시즌1은 +80💫 단계까지 등록할 수 있다. `/미니펫컬렉션` 현황 최상단에는 `[시즌 1 종료 80단계까지 등록 가능]`을 표시하고, 80단계 완료 후 일반 등록·만능열쇠 등록을 차단하며 완료 결과에 `시즌1 종료 / 시즌2에서 뵐게요` 안내를 표시한다.
 
 ---
 
@@ -4285,6 +4286,7 @@ Status: VERIFIED
 - 입력 순서로 현재 단계 완성 여부를 미리 계산하므로 한 명령에서 다음 단계 컬렉션까지 연속 선택할 수 있다.
 - 현황 UI는 단계 보상 다음에 만능열쇠 등록 `/미니펫컬렉션만능`과 등급 등록 `/미니펫컬렉션등록`을 안내한 뒤 상세 컬렉션을 표시한다.
 - `등록` 성공 시 기존 컬렉션·타이틀·회원·미니펫 저장 흐름을 재사용한다.
+- 한 명령에서 80단계를 완료한 뒤 81단계 재료까지 이어서 소비하지 않으며, 80단계 이후에는 등록 재료와 만능열쇠를 차감하지 않는다.
 ## Related Commands
 - `/미니펫컬렉션등록`
 - `/미니펫컬렉션순위`

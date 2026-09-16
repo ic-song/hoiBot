@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.531"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.532"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -911,6 +911,10 @@ var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 �
 var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 감시 객체 (실행 컨텍스트별 timerId)
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    miniPetCollection: { // 미니펫 컬렉션 시즌 운영 설정
+        seasonOneMaxStage: 80,
+        seasonOneEndMessage: "🏁 미니펫 컬렉션 시즌1 종료!\n시즌2에서 뵐게요."
+    },
     attendance: { // 출석 보상 설정
         bonusPoint: 1000000,
         bonusExp: 100
@@ -28694,6 +28698,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(miniPetCollectionData, miniPetCollectionPath);
                     }
                     var collection = ensureMiniPetCollection(miniPetCollectionData, sender);
+                    if (isMiniPetCollectionSeasonOneComplete(collection)) {
+                        replier.reply(getMiniPetCollectionSeasonOneEndMessage());
+                        return;
+                    }
 
                     if (!userState[sender]) userState[sender] = {};
                     userState[sender].miniPetCollection = {
@@ -28770,6 +28778,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var miniPetTitleData = loadJsonFile(miniPetTitlePath);
                     var collection = ensureMiniPetCollection(miniPetCollectionData, sender);
+                    if (isMiniPetCollectionSeasonOneComplete(collection)) {
+                        delete userState[sender].miniPetCollection;
+                        replier.reply(getMiniPetCollectionSeasonOneEndMessage());
+                        return;
+                    }
 
                     var removeIndexes = [];
                     var registeredLines = [];
@@ -28793,6 +28806,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
 
                         var currentStage = parseInt(collection.stage || 1, 10);
+                        if (currentStage > GLOBAL_CONFIG.miniPetCollection.seasonOneMaxStage) continue;
                         var currentGrade = selectedNow.grade;
                         var currentUpgrade = parseInt(selectedNow.upgrade || 0, 10);
 
@@ -28888,10 +28902,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                                 clearLine += "\n타이틀 획득: [" + currentTitleInfo.name + "]";
                             }
 
-                            stageClearLines.push(clearLine);
                             collection.completedStage = clearStage;
                             collection.stage = clearStage + 1;
                             collection.registered = createMiniPetCollectionRegistered();
+                            if (clearStage === GLOBAL_CONFIG.miniPetCollection.seasonOneMaxStage) {
+                                clearLine += "\n\n" + getMiniPetCollectionSeasonOneEndMessage();
+                            }
+                            stageClearLines.push(clearLine);
                         }
                     }
 
@@ -29040,6 +29057,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var miniPetUniversalCollectionData = loadJsonFile(miniPetCollectionPath);
                     if (sanitizeMiniPetCollectionData(miniPetUniversalCollectionData)) saveJsonFile(miniPetUniversalCollectionData, miniPetCollectionPath);
                     var miniPetUniversalCollection = ensureMiniPetCollection(miniPetUniversalCollectionData, sender);
+                    if (isMiniPetCollectionSeasonOneComplete(miniPetUniversalCollection)) {
+                        replier.reply(getMiniPetCollectionSeasonOneEndMessage());
+                        return;
+                    }
                     var miniPetUniversalPlannedRegistered = {};
                     for (var miniPetUniversalGradeIndex = 0; miniPetUniversalGradeIndex < MINI_PET_COLLECTION_ALLOWED_GRADES.length; miniPetUniversalGradeIndex++) {
                         var miniPetUniversalInitialGrade = MINI_PET_COLLECTION_ALLOWED_GRADES[miniPetUniversalGradeIndex];
@@ -29048,6 +29069,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var miniPetUniversalStage = parseInt(miniPetUniversalCollection.stage || 1, 10);
                     var miniPetUniversalSelected = [];
                     for (var miniPetUniversalIndex = 0; miniPetUniversalIndex < miniPetUniversalArgs.length; miniPetUniversalIndex++) {
+                        if (miniPetUniversalStage > GLOBAL_CONFIG.miniPetCollection.seasonOneMaxStage) {
+                            replier.reply("⚠️ 시즌1 최대 단계인 +" + GLOBAL_CONFIG.miniPetCollection.seasonOneMaxStage + "💫까지만 선택할 수 있습니다.\n\n" + getMiniPetCollectionSeasonOneEndMessage());
+                            return;
+                        }
                         var miniPetUniversalNumber = parseInt(miniPetUniversalArgs[miniPetUniversalIndex], 10);
                         var miniPetUniversalGrade = MINI_PET_COLLECTION_ALLOWED_GRADES[miniPetUniversalNumber - 1];
                         if (!miniPetUniversalGrade) {
@@ -29164,11 +29189,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         saveJsonFile(miniPetCollectionData, miniPetCollectionPath);
                     }
                     var collection = ensureMiniPetCollection(miniPetCollectionData, sender);
+                    if (isMiniPetCollectionSeasonOneComplete(collection)) {
+                        var seasonOneOut = "[시즌 1 종료 80단계까지 등록 가능]\n";
+                        seasonOneOut += "🐹[" + checkRank(data, petData, guildData, sender) + "]의 미니펫 컬렉션🐹\n";
+                        seasonOneOut += "시즌1 최종 단계: +" + GLOBAL_CONFIG.miniPetCollection.seasonOneMaxStage + "💫\n\n";
+                        seasonOneOut += getMiniPetCollectionSeasonOneEndMessage();
+                        replier.reply(seasonOneOut);
+                        return;
+                    }
 
                     var stage = parseInt(collection.stage || 1, 10);
                     var reward = miniPetCollectionInfo.stageReward[String(stage)];
 
                     var out = "";
+                    out += "[시즌 1 종료 80단계까지 등록 가능]\n";
                     out += "🐹[" + checkRank(data, petData, guildData, sender) + "]의 미니펫 컬렉션🐹\n";
                     out += "현재 미니펫 컬렉션 [+" + stage + "💫]단계 도전중\n\n";
 
@@ -55466,6 +55500,19 @@ function ensureMiniPetCollection(collectionData, sender) {
     collectionData.member[sender].collection.registered = normalizeMiniPetCollectionRegistered(collectionData.member[sender].collection.registered);
 
     return collectionData.member[sender].collection;
+}
+
+// 미니펫 컬렉션 시즌1 최종 단계를 완료했는지 확인하는 함수
+function isMiniPetCollectionSeasonOneComplete(collection) {
+    if (!collection) return false;
+    var completedStage = parseInt(collection.completedStage || 0, 10);
+    var currentStage = parseInt(collection.stage || 1, 10);
+    return completedStage >= GLOBAL_CONFIG.miniPetCollection.seasonOneMaxStage || currentStage > GLOBAL_CONFIG.miniPetCollection.seasonOneMaxStage;
+}
+
+// 미니펫 컬렉션 시즌1 종료 안내 문구를 반환하는 함수
+function getMiniPetCollectionSeasonOneEndMessage() {
+    return GLOBAL_CONFIG.miniPetCollection.seasonOneEndMessage;
 }
 
 // 유저의 미니펫 컬렉션 데이터에서 현재 단계, 등록 수, 최대 수 계산하여 반환
