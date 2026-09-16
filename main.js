@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.533"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.534"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 let termsState = {}; // 약관 동의 상태 저장용
@@ -6961,8 +6961,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     var homeData = loadJsonFile(homeDataFile);
 
-                    var shouldUpdateExploreIntervalTime = msg != "/펫탐험정산"; // 수동 정산은 자동 타이머 기준 시각을 유지
-                    if (shouldUpdateExploreIntervalTime) {
+                    var isManualPetExploreSettlement = msg == "/펫탐험정산"; // 관리자 즉시 정산 여부
+                    if (!isManualPetExploreSettlement) {
                         data.previnterval = new Date().getTime();
                     }
 
@@ -6993,8 +6993,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     //  doPetExploreInterval에 petExploreData 전달
                     var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
 
+                    if (isManualPetExploreSettlement) {
+                        stopAllIntervals(data);
+                        startInterval(data, room, replier, setint, ctx.isDev); // 수동 정산 완료 시각부터 60분 주기로 재시작
+                        saveJsonFile(data, filePath);
+                    }
+
                     if (!out) {
-                        if (shouldUpdateExploreIntervalTime) saveJsonFile(data, filePath);
+                        if (!isManualPetExploreSettlement) saveJsonFile(data, filePath);
                         if (msg == "/펫탐험시작") replier.reply("현재 탐험 인원이 없습니다.");
                         return;
                     }
