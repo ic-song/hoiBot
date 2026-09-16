@@ -49249,9 +49249,9 @@ function applyAdventureStarterMemberRewards(data, user) {
     for (var i = 0; i < rewards.length; i++) addItem(data, user, rewards[i][0], rewards[i][1]);
 
     var currentIntimacy = getUserIntimacyInfo(data, user);
-    if (!currentIntimacy.exists || currentIntimacy.level < 3000) {
+    if (!currentIntimacy.exists || currentIntimacy.level < 300) {
         if (currentIntimacy.itemKey) delete member.bag[currentIntimacy.itemKey];
-        member.bag[buildIntimacyItemName(3000, 0, 3300000)] = 1;
+        member.bag[buildIntimacyItemName(300, 0, 330000)] = 1;
     }
     state.receipts.memberRewards = true;
     return true;
