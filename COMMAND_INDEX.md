@@ -7085,3 +7085,67 @@ Status: VERIFIED
 - `/레벨순위`는 본인의 레벨·전체 순위·전체 계정 수와 바로 위 고유 순위의 레벨 또는 EXP 차이를 상단에 표시한다. 단독 1위는 현재 레벨 이전의 필요 EXP까지 합산한 누적 EXP로 2위와의 차이를 표시하고, 공동 1위는 차이 0으로 표시한다. 목록은 레벨 내림차순, 동률이면 EXP 내림차순으로 정렬하며 `1, 1, 3` 공동순위와 TOP 50을 유지한다. 상위 5명은 기본 화면에, 6번째부터는 `allsee` 뒤에 표시하고 본인이 TOP 50 밖이어도 상단의 내 순위는 유지한다.
 - 모험가 EXP의 계산·저장 정밀도는 유지하고 `/레벨`, 종합정보, 프리미엄 가방, 대전·탐험·출석·퀘스트·자동일퀘 결과, 관리자 수정 결과와 `/레벨순위`의 EXP 표시는 소수부를 제거한다. 자동일퀘 합계는 화면 문자열이 아니라 실제 지급값을 집계한다.
 - 기존 `/환생`, `/레벨리셋`, `/누렙순위` 및 특수 레벨업 보상은 제거됐다.
+
+---
+
+# /인증필요 · /미정 [이름] · /정보 [유저명]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+
+- `isAdminIdentity`
+- `isMasterIdentity`
+- `isGlobalOperatorLookupCommandAllowed`
+- `isGlobalInfoCommandAllowed`
+
+## AI Notes
+
+- `/인증필요`는 기존 Admin 권한을 유지하며 채팅방과 길드 영지전·펫무쌍·맞짱필드 진행 여부에 관계없이 사용할 수 있다.
+- `/미정 [이름]`과 `/정보 [유저명]`은 기존 Admin/Master 권한을 유지하며 모든 방에서 사용할 수 있다.
+- `/정보`는 권한이 확인된 경우 1:1톡 패스·이벤트 제한을 통과하며, 일반 사용자의 기존 제한은 유지한다.
+
+---
+
+# /펫스킬북보상
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `data/hoiBotChangeLog.json`
+
+## Related Helpers
+
+- `isRetiredPetSkill`
+- `ensurePetSkillRetirementCompensationLedger`
+- `countRetiredPetSkillHoldings`
+- `createPetSkillRetirementCompensationRecord`
+- `removeRetiredPetSkillHoldings`
+- `buildPetSkillRetirementCompensationResultMessage`
+
+## Data Usage
+
+- `petSkillData.json -> [user].petSkills.equipped`
+- `petSkillData.json -> [user].petSkills.lockedPremium`
+- `petSkillData.json -> [user].petSkills.bag`
+- `member.json -> member[user].bag["펫스킬북📙(/펫스킬오픈)"]`
+- `member.json -> petSkillRetirementCompensation.users[user]`
+
+## Save Flow
+
+- 계정별 대상 수량을 `PENDING` 처리 기록으로 먼저 저장한 뒤 펫스킬 회수 파일을 저장한다.
+- 회수 저장이 끝나면 `SKILLS_REMOVED`를 기록하고, 같은 수량의 펫스킬북 지급과 `COMPLETE`를 `member.json`에 함께 저장한다.
+- 중간에 실패하면 저장된 단계에서 재개하고 `COMPLETE` 계정은 다시 지급하지 않는다.
+
+## AI Notes
+
+- Admin/Master가 인자 없이 정확히 `/펫스킬북보상`을 입력해 실행한다.
+- 초월성장과 나 혼자만 레벨업의 장착·프리미엄 잠금·가방 수량을 합산해 1:1 보상한다.
+- 두 스킬은 추첨·컬렉션·장착·관리자 신규 지급·개인 거래·자유시장 신규 등록과 구매 대상에서 제외된다.
