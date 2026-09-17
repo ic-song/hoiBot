@@ -66,6 +66,10 @@ const message = context.buildBattleExperienceRewardMessage(110, 100, 10, 0, 10);
 if (message.indexOf("호월신의 가호 적용! (+10exp)") < 0 || message.indexOf("가호 사용: 10개") < 0) {
     throw new Error("가호 적용·소비 문구 검증 실패: " + message);
 }
+const battleLossMessage = context.buildBattleExperienceRewardMessage(75, 25, 50, 0, 50);
+if (battleLossMessage !== "📊 경험치: +75exp\n✨ 호월신의 가호 적용! (+50exp)\n└ 가호 사용: 50개\n└ 기본 25 + 티어 0") {
+    throw new Error("대전 패배 경험치 UI 검증 실패: " + battleLossMessage);
+}
 
 const tierChecks = [
     'tierProgressPlan.user = checkRank(data, petData, guildData, sender)',
@@ -114,6 +118,27 @@ const separateDepletionChecks = [
 ];
 for (const expected of separateDepletionChecks) {
     if (source.indexOf(expected) < 0) throw new Error("가호 별도 소진 출력 연결 검증 실패: " + expected);
+}
+
+function verifyBattleSummaryBlock(startText, endText, experienceVariable, detailTitle) {
+    const start = source.indexOf(startText);
+    const end = source.indexOf(endText, start);
+    if (start < 0 || end < 0) throw new Error("대전 UI 검증 범위를 찾을 수 없습니다: " + detailTitle);
+    const block = source.slice(start, end);
+    const experienceIndex = block.indexOf(experienceVariable);
+    const resultIndex = block.indexOf('" [" + checkRank');
+    const detailIndex = block.indexOf(detailTitle + '" + allsee');
+    if (experienceIndex < 0 || resultIndex < experienceIndex || detailIndex < resultIndex) {
+        throw new Error("대전 요약 UI 순서 검증 실패: " + detailTitle);
+    }
+    const allseeCalls = block.match(/allsee/g) || [];
+    if (allseeCalls.length !== 1) throw new Error("대전 상세 allsee 위치 검증 실패: " + detailTitle + " / " + allseeCalls.length);
+}
+
+verifyBattleSummaryBlock('result += "🏆 데일리 캐슬매력 대전', 'replier.reply(result);', 'castleExperienceMessage', '📊 데일리 캐슬대전 상세결과');
+verifyBattleSummaryBlock('let resultMsg = "🐹 미니펫 대전', 'replier.reply(resultMsg);', 'miniExperienceMessage', '📊 미니펫대전 상세결과');
+if (source.indexOf('miniPetBattleExperience: { win: 50, lose: 25 }') < 0) {
+    throw new Error("미니펫대전 승패 경험치 설정 검증 실패");
 }
 
 const attendanceChecks = [

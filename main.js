@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.544"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.545"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -1569,7 +1569,7 @@ const GLOBAL_CONFIG = {
         dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
         weeklyQuestExperienceReward: 500, // 주간퀘스트 경험치 보상
         castleBattleExperience: { win: 50, lose: 25 }, // 캐슬대전 승패 경험치
-        miniPetBattleExperience: { win: 22.5, lose: 7.5 }, // 미니펫대전 승패 경험치
+        miniPetBattleExperience: { win: 50, lose: 25 }, // 미니펫대전 승패 경험치
         autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정
@@ -19356,7 +19356,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     result += "🏆 데일리 캐슬매력 대전\n";
                     result += "(대전횟수: " + (isNaN(data.member[sender].battle.count) ? 0 : data.member[sender].battle.count) + "/" + joinMaxCnt + ") ";
                     result += "(리셋권: " + (data.member[sender].bag[resetTicketName] || 0) + "개)\n";
-                    result += "결과: " + (isWinFlag ? "✅ 승리" : "❌ 패배") + "\n";
+                    result += castleExperienceMessage + "\n";
+                    result += "━━━━━━━━━━━━\n\n";
+                    result += (isWinFlag ? "✅ 승리" : "❌ 패배") + " [" + checkRank(data, petData, guildData, attackerName) + "] 🆚 [" + checkRank(data, petData, guildData, defenderName) + "]\n";
+                    result += "📊 데일리 캐슬대전 상세결과" + allsee + "\n";
                     result += "━━━━━━━━━━━━\n\n";
                     result += "⚔️ 공격\n";
                     result += "유저: " + checkRank(data, petData, guildData, attackerName) + "\n";
@@ -19374,16 +19377,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     result += "상성: " + numberWithCommas(defenderTypeExp) + "💕" + (petTypeBuff.buff2 === 1.3 ? " ⬆️유리" : "") + "\n";
                     result += "최종: " + numberWithCommas(defenderPetExp) + "💕" + (defenderCriticalFlag ? " 💥크리티컬" : "") + "\n\n";
                     result += "━━━━━━━━━━━━\n";
-                    result += "📊 최종 매력 비교" + allsee + "\n";
+                    result += "📊 최종 매력 비교\n";
                     result += numberWithCommas(attackerPetExp) + " " + castleCompareSymbol + " " + numberWithCommas(defenderPetExp) + "\n";
                     result += "매력 차이: " + numberWithCommas(castleExpGap) + "💕\n\n";
                     result += isWinFlag ? "🏆 공격 승리\n" : "🛡️ 방어 승리\n";
                     result += isWinFlag ? checkRank(data, petData, guildData, attackerName) + " 님이 캐슬대전에서 승리했습니다!\n" : checkRank(data, petData, guildData, defenderName) + " 님이 캐슬대전에서 승리했습니다!\n";
                     result += "CP: " + (isWinFlag ? "+" + winnerScore : "-" + loseScore) + "🏆 · 누적 " + numberWithCommas(data.member[sender].battle.score) + "🏆\n";
-                    result += castleExperienceMessage + "\n";
                     result +=
                         "\n━ ✦ 획득포인트 및 경험치 상세정보✦ ━​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​\n";
-                    result += allsee + "\n";
                     result += "\n획득 포인트🤑: 🅟7,000,000\n";
                     result +=
                         "현재 레벨 " +
@@ -19401,7 +19402,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     } else if (data.member[sender].boostercnt > 0) {
                         result += "\n남은 " + GLOBAL_CONFIG.level.boosterName + ": " + numberWithCommas(data.member[sender].boostercnt || 0) + "회";
                     }
-                    result += "\n🔸️캐슬대전 최종 매력 차이🔸️\n" + allsee + numberWithCommas(castleExpGap) + "💕";
+                    result += "\n🔸️캐슬대전 최종 매력 차이🔸️\n" + numberWithCommas(castleExpGap) + "💕";
                     result += "\n\n" + checkRank(data, petData, guildData, winnerName) + " 캐슬포인트(CP): +" + numberWithCommas(winnerScore) + "pt🏆";
                     result += "\n" + checkRank(data, petData, guildData, loseName) + " 캐슬포인트(CP): -" + numberWithCommas(loseScore) + "pt🏆";
                     var castleLevelUpMessage = "";
@@ -20013,7 +20014,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     let enemyMiniPetUpgrade = petData[targetName].miniPet.upgrade || 0;
                     let resultMsg = "🐹 미니펫 대전\n";
                     resultMsg += "(대전횟수: " + remain + "/" + miniPetBattleMax + ") (리셋권: " + resetItemCount + "개)\n";
-                    resultMsg += "결과: " + (isWin ? "✅ 승리" : "❌ 패배") + "\n";
+                    resultMsg += "━━━━━━━━━━━━\n";
+                    resultMsg += miniExperienceMessage + "\n";
+                    resultMsg += "━━━━━━━━━━━━\n\n";
+                    resultMsg += (isWin ? "✅ 승리" : "❌ 패배") + " [" + checkRank(data, petData, guildData, sender) + "] 🆚 [" + checkRank(data, petData, guildData, targetName) + "]\n";
+                    resultMsg += "📊 미니펫대전 상세결과" + allsee + "\n";
                     resultMsg += "━━━━━━━━━━━━\n\n";
                     resultMsg += "⚔️ 공격\n";
                     resultMsg += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
@@ -20029,15 +20034,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     resultMsg += "미니펫매력: " + numberWithCommas(enemyBase) + "💕\n";
                     resultMsg += "최종: " + numberWithCommas(enemyFinal) + "💕" + (isEnemyCrit ? " 💥크리티컬" : "") + "\n\n";
                     resultMsg += "━━━━━━━━━━━━\n";
-                    resultMsg += "📊 최종 매력 비교" + allsee + "\n";
+                    resultMsg += "📊 최종 매력 비교\n";
                     resultMsg += numberWithCommas(myFinal) + " " + miniPetCompareSymbol + " " + numberWithCommas(enemyFinal) + "\n";
                     resultMsg += "매력 차이: " + numberWithCommas(miniPetExpGap) + "💕\n\n";
                     resultMsg += isWin ? "🏆 공격 승리\n" : "🛡️ 방어 승리\n";
                     resultMsg += isWin ? checkRank(data, petData, guildData, sender) + " 님이 미니펫대전에서 승리했습니다!\n" : checkRank(data, petData, guildData, targetName) + " 님이 미니펫대전에서 승리했습니다!\n";
-                    resultMsg += miniExperienceMessage + "\n\n";
                     resultMsg +=
                         "━ ✦ 획득포인트 및 경험치 상세정보✦ ━​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​";
-                    resultMsg += "\n" + allsee + "\n";
+                    resultMsg += "\n";
                     resultMsg += "획득 포인트🤑: 🅟" + numberWithCommas(rewardPoint) + "\n";
                     resultMsg += "획득 아이템💰: " + rewardItemName + " x " + rewardItemCount + "\n";
                     resultMsg +=
