@@ -7088,7 +7088,7 @@ Status: VERIFIED
 
 ---
 
-# /인증필요 · /미정 [이름] · /정보 [유저명]
+# /인증필요 · /미정 [이름] · /정보 [유저명] · /기록 [내용] · /기록실
 
 Status: VERIFIED
 
@@ -7101,7 +7101,7 @@ Status: VERIFIED
 
 - `isAdminIdentity`
 - `isMasterIdentity`
-- `isGlobalOperatorLookupCommandAllowed`
+- `isGlobalOperatorCommandAllowed`
 - `isGlobalInfoCommandAllowed`
 
 ## AI Notes
@@ -7109,6 +7109,8 @@ Status: VERIFIED
 - `/인증필요`는 기존 Admin 권한을 유지하며 채팅방과 길드 영지전·펫무쌍·맞짱필드 진행 여부에 관계없이 사용할 수 있다.
 - `/미정 [이름]`과 `/정보 [유저명]`은 기존 Admin/Master 권한을 유지하며 모든 방에서 사용할 수 있다.
 - `/정보`는 권한이 확인된 경우 1:1톡 패스·이벤트 제한을 통과하며, 일반 사용자의 기존 제한은 유지한다.
+- `/기록 [내용]`과 `/기록실`은 기존 Admin/Master 권한을 유지하며 모든 방과 이벤트 진행 중에 사용할 수 있다.
+- `/기록` 등록은 정확한 명령 형식만 허용해 `/기록삭제` 등 다른 기록 관리 명령과 충돌하지 않는다.
 
 ---
 
@@ -7140,9 +7142,9 @@ Status: VERIFIED
 
 ## Save Flow
 
-- 계정별 대상 수량을 `PENDING` 처리 기록으로 먼저 저장한 뒤 펫스킬 회수 파일을 저장한다.
-- 회수 저장이 끝나면 `SKILLS_REMOVED`를 기록하고, 같은 수량의 펫스킬북 지급과 `COMPLETE`를 `member.json`에 함께 저장한다.
-- 중간에 실패하면 저장된 단계에서 재개하고 `COMPLETE` 계정은 다시 지급하지 않는다.
+- 전체 계정의 기존 `PENDING`·`SKILLS_REMOVED` 기록을 이어받아 메모리에서 회수와 보상을 계산하고 `COMPLETE`로 정리한다.
+- 계정별 반복 저장 없이 `petSkillData.json`과 `member.json`을 각각 한 번만 저장한다.
+- 두 파일 중 하나라도 저장에 실패하면 명령 단위 저장 트랜잭션이 실행 전 백업으로 복구하며, 이미 `COMPLETE`인 계정은 다시 지급하지 않는다.
 
 ## AI Notes
 

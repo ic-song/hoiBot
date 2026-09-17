@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.542"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.543"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -3342,7 +3342,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
             return;
         }
-        if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg) && !isGlobalOperatorLookupCommandAllowed(sender, msg)) {
+        if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg) && !isGlobalOperatorCommandAllowed(sender, msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
                     "허용 명령어: /영지공격, /영지온, /영지오프, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
@@ -3372,31 +3372,34 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var retirementUsers = Object.keys(data.member);
             for (var retirementUserIndex = 0; retirementUserIndex < retirementUsers.length; retirementUserIndex++) {
                 var retirementUser = retirementUsers[retirementUserIndex];
+                var retirementRecord = retirementLedger.users[retirementUser];
+                if (retirementRecord && retirementRecord.status === "COMPLETE") {
+                    retirementSummary.skippedUsers++;
+                    continue;
+                }
+                var retirementMemberBagBefore = JSON.stringify(data.member[retirementUser].bag || {});
+                var retirementSkillBefore = petSkillData.hasOwnProperty(retirementUser) ? JSON.stringify(petSkillData[retirementUser]) : null;
+                var retirementRecordBefore = retirementLedger.users.hasOwnProperty(retirementUser) ? JSON.stringify(retirementLedger.users[retirementUser]) : null;
                 try {
-                    var retirementRecord = retirementLedger.users[retirementUser];
-                    if (retirementRecord && retirementRecord.status === "COMPLETE") {
-                        retirementSummary.skippedUsers++;
-                        continue;
+                    if (retirementRecord && retirementRecord.status === "FAILED") {
+                        retirementRecord = createPetSkillRetirementCompensationRecord(countRetiredPetSkillHoldings(petSkillData, retirementUser));
+                        retirementLedger.users[retirementUser] = retirementRecord;
                     }
                     if (!retirementRecord) {
                         var retirementCounts = countRetiredPetSkillHoldings(petSkillData, retirementUser);
                         retirementRecord = createPetSkillRetirementCompensationRecord(retirementCounts);
                         retirementLedger.users[retirementUser] = retirementRecord;
-                        saveJsonFile(data, filePath);
                     }
                     if (retirementRecord.status === "PENDING") {
                         removeRetiredPetSkillHoldings(petSkillData, retirementUser);
-                        saveJsonFile(petSkillData, petSkillDataPath);
                         retirementRecord.status = "SKILLS_REMOVED";
                         retirementRecord.skillsRemovedAt = formatDateTime(new Date());
-                        saveJsonFile(data, filePath);
                     }
                     if (retirementRecord.status === "SKILLS_REMOVED") {
                         if (retirementRecord.rewardCount > 0) addItem(data, retirementUser, GLOBAL_CONFIG.petSkill.bookItemName, retirementRecord.rewardCount);
                         retirementRecord.status = "COMPLETE";
                         retirementRecord.completedAt = formatDateTime(new Date());
                         retirementRecord.lastError = "";
-                        saveJsonFile(data, filePath);
                     }
                     if (retirementRecord.rewardCount > 0) {
                         retirementSummary.rewardedUsers++;
@@ -3408,17 +3411,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                 } catch (retirementError) {
                     retirementSummary.failedUsers++;
-                    if (retirementLedger.users[retirementUser]) {
+                    data.member[retirementUser].bag = JSON.parse(retirementMemberBagBefore);
+                    if (retirementSkillBefore === null) delete petSkillData[retirementUser];
+                    else petSkillData[retirementUser] = JSON.parse(retirementSkillBefore);
+                    if (retirementRecordBefore === null) retirementLedger.users[retirementUser] = { status: "FAILED", lastError: String(retirementError), failedAt: formatDateTime(new Date()) };
+                    else {
+                        retirementLedger.users[retirementUser] = JSON.parse(retirementRecordBefore);
                         retirementLedger.users[retirementUser].lastError = String(retirementError);
-                        try {
-                            saveJsonFile(data, filePath);
-                        } catch (retirementSaveError) {
-                            debuggerLog("[ERROR : 폐지 펫스킬 보상 실패 기록] " + retirementSaveError.toString());
-                        }
+                        retirementLedger.users[retirementUser].failedAt = formatDateTime(new Date());
                     }
                     debuggerLog("[ERROR : 폐지 펫스킬 보상] " + retirementUser + " - " + retirementError.toString());
                 }
             }
+            saveJsonFile(petSkillData, petSkillDataPath);
+            saveJsonFile(data, filePath);
             replier.reply(buildPetSkillRetirementCompensationResultMessage(retirementSummary));
             return;
         }
@@ -3548,7 +3554,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(data, filePath);
         }
         var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 운영 명령 사용 가능 대상
-        var isMatzangOperatorCommand = (isMatzangOperator && isMatzangOperatorCommandMessage(msg)) || isCastleSiegeRoomOperatorCommand(sender, msg) || isGlobalOperatorLookupCommandAllowed(sender, msg); // 운영자에게만 허용할 관리 명령 여부
+        var isMatzangOperatorCommand = (isMatzangOperator && isMatzangOperatorCommandMessage(msg)) || isCastleSiegeRoomOperatorCommand(sender, msg) || isGlobalOperatorCommandAllowed(sender, msg); // 운영자에게만 허용할 관리 명령 여부
         if (matzangField.active && !matzangField.resting && !isMatzangOperatorCommand && !isMatzangAllowedDuringFieldCommand(msg)) {
             if (msg.indexOf("/") === 0 || isMatzangBlockedPlainCommandAlias(msg)) {
                 replier.reply(
@@ -6089,7 +6095,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
-                if (!data.member[sender].agree && !isGlobalOperatorLookupCommandAllowed(sender, msg)) {
+                if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg)) {
                     // 약관동의 안할 시 사용불가
                     saveJsonFile(data, filePath);
                     return;
@@ -19454,7 +19460,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if (msg === "/기록실") {
-                    if (!(isMaster(sender) || isAdmin(sender))) {
+                    if (!(isMasterIdentity(sender) || isAdminIdentity(sender))) {
                         // replier.reply('❌ 권한이 없습니다.');
                         return;
                     }
@@ -19537,8 +19543,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (msg.startsWith("/기록")) {
-                    if (!(isMaster(sender) || isAdmin(sender))) {
+                if (msg === "/기록" || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg)) {
+                    if (!(isMasterIdentity(sender) || isAdminIdentity(sender))) {
                         // replier.reply('❌ 권한이 없습니다.');
                         return;
                     }
@@ -30451,12 +30457,14 @@ function isMasterIdentity(sender) {
     return Master.indexOf(sender) !== -1;
 }
 
-// 방·이벤트 제한 없이 허용할 운영 조회 명령과 기존 역할을 확인하는 함수
-function isGlobalOperatorLookupCommandAllowed(sender, msg) {
+// 방·이벤트 제한 없이 허용할 운영 명령과 기존 역할을 확인하는 함수
+function isGlobalOperatorCommandAllowed(sender, msg) {
     if (typeof msg !== "string") return false;
     if (msg === "/인증필요") return isAdminIdentity(sender);
     if (msg === "/미정" || msg.indexOf("/미정 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
     if (msg === "/정보" || msg.indexOf("/정보 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
+    if (msg === "/기록실") return isAdminIdentity(sender) || isMasterIdentity(sender);
+    if (msg === "/기록" || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg)) return isAdminIdentity(sender) || isMasterIdentity(sender);
     return false;
 }
 
@@ -30546,7 +30554,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
         command === "/소식" || command === "/소식등록" || /^\/소식삭제\s+\d+$/.test(command) ||
-        /^\/알림\s+.+$/.test(command) || command === "/글자수전체정리" ||
+        /^\/알림\s+.+$/.test(command) || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
 }
 
@@ -37090,7 +37098,7 @@ function isPetMusouLightningRateCommand(msg) {
 function isPetMusouBlockedDuringTournamentCommand(musou, msg, sender) {
     if (!musou || !musou.active || typeof msg !== "string") return false;
     if (!musou.startReady && musou.signupOpen && msg === "/펫무쌍준비") return false;
-    if (isPetMusouOperator(sender) || isGlobalOperatorLookupCommandAllowed(sender, msg)) return false;
+    if (isPetMusouOperator(sender) || isGlobalOperatorCommandAllowed(sender, msg)) return false;
     if (msg === "/펫무쌍시작" && isPetMusouStartOperator(sender)) return false;
     return !isPetMusouAllowedDuringTournamentCommand(msg);
 }
