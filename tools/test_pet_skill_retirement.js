@@ -80,8 +80,10 @@ const mainChecks = [
     'targetSkillData.retired === true',
     'skillData.collectionEligible === false',
     'command === "/펫스킬북보상"',
-    'isGlobalOperatorLookupCommandAllowed(sender, msg)',
-    '!data.member[sender].agree && !isGlobalOperatorLookupCommandAllowed(sender, msg)',
+    'isGlobalOperatorCommandAllowed(sender, msg)',
+    '!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg)',
+    'if (msg === "/기록실") return isAdminIdentity(sender) || isMasterIdentity(sender)',
+    'if (msg === "/기록" || /^\\/기록\\s+',
     'msg === "/인증필요" && isAdminIdentity(sender)',
     'isMasterIdentity(sender) || isAdminIdentity(sender)'
 ];
@@ -96,6 +98,23 @@ const infoChecks = [
 ];
 for (const expected of infoChecks) {
     if (infoSource.indexOf(expected) < 0) throw new Error("Info.js 연결 검증 실패: " + expected);
+}
+
+const compensationCommandStart = source.indexOf('if (msg === "/펫스킬북보상")');
+const compensationCommandEnd = source.indexOf('var shouldCleanupAllPremiumUsers', compensationCommandStart);
+const compensationCommandSource = source.slice(compensationCommandStart, compensationCommandEnd);
+const compensationSaveCalls = compensationCommandSource.match(/saveJsonFile\(/g) || [];
+if (compensationSaveCalls.length !== 2) {
+    throw new Error("/펫스킬북보상 저장 횟수 검증 실패: " + compensationSaveCalls.length);
+}
+const compensationLoopEnd = compensationCommandSource.indexOf('saveJsonFile(petSkillData, petSkillDataPath)');
+const compensationLoopSource = compensationCommandSource.slice(0, compensationLoopEnd);
+if (compensationLoopSource.indexOf('saveJsonFile(') >= 0) {
+    throw new Error("/펫스킬북보상 계정 반복 구간에 파일 저장이 남아 있습니다.");
+}
+
+if (source.indexOf('if (msg === "/기록" || /^\\/기록\\s+') < 0 || source.indexOf('if (!(isMasterIdentity(sender) || isAdminIdentity(sender)))') < 0) {
+    throw new Error("기록 명령 전역 권한·정확한 패턴 연결 검증 실패");
 }
 
 console.log("PASS pet skill retirement compensation and global operator lookup commands");
