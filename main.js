@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.543"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.544"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -83,7 +83,7 @@ var guildLevelTable = {
 
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_SYSTEM_VERSION = 2;
-const PET_SKILL_RETIREMENT_COMPENSATION_VERSION = "2026-09-17-v1";
+const PET_SKILL_RETIREMENT_COMPENSATION_VERSION = "2026-09-17-v2-collection";
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const PET_SKILL_BAG_MAX_COUNT = 100;
 const PET_SKILL_SELL_PRICE = 1000000000;
@@ -3368,44 +3368,68 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             var retirementLedger = ensurePetSkillRetirementCompensationLedger(data);
-            var retirementSummary = { rewardedUsers: 0, noTargetUsers: 0, skippedUsers: 0, failedUsers: 0, transcendenceCount: 0, soloLevelingCount: 0, rewardCount: 0 };
+            var retirementSummary = { rewardedUsers: 0, noTargetUsers: 0, skippedUsers: 0, failedUsers: 0, transcendenceCount: 0, soloLevelingCount: 0, collectionCount: 0, rewardCount: 0 };
             var retirementUsers = Object.keys(data.member);
             for (var retirementUserIndex = 0; retirementUserIndex < retirementUsers.length; retirementUserIndex++) {
                 var retirementUser = retirementUsers[retirementUserIndex];
                 var retirementRecord = retirementLedger.users[retirementUser];
-                if (retirementRecord && retirementRecord.status === "COMPLETE") {
+                var retirementCollectionRecord = retirementLedger.collectionUsers[retirementUser];
+                if (retirementRecord && retirementRecord.status === "COMPLETE" && retirementCollectionRecord && retirementCollectionRecord.status === "COMPLETE") {
                     retirementSummary.skippedUsers++;
                     continue;
                 }
                 var retirementMemberBagBefore = JSON.stringify(data.member[retirementUser].bag || {});
                 var retirementSkillBefore = petSkillData.hasOwnProperty(retirementUser) ? JSON.stringify(petSkillData[retirementUser]) : null;
                 var retirementRecordBefore = retirementLedger.users.hasOwnProperty(retirementUser) ? JSON.stringify(retirementLedger.users[retirementUser]) : null;
+                var retirementCollectionRecordBefore = retirementLedger.collectionUsers.hasOwnProperty(retirementUser) ? JSON.stringify(retirementLedger.collectionUsers[retirementUser]) : null;
                 try {
-                    if (retirementRecord && retirementRecord.status === "FAILED") {
-                        retirementRecord = createPetSkillRetirementCompensationRecord(countRetiredPetSkillHoldings(petSkillData, retirementUser));
-                        retirementLedger.users[retirementUser] = retirementRecord;
+                    var retirementPendingRecords = [];
+                    var retirementUserRewardCount = 0;
+                    var retirementUserTranscendenceCount = 0;
+                    var retirementUserSoloLevelingCount = 0;
+                    var retirementUserCollectionCount = 0;
+                    if (!retirementRecord || retirementRecord.status !== "COMPLETE") {
+                        if (!retirementRecord || retirementRecord.status === "FAILED") {
+                            retirementRecord = createPetSkillRetirementCompensationRecord(countRetiredPetSkillHoldings(petSkillData, retirementUser));
+                            retirementLedger.users[retirementUser] = retirementRecord;
+                        }
+                        if (retirementRecord.status === "PENDING") {
+                            removeRetiredPetSkillHoldings(petSkillData, retirementUser);
+                            retirementRecord.status = "SKILLS_REMOVED";
+                            retirementRecord.skillsRemovedAt = formatDateTime(new Date());
+                        }
+                        if (retirementRecord.status === "SKILLS_REMOVED") {
+                            retirementPendingRecords.push(retirementRecord);
+                            retirementUserRewardCount += retirementRecord.rewardCount;
+                            retirementUserTranscendenceCount += retirementRecord.counts.transcendence;
+                            retirementUserSoloLevelingCount += retirementRecord.counts.soloLeveling;
+                        }
                     }
-                    if (!retirementRecord) {
-                        var retirementCounts = countRetiredPetSkillHoldings(petSkillData, retirementUser);
-                        retirementRecord = createPetSkillRetirementCompensationRecord(retirementCounts);
-                        retirementLedger.users[retirementUser] = retirementRecord;
+                    if (!retirementCollectionRecord || retirementCollectionRecord.status !== "COMPLETE") {
+                        if (!retirementCollectionRecord || retirementCollectionRecord.status === "FAILED") {
+                            retirementCollectionRecord = createPetSkillRetirementCompensationRecord(countRetiredPetSkillCollectionHoldings(petSkillData, retirementUser));
+                            retirementLedger.collectionUsers[retirementUser] = retirementCollectionRecord;
+                        }
+                        if (retirementCollectionRecord.status === "PENDING" || retirementCollectionRecord.status === "SKILLS_REMOVED") {
+                            retirementPendingRecords.push(retirementCollectionRecord);
+                            retirementUserRewardCount += retirementCollectionRecord.rewardCount;
+                            retirementUserTranscendenceCount += retirementCollectionRecord.counts.transcendence;
+                            retirementUserSoloLevelingCount += retirementCollectionRecord.counts.soloLeveling;
+                            retirementUserCollectionCount += retirementCollectionRecord.rewardCount;
+                        }
                     }
-                    if (retirementRecord.status === "PENDING") {
-                        removeRetiredPetSkillHoldings(petSkillData, retirementUser);
-                        retirementRecord.status = "SKILLS_REMOVED";
-                        retirementRecord.skillsRemovedAt = formatDateTime(new Date());
+                    if (retirementUserRewardCount > 0) addItem(data, retirementUser, GLOBAL_CONFIG.petSkill.bookItemName, retirementUserRewardCount);
+                    for (var retirementPendingIndex = 0; retirementPendingIndex < retirementPendingRecords.length; retirementPendingIndex++) {
+                        retirementPendingRecords[retirementPendingIndex].status = "COMPLETE";
+                        retirementPendingRecords[retirementPendingIndex].completedAt = formatDateTime(new Date());
+                        retirementPendingRecords[retirementPendingIndex].lastError = "";
                     }
-                    if (retirementRecord.status === "SKILLS_REMOVED") {
-                        if (retirementRecord.rewardCount > 0) addItem(data, retirementUser, GLOBAL_CONFIG.petSkill.bookItemName, retirementRecord.rewardCount);
-                        retirementRecord.status = "COMPLETE";
-                        retirementRecord.completedAt = formatDateTime(new Date());
-                        retirementRecord.lastError = "";
-                    }
-                    if (retirementRecord.rewardCount > 0) {
+                    if (retirementUserRewardCount > 0) {
                         retirementSummary.rewardedUsers++;
-                        retirementSummary.transcendenceCount += retirementRecord.counts.transcendence;
-                        retirementSummary.soloLevelingCount += retirementRecord.counts.soloLeveling;
-                        retirementSummary.rewardCount += retirementRecord.rewardCount;
+                        retirementSummary.transcendenceCount += retirementUserTranscendenceCount;
+                        retirementSummary.soloLevelingCount += retirementUserSoloLevelingCount;
+                        retirementSummary.collectionCount += retirementUserCollectionCount;
+                        retirementSummary.rewardCount += retirementUserRewardCount;
                     } else {
                         retirementSummary.noTargetUsers++;
                     }
@@ -3419,6 +3443,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         retirementLedger.users[retirementUser] = JSON.parse(retirementRecordBefore);
                         retirementLedger.users[retirementUser].lastError = String(retirementError);
                         retirementLedger.users[retirementUser].failedAt = formatDateTime(new Date());
+                    }
+                    if (retirementCollectionRecordBefore === null) retirementLedger.collectionUsers[retirementUser] = { status: "FAILED", lastError: String(retirementError), failedAt: formatDateTime(new Date()) };
+                    else {
+                        retirementLedger.collectionUsers[retirementUser] = JSON.parse(retirementCollectionRecordBefore);
+                        retirementLedger.collectionUsers[retirementUser].lastError = String(retirementError);
+                        retirementLedger.collectionUsers[retirementUser].failedAt = formatDateTime(new Date());
                     }
                     debuggerLog("[ERROR : 폐지 펫스킬 보상] " + retirementUser + " - " + retirementError.toString());
                 }
@@ -44998,6 +45028,7 @@ function ensurePetSkillRetirementCompensationLedger(data) {
     }
     var ledger = data.petSkillRetirementCompensation;
     if (!ledger.users || typeof ledger.users !== "object" || ledger.users instanceof Array) ledger.users = {};
+    if (!ledger.collectionUsers || typeof ledger.collectionUsers !== "object" || ledger.collectionUsers instanceof Array) ledger.collectionUsers = {};
     ledger.version = PET_SKILL_RETIREMENT_COMPENSATION_VERSION;
     return ledger;
 }
@@ -45020,6 +45051,23 @@ function countRetiredPetSkillHoldings(petSkillData, user) {
     for (var bagName in skills.bag) {
         if (!skills.bag.hasOwnProperty(bagName)) continue;
         countSkill(bagName, skills.bag[bagName], "bag");
+    }
+    return counts;
+}
+
+// 펫스킬 컬렉션에 등록된 폐지 스킬 수량을 계산하는 함수
+function countRetiredPetSkillCollectionHoldings(petSkillData, user) {
+    var counts = { transcendence: 0, soloLeveling: 0, equipped: 0, lockedPremium: 0, bag: 0, collection: 0, total: 0 };
+    var collection = ensurePetSkillCollection(petSkillData, user);
+    for (var collectionSkillName in collection) {
+        if (!collection.hasOwnProperty(collectionSkillName)) continue;
+        var normalizedName = normalizePetSkillName(collectionSkillName);
+        var safeAmount = Math.max(0, parseInt(collection[collectionSkillName], 10) || 0);
+        if (normalizedName === "초월성장") counts.transcendence += safeAmount;
+        else if (normalizedName === "나 혼자만 레벨업") counts.soloLeveling += safeAmount;
+        else continue;
+        counts.collection += safeAmount;
+        counts.total += safeAmount;
     }
     return counts;
 }
@@ -45059,6 +45107,7 @@ function buildPetSkillRetirementCompensationResultMessage(summary) {
         "━━━━━━━━━━━━\n" +
         "초월성장 회수: " + numberWithCommas(summary.transcendenceCount) + "개\n" +
         "나혼자만레벨업 회수: " + numberWithCommas(summary.soloLevelingCount) + "개\n" +
+        "└ 컬렉션 등록분 포함: " + numberWithCommas(summary.collectionCount) + "개\n" +
         "펫스킬북📙 지급: 총 " + numberWithCommas(summary.rewardCount) + "개";
 }
 
