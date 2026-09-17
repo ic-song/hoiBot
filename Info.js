@@ -170,6 +170,21 @@ function isMaster(sender) {
 	return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
 }
 
+// 채팅방과 관계없이 Admin 명단에 포함된 사용자인지 확인하는 함수
+function isAdminIdentity(sender) {
+	return Admins.indexOf(sender) !== -1;
+}
+
+// 채팅방과 관계없이 Master 명단에 포함된 사용자인지 확인하는 함수
+function isMasterIdentity(sender) {
+	return Master.indexOf(sender) !== -1;
+}
+
+// /정보의 기존 Admin/Master 역할을 유지하면서 모든 방에서 허용하는 함수
+function isGlobalInfoCommandAllowed(sender, msg) {
+	return typeof msg === "string" && (msg === "/정보" || msg.indexOf("/정보 ") === 0) && (isAdminIdentity(sender) || isMasterIdentity(sender));
+}
+
 
 // Info에서 현재 레벨의 필요 경험치를 반환하는 함수
 function getInfoLevelRequiredExperience(level) {
@@ -435,21 +450,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		let data = loadJsonFile(filePath);
+		var isGlobalInfoCommand = isGlobalInfoCommandAllowed(sender, msg);
 		// 펫무쌍 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 차단합니다.
-		if (data && data.petMusou && data.petMusou.active && !(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
-		if (!isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
+		if (data && data.petMusou && data.petMusou.active && !isGlobalInfoCommand && !(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
+		if (!isGlobalInfoCommand && !isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
 			return;
 		}
 		var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 중 관리 정보 명령 사용 가능 대상
 		var isMatzangInfoOperatorCommand = isMatzangOperator && isMatzangInfoOperatorCommandMessage(msg); // Info.js 관리 명령 여부
-		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isMatzangInfoOperatorCommand) {
+		if (data && data.matzangField && data.matzangField.active === true && data.matzangField.resting !== true && !isGlobalInfoCommand && !isMatzangInfoOperatorCommand) {
 			return;
 		}
 		if (isAccountSuspensionBlockedMessage(msg) && isAccountSuspended(data, sender)) {
 			replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
 			return;
 		}
-		if (data && data.member && data.member[sender] && data.member[sender].agree != true) {
+		if (!isGlobalInfoCommand && data && data.member && data.member[sender] && data.member[sender].agree != true) {
 			return;
 		}
 		var petData = loadJsonFile(memberPetPath);
@@ -458,7 +474,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var petTitleData = loadJsonFile(petTitlePath);
 		var guildData = loadJsonFile(guildPath);
 
-		if (msg.startsWith("/정보") && (isAdmin(sender) || isMaster(sender))) {
+		if (msg.startsWith("/정보") && (isAdminIdentity(sender) || isMasterIdentity(sender))) {
 			var targetUser = msg.substring("/정보".length).trim();
 			if (data.member[targetUser]) {
 				let memberInfo = data.member[targetUser];

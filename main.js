@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.541"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.542"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -83,6 +83,7 @@ var guildLevelTable = {
 
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_SYSTEM_VERSION = 2;
+const PET_SKILL_RETIREMENT_COMPENSATION_VERSION = "2026-09-17-v1";
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const PET_SKILL_BAG_MAX_COUNT = 100;
 const PET_SKILL_SELL_PRICE = 1000000000;
@@ -150,7 +151,7 @@ const PET_SKILL_LIST = [
     { name: "시련을 걷는 자", grade: "B", rate: 2.0, effect: "10% 확률로 시련의 탑 공략 성공" },
     { name: "결혼못한 대장장이", grade: "B", rate: 2.0, effect: "/펜던트강화 성공 확률 1% 증가" },
     { name: "구원", grade: "B", rate: 2.3, effect: "시련의탑 50% 확률로 순간 매력 50만 지원" },
-    { name: "나 혼자만 레벨업", grade: "B", rate: 2.3, effect: "레벨 리뉴얼로 레벨업 보상 효과가 종료되었습니다." },
+    { name: "나 혼자만 레벨업", grade: "B", rate: 2.3, openable: false, showUnopenableRate: true, retired: true, collectionEligible: false, effect: "레벨 리뉴얼로 폐지되어 효과가 종료되었습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "헌터", grade: "B", rate: 2.4, effect: "/미니펫대전 시 7% 확률로 미니펫뽑기 1개 획득" },
     { name: "광산탐험가", grade: "B", rate: 2.5, effect: "펫강화/친밀도/행운 탐험 성공확률 5% 상승" },
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
@@ -169,7 +170,7 @@ const PET_SKILL_LIST = [
     { name: "기도", grade: "C", rate: 1.5, effect: "하루 한 번 호월신에게 기도를 올립니다.\n3% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 신성한 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
     { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
-    { name: "초월성장", grade: "C", rate: 4.5, effect: "레벨 리뉴얼로 레벨업 보상 효과가 종료되었습니다." },
+    { name: "초월성장", grade: "C", rate: 4.5, openable: false, showUnopenableRate: true, retired: true, collectionEligible: false, effect: "레벨 리뉴얼로 폐지되어 효과가 종료되었습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "망므", grade: "C", rate: 4.0, heartBonus: 5, equipComment: "이건 내 망므야!", equipCommentNoColon: true, effect: "하루 마음 보내기 가능 횟수가 5회 증가합니다.\n펫스킬을 해제하면 추가된 일일 한도 5회는 회수됩니다." },
     { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
@@ -3341,7 +3342,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
             return;
         }
-        if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
+        if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(guildData) && isGuildTerritoryBlockedDuringWarCommand(msg) && !isGlobalOperatorLookupCommandAllowed(sender, msg)) {
             replier.reply(
                 "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다.\n\n" +
                     "허용 명령어: /영지공격, /영지온, /영지오프, /길드영지순서, /길드영지순위, /영지순위보상, /영지보상순위, /안정, /불안정, /균열, /대균열, /길드영지초기화, /길드영지종료, /길드영지"
@@ -3360,6 +3361,66 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(petData, memberPetPath);
             saveJsonFile(petSkillData, petSkillDataPath);
             addResponseTiming("펫스킬 보정 저장", commonStepStart);
+        }
+        if (msg === "/펫스킬북보상") {
+            if (!(isAdmin(sender) || isMaster(sender))) {
+                replier.reply("❌ 관리자만 사용할 수 있습니다.");
+                return;
+            }
+            var retirementLedger = ensurePetSkillRetirementCompensationLedger(data);
+            var retirementSummary = { rewardedUsers: 0, noTargetUsers: 0, skippedUsers: 0, failedUsers: 0, transcendenceCount: 0, soloLevelingCount: 0, rewardCount: 0 };
+            var retirementUsers = Object.keys(data.member);
+            for (var retirementUserIndex = 0; retirementUserIndex < retirementUsers.length; retirementUserIndex++) {
+                var retirementUser = retirementUsers[retirementUserIndex];
+                try {
+                    var retirementRecord = retirementLedger.users[retirementUser];
+                    if (retirementRecord && retirementRecord.status === "COMPLETE") {
+                        retirementSummary.skippedUsers++;
+                        continue;
+                    }
+                    if (!retirementRecord) {
+                        var retirementCounts = countRetiredPetSkillHoldings(petSkillData, retirementUser);
+                        retirementRecord = createPetSkillRetirementCompensationRecord(retirementCounts);
+                        retirementLedger.users[retirementUser] = retirementRecord;
+                        saveJsonFile(data, filePath);
+                    }
+                    if (retirementRecord.status === "PENDING") {
+                        removeRetiredPetSkillHoldings(petSkillData, retirementUser);
+                        saveJsonFile(petSkillData, petSkillDataPath);
+                        retirementRecord.status = "SKILLS_REMOVED";
+                        retirementRecord.skillsRemovedAt = formatDateTime(new Date());
+                        saveJsonFile(data, filePath);
+                    }
+                    if (retirementRecord.status === "SKILLS_REMOVED") {
+                        if (retirementRecord.rewardCount > 0) addItem(data, retirementUser, GLOBAL_CONFIG.petSkill.bookItemName, retirementRecord.rewardCount);
+                        retirementRecord.status = "COMPLETE";
+                        retirementRecord.completedAt = formatDateTime(new Date());
+                        retirementRecord.lastError = "";
+                        saveJsonFile(data, filePath);
+                    }
+                    if (retirementRecord.rewardCount > 0) {
+                        retirementSummary.rewardedUsers++;
+                        retirementSummary.transcendenceCount += retirementRecord.counts.transcendence;
+                        retirementSummary.soloLevelingCount += retirementRecord.counts.soloLeveling;
+                        retirementSummary.rewardCount += retirementRecord.rewardCount;
+                    } else {
+                        retirementSummary.noTargetUsers++;
+                    }
+                } catch (retirementError) {
+                    retirementSummary.failedUsers++;
+                    if (retirementLedger.users[retirementUser]) {
+                        retirementLedger.users[retirementUser].lastError = String(retirementError);
+                        try {
+                            saveJsonFile(data, filePath);
+                        } catch (retirementSaveError) {
+                            debuggerLog("[ERROR : 폐지 펫스킬 보상 실패 기록] " + retirementSaveError.toString());
+                        }
+                    }
+                    debuggerLog("[ERROR : 폐지 펫스킬 보상] " + retirementUser + " - " + retirementError.toString());
+                }
+            }
+            replier.reply(buildPetSkillRetirementCompensationResultMessage(retirementSummary));
+            return;
         }
         var shouldCleanupAllPremiumUsers = ((msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) ||
             (msg === "/자동출첵" && (isMaster(sender) || sender === "오픈채팅봇"));
@@ -3487,7 +3548,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(data, filePath);
         }
         var isMatzangOperator = isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇"; // 맞짱필드 운영 명령 사용 가능 대상
-        var isMatzangOperatorCommand = (isMatzangOperator && isMatzangOperatorCommandMessage(msg)) || isCastleSiegeRoomOperatorCommand(sender, msg); // 운영자에게만 허용할 관리 명령 여부
+        var isMatzangOperatorCommand = (isMatzangOperator && isMatzangOperatorCommandMessage(msg)) || isCastleSiegeRoomOperatorCommand(sender, msg) || isGlobalOperatorLookupCommandAllowed(sender, msg); // 운영자에게만 허용할 관리 명령 여부
         if (matzangField.active && !matzangField.resting && !isMatzangOperatorCommand && !isMatzangAllowedDuringFieldCommand(msg)) {
             if (msg.indexOf("/") === 0 || isMatzangBlockedPlainCommandAlias(msg)) {
                 replier.reply(
@@ -4368,6 +4429,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
 
+                    if (addSkillData.retired === true) {
+                        replier.reply("❌ 폐지된 펫스킬은 새로 지급할 수 없습니다: " + formatPetSkillName(addSkillData.name));
+                        return;
+                    }
+
                     if (addSkillData.directGrantOnly === true && !directGrantSkillData) {
                         replier.reply("❌ " + formatPetSkillName(addSkillData.name) + "[" + addSkillData.grade + "]은(는)\n" + addSkillData.directGrantUsage + "\n명령어로만 지급할 수 있습니다.");
                         return;
@@ -4465,6 +4531,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (!bSkillData) {
                             bulkResults.fail++;
                             bulkResults.failDetail.push((bIdx + 1) + "줄: 펫스킬 없음 — " + bSkillRaw);
+                            continue;
+                        }
+
+                        if (bSkillData.retired === true) {
+                            bulkResults.fail++;
+                            bulkResults.failDetail.push((bIdx + 1) + "줄: 폐지된 펫스킬 — " + formatPetSkillName(bSkillData.name));
                             continue;
                         }
 
@@ -5121,6 +5193,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var tradeSkillName = senderSkillBag[skillTradeIndex - 1];
+                    if (isRetiredPetSkill(tradeSkillName)) {
+                        replier.reply("❌ 폐지된 펫스킬은 거래할 수 없습니다.\n관리자에게 /펫스킬북보상 처리를 요청해 주세요.");
+                        return;
+                    }
                     var senderSkillStore = initPetSkillUser(petSkillData, sender);
                     if ((senderSkillStore.bag[tradeSkillName] || 0) < skillTradeCount) {
                         replier.reply("❌ 스킬북 수량이 부족합니다.");
@@ -5498,6 +5574,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var skillMarketName = skillMarketList[skillMarketIndex - 1];
+                    if (isRetiredPetSkill(skillMarketName)) {
+                        replier.reply("❌ 폐지된 펫스킬은 자유시장에 등록할 수 없습니다.\n관리자에게 /펫스킬북보상 처리를 요청해 주세요.");
+                        return;
+                    }
                     var skillMarketStore = initPetSkillUser(petSkillData, sender);
                     if ((skillMarketStore.bag[skillMarketName] || 0) < skillMarketCount) {
                         replier.reply("❌ 스킬북 수량이 부족합니다.");
@@ -5634,6 +5714,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (!buyListing) {
                         replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
+                        return;
+                    }
+                    if (buyListing.type === "skill" && isRetiredPetSkill(buyListing.itemName)) {
+                        replier.reply("❌ 폐지된 펫스킬 거래는 구매할 수 없습니다.\n판매자가 거래를 취소한 뒤 관리자에게 /펫스킬북보상 처리를 요청해 주세요.");
                         return;
                     }
                     if (buyListing.seller === sender) {
@@ -6005,7 +6089,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
-                if (!data.member[sender].agree) {
+                if (!data.member[sender].agree && !isGlobalOperatorLookupCommandAllowed(sender, msg)) {
                     // 약관동의 안할 시 사용불가
                     saveJsonFile(data, filePath);
                     return;
@@ -7275,7 +7359,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/미정" || /^\/미정\s+\S(?:.*\S)?\s*$/.test(msg)) {
-                    if (!(isMaster(sender) || isAdmin(sender))) {
+                    if (!(isMasterIdentity(sender) || isAdminIdentity(sender))) {
                         replier.reply("❌ 관리자만 사용할 수 있습니다.");
                         return;
                     }
@@ -8322,7 +8406,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
                     }
                 }
-                if ((msg === "/가입인증" || msg === "/인증필요" || msg === "/가입인증 목록") && isAdmin(sender)) {
+                if (((msg === "/가입인증" || msg === "/가입인증 목록") && isAdmin(sender)) || (msg === "/인증필요" && isAdminIdentity(sender))) {
                     let checkmsg1 = "\n1일차 : ";
                     let checkmsg2 = "\n2일차 : ";
                     let checkmsg3 = "\n3일차 : ";
@@ -30357,6 +30441,25 @@ function isMaster(sender) {
     return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
 }
 
+// 채팅방과 관계없이 Admin 명단에 포함된 사용자인지 확인하는 함수
+function isAdminIdentity(sender) {
+    return Admins.indexOf(sender) !== -1;
+}
+
+// 채팅방과 관계없이 Master 명단에 포함된 사용자인지 확인하는 함수
+function isMasterIdentity(sender) {
+    return Master.indexOf(sender) !== -1;
+}
+
+// 방·이벤트 제한 없이 허용할 운영 조회 명령과 기존 역할을 확인하는 함수
+function isGlobalOperatorLookupCommandAllowed(sender, msg) {
+    if (typeof msg !== "string") return false;
+    if (msg === "/인증필요") return isAdminIdentity(sender);
+    if (msg === "/미정" || msg.indexOf("/미정 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
+    if (msg === "/정보" || msg.indexOf("/정보 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
+    return false;
+}
+
 // 공성전 전용방에서 요청된 다섯 운영 명령의 기존 권한을 확인하는 함수
 function isCastleSiegeRoomOperatorCommand(sender, msg) {
     if (getCurrentContext().permissionRoom !== room8 || typeof msg !== "string") return false;
@@ -30434,7 +30537,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/펜던트승급\s+\d+$/.test(command) || command === "승급할거임" || command === "쫄아뜸" ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
-        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) ||
+        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
@@ -36987,7 +37090,7 @@ function isPetMusouLightningRateCommand(msg) {
 function isPetMusouBlockedDuringTournamentCommand(musou, msg, sender) {
     if (!musou || !musou.active || typeof msg !== "string") return false;
     if (!musou.startReady && musou.signupOpen && msg === "/펫무쌍준비") return false;
-    if (isPetMusouOperator(sender)) return false;
+    if (isPetMusouOperator(sender) || isGlobalOperatorLookupCommandAllowed(sender, msg)) return false;
     if (msg === "/펫무쌍시작" && isPetMusouStartOperator(sender)) return false;
     return !isPetMusouAllowedDuringTournamentCommand(msg);
 }
@@ -44608,7 +44711,7 @@ function buildPetSkillCollectionProgressLines(collection) {
         lines.push("━━━" + grade + " 등급━━━");
         for (var skillIndex = 0; skillIndex < PET_SKILL_LIST.length; skillIndex++) {
             var skillData = PET_SKILL_LIST[skillIndex];
-            if (skillData.grade !== grade) continue;
+            if (skillData.grade !== grade || skillData.collectionEligible === false) continue;
             collectionNumber++;
             var count = getPetSkillCollectionCount(collection, skillData.name);
             lines.push("[" + collectionNumber + "] " + formatPetSkillName(skillData.name) + " [" + count + "/" + maxCount + "]" + (count === maxCount ? " ✅" : ""));
@@ -44626,7 +44729,7 @@ function getPetSkillCollectionTargetList() {
         var grade = gradeOrder[gradeIndex];
         for (var skillIndex = 0; skillIndex < PET_SKILL_LIST.length; skillIndex++) {
             var skillData = PET_SKILL_LIST[skillIndex];
-            if (skillData.grade === grade) targets.push(skillData);
+            if (skillData.grade === grade && skillData.collectionEligible !== false) targets.push(skillData);
         }
     }
     return targets;
@@ -44860,6 +44963,7 @@ function normalizePetSkillName(skillName) {
     else if (skillName === "기사단증원") return "기사단 증원";
     else if (skillName === "타고난장사꾼") return "타고난 장사꾼";
     else if (skillName === "티어상승론") return "티어 상승론";
+    else if (skillName === "나혼자만레벨업") return "나 혼자만 레벨업";
     else if (skillName === "망한건맞아") return "망한건 맞아";
     else if (skillName === "전설의소매치기" || skillName === "전설의소매채기" || skillName === "전설의 소매채기") return "전설의 소매치기";
     else if (skillName === "광산 탐험가") return "광산탐험가";
@@ -44871,6 +44975,83 @@ function normalizePetSkillName(skillName) {
 function formatPetSkillName(skillName) {
     skillName = normalizePetSkillName(skillName);
     return skillName ? skillName + "📙" : "";
+}
+
+// 폐지된 펫스킬인지 확인하는 함수
+function isRetiredPetSkill(skillName) {
+    var skillData = getPetSkillData(skillName);
+    return !!(skillData && skillData.retired === true);
+}
+
+// 폐지 펫스킬 보상 처리 기록 구조를 보장하는 함수
+function ensurePetSkillRetirementCompensationLedger(data) {
+    if (!data.petSkillRetirementCompensation || typeof data.petSkillRetirementCompensation !== "object") {
+        data.petSkillRetirementCompensation = { version: PET_SKILL_RETIREMENT_COMPENSATION_VERSION, users: {} };
+    }
+    var ledger = data.petSkillRetirementCompensation;
+    if (!ledger.users || typeof ledger.users !== "object" || ledger.users instanceof Array) ledger.users = {};
+    ledger.version = PET_SKILL_RETIREMENT_COMPENSATION_VERSION;
+    return ledger;
+}
+
+// 장착·프리미엄 잠금·가방에 보유한 폐지 펫스킬 수량을 계산하는 함수
+function countRetiredPetSkillHoldings(petSkillData, user) {
+    var skills = initPetSkillUser(petSkillData, user);
+    var counts = { transcendence: 0, soloLeveling: 0, equipped: 0, lockedPremium: 0, bag: 0, total: 0 };
+    var countSkill = function (skillName, amount, location) {
+        var normalizedName = normalizePetSkillName(skillName);
+        var safeAmount = Math.max(0, parseInt(amount, 10) || 0);
+        if (normalizedName === "초월성장") counts.transcendence += safeAmount;
+        else if (normalizedName === "나 혼자만 레벨업") counts.soloLeveling += safeAmount;
+        else return;
+        counts[location] += safeAmount;
+        counts.total += safeAmount;
+    };
+    for (var equippedIndex = 0; equippedIndex < skills.equipped.length; equippedIndex++) countSkill(skills.equipped[equippedIndex], 1, "equipped");
+    for (var lockedIndex = 0; lockedIndex < skills.lockedPremium.length; lockedIndex++) countSkill(skills.lockedPremium[lockedIndex], 1, "lockedPremium");
+    for (var bagName in skills.bag) {
+        if (!skills.bag.hasOwnProperty(bagName)) continue;
+        countSkill(bagName, skills.bag[bagName], "bag");
+    }
+    return counts;
+}
+
+// 중단 후 재개 가능한 폐지 펫스킬 보상 처리 기록을 생성하는 함수
+function createPetSkillRetirementCompensationRecord(counts) {
+    return {
+        status: "PENDING",
+        counts: counts,
+        rewardCount: counts.total,
+        startedAt: formatDateTime(new Date()),
+        skillsRemovedAt: "",
+        completedAt: "",
+        lastError: ""
+    };
+}
+
+// 장착·프리미엄 잠금·가방에서 폐지 펫스킬을 제거하는 함수
+function removeRetiredPetSkillHoldings(petSkillData, user) {
+    var skills = initPetSkillUser(petSkillData, user);
+    skills.equipped = skills.equipped.filter(function (skillName) { return !isRetiredPetSkill(skillName); });
+    skills.lockedPremium = skills.lockedPremium.filter(function (skillName) { return !isRetiredPetSkill(skillName); });
+    for (var bagName in skills.bag) {
+        if (!skills.bag.hasOwnProperty(bagName)) continue;
+        if (isRetiredPetSkill(bagName)) delete skills.bag[bagName];
+    }
+}
+
+// 폐지 펫스킬 보상 처리 결과 메시지를 생성하는 함수
+function buildPetSkillRetirementCompensationResultMessage(summary) {
+    return "📙 폐지 펫스킬 보상 처리 결과\n" +
+        "━━━━━━━━━━━━\n" +
+        "보상 지급: " + numberWithCommas(summary.rewardedUsers) + "명\n" +
+        "대상 없음: " + numberWithCommas(summary.noTargetUsers) + "명\n" +
+        "기처리 제외: " + numberWithCommas(summary.skippedUsers) + "명\n" +
+        "처리 실패: " + numberWithCommas(summary.failedUsers) + "명\n" +
+        "━━━━━━━━━━━━\n" +
+        "초월성장 회수: " + numberWithCommas(summary.transcendenceCount) + "개\n" +
+        "나혼자만레벨업 회수: " + numberWithCommas(summary.soloLevelingCount) + "개\n" +
+        "펫스킬북📙 지급: 총 " + numberWithCommas(summary.rewardCount) + "개";
 }
 
 // 펫 스킬 시스템에서 사용자별 데이터 초기화 및 구조 보장
@@ -45259,6 +45440,7 @@ function isPetSkillCompatible(petSkillData, user, skillName) {
     if (equipped.indexOf(skillName) !== -1) return { ok: false, reason: "이미 장착 중인 스킬입니다." };
 
     var targetSkillData = getPetSkillData(skillName);
+    if (targetSkillData && targetSkillData.retired === true) return { ok: false, reason: "폐지된 펫스킬은 장착할 수 없습니다." };
     if (targetSkillData && targetSkillData.tierExclusive) {
         for (var tierIndex = 0; tierIndex < equipped.length; tierIndex++) {
             var equippedSkillData = getPetSkillData(equipped[tierIndex]);
