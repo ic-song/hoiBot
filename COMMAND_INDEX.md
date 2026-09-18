@@ -759,7 +759,7 @@ Status: VERIFIED
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
 - `/펫홈활동파일생성`: Admin/Master-only exact command; creates `petHomeActivityFile` with empty `alerts`, `recentVisitors`, `petHomeSocial`, and `migrations` only when the active DEV/PROD file does not exist and never overwrites an existing file.
 - `/펫홈활동살리기`: Admin/Master-only exact command; strictly parses and validates `petHomeActivityData_back.json`, then atomically restores only `petHomeActivityData.json` without replacing the backup.
-- `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count + 망므📙 5회` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling. 스킬 해제 후에는 이미 사용한 횟수는 유지하고 추가 한도만 즉시 사라진다.
+- `/마음 [닉네임] [수량]` and the four direct expression commands require both users to have an active hoi/newbie pass, share a daily `1 + active mutual follow count + 망므📙 5회` allowance, save target totals to `homeDataFile`, and save sender usage, badge stats, and target alerts to `petHomeActivityFile` with rollback handling. `호이 남`은 일일 사용 횟수 판정만 무제한이며 대상 패스·본인 사용 금지·통계·알림·저장 규칙은 그대로 적용된다. `/내마음`과 `/홈알림`에는 남은 횟수를 `무제한`으로 표시한다. 스킬 해제 후에는 이미 사용한 횟수는 유지하고 추가 한도만 즉시 사라진다.
 - `/팔로우` requires both users to have an active hoi/newbie pass, updates the sender's following and target's followers together, detects mutual relationships, awards relationship badges, and saves `petHomeActivityFile`; `/언팔로우` remains available after pass expiry and removes both sides of the relationship.
 - `/팔로워`, `/팔로잉`, and `/내마음` read preserved social relationships from `petHomeActivityFile`; list and benefit commands require an active pass. `/내마음`은 `망므📙` 장착 시 `+5회`를 별도 표시한다. Their standalone guide outputs identify the requesting user with `[checkRank] 님`. Follower/following lists show non-mutual users before mutual users without mutating the stored relationship order, and the headers show the related `/팔로우` and `/팔로잉` command guides.
 - `/홈뱃지` rechecks achievement badges, including 10 feed activity badges for 1–365 distinct activity days, while the badge view/equip/unequip/permanent-delete commands include achievement, special, 57 original gacha badges, 20 MBTI gacha badges, and 50 relationship-type gacha badges stored in `petHomeActivityFile`; permanent deletion blocks re-grant from every path. These commands are available without a pass. 장착은 `/홈뱃지장착 [대표뱃지번호] [보조뱃지번호]`로 두 슬롯을 한 번에 지정하며 기존 단일 `/홈뱃지장착 [번호|ID]`는 대표 슬롯으로 호환된다. 해제도 장착된 뱃지번호 1~2개를 지정하고 30초 확인을 거치며, 대표만 제거되면 보조가 자동 승격한다. 같은 뱃지 중복 장착은 거부한다. 캐슬·레이드는 두 슬롯, 펫강화·탐험은 대표 슬롯만 적용하며 뱃지별 기본합계 100% 보정과 프리미엄 +3%p를 독립 계산한다. 보조로 장착된 뱃지의 옵션 카드에는 사용 가능한 1번 캐슬·2번 레이드만 표시하고, 저장된 3·4번 수치는 보존해 대표 장착 시 다시 표시한다.
@@ -778,7 +778,7 @@ Status: VERIFIED
 - `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/팔로워순위`는 실제 팔로워에 `인플루언서📙` 1,000명과 `셀럽📙` 2,000명을 합산하고, `/마음순위`는 각 유저의 귀여워·멋져요·응원해·사랑해 받은 수를 표시한다.
 - `/펫홈패스개편정리`: Admin/Master-only exact command; validates or creates one-time backups under the active data root's `backups/` folder, removes all normal comments and `likeCnt` values, preserves pinned comments, saves both files, reload-verifies the cleanup, and records `passBenefits20260726` so it cannot run twice.
 - `/댓글`, `/댓글핀`, `/댓글확인`, `/댓글삭제`, and `/댓글핀삭제` require the command sender to have an active hoi or newbie pass; `/댓글` additionally requires the target home owner to have one.
-- `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling.
+- `/좋아홈` requires both sender and target to have an active hoi or newbie pass before counters, points, or home data are mutated; active pass users pay zero cost and successful use adds an activity alert with rollback handling. 일반 이용자의 일일 2회 제한은 유지하며 `호이 남`만 횟수 제한 없이 사용할 수 있다.
 - Successful `/댓글`, `/좋아홈`, heart-expression, follow, and visit flows update cumulative badge stats and award badges in the same activity-file save/rollback flow.
 - Both account-deletion flows remove the deleted user's social record and references from other users' followers/following, alerts, and recent visitors before saving `petHomeActivityFile`.
 - Duplicate comments by the same writer are allowed.
@@ -966,7 +966,7 @@ Status: VERIFIED
 - `/영지온`은 유효한 영지기습패스와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 미구독 상태에서 활성화에 실패하면 체크랭크와 영지기습패스 미구독 안내를 함께 표시한다. 실제 턴에도 패스와 자격을 재검증하며 실패하면 OFF 처리한다. `/영지오프`는 기존 설정·로그·저장을 유지하고 미구독 상태일 때 응답 문구만 구독 안내로 변경한다.
 - 자동 공격은 1~7번 중 현재 공격 길드가 점령한 영지를 제외한 후보를 균등 무작위로 선택하고 수동 공격과 같은 공통 처리 경로를 사용한다. 회차·턴 토큰·사용자 키로 자동/수동 중복 공격을 방지하며, 예약 당시 길드와 실행 시점의 실제 길드가 다르면 실행하지 않는다.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/영지온`, `/영지오프`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`.
-- `/길드영지시작` and `/길드영지종료` can also be entered from the dedicated siege room by their existing named operators; this room allowance does not bypass the active territory-war command lock.
+- `/길드영지시작`은 기존 지정 운영자에 더해 서버관리자방의 등록된 Admin·Master가 실행할 수 있다. `/길드영지종료`의 기존 지정 운영자 권한은 유지하며, 방 권한이 진행 상태·준비 길드·펫무쌍 상호 차단 조건을 우회하지 않는다.
 
 ---
 
@@ -2424,7 +2424,7 @@ Status: VERIFIED
 - `/벼락확률 [0-100]`은 진행 중인 대회의 `lightningRate`만 변경하고 `member.json`을 한 번 저장한다. `dev/` 입력은 기존 DEV 컨텍스트의 `member.json`에만 반영한다.
 - 종합매력과 크리티컬 기준값은 60초 참가 모집 마감 시점에 저장하며 진행 중 실시간 변경을 반영하지 않는다.
 - 다음 회차 준비자와 현재 회차 참가자를 별도 객체로 저장한다. 참가 신청과 대회 시작 시점에 길드·펫·계정정지 상태를 각각 확인하며, 신청 뒤 정지된 참가자는 시작 대상에서 제외한다.
-- 참가 신청 명령은 `/펫무쌍준비`이며 `/펫무쌍참가` 별칭은 사용하지 않는다. `/펫무쌍시작`은 `오픈채팅봇`과 명령어방의 MASTER가 실행할 수 있다.
+- 참가 신청 명령은 `/펫무쌍준비`이며 `/펫무쌍참가` 별칭은 사용하지 않는다. `/펫무쌍시작`은 `오픈채팅봇`, 기존 명령어방 MASTER, 서버관리자방의 등록된 Admin·Master가 실행할 수 있다.
 - `/펫무쌍준비` 성공 안내의 접힌 영역에는 규칙과 현재 다음 회차 준비자 전원의 체크랭크 목록을 함께 표시하며, 방금 준비한 사용자도 목록에 포함한다. 강제 종료·공격 소진·시간초과로 대회가 끝나면 프리미엄 자동 준비 ON 이용자를 다음 회차에 즉시 등록하고 종료 결과에 등록·제외·실패 인원을 표시한다.
 - `/펫무쌍시작`과 정시 시작은 전체 `NoticeMsg`로 60초 전 참가 모집과 공성전 링크를 안내하고 `/펫무쌍준비`를 추가 접수한다. 기존 준비자는 유지하며 마감 시 자격·능력치를 재확인해 참가자를 확정하고 첫 12초 공격 타이머를 시작한다. 실제 시작과 확정 참가자 명단은 `castleMsg`로 공성전 명령어방에만 출력한다. 참가자가 없으면 모집을 종료하고 대회를 취소한다. 저장된 마감시각·토큰으로 재시작과 중복 타이머를 처리한다.
 - 시작 유예 마감시각과 토큰을 `member.json`에 저장하며, 봇 재시작 뒤 첫 수신 메시지에서 남은 유예 타이머를 복구하거나 마감된 준비를 완료한다.
