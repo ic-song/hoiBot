@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.546"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.547"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -22856,6 +22856,92 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildHomeBadgeCubeRateMessage(data, petData, guildData, sender));
                     return;
                 }
+                if ((msg === "/홈뱃지큐브수정" || /^\/홈뱃지큐브수정\s+[12]\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?$/.test(msg)) && isMaster(sender)) {
+                    var homeBadgeCubeEditMatch = msg.match(/^\/홈뱃지큐브수정\s+([12])\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)$/);
+                    if (!homeBadgeCubeEditMatch) {
+                        replier.reply("사용법: /홈뱃지큐브수정 [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]\n예시: /홈뱃지큐브수정 1 10.5 8.2 7 12.3\n※ 옵션 수치는 소수점 첫째 자리까지 입력할 수 있습니다.");
+                        return;
+                    }
+                    var homeBadgeCubeEditSlotNumber = parseInt(homeBadgeCubeEditMatch[1], 10);
+                    var homeBadgeCubeEditValues = [
+                        parseFloat(homeBadgeCubeEditMatch[2]),
+                        parseFloat(homeBadgeCubeEditMatch[3]),
+                        parseFloat(homeBadgeCubeEditMatch[4]),
+                        parseFloat(homeBadgeCubeEditMatch[5])
+                    ];
+                    var homeBadgeCubeEditOptions = GLOBAL_CONFIG.petHomeActivity.cube.options;
+                    for (var homeBadgeCubeEditValueIndex = 0; homeBadgeCubeEditValueIndex < homeBadgeCubeEditOptions.length; homeBadgeCubeEditValueIndex++) {
+                        var homeBadgeCubeEditOption = homeBadgeCubeEditOptions[homeBadgeCubeEditValueIndex];
+                        var homeBadgeCubeEditValue = homeBadgeCubeEditValues[homeBadgeCubeEditValueIndex];
+                        if (!isFinite(homeBadgeCubeEditValue) || homeBadgeCubeEditValue < 0 || homeBadgeCubeEditValue > homeBadgeCubeEditOption.max) {
+                            replier.reply("❌ " + homeBadgeCubeEditOption.emoji + " " + homeBadgeCubeEditOption.name + "은(는) 0~" + formatHomeBadgeCubeCardPercent(homeBadgeCubeEditOption.max) + " 범위로 입력해 주세요.");
+                            return;
+                        }
+                    }
+                    var homeBadgeCubeEditActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
+                    var homeBadgeCubeEditEquippedIds = getPetHomeEquippedBadgeIds(homeBadgeCubeEditActivityData, sender);
+                    var homeBadgeCubeEditBadgeId = homeBadgeCubeEditEquippedIds[homeBadgeCubeEditSlotNumber - 1];
+                    var homeBadgeCubeEditBadge = homeBadgeCubeEditBadgeId ? getPetHomeBadgeById(homeBadgeCubeEditBadgeId) : null;
+                    var homeBadgeCubeEditSocial = getPetHomeSocialUser(homeBadgeCubeEditActivityData, sender);
+                    if (!homeBadgeCubeEditBadgeId) {
+                        replier.reply("❌ " + homeBadgeCubeEditSlotNumber + "번 장착 슬롯이 비어 있습니다.\n/홈뱃지에서 장착 상태를 확인해 주세요.");
+                        return;
+                    }
+                    if (!homeBadgeCubeEditBadge || !petHomeStringListContains(homeBadgeCubeEditSocial.badges, homeBadgeCubeEditBadge.id)) {
+                        replier.reply("❌ 장착된 홈뱃지 정보를 확인할 수 없습니다.\n/홈뱃지에서 장착 상태를 확인해 주세요.");
+                        return;
+                    }
+                    var hadHomeBadgeCubeEditStore = data.member[sender].hasOwnProperty("homeBadgeCube");
+                    var homeBadgeCubeEditStoreSnapshot = hadHomeBadgeCubeEditStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
+                    syncHomeBadgeCubeEquippedBadges(data, sender, homeBadgeCubeEditEquippedIds);
+                    var homeBadgeCubeEditRecord = getHomeBadgeCubeRecord(data, sender, homeBadgeCubeEditBadge.id, true);
+                    var homeBadgeCubeEditBeforeValues = [];
+                    for (var homeBadgeCubeEditOptionIndex = 0; homeBadgeCubeEditOptionIndex < homeBadgeCubeEditOptions.length; homeBadgeCubeEditOptionIndex++) {
+                        var homeBadgeCubeEditConfig = homeBadgeCubeEditOptions[homeBadgeCubeEditOptionIndex];
+                        homeBadgeCubeEditBeforeValues.push(parseFloat(homeBadgeCubeEditRecord[homeBadgeCubeEditConfig.key]) || 0);
+                        homeBadgeCubeEditRecord[homeBadgeCubeEditConfig.key] = Math.round(homeBadgeCubeEditValues[homeBadgeCubeEditOptionIndex] * 10) / 10;
+                    }
+                    try {
+                        saveJsonFile(data, filePath);
+                    } catch (homeBadgeCubeEditSaveError) {
+                        if (hadHomeBadgeCubeEditStore) data.member[sender].homeBadgeCube = homeBadgeCubeEditStoreSnapshot;
+                        else delete data.member[sender].homeBadgeCube;
+                        try {
+                            saveJsonFile(data, filePath);
+                        } catch (homeBadgeCubeEditRollbackError) {
+                            debuggerLog("[ERROR : 홈뱃지 큐브 수정 롤백 실패] " + homeBadgeCubeEditRollbackError);
+                        }
+                        throw homeBadgeCubeEditSaveError;
+                    }
+                    var verifiedHomeBadgeCubeEditData = loadJsonFile(filePath);
+                    var verifiedHomeBadgeCubeEditRecord = getHomeBadgeCubeRecord(verifiedHomeBadgeCubeEditData, sender, homeBadgeCubeEditBadge.id, false);
+                    var homeBadgeCubeEditVerified = !!verifiedHomeBadgeCubeEditRecord;
+                    for (var homeBadgeCubeEditVerifyIndex = 0; homeBadgeCubeEditVerifyIndex < homeBadgeCubeEditOptions.length && homeBadgeCubeEditVerified; homeBadgeCubeEditVerifyIndex++) {
+                        var verifiedHomeBadgeCubeEditOption = homeBadgeCubeEditOptions[homeBadgeCubeEditVerifyIndex];
+                        homeBadgeCubeEditVerified = Number(verifiedHomeBadgeCubeEditRecord[verifiedHomeBadgeCubeEditOption.key]) === homeBadgeCubeEditValues[homeBadgeCubeEditVerifyIndex];
+                    }
+                    if (!homeBadgeCubeEditVerified) {
+                        replier.reply("❌ 홈뱃지 큐브 옵션 저장 검증에 실패했습니다. 회원 데이터를 확인해 주세요.");
+                        return;
+                    }
+                    var homeBadgeCubeEditLines = [
+                        "✅ 홈뱃지 큐브 옵션 수정 완료",
+                        "[" + checkRank(data, petData, guildData, sender) + "] 님",
+                        "[장착 슬롯 " + homeBadgeCubeEditSlotNumber + "] " + homeBadgeCubeEditBadge.emoji + " " + homeBadgeCubeEditBadge.name,
+                        "━━━━━━━━━━━━"
+                    ];
+                    for (var homeBadgeCubeEditLineIndex = 0; homeBadgeCubeEditLineIndex < homeBadgeCubeEditOptions.length; homeBadgeCubeEditLineIndex++) {
+                        var homeBadgeCubeEditLineOption = homeBadgeCubeEditOptions[homeBadgeCubeEditLineIndex];
+                        homeBadgeCubeEditLines.push(homeBadgeCubeEditLineOption.emoji + " " + homeBadgeCubeEditLineOption.name + ": " + formatHomeBadgeCubeCardPercent(homeBadgeCubeEditBeforeValues[homeBadgeCubeEditLineIndex]) + " → " + formatHomeBadgeCubeCardPercent(homeBadgeCubeEditValues[homeBadgeCubeEditLineIndex]));
+                    }
+                    if (homeBadgeCubeEditSlotNumber === 2) homeBadgeCubeEditLines.push("※ 보조 슬롯의 펫 강화·탐험 옵션은 대표 슬롯으로 이동하면 적용됩니다.");
+                    replier.reply(homeBadgeCubeEditLines.join("\n"));
+                    return;
+                }
+                if (/^\/홈뱃지큐브수정(?:\s+.*)?$/.test(msg) && isMaster(sender)) {
+                    replier.reply("사용법: /홈뱃지큐브수정 [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]\n예시: /홈뱃지큐브수정 1 10.5 8.2 7 12.3\n범위: 캐슬 0~50% · 레이드 0~50% · 펫강화 0~30% · 탐험 0~15%");
+                    return;
+                }
                 if (/^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(msg)) {
                     var homeBadgeCubeParts = msg.trim().split(/\s+/);
                     var homeBadgeCubeSlotNumber = parseInt(homeBadgeCubeParts[1], 10);
@@ -30573,6 +30659,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
         /^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(command) ||
+        /^\/홈뱃지큐브수정\s+[12]\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?$/.test(command) ||
         command === "홈뱃지교체" || command === "홈뱃지해제확정" || command === "홈뱃지취소" ||
         /^\/홈뱃지장착\s+(?:(?:\d+\s+\d+)|(?:\d+|[A-Za-z]{1,4}\d{2,3}))$/.test(command) ||
         /^\/홈뱃지해제\s+\d+(?:\s+\d+)?$/.test(command) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(command) ||
@@ -30771,7 +30858,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/반지보상통계", "/정리알림", "/패스목록", "/호패프리미엄추가", "/호패프리미엄삭제", "/호프단체추가", "/호프구독", "/구독패스지급", "/펀치순위초기화", "/탐험유저확인", "/선물삭제",
         "/펜던트가방", "/펜던트강화수정", "/펜던트내구도수정", "/펜던트삭제", "/펜던트장착초기화", "/펜던트추가",
         "/펫홈댓글파일생성", "/펫홈활동파일생성", "/펫홈소셜뱃지마이그레이션", "/펫홈피드마이그레이션", "/펫홈패스개편정리",
-        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/호여", "/부스터수정", "/황금당근수정", "/개발자노트"
+        "/특별뱃지목록", "/특별뱃지지급", "/특별뱃지회수", "/홈뱃지큐브수정", "/레벨수정", "/경험치수정", "/레벨초기화", "/레벨리뉴얼점검", "/레벨리뉴얼적용", "/환생회수", "/호여", "/부스터수정", "/황금당근수정", "/개발자노트"
     ];
     for (var i = 0; i < commandRoots.length; i++) {
         var commandRoot = commandRoots[i];
@@ -38139,7 +38226,8 @@ function isPassFreeHomeBadgeCommand(msg) {
         /^\/홈뱃지장착(?:\s+.*)?$/.test(msg) ||
         /^\/홈뱃지해제(?:\s+.*)?$/.test(msg) ||
         /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(msg) ||
-        /^\/홈뱃지큐브(?:\s+.*)?$/.test(msg);
+        /^\/홈뱃지큐브(?:\s+.*)?$/.test(msg) ||
+        /^\/홈뱃지큐브수정(?:\s+.*)?$/.test(msg);
 }
 
 // 호이패스 프리미엄 활성 유저용 공통 출력 헤더를 반환하는 함수
