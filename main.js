@@ -7133,7 +7133,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
-                if (exploreInterval == true || (msg == "/펫탐험정산" && (isMaster(sender) || sender == "오픈채팅봇"))) {
+                if (exploreInterval == true || (msg == "/펫탐험정산" && (isMaster(sender) || sender == "오픈채팅봇" || (room === room90 && isAdmin(sender))))) {
                     exploreInterval = false;
 
                     var homeData = loadJsonFile(homeDataFile);
