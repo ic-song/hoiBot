@@ -7169,20 +7169,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                     //  doPetExploreInterval에 petExploreData 전달
                     var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
+                    var manualExploreRestartMessage = ""; // 수동 정산 후 다시 시작한 자동 정산 주기 안내
 
                     if (isManualPetExploreSettlement) {
                         stopAllIntervals(data);
                         startInterval(data, room, replier, setint, ctx.isDev); // 수동 정산 완료 시각부터 60분 주기로 재시작
                         saveJsonFile(data, filePath);
+                        manualExploreRestartMessage = "✅ 펫탐험을 시작합니다.\n⏱️ 다음 정산까지 남은 시간: " + setint + "분";
                     }
 
                     if (!out) {
                         if (!isManualPetExploreSettlement) saveJsonFile(data, filePath);
                         if (msg == "/펫탐험시작") replier.reply("현재 탐험 인원이 없습니다.");
+                        if (manualExploreRestartMessage) replier.reply(manualExploreRestartMessage);
                         return;
                     }
 
                     noticeMsg(out);
+                    if (manualExploreRestartMessage) replier.reply(manualExploreRestartMessage);
                 }
                 if (msg.startsWith("/럭키오픈")) {
                     let args = msg.split(" ");
