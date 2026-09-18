@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.548"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.549"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -22856,10 +22856,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(buildHomeBadgeCubeRateMessage(data, petData, guildData, sender));
                     return;
                 }
-                if ((msg === "/홈뱃지큐브수정" || /^\/홈뱃지큐브수정\s+[12]\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?\s+\d+(?:\.\d)?$/.test(msg)) && isMaster(sender)) {
-                    var homeBadgeCubeEditMatch = msg.match(/^\/홈뱃지큐브수정\s+([12])\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)$/);
+                if (/^\/홈뱃지큐브수정(?:\s+.*)?$/.test(msg) && isMaster(sender)) {
+                    var homeBadgeCubeEditContent = msg.substring("/홈뱃지큐브수정".length).trim();
+                    var homeBadgeCubeEditTargetParsed = findTargetAtStart(homeBadgeCubeEditContent, data.member || {});
+                    if (!homeBadgeCubeEditTargetParsed.target) {
+                        replier.reply("사용법: /홈뱃지큐브수정 [닉네임] [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]\n예시: /홈뱃지큐브수정 호이 남 1 10.5 8.2 7 12.3\n범위: 캐슬 0~50% · 레이드 0~50% · 펫강화 0~30% · 탐험 0~15%");
+                        return;
+                    }
+                    var homeBadgeCubeEditTarget = homeBadgeCubeEditTargetParsed.target;
+                    var homeBadgeCubeEditMatch = homeBadgeCubeEditTargetParsed.rest.match(/^([12])\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)\s+(\d+(?:\.\d)?)$/);
                     if (!homeBadgeCubeEditMatch) {
-                        replier.reply("사용법: /홈뱃지큐브수정 [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]\n예시: /홈뱃지큐브수정 1 10.5 8.2 7 12.3\n※ 옵션 수치는 소수점 첫째 자리까지 입력할 수 있습니다.");
+                        replier.reply("사용법: /홈뱃지큐브수정 [닉네임] [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]\n예시: /홈뱃지큐브수정 호이 남 1 10.5 8.2 7 12.3\n※ 옵션 수치는 소수점 첫째 자리까지 입력할 수 있습니다.");
                         return;
                     }
                     var homeBadgeCubeEditSlotNumber = parseInt(homeBadgeCubeEditMatch[1], 10);
@@ -22879,22 +22886,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         }
                     }
                     var homeBadgeCubeEditActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
-                    var homeBadgeCubeEditEquippedIds = getPetHomeEquippedBadgeIds(homeBadgeCubeEditActivityData, sender);
+                    var homeBadgeCubeEditEquippedIds = getPetHomeEquippedBadgeIds(homeBadgeCubeEditActivityData, homeBadgeCubeEditTarget);
                     var homeBadgeCubeEditBadgeId = homeBadgeCubeEditEquippedIds[homeBadgeCubeEditSlotNumber - 1];
                     var homeBadgeCubeEditBadge = homeBadgeCubeEditBadgeId ? getPetHomeBadgeById(homeBadgeCubeEditBadgeId) : null;
-                    var homeBadgeCubeEditSocial = getPetHomeSocialUser(homeBadgeCubeEditActivityData, sender);
+                    var homeBadgeCubeEditSocial = getPetHomeSocialUser(homeBadgeCubeEditActivityData, homeBadgeCubeEditTarget);
                     if (!homeBadgeCubeEditBadgeId) {
-                        replier.reply("❌ " + homeBadgeCubeEditSlotNumber + "번 장착 슬롯이 비어 있습니다.\n/홈뱃지에서 장착 상태를 확인해 주세요.");
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, homeBadgeCubeEditTarget) + "] 님의 " + homeBadgeCubeEditSlotNumber + "번 장착 슬롯이 비어 있습니다.\n/홈뱃지에서 장착 상태를 확인해 주세요.");
                         return;
                     }
                     if (!homeBadgeCubeEditBadge || !petHomeStringListContains(homeBadgeCubeEditSocial.badges, homeBadgeCubeEditBadge.id)) {
-                        replier.reply("❌ 장착된 홈뱃지 정보를 확인할 수 없습니다.\n/홈뱃지에서 장착 상태를 확인해 주세요.");
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, homeBadgeCubeEditTarget) + "] 님의 장착 홈뱃지 정보를 확인할 수 없습니다.\n/홈뱃지에서 장착 상태를 확인해 주세요.");
                         return;
                     }
-                    var hadHomeBadgeCubeEditStore = data.member[sender].hasOwnProperty("homeBadgeCube");
-                    var homeBadgeCubeEditStoreSnapshot = hadHomeBadgeCubeEditStore ? JSON.parse(JSON.stringify(data.member[sender].homeBadgeCube)) : null;
-                    syncHomeBadgeCubeEquippedBadges(data, sender, homeBadgeCubeEditEquippedIds);
-                    var homeBadgeCubeEditRecord = getHomeBadgeCubeRecord(data, sender, homeBadgeCubeEditBadge.id, true);
+                    var hadHomeBadgeCubeEditStore = data.member[homeBadgeCubeEditTarget].hasOwnProperty("homeBadgeCube");
+                    var homeBadgeCubeEditStoreSnapshot = hadHomeBadgeCubeEditStore ? JSON.parse(JSON.stringify(data.member[homeBadgeCubeEditTarget].homeBadgeCube)) : null;
+                    syncHomeBadgeCubeEquippedBadges(data, homeBadgeCubeEditTarget, homeBadgeCubeEditEquippedIds);
+                    var homeBadgeCubeEditRecord = getHomeBadgeCubeRecord(data, homeBadgeCubeEditTarget, homeBadgeCubeEditBadge.id, true);
                     var homeBadgeCubeEditBeforeValues = [];
                     for (var homeBadgeCubeEditOptionIndex = 0; homeBadgeCubeEditOptionIndex < homeBadgeCubeEditOptions.length; homeBadgeCubeEditOptionIndex++) {
                         var homeBadgeCubeEditConfig = homeBadgeCubeEditOptions[homeBadgeCubeEditOptionIndex];
@@ -22904,8 +22911,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     try {
                         saveJsonFile(data, filePath);
                     } catch (homeBadgeCubeEditSaveError) {
-                        if (hadHomeBadgeCubeEditStore) data.member[sender].homeBadgeCube = homeBadgeCubeEditStoreSnapshot;
-                        else delete data.member[sender].homeBadgeCube;
+                        if (hadHomeBadgeCubeEditStore) data.member[homeBadgeCubeEditTarget].homeBadgeCube = homeBadgeCubeEditStoreSnapshot;
+                        else delete data.member[homeBadgeCubeEditTarget].homeBadgeCube;
                         try {
                             saveJsonFile(data, filePath);
                         } catch (homeBadgeCubeEditRollbackError) {
@@ -22914,7 +22921,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         throw homeBadgeCubeEditSaveError;
                     }
                     var verifiedHomeBadgeCubeEditData = loadJsonFile(filePath);
-                    var verifiedHomeBadgeCubeEditRecord = getHomeBadgeCubeRecord(verifiedHomeBadgeCubeEditData, sender, homeBadgeCubeEditBadge.id, false);
+                    var verifiedHomeBadgeCubeEditRecord = getHomeBadgeCubeRecord(verifiedHomeBadgeCubeEditData, homeBadgeCubeEditTarget, homeBadgeCubeEditBadge.id, false);
                     var homeBadgeCubeEditVerified = !!verifiedHomeBadgeCubeEditRecord;
                     for (var homeBadgeCubeEditVerifyIndex = 0; homeBadgeCubeEditVerifyIndex < homeBadgeCubeEditOptions.length && homeBadgeCubeEditVerified; homeBadgeCubeEditVerifyIndex++) {
                         var verifiedHomeBadgeCubeEditOption = homeBadgeCubeEditOptions[homeBadgeCubeEditVerifyIndex];
@@ -22926,7 +22933,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var homeBadgeCubeEditLines = [
                         "✅ 홈뱃지 큐브 옵션 수정 완료",
-                        "[" + checkRank(data, petData, guildData, sender) + "] 님",
+                        "[" + checkRank(data, petData, guildData, homeBadgeCubeEditTarget) + "] 님",
                         "[장착 슬롯 " + homeBadgeCubeEditSlotNumber + "] " + homeBadgeCubeEditBadge.emoji + " " + homeBadgeCubeEditBadge.name,
                         "━━━━━━━━━━━━"
                     ];
@@ -22936,10 +22943,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (homeBadgeCubeEditSlotNumber === 2) homeBadgeCubeEditLines.push("※ 보조 슬롯의 펫 강화·탐험 옵션은 대표 슬롯으로 이동하면 적용됩니다.");
                     replier.reply(homeBadgeCubeEditLines.join("\n"));
-                    return;
-                }
-                if (/^\/홈뱃지큐브수정(?:\s+.*)?$/.test(msg) && isMaster(sender)) {
-                    replier.reply("사용법: /홈뱃지큐브수정 [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]\n예시: /홈뱃지큐브수정 1 10.5 8.2 7 12.3\n범위: 캐슬 0~50% · 레이드 0~50% · 펫강화 0~30% · 탐험 0~15%");
                     return;
                 }
                 if (/^\/홈뱃지큐브\s+\d+\s+[1-4](?:\s+\d+)?$/.test(msg)) {
