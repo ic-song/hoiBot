@@ -103,7 +103,7 @@ const PET_SKILL_FIXED_ACTUAL_RATES = {
 };
 const PET_SKILL_LIST = [
 
-    { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
+    { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "전설의 소매치기", grade: "한정판", limitedEdition: true, openable: false, effect: "/슈킹 아이디 입력 시 50% 확률로 해당 유저의 포인트 🅟1,000,000을 슈킹합니다.\n하루 2회까지 시도할 수 있으며, 동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n실패해도 일일 시도 횟수는 차감되며 포인트는 차감되지 않습니다.\n펫스킬을 해제하면 /슈킹을 사용할 수 없습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "광산에서 재벌까지", grade: "한정판", limitedEdition: true, openable: false, showUnopenableRate: true, effect: "하루 10회 [/재벌도전]을 사용할 수 있습니다.\n10% 확률로 다이아상자💎 1개를 획득합니다.\n0.1% 확률로 로또에 당첨되면 다이아상자💎 30개를 획득합니다.\n※ 결과와 관계없이 사용 횟수가 1회 차감됩니다." },
@@ -111,13 +111,13 @@ const PET_SKILL_LIST = [
     { name: "VIP블랙카드", grade: "SS", rate: 0.1, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.1, effect: "/상점의 /구매로 상품 구매 시 세금의 70%를 면제받습니다." },
-    { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
-    { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
     { name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
     { name: "호월신의 총애", grade: "S", rate: 0.3, effect: "하루 한 번 호월신에게 특별한 기도를 올립니다.\n7% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 신성한 기도📙와 중복 장착할 수 없습니다." },
-    { name: "장미칼", grade: "A", rate: 0.4, raidExp: 500000, castleExp: 500000, effect: "사악한 마녀의 칼입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "장미칼", grade: "A", rate: 0.4, raidExp: 500000, castleExp: 500000, effect: "사악한 마녀의 칼입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "신성한 기도", grade: "A", rate: 0.4, effect: "하루 한 번 호월신에게 신성한 기도를 올립니다.\n5% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
     { name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
@@ -133,7 +133,7 @@ const PET_SKILL_LIST = [
     { name: "숙련된 전사", grade: "A", rate: 1.7, effect: "/캐슬대전 시 50% 확률로 매력 +20 획득" },
     { name: "로열 하우스", grade: "A", rate: 1.6, effect: "가구 [로열 루미에르]를 10개 이상  레이드/캐슬 매력 15만 증가(총:종합매력 30만 증가)\n펫스킬을 해제하면 매력은 회수됩니다." },
     { name: "셀럽", grade: "A", rate: 1.5, followerBonus: 2000, equipComment: "ㅎㅇ 싸인해줌?", equipCommentNoColon: true, effect: "팔로워가 2,000명 증가합니다.\n인플루언서 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 2,000명은 회수됩니다." },
-    { name: "사신의 낫", grade: "A", rate: 0.4, raidExp: 500000, castleExp: 500000, effect: "영혼마저 베어버린다는 사신의 거대한 낫입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "사신의 낫", grade: "A", rate: 0.4, raidExp: 500000, castleExp: 500000, effect: "영혼마저 베어버린다는 사신의 거대한 낫입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "아르카나 하우스", grade: "A", rate: 1.5, raidExp: 500000, castleExp: 500000, charmCondition: "arcanaFurniture", effect: "가구 [아르카나 루미에르]를 5개 이상 보유하면 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다." },
     // { name: "길드의 심장", grade: "A", rate: 1.8, effect: "/길드공헌 시 1% 확률로 길드자금🌾 100만을 획득합니다." },
     { name: "쇼핑광", grade: "A", rate: 1.7, effect: "상점에서 상품 구매 시 20% 할인됩니다.\n※ VIP블랙카드📙와 중복되지 않습니다." },
@@ -157,7 +157,7 @@ const PET_SKILL_LIST = [
     { name: "던전탐험가", grade: "B", rate: 2.5, effect: "전도르/양계장/땅문서/샵오픈 탐험 성공확률 5% 상승" },
     { name: "무쌍신화", grade: "B", rate: 0.9195, equipComment: "슈슉..슈슈슉..챙..챙..챙!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다." },
     { name: "인플루언서", grade: "B", rate: 2.0, followerBonus: 1000, equipComment: "여러분 안녕 이건 뒷광고 ㄴㄴ 내돈내산이야루~", equipCommentNoColon: true, effect: "팔로워가 1,000명 증가합니다.\n셀럽 스킬과 중복 적용할 수 있습니다.\n펫스킬을 해제하면 증가한 팔로워 1,000명은 회수됩니다." },
-    { name: "큐피드의 활", grade: "B", rate: 1.5, raidExp: 250000, castleExp: 250000, effect: "상대의 마음을 단번에 사로잡는 사랑의 활입니다.\n장착 시 레이드매력 25만과 캐슬매력 25만, 총 종합매력 50만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "큐피드의 활", grade: "B", rate: 1.5, raidExp: 250000, castleExp: 250000, effect: "상대의 마음을 단번에 사로잡는 사랑의 활입니다.\n장착 시 레이드매력 25만과 캐슬매력 25만, 총 종합매력 50만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     // { name: "야호", grade: "B", rate: 2.5, effect: "/알림 사용 시 확성기📢를 하루 3회까지 무료로 사용할 수 있습니다." },
     // { name: "성실한 일꾼", grade: "B", rate: 2.7, effect: "성장 보조" },
 
@@ -172,7 +172,7 @@ const PET_SKILL_LIST = [
     { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
     { name: "초월성장", grade: "C", rate: 4.5, openable: false, showUnopenableRate: true, retired: true, collectionEligible: false, effect: "레벨 리뉴얼로 폐지되어 효과가 종료되었습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "망므", grade: "C", rate: 4.0, heartBonus: 5, equipComment: "이건 내 망므야!", equipCommentNoColon: true, effect: "하루 마음 보내기 가능 횟수가 5회 증가합니다.\n펫스킬을 해제하면 추가된 일일 한도 5회는 회수됩니다." },
-    { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
 
 
     { name: "정신승리", grade: "C", rate: 5.0, effect: "캐슬대전,미니펫대전 패배 시 정신승리를 합니다." },
@@ -181,38 +181,38 @@ const PET_SKILL_LIST = [
     { name: "품행제로", grade: "D", rate: 14.5, effect: "/결투 [아이디] 입력 시 70% 확률로 상대를 이기는 연출 멘트를 출력합니다. 실제 승패 수치 변화는 없습니다." },
     { name: "망한건 맞아", grade: "D", rate: 14.5, effect: "/펫스킬오픈으로 획득할 수 있으며, 장착 시 기분만 묘하게 나빠집니다. 아무 효과가 없습니다." },
     { name: "무소유", grade: "D", rate: 14.5, effect: "땅에서 태어나 땅으로 흘러들어가니 그것이 인생이느니라" },
-    { name: "낡은 목검", grade: "D", rate: 14.5, raidExp: 50000, castleExp: 50000, effect: "오랜 세월 수련에 사용된 낡은 목검입니다.\n장착 시 레이드매력 5만과 캐슬매력 5만, 총 종합매력 10만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
+    { name: "낡은 목검", grade: "D", rate: 14.5, raidExp: 50000, castleExp: 50000, effect: "오랜 세월 수련에 사용된 낡은 목검입니다.\n장착 시 레이드매력 5만과 캐슬매력 5만, 총 종합매력 10만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
 
-    { name: "🪽 엠퍼러의 천공 날개", grade: "C", rate: 0, requiredTier: "엠퍼러", raidExp: 100000, castleExp: 100000, equipComment: "잠깐, 나 지금 날고 있는 거야?!", tierExclusive: true, effect: "엠퍼러 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 10만 증가합니다." },
-    { name: "🪬 올마이티의 전능 부적", grade: "C", rate: 0, requiredTier: "올마이티", raidExp: 150000, castleExp: 150000, equipComment: "뭐든 할 수 있을 것 같은 기분이야!", tierExclusive: true, effect: "올마이티 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 15만 증가합니다." },
-    { name: "🤍 하얀하트의 순백 반지", grade: "C", rate: 0, requiredTier: "하얀하트", raidExp: 200000, castleExp: 200000, equipComment: "깨끗하게, 맑게, 자신 있게!", tierExclusive: true, effect: "하얀하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 20만 증가합니다." },
-    { name: "🩵 하늘하트의 창공 목걸이", grade: "C", rate: 0, requiredTier: "하늘하트", raidExp: 300000, castleExp: 300000, equipComment: "오늘 하늘은 내가 접수한다!", tierExclusive: true, effect: "하늘하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 30만 증가합니다." },
-    { name: "💛 노랑하트의 황금 팔찌", grade: "C", rate: 0, requiredTier: "노랑하트", raidExp: 400000, castleExp: 400000, equipComment: "번쩍번쩍! 부자 된 기분이야!", tierExclusive: true, effect: "노랑하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 40만 증가합니다." },
-    { name: "💜 보라하트의 환상 보주", grade: "C", rate: 0, requiredTier: "보라하트", raidExp: 500000, castleExp: 500000, equipComment: "어라? 방금 유니콘 지나갔어!", tierExclusive: true, effect: "보라하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 50만 증가합니다." },
-    { name: "❤️ 빨강하트의 맹세검", grade: "C", rate: 0, requiredTier: "빨강하트", raidExp: 650000, castleExp: 650000, equipComment: "내 뜨거운 마음을 받아랏!", tierExclusive: true, effect: "빨강하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 65만 증가합니다." },
-    { name: "🖤 블랙하트의 칠흑 대낫", grade: "C", rate: 0, requiredTier: "블랙하트", raidExp: 800000, castleExp: 800000, equipComment: "후후… 오늘부터 흑화한다!", tierExclusive: true, effect: "블랙하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 80만 증가합니다." },
-    { name: "💖 반짝하트의 별빛 왕관", grade: "B", rate: 0, requiredTier: "반짝하트", raidExp: 1000000, castleExp: 1000000, equipComment: "눈부시지? 내가 좀 빛나!", tierExclusive: true, effect: "반짝하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 100만 증가합니다." },
-    { name: "❤️‍🔥 열정하트의 화염 건틀릿", grade: "B", rate: 0, requiredTier: "열정하트", raidExp: 1250000, castleExp: 1250000, equipComment: "주먹이 활활! 의욕도 활활!", tierExclusive: true, effect: "열정하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 125만 증가합니다." },
-    { name: "💘 화살하트의 운명 활", grade: "B", rate: 0, requiredTier: "화살하트", raidExp: 1500000, castleExp: 1500000, equipComment: "빗나가도 사랑은 직진이야!", tierExclusive: true, effect: "화살하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 150만 증가합니다." },
-    { name: "💗 두근하트의 설렘 마법봉", grade: "B", rate: 0, requiredTier: "두근하트", raidExp: 1800000, castleExp: 1800000, equipComment: "두근두근! 이거 고장 난 거 아니지?", tierExclusive: true, effect: "두근하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 180만 증가합니다." },
-    { name: "❤️‍🩹 심장하트의 수호 방패", grade: "B", rate: 0, requiredTier: "심장하트", raidExp: 2200000, castleExp: 2200000, equipComment: "아픈 건 싫으니까 뒤에 숨을래!", tierExclusive: true, effect: "심장하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 220만 증가합니다." },
-    { name: "💟 보라보라하트의 자수정 귀걸이", grade: "B", rate: 0, requiredTier: "보라보라하트", raidExp: 2600000, castleExp: 2600000, equipComment: "예쁜데 강하기까지 하면 반칙인가?", tierExclusive: true, effect: "보라보라하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 260만 증가합니다." },
-    { name: "🫶 손하트의 인연 반지", grade: "B", rate: 0, requiredTier: "손하트", raidExp: 3000000, castleExp: 3000000, equipComment: "자, 모두에게 하트 발사!", tierExclusive: true, effect: "손하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 300만 증가합니다." },
-    { name: "♠️ 스페이드의 사신 흑창", grade: "B", rate: 0, requiredTier: "스페이드", raidExp: 3500000, castleExp: 3500000, equipComment: "무서워하지 마, 살짝만 찌를게!", tierExclusive: true, effect: "스페이드 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 350만 증가합니다." },
-    { name: "♥️ 하트의 생명 목걸이", grade: "A", rate: 0, requiredTier: "하트", raidExp: 4000000, castleExp: 4000000, equipComment: "심장이 콩닥콩닥! 아직 살아 있다!", tierExclusive: true, effect: "하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 400만 증가합니다." },
-    { name: "♦️ 다이아몬드의 불멸검", grade: "A", rate: 0, requiredTier: "다이아몬드", raidExp: 4600000, castleExp: 4600000, equipComment: "아 뜨거 뜨거!", tierExclusive: true, effect: "다이아몬드 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 460만 증가합니다." },
-    { name: "♣️ 클로바의 행운 지팡이", grade: "A", rate: 0, requiredTier: "클로바", raidExp: 5200000, castleExp: 5200000, equipComment: "오늘은 왠지 뽑기가 잘될 것 같아!", tierExclusive: true, effect: "클로바 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 520만 증가합니다." },
-    { name: "🃏 풀하우스의 승부 카드", grade: "A", rate: 0, requiredTier: "풀하우스", raidExp: 6000000, castleExp: 6000000, equipComment: "올인! 내 포인트도 올인!", tierExclusive: true, effect: "풀하우스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 600만 증가합니다." },
-    { name: "🧸 곰찌의 수호 인형", grade: "A", rate: 0, requiredTier: "곰찌", raidExp: 7000000, castleExp: 7000000, equipComment: "귀엽다고 얕보면 곰 발바닥 간다!", tierExclusive: true, effect: "곰찌 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 700만 증가합니다." },
-    { name: "🌱 초심의 모험가 단검", grade: "A", rate: 0, requiredTier: "초심", raidExp: 8000000, castleExp: 8000000, equipComment: "작지만 따끔하다구!", tierExclusive: true, effect: "초심 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 800만 증가합니다." },
-    { name: "🌸 벚꽃의 천화앵검", grade: "A", rate: 0, requiredTier: "벛꽃", raidExp: 9000000, castleExp: 9000000, equipComment: "예쁘게 피고, 화려하게 벤다!", tierExclusive: true, effect: "벛꽃 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 900만 증가합니다." },
-    { name: "🎲 해피왕의 운명 주사위", grade: "A", rate: 0, requiredTier: "해피왕", raidExp: 10000000, castleExp: 10000000, equipComment: "주사위야, 제발 눈치 좀 챙겨줘!", tierExclusive: true, effect: "해피왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,000만 증가합니다." },
-    { name: "😈 마왕의 멸망검", grade: "S", rate: 0, requiredTier: "마왕", raidExp: 12000000, castleExp: 12000000, equipComment: "크하하하! 오늘 저녁은 뭐 먹지?", tierExclusive: true, effect: "마왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,200만 증가합니다." },
-    { name: "🦄 페가수스의 성운 신창", grade: "S", rate: 0, requiredTier: "페가수스", raidExp: 14000000, castleExp: 14000000, equipComment: "비켜! 유니콘 지나간다!", tierExclusive: true, effect: "페가수스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,400만 증가합니다." },
-    { name: "👻 유령왕의 망령낫", grade: "S", rate: 0, requiredTier: "유령왕", raidExp: 16000000, castleExp: 16000000, equipComment: "뒤를 봐… 아니, 보지 마!", tierExclusive: true, effect: "유령왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,600만 증가합니다." },
-    { name: "🐶 왕왕왕의 수호왕 갑주", grade: "S", rate: 0, requiredTier: "왕왕왕", raidExp: 18000000, castleExp: 18000000, equipComment: "왕왕! 물지는 않고 때릴게!", tierExclusive: true, effect: "왕왕왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,800만 증가합니다." },
-    { name: "🐉 용용용의 용신 여의주", grade: "S", rate: 0, requiredTier: "용용용", raidExp: 21000000, castleExp: 21000000, equipComment: "소원을 말해 봐! 들어준다고는 안 했어!", tierExclusive: true, effect: "용용용 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,100만 증가합니다." },
-    { name: "🐦‍🔥 피닉스의 불멸 성검", grade: "S", rate: 0, requiredTier: "피닉스", raidExp: 25000000, castleExp: 25000000, equipComment: "타버렸다… 아니, 다시 살아났다!", tierExclusive: true, effect: "피닉스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,500만 증가합니다." }
+    { name: "🪽 엠퍼러의 천공 날개", grade: "C", rate: 0, requiredTier: "엠퍼러", raidExp: 100000, castleExp: 100000, equipComment: "잠깐, 나 지금 날고 있는 거야?!", tierExclusive: true, effect: "엠퍼러 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 10만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🪬 올마이티의 전능 부적", grade: "C", rate: 0, requiredTier: "올마이티", raidExp: 150000, castleExp: 150000, equipComment: "뭐든 할 수 있을 것 같은 기분이야!", tierExclusive: true, effect: "올마이티 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 15만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🤍 하얀하트의 순백 반지", grade: "C", rate: 0, requiredTier: "하얀하트", raidExp: 200000, castleExp: 200000, equipComment: "깨끗하게, 맑게, 자신 있게!", tierExclusive: true, effect: "하얀하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 20만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🩵 하늘하트의 창공 목걸이", grade: "C", rate: 0, requiredTier: "하늘하트", raidExp: 300000, castleExp: 300000, equipComment: "오늘 하늘은 내가 접수한다!", tierExclusive: true, effect: "하늘하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 30만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "💛 노랑하트의 황금 팔찌", grade: "C", rate: 0, requiredTier: "노랑하트", raidExp: 400000, castleExp: 400000, equipComment: "번쩍번쩍! 부자 된 기분이야!", tierExclusive: true, effect: "노랑하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 40만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "💜 보라하트의 환상 보주", grade: "C", rate: 0, requiredTier: "보라하트", raidExp: 500000, castleExp: 500000, equipComment: "어라? 방금 유니콘 지나갔어!", tierExclusive: true, effect: "보라하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 50만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "❤️ 빨강하트의 맹세검", grade: "C", rate: 0, requiredTier: "빨강하트", raidExp: 650000, castleExp: 650000, equipComment: "내 뜨거운 마음을 받아랏!", tierExclusive: true, effect: "빨강하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 65만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🖤 블랙하트의 칠흑 대낫", grade: "C", rate: 0, requiredTier: "블랙하트", raidExp: 800000, castleExp: 800000, equipComment: "후후… 오늘부터 흑화한다!", tierExclusive: true, effect: "블랙하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 80만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "💖 반짝하트의 별빛 왕관", grade: "B", rate: 0, requiredTier: "반짝하트", raidExp: 1000000, castleExp: 1000000, equipComment: "눈부시지? 내가 좀 빛나!", tierExclusive: true, effect: "반짝하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 100만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "❤️‍🔥 열정하트의 화염 건틀릿", grade: "B", rate: 0, requiredTier: "열정하트", raidExp: 1250000, castleExp: 1250000, equipComment: "주먹이 활활! 의욕도 활활!", tierExclusive: true, effect: "열정하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 125만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "💘 화살하트의 운명 활", grade: "B", rate: 0, requiredTier: "화살하트", raidExp: 1500000, castleExp: 1500000, equipComment: "빗나가도 사랑은 직진이야!", tierExclusive: true, effect: "화살하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 150만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "💗 두근하트의 설렘 마법봉", grade: "B", rate: 0, requiredTier: "두근하트", raidExp: 1800000, castleExp: 1800000, equipComment: "두근두근! 이거 고장 난 거 아니지?", tierExclusive: true, effect: "두근하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 180만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "❤️‍🩹 심장하트의 수호 방패", grade: "B", rate: 0, requiredTier: "심장하트", raidExp: 2200000, castleExp: 2200000, equipComment: "아픈 건 싫으니까 뒤에 숨을래!", tierExclusive: true, effect: "심장하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 220만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "💟 보라보라하트의 자수정 귀걸이", grade: "B", rate: 0, requiredTier: "보라보라하트", raidExp: 2600000, castleExp: 2600000, equipComment: "예쁜데 강하기까지 하면 반칙인가?", tierExclusive: true, effect: "보라보라하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 260만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🫶 손하트의 인연 반지", grade: "B", rate: 0, requiredTier: "손하트", raidExp: 3000000, castleExp: 3000000, equipComment: "자, 모두에게 하트 발사!", tierExclusive: true, effect: "손하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 300만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "♠️ 스페이드의 사신 흑창", grade: "B", rate: 0, requiredTier: "스페이드", raidExp: 3500000, castleExp: 3500000, equipComment: "무서워하지 마, 살짝만 찌를게!", tierExclusive: true, effect: "스페이드 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 350만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "♥️ 하트의 생명 목걸이", grade: "A", rate: 0, requiredTier: "하트", raidExp: 4000000, castleExp: 4000000, equipComment: "심장이 콩닥콩닥! 아직 살아 있다!", tierExclusive: true, effect: "하트 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 400만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "♦️ 다이아몬드의 불멸검", grade: "A", rate: 0, requiredTier: "다이아몬드", raidExp: 4600000, castleExp: 4600000, equipComment: "아 뜨거 뜨거!", tierExclusive: true, effect: "다이아몬드 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 460만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "♣️ 클로바의 행운 지팡이", grade: "A", rate: 0, requiredTier: "클로바", raidExp: 5200000, castleExp: 5200000, equipComment: "오늘은 왠지 뽑기가 잘될 것 같아!", tierExclusive: true, effect: "클로바 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 520만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🃏 풀하우스의 승부 카드", grade: "A", rate: 0, requiredTier: "풀하우스", raidExp: 6000000, castleExp: 6000000, equipComment: "올인! 내 포인트도 올인!", tierExclusive: true, effect: "풀하우스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 600만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🧸 곰찌의 수호 인형", grade: "A", rate: 0, requiredTier: "곰찌", raidExp: 7000000, castleExp: 7000000, equipComment: "귀엽다고 얕보면 곰 발바닥 간다!", tierExclusive: true, effect: "곰찌 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 700만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🌱 초심의 모험가 단검", grade: "A", rate: 0, requiredTier: "초심", raidExp: 8000000, castleExp: 8000000, equipComment: "작지만 따끔하다구!", tierExclusive: true, effect: "초심 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 800만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🌸 벚꽃의 천화앵검", grade: "A", rate: 0, requiredTier: "벛꽃", raidExp: 9000000, castleExp: 9000000, equipComment: "예쁘게 피고, 화려하게 벤다!", tierExclusive: true, effect: "벛꽃 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 900만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🎲 해피왕의 운명 주사위", grade: "A", rate: 0, requiredTier: "해피왕", raidExp: 10000000, castleExp: 10000000, equipComment: "주사위야, 제발 눈치 좀 챙겨줘!", tierExclusive: true, effect: "해피왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,000만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "😈 마왕의 멸망검", grade: "S", rate: 0, requiredTier: "마왕", raidExp: 12000000, castleExp: 12000000, equipComment: "크하하하! 오늘 저녁은 뭐 먹지?", tierExclusive: true, effect: "마왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,200만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🦄 페가수스의 성운 신창", grade: "S", rate: 0, requiredTier: "페가수스", raidExp: 14000000, castleExp: 14000000, equipComment: "비켜! 유니콘 지나간다!", tierExclusive: true, effect: "페가수스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,400만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "👻 유령왕의 망령낫", grade: "S", rate: 0, requiredTier: "유령왕", raidExp: 16000000, castleExp: 16000000, equipComment: "뒤를 봐… 아니, 보지 마!", tierExclusive: true, effect: "유령왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,600만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🐶 왕왕왕의 수호왕 갑주", grade: "S", rate: 0, requiredTier: "왕왕왕", raidExp: 18000000, castleExp: 18000000, equipComment: "왕왕! 물지는 않고 때릴게!", tierExclusive: true, effect: "왕왕왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,800만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🐉 용용용의 용신 여의주", grade: "S", rate: 0, requiredTier: "용용용", raidExp: 21000000, castleExp: 21000000, equipComment: "소원을 말해 봐! 들어준다고는 안 했어!", tierExclusive: true, effect: "용용용 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,100만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "🐦‍🔥 피닉스의 불멸 성검", grade: "S", rate: 0, requiredTier: "피닉스", raidExp: 25000000, castleExp: 25000000, equipComment: "타버렸다… 아니, 다시 살아났다!", tierExclusive: true, effect: "피닉스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,500만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" }
 ];
 
 var bidItems = [];
@@ -3281,9 +3281,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room);
             if (!lightResult.already || lightResult.serverUpdated) saveJsonFile(attendanceLightData, attendanceLightPath);
             if (lightResult.already) {
-                replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
+                replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n📌 이용 안내\n• 출석 주의: 4일 연속 미출석 시 잠수 계정으로간주되어 자동 추방(계정 삭제)될 수 있습니다.• 모험 시작: 모두가 함께하는 '호이월드'의 모험가가 되어 펫과 함께 여행을 떠나보세요! /모험시작");
             } else {
-                replier.reply("[" + sender + "] 님 출첵👏\n\n※ 미출석 4일시 잠수계정으로 인지하여 계정삭제 후 내보내지며 추후 다시 방입장이 가능합니다.");
+                replier.reply("[" + sender + "] 님 출첵👏\n\n📌 이용 안내\n• 출석 주의: 4일 연속 미출석 시 잠수 계정으로간주되어 자동 추방(계정 삭제)될 수 있습니다.• 모험 시작: 모두가 함께하는 '호이월드'의 모험가가 되어 펫과 함께 여행을 떠나보세요! /모험시작");
             }
             return;
         }
