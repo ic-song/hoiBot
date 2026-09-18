@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.547"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.548"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -15252,7 +15252,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
-                if (msg === "/길드영지시작" && (sender == "오픈채팅봇" || sender == "호이 남" || sender == "티모 여" || sender == "벨라 여")) {
+                if (msg === "/길드영지시작" && isGuildTerritoryStartOperator(sender)) {
                     if (ensurePetMusouData(data).active) {
                         replier.reply("❌ 펫무쌍 진행 중에는 길드 영지전을 시작할 수 없습니다.");
                         return;
@@ -23590,7 +23590,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var heartSenderSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForHeart, sender);
                     var heartTargetSocialSnapshot = snapshotPetHomeSocialUser(petHomeActivityDataForHeart, heartTargetName);
                     var heartUsageStatus = getPetHomeHeartUsageStatus(data, petSkillData, petHomeActivityDataForHeart, heartHomeData, sender);
-                    if (heartUseCount > heartUsageStatus.remaining) {
+                    if (!heartUsageStatus.unlimited && heartUseCount > heartUsageStatus.remaining) {
                         replier.reply("사용 가능한 마음표현 횟수가 부족합니다.💞\n남은 마음: " + heartUsageStatus.remaining + "개 / 오늘 한도: " + heartUsageStatus.limit + "개");
                         return;
                     }
@@ -23635,7 +23635,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply(
                         "💞 " + checkRank(data, petData, guildData, heartTargetName) + "님의 펫홈에\n[" +
                         buildPetHomeHeartAllocationText(heartAllocations) +
-                        "] 마음을 표현했습니다!\n\n남은 마음: " + (heartUsageStatus.remaining - heartUseCount) + "개"
+                        "] 마음을 표현했습니다!\n\n남은 마음: " + (heartUsageStatus.unlimited ? "무제한" : (heartUsageStatus.remaining - heartUseCount) + "개")
                     );
                     return;
                 }
@@ -24786,7 +24786,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         let rankEmoji = checkRank(data, petData, guildData, ranking[i].name);
                         lines.push(getRankEmoji(i + 1) + "" + rankEmoji + " - 💌: " + numberWithCommas(ranking[i].likeCnt));
                     }
-                    let msgOut = "💌 펫하우스 좋아홈 순위 💌\n" + "(좋아홈은 하루에 두 번 가능합니다.)\n\n" + lines.join("\n");
+                    let msgOut = "💌 펫하우스 좋아홈 순위 💌\n" + "(좋아홈은 하루에 두 번, 호이 남은 제한 없이 가능합니다.)\n\n" + lines.join("\n");
                     replier.reply(msgOut);
                     return;
                 }
@@ -24824,7 +24824,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         data.member[sender].homeLikeCnt = 0;
                     }
                     let maxLikeCnt = 2; //최대 2회
-                    if ((data.member[sender].homeLikeCnt || 0) >= maxLikeCnt) {
+                    if (!hasUnlimitedPetHomeHeartUsage(senderName) && (data.member[sender].homeLikeCnt || 0) >= maxLikeCnt) {
                         replier.reply("좋아홈💌은 하루에 2번까지만 가능합니다. 😅");
                         return;
                     }
@@ -30575,6 +30575,17 @@ function isAdminIdentity(sender) {
 // 채팅방과 관계없이 Master 명단에 포함된 사용자인지 확인하는 함수
 function isMasterIdentity(sender) {
     return Master.indexOf(sender) !== -1;
+}
+
+// 서버관리자방에서 등록된 Admin·Master의 운영 권한을 확인하는 함수
+function isServerAdminRoomOperator(sender) {
+    var permissionRoom = getCurrentContext().permissionRoom;
+    return permissionRoom === room92 && (Admins.indexOf(sender) !== -1 || Master.indexOf(sender) !== -1);
+}
+
+// 길드 영지전 시작 명령의 기존 운영자와 서버관리자방 권한을 확인하는 함수
+function isGuildTerritoryStartOperator(sender) {
+    return sender === "오픈채팅봇" || sender === "호이 남" || sender === "티모 여" || sender === "벨라 여" || isServerAdminRoomOperator(sender);
 }
 
 // 방·이벤트 제한 없이 허용할 운영 명령과 기존 역할을 확인하는 함수
@@ -37199,10 +37210,10 @@ function isPetMusouOperator(sender) {
     return isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇";
 }
 
-// 펫무쌍 시작 명령에 오픈채팅봇과 명령어방 MASTER 권한을 허용하는 함수
+// 펫무쌍 시작 명령에 기존 권한과 서버관리자방 Admin·Master 권한을 허용하는 함수
 function isPetMusouStartOperator(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
-    return sender === "오픈채팅봇" || isMaster(sender) || (permissionRoom === room8 && Master.includes(sender));
+    return sender === "오픈채팅봇" || isMaster(sender) || (permissionRoom === room8 && Master.includes(sender)) || isServerAdminRoomOperator(sender);
 }
 
 // 펫무쌍 진행 중 일반 유저에게 허용할 명령어인지 확인하는 함수
@@ -47475,6 +47486,11 @@ function removeHomeBadgeFromEquippedSlots(data, social, user, badgeId) {
     return changed;
 }
 
+// 호이 남의 펫홈 마음표현 일일 횟수 제한을 해제할지 확인하는 함수
+function hasUnlimitedPetHomeHeartUsage(user) {
+    return user === "호이 남";
+}
+
 // 펫홈 마음표현의 오늘 사용량과 한도를 반환하는 함수
 function getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, user) {
     var social = getPetHomeSocialUser(activityData, user);
@@ -47489,7 +47505,8 @@ function getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, 
     var skillBonus = getPetSkillHeartBonus(petSkillData, user); // 망므 등 장착 스킬로 추가되는 일일 사용 횟수
     var limit = 1 + mutualBonus + premiumBonus + skillBonus; // 기본·맞팔·프리미엄·스킬 보너스를 합친 최종 한도
     var used = parseInt(social.heartUsage.count, 10) || 0;
-    return { date: today, base: 1, mutualBonus: mutualBonus, premiumBonus: premiumBonus, skillBonus: skillBonus, limit: limit, used: used, remaining: Math.max(0, limit - used) };
+    var unlimited = hasUnlimitedPetHomeHeartUsage(user); // 호이 남 전용 일일 제한 해제 여부
+    return { date: today, base: 1, mutualBonus: mutualBonus, premiumBonus: premiumBonus, skillBonus: skillBonus, limit: limit, used: used, unlimited: unlimited, remaining: unlimited ? null : Math.max(0, limit - used) };
 }
 
 // 유저가 보유한 펫홈 뱃지 설정을 고정 순서로 반환하는 함수
@@ -47567,8 +47584,8 @@ function buildPetHomeHeartUsageMessage(data, petData, petSkillData, guildData, a
         (status.premiumBonus > 0 ? "호이패스 프리미엄: +" + status.premiumBonus + "회\n" : "") +
         (status.skillBonus > 0 ? "망므📙: +" + status.skillBonus + "회\n" : "") +
         "오늘 사용: " + status.used + "회\n" +
-        "남은 마음: " + status.remaining + "회\n" +
-        "최종 사용 가능 횟수: " + status.limit + "회";
+        "남은 마음: " + (status.unlimited ? "무제한" : status.remaining + "회") + "\n" +
+        "최종 사용 가능 횟수: " + (status.unlimited ? "무제한" : status.limit + "회");
 }
 
 // 펫홈 뱃지의 획득 조건과 현재 진행도를 생성하는 함수
@@ -48041,7 +48058,7 @@ function buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sen
         "대표 뱃지: " + getPetHomeEquippedBadgeText(activityData, sender) + "\n" +
         "━━━━━━━━━━━━\n" +
         "팔로워🐾 " + followerDisplayCount + "명 | 팔로잉🎀 " + social.following.length + "명\n" +
-        "맞팔🤝 " + mutualCount + "명 | 남은 마음💌: " + heartStatus.remaining + "개\n" +
+        "맞팔🤝 " + mutualCount + "명 | 남은 마음💌: " + (heartStatus.unlimited ? "무제한" : heartStatus.remaining + "개") + "\n" +
         "━━━━━━━━━━━━\n" +
         "새로운 알림🔔 " + unreadCount + "개 | 보관📭 " + alerts.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxAlerts + "\n" +
         "최근 방문자👣 " + visitors.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors + "명\n" +
