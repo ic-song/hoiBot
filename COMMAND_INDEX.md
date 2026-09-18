@@ -640,6 +640,7 @@ Status: VERIFIED
 - `/홈뱃지오픈2 [숫자]`
 - `/홈뱃지오픈3 [숫자]`
 - `/홈뱃지큐브 [장착슬롯 1|2] [옵션번호] [횟수]`
+- `/홈뱃지큐브수정 [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]`
 - `/큐브확률`
 - `/홈뽑기확률`
 - `/특별뱃지목록`
@@ -766,6 +767,7 @@ Status: VERIFIED
 - `/홈뱃지오픈2 [숫자]` requires a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"]`, runs under the response data write lock, uniformly draws one of 20 `MBTI01`–`MBTI20` badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뱃지오픈3 [숫자]` opens 1 badge when the count is omitted or accepts a full numeric argument from 1–100, consumes `data.member[sender].bag["홈뱃지뽑기🛡️[3](/홈뱃지오픈3)"]`, runs under the response data write lock, uniformly draws one of 50 `LOVE01`–`LOVE50` relationship-type badges per item, stores unique IDs in `petHomeActivityFile`, and applies the existing duplicate-point, permanent-delete, single-reply, and two-file rollback behavior.
 - `/홈뱃지큐브 [장착슬롯] [옵션] [횟수]` is available without a pass and targets the badge currently in slot 1 or 2. Slot 1 allows options 1–4; support slot 2 allows only castle option 1 and raid option 2. Slot 2 options 3–4 and empty slots are rejected before cube/point mutation. It uses 1 cube per castle/raid attempt, 2 per pet-upgrade attempt, and 3 per explore attempt. Each consumed cube grants 500,000 points in the same `member.json` save, and point overflow or save failure rolls the point, cube bag, and cube-option state back together. It allows 1–1,000 tries and preserves the existing option limits, integer protection bands, per-badge `×1.1` total buff, and milestone notices.
+- `/홈뱃지큐브수정 [장착슬롯 1|2] [캐슬%] [레이드%] [펫강화%] [탐험%]` is Master-only and directly sets the four cube-option values of the sender's badge currently equipped in the selected slot. Values accept one decimal place and enforce the existing maxima of 50/50/30/15. The command consumes no cube, grants no points, rejects empty or unowned equipped badges, saves only `member.json`, and reload-verifies all four values. Slot 2 stores pet-upgrade and explore values but the existing effect calculation applies them only after that badge moves to the representative slot.
 - `/홈뽑기확률` is exact/read-only and shows grade and individual badge rates.
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
