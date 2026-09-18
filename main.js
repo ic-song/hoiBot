@@ -3281,9 +3281,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room);
             if (!lightResult.already || lightResult.serverUpdated) saveJsonFile(attendanceLightData, attendanceLightPath);
             if (lightResult.already) {
-                replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n📌 이용 안내\n• 출석 주의: 4일 연속 미출석 시 잠수 계정으로간주되어 자동 추방(계정 삭제)될 수 있습니다.• 모험 시작: 모두가 함께하는 '호이월드'의 모험가가 되어 펫과 함께 여행을 떠나보세요! /모험시작");
+                replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n📌 이용 안내\n• 출석 주의: 4일 연속 미출석 시 잠수 계정으로간주되어 자동 추방(계정 삭제)될 수 있습니다.\n• 모험 시작: 모두가 함께하는 '호이월드'의 모험가가 되어 펫과 함께 여행을 떠나보세요! /모험시작");
             } else {
-                replier.reply("[" + sender + "] 님 출첵👏\n\n📌 이용 안내\n• 출석 주의: 4일 연속 미출석 시 잠수 계정으로간주되어 자동 추방(계정 삭제)될 수 있습니다.• 모험 시작: 모두가 함께하는 '호이월드'의 모험가가 되어 펫과 함께 여행을 떠나보세요! /모험시작");
+                replier.reply("[" + sender + "] 님 출첵👏\n\n📌 이용 안내\n• 출석 주의: 4일 연속 미출석 시 잠수 계정으로간주되어 자동 추방(계정 삭제)될 수 있습니다.\n• 모험 시작: 모두가 함께하는 '호이월드'의 모험가가 되어 펫과 함께 여행을 떠나보세요! /모험시작");
             }
             return;
         }
