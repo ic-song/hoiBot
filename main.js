@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.549"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.550"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -7170,19 +7170,23 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     //  doPetExploreInterval에 petExploreData 전달
                     var out = doPetExploreInterval(data, petData, homeData, guildData, petExploreData, petSkillData);
 
+                    var manualPetExploreSettlementMessage = "";
                     if (isManualPetExploreSettlement) {
                         stopAllIntervals(data);
                         startInterval(data, room, replier, setint, ctx.isDev); // 수동 정산 완료 시각부터 60분 주기로 재시작
                         saveJsonFile(data, filePath);
+                        manualPetExploreSettlementMessage = buildManualPetExploreSettlementMessage(setint);
                     }
 
                     if (!out) {
                         if (!isManualPetExploreSettlement) saveJsonFile(data, filePath);
+                        if (manualPetExploreSettlementMessage) replier.reply(manualPetExploreSettlementMessage);
                         if (msg == "/펫탐험시작") replier.reply("현재 탐험 인원이 없습니다.");
                         return;
                     }
 
                     noticeMsg(out);
+                    if (manualPetExploreSettlementMessage) replier.reply(manualPetExploreSettlementMessage);
                 }
                 if (msg.startsWith("/럭키오픈")) {
                     let args = msg.split(" ");
@@ -35095,6 +35099,10 @@ function startInterval(data, room, replier, intervalMinutes, isDev) {
         data.intervalIDs = [];
     }
     data.intervalIDs.push(newInterval);
+}
+// 수동 펫탐험 정산 완료와 다음 자동 정산 시간을 안내하는 함수
+function buildManualPetExploreSettlementMessage(intervalMinutes) {
+    return "✅ 펫탐험 정산을 완료했습니다.\n⏱️ 다음 자동 정산까지: " + intervalMinutes + "분";
 }
 function stopAllIntervals(data) {
     if (Array.isArray(data.intervalIDs) && data.intervalIDs.length > 0) {
