@@ -7553,7 +7553,7 @@ replier.reply(
     "[" + checkRank(data, petData, guildData, sender) + "] 님에게\n" +
     "호월신의 가호✨ " + numberWithCommas(blessingCount) + "개가 깃들었습니다!\n" +
     "✨호블레스유✨\n\n" +
-    "📖 호월신의 가호 안내" + allsee + "\n\n" +
+    "📖 호월신의 가호 안내사항 📖" + allsee + "\n\n" +
     "경험치 획득 시 가호가 자동으로 사용되며,\n" +
     "경험치를 3배로 획득합니다.\n\n" +
     "🌟 경험치 획득처 및 획득량\n" +
