@@ -185,6 +185,15 @@ function isGlobalInfoCommandAllowed(sender, msg) {
 	return typeof msg === "string" && (msg === "/정보" || msg.indexOf("/정보 ") === 0) && (isAdminIdentity(sender) || isMasterIdentity(sender));
 }
 
+// 영지전 중 main.js가 안내한 일반 정보 명령을 Info.js에서 다시 처리하지 않도록 확인하는 함수
+function isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, isDev, isGlobalInfoCommand) {
+	return !isDev &&
+		!!(guildData && guildData.territoryWar && guildData.territoryWar.active === true) &&
+		typeof msg === "string" &&
+		msg.indexOf("/") === 0 &&
+		!isGlobalInfoCommand;
+}
+
 
 // Info에서 현재 레벨의 필요 경험치를 반환하는 함수
 function getInfoLevelRequiredExperience(level) {
@@ -451,6 +460,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		let data = loadJsonFile(filePath);
 		var isGlobalInfoCommand = isGlobalInfoCommandAllowed(sender, msg);
+		var guildData = loadJsonFile(guildPath);
+		// 영지전 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 조용히 차단합니다.
+		if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, isGlobalInfoCommand)) return;
 		// 펫무쌍 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 차단합니다.
 		if (data && data.petMusou && data.petMusou.active && !isGlobalInfoCommand && !(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
 		if (!isGlobalInfoCommand && !isGroupChat && !hasInfoPrivateChatPass(data, sender)) {
@@ -472,7 +484,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		var petSkillData = loadJsonFile(petSkillDataPath) || {};
 		var titleData = loadJsonFile(memberTitlePath);
 		var petTitleData = loadJsonFile(petTitlePath);
-		var guildData = loadJsonFile(guildPath);
 
 		if (msg.startsWith("/정보") && (isAdminIdentity(sender) || isMasterIdentity(sender))) {
 			var targetUser = msg.substring("/정보".length).trim();
