@@ -7549,8 +7549,33 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     removeItem(data, sender, GLOBAL_CONFIG.level.boosterItemName, blessingCount);
                     data.member[sender].boostercnt = Math.max(0, parseInt(data.member[sender].boostercnt, 10) || 0) + blessingCount;
                     saveJsonFile(data, filePath);
-                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님에게\n호월신의 가호✨ " + numberWithCommas(blessingCount) + "개가 깃들었습니다!\n\n✨호렐루야✨");
-                    return;
+replier.reply(
+    "[" + checkRank(data, petData, guildData, sender) + "] 님에게\n" +
+    "호월신의 가호✨ " + numberWithCommas(blessingCount) + "개가 깃들었습니다!\n" +
+    "✨호블레스유✨\n\n" +
+    "📖 호월신의 가호 안내" + allsee + "\n\n" +
+    "경험치 획득 시 가호가 자동으로 사용되며,\n" +
+    "경험치를 3배로 획득합니다.\n\n" +
+    "🌟 경험치 획득처 및 획득량\n" +
+    "【 기본 → 가호 적용 】\n\n" +
+    "💬 채팅: 1 → 3 EXP\n" +
+    "📅 출석체크: 100 → 300 EXP\n" +
+    "🏆 캐슬대전: 50 → 150 EXP\n" +
+    "🐹 미니펫대전: 50 → 150 EXP\n" +
+    "📜 일일퀘스트: 100 → 300 EXP\n" +
+    "🦋 주간퀘스트: 500 → 1,500 EXP\n\n" +
+    "⛰️ 펫탐험 경험치\n" +
+    "⛏️ 광산: 3 → 9 EXP\n" +
+    "⚔️ 던전: 5 → 15 EXP\n" +
+    "🌀 미궁: 7 → 21 EXP\n\n" +
+    "👑 호패 프리미엄 보상\n" +
+    "경험치 보상도 가호 적용 시 3배 획득!\n\n" +
+    "※ 위 수치는 티어 보너스를 제외한 수치이며,\n" +
+    "가호가 충분히 있을 때를 기준으로 합니다.\n\n" +
+    "✨ 가호 소모 안내\n" +
+    "💬 채팅 1회\n" +
+    "└ 경험치 3 획득 / 가호 3개 소모"
+);                    return;
                 }
                 if (msg.startsWith("/타이틀추가") && isMaster(sender)) {
                     var titleData = loadJsonFile(memberTitlePath);
