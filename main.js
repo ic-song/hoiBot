@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.552"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.553"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -6129,7 +6129,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg.length > 3) {
                     data.member[sender].point++;
                     data.member[sender].chatcnt0++;
-                    var chatExpResult = addMemberExperienceWithTierBonus(data, sender, 1); // 일반 채팅의 티어·가호 포함 경험치 지급 결과
+                    var chatExpResult = addMemberExperienceWithTierBonus(data, sender, 1, true); // 일반 채팅은 티어를 제외하고 가호만 적용한 경험치 지급 결과
                     //서버데이터 넣기
                     if (!data.member[sender].server) {
                         if (roomToServer[room]) {
@@ -35740,13 +35740,13 @@ function applyRebirthMushroomRecall(data) {
     return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] };
 }
 
-// 기본 EXP에 고정 티어 EXP를 더한 뒤 가호를 적용하고 레벨업을 처리하는 함수
-function addMemberExperienceWithTierBonus(data, user, baseExperience) {
+// 기본 EXP에 선택적으로 고정 티어 EXP를 더한 뒤 가호와 레벨업을 처리하는 함수
+function addMemberExperienceWithTierBonus(data, user, baseExperience, excludeTierBonus) {
     var member = data && data.member ? data.member[user] : null;
     var base = roundToTwo(Math.max(0, Number(baseExperience) || 0)); // 이번 경험치 지급 건의 기존 기본 EXP
     var emptyBoosterResult = { baseExperience: 0, boostedBaseExperience: 0, usedBooster: 0, requiredBooster: 0, maximumExtraExperience: 0, extraExperience: 0, totalExperience: 0 };
     if (!member || base <= 0) return { base: base, bonus: 0, subtotal: base, boosterResult: emptyBoosterResult, total: 0, levelUps: [] };
-    var bonus = getTierExperienceBonus(data, user); // 현재 티어가 지급 건마다 더하는 고정 EXP
+    var bonus = excludeTierBonus ? 0 : getTierExperienceBonus(data, user); // 채팅 외 경험치 지급 건에 더하는 고정 티어 EXP
     var subtotal = roundToTwo(base + bonus); // 가호 적용 전 기본·티어 합계
     var boosterResult = applyAdventureExperienceBooster(member, subtotal);
     member.exp = roundToTwo((Number(member.exp) || 0) + boosterResult.totalExperience);

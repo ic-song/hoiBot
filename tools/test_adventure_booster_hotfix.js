@@ -78,9 +78,9 @@ verify(100, 500, 200, 200, 300);
 verify(22.5, 10, 10, 10, 0);
 verify(22.5, 45, 45, 45, 0);
 
-function verifyTierExperience(tier, base, booster, expectedBonus, expectedTotal, expectedUsed, expectedRemain) {
+function verifyTierExperience(tier, base, booster, expectedBonus, expectedTotal, expectedUsed, expectedRemain, excludeTierBonus) {
     const data = { member: { user: { rank: { tier }, exp: 0, boostercnt: booster } } };
-    const result = context.addMemberExperienceWithTierBonus(data, "user", base);
+    const result = context.addMemberExperienceWithTierBonus(data, "user", base, excludeTierBonus);
     if (result.bonus !== expectedBonus || result.total !== expectedTotal || result.boosterResult.usedBooster !== expectedUsed || data.member.user.boostercnt !== expectedRemain || data.member.user.exp !== expectedTotal) {
         throw new Error(JSON.stringify({ tier, base, booster, result, member: data.member.user }));
     }
@@ -92,6 +92,11 @@ const partialTierResult = verifyTierExperience("노랑하트", 50, 100, 30, 180,
 const noBoosterTierResult = verifyTierExperience("노랑하트", 50, 0, 30, 80, 0, 0);
 verifyTierExperience("새싹", 1, 10, 1, 6, 4, 6);
 verifyTierExperience("보라하트", 50, 0, 33, 83, 0, 0);
+verifyTierExperience("노랑하트", 1, 10, 0, 3, 2, 8, true);
+
+if (source.indexOf("addMemberExperienceWithTierBonus(data, sender, 1, true)") < 0) {
+    throw new Error("일반 채팅 티어 보너스 제외 연결 검증 실패");
+}
 
 const fullMessage = context.buildBattleExperienceRewardMessage(fullTierResult);
 if (fullMessage.indexOf("📊 총 획득 경험치: +240exp") < 0 || fullMessage.indexOf("🎟️ 티어 보너스: +30exp") < 0 || fullMessage.indexOf("가호 추가 보너스: +160exp") < 0 || fullMessage.indexOf("기본 경험치와 티어 보너스에 3배 적용되었습니다.") < 0) {
