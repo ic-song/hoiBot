@@ -26,11 +26,27 @@ const context = {
     GLOBAL_CONFIG: { level: { boosterExtraMultiplier: 2, boosterConsumptionPerBaseExp: 2 } },
     roundToTwo: value => Math.round(value * 100) / 100,
     getAutoDailyBatchContext: () => null,
+    processAdventureLevelUps: () => [],
+    replyAutoDailyAdventureLevelUps: () => {},
     formatAdventureExperience: value => String(value),
     numberWithCommas: value => String(value)
 };
 vm.createContext(context);
+const tierDataStart = source.indexOf("const ticketTierData =");
+const tierDataEnd = source.indexOf("\n};", tierDataStart) + 3;
+vm.runInContext(source.slice(tierDataStart, tierDataEnd).replace("const ticketTierData =", "ticketTierData ="), context);
+const expectedTierExperienceBonuses = [1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100, 106, 112, 118, 124, 130, 138, 146, 154, 162, 172, 182, 192, 202, 214, 226, 238];
+const tierNames = Object.keys(context.ticketTierData);
+if (tierNames.length !== expectedTierExperienceBonuses.length) throw new Error("티어 단계 수 검증 실패: " + tierNames.length);
+tierNames.forEach((tierName, index) => {
+    if (context.ticketTierData[tierName].experienceBonus !== expectedTierExperienceBonuses[index]) {
+        throw new Error("티어 고정 EXP 검증 실패: " + tierName + " / " + context.ticketTierData[tierName].experienceBonus);
+    }
+});
+vm.runInContext(extractFunction("normalizeTicketTierName"), context);
+vm.runInContext(extractFunction("getTierExperienceBonus"), context);
 vm.runInContext(extractFunction("applyAdventureExperienceBooster"), context);
+vm.runInContext(extractFunction("addMemberExperienceWithTierBonus"), context);
 vm.runInContext(extractFunction("buildBattleExperienceRewardMessage"), context);
 
 const depletionContext = {
@@ -62,13 +78,32 @@ verify(100, 500, 200, 200, 300);
 verify(22.5, 10, 10, 10, 0);
 verify(22.5, 45, 45, 45, 0);
 
-const message = context.buildBattleExperienceRewardMessage(110, 100, 10, 0, 10);
-if (message.indexOf("호월신의 가호 적용! (+10exp)") < 0 || message.indexOf("가호 사용: 10개") < 0) {
-    throw new Error("가호 적용·소비 문구 검증 실패: " + message);
+function verifyTierExperience(tier, base, booster, expectedBonus, expectedTotal, expectedUsed, expectedRemain) {
+    const data = { member: { user: { rank: { tier }, exp: 0, boostercnt: booster } } };
+    const result = context.addMemberExperienceWithTierBonus(data, "user", base);
+    if (result.bonus !== expectedBonus || result.total !== expectedTotal || result.boosterResult.usedBooster !== expectedUsed || data.member.user.boostercnt !== expectedRemain || data.member.user.exp !== expectedTotal) {
+        throw new Error(JSON.stringify({ tier, base, booster, result, member: data.member.user }));
+    }
+    return result;
 }
-const battleLossMessage = context.buildBattleExperienceRewardMessage(75, 25, 50, 0, 50);
-if (battleLossMessage !== "📊 경험치: +75exp\n✨ 호월신의 가호 적용! (+50exp)\n└ 가호 사용: 50개\n└ 기본 25 + 티어 0") {
-    throw new Error("대전 패배 경험치 UI 검증 실패: " + battleLossMessage);
+
+const fullTierResult = verifyTierExperience("노랑하트", 50, 999, 30, 240, 160, 839);
+const partialTierResult = verifyTierExperience("노랑하트", 50, 100, 30, 180, 100, 0);
+const noBoosterTierResult = verifyTierExperience("노랑하트", 50, 0, 30, 80, 0, 0);
+verifyTierExperience("새싹", 1, 10, 1, 6, 4, 6);
+verifyTierExperience("보라하트", 50, 0, 33, 83, 0, 0);
+
+const fullMessage = context.buildBattleExperienceRewardMessage(fullTierResult);
+if (fullMessage.indexOf("📊 총 획득 경험치: +240exp") < 0 || fullMessage.indexOf("🎟️ 티어 보너스: +30exp") < 0 || fullMessage.indexOf("가호 추가 보너스: +160exp") < 0 || fullMessage.indexOf("기본 경험치와 티어 보너스에 3배 적용되었습니다.") < 0) {
+    throw new Error("가호 전체 적용 문구 검증 실패: " + fullMessage);
+}
+const partialMessage = context.buildBattleExperienceRewardMessage(partialTierResult);
+if (partialMessage.indexOf("📊 총 획득 경험치: +180exp") < 0 || partialMessage.indexOf("보유 수량이 부족해 일부 경험치에만 3배 적용되었습니다.") < 0) {
+    throw new Error("가호 부분 적용 문구 검증 실패: " + partialMessage);
+}
+const noBoosterMessage = context.buildBattleExperienceRewardMessage(noBoosterTierResult);
+if (noBoosterMessage.indexOf("📊 총 획득 경험치: +80exp") < 0 || noBoosterMessage.indexOf("호월신의 가호가 적용되지 않았습니다.") < 0) {
+    throw new Error("가호 미적용 문구 검증 실패: " + noBoosterMessage);
 }
 
 const tierChecks = [
@@ -98,13 +133,13 @@ rankData.member["사람 남"].rank.emoji = "👑";
 if (rankContext.checkRank(rankData, {}, {}, "사람 남") !== "👑사람 남") throw new Error("승급 후 checkRank 재계산 검증 실패");
 
 const consumptionMessageCallChecks = [
-    "buildBattleExperienceRewardMessage(castleTierExpResult.total, expGain, expFromBooster, castleTierExpResult.bonus, castleBoosterResult.usedBooster)",
-    "buildBattleExperienceRewardMessage(miniTierExpResult.total, expGain, expFromBooster, miniTierExpResult.bonus, miniBoosterResult.usedBooster)",
-    "buildQuestExperienceRewardMessage(dailyExperienceResult, dailyBaseExperience, dailyBoosterResult.extraExperience, dailyBoosterResult.usedBooster)",
-    "buildQuestExperienceRewardMessage(premiumExperienceResult, premiumBaseExperience, premiumBoosterResult.extraExperience, premiumBoosterResult.usedBooster)",
-    "buildQuestExperienceRewardMessage(weeklyExperienceResult, weeklyBaseExperience, weeklyBoosterResult.extraExperience, weeklyBoosterResult.usedBooster)",
-    "buildBattleExperienceRewardMessage(experienceResult.total, baseExperience, boosterResult.extraExperience, experienceResult.bonus, boosterResult.usedBooster)",
-    'attendanceRewardMessage += "\\n└ 가호 사용: " + numberWithCommas(attendanceBoosterResult.usedBooster) + "개"'
+    "buildBattleExperienceRewardMessage(castleTierExpResult)",
+    "buildBattleExperienceRewardMessage(miniTierExpResult)",
+    "buildQuestExperienceRewardMessage(dailyExperienceResult)",
+    "buildQuestExperienceRewardMessage(premiumExperienceResult)",
+    "buildQuestExperienceRewardMessage(weeklyExperienceResult)",
+    "buildBattleExperienceRewardMessage(experienceResult)",
+    "buildBattleExperienceRewardMessage(attendanceExpResult)"
 ];
 for (const expected of consumptionMessageCallChecks) {
     if (source.indexOf(expected) < 0) throw new Error("가호 소비 문구 연결 검증 실패: " + expected);
@@ -142,9 +177,9 @@ if (source.indexOf('miniPetBattleExperience: { win: 50, lose: 25 }') < 0) {
 }
 
 const attendanceChecks = [
-    "attendanceBoosterResult = applyAdventureExperienceBooster(member, GLOBAL_CONFIG.attendance.bonusExp)",
-    "attendanceExpResult = addMemberExperienceWithTierBonus(data, user, attendanceBoosterResult.totalExperience)",
-    'attendanceRewardMessage += "\\n└ 가호 사용: " + numberWithCommas(attendanceBoosterResult.usedBooster) + "개"',
+    "attendanceExpResult = addMemberExperienceWithTierBonus(data, user, GLOBAL_CONFIG.attendance.bonusExp)",
+    "attendanceBoosterResult = attendanceExpResult.boosterResult",
+    "buildBattleExperienceRewardMessage(attendanceExpResult)",
     "boosterUsed: attendanceBoosterResult.usedBooster"
 ];
 for (const expected of attendanceChecks) {
@@ -174,5 +209,9 @@ const boosterHelperSource = extractFunction("applyAdventureExperienceBooster");
 if (boosterHelperSource.indexOf("loadJsonFile") >= 0 || boosterHelperSource.indexOf("saveJsonFile") >= 0) {
     throw new Error("가호 계산 helper 내부에 파일 IO가 포함되어 있습니다.");
 }
+const tierExperienceHelperSource = extractFunction("addMemberExperienceWithTierBonus");
+if (tierExperienceHelperSource.indexOf("loadJsonFile") >= 0 || tierExperienceHelperSource.indexOf("saveJsonFile") >= 0) {
+    throw new Error("티어 경험치 helper 내부에 파일 IO가 포함되어 있습니다.");
+}
 
-console.log("PASS adventure booster boundaries, consumption message, tier checkRank wiring");
+console.log("PASS fixed tier EXP, booster ordering/boundaries, reward UI, tier checkRank wiring");
