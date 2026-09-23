@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.557"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.558"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2633,6 +2633,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             msg = stripDevCommandPrefix(msg);
             replier = createContextReplier(replier, ctx);
         }
+        if (msg === "/퀘스트완료" && room !== testRoom) return;
 
         if (ctx.isDev && msg === "/데이터백업") {
             if (!isMaster(sender)) {
@@ -16952,10 +16953,6 @@ replier.reply(
                 }
 
                 if (msg === "/모험가퀘스트" || msg === "/퀘스트완료" || msg === "/퀘스트기록" || msg === "/퀘스트타이틀" || msg === "/퀘스트타이틀제거" || /^\/퀘스트타이틀장착\s+\d+$/.test(msg)) {
-                    if (msg === "/퀘스트완료" && room !== testRoom) {
-                        replier.reply("⏳ /퀘스트완료는 현재 팻 테스트방에서만 사용할 수 있어요.");
-                        return;
-                    }
                     if (!petData[sender] || !petData[sender].petname) {
                         replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 먼저 /모험시작으로 펫과 함께 모험을 시작해 주세요.");
                         return;

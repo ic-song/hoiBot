@@ -155,8 +155,10 @@ assert(main.includes('if (adventureQuestState.currentStage > GLOBAL_CONFIG.adven
 const questCommandStart = main.indexOf('if (msg === "/모험가퀘스트" || msg === "/퀘스트완료"');
 const questMutationStart = main.indexOf('var adventureQuestMemberSnapshot =', questCommandStart);
 assert(questCommandStart >= 0 && questMutationStart > questCommandStart);
-const questCommandGuard = main.slice(questCommandStart, questMutationStart);
-assert(/if \(msg === "\/퀘스트완료" && room !== testRoom\) \{\s*replier\.reply\("⏳ \/퀘스트완료는 현재 팻 테스트방에서만 사용할 수 있어요\."\);\s*return;\s*\}/.test(questCommandGuard));
+const responseStart = main.indexOf('function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)');
+const questCommandGuard = main.slice(responseStart, questCommandStart);
+assert(/if \(msg === "\/퀘스트완료" && room !== testRoom\) return;/.test(questCommandGuard));
+assert(main.indexOf('if (msg === "/퀘스트완료" && room !== testRoom) return;') < main.indexOf('if (ctx.isDev && msg === "/데이터백업")'));
 assert(main.includes('const testRoom = "팻 테스트방";'));
 assert(/if \(msg === "\/상점"\) \{\r?\n\s*if \(recordAdventureQuestAction\(data, sender, 2, "shopViewed", 0\)\) saveJsonFile\(data, filePath\);/.test(main));
 assert(!/^\s*saveJsonFile\(/m.test(info), "Info.js must not call the main-only save helper");
