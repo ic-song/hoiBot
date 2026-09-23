@@ -242,6 +242,16 @@ function applyInfoPercentWithExactFloor(value, percent) {
 // Info에서 /레벨 출력 메시지를 만드는 함수
 function buildInfoLevelMessage(data, petData, guildData, user) {
 	var member = data.member[user];
+	var quest = member.adventureQuest && typeof member.adventureQuest === "object" ? member.adventureQuest : null;
+	var questCompleted = quest && quest.completedStages instanceof Array ? Math.min(16, quest.completedStages.length) : 0;
+	var questTitle = "";
+	if (quest && quest.equippedTitle && quest.titles instanceof Array) {
+		for (var titleIndex = 0; titleIndex < quest.titles.length; titleIndex++) {
+			if (quest.titles[titleIndex].number === quest.equippedTitle) questTitle = quest.titles[titleIndex].title;
+		}
+	}
+	var questCastlePercent = quest && quest.totals ? Number(quest.totals.castlePercent) || 0 : 0;
+	var questRaidPercent = quest && quest.totals ? Number(quest.totals.raidPercent) || 0 : 0;
 	var level = Math.max(1, parseInt(member.lv, 10) || 1);
 	var exp = Math.max(0, Number(member.exp) || 0);
 	var required = getInfoLevelRequiredExperience(level);
@@ -253,17 +263,34 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	var promotionCount = Math.floor(level / 10); // 대승급을 포함한 전체 10레벨 단위 승급 차수
 	var nextPromotion = (Math.floor(level / 10) + 1) * 10;
 	var nextMajor = (Math.floor(level / 100) + 1) * 100;
-	return "[" + checkRank(data, petData, guildData, user) + "]님의 모험가 정보 🧭\n" +
+	var questStatus = questCompleted >= 16 ? (level < 17 ? "🔒 다음 퀘스트: 17단계 · Lv.17부터 진행 가능 (본편 공개 대기)" : "🔒 다음 퀘스트: 17단계 · 본편 공개 대기") : "📜 진행 중: " + (questCompleted + 1) + "단계 · NPC 호식이😺";
+	return (questTitle ? "🏅 " + questTitle + "\n" : "") + "[" + checkRank(data, petData, guildData, user) + "]님의 모험가 정보 🧭\n" +
 		getInfoAdventureLevelTitle(level) + " · " + numberWithCommas(promotionCount) + "차 승급\n" +
 		"━━━━━━━━━━━━\n" +
 		"🌟 Lv." + numberWithCommas(level) + " [" + gauge + "]\n" +
 		"📊 EXP: " + formatInfoAdventureExperience(exp) + " / " + formatInfoAdventureExperience(required) + " (" + (ratio * 100).toFixed(3) + "%)\n" +
-		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n" +
-		"━━━━━━━━━━━━\n" +
-		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
-		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n\n" +
+		"✨ 호월신의 가호 (경험치 3배): " + numberWithCommas(member.boostercnt || 0) + "개\n\n" +
 		"🎯 다음 승급까지: Lv." + numberWithCommas(nextPromotion) + " · " + numberWithCommas(nextPromotion - level) + "레벨 남음\n" +
-		"🏆 다음 대승급까지: Lv." + numberWithCommas(nextMajor) + " · " + numberWithCommas(nextMajor - level) + "레벨 남음";
+		"🏆 다음 대승급까지: Lv." + numberWithCommas(nextMajor) + " · " + numberWithCommas(nextMajor - level) + "레벨 남음\n" +
+		"━━━━━━━━━━━━\n" +
+		"🧭 모험가 퀘스트 · " + questCompleted + "/100단계 완료\n" +
+		questStatus + "\n\n" +
+		"👉 진행 안내 /모험가퀘스트\n" +
+		"👉 전체 기록 /퀘스트기록\n" +
+		"━━━━━━━━━━━━\n" +
+		"📚 모험가 · 퀘스트 상세 보상정보" + allsee + "\n\n" +
+		"🎒 모험가 레벨 보너스\n" +
+		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
+		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
+		"━━━━━━━━━━━━\n" +
+		"🧭 모험가 퀘스트 보너스\n" +
+		"⚔️ 퀘스트 캐슬 보너스: +" + formatInfoAdventureQuestPercent(questCastlePercent) + "%\n" +
+		"👾 퀘스트 레이드 보너스: +" + formatInfoAdventureQuestPercent(questRaidPercent) + "%";
+}
+
+// Info 화면의 퀘스트 매력 보너스를 0.001% 단위까지 표시하는 함수
+function formatInfoAdventureQuestPercent(value) {
+	return (Math.round((Number(value) || 0) * 1000) / 1000).toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 // Info 명령에서 후원패스 날짜 문자열을 비교 가능한 값으로 변환하는 함수
@@ -922,6 +949,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply("출석한 유저 목록:\n" + userListText1 + allsee + "\n" + userListText2);
 		}
 		if (msg === "/상점") {
+			var shopQuest = data.member && data.member[sender] ? data.member[sender].adventureQuest : null;
+			if (shopQuest && shopQuest.currentStage === 2 && shopQuest.progress && !shopQuest.progress.shopViewed) {
+				shopQuest.progress.shopViewed = true;
+				saveJsonFile(data, filePath);
+			}
 			let itemList = Object.keys(data.shop).map(function (itemName, index) {
 				let itemDetails = data.shop[itemName];
 				let itemPrice = numberWithCommas(itemDetails);
@@ -1298,7 +1330,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var weeklyQuestCnt = Math.max(0, Math.min(parseInt(data.member[sender].weeklyQuestCnt, 10) || 0, weeklyQuestMax));
 			var weeklyQuestRemain = Math.max(0, weeklyQuestMax - weeklyQuestCnt);
 			var weeklyQuestGuideMsg = weeklyQuestRemain <= 0 ? "(주간퀘스트🦋 보상 수령 가능✅)" : "(주간퀘스트🦋 보상까지 " + weeklyQuestRemain + "번 남았습니다)";
-			var questGuideMessages = ["('/정리' or 'ㅇㅇㅇ'만 해도 자동지급!)", "(👉전부 ✅ /퀘스트완료 or /ㅇ 시 보상지급!)", "(일일퀘스트 7번을 완료하면 주간보상!)", weeklyQuestGuideMsg];
+			var questGuideMessages = ["('/정리' or 'ㅇㅇㅇ'만 해도 자동지급!)", "(👉전부 ✅ /일퀘완료 or /ㅇ 시 보상지급!)", "(일일퀘스트 7번을 완료하면 주간보상!)", weeklyQuestGuideMsg];
 			var questGuideMsg = questGuideMessages[Math.floor(Math.random() * questGuideMessages.length)];
 
 			// 메시지 구성
@@ -2555,7 +2587,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("");
 	lines.push("📜일일,주간퀘스트 보상 명령어 안내📜" + allsee);
 	lines.push("");
-	lines.push('※ 모든 체크가[✅]면 "/퀘스트완료" 또는 "/ㅇ" 를 적어주세요');
+	lines.push('※ 모든 체크가[✅]면 "/일퀘완료" 또는 "/ㅇ" 를 적어주세요');
 	lines.push("※ 정리 or ㅇㅇㅇ 만 해도 보상지급이 됩니다.");
 	return lines.join("\n");
 }

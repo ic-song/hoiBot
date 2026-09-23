@@ -2079,6 +2079,45 @@ blockedNicknameTerms: [
         ],
         rankRewards: [15, 14, 13, 12, 11, 10, 9, 8, 7, 6]
     },
+    adventureQuest: { // 모험가 퀘스트 튜토리얼 설정
+        seasonMaxStage: 100,
+        tutorialMaxStage: 16,
+        castlePercentPerStage: 0.005,
+        raidPercentPerStage: 0.005,
+        experiencePerStage: 1000,
+        starterSkillBookCount: 1,
+        homeBadgeCubeCount: 100,
+        petStartReactions: [
+            "처음 만난 너를 조심스레 올려다본다. 🐾", "티어 표식을 신기한 듯 바라본다. 🎟️", "작은 선수들을 향해 열심히 응원한다. 🐹", "캐슬대전 이야기에 당당하게 자세를 잡는다. 🏰",
+            "시련의탑 설명을 듣고 네 곁에 바짝 붙는다. 🗼", "지도를 들여다보며 가고 싶은 곳을 짚는다. 🗺️", "잔뜩 쌓인 먹이를 보고 눈을 반짝인다. 🍼", "펼쳐진 책 옆에서 제법 진지한 표정을 짓는다. 📙",
+            "넓어진 집에서 뛸 생각에 발을 들썩인다. 🏠", "새 가구 옆에 앉아 자기 자리부터 정한다. 🛋️", "미니펫의 훈련을 지켜보며 고개를 끄덕인다. 💫", "반짝이는 펜던트에 시선을 떼지 못한다. 💎",
+            "뱃지를 번갈아 보며 고민에 빠진다. 🏅", "큐브에서 새어 나오는 빛을 따라 고개를 움직인다. 💟", "자기 차례라는 말에 씩씩하게 앞으로 나온다. ⭐", "자기는 친구가 아니냐는 듯 네 옆구리를 툭 건드린다. 🐾"
+        ],
+        petCompleteReactions: [
+            "네 곁에 자리를 잡고 앞으로의 모험을 기다린다. 🐾", "새 티어 표식을 자랑하듯 네 주위를 한 바퀴 돈다. 🎟️", "미니펫들에게 마지막까지 힘찬 응원을 보낸다. 🐹", "네 옆에서 자신도 한몫했다는 듯 뿌듯해한다. 🏰",
+            "도전을 마친 너를 반갑게 맞이한다. 🗼", "정해진 탐험지를 바라보며 기대에 찬 몸짓을 한다. 🗺️", "배를 든든히 채우고 기분 좋게 몸을 들썩인다. 🍼", "새로 배운 기술을 보여주고 싶어 안달이 난다. 📙",
+            "넓어진 공간에서 놀 생각에 신이 난다. 🏠", "새 가구가 놓인 자리를 마음에 들어 한다. 🛋️", "강화를 경험한 미니펫에게 다가가 격려한다. 💫", "펜던트를 살피는 너를 관심 있게 지켜본다. 💎",
+            "준비한 홈뱃지를 번갈아 보며 고개를 끄덕인다. 🏅", "홈뱃지의 빛을 바라보며 기분 좋게 몸을 흔든다. 💟", "네 손길에 기대어 다음 모험을 기다린다. ⭐", "광장 바깥을 바라보다 네가 따라오는지 돌아본다. 🐾"
+        ],
+        stages: [
+            { number: 1, title: "호식이와 첫 만남", objective: "모험가 퀘스트에 참여하기", commands: "/모험가퀘스트 → /퀘스트완료", story: "호월킹덤 광장에 도착한 모험가를 호식이가 맞습니다.", npcStart: "호월킹덤에 온 걸 환영한다냥! 난 호식이야. 앞으로 함께할 펫부터 만나볼까? 모험 준비물도 챙겨줄게!", npcComplete: "좋아, 준비가 끝났다냥! 이제 광장에서 하나씩 배워보자.", record: "광장에서 펫과 함께 모험 준비를 마쳤다." },
+            { number: 2, title: "첫 티어 달기", objective: "상점 조회 → 1번 상품 1개 구매 → 티어 조회 → 티어 적용", commands: "/상점 → /구매 1 1 → /티어 → /티어적용 → /퀘스트완료", story: "호식이가 광장 상점을 가리키며 티어 사용법을 알려줍니다.", npcStart: "모험가라면 자기 티어쯤은 있어야지! 상점에서 티어티켓을 준비하고, 네 티어에 적용해보자냥.", npcComplete: "티어가 잘 적용됐네! 네가 쌓아갈 성장의 첫 표식이다냥.", record: "티어티켓을 구매하고 티어를 적용했다." },
+            { number: 3, title: "작은 친구들의 대전", objective: "미니펫대전 정상 결과 15회", commands: "/미니펫대전 → /퀘스트완료", story: "미니펫대전을 경험하며 전투 흐름을 익힙니다.", npcStart: "작다고 얕보면 큰코다친다냥! 미니펫대전을 15판 해보고 와. 이기고 지는 것보다 익숙해지는 게 먼저야.", npcComplete: "15판이나 해냈구나! 작은 친구들의 실력도 제법이지?", record: "미니펫대전 15판을 마쳤다." },
+            { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 15회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 15판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 15판을 마쳤다." },
+            { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 15회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 15판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 15판을 마쳤다." },
+            { number: 6, title: "첫 탐험지 정하기", objective: "1~3번 탐험지 중 한 곳 지정", commands: "/탐 1, /탐 2, /탐 3 중 하나 → /퀘스트완료", story: "광장에 펼쳐진 지도에서 첫 탐험지를 고릅니다.", npcStart: "광장에서 탐험지를 정해볼까? 1번부터 3번 중 한 곳을 골라봐. 목적지만 지정하면 된다냥!", npcComplete: "탐험할 곳을 정했네! 돌아올 이야기가 벌써 궁금하다냥.", record: "펫을 보낼 첫 탐험지를 지정했다." },
+            { number: 7, title: "든든하게 먹고 출발", objective: "펫먹이 100,000개를 한 번에 사용", commands: "/냠냠 100000 → /퀘스트완료", story: "호식이가 준비한 먹이로 펫의 배를 든든히 채웁니다.", npcStart: "배가 든든해야 모험도 신나지! 펫먹이 10만 개를 챙겨줄 테니 네 친구에게 먹여봐라냥!", npcComplete: "아주 잘 먹었다냥! 배도 든든해졌으니 다음 준비를 시작해 보자냥!", record: "펫에게 먹이 10만 개를 먹였다." },
+            { number: 8, title: "첫 펫스킬 익히기", objective: "스킬북 1개 오픈 후 유효한 펫스킬 장착", commands: "/펫스킬오픈 1 → /펫스킬장착 [번호] → /퀘스트완료", story: "스킬북을 열고 배운 펫스킬을 실제로 장착합니다.", npcStart: "스킬북 속에 어떤 기술이 숨어 있을까? 한 권 열어보고 펫스킬을 장착해봐. 읽기만 해선 쓸 수 없다냥!", npcComplete: "스킬이 제대로 장착됐네! 이제 배운 기술을 써볼 수 있겠다냥.", record: "스킬북을 열어 펫스킬을 장착했다." },
+            { number: 9, title: "우리 집을 넓혀보자", objective: "퀘스트 시작 당시보다 펫홈 평수 늘리기", commands: "/집짓기 → 집뚝딱 → /퀘스트완료", story: "펫과 함께 지낼 집의 평수를 넓힙니다.", npcStart: "모험을 마치고 쉴 집도 필요하지! 재료 상점에서 준비물을 살펴보고, 지금보다 집을 넓혀와라냥.", npcComplete: "집이 더 넓어졌네! 함께 지낼 공간을 네 손으로 키웠다냥.", record: "펫홈의 평수를 늘렸다." },
+            { number: 10, title: "집에 가구 들이기", objective: "가구 장착 후 실제 배치 1개 이상 유지", commands: "/가구장착 [번호] → /퀘스트완료", story: "넓어진 펫홈에 가구를 놓아 꾸밉니다.", npcStart: "집이 넓어졌으면 꾸며야지! 마음에 드는 가구를 하나 장착해봐. 내 자리는 남겨두고!", npcComplete: "가구 하나로 분위기가 달라졌지? 네 취향이 보이는 집이다냥.", record: "펫홈에 가구를 장착했다." },
+            { number: 11, title: "미니펫 강화 입문", objective: "유효한 미니펫 강화 시도 1회", commands: "/미니펫강화 [가방번호] → /퀘스트완료", story: "미니펫 강화를 한 번 진행해 강화 과정을 익힙니다.", npcStart: "미니펫도 함께 강해져야 한다냥. 가방에서 강화할 친구를 골라 한 번 강화해봐!", npcComplete: "미니펫 강화 방법을 익혔네! 다음에도 대상부터 꼭 확인해라냥.", record: "미니펫 강화를 한 번 진행했다." },
+            { number: 12, title: "펜던트 강화 입문", objective: "유효한 펜던트 강화 시도 1회", commands: "/펜던트강화 [번호] → 진행시켜 → /퀘스트완료", story: "펜던트 강화에 도전해 성공과 실패 과정을 경험합니다.", npcStart: "목에 건 펜던트도 든든한 힘이 된다냥. 강화할 펜던트를 확인하고 한 번 도전해봐!", npcComplete: "펜던트 강화도 해봤구나! 준비물을 확인하는 습관을 들여라냥.", record: "펜던트 강화를 한 번 진행했다." },
+            { number: 13, title: "홈뱃지 고르기", objective: "다이아상점 조회 후 홈뱃지 상품 2개 구매", commands: "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료", story: "다이아상점에서 사용할 홈뱃지를 준비합니다.", npcStart: "다이아상점에는 홈뱃지가 있어! 1번, 2번, 3번 중에서 두 개를 사 와라냥. 같은 종류로 두 개 골라도 괜찮아!", npcComplete: "홈뱃지를 준비했네! 다음엔 힘을 더하고 적용하는 법을 배우자.", record: "다이아상점에서 상품 두 개를 구매했다." },
+            { number: 14, title: "홈뱃지에 힘을 더하자", objective: "홈뱃지 큐브 실제 사용 1회 및 홈뱃지 장착 유지", commands: "/홈뱃지장착 [번호] → /홈뱃지큐브 [슬롯] [옵션] → /퀘스트완료", story: "호식이가 건넨 큐브로 장착한 홈뱃지의 힘을 키웁니다.", npcStart: "홈뱃지 큐브 100개를 챙겨줄게! 큐브를 사용하고 홈뱃지가 장착돼 효과를 주고 있는지도 확인해봐라냥.", npcComplete: "홈뱃지가 제대로 적용됐네! 준비한 보람이 있다냥.", record: "홈뱃지 큐브를 사용하고 홈뱃지를 적용했다." },
+            { number: 15, title: "펫과 함께 한 단계 더", objective: "유효한 펫 강화 시도 1회", commands: "/펫강화 [횟수] → /퀘스트완료", story: "함께하는 펫의 강화를 한 번 진행합니다.", npcStart: "이번엔 네 곁을 지키는 펫 차례야. 펫 강화를 한 번 해보고 와. 도전하는 법을 배우는 거다냥!", npcComplete: "펫 강화까지 해냈네! 너와 펫이 함께 자라는 모습이 좋다냥.", record: "펫 강화를 한 번 진행했다." },
+            { number: 16, title: "야, 너 친구 없지?", objective: "길드목록 정상 조회 1회", commands: "/길드목록 → /퀘스트완료", story: "함께할 동료를 찾을 수 있는 길드목록을 둘러봅니다.", npcStart: "야, 너 친구 없지? 😼 펫 친구 말고 같이 모험할 친구 말이야! /길드목록에서 둘러보고 와. 가입은 마음에 드는 곳을 찾은 다음에 해도 돼!", npcComplete: "함께할 동료들도 둘러봤구나. 광장 수업은 끝났어! Lv.17이 되면 첫 본편 의뢰로 모험을 이어가라냥.", record: "길드목록을 둘러보고 광장 튜토리얼을 마쳤다." }
+        ]
+    },
     items: { // 공통 아이템명 설정
         carrotName: "🥕당근이세요?",
         carrotThermometerName: "🌡️당근온도기(/온도 아이디)",
@@ -4071,6 +4110,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (msg === "/다이아상점") {
+            if (recordAdventureQuestAction(data, sender, 13, "diamondShopViewed", 0)) saveJsonFile(data, filePath);
             var shopMsg = "💎호이월드 다이아 상점💎\n\n(구매방법: /다이아상점구매 [번호] [갯수])\n\n※ 다이아💎 획득처가 궁금하신가요?\n※ 채팅창에 '다이아 상점' 을 적어보세요.\n" +allsee;
             if (matzangField.shop.length < 1) shopMsg += "등록된 상품이 없습니다.";
             for (var ds = 0; ds < matzangField.shop.length; ds++) {
@@ -4102,6 +4142,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 memo: buyItem.name + "x" + numberWithCommas(buyItem.count * buyCount)
             });
             addItem(data, sender, buyItem.name, buyItem.count * buyCount);
+            var diamondQuestState = getAdventureQuestState(data, sender, false);
+            if (diamondQuestState && diamondQuestState.currentStage === 13 && diamondQuestState.progress.diamondShopViewed) {
+                var badgeProductOffered = false;
+                for (var badgeShopIndex = 0; badgeShopIndex < matzangField.shop.length; badgeShopIndex++) {
+                    if (isAdventureQuestHomeBadgeProduct(matzangField.shop[badgeShopIndex].name)) badgeProductOffered = true;
+                }
+                if (!badgeProductOffered || isAdventureQuestHomeBadgeProduct(buyItem.name)) recordAdventureQuestAction(data, sender, 13, "diamondShopPurchase", buyItem.count * buyCount);
+            }
             saveJsonFile(data, filePath);
             saveJsonFile(currencyLogData, currencyLogPath);
             replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buyItem.name + " " + numberWithCommas(buyItem.count * buyCount) + "개 구매 완료!\n잔여 다이아💎: " + numberWithCommas(data.member[sender].diamond) + "개");
@@ -4451,7 +4499,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var starterHomeData = loadJsonFile(homeDataFile);
                     adventureOnboarding.stage = "APPLYING";
-                    if (applyAdventureStarterMemberRewards(data, sender)) saveJsonFile(data, filePath);
                     if (applyAdventureStarterPetSettings(petData, sender)) saveJsonFile(petData, memberPetPath);
                     if (applyAdventureStarterSkill(petSkillData, sender)) saveJsonFile(petSkillData, petSkillDataPath);
                     if (applyAdventureStarterHome(starterHomeData, sender)) saveJsonFile(starterHomeData, homeDataFile);
@@ -4952,6 +4999,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     removeItem(data, sender, GLOBAL_CONFIG.petSkill.bookItemName, skillOpenCount);
+                    recordAdventureQuestAction(data, sender, 8, "skillBookOpened", 0);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petSkillData, petSkillDataPath);
 
@@ -5023,6 +5071,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     removePetSkillFromBag(petSkillData, sender, equipName, 1);
                     skillStore.equipped.push(equipName);
+                    if (recordAdventureQuestAction(data, sender, 8, "skillEquipped", 0)) saveJsonFile(data, filePath);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     var equipMsg = "✅ " + formatPetSkillName(equipName) + " 장착 완료!\n장착된 스킬은 귀속됩니다.";
                     if (isPrayerSkillName(equipName)) {
@@ -16897,7 +16946,132 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/퀘스트완료" || msg === "ㅎㅎㅎ" || msg === "/ㅇ" || msg === "/ㅇㅇㅇ") {
+                if (msg === "/모험가퀘스트" || msg === "/퀘스트완료" || msg === "/퀘스트기록" || msg === "/퀘스트타이틀" || msg === "/퀘스트타이틀제거" || /^\/퀘스트타이틀장착\s+\d+$/.test(msg)) {
+                    if (!petData[sender] || !petData[sender].petname) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님 먼저 /모험시작으로 펫과 함께 모험을 시작해 주세요.");
+                        return;
+                    }
+                    var adventureQuestMemberSnapshot = JSON.parse(JSON.stringify(data.member[sender]));
+                    if (msg !== "/모험가퀘스트" && msg !== "/퀘스트완료" && !getAdventureQuestState(data, sender, false)) {
+                        replier.reply("먼저 /모험가퀘스트에서 첫 퀘스트를 확인해 주세요.");
+                        return;
+                    }
+                    var adventureQuestState = getAdventureQuestState(data, sender, true);
+                    var adventureQuestChanged = false;
+                    var adventureQuestNeedsHome = adventureQuestState.currentStage === 8 || adventureQuestState.currentStage === 9 || adventureQuestState.currentStage === 10;
+                    var adventureQuestHomeInfo = adventureQuestNeedsHome ? loadJsonFile(homeInfoFile) : null;
+                    var adventureQuestHomeData = adventureQuestNeedsHome ? initSweetHomeUser(loadJsonFile(homeDataFile), sender) : null;
+                    var adventureQuestExploreData = adventureQuestState.currentStage === 6 ? loadJsonFile(petExplorePath) : null;
+                    var adventureQuestActivityData = adventureQuestState.currentStage === 14 ? requirePetHomeActivityData(loadJsonFile(petHomeActivityFile)) : null;
+
+                    if (applyAdventureStarterMemberRewards(data, sender)) adventureQuestChanged = true;
+                    if (prepareAdventureQuestStage(data, sender, adventureQuestHomeInfo, adventureQuestHomeData)) adventureQuestChanged = true;
+
+                    if (adventureQuestState.currentStage === 9 && adventureQuestState.progress.maxFloorAtEntry === true) {
+                        var automaticHomeStageResult = completeAdventureQuestStage(data, sender);
+                        if (automaticHomeStageResult) {
+                            prepareAdventureQuestStage(data, sender, adventureQuestHomeInfo, adventureQuestHomeData);
+                            try {
+                                saveJsonFile(data, filePath);
+                            } catch (adventureQuestAutoSaveError) {
+                                data.member[sender] = adventureQuestMemberSnapshot;
+                                throw adventureQuestAutoSaveError;
+                            }
+                            replier.reply(buildAdventureQuestCompleteMessage(data, petData, guildData, sender, automaticHomeStageResult, true));
+                            if (automaticHomeStageResult.levelUps.length > 0) replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, sender, automaticHomeStageResult.levelUps));
+                            return;
+                        }
+                    }
+
+                    if (msg === "/모험가퀘스트") {
+                        if (adventureQuestChanged) {
+                            try {
+                                saveJsonFile(data, filePath);
+                            } catch (adventureQuestStartSaveError) {
+                                data.member[sender] = adventureQuestMemberSnapshot;
+                                throw adventureQuestStartSaveError;
+                            }
+                        }
+                        replier.reply(buildAdventureQuestMessage(data, petData, petSkillData, guildData, adventureQuestHomeData, adventureQuestExploreData, adventureQuestActivityData, sender));
+                        return;
+                    }
+                    if (msg === "/퀘스트기록") {
+                        if (adventureQuestChanged) saveJsonFile(data, filePath);
+                        replier.reply(buildAdventureQuestHistoryMessage(data, petData, guildData, sender));
+                        return;
+                    }
+                    if (msg === "/퀘스트타이틀") {
+                        if (adventureQuestChanged) saveJsonFile(data, filePath);
+                        replier.reply(buildAdventureQuestTitleMessage(data, petData, guildData, sender));
+                        return;
+                    }
+                    if (msg === "/퀘스트타이틀제거") {
+                        if (!adventureQuestState.equippedTitle) {
+                            replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 장착 중인 타이틀이 없어요.");
+                            return;
+                        }
+                        adventureQuestState.equippedTitle = 0;
+                        saveJsonFile(data, filePath);
+                        replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님 퀘스트 타이틀을 해제했어요.");
+                        return;
+                    }
+                    if (/^\/퀘스트타이틀장착\s+\d+$/.test(msg)) {
+                        var adventureTitleNumber = parseInt(msg.split(/\s+/)[1], 10);
+                        var adventureTitleOwned = adventureQuestState.completedStages.indexOf(adventureTitleNumber) >= 0;
+                        var adventureTitleConfig = getAdventureQuestStageConfig(adventureTitleNumber);
+                        if (!adventureTitleOwned || !adventureTitleConfig) {
+                            replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 보유하지 않은 타이틀이에요.");
+                            return;
+                        }
+                        if (adventureQuestState.equippedTitle === adventureTitleNumber) {
+                            replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님 이미 장착 중인 타이틀이에요.");
+                            return;
+                        }
+                        adventureQuestState.equippedTitle = adventureTitleNumber;
+                        saveJsonFile(data, filePath);
+                        replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님 퀘스트 타이틀을 장착했어요.\n🏅 " + adventureTitleConfig.title);
+                        return;
+                    }
+                    if (msg === "/퀘스트완료") {
+                        var adventureQuestCheck = getAdventureQuestCompletionCheck(data, petData, petSkillData, adventureQuestHomeData, adventureQuestExploreData, adventureQuestActivityData, sender);
+                        if (!adventureQuestCheck.complete) {
+                            if (adventureQuestChanged) saveJsonFile(data, filePath);
+                            replier.reply(buildAdventureQuestIncompleteMessage(data, petData, guildData, sender, adventureQuestCheck));
+                            return;
+                        }
+                        var adventureQuestResult = completeAdventureQuestStage(data, sender);
+                        if (!adventureQuestResult) {
+                            if (adventureQuestChanged) saveJsonFile(data, filePath);
+                            replier.reply("✅ 튜토리얼 16단계를 모두 완료했습니다.");
+                            return;
+                        }
+                        prepareAdventureQuestStage(data, sender, adventureQuestHomeInfo, adventureQuestHomeData);
+                        var automaticStage9Result = null;
+                        if (getAdventureQuestState(data, sender, false).currentStage === 9 && getAdventureQuestState(data, sender, false).progress.maxFloorAtEntry === true) {
+                            automaticStage9Result = completeAdventureQuestStage(data, sender);
+                            prepareAdventureQuestStage(data, sender, adventureQuestHomeInfo, adventureQuestHomeData);
+                        }
+                        try {
+                            saveJsonFile(data, filePath);
+                        } catch (adventureQuestCompleteSaveError) {
+                            data.member[sender] = adventureQuestMemberSnapshot;
+                            throw adventureQuestCompleteSaveError;
+                        }
+                        var adventureQuestSuccessMessage = buildAdventureQuestCompleteMessage(data, petData, guildData, sender, adventureQuestResult, false);
+                        if (automaticStage9Result) adventureQuestSuccessMessage += "\n\n" + buildAdventureQuestCompleteMessage(data, petData, guildData, sender, automaticStage9Result, true);
+                        replier.reply(adventureQuestSuccessMessage);
+                        if (adventureQuestResult.levelUps.length > 0) replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, sender, adventureQuestResult.levelUps));
+                        if (automaticStage9Result && automaticStage9Result.levelUps.length > 0) replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, sender, automaticStage9Result.levelUps));
+                        return;
+                    }
+                }
+
+                if (/^\/퀘스트타이틀장착(?:\s|$)/.test(msg)) {
+                    replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님 타이틀 번호를 입력해 주세요.\n👉 /퀘스트타이틀장착 [번호]");
+                    return;
+                }
+
+                if (msg === "/일퀘완료" || msg === "ㅎㅎㅎ" || msg === "/ㅇ" || msg === "/ㅇㅇㅇ") {
                     if (!castleSiegeFlag && data.member && data.member[sender]) {
                         var status = getDailyQuestStatus(data, petData, guildData, sender);
                         var rewardResult = claimQuestReward(data, petData, guildData, petSkillData, sender);
@@ -16947,7 +17121,7 @@ replier.reply(
                             }
                             statusMsg += "주간퀘스트🦋[" + status.weeklyUsed + "/" + status.weeklyMax + "]: " + getWeeklyQuestRemainText(status.weeklyUsed, status.weeklyMax) + "\n";
                             statusMsg += "━━━━━━━━━━━━━━━━\n";
-                            statusMsg += '모든 퀘스트를 완료하면 "/퀘스트완료" 또는 "ㅎㅎㅎ"("/ㅇㅇㅇ") 를 입력하세요.';
+                            statusMsg += '모든 퀘스트를 완료하면 "/일퀘완료" 또는 "ㅎㅎㅎ"("/ㅇㅇㅇ") 를 입력하세요.';
                             replier.reply(statusMsg);
                         }
                     }
@@ -17506,7 +17680,9 @@ replier.reply(
                         replier.reply("펫강화는 최대 100회까지만 가능합니다. 100회로 진행합니다.");
                         petUpgradeCount = 100;
                     }
+                    var petUpgradePointBefore = Number(data.member[sender].point) || 0;
                     replier.reply(runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, petUpgradeCount));
+                    if ((Number(data.member[sender].point) || 0) < petUpgradePointBefore) recordAdventureQuestAction(data, sender, 15, "petUpgradeAttempt", 0);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
                     return;
@@ -17580,7 +17756,9 @@ replier.reply(
                         replier.reply("미니펫강화는 최대 100회까지만 가능합니다. 100회로 진행합니다.");
                         miniTryCount = 100;
                     }
+                    var miniPetUpgradePointBefore = Number(data.member[sender].point) || 0;
                     replier.reply(runRepeatMiniPetUpgrade(sender, data, petData, guildData, petSkillData, miniBagIndex, miniTryCount));
+                    if ((Number(data.member[sender].point) || 0) < miniPetUpgradePointBefore) recordAdventureQuestAction(data, sender, 11, "miniPetUpgradeAttempt", 0);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
                     return;
@@ -18254,6 +18432,7 @@ replier.reply(
                 }
 
                 if (msg === "/티어") {
+                    if (recordAdventureQuestAction(data, sender, 2, "tierViewed", 0)) saveJsonFile(data, filePath);
                     var tierProgressPlan = buildTierProgressPlan(data, petSkillData, sender);
                     if (tierProgressPlan) tierProgressPlan.user = checkRank(data, petData, guildData, sender);
                     replier.reply(buildTierProgressMessage(tierProgressPlan, false));
@@ -18271,6 +18450,7 @@ replier.reply(
                         replier.reply(tierApplyResult.message || buildTierProgressMessage(tierPlan, true));
                         return;
                     }
+                    if (recordAdventureQuestAction(data, sender, 2, "tierApplied", 0)) getAdventureQuestState(data, sender, false).progress.appliedTier = data.member[sender].rank.tier;
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
                     var promotedRankName = checkRank(data, petData, guildData, sender);
@@ -19152,6 +19332,7 @@ replier.reply(
                             isBuyFlag = true;
                         }
                         if (isBuyFlag) {
+                            if (itemNumber === 1) recordAdventureQuestAction(data, sender, 2, "tierPurchased", 0);
                             if (ticketEventCouponPlan.usedCount > 0) {
                                 var consumedTicketEventCouponCount = consumeTicketEventCouponPlan(data, sender, ticketEventCouponPlan);
                                 if (consumedTicketEventCouponCount !== ticketEventCouponPlan.usedCount) throw new Error("티켓 이벤트 쿠폰 차감 수량이 구매 계산과 일치하지 않습니다.");
@@ -19493,6 +19674,7 @@ replier.reply(
                         gradeUpDownMessage += "[" + beforeRankName + "] -> [" + afterRankName + "] 으로 " + (beforeScore < afterScore ? "\n🥇승급" : "\n〽강등") + "하였습니다.";
                         replier.reply(gradeUpDownMessage);
                     }
+                    recordAdventureQuestAction(data, sender, 4, "castleBattle", 1);
                     saveJsonFile(castleBattleData, castleBattlePath);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
@@ -20162,6 +20344,7 @@ replier.reply(
                             replier.reply("야수의 본능📙 으르렁.. 포인트보상 2배적용 🅟" + numberWithCommas(rewardPoint) + "만 획득!");
                         }
                     }
+                    recordAdventureQuestAction(data, sender, 3, "miniBattle", 1);
                     saveJsonFile(petData, memberPetPath);
                     saveJsonFile(data, filePath);
                     return;
@@ -20463,6 +20646,7 @@ replier.reply(
                     clearPendantUpgradeState(sender);
                     replier.reply(pendantConfirmResult.message);
                     if (pendantConfirmResult.ok) {
+                        recordAdventureQuestAction(data, sender, 12, "pendantUpgradeAttempt", 0);
                         saveJsonFile(data, filePath);
                         saveJsonFile(petData, memberPetPath);
                     }
@@ -21570,6 +21754,7 @@ replier.reply(
                         replier.reply("🎉시련의탑 공략 타이틀 지급🎉\n\n[" + checkRank(data, petData, guildData, sender) + "] 용사님\n\n" + titleName + " ");
                         saveJsonFile(titleData, memberTitlePath);
                     }
+                    recordAdventureQuestAction(data, sender, 5, "trialTower", 1);
                     saveJsonFile(trialTower, trialTowerPath);
                     saveJsonFile(data, filePath);
                     return;
@@ -22464,6 +22649,7 @@ replier.reply(
                     homeData[sender].houseName = info.houseName;
                     homeData[sender].exp += info.exp || 0;
                     petData[sender].petexp += info.exp || 0;
+                    recordAdventureQuestAction(data, sender, 9, "homeExpanded", 0);
                     saveJsonFile(homeData, homeDataFile);
                     saveJsonFile(data, filePath);
                     delete userState[sender].homeUpgrade;
@@ -23111,6 +23297,12 @@ replier.reply(
                     homeBadgeCubeBag[homeBadgeCubeConfig.itemName] = homeBadgeCubeHeld - homeBadgeCubeConsumed;
                     if (homeBadgeCubeBag[homeBadgeCubeConfig.itemName] <= 0) delete homeBadgeCubeBag[homeBadgeCubeConfig.itemName];
                     data.member[sender].point = homeBadgeCubeNextPoint;
+                    var homeBadgeQuestState = getAdventureQuestState(data, sender, false);
+                    var homeBadgeQuestProgressBefore = homeBadgeQuestState && homeBadgeQuestState.currentStage === 14 ? JSON.parse(JSON.stringify(homeBadgeQuestState.progress)) : null;
+                    if (homeBadgeCubeConsumed > 0) {
+                        recordAdventureQuestAction(data, sender, 14, "homeBadgeCubeUsed", 0);
+                        recordAdventureQuestAction(data, sender, 14, "homeBadgeEquipped", 0);
+                    }
                     if (isHomeBadgeCubeAllMax(homeBadgeCubeRecord) && homeBadgeCubeRecord.allMaxNotified !== true) {
                         homeBadgeCubeRecord.allMaxNotified = true;
                         homeBadgeCubeAllMaxNotice = true;
@@ -23123,6 +23315,7 @@ replier.reply(
                         else delete data.member[sender].homeBadgeCube;
                         if (hadHomeBadgeCubePoint) data.member[sender].point = homeBadgeCubePointSnapshot;
                         else delete data.member[sender].point;
+                        if (homeBadgeQuestProgressBefore && homeBadgeQuestState) homeBadgeQuestState.progress = homeBadgeQuestProgressBefore;
                         try {
                             saveJsonFile(data, filePath);
                         } catch (homeBadgeCubeRollbackError) {
@@ -24667,6 +24860,7 @@ replier.reply(
                     var placedExp = placedSummary.totalExp;
                     if (placedFurnitureSplitActive && userHome.placedFurniture !== undefined) delete userHome.placedFurniture;
                     // 저장
+                    if (recordAdventureQuestAction(data, sender, 10, "furnitureEquipped", 0)) saveJsonFile(data, filePath);
                     if (placedFurnitureSplitActive) saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath);
                     saveJsonFile(homeData, homeDataFile);
                     // 안내 메시지
@@ -25287,6 +25481,7 @@ replier.reply(
                         return;
                     }
                     var restoredLockedSkillCount = result.levelUps > 0 ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 친밀도 슬롯 증가로 다시 활성화된 잠금 스킬 수
+                    if (feedCount === 100000) recordAdventureQuestAction(data, sender, 7, "feed100000", 0);
 
                     // UI
                     var out = "";
@@ -25732,6 +25927,7 @@ replier.reply(
                     });
 
                     petExploreData.userBet[sender] = dungeonNo;
+                    if (parseInt(dungeonNo, 10) >= 1 && parseInt(dungeonNo, 10) <= 3) recordAdventureQuestAction(data, sender, 6, "exploreSelected", 0);
 
                     // 저장
                     saveJsonFile(petExploreData, petExplorePath);
@@ -25946,6 +26142,7 @@ replier.reply(
 
                     if (rows.length === 0) {
                         out += "표시할 길드가 없습니다.";
+                        if (recordAdventureQuestAction(data, sender, 16, "guildListViewed", 0)) saveJsonFile(data, filePath);
                         replier.reply(out);
                         return;
                     }
@@ -26004,6 +26201,7 @@ replier.reply(
                         }
                     }
 
+                    if (recordAdventureQuestAction(data, sender, 16, "guildListViewed", 0)) saveJsonFile(data, filePath);
                     replier.reply(out);
                     return;
                 }
@@ -35371,20 +35569,20 @@ function buildAdventureExperienceEditMessage(data, petData, guildData, user, bef
 // 0.01% 정수 단위로 비율을 적용해 부동소수점 내림 오차를 막는 함수
 function applyPercentWithExactFloor(value, percent) {
     var baseValue = Math.max(0, Math.floor(Number(value) || 0));
-    var basisPoints = Math.round((Number(percent) || 0) * 100); // 1 = 0.01%
-    var wholeUnits = Math.floor(baseValue / 10000); // 큰 수 곱셈을 피하기 위한 10000 단위 몫
-    var remainder = baseValue - wholeUnits * 10000; // 10000 미만 나머지
-    return baseValue + wholeUnits * basisPoints + Math.floor(remainder * basisPoints / 10000);
+    var thousandthPercent = Math.round((Number(percent) || 0) * 1000); // 1 = 0.001%
+    var wholeUnits = Math.floor(baseValue / 100000); // 큰 수 곱셈을 피하기 위한 100000 단위 몫
+    var remainder = baseValue - wholeUnits * 100000; // 100000 미만 나머지
+    return baseValue + wholeUnits * thousandthPercent + Math.floor(remainder * thousandthPercent / 100000);
 }
 
-// 적용된 0.01% 비율을 정수 연산으로 역산하는 함수
+// 적용된 0.001% 비율을 정수 연산으로 역산하는 함수
 function removePercentWithExactCeil(value, percent) {
     var appliedValue = Math.max(0, Math.floor(Number(value) || 0));
-    var denominator = 10000 + Math.round((Number(percent) || 0) * 100); // 적용 배율의 0.01% 정수값
+    var denominator = 100000 + Math.round((Number(percent) || 0) * 1000); // 적용 배율의 0.001% 정수값
     if (denominator <= 0) return appliedValue;
     var wholeUnits = Math.floor(appliedValue / denominator); // 큰 수 곱셈을 피하기 위한 배율 단위 몫
     var remainder = appliedValue - wholeUnits * denominator; // 배율 단위 미만 나머지
-    return wholeUnits * 10000 + Math.ceil(remainder * 10000 / denominator);
+    return wholeUnits * 100000 + Math.ceil(remainder * 100000 / denominator);
 }
 
 // 보유 경험치를 넘겨 다중 레벨업과 정규 포인트 보상을 처리하는 함수
@@ -42570,7 +42768,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     lines.push("");
     lines.push("📜일일,주간퀘스트 보상 명령어 안내📜");
     lines.push("");
-    lines.push('※ 모든 체크가[✅]면 "/퀘스트완료" 또는 "ㅎㅎㅎ" 를 적어주세요');
+    lines.push('※ 모든 체크가[✅]면 "/일퀘완료" 또는 "ㅎㅎㅎ" 를 적어주세요');
     lines.push("※ 정리 or ㅇㅇㅇ 만 해도 보상지급이 됩니다.");
     return lines.join("\n");
 }
@@ -43010,6 +43208,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
     castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
     castleCubePercent += getAdventureLevelCharmPercent(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1);
+    var castleQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
+    castleCubePercent += castleQuestState && castleQuestState.totals ? Number(castleQuestState.totals.castlePercent) || 0 : 0;
     return applyPercentWithExactFloor(castleTotal, castleCubePercent);
 }
 
@@ -43038,6 +43238,8 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
     raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
     raidCubePercent += getAdventureLevelCharmPercent(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1);
+    var raidQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
+    raidCubePercent += raidQuestState && raidQuestState.totals ? Number(raidQuestState.totals.raidPercent) || 0 : 0;
     return applyPercentWithExactFloor(raidTotal, raidCubePercent);
 }
 function calculateItemInfoAll(memberName, data, petData) {
@@ -49679,13 +49881,268 @@ function buildAdventurePetCreatedMessage(user, petName) {
         "펫정보 기본 세팅과 모험에 필요한 재화가 지급됩니다.";
 }
 
+// 모험가 퀘스트 진행 상태를 생성하거나 정규화하는 함수
+function getAdventureQuestState(data, user, createIfMissing) {
+    var member = data && data.member ? data.member[user] : null;
+    if (!member) return null;
+    if (!member.adventureQuest || typeof member.adventureQuest !== "object" || member.adventureQuest instanceof Array) {
+        if (!createIfMissing) return null;
+        member.adventureQuest = {
+            version: 1,
+            currentStage: 1,
+            completedStages: [],
+            records: [],
+            titles: [],
+            equippedTitle: 0,
+            progress: {},
+            receipts: {},
+            totals: { castlePercent: 0, raidPercent: 0, diamondBoxes: 0, experience: 0 },
+            startedAt: formatDateTime(new Date()),
+            stageStartedAt: formatDateTime(new Date())
+        };
+    }
+    var state = member.adventureQuest;
+    state.currentStage = Math.max(1, parseInt(state.currentStage, 10) || 1);
+    if (!(state.completedStages instanceof Array)) state.completedStages = [];
+    if (!(state.records instanceof Array)) state.records = [];
+    if (!(state.titles instanceof Array)) state.titles = [];
+    if (!state.progress || typeof state.progress !== "object" || state.progress instanceof Array) state.progress = {};
+    if (!state.receipts || typeof state.receipts !== "object" || state.receipts instanceof Array) state.receipts = {};
+    if (!state.totals || typeof state.totals !== "object" || state.totals instanceof Array) state.totals = {};
+    state.totals.castlePercent = Number(state.totals.castlePercent) || 0;
+    state.totals.raidPercent = Number(state.totals.raidPercent) || 0;
+    state.totals.diamondBoxes = Math.max(0, parseInt(state.totals.diamondBoxes, 10) || 0);
+    state.totals.experience = Math.max(0, parseInt(state.totals.experience, 10) || 0);
+    return state;
+}
+
+// 단계 번호에 해당하는 튜토리얼 설정을 반환하는 함수
+function getAdventureQuestStageConfig(stageNumber) {
+    var index = parseInt(stageNumber, 10) - 1;
+    var stages = GLOBAL_CONFIG.adventureQuest.stages;
+    return index >= 0 && index < stages.length ? stages[index] : null;
+}
+
+// 다이아상점 상품이 구매 대상 홈뱃지인지 확인하는 함수
+function isAdventureQuestHomeBadgeProduct(itemName) {
+    var name = String(itemName || "");
+    return name.indexOf("홈뱃지") >= 0 && name.indexOf("큐브") < 0;
+}
+
+// 현재 단계에서 발생한 행동을 진행 상태에 기록하는 함수
+function recordAdventureQuestAction(data, user, stageNumber, key, amount) {
+    var state = getAdventureQuestState(data, user, false);
+    if (!state || state.currentStage !== stageNumber) return false;
+    if (stageNumber === 2 && key === "tierPurchased" && !state.progress.shopViewed) return false;
+    if (stageNumber === 2 && key === "tierViewed" && !state.progress.tierPurchased) return false;
+    if (stageNumber === 2 && key === "tierApplied" && !state.progress.tierViewed) return false;
+    var value = typeof amount === "number" ? amount : 1;
+    if (value === 0) state.progress[key] = true;
+    else state.progress[key] = (parseInt(state.progress[key], 10) || 0) + value;
+    return true;
+}
+
+// 펫홈이 현재 정의된 최고 평수인지 확인하는 함수
+function isAdventureQuestHomeAtMaximum(homeInfo, homeData, user) {
+    if (!homeInfo || !homeData || !homeData[user]) return false;
+    return !getNextHomeInfoByFloor(homeInfo, homeData[user].floor || 0);
+}
+
+// 단계 진입 준비물과 시작 상태를 최초 한 번만 적용하는 함수
+function prepareAdventureQuestStage(data, user, homeInfo, homeData) {
+    var state = getAdventureQuestState(data, user, true);
+    var stage = state.currentStage;
+    if (stage > GLOBAL_CONFIG.adventureQuest.tutorialMaxStage) return false;
+    var changed = false;
+    var receiptKey = "stage" + stage + "Prepared";
+    if (state.receipts[receiptKey] !== true) {
+        state.progress = {};
+        state.stageStartedAt = formatDateTime(new Date());
+        if (stage === 7) addItem(data, user, "펫먹이🍼", 100000);
+        if (stage === 8) addItem(data, user, GLOBAL_CONFIG.petSkill.bookItemName, GLOBAL_CONFIG.adventureQuest.starterSkillBookCount);
+        if (stage === 9 && homeData && homeData[user]) {
+            state.progress.startFloor = parseInt(homeData[user].floor, 10) || 0;
+            state.progress.maxFloorAtEntry = isAdventureQuestHomeAtMaximum(homeInfo, homeData, user);
+        }
+        if (stage === 14) addItem(data, user, "홈뱃지 큐브💟", GLOBAL_CONFIG.adventureQuest.homeBadgeCubeCount);
+        state.receipts[receiptKey] = true;
+        changed = true;
+    }
+    return changed;
+}
+
+// 현재 단계의 완료 조건과 남은 목표를 계산하는 함수
+function getAdventureQuestCompletionCheck(data, petData, petSkillData, homeData, petExploreData, petHomeActivityData, user) {
+    var state = getAdventureQuestState(data, user, false);
+    if (!state) return { complete: false, remaining: "먼저 /모험가퀘스트를 입력해 주세요." };
+    var p = state.progress || {};
+    var stage = state.currentStage;
+    if (stage === 1) return { complete: true, remaining: "" };
+    if (stage === 2) return { complete: !!(p.shopViewed && p.tierPurchased && p.tierViewed && p.tierApplied && p.appliedTier && data.member[user].rank && data.member[user].rank.tier === p.appliedTier), remaining: "상점 조회 → 1번 상품 구매 → 티어 조회 → 티어 적용을 순서대로 완료하고 적용 상태를 유지해 주세요." };
+    if (stage === 3) return { complete: (p.miniBattle || 0) >= 15, remaining: "미니펫대전 " + Math.max(0, 15 - (p.miniBattle || 0)) + "회가 남았습니다." };
+    if (stage === 4) return { complete: (p.castleBattle || 0) >= 15, remaining: "캐슬대전 " + Math.max(0, 15 - (p.castleBattle || 0)) + "회가 남았습니다." };
+    if (stage === 5) return { complete: (p.trialTower || 0) >= 15, remaining: "시련의탑 " + Math.max(0, 15 - (p.trialTower || 0)) + "회가 남았습니다." };
+    if (stage === 6) {
+        var selected = petExploreData && petExploreData.userBet ? parseInt(petExploreData.userBet[user], 10) : 0;
+        return { complete: !!p.exploreSelected && selected >= 1 && selected <= 3, remaining: "1~3번 탐험지 중 한 곳을 지정해 주세요." };
+    }
+    if (stage === 7) return { complete: !!p.feed100000, remaining: "/냠냠 100000으로 먹이 10만 개를 한 번에 사용해 주세요." };
+    if (stage === 8) {
+        var skillStore = petSkillData && petSkillData[user] ? petSkillData[user].petSkills : null;
+        return { complete: !!p.skillBookOpened && !!p.skillEquipped && !!(skillStore && skillStore.equipped && skillStore.equipped.length > 0), remaining: "스킬북 1개를 실제로 열고 유효한 펫스킬을 장착해 주세요." };
+    }
+    if (stage === 9) {
+        var currentFloor = homeData && homeData[user] ? parseInt(homeData[user].floor, 10) || 0 : 0;
+        return { complete: !!p.maxFloorAtEntry || currentFloor > (parseInt(p.startFloor, 10) || 0), remaining: "퀘스트 시작 당시보다 펫홈 평수를 늘려 주세요." };
+    }
+    if (stage === 10) {
+        var placed = homeData && homeData[user] && homeData[user].placedFurniture instanceof Array ? homeData[user].placedFurniture.length : 0;
+        if (homeData && homeData[user] && homeData[user].placedFurnitureSummary) placed = Math.max(placed, parseInt(homeData[user].placedFurnitureSummary.count, 10) || 0);
+        return { complete: !!p.furnitureEquipped && placed > 0, remaining: "가구를 장착하고 실제 배치 상태를 유지해 주세요." };
+    }
+    if (stage === 11) return { complete: !!p.miniPetUpgradeAttempt, remaining: "유효한 미니펫 강화 시도를 1회 진행해 주세요." };
+    if (stage === 12) return { complete: !!p.pendantUpgradeAttempt, remaining: "유효한 펜던트 강화 시도를 1회 진행해 주세요." };
+    if (stage === 13) return { complete: !!p.diamondShopViewed && (p.diamondShopPurchase || 0) >= 2, remaining: "다이아상점을 확인하고 인정 상품을 2개 구매해 주세요." };
+    if (stage === 14) {
+        var equippedBadgeIds = petHomeActivityData ? getPetHomeEquippedBadgeIds(petHomeActivityData, user) : [];
+        return { complete: !!p.homeBadgeCubeUsed && !!p.homeBadgeEquipped && !!(equippedBadgeIds[0] || equippedBadgeIds[1]), remaining: "홈뱃지 큐브를 실제로 사용하고 홈뱃지를 장착해 주세요." };
+    }
+    if (stage === 15) return { complete: !!p.petUpgradeAttempt, remaining: "유효한 펫 강화 시도를 1회 진행해 주세요." };
+    if (stage === 16) return { complete: !!p.guildListViewed, remaining: "/길드목록을 정상 조회해 주세요." };
+    return { complete: false, remaining: "현재 개발된 튜토리얼을 모두 완료했습니다." };
+}
+
+// 한 단계의 보상·기록·타이틀을 중복 없이 지급하는 함수
+function completeAdventureQuestStage(data, user) {
+    var member = data.member[user];
+    var state = getAdventureQuestState(data, user, false);
+    var stage = state ? state.currentStage : 0;
+    var config = getAdventureQuestStageConfig(stage);
+    if (!member || !state || !config || state.completedStages.indexOf(stage) >= 0) return null;
+    var diamondBoxes = stage * 5;
+    member.exp = roundToTwo((Number(member.exp) || 0) + GLOBAL_CONFIG.adventureQuest.experiencePerStage);
+    var levelUps = processAdventureLevelUps(member);
+    addItem(data, user, GLOBAL_CONFIG.items.diamondBoxName, diamondBoxes);
+    state.completedStages.push(stage);
+    state.titles.push({ number: stage, title: config.title, obtainedAt: formatDateTime(new Date()) });
+    state.records.unshift({ stage: stage, title: config.title, summary: config.record, completedAt: formatDateTime(new Date()) });
+    state.totals.castlePercent = Math.round((state.totals.castlePercent + GLOBAL_CONFIG.adventureQuest.castlePercentPerStage) * 1000) / 1000;
+    state.totals.raidPercent = Math.round((state.totals.raidPercent + GLOBAL_CONFIG.adventureQuest.raidPercentPerStage) * 1000) / 1000;
+    state.totals.diamondBoxes += diamondBoxes;
+    state.totals.experience += GLOBAL_CONFIG.adventureQuest.experiencePerStage;
+    state.currentStage = stage + 1;
+    state.progress = {};
+    state.stageStartedAt = formatDateTime(new Date());
+    return { stage: stage, config: config, diamondBoxes: diamondBoxes, levelUps: levelUps };
+}
+
+// 단계별 목표를 현재 행동 횟수와 완료 상태로 표시하는 함수
+function getAdventureQuestGoalLines(state, check) {
+    var stage = state.currentStage;
+    var p = state.progress || {};
+    if (stage >= 3 && stage <= 5) {
+        var key = stage === 3 ? "miniBattle" : stage === 4 ? "castleBattle" : "trialTower";
+        var label = stage === 3 ? "미니펫대전" : stage === 4 ? "캐슬대전" : "시련의탑";
+        var count = Math.min(15, parseInt(p[key], 10) || 0);
+        return [(count >= 15 ? "[✅] " : "[⬜] ") + label + " 정상 결과 · " + count + "/15회"];
+    }
+    if (stage === 7) return [(p.feed100000 ? "[✅] " : "[⬜] ") + "펫먹이 100,000개 사용 · " + (p.feed100000 ? "1" : "0") + "/1회"];
+    if (stage === 13) return [(p.diamondShopViewed ? "[✅] " : "[⬜] ") + "다이아상점 조회", ((p.diamondShopPurchase || 0) >= 2 ? "[✅] " : "[⬜] ") + "인정 상품 구매 · " + Math.min(2, p.diamondShopPurchase || 0) + "/2개"];
+    return [(check.complete ? "[✅] " : "[⬜] ") + getAdventureQuestStageConfig(stage).objective];
+}
+
+// 현재 단계에서 실제 지급한 준비물만 화면에 표시하는 함수
+function getAdventureQuestPreparationLines(state) {
+    if (state.currentStage === 7) return ["📦 준비물 지급 완료", "펫먹이🍼 ×100,000개", ""];
+    if (state.currentStage === 8) return ["📦 준비물 지급 완료", "스킬북📙 ×1개", ""];
+    if (state.currentStage === 14) return ["📦 준비물 지급 완료", "홈뱃지 큐브💟 ×100개", ""];
+    if (state.currentStage === 1 && state.receipts.starterMemberRewards) return ["📦 준비물 지급 완료", "모험가 스타터 아이템", ""];
+    return [];
+}
+
+// 펫의 외형과 이름을 퀘스트 대사 표시에 맞게 반환하는 함수
+function getAdventureQuestPetLabel(petData, user) {
+    var pet = petData && petData[user] ? petData[user] : null;
+    return pet && pet.petname ? String(pet.petimg || "🐾") + pet.petname : "🐾펫";
+}
+
+// 아직 구현되지 않은 본편 17단계의 대기 상태를 레벨에 맞게 표시하는 함수
+function getAdventureQuestNextStageMessage(data, user) {
+    var level = data && data.member && data.member[user] ? parseInt(data.member[user].lv, 10) || 1 : 1;
+    return level < 17 ? "🔒 다음 퀘스트: 17단계 · Lv.17부터 진행 가능 (본편 공개 대기)" : "🔒 다음 퀘스트: 17단계 · 본편 공개 대기";
+}
+
+// 현재 모험가 퀘스트 전체 화면을 생성하는 함수
+function buildAdventureQuestMessage(data, petData, petSkillData, guildData, homeData, exploreData, activityData, user) {
+    var state = getAdventureQuestState(data, user, false);
+    var config = state ? getAdventureQuestStageConfig(state.currentStage) : null;
+    var rank = checkRank(data, petData, guildData, user);
+    if (!config) return "🧭 모험가 퀘스트 · 튜토리얼\n[" + rank + "]님의 진행 중인 퀘스트\n━━━━━━━━━━━━\n✅ 튜토리얼 16단계를 모두 완료했습니다.\n진행도 · 16/100단계 완료 (16.00%)\n" + getAdventureQuestNextStageMessage(data, user) + "\n👉 전체 기록 /퀘스트기록";
+    var check = getAdventureQuestCompletionCheck(data, petData, petSkillData, homeData, exploreData, activityData, user);
+    var lines = ["🧭 모험가 퀘스트 · 튜토리얼", "[" + rank + "]님의 진행 중인 퀘스트", "━━━━━━━━━━━━", "📍 호월킹덤 광장", "", "【" + config.number + "단계 · NPC 호식이😺】", "📜 " + config.title, "", "“" + config.npcStart + "”", "", "나의 펫 [" + getAdventureQuestPetLabel(petData, user) + "]", GLOBAL_CONFIG.adventureQuest.petStartReactions[config.number - 1], "━━━━━━━━━━━━"];
+    lines = lines.concat(getAdventureQuestPreparationLines(state));
+    lines.push("🎯 퀘스트 목표");
+    lines = lines.concat(getAdventureQuestGoalLines(state, check));
+    lines.push("━━━━━━━━━━━━", "🎁 완료 보상", "캐슬⚔️ +0.005%  레이드👾 +0.005%", "💎 다이아상자 ×" + (config.number * 5) + "개", "📊 획득 경험치 +1,000 EXP", "━━━━━━━━━━━━");
+    var commands = config.commands.split(" → ");
+    for (var i = 0; i < commands.length; i++) lines.push("👉 " + commands[i]);
+    return lines.join("\n");
+}
+
+// 미완료 목표와 다음 실행 명령만 실패 화면에 표시하는 함수
+function buildAdventureQuestIncompleteMessage(data, petData, guildData, user, check) {
+    var state = getAdventureQuestState(data, user, false);
+    var config = getAdventureQuestStageConfig(state.currentStage);
+    var lines = ["❌ [" + checkRank(data, petData, guildData, user) + "] 님 아직 달성하지 않은 목표가 있어요.", "【" + state.currentStage + "단계 · NPC 호식이😺】", "━━━━━━━━━━━━", "🎯 미완료 목표"];
+    lines = lines.concat(getAdventureQuestGoalLines(state, check));
+    lines.push("━━━━━━━━━━━━");
+    var commands = config.commands.split(" → ");
+    for (var i = 0; i < commands.length; i++) lines.push("👉 " + commands[i]);
+    return lines.join("\n");
+}
+
+// 모험가 퀘스트 완료 성공 화면을 생성하는 함수
+function buildAdventureQuestCompleteMessage(data, petData, guildData, user, result, autoCompletedStage9) {
+    var lines = ["✅ [" + checkRank(data, petData, guildData, user) + "] 님 " + result.stage + "단계 퀘스트 완료!", "━━━━━━━━━━━━", "【" + result.stage + "단계 · NPC 호식이😺】", "📜 " + result.config.title, "", "“" + result.config.npcComplete + "”", "", "나의 펫 [" + getAdventureQuestPetLabel(petData, user) + "]", GLOBAL_CONFIG.adventureQuest.petCompleteReactions[result.stage - 1], "━━━━━━━━━━━━", "🎁 완료 보상", "캐슬⚔️ +0.005%  레이드👾 +0.005%", "💎 다이아상자 ×" + result.diamondBoxes + "개", "📊 획득 경험치 +1,000 EXP", "━━━━━━━━━━━━"];
+    if (autoCompletedStage9) lines.push("🏠 최대 평수 보유로 자동 완료했어요.");
+    lines.push(result.stage === 16 ? getAdventureQuestNextStageMessage(data, user) : "👉 다음 퀘스트 /모험가퀘스트");
+    return lines.join("\n");
+}
+
+// 퀘스트 매력 보너스를 0.001% 단위까지 표시하는 함수
+function formatAdventureQuestPercent(value) {
+    return (Math.round((Number(value) || 0) * 1000) / 1000).toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+// 모험가 퀘스트 누적 기록 화면을 생성하는 함수
+function buildAdventureQuestHistoryMessage(data, petData, guildData, user) {
+    var state = getAdventureQuestState(data, user, false);
+    var completed = state ? Math.min(16, state.completedStages.length) : 0;
+    var filled = Math.floor(completed / 10);
+    var gauge = "";
+    for (var i = 0; i < 10; i++) gauge += i < filled ? "■" : "□";
+    var lines = ["🧭 모험가 퀘스트", "[" + checkRank(data, petData, guildData, user) + "]님의 모험 기록", "━━━━━━━━━━━━", "📖 호월킹덤 일대기 시즌1", "[" + gauge + "]", "진행도 · " + completed + "/100단계 완료 (" + completed.toFixed(2) + "%)", "━━━━━━━━━━━━", "🎁 누적 보상", "캐슬⚔️ +" + formatAdventureQuestPercent(state ? state.totals.castlePercent : 0) + "%  레이드👾 +" + formatAdventureQuestPercent(state ? state.totals.raidPercent : 0) + "%", "💎 다이아상자 ×" + numberWithCommas(state ? state.totals.diamondBoxes : 0) + "개", "📊 누적 경험치 " + numberWithCommas(state ? state.totals.experience : 0) + " EXP", "━━━━━━━━━━━━", "📚 전체 모험 기록 · 최신순" + allsee];
+    if (!state || state.records.length === 0) lines.push("", "완료 기록이 없습니다.");
+    else for (var r = 0; r < state.records.length; r++) lines.push("", "【" + state.records[r].stage + "단계 · NPC 호식이😺】", state.records[r].summary);
+    return lines.join("\n");
+}
+
+// 보유 퀘스트 타이틀 목록을 최신순으로 생성하는 함수
+function buildAdventureQuestTitleMessage(data, petData, guildData, user) {
+    var state = getAdventureQuestState(data, user, false);
+    var titles = state && state.titles ? state.titles : [];
+    var equipped = state && state.equippedTitle ? getAdventureQuestStageConfig(state.equippedTitle) : null;
+    var lines = ["🏅 모험가 퀘스트 타이틀", "[" + checkRank(data, petData, guildData, user) + "]님의 퀘스트 타이틀", "━━━━━━━━━━━━", "🏅 장착 타이틀: " + (equipped ? equipped.title : "없음"), "📚 보유 타이틀: " + titles.length + "개", "", "👉 장착 /퀘스트타이틀장착 [번호]", "👉 해제 /퀘스트타이틀제거", "━━━━━━━━━━━━", "📜 보유 타이틀 · 최신순" + allsee];
+    for (var i = titles.length - 1; i >= 0; i--) lines.push("", "[" + titles[i].number + "] " + titles[i].title);
+    if (titles.length === 0) lines.push("", "아직 보유한 퀘스트 타이틀이 없어요.");
+    return lines.join("\n");
+}
+
 // 호월신의 축복 적용 완료 안내 문구를 생성하는 함수
 function buildAdventureStarterCompleteMessage(user, petName) {
     return "[" + user + "]님에게 호월신의 축복✨이 깃듭니다!\n\n" +
         "🐾 " + petName + "의 기본 세팅 완료!\n" +
         "📙 펫스킬 학개론 장착 완료!\n" +
-        "💰 포인트 300억 지급 완료!\n" +
-        "🎁 모험에 필요한 아이템 지급 완료!\n" +
         "━━━━━━━━━━━━━━━\n" +
         "🐾 먼저, 함께할 펫을 만나보세요!\n\n" +
         "채팅창에 /펫정보 를 입력하면\n" +
@@ -49710,13 +50167,13 @@ function buildAdventureOnboardingResumeMessage(data, petData, user) {
     return "[" + user + "]님은 이미 호이월드 모험을 시작했습니다.\n/펫정보 로 현재 동반자를 확인해 주세요.";
 }
 
-// 신규 모험가의 포인트·가호·가방·친밀도 보상을 한 번만 지급하는 함수
+// 모험가 퀘스트 최초 참여자의 포인트·가호·가방·친밀도 보상을 한 번만 지급하는 함수
 function applyAdventureStarterMemberRewards(data, user) {
     var member = data.member[user];
-    var state = getAdventureOnboardingMemberState(data, user);
+    var state = getAdventureQuestState(data, user, true);
     if (!member || !state) return false;
     if (!state.receipts || typeof state.receipts !== "object") state.receipts = {};
-    if (state.receipts.memberRewards === true) return false;
+    if (state.receipts.starterMemberRewards === true) return false;
 
     addPoint(data, user, 30000000000);
     member.boostercnt = Math.max(0, parseInt(member.boostercnt, 10) || 0) + 1000;
@@ -49746,7 +50203,7 @@ function applyAdventureStarterMemberRewards(data, user) {
         if (currentIntimacy.itemKey) delete member.bag[currentIntimacy.itemKey];
         member.bag[buildIntimacyItemName(300, 0, 330000)] = 1;
     }
-    state.receipts.memberRewards = true;
+    state.receipts.starterMemberRewards = true;
     return true;
 }
 

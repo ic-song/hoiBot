@@ -2148,7 +2148,7 @@ Status: VERIFIED
 - `/캐슬대전`
 - `/미니펫대전`
 - `/퀘스트`
-- `/퀘스트완료`
+- `/일퀘완료`
 
 ## AI Notes
 
@@ -2174,7 +2174,7 @@ Status: VERIFIED
 - `/퀘스트`, `/ㅋ`, `ㄹㄹㄹ` 안내 화면은 첫 줄에 요청 유저의 `[checkRank] 님`을 표시한다.
 - `/퀘스트` 안내에는 일일 100 EXP, 주간 500 EXP, 프리미엄 전용 일퀘 50 EXP를 각 보상 영역에 표시한다. 완료 시 기본 EXP에 현재 티어의 고정 EXP를 먼저 더하고 보유 가호 범위에서 최대 3배까지 적용하며, 실제 총 지급량과 기본·티어·가호 추가분·사용량을 표시한다. 가호 소진과 레벨업도 기존 공통 흐름으로 처리한다.
 - 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 제목 다음 빈 줄에 세 조건을 `[호패,초패 회원전용]`으로 표시하고 마지막 조건 바로 아래에 구분선을 둔다.
-- `/퀘스트완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
+- `/일퀘완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
 - 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`, 피드 글 작성은 저장에 성공한 `/피드`에서 `feedPostCnt`, 홈알림 열기는 정상 저장된 `/홈알림`에서 `homeAlertOpenCnt`를 증가시킨다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
@@ -2217,7 +2217,7 @@ Status: VERIFIED
 
 - `/자동일퀘`
 - `/퀘스트`
-- `/퀘스트완료`
+- `/일퀘완료`
 - `/캐슬대전횟수리셋`
 - `/미니펫대전횟수`
 - `/탐험횟수수정`
@@ -2592,7 +2592,7 @@ Status: VERIFIED
 - `/패스목록`
 - `/패키지가방`
 - `/퀘스트`, `/ㅋ`
-- `/퀘스트완료`, `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ`
+- `/일퀘완료`, `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ`
 - `/포인트`, `/내정보`, `/정리`
 - `/홈알림`, `/팔로워`, `/팔로잉`, `/내마음`
 - `/펫정보`, `/펫스킬가방`, `/펫스킬장착`
@@ -6436,6 +6436,47 @@ Status: VERIFIED
 
 ---
 
+# /모험가퀘스트 · /퀘스트완료 · /퀘스트기록 · /퀘스트타이틀
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: 튜토리얼 진행·보상·타이틀·매력 반영
+- `Info.js`: `/상점` 행동 기록과 `/레벨` 퀘스트 표시
+
+## Related Helpers
+
+- `getAdventureQuestState`
+- `prepareAdventureQuestStage`
+- `recordAdventureQuestAction`
+- `getAdventureQuestCompletionCheck`
+- `completeAdventureQuestStage`
+- `buildAdventureQuestMessage`
+- `buildAdventureQuestHistoryMessage`
+- `buildAdventureQuestTitleMessage`
+- `calculateCastleExp`, `calculateRaidExp`
+
+## Data Usage
+
+- `data.member[사용자].adventureQuest`: 현재 단계, 단계별 행동, 지급 영수증, 완료 기록·타이틀, 누적 보상
+- `memberPet.json`, `petSkillData`, 펫홈·탐험·홈뱃지 자료: 완료 시 실제 적용 상태 확인
+
+## Save Flow
+
+- 스타터 회원 보상과 7·8·14단계 준비물은 단계 최초 진입 시 영수증을 기록하고 `member.json`에 함께 저장한다.
+- 행동 기록은 실제 기능 성공 흐름에서 기록한다. `Info.js`의 `/상점`은 동일한 회원 데이터를 저장한다.
+- `/퀘스트완료`는 현재 단계 조건을 재확인하고 보상·기록·타이틀·다음 단계 준비물을 한 번에 저장한다. 9단계 최대 평수 자동 완료도 같은 흐름을 사용한다.
+- 기존 `/퀘스트완료` 일일 보상 명령은 `/일퀘완료`로 변경했고 `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ` 별칭은 유지한다.
+
+## Related Commands
+
+- `/모험가퀘스트`, `/퀘스트완료`, `/퀘스트기록`
+- `/퀘스트타이틀`, `/퀘스트타이틀장착 [번호]`, `/퀘스트타이틀제거`
+- `/레벨`, `/일퀘완료`
+
+---
+
 # /모험시작 · /호여!!
 
 Status: VERIFIED
@@ -6459,7 +6500,7 @@ Status: VERIFIED
 ## Data Usage
 
 - `adventureOnboarding.users[사용자]`: 캐릭터 생성 전 시작 선택 대기 상태
-- `data.member[사용자].adventureOnboarding`: 캐릭터 생성 후 펫 이름·축복 적용·완료 단계와 회원 보상 영수증
+- `data.member[사용자].adventureOnboarding`: 캐릭터 생성 후 펫 이름·축복 적용·완료 단계
 - `petData[사용자].starterBlessingApplied`
 - `petSkillData[사용자].starterBlessingApplied`
 - `homeData[사용자].starterBlessingApplied`
@@ -6471,8 +6512,8 @@ Status: VERIFIED
 - `다음에 한다`는 시작 선택 상태만 삭제하며 회원·펫·보상을 생성하지 않는다.
 - `출발한다`는 회원을 생성하고 기존 미가입 출석을 이관한 뒤 펫 이름 입력 단계로 이동한다.
 - 펫 이름 확정 시 이름을 정리·검사하고 `호월신의 축복✨(/호여!!)`을 1개만 지급한다.
-- `/호여!!`은 회원 보상, 펫, 펫스킬, 펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다.
-- 기존 회원은 신규 지급 대상으로 자동 편입하지 않는다.
+- `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 대량 스타터 아이템은 여기서 지급하지 않는다.
+- 기존 회원도 `/모험가퀘스트` 최초 참여 시 스타터 회원 보상을 1회 받는다.
 - 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.
 
 ---
