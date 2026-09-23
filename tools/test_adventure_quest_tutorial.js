@@ -156,6 +156,36 @@ assert(/if \(msg === "\/상점"\) \{\r?\n\s*if \(recordAdventureQuestAction\(dat
 assert(!/^\s*saveJsonFile\(/m.test(info), "Info.js must not call the main-only save helper");
 assert(main.includes('msg === "/일퀘완료"'));
 assert(!info.includes('"/퀘스트완료" 또는 "/ㅇ"'));
+const starterContext = {
+    getAdventureOnboardingMemberState: (fixture, name) => fixture.member[name].adventureOnboarding,
+    getUserIntimacyInfo: (fixture, name) => {
+        const key = Object.keys(fixture.member[name].bag).find(item => item.startsWith("펫 친밀도🐾"));
+        return { exists: !!key, itemKey: key || null, level: key ? Number((key.match(/Lv\.(\d+)/) || [])[1]) : 0 };
+    },
+    buildIntimacyItemName: (level, progress, exp) => `펫 친밀도🐾 [Lv.${level}](${progress}/1000)+${exp}💕`,
+    getAdventureQuestState: (fixture, name) => fixture.member[name].adventureQuest,
+    addPoint: (fixture, name, count) => { fixture.member[name].point = (fixture.member[name].point || 0) + count; },
+    addItem: (fixture, name, item, count) => { fixture.member[name].bag[item] = (fixture.member[name].bag[item] || 0) + count; },
+    GLOBAL_CONFIG: { petSkill: { bookItemName: "스킬북📙" } }
+};
+vm.createContext(starterContext);
+vm.runInContext(["applyAdventureStarterIntimacyReward", "applyAdventureStarterMemberRewards"].map(name => extractFunction(name)).join("\n"), starterContext);
+const starterFixture = { member: {
+    newbie: { bag: {}, adventureOnboarding: { stage: "APPLYING", receipts: {} }, adventureQuest: { receipts: {} } },
+    existing: { bag: { "펫 친밀도🐾 [Lv.100](0/1000)+110000💕": 1 }, adventureQuest: { receipts: {} } },
+    advanced: { bag: { "펫 친밀도🐾 [Lv.350](0/1000)+385000💕": 1 }, adventureOnboarding: { stage: "APPLYING", receipts: {} } }
+} };
+assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFixture, "newbie"), true);
+assert.strictEqual(starterFixture.member.newbie.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], 1);
+assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFixture, "newbie"), false);
+assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "newbie"), true);
+assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "newbie"), false);
+assert.strictEqual(starterFixture.member.newbie.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], 1);
+assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "existing"), true);
+assert.strictEqual(starterFixture.member.existing.bag["펫 친밀도🐾 [Lv.100](0/1000)+110000💕"], 1);
+assert.strictEqual(starterFixture.member.existing.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], undefined);
+assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFixture, "advanced"), false);
+assert.strictEqual(starterFixture.member.advanced.bag["펫 친밀도🐾 [Lv.350](0/1000)+385000💕"], 1);
 for (const source of [main, info]) {
     const charmContext = {
         calculateCastleItem: () => 140000,

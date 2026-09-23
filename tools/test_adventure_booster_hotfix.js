@@ -193,10 +193,14 @@ for (const expected of attendanceChecks) {
 
 const onboardingChecks = [
     "currentIntimacy.level < 300",
-    "buildIntimacyItemName(300, 0, 330000)"
+    "buildIntimacyItemName(300, 0, 330000)",
+    "var starterIntimacyGranted = applyAdventureStarterIntimacyReward(data, sender)"
 ];
 for (const expected of onboardingChecks) {
     if (source.indexOf(expected) < 0) throw new Error("신규 모험가 친밀도 300 검증 실패: " + expected);
+}
+if (extractFunction("applyAdventureStarterMemberRewards").indexOf("buildIntimacyItemName") >= 0) {
+    throw new Error("튜토리얼 스타터 지급에서 친밀도 보정이 제거되지 않았습니다.");
 }
 
 const boosterEditCommandChecks = [

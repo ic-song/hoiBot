@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.555"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.556"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -4502,11 +4502,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (applyAdventureStarterPetSettings(petData, sender)) saveJsonFile(petData, memberPetPath);
                     if (applyAdventureStarterSkill(petSkillData, sender)) saveJsonFile(petSkillData, petSkillDataPath);
                     if (applyAdventureStarterHome(starterHomeData, sender)) saveJsonFile(starterHomeData, homeDataFile);
+                    var starterIntimacyGranted = applyAdventureStarterIntimacyReward(data, sender);
                     removeItem(data, sender, getAdventureBlessingItemName(), 1);
                     adventureOnboarding.stage = "COMPLETE";
                     adventureOnboarding.completedAt = formatDateTime(new Date());
                     saveJsonFile(data, filePath);
-                    replier.reply(buildAdventureStarterCompleteMessage(sender, petData[sender].petname));
+                    replier.reply(buildAdventureStarterCompleteMessage(sender, petData[sender].petname, starterIntimacyGranted));
                     return;
                 }
 
@@ -50182,10 +50183,11 @@ function buildAdventureQuestTitleMessage(data, petData, guildData, user) {
 }
 
 // 호월신의 축복 적용 완료 안내 문구를 생성하는 함수
-function buildAdventureStarterCompleteMessage(user, petName) {
+function buildAdventureStarterCompleteMessage(user, petName, intimacyGranted) {
     return "[" + user + "]님에게 호월신의 축복✨이 깃듭니다!\n\n" +
         "🐾 " + petName + "의 기본 세팅 완료!\n" +
         "📙 펫스킬 학개론 장착 완료!\n" +
+        (intimacyGranted ? "🐾 친밀도 Lv.300 (매력 330,000💕) 지원 완료!\n" : "") +
         "━━━━━━━━━━━━━━━\n" +
         "🐾 먼저, 함께할 펫을 만나보세요!\n\n" +
         "채팅창에 /펫정보 를 입력하면\n" +
@@ -50210,7 +50212,25 @@ function buildAdventureOnboardingResumeMessage(data, petData, user) {
     return "[" + user + "]님은 이미 호이월드 모험을 시작했습니다.\n/펫정보 로 현재 동반자를 확인해 주세요.";
 }
 
-// 모험가 퀘스트 최초 참여자의 포인트·가호·가방·친밀도 보상을 한 번만 지급하는 함수
+// 신규 모험가의 축복 완료 시 친밀도 Lv.300을 한 번만 지원하는 함수
+function applyAdventureStarterIntimacyReward(data, user) {
+    var member = data && data.member ? data.member[user] : null;
+    var onboarding = getAdventureOnboardingMemberState(data, user);
+    if (!member || !onboarding) return false;
+    if (!onboarding.receipts || typeof onboarding.receipts !== "object") onboarding.receipts = {};
+    if (onboarding.receipts.intimacyReward === true) return false;
+    if (!member.bag || typeof member.bag !== "object") member.bag = {};
+    var currentIntimacy = getUserIntimacyInfo(data, user);
+    var granted = !currentIntimacy.exists || currentIntimacy.level < 300;
+    if (granted) {
+        if (currentIntimacy.itemKey) delete member.bag[currentIntimacy.itemKey];
+        member.bag[buildIntimacyItemName(300, 0, 330000)] = 1;
+    }
+    onboarding.receipts.intimacyReward = true;
+    return granted;
+}
+
+// 모험가 퀘스트 최초 참여자의 포인트·가호·가방 보상을 한 번만 지급하는 함수
 function applyAdventureStarterMemberRewards(data, user) {
     var member = data.member[user];
     var state = getAdventureQuestState(data, user, true);
@@ -50241,11 +50261,6 @@ function applyAdventureStarterMemberRewards(data, user) {
     ];
     for (var i = 0; i < rewards.length; i++) addItem(data, user, rewards[i][0], rewards[i][1]);
 
-    var currentIntimacy = getUserIntimacyInfo(data, user);
-    if (!currentIntimacy.exists || currentIntimacy.level < 300) {
-        if (currentIntimacy.itemKey) delete member.bag[currentIntimacy.itemKey];
-        member.bag[buildIntimacyItemName(300, 0, 330000)] = 1;
-    }
     state.receipts.starterMemberRewards = true;
     return true;
 }

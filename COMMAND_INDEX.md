@@ -6493,6 +6493,7 @@ Status: VERIFIED
 - `getAdventureOnboardingMemberState`
 - `buildHoiWorldTermsMessage`
 - `sanitizeAdventurePetName`
+- `applyAdventureStarterIntimacyReward`
 - `applyAdventureStarterMemberRewards`
 - `applyAdventureStarterPetSettings`
 - `applyAdventureStarterSkill`
@@ -6513,8 +6514,8 @@ Status: VERIFIED
 - `다음에 한다`는 시작 선택 상태만 삭제하며 회원·펫·보상을 생성하지 않는다.
 - `출발한다`는 회원을 생성하고 기존 미가입 출석을 이관한 뒤 펫 이름 입력 단계로 이동한다.
 - 펫 이름 확정 시 이름을 정리·검사하고 `호월신의 축복✨(/호여!!)`을 1개만 지급한다.
-- `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 대량 스타터 아이템은 여기서 지급하지 않는다.
-- 기존 회원도 `/모험가퀘스트` 최초 참여 시 스타터 회원 보상을 1회 받는다.
+- `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 신규 회원의 친밀도 Lv.300(+330,000💕)는 여기서 1회 지원하며, 대량 스타터 아이템은 지급하지 않는다.
+- 기존 회원도 `/모험가퀘스트` 최초 참여 시 스타터 회원 보상을 1회 받지만 친밀도 Lv.300 보정은 받지 않는다.
 - 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.
 
 ---
