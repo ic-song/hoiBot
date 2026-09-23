@@ -6,14 +6,14 @@ const path = require("path");
 const main = fs.readFileSync(path.join(__dirname, "..", "main.js"), "utf8");
 const info = fs.readFileSync(path.join(__dirname, "..", "Info.js"), "utf8");
 
-function extractFunction(name) {
-    const start = main.indexOf("function " + name + "(");
+function extractFunction(name, source = main) {
+    const start = source.indexOf("function " + name + "(");
     assert(start >= 0, "missing function: " + name);
-    const brace = main.indexOf("{", start);
+    const brace = source.indexOf("{", start);
     let depth = 0;
-    for (let i = brace; i < main.length; i++) {
-        if (main[i] === "{") depth++;
-        if (main[i] === "}" && --depth === 0) return main.slice(start, i + 1);
+    for (let i = brace; i < source.length; i++) {
+        if (source[i] === "{") depth++;
+        if (source[i] === "}" && --depth === 0) return source.slice(start, i + 1);
     }
     throw new Error("unclosed function: " + name);
 }
@@ -156,4 +156,31 @@ assert(/if \(msg === "\/상점"\) \{\r?\n\s*if \(recordAdventureQuestAction\(dat
 assert(!/^\s*saveJsonFile\(/m.test(info), "Info.js must not call the main-only save helper");
 assert(main.includes('msg === "/일퀘완료"'));
 assert(!info.includes('"/퀘스트완료" 또는 "/ㅇ"'));
+for (const source of [main, info]) {
+    const charmContext = {
+        calculateCastleItem: () => 140000,
+        calculateItemInfoAll: () => ({ castleExp: 0, raidExp: 150000 }),
+        getHomeTotalExp: () => 0,
+        hasPetSkill: () => false,
+        getIntimacyExpFromBag: bag => bag.intimacy || 0,
+        getEquippedNonTierPetSkillExp: () => 0,
+        getEquippedTierPetSkillExp: () => 0,
+        getHomeBadgeCubeActiveOptionPercent: () => 0,
+        getGuildContributionCubeMemberPercent: () => 0,
+        getAdventureLevelCharmPercent: () => 0,
+        getInfoAdventureLevelSummary: () => ({ charmPercent: 0 })
+    };
+    vm.createContext(charmContext);
+    const percentName = source === main ? "applyPercentWithExactFloor" : "applyInfoPercentWithExactFloor";
+    vm.runInContext([percentName, "calculateCastleExp", "calculateRaidExp"].map(name => extractFunction(name, source)).join("\n"), charmContext);
+    const charmData = { member: { tester: { lv: 1, bag: { intimacy: 0 }, adventureQuest: { totals: { castlePercent: 0, raidPercent: 0 } } } } };
+    const pet = { tester: { petexp: 0 } };
+    assert.strictEqual(charmContext.calculateCastleExp("tester", charmData, pet, {}, {}, false, {}), 140000);
+    assert.strictEqual(charmContext.calculateRaidExp("tester", charmData, pet, {}, {}, false, {}), 150000);
+    charmData.member.tester.bag.intimacy = 330000;
+    charmData.member.tester.adventureQuest.totals.castlePercent = 0.005;
+    charmData.member.tester.adventureQuest.totals.raidPercent = 0.005;
+    assert.strictEqual(charmContext.calculateCastleExp("tester", charmData, pet, {}, {}, false, {}), 470023);
+    assert.strictEqual(charmContext.calculateRaidExp("tester", charmData, pet, {}, {}, false, {}), 150007);
+}
 console.log("PASS adventure quest tutorial synthetic checks");

@@ -230,13 +230,13 @@ function formatInfoAdventureLevelPercent(value) {
 	return String(Math.round((Number(value) || 0) * 100) / 100);
 }
 
-// Info 매력 계산에서 0.01% 정수 단위로 비율을 적용하는 함수
+// Info 매력 계산에서 0.001% 정수 단위로 비율을 적용하는 함수
 function applyInfoPercentWithExactFloor(value, percent) {
 	var baseValue = Math.max(0, Math.floor(Number(value) || 0));
-	var basisPoints = Math.round((Number(percent) || 0) * 100); // 1 = 0.01%
-	var wholeUnits = Math.floor(baseValue / 10000); // 큰 수 곱셈을 피하기 위한 10000 단위 몫
-	var remainder = baseValue - wholeUnits * 10000; // 10000 미만 나머지
-	return baseValue + wholeUnits * basisPoints + Math.floor(remainder * basisPoints / 10000);
+	var thousandthPercent = Math.round((Number(percent) || 0) * 1000); // 1 = 0.001%
+	var wholeUnits = Math.floor(baseValue / 100000); // 큰 수 곱셈을 피하기 위한 100000 단위 몫
+	var remainder = baseValue - wholeUnits * 100000; // 100000 미만 나머지
+	return baseValue + wholeUnits * thousandthPercent + Math.floor(remainder * thousandthPercent / 100000);
 }
 
 // Info에서 /레벨 출력 메시지를 만드는 함수
@@ -1959,6 +1959,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
 	castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
 	castleCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
+	var castleQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
+	castleCubePercent += castleQuestState && castleQuestState.totals ? Number(castleQuestState.totals.castlePercent) || 0 : 0;
 	return applyInfoPercentWithExactFloor(castleTotal, castleCubePercent);
 }
 
@@ -1987,6 +1989,8 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
 	raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
 	raidCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
+	var raidQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
+	raidCubePercent += raidQuestState && raidQuestState.totals ? Number(raidQuestState.totals.raidPercent) || 0 : 0;
 	return applyInfoPercentWithExactFloor(raidTotal, raidCubePercent);
 }
 
