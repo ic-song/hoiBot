@@ -949,11 +949,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply("출석한 유저 목록:\n" + userListText1 + allsee + "\n" + userListText2);
 		}
 		if (msg === "/상점") {
-			var shopQuest = data.member && data.member[sender] ? data.member[sender].adventureQuest : null;
-			if (shopQuest && shopQuest.currentStage === 2 && shopQuest.progress && !shopQuest.progress.shopViewed) {
-				shopQuest.progress.shopViewed = true;
-				saveJsonFile(data, filePath);
-			}
 			let itemList = Object.keys(data.shop).map(function (itemName, index) {
 				let itemDetails = data.shop[itemName];
 				let itemPrice = numberWithCommas(itemDetails);

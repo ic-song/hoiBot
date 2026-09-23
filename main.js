@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.554"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.555"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -6216,6 +6216,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg)) {
                     // 약관동의 안할 시 사용불가
                     saveJsonFile(data, filePath);
+                    return;
+                }
+                if (msg === "/상점") {
+                    if (recordAdventureQuestAction(data, sender, 2, "shopViewed", 0)) saveJsonFile(data, filePath);
                     return;
                 }
                 if (msg === "/당근게시판") {
