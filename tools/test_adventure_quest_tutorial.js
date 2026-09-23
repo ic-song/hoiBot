@@ -152,7 +152,7 @@ const rewardsAfterTutorial = inventory["다이아상자💎"];
 assert.strictEqual(context.completeAdventureQuestStage(totalsData, "all"), null);
 assert.strictEqual(inventory["다이아상자💎"], rewardsAfterTutorial);
 assert(main.includes('if (adventureQuestState.currentStage > GLOBAL_CONFIG.adventureQuest.tutorialMaxStage) {'));
-assert(main.includes('if (msg === "/상점") {\n                    if (recordAdventureQuestAction(data, sender, 2, "shopViewed", 0)) saveJsonFile(data, filePath);'));
+assert(/if \(msg === "\/상점"\) \{\r?\n\s*if \(recordAdventureQuestAction\(data, sender, 2, "shopViewed", 0\)\) saveJsonFile\(data, filePath\);/.test(main));
 assert(!/^\s*saveJsonFile\(/m.test(info), "Info.js must not call the main-only save helper");
 assert(main.includes('msg === "/일퀘완료"'));
 assert(!info.includes('"/퀘스트완료" 또는 "/ㅇ"'));
