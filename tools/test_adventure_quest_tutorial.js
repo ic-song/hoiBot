@@ -27,7 +27,7 @@ const config = {
         castlePercentPerStage: 0.005,
         raidPercentPerStage: 0.005,
         experiencePerStage: 1000,
-        stages: Array.from({ length: 16 }, (_, index) => ({ number: index + 1, title: "제목" + (index + 1), record: "기록" + (index + 1) }))
+        stages: Array.from({ length: 16 }, (_, index) => ({ number: index + 1, title: "제목" + (index + 1), record: "기록" + (index + 1), objective: "목표", commands: index === 12 ? "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료" : index === 13 ? "/홈뱃지장착 [번호] → /홈뱃지큐브 [슬롯] [옵션] → /퀘스트완료" : "/퀘스트완료" }))
     },
     petSkill: { bookItemName: "스킬북📙" },
     items: { diamondBoxName: "다이아상자💎" }
@@ -39,13 +39,15 @@ const context = {
     roundToTwo: value => Math.round(value * 100) / 100,
     processAdventureLevelUps: () => [],
     getNextHomeInfoByFloor: (_info, floor) => floor < 100 ? { floor: floor + 1 } : null,
-    getPetHomeEquippedBadgeIds: (_activity, _user) => [1]
+    getPetHomeEquippedBadgeIds: activity => activity.equippedBadgeIds || [],
+    checkRank: () => "테스터"
 };
 vm.createContext(context);
 for (const name of [
     "getAdventureQuestState", "getAdventureQuestStageConfig", "recordAdventureQuestAction",
     "isAdventureQuestHomeAtMaximum", "prepareAdventureQuestStage",
     "getAdventureQuestCompletionCheck", "completeAdventureQuestStage",
+    "getAdventureQuestGoalLines", "getAdventureQuestNextStageMessage", "buildAdventureQuestIncompleteMessage",
     "applyPercentWithExactFloor", "removePercentWithExactCeil"
 ]) vm.runInContext(extractFunction(name), context);
 
@@ -99,6 +101,37 @@ state.currentStage = 14;
 assert.strictEqual(context.prepareAdventureQuestStage(data, user, {}, home), true);
 assert.strictEqual(context.prepareAdventureQuestStage(data, user, {}, home), false);
 assert.strictEqual(inventory["홈뱃지 큐브💟"], 100);
+const badgeActivity = { equippedBadgeIds: ["badge-a", null] };
+const realmArray = vm.runInContext("Array", context);
+data.member[user].homeBadgeCube = { equippedBadgeIds: realmArray.of("badge-a", null) };
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, badgeActivity, user).complete, false, "기존 장착만으로는 완료 불가");
+const preEquippedCheck = context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, badgeActivity, user);
+const preEquippedMessage = context.buildAdventureQuestIncompleteMessage(data, {}, {}, user, preEquippedCheck);
+assert(preEquippedMessage.includes("👉 /홈뱃지큐브"));
+assert(!preEquippedMessage.includes("👉 /홈뱃지장착"));
+state.progress.homeBadgeCubeUsed = true;
+state.progress.cubedBadgeIds = realmArray.of("badge-a");
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, badgeActivity, user).complete, true, "사전 장착 후 큐브 사용 인정");
+badgeActivity.equippedBadgeIds = [null, null];
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, badgeActivity, user).complete, false, "해제된 뱃지는 완료 불가");
+let badgeCheck = context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, badgeActivity, user);
+let badgeMessage = context.buildAdventureQuestIncompleteMessage(data, {}, {}, user, badgeCheck);
+assert(badgeMessage.includes("큐브를 사용한 홈뱃지 장착·적용"));
+assert(!badgeMessage.includes("[✅] 홈뱃지 큐브"));
+assert(!badgeMessage.includes("👉 /홈뱃지큐브"));
+badgeActivity.equippedBadgeIds = ["badge-a", null];
+data.member[user].homeBadgeCube.equippedBadgeIds = realmArray.of(null, null);
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, badgeActivity, user).complete, false, "큐브 적용 동기화 누락은 완료 불가");
+data.member[user].homeBadgeCube.equippedBadgeIds = realmArray.of("badge-a", null);
+state.progress.cubedBadgeIds.push("badge-b");
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, badgeActivity, user).complete, true, "다른 뱃지를 추가로 큐브 사용해도 기존 장착 뱃지 인정");
+state.currentStage = 13;
+state.progress = { diamondShopViewed: true, diamondShopPurchase: 1 };
+const shopCheck = context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user);
+const shopMessage = context.buildAdventureQuestIncompleteMessage(data, {}, {}, user, shopCheck);
+assert(shopMessage.includes("인정 상품 구매 · 1/2개"));
+assert(!shopMessage.includes("[✅] 다이아상점 조회"));
+assert(!shopMessage.includes("👉 /다이아상점\n"));
 assert.strictEqual(context.applyPercentWithExactFloor(100000, 0.005), 100005);
 assert.strictEqual(context.removePercentWithExactCeil(100005, 0.005), 100000);
 const totalsData = { member: { all: { exp: 0 } } };
@@ -113,6 +146,12 @@ assert.strictEqual(totalsState.totals.diamondBoxes, 680);
 assert.strictEqual(totalsState.totals.experience, 16000);
 assert.strictEqual(totalsState.titles.length, 16);
 assert.strictEqual(context.completeAdventureQuestStage(totalsData, "all"), null);
+assert.strictEqual(context.getAdventureQuestNextStageMessage(totalsData, "all").includes("Lv.17부터 진행 가능"), true);
+assert(context.buildAdventureQuestIncompleteMessage(totalsData, {}, {}, "all", { complete: false }).includes("본편 공개 대기"));
+const rewardsAfterTutorial = inventory["다이아상자💎"];
+assert.strictEqual(context.completeAdventureQuestStage(totalsData, "all"), null);
+assert.strictEqual(inventory["다이아상자💎"], rewardsAfterTutorial);
+assert(main.includes('if (adventureQuestState.currentStage > GLOBAL_CONFIG.adventureQuest.tutorialMaxStage) {'));
 assert(main.includes('msg === "/일퀘완료"'));
 assert(!info.includes('"/퀘스트완료" 또는 "/ㅇ"'));
 console.log("PASS adventure quest tutorial synthetic checks");

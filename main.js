@@ -2112,7 +2112,7 @@ blockedNicknameTerms: [
             { number: 10, title: "집에 가구 들이기", objective: "가구 장착 후 실제 배치 1개 이상 유지", commands: "/가구장착 [번호] → /퀘스트완료", story: "넓어진 펫홈에 가구를 놓아 꾸밉니다.", npcStart: "집이 넓어졌으면 꾸며야지! 마음에 드는 가구를 하나 장착해봐. 내 자리는 남겨두고!", npcComplete: "가구 하나로 분위기가 달라졌지? 네 취향이 보이는 집이다냥.", record: "펫홈에 가구를 장착했다." },
             { number: 11, title: "미니펫 강화 입문", objective: "유효한 미니펫 강화 시도 1회", commands: "/미니펫강화 [가방번호] → /퀘스트완료", story: "미니펫 강화를 한 번 진행해 강화 과정을 익힙니다.", npcStart: "미니펫도 함께 강해져야 한다냥. 가방에서 강화할 친구를 골라 한 번 강화해봐!", npcComplete: "미니펫 강화 방법을 익혔네! 다음에도 대상부터 꼭 확인해라냥.", record: "미니펫 강화를 한 번 진행했다." },
             { number: 12, title: "펜던트 강화 입문", objective: "유효한 펜던트 강화 시도 1회", commands: "/펜던트강화 [번호] → 진행시켜 → /퀘스트완료", story: "펜던트 강화에 도전해 성공과 실패 과정을 경험합니다.", npcStart: "목에 건 펜던트도 든든한 힘이 된다냥. 강화할 펜던트를 확인하고 한 번 도전해봐!", npcComplete: "펜던트 강화도 해봤구나! 준비물을 확인하는 습관을 들여라냥.", record: "펜던트 강화를 한 번 진행했다." },
-            { number: 13, title: "홈뱃지 고르기", objective: "다이아상점 조회 후 홈뱃지 상품 2개 구매", commands: "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료", story: "다이아상점에서 사용할 홈뱃지를 준비합니다.", npcStart: "다이아상점에는 홈뱃지가 있어! 1번, 2번, 3번 중에서 두 개를 사 와라냥. 같은 종류로 두 개 골라도 괜찮아!", npcComplete: "홈뱃지를 준비했네! 다음엔 힘을 더하고 적용하는 법을 배우자.", record: "다이아상점에서 상품 두 개를 구매했다." },
+            { number: 13, title: "홈뱃지 고르기", objective: "다이아상점 조회 후 인정 상품 2개 구매", commands: "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료", story: "다이아상점에서 사용할 상품을 준비합니다.", npcStart: "다이아상점에서 홈뱃지 상품 두 개를 골라봐라냥. 홈뱃지 상품이 없다면 다른 상품 두 개를 사도 인정해줄게!", npcComplete: "상품을 준비했네! 다음엔 홈뱃지에 힘을 더하고 적용하는 법을 배우자.", record: "다이아상점에서 인정 상품 두 개를 구매했다." },
             { number: 14, title: "홈뱃지에 힘을 더하자", objective: "홈뱃지 큐브 실제 사용 1회 및 홈뱃지 장착 유지", commands: "/홈뱃지장착 [번호] → /홈뱃지큐브 [슬롯] [옵션] → /퀘스트완료", story: "호식이가 건넨 큐브로 장착한 홈뱃지의 힘을 키웁니다.", npcStart: "홈뱃지 큐브 100개를 챙겨줄게! 큐브를 사용하고 홈뱃지가 장착돼 효과를 주고 있는지도 확인해봐라냥.", npcComplete: "홈뱃지가 제대로 적용됐네! 준비한 보람이 있다냥.", record: "홈뱃지 큐브를 사용하고 홈뱃지를 적용했다." },
             { number: 15, title: "펫과 함께 한 단계 더", objective: "유효한 펫 강화 시도 1회", commands: "/펫강화 [횟수] → /퀘스트완료", story: "함께하는 펫의 강화를 한 번 진행합니다.", npcStart: "이번엔 네 곁을 지키는 펫 차례야. 펫 강화를 한 번 해보고 와. 도전하는 법을 배우는 거다냥!", npcComplete: "펫 강화까지 해냈네! 너와 펫이 함께 자라는 모습이 좋다냥.", record: "펫 강화를 한 번 진행했다." },
             { number: 16, title: "야, 너 친구 없지?", objective: "길드목록 정상 조회 1회", commands: "/길드목록 → /퀘스트완료", story: "함께할 동료를 찾을 수 있는 길드목록을 둘러봅니다.", npcStart: "야, 너 친구 없지? 😼 펫 친구 말고 같이 모험할 친구 말이야! /길드목록에서 둘러보고 와. 가입은 마음에 드는 곳을 찾은 다음에 해도 돼!", npcComplete: "함께할 동료들도 둘러봤구나. 광장 수업은 끝났어! Lv.17이 되면 첫 본편 의뢰로 모험을 이어가라냥.", record: "길드목록을 둘러보고 광장 튜토리얼을 마쳤다." }
@@ -17033,6 +17033,11 @@ replier.reply(
                         return;
                     }
                     if (msg === "/퀘스트완료") {
+                        if (adventureQuestState.currentStage > GLOBAL_CONFIG.adventureQuest.tutorialMaxStage) {
+                            if (adventureQuestChanged) saveJsonFile(data, filePath);
+                            replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님 튜토리얼 16단계를 모두 완료했어요.\n" + getAdventureQuestNextStageMessage(data, sender));
+                            return;
+                        }
                         var adventureQuestCheck = getAdventureQuestCompletionCheck(data, petData, petSkillData, adventureQuestHomeData, adventureQuestExploreData, adventureQuestActivityData, sender);
                         if (!adventureQuestCheck.complete) {
                             if (adventureQuestChanged) saveJsonFile(data, filePath);
@@ -23301,7 +23306,10 @@ replier.reply(
                     var homeBadgeQuestProgressBefore = homeBadgeQuestState && homeBadgeQuestState.currentStage === 14 ? JSON.parse(JSON.stringify(homeBadgeQuestState.progress)) : null;
                     if (homeBadgeCubeConsumed > 0) {
                         recordAdventureQuestAction(data, sender, 14, "homeBadgeCubeUsed", 0);
-                        recordAdventureQuestAction(data, sender, 14, "homeBadgeEquipped", 0);
+                        if (homeBadgeQuestState && homeBadgeQuestState.currentStage === 14) {
+                            if (!(homeBadgeQuestState.progress.cubedBadgeIds instanceof Array)) homeBadgeQuestState.progress.cubedBadgeIds = [];
+                            if (homeBadgeQuestState.progress.cubedBadgeIds.indexOf(homeBadgeCubeBadge.id) < 0) homeBadgeQuestState.progress.cubedBadgeIds.push(homeBadgeCubeBadge.id);
+                        }
                     }
                     if (isHomeBadgeCubeAllMax(homeBadgeCubeRecord) && homeBadgeCubeRecord.allMaxNotified !== true) {
                         homeBadgeCubeRecord.allMaxNotified = true;
@@ -50005,7 +50013,13 @@ function getAdventureQuestCompletionCheck(data, petData, petSkillData, homeData,
     if (stage === 13) return { complete: !!p.diamondShopViewed && (p.diamondShopPurchase || 0) >= 2, remaining: "다이아상점을 확인하고 인정 상품을 2개 구매해 주세요." };
     if (stage === 14) {
         var equippedBadgeIds = petHomeActivityData ? getPetHomeEquippedBadgeIds(petHomeActivityData, user) : [];
-        return { complete: !!p.homeBadgeCubeUsed && !!p.homeBadgeEquipped && !!(equippedBadgeIds[0] || equippedBadgeIds[1]), remaining: "홈뱃지 큐브를 실제로 사용하고 홈뱃지를 장착해 주세요." };
+        var cubeStore = data.member[user].homeBadgeCube;
+        var cubedBadgeApplied = false; // 큐브를 사용한 뱃지 중 현재 장착·효과 동기화된 뱃지 유무
+        var cubedBadgeIds = p.cubedBadgeIds instanceof Array ? p.cubedBadgeIds : [];
+        for (var cubedBadgeIndex = 0; cubedBadgeIndex < cubedBadgeIds.length; cubedBadgeIndex++) {
+            if (equippedBadgeIds.indexOf(cubedBadgeIds[cubedBadgeIndex]) >= 0 && cubeStore && cubeStore.equippedBadgeIds instanceof Array && cubeStore.equippedBadgeIds.indexOf(cubedBadgeIds[cubedBadgeIndex]) >= 0) cubedBadgeApplied = true;
+        }
+        return { complete: !!p.homeBadgeCubeUsed && cubedBadgeApplied, cubeUsed: !!p.homeBadgeCubeUsed, badgeEquipped: !!(equippedBadgeIds[0] || equippedBadgeIds[1]), badgeApplied: cubedBadgeApplied, remaining: "홈뱃지 큐브를 실제로 사용하고 홈뱃지를 장착해 주세요." };
     }
     if (stage === 15) return { complete: !!p.petUpgradeAttempt, remaining: "유효한 펫 강화 시도를 1회 진행해 주세요." };
     if (stage === 16) return { complete: !!p.guildListViewed, remaining: "/길드목록을 정상 조회해 주세요." };
@@ -50037,9 +50051,13 @@ function completeAdventureQuestStage(data, user) {
 }
 
 // 단계별 목표를 현재 행동 횟수와 완료 상태로 표시하는 함수
-function getAdventureQuestGoalLines(state, check) {
+function getAdventureQuestGoalLines(state, check, onlyIncomplete) {
     var stage = state.currentStage;
     var p = state.progress || {};
+    if (stage === 2) {
+        var tierLines = [(p.shopViewed ? "[✅] " : "[⬜] ") + "상점 조회", (p.tierPurchased ? "[✅] " : "[⬜] ") + "1번 상품 1개 구매", (p.tierViewed ? "[✅] " : "[⬜] ") + "티어 조회", (check.complete ? "[✅] " : "[⬜] ") + "티어 적용·유지"];
+        return onlyIncomplete ? tierLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : tierLines;
+    }
     if (stage >= 3 && stage <= 5) {
         var key = stage === 3 ? "miniBattle" : stage === 4 ? "castleBattle" : "trialTower";
         var label = stage === 3 ? "미니펫대전" : stage === 4 ? "캐슬대전" : "시련의탑";
@@ -50047,7 +50065,18 @@ function getAdventureQuestGoalLines(state, check) {
         return [(count >= 15 ? "[✅] " : "[⬜] ") + label + " 정상 결과 · " + count + "/15회"];
     }
     if (stage === 7) return [(p.feed100000 ? "[✅] " : "[⬜] ") + "펫먹이 100,000개 사용 · " + (p.feed100000 ? "1" : "0") + "/1회"];
-    if (stage === 13) return [(p.diamondShopViewed ? "[✅] " : "[⬜] ") + "다이아상점 조회", ((p.diamondShopPurchase || 0) >= 2 ? "[✅] " : "[⬜] ") + "인정 상품 구매 · " + Math.min(2, p.diamondShopPurchase || 0) + "/2개"];
+    if (stage === 8) {
+        var skillLines = [(p.skillBookOpened ? "[✅] " : "[⬜] ") + "스킬북 1개 오픈", (check.complete ? "[✅] " : "[⬜] ") + "유효한 펫스킬 장착·유지"];
+        return onlyIncomplete ? skillLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : skillLines;
+    }
+    if (stage === 13) {
+        var shopLines = [(p.diamondShopViewed ? "[✅] " : "[⬜] ") + "다이아상점 조회", ((p.diamondShopPurchase || 0) >= 2 ? "[✅] " : "[⬜] ") + "인정 상품 구매 · " + Math.min(2, p.diamondShopPurchase || 0) + "/2개"];
+        return onlyIncomplete ? shopLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : shopLines;
+    }
+    if (stage === 14) {
+        var badgeLines = [(check.cubeUsed ? "[✅] " : "[⬜] ") + "홈뱃지 큐브 실제 사용 · " + (check.cubeUsed ? "1" : "0") + "/1회", (check.badgeApplied ? "[✅] " : "[⬜] ") + "큐브를 사용한 홈뱃지 장착·적용"];
+        return onlyIncomplete ? badgeLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : badgeLines;
+    }
     return [(check.complete ? "[✅] " : "[⬜] ") + getAdventureQuestStageConfig(stage).objective];
 }
 
@@ -50093,10 +50122,20 @@ function buildAdventureQuestMessage(data, petData, petSkillData, guildData, home
 function buildAdventureQuestIncompleteMessage(data, petData, guildData, user, check) {
     var state = getAdventureQuestState(data, user, false);
     var config = getAdventureQuestStageConfig(state.currentStage);
+    if (!config) return "✅ 튜토리얼 16단계를 모두 완료했어요.\n" + getAdventureQuestNextStageMessage(data, user);
     var lines = ["❌ [" + checkRank(data, petData, guildData, user) + "] 님 아직 달성하지 않은 목표가 있어요.", "【" + state.currentStage + "단계 · NPC 호식이😺】", "━━━━━━━━━━━━", "🎯 미완료 목표"];
-    lines = lines.concat(getAdventureQuestGoalLines(state, check));
+    lines = lines.concat(getAdventureQuestGoalLines(state, check, true));
     lines.push("━━━━━━━━━━━━");
     var commands = config.commands.split(" → ");
+    var p = state.progress || {};
+    if (state.currentStage === 2) {
+        if (!p.shopViewed) commands = ["/상점", "/퀘스트완료"];
+        else if (!p.tierPurchased) commands = ["/구매 1 1", "/퀘스트완료"];
+        else if (!p.tierViewed) commands = ["/티어", "/퀘스트완료"];
+        else commands = ["/티어적용", "/퀘스트완료"];
+    } else if (state.currentStage === 8 && p.skillBookOpened) commands = ["/펫스킬장착 [번호]", "/퀘스트완료"];
+    else if (state.currentStage === 13 && p.diamondShopViewed) commands = ["/다이아상점구매 [번호] [개수]", "/퀘스트완료"];
+    else if (state.currentStage === 14) commands = (check.badgeApplied || (check.badgeEquipped && !p.homeBadgeCubeUsed)) ? ["/홈뱃지큐브 [슬롯] [옵션]", "/퀘스트완료"] : p.homeBadgeCubeUsed ? ["/홈뱃지장착 [번호]", "/퀘스트완료"] : ["/홈뱃지장착 [번호]", "/홈뱃지큐브 [슬롯] [옵션]", "/퀘스트완료"];
     for (var i = 0; i < commands.length; i++) lines.push("👉 " + commands[i]);
     return lines.join("\n");
 }
