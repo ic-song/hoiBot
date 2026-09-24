@@ -96,6 +96,9 @@ assert.strictEqual(tierQuestSaves, 1, "승급 불가 시에도 퀘스트 진행 
 delete data.member[user].bag["티어 승급티켓🎟"];
 assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true, "입력 후 티켓 소진해도 완료 유지");
 assert.strictEqual(context.getAdventureQuestGoalLines(state, { complete: true }, false)[0].indexOf("[✅]"), 0);
+assert.strictEqual(context.completeAdventureQuestStage(data, user).stage, 2, "2단계 완료 처리");
+state.currentStage = 2;
+assert.strictEqual(context.completeAdventureQuestStage(data, user), null, "2단계 보상 중복 지급 방지");
 
 state.currentStage = 6;
 state.progress = { exploreSelected: true };
@@ -115,8 +118,13 @@ assert.strictEqual(context.recordAdventureQuestExploreSelection(data, user, "1")
 assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, false);
 assert.strictEqual(context.recordAdventureQuestExploreResult(data, user, "1"), true);
 assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true);
-
+assert.strictEqual(context.completeAdventureQuestStage(data, user).stage, 6, "정산 후 6단계 완료 처리");
+state.currentStage = 6;
+assert.strictEqual(context.completeAdventureQuestStage(data, user), null, "6단계 보상 중복 지급 방지");
 state.currentStage = 7;
+assert.strictEqual(state.currentStage, 7);
+assert.strictEqual(inventory["다이아상자💎"], 45, "1·2·6단계 보상 합계");
+
 assert.strictEqual(context.prepareAdventureQuestStage(data, user, {}, home), true);
 assert.strictEqual(context.prepareAdventureQuestStage(data, user, {}, home), false);
 assert.strictEqual(inventory["펫먹이🍼"], 100000);
