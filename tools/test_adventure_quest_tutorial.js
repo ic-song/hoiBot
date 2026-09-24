@@ -226,6 +226,7 @@ assert(main.includes('recordAdventureQuestExploreResult(data, user, config.slot)
 assert(main.includes('recordAdventureQuestExploreResult(data, user, dk);'), "일반 정상 정산 결과 기록");
 assert.strictEqual(context.getAdventureQuestPreparationLines({ currentStage: 14, receipts: {} })[1], "홈뱃지 큐브💟 ×100개");
 assert.strictEqual(context.getAdventureQuestPreparationLines({ currentStage: 14, receipts: {} })[0], "📦 최초 1회 지급");
+assert.strictEqual(context.getAdventureQuestPreparationLines({ currentStage: 1, receipts: { starterMemberRewards: true } }).length, 0);
 assert(!/^\s*saveJsonFile\(/m.test(info), "Info.js must not call the main-only save helper");
 assert(main.includes('msg === "/일퀘완료"'));
 assert(!info.includes('"/퀘스트완료" 또는 "/ㅇ"'));
@@ -242,21 +243,30 @@ const starterContext = {
     GLOBAL_CONFIG: { petSkill: { bookItemName: "스킬북📙" } }
 };
 vm.createContext(starterContext);
+const starterConfigStart = main.indexOf("    adventureStarter: {");
+const starterConfigEnd = main.indexOf("    adventureQuest: {", starterConfigStart);
+assert(starterConfigStart >= 0 && starterConfigEnd > starterConfigStart);
+vm.runInContext("GLOBAL_CONFIG.adventureStarter = ({" + main.slice(starterConfigStart, starterConfigEnd) + "}).adventureStarter;", starterContext);
 vm.runInContext(["applyAdventureStarterIntimacyReward", "applyAdventureStarterMemberRewards"].map(name => extractFunction(name)).join("\n"), starterContext);
 const starterFixture = { member: {
     newbie: { bag: {}, adventureOnboarding: { stage: "APPLYING", receipts: {} }, adventureQuest: { receipts: {} } },
     existing: { bag: { "펫 친밀도🐾 [Lv.100](0/1000)+110000💕": 1 }, adventureQuest: { receipts: {} } },
-    advanced: { bag: { "펫 친밀도🐾 [Lv.350](0/1000)+385000💕": 1 }, adventureOnboarding: { stage: "APPLYING", receipts: {} } }
+    advanced: { bag: { "펫 친밀도🐾 [Lv.350](0/1000)+385000💕": 1 }, adventureOnboarding: { stage: "APPLYING", receipts: {} } },
+    oldPaid: { bag: {}, adventureOnboarding: { stage: "APPLYING", receipts: { memberRewards: true } } },
+    questPaid: { bag: {}, adventureOnboarding: { stage: "APPLYING", receipts: {} }, adventureQuest: { receipts: { starterMemberRewards: true } } }
 } };
 assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFixture, "newbie"), true);
 assert.strictEqual(starterFixture.member.newbie.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], 1);
 assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFixture, "newbie"), false);
 assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "newbie"), true);
 assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "newbie"), false);
+assert.strictEqual(starterFixture.member.newbie.adventureOnboarding.receipts.memberRewards, true);
 assert.strictEqual(starterFixture.member.newbie.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], 1);
-assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "existing"), true);
+assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "existing"), false);
 assert.strictEqual(starterFixture.member.existing.bag["펫 친밀도🐾 [Lv.100](0/1000)+110000💕"], 1);
 assert.strictEqual(starterFixture.member.existing.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], undefined);
+assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "oldPaid"), false);
+assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "questPaid"), false);
 assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFixture, "advanced"), false);
 assert.strictEqual(starterFixture.member.advanced.bag["펫 친밀도🐾 [Lv.350](0/1000)+385000💕"], 1);
 for (const source of [main, info]) {

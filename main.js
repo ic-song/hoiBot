@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.562"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.563"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2079,6 +2079,29 @@ blockedNicknameTerms: [
         ],
         rankRewards: [15, 14, 13, 12, 11, 10, 9, 8, 7, 6]
     },
+    adventureStarter: { // 호월신의 축복 스타터팩 지급·회수 기준
+        points: 30000000000,
+        boosters: 1000,
+        items: [
+            ["전설의 돌맹이🗿", 50],
+            ["미니펫뽑기🐹(/미니펫오픈)", 10],
+            ["펫스윗홈인테리어샵🖼️(/샵오픈)", 8],
+            ["펫 강화석⭐", 3000],
+            ["양념치킨🐔", 700],
+            ["경찰과 도둑🚨(/삐뽀삐뽀)", 50],
+            ["돌멩이🪨", 30000],
+            ["미니펫대전리셋권🐹", 900],
+            ["캐슬대전리셋권🐶", 900],
+            ["시련의탑리셋권😈", 500],
+            ["펫던전 입장권🌋", 100],
+            ["레이드타격대인장👑(+600👾)", 10],
+            ["잡템상자☠", 100],
+            ["펫스킬북📙(/펫스킬오픈)", 3],
+            ["탐험확률UP🗻(50%)", 200],
+            ["땅문서📜", 20],
+            ["펫 이름변경권🎫", 3]
+        ]
+    },
     adventureQuest: { // 모험가 퀘스트 튜토리얼 설정
         seasonMaxStage: 100,
         tutorialMaxStage: 16,
@@ -2648,6 +2671,39 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             replier.reply(buildManagedJsonStatusMessage());
+            return;
+        }
+
+        var starterRecoveryExecute = /^\/스타터중복회수 실행 ([1-9]\d*) 확인$/.exec(msg);
+        if (msg === "/스타터중복회수" || starterRecoveryExecute) {
+            if (room !== testRoom || !isMaster(sender)) return;
+            var starterRecoveryData = loadJsonFile(filePath);
+            if (!starterRecoveryData || !starterRecoveryData.member || typeof starterRecoveryData.member !== "object") {
+                replier.reply("스타터 지급 기록을 확인할 수 없습니다. member.json을 확인해 주세요.");
+                return;
+            }
+            var starterRecoveryPlan = getAdventureStarterRecoveryPlan(starterRecoveryData.member);
+            if (!starterRecoveryExecute) {
+                var starterPreviewMessages = buildAdventureStarterRecoveryPreviewMessages(starterRecoveryPlan);
+                for (var previewIndex = 0; previewIndex < starterPreviewMessages.length; previewIndex++) replier.reply(starterPreviewMessages[previewIndex]);
+                return;
+            }
+            if (Number(starterRecoveryExecute[1]) !== starterRecoveryPlan.pending.length) {
+                replier.reply("❌ 미회수 대상자 수가 변경되었습니다. /스타터중복회수로 다시 확인해 주세요.");
+                return;
+            }
+            if (starterRecoveryPlan.ready.length === 0) {
+                replier.reply("회수 가능한 인원이 없습니다. 잔액 부족 명단을 확인해 주세요.");
+                return;
+            }
+            var starterRecoveredAt = formatDateTime(new Date());
+            for (var recoveryIndex = 0; recoveryIndex < starterRecoveryPlan.ready.length; recoveryIndex++) {
+                if (!applyAdventureStarterRecovery(starterRecoveryData.member[starterRecoveryPlan.ready[recoveryIndex]], starterRecoveredAt)) {
+                    throw new Error("스타터 회수 조건 재검사 실패: " + starterRecoveryPlan.ready[recoveryIndex]);
+                }
+            }
+            saveJsonFile(starterRecoveryData, filePath);
+            replier.reply("✅ 퀘스트 스타터 지급분 회수 완료: " + starterRecoveryPlan.ready.length + "명\n잔액 부족 보류: " + starterRecoveryPlan.blocked.length + "명\n친밀도·퀘스트 진행 기록은 유지했습니다. /스타터중복확인으로 결과를 확인해 주세요.");
             return;
         }
 
@@ -4502,6 +4558,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (applyAdventureStarterPetSettings(petData, sender)) saveJsonFile(petData, memberPetPath);
                     if (applyAdventureStarterSkill(petSkillData, sender)) saveJsonFile(petSkillData, petSkillDataPath);
                     if (applyAdventureStarterHome(starterHomeData, sender)) saveJsonFile(starterHomeData, homeDataFile);
+                    applyAdventureStarterMemberRewards(data, sender);
                     var starterIntimacyGranted = applyAdventureStarterIntimacyReward(data, sender);
                     removeItem(data, sender, getAdventureBlessingItemName(), 1);
                     adventureOnboarding.stage = "COMPLETE";
@@ -16968,7 +17025,6 @@ replier.reply(
                     var adventureQuestExploreData = adventureQuestState.currentStage === 6 ? loadJsonFile(petExplorePath) : null;
                     var adventureQuestActivityData = adventureQuestState.currentStage === 14 ? requirePetHomeActivityData(loadJsonFile(petHomeActivityFile)) : null;
 
-                    if (applyAdventureStarterMemberRewards(data, sender)) adventureQuestChanged = true;
                     if (prepareAdventureQuestStage(data, sender, adventureQuestHomeInfo, adventureQuestHomeData)) adventureQuestChanged = true;
 
                     if (adventureQuestState.currentStage === 9 && adventureQuestState.progress.maxFloorAtEntry === true) {
@@ -30944,7 +31000,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
-        command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "출발한다" || command === "다음에 한다" ||
+        command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || /^\/스타터중복회수 실행 [1-9]\d* 확인$/.test(command) || command === "출발한다" || command === "다음에 한다" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -50111,7 +50167,6 @@ function getAdventureQuestPreparationLines(state) {
     if (state.currentStage === 7) return ["📦 최초 1회 지급", "펫먹이🍼 ×100,000개", ""];
     if (state.currentStage === 8) return ["📦 최초 1회 지급", GLOBAL_CONFIG.petSkill.bookItemName + " ×1개", ""];
     if (state.currentStage === 14) return ["📦 최초 1회 지급", "홈뱃지 큐브💟 ×100개", ""];
-    if (state.currentStage === 1 && state.receipts.starterMemberRewards) return ["📦 최초 1회 지급", "모험가 스타터 아이템", ""];
     return [];
 }
 
@@ -50246,39 +50301,97 @@ function applyAdventureStarterIntimacyReward(data, user) {
     return granted;
 }
 
-// 모험가 퀘스트 최초 참여자의 포인트·가호·가방 보상을 한 번만 지급하는 함수
+// 호월신의 축복 사용 시 스타터 포인트·가호·가방 보상을 한 번만 지급하는 함수
 function applyAdventureStarterMemberRewards(data, user) {
-    var member = data.member[user];
-    var state = getAdventureQuestState(data, user, true);
-    if (!member || !state) return false;
-    if (!state.receipts || typeof state.receipts !== "object") state.receipts = {};
-    if (state.receipts.starterMemberRewards === true) return false;
+    var member = data && data.member ? data.member[user] : null;
+    var onboarding = getAdventureOnboardingMemberState(data, user);
+    if (!member || !onboarding) return false;
+    if (!onboarding.receipts || typeof onboarding.receipts !== "object") onboarding.receipts = {};
+    if (onboarding.receipts.memberRewards === true) return false;
+    var quest = member.adventureQuest;
+    if (quest && quest.receipts && quest.receipts.starterMemberRewards === true) return false;
 
-    addPoint(data, user, 30000000000);
-    member.boostercnt = Math.max(0, parseInt(member.boostercnt, 10) || 0) + 1000;
-    var rewards = [
-        ["전설의 돌맹이🗿", 50],
-        ["미니펫뽑기🐹(/미니펫오픈)", 10],
-        ["펫스윗홈인테리어샵🖼️(/샵오픈)", 8],
-        ["펫 강화석⭐", 3000],
-        ["양념치킨🐔", 700],
-        ["경찰과 도둑🚨(/삐뽀삐뽀)", 50],
-        ["돌멩이🪨", 30000],
-        ["미니펫대전리셋권🐹", 900],
-        ["캐슬대전리셋권🐶", 900],
-        ["시련의탑리셋권😈", 500],
-        ["펫던전 입장권🌋", 100],
-        ["레이드타격대인장👑(+600👾)", 10],
-        ["잡템상자☠", 100],
-        [GLOBAL_CONFIG.petSkill.bookItemName, 3],
-        ["탐험확률UP🗻(50%)", 200],
-        ["땅문서📜", 20],
-        ["펫 이름변경권🎫", 3]
-    ];
-    for (var i = 0; i < rewards.length; i++) addItem(data, user, rewards[i][0], rewards[i][1]);
+    var starter = GLOBAL_CONFIG.adventureStarter;
+    addPoint(data, user, starter.points);
+    member.boostercnt = Math.max(0, parseInt(member.boostercnt, 10) || 0) + starter.boosters;
+    for (var i = 0; i < starter.items.length; i++) addItem(data, user, starter.items[i][0], starter.items[i][1]);
 
-    state.receipts.starterMemberRewards = true;
+    onboarding.receipts.memberRewards = true;
     return true;
+}
+
+// 퀘스트 경로로 지급된 스타터팩의 전량 회수 가능 여부를 확인하는 함수
+function getAdventureStarterRecoveryStatus(member) {
+    var receipts = member && member.adventureQuest && member.adventureQuest.receipts;
+    if (!receipts || receipts.starterMemberRewards !== true) return { target: false, recovered: false, missing: [] };
+    if (receipts.starterMemberRewardsRecovered === true) return { target: true, recovered: true, missing: [] };
+    var starter = GLOBAL_CONFIG.adventureStarter;
+    var missing = [];
+    var points = Number(member.point); // 현재 보유 포인트
+    var boosters = Number(member.boostercnt); // 현재 보유 가호 횟수
+    if (!isFinite(points) || Math.floor(points) !== points || points < starter.points) missing.push("포인트 " + (isFinite(points) ? points : "값 이상") + "/" + starter.points);
+    if (!isFinite(boosters) || Math.floor(boosters) !== boosters || boosters < starter.boosters) missing.push("가호 " + (isFinite(boosters) ? boosters : "값 이상") + "/" + starter.boosters);
+    var bag = member.bag && typeof member.bag === "object" ? member.bag : {};
+    for (var i = 0; i < starter.items.length; i++) {
+        var item = starter.items[i];
+        var owned = Number(bag[item[0]]); // 해당 아이템의 현재 보유량
+        if (!isFinite(owned) || Math.floor(owned) !== owned || owned < item[1]) missing.push(item[0] + " " + (isFinite(owned) ? owned : "값 이상") + "/" + item[1]);
+    }
+    return { target: true, recovered: false, missing: missing };
+}
+
+// 퀘스트 스타터 지급자 중 회수 가능·보류·완료 인원을 분류하는 함수
+function getAdventureStarterRecoveryPlan(members) {
+    var names = Object.keys(members).sort();
+    var plan = { pending: [], ready: [], blocked: [], recovered: [] };
+    for (var i = 0; i < names.length; i++) {
+        var status = getAdventureStarterRecoveryStatus(members[names[i]]);
+        if (!status.target) continue;
+        if (status.recovered) {
+            plan.recovered.push(names[i]);
+            continue;
+        }
+        plan.pending.push(names[i]);
+        if (status.missing.length > 0) plan.blocked.push({ name: names[i], missing: status.missing });
+        else plan.ready.push(names[i]);
+    }
+    return plan;
+}
+
+// 회수 조건을 다시 검사한 후 스타터팩 지급분만 차감하고 중복 실행을 막는 함수
+function applyAdventureStarterRecovery(member, recoveredAt) {
+    var status = getAdventureStarterRecoveryStatus(member);
+    if (!status.target || status.recovered || status.missing.length > 0) return false;
+    var starter = GLOBAL_CONFIG.adventureStarter;
+    member.point = Number(member.point) - starter.points;
+    member.boostercnt = Number(member.boostercnt) - starter.boosters;
+    for (var i = 0; i < starter.items.length; i++) {
+        var item = starter.items[i];
+        var remaining = Number(member.bag[item[0]]) - item[1];
+        if (remaining === 0) delete member.bag[item[0]];
+        else member.bag[item[0]] = remaining;
+    }
+    member.adventureQuest.receipts.starterMemberRewardsRecovered = true;
+    member.adventureQuest.receipts.starterMemberRewardsRecoveredAt = recoveredAt;
+    return true;
+}
+
+// 스타터팩 회수 대상과 보류 사유를 실행 전에 출력하는 함수
+function buildAdventureStarterRecoveryPreviewMessages(plan) {
+    var messages = ["📋 퀘스트 스타터 지급분 회수 미리보기\n지급 기록: " + (plan.pending.length + plan.recovered.length) + "명\n미회수: " + plan.pending.length + "명\n회수 가능: " + plan.ready.length + "명\n잔액 부족 보류: " + plan.blocked.length + "명\n이미 회수: " + plan.recovered.length + "명\n※ 아이템 17종·300억 포인트·가호 1,000개만 회수하며, 친밀도·퀘스트 진행 기록은 유지합니다."];
+    for (var start = 0; start < plan.ready.length; start += 30) {
+        messages.push("✅ 회수 가능 명단\n" + allsee + "\n" + plan.ready.slice(start, start + 30).join("\n"));
+    }
+    for (var blockedStart = 0; blockedStart < plan.blocked.length; blockedStart += 10) {
+        var lines = [];
+        for (var i = blockedStart; i < Math.min(blockedStart + 10, plan.blocked.length); i++) {
+            var blocked = plan.blocked[i];
+            lines.push(blocked.name + " — 부족 " + blocked.missing.length + "항목: " + blocked.missing.slice(0, 3).join(", ") + (blocked.missing.length > 3 ? " 외" : ""));
+        }
+        messages.push("⚠️ 회수 보류 명단\n" + allsee + "\n" + lines.join("\n"));
+    }
+    if (plan.ready.length > 0) messages.push("대상과 수량을 확인한 뒤 팻 테스트방에서 정확히 입력해 주세요.\n/스타터중복회수 실행 " + plan.pending.length + " 확인");
+    return messages;
 }
 
 // 신규 모험가의 펫·정령·미니펫·펜던트 세팅을 한 번만 적용하는 함수

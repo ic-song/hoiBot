@@ -103,6 +103,29 @@ const GLOBAL_CONFIG = {
 			"낡은 목검": { raidExp: 50000, castleExp: 50000 }
 		}
 	},
+	starterRecovery: { // 퀘스트 경로 스타터팩 중복 지급 회수 기준
+		points: 30000000000,
+		boosters: 1000,
+		items: [
+			["전설의 돌맹이🗿", 50],
+			["미니펫뽑기🐹(/미니펫오픈)", 10],
+			["펫스윗홈인테리어샵🖼️(/샵오픈)", 8],
+			["펫 강화석⭐", 3000],
+			["양념치킨🐔", 700],
+			["경찰과 도둑🚨(/삐뽀삐뽀)", 50],
+			["돌멩이🪨", 30000],
+			["미니펫대전리셋권🐹", 900],
+			["캐슬대전리셋권🐶", 900],
+			["시련의탑리셋권😈", 500],
+			["펫던전 입장권🌋", 100],
+			["레이드타격대인장👑(+600👾)", 10],
+			["잡템상자☠", 100],
+			["펫스킬북📙(/펫스킬오픈)", 3],
+			["탐험확률UP🗻(50%)", 200],
+			["땅문서📜", 20],
+			["펫 이름변경권🎫", 3]
+		]
+	},
 	guildContributionCube: { // 길드공헌 큐브 조회 설정
 		options: {
 			"1": { key: "castle", maxUnits: 500 },
@@ -1658,12 +1681,34 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		applyItemInfoContext(productionItemInfoData);
 	}
 }
+// 퀘스트 스타터팩의 회수 대상 여부와 현재 보유 수량을 확인하는 함수
+function getStarterRecoveryStatus(member) {
+	var receipts = member && member.adventureQuest && member.adventureQuest.receipts;
+	if (!receipts || receipts.starterMemberRewards !== true) return { label: "퀘스트 지급 없음", target: false, recovered: false, missing: [] };
+	if (receipts.starterMemberRewardsRecovered === true) return { label: "회수 완료", target: true, recovered: true, missing: [] };
+	var recovery = GLOBAL_CONFIG.starterRecovery;
+	var missing = [];
+	var points = Number(member.point); // 현재 보유 포인트
+	var boosters = Number(member.boostercnt); // 현재 보유 가호 횟수
+	if (!isFinite(points) || Math.floor(points) !== points || points < recovery.points) missing.push("포인트 " + (isFinite(points) ? points : "값 이상") + "/" + recovery.points);
+	if (!isFinite(boosters) || Math.floor(boosters) !== boosters || boosters < recovery.boosters) missing.push("가호 " + (isFinite(boosters) ? boosters : "값 이상") + "/" + recovery.boosters);
+	var bag = member.bag && typeof member.bag === "object" ? member.bag : {};
+	for (var i = 0; i < recovery.items.length; i++) {
+		var item = recovery.items[i];
+		var owned = Number(bag[item[0]]); // 해당 아이템의 현재 보유량
+		if (!isFinite(owned) || Math.floor(owned) !== owned || owned < item[1]) missing.push(item[0] + " " + (isFinite(owned) ? owned : "값 이상") + "/" + item[1]);
+	}
+	return { label: missing.length > 0 ? "회수 보류(부족 " + missing.length + "항목)" : "회수 가능", target: true, recovered: false, missing: missing };
+}
 // 기존·퀘스트 스타터 지급 플래그별 이용자와 교집합을 조회하는 함수
 function buildStarterDuplicateAuditMessages(members) {
 	var names = Object.keys(members);
 	var oldRecipients = []; // 기존 지급 플래그가 true인 이용자
 	var questRecipients = []; // 퀘스트 지급 플래그가 true인 이용자
 	var candidates = []; // 두 지급 플래그가 모두 true인 이용자
+	var recoveryReady = []; // 현재 보유량으로 전량 회수 가능한 이용자
+	var recoveryBlocked = 0; // 잔액 부족으로 보류되는 이용자 수
+	var recoveryDone = 0; // 이미 회수 처리된 이용자 수
 	for (var i = 0; i < names.length; i++) {
 		var member = members[names[i]];
 		var onboardingReceipts = member && member.adventureOnboarding && member.adventureOnboarding.receipts;
@@ -1671,20 +1716,28 @@ function buildStarterDuplicateAuditMessages(members) {
 		var hasOldReward = !!(onboardingReceipts && onboardingReceipts.memberRewards === true);
 		var hasQuestReward = !!(questReceipts && questReceipts.starterMemberRewards === true);
 		if (hasOldReward) oldRecipients.push(names[i]);
-		if (hasQuestReward) questRecipients.push(names[i]);
+		if (hasQuestReward) {
+			questRecipients.push(names[i]);
+			var recoveryStatus = getStarterRecoveryStatus(member);
+			if (recoveryStatus.recovered) recoveryDone++;
+			else if (recoveryStatus.missing.length > 0) recoveryBlocked++;
+			else recoveryReady.push(names[i]);
+		}
 		if (hasOldReward && hasQuestReward) candidates.push(names[i]);
 	}
 	oldRecipients.sort();
 	questRecipients.sort();
 	candidates.sort();
-	var messages = ["📋 스타터 지급 기록 조회\n기존 지급: " + oldRecipients.length + "명\n퀘스트 지급: " + questRecipients.length + "명\n두 플래그 모두: " + candidates.length + "명\n※ 목록은 서로 겹칩니다. 두 플래그가 있어도 회수 확정은 아닙니다."];
-	appendStarterAuditListMessages(messages, "기존 지급 플래그", oldRecipients);
-	appendStarterAuditListMessages(messages, "퀘스트 지급 플래그", questRecipients);
-	appendStarterAuditListMessages(messages, "두 플래그 모두 · 중복 지급 후보", candidates);
+	recoveryReady.sort();
+	var messages = ["📋 스타터 지급 기록 조회\n기존 지급: " + oldRecipients.length + "명\n퀘스트 지급: " + questRecipients.length + "명\n두 플래그 모두: " + candidates.length + "명\n회수 가능: " + recoveryReady.length + "명\n잔액 부족 보류: " + recoveryBlocked + "명\n이미 회수: " + recoveryDone + "명\n※ 운영 확인에 따라 퀘스트 지급 플래그 보유자를 회수 대상으로 표시합니다. 잔액 충족은 지급 경로 증명이 아닙니다."];
+	appendStarterAuditListMessages(messages, "기존 지급 플래그", oldRecipients, members);
+	appendStarterAuditListMessages(messages, "퀘스트 지급 플래그", questRecipients, members);
+	appendStarterAuditListMessages(messages, "두 플래그 모두", candidates, members);
+	appendStarterAuditListMessages(messages, "회수 가능 명단", recoveryReady, members);
 	return messages;
 }
 // 스타터 지급 플래그별 이용자 목록을 30명씩 나누어 출력하는 함수
-function appendStarterAuditListMessages(messages, label, names) {
+function appendStarterAuditListMessages(messages, label, names, members) {
 	if (names.length === 0) {
 		messages.push("📋 " + label + ": 0명");
 		return;
@@ -1692,9 +1745,11 @@ function appendStarterAuditListMessages(messages, label, names) {
 	for (var start = 0; start < names.length; start += 30) {
 		var lines = [];
 		for (var i = start; i < Math.min(start + 30, names.length); i++) {
-			lines.push((i + 1) + ". " + names[i]);
+			var status = getStarterRecoveryStatus(members[names[i]]);
+			var missingDetails = status.missing.length > 0 ? " · " + status.missing.slice(0, 3).join(", ") + (status.missing.length > 3 ? " 외" : "") : "";
+			lines.push((i + 1) + ". " + names[i] + " — " + status.label + missingDetails);
 		}
-		messages.push("📋 " + label + ": " + names.length + "명\n" + allsee + "\n" + lines.join("\n"));
+		messages.push("📋 " + label + ": " + names.length + "명\n" + (names.length > 5 ? allsee + "\n" : "") + lines.join("\n"));
 	}
 }
 // JSON 파일 로드 함수
