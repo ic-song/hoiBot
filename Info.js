@@ -225,9 +225,25 @@ function getInfoAdventureLevelSummary(level) {
 	return { normalCount: normalCount, majorCount: majorCount, charmPercent: charmPercent };
 }
 
-// Info에서 모험가 보너스율을 셋째 자리에서 반올림해 불필요한 0 없이 표시하는 함수
-function formatInfoAdventureLevelPercent(value) {
-	return String(Math.round((Number(value) || 0) * 100) / 100);
+// 레벨·승급·퀘스트의 실제 보너스율을 출처별로 나누고 캐슬·레이드 합계를 계산하는 함수
+function getInfoAdventureRewardSummary(level, questCastlePercent, questRaidPercent) {
+	var levelSummary = getInfoAdventureLevelSummary(level);
+	var currentLevel = Math.max(1, parseInt(level, 10) || 1);
+	var levelMilli = Math.round((currentLevel - 1) * GLOBAL_CONFIG.level.baseCharmPercent * 1000); // 0.001% 단위 레벨 성장 보너스
+	var promotionMilli = Math.round(levelSummary.normalCount * GLOBAL_CONFIG.level.normalPromotionPercent * 1000); // 일반 승급 보너스
+	var majorMilli = Math.round(levelSummary.majorCount * GLOBAL_CONFIG.level.majorPromotionPercent * 1000); // 대승급 보너스
+	var questCastleMilli = Math.round((Number(questCastlePercent) || 0) * 1000); // 실제 지급된 퀘스트 캐슬 보너스
+	var questRaidMilli = Math.round((Number(questRaidPercent) || 0) * 1000); // 실제 지급된 퀘스트 레이드 보너스
+	var levelTotalMilli = levelMilli + promotionMilli + majorMilli; // 레벨 보상은 각 출처를 한 번씩만 합산
+	return {
+		levelPercent: levelMilli / 1000,
+		promotionPercent: promotionMilli / 1000,
+		majorPercent: majorMilli / 1000,
+		questCastlePercent: questCastleMilli / 1000,
+		questRaidPercent: questRaidMilli / 1000,
+		castleTotalPercent: (levelTotalMilli + questCastleMilli) / 1000,
+		raidTotalPercent: (levelTotalMilli + questRaidMilli) / 1000
+	};
 }
 
 // Info 매력 계산에서 0.001% 정수 단위로 비율을 적용하는 함수
@@ -259,7 +275,7 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	var filled = Math.max(0, Math.min(10, Math.floor(ratio * 10))); // 10칸 게이지 채움 수
 	var gauge = "";
 	for (var i = 0; i < 10; i++) gauge += i < filled ? "■" : "□";
-	var summary = getInfoAdventureLevelSummary(level);
+	var rewardSummary = getInfoAdventureRewardSummary(level, questCastlePercent, questRaidPercent); // 이미 적용된 보너스의 출처별 내역과 표시 합계
 	var promotionCount = Math.floor(level / 10); // 대승급을 포함한 전체 10레벨 단위 승급 차수
 	var nextPromotion = (Math.floor(level / 10) + 1) * 10;
 	var nextMajor = (Math.floor(level / 100) + 1) * 100;
@@ -278,14 +294,16 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		"👉 진행 안내 /모험가퀘스트\n" +
 		"👉 전체 기록 /퀘스트기록\n" +
 		"━━━━━━━━━━━━\n" +
-		"📚 모험가 · 퀘스트 상세 보상정보" + allsee + "\n\n" +
-		"🎒 모험가 레벨 보너스\n" +
-		"⚔️ 모험가 캐슬 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
-		"👾 모험가 레이드 보너스: +" + formatInfoAdventureLevelPercent(summary.charmPercent) + "%\n" +
+		"📚 모험가 성장 · 보상 상세정보\n" +
+		"전체보기에서 확인하세요 👇" + allsee + "\n" +
 		"━━━━━━━━━━━━\n" +
-		"🧭 모험가 퀘스트 보너스\n" +
-		"⚔️ 퀘스트 캐슬 보너스: +" + formatInfoAdventureQuestPercent(questCastlePercent) + "%\n" +
-		"👾 퀘스트 레이드 보너스: +" + formatInfoAdventureQuestPercent(questRaidPercent) + "%";
+		"📊 누적 성장 보너스 합계\n" +
+		"캐슬매력⚔️: +" + formatInfoAdventureQuestPercent(rewardSummary.castleTotalPercent) + "% · 레이드매력👾: +" + formatInfoAdventureQuestPercent(rewardSummary.raidTotalPercent) + "%\n\n" +
+		"├ 🌟 레벨 성장: ⚔️+" + formatInfoAdventureQuestPercent(rewardSummary.levelPercent) + "% · 👾+" + formatInfoAdventureQuestPercent(rewardSummary.levelPercent) + "%\n" +
+		"├ 🎯 승급: ⚔️+" + formatInfoAdventureQuestPercent(rewardSummary.promotionPercent) + "% · 👾+" + formatInfoAdventureQuestPercent(rewardSummary.promotionPercent) + "%\n" +
+		"├ 🏆 대승급: ⚔️+" + formatInfoAdventureQuestPercent(rewardSummary.majorPercent) + "% · 👾+" + formatInfoAdventureQuestPercent(rewardSummary.majorPercent) + "%\n" +
+		"└ 🧭 모험가 퀘스트: ⚔️+" + formatInfoAdventureQuestPercent(rewardSummary.questCastlePercent) + "% · 👾+" + formatInfoAdventureQuestPercent(rewardSummary.questRaidPercent) + "%\n" +
+		"━━━━━━━━━━━━";
 }
 
 // Info 화면의 퀘스트 매력 보너스를 0.001% 단위까지 표시하는 함수
@@ -1450,7 +1468,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (msg === "/캐슬매력순위") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
-			let castleRanking = generateCastleRanking(petData, data, homeData, guildData);
+			let castleRanking = generateCastleRanking(petData, data, homeData, petSkillData, guildData);
 
 			let resultMsg = "🏆 [펫] 캐슬매력 순위 🏆\n\n";
 			resultMsg += castleRanking.rankingMsg1 + allsee + castleRanking.rankingMsg2;
@@ -1460,7 +1478,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (msg === "/레이드매력순위") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
-			let raidRanking = generateRaidRanking(petData, data, homeData, guildData);
+			let raidRanking = generateRaidRanking(petData, data, homeData, petSkillData, guildData);
 			let resultMsg = "🏆 [펫]레이드매력 순위 🏆\n\n";
 			resultMsg += raidRanking.rankingMsg1 + allsee + raidRanking.rankingMsg2;
 			replier.reply(resultMsg);
@@ -2230,42 +2248,20 @@ function generatePetRanking(petData) {
 	};
 }
 // 캐슬매력순위 생성 함수
-function generateCastleRanking(petData, data, homeData, guildData) {
-	let sortedCastlePets = Object.keys(petData).sort((a, b) => {
-		let castleExpA =
-			calculateCastleItem(a, data) +
-			calculateItemInfoAll(a, data, petData).castleExp +
-			petData[a].petexp +
-			((petData[a] && petData[a].miniPet && petData[a].miniPet.castleExp) || 0) +
-			getHomeTotalExp(homeData, a) +
-			getUserIntimacyInfo(data, a).exp;
-		let castleExpB =
-			calculateCastleItem(b, data) +
-			calculateItemInfoAll(b, data, petData).castleExp +
-			petData[b].petexp +
-			((petData[b] && petData[b].miniPet && petData[b].miniPet.castleExp) || 0) +
-			getHomeTotalExp(homeData, b) +
-			getUserIntimacyInfo(data, b).exp;
-		castleExpA = Math.floor(castleExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "castle") + getGuildContributionCubeMemberPercent(data, guildData, a, "castle")) / 100));
-		castleExpB = Math.floor(castleExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "castle") + getGuildContributionCubeMemberPercent(data, guildData, b, "castle")) / 100));
-		return castleExpB - castleExpA;
-	});
+function generateCastleRanking(petData, data, homeData, petSkillData, guildData) {
+	var castleScores = {}; // 펫정보와 동일한 공용 계산식으로 산출한 사용자별 캐슬매력
+	var sortedCastlePets = Object.keys(petData);
+	for (var c = 0; c < sortedCastlePets.length; c++) {
+		var castleUser = sortedCastlePets[c];
+		castleScores[castleUser] = calculateCastleExp(castleUser, data, petData, homeData, petSkillData, false, guildData) || 0;
+	}
+	sortedCastlePets.sort(function (a, b) { return castleScores[b] - castleScores[a]; });
 	let rankingMsg1 = "";
 	let rankingMsg2 = "";
 	for (let i = 0; i < sortedCastlePets.length; i++) {
 		let username = sortedCastlePets[i];
 		let petInfo = petData[username];
-		let homeExp = getHomeTotalExp(homeData, username);
-		let intimacyExp = getUserIntimacyInfo(data, username).exp;
-		let totalCastleExp = Math.round(
-			petInfo.petexp +
-				calculateCastleItem(username, data) +
-				calculateItemInfoAll(username, data, petData).castleExp +
-				((petData[username] && petData[username].miniPet && petData[username].miniPet.castleExp) || 0) +
-				homeExp +
-				intimacyExp
-		);
-		totalCastleExp = Math.floor(totalCastleExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "castle") + getGuildContributionCubeMemberPercent(data, guildData, username, "castle")) / 100));
+		let totalCastleExp = castleScores[username];
 
 		if (totalCastleExp > 5) {
 			let rankEmoji = getRankEmoji(i + 1);
@@ -2284,21 +2280,14 @@ function generateCastleRanking(petData, data, homeData, guildData) {
 }
 
 // 레이드매력순위 생성 함수
-function generateRaidRanking(petData, data, homeData, guildData) {
-	var sortedRaidPets = Object.keys(petData).sort(function (a, b) {
-		var petA = petData[a];
-		var petB = petData[b];
-
-		var miniExpA = petA && petA.miniPet && petA.miniPet.raidExp ? petA.miniPet.raidExp : 0;
-		var miniExpB = petB && petB.miniPet && petB.miniPet.raidExp ? petB.miniPet.raidExp : 0;
-
-		var raidExpA = (calculateItemInfoAll(a, data, petData).raidExp || 0) + (petA.petexp || 0) + miniExpA + getHomeTotalExp(homeData, a);
-		var raidExpB = (calculateItemInfoAll(b, data, petData).raidExp || 0) + (petB.petexp || 0) + miniExpB + getHomeTotalExp(homeData, b);
-		raidExpA = Math.floor(raidExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "raid") + getGuildContributionCubeMemberPercent(data, guildData, a, "raid")) / 100));
-		raidExpB = Math.floor(raidExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "raid") + getGuildContributionCubeMemberPercent(data, guildData, b, "raid")) / 100));
-
-		return raidExpB - raidExpA;
-	});
+function generateRaidRanking(petData, data, homeData, petSkillData, guildData) {
+	var raidScores = {}; // 펫정보와 동일한 공용 계산식으로 산출한 사용자별 레이드매력
+	var sortedRaidPets = Object.keys(petData);
+	for (var r = 0; r < sortedRaidPets.length; r++) {
+		var raidUser = sortedRaidPets[r];
+		raidScores[raidUser] = calculateRaidExp(raidUser, data, petData, homeData, petSkillData, false, guildData) || 0;
+	}
+	sortedRaidPets.sort(function (a, b) { return raidScores[b] - raidScores[a]; });
 
 	var rankingMsg1 = "";
 	var rankingMsg2 = "";
@@ -2306,10 +2295,7 @@ function generateRaidRanking(petData, data, homeData, guildData) {
 	for (var i = 0; i < sortedRaidPets.length; i++) {
 		var username = sortedRaidPets[i];
 		var petInfo = petData[username];
-		var miniPetExp = petInfo.miniPet && petInfo.miniPet.raidExp ? petInfo.miniPet.raidExp : 0;
-		var homeExp = getHomeTotalExp(homeData, username);
-		var totalRaidExp = Math.round((petInfo.petexp || 0) + (calculateItemInfoAll(username, data, petData).raidExp || 0) + miniPetExp + homeExp);
-		totalRaidExp = Math.floor(totalRaidExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "raid") + getGuildContributionCubeMemberPercent(data, guildData, username, "raid")) / 100));
+		var totalRaidExp = raidScores[username];
 
 		if (totalRaidExp > 5) {
 			var rankEmoji = getRankEmoji(i + 1);

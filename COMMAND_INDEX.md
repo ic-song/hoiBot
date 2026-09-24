@@ -5134,13 +5134,14 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateCastleRanking`
-- `getGuildContributionCubeMemberPercent`
+- `calculateCastleExp`
 
 ## Data Usage
 
 - `petData`
 - `data.member`
 - `homeData`
+- `petSkillData`
 - `guildData.guilds[*].cubeOptions.castle`
 
 ## Save Flow
@@ -5156,7 +5157,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Castle-focused charm leaderboard that depends on loaded home data
-- Applies the representative and support home-badge castle percentages plus the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
+- Uses the same `calculateCastleExp` result as `/펫정보` for ranking and displayed values, including skill, level, quest, home-badge, and guild bonuses.
 - Re-check `initSweetHomeUser` when home normalization affects ranking totals
 
 ---
@@ -5178,13 +5179,14 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateRaidRanking`
-- `getGuildContributionCubeMemberPercent`
+- `calculateRaidExp`
 
 ## Data Usage
 
 - `petData`
 - `data.member`
 - `homeData`
+- `petSkillData`
 - `guildData.guilds[*].cubeOptions.raid`
 
 ## Save Flow
@@ -5200,7 +5202,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Raid-focused charm leaderboard parallel to `/캐슬매력순위`
-- Applies the representative and support home-badge raid percentages plus the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
+- Uses the same `calculateRaidExp` result as `/펫정보` for ranking and displayed values, including skill, level, quest, home-badge, and guild bonuses.
 - Good anchor when raid total calculations diverge from displayed pet/home state
 
 ---
@@ -7083,6 +7085,7 @@ Status: VERIFIED
 - `getAdventureLevelTitle`
 - `getAdventurePromotionCounts`
 - `getAdventureLevelCharmPercent`
+- `getInfoAdventureRewardSummary`
 - `applyAdventureExperienceBooster`
 - `formatAdventureLevelEditDifference`
 - `buildAdventureLevelEditMessage`
@@ -7111,7 +7114,8 @@ Status: VERIFIED
 - 레벨업 알림 전 `member.json`을 저장한다.
 - 일반 레벨업 알림은 다음 10레벨 단위 승급까지 남은 레벨을 표시하고, 상세에서는 기본·승급·대승급 증가분을 구분한다.
 - 레벨업 알림은 한 번에 여러 레벨과 승급을 통과해도 모든 처리가 끝난 실제 현재 레벨과 칭호를 상단에 표시한다. 현재 레벨과 칭호 사이에는 빈 줄을 두고, `📋 이번 레벨업 상세` 제목까지 기본 화면에 표시한 뒤 상세 행부터 `allsee`로 접는다.
-- `/레벨`은 채크랭크, 현재 칭호와 전체 승급 차수, 레벨·게이지·EXP와 소수 셋째 자리 진행률, 가호 수량, 캐슬·레이드 보너스, 다음 승급과 대승급까지 남은 레벨을 한 화면에 표시한다.
+- `/레벨`은 채크랭크, 현재 칭호와 전체 승급 차수, 레벨·게이지·EXP와 소수 셋째 자리 진행률, 가호 수량, 다음 승급과 대승급까지 남은 레벨을 표시한다. 전체보기 상세에는 레벨 성장·일반 승급·대승급·실제 지급된 퀘스트 보너스를 캐슬·레이드별로 표시하고 각각의 누적 합계를 조회용으로 보여준다. 엠블럼·펫원정은 구현된 적용 데이터가 없으므로 이 합계에 임의 값을 더하지 않는다.
+- `/레벨` 조회는 보너스 합계를 다시 지급하거나 매력 계산에 재적용하지 않으며 `member.json` 저장도 하지 않는다.
 - `/레벨`의 캐슬·레이드 누적 보너스는 소수 셋째 자리에서 반올림해 둘째 자리까지 보존하고, 끝의 불필요한 0은 표시하지 않는다. 예: `1.20% → 1.2%`, `1.85% → 1.85%`.
 - `/레벨수정 [아이디] [레벨]`은 `호이 남`만 실행할 수 있다. 대상의 레벨만 정확히 변경하고 기존 EXP·티어 경험치 잔여값을 유지한 채 저장을 재검증하며, 레벨·칭호·전체/일반/대승급·필요 EXP·캐슬/레이드 보너스의 전후 값과 상승·하락 수치를 표시한다.
 - `/경험치수정 [아이디] [경험치]`는 `호이 남`만 실행할 수 있다. 현재 레벨의 EXP를 입력값으로 바꾸고 기준치를 넘으면 실제 다중 레벨업과 레벨당 포인트 보상을 처리한다. 저장된 계정 전체를 다시 읽어 검증하며 기존·입력·최종 EXP, 레벨, 레벨업 횟수, 포인트 변동과 레벨업 알림을 표시한다.
