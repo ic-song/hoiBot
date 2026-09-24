@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.560"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.561"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2634,8 +2634,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             msg = stripDevCommandPrefix(msg);
             replier = createContextReplier(replier, ctx);
         }
-        if (msg === "/퀘스트완료" && room !== testRoom) return;
-
         if (ctx.isDev && msg === "/데이터백업") {
             if (!isMaster(sender)) {
                 replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");

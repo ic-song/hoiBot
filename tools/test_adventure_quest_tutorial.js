@@ -209,9 +209,8 @@ const questMutationStart = main.indexOf('var adventureQuestMemberSnapshot =', qu
 assert(questCommandStart >= 0 && questMutationStart > questCommandStart);
 const responseStart = main.indexOf('function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)');
 const questCommandGuard = main.slice(responseStart, questCommandStart);
-assert(/if \(msg === "\/퀘스트완료" && room !== testRoom\) return;/.test(questCommandGuard));
-assert(main.indexOf('if (msg === "/퀘스트완료" && room !== testRoom) return;') < main.indexOf('if (ctx.isDev && msg === "/데이터백업")'));
-assert(main.includes('const testRoom = "팻 테스트방";'));
+assert(!/if \(msg === "\/퀘스트완료" && room !== testRoom\) return;/.test(questCommandGuard), "퀘스트 완료 명령은 방 제한 없이 처리");
+assert(main.includes('if (msg === "/퀘스트완료") {'), "기존 완료 조건 검사는 유지");
 assert(!main.includes('recordAdventureQuestAction(data, sender, 2, "shopViewed", 0)'), "상점 조회는 2단계 필수 조건 아님");
 assert(main.indexOf('var tierQuestCommandRecorded = hasItem(data, sender, GLOBAL_CONFIG.adventureQuest.tierTicketItemName, 1) && recordAdventureQuestAction(data, sender, 2, "tierTicketApplied", 0);') < main.indexOf('if (!tierPlan || !tierPlan.canPromote) {'), "티켓 보유를 승급 판정 전에 확인");
 assert(main.includes('if (tierQuestCommandRecorded) saveJsonFile(data, filePath);'), "승급 불가 시에도 퀘스트 진행 저장");
