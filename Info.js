@@ -508,6 +508,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (!msg.startsWith("/") && plainCommands.indexOf(msg) === -1) {
 			return;
 		}
+		if (msg === "/스타터중복확인" && room !== testRoom) return;
 		let data = loadJsonFile(filePath);
 		if (msg === "/스타터중복확인") {
 			if (!isMaster(sender)) return;
