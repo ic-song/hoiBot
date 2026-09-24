@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.567"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.568"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2635,6 +2635,13 @@ const miniPetData = loadJsonFile(miniPetPath);
 
 //메인채팅응답기능
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+    if (msg === "/메인방제한" || msg === "/메인방제한 ON" || msg === "/메인방제한 OFF") {
+        if (room !== testRoom || !isMasterIdentity(sender)) return;
+        if (msg === "/메인방제한 ON") GLOBAL_CONFIG.maintenance.testRoomOnly = true;
+        if (msg === "/메인방제한 OFF") GLOBAL_CONFIG.maintenance.testRoomOnly = false;
+        replier.reply("MAIN 방 제한: " + (GLOBAL_CONFIG.maintenance.testRoomOnly ? "ON · 팻 테스트방만 응답" : "OFF · 일반 채팅방도 응답") + "\n※ 메모리 설정이며 봇 재컴파일 시 기본값 OFF로 돌아갑니다.");
+        return;
+    }
     if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     var responseDataLock = getResponseDataFlowLock(msg);
     var responseTransactionAcquired = false;

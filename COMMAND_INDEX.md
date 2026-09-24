@@ -6293,6 +6293,27 @@ Status: VERIFIED
 
 ---
 
+# /메인방제한 · /메인방제한 ON · /메인방제한 OFF
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: `response(...)` 입구에서 처리
+
+## Data Usage
+
+- `GLOBAL_CONFIG.maintenance.testRoomOnly` 메모리 값만 조회·변경한다.
+- 기본값은 `OFF`이며 재컴파일 시 기본값으로 돌아간다.
+
+## Save Flow
+
+- Master가 `팻 테스트방`에서 입력한 경우에만 응답한다. 다른 방이나 권한 없는 이용자의 입력은 무응답이다.
+- `ON`이면 MAIN의 다른 명령은 `팻 테스트방`에서만 처리하고, `OFF`이면 일반 방에서도 처리한다.
+- `member.json` 등 운영 데이터 파일은 읽거나 저장하지 않는다. `/스타터중복회수` 자체의 테스트방·Master 제한은 유지된다.
+
+---
+
 # /데이터상태
 
 Status: VERIFIED
