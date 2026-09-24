@@ -6438,6 +6438,26 @@ Status: VERIFIED
 
 ---
 
+# /스타터중복확인
+
+Status: VERIFIED
+
+## Files
+
+- `Info.js`: Master 전용 읽기 전용 지급 기록 조회
+
+## Data Usage
+
+- `member.json`의 `data.member[사용자].adventureOnboarding.receipts.memberRewards`와 `data.member[사용자].adventureQuest.receipts.starterMemberRewards`가 각각 `true`인 이용자 목록 및 두 목록의 교집합을 표시한다.
+- 각 목록을 30명씩 나누어 출력하며, 실제 중복 지급·회수 가능 수량은 확정하지 않는다.
+
+## Save Flow
+
+- 조회만 하며 `saveJsonFile`을 호출하지 않는다.
+- Info.js의 Master 허용 방인 `팻 테스트방`, `서버관리자`에서만 응답한다.
+
+---
+
 # /모험가퀘스트 · /퀘스트완료 · /퀘스트기록 · /퀘스트타이틀
 
 Status: VERIFIED
