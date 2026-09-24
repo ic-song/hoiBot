@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.566"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.567"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -953,8 +953,8 @@ var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 �
 var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 감시 객체 (실행 컨텍스트별 timerId)
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
-    maintenance: { // 중복 지급 회수 중 MAIN 명령어 테스트방 한정
-        testRoomOnly: true
+    maintenance: { // MAIN 명령어의 임시 테스트방 한정 설정
+        testRoomOnly: false
     },
     miniPetCollection: { // 미니펫 컬렉션 시즌 운영 설정
         seasonOneMaxStage: 80,

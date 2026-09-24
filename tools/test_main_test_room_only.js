@@ -14,12 +14,12 @@ assert(guard.includes("room !== testRoom"));
 const context = { testRoom: "팻 테스트방" };
 vm.createContext(context);
 vm.runInContext("this.maintenance = ({" + main.slice(configStart, configEnd) + "}).maintenance;", context);
-assert.strictEqual(context.maintenance.testRoomOnly, true);
+assert.strictEqual(context.maintenance.testRoomOnly, false);
 context.GLOBAL_CONFIG = { maintenance: context.maintenance };
 vm.runInContext("function acceptsMainRoom(room) {" + guard + "return true; }", context);
 assert.strictEqual(context.acceptsMainRoom("팻 테스트방"), true);
-assert.strictEqual(context.acceptsMainRoom("서버관리자"), undefined);
-assert.strictEqual(context.acceptsMainRoom("일반방"), undefined);
+assert.strictEqual(context.acceptsMainRoom("서버관리자"), true);
+assert.strictEqual(context.acceptsMainRoom("일반방"), true);
 assert(lockStart < main.indexOf("dataTransactionLock.tryLock()", responseStart), "차단 후 잠금·데이터 작업 시작");
 
-console.log("MAIN 테스트방 전용 입구 제한 테스트 통과");
+console.log("MAIN 일반방 명령 재개 테스트 통과");
