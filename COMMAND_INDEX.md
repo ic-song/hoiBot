@@ -2917,7 +2917,7 @@ Status: VERIFIED
 
 - `/티어` is read-only.
 - `/티어적용`은 복합 데이터 변경 쓰기 잠금 안에서 성공한 사용자 본인의 `data`와 `petData`를 저장한 뒤 승급 알림을 보낸다.
-- 승급 실패·동일 티어 적용은 티어 보상을 변경하지 않는다. 단, 튜토리얼 2단계에서는 선행 상점 구매·티어 조회 후 `/티어적용` 명령 입력 자체를 진행 상태로 저장한다.
+- 승급 실패·동일 티어 적용은 티어 보상을 변경하지 않는다. 단, 튜토리얼 2단계에서는 입력 시점에 티어 승급티켓🎟을 1개 이상 보유했다면 실제 승급 성공과 무관하게 `/티어적용` 입력을 진행 상태로 저장한다.
 
 ## Related Commands
 
@@ -5570,7 +5570,8 @@ Status: VERIFIED
 ## Save Flow
 - `/탐` updates `petExploreData` and saves through `saveJsonFile(petExploreData, petExplorePath)`
 - `/탐` also saves `data` through `saveJsonFile(data, filePath)`
-- 튜토리얼 6단계에서 `/탐 1`~`/탐 11` 번호를 입력하면 이벤트·입장 조건으로 거절되더라도 퀘스트 입력 기록을 먼저 `member.json`에 저장한다. 범위 밖 번호는 인정하지 않으며, 정상 `/탐` 등록도 인정한다.
+- 튜토리얼 6단계는 정상 `/지도` 조회 후 명시적 `/탐 [번호]`로 이용 가능한 탐험지를 실제 지정해야 한다. 이벤트·입장 조건으로 거절된 입력이나 번호 없는 `/탐`은 인정하지 않는다. 같은 탐험지가 이미 설정되어 있으면 번호를 다시 입력해 확인할 수 있다.
+- 지정한 탐험지의 정각 정산 결과를 받은 뒤 성공·실패 모두 목표로 인정한다. 길드·포인트·입장권 등의 사유로 정산되지 않은 경우는 인정하지 않으며, 일반/이벤트 정산은 보상과 함께 `member.json`에 진행 상태를 저장한다.
 - `doPetExploreInterval` saves reward/member changes through `saveJsonFile(data, filePath)` and exploration state through `saveJsonFile(petExploreData, petExplorePath)`
 
 ## Related Commands
@@ -6451,6 +6452,8 @@ Status: VERIFIED
 - `getAdventureQuestState`
 - `prepareAdventureQuestStage`
 - `recordAdventureQuestAction`
+- `recordAdventureQuestExploreSelection`
+- `recordAdventureQuestExploreResult`
 - `getAdventureQuestCompletionCheck`
 - `completeAdventureQuestStage`
 - `buildAdventureQuestMessage`
@@ -6466,8 +6469,8 @@ Status: VERIFIED
 ## Save Flow
 
 - `/퀘스트완료`는 임시로 `팻 테스트방`에서만 실행하며, 다른 방에서는 퀘스트 상태 생성·보상·저장 전에 무응답으로 종료한다. 다른 퀘스트 조회·타이틀 명령은 이 제한을 받지 않는다.
-- 스타터 회원 보상과 7·8·14단계 준비물은 단계 최초 진입 시 영수증을 기록하고 `member.json`에 함께 저장한다.
-- 대부분의 행동 기록은 실제 기능 성공 흐름에서 기록한다. 2단계 `/티어적용`과 6단계 유효 번호 `/탐`은 명령 입력을 인정하며 실제 승급·탐험 등록 성공을 요구하지 않는다. `/상점` 2단계 조회 기록은 `main.js`가 회원 데이터에 저장하고 `Info.js`는 화면만 출력한다.
+- 스타터 회원 보상과 7·8·14단계 최초 1회 지급 재료는 단계 최초 진입 시 영수증을 기록하고 `member.json`에 함께 저장한다. 화면에는 실제 아이템명과 `최초 1회 지급`을 표시한다.
+- 대부분의 행동 기록은 실제 기능 성공 흐름에서 기록한다. 2단계는 티어 승급티켓🎟 1개 이상을 보유한 상태의 `/티어적용` 입력만 인정하며 상점 조회·구매·티어 조회와 실제 승급 성공은 요구하지 않는다. 6단계는 `/지도` 조회, 실제 `/탐 [번호]` 지정, 해당 탐험지의 정산 결과 수령 순서로 완료한다.
 - `/퀘스트완료`는 현재 단계 조건을 재확인하고 보상·기록·타이틀·다음 단계 준비물을 한 번에 저장한다. 9단계 최대 평수 자동 완료도 같은 흐름을 사용한다.
 - 14단계는 큐브를 실제 사용한 홈뱃지가 현재 장착·적용 중일 때 완료한다. 16단계 이후 `/퀘스트완료`는 본편 대기 안내만 표시하며 보상을 다시 지급하지 않는다.
 - 기존 `/퀘스트완료` 일일 보상 명령은 `/일퀘완료`로 변경했고 `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ` 별칭은 유지한다.
