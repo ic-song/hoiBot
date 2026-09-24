@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.565"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.566"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2678,8 +2678,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
 
-        var starterRecoveryExecute = /^\/스타터중복회수 실행 ([1-9]\d*) 확인$/.exec(msg);
-        if (msg === "/스타터중복회수" || starterRecoveryExecute) {
+        if (msg === "/스타터중복회수" || msg === "/스타터중복회수 실행") {
             if (room !== testRoom || !isMaster(sender)) return;
             var starterRecoveryData = loadJsonFile(filePath);
             if (!starterRecoveryData || !starterRecoveryData.member || typeof starterRecoveryData.member !== "object") {
@@ -2687,13 +2686,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             var starterRecoveryPlan = getAdventureStarterRecoveryPlan(starterRecoveryData.member);
-            if (!starterRecoveryExecute) {
+            if (msg === "/스타터중복회수") {
                 var starterPreviewMessages = buildAdventureStarterRecoveryPreviewMessages(starterRecoveryPlan);
                 for (var previewIndex = 0; previewIndex < starterPreviewMessages.length; previewIndex++) replier.reply(starterPreviewMessages[previewIndex]);
-                return;
-            }
-            if (Number(starterRecoveryExecute[1]) !== starterRecoveryPlan.pending.length) {
-                replier.reply("❌ 미회수 대상자 수가 변경되었습니다. /스타터중복회수로 다시 확인해 주세요.");
                 return;
             }
             if (starterRecoveryPlan.ready.length === 0) {
@@ -31004,7 +30999,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
-        command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || /^\/스타터중복회수 실행 [1-9]\d* 확인$/.test(command) || command === "출발한다" || command === "다음에 한다" ||
+        command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "/스타터중복회수 실행" || command === "출발한다" || command === "다음에 한다" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -50443,7 +50438,7 @@ function buildAdventureStarterRecoveryPreviewMessages(plan) {
         }
         messages.push("⚠️ 데이터 오류 보류 명단\n" + allsee + "\n" + lines.join("\n"));
     }
-    if (plan.ready.length > 0) messages.push("대상과 수량을 확인한 뒤 팻 테스트방에서 정확히 입력해 주세요.\n/스타터중복회수 실행 " + plan.pending.length + " 확인");
+    if (plan.ready.length > 0) messages.push("대상과 수량을 확인한 뒤 팻 테스트방에서 입력해 주세요.\n/스타터중복회수 실행");
     return messages;
 }
 
