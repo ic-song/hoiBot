@@ -2085,6 +2085,7 @@ blockedNicknameTerms: [
         castlePercentPerStage: 0.005,
         raidPercentPerStage: 0.005,
         experiencePerStage: 1000,
+        tierTicketItemName: "티어 승급티켓🎟",
         starterSkillBookCount: 1,
         homeBadgeCubeCount: 100,
         petStartReactions: [
@@ -2094,14 +2095,14 @@ blockedNicknameTerms: [
             "뱃지를 번갈아 보며 고민에 빠진다. 🏅", "큐브에서 새어 나오는 빛을 따라 고개를 움직인다. 💟", "자기 차례라는 말에 씩씩하게 앞으로 나온다. ⭐", "자기는 친구가 아니냐는 듯 네 옆구리를 툭 건드린다. 🐾"
         ],
         petCompleteReactions: [
-            "네 곁에 자리를 잡고 앞으로의 모험을 기다린다. 🐾", "새 티어 표식을 자랑하듯 네 주위를 한 바퀴 돈다. 🎟️", "미니펫들에게 마지막까지 힘찬 응원을 보낸다. 🐹", "네 옆에서 자신도 한몫했다는 듯 뿌듯해한다. 🏰",
+            "네 곁에 자리를 잡고 앞으로의 모험을 기다린다. 🐾", "네가 확인한 티어 표식을 바라보며 주위를 한 바퀴 돈다. 🎟️", "미니펫들에게 마지막까지 힘찬 응원을 보낸다. 🐹", "네 옆에서 자신도 한몫했다는 듯 뿌듯해한다. 🏰",
             "도전을 마친 너를 반갑게 맞이한다. 🗼", "정해진 탐험지를 바라보며 기대에 찬 몸짓을 한다. 🗺️", "배를 든든히 채우고 기분 좋게 몸을 들썩인다. 🍼", "새로 배운 기술을 보여주고 싶어 안달이 난다. 📙",
             "넓어진 공간에서 놀 생각에 신이 난다. 🏠", "새 가구가 놓인 자리를 마음에 들어 한다. 🛋️", "강화를 경험한 미니펫에게 다가가 격려한다. 💫", "펜던트를 살피는 너를 관심 있게 지켜본다. 💎",
             "준비한 홈뱃지를 번갈아 보며 고개를 끄덕인다. 🏅", "홈뱃지의 빛을 바라보며 기분 좋게 몸을 흔든다. 💟", "네 손길에 기대어 다음 모험을 기다린다. ⭐", "광장 바깥을 바라보다 네가 따라오는지 돌아본다. 🐾"
         ],
         stages: [
             { number: 1, title: "호식이와 첫 만남", objective: "모험가 퀘스트에 참여하기", commands: "/모험가퀘스트 → /퀘스트완료", story: "호월킹덤 광장에 도착한 모험가를 호식이가 맞습니다.", npcStart: "호월킹덤에 온 걸 환영한다냥! 난 호식이야. 앞으로 함께할 펫부터 만나볼까? 모험 준비물도 챙겨줄게!", npcComplete: "좋아, 준비가 끝났다냥! 이제 광장에서 하나씩 배워보자.", record: "광장에서 펫과 함께 모험 준비를 마쳤다." },
-            { number: 2, title: "첫 티어 달기", objective: "상점 조회 → 1번 상품 1개 구매 → 티어 조회 → /티어적용 입력", commands: "/상점 → /구매 1 1 → /티어 → /티어적용 → /퀘스트완료", story: "호식이가 광장 상점을 가리키며 티어 사용법을 알려줍니다.", npcStart: "모험가라면 자기 티어쯤은 있어야지! 상점에서 티어티켓을 준비하고, 적용 명령도 확인해보자냥.", npcComplete: "티어 적용 방법도 확인했네! 네가 쌓아갈 성장의 첫 표식이다냥.", record: "티어티켓을 구매하고 티어 적용 명령을 확인했다." },
+            { number: 2, title: "첫 티어 달기", objective: "티어 승급티켓🎟 보유 후 /티어적용 입력", commands: "/티어적용 → /퀘스트완료", story: "호식이가 티어 사용법을 알려줍니다.", npcStart: "모험가라면 자기 티어쯤은 있어야지! 티어티켓을 준비하고 /티어적용을 입력해보자냥.", npcComplete: "티어 적용 명령도 확인했네! 네가 쌓아갈 성장의 첫 표식이다냥.", record: "티어티켓을 보유하고 티어 적용 명령을 입력했다." },
             { number: 3, title: "작은 친구들의 대전", objective: "미니펫대전 정상 결과 15회", commands: "/미니펫대전 → /퀘스트완료", story: "미니펫대전을 경험하며 전투 흐름을 익힙니다.", npcStart: "작다고 얕보면 큰코다친다냥! 미니펫대전을 15판 해보고 와. 이기고 지는 것보다 익숙해지는 게 먼저야.", npcComplete: "15판이나 해냈구나! 작은 친구들의 실력도 제법이지?", record: "미니펫대전 15판을 마쳤다." },
             { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 15회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 15판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 15판을 마쳤다." },
             { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 15회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 15판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 15판을 마쳤다." },
@@ -6221,7 +6222,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/상점") {
-                    if (recordAdventureQuestAction(data, sender, 2, "shopViewed", 0)) saveJsonFile(data, filePath);
                     return;
                 }
                 if (msg === "/당근게시판") {
@@ -18443,14 +18443,13 @@ replier.reply(
                 }
 
                 if (msg === "/티어") {
-                    if (recordAdventureQuestAction(data, sender, 2, "tierViewed", 0)) saveJsonFile(data, filePath);
                     var tierProgressPlan = buildTierProgressPlan(data, petSkillData, sender);
                     if (tierProgressPlan) tierProgressPlan.user = checkRank(data, petData, guildData, sender);
                     replier.reply(buildTierProgressMessage(tierProgressPlan, false));
                     return;
                 }
                 if (msg === "/티어적용") {
-                    var tierQuestCommandRecorded = recordAdventureQuestAction(data, sender, 2, "tierApplied", 0); // 실제 승급과 무관하게 단계 내 명령 입력 인정
+                    var tierQuestCommandRecorded = hasItem(data, sender, GLOBAL_CONFIG.adventureQuest.tierTicketItemName, 1) && recordAdventureQuestAction(data, sender, 2, "tierTicketApplied", 0); // 입력 시점에 티켓을 보유했으면 승급 결과와 무관하게 인정
                     var tierPlan = buildTierProgressPlan(data, petSkillData, sender);
                     if (tierPlan) tierPlan.user = checkRank(data, petData, guildData, sender);
                     if (!tierPlan || !tierPlan.canPromote) {
@@ -19345,7 +19344,6 @@ replier.reply(
                             isBuyFlag = true;
                         }
                         if (isBuyFlag) {
-                            if (itemNumber === 1) recordAdventureQuestAction(data, sender, 2, "tierPurchased", 0);
                             if (ticketEventCouponPlan.usedCount > 0) {
                                 var consumedTicketEventCouponCount = consumeTicketEventCouponPlan(data, sender, ticketEventCouponPlan);
                                 if (consumedTicketEventCouponCount !== ticketEventCouponPlan.usedCount) throw new Error("티켓 이벤트 쿠폰 차감 수량이 구매 계산과 일치하지 않습니다.");
@@ -49953,9 +49951,6 @@ function isAdventureQuestHomeBadgeProduct(itemName) {
 function recordAdventureQuestAction(data, user, stageNumber, key, amount) {
     var state = getAdventureQuestState(data, user, false);
     if (!state || state.currentStage !== stageNumber) return false;
-    if (stageNumber === 2 && key === "tierPurchased" && !state.progress.shopViewed) return false;
-    if (stageNumber === 2 && key === "tierViewed" && !state.progress.tierPurchased) return false;
-    if (stageNumber === 2 && key === "tierApplied" && !state.progress.tierViewed) return false;
     var value = typeof amount === "number" ? amount : 1;
     if (value === 0) state.progress[key] = true;
     else state.progress[key] = (parseInt(state.progress[key], 10) || 0) + value;
@@ -49998,7 +49993,7 @@ function getAdventureQuestCompletionCheck(data, petData, petSkillData, homeData,
     var p = state.progress || {};
     var stage = state.currentStage;
     if (stage === 1) return { complete: true, remaining: "" };
-    if (stage === 2) return { complete: !!(p.shopViewed && p.tierPurchased && p.tierViewed && p.tierApplied), remaining: "상점 조회 → 1번 상품 구매 → 티어 조회 → /티어적용 입력을 순서대로 완료해 주세요." };
+    if (stage === 2) return { complete: !!p.tierTicketApplied, remaining: "티어 승급티켓🎟 1개 이상을 보유한 상태에서 /티어적용을 입력해 주세요." };
     if (stage === 3) return { complete: (p.miniBattle || 0) >= 15, remaining: "미니펫대전 " + Math.max(0, 15 - (p.miniBattle || 0)) + "회가 남았습니다." };
     if (stage === 4) return { complete: (p.castleBattle || 0) >= 15, remaining: "캐슬대전 " + Math.max(0, 15 - (p.castleBattle || 0)) + "회가 남았습니다." };
     if (stage === 5) return { complete: (p.trialTower || 0) >= 15, remaining: "시련의탑 " + Math.max(0, 15 - (p.trialTower || 0)) + "회가 남았습니다." };
@@ -50064,8 +50059,8 @@ function getAdventureQuestGoalLines(state, check, onlyIncomplete) {
     var stage = state.currentStage;
     var p = state.progress || {};
     if (stage === 2) {
-        var tierLines = [(p.shopViewed ? "[✅] " : "[⬜] ") + "상점 조회", (p.tierPurchased ? "[✅] " : "[⬜] ") + "1번 상품 1개 구매", (p.tierViewed ? "[✅] " : "[⬜] ") + "티어 조회", (p.tierApplied ? "[✅] " : "[⬜] ") + "/티어적용 입력"];
-        return onlyIncomplete ? tierLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : tierLines;
+        var tierLine = (p.tierTicketApplied ? "[✅] " : "[⬜] ") + "티어 승급티켓🎟 보유 후 /티어적용 입력";
+        return onlyIncomplete && p.tierTicketApplied ? [] : [tierLine];
     }
     if (stage >= 3 && stage <= 5) {
         var key = stage === 3 ? "miniBattle" : stage === 4 ? "castleBattle" : "trialTower";
@@ -50137,12 +50132,7 @@ function buildAdventureQuestIncompleteMessage(data, petData, guildData, user, ch
     lines.push("━━━━━━━━━━━━");
     var commands = config.commands.split(" → ");
     var p = state.progress || {};
-    if (state.currentStage === 2) {
-        if (!p.shopViewed) commands = ["/상점", "/퀘스트완료"];
-        else if (!p.tierPurchased) commands = ["/구매 1 1", "/퀘스트완료"];
-        else if (!p.tierViewed) commands = ["/티어", "/퀘스트완료"];
-        else commands = ["/티어적용", "/퀘스트완료"];
-    } else if (state.currentStage === 8 && p.skillBookOpened) commands = ["/펫스킬장착 [번호]", "/퀘스트완료"];
+    if (state.currentStage === 8 && p.skillBookOpened) commands = ["/펫스킬장착 [번호]", "/퀘스트완료"];
     else if (state.currentStage === 13 && p.diamondShopViewed) commands = ["/다이아상점구매 [번호] [개수]", "/퀘스트완료"];
     else if (state.currentStage === 14) commands = (check.badgeApplied || (check.badgeEquipped && !p.homeBadgeCubeUsed)) ? ["/홈뱃지큐브 [슬롯] [옵션]", "/퀘스트완료"] : p.homeBadgeCubeUsed ? ["/홈뱃지장착 [번호]", "/퀘스트완료"] : ["/홈뱃지장착 [번호]", "/홈뱃지큐브 [슬롯] [옵션]", "/퀘스트완료"];
     for (var i = 0; i < commands.length; i++) lines.push("👉 " + commands[i]);
