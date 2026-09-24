@@ -67,10 +67,14 @@ assert.strictEqual(context.recordAdventureQuestAction(data, user, 2, "shopViewed
 assert.strictEqual(context.recordAdventureQuestAction(data, user, 2, "tierPurchased", 0), true);
 assert.strictEqual(context.recordAdventureQuestAction(data, user, 2, "tierViewed", 0), true);
 assert.strictEqual(context.recordAdventureQuestAction(data, user, 2, "tierApplied", 0), true);
-state.progress.appliedTier = "노랑하트";
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true, "상위 티어 사용자는 명령 입력만으로 완료");
+
+state.currentStage = 6;
+state.progress = {};
 assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, false);
-data.member[user].rank.tier = "노랑하트";
-assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true);
+assert.strictEqual(context.recordAdventureQuestAction(data, user, 6, "exploreSelected", 0), true);
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, { userBet: { tester: "11" } }, {}, user).complete, true, "이벤트 탐험지 11번 인정");
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, { userBet: { tester: "1" } }, {}, user).complete, true, "탐험지 번호 입력 기록 인정");
 
 state.currentStage = 7;
 assert.strictEqual(context.prepareAdventureQuestStage(data, user, {}, home), true);
@@ -161,6 +165,11 @@ assert(/if \(msg === "\/퀘스트완료" && room !== testRoom\) return;/.test(qu
 assert(main.indexOf('if (msg === "/퀘스트완료" && room !== testRoom) return;') < main.indexOf('if (ctx.isDev && msg === "/데이터백업")'));
 assert(main.includes('const testRoom = "팻 테스트방";'));
 assert(/if \(msg === "\/상점"\) \{\r?\n\s*if \(recordAdventureQuestAction\(data, sender, 2, "shopViewed", 0\)\) saveJsonFile\(data, filePath\);/.test(main));
+assert(main.indexOf('var tierQuestCommandRecorded = recordAdventureQuestAction(data, sender, 2, "tierApplied", 0);') < main.indexOf('if (!tierPlan || !tierPlan.canPromote) {'), "티어 승급 판정 전에 명령 입력 기록");
+assert(main.includes('if (tierQuestCommandRecorded) saveJsonFile(data, filePath);'), "승급 불가 시에도 퀘스트 진행 저장");
+assert(main.indexOf('var questExploreInputRecorded =') < main.indexOf('if (isChuseokExploreEventActive(petExploreData)) {'), "이벤트 차단 전 탐험지 입력 기록");
+assert(main.indexOf('if (questExploreInputRecorded) saveJsonFile(data, filePath);') < main.indexOf('if (isChuseokExploreEventActive(petExploreData)) {'), "이벤트 차단 전 탐험지 입력 저장");
+assert(main.includes('questExploreInput >= 1 && questExploreInput <= 11'), "유효한 탐험지 번호만 인정");
 assert(!/^\s*saveJsonFile\(/m.test(info), "Info.js must not call the main-only save helper");
 assert(main.includes('msg === "/일퀘완료"'));
 assert(!info.includes('"/퀘스트완료" 또는 "/ㅇ"'));

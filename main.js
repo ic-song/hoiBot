@@ -2101,11 +2101,11 @@ blockedNicknameTerms: [
         ],
         stages: [
             { number: 1, title: "호식이와 첫 만남", objective: "모험가 퀘스트에 참여하기", commands: "/모험가퀘스트 → /퀘스트완료", story: "호월킹덤 광장에 도착한 모험가를 호식이가 맞습니다.", npcStart: "호월킹덤에 온 걸 환영한다냥! 난 호식이야. 앞으로 함께할 펫부터 만나볼까? 모험 준비물도 챙겨줄게!", npcComplete: "좋아, 준비가 끝났다냥! 이제 광장에서 하나씩 배워보자.", record: "광장에서 펫과 함께 모험 준비를 마쳤다." },
-            { number: 2, title: "첫 티어 달기", objective: "상점 조회 → 1번 상품 1개 구매 → 티어 조회 → 티어 적용", commands: "/상점 → /구매 1 1 → /티어 → /티어적용 → /퀘스트완료", story: "호식이가 광장 상점을 가리키며 티어 사용법을 알려줍니다.", npcStart: "모험가라면 자기 티어쯤은 있어야지! 상점에서 티어티켓을 준비하고, 네 티어에 적용해보자냥.", npcComplete: "티어가 잘 적용됐네! 네가 쌓아갈 성장의 첫 표식이다냥.", record: "티어티켓을 구매하고 티어를 적용했다." },
+            { number: 2, title: "첫 티어 달기", objective: "상점 조회 → 1번 상품 1개 구매 → 티어 조회 → /티어적용 입력", commands: "/상점 → /구매 1 1 → /티어 → /티어적용 → /퀘스트완료", story: "호식이가 광장 상점을 가리키며 티어 사용법을 알려줍니다.", npcStart: "모험가라면 자기 티어쯤은 있어야지! 상점에서 티어티켓을 준비하고, 적용 명령도 확인해보자냥.", npcComplete: "티어 적용 방법도 확인했네! 네가 쌓아갈 성장의 첫 표식이다냥.", record: "티어티켓을 구매하고 티어 적용 명령을 확인했다." },
             { number: 3, title: "작은 친구들의 대전", objective: "미니펫대전 정상 결과 15회", commands: "/미니펫대전 → /퀘스트완료", story: "미니펫대전을 경험하며 전투 흐름을 익힙니다.", npcStart: "작다고 얕보면 큰코다친다냥! 미니펫대전을 15판 해보고 와. 이기고 지는 것보다 익숙해지는 게 먼저야.", npcComplete: "15판이나 해냈구나! 작은 친구들의 실력도 제법이지?", record: "미니펫대전 15판을 마쳤다." },
             { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 15회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 15판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 15판을 마쳤다." },
             { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 15회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 15판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 15판을 마쳤다." },
-            { number: 6, title: "첫 탐험지 정하기", objective: "1~3번 탐험지 중 한 곳 지정", commands: "/탐 1, /탐 2, /탐 3 중 하나 → /퀘스트완료", story: "광장에 펼쳐진 지도에서 첫 탐험지를 고릅니다.", npcStart: "광장에서 탐험지를 정해볼까? 1번부터 3번 중 한 곳을 골라봐. 목적지만 지정하면 된다냥!", npcComplete: "탐험할 곳을 정했네! 돌아올 이야기가 벌써 궁금하다냥.", record: "펫을 보낼 첫 탐험지를 지정했다." },
+            { number: 6, title: "첫 탐험지 정하기", objective: "탐험지 번호 입력", commands: "/탐 [번호] (이벤트 중 /탐 11) → /퀘스트완료", story: "광장에 펼쳐진 지도에서 첫 탐험지를 고릅니다.", npcStart: "광장에서 탐험지를 살펴볼까? 탐험지 번호를 입력해봐. 이벤트 중 실제 참여는 11번에서 할 수 있다냥!", npcComplete: "탐험지를 살펴봤네! 돌아올 이야기가 벌써 궁금하다냥.", record: "첫 탐험지 번호를 입력했다." },
             { number: 7, title: "든든하게 먹고 출발", objective: "펫먹이 100,000개를 한 번에 사용", commands: "/냠냠 100000 → /퀘스트완료", story: "호식이가 준비한 먹이로 펫의 배를 든든히 채웁니다.", npcStart: "배가 든든해야 모험도 신나지! 펫먹이 10만 개를 챙겨줄 테니 네 친구에게 먹여봐라냥!", npcComplete: "아주 잘 먹었다냥! 배도 든든해졌으니 다음 준비를 시작해 보자냥!", record: "펫에게 먹이 10만 개를 먹였다." },
             { number: 8, title: "첫 펫스킬 익히기", objective: "스킬북 1개 오픈 후 유효한 펫스킬 장착", commands: "/펫스킬오픈 1 → /펫스킬장착 [번호] → /퀘스트완료", story: "스킬북을 열고 배운 펫스킬을 실제로 장착합니다.", npcStart: "스킬북 속에 어떤 기술이 숨어 있을까? 한 권 열어보고 펫스킬을 장착해봐. 읽기만 해선 쓸 수 없다냥!", npcComplete: "스킬이 제대로 장착됐네! 이제 배운 기술을 써볼 수 있겠다냥.", record: "스킬북을 열어 펫스킬을 장착했다." },
             { number: 9, title: "우리 집을 넓혀보자", objective: "퀘스트 시작 당시보다 펫홈 평수 늘리기", commands: "/집짓기 → 집뚝딱 → /퀘스트완료", story: "펫과 함께 지낼 집의 평수를 넓힙니다.", npcStart: "모험을 마치고 쉴 집도 필요하지! 재료 상점에서 준비물을 살펴보고, 지금보다 집을 넓혀와라냥.", npcComplete: "집이 더 넓어졌네! 함께 지낼 공간을 네 손으로 키웠다냥.", record: "펫홈의 평수를 늘렸다." },
@@ -18450,18 +18450,20 @@ replier.reply(
                     return;
                 }
                 if (msg === "/티어적용") {
+                    var tierQuestCommandRecorded = recordAdventureQuestAction(data, sender, 2, "tierApplied", 0); // 실제 승급과 무관하게 단계 내 명령 입력 인정
                     var tierPlan = buildTierProgressPlan(data, petSkillData, sender);
                     if (tierPlan) tierPlan.user = checkRank(data, petData, guildData, sender);
                     if (!tierPlan || !tierPlan.canPromote) {
+                        if (tierQuestCommandRecorded) saveJsonFile(data, filePath);
                         replier.reply(buildTierProgressMessage(tierPlan, true));
                         return;
                     }
                     var tierApplyResult = applyRankBasedOnTicketsForUser(petData, data, sender);
                     if (!tierApplyResult.ok || !tierApplyResult.changed) {
+                        if (tierQuestCommandRecorded) saveJsonFile(data, filePath);
                         replier.reply(tierApplyResult.message || buildTierProgressMessage(tierPlan, true));
                         return;
                     }
-                    if (recordAdventureQuestAction(data, sender, 2, "tierApplied", 0)) getAdventureQuestState(data, sender, false).progress.appliedTier = data.member[sender].rank.tier;
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
                     var promotedRankName = checkRank(data, petData, guildData, sender);
@@ -25840,6 +25842,10 @@ replier.reply(
 
                     var parts = msg.trim().split(/\s+/);
                     var dungeonNo = null;
+                    var questExploreInput = parts.length === 2 ? parseInt(parts[1], 10) : 0; // 이벤트 차단 전 입력한 탐험지 번호
+                    var questExploreState = getAdventureQuestState(data, sender, false);
+                    var questExploreInputRecorded = questExploreInput >= 1 && questExploreInput <= 11 && questExploreState && questExploreState.currentStage === 6 && !questExploreState.progress.exploreSelected && recordAdventureQuestAction(data, sender, 6, "exploreSelected", 0);
+                    if (questExploreInputRecorded) saveJsonFile(data, filePath);
 
                     if (isChuseokExploreEventActive(petExploreData)) {
                         if (parts.length !== 2 || parts[1] !== "11") {
@@ -25941,11 +25947,11 @@ replier.reply(
                     });
 
                     petExploreData.userBet[sender] = dungeonNo;
-                    if (parseInt(dungeonNo, 10) >= 1 && parseInt(dungeonNo, 10) <= 3) recordAdventureQuestAction(data, sender, 6, "exploreSelected", 0);
+                    if (!questExploreInputRecorded && parts.length === 1) recordAdventureQuestAction(data, sender, 6, "exploreSelected", 0);
 
                     // 저장
                     saveJsonFile(petExploreData, petExplorePath);
-                    saveJsonFile(data, filePath);
+                    if (!questExploreInputRecorded) saveJsonFile(data, filePath);
 
                     if (typeof homeData === "undefined") var homeData = loadJsonFile(homeDataFile);
                     var msgLine = buildExploreBetMessage(data, petData, homeData, guildData, petSkillData, petExploreData, sender, dungeonNo, prevDungeon);
@@ -49992,14 +49998,11 @@ function getAdventureQuestCompletionCheck(data, petData, petSkillData, homeData,
     var p = state.progress || {};
     var stage = state.currentStage;
     if (stage === 1) return { complete: true, remaining: "" };
-    if (stage === 2) return { complete: !!(p.shopViewed && p.tierPurchased && p.tierViewed && p.tierApplied && p.appliedTier && data.member[user].rank && data.member[user].rank.tier === p.appliedTier), remaining: "상점 조회 → 1번 상품 구매 → 티어 조회 → 티어 적용을 순서대로 완료하고 적용 상태를 유지해 주세요." };
+    if (stage === 2) return { complete: !!(p.shopViewed && p.tierPurchased && p.tierViewed && p.tierApplied), remaining: "상점 조회 → 1번 상품 구매 → 티어 조회 → /티어적용 입력을 순서대로 완료해 주세요." };
     if (stage === 3) return { complete: (p.miniBattle || 0) >= 15, remaining: "미니펫대전 " + Math.max(0, 15 - (p.miniBattle || 0)) + "회가 남았습니다." };
     if (stage === 4) return { complete: (p.castleBattle || 0) >= 15, remaining: "캐슬대전 " + Math.max(0, 15 - (p.castleBattle || 0)) + "회가 남았습니다." };
     if (stage === 5) return { complete: (p.trialTower || 0) >= 15, remaining: "시련의탑 " + Math.max(0, 15 - (p.trialTower || 0)) + "회가 남았습니다." };
-    if (stage === 6) {
-        var selected = petExploreData && petExploreData.userBet ? parseInt(petExploreData.userBet[user], 10) : 0;
-        return { complete: !!p.exploreSelected && selected >= 1 && selected <= 3, remaining: "1~3번 탐험지 중 한 곳을 지정해 주세요." };
-    }
+    if (stage === 6) return { complete: !!p.exploreSelected, remaining: "탐험지 번호를 /탐 [번호]로 입력해 주세요. 이벤트 중 실제 참여는 /탐 11에서 할 수 있어요." };
     if (stage === 7) return { complete: !!p.feed100000, remaining: "/냠냠 100000으로 먹이 10만 개를 한 번에 사용해 주세요." };
     if (stage === 8) {
         var skillStore = petSkillData && petSkillData[user] ? petSkillData[user].petSkills : null;
@@ -50061,7 +50064,7 @@ function getAdventureQuestGoalLines(state, check, onlyIncomplete) {
     var stage = state.currentStage;
     var p = state.progress || {};
     if (stage === 2) {
-        var tierLines = [(p.shopViewed ? "[✅] " : "[⬜] ") + "상점 조회", (p.tierPurchased ? "[✅] " : "[⬜] ") + "1번 상품 1개 구매", (p.tierViewed ? "[✅] " : "[⬜] ") + "티어 조회", (check.complete ? "[✅] " : "[⬜] ") + "티어 적용·유지"];
+        var tierLines = [(p.shopViewed ? "[✅] " : "[⬜] ") + "상점 조회", (p.tierPurchased ? "[✅] " : "[⬜] ") + "1번 상품 1개 구매", (p.tierViewed ? "[✅] " : "[⬜] ") + "티어 조회", (p.tierApplied ? "[✅] " : "[⬜] ") + "/티어적용 입력"];
         return onlyIncomplete ? tierLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : tierLines;
     }
     if (stage >= 3 && stage <= 5) {

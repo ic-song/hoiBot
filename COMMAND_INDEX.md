@@ -2917,7 +2917,7 @@ Status: VERIFIED
 
 - `/티어` is read-only.
 - `/티어적용`은 복합 데이터 변경 쓰기 잠금 안에서 성공한 사용자 본인의 `data`와 `petData`를 저장한 뒤 승급 알림을 보낸다.
-- Failed and same-tier applications do not mutate or save tier rewards.
+- 승급 실패·동일 티어 적용은 티어 보상을 변경하지 않는다. 단, 튜토리얼 2단계에서는 선행 상점 구매·티어 조회 후 `/티어적용` 명령 입력 자체를 진행 상태로 저장한다.
 
 ## Related Commands
 
@@ -5570,6 +5570,7 @@ Status: VERIFIED
 ## Save Flow
 - `/탐` updates `petExploreData` and saves through `saveJsonFile(petExploreData, petExplorePath)`
 - `/탐` also saves `data` through `saveJsonFile(data, filePath)`
+- 튜토리얼 6단계에서 `/탐 1`~`/탐 11` 번호를 입력하면 이벤트·입장 조건으로 거절되더라도 퀘스트 입력 기록을 먼저 `member.json`에 저장한다. 범위 밖 번호는 인정하지 않으며, 정상 `/탐` 등록도 인정한다.
 - `doPetExploreInterval` saves reward/member changes through `saveJsonFile(data, filePath)` and exploration state through `saveJsonFile(petExploreData, petExplorePath)`
 
 ## Related Commands
@@ -6466,7 +6467,7 @@ Status: VERIFIED
 
 - `/퀘스트완료`는 임시로 `팻 테스트방`에서만 실행하며, 다른 방에서는 퀘스트 상태 생성·보상·저장 전에 무응답으로 종료한다. 다른 퀘스트 조회·타이틀 명령은 이 제한을 받지 않는다.
 - 스타터 회원 보상과 7·8·14단계 준비물은 단계 최초 진입 시 영수증을 기록하고 `member.json`에 함께 저장한다.
-- 행동 기록은 실제 기능 성공 흐름에서 기록한다. `/상점` 2단계 조회 기록은 `main.js`가 회원 데이터에 저장하고 `Info.js`는 화면만 출력한다.
+- 대부분의 행동 기록은 실제 기능 성공 흐름에서 기록한다. 2단계 `/티어적용`과 6단계 유효 번호 `/탐`은 명령 입력을 인정하며 실제 승급·탐험 등록 성공을 요구하지 않는다. `/상점` 2단계 조회 기록은 `main.js`가 회원 데이터에 저장하고 `Info.js`는 화면만 출력한다.
 - `/퀘스트완료`는 현재 단계 조건을 재확인하고 보상·기록·타이틀·다음 단계 준비물을 한 번에 저장한다. 9단계 최대 평수 자동 완료도 같은 흐름을 사용한다.
 - 14단계는 큐브를 실제 사용한 홈뱃지가 현재 장착·적용 중일 때 완료한다. 16단계 이후 `/퀘스트완료`는 본편 대기 안내만 표시하며 보상을 다시 지급하지 않는다.
 - 기존 `/퀘스트완료` 일일 보상 명령은 `/일퀘완료`로 변경했고 `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ` 별칭은 유지한다.
