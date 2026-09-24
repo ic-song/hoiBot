@@ -2634,8 +2634,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             msg = stripDevCommandPrefix(msg);
             replier = createContextReplier(replier, ctx);
         }
-        if (msg === "/퀘스트완료" && room !== testRoom) return;
-
         if (ctx.isDev && msg === "/데이터백업") {
             if (!isMaster(sender)) {
                 replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
