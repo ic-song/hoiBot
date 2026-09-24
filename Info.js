@@ -1682,24 +1682,53 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		applyItemInfoContext(productionItemInfoData);
 	}
 }
+// 스타터 회수 조회에서 없는 재화와 비정상 수량을 구분하는 함수
+function getStarterRecoverableCount(raw, maximum) {
+	if (raw === undefined || raw === null) return 0;
+	var value = Number(raw);
+	if (typeof raw === "boolean" || (typeof raw === "string" && !raw.trim()) || !isFinite(value) || Math.floor(value) !== value || value < 0 || value > 9007199254740991) return null;
+	return Math.min(value, maximum);
+}
 // 퀘스트 스타터팩의 회수 대상 여부와 현재 보유 수량을 확인하는 함수
 function getStarterRecoveryStatus(member) {
 	var receipts = member && member.adventureQuest && member.adventureQuest.receipts;
-	if (!receipts || receipts.starterMemberRewards !== true) return { label: "퀘스트 지급 없음", target: false, recovered: false, missing: [] };
-	if (receipts.starterMemberRewardsRecovered === true) return { label: "회수 완료", target: true, recovered: true, missing: [] };
+	if (!receipts || receipts.starterMemberRewards !== true) return { label: "퀘스트 지급 없음", target: false, recovered: false, missing: [], invalid: [] };
+	if (receipts.starterMemberRewardsRecovered === true) {
+		var priorRecovery = receipts.starterMemberRewardsRecovery;
+		var recordedMissing = []; // 완료된 회수에서 부족했던 항목과 수량
+		if (priorRecovery && priorRecovery.missingPoints > 0) recordedMissing.push("포인트 " + priorRecovery.missingPoints);
+		if (priorRecovery && priorRecovery.missingBoosters > 0) recordedMissing.push("가호 " + priorRecovery.missingBoosters);
+		var recordedItems = priorRecovery && priorRecovery.missingItems ? priorRecovery.missingItems : {};
+		var recordedNames = Object.keys(recordedItems);
+		for (var recordedIndex = 0; recordedIndex < recordedNames.length; recordedIndex++) recordedMissing.push(recordedNames[recordedIndex] + " " + recordedItems[recordedNames[recordedIndex]]);
+		var incomplete = priorRecovery && (priorRecovery.missingPoints > 0 || priorRecovery.missingBoosters > 0 || Object.keys(priorRecovery.missingItems || {}).length > 0);
+		var recoveredAny = priorRecovery && (priorRecovery.points > 0 || priorRecovery.boosters > 0 || Object.keys(priorRecovery.items || {}).length > 0);
+		return { label: priorRecovery && !recoveredAny ? "보유량 0 · 처리 완료" : (incomplete ? "부분 회수 완료" : "회수 완료"), target: true, recovered: true, missing: recordedMissing, invalid: [] };
+	}
 	var recovery = GLOBAL_CONFIG.starterRecovery;
 	var missing = [];
-	var points = Number(member.point); // 현재 보유 포인트
-	var boosters = Number(member.boostercnt); // 현재 보유 가호 횟수
-	if (!isFinite(points) || Math.floor(points) !== points || points < recovery.points) missing.push("포인트 " + (isFinite(points) ? points : "값 이상") + "/" + recovery.points);
-	if (!isFinite(boosters) || Math.floor(boosters) !== boosters || boosters < recovery.boosters) missing.push("가호 " + (isFinite(boosters) ? boosters : "값 이상") + "/" + recovery.boosters);
+	var invalid = []; // 수량이 음수·소수 등 비정상인 항목
+	var points = getStarterRecoverableCount(member.point, recovery.points); // 실제 회수 가능한 포인트
+	var boosters = getStarterRecoverableCount(member.boostercnt, recovery.boosters); // 실제 회수 가능한 가호
+	var recoveredKinds = (points || 0) > 0 ? 1 : 0; // 보유량 0 이용자 구분용 항목 수
+	if ((boosters || 0) > 0) recoveredKinds++;
+	if (points === null) invalid.push("포인트");
+	else if (points < recovery.points) missing.push("포인트 " + points + "/" + recovery.points);
+	if (boosters === null) invalid.push("가호");
+	else if (boosters < recovery.boosters) missing.push("가호 " + boosters + "/" + recovery.boosters);
 	var bag = member.bag && typeof member.bag === "object" ? member.bag : {};
+	if (member.bag !== undefined && member.bag !== null && typeof member.bag !== "object") invalid.push("가방");
 	for (var i = 0; i < recovery.items.length; i++) {
 		var item = recovery.items[i];
-		var owned = Number(bag[item[0]]); // 해당 아이템의 현재 보유량
-		if (!isFinite(owned) || Math.floor(owned) !== owned || owned < item[1]) missing.push(item[0] + " " + (isFinite(owned) ? owned : "값 이상") + "/" + item[1]);
+		var owned = getStarterRecoverableCount(bag[item[0]], item[1]); // 실제 회수 가능한 아이템 수량
+		if (owned === null) invalid.push(item[0]);
+		else {
+			if (owned > 0) recoveredKinds++;
+			if (owned < item[1]) missing.push(item[0] + " " + owned + "/" + item[1]);
+		}
 	}
-	return { label: missing.length > 0 ? "회수 보류(부족 " + missing.length + "항목)" : "회수 가능", target: true, recovered: false, missing: missing };
+	var label = invalid.length > 0 ? "데이터 오류 보류" : (recoveredKinds === 0 ? "보유량 0 · 처리 가능" : (missing.length > 0 ? "부분 회수 가능" : "전액 회수 가능"));
+	return { label: label, target: true, recovered: false, missing: missing, invalid: invalid, recoveredKinds: recoveredKinds };
 }
 // 기존·퀘스트 스타터 지급 플래그별 이용자와 교집합을 조회하는 함수
 function buildStarterDuplicateAuditMessages(members) {
@@ -1707,8 +1736,11 @@ function buildStarterDuplicateAuditMessages(members) {
 	var oldRecipients = []; // 기존 지급 플래그가 true인 이용자
 	var questRecipients = []; // 퀘스트 지급 플래그가 true인 이용자
 	var candidates = []; // 두 지급 플래그가 모두 true인 이용자
-	var recoveryReady = []; // 현재 보유량으로 전량 회수 가능한 이용자
-	var recoveryBlocked = 0; // 잔액 부족으로 보류되는 이용자 수
+	var recoveryReady = []; // 현재 보유량만큼 처리 가능한 이용자
+	var recoveryFull = 0; // 전액 회수 가능한 이용자 수
+	var recoveryPartial = 0; // 일부만 회수 가능한 이용자 수
+	var recoveryEmpty = 0; // 회수할 현재 보유량이 없는 이용자 수
+	var recoveryInvalid = 0; // 데이터 오류로 보류되는 이용자 수
 	var recoveryDone = 0; // 이미 회수 처리된 이용자 수
 	for (var i = 0; i < names.length; i++) {
 		var member = members[names[i]];
@@ -1721,8 +1753,13 @@ function buildStarterDuplicateAuditMessages(members) {
 			questRecipients.push(names[i]);
 			var recoveryStatus = getStarterRecoveryStatus(member);
 			if (recoveryStatus.recovered) recoveryDone++;
-			else if (recoveryStatus.missing.length > 0) recoveryBlocked++;
-			else recoveryReady.push(names[i]);
+			else if (recoveryStatus.invalid.length > 0) recoveryInvalid++;
+			else {
+				recoveryReady.push(names[i]);
+				if (recoveryStatus.recoveredKinds === 0) recoveryEmpty++;
+				else if (recoveryStatus.missing.length > 0) recoveryPartial++;
+				else recoveryFull++;
+			}
 		}
 		if (hasOldReward && hasQuestReward) candidates.push(names[i]);
 	}
@@ -1730,11 +1767,11 @@ function buildStarterDuplicateAuditMessages(members) {
 	questRecipients.sort();
 	candidates.sort();
 	recoveryReady.sort();
-	var messages = ["📋 스타터 지급 기록 조회\n기존 지급: " + oldRecipients.length + "명\n퀘스트 지급: " + questRecipients.length + "명\n두 플래그 모두: " + candidates.length + "명\n회수 가능: " + recoveryReady.length + "명\n잔액 부족 보류: " + recoveryBlocked + "명\n이미 회수: " + recoveryDone + "명\n※ 운영 확인에 따라 퀘스트 지급 플래그 보유자를 회수 대상으로 표시합니다. 잔액 충족은 지급 경로 증명이 아닙니다."];
+	var messages = ["📋 스타터 지급 기록 조회\n기존 지급: " + oldRecipients.length + "명\n퀘스트 지급: " + questRecipients.length + "명\n두 플래그 모두: " + candidates.length + "명\n처리 가능: " + recoveryReady.length + "명\n전액 회수: " + recoveryFull + "명\n부분 회수: " + recoveryPartial + "명\n보유량 0: " + recoveryEmpty + "명\n데이터 오류 보류: " + recoveryInvalid + "명\n이미 회수: " + recoveryDone + "명\n※ 퀘스트 지급 기록이 있는 이용자는 현재 남은 수량만 회수합니다. 남은 수량만으로 지급 경로를 증명하지는 않습니다."];
 	appendStarterAuditListMessages(messages, "기존 지급 플래그", oldRecipients, members);
 	appendStarterAuditListMessages(messages, "퀘스트 지급 플래그", questRecipients, members);
 	appendStarterAuditListMessages(messages, "두 플래그 모두", candidates, members);
-	appendStarterAuditListMessages(messages, "회수 가능 명단", recoveryReady, members);
+	appendStarterAuditListMessages(messages, "처리 가능 명단", recoveryReady, members);
 	return messages;
 }
 // 스타터 지급 플래그별 이용자 목록을 30명씩 나누어 출력하는 함수
@@ -1747,7 +1784,8 @@ function appendStarterAuditListMessages(messages, label, names, members) {
 		var lines = [];
 		for (var i = start; i < Math.min(start + 30, names.length); i++) {
 			var status = getStarterRecoveryStatus(members[names[i]]);
-			var missingDetails = status.missing.length > 0 ? " · " + status.missing.slice(0, 3).join(", ") + (status.missing.length > 3 ? " 외" : "") : "";
+			var details = status.invalid.length > 0 ? status.invalid : status.missing;
+			var missingDetails = details.length > 0 ? " · " + details.slice(0, 3).join(", ") + (details.length > 3 ? " 외" : "") : "";
 			lines.push((i + 1) + ". " + names[i] + " — " + status.label + missingDetails);
 		}
 		messages.push("📋 " + label + ": " + names.length + "명\n" + (names.length > 5 ? allsee + "\n" : "") + lines.join("\n"));

@@ -4,7 +4,7 @@ const path = require("path");
 const vm = require("vm");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "Info.js"), "utf8");
-const start = source.indexOf("function getStarterRecoveryStatus(");
+const start = source.indexOf("function getStarterRecoverableCount(");
 const end = source.indexOf("// JSON 파일 로드 함수", start);
 assert(start >= 0 && end > start, "스타터 지급 기록 조회 함수가 있어야 합니다.");
 
@@ -34,8 +34,8 @@ assert.strictEqual(messages.length, 5);
 assert(messages[0].includes("기존 지급: 2명"));
 assert(messages[0].includes("퀘스트 지급: 2명"));
 assert(messages[0].includes("두 플래그 모두: 1명"));
-assert(messages[0].includes("회수 가능: 0명"));
-assert(messages[0].includes("잔액 부족 보류: 2명"));
+assert(messages[0].includes("처리 가능: 2명"));
+assert(messages[0].includes("보유량 0: 2명"));
 assert(messages[1].includes("기존만"));
 assert(!messages[1].includes("퀘스트만"));
 assert(messages[2].includes("퀘스트만"));
@@ -43,12 +43,12 @@ assert(!messages[2].includes("기존만"));
 assert(messages[3].includes("두번받음"));
 assert(!messages.join("\n").includes("문자플래그"));
 assert(messages[1].includes("퀘스트 지급 없음"));
-assert(messages[2].includes("회수 보류"));
+assert(messages[2].includes("보유량 0 · 처리 가능"));
 
 const manyMembers = {};
 for (let i = 0; i < 31; i++) manyMembers["유저" + i] = member(true, true);
 const pages = context.buildStarterDuplicateAuditMessages(manyMembers);
-assert.strictEqual(pages.length, 8);
+assert.strictEqual(pages.length, 9);
 assert(pages[0].includes("두 플래그 모두: 31명"));
 assert(pages[2].includes("31. "));
 assert(pages[6].includes("31. "));
@@ -66,18 +66,24 @@ const recoverable = {
     bag: fullBag,
     adventureQuest: { receipts: { starterMemberRewards: true } }
 };
-assert.strictEqual(context.getStarterRecoveryStatus(recoverable).label, "회수 가능");
+assert.strictEqual(context.getStarterRecoveryStatus(recoverable).label, "전액 회수 가능");
 const eligibleMessages = context.buildStarterDuplicateAuditMessages({ recoverable, "보류": member(false, true) });
-assert(eligibleMessages[0].includes("회수 가능: 1명"));
-assert(eligibleMessages[0].includes("잔액 부족 보류: 1명"));
-assert(eligibleMessages[4].includes("recoverable — 회수 가능"));
+assert(eligibleMessages[0].includes("처리 가능: 2명"));
+assert(eligibleMessages[0].includes("전액 회수: 1명"));
+assert(eligibleMessages[0].includes("보유량 0: 1명"));
+assert(eligibleMessages[4].includes("recoverable — 전액 회수 가능"));
 recoverable.adventureQuest.receipts.starterMemberRewardsRecovered = true;
 assert.strictEqual(context.getStarterRecoveryStatus(recoverable).label, "회수 완료");
+recoverable.adventureQuest.receipts.starterMemberRewardsRecovery = { missingPoints: 1, missingBoosters: 0, missingItems: {} };
+assert.strictEqual(context.getStarterRecoveryStatus(recoverable).label, "보유량 0 · 처리 완료");
+recoverable.adventureQuest.receipts.starterMemberRewardsRecovery.points = 1;
+assert.strictEqual(context.getStarterRecoveryStatus(recoverable).label, "부분 회수 완료");
+assert(context.buildStarterDuplicateAuditMessages({ recoverable }).join("\n").includes("포인트 1"));
 const insufficient = member(false, true);
 insufficient.point = recovery.points;
 insufficient.boostercnt = recovery.boosters;
 insufficient.bag = Object.assign({}, fullBag, { "땅문서📜": 19 });
-assert.strictEqual(context.getStarterRecoveryStatus(insufficient).label, "회수 보류(부족 1항목)");
+assert.strictEqual(context.getStarterRecoveryStatus(insufficient).label, "부분 회수 가능");
 assert.strictEqual(insufficient.point, recovery.points);
 assert.strictEqual(insufficient.bag["땅문서📜"], 19);
 

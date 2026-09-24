@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.564"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.565"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2697,7 +2697,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             if (starterRecoveryPlan.ready.length === 0) {
-                replier.reply("회수 가능한 인원이 없습니다. 잔액 부족 명단을 확인해 주세요.");
+                replier.reply("처리 가능한 인원이 없습니다. 데이터 오류 보류 명단을 확인해 주세요.");
                 return;
             }
             var starterRecoveredAt = formatDateTime(new Date());
@@ -2707,7 +2707,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
             }
             saveJsonFile(starterRecoveryData, filePath);
-            replier.reply("✅ 퀘스트 스타터 지급분 회수 완료: " + starterRecoveryPlan.ready.length + "명\n잔액 부족 보류: " + starterRecoveryPlan.blocked.length + "명\n친밀도·퀘스트 진행 기록은 유지했습니다. /스타터중복확인으로 결과를 확인해 주세요.");
+            replier.reply("✅ 퀘스트 스타터 지급분 처리 완료: " + starterRecoveryPlan.ready.length + "명\n전액 회수: " + starterRecoveryPlan.full.length + "명\n부분 회수: " + starterRecoveryPlan.partial.length + "명\n보유량 0: " + starterRecoveryPlan.empty.length + "명\n데이터 오류 보류: " + starterRecoveryPlan.invalid.length + "명\n친밀도·퀘스트 진행 기록은 유지했습니다. /스타터중복확인으로 결과를 확인해 주세요.");
             return;
         }
 
@@ -50324,30 +50324,50 @@ function applyAdventureStarterMemberRewards(data, user) {
     return true;
 }
 
-// 퀘스트 경로로 지급된 스타터팩의 전량 회수 가능 여부를 확인하는 함수
-function getAdventureStarterRecoveryStatus(member) {
-    var receipts = member && member.adventureQuest && member.adventureQuest.receipts;
-    if (!receipts || receipts.starterMemberRewards !== true) return { target: false, recovered: false, missing: [] };
-    if (receipts.starterMemberRewardsRecovered === true) return { target: true, recovered: true, missing: [] };
-    var starter = GLOBAL_CONFIG.adventureStarter;
-    var missing = [];
-    var points = Number(member.point); // 현재 보유 포인트
-    var boosters = Number(member.boostercnt); // 현재 보유 가호 횟수
-    if (!isFinite(points) || Math.floor(points) !== points || points < starter.points) missing.push("포인트 " + (isFinite(points) ? points : "값 이상") + "/" + starter.points);
-    if (!isFinite(boosters) || Math.floor(boosters) !== boosters || boosters < starter.boosters) missing.push("가호 " + (isFinite(boosters) ? boosters : "값 이상") + "/" + starter.boosters);
-    var bag = member.bag && typeof member.bag === "object" ? member.bag : {};
-    for (var i = 0; i < starter.items.length; i++) {
-        var item = starter.items[i];
-        var owned = Number(bag[item[0]]); // 해당 아이템의 현재 보유량
-        if (!isFinite(owned) || Math.floor(owned) !== owned || owned < item[1]) missing.push(item[0] + " " + (isFinite(owned) ? owned : "값 이상") + "/" + item[1]);
-    }
-    return { target: true, recovered: false, missing: missing };
+// 스타터 회수 시 없던 재화는 0으로, 비정상 수량은 처리 불가로 구분하는 함수
+function getAdventureStarterRecoverableCount(raw, maximum) {
+    if (raw === undefined || raw === null) return 0;
+    var value = Number(raw);
+    if (typeof raw === "boolean" || (typeof raw === "string" && !raw.trim()) || !isFinite(value) || Math.floor(value) !== value || value < 0 || value > 9007199254740991) return null;
+    return Math.min(value, maximum);
 }
 
-// 퀘스트 스타터 지급자 중 회수 가능·보류·완료 인원을 분류하는 함수
+// 퀘스트 경로 스타터팩의 남은 수량·부족분·데이터 오류를 확인하는 함수
+function getAdventureStarterRecoveryStatus(member) {
+    var receipts = member && member.adventureQuest && member.adventureQuest.receipts;
+    if (!receipts || receipts.starterMemberRewards !== true) return { target: false, recovered: false, missing: [], invalid: [] };
+    if (receipts.starterMemberRewardsRecovered === true) return { target: true, recovered: true, missing: [], invalid: [] };
+    var starter = GLOBAL_CONFIG.adventureStarter;
+    var missing = []; // 원래 지급량 대비 회수할 수 없는 항목
+    var invalid = []; // 음수·소수 등 데이터 오류 항목
+    var points = getAdventureStarterRecoverableCount(member.point, starter.points); // 실제 회수 가능한 포인트
+    var boosters = getAdventureStarterRecoverableCount(member.boostercnt, starter.boosters); // 실제 회수 가능한 가호
+    if (points === null) invalid.push("포인트");
+    else if (points < starter.points) missing.push("포인트 " + points + "/" + starter.points);
+    if (boosters === null) invalid.push("가호");
+    else if (boosters < starter.boosters) missing.push("가호 " + boosters + "/" + starter.boosters);
+    var bag = member.bag && typeof member.bag === "object" ? member.bag : {};
+    if (member.bag !== undefined && member.bag !== null && typeof member.bag !== "object") invalid.push("가방");
+    var items = {}; // 아이템별 실제 회수 가능한 수량
+    var recoveredKinds = (points || 0) > 0 ? 1 : 0; // 0개 회수 대상 구분용 항목 수
+    if ((boosters || 0) > 0) recoveredKinds++;
+    for (var i = 0; i < starter.items.length; i++) {
+        var item = starter.items[i];
+        var owned = getAdventureStarterRecoverableCount(bag[item[0]], item[1]); // 해당 아이템의 실제 회수 가능량
+        if (owned === null) invalid.push(item[0]);
+        else {
+            items[item[0]] = owned;
+            if (owned > 0) recoveredKinds++;
+            if (owned < item[1]) missing.push(item[0] + " " + owned + "/" + item[1]);
+        }
+    }
+    return { target: true, recovered: false, missing: missing, invalid: invalid, points: points, boosters: boosters, items: items, recoveredKinds: recoveredKinds };
+}
+
+// 퀘스트 스타터 지급자를 전액·부분·보유량 0·데이터 오류로 분류하는 함수
 function getAdventureStarterRecoveryPlan(members) {
     var names = Object.keys(members).sort();
-    var plan = { pending: [], ready: [], blocked: [], recovered: [] };
+    var plan = { pending: [], ready: [], full: [], partial: [], empty: [], invalid: [], recovered: [] };
     for (var i = 0; i < names.length; i++) {
         var status = getAdventureStarterRecoveryStatus(members[names[i]]);
         if (!status.target) continue;
@@ -50356,43 +50376,72 @@ function getAdventureStarterRecoveryPlan(members) {
             continue;
         }
         plan.pending.push(names[i]);
-        if (status.missing.length > 0) plan.blocked.push({ name: names[i], missing: status.missing });
-        else plan.ready.push(names[i]);
+        if (status.invalid.length > 0) {
+            plan.invalid.push({ name: names[i], invalid: status.invalid });
+            continue;
+        }
+        plan.ready.push(names[i]);
+        if (status.recoveredKinds === 0) plan.empty.push(names[i]);
+        else if (status.missing.length > 0) plan.partial.push({ name: names[i], missing: status.missing });
+        else plan.full.push(names[i]);
     }
     return plan;
 }
 
-// 회수 조건을 다시 검사한 후 스타터팩 지급분만 차감하고 중복 실행을 막는 함수
+// 남아 있는 스타터팩 지급분만 회수하고 실제 회수량·부족분을 기록하는 함수
 function applyAdventureStarterRecovery(member, recoveredAt) {
     var status = getAdventureStarterRecoveryStatus(member);
-    if (!status.target || status.recovered || status.missing.length > 0) return false;
+    if (!status.target || status.recovered || status.invalid.length > 0) return false;
     var starter = GLOBAL_CONFIG.adventureStarter;
-    member.point = Number(member.point) - starter.points;
-    member.boostercnt = Number(member.boostercnt) - starter.boosters;
+    var recoveredItems = {}; // 아이템별 실제 차감 수량
+    var missingItems = {}; // 아이템별 회수하지 못한 수량
+    if (status.points > 0) member.point = Number(member.point) - status.points;
+    if (status.boosters > 0) member.boostercnt = Number(member.boostercnt) - status.boosters;
     for (var i = 0; i < starter.items.length; i++) {
         var item = starter.items[i];
-        var remaining = Number(member.bag[item[0]]) - item[1];
-        if (remaining === 0) delete member.bag[item[0]];
-        else member.bag[item[0]] = remaining;
+        var count = status.items[item[0]]; // 이번 회수에서 차감할 해당 아이템 수량
+        if (count > 0) {
+            var remaining = Number(member.bag[item[0]]) - count;
+            if (remaining === 0) delete member.bag[item[0]];
+            else member.bag[item[0]] = remaining;
+            recoveredItems[item[0]] = count;
+        }
+        if (count < item[1]) missingItems[item[0]] = item[1] - count;
     }
     member.adventureQuest.receipts.starterMemberRewardsRecovered = true;
     member.adventureQuest.receipts.starterMemberRewardsRecoveredAt = recoveredAt;
+    member.adventureQuest.receipts.starterMemberRewardsRecovery = {
+        points: status.points,
+        boosters: status.boosters,
+        items: recoveredItems,
+        missingPoints: starter.points - status.points,
+        missingBoosters: starter.boosters - status.boosters,
+        missingItems: missingItems
+    };
     return true;
 }
 
-// 스타터팩 회수 대상과 보류 사유를 실행 전에 출력하는 함수
+// 스타터팩 회수 대상·부족분·데이터 오류를 실행 전에 출력하는 함수
 function buildAdventureStarterRecoveryPreviewMessages(plan) {
-    var messages = ["📋 퀘스트 스타터 지급분 회수 미리보기\n지급 기록: " + (plan.pending.length + plan.recovered.length) + "명\n미회수: " + plan.pending.length + "명\n회수 가능: " + plan.ready.length + "명\n잔액 부족 보류: " + plan.blocked.length + "명\n이미 회수: " + plan.recovered.length + "명\n※ 아이템 17종·300억 포인트·가호 1,000개만 회수하며, 친밀도·퀘스트 진행 기록은 유지합니다."];
+    var messages = ["📋 퀘스트 스타터 지급분 회수 미리보기\n지급 기록: " + (plan.pending.length + plan.recovered.length) + "명\n미회수: " + plan.pending.length + "명\n처리 가능: " + plan.ready.length + "명\n전액 회수: " + plan.full.length + "명\n부분 회수: " + plan.partial.length + "명\n보유량 0: " + plan.empty.length + "명\n데이터 오류 보류: " + plan.invalid.length + "명\n이미 회수: " + plan.recovered.length + "명\n※ 남아 있는 만큼만 회수하고 부족분은 기록합니다. 친밀도·퀘스트 진행 기록은 유지합니다."];
     for (var start = 0; start < plan.ready.length; start += 30) {
-        messages.push("✅ 회수 가능 명단\n" + allsee + "\n" + plan.ready.slice(start, start + 30).join("\n"));
+        messages.push("✅ 처리 가능 명단\n" + allsee + "\n" + plan.ready.slice(start, start + 30).join("\n"));
     }
-    for (var blockedStart = 0; blockedStart < plan.blocked.length; blockedStart += 10) {
-        var lines = [];
-        for (var i = blockedStart; i < Math.min(blockedStart + 10, plan.blocked.length); i++) {
-            var blocked = plan.blocked[i];
-            lines.push(blocked.name + " — 부족 " + blocked.missing.length + "항목: " + blocked.missing.slice(0, 3).join(", ") + (blocked.missing.length > 3 ? " 외" : ""));
+    for (var partialStart = 0; partialStart < plan.partial.length; partialStart += 10) {
+        var partialLines = [];
+        for (var partialIndex = partialStart; partialIndex < Math.min(partialStart + 10, plan.partial.length); partialIndex++) {
+            var partial = plan.partial[partialIndex];
+            partialLines.push(partial.name + " — 부족 " + partial.missing.length + "항목: " + partial.missing.slice(0, 3).join(", ") + (partial.missing.length > 3 ? " 외" : ""));
         }
-        messages.push("⚠️ 회수 보류 명단\n" + allsee + "\n" + lines.join("\n"));
+        messages.push("📦 부분 회수 예정\n" + allsee + "\n" + partialLines.join("\n"));
+    }
+    for (var blockedStart = 0; blockedStart < plan.invalid.length; blockedStart += 10) {
+        var lines = [];
+        for (var i = blockedStart; i < Math.min(blockedStart + 10, plan.invalid.length); i++) {
+            var blocked = plan.invalid[i];
+            lines.push(blocked.name + " — 비정상 수량: " + blocked.invalid.slice(0, 3).join(", ") + (blocked.invalid.length > 3 ? " 외" : ""));
+        }
+        messages.push("⚠️ 데이터 오류 보류 명단\n" + allsee + "\n" + lines.join("\n"));
     }
     if (plan.ready.length > 0) messages.push("대상과 수량을 확인한 뒤 팻 테스트방에서 정확히 입력해 주세요.\n/스타터중복회수 실행 " + plan.pending.length + " 확인");
     return messages;
