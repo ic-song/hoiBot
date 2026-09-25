@@ -46,6 +46,7 @@ const context = {
 vm.createContext(context);
 for (const name of [
     "getAdventureQuestState", "getAdventureQuestStageConfig", "recordAdventureQuestAction",
+    "isAdventureQuestHomeBadgeProduct",
     "recordAdventureQuestExploreSelection", "recordAdventureQuestExploreResult",
     "isAdventureQuestHomeAtMaximum", "prepareAdventureQuestStage",
     "getAdventureQuestCompletionCheck", "completeAdventureQuestStage",
@@ -197,6 +198,32 @@ const shopMessage = context.buildAdventureQuestIncompleteMessage(data, {}, {}, u
 assert(shopMessage.includes("인정 상품 구매 · 1/2개"));
 assert(!shopMessage.includes("[✅] 다이아상점 조회"));
 assert(!shopMessage.includes("👉 /다이아상점\n"));
+assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("홈뱃지뽑기🛡️[1]"), true);
+assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("홈뱃지 큐브💟 50개"), true, "다이아상점 14번 큐브 묶음 인정");
+assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("다른 큐브"), false);
+const badgePurchaseStart = main.indexOf("var diamondQuestState = getAdventureQuestState(data, sender, false);", main.indexOf('if (/^\\/다이아상점구매'));
+const badgePurchaseEnd = main.indexOf("saveJsonFile(data, filePath);", badgePurchaseStart);
+assert(badgePurchaseStart >= 0 && badgePurchaseEnd > badgePurchaseStart, "다이아상점 구매 기록 흐름 확인");
+vm.runInContext("function recordBadgePurchase() { " + main.slice(badgePurchaseStart, badgePurchaseEnd) + " }", context);
+context.matzangField = { shop: [
+    { name: "홈뱃지 큐브💟 50개", count: 1 },
+    { name: "홈뱃지뽑기🛡️[1]", count: 1 },
+    { name: "다른 상품", count: 1 }
+] };
+state.progress = { diamondShopViewed: true };
+context.buyItem = context.matzangField.shop[0];
+context.buyCount = 2;
+context.recordBadgePurchase();
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "14번 큐브 2개 구매 시 13단계 2/2 인정");
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true);
+state.progress = { diamondShopViewed: true };
+context.buyItem = context.matzangField.shop[2];
+context.recordBadgePurchase();
+assert.strictEqual(state.progress.diamondShopPurchase, undefined, "홈뱃지 상품 판매 중 다른 상품은 불인정");
+state.progress = {};
+context.buyItem = context.matzangField.shop[0];
+context.recordBadgePurchase();
+assert.strictEqual(state.progress.diamondShopPurchase, undefined, "상점 조회 전 구매는 불인정");
 assert.strictEqual(context.applyPercentWithExactFloor(100000, 0.005), 100005);
 assert.strictEqual(context.removePercentWithExactCeil(100005, 0.005), 100000);
 const totalsData = { member: { all: { exp: 0 } } };
