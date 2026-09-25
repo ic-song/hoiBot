@@ -31,6 +31,13 @@ const config = {
         stages: Array.from({ length: 16 }, (_, index) => ({ number: index + 1, title: "제목" + (index + 1), record: "기록" + (index + 1), objective: "목표", commands: index === 12 ? "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료" : index === 13 ? "/홈뱃지장착 [번호] → /홈뱃지큐브 [슬롯] [옵션] → /퀘스트완료" : "/퀘스트완료" }))
     },
     petSkill: { bookItemName: "스킬북📙" },
+    petHomeActivity: {
+        gachaItemName: "홈뱃지뽑기🛡️(/홈뱃지오픈)",
+        gacha2: { itemName: "홈뱃지뽑기🛡️[2](/홈뱃지오픈2)" },
+        gacha3: { itemName: "홈뱃지뽑기🛡️[3](/홈뱃지오픈3)" },
+        cube: { itemName: "홈뱃지 큐브💟" },
+        shopAliases: { gachaPrefix: "홈뱃지뽑기🛡️", gacha1: "홈뱃지뽑기🛡️[1]", gacha2: "홈뱃지뽑기🛡️[2]", gacha3: "홈뱃지뽑기🛡️[3]", cube50: "홈뱃지 큐브💟 50개", cube50Count: 50 }
+    },
     items: { diamondBoxName: "다이아상자💎" }
 };
 const context = {
@@ -46,7 +53,7 @@ const context = {
 vm.createContext(context);
 for (const name of [
     "getAdventureQuestState", "getAdventureQuestStageConfig", "recordAdventureQuestAction",
-    "isAdventureQuestHomeBadgeProduct",
+    "getDiamondShopGrantItem", "isAdventureQuestHomeBadgeProduct",
     "recordAdventureQuestExploreSelection", "recordAdventureQuestExploreResult",
     "isAdventureQuestHomeAtMaximum", "prepareAdventureQuestStage",
     "getAdventureQuestCompletionCheck", "completeAdventureQuestStage",
@@ -199,14 +206,21 @@ assert(shopMessage.includes("인정 상품 구매 · 1/2개"));
 assert(!shopMessage.includes("[✅] 다이아상점 조회"));
 assert(!shopMessage.includes("👉 /다이아상점\n"));
 assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("홈뱃지뽑기🛡️[1]"), true);
-assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("홈뱃지 큐브💟 50개"), true, "다이아상점 14번 큐브 묶음 인정");
+assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("홈뱃지뽑기🛡️[2](/홈뱃지오픈2)"), true, "실제 오픈 아이템명도 인정");
+assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("홈뱃지 큐브💟 50개"), false, "큐브는 13단계에서 제외");
 assert.strictEqual(context.isAdventureQuestHomeBadgeProduct("다른 큐브"), false);
+assert.strictEqual(context.getDiamondShopGrantItem({ name: "홈뱃지뽑기🛡️[1]", count: 1 }, 2).name, config.petHomeActivity.gachaItemName);
+assert.strictEqual(context.getDiamondShopGrantItem({ name: "홈뱃지뽑기🛡️[2]", count: 1 }, 2).name, config.petHomeActivity.gacha2.itemName);
+assert.strictEqual(context.getDiamondShopGrantItem({ name: "홈뱃지뽑기🛡️[3]", count: 1 }, 2).name, config.petHomeActivity.gacha3.itemName);
+const cubeGrant = context.getDiamondShopGrantItem({ name: "홈뱃지 큐브💟 50개", count: 1 }, 2);
+assert.strictEqual(cubeGrant.name, "홈뱃지 큐브💟");
+assert.strictEqual(cubeGrant.count, 100, "큐브 50개 묶음 2개 구매 시 사용 가능한 큐브 100개 지급");
 const badgePurchaseStart = main.indexOf("var diamondQuestState = getAdventureQuestState(data, sender, false);", main.indexOf('if (/^\\/다이아상점구매'));
 const badgePurchaseEnd = main.indexOf("saveJsonFile(data, filePath);", badgePurchaseStart);
 assert(badgePurchaseStart >= 0 && badgePurchaseEnd > badgePurchaseStart, "다이아상점 구매 기록 흐름 확인");
 vm.runInContext("function recordBadgePurchase() { " + main.slice(badgePurchaseStart, badgePurchaseEnd) + " }", context);
 context.matzangField = { shop: [
-    { name: "홈뱃지 큐브💟 50개", count: 50 },
+    { name: "홈뱃지 큐브💟 50개", count: 1 },
     { name: "홈뱃지뽑기🛡️[1]", count: 1 },
     { name: "다른 상품", count: 1 }
 ] };
@@ -214,22 +228,61 @@ state.progress = { diamondShopViewed: true };
 context.buyItem = context.matzangField.shop[0];
 context.buyCount = 1;
 context.recordBadgePurchase();
-assert.strictEqual(state.progress.diamondShopPurchase, 1, "큐브 50개 묶음 1회 구매는 진행도 1/2");
+assert.strictEqual(state.progress.diamondShopPurchase, undefined, "뽑기 판매 중 큐브 구매는 진행도 불인정");
+context.buyItem = context.matzangField.shop[1];
 context.recordBadgePurchase();
-assert.strictEqual(state.progress.diamondShopPurchase, 2, "14번 큐브 묶음 두 번 구매 시 13단계 2/2 인정");
+assert.strictEqual(state.progress.diamondShopPurchase, 1, "홈뱃지뽑기 1개 구매는 1/2");
+context.recordBadgePurchase();
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "홈뱃지뽑기 두 번 구매 시 13단계 2/2 인정");
 assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true);
 state.progress = { diamondShopViewed: true };
 context.buyCount = 2;
 context.recordBadgePurchase();
-assert.strictEqual(state.progress.diamondShopPurchase, 2, "한 번에 큐브 묶음 2개 구매도 2/2 인정");
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "한 번에 홈뱃지뽑기 2개 구매도 2/2 인정");
 state.progress = { diamondShopViewed: true };
 context.buyItem = context.matzangField.shop[2];
 context.recordBadgePurchase();
-assert.strictEqual(state.progress.diamondShopPurchase, undefined, "홈뱃지 상품 판매 중 다른 상품은 불인정");
+assert.strictEqual(state.progress.diamondShopPurchase, undefined, "홈뱃지뽑기 판매 중 다른 상품은 불인정");
 state.progress = {};
-context.buyItem = context.matzangField.shop[0];
+context.buyItem = context.matzangField.shop[1];
 context.recordBadgePurchase();
 assert.strictEqual(state.progress.diamondShopPurchase, undefined, "상점 조회 전 구매는 불인정");
+state.progress = { diamondShopViewed: true };
+context.matzangField.shop = [{ name: "다른 상품", count: 1 }];
+context.buyItem = context.matzangField.shop[0];
+context.recordBadgePurchase();
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "홈뱃지뽑기가 없으면 다른 상품 구매 인정");
+const shopBuyStart = main.indexOf('if (/^\\/다이아상점구매\\s+\\d+\\s+\\d+$/.test(msg)) {');
+const shopBuyEnd = main.indexOf('if (msg === "/다이아상점구매"', shopBuyStart);
+assert(shopBuyStart >= 0 && shopBuyEnd > shopBuyStart, "다이아상점 구매 명령 추출");
+vm.runInContext("function runDiamondShopPurchase() { " + main.slice(shopBuyStart, shopBuyEnd) + " }", context);
+context.matzangField.shop = [
+    { name: "홈뱃지 큐브💟 50개", count: 1, price: 90 },
+    { name: "홈뱃지뽑기🛡️[1]", count: 1, price: 9 },
+    { name: "다른 상품", count: 1, price: 1 }
+];
+context.ensureDiamondMemberData = () => {};
+context.addUsedDiamond = () => {};
+context.numberWithCommas = value => String(value);
+context.currencyLogData = {};
+context.currencyLogPath = "synthetic-currency-log.json";
+data.member[user].diamond = 1000;
+state.progress = { diamondShopViewed: true };
+const savesBeforePurchase = tierQuestSaves;
+context.msg = "/다이아상점구매 2 2";
+context.runDiamondShopPurchase();
+assert.strictEqual(inventory[config.petHomeActivity.gachaItemName], 2, "짧은 상점명으로 구매해도 실제 오픈 아이템 지급");
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "뽑기 구매 2개 인정");
+assert.strictEqual(tierQuestSaves - savesBeforePurchase, 2, "회원·다이아 사용 기록 각각 저장");
+const cubesBeforePurchase = inventory["홈뱃지 큐브💟"];
+context.msg = "/다이아상점구매 1 1";
+context.runDiamondShopPurchase();
+assert.strictEqual(inventory["홈뱃지 큐브💟"], cubesBeforePurchase + 50, "큐브 묶음 구매 시 사용 가능한 큐브 50개 지급");
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "뽑기 판매 중 큐브 구매는 13단계 추가 인정하지 않음");
+const savesBeforeInvalidPurchase = tierQuestSaves;
+context.msg = "/다이아상점구매 2 1 알려줘";
+context.runDiamondShopPurchase();
+assert.strictEqual(tierQuestSaves, savesBeforeInvalidPurchase, "유효 숫자 뒤 안내 문구가 붙으면 구매하지 않음");
 assert.strictEqual(context.applyPercentWithExactFloor(100000, 0.005), 100005);
 assert.strictEqual(context.removePercentWithExactCeil(100005, 0.005), 100000);
 const totalsData = { member: { all: { exp: 0 } } };

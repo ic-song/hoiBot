@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.570"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.571"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -1384,6 +1384,14 @@ const GLOBAL_CONFIG = {
             { id: "S13", emoji: "👑", name: "호패 프리미엄" }
         ],
         gachaItemName: "홈뱃지뽑기🛡️(/홈뱃지오픈)",
+        shopAliases: {
+            gachaPrefix: "홈뱃지뽑기🛡️",
+            gacha1: "홈뱃지뽑기🛡️[1]",
+            gacha2: "홈뱃지뽑기🛡️[2]",
+            gacha3: "홈뱃지뽑기🛡️[3]",
+            cube50: "홈뱃지 큐브💟 50개",
+            cube50Count: 50
+        },
         gachaMaxOpenCount: 100,
         gachaDuplicatePointReward: 100000000, // 중복 홈뱃지 1개당 즉시 지급 포인트
         gachaGradeRates: [
@@ -2139,7 +2147,7 @@ blockedNicknameTerms: [
             { number: 10, title: "집에 가구 들이기", objective: "가구 장착 후 실제 배치 1개 이상 유지", commands: "/가구장착 [번호] → /퀘스트완료", story: "넓어진 펫홈에 가구를 놓아 꾸밉니다.", npcStart: "집이 넓어졌으면 꾸며야지! 마음에 드는 가구를 하나 장착해봐. 내 자리는 남겨두고!", npcComplete: "가구 하나로 분위기가 달라졌지? 네 취향이 보이는 집이다냥.", record: "펫홈에 가구를 장착했다." },
             { number: 11, title: "미니펫 강화 입문", objective: "유효한 미니펫 강화 시도 1회", commands: "/미니펫강화 [가방번호] → /퀘스트완료", story: "미니펫 강화를 한 번 진행해 강화 과정을 익힙니다.", npcStart: "미니펫도 함께 강해져야 한다냥. 가방에서 강화할 친구를 골라 한 번 강화해봐!", npcComplete: "미니펫 강화 방법을 익혔네! 다음에도 대상부터 꼭 확인해라냥.", record: "미니펫 강화를 한 번 진행했다." },
             { number: 12, title: "펜던트 강화 입문", objective: "유효한 펜던트 강화 시도 1회", commands: "/펜던트강화 [번호] → 진행시켜 → /퀘스트완료", story: "펜던트 강화에 도전해 성공과 실패 과정을 경험합니다.", npcStart: "목에 건 펜던트도 든든한 힘이 된다냥. 강화할 펜던트를 확인하고 한 번 도전해봐!", npcComplete: "펜던트 강화도 해봤구나! 준비물을 확인하는 습관을 들여라냥.", record: "펜던트 강화를 한 번 진행했다." },
-            { number: 13, title: "홈뱃지 고르기", objective: "다이아상점 조회 후 인정 상품 2개 구매", commands: "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료", story: "다이아상점에서 사용할 상품을 준비합니다.", npcStart: "다이아상점에서 홈뱃지뽑기나 홈뱃지 큐브 묶음을 두 개 골라봐라냥. 둘 다 없다면 다른 상품 두 개를 사도 인정해줄게!", npcComplete: "상품을 준비했네! 다음엔 홈뱃지에 힘을 더하고 적용하는 법을 배우자.", record: "다이아상점에서 인정 상품 두 개를 구매했다." },
+            { number: 13, title: "홈뱃지 고르기", objective: "다이아상점 조회 후 인정 상품 2개 구매", commands: "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료", story: "다이아상점에서 사용할 상품을 준비합니다.", npcStart: "다이아상점에서 홈뱃지뽑기를 두 개 골라봐라냥. 뽑기 상품이 없다면 다른 상품 두 개를 사도 인정해줄게!", npcComplete: "상품을 준비했네! 다음엔 홈뱃지에 힘을 더하고 적용하는 법을 배우자.", record: "다이아상점에서 인정 상품 두 개를 구매했다." },
             { number: 14, title: "홈뱃지에 힘을 더하자", objective: "홈뱃지 큐브 실제 사용 1회 및 홈뱃지 장착 유지", commands: "/홈뱃지장착 [번호] → /홈뱃지큐브 [슬롯] [옵션] → /퀘스트완료", story: "호식이가 건넨 큐브로 장착한 홈뱃지의 힘을 키웁니다.", npcStart: "홈뱃지 큐브 100개를 챙겨줄게! 큐브를 사용하고 홈뱃지가 장착돼 효과를 주고 있는지도 확인해봐라냥.", npcComplete: "홈뱃지가 제대로 적용됐네! 준비한 보람이 있다냥.", record: "홈뱃지 큐브를 사용하고 홈뱃지를 적용했다." },
             { number: 15, title: "펫과 함께 한 단계 더", objective: "유효한 펫 강화 시도 1회", commands: "/펫강화 [횟수] → /퀘스트완료", story: "함께하는 펫의 강화를 한 번 진행합니다.", npcStart: "이번엔 네 곁을 지키는 펫 차례야. 펫 강화를 한 번 해보고 와. 도전하는 법을 배우는 거다냥!", npcComplete: "펫 강화까지 해냈네! 너와 펫이 함께 자라는 모습이 좋다냥.", record: "펫 강화를 한 번 진행했다." },
             { number: 16, title: "야, 너 친구 없지?", objective: "길드목록 정상 조회 1회", commands: "/길드목록 → /퀘스트완료", story: "함께할 동료를 찾을 수 있는 길드목록을 둘러봅니다.", npcStart: "야, 너 친구 없지? 😼 펫 친구 말고 같이 모험할 친구 말이야! /길드목록에서 둘러보고 와. 가입은 마음에 드는 곳을 찾은 다음에 해도 돼!", npcComplete: "함께할 동료들도 둘러봤구나. 광장 수업은 끝났어! Lv.17이 되면 첫 본편 의뢰로 모험을 이어가라냥.", record: "길드목록을 둘러보고 광장 튜토리얼을 마쳤다." }
@@ -4203,7 +4211,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 type: "구매",
                 memo: buyItem.name + "x" + numberWithCommas(buyItem.count * buyCount)
             });
-            addItem(data, sender, buyItem.name, buyItem.count * buyCount);
+            var boughtItem = getDiamondShopGrantItem(buyItem, buyCount);
+            addItem(data, sender, boughtItem.name, boughtItem.count);
             var diamondQuestState = getAdventureQuestState(data, sender, false);
             if (diamondQuestState && diamondQuestState.currentStage === 13 && diamondQuestState.progress.diamondShopViewed) {
                 var badgeProductOffered = false;
@@ -4214,7 +4223,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             saveJsonFile(data, filePath);
             saveJsonFile(currencyLogData, currencyLogPath);
-            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + buyItem.name + " " + numberWithCommas(buyItem.count * buyCount) + "개 구매 완료!\n잔여 다이아💎: " + numberWithCommas(data.member[sender].diamond) + "개");
+            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" + boughtItem.name + " " + numberWithCommas(boughtItem.count) + "개 구매 완료!\n잔여 다이아💎: " + numberWithCommas(data.member[sender].diamond) + "개");
             return;
         }
         if (msg === "/다이아상점구매" || msg.indexOf("/다이아상점구매 ") === 0) {
@@ -49999,10 +50008,25 @@ function getAdventureQuestStageConfig(stageNumber) {
     return index >= 0 && index < stages.length ? stages[index] : null;
 }
 
-// 다이아상점 상품이 구매 대상 홈뱃지인지 확인하는 함수
+// 다이아상점 표기 상품을 실제 사용 가능한 가방 아이템으로 변환하는 함수
+function getDiamondShopGrantItem(shopItem, purchaseCount) {
+    var aliases = GLOBAL_CONFIG.petHomeActivity.shopAliases;
+    var name = shopItem.name;
+    var count = shopItem.count * purchaseCount;
+    if (name === aliases.gacha1) name = GLOBAL_CONFIG.petHomeActivity.gachaItemName;
+    else if (name === aliases.gacha2) name = GLOBAL_CONFIG.petHomeActivity.gacha2.itemName;
+    else if (name === aliases.gacha3) name = GLOBAL_CONFIG.petHomeActivity.gacha3.itemName;
+    else if (name === aliases.cube50) {
+        name = GLOBAL_CONFIG.petHomeActivity.cube.itemName;
+        count *= aliases.cube50Count;
+    }
+    return { name: name, count: count };
+}
+
+// 다이아상점 상품이 13단계 대상 홈뱃지뽑기인지 확인하는 함수
 function isAdventureQuestHomeBadgeProduct(itemName) {
     var name = String(itemName || "");
-    return name.indexOf("홈뱃지") >= 0 && (name.indexOf("큐브") < 0 || name.indexOf("홈뱃지 큐브💟") === 0);
+    return name.indexOf(GLOBAL_CONFIG.petHomeActivity.shopAliases.gachaPrefix) === 0;
 }
 
 // 현재 단계에서 발생한 행동을 진행 상태에 기록하는 함수
