@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.568"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.569"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2133,7 +2133,7 @@ blockedNicknameTerms: [
             { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 15회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 15판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 15판을 마쳤다." },
             { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 15회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 15판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 15판을 마쳤다." },
             { number: 6, title: "첫 펫 탐험 떠나기", objective: "첫 탐험 결과 받기", commands: "/지도 → /탐 [번호] → 탐험 결과 받기 → /퀘스트완료", story: "지도를 펼쳐 첫 펫 탐험을 떠나고 결과를 받습니다.", npcStart: "이제 지도를 펼쳐 첫 모험을 떠나 보자냥!\n/지도에서 마음에 드는 탐험지를 살펴본 뒤,\n/탐 [번호]를 입력하면 출발할 수 있다냥.\n탐험에 실패해도 괜찮으니, 편하게 도전해 보라냥!", npcComplete: "첫 탐험을 다녀왔구나! 성공이든 실패든 경험을 쌓은 게 중요하다냥.", record: "펫과 함께 첫 탐험을 다녀와 결과를 받았다." },
-            { number: 7, title: "든든하게 먹고 출발", objective: "펫먹이 100,000개를 한 번에 사용", commands: "/냠냠 100000 → /퀘스트완료", story: "호식이가 준비한 먹이로 펫의 배를 든든히 채웁니다.", npcStart: "배가 든든해야 모험도 신나지! 펫먹이 10만 개를 챙겨줄 테니 네 친구에게 먹여봐라냥!", npcComplete: "아주 잘 먹었다냥! 배도 든든해졌으니 다음 준비를 시작해 보자냥!", record: "펫에게 먹이 10만 개를 먹였다." },
+            { number: 7, title: "든든하게 먹고 출발", objective: "펫먹이 100,000개 이상을 한 번에 사용", commands: "/냠냠 100000 → /퀘스트완료", story: "호식이가 준비한 먹이로 펫의 배를 든든히 채웁니다.", npcStart: "배가 든든해야 모험도 신나지! 펫먹이 10만 개를 챙겨줄 테니 네 친구에게 한 번에 10만 개 이상 먹여봐라냥!", npcComplete: "아주 잘 먹었다냥! 배도 든든해졌으니 다음 준비를 시작해 보자냥!", record: "펫에게 먹이 10만 개 이상을 한 번에 먹였다." },
             { number: 8, title: "첫 펫스킬 익히기", objective: "스킬북 1개 오픈 후 유효한 펫스킬 장착", commands: "/펫스킬오픈 1 → /펫스킬장착 [번호] → /퀘스트완료", story: "스킬북을 열고 배운 펫스킬을 실제로 장착합니다.", npcStart: "스킬북 속에 어떤 기술이 숨어 있을까? 한 권 열어보고 펫스킬을 장착해봐. 읽기만 해선 쓸 수 없다냥!", npcComplete: "스킬이 제대로 장착됐네! 이제 배운 기술을 써볼 수 있겠다냥.", record: "스킬북을 열어 펫스킬을 장착했다." },
             { number: 9, title: "우리 집을 넓혀보자", objective: "퀘스트 시작 당시보다 펫홈 평수 늘리기", commands: "/집짓기 → 집뚝딱 → /퀘스트완료", story: "펫과 함께 지낼 집의 평수를 넓힙니다.", npcStart: "모험을 마치고 쉴 집도 필요하지! 재료 상점에서 준비물을 살펴보고, 지금보다 집을 넓혀와라냥.", npcComplete: "집이 더 넓어졌네! 함께 지낼 공간을 네 손으로 키웠다냥.", record: "펫홈의 평수를 늘렸다." },
             { number: 10, title: "집에 가구 들이기", objective: "가구 장착 후 실제 배치 1개 이상 유지", commands: "/가구장착 [번호] → /퀘스트완료", story: "넓어진 펫홈에 가구를 놓아 꾸밉니다.", npcStart: "집이 넓어졌으면 꾸며야지! 마음에 드는 가구를 하나 장착해봐. 내 자리는 남겨두고!", npcComplete: "가구 하나로 분위기가 달라졌지? 네 취향이 보이는 집이다냥.", record: "펫홈에 가구를 장착했다." },
@@ -25555,7 +25555,7 @@ replier.reply(
                         return;
                     }
                     var restoredLockedSkillCount = result.levelUps > 0 ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 친밀도 슬롯 증가로 다시 활성화된 잠금 스킬 수
-                    if (feedCount === 100000) recordAdventureQuestAction(data, sender, 7, "feed100000", 0);
+                    if (feedCount >= 100000) recordAdventureQuestAction(data, sender, 7, "feed100000", 0);
 
                     // UI
                     var out = "";
@@ -50074,7 +50074,7 @@ function getAdventureQuestCompletionCheck(data, petData, petSkillData, homeData,
     if (stage === 4) return { complete: (p.castleBattle || 0) >= 15, remaining: "캐슬대전 " + Math.max(0, 15 - (p.castleBattle || 0)) + "회가 남았습니다." };
     if (stage === 5) return { complete: (p.trialTower || 0) >= 15, remaining: "시련의탑 " + Math.max(0, 15 - (p.trialTower || 0)) + "회가 남았습니다." };
     if (stage === 6) return { complete: !!p.mapViewed && !!p.exploreSelected && !!p.exploreResult, remaining: !p.mapViewed ? "/지도를 열어 탐험지를 살펴봐 주세요." : !p.exploreSelected ? "/탐 [번호]로 이용 가능한 탐험지를 지정해 주세요." : "지정한 탐험지의 정산 결과를 기다려 주세요. 성공과 실패 모두 인정해요." };
-    if (stage === 7) return { complete: !!p.feed100000, remaining: "/냠냠 100000으로 먹이 10만 개를 한 번에 사용해 주세요." };
+    if (stage === 7) return { complete: !!p.feed100000, remaining: "/냠냠 [수량]으로 먹이 10만 개 이상을 한 번에 사용해 주세요. (예: /냠냠 100000)" };
     if (stage === 8) {
         var skillStore = petSkillData && petSkillData[user] ? petSkillData[user].petSkills : null;
         return { complete: !!p.skillBookOpened && !!p.skillEquipped && !!(skillStore && skillStore.equipped && skillStore.equipped.length > 0), remaining: "스킬북 1개를 실제로 열고 유효한 펫스킬을 장착해 주세요." };
@@ -50152,7 +50152,7 @@ function getAdventureQuestGoalLines(state, check, onlyIncomplete) {
         ];
         return onlyIncomplete ? exploreLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : exploreLines;
     }
-    if (stage === 7) return [(p.feed100000 ? "[✅] " : "[⬜] ") + "펫먹이 100,000개 사용 · " + (p.feed100000 ? "1" : "0") + "/1회"];
+    if (stage === 7) return [(p.feed100000 ? "[✅] " : "[⬜] ") + "펫먹이 100,000개 이상 한 번에 사용 · " + (p.feed100000 ? "1" : "0") + "/1회"];
     if (stage === 8) {
         var skillLines = [(p.skillBookOpened ? "[✅] " : "[⬜] ") + "스킬북 1개 오픈", (check.complete ? "[✅] " : "[⬜] ") + "유효한 펫스킬 장착·유지"];
         return onlyIncomplete ? skillLines.filter(function(line) { return line.indexOf("[⬜]") === 0; }) : skillLines;
