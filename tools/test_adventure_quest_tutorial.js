@@ -206,16 +206,22 @@ const badgePurchaseEnd = main.indexOf("saveJsonFile(data, filePath);", badgePurc
 assert(badgePurchaseStart >= 0 && badgePurchaseEnd > badgePurchaseStart, "다이아상점 구매 기록 흐름 확인");
 vm.runInContext("function recordBadgePurchase() { " + main.slice(badgePurchaseStart, badgePurchaseEnd) + " }", context);
 context.matzangField = { shop: [
-    { name: "홈뱃지 큐브💟 50개", count: 1 },
+    { name: "홈뱃지 큐브💟 50개", count: 50 },
     { name: "홈뱃지뽑기🛡️[1]", count: 1 },
     { name: "다른 상품", count: 1 }
 ] };
 state.progress = { diamondShopViewed: true };
 context.buyItem = context.matzangField.shop[0];
+context.buyCount = 1;
+context.recordBadgePurchase();
+assert.strictEqual(state.progress.diamondShopPurchase, 1, "큐브 50개 묶음 1회 구매는 진행도 1/2");
+context.recordBadgePurchase();
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "14번 큐브 묶음 두 번 구매 시 13단계 2/2 인정");
+assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true);
+state.progress = { diamondShopViewed: true };
 context.buyCount = 2;
 context.recordBadgePurchase();
-assert.strictEqual(state.progress.diamondShopPurchase, 2, "14번 큐브 2개 구매 시 13단계 2/2 인정");
-assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true);
+assert.strictEqual(state.progress.diamondShopPurchase, 2, "한 번에 큐브 묶음 2개 구매도 2/2 인정");
 state.progress = { diamondShopViewed: true };
 context.buyItem = context.matzangField.shop[2];
 context.recordBadgePurchase();
