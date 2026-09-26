@@ -56563,7 +56563,7 @@ function buildGuildRankRewardPayoutMessage(payoutResult) {
         }
 
         if (i === 4 && rows.length > 5) {
-            lines.push("6등~20등 보상 확인하기.. // + alllsee");
+            lines.push("6등~20등 보상 확인하기..");
             lines.push(allsee);
         }
 
