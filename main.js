@@ -43908,7 +43908,6 @@ function generateRanking(data, petData, guildData, currentUser) {
         if (rowIndex < 5) rankingMsg1 += formatLevelRankRow(rows[rowIndex]);
         else rankingMsg2 += formatLevelRankRow(rows[rowIndex]);
     }
-    if (rankingMsg2) rankingMsg1 += "\n6위부터 ";
     return { rankingMsg1: rankingMsg1, rankingMsg2: rankingMsg2, rows: rows };
 }
 
