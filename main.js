@@ -105,6 +105,7 @@ const PET_SKILL_LIST = [
 
     { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
+    { name: "베란다 대확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 대확장해 장착할 수 있는 가구를 6개 늘려줍니다.\n베란다 확장📙의 3칸과 중복 적용됩니다.\n펫스킬을 소멸하면 추가된 가구 슬롯이 회수되며, 한도를 초과한 하단 가구는 가구가방으로 돌아갑니다.\n※ /펫스킬오픈으로 획득 불가" },
     { name: "전설의 소매치기", grade: "한정판", limitedEdition: true, openable: false, effect: "/슈킹 아이디 입력 시 50% 확률로 해당 유저의 포인트 🅟1,000,000을 슈킹합니다.\n하루 2회까지 시도할 수 있으며, 동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n실패해도 일일 시도 횟수는 차감되며 포인트는 차감되지 않습니다.\n펫스킬을 해제하면 /슈킹을 사용할 수 없습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "광산에서 재벌까지", grade: "한정판", limitedEdition: true, openable: false, showUnopenableRate: true, effect: "하루 10회 [/재벌도전]을 사용할 수 있습니다.\n10% 확률로 다이아상자💎 1개를 획득합니다.\n0.1% 확률로 로또에 당첨되면 다이아상자💎 30개를 획득합니다.\n※ 결과와 관계없이 사용 횟수가 1회 차감됩니다." },
     { name: "입찰의 귀재", grade: "한정판", limitedEdition: true, openable: false, effect: "호이상점 /입찰 시 입찰 포인트가 10% 할인됩니다.\n\n※ 펫스킬 해제 시 효과도 함께 회수됩니다." },
@@ -1890,6 +1891,9 @@ blockedNicknameTerms: [
         oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
         unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
         verandaFurnitureSlotBonus: 3,
+        largeVerandaItemName: "베란다 대확장📙(/베란다오픈)",
+        largeVerandaSkillName: "베란다 대확장",
+        largeVerandaFurnitureSlotBonus: 6,
         prayer: {
             rewardItemName: "주간상자🌼",
             dailyFlagKey: "isGidoFlag",
@@ -5018,6 +5022,27 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if (msg === "/베란다오픈") {
+                    if (!petData[sender] || !petData[sender].petname) {
+                        replier.reply("펫이 없습니다.");
+                        return;
+                    }
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.petSkill.largeVerandaItemName, 1)) {
+                        replier.reply("❌ " + GLOBAL_CONFIG.petSkill.largeVerandaItemName + " 아이템이 필요합니다.");
+                        return;
+                    }
+                    if (getPetSkillBagRemainCount(petSkillData, sender) < 1) {
+                        replier.reply("❌ 스킬가방 공간이 부족합니다. 스킬가방을 정리한 뒤 다시 시도해주세요.");
+                        return;
+                    }
+                    addPetSkillToBag(petSkillData, sender, GLOBAL_CONFIG.petSkill.largeVerandaSkillName, 1);
+                    removeItem(data, sender, GLOBAL_CONFIG.petSkill.largeVerandaItemName, 1);
+                    saveJsonFile(data, filePath);
+                    saveJsonFile(petSkillData, petSkillDataPath);
+                    replier.reply("✅ 베란다 대확장📙[한정판]을 획득했습니다!\n/펫스킬가방에서 확인하고 /펫스킬장착 [번호]로 장착해주세요.");
+                    return;
+                }
+
                 if (
                     msg === "/펫스킬오픈" ||
                     /^\/펫스킬오픈\s+\d+$/.test(msg)
@@ -5138,7 +5163,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var verandaEquipBeforeSlots = 0;
-                    if (normalizePetSkillName(equipName) === "베란다 확장") {
+                    var verandaEquipBonus = getVerandaFurnitureSlotBonus(equipName);
+                    if (verandaEquipBonus > 0) {
                         var verandaEquipHomeData = loadJsonFile(homeDataFile);
                         verandaEquipHomeData = initSweetHomeUser(verandaEquipHomeData, sender);
                         verandaEquipBeforeSlots = getFurnitureMaxSlots(data, petData, sender, verandaEquipHomeData[sender].floor || 0, petSkillData);
@@ -5177,14 +5203,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             equipMsg += "\n(로열 루미에르 배치: " + royalCount + "/10)";
                         }
                     }
-                    if (normalizePetSkillName(equipName) === "베란다 확장") {
-                        var verandaEquipAfterSlots = verandaEquipBeforeSlots + GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus;
+                    if (verandaEquipBonus > 0) {
+                        var verandaEquipAfterSlots = verandaEquipBeforeSlots + verandaEquipBonus;
                         equipMsg = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 펫스킬북 장착📙\n" +
                             "━━━━━━━━━━━━━\n" +
-                            "🪟 베란다 확장 공사가 완료되었습니다!\n" +
-                            "가구 장착 가능 수: " + verandaEquipBeforeSlots + "개 → " + verandaEquipAfterSlots + "개(⬆️+" + GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus + ")\n" +
+                            "🪟 " + normalizePetSkillName(equipName) + " 공사가 완료되었습니다!\n" +
+                            "가구 장착 가능 수: " + verandaEquipBeforeSlots + "개 → " + verandaEquipAfterSlots + "개(⬆️+" + verandaEquipBonus + ")\n" +
                             "━━━━━━━━━━━━━\n" +
-                            "베란다 확장📙 햇살도 공간도 넉넉해졌습니다.🏡";
+                            formatPetSkillName(equipName) + " 햇살도 공간도 넉넉해졌습니다.🏡";
                     } else if (normalizePetSkillName(equipName) === "전설의 소매치기") {
                         equipMsg = "🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 펫스킬북 장착📙\n" +
                             "━━━━━━━━━━━━━\n" +
@@ -5220,11 +5246,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
 
                     var unequipName = unequipStore.equipped[unequipIndex - 1];
+                    var verandaUnequipBonus = getVerandaFurnitureSlotBonus(unequipName);
                     var verandaUnequipHomeData = null;
                     var verandaUnequipPlacedData = null;
                     var verandaUnequipPlacedFileExists = false;
-                    var verandaUnequipReleaseCount = 0; // 베란다 확장 해제 후 가구가방으로 회수할 수량
-                    if (normalizePetSkillName(unequipName) === "베란다 확장") {
+                    var verandaUnequipReleaseCount = 0; // 확장 스킬 해제 후 가구가방으로 회수할 수량
+                    if (verandaUnequipBonus > 0) {
                         verandaUnequipHomeData = loadJsonFile(homeDataFile);
                         verandaUnequipPlacedFileExists = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
                         if (!verandaUnequipPlacedFileExists && !canCreatePlacedFurnitureData(verandaUnequipHomeData)) {
@@ -5237,11 +5264,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         if (!Array.isArray(verandaUnequipUserHome.furnitureBag)) verandaUnequipUserHome.furnitureBag = [];
                         var verandaUnequipPlacedList = verandaUnequipPlacedData ? ensurePlacedFurnitureUser(verandaUnequipPlacedData, sender) : getPlacedFurnitureList(verandaUnequipHomeData, null, sender);
                         var verandaUnequipCurrentMax = getFurnitureMaxSlots(data, petData, sender, verandaUnequipUserHome.floor || 0, petSkillData); // 스킬 장착 중인 현재 한도
-                        var verandaUnequipAfterMax = Math.max(0, verandaUnequipCurrentMax - GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus); // 스킬 해제 후 한도
+                        var verandaUnequipAfterMax = Math.max(0, verandaUnequipCurrentMax - verandaUnequipBonus); // 스킬 해제 후 한도
                         verandaUnequipReleaseCount = Math.max(0, verandaUnequipPlacedList.length - verandaUnequipAfterMax);
                         var verandaUnequipBagLimit = getFurnitureBagLimit(data, sender);
                         if (verandaUnequipUserHome.furnitureBag.length + verandaUnequipReleaseCount > verandaUnequipBagLimit) {
-                            replier.reply("❌ 가구가방 공간이 부족하여 베란다 확장📙을 소멸할 수 없습니다.\n필요 공간: " + verandaUnequipReleaseCount + "칸\n남은 공간: " + Math.max(0, verandaUnequipBagLimit - verandaUnequipUserHome.furnitureBag.length) + "칸");
+                            replier.reply("❌ 가구가방 공간이 부족하여 " + formatPetSkillName(unequipName) + "을 소멸할 수 없습니다.\n필요 공간: " + verandaUnequipReleaseCount + "칸\n남은 공간: " + Math.max(0, verandaUnequipBagLimit - verandaUnequipUserHome.furnitureBag.length) + "칸");
                             return;
                         }
                     }
@@ -5249,11 +5276,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     unequipStore.equipped.splice(unequipIndex - 1, 1);
                     removeItem(data, sender, GLOBAL_CONFIG.petSkill.unbindItemName, 1);
                     var verandaUnequipReleasedItems = [];
-                    if (normalizePetSkillName(unequipName) === "베란다 확장" && verandaUnequipReleaseCount > 0) {
+                    if (verandaUnequipBonus > 0 && verandaUnequipReleaseCount > 0) {
                         verandaUnequipReleasedItems = releaseVerandaExpansionFurniture(verandaUnequipHomeData, verandaUnequipPlacedData, sender, verandaUnequipReleaseCount);
                     }
                     saveJsonFile(petSkillData, petSkillDataPath);
-                    if (normalizePetSkillName(unequipName) === "베란다 확장") {
+                    if (verandaUnequipBonus > 0) {
                         if (verandaUnequipPlacedFileExists) saveJsonFile(verandaUnequipPlacedData, petHomePlacedFurniturePath);
                         saveJsonFile(verandaUnequipHomeData, homeDataFile);
                     }
@@ -48837,7 +48864,15 @@ function getPetSweetHomeRanking(homeData, data, petData, guildData) {
     };
 }
 //
-// 평수 → 배치 가능 수
+// 베란다 확장 스킬별 가구 슬롯 보너스를 반환하는 함수
+function getVerandaFurnitureSlotBonus(skillName) {
+    skillName = normalizePetSkillName(skillName);
+    if (skillName === "베란다 확장") return GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus;
+    if (skillName === GLOBAL_CONFIG.petSkill.largeVerandaSkillName) return GLOBAL_CONFIG.petSkill.largeVerandaFurnitureSlotBonus;
+    return 0;
+}
+
+// 평수와 장착 효과를 합산해 가구 배치 가능 수를 계산하는 함수
 function getFurnitureMaxSlots(data, petData, userName, floor, petSkillData) {
     floor = parseInt(floor, 10);
     if (isNaN(floor) || floor < 0) floor = 0;
@@ -48860,6 +48895,7 @@ function getFurnitureMaxSlots(data, petData, userName, floor, petSkillData) {
         else if (hasPetSkill(petSkillData, userName, "하느님 위에 갓물주")) slotSize += 15;
     }
     if (hasPetSkill(petSkillData, userName, "베란다 확장")) slotSize += GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus;
+    if (hasPetSkill(petSkillData, userName, GLOBAL_CONFIG.petSkill.largeVerandaSkillName)) slotSize += GLOBAL_CONFIG.petSkill.largeVerandaFurnitureSlotBonus;
     if (isHoiPassPremiumActive(data, userName)) slotSize += GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount;
 
     return slotSize;
