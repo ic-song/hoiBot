@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 
-const source = fs.readFileSync(path.join(__dirname, "..", "main.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "..", "main.js"), "utf8").replace(/\r\n/g, "\n");
 const user = "테스터";
 const itemName = "베란다 대확장📙(/베란다오픈)";
 const unbindName = "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)";

@@ -3,7 +3,7 @@ const path = require("path");
 const vm = require("vm");
 const assert = require("assert");
 
-const source = fs.readFileSync(path.join(__dirname, "..", "main.js"), "utf8");
+const source = fs.readFileSync(path.join(__dirname, "..", "main.js"), "utf8").replace(/\r\n/g, "\n");
 
 function extractFunction(name) {
     const start = source.indexOf("function " + name + "(");
