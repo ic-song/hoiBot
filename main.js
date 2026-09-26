@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.572"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.573"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -43908,7 +43908,6 @@ function generateRanking(data, petData, guildData, currentUser) {
         if (rowIndex < 5) rankingMsg1 += formatLevelRankRow(rows[rowIndex]);
         else rankingMsg2 += formatLevelRankRow(rows[rowIndex]);
     }
-    if (rankingMsg2) rankingMsg1 += "\n6위부터 ";
     return { rankingMsg1: rankingMsg1, rankingMsg2: rankingMsg2, rows: rows };
 }
 
@@ -56563,7 +56562,7 @@ function buildGuildRankRewardPayoutMessage(payoutResult) {
         }
 
         if (i === 4 && rows.length > 5) {
-            lines.push("6등~20등 보상 확인하기.. // + alllsee");
+            lines.push("6등~20등 보상 확인하기..");
             lines.push(allsee);
         }
 
