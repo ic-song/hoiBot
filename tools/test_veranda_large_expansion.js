@@ -76,6 +76,14 @@ assert(openBlock.includes("saveJsonFile(data, filePath)") && openBlock.includes(
 assert(openBlock.indexOf("getPetSkillBagRemainCount") < openBlock.indexOf("removeItem(data, sender"), "가방 검사 전에 아이템 소비");
 assert(source.includes('{ name: "베란다 대확장", grade: "한정판", limitedEdition: true, openable: false'));
 assert(!source.includes('msg.startsWith("/베란다오픈")'));
+const unequipStart = source.indexOf('if (/^\\/펫스킬소멸\\s+\\d+$/.test(msg))');
+const unequipEnd = source.indexOf('if (msg === "/슈킹")', unequipStart);
+const unequipBlock = source.slice(unequipStart, unequipEnd);
+assert(unequipStart >= 0 && unequipEnd > unequipStart);
+assert(unequipBlock.includes("saveJsonFile(verandaUnequipPlacedData, petHomePlacedFurniturePath, false, verandaUnequipPlacedSnapshot)"));
+assert(unequipBlock.includes("saveJsonFile(verandaUnequipHomeData, homeDataFile, false, verandaUnequipHomeSnapshot)"));
+assert(unequipBlock.indexOf("verandaUnequipHomeSnapshot = JSON.stringify") < unequipBlock.indexOf("releaseVerandaExpansionFurniture"));
+assert(unequipBlock.indexOf("verandaUnequipPlacedSnapshot = JSON.stringify") < unequipBlock.indexOf("releaseVerandaExpansionFurniture"));
 
 const command = '(function () { ' + openBlock + ' })()';
 const replies = [];
@@ -117,5 +125,80 @@ context.data.member[user].bag[context.GLOBAL_CONFIG.petSkill.largeVerandaItemNam
 vm.runInContext(command, context);
 assert.strictEqual(context.data.member[user].bag[context.GLOBAL_CONFIG.petSkill.largeVerandaItemName], 1, "접미 텍스트 입력 시 명령 무시");
 assert.strictEqual(saves.length, 0);
+
+const fileNames = ["skills.json", "placed.json", "home.json", "member.json"];
+const originalFiles = {
+    "skills.json": JSON.stringify({ equipped: ["베란다 대확장"] }),
+    "placed.json": JSON.stringify({ [user]: [{ id: "가구1" }] }),
+    "home.json": JSON.stringify({ [user]: { furnitureBag: [] } }),
+    "member.json": JSON.stringify({ [user]: { unbindTicket: 1 } })
+};
+let disk = {};
+let backup = {};
+let failOnceAt = null;
+const threadLocal = {
+    value: null,
+    get() { return this.value; },
+    set(value) { this.value = value; },
+    remove() { this.value = null; }
+};
+const transactionContext = {
+    dataSaveTransactionThreadLocal: threadLocal,
+    dataTransactionLock: { lock() {}, unlock() {} },
+    resolveActiveDataPath: value => value,
+    getAutoDailyBatchContext: () => null,
+    getManagedJsonBackupPath: value => value === "skills.json" || value === "member.json" ? value + ".bak" : null,
+    isProtectedManagedJsonPath: value => value === "skills.json" || value === "member.json",
+    ensureParentFolder: () => {},
+    debuggerLog: () => {},
+    FileStream: { write: () => { throw new Error("스냅샷 저장이 직접 쓰기로 빠짐"); } },
+    writeVerifiedJsonFile: (file, text, skipBackup) => {
+        if (failOnceAt === file) {
+            failOnceAt = null;
+            throw new Error("저장 실패 모의: " + file);
+        }
+        JSON.parse(text);
+        if (!skipBackup && (file === "skills.json" || file === "member.json")) backup[file] = disk[file];
+        disk[file] = text;
+    },
+    restoreManagedJsonFromBackup: file => {
+        if (!backup[file]) return null;
+        disk[file] = backup[file];
+        return { data: JSON.parse(backup[file]) };
+    }
+};
+vm.createContext(transactionContext);
+[
+    "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction",
+    "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "saveJsonFile"
+].forEach(name => vm.runInContext(extractFunction(name), transactionContext));
+
+function saveRemovalFiles() {
+    transactionContext.beginDataSaveTransaction();
+    try {
+        transactionContext.saveJsonFile({ equipped: [] }, "skills.json");
+        transactionContext.saveJsonFile({ [user]: [] }, "placed.json", false, originalFiles["placed.json"]);
+        transactionContext.saveJsonFile({ [user]: { furnitureBag: [{ id: "가구1" }] } }, "home.json", false, originalFiles["home.json"]);
+        transactionContext.saveJsonFile({ [user]: { unbindTicket: 0 } }, "member.json");
+    } finally {
+        transactionContext.endDataSaveTransaction();
+    }
+}
+
+for (const failingFile of fileNames) {
+    disk = Object.assign({}, originalFiles);
+    backup = {};
+    failOnceAt = failingFile;
+    assert.throws(saveRemovalFiles, /저장 실패 모의/);
+    assert.deepStrictEqual(disk, originalFiles, failingFile + " 실패 후 가구·스킬·소멸권 복구 실패");
+}
+disk = Object.assign({}, originalFiles);
+backup = {};
+saveRemovalFiles();
+assert.notDeepStrictEqual(disk, originalFiles, "정상 저장 시 변경 미반영");
+assert.strictEqual(JSON.parse(disk["placed.json"])[user].length, 0);
+assert.strictEqual(JSON.parse(disk["home.json"])[user].furnitureBag.length, 1);
+assert.strictEqual(JSON.parse(disk["skills.json"]).equipped.length, 0);
+assert.strictEqual(JSON.parse(disk["member.json"])[user].unbindTicket, 0);
 
 console.log("베란다 대확장 모의 검증 통과");

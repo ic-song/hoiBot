@@ -5249,16 +5249,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var verandaUnequipBonus = getVerandaFurnitureSlotBonus(unequipName);
                     var verandaUnequipHomeData = null;
                     var verandaUnequipPlacedData = null;
+                    var verandaUnequipHomeSnapshot = null;
+                    var verandaUnequipPlacedSnapshot = null;
                     var verandaUnequipPlacedFileExists = false;
                     var verandaUnequipReleaseCount = 0; // 확장 스킬 해제 후 가구가방으로 회수할 수량
                     if (verandaUnequipBonus > 0) {
                         verandaUnequipHomeData = loadJsonFile(homeDataFile);
+                        verandaUnequipHomeSnapshot = JSON.stringify(verandaUnequipHomeData); // 소멸 전 펫홈 상태
                         verandaUnequipPlacedFileExists = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
                         if (!verandaUnequipPlacedFileExists && !canCreatePlacedFurnitureData(verandaUnequipHomeData)) {
                             replier.reply("❌ 장착 가구 상세 파일 확인이 필요합니다. 관리자에게 문의해주세요.");
                             return;
                         }
                         verandaUnequipPlacedData = verandaUnequipPlacedFileExists ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                        if (verandaUnequipPlacedFileExists) verandaUnequipPlacedSnapshot = JSON.stringify(verandaUnequipPlacedData); // 소멸 전 장착 가구 상태
                         verandaUnequipHomeData = initSweetHomeUser(verandaUnequipHomeData, sender);
                         var verandaUnequipUserHome = verandaUnequipHomeData[sender];
                         if (!Array.isArray(verandaUnequipUserHome.furnitureBag)) verandaUnequipUserHome.furnitureBag = [];
@@ -5281,8 +5285,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     saveJsonFile(petSkillData, petSkillDataPath);
                     if (verandaUnequipBonus > 0) {
-                        if (verandaUnequipPlacedFileExists) saveJsonFile(verandaUnequipPlacedData, petHomePlacedFurniturePath);
-                        saveJsonFile(verandaUnequipHomeData, homeDataFile);
+                        if (verandaUnequipPlacedFileExists) saveJsonFile(verandaUnequipPlacedData, petHomePlacedFurniturePath, false, verandaUnequipPlacedSnapshot);
+                        saveJsonFile(verandaUnequipHomeData, homeDataFile, false, verandaUnequipHomeSnapshot);
                     }
                     saveJsonFile(data, filePath);
                     replier.reply("✅ " + formatPetSkillName(unequipName) + " 소멸 완료!" + (verandaUnequipReleasedItems.length > 0 ? "\n가장 하단의 가구 " + verandaUnequipReleasedItems.length + "개를 가구가방으로 회수했습니다." : ""));
@@ -32018,18 +32022,19 @@ function endDataSaveTransaction() {
     if (transaction.depth <= 0) dataSaveTransactionThreadLocal.remove();
 }
 
-// 관리 JSON의 명령 실행 전 백업을 트랜잭션에 최초 한 번만 등록하는 함수
-function prepareManagedJsonTransactionEntry(path, skipManagedBackup) {
+// 관리 JSON 백업 또는 명령 전 스냅샷을 트랜잭션에 최초 한 번만 등록하는 함수
+function prepareManagedJsonTransactionEntry(path, skipManagedBackup, rollbackSnapshotText) {
     var transaction = getDataSaveTransaction();
     var backupPath = getManagedJsonBackupPath(path);
-    if (!transaction || !backupPath || skipManagedBackup === true || transaction.rollingBack) {
+    var hasSnapshot = typeof rollbackSnapshotText === "string";
+    if (!transaction || (!backupPath && !hasSnapshot) || skipManagedBackup === true || transaction.rollingBack) {
         return { entry: null, skipManagedBackup: skipManagedBackup === true };
     }
     if (transaction.failed) throw new Error("Data save transaction already failed");
     if (transaction.entries[path]) {
         return { entry: transaction.entries[path], skipManagedBackup: true };
     }
-    var entry = { path: path, backupPath: backupPath, saved: false };
+    var entry = { path: path, backupPath: backupPath, snapshotText: hasSnapshot ? rollbackSnapshotText : null, saved: false };
     transaction.entries[path] = entry;
     transaction.order.push(path);
     return { entry: entry, skipManagedBackup: false };
@@ -32047,8 +32052,16 @@ function rollbackDataSaveTransaction() {
         for (var i = transaction.order.length - 1; i >= 0; i--) {
             var entry = transaction.entries[transaction.order[i]];
             if (!entry || !entry.saved) continue;
-            var recoveryResult = restoreManagedJsonFromBackup(entry.path, "transaction rollback");
-            if (!recoveryResult) rollbackErrors.push(entry.path);
+            try {
+                if (entry.snapshotText !== null) {
+                    writeVerifiedJsonFile(entry.path, entry.snapshotText, true);
+                } else {
+                    var recoveryResult = restoreManagedJsonFromBackup(entry.path, "transaction rollback");
+                    if (!recoveryResult) rollbackErrors.push(entry.path);
+                }
+            } catch (rollbackError) {
+                rollbackErrors.push(entry.path + ": " + rollbackError.toString());
+            }
         }
     } finally {
         transaction.rollingBack = false;
@@ -32163,7 +32176,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
 }
 
 // JSON 파일 저장 함수
-function saveJsonFile(data, path, skipManagedBackup) {
+function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
     if (data === null || (typeof data !== "object" && typeof data !== "function")) {
         debuggerLog("[Error] 데이터 저장 에러발생, 관리자 호출바람." + allsee + JSON.stringify(data));
     } else {
@@ -32182,8 +32195,11 @@ function saveJsonFile(data, path, skipManagedBackup) {
         var transactionEntryResult = null;
         try {
             ensureParentFolder(path);
-            if (isProtectedManagedJsonPath(path)) {
-                transactionEntryResult = prepareManagedJsonTransactionEntry(path, skipManagedBackup);
+            if (typeof rollbackSnapshotText === "string" && !getDataSaveTransaction()) {
+                throw new Error("Transactional JSON snapshot requires command transaction: " + path);
+            }
+            if (isProtectedManagedJsonPath(path) || typeof rollbackSnapshotText === "string") {
+                transactionEntryResult = prepareManagedJsonTransactionEntry(path, skipManagedBackup, rollbackSnapshotText);
                 writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup);
                 if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
             } else {
