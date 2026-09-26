@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.571"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.572"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2116,6 +2116,7 @@ blockedNicknameTerms: [
     adventureQuest: { // 모험가 퀘스트 튜토리얼 설정
         seasonMaxStage: 100,
         tutorialMaxStage: 16,
+        battleResultGoal: 10,
         castlePercentPerStage: 0.005,
         raidPercentPerStage: 0.005,
         experiencePerStage: 1000,
@@ -2137,9 +2138,9 @@ blockedNicknameTerms: [
         stages: [
             { number: 1, title: "호식이와 첫 만남", objective: "모험가 퀘스트에 참여하기", commands: "/모험가퀘스트 → /퀘스트완료", story: "호월킹덤 광장에 도착한 모험가를 호식이가 맞습니다.", npcStart: "호월킹덤에 온 걸 환영한다냥! 난 호식이야. 앞으로 함께할 펫부터 만나볼까? 모험 준비물도 챙겨줄게!", npcComplete: "좋아, 준비가 끝났다냥! 이제 광장에서 하나씩 배워보자.", record: "광장에서 펫과 함께 모험 준비를 마쳤다." },
             { number: 2, title: "첫 티어 달기", objective: "티어 승급티켓🎟 보유 후 /티어적용 입력", commands: "/티어적용 → /퀘스트완료", story: "호식이가 티어 사용법을 알려줍니다.", npcStart: "모험가라면 자기 티어쯤은 있어야지! 티어티켓을 준비하고 /티어적용을 입력해보자냥.", npcComplete: "티어 적용 명령도 확인했네! 네가 쌓아갈 성장의 첫 표식이다냥.", record: "티어티켓을 보유하고 티어 적용 명령을 입력했다." },
-            { number: 3, title: "작은 친구들의 대전", objective: "미니펫대전 정상 결과 15회", commands: "/미니펫대전 → /퀘스트완료", story: "미니펫대전을 경험하며 전투 흐름을 익힙니다.", npcStart: "작다고 얕보면 큰코다친다냥! 미니펫대전을 15판 해보고 와. 이기고 지는 것보다 익숙해지는 게 먼저야.", npcComplete: "15판이나 해냈구나! 작은 친구들의 실력도 제법이지?", record: "미니펫대전 15판을 마쳤다." },
-            { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 15회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 15판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 15판을 마쳤다." },
-            { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 15회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 15판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 15판을 마쳤다." },
+            { number: 3, title: "작은 친구들의 대전", objective: "미니펫대전 정상 결과 10회", commands: "/미니펫대전 → /퀘스트완료", story: "미니펫대전을 경험하며 전투 흐름을 익힙니다.", npcStart: "작다고 얕보면 큰코다친다냥! 미니펫대전을 10판 해보고 와. 이기고 지는 것보다 익숙해지는 게 먼저야.", npcComplete: "10판이나 해냈구나! 작은 친구들의 실력도 제법이지?", record: "미니펫대전 10판을 마쳤다." },
+            { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 10회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 10판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 10판을 마쳤다." },
+            { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 10회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 10판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 10판을 마쳤다." },
             { number: 6, title: "첫 펫 탐험 떠나기", objective: "첫 탐험 결과 받기", commands: "/지도 → /탐 [번호] → 탐험 결과 받기 → /퀘스트완료", story: "지도를 펼쳐 첫 펫 탐험을 떠나고 결과를 받습니다.", npcStart: "이제 지도를 펼쳐 첫 모험을 떠나 보자냥!\n/지도에서 마음에 드는 탐험지를 살펴본 뒤,\n/탐 [번호]를 입력하면 출발할 수 있다냥.\n탐험에 실패해도 괜찮으니, 편하게 도전해 보라냥!", npcComplete: "첫 탐험을 다녀왔구나! 성공이든 실패든 경험을 쌓은 게 중요하다냥.", record: "펫과 함께 첫 탐험을 다녀와 결과를 받았다." },
             { number: 7, title: "든든하게 먹고 출발", objective: "펫먹이 100,000개 이상을 한 번에 사용", commands: "/냠냠 100000 → /퀘스트완료", story: "호식이가 준비한 먹이로 펫의 배를 든든히 채웁니다.", npcStart: "배가 든든해야 모험도 신나지! 펫먹이 10만 개를 챙겨줄 테니 네 친구에게 한 번에 10만 개 이상 먹여봐라냥!", npcComplete: "아주 잘 먹었다냥! 배도 든든해졌으니 다음 준비를 시작해 보자냥!", record: "펫에게 먹이 10만 개 이상을 한 번에 먹였다." },
             { number: 8, title: "첫 펫스킬 익히기", objective: "스킬북 1개 오픈 후 유효한 펫스킬 장착", commands: "/펫스킬오픈 1 → /펫스킬장착 [번호] → /퀘스트완료", story: "스킬북을 열고 배운 펫스킬을 실제로 장착합니다.", npcStart: "스킬북 속에 어떤 기술이 숨어 있을까? 한 권 열어보고 펫스킬을 장착해봐. 읽기만 해선 쓸 수 없다냥!", npcComplete: "스킬이 제대로 장착됐네! 이제 배운 기술을 써볼 수 있겠다냥.", record: "스킬북을 열어 펫스킬을 장착했다." },
@@ -50094,9 +50095,9 @@ function getAdventureQuestCompletionCheck(data, petData, petSkillData, homeData,
     var stage = state.currentStage;
     if (stage === 1) return { complete: true, remaining: "" };
     if (stage === 2) return { complete: !!p.tierTicketApplied, remaining: "티어 승급티켓🎟 1개 이상을 보유한 상태에서 /티어적용을 입력해 주세요." };
-    if (stage === 3) return { complete: (p.miniBattle || 0) >= 15, remaining: "미니펫대전 " + Math.max(0, 15 - (p.miniBattle || 0)) + "회가 남았습니다." };
-    if (stage === 4) return { complete: (p.castleBattle || 0) >= 15, remaining: "캐슬대전 " + Math.max(0, 15 - (p.castleBattle || 0)) + "회가 남았습니다." };
-    if (stage === 5) return { complete: (p.trialTower || 0) >= 15, remaining: "시련의탑 " + Math.max(0, 15 - (p.trialTower || 0)) + "회가 남았습니다." };
+    if (stage === 3) return { complete: (p.miniBattle || 0) >= GLOBAL_CONFIG.adventureQuest.battleResultGoal, remaining: "미니펫대전 " + Math.max(0, GLOBAL_CONFIG.adventureQuest.battleResultGoal - (p.miniBattle || 0)) + "회가 남았습니다." };
+    if (stage === 4) return { complete: (p.castleBattle || 0) >= GLOBAL_CONFIG.adventureQuest.battleResultGoal, remaining: "캐슬대전 " + Math.max(0, GLOBAL_CONFIG.adventureQuest.battleResultGoal - (p.castleBattle || 0)) + "회가 남았습니다." };
+    if (stage === 5) return { complete: (p.trialTower || 0) >= GLOBAL_CONFIG.adventureQuest.battleResultGoal, remaining: "시련의탑 " + Math.max(0, GLOBAL_CONFIG.adventureQuest.battleResultGoal - (p.trialTower || 0)) + "회가 남았습니다." };
     if (stage === 6) return { complete: !!p.mapViewed && !!p.exploreSelected && !!p.exploreResult, remaining: !p.mapViewed ? "/지도를 열어 탐험지를 살펴봐 주세요." : !p.exploreSelected ? "/탐 [번호]로 이용 가능한 탐험지를 지정해 주세요." : "지정한 탐험지의 정산 결과를 기다려 주세요. 성공과 실패 모두 인정해요." };
     if (stage === 7) return { complete: !!p.feed100000, remaining: "/냠냠 [수량]으로 먹이 10만 개 이상을 한 번에 사용해 주세요. (예: /냠냠 100000)" };
     if (stage === 8) {
@@ -50165,8 +50166,9 @@ function getAdventureQuestGoalLines(state, check, onlyIncomplete) {
     if (stage >= 3 && stage <= 5) {
         var key = stage === 3 ? "miniBattle" : stage === 4 ? "castleBattle" : "trialTower";
         var label = stage === 3 ? "미니펫대전" : stage === 4 ? "캐슬대전" : "시련의탑";
-        var count = Math.min(15, parseInt(p[key], 10) || 0);
-        return [(count >= 15 ? "[✅] " : "[⬜] ") + label + " 정상 결과 · " + count + "/15회"];
+        var goal = GLOBAL_CONFIG.adventureQuest.battleResultGoal;
+        var count = Math.min(goal, parseInt(p[key], 10) || 0);
+        return [(count >= goal ? "[✅] " : "[⬜] ") + label + " 정상 결과 · " + count + "/" + goal + "회"];
     }
     if (stage === 6) {
         var exploreLines = [
