@@ -32,6 +32,8 @@ function baseContext() {
             privateChat: { notifyEvery: 3, messagePreviewMaxLength: 100 }
         },
         allsee: "<FOLD>",
+        isHoiPassPremiumActive: (data, user) => !!(data.member[user] && data.member[user].premiumActive),
+        getHoiPassPremiumHeader: (data, user) => data.member[user] && data.member[user].premiumActive ? "[👑호이패스 프리미엄👑]\n" : "",
         checkRank: (_data, _pet, _guild, user) => "💛" + user,
         numberWithCommas: value => Number(value).toLocaleString("en-US"),
         roundToTwo: value => Math.round(value * 100) / 100,
@@ -86,18 +88,27 @@ function round1() {
 
 function round2() {
     const c = attendanceContext();
-    const data = { member: { user: { point: 0, exp: 0, boostercnt: 999, today: 0, recent: "" } }, attendanceNotice: "🐹 특별판매!\n상품 구성은 /소식" };
+    const data = { member: { user: { point: 0, exp: 0, boostercnt: 999, today: 0, recent: "", premiumActive: true } }, attendanceNotice: "🐹 특별판매!\n상품 구성은 /소식" };
     const result = c.processAttendanceForUser(data, {}, {}, {}, "user");
     const message = c.buildAttendanceCompleteMessage(data, {}, {}, "user", result);
     const lines = message.split("\n");
-    assert.strictEqual(lines[2], "https://ibb.co/jkbgrzHt", "완료 문구 바로 아래 링크");
-    assert.strictEqual(message.split("<FOLD>").length - 1, 1, "접기 표시는 한 번");
-    assert(message.indexOf("(알림)") < message.indexOf("<FOLD>"), "알림은 접기 전");
+    assert.strictEqual(lines[0], "[👑호이패스 프리미엄👑]");
+    assert.strictEqual(lines[2], "이 게임물은 게임물관리위원회로부터");
+    assert.strictEqual(lines[3], "전체이용가 등급을 받았습니다.");
+    assert.strictEqual(lines[4], "https://ibb.co/jkbgrzHt", "심의 문구 바로 아래 링크");
+    assert(!message.includes("<FOLD>"), "접기 영역 삭제");
+    assert(message.includes("(알림)\n🐹 특별판매!\n상품 구성은 /소식"), "등록한 여러 줄 알림 출력");
     assert(message.indexOf("💰 총 획득 포인트 🅟4,500,000") >= 0);
     assert(message.indexOf("📊 총 획득 경험치: +390exp") >= 0);
-    assert(message.indexOf("총 지급: 🅟4,500,000 포인트") > message.indexOf("<FOLD>"));
-    assert(message.indexOf("최종 획득: +390 EXP") > message.indexOf("<FOLD>"));
+    assert(message.includes("🎲 출첵보너스 3배 당첨: 🅟3,000,000"));
+    assert(!message.includes("📋 출석 보상 상세 보기"));
+    assert(!message.includes("총 지급:"));
     assert(message.indexOf("호월신의 가호 적용") >= 0);
+    const requestedResult = { experienceResult: { base: 100, bonus: 1, total: 101, boosterResult: { usedBooster: 0, requiredBooster: 202, extraExperience: 0 } }, totalPointReward: 4000000, dicePoint: 3000000, multiplier: 3, rankBonusPoint: 0, openRunRewardGranted: false, boosterDepletionMessage: "", levelUps: [] };
+    const requestedLines = c.buildAttendanceCompleteMessage(data, {}, {}, "user", requestedResult).split("\n");
+    assert.deepStrictEqual(requestedLines.slice(0, 12), ["[👑호이패스 프리미엄👑]", "[💛user]님, 출석체크 완료! ✅", "이 게임물은 게임물관리위원회로부터", "전체이용가 등급을 받았습니다.", "https://ibb.co/jkbgrzHt", "━━━━━━━━━━━━", "💰 총 획득 포인트 🅟4,000,000", "📊 총 획득 경험치: +101exp", "├ 📘 기본: +100exp", "├ 🎟️ 티어 보너스: +1exp", "✨ 호월신의 가호 미적용", "🎲 출첵보너스 3배 당첨: 🅟3,000,000"]);
+    data.member.user.premiumActive = false;
+    assert(!c.buildAttendanceCompleteMessage(data, {}, {}, "user", result).includes("[👑호이패스 프리미엄👑]"), "일반 회원의 프리미엄 헤더 제외");
     delete data.attendanceNotice;
     assert(!c.buildAttendanceCompleteMessage(data, {}, {}, "user", result).includes("(알림)"));
     console.log("2/5 통합 출석 메시지·알림 PASS");
@@ -126,6 +137,9 @@ function round3() {
     c.today = "20260928";
     assert.strictEqual(c.awardDailyChatExperience(restored, "user").total, 3, "다음 날 한도 재개");
     assert(c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").includes("500 / 500 EXP"));
+    assert(!c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").startsWith("[👑호이패스 프리미엄👑]"));
+    data.member.user.premiumActive = true;
+    assert(c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").startsWith("[👑호이패스 프리미엄👑]"));
     console.log("3/5 채팅 500 EXP 경계·가호·재시작 PASS");
 }
 
@@ -137,7 +151,7 @@ function round4() {
     c.isMaster = user => user === "master";
     c.isGlobalOperatorCommandAllowed = (user, msg) => user === "admin" && msg === "/정보";
     c.isMatzangOperatorCommandMessage = msg => msg === "/데이터상태" || msg === "/호여";
-    load(c, main, ["isAttendanceFreeCommand", "isAttendanceGameCommand", "buildAttendanceRequiredMessage"]);
+    load(c, main, ["getAttendanceNoticeCommandPrefix", "isAttendanceFreeCommand", "isAttendanceGameCommand", "buildAttendanceRequiredMessage"]);
     assert(c.isAttendanceGameCommand("/펀치 1"));
     assert(c.isAttendanceGameCommand("ㅁㅁ"));
     assert(c.isAttendanceGameCommand("ㅍㅍㅍ"));
@@ -146,6 +160,9 @@ function round4() {
     assert(c.isAttendanceFreeCommand("/소식", "user"));
     assert(!c.isAttendanceFreeCommand("/펀치 1", "user"));
     assert(c.isAttendanceFreeCommand("/출석알림 공지", "master"));
+    assert(c.isAttendanceFreeCommand("/출첵알림 첫 줄\n둘째 줄", "master"));
+    assert.strictEqual(c.getAttendanceNoticeCommandPrefix("/출첵알림 첫 줄\n둘째 줄"), "/출첵알림");
+    assert.strictEqual(c.getAttendanceNoticeCommandPrefix("/출첵알림삭제"), "");
     assert(c.isAttendanceFreeCommand("/스타터중복확인", "master"));
     assert(!c.isAttendanceFreeCommand("/펀치 1", "admin"), "관리자 게임 명령도 출석 필요");
     assert(!c.isAttendanceFreeCommand("/호여", "admin"), "운영 명령 목록의 게임 명령 제외");
@@ -153,7 +170,9 @@ function round4() {
     assert(c.isAttendanceFreeCommand("/정보", "admin"), "전역 관리 명령 허용");
     assert(c.isAttendanceGameCommand("자유시장거래"));
     assert(c.isAttendanceGameCommand("이쁘다"));
-    assert(c.buildAttendanceRequiredMessage({}, {}, {}, "user").includes("채팅창에 ㅊㅊ을 입력해주세요."));
+    assert(c.buildAttendanceRequiredMessage({ member: { user: {} } }, {}, {}, "user").includes("채팅창에 ㅊㅊ을 입력해주세요."));
+    assert(!c.buildAttendanceRequiredMessage({ member: { user: {} } }, {}, {}, "user").startsWith("[👑호이패스 프리미엄👑]"));
+    assert(c.buildAttendanceRequiredMessage({ member: { user: { premiumActive: true } } }, {}, {}, "user").startsWith("[👑호이패스 프리미엄👑]"));
     const infoContext = { isAdminIdentity: c.isAdminIdentity, isMasterIdentity: c.isMasterIdentity, isAdmin: c.isAdmin, isMaster: c.isMaster, isGlobalInfoCommandAllowed: (_user, msg) => msg === "/정보", isMatzangInfoOperatorCommandMessage: msg => msg === "/미출석" };
     load(infoContext, info, ["isInfoAttendanceFreeCommand"]);
     assert(!infoContext.isInfoAttendanceFreeCommand("/포인트", "user"));
