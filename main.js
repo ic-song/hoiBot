@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.574"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.575"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -34714,13 +34714,15 @@ function isAttendanceFreeCommand(msg, sender) {
     if (msg === "ㅊㅊ" || msg === "호월 봇 이용약관") return true;
     if (msg === "/도움말" || msg === "/명령어" || msg === "/공지" || msg === "/소식" || msg === "/문의" || msg === "/호이봇버전" || msg === "/모험시작") return true;
     if ((msg === "/출석알림" || /^\/출석알림\s+[\s\S]*$/.test(msg)) && isMasterIdentity(sender)) return true;
-    return (isAdminIdentity(sender) || isMasterIdentity(sender)) && msg.charAt(0) === "/";
+    if (msg === "/스타터중복확인" && isMaster(sender)) return true;
+    if (isGlobalOperatorCommandAllowed(sender, msg)) return true;
+    return (isAdmin(sender) || isMaster(sender)) && msg !== "/호여" && !/^\/호여\s+\d+$/.test(msg) && isMatzangOperatorCommandMessage(msg);
 }
 
 // 슬래시 명령과 기존 비슬래시 게임 트리거를 출석 제한 대상으로 확인하는 함수
 function isAttendanceGameCommand(msg) {
     if (msg.charAt(0) === "/") return true;
-    var plainCommands = ["ㅊㅇ", "ㅁㅁ", "ㅈㅈ", "ㅅㅅ", "ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ", "ㅇㅇㅇ", "ㄹㄹㄹ", "ㅇㅋㅋ", "ㅎㅎㅎ", "ㄴㄴㄴ", "ㄱㄱㄱ", "ㅎㄹ", "쫄아뜸", "승급할거임", "쫄았음", "진행시켜", "생각해볼게", "장착할래", "입양할래", "집뚝딱", "생각해본다", "홈뱃지취소", "홈뱃지교체", "홈뱃지해제확정", "등록", "ㄴㄴ", "가입한다", "영지종료보상", "해방열쇠조합"];
+    var plainCommands = ["ㅊㅇ", "ㅁㅁ", "ㅈㅈ", "ㅅㅅ", "ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ", "ㅇㅇㅇ", "ㄹㄹㄹ", "ㅇㅋㅋ", "ㅎㅎㅎ", "ㄴㄴㄴ", "ㄱㄱㄱ", "ㅎㄹ", "쫄아뜸", "승급할거임", "쫄았음", "진행시켜", "생각해볼게", "장착할래", "입양할래", "집뚝딱", "생각해본다", "홈뱃지취소", "홈뱃지교체", "홈뱃지해제확정", "등록", "ㄴㄴ", "가입한다", "영지종료보상", "해방열쇠조합", "자유시장거래", "자유시장거래취소", "이쁘다"];
     return plainCommands.indexOf(msg) !== -1;
 }
 
