@@ -3708,16 +3708,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("❌ /자동출첵 명령어를 사용할 권한이 없습니다.");
                 return;
             }
-            var premiumAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
-            if (premiumAutoAttendanceResult.changed) saveJsonFile(data, filePath);
-            if (premiumAutoAttendanceResult.noticeMessage) {
-                if (ctx.isDev) {
-                    replier.reply(premiumAutoAttendanceResult.noticeMessage);
-                } else {
-                    noticeMsg(premiumAutoAttendanceResult.noticeMessage);
-                }
-            }
-            replier.reply(premiumAutoAttendanceResult.message);
+            var autoAttendancePassResult = grantAllSupportPassDailyRewards(data, sender);
+            appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: sender, result: "SUCCESS", grantedCount: autoAttendancePassResult.totalGrantedCount, skippedCount: autoAttendancePassResult.totalSkippedCount, reason: "", processedAt: formatDateTime(new Date()) });
+            saveJsonFile(data, filePath);
+            replier.reply(buildSupportPassPayoutResultMessage(autoAttendancePassResult));
             return;
         }
         if (/^\/자동출첵\s+.*$/.test(msg)) {
@@ -6843,6 +6837,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     resetAttendance(petData, data, replier);
                     stopAllIntervals(data);
                     delete data.previnterval;
+                    var resetAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
+                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(data, filePath);
+                    if (resetAutoAttendanceResult.noticeMessage) {
+                        if (ctx.isDev) replier.reply(resetAutoAttendanceResult.noticeMessage);
+                        else noticeMsg(resetAutoAttendanceResult.noticeMessage);
+                    }
+                    replier.reply(resetAutoAttendanceResult.message);
+                    return;
                 }
                 if (msg === "/주기리셋" && (isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
                     try {
@@ -37321,22 +37324,9 @@ function autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, gu
     return result;
 }
 
-// 패스 일괄 지급 뒤 프리미엄 자동 출석 대상자를 독립적으로 처리하는 함수
+// 출첵 초기화 뒤 프리미엄 자동 출석 대상자를 처리하는 함수
 function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, operator) {
     var changed = false;
-    var passMessage = "";
-    try {
-        var passResult = grantAllSupportPassDailyRewards(data, operator);
-        changed = passResult.changed || changed;
-        passMessage = buildSupportPassPayoutResultMessage(passResult);
-        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "SUCCESS", grantedCount: passResult.totalGrantedCount, skippedCount: passResult.totalSkippedCount, reason: "", processedAt: formatDateTime(new Date()) });
-        changed = true;
-    } catch (passError) {
-        passMessage = "❌ 구독 패스 지급 중 오류가 발생했습니다: " + passError;
-        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "ERROR", reason: String(passError).substring(0, 200), processedAt: formatDateTime(new Date()) });
-        changed = true;
-    }
-
     var successCount = 0;
     var alreadyCount = 0;
     var inactiveCount = 0;
@@ -37376,7 +37366,7 @@ function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData,
     if (noticeMessages.length > 0) {
         noticeMessage = "[👑호이패스 프리미엄 자동출첵 기능👑]\n[자동출첵 유저 리스트]" + allsee + "\n\n" + noticeMessages.join("\n\n") + "\n\n==========";
     }
-    var lines = [passMessage, "", "🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
+    var lines = ["🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
     return { changed: changed, noticeMessage: noticeMessage, noticeMessages: noticeMessages, message: lines.join("\n") };
 }
 
