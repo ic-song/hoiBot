@@ -3428,6 +3428,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         var petData = loadJsonFile(memberPetPath);
         addResponseTiming("member_pet.json 로드", commonStepStart);
+        if (petData && petData[sender] && petData[sender].starterBlessingApplied === true && assignAdventureStarterPetAppearance(petData[sender])) {
+            saveJsonFile(petData, memberPetPath);
+        }
         commonStepStart = Date.now();
         var petSkillData = loadJsonFile(petSkillDataPath);
         addResponseTiming("petSkillData.json 로드", commonStepStart);
@@ -50699,9 +50702,21 @@ function applyAdventureStarterPetSettings(petData, user) {
     if (!pet || pet.starterBlessingApplied === true) return false;
     var petName = pet.petname;
     applyStarterPet(pet, user, null);
+    assignAdventureStarterPetAppearance(pet);
     pet.petname = petName;
     if (!pet.pendant) pet.pendant = createPendantByGradeInfo(getPendantGradeInfo("최하급"));
     pet.starterBlessingApplied = true;
+    return true;
+}
+
+// 알 상태인 신규 모험가 펫에 기존 외형 목록의 땅·하늘 속성과 외형을 한 번 부여하는 함수
+function assignAdventureStarterPetAppearance(pet) {
+    if (!pet || pet.pettype !== "알") return false;
+    var starterTypes = ["하늘", "땅"];
+    var starterType = starterTypes[Math.floor(Math.random() * starterTypes.length)];
+    var uniqueAppearance = Math.random() < 0.1;
+    pet.pettype = starterType;
+    pet.petimg = getRandomEmojiFromType(uniqueAppearance ? petTypes3 : petTypes2, starterType);
     return true;
 }
 

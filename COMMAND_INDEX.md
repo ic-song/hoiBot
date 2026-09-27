@@ -6598,6 +6598,7 @@ Status: VERIFIED
 - `applyAdventureStarterIntimacyReward`
 - `applyAdventureStarterMemberRewards`
 - `applyAdventureStarterPetSettings`
+- `assignAdventureStarterPetAppearance`
 - `applyAdventureStarterSkill`
 - `applyAdventureStarterHome`
 
@@ -6617,6 +6618,7 @@ Status: VERIFIED
 - `출발한다`는 회원을 생성하고 기존 미가입 출석을 이관한 뒤 펫 이름 입력 단계로 이동한다.
 - 펫 이름 확정 시 이름을 정리·검사하고 `호월신의 축복✨(/호여!!)`을 1개만 지급한다.
 - `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 신규 회원의 친밀도 Lv.300(+330,000💕)와 스타터 아이템 17종·300억 포인트·가호 1,000개를 각각 1회 지원한다.
+- 신규 펫의 알 상태는 `/호여!!` 완료 시 기존 외형 목록의 땅·하늘 속성과 외형으로 확정해 `member_pet.json`에 저장한다. 이미 스타터 설정을 완료했지만 알 상태로 남은 펫은 해당 사용자의 다음 `main.js` 응답에서 한 번 보정·저장하며, 이후 조회에서는 다시 뽑지 않는다.
 - `/모험가퀘스트` 최초 참여에서는 스타터팩을 지급하지 않는다. 과거 퀘스트 지급 기록이 있는 회원은 `/호여!!`에서 같은 스타터팩을 다시 지급하지 않는다.
 - 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.
 
