@@ -94,7 +94,7 @@ verifyTierExperience("새싹", 1, 10, 1, 6, 4, 6);
 verifyTierExperience("보라하트", 50, 0, 33, 83, 0, 0);
 verifyTierExperience("노랑하트", 1, 10, 0, 3, 2, 8, true);
 
-if (source.indexOf("addMemberExperienceWithTierBonus(data, sender, 1, true)") < 0) {
+if (source.indexOf("awardDailyChatExperience(data, sender)") < 0 || source.indexOf("var bonus = excludeTierBonus ? 0 : getTierExperienceBonus(data, user)") < 0) {
     throw new Error("일반 채팅 티어 보너스 제외 연결 검증 실패");
 }
 

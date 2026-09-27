@@ -486,6 +486,20 @@ function applyItemInfoContext(nextItemInfoData) {
 	castlePremiumItem = itemInfoData.castlePremiumItem;
 	castleItem = itemInfoData.castleItem;
 }
+// 정보 응답기의 출석 제한에 사용할 한국시간 날짜 키를 반환하는 함수
+function getInfoAttendanceKstDateKey() {
+	var kst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+	var month = kst.getUTCMonth() + 1;
+	var day = kst.getUTCDate();
+	return String(kst.getUTCFullYear()) + (month < 10 ? "0" : "") + month + (day < 10 ? "0" : "") + day;
+}
+
+// 출석 전에도 열어 둘 정보·운영 안내 명령을 확인하는 함수
+function isInfoAttendanceFreeCommand(msg, sender) {
+	if (msg === "/도움말" || msg === "/명령어" || msg === "/공지" || msg === "/소식" || msg === "/문의" || msg === "/호이봇버전" || msg === "/모험시작") return true;
+	return (isAdminIdentity(sender) || isMasterIdentity(sender)) && msg.charAt(0) === "/";
+}
+
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
 	var ctx = createCommandContext(isDevCommandMessage(msg), room);
 	var prevCtx = enterCommandContext(ctx);
@@ -510,6 +524,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg === "/스타터중복확인" && room !== testRoom) return;
 		let data = loadJsonFile(filePath);
+		if (data && data.member && data.member[sender] && !isInfoAttendanceFreeCommand(msg, sender)) {
+			var attendanceMember = data.member[sender];
+			if (String(attendanceMember.recent || "") !== getInfoAttendanceKstDateKey()) return;
+		}
 		if (msg === "/스타터중복확인") {
 			if (!isMaster(sender)) return;
 			if (!data || !data.member || typeof data.member !== "object") {
