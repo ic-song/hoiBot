@@ -37,8 +37,6 @@ Status: VERIFIED
 - `recordBlockedPrivateChatAttempt`
 - `hasExpiredHoiPassForPrivateChat`
 - `buildExpiredHoiPassPrivateChatMessage`
-- `buildNoHoiPassPrivateChatMessage`
-- `getBlockedPrivateChatNoticeKind`
 - `hasInfoPrivateChatPass`
 - `isSupportPassActive`
 - `isInfoSupportPassActive`
@@ -57,7 +55,7 @@ Status: VERIFIED
 
 - 그룹채팅은 기존 명령어 흐름을 유지한다.
 - 1:1톡은 활성 초보패스·호이패스·호이패스 프리미엄이 없으면 `main.js`와 `Info.js` 모두 명령 실행 전에 반환한다. 단, `main.js`의 홈뱃지 조회·장착·해제·삭제·큐브·확률 명령은 패스 없이도 실행한다.
-- `main.js`는 패스 없는 1:1 입력의 유저별 차단 횟수를 메모리에 누적하며, 3회 단위마다 `room90`에 사용자·방·횟수·최근 메시지를 알린다. 패스가 없는 유저에게는 차단할 때마다 1:1 이용 제한 안내를 보내고, 호이패스 또는 프리미엄 이용기간이 지난 유저에게는 기존 관리자 감지가 발생한 건에서 1:1 종료 안내를 보낸다.
+- `main.js`는 패스 없는 1:1 입력의 유저별 차단 횟수를 메모리에 누적하며, 3회 단위마다 `room90`에 사용자·방·횟수·최근 메시지를 알린다. 같은 감지 건에서 호이패스 또는 프리미엄 이용기간이 지난 해당 유저에게만 1:1 종료 안내를 보낸다.
 - `Info.js`는 별도 응답과 카운트 증가 없이 실행만 차단한다.
 - 1:1톡 차단 횟수는 파일에 저장하지 않아 봇 재시작 시 초기화된다.
 - `main.js`의 DEV 데이터 백업과 봇 복구 명령은 기존 비상 복구 흐름을 유지한다.
