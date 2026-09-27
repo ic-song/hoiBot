@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.578"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.579"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2838,11 +2838,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
         if (!isGroupChat) {
             data = loadJsonFile(filePath);
-            if (!hasActiveHoiPassAccess(data, sender) && !isPassFreeHomeBadgeCommand(msg) && !(isMasterIdentity(sender) && getAttendanceNoticeCommandPrefix(msg))) {
+            var isChatExperienceQueryOperator = getChatExperienceQueryTarget(msg) !== null && (isAdminIdentity(sender) || isMasterIdentity(sender));
+            if (!hasActiveHoiPassAccess(data, sender) && !isPassFreeHomeBadgeCommand(msg) && !(isMasterIdentity(sender) && getAttendanceNoticeCommandPrefix(msg)) && !isChatExperienceQueryOperator) {
                 var privateChatDetectionSent = recordBlockedPrivateChatAttempt(room, sender, msg);
-                if (privateChatDetectionSent && hasExpiredHoiPassForPrivateChat(data, sender)) {
+                var privateChatNoticeKind = getBlockedPrivateChatNoticeKind(data, sender, privateChatDetectionSent);
+                if (privateChatNoticeKind) {
                     var privateChatGuildData = loadJsonFile(guildPath);
-                    replier.reply(buildExpiredHoiPassPrivateChatMessage(data, privateChatGuildData, sender));
+                    replier.reply(privateChatNoticeKind === "expired" ? buildExpiredHoiPassPrivateChatMessage(data, privateChatGuildData, sender) : buildNoHoiPassPrivateChatMessage(data, privateChatGuildData, sender));
                 }
                 return;
             }
@@ -3428,6 +3430,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         var petData = loadJsonFile(memberPetPath);
         addResponseTiming("member_pet.json 로드", commonStepStart);
+        if (petData && petData[sender] && petData[sender].starterBlessingApplied === true && assignAdventureStarterPetAppearance(petData[sender])) {
+            saveJsonFile(petData, memberPetPath);
+        }
         commonStepStart = Date.now();
         var petSkillData = loadJsonFile(petSkillDataPath);
         addResponseTiming("petSkillData.json 로드", commonStepStart);
@@ -3450,6 +3455,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("✅ 출석 알림을 등록했습니다.");
             return;
         }
+        if (handleDailyChatExperienceQuery(data, msg, sender, replier)) return;
         var invalidTerritoryAutoAttackUsers = disableInvalidGuildTerritoryAutoAttacks(data); // 만료·삭제된 패스 단독 자동공격 상태 정리
         if (invalidTerritoryAutoAttackUsers.length > 0) saveJsonFile(data, filePath);
         castleSiegeFlag = guildData.castleSiegeFlag || false;
@@ -3705,16 +3711,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("❌ /자동출첵 명령어를 사용할 권한이 없습니다.");
                 return;
             }
-            var premiumAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
-            if (premiumAutoAttendanceResult.changed) saveJsonFile(data, filePath);
-            if (premiumAutoAttendanceResult.noticeMessage) {
-                if (ctx.isDev) {
-                    replier.reply(premiumAutoAttendanceResult.noticeMessage);
-                } else {
-                    noticeMsg(premiumAutoAttendanceResult.noticeMessage);
-                }
-            }
-            replier.reply(premiumAutoAttendanceResult.message);
+            var autoAttendancePassResult = grantAllSupportPassDailyRewards(data, sender);
+            appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: sender, result: "SUCCESS", grantedCount: autoAttendancePassResult.totalGrantedCount, skippedCount: autoAttendancePassResult.totalSkippedCount, reason: "", processedAt: formatDateTime(new Date()) });
+            saveJsonFile(data, filePath);
+            replier.reply(buildSupportPassPayoutResultMessage(autoAttendancePassResult));
             return;
         }
         if (/^\/자동출첵\s+.*$/.test(msg)) {
@@ -6840,6 +6840,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     resetAttendance(petData, data, replier);
                     stopAllIntervals(data);
                     delete data.previnterval;
+                    var resetAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
+                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(data, filePath);
+                    if (resetAutoAttendanceResult.noticeMessage) {
+                        if (ctx.isDev) replier.reply(resetAutoAttendanceResult.noticeMessage);
+                        else noticeMsg(resetAutoAttendanceResult.noticeMessage);
+                    }
+                    replier.reply(resetAutoAttendanceResult.message);
+                    return;
                 }
                 if (msg === "/주기리셋" && (isMaster(sender) || (room === room90 && (isAdmin(sender) || sender === "오픈채팅봇")))) {
                     try {
@@ -34717,8 +34726,36 @@ function getAttendanceNoticeCommandPrefix(msg) {
     return "";
 }
 
+// 대상 회원의 오늘 채팅 경험치 조회 명령에서 닉네임을 추출하는 함수
+function getChatExperienceQueryTarget(msg) {
+    if (msg === "/채팅경험치확인") return "";
+    var match = String(msg || "").match(/^\/채팅경험치확인\s+([^\r\n]+)$/);
+    return match ? match[1].trim() : null;
+}
+
+// 관리자용 채팅 경험치 조회 명령의 권한과 대상을 확인해 결과를 응답하는 함수
+function handleDailyChatExperienceQuery(data, msg, sender, replier) {
+    var target = getChatExperienceQueryTarget(msg);
+    if (target === null) return false;
+    if (!(isAdminIdentity(sender) || isMasterIdentity(sender))) {
+        replier.reply("❌ 관리자 또는 MASTER만 사용할 수 있습니다.");
+        return true;
+    }
+    if (!target) {
+        replier.reply("사용법: /채팅경험치확인 대상닉네임");
+        return true;
+    }
+    if (!data.member || !data.member[target]) {
+        replier.reply("❌ 대상 계정을 찾을 수 없습니다: " + target);
+        return true;
+    }
+    replier.reply(buildDailyChatExperienceStatusMessage(data, target));
+    return true;
+}
+
 // 출석 전에도 이용할 수 있는 안내·운영 명령인지 확인하는 함수
 function isAttendanceFreeCommand(msg, sender) {
+    if (sender === "오픈채팅봇") return true;
     if (msg === "ㅊㅊ" || msg === "호월 봇 이용약관") return true;
     if (msg === "/도움말" || msg === "/명령어" || msg === "/공지" || msg === "/소식" || msg === "/문의" || msg === "/호이봇버전" || msg === "/모험시작") return true;
     if (getAttendanceNoticeCommandPrefix(msg) && isMasterIdentity(sender)) return true;
@@ -36194,6 +36231,25 @@ function awardDailyChatExperience(data, user) {
     return { base: base, bonus: 0, subtotal: base, boosterResult: boosterResult, total: total, levelUps: levelUps, reachedLimit: reachedLimit };
 }
 
+// 저장된 오늘의 채팅 경험치만 읽어 관리자용 조회 메시지로 만드는 함수
+function buildDailyChatExperienceStatusMessage(data, user) {
+    var member = data.member[user];
+    var todayKey = getAttendanceKstDateKey();
+    var limit = GLOBAL_CONFIG.attendance.chatExpDailyLimit;
+    var daily = member.chatExperienceDaily;
+    var storedExperience = daily && daily.date === todayKey ? Number(daily.experience) : 0; // 오늘 채팅으로 실제 지급한 경험치
+    var earned = Math.max(0, Math.min(limit, isFinite(storedExperience) ? storedExperience : 0)); // 표시할 일일 획득량
+    var remaining = limit - earned; // 오늘 채팅으로 더 얻을 수 있는 경험치
+    var status = !hasAttendedToday(data, user) ? "출석 전" : earned >= limit ? "한도 도달" : "획득 가능";
+    var dateText = todayKey.substring(0, 4) + "." + todayKey.substring(4, 6) + "." + todayKey.substring(6, 8);
+    return "📊 오늘의 채팅 경험치\n" +
+        "대상: " + user + "\n" +
+        "기준: " + dateText + " (KST)\n" +
+        "획득: " + numberWithCommas(earned) + " / " + numberWithCommas(limit) + " EXP\n" +
+        "남음: " + numberWithCommas(remaining) + " EXP\n" +
+        "상태: " + status;
+}
+
 // 채팅 경험치 일일 한도에 처음 도달했을 때 안내하는 함수
 function buildDailyChatExperienceLimitMessage(data, petData, guildData, user) {
     return getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "]님,\n" +
@@ -37271,22 +37327,9 @@ function autoRegisterHoiPassPremiumPetMusouUsers(data, petData, petSkillData, gu
     return result;
 }
 
-// 패스 일괄 지급 뒤 프리미엄 자동 출석 대상자를 독립적으로 처리하는 함수
+// 출첵 초기화 뒤 프리미엄 자동 출석 대상자를 처리하는 함수
 function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, operator) {
     var changed = false;
-    var passMessage = "";
-    try {
-        var passResult = grantAllSupportPassDailyRewards(data, operator);
-        changed = passResult.changed || changed;
-        passMessage = buildSupportPassPayoutResultMessage(passResult);
-        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "SUCCESS", grantedCount: passResult.totalGrantedCount, skippedCount: passResult.totalSkippedCount, reason: "", processedAt: formatDateTime(new Date()) });
-        changed = true;
-    } catch (passError) {
-        passMessage = "❌ 구독 패스 지급 중 오류가 발생했습니다: " + passError;
-        appendPetMusouAutomationLog(data, { feature: "SUPPORT_PASS_PAYOUT", action: "RUN", operator: operator, result: "ERROR", reason: String(passError).substring(0, 200), processedAt: formatDateTime(new Date()) });
-        changed = true;
-    }
-
     var successCount = 0;
     var alreadyCount = 0;
     var inactiveCount = 0;
@@ -37326,7 +37369,7 @@ function runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData,
     if (noticeMessages.length > 0) {
         noticeMessage = "[👑호이패스 프리미엄 자동출첵 기능👑]\n[자동출첵 유저 리스트]" + allsee + "\n\n" + noticeMessages.join("\n\n") + "\n\n==========";
     }
-    var lines = [passMessage, "", "🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
+    var lines = ["🐺 호이패스 프리미엄 자동출첵", "━━━━━━━━━━━━━━━", "출석 완료: " + successCount + "명", "당일 출석 완료로 제외: " + alreadyCount + "명", "프리미엄 비활성으로 제외: " + inactiveCount + "명", "처리 실패: " + failedCount + "명"];
     return { changed: changed, noticeMessage: noticeMessage, noticeMessages: noticeMessages, message: lines.join("\n") };
 }
 
@@ -38989,6 +39032,21 @@ function buildExpiredHoiPassPrivateChatMessage(data, guildData, user) {
         "연장하신 후 다시 이용해주세요. 😊\n\n" +
         "🎟️ 호이패스 안내\nhttps://hoiland123.tistory.com/647\n\n" +
         "👑 호이패스 프리미엄 안내\nhttps://hoiland123.tistory.com/648";
+}
+
+// 패스가 없는 유저에게 보낼 호월톡 1:1 이용 제한 안내를 만드는 함수
+function buildNoHoiPassPrivateChatMessage(data, guildData, user) {
+    return "[" + checkRank(data, null, guildData, user) + "]님, 호이패스 유저 외에는 호월톡 1:1을 이용할 수 없습니다. 🎫\n" +
+        "━━━━━━━━━━━━\n" +
+        "호이패스 또는 호이패스 프리미엄 가입 후 다시 이용해주세요.\n\n" +
+        "🎟️ 호이패스 안내\nhttps://hoiland123.tistory.com/647\n\n" +
+        "👑 호이패스 프리미엄 안내\nhttps://hoiland123.tistory.com/648";
+}
+
+// 차단된 1:1톡에 보낼 유저 안내 종류를 패스 상태와 관리자 감지 주기에 따라 정하는 함수
+function getBlockedPrivateChatNoticeKind(data, user, detectionSent) {
+    if (hasExpiredHoiPassForPrivateChat(data, user)) return detectionSent ? "expired" : "";
+    return "noPass";
 }
 
 // 패스 미사용 유저의 1:1톡 차단 횟수를 기록하고 주기마다 운영진에게 알리는 함수
@@ -50699,9 +50757,21 @@ function applyAdventureStarterPetSettings(petData, user) {
     if (!pet || pet.starterBlessingApplied === true) return false;
     var petName = pet.petname;
     applyStarterPet(pet, user, null);
+    assignAdventureStarterPetAppearance(pet);
     pet.petname = petName;
     if (!pet.pendant) pet.pendant = createPendantByGradeInfo(getPendantGradeInfo("최하급"));
     pet.starterBlessingApplied = true;
+    return true;
+}
+
+// 알 상태인 신규 모험가 펫에 기존 외형 목록의 땅·하늘 속성과 외형을 한 번 부여하는 함수
+function assignAdventureStarterPetAppearance(pet) {
+    if (!pet || pet.pettype !== "알") return false;
+    var starterTypes = ["하늘", "땅"];
+    var starterType = starterTypes[Math.floor(Math.random() * starterTypes.length)];
+    var uniqueAppearance = Math.random() < 0.1;
+    pet.pettype = starterType;
+    pet.petimg = getRandomEmojiFromType(uniqueAppearance ? petTypes3 : petTypes2, starterType);
     return true;
 }
 
