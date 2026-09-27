@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.576"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.577"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2840,9 +2840,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             data = loadJsonFile(filePath);
             if (!hasActiveHoiPassAccess(data, sender) && !isPassFreeHomeBadgeCommand(msg) && !(isMasterIdentity(sender) && getAttendanceNoticeCommandPrefix(msg))) {
                 var privateChatDetectionSent = recordBlockedPrivateChatAttempt(room, sender, msg);
-                if (privateChatDetectionSent && hasExpiredHoiPassForPrivateChat(data, sender)) {
+                var privateChatNoticeKind = getBlockedPrivateChatNoticeKind(data, sender, privateChatDetectionSent);
+                if (privateChatNoticeKind) {
                     var privateChatGuildData = loadJsonFile(guildPath);
-                    replier.reply(buildExpiredHoiPassPrivateChatMessage(data, privateChatGuildData, sender));
+                    replier.reply(privateChatNoticeKind === "expired" ? buildExpiredHoiPassPrivateChatMessage(data, privateChatGuildData, sender) : buildNoHoiPassPrivateChatMessage(data, privateChatGuildData, sender));
                 }
                 return;
             }
@@ -38989,6 +38990,21 @@ function buildExpiredHoiPassPrivateChatMessage(data, guildData, user) {
         "연장하신 후 다시 이용해주세요. 😊\n\n" +
         "🎟️ 호이패스 안내\nhttps://hoiland123.tistory.com/647\n\n" +
         "👑 호이패스 프리미엄 안내\nhttps://hoiland123.tistory.com/648";
+}
+
+// 패스가 없는 유저에게 보낼 호월톡 1:1 이용 제한 안내를 만드는 함수
+function buildNoHoiPassPrivateChatMessage(data, guildData, user) {
+    return "[" + checkRank(data, null, guildData, user) + "]님, 호이패스 유저 외에는 호월톡 1:1을 이용할 수 없습니다. 🎫\n" +
+        "━━━━━━━━━━━━\n" +
+        "호이패스 또는 호이패스 프리미엄 가입 후 다시 이용해주세요.\n\n" +
+        "🎟️ 호이패스 안내\nhttps://hoiland123.tistory.com/647\n\n" +
+        "👑 호이패스 프리미엄 안내\nhttps://hoiland123.tistory.com/648";
+}
+
+// 차단된 1:1톡에 보낼 유저 안내 종류를 패스 상태와 관리자 감지 주기에 따라 정하는 함수
+function getBlockedPrivateChatNoticeKind(data, user, detectionSent) {
+    if (hasExpiredHoiPassForPrivateChat(data, user)) return detectionSent ? "expired" : "";
+    return "noPass";
 }
 
 // 패스 미사용 유저의 1:1톡 차단 횟수를 기록하고 주기마다 운영진에게 알리는 함수
