@@ -792,17 +792,18 @@ const towerTips = [
 ];
 //room
 const room1 = "🍶30대, 월급은 스쳐지나가도 우리는 남는다..!🌙";
-const room2 = "💕💜 2030 어차피 친해질 사이 💕💜";
+const room2 = "2030 반말 💬 말 놓으면 금방 친해져•월루•보룸";
 const room3 = "🐰 2030, 여기 좀 귀엽다 너도 올래?🍓";
 const testRoom = "팻 테스트방";
 const room5 = "호이월드 커뮤니티[티어 킹 이상 입장가능]";
 const room6 = "💜3040대친목 반말방🐻 24시 보이스룸💜";
-const room7 = "2030, 우리는 청춘이라는 별 아래서✨";
+const room7 = "2030 반말방 | 우리는 청춘이라는 별 아래서✨";
 const room8 = "공성전";
-const room10 = "🌱 우리도 30대는 처음이라🎙️";
+const room10 = "💫도파민 팡팡💫터지는 30대 어서와😘";
 const room11 = "🍺 3040, 인생 뭐 있어? 오늘도 수다 한 잔";
 const room12 = "🎀30대, 주파수가 맞는 사이🌙";
 const room13 = "😎 2030 어 왔냐? 앉아 반말해🍿";
+const room14 = "🐶30대 반말방💞친목🐩봇,보룸,수다,벙🎤";
 const room90 = "호이월드 GM 관리자방";
 const room91 = "통합스텝";
 const room92 = "서버관리자";
@@ -818,6 +819,7 @@ roomToServer[room10] = "호이서버6[30]";
 roomToServer[room11] = "호이서버4[3040]";
 roomToServer[room12] = "벨라서버2[30]";
 roomToServer[room13] = "호이서버7[2030]";
+roomToServer[room14] = "호이서버1-2[30]"
 roomToServer[room90] = "호이월드 운영진[GM]";
 
 // 서버 전체명을 운영용 약칭으로 변환하는 함수
@@ -832,6 +834,7 @@ function getServerShortName(serverName) {
         "호이서버5[2030]": "호5",
         "호이서버6[2030]": "호6",
         "호이서버7[2030]": "호7",
+        "호이서버1-2[30]": "호1-2",
         "호이월드 운영진[GM]": "GM",
         "호이월드[서버장]": "서버장"
     };
