@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.574"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.575"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -963,7 +963,10 @@ const GLOBAL_CONFIG = {
     },
     attendance: { // 출석 보상 설정
         bonusPoint: 1000000,
-        bonusExp: 100
+        bonusExp: 100,
+        chatExpDailyLimit: 500,
+        kstOffsetMs: 9 * 60 * 60 * 1000,
+        resultLink: "https://ibb.co/jkbgrzHt"
     },
     level: { // 모험가 레벨 리뉴얼 설정
         expBase: 1000,
@@ -2835,8 +2838,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
         if (!isGroupChat) {
             data = loadJsonFile(filePath);
-            if (!hasActiveHoiPassAccess(data, sender) && !isPassFreeHomeBadgeCommand(msg)) {
-                recordBlockedPrivateChatAttempt(room, sender, msg);
+            if (!hasActiveHoiPassAccess(data, sender) && !isPassFreeHomeBadgeCommand(msg) && !(isMasterIdentity(sender) && (msg === "/출석알림" || /^\/출석알림\s+[\s\S]*$/.test(msg)))) {
+                var privateChatDetectionSent = recordBlockedPrivateChatAttempt(room, sender, msg);
+                if (privateChatDetectionSent && hasExpiredHoiPassForPrivateChat(data, sender)) {
+                    var privateChatGuildData = loadJsonFile(guildPath);
+                    replier.reply(buildExpiredHoiPassPrivateChatMessage(data, privateChatGuildData, sender));
+                }
                 return;
             }
         }
@@ -3427,6 +3434,21 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         var guildData = loadJsonFile(guildPath);
         addResponseTiming("guildData.json 로드", commonStepStart);
+        if (msg === "/출석알림" || /^\/출석알림\s+[\s\S]*$/.test(msg)) {
+            if (!isMasterIdentity(sender)) {
+                replier.reply("❌ MASTER 권한만 사용할 수 있습니다.");
+                return;
+            }
+            var attendanceNoticeText = msg.substring("/출석알림".length).replace(/^\s/, "");
+            if (!attendanceNoticeText.trim()) {
+                replier.reply("사용법: /출석알림 내용");
+                return;
+            }
+            data.attendanceNotice = attendanceNoticeText;
+            saveJsonFile(data, filePath);
+            replier.reply("✅ 출석 알림을 등록했습니다.");
+            return;
+        }
         var invalidTerritoryAutoAttackUsers = disableInvalidGuildTerritoryAutoAttacks(data); // 만료·삭제된 패스 단독 자동공격 상태 정리
         if (invalidTerritoryAutoAttackUsers.length > 0) saveJsonFile(data, filePath);
         castleSiegeFlag = guildData.castleSiegeFlag || false;
@@ -3493,6 +3515,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             return;
         }
+        if (!hasAttendedToday(data, sender) && isAttendanceGameCommand(msg) && !isAttendanceFreeCommand(msg, sender)) {
+            replier.reply(buildAttendanceRequiredMessage(data, petData, guildData, sender));
+            return;
+        }
         if (!ctx.isDev && isMutableGuildTerritoryCommand(msg) && isDevGuildTerritoryWarActive()) {
             replier.reply("⚠️ DEV 길드 영지전이 진행 중입니다.\n테스트 진행 중에는 dev/" + msg.replace(/^\//, "") + " 형식으로 입력해 주세요.");
             return;
@@ -3516,6 +3542,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(petData, memberPetPath);
             saveJsonFile(petSkillData, petSkillDataPath);
             addResponseTiming("펫스킬 보정 저장", commonStepStart);
+        }
+        if (msg === "ㅊㅊ") {
+            var attendanceResult = processAttendanceForUser(data, petData, petSkillData, guildData, sender);
+            if (attendanceResult.ok) {
+                saveJsonFile(data, filePath);
+                replier.reply(buildAttendanceCompleteMessage(data, petData, guildData, sender, attendanceResult));
+                var attendanceMajorLevel = getHighestMajorPromotionLevel(attendanceResult.levelUps);
+                if (attendanceMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + attendanceMajorLevel + " " + getAdventureLevelTitle(attendanceMajorLevel) + "에 도달했습니다!", room);
+            } else {
+                replier.reply(attendanceResult.message);
+            }
+            return;
         }
         if (msg === "/펫스킬북보상") {
             if (!(isAdmin(sender) || isMaster(sender))) {
@@ -3640,7 +3678,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         var restoredExpiredPremiumSkillCount = data.member[sender] ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 기존 잠금 중 현재 빈 슬롯에 복구된 스킬 수
         if (restoredExpiredPremiumSkillCount > 0) saveJsonFile(petSkillData, petSkillDataPath);
-        var worldNewsResult = processWorldNewsCommand(data, petData, guildData, sender, room, msg);
+        var worldNewsResult = processWorldNewsCommand(data, petData, guildData, sender, room, msg, hasAttendedToday(data, sender));
         if (worldNewsResult.handled) {
             if (worldNewsResult.changed) saveJsonFile(data, filePath);
             if (worldNewsResult.message) replier.reply(worldNewsResult.message);
@@ -6283,41 +6321,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg.length > 3) {
                     data.member[sender].point++;
                     data.member[sender].chatcnt0++;
-                    var chatExpResult = addMemberExperienceWithTierBonus(data, sender, 1, true); // 일반 채팅은 티어를 제외하고 가호만 적용한 경험치 지급 결과
+                    var chatExpResult = hasAttendedToday(data, sender) ? awardDailyChatExperience(data, sender) : null; // 출석 후 남은 일일 한도 안에서 실제 지급한 채팅 경험치
+                    if (chatExpResult && chatExpResult.total > 0) saveJsonFile(data, filePath);
                     //서버데이터 넣기
                     if (!data.member[sender].server) {
                         if (roomToServer[room]) {
                             data.member[sender].server = roomToServer[room];
                         }
                     }
-                    if (chatExpResult.levelUps.length > 0) {
-                        saveJsonFile(data, filePath);
+                    if (chatExpResult && chatExpResult.levelUps.length > 0) {
                         var chatLevelMessage = buildAdventureLevelUpMessage(data, petData, guildData, sender, chatExpResult.levelUps);
                         replier.reply(chatLevelMessage);
                         var chatMajorLevel = getHighestMajorPromotionLevel(chatExpResult.levelUps);
                         if (chatMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + chatMajorLevel + " " + getAdventureLevelTitle(chatMajorLevel) + "에 도달했습니다!", room);
                     }
-                    var chatBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, chatExpResult.boosterResult);
+                    var chatBoosterDepletionMessage = chatExpResult ? buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, chatExpResult.boosterResult) : "";
                     if (chatBoosterDepletionMessage) replier.reply(chatBoosterDepletionMessage);
+                    if (chatExpResult && chatExpResult.reachedLimit) replier.reply(buildDailyChatExperienceLimitMessage(data, petData, guildData, sender));
                 }
 
 
-                if (msg === "ㅊㅊ") {
-                    if (!castleSiegeFlag) {
-                        var attendanceResult = processAttendanceForUser(data, petData, petSkillData, guildData, sender);
-                        if (attendanceResult.ok) {
-                            saveJsonFile(data, filePath);
-                            for (var attendanceMessageIndex = 0; attendanceMessageIndex < attendanceResult.messages.length; attendanceMessageIndex++) {
-                                replier.reply(attendanceResult.messages[attendanceMessageIndex]);
-                            }
-                            var attendanceMajorLevel = getHighestMajorPromotionLevel(attendanceResult.levelUps);
-                            if (attendanceMajorLevel > 0) noticeMsgExceptRoom("🏆 호이월드 모험가 대승급 소식!\n[" + checkRank(data, petData, guildData, sender) + "] 님이\nLv." + attendanceMajorLevel + " " + getAdventureLevelTitle(attendanceMajorLevel) + "에 도달했습니다!", room);
-                        } else {
-                            replier.reply(attendanceResult.message);
-                        }
-                    }
-                    return;
-                }
                 if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg)) {
                     // 약관동의 안할 시 사용불가
                     saveJsonFile(data, filePath);
@@ -34672,21 +34695,93 @@ function finishGuildTerritoryWar(data, guildData, reason, petSkillData) {
         noticeMsg(out);
     });
 }
+// 한국시간 날짜를 출석·채팅 경험치의 일일 판정 키로 반환하는 함수
+function getAttendanceKstDateKey() {
+    var kst = new Date(Date.now() + GLOBAL_CONFIG.attendance.kstOffsetMs);
+    var month = kst.getUTCMonth() + 1;
+    var day = kst.getUTCDate();
+    return String(kst.getUTCFullYear()) + (month < 10 ? "0" : "") + month + (day < 10 ? "0" : "") + day;
+}
+
+// 회원의 오늘 출석 완료 여부를 저장된 출석 날짜로 확인하는 함수
+function hasAttendedToday(data, user) {
+    var member = data && data.member ? data.member[user] : null;
+    return !!member && String(member.recent || "") === getAttendanceKstDateKey();
+}
+
+// 출석 전에도 이용할 수 있는 안내·운영 명령인지 확인하는 함수
+function isAttendanceFreeCommand(msg, sender) {
+    if (msg === "ㅊㅊ" || msg === "호월 봇 이용약관") return true;
+    if (msg === "/도움말" || msg === "/명령어" || msg === "/공지" || msg === "/소식" || msg === "/문의" || msg === "/호이봇버전" || msg === "/모험시작") return true;
+    if ((msg === "/출석알림" || /^\/출석알림\s+[\s\S]*$/.test(msg)) && isMasterIdentity(sender)) return true;
+    if (msg === "/스타터중복확인" && isMaster(sender)) return true;
+    if (isGlobalOperatorCommandAllowed(sender, msg)) return true;
+    return (isAdmin(sender) || isMaster(sender)) && msg !== "/호여" && !/^\/호여\s+\d+$/.test(msg) && isMatzangOperatorCommandMessage(msg);
+}
+
+// 슬래시 명령과 기존 비슬래시 게임 트리거를 출석 제한 대상으로 확인하는 함수
+function isAttendanceGameCommand(msg) {
+    if (msg.charAt(0) === "/") return true;
+    var plainCommands = ["ㅊㅇ", "ㅁㅁ", "ㅈㅈ", "ㅅㅅ", "ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ", "ㅇㅇㅇ", "ㄹㄹㄹ", "ㅇㅋㅋ", "ㅎㅎㅎ", "ㄴㄴㄴ", "ㄱㄱㄱ", "ㅎㄹ", "쫄아뜸", "승급할거임", "쫄았음", "진행시켜", "생각해볼게", "장착할래", "입양할래", "집뚝딱", "생각해본다", "홈뱃지취소", "홈뱃지교체", "홈뱃지해제확정", "등록", "ㄴㄴ", "가입한다", "영지종료보상", "해방열쇠조합", "자유시장거래", "자유시장거래취소", "이쁘다"];
+    return plainCommands.indexOf(msg) !== -1;
+}
+
+// 출석 전 게임 명령에 보낼 고정 안내를 만드는 함수
+function buildAttendanceRequiredMessage(data, petData, guildData, user) {
+    return "[👑호이패스 프리미엄👑]\n[" + checkRank(data, petData, guildData, user) + "]님, 출석체크부터 해주세요! ✅\n" +
+        "━━━━━━━━━━━━\n오늘의 출석체크가 아직 완료되지 않았습니다.\n출석체크를 완료하면 게임을 이용할 수 있어요.\n\n👉 채팅창에 ㅊㅊ을 입력해주세요.";
+}
+
+// 실제 출석 보상 결과와 운영 알림을 한 메시지로 조합하는 함수
+function buildAttendanceCompleteMessage(data, petData, guildData, user, result) {
+    var exp = result.experienceResult;
+    var booster = exp.boosterResult;
+    var boosterState = booster.usedBooster > 0 ? (booster.usedBooster < booster.requiredBooster ? "일부 적용" : "적용") : "미적용";
+    var lines = ["[👑호이패스 프리미엄👑]", "[" + checkRank(data, petData, guildData, user) + "]님, 출석체크 완료! ✅", GLOBAL_CONFIG.attendance.resultLink, "━━━━━━━━━━━━", "💰 총 획득 포인트 🅟" + numberWithCommas(result.totalPointReward), "📊 총 획득 경험치: +" + numberWithCommas(exp.total) + "exp", "├ 📘 기본: +" + numberWithCommas(exp.base) + "exp"];
+    if (exp.bonus > 0) lines.push("├ 🎟️ 티어 보너스: +" + numberWithCommas(exp.bonus) + "exp");
+    if (booster.extraExperience > 0) lines.push("└ ✨ 가호 추가: +" + numberWithCommas(booster.extraExperience) + "exp");
+    lines.push("✨ 호월신의 가호 " + boosterState + (booster.usedBooster > 0 ? " (" + numberWithCommas(booster.usedBooster) + "개 사용)" : ""));
+    if (result.dicePoint > 0) lines.push("🎲 출첵 " + result.multiplier + "배 당첨: 🅟" + numberWithCommas(result.dicePoint));
+    if (result.rankBonusPoint > 0) lines.push("🎊 추가 보너스: 🅟" + numberWithCommas(result.rankBonusPoint));
+    lines.push("━━━━━━━━━━━━");
+    if (data.attendanceNotice) lines.push("(알림)", String(data.attendanceNotice), "━━━━━━━━━━━━");
+    lines.push("📋 출석 보상 상세 보기" + allsee, "💰 포인트 지급 내역", "├ 기본 출석: 🅟" + numberWithCommas(GLOBAL_CONFIG.attendance.bonusPoint));
+    if (result.dicePoint > 0) lines.push("├ 출첵 " + result.multiplier + "배 당첨: 🅟" + numberWithCommas(result.dicePoint));
+    if (result.rankBonusPoint > 0) lines.push("└ 추가 보너스: 🅟" + numberWithCommas(result.rankBonusPoint));
+    lines.push("이 게임물은 게임물관리위원회로부터 전체이용가 등급을 받았습니다.");
+    lines.push("총 지급: 🅟" + numberWithCommas(result.totalPointReward) + " 포인트", "", "📊 경험치 지급 내역", "├ 📘 기본: +" + numberWithCommas(exp.base) + " EXP");
+    if (exp.bonus > 0) lines.push("├ 🎟️ 티어 보너스: +" + numberWithCommas(exp.bonus) + " EXP");
+    if (booster.extraExperience > 0) lines.push("└ ✨ 가호 추가: +" + numberWithCommas(booster.extraExperience) + " EXP");
+    lines.push("최종 획득: +" + numberWithCommas(exp.total) + " EXP", "", "✨ 호월신의 가호 " + boosterState + (booster.usedBooster > 0 ? " · " + numberWithCommas(booster.usedBooster) + "개 사용" : ""));
+    if (result.rankBonusMessage) lines.push("", result.rankBonusMessage);
+    if (result.openRunRewardGranted) lines.push("", "[" + checkRank(data, petData, guildData, user) + "] : 오늘도 1등 출석 성공!", "오픈런의 기세로 펫먹이🍼 1,000개를 획득합니다!", "[" + checkRank(data, petData, guildData, user) + "] : 누구보다 빠르게, 남들과는 다르게!");
+    if (result.boosterDepletionMessage) lines.push("", result.boosterDepletionMessage);
+    if (result.levelUps.length > 0) lines.push("", buildAdventureLevelUpMessage(data, petData, guildData, user, result.levelUps));
+    return lines.join("\n");
+}
+
 // 수동·자동 출석이 함께 사용하는 출석 판정과 보상 처리 함수
 function processAttendanceForUser(data, petData, petSkillData, guildData, user) {
     if (!data || !data.member || !data.member[user]) return { ok: false, message: "❌ 존재하지 않거나 비정상적인 회원 데이터입니다." };
     if (!(data.attend_list instanceof Array)) data.attend_list = [];
     var member = data.member[user];
-    var todayText = String(getCurrentDate());
-    var alreadyAttended = data.attend_list.indexOf(user) !== -1 || (String(member.recent || "") === todayText && (parseInt(member.today, 10) || 0) > 0);
+    var todayText = getAttendanceKstDateKey();
+    var alreadyAttended = String(member.recent || "") === todayText;
     var rankText = checkRank(data, petData, guildData, user);
     if (alreadyAttended) return { ok: false, already: true, message: "[" + rankText + "] 님 이미 출첵 하셨습니다." };
 
     if (!member.bag || typeof member.bag !== "object") member.bag = {};
+    if (data.attend_list_date !== todayText) {
+        data.attend_list = data.attend_list.filter(function (attendee) {
+            return data.member[attendee] && String(data.member[attendee].recent || "") === todayText;
+        });
+        data.attend_list_date = todayText;
+    }
+    if (String(member.recent || "") !== todayText) member.today = 0;
     data.attend_list.push(user);
     member.cnt = (parseInt(member.cnt, 10) || 0) + 1;
     member.today = (parseInt(member.today, 10) || 0) + 1;
-    member.recent = getCurrentDate();
+    member.recent = todayText;
     member.point = (Number(member.point) || 0) + GLOBAL_CONFIG.attendance.bonusPoint;
     var attendanceExpResult = addMemberExperienceWithTierBonus(data, user, GLOBAL_CONFIG.attendance.bonusExp);
     var attendanceBoosterResult = attendanceExpResult.boosterResult; // 출석 경험치 가호 적용·소모 결과
@@ -34729,6 +34824,12 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
         ok: true,
         messages: messages,
         totalPointReward: totalPointReward,
+        experienceResult: attendanceExpResult,
+        dicePoint: dicePoint,
+        rankBonusPoint: rankBonusPoint,
+        rankBonusMessage: rankBonusMultiplier !== 0 ? String(rankBonus.Bonusmsg || "") : "",
+        multiplier: multiplier,
+        boosterDepletionMessage: attendanceBoosterDepletionMessage,
         expReward: GLOBAL_CONFIG.attendance.bonusExp,
         boosterUsed: attendanceBoosterResult.usedBooster,
         boosterExperience: attendanceBoosterResult.extraExperience,
@@ -36065,6 +36166,43 @@ function applyRebirthMushroomRecall(data) {
         accounts: accountRecords
     };
     return { ok: true, inspection: inspection, migration: data.migrations[GLOBAL_CONFIG.level.rebirthRecallKey] };
+}
+
+// 채팅 EXP를 일일 한도 안에서 지급하고 실제 지급한 가호 추가분만 차감하는 함수
+function awardDailyChatExperience(data, user) {
+    var member = data.member[user];
+    var todayText = getAttendanceKstDateKey();
+    if (!member.chatExperienceDaily || member.chatExperienceDaily.date !== todayText) member.chatExperienceDaily = { date: todayText, experience: 0, notified: false };
+    var daily = member.chatExperienceDaily;
+    var limit = GLOBAL_CONFIG.attendance.chatExpDailyLimit;
+    var earned = Math.max(0, Math.min(limit, Number(daily.experience) || 0)); // 오늘 이미 실제 지급한 채팅 EXP
+    var remaining = Math.max(0, limit - earned); // 이번 채팅에 남은 일일 지급 한도
+    var base = Math.min(1, remaining);
+    var availableBooster = Math.max(0, parseInt(member.boostercnt, 10) || 0);
+    var extra = Math.min(base * GLOBAL_CONFIG.level.boosterExtraMultiplier, availableBooster, remaining - base); // 한도 안에서 실제 지급할 가호 추가 EXP
+    var total = base + extra;
+    var boosterResult = { baseExperience: base, boostedBaseExperience: extra > 0 ? base : 0, usedBooster: extra, requiredBooster: base * GLOBAL_CONFIG.level.boosterConsumptionPerBaseExp, maximumExtraExperience: base * GLOBAL_CONFIG.level.boosterExtraMultiplier, extraExperience: extra, totalExperience: total };
+    var levelUps = [];
+    if (total > 0) {
+        member.boostercnt = availableBooster - extra;
+        member.exp = roundToTwo((Number(member.exp) || 0) + total);
+        daily.experience = earned + total;
+        levelUps = processAdventureLevelUps(member);
+    }
+    var reachedLimit = total > 0 && daily.experience >= limit && daily.notified !== true;
+    if (reachedLimit) daily.notified = true;
+    return { base: base, bonus: 0, subtotal: base, boosterResult: boosterResult, total: total, levelUps: levelUps, reachedLimit: reachedLimit };
+}
+
+// 채팅 경험치 일일 한도에 처음 도달했을 때 안내하는 함수
+function buildDailyChatExperienceLimitMessage(data, petData, guildData, user) {
+    return "[👑호이패스 프리미엄👑]\n[" + checkRank(data, petData, guildData, user) + "]님,\n" +
+        "오늘의 채팅 경험치를 모두 획득했습니다! 💬\n━━━━━━━━━━━━\n" +
+        "📊 채팅 경험치: 500 / 500 EXP\n\n" +
+        "오늘은 채팅으로 경험치를 더 얻을 수 없으며,\n" +
+        "채팅으로 호월신의 가호✨도 소모되지 않습니다.\n\n" +
+        "🕛 매일 오전 0시에 한도가 초기화됩니다.\n" +
+        "🎮 다른 활동에서는 계속 경험치를 얻을 수 있습니다.";
 }
 
 // 기본 EXP에 선택적으로 고정 티어 EXP를 더한 뒤 가호와 레벨업을 처리하는 함수
@@ -38828,11 +38966,36 @@ function cleanupExpiredHoiPassPremium(data, petSkillData, activityData, users) {
     return result;
 }
 
+// 호이월톡 이용기간이 끝난 유저인지 확인하는 함수
+function hasExpiredHoiPassForPrivateChat(data, user) {
+    var member = data && data.member ? data.member[user] : null;
+    if (!member || !member.pass) return false;
+    var passKeys = ["hoi", "premium"];
+    for (var i = 0; i < passKeys.length; i++) {
+        var pass = member.pass[passKeys[i]];
+        if (!pass || pass.permanent === true) continue;
+        var expiry = getSupportPassDateValue(pass.endDate);
+        if (expiry !== null && expiry < getTodaySupportPassDateValue()) return true;
+    }
+    return false;
+}
+
+// 패스 종료로 차단된 유저에게 보낼 호월톡 1:1 안내를 만드는 함수
+function buildExpiredHoiPassPrivateChatMessage(data, guildData, user) {
+    return "[" + checkRank(data, null, guildData, user) + "]님, 패스 이용기간이 종료되었습니다. 🎫\n" +
+        "━━━━━━━━━━━━\n" +
+        "현재 호월톡 1:1 기능을 이용할 수 없습니다.\n\n" +
+        "호이패스 또는 호이패스 프리미엄을\n" +
+        "연장하신 후 다시 이용해주세요. 😊\n\n" +
+        "🎟️ 호이패스 안내\nhttps://hoiland123.tistory.com/647\n\n" +
+        "👑 호이패스 프리미엄 안내\nhttps://hoiland123.tistory.com/648";
+}
+
 // 패스 미사용 유저의 1:1톡 차단 횟수를 기록하고 주기마다 운영진에게 알리는 함수
 function recordBlockedPrivateChatAttempt(room, sender, msg) {
     var attemptCount = (privateChatBlockedTracker[sender] || 0) + 1; // 봇 실행 후 유저별 누적 차단 횟수
     privateChatBlockedTracker[sender] = attemptCount;
-    if (attemptCount % GLOBAL_CONFIG.privateChat.notifyEvery !== 0) return;
+    if (attemptCount % GLOBAL_CONFIG.privateChat.notifyEvery !== 0) return false;
 
     var messagePreview = String(msg || "").replace(/[\r\n]+/g, " ").trim(); // 운영 알림용 최근 메시지 한 줄 요약
     if (messagePreview.length > GLOBAL_CONFIG.privateChat.messagePreviewMaxLength) {
@@ -38848,6 +39011,7 @@ function recordBlockedPrivateChatAttempt(room, sender, msg) {
         "누적 횟수: " + attemptCount + "회\n" +
         "최근 메시지: " + messagePreview
     );
+    return true;
 }
 
 // 호이패스·초보패스 활성 유저의 펫홈 기능 비용을 면제하는 함수
@@ -42255,7 +42419,10 @@ function buildWorldNewsUserMessage(data, petData, guildData, sender, lotteryResu
     var posts = news.posts;
     var featured = selectWorldNewsFeaturedPost(news); // 이번 응답에서 한 번만 선택한 대표 소식
     var lines = ["📢 잠깐! 호이월드 소식 왔어요 👀", "━━━━━━━━━━━━"];
-    if (lotteryResult.firstEntry) {
+    if (lotteryResult.attendanceRequired) {
+        lines.push("🎰 소식복권은 출석체크 후 참여할 수 있어요.");
+        lines.push("👉 채팅창에 ㅊㅊ을 입력해주세요.");
+    } else if (lotteryResult.firstEntry) {
         lines.push("🎰 [" + checkRank(data, petData, guildData, sender) + "] 님");
         lines.push(lotteryResult.reward.label + " 당첨! 지급 완료 ✅");
         lines.push("🍀 하루 1회 · 최대 10억 포인트");
@@ -42355,7 +42522,7 @@ function buildWorldNewsDraftPreview(draft) {
 }
 
 // 소식 명령과 관리자 작성 상태 입력을 처리하는 함수
-function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
+function processWorldNewsCommand(data, petData, guildData, sender, room, msg, allowLottery) {
     var result = { handled: false, changed: false, message: "", broadcastMessage: "" };
     var news = ensureWorldNewsData(data);
     var isOperator = isAdmin(sender) || isMaster(sender);
@@ -42364,7 +42531,7 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
 
     if (msg === "/소식") {
         var member = data.member[sender];
-        var firstEntry = member.worldNewsLotteryPlayed !== true;
+        var firstEntry = allowLottery && member.worldNewsLotteryPlayed !== true;
         var reward = null;
         if (sanitizeWorldNewsPickIds(news)) result.changed = true;
         if (firstEntry) {
@@ -42375,7 +42542,7 @@ function processWorldNewsCommand(data, petData, guildData, sender, room, msg) {
             if (reward.broadcast) result.broadcastMessage = buildWorldNewsJackpotBroadcast(data, petData, guildData, sender);
         }
         result.handled = true;
-        result.message = buildWorldNewsUserMessage(data, petData, guildData, sender, { firstEntry: firstEntry, reward: reward });
+        result.message = buildWorldNewsUserMessage(data, petData, guildData, sender, { firstEntry: firstEntry, reward: reward, attendanceRequired: !allowLottery });
         if (markWorldNewsPostsRead(news.posts, member)) result.changed = true;
         return result;
     }
@@ -50618,7 +50785,7 @@ function buildMissingAttendanceSignupSuccessMessage(userId, lightRemoved) {
 // ㅊㅊ만 입력한 미가입 유저의 최소 출석 기록을 저장하는 함수
 function recordLightAttendanceOnly(attendanceLightData, sender, room) {
     if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
-    var todayText = getCurrentDate();
+    var todayText = getAttendanceKstDateKey();
     var row = attendanceLightData.users[sender] || { cnt: 0, recent: "", today: 0 };
     var already = row.recent === todayText && row.today > 0;
     var serverUpdated = false;
@@ -50646,8 +50813,14 @@ function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
     if (rowCnt > 0) member.cnt = (parseInt(member.cnt, 10) || 0) + rowCnt;
     if (row.recent) member.recent = row.recent;
     if (!member.server && row.server) member.server = row.server;
-    if (row.recent === getCurrentDate() && row.today > 0) {
+    if (row.recent === getAttendanceKstDateKey() && row.today > 0) {
         member.today = Math.max(parseInt(member.today, 10) || 0, 1);
+        if (data.attend_list_date !== row.recent) {
+            data.attend_list = data.attend_list instanceof Array ? data.attend_list.filter(function (attendee) {
+                return data.member[attendee] && String(data.member[attendee].recent || "") === row.recent;
+            }) : [];
+            data.attend_list_date = row.recent;
+        }
         if (data.attend_list instanceof Array && data.attend_list.indexOf(sender) === -1) data.attend_list.push(sender);
     }
     delete attendanceLightData.users[sender];
