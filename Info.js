@@ -496,6 +496,7 @@ function getInfoAttendanceKstDateKey() {
 
 // 출석 전에도 열어 둘 정보·운영 안내 명령을 확인하는 함수
 function isInfoAttendanceFreeCommand(msg, sender) {
+	if (sender === "오픈채팅봇") return true;
 	if (msg === "/도움말" || msg === "/명령어" || msg === "/공지" || msg === "/소식" || msg === "/문의" || msg === "/호이봇버전" || msg === "/모험시작") return true;
 	if (isGlobalInfoCommandAllowed(sender, msg)) return true;
 	if (msg === "/스타터중복확인") return isMaster(sender);

@@ -165,6 +165,7 @@ function round4() {
     assert.strictEqual(c.getAttendanceNoticeCommandPrefix("/출첵알림삭제"), "");
     assert(c.isAttendanceFreeCommand("/스타터중복확인", "master"));
     assert(!c.isAttendanceFreeCommand("/펀치 1", "admin"), "관리자 게임 명령도 출석 필요");
+    assert(c.isAttendanceFreeCommand("/펀치 1", "오픈채팅봇"), "오픈채팅봇은 출석 전에도 게임 명령 허용");
     assert(!c.isAttendanceFreeCommand("/호여", "admin"), "운영 명령 목록의 게임 명령 제외");
     assert(c.isAttendanceFreeCommand("/데이터상태", "admin"), "권한 있는 관리 명령 허용");
     assert(c.isAttendanceFreeCommand("/정보", "admin"), "전역 관리 명령 허용");
@@ -178,6 +179,7 @@ function round4() {
     assert(!infoContext.isInfoAttendanceFreeCommand("/포인트", "user"));
     assert(infoContext.isInfoAttendanceFreeCommand("/소식", "user"));
     assert(!infoContext.isInfoAttendanceFreeCommand("/포인트", "admin"));
+    assert(infoContext.isInfoAttendanceFreeCommand("/포인트", "오픈채팅봇"), "오픈채팅봇은 출석 전에도 정보 명령 허용");
     assert(infoContext.isInfoAttendanceFreeCommand("/미출석", "admin"));
     assert(main.includes("!hasAttendedToday(data, sender) && isAttendanceGameCommand(msg)"));
     assert(info.includes("String(attendanceMember.recent || \"\") !== getInfoAttendanceKstDateKey()"));
@@ -210,7 +212,7 @@ function round5() {
     c.room90 = "admin-room";
     c.getSupportPassDateValue = value => Number(value);
     c.getTodaySupportPassDateValue = () => 20260927;
-    load(c, main, ["hasExpiredHoiPassForPrivateChat", "buildExpiredHoiPassPrivateChatMessage", "recordBlockedPrivateChatAttempt"]);
+    load(c, main, ["hasExpiredHoiPassForPrivateChat", "buildExpiredHoiPassPrivateChatMessage", "buildNoHoiPassPrivateChatMessage", "getBlockedPrivateChatNoticeKind", "recordBlockedPrivateChatAttempt"]);
     const data = { member: { user: { pass: { hoi: { enabled: true, endDate: "20260926" } } } } };
     assert(c.hasExpiredHoiPassForPrivateChat(data, "user"));
     assert.strictEqual(c.recordBlockedPrivateChatAttempt("user-room", "user", "첫 시도"), false);
@@ -223,7 +225,21 @@ function round5() {
     assert(userMessage.includes("https://hoiland123.tistory.com/648"));
     assert(!userMessage.includes("누적 횟수"));
     assert(!c.hasExpiredHoiPassForPrivateChat({ member: { user: { pass: {} } } }, "user"));
-    assert(main.includes("privateChatDetectionSent && hasExpiredHoiPassForPrivateChat(data, sender)"));
+    assert.strictEqual(c.getBlockedPrivateChatNoticeKind(data, "user", false), "", "패스 만료자는 기존 감지 주기 유지");
+    assert.strictEqual(c.getBlockedPrivateChatNoticeKind(data, "user", true), "expired");
+    const noPassData = { member: { fresh: {} } };
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        const detectionSent = c.recordBlockedPrivateChatAttempt("fresh-room", "fresh", "시도 " + attempt);
+        assert.strictEqual(c.getBlockedPrivateChatNoticeKind(noPassData, "fresh", detectionSent), "noPass", "패스 없는 유저는 차단할 때마다 안내");
+        assert.strictEqual(detectionSent, attempt === 3, "관리자 감지 주기 유지");
+    }
+    assert.strictEqual(sent.length, 2);
+    const noPassMessage = c.buildNoHoiPassPrivateChatMessage({ member: { fresh: {} } }, {}, "fresh");
+    assert(noPassMessage.includes("호이패스 유저 외에는 호월톡 1:1을 이용할 수 없습니다."));
+    assert(noPassMessage.includes("https://hoiland123.tistory.com/647"));
+    assert(noPassMessage.includes("https://hoiland123.tistory.com/648"));
+    assert(!noPassMessage.includes("이용기간이 종료되었습니다"));
+    assert(main.includes("getBlockedPrivateChatNoticeKind(data, sender, privateChatDetectionSent)"));
     console.log("5/5 호월톡 1:1 감지·만료 안내 PASS");
 }
 
