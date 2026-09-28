@@ -5,7 +5,6 @@ setlocal EnableExtensions EnableDelayedExpansion
 set "ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe"
 set "TARGET_ADB_DEVICE=auto"
 set "REMOTE_DATA_DIR=/storage/emulated/0/호이랜드"
-set "SOURCE_BRANCH=feature/hoi"
 set "PROD_BRANCH=feature/prod"
 for %%I in ("%~dp0..") do set "TARGET_REPO=%%~fI"
 set "LOCAL_DATA_DIR=%TARGET_REPO%\data"
@@ -20,7 +19,7 @@ echo  hoiBot LDPlayer 운영 데이터 전체 내려받기 + PROD 반영
 echo ============================================================
 echo  %REMOTE_DATA_DIR% 전체를 ADB pull하여
 echo  !LOCAL_DATA_DIR! 로 교체한 뒤
-echo  data만 %SOURCE_BRANCH%와 %PROD_BRANCH%에 반영합니다.
+echo  운영 브랜치를 기준으로 새 데이터 작업 브랜치를 만든 뒤 PROD에 반영합니다.
 echo  DB import와 main 브랜치 동기화는 수행하지 않습니다.
 echo ============================================================
 echo.
@@ -32,6 +31,7 @@ if errorlevel 1 goto FAIL_REPO_PATH
 set "DID_PUSHD=1"
 
 for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "RUN_TS=%%t"
+set "SOURCE_BRANCH=feature/hoi-data-snapshot-%RUN_TS%-%RANDOM%"
 set "PULL_ROOT=%TEMP%\hoibot_adb_pull_%RUN_TS%_%RANDOM%"
 set "PULLED_DATA_DIR=%PULL_ROOT%\data"
 set "INCOMING_DIR=%TARGET_REPO%\.hoibot_data_incoming_%RUN_TS%_%RANDOM%"
@@ -42,20 +42,18 @@ set "GIT_STATUS_FILE=%TEMP%\hoibot_git_status_%RUN_TS%_%RANDOM%.txt"
 echo [1/7] Git 사전 안전 확인
 echo ------------------------------------------------------------
 for /f "delims=" %%b in ('git branch --show-current') do set "CURRENT_BRANCH=%%b"
-if not "!CURRENT_BRANCH!"=="%SOURCE_BRANCH%" goto FAIL_SOURCE_BRANCH
+if not "!CURRENT_BRANCH!"=="%PROD_BRANCH%" goto FAIL_SOURCE_BRANCH
 
 git status --porcelain=v1 --untracked-files=all > "%GIT_STATUS_FILE%"
 if errorlevel 1 goto FAIL_GIT_STATUS
 for %%A in ("%GIT_STATUS_FILE%") do if not "%%~zA"=="0" goto FAIL_GIT_DIRTY
 
-git fetch origin %SOURCE_BRANCH% %PROD_BRANCH%
+git fetch origin %PROD_BRANCH%
 if errorlevel 1 goto FAIL_GIT_FETCH
 for /f %%h in ('git rev-parse HEAD') do set "START_HEAD=%%h"
-for /f %%h in ('git rev-parse origin/%SOURCE_BRANCH%') do set "REMOTE_SOURCE_HEAD=%%h"
 for /f %%h in ('git rev-parse origin/%PROD_BRANCH%') do set "REMOTE_PROD_HEAD=%%h"
-if /i not "!START_HEAD!"=="!REMOTE_SOURCE_HEAD!" goto FAIL_GIT_BASE
 if /i not "!START_HEAD!"=="!REMOTE_PROD_HEAD!" goto FAIL_GIT_BASE
-echo [OK] clean %SOURCE_BRANCH% = origin/%SOURCE_BRANCH% = origin/%PROD_BRANCH%
+echo [OK] clean %PROD_BRANCH% = origin/%PROD_BRANCH%
 echo.
 
 if exist "%PULL_ROOT%\" goto FAIL_PATH_COLLISION
@@ -108,6 +106,8 @@ echo.
 
 echo [5/7] 내려받은 전체 데이터로 저장소 data 교체
 echo ------------------------------------------------------------
+git switch -c %SOURCE_BRANCH% !START_HEAD!
+if errorlevel 1 goto FAIL_SOURCE_SWITCH
 robocopy "%PULLED_DATA_DIR%" "%INCOMING_DIR%" /E /COPY:DAT /R:1 /W:1 > "%PULL_ROOT%\incoming_copy.log" 2>&1
 set "ROBOCOPY_CODE=!ERRORLEVEL!"
 if !ROBOCOPY_CODE! GEQ 8 goto FAIL_COPY
@@ -139,6 +139,7 @@ if not errorlevel 1 goto NO_DATA_CHANGES
 
 git commit -m "운영 데이터 스냅샷 %RUN_TS%"
 if errorlevel 1 goto FAIL_GIT_COMMIT
+set "DATA_CHANGED=1"
 for /f %%h in ('git rev-parse HEAD') do set "SNAPSHOT_COMMIT=%%h"
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$names=@(git -c core.quotepath=false diff-tree --no-commit-id --name-only -r HEAD); if($LASTEXITCODE -ne 0 -or $names.Count -eq 0){exit 95}; foreach($p in $names){if(-not ($p -eq 'data' -or $p.StartsWith('data/'))){exit 96}}"
@@ -155,6 +156,7 @@ goto REFLECT_PROD
 
 :NO_DATA_CHANGES
 git reset > nul 2>&1
+set "DATA_CHANGED=0"
 set "SNAPSHOT_COMMIT=!START_HEAD!"
 echo [INFO] data 변경 없음 - 기존 원격 commit을 검증합니다.
 
@@ -176,8 +178,7 @@ git fetch origin %PROD_BRANCH%
 if errorlevel 1 goto FAIL_GIT_AFTER_DATA
 for /f %%h in ('git rev-parse origin/%PROD_BRANCH%') do set "REMOTE_PROD_HEAD=%%h"
 if /i not "!SNAPSHOT_COMMIT!"=="!REMOTE_PROD_HEAD!" goto FAIL_PROD_VERIFY
-git switch %SOURCE_BRANCH%
-if errorlevel 1 goto FAIL_RETURN_SOURCE
+if "!DATA_CHANGED!"=="0" git branch -d %SOURCE_BRANCH% > nul 2>&1
 echo [OK] origin/%PROD_BRANCH% = !SNAPSHOT_COMMIT!
 goto SUCCESS
 
@@ -210,20 +211,23 @@ goto FAIL_END
 echo [FAIL] 저장소 경로 이동 실패: !TARGET_REPO!
 goto FAIL_END
 :FAIL_SOURCE_BRANCH
-echo [FAIL] 시작 브랜치는 %SOURCE_BRANCH%여야 합니다. 현재: !CURRENT_BRANCH!
+echo [FAIL] 시작 브랜치는 %PROD_BRANCH%여야 합니다. 현재: !CURRENT_BRANCH!
 goto FAIL_END
 :FAIL_GIT_STATUS
 echo [FAIL] Git 상태 확인 실패
 goto FAIL_END
 :FAIL_GIT_DIRTY
-echo [FAIL] 실행 전 working tree가 깨끗하지 않습니다. 01로 최신화한 뒤 다시 실행하세요.
+echo [FAIL] 실행 전 working tree가 깨끗하지 않습니다. 변경 파일을 확인하세요.
 goto FAIL_END
 :FAIL_GIT_FETCH
 echo [FAIL] 원격 Git 정보 갱신 실패
 if "!DATA_REPLACED!"=="1" goto FAIL_GIT_AFTER_DATA
 goto FAIL_END
 :FAIL_GIT_BASE
-echo [FAIL] HEAD, origin/%SOURCE_BRANCH%, origin/%PROD_BRANCH%가 일치하지 않습니다. 01을 먼저 실행하세요.
+echo [FAIL] 현재 %PROD_BRANCH%가 origin/%PROD_BRANCH%와 일치하지 않습니다. 먼저 최신화하세요.
+goto FAIL_END
+:FAIL_SOURCE_SWITCH
+echo [FAIL] 데이터 작업 브랜치 생성 실패: %SOURCE_BRANCH%
 goto FAIL_END
 :FAIL_PATH_COLLISION
 echo [FAIL] 임시 또는 롤백 경로가 이미 존재함
@@ -284,9 +288,6 @@ echo [FAIL] origin/%PROD_BRANCH% push 실패
 goto FAIL_GIT_AFTER_DATA
 :FAIL_PROD_VERIFY
 echo [FAIL] origin/%PROD_BRANCH% commit SHA 검증 실패
-goto FAIL_GIT_AFTER_DATA
-:FAIL_RETURN_SOURCE
-echo [FAIL] 반영 후 %SOURCE_BRANCH% 복귀 실패
 goto FAIL_GIT_AFTER_DATA
 :FAIL_RESTORE_FATAL
 echo [CRITICAL] 기존 data 자동 복원 실패
