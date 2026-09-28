@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.582"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.583"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -791,7 +791,7 @@ const towerTips = [
     "확률업 아이템을 사용하면 강화를 더 쉽게 할 수 있어요!"
 ];
 //room
-const room1 = "🍶30대, 월급은 스쳐지나가도 우리는 남는다..!🌙";
+const room1 = "😏 30대 반말방｜스치면 친구됨";
 const room2 = "2030 반말 💬 말 놓으면 금방 친해져•월루•보룸";
 const room3 = "🐰 2030, 여기 좀 귀엽다 너도 올래?🍓";
 const testRoom = "팻 테스트방";
@@ -37387,7 +37387,7 @@ function processHoiPassPremiumAutomationCommand(msg, data, petData, petSkillData
         appendPetMusouAutomationLog(data, { feature: "AUTO_ATTENDANCE", action: "ON", user: sender, result: "SAVED", reason: "", processedAt: nowText });
         return {
             changed: true,
-            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 자동 출석체크 기능을 켰습니다.\n매일 01:10에 자동출첵 처리가 되며 전체공지로 안내합니다."
+            message: getHoiPassPremiumHeader(data, sender) + "[" + rankText + "] 님 자동 출석체크 기능을 켰습니다.\n매일 00:01에 자동출첵 처리가 되며 전체공지로 안내합니다."
         };
     }
     settings.autoAttendance = false;
@@ -43027,7 +43027,7 @@ function buildUserPackageBagMessage(data, petData, petSkillData, guildData, send
     lines.push("└ 필요: 호이패스 프리미엄👑");
     lines.push("");
     lines.push("📅 자동 출석체크: " + attendanceStatus);
-    lines.push("└ 매일 01:10 자동 출석체크");
+    lines.push("└ 매일 00:01 자동 출석체크");
     lines.push("└ 설정: /출첵온 · /출첵오프");
     lines.push("└ 필요: 호이패스 프리미엄👑");
     lines.push("");
