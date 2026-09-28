@@ -22,6 +22,36 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# 권한 타이틀뱃지
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js`
+
+## Related Helpers
+
+- `getAuthorityTitleBadge`
+- `getInfoAuthorityTitleBadge`
+- `getHoiPassPremiumHeader`
+- `getInfoHoiPassPremiumHeader`
+- `buildAttendanceCompleteMessage`
+
+## Data Usage
+
+- `data.master`
+- `data.admin`
+- 호이패스 프리미엄의 현재 활성 상태
+
+## Save Flow
+
+- 현재 권한 명단을 읽어 마스터에게 `[🎮호월GM]`, 관리자에게 `[🎖호월관리자]`를 표시한다. 겸직자는 마스터 뱃지만 표시한다.
+- 권한 뱃지를 별도로 지급·저장하지 않는다. 기존 프리미엄 표시보다 위에 출력하며 프리미엄이 없어도 권한 뱃지를 표시한다.
+
+---
+
 # /성장오픈소 숫자, /성장오픈중 숫자, /성장오픈대 숫자
 
 Status: VERIFIED

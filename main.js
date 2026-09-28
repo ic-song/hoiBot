@@ -1021,6 +1021,10 @@ const GLOBAL_CONFIG = {
         medium: { size: "중", itemName: "모험가 경험치 성장물약🧪(중)(/성장오픈중 숫자)", command: "/성장오픈중", experience: 10000 },
         large: { size: "대", itemName: "모험가 경험치 성장물약🧪(대)(/성장오픈대 숫자)", command: "/성장오픈대", experience: 100000 }
     },
+    authorityBadge: { // 권한 명단에 따른 출력 뱃지
+        master: "[🎮호월GM]",
+        admin: "[🎖호월관리자]"
+    },
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
     },
@@ -34831,6 +34835,8 @@ function buildAttendanceCompleteMessage(data, petData, guildData, user, result) 
     var booster = exp.boosterResult;
     var boosterState = booster.usedBooster > 0 ? (booster.usedBooster < booster.requiredBooster ? "일부 적용" : "적용") : "미적용";
     var lines = [];
+    var authorityBadge = getAuthorityTitleBadge(data, user);
+    if (authorityBadge) lines.push(authorityBadge);
     if (isHoiPassPremiumActive(data, user)) lines.push("[👑호이패스 프리미엄👑]");
     lines.push("[" + checkRank(data, petData, guildData, user) + "]님, 출석체크 완료! ✅", "이 게임물은 게임물관리위원회로부터", "전체이용가 등급을 받았습니다.", GLOBAL_CONFIG.attendance.resultLink, "━━━━━━━━━━━━", "💰 총 획득 포인트 🅟" + numberWithCommas(result.totalPointReward), "📊 총 획득 경험치: +" + numberWithCommas(exp.total) + "exp", "├ 📘 기본: +" + numberWithCommas(exp.base) + "exp");
     if (exp.bonus > 0) lines.push("├ 🎟️ 티어 보너스: +" + numberWithCommas(exp.bonus) + "exp");
@@ -38912,9 +38918,17 @@ function isPassFreeHomeBadgeCommand(msg) {
         /^\/홈뱃지큐브수정(?:\s+.*)?$/.test(msg);
 }
 
-// 호이패스 프리미엄 활성 유저용 공통 출력 헤더를 반환하는 함수
+// 현재 권한 명단을 기준으로 최우선 타이틀뱃지를 반환하는 함수
+function getAuthorityTitleBadge(data, user) {
+    if (data && Array.isArray(data.master) && data.master.indexOf(user) !== -1) return GLOBAL_CONFIG.authorityBadge.master;
+    if (data && data.admin && Object.prototype.hasOwnProperty.call(data.admin, user)) return GLOBAL_CONFIG.authorityBadge.admin;
+    return "";
+}
+
+// 권한 뱃지와 호이패스 프리미엄 공통 출력 헤더를 반환하는 함수
 function getHoiPassPremiumHeader(data, user) {
-    return isHoiPassPremiumActive(data, user) ? "[👑호이패스 프리미엄👑]\n" : "";
+    var authorityBadge = getAuthorityTitleBadge(data, user);
+    return (authorityBadge ? authorityBadge + "\n" : "") + (isHoiPassPremiumActive(data, user) ? "[👑호이패스 프리미엄👑]\n" : "");
 }
 
 // 호이패스 프리미엄 종료일을 가방 표시 형식으로 변환하는 함수

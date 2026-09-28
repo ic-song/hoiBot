@@ -28,6 +28,7 @@ function baseContext() {
     return {
         GLOBAL_CONFIG: {
             attendance: { bonusPoint: 1000000, bonusExp: 100, chatExpDailyLimit: 500, kstOffsetMs: 9 * 60 * 60 * 1000, resultLink: "https://ibb.co/jkbgrzHt" },
+            authorityBadge: { master: "[🎮호월GM]", admin: "[🎖호월관리자]" },
             level: { boosterExtraMultiplier: 2, boosterConsumptionPerBaseExp: 2 },
             privateChat: { notifyEvery: 3, messagePreviewMaxLength: 100 }
         },
@@ -54,7 +55,7 @@ function attendanceContext() {
     const context = baseContext();
     context.today = "20260927";
     context.getAttendanceKstDateKey = () => context.today;
-    return load(context, main, ["applyAdventureExperienceBooster", "addMemberExperienceWithTierBonus", "hasAttendedToday", "processAttendanceForUser", "buildAttendanceCompleteMessage"]);
+    return load(context, main, ["applyAdventureExperienceBooster", "addMemberExperienceWithTierBonus", "hasAttendedToday", "getAuthorityTitleBadge", "processAttendanceForUser", "buildAttendanceCompleteMessage"]);
 }
 
 function round1() {

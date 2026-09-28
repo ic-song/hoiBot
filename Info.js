@@ -37,6 +37,10 @@ const GLOBAL_CONFIG = {
 			"⌛ 영원을 여행하는 자", "🌠 운명 너머를 걷는 자", "📖 새로운 신화를 쓰는 자", "💠 모든 경계 너머의 모험가", "🏆👑 끝없는 모험의 주인"
 		]
 	},
+	authorityBadge: { // 권한 명단에 따른 출력 뱃지
+		master: "[🎮호월GM]",
+		admin: "[🎖호월관리자]"
+	},
 	display: { // 화면 표시 설정
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
 	},
@@ -355,9 +359,17 @@ function hasInfoBasePass(data, user) {
 	return isInfoSupportPassActive(data, user, "newbie") || isInfoSupportPassActive(data, user, "hoi");
 }
 
-// Info 명령에서 호이패스 프리미엄 공통 헤더를 반환하는 함수
+// Info 명령에서 현재 권한 명단의 최우선 타이틀뱃지를 반환하는 함수
+function getInfoAuthorityTitleBadge(data, user) {
+	if (data && Array.isArray(data.master) && data.master.indexOf(user) !== -1) return GLOBAL_CONFIG.authorityBadge.master;
+	if (data && data.admin && Object.prototype.hasOwnProperty.call(data.admin, user)) return GLOBAL_CONFIG.authorityBadge.admin;
+	return "";
+}
+
+// Info 명령에서 권한 뱃지와 호이패스 프리미엄 공통 헤더를 반환하는 함수
 function getInfoHoiPassPremiumHeader(data, user) {
-	return isInfoSupportPassActive(data, user, "premium") ? "[👑호이패스 프리미엄👑]\n" : "";
+	var authorityBadge = getInfoAuthorityTitleBadge(data, user);
+	return (authorityBadge ? authorityBadge + "\n" : "") + (isInfoSupportPassActive(data, user, "premium") ? "[👑호이패스 프리미엄👑]\n" : "");
 }
 
 // Info 명령에서 추석 이벤트 황금당근 잔액을 반환하는 함수
