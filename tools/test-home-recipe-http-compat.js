@@ -81,8 +81,13 @@ for (const [name, options] of [
     ["materials insufficient", { insufficient: true }],
     ["malformed canonical response", { result: { ...recipe, required: [{ item: "", count: 1 }] } }]
 ]) {
-    test(`prior homeUpgrade is unusable after ${name}`, () => {
-        const context = scenario(options);
+    test(`success then ${name} cannot reuse the prior homeUpgrade`, () => {
+        const runtime = {};
+        const context = scenario(runtime);
+        context.run(command, "/집짓기");
+        assert.equal(context.state.u.homeUpgrade.floor, "1");
+        Object.assign(runtime, options);
+        if (options.insufficient) context.bag["돌멩이🪨"] = 0;
         context.run(command, "/집짓기");
         assert.equal(context.state.u.homeUpgrade, undefined);
         context.run(writer, "집뚝딱");
