@@ -7400,3 +7400,15 @@ Status: VERIFIED
 - Admin/Master가 인자 없이 정확히 `/펫스킬북보상`을 입력해 실행한다.
 - 초월성장과 나 혼자만 레벨업의 장착·프리미엄 잠금·가방 수량을 합산해 1:1 보상한다.
 - 두 스킬은 추첨·컬렉션·장착·관리자 신규 지급·개인 거래·자유시장 신규 등록과 구매 대상에서 제외된다.
+
+---
+
+# /집짓기 → 집뚝딱 canonical Recipe read boundary
+
+Status: SOURCE BRANCH ONLY (운영 route 미전환)
+
+- `/집짓기`는 정확한 명령이며 시작할 때 이전 `userState[sender].homeUpgrade`를 무효화한다.
+- `GLOBAL_CONFIG.homeRecipeCanonical.enabled`가 `true`인 별도 rollout에서만 `requestCanonicalHomeRecipeNext`가 외부 설정 파일의 HTTP 주소·토큰으로 hoi_world read endpoint를 호출한다. 실패 시 JSON으로 fallback하지 않는다.
+- 성공한 Recipe는 `validateCanonicalHomeRecipeContract`로 `floor` 문자열, `display` 문자열, `exp` 숫자, 순서가 있는 `required[{item,count}]`를 확인한 뒤 기존 메시지와 `homeUpgrade`를 만든다.
+- 재료 부족·Recipe 없음·연결/DB/응답 오류에서는 새 `homeUpgrade`를 만들지 않는다. `집뚝딱`/`/집뚝딱` writer는 기존 `homeUpgrade`를 다시 검증하고 `petSweetHomeData.json`·`member.json`을 저장하는 원래 흐름 그대로다.
+- 운영 파일 `/sdcard/호이랜드/petSweetHomeInfo.json`과 writer는 이번 source branch에서 삭제·변경하지 않는다.

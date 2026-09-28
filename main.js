@@ -957,6 +957,11 @@ var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 �
 var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 감시 객체 (실행 컨텍스트별 timerId)
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    homeRecipeCanonical: { // 별도 rollout 전에는 기존 /집짓기 경로를 유지한다.
+        enabled: false,
+        configPath: "/sdcard/호이랜드/homeRecipeReadBridge.json",
+        timeoutMs: 1500
+    },
     maintenance: { // MAIN 명령어의 임시 테스트방 한정 설정
         testRoomOnly: false
     },
@@ -22768,7 +22773,8 @@ replier.reply(
                     );
                 }
                 if (msg == "/집짓기") {
-                    let homeInfo = loadJsonFile(homeInfoFile);
+                    // 새 조회가 실패해도 이전 확인 결과로 집뚝딱을 실행할 수 없게 한다.
+                    if (userState[sender] && userState[sender].homeUpgrade) delete userState[sender].homeUpgrade;
                     let homeData = loadJsonFile(homeDataFile);
                     let nickName = checkRank(data, petData, guildData, sender);
                     if (!petData[sender] || !petData[sender].petname) {
@@ -22776,7 +22782,18 @@ replier.reply(
                         return;
                     }
                     homeData = initSweetHomeUser(homeData, sender);
-                    let nextInfo = getNextHomeInfoByFloor(homeInfo, homeData[sender].floor);
+                    let nextInfo;
+                    if (GLOBAL_CONFIG.homeRecipeCanonical.enabled) {
+                        try {
+                            nextInfo = requestCanonicalHomeRecipeNext(homeData[sender].floor);
+                        } catch (error) {
+                            replier.reply("❌ [" + nickName + "] 님\n집 제작 정보를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.");
+                            return;
+                        }
+                    } else {
+                        let homeInfo = loadJsonFile(homeInfoFile);
+                        nextInfo = getNextHomeInfoByFloor(homeInfo, homeData[sender].floor);
+                    }
                     if (!nextInfo) {
                         replier.reply("✅ [" + nickName + "] 님\n이미 최고 단계의 집을 보유 중입니다.");
                         return;
@@ -22807,14 +22824,7 @@ replier.reply(
                         );
                         return;
                     }
-                    if (!userState[sender]) userState[sender] = {};
-                    userState[sender].homeUpgrade = {
-                        floor: nextInfo.floor,
-                        houseName: nextInfo.display,
-                        exp: nextInfo.exp || 0,
-                        required: required
-                    };
-                    replier.reply(
+                    let successMessage =
                         "✅ [" +
                         nickName +
                         "] 님\n" +
@@ -22823,8 +22833,20 @@ replier.reply(
                         "👉 [집뚝딱] / [생각해본다]\n\n" +
                         lines.join("\n") +
                         "\n━━━━━━━━━━━━━━━\n" +
-                        "※ [집뚝딱]을 입력하면 즉시 재료를 소모하고 집을 업그레이드 합니다."
-                    );
+                        "※ [집뚝딱]을 입력하면 즉시 재료를 소모하고 집을 업그레이드 합니다.";
+                    if (!userState[sender]) userState[sender] = {};
+                    userState[sender].homeUpgrade = {
+                        floor: nextInfo.floor,
+                        houseName: nextInfo.display,
+                        exp: nextInfo.exp || 0,
+                        required: required
+                    };
+                    try {
+                        replier.reply(successMessage);
+                    } catch (error) {
+                        delete userState[sender].homeUpgrade;
+                        throw error;
+                    }
                     return;
                 }
                 if (msg == "/집뚝딱" || msg == "집뚝딱") {
@@ -49129,6 +49151,56 @@ function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comme
 }
 
 // 펫스윗홈
+// 비운영 rollout에서만 켜는 canonical 집 Recipe 조회와 기존 응답 계약 검증.
+function requestCanonicalHomeRecipeNext(currentFloor) {
+    var targetFloor = parseInt(currentFloor, 10) + 1;
+    if (!isFinite(targetFloor) || targetFloor < 1 || targetFloor > 9007199254740991 ||
+        Math.floor(targetFloor) !== targetFloor) throw new Error("HOME_RECIPE_FLOOR_INVALID");
+    var rawConfig = FileStream.read(GLOBAL_CONFIG.homeRecipeCanonical.configPath, "utf-8");
+    if (!rawConfig) throw new Error("HOME_RECIPE_BRIDGE_CONFIG_MISSING");
+    var bridge = JSON.parse(rawConfig);
+    if (!bridge || typeof bridge.url !== "string" || !/^https?:\/\//.test(bridge.url) ||
+        typeof bridge.token !== "string" || !bridge.token) throw new Error("HOME_RECIPE_BRIDGE_CONFIG_INVALID");
+    var url = new java.net.URL(bridge.url + (bridge.url.indexOf("?") === -1 ? "?" : "&") + "currentFloor=" + encodeURIComponent(String(targetFloor - 1)));
+    var connection = url.openConnection();
+    var reader = null;
+    try {
+        connection.setConnectTimeout(GLOBAL_CONFIG.homeRecipeCanonical.timeoutMs);
+        connection.setReadTimeout(GLOBAL_CONFIG.homeRecipeCanonical.timeoutMs);
+        connection.setRequestProperty("x-home-recipe-token", bridge.token);
+        if (connection.getResponseCode() !== 200) throw new Error("HOME_RECIPE_HTTP_ERROR");
+        reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+        var body = "";
+        var line;
+        while ((line = reader.readLine()) !== null) body += line;
+        var payload = JSON.parse(body);
+        if (!payload || payload.ok !== true || !Object.prototype.hasOwnProperty.call(payload, "recipe")) throw new Error("HOME_RECIPE_RESPONSE_INVALID");
+        if (payload.recipe === null) return null;
+        return validateCanonicalHomeRecipeContract(payload.recipe, targetFloor);
+    } finally {
+        if (reader) reader.close();
+        connection.disconnect();
+    }
+}
+
+// 집뚝딱이 소비하는 필드·타입만 허용해 잘못된 HTTP 응답의 상태 반영을 막는다.
+function validateCanonicalHomeRecipeContract(recipe, targetFloor) {
+    if (!recipe || typeof recipe !== "object" || typeof recipe.name !== "string" ||
+        typeof recipe.emoji !== "string" || typeof recipe.display !== "string" || !recipe.display ||
+        recipe.floor !== String(targetFloor) || typeof recipe.exp !== "number" ||
+        !isFinite(recipe.exp) || recipe.exp < 0 || recipe.exp > 9007199254740991 ||
+        Math.floor(recipe.exp) !== recipe.exp ||
+        !Array.isArray(recipe.required) || recipe.required.length === 0) throw new Error("HOME_RECIPE_RESPONSE_INVALID");
+    for (var i = 0; i < recipe.required.length; i++) {
+        var need = recipe.required[i];
+        if (!need || typeof need.item !== "string" || !need.item || typeof need.count !== "number" ||
+            !isFinite(need.count) || need.count < 1 || need.count > 9007199254740991 ||
+            Math.floor(need.count) !== need.count)
+            throw new Error("HOME_RECIPE_MATERIAL_INVALID");
+    }
+    return recipe;
+}
+
 function initSweetHomeUser(homeData, user) {
     if (!homeData || typeof homeData !== "object") homeData = {};
     if (!homeData[user]) {
