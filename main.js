@@ -1016,6 +1016,11 @@ const GLOBAL_CONFIG = {
             "⌛ 영원을 여행하는 자", "🌠 운명 너머를 걷는 자", "📖 새로운 신화를 쓰는 자", "💠 모든 경계 너머의 모험가", "🏆👑 끝없는 모험의 주인"
         ]
     },
+    growthPotion: { // 모험가 경험치 성장물약 설정
+        small: { size: "소", itemName: "모험가 경험치 성장물약🧪(소)(/성장오픈소 숫자)", command: "/성장오픈소", experience: 1000 },
+        medium: { size: "중", itemName: "모험가 경험치 성장물약🧪(중)(/성장오픈중 숫자)", command: "/성장오픈중", experience: 10000 },
+        large: { size: "대", itemName: "모험가 경험치 성장물약🧪(대)(/성장오픈대 숫자)", command: "/성장오픈대", experience: 100000 }
+    },
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
     },
@@ -7761,6 +7766,46 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     replier.reply("✅ 부스터 수정 완료\n[" + checkRank(data, petData, guildData, boosterEditTarget) + "] 님\n" + GLOBAL_CONFIG.level.boosterName + "\n변경: " + numberWithCommas(boosterEditBefore) + " → " + numberWithCommas(boosterEditAfter) + "개\n증감: " + (boosterEditAmount > 0 ? "+" : "") + numberWithCommas(boosterEditAmount) + "개");
+                    return;
+                }
+                var growthPotionCommand = msg.match(/^\/성장오픈(소|중|대)(?:\s+[\s\S]*)?$/);
+                if (growthPotionCommand) {
+                    var growthPotion = getGrowthPotionConfig(growthPotionCommand[1]);
+                    var growthPotionPrefix = "[" + checkRank(data, petData, guildData, sender) + "]님\n";
+                    var growthPotionInput = msg.match(/^\/성장오픈(소|중|대)\s+(\d+)$/);
+                    if (!growthPotionInput) {
+                        replier.reply(growthPotionPrefix + "❌ 사용할 수량을 정확히 입력해주세요.\n\n" + growthPotion.itemName + "\n\n사용 수량은 1 이상의 정수로 입력해주세요.\n\n예시: " + growthPotion.command + " 3\n→ " + growthPotion.size + "형 3개 사용 · " + numberWithCommas(growthPotion.experience * 3) + " EXP 획득");
+                        return;
+                    }
+                    var growthPotionCount = Number(growthPotionInput[2]);
+                    if (!isFinite(growthPotionCount) || growthPotionCount < 1 || Math.floor(growthPotionCount) !== growthPotionCount || growthPotionCount > 9007199254740991) {
+                        replier.reply(growthPotionPrefix + "❌ 사용할 수량을 정확히 입력해주세요.\n\n" + growthPotion.itemName + "\n\n사용 수량은 1 이상의 정수로 입력해주세요.\n\n예시: " + growthPotion.command + " 3\n→ " + growthPotion.size + "형 3개 사용 · " + numberWithCommas(growthPotion.experience * 3) + " EXP 획득");
+                        return;
+                    }
+                    var growthPotionMember = data.member[sender];
+                    var growthPotionStock = growthPotionMember && growthPotionMember.bag ? Number(growthPotionMember.bag[growthPotion.itemName]) || 0 : 0;
+                    if (growthPotionStock < growthPotionCount) {
+                        if (growthPotionStock <= 0) replier.reply(growthPotionPrefix + "❌ 사용할 성장물약이 없습니다.\n\n" + growthPotion.itemName + "\n🎒 보유 수량: 0개\n\n/가방에서 보유 아이템을 확인해주세요.");
+                        else replier.reply(growthPotionPrefix + "❌ 성장물약 수량이 부족합니다.\n\n" + growthPotion.itemName + "\n🎒 보유 수량: " + numberWithCommas(growthPotionStock) + "개\n🧪 요청 수량: " + numberWithCommas(growthPotionCount) + "개\n\n보유 수량 이하로 입력해주세요.\n예시: " + growthPotion.command + " " + growthPotionStock + "\n\n※ 성장물약은 사용되지 않았습니다.");
+                        return;
+                    }
+                    var growthPotionResult = prepareGrowthPotionUse(growthPotionMember, growthPotion, growthPotionCount);
+                    if (!growthPotionResult) {
+                        replier.reply(growthPotionPrefix + "❌ 처리 가능한 범위를 넘었습니다. 더 작은 수량으로 나누어 사용해주세요.\n" + growthPotion.itemName);
+                        return;
+                    }
+                    data.member[sender] = growthPotionResult.member;
+                    saveJsonFile(data, filePath);
+                    var verifiedGrowthPotionData = loadJsonFile(filePath);
+                    var verifiedGrowthPotionMember = verifiedGrowthPotionData && verifiedGrowthPotionData.member ? verifiedGrowthPotionData.member[sender] : null;
+                    if (!isExactJsonSnapshot(growthPotionResult.member, verifiedGrowthPotionMember)) {
+                        data.member[sender] = growthPotionMember;
+                        replier.reply(growthPotionPrefix + "❌ 성장물약 사용 저장 검증에 실패했습니다. 계정 데이터를 확인해주세요.\n" + growthPotion.itemName);
+                        return;
+                    }
+                    var growthPotionMessage = growthPotionPrefix + "🧪 성장물약 사용 완료!\n━━━━━━━━━━━━━\n" + growthPotion.itemName + "\n\n🧪 사용 수량: " + numberWithCommas(growthPotionCount) + "개\n📊 획득 경험치: +" + numberWithCommas(growthPotionResult.gainedExperience) + " EXP\n🎒 남은 수량: " + numberWithCommas(growthPotionResult.remainingCount) + "개\n━━━━━━━━━━━━━\n※ 티어 보너스·호월신의 가호 미적용";
+                    if (growthPotionResult.levelUps.length > 0) growthPotionMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, growthPotionResult.levelUps);
+                    replier.reply(growthPotionMessage);
                     return;
                 }
                 if (msg === "/호여" || /^\/호여\s+\d+$/.test(msg)) {
@@ -35853,6 +35898,36 @@ function removePercentWithExactCeil(value, percent) {
     var wholeUnits = Math.floor(appliedValue / denominator); // 큰 수 곱셈을 피하기 위한 배율 단위 몫
     var remainder = appliedValue - wholeUnits * denominator; // 배율 단위 미만 나머지
     return wholeUnits * 100000 + Math.ceil(remainder * 100000 / denominator);
+}
+
+// 성장물약 크기에 해당하는 설정을 반환하는 함수
+function getGrowthPotionConfig(size) {
+    if (size === "소") return GLOBAL_CONFIG.growthPotion.small;
+    if (size === "중") return GLOBAL_CONFIG.growthPotion.medium;
+    if (size === "대") return GLOBAL_CONFIG.growthPotion.large;
+    return null;
+}
+
+// 아이템 차감과 레벨업을 저장 전 후보 계정에 적용하는 함수
+function prepareGrowthPotionUse(member, potion, count) {
+    if (!member || !member.bag || !potion || !isFinite(count) || count < 1 || Math.floor(count) !== count || count > 9007199254740991) return null;
+    var stock = Number(member.bag[potion.itemName]); // 정확한 아이템명의 현재 보유 수량
+    var gainedExperience = potion.experience * count; // 티어·가호 배율을 적용하지 않은 획득 EXP
+    var currentExperience = Number(member.exp) || 0; // 레벨업 전 현재 레벨의 EXP
+    var currentPoint = Number(member.point) || 0; // 레벨업 포인트 보상 검증 기준
+    if (!isFinite(stock) || Math.floor(stock) !== stock || stock < count || stock > 9007199254740991 ||
+        !isFinite(gainedExperience) || Math.floor(gainedExperience) !== gainedExperience || gainedExperience > 9007199254740991 ||
+        !isFinite(currentExperience) || currentExperience < 0 || currentExperience + gainedExperience > 9007199254740991 ||
+        !isFinite(currentPoint) || currentPoint < 0 || currentPoint > 9007199254740991) return null;
+    var candidate = JSON.parse(JSON.stringify(member)); // 저장 전 검증할 계정 복사본
+    var remainingCount = stock - count;
+    if (remainingCount === 0) delete candidate.bag[potion.itemName];
+    else candidate.bag[potion.itemName] = remainingCount;
+    candidate.exp = currentExperience + gainedExperience;
+    var levelUps = processAdventureLevelUps(candidate);
+    if (candidate.exp >= getLevelRequiredExperience(candidate.lv) ||
+        !isFinite(candidate.point) || Math.floor(candidate.point) !== candidate.point || candidate.point > 9007199254740991) return null;
+    return { member: candidate, gainedExperience: gainedExperience, remainingCount: remainingCount, levelUps: levelUps };
 }
 
 // 보유 경험치를 넘겨 다중 레벨업과 정규 포인트 보상을 처리하는 함수

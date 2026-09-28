@@ -22,6 +22,34 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /성장오픈소 숫자, /성장오픈중 숫자, /성장오픈대 숫자
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getGrowthPotionConfig`
+- `prepareGrowthPotionUse`
+- `processAdventureLevelUps`
+- `buildAdventureLevelUpMessage`
+- `checkRank`
+
+## Data Usage
+
+- `data.member[sender].bag[정식 성장물약 이름]`
+- `data.member[sender].exp`, `lv`, `point`
+
+## Save Flow
+
+- 수량·보유량·EXP·포인트 범위를 검증한 복사본에 아이템 차감과 레벨업을 적용한 뒤 `member.json`을 한 번 저장하고 다시 읽어 검증한다.
+- 잘못된 입력, 미보유, 수량 부족, 처리 범위 초과에서는 저장하지 않는다. 티어 보너스와 가호는 적용하거나 차감하지 않는다.
+
+---
+
 # 1:1톡 패스 접근 제한
 
 Status: VERIFIED
