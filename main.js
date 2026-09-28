@@ -2132,6 +2132,12 @@ blockedNicknameTerms: [
             ["펫 이름변경권🎫", 3]
         ]
     },
+    referral: { // 캐릭터 생성 후 추천인 등록 보상·순위 설정
+        newMemberPoint: 100000000,
+        referrerPoint: 500000000,
+        skipKeyword: "없음",
+        visibleRankCount: 10
+    },
     adventureQuest: { // 모험가 퀘스트 튜토리얼 설정
         seasonMaxStage: 100,
         tutorialMaxStage: 16,
@@ -4566,6 +4572,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         //var castleBattleData = loadJsonFile(castleBattlePath);
         //var titleData = loadJsonFile(memberTitlePath);
+        if (msg === "/추천인순위") {
+            replier.reply(buildReferralRankingMessage(data, petData, guildData, sender));
+            return;
+        }
         {
             var isSignupPetFlow = !!getAdventureOnboardingMemberState(data, sender) || msg === "/모험시작" || msg === "/호여!!";
             if (sender.length <= 4 || sender == "오픈채팅봇" || isSignupPetFlow) {
@@ -4604,11 +4614,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     if (!data.member[sender].bag || typeof data.member[sender].bag !== "object") data.member[sender].bag = {};
                     if (!data.member[sender].bag[getAdventureBlessingItemName()]) addItem(data, sender, getAdventureBlessingItemName(), 1);
-                    adventureOnboarding.stage = "WAIT_BLESSING";
+                    adventureOnboarding.stage = "WAIT_REFERRAL";
                     adventureOnboarding.petNamedAt = formatDateTime(new Date());
                     saveJsonFile(petData, memberPetPath);
                     saveJsonFile(data, filePath);
-                    replier.reply(buildAdventurePetCreatedMessage(sender, adventureOnboarding.petName));
+                    replier.reply(buildAdventurePetCreatedIntroMessage(sender, adventureOnboarding.petName) + "\n\n" + buildAdventureReferralPromptMessage());
+                    return;
+                }
+                if (adventureOnboarding && adventureOnboarding.stage === "WAIT_REFERRAL" && isAdventureReferralInputCandidate(msg)) {
+                    if (!petData[sender] || !petData[sender].petname) {
+                        replier.reply(buildAdventureOnboardingResumeMessage(data, petData, sender));
+                        return;
+                    }
+                    var referralInput = String(msg).trim();
+                    var referralResult = referralInput === GLOBAL_CONFIG.referral.skipKeyword
+                        ? skipAdventureReferral(data, sender)
+                        : registerAdventureReferral(data, sender, referralInput);
+                    if (!referralResult.ok) {
+                        replier.reply(referralResult.message);
+                        return;
+                    }
+                    saveJsonFile(data, filePath);
+                    replier.reply(referralResult.message + "\n\n" + buildAdventureBlessingPromptMessage());
                     return;
                 }
                 if (msg === "/호여!!") {
@@ -35219,6 +35246,7 @@ function initializeMember(sender, data, petData) {
         rebirthcnt: 0,
         exp: 0,
         point: 0,
+        referralCount: 0,
         boostercnt: 0,
         chatcnt0: 0,
         cnt: 0,
@@ -50277,6 +50305,97 @@ function isAdventurePetNameInputCandidate(message) {
     return true;
 }
 
+// 추천인 대기 중 명령어가 아닌 닉네임·없음 입력만 판별하는 함수
+function isAdventureReferralInputCandidate(message) {
+    var text = String(message || "").trim();
+    if (!text || text.charAt(0) === "/") return false;
+    if (text === "ㅊㅊ" || text === "호월 봇 이용약관" || text.indexOf("가이드") >= 0) return false;
+    if (ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES.indexOf(text) !== -1) return false;
+    return true;
+}
+
+// 추천인 입력 단계에 보낼 안내 문구를 생성하는 함수
+function buildAdventureReferralPromptMessage() {
+    return "🤝 추천인 등록하고 1억 포인트 받으세요!\n\n" +
+        "호이월드를 소개해 준 분의 닉네임을 입력해주세요.\n\n" +
+        "👉 입력 예시: 호이 남\n" +
+        "※ 성별까지 포함하고, 따옴표는 빼주세요.\n\n" +
+        "🎁 추천인 등록 즉시\n" +
+        "• 나에게 → 1억 포인트!\n" +
+        "• 추천인에게 → 5억 포인트!\n\n" +
+        "소개해 준 분이 없다면\n" +
+        "👉 ‘없음’을 입력해주세요.";
+}
+
+// 추천인 보상과 추천 횟수에 쓸 안전한 비음수 정수를 반환하는 함수
+function getSafeReferralNumber(value) {
+    if (value === undefined || value === null) return 0;
+    var number = Number(value);
+    return isFinite(number) && Math.floor(number) === number && number >= 0 && number <= 9007199254740991 ? number : null;
+}
+
+// 추천인 없이 진행한 결정을 기존 가입 상태에 한 번만 기록하는 함수
+function skipAdventureReferral(data, user) {
+    var state = getAdventureOnboardingMemberState(data, user);
+    if (!state || state.stage !== "WAIT_REFERRAL" || (state.receipts && state.receipts.referral)) return { ok: false, message: "❌ 추천인 입력 단계가 아닙니다.\n/모험시작 으로 현재 단계를 확인해주세요." };
+    if (!state.receipts || typeof state.receipts !== "object") state.receipts = {};
+    state.receipts.referral = { status: "SKIPPED", decidedAt: formatDateTime(new Date()) };
+    state.stage = "WAIT_BLESSING";
+    return { ok: true, message: "✅ 추천인 없이 진행합니다." };
+}
+
+// 유효한 기존 유저를 추천인으로 등록하고 양쪽 보상을 함께 반영하는 함수
+function registerAdventureReferral(data, user, referrerName) {
+    var state = getAdventureOnboardingMemberState(data, user);
+    if (!state || state.stage !== "WAIT_REFERRAL" || (state.receipts && state.receipts.referral)) return { ok: false, message: "❌ 추천인 입력 단계가 아닙니다.\n/모험시작 으로 현재 단계를 확인해주세요." };
+    if (referrerName === user) return { ok: false, message: "❌ 본인은 추천인으로 등록할 수 없습니다.\n기존 유저의 닉네임 또는 없음을 입력해주세요." };
+    if (!data.member || !Object.prototype.hasOwnProperty.call(data.member, referrerName) || !data.member[referrerName]) return { ok: false, message: "❌ 등록된 추천인을 찾을 수 없습니다.\n닉네임을 다시 입력하거나 없음을 입력해주세요." };
+    var newMember = data.member[user];
+    var referrer = data.member[referrerName];
+    var newMemberPoint = getSafeReferralNumber(newMember.point); // 신규 유저의 지급 전 포인트
+    var referrerPoint = getSafeReferralNumber(referrer.point); // 추천인의 지급 전 포인트
+    var referralCount = getSafeReferralNumber(referrer.referralCount); // 추천인의 지급 전 누적 추천 인원
+    if (newMemberPoint === null || referrerPoint === null || referralCount === null ||
+        newMemberPoint + GLOBAL_CONFIG.referral.newMemberPoint > 9007199254740991 ||
+        referrerPoint + GLOBAL_CONFIG.referral.referrerPoint > 9007199254740991 ||
+        referralCount + 1 > 9007199254740991) return { ok: false, message: "❌ 추천 보상을 처리할 수 없습니다. 운영자에게 문의해주세요." };
+    newMember.point = newMemberPoint + GLOBAL_CONFIG.referral.newMemberPoint;
+    referrer.point = referrerPoint + GLOBAL_CONFIG.referral.referrerPoint;
+    referrer.referralCount = referralCount + 1;
+    if (!state.receipts || typeof state.receipts !== "object") state.receipts = {};
+    state.receipts.referral = { status: "REGISTERED", referrer: referrerName, decidedAt: formatDateTime(new Date()) };
+    state.stage = "WAIT_BLESSING";
+    return { ok: true, message: "✅ 추천인 등록 완료!\n\n🤝 추천인: " + referrerName + "\n\n🎁 나에게 1억 포인트가 지급되었습니다!\n🎁 " + referrerName + " 님에게 5억 포인트가 지급되었습니다!" };
+}
+
+// 현재까지 인정된 추천 인원만 순위 집계에 사용하는 함수
+function getReferralCount(member) {
+    var count = getSafeReferralNumber(member && member.referralCount);
+    return count === null ? 0 : count;
+}
+
+// 본인 추천 현황과 누적 추천 인원 순위를 표시하는 함수
+function buildReferralRankingMessage(data, petData, guildData, user) {
+    var ownCount = getReferralCount(data && data.member ? data.member[user] : null); // 조회자의 추천받은 신규 유저 수
+    var ownRewardText = ownCount > 0 ? numberWithCommas(ownCount * (GLOBAL_CONFIG.referral.referrerPoint / 100000000)) + "억 포인트" : "0포인트"; // 추천인으로 받은 누적 보상
+    var lines = ["🏆 호이월드 추천인 순위", "새로운 모험가를 초대한 주인공들!", "", "🤝 내가 추천한 인원: " + numberWithCommas(ownCount) + "명", "🎁 누적 추천 보상: " + ownRewardText, "※ 추천인 등록을 완료한 인원만 집계됩니다.", "※ 신규 유저 1명당 추천인에게 5억 지급!", "━━━━━━━━━━━━━"];
+    var rows = [];
+    var members = data && data.member ? data.member : {};
+    for (var name in members) {
+        if (!Object.prototype.hasOwnProperty.call(members, name)) continue;
+        var count = getReferralCount(members[name]);
+        if (count > 0) rows.push({ user: name, count: count });
+    }
+    rows.sort(function (a, b) { return b.count - a.count || (a.user < b.user ? -1 : a.user > b.user ? 1 : 0); });
+    if (rows.length === 0) lines.push("아직 추천인 등록 내역이 없습니다.");
+    for (var i = 0; i < rows.length; i++) {
+        if (i === GLOBAL_CONFIG.referral.visibleRankCount) lines.push(allsee);
+        var rank = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1) + ".";
+        lines.push(rank + " [" + checkRank(data, petData, guildData, rows[i].user) + "] — " + numberWithCommas(rows[i].count) + "명");
+    }
+    return lines.join("\n");
+}
+
 // 신규 모험 시작 첫 안내 문구를 생성하는 함수
 function buildAdventureStartMessage(user) {
     return "[" + user + "]님, 호이월드에 오신 것을 환영합니다! 🌏\n" +
@@ -50321,18 +50440,27 @@ function buildAdventurePetNamePromptMessage(user) {
         "📌 펫 이름은 6글자 이내로 정해 주세요.";
 }
 
-// 펫 생성과 호월신의 축복 지급 안내 문구를 생성하는 함수
-function buildAdventurePetCreatedMessage(user, petName) {
+// 기존 펫 생성 메시지에서 펫과의 첫 만남 구간을 반환하는 함수
+function buildAdventurePetCreatedIntroMessage(user, petName) {
     return "[" + user + "]님, 새로운 동반자가 생겼습니다! 🐾\n\n" +
         "당신이 지어준 이름, " + petName + "\n" +
-        "이제 이 친구와 함께 세상을 여행하게 됩니다.\n\n" +
-        "둘의 첫 만남을 축하하며\n" +
+        "이제 이 친구와 함께 세상을 여행하게 됩니다.";
+}
+
+// 기존 호월신의 축복 안내 구간을 원문 그대로 반환하는 함수
+function buildAdventureBlessingPromptMessage() {
+    return "둘의 첫 만남을 축하하며\n" +
         "호월신이 특별한 선물을 내려주었습니다.\n\n" +
         "🎁 호월신의 축복✨ 지급 완료!\n" +
         "━━━━━━━━━━━━━━━\n" +
         "호월신의 축복✨(/호여!!)\n\n" +
         "채팅창에 /호여!! 를 입력해 주세요.\n" +
         "펫정보 기본 세팅과 모험에 필요한 재화가 지급됩니다.";
+}
+
+// 기존 펫 생성과 축복 안내를 하나로 조합하는 함수
+function buildAdventurePetCreatedMessage(user, petName) {
+    return buildAdventurePetCreatedIntroMessage(user, petName) + "\n\n" + buildAdventureBlessingPromptMessage();
 }
 
 // 모험가 퀘스트 진행 상태를 생성하거나 정규화하는 함수
@@ -50676,6 +50804,7 @@ function buildAdventureOnboardingResumeMessage(data, petData, user) {
     var state = getAdventureOnboardingMemberState(data, user);
     if (!state) return "[" + user + "]님은 이미 호이월드 모험을 시작했습니다.\n/펫정보 로 현재 동반자를 확인해 주세요.";
     if (state.stage === "WAIT_PET_NAME") return buildAdventurePetNamePromptMessage(user);
+    if (state.stage === "WAIT_REFERRAL") return buildAdventureReferralPromptMessage();
     if (state.stage === "WAIT_BLESSING" || state.stage === "APPLYING") {
         var petName = petData && petData[user] ? petData[user].petname : state.petName;
         return "[" + user + "]님, " + (petName || "펫") + "에게 지급된 호월신의 축복✨을 사용해 주세요.\n채팅창에 /호여!! 를 입력하면 중단된 단계부터 이어집니다.";

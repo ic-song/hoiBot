@@ -6682,6 +6682,10 @@ Status: VERIFIED
 - `getAdventureOnboardingMemberState`
 - `buildHoiWorldTermsMessage`
 - `sanitizeAdventurePetName`
+- `isAdventureReferralInputCandidate`
+- `registerAdventureReferral`
+- `skipAdventureReferral`
+- `buildReferralRankingMessage`
 - `applyAdventureStarterIntimacyReward`
 - `applyAdventureStarterMemberRewards`
 - `applyAdventureStarterPetSettings`
@@ -6693,6 +6697,9 @@ Status: VERIFIED
 
 - `adventureOnboarding.users[사용자]`: 캐릭터 생성 전 시작 선택 대기 상태
 - `data.member[사용자].adventureOnboarding`: 캐릭터 생성 후 펫 이름·축복 적용·완료 단계
+- `data.member[사용자].adventureOnboarding.receipts.referral`: 추천인 등록 또는 없음 선택의 1회 영수증
+- `data.member[추천인].referralCount`: 등록 완료된 누적 추천 인원
+- `data.member[신규 유저·추천인].point`: 추천 등록 직후 양쪽 포인트 보상
 - `petData[사용자].starterBlessingApplied`
 - `petSkillData[사용자].starterBlessingApplied`
 - `homeData[사용자].starterBlessingApplied`
@@ -6704,6 +6711,9 @@ Status: VERIFIED
 - `다음에 한다`는 시작 선택 상태만 삭제하며 회원·펫·보상을 생성하지 않는다.
 - `출발한다`는 회원을 생성하고 기존 미가입 출석을 이관한 뒤 펫 이름 입력 단계로 이동한다.
 - 펫 이름 확정 시 이름을 정리·검사하고 `호월신의 축복✨(/호여!!)`을 1개만 지급한다.
+- 새 가입자는 펫 이름 확정 후 추천인 입력 대기로 이동한다. 기존 펫 생성 안내 뒤 추천인 등록 안내를 출력하고, 등록 또는 `없음` 선택 후 기존 축복 안내를 출력한다. 기존 `WAIT_BLESSING` 계정은 진행 중인 단계를 유지한다.
+- 추천 등록은 기존 닉네임과 본인 추천 여부, 포인트·횟수 범위를 먼저 확인한 뒤 신규 유저 1억·추천인 5억 포인트, 추천 횟수 +1, 가입 영수증을 같은 `member.json` 저장에 반영한다. 재입력에서는 중복 지급하지 않는다.
+- `/추천인순위`는 본인의 누적 추천 인원·보상을 조회하고 추천 인원 내림차순으로 표시한다. 11위부터 `allsee` 아래에 출력하며 저장하지 않는다.
 - `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 신규 회원의 친밀도 Lv.300(+330,000💕)와 스타터 아이템 17종·300억 포인트·가호 1,000개를 각각 1회 지원한다.
 - 신규 펫의 알 상태는 `/호여!!` 완료 시 기존 외형 목록의 땅·하늘 속성과 외형으로 확정해 `member_pet.json`에 저장한다. 이미 스타터 설정을 완료했지만 알 상태로 남은 펫은 해당 사용자의 다음 `main.js` 응답에서 한 번 보정·저장하며, 이후 조회에서는 다시 뽑지 않는다.
 - `/모험가퀘스트` 최초 참여에서는 스타터팩을 지급하지 않는다. 과거 퀘스트 지급 기록이 있는 회원은 `/호여!!`에서 같은 스타터팩을 다시 지급하지 않는다.
