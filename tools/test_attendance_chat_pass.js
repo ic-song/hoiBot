@@ -27,7 +27,7 @@ function load(context, source, names) {
 function baseContext() {
     return {
         GLOBAL_CONFIG: {
-            attendance: { bonusPoint: 1000000, bonusExp: 100, chatExpDailyLimit: 500, kstOffsetMs: 9 * 60 * 60 * 1000, resultLink: "https://ibb.co/jkbgrzHt" },
+            attendance: { bonusPoint: 1000000, bonusExp: 100, chatExpDailyLimit: 1000, kstOffsetMs: 9 * 60 * 60 * 1000, resultLink: "https://ibb.co/jkbgrzHt" },
             authorityBadge: { master: "[🎮호월GM]", admin: "[🎖호월관리자]" },
             level: { boosterExtraMultiplier: 2, boosterConsumptionPerBaseExp: 2 },
             privateChat: { notifyEvery: 3, messagePreviewMaxLength: 100 }
@@ -120,7 +120,7 @@ function round3() {
     c.today = "20260927";
     c.getAttendanceKstDateKey = () => c.today;
     load(c, main, ["awardDailyChatExperience", "buildDailyChatExperienceLimitMessage"]);
-    const data = { member: { user: { exp: 0, boostercnt: 10, chatExperienceDaily: { date: c.today, experience: 497, notified: false } } } };
+    const data = { member: { user: { exp: 0, boostercnt: 10, chatExperienceDaily: { date: c.today, experience: 997, notified: false } } } };
     const final = c.awardDailyChatExperience(data, "user");
     assert.strictEqual(final.total, 3);
     assert.strictEqual(final.reachedLimit, true);
@@ -129,19 +129,31 @@ function round3() {
     assert.strictEqual(data.member.user.boostercnt, 8);
     const restored = JSON.parse(JSON.stringify(data));
     assert.strictEqual(c.awardDailyChatExperience(restored, "user").reachedLimit, false, "재시작 후 안내 중복 금지");
-    restored.member.user.chatExperienceDaily.experience = 499;
+    restored.member.user.chatExperienceDaily.experience = 999;
     restored.member.user.chatExperienceDaily.notified = false;
     const edge = c.awardDailyChatExperience(restored, "user");
     assert.strictEqual(edge.total, 1);
     assert.strictEqual(edge.boosterResult.usedBooster, 0, "지급 안 된 가호 추가분 미차감");
     assert.strictEqual(restored.member.user.boostercnt, 8);
+    const oldLimit = { member: { user: { exp: 0, boostercnt: 10, chatExperienceDaily: { date: c.today, experience: 500, notified: true } } } };
+    const continued = c.awardDailyChatExperience(oldLimit, "user");
+    assert.strictEqual(continued.total, 3, "기존 500 EXP 도달 유저도 같은 날 추가 획득");
+    assert.strictEqual(continued.reachedLimit, false, "500 EXP에서는 새 한도 안내를 다시 출력하지 않음");
+    assert.strictEqual(oldLimit.member.user.chatExperienceDaily.experience, 503);
+    assert.strictEqual(oldLimit.member.user.chatExperienceDaily.notified, false, "이전 한도 알림 기록 해제");
+    oldLimit.member.user.chatExperienceDaily.experience = 997;
+    const newLimit = c.awardDailyChatExperience(oldLimit, "user");
+    assert.strictEqual(newLimit.reachedLimit, true, "새 1,000 EXP 한도에서 다시 알림");
+    assert.strictEqual(oldLimit.member.user.chatExperienceDaily.notified, true);
+    assert.strictEqual(c.awardDailyChatExperience(JSON.parse(JSON.stringify(oldLimit)), "user").total, 0, "재시작 후 추가 지급 금지");
     c.today = "20260928";
-    assert.strictEqual(c.awardDailyChatExperience(restored, "user").total, 3, "다음 날 한도 재개");
-    assert(c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").includes("500 / 500 EXP"));
+    assert.strictEqual(c.awardDailyChatExperience(oldLimit, "user").total, 3, "다음 날 한도 재개");
+    assert.strictEqual(oldLimit.member.user.chatExperienceDaily.experience, 3);
+    assert(c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").includes("1,000 / 1,000 EXP"));
     assert(!c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").startsWith("[👑호이패스 프리미엄👑]"));
     data.member.user.premiumActive = true;
     assert(c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").startsWith("[👑호이패스 프리미엄👑]"));
-    console.log("3/5 채팅 500 EXP 경계·가호·재시작 PASS");
+    console.log("3/5 채팅 1,000 EXP 경계·기존 알림·가호·재시작 PASS");
 }
 
 function round4() {

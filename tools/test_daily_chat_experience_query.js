@@ -18,7 +18,7 @@ function extractFunction(name) {
 }
 
 const context = {
-    GLOBAL_CONFIG: { attendance: { chatExpDailyLimit: 500 } },
+    GLOBAL_CONFIG: { attendance: { chatExpDailyLimit: 1000 } },
     today: "20260927",
     numberWithCommas: value => Number(value).toLocaleString("en-US"),
     isAdminIdentity: sender => sender === "admin",
@@ -39,24 +39,29 @@ const data = { member: { "핑크 여": { recent: context.today, chatExperienceDa
 let output = context.buildDailyChatExperienceStatusMessage(data, "핑크 여");
 assert(output.includes("대상: 핑크 여"));
 assert(output.includes("기준: 2026.09.27 (KST)"));
-assert(output.includes("획득: 497 / 500 EXP"));
-assert(output.includes("남음: 3 EXP"));
+assert(output.includes("획득: 497 / 1,000 EXP"));
+assert(output.includes("남음: 503 EXP"));
 assert(output.includes("상태: 획득 가능"));
 console.log("2/5 오늘 누적·남은 한도 PASS");
 
 data.member["핑크 여"].chatExperienceDaily.experience = 500;
 output = context.buildDailyChatExperienceStatusMessage(data, "핑크 여");
-assert(output.includes("획득: 500 / 500 EXP"));
+assert(output.includes("획득: 500 / 1,000 EXP"));
+assert(output.includes("남음: 500 EXP"));
+assert(output.includes("상태: 획득 가능"));
+data.member["핑크 여"].chatExperienceDaily.experience = 1000;
+output = context.buildDailyChatExperienceStatusMessage(data, "핑크 여");
+assert(output.includes("획득: 1,000 / 1,000 EXP"));
 assert(output.includes("남음: 0 EXP"));
 assert(output.includes("상태: 한도 도달"));
-data.member["핑크 여"].chatExperienceDaily.experience = 510;
-assert(context.buildDailyChatExperienceStatusMessage(data, "핑크 여").includes("획득: 500 / 500 EXP"));
+data.member["핑크 여"].chatExperienceDaily.experience = 1010;
+assert(context.buildDailyChatExperienceStatusMessage(data, "핑크 여").includes("획득: 1,000 / 1,000 EXP"));
 console.log("3/5 한도 도달·초과 저장값 표시 PASS");
 
 context.today = "20260928";
 output = context.buildDailyChatExperienceStatusMessage(data, "핑크 여");
-assert(output.includes("획득: 0 / 500 EXP"));
-assert(output.includes("남음: 500 EXP"));
+assert(output.includes("획득: 0 / 1,000 EXP"));
+assert(output.includes("남음: 1,000 EXP"));
 assert(output.includes("상태: 출석 전"));
 data.member["핑크 여"].recent = context.today;
 delete data.member["핑크 여"].chatExperienceDaily;

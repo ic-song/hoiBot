@@ -29,7 +29,7 @@ function makeContext(source, infoFile) {
     const context = {
         GLOBAL_CONFIG: {
             authorityBadge: extractBadgeConfig(source),
-            attendance: { resultLink: "https://example.com" }
+            attendance: { resultLink: "https://example.com", chatExpDailyLimit: 1000 }
         },
         isHoiPassPremiumActive: (data, user) => !!(data.member[user] && data.member[user].premiumActive),
         isInfoSupportPassActive: (data, user, type) => type === "premium" && !!(data.member[user] && data.member[user].premiumActive),
@@ -40,7 +40,7 @@ function makeContext(source, infoFile) {
     vm.createContext(context);
     const names = infoFile
         ? ["getInfoAuthorityTitleBadge", "getInfoHoiPassPremiumHeader"]
-        : ["getAuthorityTitleBadge", "getHoiPassPremiumHeader", "buildAttendanceCompleteMessage"];
+        : ["getAuthorityTitleBadge", "getHoiPassPremiumHeader", "buildAttendanceCompleteMessage", "buildDailyChatExperienceLimitMessage"];
     for (const name of names) vm.runInContext(extractFunction(source, name), context);
     return context;
 }
@@ -97,5 +97,9 @@ attendance = mainContext.buildAttendanceCompleteMessage(data, {}, {}, "마스터
 assert(attendance.startsWith("[🎮호월GM]\n[마스터]님, 출석체크 완료!"));
 attendance = mainContext.buildAttendanceCompleteMessage(data, {}, {}, "일반", attendanceResult);
 assert(attendance.startsWith("[일반]님, 출석체크 완료!"));
+data.admin["관리자"] = true;
+data.member["관리자"].premiumActive = true;
+assert(mainContext.buildDailyChatExperienceLimitMessage(data, {}, {}, "관리자").startsWith("[🎖호월관리자]\n[👑호이패스 프리미엄👑]\n[관리자]님,"));
+assert(mainContext.buildDailyChatExperienceLimitMessage(data, {}, {}, "관리자").includes("1,000 / 1,000 EXP"));
 
 console.log("authority badge: role precedence, dynamic lists, main/Info headers, attendance passed");

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.583"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.584"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -967,7 +967,7 @@ const GLOBAL_CONFIG = {
     attendance: { // 출석 보상 설정
         bonusPoint: 1000000,
         bonusExp: 100,
-        chatExpDailyLimit: 500,
+        chatExpDailyLimit: 1000,
         kstOffsetMs: 9 * 60 * 60 * 1000,
         resultLink: "https://ibb.co/jkbgrzHt"
     },
@@ -36325,6 +36325,7 @@ function awardDailyChatExperience(data, user) {
     var daily = member.chatExperienceDaily;
     var limit = GLOBAL_CONFIG.attendance.chatExpDailyLimit;
     var earned = Math.max(0, Math.min(limit, Number(daily.experience) || 0)); // 오늘 이미 실제 지급한 채팅 EXP
+    if (earned < limit && daily.notified === true) daily.notified = false; // 이전의 낮은 한도에서 기록된 알림 상태 해제
     var remaining = Math.max(0, limit - earned); // 이번 채팅에 남은 일일 지급 한도
     var base = Math.min(1, remaining);
     var availableBooster = Math.max(0, parseInt(member.boostercnt, 10) || 0);
@@ -36364,9 +36365,10 @@ function buildDailyChatExperienceStatusMessage(data, user) {
 
 // 채팅 경험치 일일 한도에 처음 도달했을 때 안내하는 함수
 function buildDailyChatExperienceLimitMessage(data, petData, guildData, user) {
+    var limit = numberWithCommas(GLOBAL_CONFIG.attendance.chatExpDailyLimit);
     return getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "]님,\n" +
         "오늘의 채팅 경험치를 모두 획득했습니다! 💬\n━━━━━━━━━━━━\n" +
-        "📊 채팅 경험치: 500 / 500 EXP\n\n" +
+        "📊 채팅 경험치: " + limit + " / " + limit + " EXP\n\n" +
         "오늘은 채팅으로 경험치를 더 얻을 수 없으며,\n" +
         "채팅으로 호월신의 가호✨도 소모되지 않습니다.\n\n" +
         "🕛 매일 오전 0시에 한도가 초기화됩니다.\n" +
