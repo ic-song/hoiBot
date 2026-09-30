@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.585"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.586"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2144,6 +2144,9 @@ blockedNicknameTerms: [
             ["탐험확률UP🗻(50%)", 200],
             ["땅문서📜", 20],
             ["펫 이름변경권🎫", 3]
+        ],
+        additionalItems: [ // 신규 스타터 추가 지급이며 과거 퀘스트 지급분 회수에서 제외
+            ["펜던트 강화석📿", 3]
         ]
     },
     referral: { // 캐릭터 생성 후 추천인 등록 보상·순위 설정
@@ -4674,13 +4677,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     if (applyAdventureStarterPetSettings(petData, sender)) saveJsonFile(petData, memberPetPath);
                     if (applyAdventureStarterSkill(petSkillData, sender)) saveJsonFile(petSkillData, petSkillDataPath);
                     if (applyAdventureStarterHome(starterHomeData, sender)) saveJsonFile(starterHomeData, homeDataFile);
-                    applyAdventureStarterMemberRewards(data, sender);
+                    var starterMemberRewardsGranted = applyAdventureStarterMemberRewards(data, sender);
                     var starterIntimacyGranted = applyAdventureStarterIntimacyReward(data, sender);
                     removeItem(data, sender, getAdventureBlessingItemName(), 1);
                     adventureOnboarding.stage = "COMPLETE";
                     adventureOnboarding.completedAt = formatDateTime(new Date());
                     saveJsonFile(data, filePath);
-                    replier.reply(buildAdventureStarterCompleteMessage(sender, petData[sender].petname, starterIntimacyGranted));
+                    replier.reply(buildAdventureStarterCompleteMessage(sender, petData[sender].petname, starterIntimacyGranted, starterMemberRewardsGranted));
                     return;
                 }
 
@@ -50949,11 +50952,17 @@ function buildAdventureQuestTitleMessage(data, petData, guildData, user) {
 }
 
 // 호월신의 축복 적용 완료 안내 문구를 생성하는 함수
-function buildAdventureStarterCompleteMessage(user, petName, intimacyGranted) {
+function buildAdventureStarterCompleteMessage(user, petName, intimacyGranted, memberRewardsGranted) {
+    var additionalItemLines = ""; // 이번 최초 지급에서 실제 추가된 스타터 아이템 안내
+    if (memberRewardsGranted) {
+        var additionalItems = GLOBAL_CONFIG.adventureStarter.additionalItems;
+        for (var i = 0; i < additionalItems.length; i++) additionalItemLines += additionalItems[i][0] + " " + additionalItems[i][1] + "개\n";
+    }
     return "[" + user + "]님에게 호월신의 축복✨이 깃듭니다!\n\n" +
         "🐾 " + petName + "의 기본 세팅 완료!\n" +
         "📙 펫스킬 학개론 장착 완료!\n" +
         (intimacyGranted ? "🐾 친밀도 Lv.300 (매력 330,000💕) 지원 완료!\n" : "") +
+        (additionalItemLines ? "🎁 추가 스타터 아이템\n" + additionalItemLines : "") +
         "━━━━━━━━━━━━━━━\n" +
         "🐾 먼저, 함께할 펫을 만나보세요!\n\n" +
         "채팅창에 /펫정보 를 입력하면\n" +
@@ -51011,6 +51020,7 @@ function applyAdventureStarterMemberRewards(data, user) {
     addPoint(data, user, starter.points);
     member.boostercnt = Math.max(0, parseInt(member.boostercnt, 10) || 0) + starter.boosters;
     for (var i = 0; i < starter.items.length; i++) addItem(data, user, starter.items[i][0], starter.items[i][1]);
+    for (var j = 0; j < starter.additionalItems.length; j++) addItem(data, user, starter.additionalItems[j][0], starter.additionalItems[j][1]);
 
     onboarding.receipts.memberRewards = true;
     return true;

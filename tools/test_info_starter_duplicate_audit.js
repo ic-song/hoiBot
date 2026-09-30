@@ -87,7 +87,7 @@ assert.strictEqual(context.getStarterRecoveryStatus(insufficient).label, "부분
 assert.strictEqual(insufficient.point, recovery.points);
 assert.strictEqual(insufficient.bag["땅문서📜"], 19);
 
-const commandStart = source.indexOf('if (msg === "/스타터중복확인")');
+const commandStart = source.indexOf('if (msg === "/스타터중복확인")', source.indexOf("function response("));
 const commandEnd = source.indexOf("var isGlobalInfoCommand", commandStart);
 assert(commandStart >= 0 && commandEnd > commandStart);
 const command = source.slice(commandStart, commandEnd);

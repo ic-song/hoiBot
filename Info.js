@@ -44,6 +44,9 @@ const GLOBAL_CONFIG = {
 	serverRanking: { // 종합순위에 표시하는 9개 논리 서버
 		labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[2030]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]"]
 	},
+	serverMemberList: { // 서버통계의 원래 소속값으로 조회 가능한 과거·운영 서버 표기
+		additionalKnownNames: ["호이서버1-2[30]", "호이서버6[30]", "호이월드 운영진[GM]"]
+	},
 	display: { // 화면 표시 설정
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
 	},
@@ -1601,54 +1604,42 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(msgOut);
 			return;
 		}
-		if (msg == "/서버통계") {
-			var members = data.member || {};
-			var serverCount = {};
-			var total = 0;
-			var unknown = 0;
-
-			var names = Object.keys(members);
-			for (var i = 0; i < names.length; i++) {
-				var name = names[i];
-				var m = members[name];
-
-				// 서버 정보가 없으면 미등록
-				if (!m.server || m.server === "") {
-					unknown++;
-					continue;
-				}
-
-				var serverName = m.server;
-
-				if (!serverCount[serverName]) {
-					serverCount[serverName] = 0;
-				}
-				serverCount[serverName]++;
-				total++;
+		if (msg === "/서버확인" || /^\/서버확인\s+\S(?:.*\S)?$/.test(msg)) {
+			Admins = Object.keys(data.admin);
+			Master = data.master;
+			if (!(isAdmin(sender) || isMaster(sender))) {
+				replier.reply("MASTER, ADMIN 전용 명령어입니다.");
+				return;
 			}
-
-			if (names.length == 0) {
+			var requestedServerName = msg.substring("/서버확인".length).trim();
+			var serverMemberGroups = getServerMemberGroups(data.member || {});
+			replier.reply(buildServerMemberListMessage(requestedServerName, serverMemberGroups));
+			return;
+		}
+		if (msg === "/서버통계") {
+			var serverStats = getServerMemberGroups(data.member || {});
+			if (serverStats.memberCount === 0) {
 				replier.reply("📭 등록된 유저가 없습니다.");
 				return;
 			}
 
 			// 서버 이름 기준 정렬
-			var serverNames = Object.keys(serverCount).sort(function (a, b) {
+			var serverNames = Object.keys(serverStats.usersByServer).sort(function (a, b) {
 				return a.localeCompare(b, "ko");
 			});
 
 			var msgOut = "📊 서버유저 통계 📊\n\n";
-			msgOut += "서버 전체인원: " + total + "명\n\n" + allsee;
+			msgOut += "서버 전체인원: " + serverStats.total + "명\n\n" + allsee;
 			msgOut += "가능 서버:\n";
 
 			for (var j = 0; j < serverNames.length; j++) {
 				var sName = serverNames[j];
-				var cnt = serverCount[sName];
+				var cnt = serverStats.usersByServer[sName].length;
 				msgOut += "- " + sName + ": " + cnt + "명\n";
 			}
 
-			if (unknown > 0) {
-				msgOut += "\n※ 서버 미등록 인원: " + unknown + "명";
+			if (serverStats.unknown > 0) {
+				msgOut += "\n※ 서버 미등록 인원: " + serverStats.unknown + "명";
 			}
 
 			replier.reply(msgOut);
@@ -1725,6 +1716,39 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		applyItemInfoContext(productionItemInfoData);
 	}
 }
+// 회원의 원래 서버 소속값으로 통계와 조회에 공통으로 사용할 목록을 집계하는 함수
+function getServerMemberGroups(members) {
+	var names = Object.keys(members);
+	var usersByServer = Object.create(null);
+	var total = 0; // 서버 소속이 있는 전체 회원 수
+	var unknown = 0; // 서버 소속값이 없거나 빈 회원 수
+	for (var i = 0; i < names.length; i++) {
+		var serverName = members[names[i]].server;
+		if (!serverName || serverName === "") {
+			unknown++;
+			continue;
+		}
+		if (!usersByServer[serverName]) usersByServer[serverName] = [];
+		usersByServer[serverName].push(names[i]);
+		total++;
+	}
+	return { usersByServer: usersByServer, total: total, unknown: unknown, memberCount: names.length };
+}
+
+// 요청한 서버의 전체 회원을 순번과 전체보기 형식으로 표시하는 함수
+function buildServerMemberListMessage(serverName, groups) {
+	if (!serverName) return "조회할 서버명을 입력해주세요. 사용법: /서버확인 서버명";
+	var knownServer = Object.prototype.hasOwnProperty.call(groups.usersByServer, serverName) ||
+		GLOBAL_CONFIG.serverRanking.labels.indexOf(serverName) !== -1 ||
+		GLOBAL_CONFIG.serverMemberList.additionalKnownNames.indexOf(serverName) !== -1;
+	if (!knownServer) return "존재하지 않는 서버입니다. 서버명을 확인해주세요.";
+	var users = (groups.usersByServer[serverName] || []).slice().sort(function (a, b) { return a.localeCompare(b, "ko"); });
+	if (!users.length) return "해당 서버에 등록된 유저가 없습니다.";
+	var lines = [serverName + " 유저리스트", allsee, ""];
+	for (var i = 0; i < users.length; i++) lines.push((i + 1) + ". " + users[i]);
+	return lines.join("\n");
+}
+
 // 스타터 회수 조회에서 없는 재화와 비정상 수량을 구분하는 함수
 function getStarterRecoverableCount(raw, maximum) {
 	if (raw === undefined || raw === null) return 0;
