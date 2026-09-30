@@ -7,6 +7,9 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
+		additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
+	},
 	level: { // 모험가 레벨 표시 설정
 		expBase: 1000,
 		expPerLevel: 1000,
@@ -200,11 +203,11 @@ var Master = initData.master;
 var Admins = Object.keys(initData.admin);
 function isAdmin(sender) {
 	var permissionRoom = getCurrentContext().permissionRoom;
-	return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92);
+	return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 function isMaster(sender) {
 	var permissionRoom = getCurrentContext().permissionRoom;
-	return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
+	return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 
 // 채팅방과 관계없이 Admin 명단에 포함된 사용자인지 확인하는 함수

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.589"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.590"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -965,6 +965,9 @@ var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 �
 var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 감시 객체 (실행 컨텍스트별 timerId)
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
+        additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
+    },
     maintenance: { // MAIN 명령어의 임시 테스트방 한정 설정
         testRoomOnly: false
     },
@@ -31211,13 +31214,13 @@ function buildHoiBotChangeLogMessage(changeLogData) {
 // 관리자 권한 여부를 확인하는 함수
 function isAdmin(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
-    return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92);
+    return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 
 // 마스터 권한 여부를 확인하는 함수
 function isMaster(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
-    return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92);
+    return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 
 // 채팅방과 관계없이 Admin 명단에 포함된 사용자인지 확인하는 함수
@@ -31233,7 +31236,7 @@ function isMasterIdentity(sender) {
 // 서버관리자방에서 등록된 Admin·Master의 운영 권한을 확인하는 함수
 function isServerAdminRoomOperator(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
-    return permissionRoom === room92 && (Admins.indexOf(sender) !== -1 || Master.indexOf(sender) !== -1);
+    return (permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1) && (Admins.indexOf(sender) !== -1 || Master.indexOf(sender) !== -1);
 }
 
 // 길드 영지전 시작 명령의 기존 운영자와 서버관리자방 권한을 확인하는 함수
@@ -57568,9 +57571,9 @@ function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleDat
 function buildMiniPetRobberyHistoryMessage(user, data, petData, guildData) {
     var history = petData[user] && petData[user].miniPetRobberyHistory ? petData[user].miniPetRobberyHistory : [];
     var recent = history.slice(Math.max(0, history.length - 50)).reverse(); // 최신순 최대 50건
-    var lines = ["약탈자📙 [S]", "[" + checkRank(data, petData, guildData, user) + "]님의 약탈 기록", "━━━━━━━━━━━━━", "미니펫대전 시 70% 확률로", "상대의 1,000만 포인트를 훔칩니다.", "", "📜 최근 약탈 기록: " + recent.length + "건"];
+    var lines = ["약탈자📙 [S]", "[" + checkRank(data, petData, guildData, user) + "]님의 약탈 기록", allsee, "━━━━━━━━━━━━━", "미니펫대전 시 70% 확률로", "상대의 1,000만 포인트를 훔칩니다.", "", "📜 최근 약탈 기록: " + recent.length + "건"];
     if (!recent.length) return lines.concat(["아직 약탈에 성공한 기록이 없습니다."]).join("\n");
-    lines.push("└ 최신순 · 최대 50건 표시", allsee, "━━━━━━━━━━━━━");
+    lines.push("└ 최신순 · 최대 50건 표시", "━━━━━━━━━━━━━");
     for (var i = 0; i < recent.length; i++) lines.push((i + 1) + ". [" + recent[i].target + "] · " + numberWithCommas(recent[i].amount) + " 포인트\n   └ " + recent[i].at);
     lines.push("━━━━━━━━━━━━━");
     return lines.join("\n");

@@ -48,6 +48,7 @@ if (normalStatus.unlimited || normalStatus.limit !== 23 || normalStatus.remainin
 
 let permissionRoom = "서버관리자";
 const operatorContext = {
+    GLOBAL_CONFIG: { permissions: { additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"] } },
     room92: "서버관리자",
     room8: "공성전",
     Admins: ["관리자 남"],
