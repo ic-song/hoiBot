@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.584"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.585"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -815,15 +815,23 @@ roomToServer[room2] = "호이서버2[2030]";
 roomToServer[room3] = "벨라서버1[2030]";
 roomToServer[room6] = "호이서버3[3040]";
 roomToServer[room7] = "호이서버5[2030]";
-roomToServer[room10] = "호이서버6[30]";
+roomToServer[room10] = "호이서버6[2030]";
 roomToServer[room11] = "호이서버4[3040]";
 roomToServer[room12] = "벨라서버2[30]";
 roomToServer[room13] = "호이서버7[2030]";
-roomToServer[room14] = "호이서버1-2[30]"
+roomToServer[room14] = "호이서버1[30]";
 roomToServer[room90] = "호이월드 운영진[GM]";
+
+// 기존 서버 표기를 9개 논리 서버의 최종 명칭으로 맞추는 함수
+function normalizeHoiServerLabel(serverName) {
+    if (serverName === "호이서버1-2[30]") return "호이서버1[30]";
+    if (serverName === "호이서버6[30]") return "호이서버6[2030]";
+    return serverName || "";
+}
 
 // 서버 전체명을 운영용 약칭으로 변환하는 함수
 function getServerShortName(serverName) {
+    serverName = normalizeHoiServerLabel(serverName);
     var map = {
         "벨라서버1[2030]": "벨1",
         "벨라서버2[30]": "벨2",
@@ -1024,6 +1032,12 @@ const GLOBAL_CONFIG = {
     authorityBadge: { // 권한 명단에 따른 출력 뱃지
         master: "[🎮호월GM]",
         admin: "[🎖호월관리자]"
+    },
+    serverTransfer: { // 호이서버 이동권과 이동 가능한 서버
+        itemName: "서버이동권🖱[호이서버 전용](/서버변경 서버이름)",
+        itemPrice: 100000000000,
+        names: ["호이서버1", "호이서버2", "호이서버3", "호이서버4", "호이서버5", "호이서버6", "호이서버7"],
+        labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[2030]", "호이서버7[2030]"]
     },
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
@@ -3445,6 +3459,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         if (!data) data = loadJsonFile(filePath);
         addResponseTiming("member.json 로드", commonStepStart);
+        if (data.shop && data.shop[GLOBAL_CONFIG.serverTransfer.itemName] !== GLOBAL_CONFIG.serverTransfer.itemPrice) {
+            data.shop[GLOBAL_CONFIG.serverTransfer.itemName] = GLOBAL_CONFIG.serverTransfer.itemPrice;
+            saveJsonFile(data, filePath);
+        }
         commonStepStart = Date.now();
         var petData = loadJsonFile(memberPetPath);
         addResponseTiming("member_pet.json 로드", commonStepStart);
@@ -8314,30 +8332,31 @@ replier.reply(
                     replier.reply(out);
                     return;
                 }
-                if (msg.startsWith("/관리자추가") && isMaster(sender)) {
-                    var regex = /^\/관리자추가\s+([^]+)/;
+                if (/^\/관리자추가\s+\S(?:.*\S)?$/.test(msg) && isMaster(sender)) {
+                    var regex = /^\/관리자추가\s+(.+)$/;
                     var match = msg.match(regex);
                     if (match) {
-                        var targetUserz = match[1];
+                        var targetUserz = match[1].trim();
                         if (!data.admin) data.admin = {};
                         if (data.member[targetUserz]) {
                             var img = ""; //현재 프로필 이미지 가져오는거 오류인듯
                             if (data.admin.hasOwnProperty(targetUserz)) {
                                 data.admin[targetUserz] = img;
-                                replier.reply(targetUserz + "님의 프로필 이미지가 업데이트되었습니다.");
-                                Admins = getAdminPayoutUsers(data);
+                                saveJsonFile(data, filePath);
+                                replier.reply(targetUserz + "님은 이미 관리자로 등록되어 있습니다.\n※ 관리자 상태가 변경되지 않아 서버이동권은 지급되지 않습니다.");
                             } else {
                                 data.admin[targetUserz] = img;
-                                replier.reply("[" + targetUserz + "] 님이 어드민으로 추가되었습니다.");
-                                Admins = getAdminPayoutUsers(data);
+                                addItem(data, targetUserz, GLOBAL_CONFIG.serverTransfer.itemName, 1);
+                                saveJsonFile(data, filePath);
+                                replier.reply("[" + targetUserz + "]님의 관리자 등록이 완료되었습니다. ✅\n🎫 대상 계정에 서버이동권 1개를 지급했습니다.\n\n" + GLOBAL_CONFIG.serverTransfer.itemName);
                             }
-                            saveJsonFile(data, filePath);
+                            Admins = getAdminPayoutUsers(data);
                         } else {
                             replier.reply(targetUserz + "는(은) 존재하지 않는 사용자입니다.");
                         }
                     }
                 }
-                if (msg.startsWith("/관리자삭제") && isMaster(sender)) {
+                if (/^\/관리자삭제\s+\S(?:.*\S)?$/.test(msg) && isMaster(sender)) {
                     var regex = /^\/관리자삭제\s+(.+)/;
                     var match = msg.match(regex);
                     if (match) {
@@ -8345,16 +8364,46 @@ replier.reply(
                         if (data.member[targetUser]) {
                             if (data.admin && data.admin.hasOwnProperty(targetUser)) {
                                 delete data.admin[targetUser];
-                                replier.reply("[" + targetUser + "] 님이 관리자에서 삭제되었습니다.");
+                                addItem(data, targetUser, GLOBAL_CONFIG.serverTransfer.itemName, 1);
                                 saveJsonFile(data, filePath);
+                                Admins = getAdminPayoutUsers(data);
+                                replier.reply("[" + targetUser + "]님의 관리자 해제가 완료되었습니다. ✅\n🎫 대상 계정에 서버이동권 1개를 지급했습니다.\n\n" + GLOBAL_CONFIG.serverTransfer.itemName);
                             } else {
-                                replier.reply("[" + targetUser + "] 님은 관리자가 아닙니다.");
+                                replier.reply("[" + targetUser + "]님은 관리자로 등록되어 있지 않습니다.\n※ 관리자 상태가 변경되지 않아 서버이동권은 지급되지 않습니다.");
                             }
                         } else {
                             replier.reply(targetUser + "는(은) 존재하지 않는 사용자입니다.");
                         }
                         Admins = getAdminPayoutUsers(data);
                     }
+                }
+                if (msg === "/관리자감추기") {
+                    var displayNick = "[" + checkRank(data, petData, guildData, sender) + "]님,";
+                    if (!data.admin || !Object.prototype.hasOwnProperty.call(data.admin, sender)) {
+                        replier.reply(displayNick + "\n관리자에게만 적용되는 표시 설정입니다.");
+                        return;
+                    }
+                    if (!data.member[sender].displaySettings) data.member[sender].displaySettings = {};
+                    data.member[sender].displaySettings.hideAdminTitle = data.member[sender].displaySettings.hideAdminTitle !== true;
+                    saveJsonFile(data, filePath);
+                    if (data.member[sender].displaySettings.hideAdminTitle) {
+                        replier.reply(displayNick + "\n[🎖호월관리자] 타이틀을 숨겼습니다.\n\n관리자 권한은 그대로 유지됩니다.\n다시 표시하려면 /관리자감추기를 입력해주세요.");
+                    } else {
+                        replier.reply(getAuthorityTitleBadge(data, sender) + "\n" + displayNick + "\n관리자 타이틀을 다시 표시합니다.\n\n숨기려면 /관리자감추기를 입력해주세요.");
+                    }
+                    return;
+                }
+                if (msg === "/이모지감추기") {
+                    if (!data.member[sender].displaySettings) data.member[sender].displaySettings = {};
+                    data.member[sender].displaySettings.hideRankEmoji = data.member[sender].displaySettings.hideRankEmoji !== true;
+                    saveJsonFile(data, filePath);
+                    var emojiNick = "[" + checkRank(data, petData, guildData, sender) + "]님,";
+                    if (data.member[sender].displaySettings.hideRankEmoji) {
+                        replier.reply(emojiNick + "\n본인의 순위 이모지를 숨겼습니다.\n\n다시 표시하려면 /이모지감추기를 입력해주세요.");
+                    } else {
+                        replier.reply(emojiNick + "\n본인의 순위 이모지를 다시 표시합니다.\n\n숨기려면 /이모지감추기를 입력해주세요.");
+                    }
+                    return;
                 }
                 if (msg === "/관리자명단") {
                     Admins = getAdminPayoutUsers(data);
@@ -19247,6 +19296,47 @@ replier.reply(
                     return;
                 }
 
+                if (msg === "/서버변경" || /^\/서버변경\s+\S(?:.*\S)?$/.test(msg)) {
+                    var transferConfig = GLOBAL_CONFIG.serverTransfer;
+                    var transferUser = data.member[sender];
+                    var transferNick = "[" + checkRank(data, petData, guildData, sender) + "]님,";
+                    var transferCurrent = normalizeHoiServerLabel(transferUser.server); // 기존 별칭을 반영한 현재 소속
+                    var transferCount = parseInt(transferUser.bag && transferUser.bag[transferConfig.itemName], 10) || 0; // 남은 이동권
+                    var transferChoices = "호이서버1 · 호이서버2 · 호이서버3\n호이서버4 · 호이서버5 · 호이서버6\n호이서버7";
+                    if (msg === "/서버변경") {
+                        replier.reply(transferNick + "\n서버이동 안내🖱\n━━━━━━━━━━━━━\n🏰 현재 소속: " + (transferCurrent || "미등록") + "\n🎫 보유 서버이동권: " + transferCount + "개\n\n📍 변경 가능한 서버\n" + transferChoices + "\n\n📝 사용 방법\n/서버변경 서버이름\n\n예) /서버변경 호이서버1\n\n※ 서버 변경 성공 시 서버이동권 1개가 사용됩니다.");
+                        return;
+                    }
+                    var transferName = msg.substring("/서버변경".length).trim();
+                    var transferIndex = transferConfig.names.indexOf(transferName);
+                    if (transferIndex < 0) {
+                        replier.reply(transferNick + "\n변경할 서버 이름을 확인해주세요. ⚠️\n━━━━━━━━━━━━━\n입력한 서버: " + transferName + "\n\n📍 변경 가능한 서버\n" + transferChoices + "\n\n아래 예시처럼 정확한 서버 이름을 입력해주세요.\n예) /서버변경 호이서버1\n\n※ 서버이동권은 사용되지 않았습니다.");
+                        return;
+                    }
+                    var transferDestination = transferConfig.labels[transferIndex];
+                    if (transferCurrent === transferDestination) {
+                        var otherIndex = transferIndex === 0 ? 1 : 0;
+                        replier.reply(transferNick + "\n이미 " + transferCurrent + " 소속입니다.\n\n다른 서버 이름을 입력해주세요.\n예) /서버변경 " + transferConfig.names[otherIndex] + "\n\n※ 서버이동권은 사용되지 않았습니다.");
+                        return;
+                    }
+                    if (transferCount < 1) {
+                        replier.reply(transferNick + "\n서버이동권이 부족합니다. 🎫\n\n보유 수량: 0개\n필요 수량: 1개\n\n상점에서 서버이동권을 구매해주세요.\n판매 가격: 1,000억 포인트\n\n※ 소속 서버는 변경되지 않았습니다.");
+                        return;
+                    }
+                    var transferPrevious = transferUser.server;
+                    transferUser.server = transferDestination;
+                    removeItem(data, sender, transferConfig.itemName, 1);
+                    try {
+                        saveJsonFile(data, filePath);
+                    } catch (transferError) {
+                        transferUser.server = transferPrevious;
+                        addItem(data, sender, transferConfig.itemName, 1);
+                        replier.reply(transferNick + "\n서버 변경 처리 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.\n\n※ 소속 서버와 서버이동권 보유 수량은 변경되지 않았습니다.");
+                        return;
+                    }
+                    replier.reply(transferNick + "\n소속 서버 변경이 완료되었습니다! ✅\n━━━━━━━━━━━━━\n🏰 " + (transferCurrent || "미등록") + " → " + transferDestination + "\n\n🎫 서버이동권 1개 사용\n📦 남은 서버이동권: " + (transferCount - 1) + "개");
+                    return;
+                }
                 if (msg.startsWith("/서버이동 ") && isAdmin(sender)) {
                     var commandRemoved = msg.replace("/서버이동", "").trim(); // "호이 남 호이서버1[30]"
                     var validServers = Object.values(roomToServer);
@@ -20436,7 +20526,7 @@ replier.reply(
                         return;
                     }
                     let targetName = candidates[Math.floor(Math.random() * candidates.length)];
-                    // 총매력 계산 (장착 + 가방 상위 10마리)
+                    // 대표 100%와 보조 50%의 캐슬·레이드 합산 매력
                     // 치명타 적용 전 기본값
                     let myBase = getTotalMinipetExp(sender, petData);
                     let enemyBase = getTotalMinipetExp(targetName, petData);
@@ -20493,20 +20583,20 @@ replier.reply(
                     resultMsg += "⚔️ 공격\n";
                     resultMsg += "유저: " + checkRank(data, petData, guildData, sender) + "\n";
                     resultMsg += "미니펫: " + petData[sender].miniPet.name + "(" + petData[sender].miniPet.emoji + ") · 강화: " + myMiniPetUpgrade + "강💫\n";
-                    resultMsg += "등급: " + petData[sender].miniPet.grade + " · 장착: +" + numberWithCommas(petData[sender].miniPet.battleExp) + "💕\n";
-                    resultMsg += "미니펫매력: " + numberWithCommas(myBase) + "💕\n";
-                    resultMsg += "최종: " + numberWithCommas(myFinal) + "💕" + (isMyCrit ? " 💥크리티컬" : "") + "\n\n";
+                    resultMsg += "등급: " + petData[sender].miniPet.grade + " · 대표: +" + numberWithCommas(petData[sender].miniPet.battleExp) + "💞\n";
+                    resultMsg += "미니펫매력: " + numberWithCommas(myBase) + "💞\n";
+                    resultMsg += "최종: " + numberWithCommas(myFinal) + "💞" + (isMyCrit ? " 💥크리티컬" : "") + "\n\n";
                     resultMsg += "              🆚\n\n";
                     resultMsg += "🛡️ 방어\n";
                     resultMsg += "유저: " + checkRank(data, petData, guildData, targetName) + "\n";
                     resultMsg += "미니펫: " + petData[targetName].miniPet.name + "(" + petData[targetName].miniPet.emoji + ") · 강화: " + enemyMiniPetUpgrade + "강💫\n";
-                    resultMsg += "등급: " + petData[targetName].miniPet.grade + " · 장착: +" + numberWithCommas(petData[targetName].miniPet.battleExp) + "💕\n";
-                    resultMsg += "미니펫매력: " + numberWithCommas(enemyBase) + "💕\n";
-                    resultMsg += "최종: " + numberWithCommas(enemyFinal) + "💕" + (isEnemyCrit ? " 💥크리티컬" : "") + "\n\n";
+                    resultMsg += "등급: " + petData[targetName].miniPet.grade + " · 대표: +" + numberWithCommas(petData[targetName].miniPet.battleExp) + "💞\n";
+                    resultMsg += "미니펫매력: " + numberWithCommas(enemyBase) + "💞\n";
+                    resultMsg += "최종: " + numberWithCommas(enemyFinal) + "💞" + (isEnemyCrit ? " 💥크리티컬" : "") + "\n\n";
                     resultMsg += "━━━━━━━━━━━━\n";
                     resultMsg += "📊 최종 매력 비교\n";
                     resultMsg += numberWithCommas(myFinal) + " " + miniPetCompareSymbol + " " + numberWithCommas(enemyFinal) + "\n";
-                    resultMsg += "매력 차이: " + numberWithCommas(miniPetExpGap) + "💕\n\n";
+                    resultMsg += "매력 차이: " + numberWithCommas(miniPetExpGap) + "💞\n\n";
                     resultMsg += isWin ? "🏆 공격 승리\n" : "🛡️ 방어 승리\n";
                     resultMsg += isWin ? checkRank(data, petData, guildData, sender) + " 님이 미니펫대전에서 승리했습니다!\n" : checkRank(data, petData, guildData, targetName) + " 님이 미니펫대전에서 승리했습니다!\n";
                     resultMsg +=
@@ -20557,6 +20647,10 @@ replier.reply(
                         if (Math.random() < 0.7) {
                             data.member[targetName].point = (data.member[targetName].point || 0) - GLOBAL_CONFIG.petSkill.effects.robberStealPoint;
                             addPoint(data, sender, GLOBAL_CONFIG.petSkill.effects.robberStealPoint);
+                            if (!petData[sender].miniPetRobberyHistory) petData[sender].miniPetRobberyHistory = [];
+                            var robberyEventId = getAttendanceKstDateKey() + ":" + petData[sender].miniPetBattle.count; // 하루 대전 횟수로 식별한 성공 사건
+                            var robberyExists = petData[sender].miniPetRobberyHistory.some(function (row) { return row.id === robberyEventId; });
+                            if (!robberyExists) petData[sender].miniPetRobberyHistory.push({ id: robberyEventId, target: targetName, amount: GLOBAL_CONFIG.petSkill.effects.robberStealPoint, at: getMiniPetRobberyDateTime() });
                             replier.reply("약탈자📙\n" + userRank + "님의 약탈 본능 발동!\n상대 [" + checkRank(data, petData, guildData, targetName) + "]에게서 🅟" + numberWithCommas(GLOBAL_CONFIG.petSkill.effects.robberStealPoint) + " 포인트를 약탈합니다.");
                         }
                     }
@@ -22251,10 +22345,26 @@ replier.reply(
                     setMiniPetEquipState(sender, index); // sortIndex 기준
                     return;
                 }
+                if (/^\/미니펫보조장착\s+\d+$/.test(msg)) {
+                    var supportIndex = parseInt(msg.match(/^\/미니펫보조장착\s+(\d+)$/)[1], 10);
+                    refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                    var supportBag = petData[sender] && petData[sender].miniPetBag ? petData[sender].miniPetBag : [];
+                    var selectedSupport = supportBag.find(function (pet) { return pet.sortIndex === supportIndex; });
+                    if (!selectedSupport) {
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 올바른 가방 번호를 입력해주세요.\n예: /미니펫보조장착 1");
+                        return;
+                    }
+                    var previousSupport = petData[sender].miniPetSupport;
+                    var supportWarning = previousSupport ? "기존 [" + formatPetInfo(previousSupport) + "] 보조 미니펫은 파양(소멸)됩니다.\n파양을 방지하려면 /보조귀속해제를 먼저 사용해주세요.\n\n" : "미니펫은 한 번 장착하면 귀속됩니다.\n귀속해제권을 사용해야 가방으로 되돌릴 수 있습니다.\n\n";
+                    replier.reply("[" + formatPetInfo(selectedSupport) + "] 보조 미니펫을 장착하시겠습니까?\n" + supportWarning + "👉 [입양할래] / [생각해볼게]");
+                    setMiniPetEquipState(sender, supportIndex, "support");
+                    return;
+                }
                 if (msg === "입양할래") {
                     if (!userState[sender] || !userState[sender].miniPet) return;
                     if (userState[sender].miniPet.step !== "confirmEquip") return;
                     let index = userState[sender].miniPet.index; // sortIndex
+                    let equipRole = userState[sender].miniPet.role || "primary"; // 대표·보조 슬롯 구분
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable); // 장착 전 정렬
                     let bag = petData[sender].miniPetBag || [];
                     let selectedPet = bag.find((p) => p.sortIndex === index);
@@ -22263,17 +22373,18 @@ replier.reply(
                         resetMiniPetState(sender);
                         return;
                     }
-                    let prevEquipped = petData[sender].miniPet;
-                    petData[sender].miniPet = selectedPet; // 장착
+                    let prevEquipped = equipRole === "support" ? petData[sender].miniPetSupport : petData[sender].miniPet;
+                    if (equipRole === "support") petData[sender].miniPetSupport = selectedPet;
+                    else petData[sender].miniPet = selectedPet;
                     // 가방에서 제거
                     let removeIndex = bag.indexOf(selectedPet);
                     if (removeIndex !== -1) bag.splice(removeIndex, 1);
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
-                    let message = "[" + checkRank(data, petData, guildData, sender) + "]님이\n" + "[" + formatPetInfo(selectedPet) + "]\n미니펫을 입양했습니다!";
+                    let message = "[" + checkRank(data, petData, guildData, sender) + "]님이\n" + "[" + formatPetInfo(selectedPet) + "]\n" + (equipRole === "support" ? "보조 미니펫" : "미니펫") + "을 입양했습니다!";
                     if (prevEquipped) {
                         message += "\n기존 [" + formatPetInfo(prevEquipped) + "] 미니펫은 파양되었습니다.";
                     }
-                    if ((selectedPet.grade || "") === "창조" && hasPetSkill(petSkillData, sender, "창조림")) {
+                    if (equipRole === "primary" && (selectedPet.grade || "") === "창조" && hasPetSkill(petSkillData, sender, "창조림")) {
                         message += "\n" + buildPetSkillMsg(data, petData, guildData, sender, "창조림");
                     }
                     resetMiniPetState(sender);
@@ -22288,9 +22399,17 @@ replier.reply(
                     return;
                 }
                 if (msg === "/미니펫가방") {
-                    let output = buildMiniPetBagMessage(sender, sender, data, petData, guildData, miniPetData);
+                    var miniCollectionForBag = loadJsonFile(miniPetCollectionPath);
+                    let output = buildMiniPetBagRenewedMessage(sender, data, petData, guildData, miniCollectionForBag, miniPetData);
                     saveJsonFile(petData, memberPetPath);
                     replier.reply(output);
+                    return;
+                }
+                if (msg === "/미니펫정보") {
+                    var miniTitleForInfo = loadJsonFile(miniPetTitlePath);
+                    var robberEquippedForInfo = hasPetSkill(petSkillData, sender, "약탈자");
+                    replier.reply(buildMiniPetInfoRenewedMessage(sender, data, petData, guildData, miniTitleForInfo, robberEquippedForInfo));
+                    if (robberEquippedForInfo) replier.reply(buildMiniPetRobberyHistoryMessage(sender, data, petData, guildData));
                     return;
                 }
                 if (msg.startsWith("/미니펫조합태초+") || msg.startsWith("/미니펫조합창세") || msg.startsWith("/미니펫조합창조")) {
@@ -22405,7 +22524,7 @@ replier.reply(
                     replier.reply(resultMessage);
                     return;
                 }
-                if (msg.indexOf("/미니펫정보 ") === 0) {
+                if (/^\/미니펫정보\s+\S(?:.*\S)?$/.test(msg)) {
                     if (!isAdmin(sender) && !isMaster(sender)) {
                         // replier.reply("❌ 권한이 없습니다.");
                         return;
@@ -22417,11 +22536,6 @@ replier.reply(
                         return;
                     }
 
-                    // 옵션: 본인 조회면 기존 명령어 안내
-                    if (targetName === sender) {
-                        replier.reply("본인 미니펫 정보는 /미니펫가방 으로 확인해주세요.");
-                        return;
-                    }
 
                     // 아예 대상 유저 데이터가 없는 경우
                     if (!petData[targetName]) {
@@ -22429,9 +22543,10 @@ replier.reply(
                         return;
                     }
 
-                    let output = buildMiniPetBagMessage(targetName, sender, data, petData, guildData, miniPetData);
-                    saveJsonFile(petData, memberPetPath);
-                    replier.reply(output);
+                    var miniTitleForTarget = loadJsonFile(miniPetTitlePath);
+                    var robberEquippedForTarget = hasPetSkill(petSkillData, targetName, "약탈자");
+                    replier.reply(buildMiniPetInfoRenewedMessage(targetName, data, petData, guildData, miniTitleForTarget, robberEquippedForTarget));
+                    if (robberEquippedForTarget) replier.reply(buildMiniPetRobberyHistoryMessage(targetName, data, petData, guildData));
                     return;
                 }
                 if (msg == "/미니펫전체정리") {
@@ -22661,11 +22776,44 @@ replier.reply(
                         replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님의\n[" + unbindItem + "] 아이템이 없습니다.\n귀속 해제를 하려면 해당 아이템이 필요합니다.");
                         return;
                     }
+                    if (member.miniPetBag && member.miniPetBag.length >= getMiniPetBagLimit(data, sender)) {
+                        replier.reply("미니펫가방이 가득 차 귀속해제할 수 없습니다.");
+                        return;
+                    }
                     if (!member.miniPetBag) member.miniPetBag = [];
                     member.miniPetBag.push(member.miniPet);
                     delete member.miniPet;
                     removeItem(data, sender, unbindItem, 1);
+                    refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(data, filePath);
                     replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님의\n현재 미니펫이 귀속해제 되어 /미니펫가방 으로 이동되었습니다.\n\n(" + unbindItem + " 1개 사용됨)");
+                    return;
+                }
+                if (msg === "/보조귀속해제") {
+                    var supportMember = petData[sender];
+                    if (!supportMember || !supportMember.miniPetSupport) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의\n현재 장착 중인 보조 미니펫이 없습니다.");
+                        return;
+                    }
+                    var supportUnbindItem = "미니펫귀속해제권🐰(/귀속해제)";
+                    if (!hasItem(data, sender, supportUnbindItem, 1)) {
+                        replier.reply("❌ [" + checkRank(data, petData, guildData, sender) + "] 님의\n[" + supportUnbindItem + "] 아이템이 없습니다.");
+                        return;
+                    }
+                    if (supportMember.miniPetBag && supportMember.miniPetBag.length >= getMiniPetBagLimit(data, sender)) {
+                        replier.reply("미니펫가방이 가득 차 귀속해제할 수 없습니다.");
+                        return;
+                    }
+                    if (!supportMember.miniPetBag) supportMember.miniPetBag = [];
+                    supportMember.miniPetBag.push(supportMember.miniPetSupport);
+                    delete supportMember.miniPetSupport;
+                    removeItem(data, sender, supportUnbindItem, 1);
+                    refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(data, filePath);
+                    replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님의 보조 미니펫을 귀속해제했습니다.\n미니펫가방으로 이동했습니다.\n\n(" + supportUnbindItem + " 1개 사용됨)");
+                    return;
                 }
                 if (msg.startsWith("/미니펫이름 ")) {
                     let newName = msg.split(" ")[1];
@@ -31181,7 +31329,9 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
         command === "/소식" || command === "/소식등록" || /^\/소식삭제\s+\d+$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(command) || command === "/글자수전체정리" ||
-        command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command);
+        command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command) ||
+        /^\/서버변경\s+\S(?:.*\S)?$/.test(command) || /^\/관리자추가\s+\S(?:.*\S)?$/.test(command) || /^\/관리자삭제\s+\S(?:.*\S)?$/.test(command) ||
+        command === "/관리자감추기" || command === "/이모지감추기" || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
 }
 
 // 자동일퀘 대상 3종이 보너스 횟수까지 완료됐는지 확인하는 함수
@@ -38951,7 +39101,10 @@ function isPassFreeHomeBadgeCommand(msg) {
 // 현재 권한 명단을 기준으로 최우선 타이틀뱃지를 반환하는 함수
 function getAuthorityTitleBadge(data, user) {
     if (data && Array.isArray(data.master) && data.master.indexOf(user) !== -1) return GLOBAL_CONFIG.authorityBadge.master;
-    if (data && data.admin && Object.prototype.hasOwnProperty.call(data.admin, user)) return GLOBAL_CONFIG.authorityBadge.admin;
+    if (data && data.admin && Object.prototype.hasOwnProperty.call(data.admin, user)) {
+        var member = data.member && data.member[user];
+        return member && member.displaySettings && member.displaySettings.hideAdminTitle === true ? "" : GLOBAL_CONFIG.authorityBadge.admin;
+    }
     return "";
 }
 
@@ -43289,6 +43442,18 @@ function getCheckRankTierEmoji(data, user) {
     return tier && tier.emoji ? tier.emoji : (member.rank.emoji || "");
 }
 
+// 본인이 순위 이모지를 감춘 경우 표시 접두사를 제외하는 함수
+function getVisibleRankEmoji(data, user, emoji) {
+    var member = data && data.member ? data.member[user] : null;
+    return member && member.displaySettings && member.displaySettings.hideRankEmoji === true ? "" : emoji;
+}
+
+// 회원의 직접 저장된 티어 이모지를 표시 설정에 맞춰 반환하는 함수
+function getMemberRankEmojiForDisplay(member) {
+    if (!member || !member.rank) return "";
+    return member.displaySettings && member.displaySettings.hideRankEmoji === true ? "" : (member.rank.emoji || "");
+}
+
 function checkRank(data, petData, guildData, user) {
     let userwithrank = user;
     if (!guildData) {
@@ -43308,33 +43473,35 @@ function checkRank(data, petData, guildData, user) {
             }
         }
 
+        var rankPrefix = ""; // 순위·칭호에 따라 닉네임 앞에 붙는 이모지
         if (isCastleGuildMember) {
             // 성주 또는 성주와 같은 길드원
-            userwithrank = "🏰" + userwithrank;
+            rankPrefix = "🏰";
         } else if (user == data.star) {
             //좋아요
-            userwithrank = "💞" + userwithrank;
+            rankPrefix = "💞";
         } else if (user == data.topCarrotGive) {
             //당근
-            userwithrank = "🥕" + userwithrank;
+            rankPrefix = "🥕";
         } else if (user == data.topThermo) {
             //온도
-            userwithrank = "🌡" + userwithrank;
+            rankPrefix = "🌡";
         } else if (user == data.miniPetTop) {
             //미니펫
-            userwithrank = "✨" + userwithrank;
+            rankPrefix = "✨";
         } else if (user == data.toplv) {
             //최고 레벨
-            userwithrank = "🌟" + userwithrank;
+            rankPrefix = "🌟";
         } else if (user == data.mc) {
             //mc
-            userwithrank = "💬" + userwithrank;
+            rankPrefix = "💬";
         } else if (user == data.intimacyTop) {
             //친밀도
-            userwithrank = "🍼" + userwithrank;
+            rankPrefix = "🍼";
         } else {
-            userwithrank = getCheckRankTierEmoji(data, user) + userwithrank;
+            rankPrefix = getCheckRankTierEmoji(data, user);
         }
+        userwithrank = getVisibleRankEmoji(data, user, rankPrefix) + userwithrank;
 
         // 길드 계급 이모지 추가
         if (guildData) {
@@ -43659,7 +43826,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     let castleItem = calculateCastleItem(memberName, data) || 0;
     let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0;
-    let miniPetExp = (petData[memberName] && petData[memberName].miniPet && petData[memberName].miniPet.castleExp) || 0;
+    let miniPetExp = getMiniPetModeCharm(memberName, petData);
     let homeExp = getHomeTotalExp(homeData, memberName) || 0;
     if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
@@ -43692,7 +43859,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
     let itemInfo = calculateItemInfoAll(memberName, data, petData) || { raidExp: 0 }; // `null` 또는 `undefined` 방지
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0; // `petData` 값이 없을 때 `0` 반환
-    let miniPetExp = (petData[memberName] && petData[memberName].miniPet && petData[memberName].miniPet.raidExp) || 0; // 미니펫 레이드 경험치
+    let miniPetExp = getMiniPetModeCharm(memberName, petData); // 대표·보조 미니펫 레이드 매력
     let homeExp = getHomeTotalExp(homeData, memberName) || 0;
     if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
@@ -44166,14 +44333,14 @@ function generatelikeRanking(data) {
     let rankingMsg2 = "";
     for (let i = 0; i < 10; i++) {
         let username1 = sortedUsrs[i];
-        let Rsender1 = data[username1].rank.emoji + username1;
+        let Rsender1 = getMemberRankEmojiForDisplay(data[username1]) + username1;
         let UsrInfo1 = data[username1];
         let rankEmoji1 = getRankEmoji(i + 1);
         rankingMsg1 += rankEmoji1 + Rsender1 + " - 💕: " + numberWithCommas(UsrInfo1.like) + "\n";
     }
     for (let i = 10; i < sortedUsrs.length; i++) {
         let username2 = sortedUsrs[i];
-        let Rsender2 = data[username2].rank.emoji + username2;
+        let Rsender2 = getMemberRankEmojiForDisplay(data[username2]) + username2;
         let UsrInfo2 = data[username2];
         let rankEmoji2 = getRankEmoji(i + 1);
         rankingMsg2 += rankEmoji2 + Rsender2 + " - 💕: " + numberWithCommas(UsrInfo2.like) + "\n";
@@ -44214,14 +44381,14 @@ function generatechatRanking(data) {
     let rankingMsg2 = "";
     for (let i = 0; i < 10; i++) {
         let username1 = sortedUsrs[i];
-        let Rsender1 = data[username1].rank.emoji + username1;
+        let Rsender1 = getMemberRankEmojiForDisplay(data[username1]) + username1;
         let UsrInfo1 = data[username1];
         let rankEmoji1 = getRankEmoji(i + 1);
         rankingMsg1 += rankEmoji1 + Rsender1 + " - 채팅수: " + numberWithCommas(UsrInfo1.chatcnt0) + "\n";
     }
     for (let i = 10; i < sortedUsrs.length; i++) {
         let username2 = sortedUsrs[i];
-        let Rsender2 = data[username2].rank.emoji + username2;
+        let Rsender2 = getMemberRankEmojiForDisplay(data[username2]) + username2;
         let UsrInfo2 = data[username2];
         let rankEmoji2 = getRankEmoji(i + 1);
         rankingMsg2 += rankEmoji2 + Rsender2 + " - 채팅수: " + numberWithCommas(UsrInfo2.chatcnt0) + "\n";
@@ -46613,7 +46780,7 @@ function generateThermoRanking(data) {
         let thermo = members[name].thermoPoints || 0;
         if (thermo > 0) {
             let rankEmoji = getRankEmoji(i + 1);
-            let decoratedName = (members[name].rank.emoji || "") + name;
+            let decoratedName = getMemberRankEmojiForDisplay(members[name]) + name;
             let msg = rankEmoji + decoratedName + " - 온도 " + numberWithCommas(thermo) + "도\n";
             if (i < 10) {
                 rankingMsg1 += msg;
@@ -46642,7 +46809,7 @@ function generateCarrotGiveRanking(data) {
         let carrot = members[name].carrotGiven || 0;
         if (carrot > 0) {
             let rankEmoji = getRankEmoji(i + 1);
-            let decoratedName = (members[name].rank.emoji || "") + name;
+            let decoratedName = getMemberRankEmojiForDisplay(members[name]) + name;
             let msg = rankEmoji + decoratedName + " - 당근 " + numberWithCommas(carrot) + "개\n";
             if (i < 10) {
                 rankingMsg1 += msg;
@@ -46741,11 +46908,12 @@ function getMiniPetState(sender) {
     return userState[sender] && userState[sender].miniPet ? userState[sender].miniPet : null;
 }
 // 상태 설정 함수
-function setMiniPetEquipState(sender, index) {
+function setMiniPetEquipState(sender, index, role) {
     if (!userState[sender]) userState[sender] = {};
     userState[sender].miniPet = {
         step: "confirmEquip",
-        index: index
+        index: index,
+        role: role || "primary"
     };
 }
 // 미니펫 가방 정렬 함수
@@ -46780,7 +46948,7 @@ function getMiniPetExpRanking(petData, data, guildData) {
         if (b.exp !== a.exp) return b.exp - a.exp;
         return a.user.localeCompare(b.user, "ko");
     });
-    let message = "🐹미니펫 총 매력도 순위🐹\n\n(장착+가방 상위 10 합산 매력)\n'/미니펫연금'을 적어보세요\n순위를 유지하면 매일 보상이 파파팍!\n\n당신의 최강 컬렉션을 완성해뿅🐹\n\n";
+    let message = "🐹미니펫 총 매력도 순위🐹\n\n(대표 100% + 보조 50%, 캐슬·레이드 합산)\n'/미니펫연금'을 적어보세요\n순위를 유지하면 매일 보상이 파파팍!\n\n당신의 최강 컬렉션을 완성해뿅🐹\n\n";
     for (let i = 0; i < ranking.length; i++) {
         if (i === 10 && typeof allsee !== "undefined") {
             message += allsee;
@@ -46817,20 +46985,17 @@ function getMiniPetTotalExpRank(username, petData) {
     }
     return "순위없음";
 }
+// 대표와 보조가 캐슬·레이드 각각에 더하는 매력을 계산하는 함수
+function getMiniPetModeCharm(user, petData) {
+    var pet = petData && petData[user] ? petData[user] : null;
+    if (!pet) return 0;
+    var primary = Math.max(0, Number(pet.miniPet && pet.miniPet.battleExp) || 0); // 대표 원본 매력
+    var support = Math.floor(Math.max(0, Number(pet.miniPetSupport && pet.miniPetSupport.battleExp) || 0) / 2); // 보조 적용 매력
+    return primary + support;
+}
 // 특정 사용자의 미니펫 총 경험치를 계산하는 함수
 function getTotalMinipetExp(sender, petData) {
-    if (!petData[sender]) return 0;
-    let equipped = petData[sender].miniPet;
-    let bag = sortMiniPetBag(petData[sender].miniPetBag || [], miniPetData.gradeTable);
-    let totalExp = 0;
-    // debuggerLog(JSON.stringify(petData[sender]));
-    if (equipped && equipped.battleExp) {
-        totalExp += equipped.battleExp;
-    }
-    for (let i = 0; i < bag.length && i < 5; i++) {
-        totalExp += bag[i].battleExp || 0;
-    }
-    return totalExp;
+    return getMiniPetModeCharm(sender, petData) * 2;
 }
 function getMiniPetBattleRank(username, petData) {
     let ranking = [];
@@ -47854,7 +48019,7 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     lines.push("");
     lines.push("[기본 구성]");
     lines.push("펫 매력: " + numberWithCommas(pet.petexp || 0) + " (캐슬·레이드 각각 반영)");
-    lines.push("미니펫: 캐슬 " + numberWithCommas(miniPet.castleExp || 0) + " / 레이드 " + numberWithCommas(miniPet.raidExp || 0));
+    lines.push("미니펫: 캐슬 " + numberWithCommas(getMiniPetModeCharm(user, petData)) + " / 레이드 " + numberWithCommas(getMiniPetModeCharm(user, petData)));
     lines.push("가구: " + numberWithCommas(rawHomeExp) + (appliedHomeExp !== rawHomeExp ? " → " + numberWithCommas(appliedHomeExp) + " (인테리어 장인)" : ""));
     lines.push("펫강화: " + baseUpgradeLevel + "강 → " + actualUpgradeLevel + "강 / 종합매력 +" + numberWithCommas(upgradeCharm));
     lines.push("");
@@ -50207,7 +50372,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return petInfo.petexp || 0;
     });
     var castleMiniPetExp = measure("캐슬-미니펫", function () {
-        return (petInfo.miniPet && petInfo.miniPet.castleExp) || 0;
+        return getMiniPetModeCharm(sender, petData);
     });
     var castleHomeExp = measure("캐슬-홈/가구", function () {
         var homeExp = getHomeTotalExp(homeData, sender) || 0;
@@ -50230,7 +50395,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         return petInfo.petexp || 0;
     });
     var raidMiniPetExp = measure("레이드-미니펫", function () {
-        return (petInfo.miniPet && petInfo.miniPet.raidExp) || 0;
+        return getMiniPetModeCharm(sender, petData);
     });
     var raidHomeExp = measure("레이드-홈/가구", function () {
         var homeExp = getHomeTotalExp(homeData, sender) || 0;
@@ -57322,6 +57487,79 @@ function syncByMemberKeys(originMemberObj, targetObj) {
     });
 
     return removed;
+}
+
+// 한국 시간 기준 미니펫 약탈 발생 일시를 반환하는 함수
+function getMiniPetRobberyDateTime() {
+    var formatter = new java.text.SimpleDateFormat("MM/dd HH:mm");
+    formatter.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Seoul"));
+    return String(formatter.format(new Date()));
+}
+
+// 미니펫 타이틀의 현재 표시 이름을 조회하는 함수
+function getMiniPetDisplayTitle(titleData, user) {
+    var title = titleData && titleData.member && titleData.member[user] ? titleData.member[user].title : null;
+    return title && title.list && title.list[title.num - 1] ? title.list[title.num - 1].name : "미니펫타이틀이 없슴다";
+}
+
+// 대표·보조 편성 정보와 명령어 안내를 출력하는 함수
+function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleData, robberEquipped) {
+    var owner = petData[user] || {};
+    var primary = owner.miniPet || null;
+    var support = owner.miniPetSupport || null;
+    var modeCharm = getMiniPetModeCharm(user, petData); // 캐슬·레이드 각각의 미니펫 기여분
+    var battle = owner.miniPetBattle || { win: 0, lose: 0, count: 0 };
+    var battleTotal = battle.win + battle.lose;
+    var battleRate = battleTotal ? Math.round(battle.win * 100 / battleTotal) : 0;
+    var lines = [getHoiPassPremiumHeader(data, user) + "✮━ " + getMiniPetDisplayTitle(titleData, user) + " ━✮", "[" + checkRank(data, petData, guildData, user) + "]님의 미니펫 정보", "━━━━━━━━━━━━━"];
+    lines.push("👑 대표｜" + (primary ? primary.name + primary.emoji : "미장착"));
+    if (primary) {
+        lines.push("└ " + (primary.grade || "일반") + " · 강화 +" + (primary.upgrade || 0) + "💫");
+        lines.push("└ 매력 " + numberWithCommas(primary.battleExp || 0) + "💞");
+    }
+    lines.push("");
+    lines.push("🛡️ 보조｜" + (support ? support.name + support.emoji : "미장착") + " (50% 매력 반영)");
+    if (support) {
+        lines.push("└ " + (support.grade || "일반") + " · 강화 +" + (support.upgrade || 0) + "💫");
+        lines.push("└ 매력 " + numberWithCommas(Math.floor((Number(support.battleExp) || 0) / 2)) + "💞");
+    }
+    lines.push("", "💞 종합매력 반영: +" + numberWithCommas(modeCharm * 2), "├ ⚔️ 캐슬매력 +" + numberWithCommas(modeCharm), "└ 👾 레이드매력 +" + numberWithCommas(modeCharm), "━━━━━━━━━━━━━");
+    lines.push("미대전🆚: " + battle.win + "승 " + battle.lose + "패(" + battleRate + "%)(" + getMiniPetBattleRank(user, petData) + ")");
+    lines.push("미대전 횟수(" + (battle.count || 0) + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ")" + ((battle.count || 0) < GLOBAL_CONFIG.daily.miniPetBattleFree ? " · 무료 1회 가능" : ""));
+    if (robberEquipped) lines.push("📙 약탈자 장착 중");
+    lines.push("━━━━━━━━━━━━━", "※ 미니펫가방: /미니펫가방", allsee, "━━━━━━━━━━━━━", "※ 대표장착: /미니펫장착 [미니펫가방번호]", "※ 보조장착: /미니펫보조장착 [미니펫가방번호]", "※ 대표귀속해제: /귀속해제", "※ 보조귀속해제: /보조귀속해제", "└ 공통 필요: 미니펫귀속해제권🐰(/귀속해제)", "", "※ 외형변경: /미니펫외형 [수정이모지]", "※ 이름변경: /미니펫이름 [수정이름]", "━━━━━━━━━━━━━", "※ 미니펫대전: /미니펫대전", "※ 다승순위: /미니펫대전순위", "※ 승률순위: /미니펫승률순위", "※ 대표매력순위: /미니펫순위", "※ 종합매력순위: /미니펫종합순위", "━━━━━━━━━━━━━");
+    return lines.join("\n");
+}
+
+// 장착한 약탈자의 최근 성공 기록을 별도 메시지로 출력하는 함수
+function buildMiniPetRobberyHistoryMessage(user, data, petData, guildData) {
+    var history = petData[user] && petData[user].miniPetRobberyHistory ? petData[user].miniPetRobberyHistory : [];
+    var recent = history.slice(Math.max(0, history.length - 50)).reverse(); // 최신순 최대 50건
+    var lines = ["약탈자📙 [S]", "[" + checkRank(data, petData, guildData, user) + "]님의 약탈 기록", "━━━━━━━━━━━━━", "미니펫대전 시 70% 확률로", "상대의 1,000만 포인트를 훔칩니다.", "", "📜 최근 약탈 기록: " + recent.length + "건"];
+    if (!recent.length) return lines.concat(["아직 약탈에 성공한 기록이 없습니다."]).join("\n");
+    lines.push("└ 최신순 · 최대 50건 표시", allsee, "━━━━━━━━━━━━━");
+    for (var i = 0; i < recent.length; i++) lines.push((i + 1) + ". [" + recent[i].target + "] · " + numberWithCommas(recent[i].amount) + " 포인트\n   └ " + recent[i].at);
+    lines.push("━━━━━━━━━━━━━");
+    return lines.join("\n");
+}
+
+// 미니펫 보유 목록과 컬렉션 현황을 출력하는 함수
+function buildMiniPetBagRenewedMessage(user, data, petData, guildData, collectionData, miniPetData) {
+    var owner = petData[user] || {};
+    var bag = owner.miniPetBag || [];
+    refreshMiniPetSortIndex(petData, user, miniPetData.gradeTable);
+    var collection = getMiniPetCollectionData(collectionData, user);
+    var collectionRank = getMiniPetCollectionRanking(collectionData);
+    var collectionRankText = "순위없음📊";
+    for (var r = 0; r < collectionRank.length; r++) if (collectionRank[r].userName === user) { collectionRankText = (r + 1) + "등📊"; break; }
+    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "※ 미니펫 정보: /미니펫정보", "※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]", "※ 등급 정리: /미니펫등급정리 [등급이름]", "※ 매력 정리: /미니펫가방정리 [매력]", "└ 창조·창세·엘리트 등급 제외", "━━━━━━━━━━━━━"];
+    if (!bag.length) lines.push("미니펫가방이 비어 있습니다.");
+    for (var i = 0; i < bag.length; i++) {
+        if (i === 5) lines.push(allsee);
+        var pet = bag[i];
+        lines.push(pet.sortIndex + ". " + pet.name + pet.emoji + "(+" + numberWithCommas(pet.battleExp || 0) + "💞)[" + pet.grade + "]" + (pet.upgrade ? "(" + getMiniPetUpgradeDisplay(pet) + "💫)" : ""));
+    }
+    return lines.join("\n");
 }
 
 function buildMiniPetBagMessage(targetName, viewerName, data, petData, guildData, miniPetData) {
