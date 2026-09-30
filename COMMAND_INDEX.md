@@ -310,7 +310,7 @@ Status: VERIFIED
 
 - `숙련된 전사` adds pet charm only after matching and ticket validation pass; keep `memberPetPath` save in this command flow when changing castle battle rewards.
 - `/캐슬대전` 장비 매력 계산은 `calculateItemInfoAll(...).castleExp`를 사용해 펜던트 캐슬 매력을 함께 반영한다.
-- `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `miniPet.castleExp`를 사용한다.
+- `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `getMiniPetModeCharm`으로 대표 100%와 보조 50%를 합산한다.
 - 양측 모두 `calculateCastleExp`로 전체 캐슬매력을 계산해 장비·미니펫·홈·친밀도·일반/티어 전용 펫스킬을 동일하게 반영한 뒤 상성·크리티컬을 적용하며, 동률이면 방어자가 승리한다.
 - 출력 상단에는 대전횟수·리셋권, 경험치, 승패와 대전 상대를 먼저 표시하고 `데일리 캐슬대전 상세결과`부터 `allsee`로 접는다. 상세 영역은 공격·방어 펫 외형, 속성, 캐슬/상성/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 CP·보상을 유지한다.
 - 캐슬대전 경험치는 승리 50 EXP, 패배 25 EXP이며 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용하고 레벨 상승을 처리하는 공통 경험치 흐름을 사용한다.
@@ -591,7 +591,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Canonical entry point for mini-pet bag rendering
-- 가방은 원본 매력을 한 줄씩 표시하고 5번 다음에 `allsee`를 넣는다. 정보·편성은 `/미니펫정보`에서 확인한다.
+- 가방은 원본 매력을 한 줄씩 표시하고 5번 다음에 `allsee`를 넣는다. 상단에 대표·보조 장착 안내를 추가하며 정보·편성은 `/미니펫정보`에서 확인한다.
 - Nearby branches contain most mini-pet bag mutation logic
 - 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한하며 프리미엄 종료 후 초과 보유 데이터는 삭제하지 않는다.
 
@@ -2979,7 +2979,7 @@ Status: VERIFIED
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
 - `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
-- `/종합순위`와 `ㅈㅈㅈ`는 월드 개인 순위와 소속 서버 순위를 두 메시지로 출력한다. `/서버순위`는 9개 서버 합산 순위만 한 메시지로 출력한다.
+- `/종합순위`와 `ㅈㅈㅈ`는 월드 개인 순위와 소속 서버 순위를 두 메시지로 출력한다. `/서버순위`는 커뮤니티를 포함한 10개 서버 합산 순위를 한 메시지로 출력한다.
 - 개인과 서버 합산은 같은 개인 종합매력 결과를 사용한다. `호이서버1-2[30]`은 서버1로, 구 서버6 `[30]`은 `[2030]`으로 집계한다.
 - 각 메시지는 3위 다음에 `allsee`를 적용한다.
 
@@ -4318,7 +4318,7 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `normalizeHoiServerLabel`, `normalizeRankServerName`
+- `normalizeHoiServerLabel`, `normalizeInfoServerLabel`, `normalizeRankServerName`
 - `buildServerRankingRows`, `getAuthorityTitleBadge`, `getVisibleRankEmoji`
 
 ## Data Usage / Save Flow
@@ -4327,6 +4327,10 @@ Status: VERIFIED
 - 서버 변경은 대상 계정의 `server`와 이동권 1개를 함께 변경하고 `filePath`에 저장한다. 안내·실패·같은 서버 요청은 변경하지 않는다.
 - 관리자·순위 이모지 표시 설정은 계정의 `displaySettings`에 별개로 저장하며 실제 관리자 권한과 순위 수치는 유지한다.
 - `/서버순위`는 조회 전용이며 소속 서버의 전체 회원 매력을 합산한다.
+- `/서버이동`, `/서버변경`, 신규 소속 매핑과 순위 집계는 서버6을 `호이서버6[30]`으로 통일한다. 기존 `[2030]` 소속값도 서버6으로 합산한다.
+- 개인 정보와 길드 화면의 서버명도 최신 표기로 출력하며 기존 저장 데이터는 조회만으로 변경하지 않는다.
+- `/서버변경`은 기존 이동권으로 호이서버1~7과 `호이월드 커뮤니티`를 선택한다. 관리자 `/서버이동`도 커뮤니티를 허용하며 채팅방 입장만으로 기존 소속을 변경하지 않는다.
+- `/이모지감추기`의 `hideRankEmoji` 설정이 켜져 있으면 `getVisibleRankEmoji`와 `getMemberRankEmojiForDisplay`가 `getTierEmojiForMember`로 현재 티어 이모지를 표시한다. 꺼지면 특별 순위 표시를 복원한다.
 
 ---
 
@@ -5430,10 +5434,10 @@ Status: VERIFIED
 
 - Aggregates server-name distribution from member profiles
 - Missing or blank `member.server` values are folded into unknown counts
-- 두 명령은 `getServerMemberGroups`에서 `data.member`의 원래 소속값을 동일하게 집계한다. 서버순위의 별칭 합산 규칙은 적용하지 않는다.
+- 두 명령은 `getServerMemberGroups`에서 동일하게 집계한다. 서버6의 과거 `[2030]` 값은 `[30]`으로 묶고, 그 밖의 원래 소속값은 유지한다. `/서버확인`은 서버6의 과거 표기로 조회해도 최신 `[30]` 명단을 반환한다.
 - `/서버확인`은 현재 Admin/Master 명단을 갱신한 뒤 기존 채팅방별 권한을 판정하며, 기존 출석·게임·1:1 제한을 따른다. 입력은 전체 서버명을 사용한다.
 - 제목 바로 뒤에 `allsee`를 넣고 해당 서버의 전체 닉네임을 가나다순으로 번호를 붙여 표시한다. 미가입 출첵 이용자는 포함하지 않는다.
-- 인자 없음·잘못된 서버·등록 유저 없는 서버는 안내만 출력하며 데이터를 저장하지 않는다. 현재 9개 서버, 과거 표기·운영 서버와 실제 회원 소속에 저장된 서버명을 조회할 수 있다.
+- 인자 없음·잘못된 서버·등록 유저 없는 서버는 안내만 출력하며 데이터를 저장하지 않는다. 커뮤니티를 포함한 현재 10개 서버, 과거 표기·운영 서버와 실제 회원 소속에 저장된 서버명을 조회할 수 있다.
 
 ---
 

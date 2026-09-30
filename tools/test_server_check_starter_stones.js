@@ -35,7 +35,7 @@ vm.createContext(server);
 const configStart = info.indexOf("const GLOBAL_CONFIG = {");
 const configEnd = info.indexOf("//랭크.txt", configStart);
 vm.runInContext(info.slice(configStart, configEnd) + "\nthis.GLOBAL_CONFIG = GLOBAL_CONFIG;", server);
-for (const name of ["getServerMemberGroups", "buildServerMemberListMessage", "isAdmin", "isMaster"]) {
+for (const name of ["normalizeInfoServerLabel", "getServerMemberGroups", "buildServerMemberListMessage", "isAdmin", "isMaster"]) {
     vm.runInContext(extractBlock(info, "function " + name + "("), server);
 }
 vm.runInContext("function runServer() {" + extractBlock(info, 'if (msg === "/서버확인" ||') + extractBlock(info, 'if (msg === "/서버통계")') + "}", server);
@@ -46,6 +46,8 @@ assert(messages[0].includes("호이서버1[30]: 2명"));
 assert(messages[0].includes("호이서버1-2[30]: 1명"));
 assert(messages[0].includes("서버 미등록 인원: 2명"));
 const groups = server.getServerMemberGroups(server.data.member);
+assert.strictEqual(groups.usersByServer["호이서버6[30]"].length, 2, "서버6 구·신 표기 통합");
+assert.strictEqual(server.buildServerMemberListMessage("호이서버6[2030]", groups), server.buildServerMemberListMessage("호이서버6[30]", groups));
 const list = server.buildServerMemberListMessage("호이서버1[30]", groups);
 assert.strictEqual(list, "호이서버1[30] 유저리스트\n[전체보기]\n\n1. 가나다\n2. 다른");
 assert.strictEqual(groups.usersByServer["호이서버1[30]"].length, (list.match(/^\d+\. /gm) || []).length);

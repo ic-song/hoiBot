@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.586"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.587"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -815,17 +815,17 @@ roomToServer[room2] = "호이서버2[2030]";
 roomToServer[room3] = "벨라서버1[2030]";
 roomToServer[room6] = "호이서버3[3040]";
 roomToServer[room7] = "호이서버5[2030]";
-roomToServer[room10] = "호이서버6[2030]";
+roomToServer[room10] = "호이서버6[30]";
 roomToServer[room11] = "호이서버4[3040]";
 roomToServer[room12] = "벨라서버2[30]";
 roomToServer[room13] = "호이서버7[2030]";
 roomToServer[room14] = "호이서버1[30]";
 roomToServer[room90] = "호이월드 운영진[GM]";
 
-// 기존 서버 표기를 9개 논리 서버의 최종 명칭으로 맞추는 함수
+// 기존 서버 표기를 현재 서버의 최종 명칭으로 맞추는 함수
 function normalizeHoiServerLabel(serverName) {
     if (serverName === "호이서버1-2[30]") return "호이서버1[30]";
-    if (serverName === "호이서버6[30]") return "호이서버6[2030]";
+    if (serverName === "호이서버6[2030]") return "호이서버6[30]";
     return serverName || "";
 }
 
@@ -840,7 +840,7 @@ function getServerShortName(serverName) {
         "호이서버3[3040]": "호3",
         "호이서버4[3040]": "호4",
         "호이서버5[2030]": "호5",
-        "호이서버6[2030]": "호6",
+        "호이서버6[30]": "호6",
         "호이서버7[2030]": "호7",
         "호이서버1-2[30]": "호1-2",
         "호이월드 운영진[GM]": "GM",
@@ -1036,8 +1036,8 @@ const GLOBAL_CONFIG = {
     serverTransfer: { // 호이서버 이동권과 이동 가능한 서버
         itemName: "서버이동권🖱[호이서버 전용](/서버변경 서버이름)",
         itemPrice: 100000000000,
-        names: ["호이서버1", "호이서버2", "호이서버3", "호이서버4", "호이서버5", "호이서버6", "호이서버7"],
-        labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[2030]", "호이서버7[2030]"]
+        names: ["호이서버1", "호이서버2", "호이서버3", "호이서버4", "호이서버5", "호이서버6", "호이서버7", "호이월드 커뮤니티"],
+        labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "호이월드 커뮤니티"]
     },
     display: { // 화면 표시 설정
         changeLogMax: 10 // 최근 수정 이력 표시 개수
@@ -8402,7 +8402,7 @@ replier.reply(
                     saveJsonFile(data, filePath);
                     var emojiNick = "[" + checkRank(data, petData, guildData, sender) + "]님,";
                     if (data.member[sender].displaySettings.hideRankEmoji) {
-                        replier.reply(emojiNick + "\n본인의 순위 이모지를 숨겼습니다.\n\n다시 표시하려면 /이모지감추기를 입력해주세요.");
+                        replier.reply(emojiNick + "\n본인의 순위 이모지 대신 티어 이모지를 표시합니다.\n\n순위 이모지를 다시 표시하려면 /이모지감추기를 입력해주세요.");
                     } else {
                         replier.reply(emojiNick + "\n본인의 순위 이모지를 다시 표시합니다.\n\n숨기려면 /이모지감추기를 입력해주세요.");
                     }
@@ -8841,7 +8841,7 @@ replier.reply(
                     for (let user in data.member) {
                         if (!data.member[user].voicecheck && data.member[user].join && data.member[user].agree === true) {
                             let join = data.member[user].join;
-                            let server = data.member[user].server ? "(" + data.member[user].server + ")" : "";
+                            let server = data.member[user].server ? "(" + normalizeHoiServerLabel(data.member[user].server) + ")" : "";
                             let joinYear = parseInt(join.substring(0, 4));
                             let joinMonth = parseInt(join.substring(4, 6)) - 1;
                             let joinDay = parseInt(join.substring(6, 8));
@@ -16104,7 +16104,7 @@ replier.reply(
                         var castleInfo = "🏰호월킹덤 상세정보🏰\n\n";
                         castleInfo += "영주👑: " + checkRank(data, petData, guildData, lord) + "\n";
                         if (lordGuildInfo.guild.server) {
-                            castleInfo += "길드서버📊: " + lordGuildInfo.guild.server + "\n";
+                            castleInfo += "길드서버📊: " + normalizeHoiServerLabel(lordGuildInfo.guild.server) + "\n";
                         }
 
                         castleInfo += "길드🎖️: " + guildName + " 이(가) 점령중\n";
@@ -19305,15 +19305,15 @@ replier.reply(
                     var transferNick = "[" + checkRank(data, petData, guildData, sender) + "]님,";
                     var transferCurrent = normalizeHoiServerLabel(transferUser.server); // 기존 별칭을 반영한 현재 소속
                     var transferCount = parseInt(transferUser.bag && transferUser.bag[transferConfig.itemName], 10) || 0; // 남은 이동권
-                    var transferChoices = "호이서버1 · 호이서버2 · 호이서버3\n호이서버4 · 호이서버5 · 호이서버6\n호이서버7";
+                    var transferChoices = transferConfig.names.slice(0, 3).join(" · ") + "\n" + transferConfig.names.slice(3, 6).join(" · ") + "\n" + transferConfig.names.slice(6).join(" · ");
                     if (msg === "/서버변경") {
-                        replier.reply(transferNick + "\n서버이동 안내🖱\n━━━━━━━━━━━━━\n🏰 현재 소속: " + (transferCurrent || "미등록") + "\n🎫 보유 서버이동권: " + transferCount + "개\n\n📍 변경 가능한 서버\n" + transferChoices + "\n\n📝 사용 방법\n/서버변경 서버이름\n\n예) /서버변경 호이서버1\n\n※ 서버 변경 성공 시 서버이동권 1개가 사용됩니다.");
+                        replier.reply(transferNick + "\n서버이동 안내🖱\n━━━━━━━━━━━━━\n🏰 현재 소속: " + (transferCurrent || "미등록") + "\n🎫 보유 서버이동권: " + transferCount + "개\n\n📍 변경 가능한 서버\n" + transferChoices + "\n\n📝 사용 방법\n/서버변경 서버이름\n\n예) /서버변경 호이월드 커뮤니티\n\n※ 서버 변경 성공 시 서버이동권 1개가 사용됩니다.");
                         return;
                     }
                     var transferName = msg.substring("/서버변경".length).trim();
                     var transferIndex = transferConfig.names.indexOf(transferName);
                     if (transferIndex < 0) {
-                        replier.reply(transferNick + "\n변경할 서버 이름을 확인해주세요. ⚠️\n━━━━━━━━━━━━━\n입력한 서버: " + transferName + "\n\n📍 변경 가능한 서버\n" + transferChoices + "\n\n아래 예시처럼 정확한 서버 이름을 입력해주세요.\n예) /서버변경 호이서버1\n\n※ 서버이동권은 사용되지 않았습니다.");
+                        replier.reply(transferNick + "\n변경할 서버 이름을 확인해주세요. ⚠️\n━━━━━━━━━━━━━\n입력한 서버: " + transferName + "\n\n📍 변경 가능한 서버\n" + transferChoices + "\n\n아래 예시처럼 정확한 서버 이름을 입력해주세요.\n예) /서버변경 호이월드 커뮤니티\n\n※ 서버이동권은 사용되지 않았습니다.");
                         return;
                     }
                     var transferDestination = transferConfig.labels[transferIndex];
@@ -19340,9 +19340,13 @@ replier.reply(
                     replier.reply(transferNick + "\n소속 서버 변경이 완료되었습니다! ✅\n━━━━━━━━━━━━━\n🏰 " + (transferCurrent || "미등록") + " → " + transferDestination + "\n\n🎫 서버이동권 1개 사용\n📦 남은 서버이동권: " + (transferCount - 1) + "개");
                     return;
                 }
-                if (msg.startsWith("/서버이동 ") && isAdmin(sender)) {
+                if (/^\/서버이동\s+\S(?:.*\S)?$/.test(msg) && isAdmin(sender)) {
                     var commandRemoved = msg.replace("/서버이동", "").trim(); // "호이 남 호이서버1[30]"
-                    var validServers = Object.values(roomToServer);
+                    var validServers = Object.values(roomToServer).map(normalizeHoiServerLabel);
+                    for (var transferLabelIndex = 0; transferLabelIndex < GLOBAL_CONFIG.serverTransfer.labels.length; transferLabelIndex++) {
+                        var transferLabel = GLOBAL_CONFIG.serverTransfer.labels[transferLabelIndex];
+                        if (validServers.indexOf(transferLabel) === -1) validServers.push(transferLabel);
+                    }
                     // 서버명을 기준으로 역방향 탐색
                     var foundServer = validServers.find((server) => commandRemoved.endsWith(server));
                     if (!foundServer) {
@@ -26539,7 +26543,7 @@ replier.reply(
                             "(" +
                             r.mark +
                             ")[" +
-                            r.server +
+                            normalizeHoiServerLabel(r.server) +
                             "][" +
                             checkRank(data, petData, guildData, r.master) +
                             "][" +
@@ -26566,7 +26570,7 @@ replier.reply(
                                 "(" +
                                 rr.mark +
                                 ")[" +
-                                rr.server +
+                                normalizeHoiServerLabel(rr.server) +
                                 "][" +
                                 checkRank(data, petData, guildData, rr.master) +
                                 "][" +
@@ -26626,7 +26630,7 @@ replier.reply(
                     var out = "";
 
                     out += "🏰 길드 정보 🏰\n";
-                    out += "서버📊: " + g.server + "\n";
+                    out += "서버📊: " + normalizeHoiServerLabel(g.server) + "\n";
                     out += "길드명🎖️: " + g.name + "(" + g.mark + ")";
                     out += "\n";
                     out += "길마: " + checkRank(data, petData, guildData, g.master);
@@ -27080,7 +27084,7 @@ replier.reply(
 
                     delete userState[sender].guildJoin;
 
-                    replier.reply("✅ 길드 가입 완료!\n" + "길드: " + g.name + "(" + g.mark + ")[" + g.server + "]");
+                    replier.reply("✅ 길드 가입 완료!\n" + "길드: " + g.name + "(" + g.mark + ")[" + normalizeHoiServerLabel(g.server) + "]");
                     return;
                 }
                 if (msg === "/안한다") {
@@ -27221,7 +27225,7 @@ replier.reply(
                     saveJsonFile(data, filePath);
 
                     replier.reply(
-                        "✅ 길드 해지(삭제) 완료!\n" + "길드: " + legacyDisbandResult.guild.name + "(" + legacyDisbandResult.guild.mark + ")[" + legacyDisbandResult.guild.server + "]\n" + "길드마스터: " + legacyDisbandResult.guild.master + "\n" + "처리 길드원: " + legacyDisbandResult.memberCount + "명"
+                        "✅ 길드 해지(삭제) 완료!\n" + "길드: " + legacyDisbandResult.guild.name + "(" + legacyDisbandResult.guild.mark + ")[" + normalizeHoiServerLabel(legacyDisbandResult.guild.server) + "]\n" + "길드마스터: " + legacyDisbandResult.guild.master + "\n" + "처리 길드원: " + legacyDisbandResult.memberCount + "명"
                     );
                     return;
                 }
@@ -27872,7 +27876,7 @@ replier.reply(
 
                     out += "길드ID: " + gid + "\n";
                     out += "길드명: " + g.name + "(" + g.mark + ")\n";
-                    out += "서버: " + g.server + "\n";
+                    out += "서버: " + normalizeHoiServerLabel(g.server) + "\n";
                     out += "길드마스터: " + g.master + "\n";
                     out += "부길마: " + getGuildSubMasterDisplay(data, petData, guildData, g) + "\n\n";
 
@@ -28569,7 +28573,7 @@ replier.reply(
 
                         row = rows[i];
 
-                        out += row.rank + ". " + row.name + (row.mark || "") + "[" + row.server + "]" + "[" + row.rankTitle + " " + row.master + "]" + "[ Lv." + row.level + "]\n";
+                        out += row.rank + ". " + row.name + (row.mark || "") + "[" + normalizeHoiServerLabel(row.server) + "]" + "[" + row.rankTitle + " " + row.master + "]" + "[ Lv." + row.level + "]\n";
                         out += "[" + numberWithCommas(row.totalCharm) + "💞]\n";
                     }
 
@@ -33537,7 +33541,7 @@ function buildGuildTerritoryRankingMessage(data, guildData) {
         }
         var guild = rows[i].guild;
         out += (i + 1) + ". " + formatGuildDisplay(guild) + "\n";
-        out += "[" + (guild.server || "서버미상") + "]\n";
+        out += "[" + (normalizeHoiServerLabel(guild.server) || "서버미상") + "]\n";
         out += "[" + formatGuildTerritoryMasterDisplay(data, guildData, guild) + "][Lv." + (guild.level || 1) + "]\n";
         out += "[누적 영지점수: " + numberWithCommas(rows[i].score) + "pt]\n\n";
     }
@@ -43436,25 +43440,29 @@ function addsingle(number) {
     return number < 10 ? "  " + number : " " + number;
 }
 
-// 저장 티어를 기준으로 checkRank에 표시할 최신 이모지를 반환하는 함수
-function getCheckRankTierEmoji(data, user) {
-    var member = data && data.member ? data.member[user] : null;
+// 회원의 저장 티어에 해당하는 최신 이모지를 반환하는 함수
+function getTierEmojiForMember(member) {
     if (!member || !member.rank) return "";
     var tierName = member.rank.tier === "벚꽃" ? "벛꽃" : member.rank.tier;
     var tier = ticketTierData[tierName];
     return tier && tier.emoji ? tier.emoji : (member.rank.emoji || "");
 }
 
-// 본인이 순위 이모지를 감춘 경우 표시 접두사를 제외하는 함수
+// 저장 티어를 기준으로 닉네임에 표시할 이모지를 반환하는 함수
+function getCheckRankTierEmoji(data, user) {
+    return getTierEmojiForMember(data && data.member ? data.member[user] : null);
+}
+
+// 순위 이모지 감추기 상태에서는 티어 이모지로 전환하는 함수
 function getVisibleRankEmoji(data, user, emoji) {
     var member = data && data.member ? data.member[user] : null;
-    return member && member.displaySettings && member.displaySettings.hideRankEmoji === true ? "" : emoji;
+    return member && member.displaySettings && member.displaySettings.hideRankEmoji === true ? getTierEmojiForMember(member) : emoji;
 }
 
 // 회원의 직접 저장된 티어 이모지를 표시 설정에 맞춰 반환하는 함수
 function getMemberRankEmojiForDisplay(member) {
     if (!member || !member.rank) return "";
-    return member.displaySettings && member.displaySettings.hideRankEmoji === true ? "" : (member.rank.emoji || "");
+    return member.displaySettings && member.displaySettings.hideRankEmoji === true ? getTierEmojiForMember(member) : (member.rank.emoji || "");
 }
 
 function checkRank(data, petData, guildData, user) {
@@ -57562,7 +57570,7 @@ function buildMiniPetBagRenewedMessage(user, data, petData, guildData, collectio
     var collectionRank = getMiniPetCollectionRanking(collectionData);
     var collectionRankText = "순위없음📊";
     for (var r = 0; r < collectionRank.length; r++) if (collectionRank[r].userName === user) { collectionRankText = (r + 1) + "등📊"; break; }
-    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "※ 미니펫 정보: /미니펫정보", "※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]", "※ 등급 정리: /미니펫등급정리 [등급이름]", "※ 매력 정리: /미니펫가방정리 [매력]", "└ 창조·창세·엘리트 등급 제외", "━━━━━━━━━━━━━"];
+    var lines = [getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 보유 미니펫가방🐹[" + bag.length + "/" + getMiniPetBagLimit(data, user) + "]", "미니펫컬렉션+" + (collection ? collection.completedStage || 0 : 0) + "💫[" + (collection ? collection.registeredCount || 0 : 0) + "/" + (collection ? collection.maxCount || 0 : 0) + "] (" + collectionRankText + ")", "━━━━━━━━━━━━━", "※ 미니펫 정보: /미니펫정보", "※ 대표장착: /미니펫장착 [미니펫가방번호]", "※ 보조장착: /미니펫보조장착 [미니펫가방번호]", "※ 구간 판매: /미니펫지정판매 [시작번호]~[끝번호]", "※ 등급 정리: /미니펫등급정리 [등급이름]", "※ 매력 정리: /미니펫가방정리 [매력]", "└ 창조·창세·엘리트 등급 제외", "━━━━━━━━━━━━━"];
     if (!bag.length) lines.push("미니펫가방이 비어 있습니다.");
     for (var i = 0; i < bag.length; i++) {
         if (i === 5) lines.push(allsee);

@@ -41,11 +41,15 @@ const GLOBAL_CONFIG = {
 		master: "[🎮호월GM]",
 		admin: "[🎖호월관리자]"
 	},
-	serverRanking: { // 종합순위에 표시하는 9개 논리 서버
-		labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[2030]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]"]
+	serverRanking: { // 종합순위에 표시하는 10개 논리 서버
+		labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"]
+	},
+	serverTransfer: { // 기존 서버이동권의 상점 안내
+		itemName: "서버이동권🖱[호이서버 전용](/서버변경 서버이름)",
+		description: "호이서버1~7 및 호이월드 커뮤니티로 변경할 수 있습니다."
 	},
 	serverMemberList: { // 서버통계의 원래 소속값으로 조회 가능한 과거·운영 서버 표기
-		additionalKnownNames: ["호이서버1-2[30]", "호이서버6[30]", "호이월드 운영진[GM]"]
+		additionalKnownNames: ["호이서버1-2[30]", "호이서버6[2030]", "호이월드 운영진[GM]"]
 	},
 	display: { // 화면 표시 설정
 		changeLogMax: 10 // 최근 수정 이력 표시 개수
@@ -623,7 +627,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (activeTitle) {
 						resultmsg += "• " + activeTitle + "\n";
 					}
-					resultmsg += "• " + (data.member[targetUser].server ? data.member[targetUser].server + "\n" : "");
+					resultmsg += "• " + (data.member[targetUser].server ? normalizeInfoServerLabel(data.member[targetUser].server) + "\n" : "");
 					if (petData[targetUser] && petData[targetUser].newimg) {
 						petData[targetUser].petimg = petData[targetUser].newimg;
 					}
@@ -800,7 +804,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				resultMsg += "• 👑호이패스 프리미엄👑\n";
 			}
 
-			resultMsg += memberInfo.server ? "• " + memberInfo.server + "\n" : "";
+			resultMsg += memberInfo.server ? "• " + normalizeInfoServerLabel(memberInfo.server) + "\n" : "";
 
 			if (memberInfo.firstSponsor === true) {
 				resultMsg += "• 🐹호이월드 후원자🐹\n";
@@ -1037,7 +1041,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let taxAmount = itemDetails * (taxRate / 100); // 세금 계산
 					itemTax = "\n(세금: 🅟" + numberWithCommas(taxAmount.toFixed(0)) + ")"; // 소수점 이하 버림
 				}
-				return index + 1 + ". " + itemName + " : 🅟" + numberWithCommas(itemPrice) + itemTax;
+				var itemDescription = itemName === GLOBAL_CONFIG.serverTransfer.itemName ? "\n└ " + GLOBAL_CONFIG.serverTransfer.description : "";
+				return index + 1 + ". " + itemName + " : 🅟" + numberWithCommas(itemPrice) + itemTax + itemDescription;
 			});
 			if (itemList.length > 0) {
 				var lordGuildText = "";
@@ -1716,14 +1721,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		applyItemInfoContext(productionItemInfoData);
 	}
 }
-// 회원의 원래 서버 소속값으로 통계와 조회에 공통으로 사용할 목록을 집계하는 함수
+// 서버6의 이전 표기를 현재 명칭으로 맞추는 함수
+function normalizeInfoServerLabel(serverName) {
+	return serverName === "호이서버6[2030]" ? "호이서버6[30]" : (serverName || "");
+}
+
+// 회원 소속값을 최신 표기로 맞춰 통계와 조회 목록을 집계하는 함수
 function getServerMemberGroups(members) {
 	var names = Object.keys(members);
 	var usersByServer = Object.create(null);
 	var total = 0; // 서버 소속이 있는 전체 회원 수
 	var unknown = 0; // 서버 소속값이 없거나 빈 회원 수
 	for (var i = 0; i < names.length; i++) {
-		var serverName = members[names[i]].server;
+		var serverName = normalizeInfoServerLabel(members[names[i]].server);
 		if (!serverName || serverName === "") {
 			unknown++;
 			continue;
@@ -1738,6 +1748,7 @@ function getServerMemberGroups(members) {
 // 요청한 서버의 전체 회원을 순번과 전체보기 형식으로 표시하는 함수
 function buildServerMemberListMessage(serverName, groups) {
 	if (!serverName) return "조회할 서버명을 입력해주세요. 사용법: /서버확인 서버명";
+	serverName = normalizeInfoServerLabel(serverName);
 	var knownServer = Object.prototype.hasOwnProperty.call(groups.usersByServer, serverName) ||
 		GLOBAL_CONFIG.serverRanking.labels.indexOf(serverName) !== -1 ||
 		GLOBAL_CONFIG.serverMemberList.additionalKnownNames.indexOf(serverName) !== -1;
@@ -2255,11 +2266,10 @@ function generateRanking(data, petData, homeData, petSkillData, guildData) {
 	};
 }
 
-// 기존 소속값을 9개 서버 순위의 최종 표시 명칭으로 변환하는 함수
+// 기존 소속값을 현재 서버 순위의 최종 표시 명칭으로 변환하는 함수
 function normalizeRankServerName(serverName) {
 	if (serverName === "호이서버1-2[30]") return "호이서버1[30]";
-	if (serverName === "호이서버6[30]") return "호이서버6[2030]";
-	return serverName || "";
+	return normalizeInfoServerLabel(serverName);
 }
 
 // 개인 종합매력 결과를 소속 서버별로 합산하는 함수
@@ -2328,7 +2338,7 @@ function buildCombinedServerRankingMessage(servers, sender, data, petData, guild
 	for (var i = 0; i < servers.length; i++) if (servers[i].name === myServerName) { myServer = servers[i]; serverRank = i + 1; break; }
 	var myUserRank = 0;
 	if (myServer) for (var k = 0; k < myServer.users.length; k++) if (myServer.users[k].key === sender) { myUserRank = k + 1; break; }
-	var lines = ["🏰 서버 종합순위", "🌐 전체 9개 서버 /서버순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏠 소속 서버: " + (myServerName || "미등록"), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", ""];
+	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버 /서버순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏠 소속 서버: " + (myServerName || "미등록"), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", ""];
 	var users = myServer ? myServer.users : [];
 	for (var j = 0; j < users.length && j < 10; j++) {
 		if (j === 3) lines.push(allsee);
@@ -2341,10 +2351,10 @@ function buildCombinedServerRankingMessage(servers, sender, data, petData, guild
 	return lines.join("\n");
 }
 
-// 전체 9개 서버의 종합매력 순위만 출력하는 함수
+// 전체 서버의 종합매력 순위만 출력하는 함수
 function buildStandaloneServerRankingMessage(servers, sender, data) {
 	var myServerName = normalizeRankServerName(data.member[sender] && data.member[sender].server);
-	var lines = ["🏰 서버 종합순위", "🌐 전체 9개 서버", "━━━━━━━━━━━━━"];
+	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버", "━━━━━━━━━━━━━"];
 	for (var i = 0; i < servers.length; i++) {
 		if (i === 3) lines.push(allsee);
 		lines.push(formatOverallServerRow(servers[i], i + 1, myServerName), "");
@@ -3045,25 +3055,29 @@ function addsingle(number) {
 	return number < 10 ? "  " + number : " " + number;
 }
 
-// 저장 티어를 기준으로 checkRank에 표시할 최신 이모지를 반환하는 함수
-function getCheckRankTierEmoji(data, user) {
-	var member = data && data.member ? data.member[user] : null;
+// 회원의 저장 티어에 해당하는 최신 이모지를 반환하는 함수
+function getTierEmojiForMember(member) {
 	if (!member || !member.rank) return "";
 	var tierName = member.rank.tier === "벚꽃" ? "벛꽃" : member.rank.tier;
 	var tier = ticketTierData[tierName];
 	return tier && tier.emoji ? tier.emoji : (member.rank.emoji || "");
 }
 
-// 본인이 순위 이모지를 감춘 경우 표시 접두사를 제외하는 함수
+// 저장 티어를 기준으로 닉네임에 표시할 이모지를 반환하는 함수
+function getCheckRankTierEmoji(data, user) {
+	return getTierEmojiForMember(data && data.member ? data.member[user] : null);
+}
+
+// 순위 이모지 감추기 상태에서는 티어 이모지로 전환하는 함수
 function getVisibleRankEmoji(data, user, emoji) {
 	var member = data && data.member ? data.member[user] : null;
-	return member && member.displaySettings && member.displaySettings.hideRankEmoji === true ? "" : emoji;
+	return member && member.displaySettings && member.displaySettings.hideRankEmoji === true ? getTierEmojiForMember(member) : emoji;
 }
 
 // 회원의 직접 저장된 티어 이모지를 표시 설정에 맞춰 반환하는 함수
 function getMemberRankEmojiForDisplay(member) {
 	if (!member || !member.rank) return "";
-	return member.displaySettings && member.displaySettings.hideRankEmoji === true ? "" : (member.rank.emoji || "");
+	return member.displaySettings && member.displaySettings.hideRankEmoji === true ? getTierEmojiForMember(member) : (member.rank.emoji || "");
 }
 
 function checkRank(data, petData, guildData, user) {

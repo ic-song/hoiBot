@@ -129,7 +129,9 @@ const rankContext = {
     getMyGuildInfo: () => ({ error: true })
 };
 vm.createContext(rankContext);
+vm.runInContext(extractFunction("getTierEmojiForMember"), rankContext);
 vm.runInContext(extractFunction("getCheckRankTierEmoji"), rankContext);
+vm.runInContext(extractFunction("getVisibleRankEmoji"), rankContext);
 vm.runInContext(extractFunction("checkRank"), rankContext);
 const rankData = { member: { "사람 남": { rank: { tier: "노랑하트", emoji: "💛" } } } };
 if (rankContext.checkRank(rankData, {}, {}, "사람 남") !== "💛사람 남") throw new Error("승급 전 checkRank 검증 실패");

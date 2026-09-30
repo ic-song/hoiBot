@@ -44,7 +44,7 @@ function context(source, names, extras) {
         getMiniPetUpgradeDisplay: pet => "+" + pet.upgrade,
         GLOBAL_CONFIG: {
             daily: { miniPetBattleMax: 15, miniPetBattleFree: 1 },
-            serverRanking: { labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[2030]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]"] }
+            serverRanking: { labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"] }
         }
     }, extras || {});
     vm.createContext(sandbox);
@@ -68,7 +68,7 @@ assert.strictEqual(mini.getMiniPetModeCharm("나", petData), 1186425);
 assert.strictEqual(mini.getTotalMinipetExp("나", petData), 2372850);
 assert.strictEqual(mini.getMiniPetModeCharm("홀수", petData), 2);
 assert.strictEqual(mini.normalizeHoiServerLabel("호이서버1-2[30]"), "호이서버1[30]");
-assert.strictEqual(mini.normalizeHoiServerLabel("호이서버6[30]"), "호이서버6[2030]");
+assert.strictEqual(mini.normalizeHoiServerLabel("호이서버6[2030]"), "호이서버6[30]");
 const miniInfo = mini.buildMiniPetInfoRenewedMessage("나", members, petData, {}, {}, true);
 assert(miniInfo.includes("💞 종합매력 반영: +2,372,850"));
 assert(miniInfo.includes("└ 매력 811,175💞"));
@@ -81,27 +81,27 @@ const robbery = mini.buildMiniPetRobberyHistoryMessage("나", members, petData, 
 assert(robbery.includes("최근 약탈 기록: 1건"));
 assert(robbery.indexOf("<ALLSEE>") < robbery.indexOf("1. [상대]"));
 
-const rank = context(info, ["generateRanking", "normalizeRankServerName", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"], {
+const rank = context(info, ["generateRanking", "normalizeInfoServerLabel", "normalizeRankServerName", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"], {
     calculateCastleExp: user => user === "나" ? 120 : 0,
     calculateRaidExp: user => user === "나" ? 80 : 0,
     calculatePetUpgradeCharm: () => 0,
     getRankEmoji: () => "🥇 "
 });
-const rankingData = { member: { "나": { server: "호이서버1-2[30]" }, "다른": { server: "호이서버6[30]" }, "미등록": {} } };
+const rankingData = { member: { "나": { server: "호이서버1-2[30]" }, "다른": { server: "호이서버6[2030]" }, "미등록": {} } };
 const rows = rank.generateRanking(rankingData, { "나": {} }, {}, {}, {}).rows;
 assert.strictEqual(rows.length, 3);
 assert.strictEqual(rows[0].totalExp, 200);
 const servers = rank.buildServerRankingRows(rows, rankingData);
-assert.strictEqual(servers.length, 9);
+assert.strictEqual(servers.length, 10);
 assert.strictEqual(servers.find(row => row.name === "호이서버1[30]").totalExp, 200);
-assert.strictEqual(servers.find(row => row.name === "호이서버6[2030]").users.length, 1);
+assert.strictEqual(servers.find(row => row.name === "호이서버6[30]").users.length, 1);
 const world = rank.buildWorldOverallRankingMessage(rows, "나", rankingData, {}, {});
 const combined = rank.buildCombinedServerRankingMessage(servers, "나", rankingData, {}, {});
 const standalone = rank.buildStandaloneServerRankingMessage(servers, "나", rankingData);
 assert(world.includes("👑 월드 종합순위"));
 assert(combined.includes("🏠 소속 서버: 호이서버1[30]"));
 assert.strictEqual((standalone.match(/<ALLSEE>/g) || []).length, 1);
-assert.strictEqual((standalone.match(/└ 👑 /g) || []).length, 9);
+assert.strictEqual((standalone.match(/└ 👑 /g) || []).length, 10);
 
 const serverItem = "서버이동권🖱[호이서버 전용](/서버변경 서버이름)";
 const serverMessages = [];
@@ -118,8 +118,8 @@ const serverState = {
     GLOBAL_CONFIG: { serverTransfer: {
         itemName: serverItem,
         itemPrice: 100000000000,
-        names: ["호이서버1", "호이서버2", "호이서버3", "호이서버4", "호이서버5", "호이서버6", "호이서버7"],
-        labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[2030]", "호이서버7[2030]"]
+        names: ["호이서버1", "호이서버2", "호이서버3", "호이서버4", "호이서버5", "호이서버6", "호이서버7", "호이월드 커뮤니티"],
+        labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "호이월드 커뮤니티"]
     } },
     saveJsonFile: () => { serverSaves++; },
     removeItem: (data, user, item) => { if (--data.member[user].bag[item] === 0) delete data.member[user].bag[item]; },
@@ -137,19 +137,19 @@ assert.strictEqual(serverState.data.member["나"].bag[serverItem], 1);
 serverState.msg = "/서버변경 호이서버6";
 serverState.runServerChange();
 assert.strictEqual(serverSaves, 1);
-assert.strictEqual(serverState.data.member["나"].server, "호이서버6[2030]");
+assert.strictEqual(serverState.data.member["나"].server, "호이서버6[30]");
 assert.strictEqual(serverState.data.member["나"].bag[serverItem], undefined);
 assert(serverMessages[serverMessages.length - 1].includes("남은 서버이동권: 0개"));
 serverState.msg = "/서버변경 호이서버2";
 serverState.runServerChange();
 assert.strictEqual(serverSaves, 1);
-assert.strictEqual(serverState.data.member["나"].server, "호이서버6[2030]");
+assert.strictEqual(serverState.data.member["나"].server, "호이서버6[30]");
 
 serverState.data.member["나"].bag[serverItem] = 1;
 serverState.saveJsonFile = () => { throw new Error("write failed"); };
 serverState.msg = "/서버변경 호이서버2";
 serverState.runServerChange();
-assert.strictEqual(serverState.data.member["나"].server, "호이서버6[2030]");
+assert.strictEqual(serverState.data.member["나"].server, "호이서버6[30]");
 assert.strictEqual(serverState.data.member["나"].bag[serverItem], 1);
 assert(serverMessages[serverMessages.length - 1].includes("오류가 발생했습니다"));
 
