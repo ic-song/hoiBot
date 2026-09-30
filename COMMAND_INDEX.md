@@ -566,13 +566,14 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `buildMiniPetBagMessage`
+- `buildMiniPetBagRenewedMessage`
 - `checkRank`
 
 ## Data Usage
 
 - `petData[sender].miniPetBag`
 - `petData[sender].miniPet`
+- `miniPetCollectionData.member[sender]`
 - `miniPetData`
 
 ## Save Flow
@@ -590,7 +591,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Canonical entry point for mini-pet bag rendering
-- For bag format and viewer-target split, inspect `buildMiniPetBagMessage` in `main.js`
+- 가방은 원본 매력을 한 줄씩 표시하고 5번 다음에 `allsee`를 넣는다. 정보·편성은 `/미니펫정보`에서 확인한다.
 - Nearby branches contain most mini-pet bag mutation logic
 - 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한하며 프리미엄 종료 후 초과 보유 데이터는 삭제하지 않는다.
 
@@ -1978,7 +1979,8 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `buildMiniPetBagMessage`
+- `buildMiniPetInfoRenewedMessage`
+- `buildMiniPetRobberyHistoryMessage`
 - `isAdmin`
 - `isMaster`
 
@@ -1988,7 +1990,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Calls `saveJsonFile(petData, memberPetPath)` after message build
+- 조회만 수행하며 저장하지 않는다.
 
 ## Related Commands
 
@@ -1996,8 +1998,8 @@ Status: VERIFIED
 
 ## AI Notes
 
-- Admin/master-only mirror of mini-pet bag view for another user
-- Reuses the same renderer as `/미니펫가방`
+- 인자 없이 입력하면 자신의 대표·보조 편성과 미니펫대전 정보를 표시한다. 관리자·MASTER는 닉네임을 지정해 타인을 조회할 수 있다.
+- 약탈자 스킬 장착 시 성공 기록을 두 번째 메시지로 최대 50건 출력한다.
 
 ---
 
@@ -2068,6 +2070,8 @@ Status: VERIFIED
 - `petData[sender].miniPet`
 - `petData[sender].miniPetBag`
 - `petData[sender].miniPetBattle`
+- `petData[sender].miniPetSupport`
+- `petData[sender].miniPetRobberyHistory`
 
 ## Save Flow
 
@@ -2077,6 +2081,7 @@ Status: VERIFIED
 ## AI Notes
 
 - 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
+- 기본 매력은 `(대표 원본 + 보조 원본의 50% 버림) × 2`이며 기존 가방 최소 5마리 입장 조건은 유지한다.
 - 출력 상단에는 대전횟수·리셋권, 경험치, 승패와 대전 상대를 먼저 표시하고 `미니펫대전 상세결과`부터 `allsee`로 접는다. 상세 영역은 공격·방어 미니펫 외형과 강화 수치, 등급, 장착/미니펫/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 유지한다.
 - 미니펫대전 경험치는 승리 50 EXP, 패배 25 EXP이며 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용하고 레벨 상승을 처리하는 공통 경험치 흐름을 사용한다.
 - 수동 미니펫대전에서 레벨업·승급·대승급이 발생하면 대전 결과 다음 메시지로 안내를 별도 출력한다. 자동일퀘에서는 기존 즉시 안내만 출력해 중복을 막는다.
@@ -2948,7 +2953,9 @@ Status: VERIFIED
 
 - `initSweetHomeUser`
 - `generateRanking`
-- `buildTotalRankingGapGuide`
+- `buildWorldOverallRankingMessage`
+- `buildCombinedServerRankingMessage`
+- `buildServerRankingRows`
 
 ## Data Usage
 
@@ -2972,8 +2979,9 @@ Status: VERIFIED
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
 - `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
-- Adds a sender-specific rank gap guide above the ranking list when the sender appears in the ranking.
-- `allsee` is inserted after the top 5 rows for this command.
+- `/종합순위`와 `ㅈㅈㅈ`는 월드 개인 순위와 소속 서버 순위를 두 메시지로 출력한다. `/서버순위`는 9개 서버 합산 순위만 한 메시지로 출력한다.
+- 개인과 서버 합산은 같은 개인 종합매력 결과를 사용한다. `호이서버1-2[30]`은 서버1로, 구 서버6 `[30]`은 `[2030]`으로 집계한다.
+- 각 메시지는 3위 다음에 `allsee`를 적용한다.
 
 ---
 
@@ -4279,6 +4287,7 @@ Status: VERIFIED
 - `data.member[*].bag[입력한 아이템이름]`
 ## Save Flow
 - `/관리자추가` and `/관리자삭제` mutate `data.admin` and save `filePath`
+- 실제 관리자 등록·해제 성공 시 대상 회원 가방에 서버이동권을 1개 지급하고 같은 `filePath`에 저장한다. 중복 등록·삭제에는 지급하지 않는다.
 - `/관리자일당` reads `data.admin`, gives existing members `GLOBAL_CONFIG.admin.dailyPayoutPoint` (10억) points, reports actual paid count, and saves `filePath`
 - `/부방상여 아이템이름/갯수`는 마지막 `/숫자`를 수량으로 해석하고, `data.admin`의 실제 가입 유저에게 입력 아이템을 지급한 뒤 대상 수와 지급 내역을 출력하고 `filePath`를 저장한다.
 ## Related Commands
@@ -4295,6 +4304,29 @@ Status: VERIFIED
 - `/관리자일당` authorization remains `호이 남` and `오픈채팅봇`
 - `/부방상여` authorization remains `호이 남`
 - 인자 없는 `/부방상여`는 사용법만 출력하며 지급하지 않는다. 아이템명 내부의 `/관련명령어` 표기는 유지하고 마지막 `/숫자`만 지급 수량으로 분리한다.
+
+---
+
+# /서버변경 · /서버순위 · 표시 감추기
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: `/서버변경`, `/관리자감추기`, `/이모지감추기`
+- `Info.js`: `/서버순위`
+
+## Related Helpers
+
+- `normalizeHoiServerLabel`, `normalizeRankServerName`
+- `buildServerRankingRows`, `getAuthorityTitleBadge`, `getVisibleRankEmoji`
+
+## Data Usage / Save Flow
+
+- `data.shop[GLOBAL_CONFIG.serverTransfer.itemName]`에 1,000억 포인트 상품을 등록한다.
+- 서버 변경은 대상 계정의 `server`와 이동권 1개를 함께 변경하고 `filePath`에 저장한다. 안내·실패·같은 서버 요청은 변경하지 않는다.
+- 관리자·순위 이모지 표시 설정은 계정의 `displaySettings`에 별개로 저장하며 실제 관리자 권한과 순위 수치는 유지한다.
+- `/서버순위`는 조회 전용이며 소속 서버의 전체 회원 매력을 합산한다.
 
 ---
 
