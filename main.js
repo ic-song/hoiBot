@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.588"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.589"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -18015,7 +18015,7 @@ replier.reply(
                     var miniBagIndex = null;
                     var miniTryCount = 1;
                     if (miniUpgradeArgs.length >= 2) {
-                        miniBagIndex = parseInt(miniUpgradeArgs[1], 10);
+                        miniBagIndex = miniUpgradeArgs[1] === "00" ? "00" : parseInt(miniUpgradeArgs[1], 10); // 보조 전용 값은 숫자 0으로 변환하지 않음
                         if (isNaN(miniBagIndex) || miniBagIndex < 0) {
                             replier.reply("❌ 사용법:\n/미니펫강화\n/미니펫강화 [미니펫가방번호]\n/미니펫강화 [미니펫가방번호] [시도횟수]");
                             return;
@@ -18024,6 +18024,10 @@ replier.reply(
                     if (miniUpgradeArgs.length >= 3) {
                         miniTryCount = parseInt(miniUpgradeArgs[2], 10);
                         if (!miniTryCount || miniTryCount < 1) {
+                            if (miniBagIndex === "00") {
+                                replier.reply("❌ 사용법:\n※ 보조미니펫 강화: /미니펫강화 00 [강화횟수]\n예시: /미니펫강화 00 10");
+                                return;
+                            }
                             replier.reply("❌ 사용법:\n/미니펫강화\n/미니펫강화 [미니펫가방번호]\n/미니펫강화 [미니펫가방번호] [시도횟수]");
                             return;
                         }
@@ -40302,7 +40306,18 @@ function runRepeatPetUpgrade(sender, data, petData, guildData, petSkillData, cou
     return summary + "\n\n" + results.join("\n\n");
 }
 
+// 입력 번호로 대표·보조·가방 미니펫 강화 대상을 조회하는 함수
 function getMiniUpgradeTargetInfo(sender, petData, idxParam) {
+    if (idxParam === "00") {
+        var supportOwner = petData[sender];
+        if (!supportOwner || !supportOwner.miniPetSupport) {
+            return {
+                ok: false,
+                message: "보조로 장착된 미니펫이 없습니다.\n먼저 보조 미니펫을 장착해주세요.\n※ 보조장착: /미니펫보조장착 [미니펫가방번호]"
+            };
+        }
+        return { ok: true, mini: supportOwner.miniPetSupport, targetType: "support" };
+    }
     if (!petData[sender]) petData[sender] = {};
 
     if (idxParam === null || typeof idxParam === "undefined") {
@@ -57545,7 +57560,7 @@ function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleDat
     lines.push("미대전🆚: " + battle.win + "승 " + battle.lose + "패(" + battleRate + "%)(" + getMiniPetBattleRank(user, petData) + ")");
     lines.push("미대전 횟수(" + (battle.count || 0) + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ")" + ((battle.count || 0) < GLOBAL_CONFIG.daily.miniPetBattleFree ? " · 무료 1회 가능" : ""));
     if (robberEquipped) lines.push("📙 약탈자 장착 중");
-    lines.push("━━━━━━━━━━━━━", "※ 미니펫가방: /미니펫가방", allsee, "━━━━━━━━━━━━━", "※ 대표장착: /미니펫장착 [미니펫가방번호]", "※ 보조장착: /미니펫보조장착 [미니펫가방번호]", "※ 대표귀속해제: /귀속해제", "※ 보조귀속해제: /보조귀속해제", "└ 공통 필요: 미니펫귀속해제권🐰(/귀속해제)", "", "※ 외형변경: /미니펫외형 [수정이모지]", "※ 이름변경: /미니펫이름 [수정이름]", "━━━━━━━━━━━━━", "※ 미니펫대전: /미니펫대전", "※ 다승순위: /미니펫대전순위", "※ 승률순위: /미니펫승률순위", "※ 대표매력순위: /미니펫순위", "※ 종합매력순위: /미니펫종합순위", "━━━━━━━━━━━━━");
+    lines.push("━━━━━━━━━━━━━", "※ 미니펫가방: /미니펫가방", allsee, "━━━━━━━━━━━━━", "※ 대표장착: /미니펫장착 [미니펫가방번호]", "※ 보조장착: /미니펫보조장착 [미니펫가방번호]", "※ 대표미니펫 강화: /미니펫강화 0 [강화횟수]", "※ 보조미니펫 강화: /미니펫강화 00 [강화횟수]", "※ 대표귀속해제: /귀속해제", "※ 보조귀속해제: /보조귀속해제", "└ 공통 필요: 미니펫귀속해제권🐰(/귀속해제)", "", "※ 외형변경: /미니펫외형 [수정이모지]", "※ 이름변경: /미니펫이름 [수정이름]", "━━━━━━━━━━━━━", "※ 미니펫대전: /미니펫대전", "※ 다승순위: /미니펫대전순위", "※ 승률순위: /미니펫승률순위", "※ 대표매력순위: /미니펫순위", "※ 종합매력순위: /미니펫종합순위", "━━━━━━━━━━━━━");
     return lines.join("\n");
 }
 

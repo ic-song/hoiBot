@@ -314,6 +314,7 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 		questStatus + "\n\n" +
 		"👉 진행 안내 /모험가퀘스트\n" +
 		"👉 전체 기록 /퀘스트기록\n" +
+		"👉 타이틀 장착 /퀘스트타이틀\n" +
 		"━━━━━━━━━━━━\n" +
 		"📚 모험가 · 퀘스트 상세 보상정보" + allsee + "\n\n" +
 		"🎒 모험가 레벨 보너스\n" +
