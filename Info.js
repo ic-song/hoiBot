@@ -2338,13 +2338,11 @@ function buildCombinedServerRankingMessage(servers, sender, data, petData, guild
 	for (var i = 0; i < servers.length; i++) if (servers[i].name === myServerName) { myServer = servers[i]; serverRank = i + 1; break; }
 	var myUserRank = 0;
 	if (myServer) for (var k = 0; k < myServer.users.length; k++) if (myServer.users[k].key === sender) { myUserRank = k + 1; break; }
-	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버 /서버순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏠 소속 서버: " + (myServerName || "미등록"), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", ""];
+	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버 /서버순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏠 소속 서버: " + (myServerName || "미등록"), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", allsee, ""];
 	var users = myServer ? myServer.users : [];
 	for (var j = 0; j < users.length && j < 10; j++) {
-		if (j === 3) lines.push(allsee);
 		lines.push(formatOverallUserRow(users[j], j + 1, data, petData, guildData, sender));
 	}
-	if (users.length <= 3) lines.push(allsee);
 	lines.push("", "📋 서버 내 상위 10위까지 표시됩니다.", "━━━━━━━━━━━━━", "🌐 서버별 종합매력 합산 순위", "");
 	for (var s = 0; s < servers.length; s++) lines.push(formatOverallServerRow(servers[s], s + 1, myServerName), "");
 	lines.push("━━━━━━━━━━━━━", "🏠 내 소속 서버", "📊 소속 유저들의 종합매력 합산 기준");

@@ -99,6 +99,20 @@ assert(combined.includes("전체 10개 서버 /서버순위"));
 assert(combined.includes("소속 서버: 호이월드 커뮤니티"));
 assert(combined.includes("서버 내 순위: 12위"));
 assert(!combined.includes("u2 ·"), "서버 개인 목록은 상위10명");
+assert(combined.includes("🏠 우리 서버 개인 종합순위\n<ALLSEE>\n\n🥇"));
+assert.strictEqual((combined.match(/<ALLSEE>/g) || []).length, 1);
+for (const count of [0, 1, 3, 4, 12]) {
+    const edgeData = { member: { viewer: { server: "호이월드 커뮤니티" } } };
+    const edgeServers = servers.map(server => Object.assign({}, server, { users: server.name === "호이월드 커뮤니티" ? server.users.slice(0, count) : server.users }));
+    const output = rank.buildCombinedServerRankingMessage(edgeServers, "viewer", edgeData, {}, {});
+    const parts = output.split("<ALLSEE>");
+    assert.strictEqual(parts.length, 2, count + "명일 때도 접기 위치는 한 곳");
+    assert(parts[0].endsWith("🏠 우리 서버 개인 종합순위\n"));
+    assert(!parts[0].includes("🥇"), "개인 1위부터 접기");
+    assert(parts[1].includes("🌐 서버별 종합매력 합산 순위"));
+    assert.strictEqual((parts[1].match(/ · 👑 /g) || []).length, Math.min(count, 10));
+    assert(!output.includes("// ALLSEE 시작"));
+}
 const standalone = rank.buildStandaloneServerRankingMessage(servers, "u1", data);
 assert(standalone.includes("전체 10개 서버"));
 assert.strictEqual((standalone.match(/└ 👑 /g) || []).length, 10);
