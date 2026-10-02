@@ -401,7 +401,9 @@ for (const source of [main, info]) {
     };
     vm.createContext(charmContext);
     const percentName = source === main ? "applyPercentWithExactFloor" : "applyInfoPercentWithExactFloor";
-    vm.runInContext([percentName, "calculateCastleExp", "calculateRaidExp"].map(name => extractFunction(name, source)).join("\n"), charmContext);
+    const charmFunctions = [percentName, "getMiniPetModeCharm", "calculateCastleExp", "calculateRaidExp"];
+    if (source === main) charmFunctions.push("getPetModeCharmPercent");
+    vm.runInContext(charmFunctions.map(name => extractFunction(name, source)).join("\n"), charmContext);
     const charmData = { member: { tester: { lv: 1, bag: { intimacy: 0 }, adventureQuest: { totals: { castlePercent: 0, raidPercent: 0 } } } } };
     const pet = { tester: { petexp: 0 } };
     assert.strictEqual(charmContext.calculateCastleExp("tester", charmData, pet, {}, {}, false, {}), 140000);

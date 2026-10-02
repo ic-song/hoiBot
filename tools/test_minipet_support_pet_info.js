@@ -45,7 +45,7 @@ function makeContext(source, isInfo) {
     const names = ["getMiniPetModeCharm", "calculateCastleExp", "calculateRaidExp", "calculateTotalExp",
         isInfo ? "applyInfoPercentWithExactFloor" : "applyPercentWithExactFloor"];
     if (isInfo) names.push("formatPetInfo", "formatKoreanShort", "getMiniPetUpgradeDisplay");
-    else names.push("buildMiniPetInfoRenewedMessage", "getMiniPetDisplayTitle");
+    else names.push("getPetModeCharmPercent", "buildMiniPetInfoRenewedMessage", "getMiniPetDisplayTitle");
     for (const name of names) vm.runInContext(extractFunction(source, name), c);
     return c;
 }

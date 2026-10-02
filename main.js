@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.590"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.593"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -112,7 +112,7 @@ const PET_SKILL_LIST = [
     { name: "VIP블랙카드", grade: "SS", rate: 0.1, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
     { name: "탈세자", grade: "SS", rate: 0.1, effect: "/상점의 /구매로 상품 구매 시 세금의 70%를 면제받습니다." },
-    { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "미니펫 [엘리트] 등급을 장착하면 레이드매력 150만과 캐슬매력 150만, 총 종합매력 300만을 획득합니다.\n펫스킬 해제 또는 발동 조건 미충족 시 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "[엘리트] 등급 미니펫 장착 시 장착 슬롯에 따라 추가 매력을 획득합니다.\n\n🐹 대표 장착 · 100% 반영\n캐슬매력 +150만 · 레이드매력 +150만\n└ 종합매력 +300만💞\n\n🛡️ 보조 장착 · 50% 반영\n캐슬매력 +75만 · 레이드매력 +75만\n└ 종합매력 +150만💞\n\n※ 대표·보조 모두 조건 충족 시 각각 합산됩니다.\n※ 위 수치는 다른 퍼센트 보너스 적용 전 기준입니다.\n※ 펫스킬 해제 또는 조건 미충족 시 해당 보너스가 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
@@ -126,7 +126,7 @@ const PET_SKILL_LIST = [
     { name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
     { name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
     { name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
-    { name: "창조림", grade: "S", rate: 1.0, effect: "미니펫 [창조] 등급 장착 시 레이드매력 50만 + 캐슬매력 50만(종합매력 100만)을 획득합니다.\n조건 해제 시 보너스도 함께 회수됩니다." },
+    { name: "창조림", grade: "S", rate: 1.0, raidExp: 500000, castleExp: 500000, charmCondition: "creationMiniPet", effect: "[창조] 등급 미니펫 장착 시 장착 슬롯에 따라 추가 매력을 획득합니다.\n\n🐹 대표 장착 · 100% 반영\n캐슬매력 +50만 · 레이드매력 +50만\n└ 종합매력 +100만💞\n\n🛡️ 보조 장착 · 50% 반영\n캐슬매력 +25만 · 레이드매력 +25만\n└ 종합매력 +50만💞\n\n※ 대표·보조 모두 조건 충족 시 각각 합산됩니다.\n※ 위 수치는 다른 퍼센트 보너스 적용 전 기준입니다.\n※ 펫스킬 해제 또는 조건 미충족 시 해당 보너스가 회수됩니다." },
     { name: "엑스칼리버", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "선택받은 자만이 사용할 수 있는 전설의 성검입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
 
     { name: "십원", grade: "A", rate: 1.5, effect: "시련의탑 40% 확률로 순간 매력 100만 지원" },
@@ -981,6 +981,10 @@ const GLOBAL_CONFIG = {
         chatExpDailyLimit: 1000,
         kstOffsetMs: 9 * 60 * 60 * 1000,
         resultLink: "https://ibb.co/jkbgrzHt"
+    },
+    carrotTrade: { // 당근거래를 허용할 실제 단체방과 입장 안내
+        communityRoom: room5,
+        communityLink: "https://open.kakao.com/o/gvG4xl6h"
     },
     level: { // 모험가 레벨 리뉴얼 설정
         expBase: 1000,
@@ -1919,6 +1923,7 @@ blockedNicknameTerms: [
         maxLength: 30 // 타이틀 선물 내용 최대 길이
     },
     petSkill: { // 펫스킬 시스템 설정
+        miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
         oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
         unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
@@ -2232,7 +2237,8 @@ blockedNicknameTerms: [
             }
         },
         genesis: {
-            itemName: "[🐹미니펫]창조패키지 확정(/창조오픈)",
+            itemName: "[🐹미니펫]창조등급 확정(/창조오픈)",
+            legacyItemNames: ["[🐹미니펫]창조패키지 확정(/창조오픈)"],
             maxBagSize: 8,
             reward: {
                 name: "호이빛",
@@ -2241,6 +2247,18 @@ blockedNicknameTerms: [
                 battleExp: 1350000,
                 castleExp: 1350000,
                 raidExp: 1350000
+            }
+        },
+        creationRewardBox: { // 통합 패키지 구성품으로 지급하는 창세 미니펫 보상상자
+            itemName: "[🐹미니펫]창세등급 확정(/창세오픈)",
+            legacyItemNames: ["[🐹미니펫]창조패키지 확정(/창세오픈)", "[🐹미니펫]창조보상상자(/창세오픈)"],
+            reward: {
+                name: "호이똥",
+                emoji: "💩",
+                grade: "창세",
+                battleExp: 990000,
+                castleExp: 990000,
+                raidExp: 990000
             }
         }
     },
@@ -2873,6 +2891,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
 
         var data = null;
+
+        // 거래 장소 차단을 패스·출석 검사와 거래 데이터 변경보다 먼저 처리한다.
+        if (isCarrotTradeCommand(msg) && !isCarrotTradeRoomAllowed(room, isGroupChat)) {
+            data = loadJsonFile(filePath);
+            var carrotBlockPetData = loadJsonFile(memberPetPath);
+            var carrotBlockGuildData = loadJsonFile(guildPath);
+            var carrotBlockNick = checkRank(data, carrotBlockPetData, carrotBlockGuildData, sender);
+            replier.reply(buildCarrotTradeBlockedMessage(carrotBlockNick));
+            return;
+        }
 
         if (!isGroupChat) {
             data = loadJsonFile(filePath);
@@ -4063,7 +4091,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var homeDataForTimeCheck = loadJsonFile(homeDataFile);
             var homeLoadMs = Date.now() - homeLoadStart;
             var expCalcStart = Date.now();
-            var timeCheckDetail = buildTotalExpTimeCheckDetail(timeCheckUser, data, petData, homeDataForTimeCheck, petSkillData);
+            var timeCheckDetail = buildTotalExpTimeCheckDetail(timeCheckUser, data, petData, homeDataForTimeCheck, petSkillData, guildData);
             var totalExpForTimeCheck = timeCheckDetail.total;
             var expCalcMs = Date.now() - expCalcStart;
             var branchTimeMs = Date.now() - timeCheckStart;
@@ -5494,8 +5522,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
 
-                if (msg.startsWith("/펫스킬당근 ")) {
-                    var skillTradeArgs = msg.trim().split(" ");
+                if (/^\/펫스킬당근\s+.+\s+\d+\s+\d+$/.test(msg)) {
+                    var skillTradeArgs = msg.trim().split(/\s+/);
                     if (skillTradeArgs.length < 4) {
                         replier.reply("사용법: /펫스킬당근 [받을유저닉] [스킬가방번호] [수량]");
                         return;
@@ -6499,8 +6527,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님\n🥕당근게시글이 삭제되었습니다.\n\n🥕당근! 🥕당근!");
                     return;
                 }
-                if (msg.startsWith("/당근 ")) {
-                    var args = msg.trim().split(" ");
+                if (/^\/당근\s+.+\s+\d+\s+\d+$/.test(msg)) {
+                    var args = msg.trim().split(/\s+/);
                     if (args.length < 4) {
                         replier.reply("사용법: /당근 [받을유저닉] [가방번호] [수량]");
                         return;
@@ -6508,7 +6536,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var count = parseInt(args[args.length - 1], 10);
                     var bagIndex = parseInt(args[args.length - 2], 10);
                     var receiver = args.slice(1, args.length - 2).join(" "); // 닉네임 합치기
-                    if (sender == receiver || count == 0) {
+                    if (sender == receiver || count <= 0) {
                         replier.reply("당근농사꾼🧑‍🌾 : 되겠냐 ㅇㅅㅋ야");
                         return;
                     }
@@ -6561,6 +6589,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addItem(data, receiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
                     if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
                     data.member[sender].carrotGiven += 1;
+                    saveJsonFile(data, filePath);
                     replier.reply(
                         "🥕당근거래 완료!\n\n[" +
                         checkRank(data, petData, guildData, sender) +
@@ -6578,11 +6607,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "개)\n" +
                         "- 🌡️당근온도기 +2개 지급\n"
                     );
-                    saveJsonFile(data, filePath);
                     return;
                 }
-                if (msg.startsWith("/미니펫당근 ")) {
-                    let args = msg.trim().split(" ");
+                if (/^\/미니펫당근\s+.+\s+\d+$/.test(msg)) {
+                    let args = msg.trim().split(/\s+/);
                     if (args.length < 3) {
                         replier.reply("❌ 사용법: /미니펫당근 [받는닉네임] [미니펫가방번호]");
                         return;
@@ -6646,6 +6674,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addItem(data, receiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
                     if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
                     data.member[sender].carrotGiven += 1;
+                    saveJsonFile(data, filePath);
+                    saveJsonFile(petData, memberPetPath);
                     replier.reply(
                         "🧸미니펫 당근거래 완료!\n\n" +
                         "[" +
@@ -6662,12 +6692,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "개)\n" +
                         "- 🌡️당근온도기 +2개 지급"
                     );
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(petData, memberPetPath);
                     return;
                 }
-                if (msg.startsWith("/가구당근 ")) {
-                    let args = msg.trim().split(" ");
+                if (/^\/가구당근\s+.+\s+\d+$/.test(msg)) {
+                    let args = msg.trim().split(/\s+/);
                     if (args.length < 3) {
                         replier.reply("❌ 사용법: /가구당근 [받는닉네임] [가구번호]");
                         return;
@@ -6693,6 +6721,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     let homeData = loadJsonFile(homeDataFile);
+                    var furnitureTradeHomeSnapshot = JSON.stringify(homeData); // 거래 전 가구 원본을 저장 실패 시 복구
                     homeData = initSweetHomeUser(homeData, receiver);
                     homeData = initSweetHomeUser(homeData, sender);
                     let senderBag = homeData[sender].furnitureBag;
@@ -6702,7 +6731,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ [" + sender + "]님의 가구 가방이 비어있습니다.");
                         return;
                     }
-                    if (isNaN(furnIndex) || furnIndex < 1) {
+                    if (isNaN(furnIndex) || furnIndex < 1 || furnIndex > senderBag.length) {
                         replier.reply("❌ 유효하지 않은 가구 번호입니다.");
                         return;
                     }
@@ -6740,7 +6769,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     data.member[sender].carrotGiven++;
                     // 저장
                     saveJsonFile(data, filePath);
-                    saveJsonFile(homeData, homeDataFile);
+                    saveJsonFile(homeData, homeDataFile, false, furnitureTradeHomeSnapshot);
                     let tradeMsg =
                         "🏡가구 당근거래 완료!\n\n" +
                         "[" +
@@ -16454,16 +16483,17 @@ replier.reply(
                 }
 
                 // ==============================
-                // /창세오픈
-                // - 창세패키지 확정 1개 소모
-                // - 가온빛 미니펫을 미니펫 가방에 지급
+                // /창조오픈
+                // - 기존 창조패키지 또는 신규 창조등급 확정 1개 소모
+                // - 호이빛 미니펫을 미니펫 가방에 지급
                 // ==============================
                 if (msg === "/창조오픈") {
                     var genesisMember = data.member[sender];
                     if (!genesisMember) return;
 
                     var genesisPackage = GLOBAL_CONFIG.guaranteedPackage.genesis;
-                    if (!hasItem(data, sender, genesisPackage.itemName, 1)) {
+                    var genesisConsumeItem = getOwnedMiniPetRewardBoxItem(data, sender, genesisPackage); // 기존 이름의 보유분부터 사용
+                    if (!genesisConsumeItem) {
                         replier.reply("해당 확정 패키지를 보유하고 있지 않습니다.");
                         return;
                     }
@@ -16478,7 +16508,7 @@ replier.reply(
                     var genesisReward = JSON.parse(JSON.stringify(genesisPackage.reward));
                     petData[sender].miniPetBag.push(genesisReward);
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
-                    removeItem(data, sender, genesisPackage.itemName, 1);
+                    removeItem(data, sender, genesisConsumeItem, 1);
 
                     try {
                         saveJsonFile(petData, memberPetPath);
@@ -16491,7 +16521,7 @@ replier.reply(
                             }
                         }
                         refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
-                        addItem(data, sender, genesisPackage.itemName, 1);
+                        addItem(data, sender, genesisConsumeItem, 1);
                         try {
                             saveJsonFile(petData, memberPetPath);
                             saveJsonFile(data, filePath);
@@ -16501,7 +16531,35 @@ replier.reply(
                         throw genesisOpenError;
                     }
 
-                    replier.reply("🐹 창조패키지 확정 오픈!\n\n호이빛💖(+1350000💕)[창조]을(를) 획득했습니다.");
+                    replier.reply("🐹 창조등급 확정 오픈!\n\n호이빛💖(+1350000💕)[창조]을(를) 획득했습니다.");
+                    return;
+                }
+
+                // 기존 이름 또는 신규 창세등급 확정 1개를 사용해 창세 미니펫을 지급한다.
+                if (msg === "/창세오픈") {
+                    if (!data.member[sender]) return;
+                    var creationBox = GLOBAL_CONFIG.guaranteedPackage.creationRewardBox;
+                    var creationBoxNick = "[" + checkRank(data, petData, guildData, sender) + "]님";
+                    var creationBoxConsumeItem = getOwnedMiniPetRewardBoxItem(data, sender, creationBox); // 기존 이름의 보유분부터 사용
+                    if (!creationBoxConsumeItem) {
+                        replier.reply(creationBoxNick + ", 오픈할 보상상자가 없습니다.\n필요 아이템: " + creationBox.itemName);
+                        return;
+                    }
+                    var creationBoxBag = petData[sender] && petData[sender].miniPetBag; // 지급 전 현재 가방
+                    if (creationBoxBag && creationBoxBag.length >= getMiniPetBagLimit(data, sender)) {
+                        replier.reply(creationBoxNick + ", 미니펫가방에 빈자리가 필요합니다.\n가방을 정리한 뒤 /창세오픈을 다시 입력해주세요.\n\n보상상자는 소모되지 않았습니다.\n👉 확인: /미니펫가방");
+                        return;
+                    }
+                    if (!petData[sender]) petData[sender] = {};
+                    if (!petData[sender].miniPetBag) petData[sender].miniPetBag = [];
+                    var creationBoxReward = JSON.parse(JSON.stringify(creationBox.reward)); // 각 오픈마다 독립적인 미니펫 생성
+                    petData[sender].miniPetBag.push(creationBoxReward);
+                    refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
+                    removeItem(data, sender, creationBoxConsumeItem, 1);
+                    // 기존 명령 트랜잭션에서 두 파일의 저장 실패를 함께 롤백한다.
+                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(data, filePath);
+                    replier.reply(creationBoxNick + ", 창세 미니펫을 획득했습니다! 🐹\n━━━━━━━━━━━━\n🎁 사용: " + creationBoxConsumeItem + " ×1\n\n" + creationBoxReward.name + creationBoxReward.emoji + "(+" + numberWithCommas(creationBoxReward.battleExp) + "💞)[" + creationBoxReward.grade + "]\n\n미니펫가방에 지급되었습니다.\n👉 확인: /미니펫가방");
                     return;
                 }
 
@@ -22398,7 +22456,7 @@ replier.reply(
                     if (prevEquipped) {
                         message += "\n기존 [" + formatPetInfo(prevEquipped) + "] 미니펫은 파양되었습니다.";
                     }
-                    if (equipRole === "primary" && (selectedPet.grade || "") === "창조" && hasPetSkill(petSkillData, sender, "창조림")) {
+                    if ((selectedPet.grade || "") === "창조" && hasPetSkill(petSkillData, sender, "창조림")) {
                         message += "\n" + buildPetSkillMsg(data, petData, guildData, sender, "창조림");
                     }
                     resetMiniPetState(sender);
@@ -33327,12 +33385,9 @@ function getGuildMaxMemberLimit(g, petSkillData) {
     return maxMember;
 }
 
-// 창조 미니펫 장착 여부 확인 함수
+// 대표 또는 보조에 창조 미니펫이 장착되어 있는지 확인하는 함수
 function hasEquippedCreationMiniPet(petData, user) {
-    return !!(petData &&
-        petData[user] &&
-        petData[user].miniPet &&
-        (petData[user].miniPet.grade || "") === "창조");
+    return getMiniPetSkillCharmRate(petData, user, "creationMiniPet") > 0;
 }
 
 // 길드의 소드마스터 수 계산 및 보장
@@ -42109,7 +42164,7 @@ function formatPackageRewardSummary(rewards) {
         if (reward.type === "point") {
             parts.push("포인트 x" + numberWithCommas(reward.count || 0));
         } else {
-            parts.push((reward.name || reward.type || "보상") + " x" + numberWithCommas(reward.count || 0));
+            parts.push(normalizeMiniPetRewardBoxItemName(reward.name || reward.type || "보상") + " x" + numberWithCommas(reward.count || 0));
         }
     }
     return parts.join(", ");
@@ -42166,6 +42221,8 @@ function buildPackageAddGuideMessage() {
     lines.push("/패키지추가 이벤트패키지🎁 | 이벤트 보상 패키지 | point:10000000, item:펫 강화석⭐:10");
     lines.push("/패키지수정 3 point:10000000, item:펫 강화석⭐:10");
     lines.push("/패키지수정 3 펫 강화석⭐ x4,000, 미니펫뽑기🐹(/미니펫오픈) x10");
+    lines.push("/패키지추가 창세미니펫패키지🎁 | 창세 미니펫 보상상자 1개 | item:" + GLOBAL_CONFIG.guaranteedPackage.creationRewardBox.itemName + ":1");
+    lines.push("※ 창세등급 확정은 /패키지사용으로 /가방에 받은 뒤 /창세오픈으로 사용합니다.");
     lines.push("");
     lines.push("제거:");
     lines.push("/패키지제거 리스트번호");
@@ -42376,7 +42433,7 @@ function handlePackageAddFlowMessage(sender, msg, packageInfoData) {
     if (state.step === "ITEM_COUNT") {
         var itemCount = parseInt(text, 10); // 추가할 아이템 수량
         if (isNaN(itemCount) || itemCount < 1) return { ok: false, message: "❌ 아이템 수량은 1 이상 숫자로 입력해주세요." };
-        var itemName = state.pendingReward ? state.pendingReward.name : ""; // 직전 단계에서 입력한 아이템명
+        var itemName = normalizeMiniPetRewardBoxItemName(state.pendingReward ? state.pendingReward.name : ""); // 기존 등급 확정 이름도 신규 이름으로 등록
         if (!itemName) {
             state.step = "ITEM_NAME";
             return { ok: false, message: "❌ 아이템명이 없습니다. 아이템명을 다시 입력해주세요." };
@@ -42452,7 +42509,7 @@ function parsePackageNaturalItemRewardSpec(rewardSpec) {
 
         var itemCount = parseInt(String(match[1]).replace(/,/g, ""), 10); // 쉼표가 포함된 수량 정규화
         if (isNaN(itemCount) || itemCount < 1) return { error: "아이템 보상 수량이 올바르지 않습니다: " + rawName };
-        rewards.push({ type: "item", name: rawName, count: itemCount });
+        rewards.push({ type: "item", name: normalizeMiniPetRewardBoxItemName(rawName), count: itemCount });
         lastEnd = pattern.lastIndex;
     }
 
@@ -42485,7 +42542,7 @@ function parsePackageRewardSpec(rewardSpec) {
             var itemCount = parseInt(itemBody.substring(lastColon + 1).trim(), 10); // 보상 아이템 수량
             if (!itemName) return { error: "아이템명이 비어 있습니다." };
             if (isNaN(itemCount) || itemCount < 1) return { error: "아이템 보상 수량이 올바르지 않습니다: " + itemName };
-            rewards.push({ type: "item", name: itemName, count: itemCount });
+            rewards.push({ type: "item", name: normalizeMiniPetRewardBoxItemName(itemName), count: itemCount });
         } else {
             return { error: "지원하지 않는 보상 형식입니다: " + raw };
         }
@@ -43308,8 +43365,9 @@ function applyPackageRewards(data, user, packageInfo, useCount) {
         var reward = rewards[i]; // 지급할 보상 항목
         var totalCount = (parseInt(reward.count, 10) || 0) * useCount; // 사용 수량을 곱한 최종 지급량
         if (reward.type === "item") {
-            addItem(data, user, reward.name, totalCount);
-            rewardLines.push(reward.name + " x" + numberWithCommas(totalCount));
+            var packageRewardItemName = normalizeMiniPetRewardBoxItemName(reward.name); // 기존 구성품 이름도 신규 등급명으로 지급
+            addItem(data, user, packageRewardItemName, totalCount);
+            rewardLines.push(packageRewardItemName + " x" + numberWithCommas(totalCount));
         } else if (reward.type === "point") {
             if (typeof data.member[user].point !== "number") data.member[user].point = 0;
             addPoint(data, user, totalCount);
@@ -43866,9 +43924,6 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 
     // 펫 스킬
     var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
-    if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
-        skillExp += 500000;
-    }
     if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
         var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
         if (royalLumiereCount >= 10) {
@@ -43877,11 +43932,7 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     }
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "castleExp");
     var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
-    var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
-    castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
-    castleCubePercent += getAdventureLevelCharmPercent(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1);
-    var castleQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
-    castleCubePercent += castleQuestState && castleQuestState.totals ? Number(castleQuestState.totals.castlePercent) || 0 : 0;
+    var castleCubePercent = getPetModeCharmPercent(memberName, data, guildData, "castle", excludeHomeBadgeCube);
     return applyPercentWithExactFloor(castleTotal, castleCubePercent);
 }
 
@@ -43896,9 +43947,6 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 
     // 펫스킬
     let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
-    if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
-        skillExp += 500000;
-    }
     if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
         var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
         if (royalLumiereCount >= 10) {
@@ -43907,13 +43955,22 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     }
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "raidExp");
     var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
-    var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
-    raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
-    raidCubePercent += getAdventureLevelCharmPercent(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1);
-    var raidQuestState = data && data.member && data.member[memberName] ? data.member[memberName].adventureQuest : null;
-    raidCubePercent += raidQuestState && raidQuestState.totals ? Number(raidQuestState.totals.raidPercent) || 0 : 0;
+    var raidCubePercent = getPetModeCharmPercent(memberName, data, guildData, "raid", excludeHomeBadgeCube);
     return applyPercentWithExactFloor(raidTotal, raidCubePercent);
 }
+
+// 실전과 진단에서 같은 홈뱃지·길드·레벨·퀘스트 매력 비율을 합산하는 함수
+function getPetModeCharmPercent(memberName, data, guildData, mode, excludeHomeBadgeCube) {
+    var member = data && data.member ? data.member[memberName] : null;
+    var percent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, mode);
+    percent += getGuildContributionCubeMemberPercent(data, guildData, memberName, mode);
+    percent += getAdventureLevelCharmPercent(member ? member.lv : 1);
+    var questState = member ? member.adventureQuest : null;
+    var questPercentKey = mode === "castle" ? "castlePercent" : "raidPercent"; // 콘텐츠별 누적 퀘스트 보너스
+    percent += questState && questState.totals ? Number(questState.totals[questPercentKey]) || 0 : 0;
+    return percent;
+}
+
 function calculateItemInfoAll(memberName, data, petData) {
     let returnObj = {
         battleExp: 0,
@@ -44897,6 +44954,28 @@ function runSellAll(sender, data, petData, guildData) {
         return "판매할 수 있는 아이템이 없습니다.";
     }
 }
+// 미니펫 등급 확정 아이템의 기존 이름을 신규 지급 이름으로 연결하는 함수
+function normalizeMiniPetRewardBoxItemName(itemName) {
+    var boxes = [GLOBAL_CONFIG.guaranteedPackage.genesis, GLOBAL_CONFIG.guaranteedPackage.creationRewardBox];
+    for (var boxIndex = 0; boxIndex < boxes.length; boxIndex++) {
+        var box = boxes[boxIndex];
+        var legacyNames = box.legacyItemNames || [];
+        for (var nameIndex = 0; nameIndex < legacyNames.length; nameIndex++) {
+            if (itemName === legacyNames[nameIndex]) return box.itemName;
+        }
+    }
+    return itemName;
+}
+
+// 기존 보유 수량을 변경하지 않고 오픈 시 소모할 기존·신규 아이템 이름을 찾는 함수
+function getOwnedMiniPetRewardBoxItem(data, user, box) {
+    var itemNames = (box.legacyItemNames || []).concat([box.itemName]);
+    for (var i = 0; i < itemNames.length; i++) {
+        if (hasItem(data, user, itemNames[i], 1)) return itemNames[i];
+    }
+    return null;
+}
+
 // 해당 사용자가 특정 아이템을 count 이상 보유하고 있는지 확인
 function hasItem(data, user, itemName, count) {
     if (!data.member[user]) return false;
@@ -45987,7 +46066,8 @@ function buildPrayerResultMessage(data, petData, guildData, user, skillName, suc
 function buildPetSkillInfoMessage(skillInfo) {
     if (isPrayerSkillName(skillInfo.name)) return buildPrayerSkillInfoMessage(skillInfo);
     var skillTitle = formatPetSkillName(skillInfo.name) + (skillInfo.limitedEdition === true ? "[" + skillInfo.grade + "]" : "");
-    var skillRateLine = skillInfo.openable === false ? (skillInfo.showUnopenableRate === true ? "\n확률: /펫스킬오픈 획득 불가" : "") : "\n확률: " + formatPetSkillRate(getPetSkillActualRate(skillInfo)) + "%";
+    var rateLabel = skillInfo.charmCondition === "creationMiniPet" || skillInfo.charmCondition === "eliteMiniPet" ? "획득 확률" : "확률";
+    var skillRateLine = skillInfo.openable === false ? (skillInfo.showUnopenableRate === true ? "\n확률: /펫스킬오픈 획득 불가" : "") : "\n" + rateLabel + ": " + formatPetSkillRate(getPetSkillActualRate(skillInfo)) + "%";
     var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
     return skillTitle + "\n등급: " + skillInfo.grade + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine;
 }
@@ -46472,11 +46552,20 @@ function getPetSkillHeartBonus(petSkillData, user) {
     return totalBonus;
 }
 
+// 등급 조건부 펫스킬의 대표 100%와 보조 50% 기여분을 합산하는 함수
+function getMiniPetSkillCharmRate(petData, user, condition) {
+    var pet = petData && petData[user] ? petData[user] : null;
+    if (!pet) return 0;
+    var primaryMatches = condition === "creationMiniPet" ? !!(pet.miniPet && pet.miniPet.grade === "창조") : condition === "eliteMiniPet" && !!isElite(pet.miniPet);
+    var supportMatches = condition === "creationMiniPet" ? !!(pet.miniPetSupport && pet.miniPetSupport.grade === "창조") : condition === "eliteMiniPet" && !!isElite(pet.miniPetSupport);
+    return (primaryMatches ? 1 : 0) + (supportMatches ? GLOBAL_CONFIG.petSkill.miniPetSupportCharmRate : 0);
+}
+
 // 조건형 종합매력 펫스킬의 현재 발동 여부를 확인
 function isPetSkillCharmConditionActive(skillData, petData, homeData, user) {
     if (!skillData || !skillData.charmCondition) return true;
-    if (skillData.charmCondition === "eliteMiniPet") {
-        return !!(petData && petData[user] && isElite(petData[user].miniPet));
+    if (skillData.charmCondition === "eliteMiniPet" || skillData.charmCondition === "creationMiniPet") {
+        return getMiniPetSkillCharmRate(petData, user, skillData.charmCondition) > 0;
     }
     if (skillData.charmCondition === "arcanaFurniture") {
         return getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5;
@@ -46495,7 +46584,8 @@ function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, ex
         counted[skillName] = true;
         var skillData = getPetSkillData(skillName);
         if (!skillData || skillData.tierExclusive || !isPetSkillCharmConditionActive(skillData, petData, homeData, user)) continue;
-        totalExp += parseInt(skillData[expType], 10) || 0;
+        var slotRate = skillData.charmCondition === "eliteMiniPet" || skillData.charmCondition === "creationMiniPet" ? getMiniPetSkillCharmRate(petData, user, skillData.charmCondition) : 1; // 조건 충족 슬롯의 합산 반영률
+        totalExp += Math.floor((parseInt(skillData[expType], 10) || 0) * slotRate);
     }
     return totalExp;
 }
@@ -46765,7 +46855,22 @@ function hasPoint(data, user, amount) {
 function addPoint(data, user, delta) {
     data.member[user].point += delta;
 }
-// 당근 거래가 불가능 아이템
+// 커뮤니티 제한 대상인 당근거래 네 명령어만 식별하는 함수
+function isCarrotTradeCommand(msg) {
+    return /^\/(?:당근|미니펫당근|가구당근|펫스킬당근)(?:\s|$)/.test(msg);
+}
+
+// 사용자의 소속 서버 대신 실제 입력한 단체방으로 거래 허용 여부를 확인하는 함수
+function isCarrotTradeRoomAllowed(room, isGroupChat) {
+    return isGroupChat === true && room === GLOBAL_CONFIG.carrotTrade.communityRoom;
+}
+
+// 거래 차단 시 아이템 미소모 안내와 커뮤니티 링크를 출력하는 함수
+function buildCarrotTradeBlockedMessage(nickname) {
+    return "[" + nickname + "]님,\n🚫 이곳에서는 당근거래가 불가능합니다.\n━━━━━━━━━━━━\n🥕 당근거래는 「호이월드 커뮤니티」 방에서만 이용할 수 있습니다.\n\n다른 서버 및 일대일톡에서는 거래할 수 없습니다.\n\n👇 아래 커뮤니티 방에서 거래해 주세요!\n" + GLOBAL_CONFIG.carrotTrade.communityLink + "\n\n※ 거래가 진행되지 않아 아이템은 소모되지 않았습니다.";
+}
+
+// 당근 거래가 불가능한 아이템을 확인하는 함수
 function isTradableItem(itemName) {
     var raw = String(itemName || "");
     var base = normalizeItemName(raw);
@@ -50356,7 +50461,7 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData, guildD
 }
 
 // 종합매력 시간체크용 세부 계산 결과를 반환하는 함수
-function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillData) {
+function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillData, guildData) {
     var result = {
         total: 0,
         lines: []
@@ -50382,12 +50487,11 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
 
     function calcSkillExp(homeDataForSkill, expType) {
         var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeDataForSkill, sender, expType);
-        if (hasPetSkill(petSkillData, sender, "창조림") && hasEquippedCreationMiniPet(petData, sender)) skillExp += 500000;
         if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
             var royalLumiereCount = getPlacedFurnitureCountByGrade(homeDataForSkill, sender, "로열 루미에르");
             if (royalLumiereCount >= 10) skillExp += 150000;
         }
-        return skillExp;
+        return skillExp + getEquippedTierPetSkillExp(petSkillData, sender, expType);
     }
 
     var castleItemExp = measure("캐슬-공격아이템", function () {
@@ -50414,7 +50518,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     var castleSkillExp = measure("캐슬-펫스킬", function () {
         return calcSkillExp(homeData, "castleExp");
     });
-    var castleTotal = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp;
+    var castleBase = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp; // 퍼센트 적용 전 진단 합계
 
     var raidEquipmentExp = measure("레이드-정령/반지/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { raidExp: 0 };
@@ -50434,7 +50538,13 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     var raidSkillExp = measure("레이드-펫스킬", function () {
         return calcSkillExp(homeData, "raidExp");
     });
-    var raidTotal = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp;
+    var raidBase = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp; // 퍼센트 적용 전 진단 합계
+    var castleTotal = measure("캐슬-최종합계", function () {
+        return applyPercentWithExactFloor(castleBase, getPetModeCharmPercent(sender, data, guildData, "castle", false));
+    });
+    var raidTotal = measure("레이드-최종합계", function () {
+        return applyPercentWithExactFloor(raidBase, getPetModeCharmPercent(sender, data, guildData, "raid", false));
+    });
     var upgradeBonus = measure("강화 보너스", function () {
         return calculatePetUpgradeCharm(sender, data, petData);
     });
@@ -50443,6 +50553,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     if (isNaN(result.total)) result.total = 0;
     result.lines.push("캐슬 합계: " + numberWithCommas(castleTotal) + "💕");
     result.lines.push("레이드 합계: " + numberWithCommas(raidTotal) + "💕");
+    result.lines.push("퍼센트 적용 전: 캐슬 " + numberWithCommas(castleBase) + "💕 · 레이드 " + numberWithCommas(raidBase) + "💕");
     result.lines.push("강화 보너스: " + numberWithCommas(upgradeBonus) + "💕");
     result.lines.push("━━━━━━━━━━━━");
     var visibleDetailCount = 0;

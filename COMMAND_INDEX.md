@@ -209,19 +209,25 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.member[sender].bag["[🐹미니펫]창세패키지 확정(/창세오픈)"]`
+- `data.member[sender].bag["[🐹미니펫]창세등급 확정(/창세오픈)"]`
 - `petData[sender].miniPetBag`
-- `GLOBAL_CONFIG.guaranteedPackage.genesis`
+- `GLOBAL_CONFIG.guaranteedPackage.creationRewardBox`
 
 ## Save Flow
 
-- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 패키지 1개를 소모해 `가온빛💖(+1001280💕)[창세]` 1개를 지급한다.
-- 성공 시 `memberPetPath`와 `filePath`를 저장하며, 저장 실패 시 지급 미니펫 제거와 패키지 복원을 시도한다.
+- 현재 미니펫 가방 한도(일반 10칸, 프리미엄 15칸)를 먼저 확인하고 보상상자 1개를 소모해 `호이똥💩(+990,000💞)[창세]` 1마리를 지급한다.
+- `memberPetPath`와 `filePath`를 기존 명령 저장 트랜잭션 안에서 저장한다. 저장 실패 시 기존 트랜잭션 롤백 흐름을 따른다. 성공 안내는 두 저장이 완료된 뒤 출력한다.
 
 ## AI Notes
 
 - Exact command guard: `/창세오픈`.
-- 패키지가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
+- 보상상자가 없거나 보관함이 가득 찬 경우 데이터는 변경하지 않는다.
+- `/패키지추가`의 `item:[🐹미니펫]창세등급 확정(/창세오픈):수량` 구성품으로 등록 가능하다. `/패키지지급` → `/패키지가방` → `/패키지사용` → `/가방` → `/창세오픈` → `/미니펫가방` 흐름을 사용한다.
+- 창세 기존 이름은 `[🐹미니펫]창조패키지 확정(/창세오픈)`이며, 이전 개발 이름 `[🐹미니펫]창조보상상자(/창세오픈)`도 호환한다.
+- 기존 `/창조오픈`은 `GLOBAL_CONFIG.guaranteedPackage.genesis`의 신규 `[🐹미니펫]창조등급 확정(/창조오픈)` 또는 기존 `[🐹미니펫]창조패키지 확정(/창조오픈)`을 소모해 `호이빛💖(+1,350,000💕)[창조]`를 지급한다.
+- `getOwnedMiniPetRewardBoxItem`은 기존 이름을 먼저 조회하고 한 번에 보유 아이템 한 종류에서 1개만 차감한다. 보유분을 일괄 변환하지 않는다.
+- `normalizeMiniPetRewardBoxItemName`으로 기존 패키지 구성품도 새 이름으로 지급하며, 기존 패키지 정의·보유 수량은 덮어쓰지 않는다.
+- 신규 미니펫은 보상상자로 확정 지급하며 기존 랜덤 뽑기 목록·확률은 변경하지 않는다.
 
 ---
 
@@ -1600,10 +1606,11 @@ Status: VERIFIED
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
 - `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함), 길드공헌 큐브, 모험가 레벨, 퀘스트 누적 보너스를 0.001% 단위로 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
-- 일반 종합매력 무기 펫스킬 11종은 `Info.js`의 공통 무기표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.
-- `엘리트 박사📙`는 엘리트 미니펫 장착 시, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
+- 일반 종합매력 펫스킬 12종은 `Info.js`의 공통 매력표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.
+- `getMiniPetSkillCharmRate`는 창조림·엘리트 박사의 등급 조건을 대표·보조 슬롯에서 각각 판정해 대표 100% + 보조 50%를 합산하며 가방 보유만 한 미니펫은 제외한다. `getEquippedNonTierPetSkillExp`는 장착 목록만 합산해 프리미엄 잠금 스킬을 제외한다. 엘리트 기존 표기는 유지하고 창세 등급은 창조림에서 제외한다.
+- `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구 5개 이상일 때만 종합매력에 반영한다.
 - Pet skill slot display should stay aligned with `/펫스킬`, including `펫스킬 학개론` bonus slots
-- `창조림📙` bonus should appear only while a `창조` grade mini-pet remains equipped
+- 창조림은 캐슬·레이드 각각 대표 +50만·보조 +25만, 엘리트 박사는 각각 대표 +150만·보조 +75만이다. 양쪽 충족 시 각 스킬의 150%를 적용하고 기존 퍼센트 보너스 계산 순서를 유지한다.
 
 ---
 
@@ -2410,6 +2417,8 @@ Status: VERIFIED
 - Step reward choices: `1/포인트`, `2/아이템`, `3/완료`, `4/취소`
 - Reward spec examples: `point:10000000`, `item:펫 강화석⭐:10`
 - Item reward specs also accept operator-friendly `아이템명 x4,000` entries separated by commas
+- 창조·창세 등급 확정 구성품의 기존 이름은 `normalizeMiniPetRewardBoxItemName`으로 신규 이름에 연결한다. `/패키지사용` 결과와 구성품 요약도 신규 이름으로 표시한다.
+- `item:이름:수량`, `이름 x수량`, 단계별 `ITEM_COUNT` 입력은 모두 등급 확정 구성품의 신규 이름으로 등록한다. 기존 보유 가방의 키·수량은 일괄 변환하지 않는다.
 - `/패키지가방 [아이디]` is Master/Admin-only and reads another user's package bag without mutating or saving data
 - `/패키지가방` displays `data.operationNotices.packageBag` above the package list when configured, then separates support-pass status from territory attack, pet-Musou preparation, and attendance automation status. 영구 패스는 `영구권 사용 중 [✅]`으로 구분하며, missing or expired entitlements display `이용 불가 [🔒]`; the view is read-only and does not initialize automation data.
 
@@ -2931,6 +2940,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Dual-purpose lookup: skill effect lookup or admin user-bag lookup
+- 창조림·엘리트 박사는 기존 획득 확률 0.3%·0.1%를 유지하며 `획득 확률`로 안내한다. 효과 설명에는 대표 100%·보조 50%와 양쪽 합산, 퍼센트 보너스 적용 전 수치를 표시한다.
 - `무쌍신화📙[B]`는 고정 확률 0.5%이며, `무쌍귀신📙[A]`과 동시에 장착할 수 있다.
 - `전설의 몽둥이📙[한정판]` 조회는 확률 줄 없이 한정판 등급과 레이드·캐슬 매력 50만 효과를 표시한다.
 - 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
@@ -3648,6 +3658,8 @@ Status: VERIFIED
 - `data.member[receiver].bag`
 ## Save Flow
 - Trades bag items between users and saves member data
+- 일반 아이템·미니펫·펫스킬·가구 거래 완료 안내는 관련 파일 저장이 모두 성공한 뒤 출력한다.
+- 가구 거래는 로드 직후 원본 스냅샷을 만들고 `saveJsonFile(homeData, homeDataFile, false, snapshot)`으로 검증 저장 및 명령 트랜잭션 롤백에 포함한다.
 ## Related Commands
 - `/당근게시판`
 - `/당근완료`
@@ -3658,6 +3670,13 @@ Status: VERIFIED
 
 ## AI Notes
 - Direct carrot trades require both sender and receiver to be currently tier `킹` or higher before inventory mutation.
+- `/당근`, `/미니펫당근`, `/가구당근`, `/펫스킬당근`은 `isCarrotTradeCommand` 공통 판정과 `isCarrotTradeRoomAllowed` 실제 단체방 검사로 커뮤니티에서만 허용한다.
+- `GLOBAL_CONFIG.carrotTrade.communityRoom`은 기존 `room5`의 `호이월드 커뮤니티[티어 킹 이상 입장가능]`이다. 회원의 소속 서버와 DEV 여부는 거래 장소 예외가 아니다.
+- response의 패스·출석 검사 및 게임 데이터 변경 전에 차단한다. 패스 미보유 일대일톡에도 `buildCarrotTradeBlockedMessage`의 체크랭크·입장 링크·미소모 안내를 한 번 출력하고 종료한다.
+- 차단 시 `member.json`, `member_pet.json`, 가구·펫스킬 데이터, 당근온도기 및 거래 횟수는 변경·저장하지 않는다. 안내용 member·pet·guild 로드는 command entry에서 수행한다.
+- 기존 수수료는 일반 아이템 수량당 1개, 미니펫 20개, 가구 10개, 펫스킬 수량당 50개이다. 기획 표의 가구 5개와 다르지만 기존 거래 조건 유지 요구를 따른다.
+- 실행 분기는 닉네임과 마지막 정수 인수를 전체 패턴으로 확인한다. 접미 안내 문구·음수·소수는 거래를 실행하지 않는다. 가구 번호 상한을 검사한다.
+- `/당근게시판`, `/당근등록`, `/당근완료`, `/당근게시판삭제`, `/펜던트당근`, 자유시장은 이번 커뮤니티 전용 제한 대상이 아니다.
 
 ---
 
@@ -4047,7 +4066,7 @@ Status: VERIFIED
 - `/계삭진행`과 `/계정잠수삭제`는 공통 `cleanupDeletedAccountResiduals` 흐름에 실제 삭제 성공 대상을 명시해, 해당 계정의 펫스킬·미니펫 컬렉션/칭호·펫/홈·시련의탑·펀치·펫탐험·소셜/방명록·시장·게시판·계정 식별 로그를 함께 제거하고 각 저장소를 명령 흐름에서 한 번씩 저장한다. 이때 다른 회원 목록 외 식별자를 함께 자동 정리하지 않는다.
 - `품행제로📙`은 `/결투 [아이디]` 입력 시 70% 확률로 승리 연출 멘트, 30% 확률로 실패 연출 멘트를 출력하며 실제 승패 수치 변화는 없다
 - `망한건 맞아📙`는 장착 시 랜덤 연출 멘트만 출력하며 실제 효과는 없다
-- `창조림📙`은 장착된 미니펫의 등급이 `창조`일 때만 레이드/캐슬 매력 보너스를 계산식으로 적용한다
+- `창조림📙`은 대표·보조의 `창조` 등급 조건을 각각 판정해 레이드/캐슬 기본 50만 보너스에 100%·50%를 적용한다. `getEquippedNonTierPetSkillExp`에서 한 번 가산하며 별도 하드코딩 가산은 하지 않는다.
 - `전설의 몽둥이📙[한정판]`는 장착 목록에 있을 때 레이드·캐슬 매력 50만씩을 동적으로 적용하고 `/펫스킬소멸`로 제거되면 즉시 회수한다. 장착 성공 시 `오오.. 영롱하군요 너..빌런인가?` 멘트를 표시한다.
 - `베란다 확장📙[한정판]`은 가구 장착 한도를 3칸 늘린다. 소멸 후 한도를 초과하면 장착 목록 하단 가구부터 가구가방으로 회수하며, 가방 공간이 부족하면 스킬과 소멸권을 소비하지 않는다.
 - `베란다 대확장📙[한정판]`은 `/베란다오픈`으로만 지급되며 가구 장착 한도를 6칸 늘린다. 기존 베란다 확장과 함께 장착하면 총 9칸이고, 각각 소멸할 때 해당 보너스만 회수한다. 가구가방 공간 부족 시 소멸을 보류한다.
@@ -4056,7 +4075,7 @@ Status: VERIFIED
 - `VIP블랙카드📙`와 `쇼핑광📙`은 함께 장착할 수 없다.
 - `인플루언서📙`과 `셀럽📙`은 중복 장착 시 `/펫홈`, `/홈알림`, `/팔로워순위` 표시 팔로워에 합계 3,000명을 더하며 실제 팔로워 관계와 뱃지 누적값은 바꾸지 않는다.
 - `망므📙` 장착 멘트는 `이건 내 망므야!`이며 일일 마음 한도를 5회 늘린다.
-- 일반 종합매력 무기 스킬은 서로 중복 적용하고 해제 즉시 계산에서 빠진다. `엘리트 박사📙`는 장착 미니펫이 엘리트 등급일 때, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구가 5개 이상일 때만 발동한다.
+- 일반 종합매력 무기 스킬은 서로 중복 적용하고 해제 즉시 계산에서 빠진다. `엘리트 박사📙`는 대표·보조의 엘리트 조건에 100%·50%를 각각 적용하고, `아르카나 하우스📙`는 가방·배치 합산 아르카나 루미에르 가구가 5개 이상일 때만 발동한다.
 
 ---
 
@@ -4162,6 +4181,9 @@ Status: VERIFIED
 ## Related Commands
 - `/펫스킬가방`
 - `/당근`
+
+## AI Notes
+- 공통 커뮤니티 제한과 정확한 인수 검사는 `/당근` 항목을 참고한다. 수량당 당근 50개와 기존 양쪽 킹 이상·스킬가방 한도 조건을 유지한다.
 
 ---
 
@@ -5294,6 +5316,7 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateCastleRanking`
+- `calculateCastleExp`
 - `getGuildContributionCubeMemberPercent`
 
 ## Data Usage
@@ -5316,7 +5339,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Castle-focused charm leaderboard that depends on loaded home data
-- Applies the representative and support home-badge castle percentages plus the current valid guild's castle cube percentage while preserving the existing leaderboard base fields.
+- `generateCastleRanking`은 명령 흐름에서 로드된 `petSkillData`를 받아 `calculateCastleExp`로 각 유저의 최종 매력을 한 번 계산한다. 펫스킬·홈뱃지·길드 큐브·레벨·퀘스트 보너스가 반영된 같은 값으로 정렬과 표시를 처리한다.
 - Re-check `initSweetHomeUser` when home normalization affects ranking totals
 
 ---
@@ -5338,6 +5361,7 @@ Status: VERIFIED
 - `loadJsonFile`
 - `initSweetHomeUser`
 - `generateRaidRanking`
+- `calculateRaidExp`
 - `getGuildContributionCubeMemberPercent`
 
 ## Data Usage
@@ -5360,7 +5384,7 @@ Status: VERIFIED
 ## AI Notes
 
 - Raid-focused charm leaderboard parallel to `/캐슬매력순위`
-- Applies the representative and support home-badge raid percentages plus the current valid guild's raid cube percentage while preserving the existing leaderboard base fields.
+- `generateRaidRanking`은 명령 흐름에서 로드된 `petSkillData`를 받아 `calculateRaidExp`로 각 유저의 최종 매력을 한 번 계산한다. 펫스킬·홈뱃지·길드 큐브·레벨·퀘스트 보너스가 반영된 같은 값으로 정렬과 표시를 처리한다.
 - Good anchor when raid total calculations diverge from displayed pet/home state
 
 ---
@@ -5906,6 +5930,7 @@ Status: VERIFIED
 - 맞짱은 참여 시점 종합매력에 상성·크리티컬을 적용한 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 상세보기는 양측 기본/상성/최종 매력, 크리티컬, 비교식과 매력 차이를 카드형 UI로 표시한다.
 - `/맞짱시간체크 [닉네임]` measures only the named user's 종합매력 calculation and reports response-entry total, diagnostic-branch, home-load, total calculation, response common processing timings for data loads/normalizers, and detailed component timings for castle, raid, equipment, home, pet, mini-pet, intimacy, pet skill, and upgrade bonus; 0ms detail rows are hidden; it does not select an opponent or run `runMatzangBattle`
+- `buildTotalExpTimeCheckDetail`은 명령에서 로드된 `guildData`를 전달받아 티어 스킬도 합산한다. 실전과 공통인 `getPetModeCharmPercent`·`applyPercentWithExactFloor`로 최종 합계를 계산하며 퍼센트 적용 전 합계도 별도로 표시한다. 세부 항목을 다시 로드하거나 저장하지 않는다.
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`

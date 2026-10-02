@@ -103,6 +103,7 @@ const GLOBAL_CONFIG = {
 		maxLength: 30 // 타이틀 선물 내용 최대 길이
 	},
 	petSkill: { // 펫스킬 시스템 설정
+		miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
 		bookItemName: "펫스킬북📙(/펫스킬오픈)",
 		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
 		unbindItemName: "펫스킬소멸권🧙‍♂️(/펫스킬소멸 번호)",
@@ -110,6 +111,7 @@ const GLOBAL_CONFIG = {
 			"전설의 몽둥이": { raidExp: 500000, castleExp: 500000 },
 			"청룡언월도": { raidExp: 1000000, castleExp: 1000000 },
 			"엘리트 박사": { raidExp: 1500000, castleExp: 1500000, condition: "eliteMiniPet" },
+			"창조림": { raidExp: 500000, castleExp: 500000, condition: "creationMiniPet" },
 			"오딘의 뿅망치": { raidExp: 2000000, castleExp: 2000000 },
 			"장미칼": { raidExp: 500000, castleExp: 500000 },
 			"엑스칼리버": { raidExp: 1000000, castleExp: 1000000 },
@@ -1541,7 +1543,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (msg === "/캐슬매력순위") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
-			let castleRanking = generateCastleRanking(petData, data, homeData, guildData);
+			let castleRanking = generateCastleRanking(petData, data, homeData, guildData, petSkillData);
 
 			let resultMsg = "🏆 [펫] 캐슬매력 순위 🏆\n\n";
 			resultMsg += castleRanking.rankingMsg1 + allsee + castleRanking.rankingMsg2;
@@ -1551,7 +1553,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (msg === "/레이드매력순위") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
-			let raidRanking = generateRaidRanking(petData, data, homeData, guildData);
+			let raidRanking = generateRaidRanking(petData, data, homeData, guildData, petSkillData);
 			let resultMsg = "🏆 [펫]레이드매력 순위 🏆\n\n";
 			resultMsg += raidRanking.rankingMsg1 + allsee + raidRanking.rankingMsg2;
 			replier.reply(resultMsg);
@@ -2181,9 +2183,6 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 
 	// 펫 스킬
 	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
-	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
-		skillExp += 500000;
-	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -2211,9 +2210,6 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 
 	// 펫스킬
 	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
-	if (hasPetSkill(petSkillData, memberName, "창조림") && hasEquippedCreationMiniPet(petData, memberName)) {
-		skillExp += 500000;
-	}
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
@@ -2557,42 +2553,20 @@ function generatePetRanking(petData) {
 	};
 }
 // 캐슬매력순위 생성 함수
-function generateCastleRanking(petData, data, homeData, guildData) {
+function generateCastleRanking(petData, data, homeData, guildData, petSkillData) {
+	var castleScores = {}; // 정렬과 출력이 함께 사용하는 최종 캐슬 매력
+	for (var user in petData) {
+		if (petData.hasOwnProperty(user)) castleScores[user] = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
+	}
 	let sortedCastlePets = Object.keys(petData).sort((a, b) => {
-		let castleExpA =
-			calculateCastleItem(a, data) +
-			calculateItemInfoAll(a, data, petData).castleExp +
-			petData[a].petexp +
-			getMiniPetModeCharm(a, petData) +
-			getHomeTotalExp(homeData, a) +
-			getUserIntimacyInfo(data, a).exp;
-		let castleExpB =
-			calculateCastleItem(b, data) +
-			calculateItemInfoAll(b, data, petData).castleExp +
-			petData[b].petexp +
-			getMiniPetModeCharm(b, petData) +
-			getHomeTotalExp(homeData, b) +
-			getUserIntimacyInfo(data, b).exp;
-		castleExpA = Math.floor(castleExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "castle") + getGuildContributionCubeMemberPercent(data, guildData, a, "castle")) / 100));
-		castleExpB = Math.floor(castleExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "castle") + getGuildContributionCubeMemberPercent(data, guildData, b, "castle")) / 100));
-		return castleExpB - castleExpA;
+		return castleScores[b] - castleScores[a];
 	});
 	let rankingMsg1 = "";
 	let rankingMsg2 = "";
 	for (let i = 0; i < sortedCastlePets.length; i++) {
 		let username = sortedCastlePets[i];
 		let petInfo = petData[username];
-		let homeExp = getHomeTotalExp(homeData, username);
-		let intimacyExp = getUserIntimacyInfo(data, username).exp;
-		let totalCastleExp = Math.round(
-			petInfo.petexp +
-				calculateCastleItem(username, data) +
-				calculateItemInfoAll(username, data, petData).castleExp +
-				getMiniPetModeCharm(username, petData) +
-				homeExp +
-				intimacyExp
-		);
-		totalCastleExp = Math.floor(totalCastleExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "castle") + getGuildContributionCubeMemberPercent(data, guildData, username, "castle")) / 100));
+		let totalCastleExp = castleScores[username];
 
 		if (totalCastleExp > 5) {
 			let rankEmoji = getRankEmoji(i + 1);
@@ -2611,20 +2585,13 @@ function generateCastleRanking(petData, data, homeData, guildData) {
 }
 
 // 레이드매력순위 생성 함수
-function generateRaidRanking(petData, data, homeData, guildData) {
+function generateRaidRanking(petData, data, homeData, guildData, petSkillData) {
+	var raidScores = {}; // 정렬과 출력이 함께 사용하는 최종 레이드 매력
+	for (var user in petData) {
+		if (petData.hasOwnProperty(user)) raidScores[user] = calculateRaidExp(user, data, petData, homeData, petSkillData, false, guildData);
+	}
 	var sortedRaidPets = Object.keys(petData).sort(function (a, b) {
-		var petA = petData[a];
-		var petB = petData[b];
-
-		var miniExpA = getMiniPetModeCharm(a, petData);
-		var miniExpB = getMiniPetModeCharm(b, petData);
-
-		var raidExpA = (calculateItemInfoAll(a, data, petData).raidExp || 0) + (petA.petexp || 0) + miniExpA + getHomeTotalExp(homeData, a);
-		var raidExpB = (calculateItemInfoAll(b, data, petData).raidExp || 0) + (petB.petexp || 0) + miniExpB + getHomeTotalExp(homeData, b);
-		raidExpA = Math.floor(raidExpA * (1 + (getHomeBadgeCubeActiveOptionPercent(data, a, "raid") + getGuildContributionCubeMemberPercent(data, guildData, a, "raid")) / 100));
-		raidExpB = Math.floor(raidExpB * (1 + (getHomeBadgeCubeActiveOptionPercent(data, b, "raid") + getGuildContributionCubeMemberPercent(data, guildData, b, "raid")) / 100));
-
-		return raidExpB - raidExpA;
+		return raidScores[b] - raidScores[a];
 	});
 
 	var rankingMsg1 = "";
@@ -2633,10 +2600,7 @@ function generateRaidRanking(petData, data, homeData, guildData) {
 	for (var i = 0; i < sortedRaidPets.length; i++) {
 		var username = sortedRaidPets[i];
 		var petInfo = petData[username];
-		var miniPetExp = getMiniPetModeCharm(username, petData);
-		var homeExp = getHomeTotalExp(homeData, username);
-		var totalRaidExp = Math.round((petInfo.petexp || 0) + (calculateItemInfoAll(username, data, petData).raidExp || 0) + miniPetExp + homeExp);
-		totalRaidExp = Math.floor(totalRaidExp * (1 + (getHomeBadgeCubeActiveOptionPercent(data, username, "raid") + getGuildContributionCubeMemberPercent(data, guildData, username, "raid")) / 100));
+		var totalRaidExp = raidScores[username];
 
 		if (totalRaidExp > 5) {
 			var rankEmoji = getRankEmoji(i + 1);
@@ -2778,11 +2742,9 @@ function initPetSkillUser(petSkillData, user) {
 	return petSkillData[user].petSkills;
 }
 
+// 대표 또는 보조에 창조 미니펫이 장착되어 있는지 확인하는 함수
 function hasEquippedCreationMiniPet(petData, user) {
-	return !!(petData &&
-		petData[user] &&
-		petData[user].miniPet &&
-		(petData[user].miniPet.grade || "") === "창조");
+	return getMiniPetSkillCharmRate(petData, user, "creationMiniPet") > 0;
 }
 // 장착된 펫스킬 이름 배열 반환 함수
 function getEquippedPetSkillNames(petSkillData, user) {
@@ -2798,11 +2760,19 @@ function hasPetSkill(petSkillData, user, skillName) {
 	var equipped = getEquippedPetSkillNames(petSkillData, user);
 	return equipped.indexOf(skillName) !== -1;
 }
+// 등급 조건부 펫스킬의 대표 100%와 보조 50% 기여분을 합산하는 함수
+function getMiniPetSkillCharmRate(petData, user, condition) {
+	var pet = petData && petData[user] ? petData[user] : null;
+	if (!pet) return 0;
+	var primaryMatches = condition === "creationMiniPet" ? !!(pet.miniPet && pet.miniPet.grade === "창조") : condition === "eliteMiniPet" && !!isElite(pet.miniPet);
+	var supportMatches = condition === "creationMiniPet" ? !!(pet.miniPetSupport && pet.miniPetSupport.grade === "창조") : condition === "eliteMiniPet" && !!isElite(pet.miniPetSupport);
+	return (primaryMatches ? 1 : 0) + (supportMatches ? GLOBAL_CONFIG.petSkill.miniPetSupportCharmRate : 0);
+}
 // 조건형 종합매력 펫스킬의 현재 발동 여부를 확인하는 함수
 function isInfoPetSkillCharmConditionActive(skillData, petData, homeData, user) {
 	if (!skillData || !skillData.condition) return true;
-	if (skillData.condition === "eliteMiniPet") {
-		return !!(petData && petData[user] && isElite(petData[user].miniPet));
+	if (skillData.condition === "eliteMiniPet" || skillData.condition === "creationMiniPet") {
+		return getMiniPetSkillCharmRate(petData, user, skillData.condition) > 0;
 	}
 	if (skillData.condition === "arcanaFurniture") {
 		return getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5;
@@ -2821,7 +2791,8 @@ function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, ex
 		counted[skillName] = true;
 		var skillData = charmSkills[skillName];
 		if (!skillData || !isInfoPetSkillCharmConditionActive(skillData, petData, homeData, user)) continue;
-		totalExp += parseInt(skillData[expType], 10) || 0;
+		var slotRate = skillData.condition === "eliteMiniPet" || skillData.condition === "creationMiniPet" ? getMiniPetSkillCharmRate(petData, user, skillData.condition) : 1; // 조건 충족 슬롯의 합산 반영률
+		totalExp += Math.floor((parseInt(skillData[expType], 10) || 0) * slotRate);
 	}
 	return totalExp;
 }
