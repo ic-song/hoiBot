@@ -2032,6 +2032,9 @@ Status: VERIFIED
 ## Related Helpers
 
 - `buildMiniPetInfoRenewedMessage`
+- `getEquippedPetSkillNames`
+- `getMiniPetSkillCharmRate`
+- `getPetSkillData`
 - `buildMiniPetRobberyHistoryMessage`
 - `isAdmin`
 - `isMaster`
@@ -2051,6 +2054,8 @@ Status: VERIFIED
 ## AI Notes
 
 - 인자 없이 입력하면 자신의 대표·보조 편성과 미니펫대전 정보를 표시한다. 관리자·MASTER는 닉네임을 지정해 타인을 조회할 수 있다.
+- 본인·대상 조회는 이미 로드한 `petSkillData`를 출력 함수에 전달한다. 슬롯에는 미니펫 자체 매력을 표시하고, 창조림·엘리트 박사의 활성 장착·등급 조건에 따른 추가 매력과 이를 포함한 캐슬·레이드 합계를 별도로 표시한다. 잠금·미장착 스킬은 합산하지 않으며 같은 스킬의 별칭은 중복 가산하지 않는다.
+- 미니펫 정보 합계는 다른 퍼센트 보너스 적용 전 기여분이다. 퍼센트 보너스를 포함한 전체 종합매력은 `/펫정보`에서 확인한다.
 - 약탈자 스킬 장착 시 성공 기록을 두 번째 메시지로 최대 50건 출력한다.
 - 약탈 기록은 닉네임 제목 다음에 `allsee`를 한 번 적용한다. 기록 0건일 때도 확률·금액·빈 기록 안내를 전체보기 안에 표시한다.
 - 하단 안내는 대표·보조 장착 → 대표 `0`·보조 `00` 강화 → 대표·보조 귀속해제 → 귀속해제권 안내 순서로 표시한다.

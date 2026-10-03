@@ -55,6 +55,7 @@ function context(source, isInfo) {
     else names.push("getPetModeCharmPercent", "getTierPetSkillSearchName", "getPetSkillData", "getTotalMinipetExp", "buildTotalExpTimeCheckDetail",
         "getPetSkillTotalRate", "getOpenablePetSkillCountByGrade", "getPetSkillFixedActualRateTotal", "getPetSkillRandomWeight",
         "getPetSkillActualRate", "formatPetSkillRate", "buildPetSkillInfoMessage", "formatPetSkillName", "buildTierPetSkillInfoLine",
+        "buildMiniPetInfoRenewedMessage", "getMiniPetDisplayTitle",
         "buildGuildTerritoryCastleExpSnapshots", "fillGuildTerritoryCastleExpSnapshots", "createGuildTerritoryCastleBattleSnapshot");
     for (const name of names) vm.runInContext(fn(source, name), c);
     return c;
@@ -271,5 +272,40 @@ group("ongoing territory snapshot retained; new rounds receive current bonus", (
     const next = c.buildGuildTerritoryCastleExpSnapshots(f.data, f.pets, f.home, f.skills, {}, war, [{ user: "test" }]);
     assert.strictEqual(next.test, 750000);
     assert.strictEqual(war.castleBattleSnapshots.test.baseExp, 750000);
+});
+group("reported elite representative and creation support display matches actual totals", () => {
+    const c = contexts[0];
+    Object.assign(c, {
+        getHoiPassPremiumHeader: () => "", getMiniPetBattleRank: () => "순위없음", allsee: "<ALLSEE>"
+    });
+    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1 };
+    const f = fixture(c, "엘리트", "창조");
+    Object.assign(f.pets.test.miniPet, { name: "아르케", emoji: "🌌", battleExp: 12000000 });
+    Object.assign(f.pets.test.miniPetSupport, { name: "호이빛", emoji: "💖", battleExp: 1630000, upgrade: 28 });
+    const before = JSON.stringify(f);
+    const output = c.buildMiniPetInfoRenewedMessage("test", f.data, f.pets, {}, {}, false, f.skills);
+    assert(output.includes("└ 매력 12,000,000💞"));
+    assert(output.includes("└ 매력 815,000💞"));
+    assert(output.includes("엘리트 박사📙: +3,000,000💞"));
+    assert(output.includes("창조림📙: +500,000💞"));
+    assert(output.includes("등급 펫스킬 추가: +3,500,000💞"));
+    assert(output.includes("종합매력 반영: +29,130,000"));
+    assert(output.includes("캐슬매력 +14,565,000"));
+    assert.deepStrictEqual(values(c, f), [14565000, 14565000, 29130000]);
+    assert.strictEqual(JSON.stringify(f), before);
+    for (const skillNames of [[], ["창조림", "창조림📙"], ["엘리트 박사"]]) {
+        vm.runInContext("fixture.skills.test.petSkills.equipped = " + JSON.stringify(skillNames), c);
+        const result = c.buildMiniPetInfoRenewedMessage("test", f.data, f.pets, {}, {}, false, f.skills);
+        assert(result.includes("종합매력 반영: +" + c.numberWithCommas(values(c, f)[2])));
+    }
+    vm.runInContext('fixture.skills.test.petSkills.equipped = ["창조림", "엘리트 박사"]', c);
+    f.pets.test.miniPet = null;
+    f.pets.test.miniPetSupport.grade = "창세";
+    const inactive = c.buildMiniPetInfoRenewedMessage("test", f.data, f.pets, {}, {}, false, f.skills);
+    assert(inactive.includes("등급 펫스킬 추가: +0💞"));
+    assert(inactive.includes("장착 등급 조건 미충족"));
+    assert(inactive.includes("종합매력 반영: +1,630,000"));
+    assert(sources[0].includes("miniTitleForInfo, robberEquippedForInfo, petSkillData)"));
+    assert(sources[0].includes("miniTitleForTarget, robberEquippedForTarget, petSkillData)"));
 });
 console.log("Mini-pet conditional skills: " + groups + " groups passed");

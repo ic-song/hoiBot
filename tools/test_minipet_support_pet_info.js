@@ -28,6 +28,7 @@ function makeContext(source, isInfo) {
         hasPetSkill: () => false,
         getIntimacyExpFromBag: () => 0,
         getEquippedNonTierPetSkillExp: () => 0,
+        getEquippedPetSkillNames: () => [],
         getEquippedTierPetSkillExp: () => 0,
         getHomeBadgeCubeActiveOptionPercent: () => 0,
         getGuildContributionCubeMemberPercent: () => 0,

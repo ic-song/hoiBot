@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.595"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.596"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -22535,7 +22535,7 @@ replier.reply(
                 if (msg === "/미니펫정보") {
                     var miniTitleForInfo = loadJsonFile(miniPetTitlePath);
                     var robberEquippedForInfo = hasPetSkill(petSkillData, sender, "약탈자");
-                    replier.reply(buildMiniPetInfoRenewedMessage(sender, data, petData, guildData, miniTitleForInfo, robberEquippedForInfo));
+                    replier.reply(buildMiniPetInfoRenewedMessage(sender, data, petData, guildData, miniTitleForInfo, robberEquippedForInfo, petSkillData));
                     if (robberEquippedForInfo) replier.reply(buildMiniPetRobberyHistoryMessage(sender, data, petData, guildData));
                     return;
                 }
@@ -22672,7 +22672,7 @@ replier.reply(
 
                     var miniTitleForTarget = loadJsonFile(miniPetTitlePath);
                     var robberEquippedForTarget = hasPetSkill(petSkillData, targetName, "약탈자");
-                    replier.reply(buildMiniPetInfoRenewedMessage(targetName, data, petData, guildData, miniTitleForTarget, robberEquippedForTarget));
+                    replier.reply(buildMiniPetInfoRenewedMessage(targetName, data, petData, guildData, miniTitleForTarget, robberEquippedForTarget, petSkillData));
                     if (robberEquippedForTarget) replier.reply(buildMiniPetRobberyHistoryMessage(targetName, data, petData, guildData));
                     return;
                 }
@@ -57748,11 +57748,29 @@ function getMiniPetDisplayTitle(titleData, user) {
 }
 
 // 대표·보조 편성 정보와 명령어 안내를 출력하는 함수
-function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleData, robberEquipped) {
+function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleData, robberEquipped, petSkillData) {
     var owner = petData[user] || {};
     var primary = owner.miniPet || null;
     var support = owner.miniPetSupport || null;
     var modeCharm = getMiniPetModeCharm(user, petData); // 캐슬·레이드 각각의 미니펫 기여분
+    var skillCastleCharm = 0; // 등급 조건부 스킬의 캐슬 추가 매력
+    var skillRaidCharm = 0; // 등급 조건부 스킬의 레이드 추가 매력
+    var skillLines = [];
+    var equippedSkills = getEquippedPetSkillNames(petSkillData, user);
+    var countedSkills = {};
+    for (var skillIndex = 0; skillIndex < equippedSkills.length; skillIndex++) {
+        var skillName = equippedSkills[skillIndex];
+        if (countedSkills[skillName]) continue;
+        countedSkills[skillName] = true;
+        var skill = getPetSkillData(skillName);
+        if (!skill || (skill.charmCondition !== "creationMiniPet" && skill.charmCondition !== "eliteMiniPet")) continue;
+        var slotRate = getMiniPetSkillCharmRate(petData, user, skill.charmCondition); // 실제 계산과 동일한 대표·보조 합산 비율
+        var castleBonus = Math.floor((parseInt(skill.castleExp, 10) || 0) * slotRate);
+        var raidBonus = Math.floor((parseInt(skill.raidExp, 10) || 0) * slotRate);
+        skillCastleCharm += castleBonus;
+        skillRaidCharm += raidBonus;
+        skillLines.push("└ " + skillName + "📙: +" + numberWithCommas(castleBonus + raidBonus) + "💞" + (slotRate > 0 ? "" : " (장착 등급 조건 미충족)"));
+    }
     var battle = owner.miniPetBattle || { win: 0, lose: 0, count: 0 };
     var battleTotal = battle.win + battle.lose;
     var battleRate = battleTotal ? Math.round(battle.win * 100 / battleTotal) : 0;
@@ -57768,7 +57786,13 @@ function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleDat
         lines.push("└ " + (support.grade || "일반") + " · 강화 +" + (support.upgrade || 0) + "💫");
         lines.push("└ 매력 " + numberWithCommas(Math.floor((Number(support.battleExp) || 0) / 2)) + "💞");
     }
-    lines.push("", "💞 종합매력 반영: +" + numberWithCommas(modeCharm * 2), "├ ⚔️ 캐슬매력 +" + numberWithCommas(modeCharm), "└ 👾 레이드매력 +" + numberWithCommas(modeCharm), "━━━━━━━━━━━━━");
+    if (skillLines.length) {
+        lines.push("", "📙 등급 펫스킬 추가: +" + numberWithCommas(skillCastleCharm + skillRaidCharm) + "💞");
+        for (var skillLineIndex = 0; skillLineIndex < skillLines.length; skillLineIndex++) lines.push(skillLines[skillLineIndex]);
+    }
+    lines.push("", "💞 종합매력 반영: +" + numberWithCommas(modeCharm * 2 + skillCastleCharm + skillRaidCharm), "├ ⚔️ 캐슬매력 +" + numberWithCommas(modeCharm + skillCastleCharm), "└ 👾 레이드매력 +" + numberWithCommas(modeCharm + skillRaidCharm));
+    if (skillLines.length) lines.push("※ 미니펫 기본 매력 + 등급 펫스킬 기준이며, 다른 퍼센트 보너스는 /펫정보에 반영됩니다.");
+    lines.push("━━━━━━━━━━━━━");
     lines.push("미대전🆚: " + battle.win + "승 " + battle.lose + "패(" + battleRate + "%)(" + getMiniPetBattleRank(user, petData) + ")");
     lines.push("미대전 횟수(" + (battle.count || 0) + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ")" + ((battle.count || 0) < GLOBAL_CONFIG.daily.miniPetBattleFree ? " · 무료 1회 가능" : ""));
     if (robberEquipped) lines.push("📙 약탈자 장착 중");
