@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.594"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.595"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2218,7 +2218,9 @@ blockedNicknameTerms: [
     },
     pointShop: { // 포인트 상점 설정
         limits: {
-            diamondBoxDailyBuy: 100
+            diamondBoxDailyBuy: 100,
+            maxPurchaseQuantity: 9999,
+            maxSafeNumber: 9007199254740991
         },
         petSkillBenefits: {
             taxRelief: { skillName: "탈세자", payableTaxRate: 0.3 },
@@ -19494,8 +19496,13 @@ replier.reply(
                         }
 
                         let itemList = Object.keys(data.shop);
-                        var itemNumber = parseInt(match[1], 10);
-                        var quantity = parseInt(match[2], 10) || 1;
+                        var itemNumber = Number(match[1]);
+                        var quantity = typeof match[2] === "undefined" ? 1 : Number(match[2]);
+
+                        if (!isFinite(quantity) || quantity > GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) {
+                            replier.reply("❌ 한 번에 최대 " + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) + "개까지 구매할 수 있습니다.");
+                            return;
+                        }
 
                         if (itemNumber <= 0 || itemNumber > itemList.length) {
                             replier.reply("유효하지 않은 상품 번호입니다.\n다시 확인해주세요.");
@@ -19508,6 +19515,26 @@ replier.reply(
 
                         var itemName = itemList[itemNumber - 1];
                         var purchaseQuote = buildPointShopPurchaseQuote(data, petSkillData, sender, itemName, quantity, data.shop[itemName]);
+                        if (!purchaseQuote.available) {
+                            replier.reply("❌ 상품 가격이나 할인 정보를 확인할 수 없어 구매하지 않았습니다.\n관리자에게 문의해주세요.");
+                            return;
+                        }
+                        quantity = purchaseQuote.quantity;
+                        var pointShopBonusCount = getPointShopTierTicketBonusCount(petSkillData, sender, itemName, quantity); // 이번 구매의 추가 티켓 수량
+                        var pointShopHeldCount = typeof data.member[sender].bag[itemName] === "undefined" ? 0 : data.member[sender].bag[itemName]; // 구매 전 보유량
+                        if (!isPointShopSafeAmount(data.member[sender].point) ||
+                            !isPointShopSafeCount(pointShopHeldCount) ||
+                            !isPointShopSafeCount(pointShopHeldCount + quantity + pointShopBonusCount)) {
+                            replier.reply("❌ 포인트나 아이템 보유 수량을 확인할 수 없어 구매하지 않았습니다.\n관리자에게 문의해주세요.");
+                            return;
+                        }
+                        var pointShopDailyCountName = itemName.indexOf("다이아") !== -1 && itemName.indexOf("상자") !== -1 ? "diamondBoxBuyCount" :
+                            itemName === GLOBAL_CONFIG.items.carrotName ? "carrotBuyCount" : ""; // 상품별 일일 구매 기록
+                        var pointShopDailyCount = pointShopDailyCountName && typeof data.member[sender][pointShopDailyCountName] !== "undefined" ? data.member[sender][pointShopDailyCountName] : 0;
+                        if (!isPointShopSafeCount(pointShopDailyCount) || !isPointShopSafeCount(pointShopDailyCount + quantity)) {
+                            replier.reply("❌ 일일 구매 수량을 확인할 수 없어 구매하지 않았습니다.\n관리자에게 문의해주세요.");
+                            return;
+                        }
                         var basePrice = purchaseQuote.basePrice;
                         var itemPrice = purchaseQuote.itemPrice;
                         var taxRate = purchaseQuote.taxRate;
@@ -19521,16 +19548,30 @@ replier.reply(
                             replier.reply("❌ " + "[" + checkRank(data, petData, guildData, sender) + "]님 포인트가 부족합니다.\n필요: 🅟" + numberWithCommas(itemTotalCost));
                             return;
                         }
+                        if (!isPointShopSafeAmount(data.member[sender].point - itemTotalCost) ||
+                            (itemTotalCost > 0 && data.member[sender].point - itemTotalCost === data.member[sender].point)) {
+                            replier.reply("❌ 결제 후 포인트를 정확히 계산할 수 없어 구매하지 않았습니다.\n관리자에게 문의해주세요.");
+                            return;
+                        }
+                        if (!isPointShopTaxSettlementSafe(data, guildData, taxAmount)) {
+                            replier.reply("❌ 상점 세금 적립액을 확인할 수 없어 구매하지 않았습니다.\n관리자에게 문의해주세요.");
+                            return;
+                        }
+
+                        var pointShopSuccessMessages = []; // 저장이 완료된 뒤 출력할 구매 결과
+                        var pointShopSuccessReplier = {
+                            reply: function (message) { pointShopSuccessMessages.push(message); }
+                        };
 
                         if (itemName == "펫 매력포션💊(900이하)") {
                             if (petData[sender] && petData[sender].petname) {
                                 if (petData[sender].petexp + quantity < 901) {
                                     isBuyFlag = true;
                                     petData[sender].petexp += quantity;
-                                    replier.reply(itemName + " x" + quantity + "개를\n🅟" + numberWithCommas(itemTotalCost) + "에 구매하셨습니다.");
-                                    replier.reply(petData[sender].petimg + petData[sender].petname + ": 꿈틀 꿈틀..🍼\n 매력💕 " + quantity + "pt 상승!!");
+                                    pointShopSuccessReplier.reply(itemName + " x" + quantity + "개를\n🅟" + numberWithCommas(itemTotalCost) + "에 구매하셨습니다.");
+                                    pointShopSuccessReplier.reply(petData[sender].petimg + petData[sender].petname + ": 꿈틀 꿈틀..🍼\n 매력💕 " + quantity + "pt 상승!!");
                                     if (petData[sender].pettype == "알" && petData[sender].petexp >= GLOBAL_CONFIG.pet.evolutionRequiredExp) {
-                                        updateEmoji(petData[sender], replier);
+                                        updateEmoji(petData[sender], pointShopSuccessReplier);
                                     }
                                 } else {
                                     replier.reply("이미 충분히 성장하여\n초급포션💊 x" + quantity + "개를\n 먹일 수 없습니다.");
@@ -19545,8 +19586,8 @@ replier.reply(
                                 } else {
                                     isBuyFlag = true;
                                     petData[sender].pettitle = getRandomCharacter();
-                                    replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
-                                    replier.reply(petData[sender].petimg + petData[sender].petname + "의 성격이\n" + petData[sender].pettitle + "으로 변경되었습니다.");
+                                    pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                    pointShopSuccessReplier.reply(petData[sender].petimg + petData[sender].petname + "의 성격이\n" + petData[sender].pettitle + "으로 변경되었습니다.");
                                 }
                             } else {
                                 replier.reply("펫을 먼저 생성해 주세요");
@@ -19565,10 +19606,10 @@ replier.reply(
                                         } else {
                                             isBuyFlag = true;
                                             let selectedType = petTypes1[Math.floor(Math.random() * petTypes1.length)];
-                                            replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                            pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
 
                                             petData[sender].pettype = selectedType.name;
-                                            updateEmoji(petData[sender], replier);
+                                            updateEmoji(petData[sender], pointShopSuccessReplier);
                                             delete petData[sender].confirmChange;
                                         }
                                     }
@@ -19578,9 +19619,9 @@ replier.reply(
                                     } else {
                                         isBuyFlag = true;
                                         let selectedType = petTypes1[Math.floor(Math.random() * petTypes1.length)];
-                                        replier.reply(itemName + "을(를)\n🅟" + numberWithCommas(itemTotalCost) + "에 구매하셨습니다.");
+                                        pointShopSuccessReplier.reply(itemName + "을(를)\n🅟" + numberWithCommas(itemTotalCost) + "에 구매하셨습니다.");
                                         petData[sender].pettype = selectedType.name;
-                                        updateEmoji(petData[sender], replier);
+                                        updateEmoji(petData[sender], pointShopSuccessReplier);
                                     }
                                 }
                             } else {
@@ -19595,7 +19636,7 @@ replier.reply(
                                 } else {
                                     isBuyFlag = true;
                                     data.member[sender].bag[itemName] = 1; // 상품을 bag에 추가
-                                    replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                    pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
                                 }
                             }
                         } else if (itemName == "자동대깨호😝(1일)") {
@@ -19607,7 +19648,7 @@ replier.reply(
                                 } else {
                                     isBuyFlag = true;
                                     data.member[sender].bag[itemName] = 1; // 상품을 bag에 추가
-                                    replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                    pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
                                 }
                             }
                         } else if (itemName == "자동대깨무🐔 패스이용권") {
@@ -19619,7 +19660,7 @@ replier.reply(
                                 } else {
                                     isBuyFlag = true;
                                     data.member[sender].bag[itemName] = 1; // 상품을 bag에 추가
-                                    replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                    pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
                                 }
                             }
                         } else if (itemName == "자동대깨봇🤖(1일)") {
@@ -19632,12 +19673,12 @@ replier.reply(
                                     isBuyFlag = true;
                                     data.member[sender].bag[itemName] = 1; // 상품을 bag에 추가
                                     //replier.reply(itemName + '을(를)\n🅟' + numberWithCommas(itemTotalCost) + '에 구매하셨습니다.');
-                                    replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                    pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
                                 }
                             }
                         } else if (itemName.indexOf("다이아") !== -1 && itemName.indexOf("상자") !== -1) {
                             let diamondBoxDailyLimit = GLOBAL_CONFIG.pointShop.limits.diamondBoxDailyBuy;
-                            data.member[sender].diamondBoxBuyCount = parseInt(data.member[sender].diamondBoxBuyCount, 10) || 0;
+                            data.member[sender].diamondBoxBuyCount = pointShopDailyCount;
                             let buyCount = data.member[sender].diamondBoxBuyCount;
                             let remaining = diamondBoxDailyLimit - buyCount;
                             if (remaining < 0) remaining = 0;
@@ -19647,7 +19688,7 @@ replier.reply(
                             }
                             addItem(data, sender, itemName, quantity);
                             data.member[sender].diamondBoxBuyCount += quantity;
-                            replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                            pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
                             isBuyFlag = true;
                         } else if (itemName == GLOBAL_CONFIG.items.carrotName) {
                             let totalCost = itemTotalCost;
@@ -19679,7 +19720,7 @@ replier.reply(
 
                                 addItem(data, sender, GLOBAL_CONFIG.items.carrotName, quantity);
                                 data.member[sender].carrotBuyCount += quantity;
-                                replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
                                 isBuyFlag = true;
                             }
                         } else if (itemName == "펫 속성리롤🔄") {
@@ -19692,8 +19733,8 @@ replier.reply(
                             } else {
                                 isBuyFlag = true;
                                 petData[sender].pettype = getRandomPetType();
-                                replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
-                                replier.reply(
+                                pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                                pointShopSuccessReplier.reply(
                                     petData[sender].petimg +
                                     petData[sender].petname +
                                     "의속성이\n" +
@@ -19707,13 +19748,13 @@ replier.reply(
                             } else {
                                 data.member[sender].bag[itemName] += quantity;
                             }
-                            replier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
+                            pointShopSuccessReplier.reply(buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxRate, itemTotalCost, data.member[sender].point - itemTotalCost));
                             var pointShopTierTicketBonus = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
                             if (itemName === pointShopTierTicketBonus.itemName) {
-                                var bonusTicketCount = getPointShopTierTicketBonusCount(petSkillData, sender, itemName, quantity);
+                                var bonusTicketCount = pointShopBonusCount;
                                 if (bonusTicketCount > 0) {
                                     addItem(data, sender, itemName, bonusTicketCount);
-                                    replier.reply(buildPetSkillMsg(data, petData, guildData, sender, pointShopTierTicketBonus.skillName) + "\n티어 승급티켓🎟 " + numberWithCommas(bonusTicketCount) + "개를 추가로 획득했습니다.");
+                                    pointShopSuccessReplier.reply(buildPetSkillMsg(data, petData, guildData, sender, pointShopTierTicketBonus.skillName) + "\n티어 승급티켓🎟 " + numberWithCommas(bonusTicketCount) + "개를 추가로 획득했습니다.");
                                 }
                             }
                             isBuyFlag = true;
@@ -19722,17 +19763,20 @@ replier.reply(
                             if (ticketEventCouponPlan.usedCount > 0) {
                                 var consumedTicketEventCouponCount = consumeTicketEventCouponPlan(data, sender, ticketEventCouponPlan);
                                 if (consumedTicketEventCouponCount !== ticketEventCouponPlan.usedCount) throw new Error("티켓 이벤트 쿠폰 차감 수량이 구매 계산과 일치하지 않습니다.");
-                                replier.reply(buildTicketEventCouponUsageMessage(ticketEventCouponPlan));
+                                pointShopSuccessReplier.reply(buildTicketEventCouponUsageMessage(ticketEventCouponPlan));
                             }
                             if (taxAmount > 0) {
                                 applyTax(itemPrice, data, guildData, taxAmount);
                             }
                             addPoint(data, sender, -itemTotalCost); // 상품가격 point 차감
                             if (taxExempt && baseTaxRate > 0) {
-                                replier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금의 70%가 면제됩니다.");
+                                pointShopSuccessReplier.reply(buildPetSkillMsg(data, petData, guildData, sender, "탈세자") + "\n상점 세금의 70%가 면제됩니다.");
                             }
                             saveJsonFile(data, filePath);
                             saveJsonFile(petData, memberPetPath);
+                            for (var pointShopReplyIndex = 0; pointShopReplyIndex < pointShopSuccessMessages.length; pointShopReplyIndex++) {
+                                replier.reply(pointShopSuccessMessages[pointShopReplyIndex]);
+                            }
                             if (pointShopDiscountSkill === "VIP블랙카드") {
                                 replier.reply("💳 VIP블랙카드📙 [" + checkRank(data, petData, guildData, sender) + "] 님의 VIP 결제\n말없이 블랙카드를 계산대에 올려놓습니다.\n직원이 허리를 숙입니다.\n상품가 30% 할인👑");
                             } else if (pointShopDiscountSkill === "쇼핑광") {
@@ -36739,6 +36783,9 @@ function buildTierProgressMessage(plan, isApplyFailure) {
                     var ticketPurchaseResultText = plan.tierTicketPurchaseBonus > 0 ? " → 총 " + numberWithCommas(plan.tierTicketPurchaseQuantity + plan.tierTicketPurchaseBonus) + "장 획득" : "";
                     lines.push("💰 티켓 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장 구매" + ticketPurchaseResultText + ": 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
                     lines.push(buildTierQuoteStatusText(plan.quote) + " · 세금 포함");
+                    if (plan.tierTicketPurchaseQuantity > GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) {
+                        lines.push("※ 상점에서 1회 최대 " + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) + "개씩 나눠 구매해주세요.");
+                    }
                 } else {
                     lines.push("💰 티켓 구매비: 현재 확인할 수 없어요");
                 }
@@ -37832,9 +37879,39 @@ function grantPetMusouTicketEventCoupon(data, user) {
     return { name: selectedCoupon.name, rate: selectedCoupon.rate, display: "티켓쿠폰🎟️(" + selectedCoupon.rate + "%) 획득" };
 }
 
+// 포인트 상점의 금액이 유한한 숫자이며 정확한 정수 표현 범위 안인지 확인하는 함수
+function isPointShopSafeAmount(value) {
+    return typeof value === "number" && isFinite(value) && value >= 0 && value <= GLOBAL_CONFIG.pointShop.limits.maxSafeNumber;
+}
+
+// 포인트 상점의 보유·지급 수량이 안전한 0 이상 정수인지 확인하는 함수
+function isPointShopSafeCount(value) {
+    return isPointShopSafeAmount(value) && Math.floor(value) === value;
+}
+
+// 포인트 상점 세금의 성·길드·재단 적립 결과가 안전한지 변경 전에 확인하는 함수
+function isPointShopTaxSettlementSafe(data, guildData, taxAmount) {
+    var castle = data.HoiCastle;
+    if (taxAmount <= 0 || !castle || !castle.taxRate || !castle.lord) return true;
+    var guildShare = Math.round(taxAmount * 0.15); // 기존 세금 중 길드 몫
+    var foundationShare = taxAmount - guildShare; // 기존 세금 중 재단 몫
+    var castleEarnings = typeof castle.earnings === "undefined" ? 0 : castle.earnings;
+    var foundationTotal = data.hoiHappyFoundation && typeof data.hoiHappyFoundation.totalAmount !== "undefined" ? data.hoiHappyFoundation.totalAmount : 0;
+    if (!isPointShopSafeAmount(castleEarnings) || !isPointShopSafeAmount(castleEarnings + guildShare) ||
+        !isPointShopSafeAmount(foundationTotal) || !isPointShopSafeAmount(foundationTotal + foundationShare)) return false;
+    var lordGuild = getMyGuildInfo(data, guildData, castle.lord);
+    if (lordGuild && !lordGuild.error && lordGuild.guild) {
+        var warehouse = lordGuild.guild.warehouse;
+        var guildFund = warehouse && typeof warehouse.fund !== "undefined" ? warehouse.fund : 0;
+        if (!isPointShopSafeAmount(guildFund) || !isPointShopSafeAmount(guildFund + guildShare)) return false;
+    }
+    return true;
+}
+
 // 티켓 구매 수량에 맞춰 높은 할인율부터 쿠폰 적용 가격과 차감 계획을 계산하는 함수
 function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unitPrice) {
-    var plan = { itemPrice: Number(unitPrice) * quantity, usedCount: 0, usages: [] };
+    if (!isPointShopSafeCount(quantity) || quantity < 1 || !isPointShopSafeAmount(unitPrice) || !isPointShopSafeAmount(unitPrice * quantity)) return null;
+    var plan = { itemPrice: unitPrice * quantity, usedCount: 0, usages: [] };
     if (String(itemName || "").indexOf("티켓") === -1) return plan;
     var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
     if (!bag) return plan;
@@ -37842,34 +37919,37 @@ function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unit
     var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons.slice();
     coupons.sort(function (a, b) { return b.rate - a.rate; });
     for (var i = 0; i < coupons.length && remainingQuantity > 0; i++) {
-        var heldCount = parseInt(bag[coupons[i].name], 10) || 0;
+        var heldCount = typeof bag[coupons[i].name] === "undefined" ? 0 : bag[coupons[i].name];
+        if (!isPointShopSafeCount(heldCount)) return null;
         if (heldCount < 1) continue;
         var useCount = Math.min(heldCount, remainingQuantity); // 이번 할인율에서 실제 적용할 쿠폰 수
-        plan.itemPrice -= Number(unitPrice) * (coupons[i].rate / 100) * useCount;
+        plan.itemPrice -= unitPrice * useCount / 100 * coupons[i].rate;
         plan.usedCount += useCount;
         plan.usages.push({ name: coupons[i].name, rate: coupons[i].rate, count: useCount });
         remainingQuantity -= useCount;
     }
-    return plan;
+    return isPointShopSafeAmount(plan.itemPrice) ? plan : null;
 }
 
 // 포인트 상점의 티어 승급티켓 구매에만 티어 상승론 추가 수량을 계산하는 함수
 function getPointShopTierTicketBonusCount(petSkillData, user, itemName, quantity) {
     var benefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
-    var parsedQuantity = Math.max(0, parseInt(quantity, 10) || 0);
+    var parsedQuantity = quantity;
+    if (!isPointShopSafeCount(parsedQuantity)) return 0;
     if (itemName !== benefit.itemName || !hasPetSkill(petSkillData, user, benefit.skillName)) return 0;
     return Math.floor(parsedQuantity * benefit.bonusRate);
 }
 
 // 티어 상승론 보너스를 포함해 부족 티켓을 채우는 최소 포인트 상점 구매 수량을 계산하는 함수
 function getPointShopTierTicketPurchaseQuantity(petSkillData, user, requiredQuantity) {
-    var required = Math.max(0, parseInt(requiredQuantity, 10) || 0);
+    var required = requiredQuantity;
+    if (!isPointShopSafeCount(required)) return 0;
     var benefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.tierTicketBonus;
     if (required < 1 || !hasPetSkill(petSkillData, user, benefit.skillName)) return required;
     var low = 1;
     var high = required;
     while (low < high) {
-        var middle = Math.floor((low + high) / 2); // 보너스를 포함해 부족 수량을 충족하는 최소 구매량 탐색
+        var middle = low + Math.floor((high - low) / 2); // 안전 범위 안에서 최소 구매량 탐색
         var received = middle + getPointShopTierTicketBonusCount(petSkillData, user, benefit.itemName, middle);
         if (received >= required) high = middle;
         else low = middle + 1;
@@ -37879,29 +37959,35 @@ function getPointShopTierTicketPurchaseQuantity(petSkillData, user, requiredQuan
 
 // 포인트 상점 구매와 조회 화면이 함께 사용하는 최종 결제 견적을 계산하는 함수
 function buildPointShopPurchaseQuote(data, petSkillData, user, itemName, quantity, unitPrice) {
-    var parsedQuantity = parseInt(quantity, 10);
-    var parsedUnitPrice = Number(unitPrice);
-    if (!data || !data.member || !data.member[user] || parsedQuantity < 1 || !isFinite(parsedUnitPrice) || parsedUnitPrice < 0) {
+    var parsedQuantity = quantity;
+    var parsedUnitPrice = unitPrice;
+    if (!data || !data.member || !data.member[user] || !isPointShopSafeCount(parsedQuantity) || parsedQuantity < 1 || !isPointShopSafeAmount(parsedUnitPrice)) {
         return { available: false };
     }
     var basePrice = parsedUnitPrice * parsedQuantity;
+    if (!isPointShopSafeAmount(basePrice)) return { available: false };
     var couponPlan = buildTicketEventCouponPurchasePlan(data, user, itemName, parsedQuantity, parsedUnitPrice);
+    if (!couponPlan) return { available: false };
     var itemPrice = couponPlan.itemPrice;
     var discountSkill = "";
     if (hasPetSkill(petSkillData, user, "VIP블랙카드")) {
         discountSkill = "VIP블랙카드";
-        itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.vipBlackCardRate);
+        itemPrice = itemPrice / 100 * (100 - GLOBAL_CONFIG.petSkill.shopDiscounts.vipBlackCardRate * 100);
     } else if (hasPetSkill(petSkillData, user, "쇼핑광")) {
         discountSkill = "쇼핑광";
-        itemPrice = itemPrice * (1 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate);
+        itemPrice = itemPrice / 100 * (100 - GLOBAL_CONFIG.petSkill.shopDiscounts.shoppingFanRate * 100);
     }
-    var baseTaxRate = data.HoiCastle && data.HoiCastle.taxRate ? parseInt(data.HoiCastle.taxRate, 10) || 0 : 0;
+    var configuredTaxRate = data.HoiCastle && data.HoiCastle.taxRate ? Number(data.HoiCastle.taxRate) : 0;
+    if (!isPointShopSafeAmount(configuredTaxRate)) return { available: false };
+    var baseTaxRate = Math.floor(configuredTaxRate);
     var taxBenefit = GLOBAL_CONFIG.pointShop.petSkillBenefits.taxRelief;
     var taxExempt = hasPetSkill(petSkillData, user, taxBenefit.skillName);
     var taxRate = taxExempt ? Math.round(baseTaxRate * taxBenefit.payableTaxRate * 10) / 10 : baseTaxRate;
-    var taxAmount = Math.round(itemPrice * (taxRate / 100));
+    var taxAmount = Math.round(itemPrice / 100 * taxRate);
+    if (!isPointShopSafeAmount(itemPrice) || !isPointShopSafeAmount(taxAmount) || !isPointShopSafeAmount(itemPrice + taxAmount)) return { available: false };
     return {
         available: true,
+        quantity: parsedQuantity,
         basePrice: basePrice,
         itemPrice: itemPrice,
         taxRate: taxRate,
@@ -37919,7 +38005,8 @@ function consumeTicketEventCouponPlan(data, user, plan) {
     var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
     if (!bag || !plan || !(plan.usages instanceof Array)) return 0;
     for (var i = 0; i < plan.usages.length; i++) {
-        if ((parseInt(bag[plan.usages[i].name], 10) || 0) < plan.usages[i].count) return 0;
+        if (!isPointShopSafeCount(bag[plan.usages[i].name]) ||
+            !isPointShopSafeCount(plan.usages[i].count) || bag[plan.usages[i].name] < plan.usages[i].count) return 0;
     }
     var consumedCount = 0; // 모든 할인율에서 실제 차감한 쿠폰 합계
     for (var j = 0; j < plan.usages.length; j++) {

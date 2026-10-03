@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
 		additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
 	},
@@ -1066,7 +1067,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
 				let taxRate = data.HoiCastle ? "\n호월킹덤 영주: 🏰" + data.HoiCastle.lord + lordGuildText + "\n(세금💲: " + data.HoiCastle.taxRate + "%)" : null;
 
-				let responseMessage = "🛍호월킹덤 포인트 상점🛍\n" + (taxRate ? taxRate : "") + "\n\n(구매방법:/구매 [번호] [갯수])\n" + "※ 상품을 보시려면 전체보기를 눌러주세요\n";
+				let responseMessage = "🛍호월킹덤 포인트 상점🛍\n" + (taxRate ? taxRate : "") + "\n\n(구매방법:/구매 [번호] [갯수])\n" + "※ 1회 최대 " + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) + "개 구매 가능\n" + "※ 상품을 보시려면 전체보기를 눌러주세요\n";
 				// ✅ 여기! 아이템 리스트 출력 직전에 allsee 삽입
 				if (typeof allsee !== "undefined") {
 					responseMessage += allsee + "\n";

@@ -4758,6 +4758,10 @@ Status: VERIFIED
 - `buildPetSkillMsg`
 - `buildPointShopBuyMessage`
 - `applyTax`
+- `buildPointShopPurchaseQuote`
+- `isPointShopSafeAmount`
+- `isPointShopSafeCount`
+- `isPointShopTaxSettlementSafe`
 - `buildTicketEventCouponPurchasePlan`
 - `consumeTicketEventCouponPlan`
 - `buildTicketEventCouponUsageMessage`
@@ -4779,6 +4783,7 @@ Status: VERIFIED
 - `applyTax` also adds the non-guild tax share to `data.hoiHappyFoundation.totalAmount`
 - Saves updated member state through `saveJsonFile(data, filePath)` after successful purchase
 - Saves updated pet state through `saveJsonFile(petData, memberPetPath)` after successful purchase
+- 구매·쿠폰·보너스·펫 외형/성격 변경 완료 메시지는 길드·회원·펫 저장이 끝난 뒤 출력한다. 저장 실패 시 기존 명령 트랜잭션이 세금·차감·쿠폰·지급을 되돌린다.
 - 티켓 이름을 포함한 상품은 구매 수량만큼 보유 쿠폰을 높은 할인율부터 티켓 1개당 1장씩 적용하고, 구매가 성공한 뒤 할인율별 적용 수량을 차감한다. 보유 쿠폰이 부족하면 보유 수량까지만 할인하며 실패·취소된 구매에는 쿠폰을 차감하지 않는다.
 - `applyTax(itemPrice, data, guildData)` saves changed guild state through `saveJsonFile(guildData, guildPath)` when tax is not exempt
 
@@ -4796,6 +4801,12 @@ Status: VERIFIED
 - `탈세자📙` reduces tax by 70% only in the point-shop `/상점` → `/구매` flow, so the user pays 30% of the original tax.
 - `티어 상승론📙` adds `floor(quantity * 0.01)` bonus only when the point-shop `/구매` item is `티어 승급티켓🎟`.
 - Command guard accepts only `/구매` or `/구매 숫자 [숫자]`; suffix guide text does not enter purchase logic.
+- 구매 수량은 생략 시 1개, 명시 입력은 1~9,999개만 허용한다. 관리자도 같은 1회 제한을 적용하며, 0개나 큰 정수/Infinity로 변환되는 입력에는 차감·지급하지 않는다.
+- 입력 문자열은 진입에서 `Number`로 한 번 변환한다. 이후 견적·쿠폰·티어 보너스에서는 숫자를 `parseInt`로 재해석하지 않는다.
+- 상품가·결제액·보유 포인트·지급 후 수량·사용할 쿠폰·일일 구매 기록·세금 적립 결과의 유한성과 안전 범위를 검사한다. 숫자가 아닌 보유값을 자동 초기화하거나 바꾸지 않는다.
+- 0원 상품은 기존 정책을 유지한다. 기존 스킬 할인율·쿠폰 적용 순서·세금 반올림은 유지하며, 백분율 계산 순서를 조정해 불필요한 소수 오차를 줄인다.
+- `/티어`의 총 필요 수량 견적은 9,999개보다 커도 유지하고 1회 한도에 맞춰 나눠 구매하도록 안내한다. `/상점`은 `Info.js`에서 같은 한도를 표시한다.
+- 검증: `node tools/test_point_shop_purchase.js` (실제 명령·견적·세금·저장·트랜잭션 함수, 합성 파일시스템).
 - Buying a point-shop item whose name contains both `다이아` and `상자` is limited to `GLOBAL_CONFIG.pointShop.limits.diamondBoxDailyBuy` per day before cost/tax processing.
 
 ---
