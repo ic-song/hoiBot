@@ -558,6 +558,49 @@ Status: VERIFIED
 
 ---
 
+# /미니펫추가 [아이디(2단어)] [이름] [이모지] [등급] [가격] [매력도]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `addMiniPetToUserBag`
+- `getMiniPetBagLimit`
+- `checkRank`
+
+## Data Usage
+
+- `data.member[receiver]`: 등록 회원인지 확인
+- `petData[receiver].miniPetBag`: 미니펫 1마리 추가
+
+## Save Flow
+
+- 명령 진입에서 읽은 `petData`를 전달하며 지급 함수 내부에는 파일 IO가 없다.
+- `saveJsonFile(petData, memberPetPath)` 완료 후 지급 성공과 보유 수량을 안내한다.
+- 저장 실패 시 실패 안내 후 오류를 다시 던져 기존 응답 오류 로그·트랜잭션 흐름을 유지한다.
+- 기존 명령 컨텍스트가 DEV/PROD 경로를 분리한다.
+
+## Related Commands
+
+- `/미니펫가방`
+
+## AI Notes
+
+- 기존 `호이 남` 전용 권한과 아이디 2단어 형식을 유지한다. 미니펫 이름은 여러 단어를 허용한다.
+- 전체 명령 패턴으로 실행을 제한하고 연속 공백·탭을 구분자로 처리한다.
+- 숫자로만 된 등급은 허용하지 않아 뒤에 숫자를 붙여 인자 위치가 밀리는 입력을 막는다.
+- 가격·매력도는 0 이상 9,007,199,254,740,991 이하의 정수만 허용한다.
+- 미등록 대상의 잔여 펫 데이터를 만들지 않는다. 등록 회원의 펫/가방 구조가 없으면 기존 지급 함수가 생성한다.
+- 관리자 지급의 기존 가방 한도 초과 허용은 유지한다. 보유 수량 표시는 일반 10칸·프리미엄 15칸을 기준으로 한다.
+- 공용 지급 함수와 가방 정렬·전체보기 출력은 변경하지 않는다.
+- 검증: `node tools/test_minipet_admin_add.js` (합성 파일시스템, 실제 저장·교체·로드·DEV 컨텍스트 함수 사용).
+
+---
+
 # /미니펫가방
 
 Status: VERIFIED

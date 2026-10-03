@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.593"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.594"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -22149,8 +22149,8 @@ replier.reply(
                     saveJsonFile(data, filePath);
                     return;
                 }
-                if (msg.startsWith("/미니펫추가 ") && sender == "호이 남") {
-                    let args = msg.replace("/미니펫추가", "").trim().split(" ");
+                if ((msg === "/미니펫추가" || /^\/미니펫추가\s+\S+\s+\S+\s+\S+(?:\s+\S+)*\s+\S+\s+(?!\d+(?:\s|$))\S+\s+\d+\s+\d+$/.test(msg)) && sender === "호이 남") {
+                    let args = msg.replace("/미니펫추가", "").trim().split(/\s+/);
                     if (args.length < 7) {
                         replier.reply("❌ 사용법: /미니펫추가 [아이디(2단어)] [이름] [이모지] [등급] [가격] [매력도]");
                         return;
@@ -22161,12 +22161,16 @@ replier.reply(
                     let emoji = args[args.length - 4];
                     let name = args.slice(2, args.length - 4).join(" "); // 이름
                     let receiver = args.slice(0, 2).join(" "); // 아이디(2단어)
-                    if (isNaN(price) || isNaN(exp)) {
-                        replier.reply("❌ 가격과 매력도는 숫자로 입력해주세요.");
+                    if (!isFinite(price) || !isFinite(exp) || price > 9007199254740991 || exp > 9007199254740991) {
+                        replier.reply("❌ 가격과 매력도는 0 이상 9,007,199,254,740,991 이하의 정수로 입력해주세요.");
+                        return;
+                    }
+                    if (!data.member[receiver]) {
+                        replier.reply("❌ 등록된 회원이 아닙니다. 지급 대상의 아이디를 확인해주세요.");
                         return;
                     }
                     let miniPetObj = addMiniPetToUserBag(petData, receiver, name, emoji, grade, price, exp);
-                    replier.reply(
+                    let miniPetAddMessage =
                         "✅ [" +
                         checkRank(data, petData, guildData, receiver) +
                         "]님의 미니펫가방에 [" +
@@ -22178,9 +22182,16 @@ replier.reply(
                         miniPetObj.price +
                         "포인트, 💕" +
                         exp +
-                        " 매력도 미니펫이 추가되었습니다."
-                    );
-                    saveJsonFile(petData, memberPetPath);
+                        " 매력도 미니펫이 추가되었습니다." +
+                        "\n🐹 보유 수량: " + petData[receiver].miniPetBag.length + "/" + getMiniPetBagLimit(data, receiver) +
+                        "\n👉 확인: /미니펫가방";
+                    try {
+                        saveJsonFile(petData, memberPetPath);
+                    } catch (miniPetAddSaveError) {
+                        replier.reply("❌ 미니펫을 저장하지 못해 지급이 완료되지 않았습니다.\n관리자 오류 로그를 확인해주세요.");
+                        throw miniPetAddSaveError;
+                    }
+                    replier.reply(miniPetAddMessage);
                     return;
                 }
                 if (/^\/알림(?:\s|$)/.test(msg)) {
