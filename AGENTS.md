@@ -23,6 +23,13 @@ Project explanations for human operators/developers are managed in `README.md`.
 
 # 2) Runtime Environment
 
+## Legacy-Only Project Scope
+
+- This `hoiBot` project handles only the legacy Android MessengerBot/Rhino bot. The default runtime contract is the existing seven-argument `response(...)` callback below.
+- If the user requests non-legacy work here, decline that work in this project and explain that it belongs in a separate project. Do not start web portal, Iris/redroid runtime, API2 migration, or modernization implementation/UAT from this chat.
+- These scope rules take precedence over the modernization workflow sections below. Existing modernization references do not authorize non-legacy work in this project.
+- Verify the current legacy callback and APIs before changing behavior. Optional extended arguments must not become mandatory unless the operating MessengerBot environment is verified to provide them and the user explicitly requires them.
+
 ## Runtime
 
 - Android MessengerBot Rhino JavaScript engine
