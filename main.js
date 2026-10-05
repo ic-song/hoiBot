@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.596"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.598"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2216,6 +2216,20 @@ blockedNicknameTerms: [
         pendantUnbindItemName: "펜던트귀속해제💎(/펜던트해제)",
         ringExpRewardItemName: "반지매력보상🎁(/보상받기)"
     },
+    raidSealCraft: { // 레이드 인장 조합 비용·결과 설정
+        materialName: "잡템☠️",
+        materialCount: 3000,
+        pointCost: 5000000000,
+        rewardName: "레이드타격대인장👑(+600👾)"
+    },
+    stoneBox: { // 대량 돌멩이 구매·개봉 설정
+        stoneItemName: "돌멩이🪨",
+        maxOpenQuantity: 9999,
+        boxes: {
+            "1만": { itemName: "돌멩이 1만개 상자📦(/돌멩이상자오픈 1만)", stoneCount: 10000 },
+            "10만": { itemName: "돌멩이 10만개 상자📦(/돌멩이상자오픈 10만)", stoneCount: 100000 }
+        }
+    },
     pointShop: { // 포인트 상점 설정
         limits: {
             diamondBoxDailyBuy: 100,
@@ -3495,10 +3509,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         if (!data) data = loadJsonFile(filePath);
         addResponseTiming("member.json 로드", commonStepStart);
+        var pointShopBootstrapChanged = syncStoneBoxShopItems(data); // 돌멩이 단가와 상자 가격 동기화
         if (data.shop && data.shop[GLOBAL_CONFIG.serverTransfer.itemName] !== GLOBAL_CONFIG.serverTransfer.itemPrice) {
             data.shop[GLOBAL_CONFIG.serverTransfer.itemName] = GLOBAL_CONFIG.serverTransfer.itemPrice;
-            saveJsonFile(data, filePath);
+            pointShopBootstrapChanged = true;
         }
+        if (pointShopBootstrapChanged) saveJsonFile(data, filePath);
         commonStepStart = Date.now();
         var petData = loadJsonFile(memberPetPath);
         addResponseTiming("member_pet.json 로드", commonStepStart);
@@ -16215,42 +16231,18 @@ replier.reply(
                         }
                     }
                 }
-                if (msg === "/레이드인장조합" || /^\/레이드인장조합\s+\d+$/.test(msg)) {
-                    if (!castleSiegeFlag) {
-                        var rArgs = msg.split(" ");
-                        var numToCraft = 1; // 조합 갯수 기본값
-                        if (rArgs.length > 1) {
-                            numToCraft = Math.max(1, parseInt(rArgs[1])); // 1개 이상만 가능
-                        }
-                        var requiredMaterials = 1000 * numToCraft; // 잡템☠️ 1000개
-                        var requiredCurrency = 1000000000 * numToCraft; // 포인트 10억
-                        var bag = data.member[sender].bag || (data.member[sender].bag = {});
-                        if (bag["잡템☠️"] && bag["잡템☠️"] >= requiredMaterials) {
-                            if (data.member[sender].point && data.member[sender].point >= requiredCurrency) {
-                                // 재료 차감
-                                bag["잡템☠️"] -= requiredMaterials;
-                                data.member[sender].point -= requiredCurrency;
-                                // 인장 지급
-                                var key = "레이드타격대인장👑(+600👾)";
-                                if (!bag[key]) bag[key] = numToCraft;
-                                else bag[key] += numToCraft;
-                                let resultMsg =
-                                    "[" +
-                                    checkRank(data, petData, guildData, sender) +
-                                    "] 님\n" +
-                                    "레이드타격대인장👑(+600👾) " +
-                                    numToCraft +
-                                    "개 조합 완료!\n" +
-                                    "(레이드매력+/펫공격에 적용됩니다.)";
-                                replier.reply(resultMsg);
-                                if (bag["잡템☠️"] === 0) delete bag["잡템☠️"];
-                            } else {
-                                replier.reply("🅟" + requiredCurrency.toLocaleString() + " 포인트가 필요합니다!");
-                            }
-                        } else {
-                            replier.reply("잡템☠️ " + requiredMaterials + "개가 필요합니다!");
-                        }
-                    }
+                var raidSealCraftRequest = getRaidSealCraftRequest(msg);
+                if (raidSealCraftRequest) {
+                    if (castleSiegeFlag) return;
+                    var raidSealCraftNick = checkRank(data, petData, guildData, sender);
+                    var raidSealCraftResult = craftRaidSealItems(data, sender, raidSealCraftRequest.quantity, raidSealCraftNick);
+                    if (raidSealCraftResult.changed) saveJsonFile(data, filePath);
+                    replier.reply(raidSealCraftResult.message);
+                    return;
+                }
+                if (/^\/레이드인장조합(?:\s+[\s\S]*)?$/.test(msg)) {
+                    replier.reply("❌ 사용법: /레이드인장조합 [수량]\n수량을 생략하면 1개를 조합합니다.\n1개당 " + GLOBAL_CONFIG.raidSealCraft.materialName + " " + numberWithCommas(GLOBAL_CONFIG.raidSealCraft.materialCount) + "개와 🅟" + numberWithCommas(GLOBAL_CONFIG.raidSealCraft.pointCost) + " 포인트가 필요합니다.");
+                    return;
                 }
                 if (msg === "/펫먹이조합" || /^\/펫먹이조합\s+\d+$/.test(msg)) {
                     if (!castleSiegeFlag) {
@@ -22532,6 +22524,30 @@ replier.reply(
                     replier.reply(output);
                     return;
                 }
+                var miniPetBagTargetMatch = msg.match(/^\/미니펫가방\s+([^\r\n]+)$/);
+                if (miniPetBagTargetMatch) {
+                    if (!isMaster(sender)) {
+                        replier.reply("⛔ 다른 유저의 미니펫가방 조회는 MASTER만 가능합니다.");
+                        return;
+                    }
+                    var miniPetBagTarget = miniPetBagTargetMatch[1].trim();
+                    if (!miniPetBagTarget) {
+                        replier.reply("사용법: /미니펫가방 [아이디]");
+                        return;
+                    }
+                    if (!Object.prototype.hasOwnProperty.call(data.member, miniPetBagTarget)) {
+                        replier.reply("❌ 해당 아이디의 유저를 찾을 수 없습니다.");
+                        return;
+                    }
+                    var miniPetBagTargetOwner = Object.prototype.hasOwnProperty.call(petData, miniPetBagTarget) ? petData[miniPetBagTarget] : null;
+                    if (!miniPetBagTargetOwner || !miniPetBagTargetOwner.miniPetBag || miniPetBagTargetOwner.miniPetBag.length === 0) {
+                        replier.reply("🐹 [" + checkRank(data, petData, guildData, miniPetBagTarget) + "]님의 미니펫가방이 비어 있습니다.");
+                        return;
+                    }
+                    var miniCollectionForTargetBag = loadJsonFile(miniPetCollectionPath);
+                    replier.reply(buildMiniPetBagRenewedMessage(miniPetBagTarget, data, petData, guildData, miniCollectionForTargetBag, miniPetData, true));
+                    return;
+                }
                 if (msg === "/미니펫정보") {
                     var miniTitleForInfo = loadJsonFile(miniPetTitlePath);
                     var robberEquippedForInfo = hasPetSkill(petSkillData, sender, "약탈자");
@@ -25706,6 +25722,17 @@ replier.reply(
                             debuggerLog("[ERROR : 봉인금고 NoticeMsg] " + sealedVaultNoticeError.toString());
                         }
                     }
+                    return;
+                }
+                var stoneBoxRequest = getStoneBoxOpenRequest(msg);
+                if (stoneBoxRequest) {
+                    var stoneBoxResult = openStoneBoxItems(data, sender, stoneBoxRequest.kind, stoneBoxRequest.count);
+                    if (stoneBoxResult.changed) saveJsonFile(data, filePath);
+                    replier.reply(stoneBoxResult.message);
+                    return;
+                }
+                if (/^\/돌멩이상자오픈(?:\s+[\s\S]*)?$/.test(msg)) {
+                    replier.reply("사용법: /돌멩이상자오픈 [1만|10만] [수량]\n수량을 생략하면 1개를 엽니다.\n\n예: /돌멩이상자오픈 1만 20\n예: /돌멩이상자오픈 10만 2");
                     return;
                 }
                 if (msg === "/다이아상자오픈" || /^\/다이아상자오픈\s+\d+$/.test(msg)) {
@@ -31434,6 +31461,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
+        getRaidSealCraftRequest(command) !== null ||
         command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "/스타터중복회수 실행" || command === "출발한다" || command === "다음에 한다" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
@@ -31445,7 +31473,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/홈뱃지해제\s+\d+(?:\s+\d+)?$/.test(command) || /^\/홈뱃지삭제\s+(?:\d+|[A-Za-z]{1,4}\d{2,3})$/.test(command) ||
         /^\/펜던트승급\s+\d+$/.test(command) || command === "승급할거임" || command === "쫄아뜸" ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
-        /^\/만능상자오픈\s+\d+$/.test(command) || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
+        /^\/만능상자오픈\s+\d+$/.test(command) || getStoneBoxOpenRequest(command) !== null || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
@@ -37877,6 +37905,104 @@ function grantPetMusouTicketEventCoupon(data, user) {
     data.member[user].bag[selectedCoupon.name] = (parseInt(data.member[user].bag[selectedCoupon.name], 10) || 0) + 1;
     appendPetMusouTicketEventLog(data, { action: "COUPON_DROP", user: user, coupon: selectedCoupon.name, roll: roll, processedAt: formatDateTime(new Date()) });
     return { name: selectedCoupon.name, rate: selectedCoupon.rate, display: "티켓쿠폰🎟️(" + selectedCoupon.rate + "%) 획득" };
+}
+
+// 생략 시 1개인 레이드 인장 조합 수량을 한 번만 숫자로 변환하는 함수
+function getRaidSealCraftRequest(msg) {
+    if (typeof msg !== "string") return null;
+    var match = msg.match(/^\/레이드인장조합(?:\s+(\d+))?$/);
+    return match ? { quantity: typeof match[1] === "undefined" ? 1 : Number(match[1]) } : null;
+}
+
+// 조합 비용과 최종 보유량을 확인한 뒤 차감·지급을 함께 반영하는 함수
+function craftRaidSealItems(data, user, quantity, nickname) {
+    var config = GLOBAL_CONFIG.raidSealCraft;
+    var requiredMaterials = config.materialCount * quantity; // 전체 조합에 필요한 잡템 수량
+    var requiredPoints = config.pointCost * quantity; // 전체 조합에 필요한 포인트
+    if (!isPointShopSafeCount(quantity) || quantity < 1 ||
+        !isPointShopSafeCount(requiredMaterials) || !isPointShopSafeCount(requiredPoints)) {
+        return { changed: false, message: "❌ 정확히 계산할 수 있는 1 이상의 정수 수량을 입력해주세요.\n사용법: /레이드인장조합 [수량]" };
+    }
+    var member = data && data.member && Object.prototype.hasOwnProperty.call(data.member, user) ? data.member[user] : null;
+    var bag = member && member.bag;
+    if (!bag || typeof bag !== "object" || bag instanceof Array) {
+        return { changed: false, message: "❌ 가방 정보를 확인할 수 없습니다. 관리자에게 문의해주세요." };
+    }
+    var heldMaterials = typeof bag[config.materialName] === "undefined" ? 0 : bag[config.materialName];
+    var heldRewards = typeof bag[config.rewardName] === "undefined" ? 0 : bag[config.rewardName];
+    var finalRewards = heldRewards + quantity; // 지급 후 보유할 인장 수량
+    if (!isPointShopSafeCount(heldMaterials) || !isPointShopSafeCount(heldRewards) ||
+        !isPointShopSafeCount(finalRewards) || !isPointShopSafeAmount(member.point)) {
+        return { changed: false, message: "❌ 재료·포인트·인장 보유량을 정확히 계산할 수 없어 조합하지 않았습니다.\n관리자에게 문의해주세요." };
+    }
+    if (heldMaterials < requiredMaterials || member.point < requiredPoints) {
+        return { changed: false, message: "❌ 레이드인장 조합 재료가 부족합니다.\n[" + nickname + "] 님\n━━━━━━━━━━━━\n📦 필요 재료\n" + config.materialName + " x" + numberWithCommas(requiredMaterials) + " + 🅟" + numberWithCommas(requiredPoints) + " 포인트\n\n🎒 현재 보유\n" + config.materialName + " x" + numberWithCommas(heldMaterials) + "\n🅟" + numberWithCommas(member.point) + "\n\n재료와 포인트를 모두 충족한 뒤\n/레이드인장조합 을 입력해 주세요." };
+    }
+    bag[config.materialName] = heldMaterials - requiredMaterials;
+    if (bag[config.materialName] === 0) delete bag[config.materialName];
+    member.point -= requiredPoints;
+    bag[config.rewardName] = finalRewards;
+    return { changed: true, message: "[" + nickname + "] 님, 조합이 완성되었습니다! 👑\n━━━━━━━━━━━━\n📦 소모 재료\n" + config.materialName + " x" + numberWithCommas(requiredMaterials) + "\n🅟" + numberWithCommas(requiredPoints) + " 포인트\n\n🎁 획득\n" + config.rewardName + " ×" + numberWithCommas(quantity) + "개" };
+}
+
+// 기존 돌멩이 단가로 두 상자 가격을 계산해 상점에 반영하는 함수
+function syncStoneBoxShopItems(data) {
+    var config = GLOBAL_CONFIG.stoneBox;
+    if (!data || !data.shop || !Object.prototype.hasOwnProperty.call(data.shop, config.stoneItemName)) return false;
+    var unitPrice = data.shop[config.stoneItemName];
+    if (!isPointShopSafeAmount(unitPrice)) return false;
+    var kinds = Object.keys(config.boxes);
+    var prices = []; // 전체 가격을 검증한 뒤 적용할 상자별 가격
+    for (var i = 0; i < kinds.length; i++) {
+        var price = unitPrice * config.boxes[kinds[i]].stoneCount;
+        if (!isPointShopSafeAmount(price)) return false;
+        prices.push(price);
+    }
+    var changed = false;
+    for (var j = 0; j < kinds.length; j++) {
+        var itemName = config.boxes[kinds[j]].itemName;
+        if (data.shop[itemName] !== prices[j]) {
+            data.shop[itemName] = prices[j];
+            changed = true;
+        }
+    }
+    return changed;
+}
+
+// 종류와 선택 수량이 명확한 돌멩이 상자 명령을 파싱하는 함수
+function getStoneBoxOpenRequest(msg) {
+    if (typeof msg !== "string") return null;
+    var match = msg.match(/^\/돌멩이상자오픈\s+(1만|10만)(?:\s+(\d+))?$/);
+    return match ? { kind: match[1], count: typeof match[2] === "undefined" ? 1 : Number(match[2]) } : null;
+}
+
+// 돌멩이 상자와 최종 지급량을 확인해 이미 로드한 가방에 함께 반영하는 함수
+function openStoneBoxItems(data, user, kind, count) {
+    var config = GLOBAL_CONFIG.stoneBox;
+    var box = Object.prototype.hasOwnProperty.call(config.boxes, kind) ? config.boxes[kind] : null;
+    if (!box || !isPointShopSafeCount(count) || count < 1 || count > config.maxOpenQuantity) {
+        return { changed: false, message: "❌ 돌멩이 상자는 한 번에 1~" + numberWithCommas(config.maxOpenQuantity) + "개까지 열 수 있습니다." };
+    }
+    var member = data && data.member && Object.prototype.hasOwnProperty.call(data.member, user) ? data.member[user] : null;
+    var bag = member && member.bag;
+    if (!bag || typeof bag !== "object" || bag instanceof Array) {
+        return { changed: false, message: "❌ 가방 정보를 확인할 수 없습니다. 관리자에게 문의해주세요." };
+    }
+    var heldBoxes = typeof bag[box.itemName] === "undefined" ? 0 : bag[box.itemName];
+    var heldStones = typeof bag[config.stoneItemName] === "undefined" ? 0 : bag[config.stoneItemName];
+    var rewardCount = box.stoneCount * count; // 이번 개봉으로 지급할 돌멩이 수량
+    var finalStoneCount = heldStones + rewardCount; // 기존 보유량까지 합산한 최종 수량
+    if (!isPointShopSafeCount(heldBoxes) || !isPointShopSafeCount(heldStones) ||
+        !isPointShopSafeCount(rewardCount) || !isPointShopSafeCount(finalStoneCount)) {
+        return { changed: false, message: "❌ 상자나 돌멩이 수량을 정확히 계산할 수 없어 개봉하지 않았습니다.\n관리자에게 문의해주세요." };
+    }
+    if (heldBoxes < count) {
+        return { changed: false, message: "❌ 돌멩이 " + kind + "개 상자가 부족합니다.\n필요: " + numberWithCommas(count) + "개\n보유: " + numberWithCommas(heldBoxes) + "개" };
+    }
+    bag[box.itemName] = heldBoxes - count;
+    if (bag[box.itemName] === 0) delete bag[box.itemName];
+    bag[config.stoneItemName] = finalStoneCount;
+    return { changed: true, message: "✅ 돌멩이 상자 오픈 완료\n━━━━━━━━━━━━\n📦 소모: " + kind + "개 상자 ×" + numberWithCommas(count) + "개\n🪨 획득: 돌멩이 " + numberWithCommas(rewardCount) + "개\n🪨 현재 보유: " + numberWithCommas(finalStoneCount) + "개" };
 }
 
 // 포인트 상점의 금액이 유한한 숫자이며 정확한 정수 표현 범위 안인지 확인하는 함수
@@ -57771,9 +57897,6 @@ function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleDat
         skillRaidCharm += raidBonus;
         skillLines.push("└ " + skillName + "📙: +" + numberWithCommas(castleBonus + raidBonus) + "💞" + (slotRate > 0 ? "" : " (장착 등급 조건 미충족)"));
     }
-    var battle = owner.miniPetBattle || { win: 0, lose: 0, count: 0 };
-    var battleTotal = battle.win + battle.lose;
-    var battleRate = battleTotal ? Math.round(battle.win * 100 / battleTotal) : 0;
     var lines = [getHoiPassPremiumHeader(data, user) + "✮━ " + getMiniPetDisplayTitle(titleData, user) + " ━✮", "[" + checkRank(data, petData, guildData, user) + "]님의 미니펫 정보", "━━━━━━━━━━━━━"];
     lines.push("👑 대표｜" + (primary ? primary.name + primary.emoji : "미장착"));
     if (primary) {
@@ -57791,10 +57914,6 @@ function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleDat
         for (var skillLineIndex = 0; skillLineIndex < skillLines.length; skillLineIndex++) lines.push(skillLines[skillLineIndex]);
     }
     lines.push("", "💞 종합매력 반영: +" + numberWithCommas(modeCharm * 2 + skillCastleCharm + skillRaidCharm), "├ ⚔️ 캐슬매력 +" + numberWithCommas(modeCharm + skillCastleCharm), "└ 👾 레이드매력 +" + numberWithCommas(modeCharm + skillRaidCharm));
-    if (skillLines.length) lines.push("※ 미니펫 기본 매력 + 등급 펫스킬 기준이며, 다른 퍼센트 보너스는 /펫정보에 반영됩니다.");
-    lines.push("━━━━━━━━━━━━━");
-    lines.push("미대전🆚: " + battle.win + "승 " + battle.lose + "패(" + battleRate + "%)(" + getMiniPetBattleRank(user, petData) + ")");
-    lines.push("미대전 횟수(" + (battle.count || 0) + "/" + GLOBAL_CONFIG.daily.miniPetBattleMax + ")" + ((battle.count || 0) < GLOBAL_CONFIG.daily.miniPetBattleFree ? " · 무료 1회 가능" : ""));
     if (robberEquipped) lines.push("📙 약탈자 장착 중");
     lines.push("━━━━━━━━━━━━━", "※ 미니펫가방: /미니펫가방", allsee, "━━━━━━━━━━━━━", "※ 대표장착: /미니펫장착 [미니펫가방번호]", "※ 보조장착: /미니펫보조장착 [미니펫가방번호]", "※ 대표미니펫 강화: /미니펫강화 0 [강화횟수]", "※ 보조미니펫 강화: /미니펫강화 00 [강화횟수]", "※ 대표귀속해제: /귀속해제", "※ 보조귀속해제: /보조귀속해제", "└ 공통 필요: 미니펫귀속해제권🐰(/귀속해제)", "", "※ 외형변경: /미니펫외형 [수정이모지]", "※ 이름변경: /미니펫이름 [수정이름]", "━━━━━━━━━━━━━", "※ 미니펫대전: /미니펫대전", "※ 다승순위: /미니펫대전순위", "※ 승률순위: /미니펫승률순위", "※ 대표매력순위: /미니펫순위", "※ 종합매력순위: /미니펫종합순위", "━━━━━━━━━━━━━");
     return lines.join("\n");
@@ -57813,10 +57932,16 @@ function buildMiniPetRobberyHistoryMessage(user, data, petData, guildData) {
 }
 
 // 미니펫 보유 목록과 컬렉션 현황을 출력하는 함수
-function buildMiniPetBagRenewedMessage(user, data, petData, guildData, collectionData, miniPetData) {
+function buildMiniPetBagRenewedMessage(user, data, petData, guildData, collectionData, miniPetData, readOnly) {
     var owner = petData[user] || {};
     var bag = owner.miniPetBag || [];
-    refreshMiniPetSortIndex(petData, user, miniPetData.gradeTable);
+    if (readOnly) {
+        bag = JSON.parse(JSON.stringify(bag)); // 원본을 보존하고 표시용 가방만 정렬
+        sortMiniPetBag(bag, miniPetData.gradeTable);
+        for (var displayIndex = 0; displayIndex < bag.length; displayIndex++) bag[displayIndex].sortIndex = displayIndex + 1;
+    } else {
+        refreshMiniPetSortIndex(petData, user, miniPetData.gradeTable);
+    }
     var collection = getMiniPetCollectionData(collectionData, user);
     var collectionRank = getMiniPetCollectionRanking(collectionData);
     var collectionRankText = "순위없음📊";

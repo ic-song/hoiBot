@@ -95,7 +95,7 @@ function reset(item = ticket, price = 7000000) {
 function edit(mutator) { const d = JSON.parse(disk[files[0]]); mutator(d); disk[files[0]] = JSON.stringify(d); }
 function read(i = 0, dev = false) { return JSON.parse(disk[dev ? files[i].replace(root, devRoot) : files[i]]); }
 function originalFiles() { return files.map(f => disk[f]); }
-function run(msg = "/구매 1 1") {
+function run(msg = "/구매 1 1", script = command) {
     replies = []; events = [];
     const isDev = c.isDevCommandMessage(msg);
     const previous = c.enterCommandContext(c.createCommandContext(isDev));
@@ -104,7 +104,7 @@ function run(msg = "/구매 1 1") {
     c.petData = JSON.parse(disk[c.resolveActiveDataPath(files[1])]);
     c.guildData = JSON.parse(disk[c.resolveActiveDataPath(files[2])]); c.petSkillData = {};
     c.beginDataSaveTransaction();
-    try { vm.runInContext(command, c); }
+    try { vm.runInContext(script, c); }
     catch (e) { c.rollbackDataSaveTransaction(); throw e; }
     finally { c.endDataSaveTransaction(); c.exitCommandContext(previous); }
     return replies.join("\n");
@@ -219,3 +219,144 @@ assert(output.includes("9,999개씩 나눠 구매"));
 assert.strictEqual(Number(infoSource.match(/pointShop: \{ limits: \{ maxPurchaseQuantity: (\d+)/)[1]), c.GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity);
 assert(infoSource.includes('"※ 1회 최대 " + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity)'));
 console.log("PASS 10: 티어 최소 구매 견적·나눠 구매 안내·Main/Info 한도 일치");
+
+// 돌멩이 상자의 실제 등록·구매·오픈 흐름도 동일한 저장 검증 환경에서 실행한다.
+vm.runInContext("GLOBAL_CONFIG.stoneBox = " + source.match(/stoneBox: (\{[\s\S]*?\n    \}),\n    pointShop/)[1], c);
+for (const name of ["syncStoneBoxShopItems", "getStoneBoxOpenRequest", "openStoneBoxItems", "getRaidSealCraftRequest", "isExclusiveDataMutationCommandMessage"]) vm.runInContext(fn(name), c);
+c.isSealedVaultMutationCommandMessage = () => false;
+const stone = c.GLOBAL_CONFIG.stoneBox.stoneItemName;
+const smallBox = c.GLOBAL_CONFIG.stoneBox.boxes["1만"].itemName;
+const largeBox = c.GLOBAL_CONFIG.stoneBox.boxes["10만"].itemName;
+const stoneStart = source.indexOf("var stoneBoxRequest = getStoneBoxOpenRequest(msg);");
+const stoneEnd = source.indexOf('if (msg === "/다이아상자오픈"', stoneStart);
+assert(stoneStart >= 0 && stoneEnd > stoneStart);
+const stoneCommand = "(function () {" + source.slice(stoneStart, stoneEnd) + "})()";
+const open = msg => run(msg, stoneCommand);
+
+// 11. 상자는 끝에 추가하고 재등록·단가 변경 시에도 기존 상품 번호를 보존한다.
+reset(stone, 30000);
+let shop = read();
+assert(c.syncStoneBoxShopItems(shop));
+assert.strictEqual(shop.shop[smallBox], 300000000);
+assert.strictEqual(shop.shop[largeBox], 3000000000);
+assert.deepStrictEqual(Object.keys(shop.shop), [stone, smallBox, largeBox]);
+assert.strictEqual(c.syncStoneBoxShopItems(shop), false);
+shop.shop[stone] = 40000;
+assert(c.syncStoneBoxShopItems(shop));
+assert.strictEqual(shop.shop[smallBox], 400000000);
+assert.strictEqual(shop.shop[largeBox], 4000000000);
+for (const value of [null, "30000", -1, Infinity, max]) {
+    const invalidShop = { shop: { [stone]: value } }, prior = JSON.stringify(invalidShop);
+    assert.strictEqual(c.syncStoneBoxShopItems(invalidShop), false);
+    assert.strictEqual(JSON.stringify(invalidShop), prior);
+}
+assert.strictEqual(c.syncStoneBoxShopItems({ shop: {} }), false);
+console.log("PASS 11: 두 상자 등록·가격 연동·기존 상품 순서 유지·잘못된 단가 미변경");
+
+// 12. 실제 구매의 할인·세금과 상자 종류별 지급을 결합해 20만 개를 검증한다.
+for (const [kind, quantity, boxName] of [["1만", 20, smallBox], ["10만", 2, largeBox]]) {
+    reset(stone, 30000);
+    edit(d => { c.syncStoneBoxShopItems(d); d.member[user].bag[stone] = 123; });
+    c.skills = ["VIP블랙카드", "탈세자"];
+    const number = Object.keys(read().shop).indexOf(boxName) + 1;
+    assert(run("/구매 " + number + " " + quantity).includes("구매 완료"));
+    assert.strictEqual(500000000000 - read().member[user].point, 4263000000);
+    assert.strictEqual(read().member[user].bag[boxName], quantity);
+    const pointBeforeOpen = read().member[user].point;
+    output = open("/돌멩이상자오픈 " + kind + " " + quantity);
+    assert(output.includes("돌멩이 200,000개"));
+    assert.strictEqual(read().member[user].bag[stone], 200123);
+    assert(!Object.hasOwn(read().member[user].bag, boxName));
+    assert.strictEqual(read().member[user].point, pointBeforeOpen);
+    assert(events.indexOf("reply") > events.lastIndexOf("save:" + files[0]));
+    assert.strictEqual(events.filter(e => e === "save:" + files[0]).length, 1);
+}
+console.log("PASS 12: 1만 20개·10만 2개 구매와 개봉·VIP/세금 유지·20만 지급·저장 후 안내");
+
+// 13. 종류별 보유량만 소모하고 수량 생략·공백·상한을 일관되게 처리한다.
+for (const [msg, kind, quantity] of [["/돌멩이상자오픈 1만", "1만", 1], ["/돌멩이상자오픈\t10만\t2", "10만", 2], ["/돌멩이상자오픈   1만   0002", "1만", 2], ["/돌멩이상자오픈 10만 9999", "10만", 9999]]) {
+    reset(); edit(d => { d.member[user].bag[smallBox] = 9999; d.member[user].bag[largeBox] = 9999; });
+    const selected = kind === "1만" ? smallBox : largeBox, other = kind === "1만" ? largeBox : smallBox;
+    assert(open(msg).includes("오픈 완료"));
+    assert.strictEqual(read().member[user].bag[other], 9999);
+    assert.strictEqual(read().member[user].bag[selected] || 0, 9999 - quantity);
+    assert.strictEqual(read().member[user].bag[stone], c.GLOBAL_CONFIG.stoneBox.boxes[kind].stoneCount * quantity);
+}
+console.log("PASS 13: 종류 분리·생략 1개·탭과 연속 공백·9999개 상한");
+
+// 14. 잘못된 숫자와 명령 접미사는 아무 것도 차감하지 않는다.
+for (const msg of ["/돌멩이상자오픈", "/돌멩이상자오픈 2만 1", "/돌멩이상자오픈 1만 0", "/돌멩이상자오픈 1만 10000", "/돌멩이상자오픈 1만 " + "9".repeat(400), "/돌멩이상자오픈 1만 -1", "/돌멩이상자오픈 1만 1.5", "/돌멩이상자오픈 1만 1e3", "/돌멩이상자오픈 1만 2 해봐", "/돌멩이상자오픈방법"]) {
+    reset(); edit(d => { d.member[user].bag[smallBox] = 9999; });
+    const prior = originalFiles(); open(msg);
+    assert.deepStrictEqual(originalFiles(), prior);
+    assert(!replies.some(s => s.includes("오픈 완료")));
+}
+assert(c.isExclusiveDataMutationCommandMessage("/돌멩이상자오픈 1만 20"));
+assert(c.isExclusiveDataMutationCommandMessage("dev/돌멩이상자오픈 10만 2"));
+assert(!c.isExclusiveDataMutationCommandMessage("/돌멩이상자오픈 1만 2 해봐"));
+console.log("PASS 14: 0·큰 숫자·음수·소수·접미·유사 명령 차단 및 쓰기 잠금 분류");
+
+// 15. 손상된 가방 수량·최종 합계 초과·해당 종류 부족은 원본을 유지한다.
+for (const field of [stone, smallBox]) for (const value of [null, "20", -1, 1.5, 1e80]) {
+    reset(); edit(d => { d.member[user].bag[smallBox] = 20; d.member[user].bag[field] = value; });
+    const prior = originalFiles(); open("/돌멩이상자오픈 1만 20"); assert.deepStrictEqual(originalFiles(), prior);
+}
+reset(); edit(d => { d.member[user].bag[smallBox] = 1; d.member[user].bag[stone] = max - 9999; });
+before = originalFiles(); open("/돌멩이상자오픈 1만"); assert.deepStrictEqual(originalFiles(), before);
+reset(); edit(d => { d.member[user].bag[largeBox] = 20; });
+before = originalFiles(); assert(open("/돌멩이상자오픈 1만 20").includes("상자가 부족")); assert.deepStrictEqual(originalFiles(), before);
+console.log("PASS 15: 손상 수량·최종 보유량 초과·종류별 부족 시 미소모");
+
+// 16. 실제 저장 실패는 차감과 지급을 복구하며 재시도는 한 번만 지급한다.
+reset(); edit(d => { d.member[user].bag[smallBox] = 20; d.member[user].bag[largeBox] = 2; });
+before = originalFiles(); failure = files[0];
+assert.throws(() => open("/돌멩이상자오픈 1만 20"), /replace failed/);
+assert.deepStrictEqual(originalFiles(), before);
+assert(!replies.some(s => s.includes("오픈 완료")));
+assert(open("/돌멩이상자오픈 1만 20").includes("오픈 완료"));
+assert.strictEqual(read().member[user].bag[stone], 200000);
+before = originalFiles(); open("/돌멩이상자오픈 1만 20"); assert.deepStrictEqual(originalFiles(), before);
+console.log("PASS 16: 실제 파일 교체 실패 복구·거짓 완료 없음·재시도 단일 지급");
+
+// 17. DEV 개봉은 운영 원본을 보존한다.
+reset(); edit(d => { d.member[user].bag[largeBox] = 2; });
+disk[files[0].replace(root, devRoot)] = disk[files[0]];
+before = originalFiles(); assert(open("dev/돌멩이상자오픈 10만 2").includes("오픈 완료"));
+assert.deepStrictEqual(originalFiles(), before);
+assert.strictEqual(read(0, true).member[user].bag[stone], 200000);
+console.log("PASS 17: DEV 오픈 경로·운영 원본 미변경");
+
+// 18. 실제 명령 전처리의 상자 등록 저장은 한 번만 수행하고 실패 시 복구한다.
+vm.runInContext("GLOBAL_CONFIG.serverTransfer = " + source.match(/serverTransfer: (\{[\s\S]*?\n    \}),/)[1], c);
+const bootstrapStart = source.indexOf("var pointShopBootstrapChanged = syncStoneBoxShopItems(data);");
+const bootstrapEnd = source.indexOf("commonStepStart = Date.now();", bootstrapStart);
+assert(bootstrapStart >= 0 && bootstrapEnd > bootstrapStart);
+const bootstrapScript = "(function () {" + source.slice(bootstrapStart, bootstrapEnd) + "})()";
+reset(stone, 30000);
+run("/상점", bootstrapScript);
+assert.strictEqual(read().shop[smallBox], 300000000);
+assert.strictEqual(read().shop[largeBox], 3000000000);
+assert.strictEqual(events.filter(e => e === "save:" + files[0]).length, 1);
+before = originalFiles(); run("/상점", bootstrapScript);
+assert.deepStrictEqual(originalFiles(), before); assert(!events.some(e => e.startsWith("save:")));
+reset(stone, 30000); before = originalFiles(); failure = files[0];
+assert.throws(() => run("/상점", bootstrapScript), /replace failed/);
+assert.deepStrictEqual(originalFiles(), before);
+reset(stone, 30000); before = originalFiles(); run("dev/상점", bootstrapScript);
+assert.deepStrictEqual(originalFiles(), before);
+assert.strictEqual(read(0, true).shop[largeBox], 3000000000);
+console.log("PASS 18: 실제 등록 진입·한 번 저장·재조회 무저장·저장 실패 및 DEV 복구");
+
+// 19. 최대 구매와 개봉의 가격·지급량 모두 큰 수량에서도 일치한다.
+for (const [kind, boxName] of [["1만", smallBox], ["10만", largeBox]]) {
+    reset(stone, 30000);
+    edit(d => { c.syncStoneBoxShopItems(d); d.member[user].point = 60000000000000; });
+    const boxNumber = Object.keys(read().shop).indexOf(boxName) + 1;
+    const totalCost = read().shop[boxName] * 9999 * 105 / 100;
+    assert(run("/구매 " + boxNumber + " 9999").includes("구매 완료"));
+    assert.strictEqual(60000000000000 - read().member[user].point, totalCost);
+    assert(open("/돌멩이상자오픈 " + kind + " 9999").includes("오픈 완료"));
+    assert.strictEqual(read().member[user].bag[stone], 9999 * c.GLOBAL_CONFIG.stoneBox.boxes[kind].stoneCount);
+    assert(!Object.hasOwn(read().member[user].bag, boxName));
+}
+console.log("PASS 19: 두 상자 9999개 구매·전체 금액 차감·최대 개봉 지급량 일치");

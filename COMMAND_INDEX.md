@@ -601,7 +601,7 @@ Status: VERIFIED
 
 ---
 
-# /미니펫가방
+# /미니펫가방 [아이디]
 
 Status: VERIFIED
 
@@ -627,7 +627,8 @@ Status: VERIFIED
 
 ## Save Flow
 
-- Calls `saveJsonFile(petData, memberPetPath)` after message build
+- 본인 조회는 메시지 생성 후 `saveJsonFile(petData, memberPetPath)`로 정렬·번호를 저장한다.
+- MASTER 대상 조회는 컬렉션을 한 번 로드하고 출력 함수의 `readOnly` 옵션으로 가방 복사본만 정렬한다. 대상 원본과 장착 상태를 변경하거나 저장하지 않는다.
 
 ## Related Commands
 
@@ -640,6 +641,9 @@ Status: VERIFIED
 ## AI Notes
 
 - Canonical entry point for mini-pet bag rendering
+- 인자 없이 본인을 조회하며, `/미니펫가방 [아이디]`는 기존 방 조건을 포함한 `isMaster(sender)`만 허용한다. Admin 단독 권한으로는 대상 조회가 불가하다.
+- 아이디는 기존 회원 키인 전체 닉네임으로 해석하고 공백을 지원한다. 대상 회원의 실제 키 존재를 확인하며 미등록 회원과 빈 가방은 구분해 안내한다.
+- 대상의 프리미엄 헤더·가방 한도·컬렉션·순위를 사용한다. 기존 출석·1:1톡·전쟁 공통 제한은 유지한다.
 - 가방은 원본 매력을 한 줄씩 표시하고 5번 다음에 `allsee`를 넣는다. 상단에 대표·보조 장착 안내를 추가하며 정보·편성은 `/미니펫정보`에서 확인한다.
 - Nearby branches contain most mini-pet bag mutation logic
 - 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한하며 프리미엄 종료 후 초과 보유 데이터는 삭제하지 않는다.
@@ -2053,7 +2057,8 @@ Status: VERIFIED
 
 ## AI Notes
 
-- 인자 없이 입력하면 자신의 대표·보조 편성과 미니펫대전 정보를 표시한다. 관리자·MASTER는 닉네임을 지정해 타인을 조회할 수 있다.
+- 인자 없이 입력하면 자신의 대표·보조 편성을 표시한다. 관리자·MASTER는 닉네임을 지정해 타인을 조회할 수 있다.
+- 매력 기준 설명과 미대전 전적·승률·순위·이용 횟수·무료 안내는 출력하지 않는다. 미대전 데이터와 기능, 약탈자 안내와 기록, 하단 명령 안내는 유지한다.
 - 본인·대상 조회는 이미 로드한 `petSkillData`를 출력 함수에 전달한다. 슬롯에는 미니펫 자체 매력을 표시하고, 창조림·엘리트 박사의 활성 장착·등급 조건에 따른 추가 매력과 이를 포함한 캐슬·레이드 합계를 별도로 표시한다. 잠금·미장착 스킬은 합산하지 않으며 같은 스킬의 별칭은 중복 가산하지 않는다.
 - 미니펫 정보 합계는 다른 퍼센트 보너스 적용 전 기여분이다. 퍼센트 보너스를 포함한 전체 종합매력은 `/펫정보`에서 확인한다.
 - 약탈자 스킬 장착 시 성공 기록을 두 번째 메시지로 최대 50건 출력한다.
@@ -6505,6 +6510,88 @@ Status: VERIFIED
 - Exact/full-pattern command guard: `/대마법박스오픈` or `/대마법박스오픈 숫자`.
 - Included in `/정리` bulk explore-box opening through `openExploreBoxesAllForOpenAll`.
 - Each box grants `펫스킬북 조각📙` 1~3개 and has a 1% chance to grant `펫스킬북📙(/펫스킬오픈)` 1개.
+
+---
+
+# /레이드인장조합 [수량]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getRaidSealCraftRequest`
+- `craftRaidSealItems`
+- `isPointShopSafeCount`
+- `isPointShopSafeAmount`
+
+## Data Usage
+
+- `GLOBAL_CONFIG.raidSealCraft`: 잡템 3,000개·포인트 5,000,000,000·기존 인장 명칭
+- `data.member[sender].bag["잡템☠️"]`
+- `data.member[sender].bag["레이드타격대인장👑(+600👾)"]`
+- `data.member[sender].point`
+
+## Save Flow
+
+- 명령 진입에서 이미 로드한 회원 데이터를 전달하며 헬퍼는 IO를 수행하지 않는다.
+- 전체 재료·포인트·결과물 보유량을 검증하고 차감·지급을 함께 반영한다.
+- 성공 시 `saveJsonFile(data, filePath)` 후 완료를 안내하고 반환한다. 저장 실패는 기존 명령 트랜잭션으로 복구한다.
+- `isExclusiveDataMutationCommandMessage`로 쓰기 잠금을 사용하며 DEV 경로를 유지한다.
+
+## AI Notes
+
+- 수량 생략은 1개이며 여러 개 조합은 비용에 동일 수량을 곱한다. 탭·연속 공백도 같은 수량으로 해석한다.
+- 0·음수·소수·지수 문자열·접미 안내 문구는 조합하지 않는다. 금액 곱셈·최종 보유량이 안전한 숫자 범위를 벗어나면 차감하지 않는다.
+- 결과물 효과와 기존 공성전·출석·1:1톡 등 공통 제한은 유지한다.
+
+---
+
+# /돌멩이상자오픈 [1만|10만] [수량]
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `getStoneBoxOpenRequest`
+- `openStoneBoxItems`
+- `syncStoneBoxShopItems`
+- `isPointShopSafeCount`
+- `isExclusiveDataMutationCommandMessage`
+
+## Data Usage
+
+- `GLOBAL_CONFIG.stoneBox`
+- `data.shop["돌멩이🪨"]`
+- `data.member[sender].bag["돌멩이🪨"]`
+- `data.member[sender].bag["돌멩이 1만개 상자📦(/돌멩이상자오픈 1만)"]`
+- `data.member[sender].bag["돌멩이 10만개 상자📦(/돌멩이상자오픈 10만)"]`
+
+## Save Flow
+
+- 명령 진입 흐름에서 이미 로드한 `data`를 전달하고, 상자 차감·돌멩이 지급을 반영한 뒤 `saveJsonFile(data, filePath)`가 성공하면 안내한다.
+- 도우미 함수는 파일을 읽거나 저장하지 않는다. DEV 컨텍스트와 기존 저장 실패 복구 흐름을 사용한다.
+
+## Related Commands
+
+- `/상점`
+- `/구매 [번호] [수량]`
+- `/가방`
+
+## AI Notes
+
+- 1만·10만은 상자 종류이며 수량 생략 시 1개, 개봉 수량은 1~9,999개이다. 숫자는 한 번만 변환하고 수량·최종 보유량의 안전 범위를 검사한다.
+- 해당 종류의 상자만 소모한다. 상자 또는 돌멩이의 보유량이 손상되었거나 부족하면 변경하지 않는다. 잘못된 종류·소수·지수 표기·추가 안내 문구는 실행하지 않는다.
+- 명령 전처리에서 돌멩이 단가 × 10,000·100,000으로 두 상자 가격을 동기화한다. 단가가 없거나 잘못되면 등록하지 않고 기존 정보를 유지한다. 기존 상품 순서를 유지하며 신규 상자를 끝에 추가한다.
+- 기존 구매의 9,999개 제한·할인·세금을 사용한다. 돌멩이 낱개 상품은 유지하고 개봉 시 추가 결제하지 않는다.
+- 기존 출석·1:1톡 패스·이벤트 공통 제한을 유지한다. 유효한 개봉 명령은 쓰기 잠금 대상으로 분류한다.
 
 ---
 

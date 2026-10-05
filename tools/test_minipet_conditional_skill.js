@@ -291,6 +291,14 @@ group("reported elite representative and creation support display matches actual
     assert(output.includes("등급 펫스킬 추가: +3,500,000💞"));
     assert(output.includes("종합매력 반영: +29,130,000"));
     assert(output.includes("캐슬매력 +14,565,000"));
+    for (const removed of ["※ 미니펫 기본 매력", "미대전🆚:", "미대전 횟수(", "무료 1회 가능"]) assert(!output.includes(removed));
+    assert(output.includes("└ 👾 레이드매력 +14,565,000\n━━━━━━━━━━━━━\n※ 미니펫가방: /미니펫가방"));
+    f.pets.test.miniPetBattle = { win: 442, lose: 256, count: 0 };
+    const battleBefore = JSON.stringify(f.pets.test.miniPetBattle);
+    const robberyOutput = c.buildMiniPetInfoRenewedMessage("test", f.data, f.pets, {}, {}, true, f.skills);
+    assert(robberyOutput.includes("📙 약탈자 장착 중"));
+    assert.strictEqual(JSON.stringify(f.pets.test.miniPetBattle), battleBefore);
+    delete f.pets.test.miniPetBattle;
     assert.deepStrictEqual(values(c, f), [14565000, 14565000, 29130000]);
     assert.strictEqual(JSON.stringify(f), before);
     for (const skillNames of [[], ["창조림", "창조림📙"], ["엘리트 박사"]]) {
