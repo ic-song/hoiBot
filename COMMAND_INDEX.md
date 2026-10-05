@@ -4393,26 +4393,32 @@ Status: PARTIAL
 
 ## Files / Commands
 
-- `main.js`: `/서버대전시작`, `/서버대전종료`, `/서버대전전체초기화`, `/레이드공격`, `/레이드기록`, `/서버레이드기록`.
-- 실행 명령은 인수 없이 정확히 입력한다. `/서버레이드기록 서버명`은 사용법만 출력한다.
+- `main.js`: `/서버대전시작`, `/서버대전종료`, `/서버대전전체초기화`, `/레이드공격`, `/레이드순위`, `/서버레이드순위`.
+- 실행 명령은 인수 없이 정확히 입력한다. `/서버레이드순위 서버명`은 사용법만 출력한다. 이전 `/레이드기록`, `/서버레이드기록`은 새 이름만 안내하며 기록 조회·파일 IO를 수행하지 않는다.
+- 운영 명령 6종은 단체방 `공성전`과 `팻 테스트방`에서 허용한다. DEV 명령은 `팻 테스트방`으로 한정한다. 다른 방과 일대일톡은 데이터 로드·저장 전 차단하며 두 운영방의 계정당 공격 한도는 합산 5회다.
 - `Info.js`: 기존 정보·순위의 잠금 및 서버 누적 우승 표시.
 - 기획: `서버_레이드대전_개발기획서_초안` (`83c393bdd7aa8266843001b9d40ca710`). 본문은 보존하며, 원격 운영 반영 확인 후 상태·실제 반영일·버전을 갱신한다.
+- 종료 UI 기획: `서버_레이드대전_상금표시_allsee_수정기획서` (`86f393bdd7aa83beb61301637c06ccfd`). 공격 보상은 2026-10-06 사용자 수정 요청을 적용한다.
+- 추가 수정 기획: `서버_레이드대전_추가_수정_기획서` (`aae393bdd7aa83acbb3c81809e181067`). 명령어방은 사용자가 확정한 공성전·팻 테스트방이며 대전 중 일반 명령 잠금은 기존 정책을 유지한다.
 
 ## Related Helpers
 
 - 회차: `createServerRaidState`, `startServerRaid`, `activateServerRaid`, `closeServerRaid`, `resetServerRaid`.
 - 공격: `getServerRaidAttackCheck`, `applyServerRaidAttack`, 기존 `calculateRaidExp`, `calculateCriticalDamage`, `calculateEffectivePetUpgradeLevel`.
 - 수신 식별값: `getServerRaidCallbackEvent`, `getServerRaidNativeId`, `getServerRaidEventId`, `createServerRaidAttackEvent`.
+- 명령방: `isServerRaidCommandRoom`, `GLOBAL_CONFIG.serverRaid.rooms`. 방 검사 후 레이드 운영 권한에 기존 MASTER 명단의 `isMasterIdentity`를 사용한다.
 - 순위·정산: `buildServerRaidResults`, `rankServerRaidRows`, `settleServerRaidParticipant`, `buildServerRaidAccountIndex`, `finishServerRaidSettlement`.
 - 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
 - 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
 - 출력: `formatServerRaidServer` / `formatInfoServerRaidServer`, `isServerRaidLocked` / `isInfoServerRaidLocked`.
+- 상금 출력: `formatServerRaidPrize`, `getServerRaidResultPrize`, `buildServerRaidResultNotice`. 종료 시 확정된 참가자 1인당 지급액을 사용하고, 이전 저장 형식은 참가자의 확정 금액을 읽는다. 출력 헬퍼는 지급하거나 저장하지 않는다.
 
 ## Data Usage / Save Flow
 
 - 기존 `member.json`의 `data.serverRaid`에 초기화 세대, 회차 번호, 준비·진행·정산 상태, 완료 회차 수, 서버 우승, 공식 결과, 원본 이벤트 처리 상태, 방별 공지 완료 상태를 저장한다.
 - `data.member[user].serverRaidAccount`는 내부 UUID·소속 기간·최근 개인 기록·현재 서버 누적 참가 기록이다. 닉네임 키가 바뀌어도 같은 회원 객체의 UUID를 재사용하고 새 회원은 새 UUID를 받는다.
-- 공격마다 R(레이드매력), D(최종 데미지), P(버림 처리한 R의 1%)를 구분해 저장한다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
+- 공격마다 R(레이드매력), D(치명타 포함 최종 데미지), P(버림 처리한 D의 1%)를 구분해 저장한다. 새 공격은 `rewardBasis: "damage"`를 저장한다. 이전 공격은 당시 지급액·기준을 유지하며 재전송 시 재계산·추가 지급하지 않는다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
+- R은 기존 `calculateRaidExp`로 계산하며 가방의 레이드타격대인장(개당 +600)과 홈뱃지·길드 큐브·레벨·퀘스트 보너스를 포함한다. 종합매력을 사용하지 않으며 포함된 보너스를 중복 가산하지 않는다.
 - 공격·종료·초기화는 명령 쓰기 잠금과 기존 데이터 트랜잭션 잠금으로 직렬화한다. 공격 횟수·포인트·데미지·이벤트 완료 상태를 `member.json`에 한 번에 저장한다.
 - 정산은 미지급 참가자의 포인트와 완료 상태를 묶어 한 번 저장한 뒤 우승·완료 횟수·확정 결과를 저장한다. 이미 지급된 계정은 재시도 시 건너뛴다. 조회용 기록은 서버와 소속 기간이 모두 일치할 때만 작성한다.
 - `scheduleServerRaidWork`는 예약 작업의 진입점이며 로드·저장·발송을 담당한다. 일반 계산·변경 헬퍼에는 파일 IO가 없다. 준비 마감, 초기화 세대, 회차 번호, 타이머 식별값을 재검사한다.
@@ -4420,22 +4426,43 @@ Status: PARTIAL
 - 공지는 기존 `noticeMsg` 대상 목록을 재사용하고 입력방을 중복 제외한다. 저장된 완료 방은 재발송하지 않는다. API 발송 성공과 완료 상태 저장 사이의 종료·저장 실패에는 실제 전달 여부가 불명확하여 공지 중복 가능성이 남는다. 공지 재시도로 보상을 다시 지급하지 않는다.
 - 전체 초기화는 이미 지급한 포인트·일반 가방을 유지한다. 서버이동은 확정 결과·우승·기존 지급 상태를 유지한다. DEV 저장과 공지는 기존 컨텍스트로 분리한다.
 
-## Legacy Callback / Remaining Runtime Verification
+## Legacy Callback / Operator Scope
 
 - 기본 `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`만으로 시작·공격·종료할 수 있다. 확장 인수는 필수가 아니다. 레거시 지원 버전에서 9번째 `logId`, 10번째 `channelId`, 11번째 `userHash`가 제공되면 `arguments`에서 읽고 앱·방·메시지 범위의 문자열 ID를 사용한다.
 - 네이티브 ID를 Number로 변환하거나 텍스트·시간 해시로 대체하지 않는다. Number로 들어온 ID도 거부한다. 신뢰된 내부 어댑터가 8번째 인수로 제공하는 `{ id: 원본 이벤트 ID 문자열, operatorId: 인증된 운영 주체 ID 문자열 }`도 지원한다.
 - 원본 ID가 없는 기본 콜백의 공격은 호출마다 저장용 UUID를 생성한다. 이 UUID는 재전송 식별값이 아니다. 2026-10-06 사용자 승인에 따라 같은 알림이 다시 전달되어도 새 공격 1회로 처리하며, 방 이동·재시작 여부와 관계없이 계정당 5회 한도를 유지한다. 원본 ID가 제공되는 경우에는 기존 재전송 차단을 유지한다. 제공된 확장 ID가 손상됐거나 Number이면 시작·공격을 차단한다.
-- 운영봇은 `GLOBAL_CONFIG.serverRaid.authentication.operatorIds`의 등록값과 앱·방·사용자 해시로 구성한 `operatorId`가 일치해야 한다. 초기 등록 목록은 비어 있어 기존 권한방의 MASTER만 운영 권한을 갖는다. 기본 콜백에서도 MASTER가 시작할 수 있다. 닉네임 `오픈채팅봇`만으로 운영 권한을 부여하지 않는다.
+- 운영봇은 `GLOBAL_CONFIG.serverRaid.authentication.operatorIds`의 등록값과 앱·방·사용자 해시로 구성한 `operatorId`가 일치해야 한다. 초기 등록 목록은 비어 있어 허용된 두 명령어방의 MASTER만 운영 권한을 갖는다. 기본 콜백에서도 MASTER가 시작할 수 있다. 닉네임 `오픈채팅봇`만으로 운영 권한을 부여하지 않는다.
 - 시작·종료 이미지 공유 링크를 기존 텍스트 메시지에 넣었으며 실제 기기의 이미지 표시는 미검증이다. 운영 기기에 직접 연결하지 않는다.
 - 공식 이력과 이벤트 처리 기록을 임의로 삭제하지 않는다. 장기 운영 데이터 규모와 Rhino 기기 처리 시간은 운영 전 검증 항목이다.
 - 레거시 콜백 호환 수정 버전은 `ver_2.600`이며 소스 버전과 개발자노트를 함께 갱신했다. 실제 기기의 수신·표시·처리 시간 검증은 별도로 남아 있다.
 - 재시작 후 조기 반환 경로의 작업 재개 보완 버전은 `ver_2.601`이다.
+- 명령어방·치명타 포함 공격 보상·상금 UI·조회 명령 이름 보완 버전은 `ver_2.602`이다. 운영 기기 업로드·컴파일·실행 검증은 운영자 범위이며 Codex 작업에 포함하지 않는다.
 
 ## Validation
 
 - `node tools/test_server_raid.js`: 실제 명령 진입·예약 작업·보호 저장 함수를 합성 데이터와 메모리 파일시스템에서 실행한다.
-- 41개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 확장 인수·내부 어댑터 경로의 원본 ID 재전송 차단도 유지한다. Android 기기 실행 검증을 대체하지 않는다.
+- 46개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 실제 Main/Info 레이드 계산에서 인장·홈/길드 큐브·레벨·퀘스트 합산을 대조하며, 제보 치명타 수치·이전 지급 기록·확정 상금 표시·명령 이름·방 제한도 검증한다. 확장 인수·내부 어댑터 경로의 원본 ID 재전송 차단도 유지한다.
 - DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
+
+---
+
+# 신규 ROOM · 호이서버6 유입
+
+Status: VERIFIED
+
+## Files / Related Helpers
+
+- `main.js`: `room15`, `roomToServer`, `assignUnspecifiedMemberServer`, `/모험시작`·`출발한다`, `recordLightAttendanceOnly`, `migrateLightAttendanceToMember`, `getNoticeTargetRooms`.
+- 기획: `신규_ROOM_추가_호이서버6_유입고정_기획서` (`e13393bdd7aa82a4b8210159aa111931`).
+
+## Data Usage / Save Flow
+
+- `🚨 30대 반말방｜도파민 폭주구역 💣🔥`를 기존 호이서버6[30]으로 연결한다. 서버 수와 기존 ROOM 매핑은 유지한다.
+- 신규 방의 단체 채팅에서 이미 생성된 회원의 미지정 소속만 지정한다. 짧은 채팅·미출석 상태도 유입 지정이 가능하며 기존 소속·재화·레이드 기록은 유지한다. 일반 채팅으로 미가입 계정을 생성하지 않는다.
+- 신규 방에서 모험을 시작하면 기존 가입 대기 파일에 `server`를 보존한다. 다른 방에서 `출발한다`를 입력해도 가입 완료 시 그 소속을 적용한다. 대기 소속이 없으면 가입 완료 방이 신규 방일 때만 해당 유입을 적용한다.
+- 회원 변경은 기존 진입 흐름에서 `filePath`에 저장하며 가입 완료는 기존 초기화·경량 출석 이관·가입 대기 제거 순서를 따른다. 헬퍼는 이미 로드한 회원 데이터만 변경하고 파일 IO가 없다. DEV는 기존 경로 컨텍스트를 사용한다.
+- 신규 방을 공통 공지·대승급 공지·출첵 시작 알림 대상에 추가한다. 레이드 명령어 허용방은 공성전·팻 테스트방 그대로 유지한다.
+- `node tools/test_room_server6_ingress.js`: 실제 가입·초기화·경량 출석 분기/함수를 합성 데이터로 실행해 7개 검증 그룹을 검증한다. 신규/기존 계정·반복 채팅·방 이동·일대일·DEV 분리·저장 실패·서버 순위 집계를 포함한다.
 
 ---
 

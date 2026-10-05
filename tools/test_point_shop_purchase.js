@@ -88,7 +88,7 @@ function reset(item = ticket, price = 7000000) {
     const guild = { guild: { warehouse: { fund: 300 } } };
     disk = {};
     for (const [i, data] of [member, pets, guild].entries()) { disk[files[i]] = JSON.stringify(data); disk[files[i].replace(root, devRoot)] = JSON.stringify(data); }
-    c.sender = user; c.skills = []; c.castleSiegeFlag = false;
+    c.sender = user; c.skills = []; c.castleSiegeFlag = false; c.room = "test"; c.room15 = "new-room"; c.isGroupChat = true;
     c.commandContextThreadLocal.remove(); c.dataSaveTransactionThreadLocal.remove();
     failure = null; replies = []; events = [];
 }
