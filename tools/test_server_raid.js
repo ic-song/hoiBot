@@ -88,6 +88,11 @@ vm.runInContext(main.slice(main.indexOf("function serverRaidHeader("), main.inde
 const entryStart = main.indexOf("// 서버 레이드대전 진입:");
 const entryEnd = main.indexOf('if (ctx.isDev && msg === "/데이터백업")', entryStart);
 vm.runInContext("function runEntry(){" + main.slice(entryStart, entryEnd) + "}", c);
+const responseStart = main.indexOf("function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {");
+const responseEnd = main.indexOf("///////////////////////////////////////////////////////////////////////////////////////////////", responseStart);
+assert(responseStart >= 0 && responseEnd > responseStart);
+vm.runInContext(main.slice(responseStart, responseEnd), c);
+vm.runInContext(block(main, "function createContextReplier("), c);
 vm.runInContext("function runTicketMove(){" + block(main, 'if (msg === "/서버변경" ||') + "}", c);
 vm.runInContext("function runAdminMove(){" + block(main, "if (/^\\/서버이동\\s+") + "}", c);
 const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank };
@@ -501,6 +506,60 @@ group("확장 인수 없는 8인수 및 빈 확장 슬롯은 기본 콜백 호�
     assert(run("/서버대전시작", "master", undefined, "test", true, native).includes("식별값"));
     assert.strictEqual(disk[memberPath], before); assert(!c.isServerRaidLocked(read()));
     assert.throws(() => { start(); c.applyServerRaidAttack(read(), "a", "new-id", null, 100000, 100000); }, /저장 식별값/);
+});
+
+group("예약 유실 후 DEV 종료 재입력으로 미완료 정산 재개·중복 지급 없음", () => {
+    start(true); attack("a", null, true);
+    run("dev/서버대전종료", "master"); c.serverRaidWorkTimers = {}; timers.clear();
+    assert.strictEqual(read(true).serverRaid.current.state, "SETTLING");
+    run("dev/서버대전종료", "master"); assert.strictEqual(timers.size, 1); tick();
+    assert.strictEqual(read(true).serverRaid.completed, 1); assert.strictEqual(read(true).member.a.point, 1500001000);
+    end(true); assert.strictEqual(read(true).member.a.point, 1500001000);
+});
+
+group("예약 유실 후 준비 중 시작 재입력은 회차·마감 보존하고 원래 시각에 활성화", () => {
+    run("dev/서버대전시작", "master"); tick(); tick(20000);
+    const round = clone(read(true).serverRaid.current); c.serverRaidWorkTimers = {}; timers.clear();
+    assert(run("dev/서버대전시작", "master").includes("지금은 서버 레이드대전"));
+    assert.deepStrictEqual(read(true).serverRaid.current, round); assert.strictEqual(timers.size, 1);
+    tick(); tick(40000); assert.strictEqual(read(true).serverRaid.current.state, "ACTIVE");
+    assert.strictEqual(read(true).serverRaid.current.id, round.id);
+});
+
+group("실제 7인수 response 전체 콜백·DEV 헤더·잠금/컨텍스트 해제·저장 실패 처리", () => {
+    const originalFlow = c.commandDataFlowLock, originalDataLock = c.dataTransactionLock, originalWrite = c.FileStream.write;
+    const originalIdentity = c.isMasterIdentity, originalDepth = c.autoDailyQuestInternalDepth, originalErrorPath = c.errorLogPath;
+    function countedLock() {
+        return { depth: 0, locks: 0, lock() { this.depth++; this.locks++; }, tryLock() { this.lock(); return true; }, unlock() { assert(this.depth > 0); this.depth--; } };
+    }
+    const readLock = countedLock(), writeLock = countedLock(), dataLock = countedLock();
+    c.commandDataFlowLock = { readLock: () => readLock, writeLock: () => writeLock }; c.dataTransactionLock = dataLock;
+    c.isMasterIdentity = user => user === "master"; c.autoDailyQuestInternalDepth = 0; c.errorLogPath = "/synthetic/error.json";
+    c.FileStream.write = (p, value) => { assert.strictEqual(p, c.errorLogPath); traces.push({ type: "error", value }); };
+    function callback(msg, user = "a", room = "test", group = true) {
+        replies = []; c.response(room, msg, user, group, c.replier, {}, "com.kakao.talk");
+        assert.strictEqual(readLock.depth, 0); assert.strictEqual(writeLock.depth, 0); assert.strictEqual(dataLock.depth, 0);
+        assert.strictEqual(c.commandContextThreadLocal.get(), null); assert.strictEqual(c.dataSaveTransactionThreadLocal.get(), null);
+        return replies.join("\n");
+    }
+    try {
+        callback("/서버대전시작", "master"); tick(); tick(60000);
+        for (let i = 0; i < 6; i++) callback("/레이드공격", "a", "room" + (i + 1));
+        assert.strictEqual(read().member.a.point, 1000005000); assert(replies.join("").includes("모두 사용"));
+        callback("/서버대전종료", "master"); tick(); assert.strictEqual(read().member.a.point, 1500005000);
+        callback("/서버대전종료", "master"); assert.strictEqual(read().serverRaid.completed, 1);
+        assert(!traces.some(t => t.type === "error")); assert(writeLock.locks >= 9);
+        const prod = disk[memberPath]; callback("dev/서버대전시작", "master"); tick(); tick(60000);
+        const dev = disk[devRoot + "member.json"]; failWrite = d => !!d.member.b.serverRaidAccount;
+        assert.strictEqual(callback("dev/레이드공격", "b"), ""); assert.strictEqual(disk[devRoot + "member.json"], dev);
+        assert(traces.some(t => t.type === "error"));
+        assert(callback("dev/레이드공격", "b").startsWith("[DEV 테스트환경]\n"));
+        callback("dev/서버대전종료", "master"); tick(); assert.strictEqual(read(true).member.b.point, 1500001000);
+        assert.strictEqual(disk[memberPath], prod);
+    } finally {
+        c.commandDataFlowLock = originalFlow; c.dataTransactionLock = originalDataLock; c.FileStream.write = originalWrite;
+        c.isMasterIdentity = originalIdentity; c.autoDailyQuestInternalDepth = originalDepth; c.errorLogPath = originalErrorPath;
+    }
 });
 
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");

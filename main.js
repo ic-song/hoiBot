@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.600"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.601"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2781,6 +2781,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         var data = loadJsonFile(filePath);
+        // 레이드 명령이 잠금·중복 종료 안내로 반환돼도 재시작 후 미완료 작업을 재개한다.
+        if (data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
         var raidCommand = isServerRaidCommand(msg);
         var raidLocked = isServerRaidLocked(data);
         if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg))) {
@@ -2884,7 +2886,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replyServerRaidSafely(replier, serverRaidHeader() + "서버명을 입력하지 않아도\n내 소속 서버의 기록을 확인할 수 있습니다.\n\n👉 /서버레이드기록");
             return;
         }
-        if (data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
         if (ctx.isDev && msg === "/데이터백업") {
             if (!isMaster(sender)) {
                 replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
