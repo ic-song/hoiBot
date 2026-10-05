@@ -4402,7 +4402,7 @@ Status: PARTIAL
 
 - 회차: `createServerRaidState`, `startServerRaid`, `activateServerRaid`, `closeServerRaid`, `resetServerRaid`.
 - 공격: `getServerRaidAttackCheck`, `applyServerRaidAttack`, 기존 `calculateRaidExp`, `calculateCriticalDamage`, `calculateEffectivePetUpgradeLevel`.
-- 수신 식별값: `getServerRaidCallbackEvent`, `getServerRaidNativeId`, `getServerRaidEventId`.
+- 수신 식별값: `getServerRaidCallbackEvent`, `getServerRaidNativeId`, `getServerRaidEventId`, `createServerRaidAttackEvent`.
 - 순위·정산: `buildServerRaidResults`, `rankServerRaidRows`, `settleServerRaidParticipant`, `buildServerRaidAccountIndex`, `finishServerRaidSettlement`.
 - 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
 - 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
@@ -4419,21 +4419,21 @@ Status: PARTIAL
 - 공지는 기존 `noticeMsg` 대상 목록을 재사용하고 입력방을 중복 제외한다. 저장된 완료 방은 재발송하지 않는다. API 발송 성공과 완료 상태 저장 사이의 종료·저장 실패에는 실제 전달 여부가 불명확하여 공지 중복 가능성이 남는다. 공지 재시도로 보상을 다시 지급하지 않는다.
 - 전체 초기화는 이미 지급한 포인트·일반 가방을 유지한다. 서버이동은 확정 결과·우승·기존 지급 상태를 유지한다. DEV 저장과 공지는 기존 컨텍스트로 분리한다.
 
-## Remaining Runtime Integration
+## Legacy Callback / Remaining Runtime Verification
 
-- 기존 7개 선언 인수를 유지하며, 지원 버전의 네이티브 확장 콜백이 제공하는 9번째 `logId`, 10번째 `channelId`, 11번째 `userHash`를 `arguments`에서 읽는다. ID는 앱·방·메시지 범위의 문자열로 조합한다. [콜백 문서](https://kbotdocs.dev/reference/legacy/EventListener/response)에 확장 인수가 기재되어 있으나 설치 버전의 실제 전달 여부는 미검증이다.
+- 기본 `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`만으로 시작·공격·종료할 수 있다. 확장 인수는 필수가 아니다. 레거시 지원 버전에서 9번째 `logId`, 10번째 `channelId`, 11번째 `userHash`가 제공되면 `arguments`에서 읽고 앱·방·메시지 범위의 문자열 ID를 사용한다.
 - 네이티브 ID를 Number로 변환하거나 텍스트·시간 해시로 대체하지 않는다. Number로 들어온 ID도 거부한다. 신뢰된 내부 어댑터가 8번째 인수로 제공하는 `{ id: 원본 이벤트 ID 문자열, operatorId: 인증된 운영 주체 ID 문자열 }`도 지원한다.
-- `id`가 없는 시작·공격은 잠금·지급·횟수 차감 없이 차단한다. 실제 봇에서 원본 ID 수신과 재전송 식별이 확인되어야 운영할 수 있다.
-- 운영봇은 `GLOBAL_CONFIG.serverRaid.authentication.operatorIds`의 등록값과 앱·방·사용자 해시로 구성한 `operatorId`가 일치해야 한다. 초기 등록 목록은 비어 있어 MASTER만 운영 권한을 갖는다. MASTER도 원본 ID가 없으면 시작은 차단된다. 닉네임 `오픈채팅봇`만으로 운영 권한을 부여하지 않는다.
+- 원본 ID가 없는 기본 콜백의 공격은 호출마다 저장용 UUID를 생성한다. 이 UUID는 재전송 식별값이 아니다. 2026-10-06 사용자 승인에 따라 같은 알림이 다시 전달되어도 새 공격 1회로 처리하며, 방 이동·재시작 여부와 관계없이 계정당 5회 한도를 유지한다. 원본 ID가 제공되는 경우에는 기존 재전송 차단을 유지한다. 제공된 확장 ID가 손상됐거나 Number이면 시작·공격을 차단한다.
+- 운영봇은 `GLOBAL_CONFIG.serverRaid.authentication.operatorIds`의 등록값과 앱·방·사용자 해시로 구성한 `operatorId`가 일치해야 한다. 초기 등록 목록은 비어 있어 기존 권한방의 MASTER만 운영 권한을 갖는다. 기본 콜백에서도 MASTER가 시작할 수 있다. 닉네임 `오픈채팅봇`만으로 운영 권한을 부여하지 않는다.
 - 시작·종료 이미지 공유 링크를 기존 텍스트 메시지에 넣었으며 실제 기기의 이미지 표시는 미검증이다. 운영 기기에 직접 연결하지 않는다.
 - 공식 이력과 이벤트 처리 기록을 임의로 삭제하지 않는다. 장기 운영 데이터 규모와 Rhino 기기 처리 시간은 운영 전 검증 항목이다.
-- 운영 반영 대상 버전은 `ver_2.599`이며 소스 버전과 개발자노트를 함께 갱신했다. 실제 기기의 수신·표시·처리 시간 검증은 별도로 남아 있다.
+- 레거시 콜백 호환 수정 버전은 `ver_2.600`이며 소스 버전과 개발자노트를 함께 갱신했다. 실제 기기의 수신·표시·처리 시간 검증은 별도로 남아 있다.
 
 ## Validation
 
 - `node tools/test_server_raid.js`: 실제 명령 진입·예약 작업·보호 저장 함수를 합성 데이터와 메모리 파일시스템에서 실행한다.
-- 신규 35개 검증 그룹과 기존 서버 표시·상점 구매·레이드 조합·미니펫 스킬·당근 거래·명령 제한 관련 회귀 검증을 통과했다. Android 기기 실행 검증을 대체하지 않는다.
-- 기본 7인수 경로는 안전 차단을, 네이티브 확장 인수·내부 어댑터 경로는 공격·재전송·회차 이동·정산·조회·DEV 분리를 검증한다. DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
+- 38개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 확장 인수·내부 어댑터 경로의 원본 ID 재전송 차단도 유지한다. Android 기기 실행 검증을 대체하지 않는다.
+- DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
 
 ---
 

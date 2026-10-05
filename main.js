@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.599"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.600"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2767,7 +2767,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier = createContextReplier(replier, ctx);
         }
         // 서버 레이드대전 진입: 다른 명령 전처리·자동 저장보다 먼저 잠금과 권한을 검사한다.
-        var serverRaidEvent = getServerRaidCallbackEvent(arguments, packageName); // 지원 버전의 원본 logId·channelId·userHash를 수신하며 기존 7인수 서명은 유지
+        var serverRaidEvent = getServerRaidCallbackEvent(arguments, packageName); // 기본 7인수 콜백을 지원하며 확장 ID는 제공될 때만 사용
         if (ctx.isDev && getMissingDevDataFiles().length > 0) {
             if (msg === "/데이터백업") {
                 if (!isMaster(sender)) {
@@ -2805,8 +2805,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
             if (msg === "/서버대전시작") {
-                if (!getServerRaidEventId(serverRaidEvent)) {
-                    replyServerRaidSafely(replier, serverRaidHeader() + "현재 서버 레이드대전을 준비하고 있습니다.\n운영 안내 후 시작해주세요.");
+                if (serverRaidEvent && serverRaidEvent.invalid) {
+                    replyServerRaidSafely(replier, serverRaidHeader() + "메시지 식별값을 확인할 수 없습니다.\n메신저봇의 콜백 전달값을 확인해주세요.");
                     return;
                 }
                 if (isServerRaidOtherBattleActive(data, raidGuildData)) {
@@ -2851,6 +2851,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replyServerRaidSafely(replier, serverRaidHeader() + "모험 시작과 펫 생성을 완료한 뒤 참여해주세요.");
                     return;
                 }
+                serverRaidEvent = createServerRaidAttackEvent(serverRaidEvent);
                 var raidAttackCheck = getServerRaidAttackCheck(data, sender, Date.now(), serverRaidEvent);
                 if (raidAttackCheck.message) {
                     replyServerRaidSafely(replier, serverRaidHeader() + raidNick + ",\n" + raidAttackCheck.message);
@@ -32960,8 +32961,9 @@ function getServerRaidNativeId(raw) {
 // 네이티브 확장 콜백 또는 신뢰된 내부 어댑터의 이벤트 메타데이터를 변환하는 함수
 function getServerRaidCallbackEvent(args, packageName) {
     if (args.length >= 11) {
+        if (args[8] === undefined && args[9] === undefined) return null;
         var logId = getServerRaidNativeId(args[8]), channelId = getServerRaidNativeId(args[9]);
-        if (!logId || !channelId || typeof packageName !== "string" || !/^[A-Za-z0-9_.]+$/.test(packageName)) return null;
+        if (!logId || !channelId || typeof packageName !== "string" || !/^[A-Za-z0-9_.]+$/.test(packageName)) return { invalid: true };
         var actorHash = typeof args[10] === "string" ? args[10] : "";
         var channel = packageName + "|" + channelId; // 메신저 앱·방 범위가 다른 ID의 충돌 방지
         return { id: channel + "|" + logId, operatorId: actorHash ? channel + "|" + actorHash : "" };
@@ -32969,8 +32971,16 @@ function getServerRaidCallbackEvent(args, packageName) {
     return args.length === 8 && args[7] && typeof args[7] === "object" ? args[7] : null;
 }
 
+// 원본 ID가 없는 레거시 공격 호출에 저장 작업용 UUID를 부여하는 함수
+function createServerRaidAttackEvent(event) {
+    if (event) return event;
+    // 호출마다 새 UUID이며 동일 알림 재전송을 식별하는 값은 아님
+    return { id: "legacy-callback:" + String(java.util.UUID.randomUUID()) };
+}
+
 // 공격 단계·소속·재전송·횟수 조건을 변경 없이 확인하는 함수
 function getServerRaidAttackCheck(data, user, now, event) {
+    if (event && event.invalid) return { message: "메시지 식별값을 확인할 수 없습니다.\n메신저봇의 콜백 전달값을 확인해주세요." };
     var eventId = getServerRaidEventId(event);
     var round = data.serverRaid && data.serverRaid.current;
     var receipt = eventId && data.serverRaid && data.serverRaid.eventReceipts[eventId];
@@ -32980,7 +32990,7 @@ function getServerRaidAttackCheck(data, user, now, event) {
     if (round.state !== "ACTIVE") return { message: "이번 대전의 공격 접수가 마감되었습니다.\n\n🏆 최종 순위와 보상을 정산 중입니다.\n종료 안내를 기다려주세요!" };
     var member = data.member[user], server = normalizeHoiServerLabel(member.server);
     if (GLOBAL_CONFIG.serverRaid.servers.indexOf(server) === -1) return { message: "참가 가능한 소속 서버를 확인할 수 없습니다.\n\n계정의 소속 서버를 확인해주세요." };
-    if (!eventId) return { message: "현재 서버 레이드대전 참여를 준비하고 있습니다.\n운영 안내 후 참여해주세요." }; // 원본 이벤트 ID 연동 전 재전송을 별도 공격으로 지급하지 않음
+    if (!eventId) throw new Error("서버 레이드대전 공격 저장 식별값이 없습니다"); // 명령 진입에서 원본 ID 또는 호출 UUID를 준비해야 함
     var account = member.serverRaidAccount;
     var participant = account && round.accounts[account.id];
     if (receipt && (!account || receipt.accountId !== account.id)) return { message: "이미 처리된 공격 이벤트입니다." };

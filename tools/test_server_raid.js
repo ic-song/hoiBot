@@ -113,12 +113,15 @@ function reset() {
 function read(dev = false) { return JSON.parse(disk[(dev ? devRoot : root) + "member.json"]); }
 function write(d, dev = false) { disk[(dev ? devRoot : root) + "member.json"] = JSON.stringify(d); }
 function run(msg, user = "a", event, room = "test", group = true, native) {
-    if ((msg === "/서버대전시작" || msg === "dev/서버대전시작") && event === undefined) event = { id: "control-start-" + (++uuid) };
     replies = []; c.sender = user; c.serverRaidEvent = event; c.room = room; c.isGroupChat = group;
     c.packageName = native ? "com.kakao.talk" : undefined;
     c.ctx = c.createCommandContext(c.isDevCommandMessage(msg), room); c.msg = c.ctx.isDev ? c.stripDevCommandPrefix(msg) : msg;
     const previous = c.enterCommandContext(c.ctx); c.beginDataSaveTransaction();
-    try { native ? c.runEntry(null, null, null, null, null, null, c.packageName, false, native.logId, native.channelId, native.userHash) : c.runEntry(null, null, null, null, null, null, null, event); }
+    try {
+        if (native) c.runEntry(null, null, null, null, null, null, c.packageName, false, native.logId, native.channelId, native.userHash);
+        else if (event) c.runEntry(null, null, null, null, null, null, null, event);
+        else c.runEntry(null, null, null, null, null, null, "com.kakao.talk");
+    }
     catch (e) { c.rollbackDataSaveTransaction(); throw e; }
     finally { c.endDataSaveTransaction(); c.exitCommandContext(previous); }
     return replies.join("\n");
@@ -144,7 +147,7 @@ group("정확한 6개 명령·접미 미실행·MASTER 및 인증된 운영봇 �
     for (const user of ["a", "admin", "오픈채팅봇"]) for (const msg of ["/서버대전시작", "/서버대전종료", "/서버대전전체초기화"]) {
         const before = disk[memberPath]; assert(run(msg, user).includes("권한")); assert.strictEqual(disk[memberPath], before);
     }
-    assert(!run("/서버대전시작", "master", undefined, "room1").includes("60초")); assert(!read().serverRaid);
+    assert(run("/서버대전시작", "master", undefined, "room1").includes("권한")); assert(!read().serverRaid);
     c.GLOBAL_CONFIG.serverRaid.authentication.operatorIds = ["trusted-bot"];
     run("/서버대전시작", "오픈채팅봇", { id: "bot-start", operatorId: "trusted-bot" }); assert(c.isServerRaidLocked(read()));
     assert(run("/서버대전전체초기화", "오픈채팅봇", { operatorId: "trusted-bot" }).includes("권한"));
@@ -193,10 +196,19 @@ group("동일 64비트 문자열 이벤트 재전송·재시작·다음 회차 �
     end(); start(); const nextRound = disk[memberPath];
     assert(attack("a", id).includes("이전 회차")); assert.strictEqual(disk[memberPath], nextRound);
 });
-group("기본 7인수 콜백은 식별 연동 전 공격 미차감·미지급", () => {
-    const idle = disk[memberPath]; assert(run("/서버대전시작", "master", null).includes("준비하고")); assert.strictEqual(disk[memberPath], idle); assert(!c.isServerRaidLocked(read()));
-    start(); const before = disk[memberPath];
-    assert(attack("a", null).includes("참여를 준비")); assert.strictEqual(disk[memberPath], before);
+group("기본 7인수 콜백 시작·공격·여러 방 및 재시작 후 계정당 5회·중복 정산 방지", () => {
+    start();
+    for (let i = 0; i < 6; i++) {
+        if (i === 2) { c.serverRaidWorkTimers = {}; timers.clear(); }
+        attack("a", null, false, "room" + (i + 1));
+    }
+    const d = read(), participant = d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id];
+    assert.strictEqual(participant.attacks.length, 5); assert.strictEqual(participant.damage, "500000");
+    assert.strictEqual(d.member.a.point, 1000005000); assert(replies.join("").includes("모두 사용"));
+    assert.strictEqual(new Set(participant.attacks.map(a => a.id)).size, 5);
+    assert(participant.attacks.every(a => a.id.startsWith("event:legacy-callback:")));
+    end(); const paid = disk[memberPath]; end(); tick();
+    assert.strictEqual(disk[memberPath], paid); assert.strictEqual(read().member.a.point, 1500005000);
 });
 group("MASTER 포함 Main·Info 잠금·기록 인수 안내보다 잠금 우선", () => {
     start();
@@ -458,6 +470,37 @@ group("최초 DEV 데이터백업은 없는 DEV 파일을 먼저 읽지 않고 �
     } finally {
         c.getMissingDevDataFiles = originalMissing; c.backupDevDataFromProduction = originalBackup;
     }
+});
+
+group("레거시 공격 저장 실패는 미반영·재입력은 새 공격·응답 실패 후에도 한 호출당 한 번 저장", () => {
+    start(); const before = disk[memberPath]; failWrite = d => !!d.member.a.serverRaidAccount;
+    assert.throws(() => attack("a", null), /rename|replace|교체/i); assert.strictEqual(disk[memberPath], before);
+    replyFailure = true; attack("a", null); replyFailure = false;
+    assert.strictEqual(read().member.a.point, 1000001000);
+    // 원본 ID가 없는 재전송은 새 공격으로 센다는 사용자 승인 정책을 검증한다.
+    attack("a", null); const d = read(), participant = d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id];
+    assert.strictEqual(participant.attacks.length, 2); assert.strictEqual(d.member.a.point, 1000002000);
+    end(); const paid = disk[memberPath]; c.serverRaidWorkTimers = {}; timers.clear(); end(); tick();
+    assert.strictEqual(disk[memberPath], paid);
+});
+
+group("레거시 기본 콜백 DEV 공격·정산은 운영 파일과 공지에 영향 없음", () => {
+    const production = disk[memberPath]; start(true); attack("a", null, true); end(true);
+    assert.strictEqual(disk[memberPath], production); assert.strictEqual(read(true).member.a.point, 1500001000);
+    assert.strictEqual(read(true).serverRaid.completed, 1);
+    assert(traces.filter(t => t.type === "notice").every(t => t.room === "room8"));
+});
+
+group("확장 인수 없는 8인수 및 빈 확장 슬롯은 기본 콜백 호환·손상된 확장 ID 시작 차단", () => {
+    for (const args of [Array(7), [null, null, null, null, null, null, "com.kakao.talk", false], Array(11)]) {
+        assert.strictEqual(c.getServerRaidCallbackEvent(args, "com.kakao.talk"), null);
+        const first = c.createServerRaidAttackEvent(null), second = c.createServerRaidAttackEvent(null);
+        assert.notStrictEqual(first.id, second.id);
+    }
+    const native = { logId: 123, channelId: "456", userHash: "master" }, before = disk[memberPath];
+    assert(run("/서버대전시작", "master", undefined, "test", true, native).includes("식별값"));
+    assert.strictEqual(disk[memberPath], before); assert(!c.isServerRaidLocked(read()));
+    assert.throws(() => { start(); c.applyServerRaidAttack(read(), "a", "new-id", null, 100000, 100000); }, /저장 식별값/);
 });
 
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");
