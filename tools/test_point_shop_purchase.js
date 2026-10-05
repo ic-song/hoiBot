@@ -222,7 +222,7 @@ console.log("PASS 10: 티어 최소 구매 견적·나눠 구매 안내·Main/In
 
 // 돌멩이 상자의 실제 등록·구매·오픈 흐름도 동일한 저장 검증 환경에서 실행한다.
 vm.runInContext("GLOBAL_CONFIG.stoneBox = " + source.match(/stoneBox: (\{[\s\S]*?\n    \}),\n    pointShop/)[1], c);
-for (const name of ["syncStoneBoxShopItems", "getStoneBoxOpenRequest", "openStoneBoxItems", "getRaidSealCraftRequest", "isExclusiveDataMutationCommandMessage"]) vm.runInContext(fn(name), c);
+for (const name of ["syncStoneBoxShopItems", "getStoneBoxOpenRequest", "openStoneBoxItems", "getRaidSealCraftRequest", "isServerRaidMutationCommand", "isExclusiveDataMutationCommandMessage"]) vm.runInContext(fn(name), c);
 c.isSealedVaultMutationCommandMessage = () => false;
 const stone = c.GLOBAL_CONFIG.stoneBox.stoneItemName;
 const smallBox = c.GLOBAL_CONFIG.stoneBox.boxes["1만"].itemName;

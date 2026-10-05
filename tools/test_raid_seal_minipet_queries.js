@@ -73,7 +73,7 @@ const c = {
 vm.createContext(c);
 vm.runInContext("GLOBAL_CONFIG.raidSealCraft = " + source.match(/raidSealCraft: (\{[\s\S]*?\n    \}),\n    stoneBox/)[1], c);
 for (const name of ["getRaidSealCraftRequest", "craftRaidSealItems", "isPointShopSafeCount", "isPointShopSafeAmount",
-    "getStoneBoxOpenRequest", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
+    "getStoneBoxOpenRequest", "isServerRaidMutationCommand", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
     "isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile",
     "isMaster", "sortMiniPetBag", "refreshMiniPetSortIndex", "buildMiniPetBagRenewedMessage", "getMiniPetCollectionData", "getMiniPetCollectionRanking"]) vm.runInContext(fn(name), c);

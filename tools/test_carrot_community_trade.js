@@ -26,9 +26,9 @@ const trades = [
     branch(String.raw`if (/^\/가구당근\s+`, 'if (msg.startsWith("/온도 "))'),
     branch(String.raw`if (/^\/펫스킬당근\s+`, 'if (msg === "/호이행복재단")')
 ];
-const entryStart = source.indexOf("var data = null;", source.indexOf("function response("));
+const entryStart = source.indexOf("// 회원 데이터는 서버 레이드대전 진입 검사에서 한 번 로드한다.", source.indexOf("function response("));
 const entryEnd = source.indexOf("if (isAccountSuspensionBlockedMessage(msg))", entryStart);
-const entry = "(function () {" + source.slice(entryStart, entryEnd) + " entryContinued = true; })()";
+const entry = "(function () {var data = null;" + source.slice(entryStart, entryEnd) + " entryContinued = true; })()";
 const room = source.match(/const room5 = "([^"]+)"/)[1];
 const giver = "보내는 합성유저", receiver = "받는 합성유저";
 const carrot = "🥕당근이세요?", thermometer = "🌡️당근온도기";

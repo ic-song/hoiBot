@@ -4387,6 +4387,56 @@ Status: VERIFIED
 
 ---
 
+# 서버 레이드대전
+
+Status: PARTIAL
+
+## Files / Commands
+
+- `main.js`: `/서버대전시작`, `/서버대전종료`, `/서버대전전체초기화`, `/레이드공격`, `/레이드기록`, `/서버레이드기록`.
+- 실행 명령은 인수 없이 정확히 입력한다. `/서버레이드기록 서버명`은 사용법만 출력한다.
+- `Info.js`: 기존 정보·순위의 잠금 및 서버 누적 우승 표시.
+- 기획: `서버_레이드대전_개발기획서_초안` (`83c393bdd7aa8266843001b9d40ca710`). 본문은 보존하며, 원격 운영 반영 확인 후 상태·실제 반영일·버전을 갱신한다.
+
+## Related Helpers
+
+- 회차: `createServerRaidState`, `startServerRaid`, `activateServerRaid`, `closeServerRaid`, `resetServerRaid`.
+- 공격: `getServerRaidAttackCheck`, `applyServerRaidAttack`, 기존 `calculateRaidExp`, `calculateCriticalDamage`, `calculateEffectivePetUpgradeLevel`.
+- 수신 식별값: `getServerRaidCallbackEvent`, `getServerRaidNativeId`, `getServerRaidEventId`.
+- 순위·정산: `buildServerRaidResults`, `rankServerRaidRows`, `settleServerRaidParticipant`, `buildServerRaidAccountIndex`, `finishServerRaidSettlement`.
+- 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
+- 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
+- 출력: `formatServerRaidServer` / `formatInfoServerRaidServer`, `isServerRaidLocked` / `isInfoServerRaidLocked`.
+
+## Data Usage / Save Flow
+
+- 기존 `member.json`의 `data.serverRaid`에 초기화 세대, 회차 번호, 준비·진행·정산 상태, 완료 회차 수, 서버 우승, 공식 결과, 원본 이벤트 처리 상태, 방별 공지 완료 상태를 저장한다.
+- `data.member[user].serverRaidAccount`는 내부 UUID·소속 기간·최근 개인 기록·현재 서버 누적 참가 기록이다. 닉네임 키가 바뀌어도 같은 회원 객체의 UUID를 재사용하고 새 회원은 새 UUID를 받는다.
+- 공격마다 R(레이드매력), D(최종 데미지), P(버림 처리한 R의 1%)를 구분해 저장한다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
+- 공격·종료·초기화는 명령 쓰기 잠금과 기존 데이터 트랜잭션 잠금으로 직렬화한다. 공격 횟수·포인트·데미지·이벤트 완료 상태를 `member.json`에 한 번에 저장한다.
+- 정산은 미지급 참가자의 포인트와 완료 상태를 묶어 한 번 저장한 뒤 우승·완료 횟수·확정 결과를 저장한다. 이미 지급된 계정은 재시도 시 건너뛴다. 조회용 기록은 서버와 소속 기간이 모두 일치할 때만 작성한다.
+- `scheduleServerRaidWork`는 예약 작업의 진입점이며 로드·저장·발송을 담당한다. 일반 계산·변경 헬퍼에는 파일 IO가 없다. 준비 마감, 초기화 세대, 회차 번호, 타이머 식별값을 재검사한다.
+- 공지는 기존 `noticeMsg` 대상 목록을 재사용하고 입력방을 중복 제외한다. 저장된 완료 방은 재발송하지 않는다. API 발송 성공과 완료 상태 저장 사이의 종료·저장 실패에는 실제 전달 여부가 불명확하여 공지 중복 가능성이 남는다. 공지 재시도로 보상을 다시 지급하지 않는다.
+- 전체 초기화는 이미 지급한 포인트·일반 가방을 유지한다. 서버이동은 확정 결과·우승·기존 지급 상태를 유지한다. DEV 저장과 공지는 기존 컨텍스트로 분리한다.
+
+## Remaining Runtime Integration
+
+- 기존 7개 선언 인수를 유지하며, 지원 버전의 네이티브 확장 콜백이 제공하는 9번째 `logId`, 10번째 `channelId`, 11번째 `userHash`를 `arguments`에서 읽는다. ID는 앱·방·메시지 범위의 문자열로 조합한다. [콜백 문서](https://kbotdocs.dev/reference/legacy/EventListener/response)에 확장 인수가 기재되어 있으나 설치 버전의 실제 전달 여부는 미검증이다.
+- 네이티브 ID를 Number로 변환하거나 텍스트·시간 해시로 대체하지 않는다. Number로 들어온 ID도 거부한다. 신뢰된 내부 어댑터가 8번째 인수로 제공하는 `{ id: 원본 이벤트 ID 문자열, operatorId: 인증된 운영 주체 ID 문자열 }`도 지원한다.
+- `id`가 없는 시작·공격은 잠금·지급·횟수 차감 없이 차단한다. 실제 봇에서 원본 ID 수신과 재전송 식별이 확인되어야 운영할 수 있다.
+- 운영봇은 `GLOBAL_CONFIG.serverRaid.authentication.operatorIds`의 등록값과 앱·방·사용자 해시로 구성한 `operatorId`가 일치해야 한다. 초기 등록 목록은 비어 있어 MASTER만 운영 권한을 갖는다. MASTER도 원본 ID가 없으면 시작은 차단된다. 닉네임 `오픈채팅봇`만으로 운영 권한을 부여하지 않는다.
+- 시작·종료 이미지 공유 링크를 기존 텍스트 메시지에 넣었으며 실제 기기의 이미지 표시는 미검증이다. 운영 기기에 직접 연결하지 않는다.
+- 공식 이력과 이벤트 처리 기록을 임의로 삭제하지 않는다. 장기 운영 데이터 규모와 Rhino 기기 처리 시간은 운영 전 검증 항목이다.
+- 운영 반영 대상 버전은 `ver_2.599`이며 소스 버전과 개발자노트를 함께 갱신했다. 실제 기기의 수신·표시·처리 시간 검증은 별도로 남아 있다.
+
+## Validation
+
+- `node tools/test_server_raid.js`: 실제 명령 진입·예약 작업·보호 저장 함수를 합성 데이터와 메모리 파일시스템에서 실행한다.
+- 신규 35개 검증 그룹과 기존 서버 표시·상점 구매·레이드 조합·미니펫 스킬·당근 거래·명령 제한 관련 회귀 검증을 통과했다. Android 기기 실행 검증을 대체하지 않는다.
+- 기본 7인수 경로는 안전 차단을, 네이티브 확장 인수·내부 어댑터 경로는 공격·재전송·회차 이동·정산·조회·DEV 분리를 검증한다. DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
+
+---
+
 # /서버변경 · /서버순위 · 표시 감추기
 
 Status: VERIFIED
@@ -4405,8 +4455,10 @@ Status: VERIFIED
 
 - `data.shop[GLOBAL_CONFIG.serverTransfer.itemName]`에 1,000억 포인트 상품을 등록한다.
 - 서버 변경은 대상 계정의 `server`와 이동권 1개를 함께 변경하고 `filePath`에 저장한다. 안내·실패·같은 서버 요청은 변경하지 않는다.
+- `/서버변경`과 관리자 `/서버이동`의 실제 소속 변경은 `applyServerRaidMembershipChange`를 통해 개인 레이드 조회 기록을 지우고 소속 기간을 증가시킨다. 실패 시 소속·이동권·레이드 조회 기록을 함께 유지하며 완료 응답 전에 저장한다.
 - 관리자·순위 이모지 표시 설정은 계정의 `displaySettings`에 별개로 저장하며 실제 관리자 권한과 순위 수치는 유지한다.
 - `/서버순위`는 조회 전용이며 소속 서버의 전체 회원 매력을 합산한다.
+- `/서버순위`에는 소속 서버 개인 TOP 10을 더보기 아래 표시하고, `/종합순위`·`ㅈㅈㅈ`의 서버 영역은 전체 서버 합산 순위를 표시한다. 기존 종합매력 공식·정렬은 유지하고 출력 단계에서만 레이드 누적 우승 `⭐N`을 붙인다.
 - `/서버이동`, `/서버변경`, 신규 소속 매핑과 순위 집계는 서버6을 `호이서버6[30]`으로 통일한다. 기존 `[2030]` 소속값도 서버6으로 합산한다.
 - 개인 정보와 길드 화면의 서버명도 최신 표기로 출력하며 기존 저장 데이터는 조회만으로 변경하지 않는다.
 - `/서버변경`은 기존 이동권으로 호이서버1~7과 `호이월드 커뮤니티`를 선택한다. 관리자 `/서버이동`도 커뮤니티를 허용하며 채팅방 입장만으로 기존 소속을 변경하지 않는다.

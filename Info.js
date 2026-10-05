@@ -559,6 +559,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg === "/스타터중복확인" && room !== testRoom) return;
 		let data = loadJsonFile(filePath);
+		// 레이드 잠금은 MASTER·전역 정보 예외보다 우선하고 안내는 main.js에서만 출력한다.
+		if (isInfoServerRaidLocked(data)) return;
 		if (data && data.member && data.member[sender] && !isInfoAttendanceFreeCommand(msg, sender)) {
 			var attendanceMember = data.member[sender];
 			if (String(attendanceMember.recent || "") !== getInfoAttendanceKstDateKey()) return;
@@ -634,7 +636,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (activeTitle) {
 						resultmsg += "• " + activeTitle + "\n";
 					}
-					resultmsg += "• " + (data.member[targetUser].server ? normalizeInfoServerLabel(data.member[targetUser].server) + "\n" : "");
+					resultmsg += "• " + (data.member[targetUser].server ? formatInfoServerRaidServer(data, data.member[targetUser].server) + "\n" : "");
 					if (petData[targetUser] && petData[targetUser].newimg) {
 						petData[targetUser].petimg = petData[targetUser].newimg;
 					}
@@ -811,7 +813,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				resultMsg += "• 👑호이패스 프리미엄👑\n";
 			}
 
-			resultMsg += memberInfo.server ? "• " + normalizeInfoServerLabel(memberInfo.server) + "\n" : "";
+			resultMsg += memberInfo.server ? "• " + formatInfoServerRaidServer(data, memberInfo.server) + "\n" : "";
 
 			if (memberInfo.firstSponsor === true) {
 				resultMsg += "• 🐹호이월드 후원자🐹\n";
@@ -1205,12 +1207,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			let rankData = generateRanking(data, petData, homeData, petSkillData, guildData);
 			let serverRows = buildServerRankingRows(rankData.rows, data);
 			replier.reply(buildWorldOverallRankingMessage(rankData.rows, sender, data, petData, guildData));
-			replier.reply(buildCombinedServerRankingMessage(serverRows, sender, data, petData, guildData));
+			replier.reply(buildStandaloneServerRankingMessage(serverRows, sender, data));
 		} else if (msg === "/서버순위") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			let rankData = generateRanking(data, petData, homeData, petSkillData, guildData);
-			replier.reply(buildStandaloneServerRankingMessage(buildServerRankingRows(rankData.rows, data), sender, data));
+			replier.reply(buildCombinedServerRankingMessage(buildServerRankingRows(rankData.rows, data), sender, data, petData, guildData));
 		}
 
 		if (msg == "/티어순위") {
@@ -2273,6 +2275,20 @@ function normalizeRankServerName(serverName) {
 	return normalizeInfoServerLabel(serverName);
 }
 
+// 준비·진행·정산 중 정보 명령의 응답을 차단하는 함수
+function isInfoServerRaidLocked(data) {
+	var round = data && data.serverRaid && data.serverRaid.current;
+	return !!(round && (round.state === "PREP" || round.state === "ACTIVE" || round.state === "SETTLING"));
+}
+
+// 기존 서버명 뒤에 같은 원본의 누적 우승 횟수를 덧붙이는 함수
+function formatInfoServerRaidServer(data, server) {
+	var name = normalizeRankServerName(server);
+	if (GLOBAL_CONFIG.serverRanking.labels.indexOf(name) === -1) return name || "미등록";
+	var wins = data && data.serverRaid && data.serverRaid.wins[name];
+	return name + "⭐" + (wins || 0);
+}
+
 // 개인 종합매력 결과를 소속 서버별로 합산하는 함수
 function buildServerRankingRows(userScores, data) {
 	var labels = GLOBAL_CONFIG.serverRanking.labels;
@@ -2306,8 +2322,8 @@ function formatOverallUserRow(row, rank, data, petData, guildData, sender) {
 }
 
 // 서버 합산 순위의 두 줄을 출력하는 함수
-function formatOverallServerRow(server, rank, myServer) {
-	return formatOverallRankPosition(rank) + " " + server.name + "\n└ 👑 " + numberWithCommas(server.totalExp) + (server.name === myServer ? " 🏠" : "");
+function formatOverallServerRow(server, rank, myServer, data) {
+	return formatOverallRankPosition(rank) + " " + formatInfoServerRaidServer(data, server.name) + "\n└ 👑 " + numberWithCommas(server.totalExp) + (server.name === myServer ? " 🏠" : "");
 }
 
 // 월드 개인 종합순위 메시지를 생성하는 함수
@@ -2339,14 +2355,14 @@ function buildCombinedServerRankingMessage(servers, sender, data, petData, guild
 	for (var i = 0; i < servers.length; i++) if (servers[i].name === myServerName) { myServer = servers[i]; serverRank = i + 1; break; }
 	var myUserRank = 0;
 	if (myServer) for (var k = 0; k < myServer.users.length; k++) if (myServer.users[k].key === sender) { myUserRank = k + 1; break; }
-	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버 /서버순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏠 소속 서버: " + (myServerName || "미등록"), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", allsee, ""];
+	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버 /서버순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏠 소속 서버: " + formatInfoServerRaidServer(data, myServerName), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", allsee, ""];
 	var users = myServer ? myServer.users : [];
 	for (var j = 0; j < users.length && j < 10; j++) {
 		lines.push(formatOverallUserRow(users[j], j + 1, data, petData, guildData, sender));
 	}
 	lines.push("", "📋 서버 내 상위 10위까지 표시됩니다.", "━━━━━━━━━━━━━", "🌐 서버별 종합매력 합산 순위", "");
-	for (var s = 0; s < servers.length; s++) lines.push(formatOverallServerRow(servers[s], s + 1, myServerName), "");
-	lines.push("━━━━━━━━━━━━━", "🏠 내 소속 서버", "📊 소속 유저들의 종합매력 합산 기준");
+	for (var s = 0; s < servers.length; s++) lines.push(formatOverallServerRow(servers[s], s + 1, myServerName, data), "");
+	lines.push("━━━━━━━━━━━━━", "🏠 내 소속 서버", "⭐ 서버 레이드대전 누적 우승 횟수", "📊 소속 유저들의 종합매력 합산 기준");
 	return lines.join("\n");
 }
 
@@ -2356,9 +2372,9 @@ function buildStandaloneServerRankingMessage(servers, sender, data) {
 	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버", "━━━━━━━━━━━━━"];
 	for (var i = 0; i < servers.length; i++) {
 		if (i === 3) lines.push(allsee);
-		lines.push(formatOverallServerRow(servers[i], i + 1, myServerName), "");
+		lines.push(formatOverallServerRow(servers[i], i + 1, myServerName, data), "");
 	}
-	lines.push("━━━━━━━━━━━━━", "🏠 내 소속 서버", "📊 소속 유저들의 종합매력 합산 기준");
+	lines.push("━━━━━━━━━━━━━", "🏠 내 소속 서버", "⭐ 서버 레이드대전 누적 우승 횟수", "📊 소속 유저들의 종합매력 합산 기준");
 	return lines.join("\n");
 }
 

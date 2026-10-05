@@ -23,6 +23,8 @@ function context(source, names, extra) {
     const c = Object.assign({ allsee: "<ALLSEE>", numberWithCommas: n => Number(n).toLocaleString("en-US"),
         checkRank: (_d, _p, _g, u) => u, getHoiPassPremiumHeader: () => "" }, extra);
     vm.createContext(c);
+    for (let i = 1; i <= 100; i++) if (!("room" + i in c)) c["room" + i] = "room" + i;
+    c.testRoom = "test";
     vm.runInContext(block(source, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);
     for (const name of names) vm.runInContext(block(source, "function " + name + "("), c);
     return c;
@@ -31,7 +33,7 @@ function context(source, names, extra) {
 let saves = 0;
 let failSave = false;
 const messages = [];
-const move = context(main, ["normalizeHoiServerLabel"], {
+const move = context(main, ["normalizeHoiServerLabel", "requireServerRaidSafeInteger", "applyServerRaidMembershipChange"], {
     sender: "test", msg: "", filePath: "dev-member.json", petData: {}, guildData: {},
     data: { member: { test: { server: "호이서버6[2030]", bag: {} } } },
     replier: { reply: m => messages.push(m) },
@@ -62,10 +64,11 @@ move.msg = "/서버변경 호이월드 커뮤니티"; move.runMove();
 assert.strictEqual(move.data.member.test.server, "호이서버6[30]");
 console.log("1/5 커뮤니티 이동·공백·별칭·중복·실패 복구 PASS");
 
-const admin = context(main, ["normalizeHoiServerLabel"], {
+const admin = context(main, ["normalizeHoiServerLabel", "requireServerRaidSafeInteger", "applyServerRaidMembershipChange"], {
     msg: "/서버이동 대상 호이월드 커뮤니티", sender: "admin", isAdmin: u => u === "admin",
     roomToServer: { r6: "호이서버6[30]", r1: "호이서버1[30]" },
-    data: { member: { 대상: { server: "이전" } } }, replier: { reply: m => messages.push(m) }
+    data: { member: { 대상: { server: "이전" } } }, replier: { reply: m => messages.push(m) },
+    filePath: "dev-member.json", saveJsonFile: () => {}
 });
 vm.runInContext("function runAdmin(){" + block(main, "if (/^\\/서버이동\\s+") + "}", admin);
 admin.runAdmin(); assert.strictEqual(admin.data.member.대상.server, "호이월드 커뮤니티");
@@ -78,7 +81,7 @@ assert.strictEqual(admin.data.member.대상.server, "호이서버6[30]");
 assert(main.includes('roomToServer[room10] = "호이서버6[30]"'));
 console.log("2/5 관리자 이동·서버6·권한·후행 안내문 차단 PASS");
 
-const rank = context(info, ["generateRanking", "normalizeInfoServerLabel", "normalizeRankServerName", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage", "getServerMemberGroups", "buildServerMemberListMessage"], {
+const rank = context(info, ["generateRanking", "normalizeInfoServerLabel", "normalizeRankServerName", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage", "getServerMemberGroups", "buildServerMemberListMessage"], {
     calculateCastleExp: (u, d) => d.member[u].score || 0, calculateRaidExp: () => 0, calculatePetUpgradeCharm: () => 0,
     getRankEmoji: () => ""
 });
