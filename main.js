@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.606"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.607"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2817,7 +2817,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             if (raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
             if (raidLocked && !isServerRaidQueryCommand(msg) && msg !== "/레이드공격" && msg !== "/서버대전종료" && msg !== "/서버대전전체초기화") {
-                replyServerRaidSafely(replier, buildServerRaidLockMessage(raidNick));
+                if (isServerRaidAutoEndDue(data.serverRaid.current, Date.now()) && closeServerRaid(data, ctx, "automatic").changed) {
+                    saveJsonFile(data, filePath); // 일반 게임 처리를 막은 상태에서 마감과 정산 대기 상태를 먼저 확정
+                    clearServerRaidWorkTimer(ctx);
+                    scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
+                }
+                replyServerRaidSafely(replier, buildServerRaidLockMessage(raidNick, data.serverRaid.current));
                 return;
             }
             if (msg === "/서버대전전체초기화") {
@@ -33274,8 +33279,15 @@ function applyServerRaidMembershipChange(member, destination) {
 }
 
 // 명령 잠금 안내를 만드는 함수
-function buildServerRaidLockMessage(nick) {
-    return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n" + nick + ",\n지금은 서버 레이드대전 시간입니다!\n\n⛔ 서버 레이드대전 종료 전까지\n일반 게임 명령어는 사용할 수 없습니다.\n\n📋 순위 조회는 모든 방에서 가능합니다.\n/레이드순위 · /서버레이드순위\n\n우리 서버의 승리를 위해\n서버 레이드대전에 참여해주세요! 🔥\n━━━━━━━━━━━━\n📍 명령어방 안내\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom + "\n\n👉 공격 참여: /레이드공격";
+function buildServerRaidLockMessage(nick, round) {
+    var header = "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n" + nick + ",\n";
+    if (round && round.state === "SETTLING") return header + "현재 서버 레이드대전 종료 처리가 진행 중입니다.\n정산 완료를 기다려주세요.";
+    var deadline = ""; // 이전 종료 시각 없는 회차에는 새 마감을 만들지 않음
+    if (round && round.autoEndAt !== undefined) {
+        requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
+        deadline = "\n🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt);
+    }
+    return header + "지금은 서버 레이드대전 시간입니다!" + deadline + "\n\n⛔ 서버 레이드대전 종료 전까지\n일반 게임 명령어는 사용할 수 없습니다.\n\n우리 서버의 승리를 위해\n서버 레이드대전에 참여해주세요! 🔥\n━━━━━━━━━━━━\n📍 명령어방 안내\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom + "\n\n👉 공격 참여: /레이드공격";
 }
 
 // 준비 안내와 규칙 더보기를 만드는 함수
