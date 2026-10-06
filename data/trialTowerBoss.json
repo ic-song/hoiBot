@@ -6,76 +6,16 @@
     "pettype": "바다",
     "reward": [
       {
-        "item": "전설의 돌맹이🗿",
-        "quantity": 30
-      },
-      {
-        "item": "미니펫뽑기🐹(/미니펫오픈)",
-        "quantity": 10
-      },
-      {
-        "item": "펫스윗홈인테리어샵🖼️(/샵오픈)",
-        "quantity": 8
-      },
-      {
-        "item": "펫 강화석⭐",
-        "quantity": 3000
-      },
-      {
-        "item": "양념치킨🐔",
-        "quantity": 700
-      },
-      {
-        "item": "경찰과 도둑🚨(/삐뽀삐뽀)",
-        "quantity": 50
+        "item": "미니펫 강화석💫",
+        "quantity": 5
       },
       {
         "item": "돌멩이🪨",
-        "quantity": 15000
-      },
-      {
-        "item": "미니펫대전리셋권🐹",
-        "quantity": 500
-      },
-      {
-        "item": "캐슬대전리셋권🐶",
-        "quantity": 500
-      },
-      {
-        "item": "시련의탑리셋권😈",
-        "quantity": 500
-      },
-      {
-        "item": "펫던전 입장권🌋",
-        "quantity": 100
-      },
-      {
-        "item": "레이드타격대인장👑(+600👾)",
-        "quantity": 10
+        "quantity": 2
       },
       {
         "item": "잡템상자☠",
-        "quantity": 100
-      },
-      {
-        "item": "펫먹이🍼",
-        "quantity": 200000
-      },
-      {
-        "item": "펫스킬북📙(/펫스킬오픈)",
         "quantity": 1
-      },
-      {
-        "item": "탐험확률UP🗻(50%)",
-        "quantity": 200
-      },
-      {
-        "item": "땅문서📜",
-        "quantity": 20
-      },
-      {
-        "item": "신입지원금",
-        "quantity": 42500
       }
     ]
   },
