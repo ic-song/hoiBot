@@ -984,8 +984,8 @@ const GLOBAL_CONFIG = {
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
         limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
-        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 600000 }, // 운영 적용 10분. 시작 명령 처리부터 준비 60초도 포함
-        rewards: { attackDivisor: 100, ranks: [500000000, 450000000, 400000000, 350000000, 300000000, 250000000, 200000000, 150000000, 100000000, 50000000] },
+        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 900000 }, // 운영 적용 15분. 시작 명령 처리부터 준비 60초도 포함
+        rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
         authentication: { operatorIds: [] }, // 네이티브 콜백·신뢰된 내부 어댑터의 운영 주체 ID. 닉네임은 인증에 사용하지 않음
         rooms: { production: [room8, testRoom], development: testRoom }, // 운영은 두 명령어방, DEV는 팻 테스트방으로 한정
@@ -33074,6 +33074,26 @@ function getServerRaidAttackCheck(data, user, now, event) {
     return {};
 }
 
+// 큰 레이드매력에 정수 백분율을 적용하고 소수점을 정확하게 버리는 함수
+function calculateServerRaidAttackReward(raidCharm, percent) {
+    requireServerRaidSafeInteger(raidCharm, "레이드매력");
+    requireServerRaidSafeInteger(percent, "공격 보상 비율");
+    var divisor = GLOBAL_CONFIG.serverRaid.rewards.attackDivisor;
+    requireServerRaidSafeInteger(divisor, "공격 보상 기준 단위");
+    if (divisor !== 100 || percent > divisor) throw new Error("서버 레이드대전 공격 보상 비율 오류");
+    var whole = Math.floor(raidCharm / divisor); // 큰 매력 전체에 비율을 곱하는 대신 몫을 먼저 분리
+    var remainder = raidCharm % divisor; // 100 미만 나머지에 비율을 적용해 최종 버림
+    return requireServerRaidSafeInteger(whole * percent + Math.floor(remainder * percent / divisor), "공격 보상");
+}
+
+// 저장된 공격의 당시 비율을 읽으며 비율 기록 없는 이전 공격은 1%로 유지하는 함수
+function getServerRaidAttackPercent(attack) {
+    var percent = attack.rewardPercent === undefined ? 1 : attack.rewardPercent;
+    requireServerRaidSafeInteger(percent, "저장된 공격 보상 비율");
+    if (percent > 100) throw new Error("서버 레이드대전 저장된 공격 보상 비율 오류");
+    return percent;
+}
+
 // 공격 R·D·P와 횟수·서버 집계를 한 저장 단위로 변경하는 함수
 function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damage, critical) {
     var check = getServerRaidAttackCheck(data, user, Date.now(), event);
@@ -33082,7 +33102,8 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     requireServerRaidSafeInteger(raidCharm, "레이드매력");
     requireServerRaidSafeInteger(damage, "공격 데미지");
     var member = data.member[user], round = data.serverRaid.current;
-    var reward = Math.floor(raidCharm / GLOBAL_CONFIG.serverRaid.rewards.attackDivisor); // 치명타 전 레이드매력의 1%를 버림 처리
+    var percent = GLOBAL_CONFIG.serverRaid.rewards.attackPercent; // 이번 공격에 실제 적용한 비율을 지급 기록과 함께 보존
+    var reward = calculateServerRaidAttackReward(raidCharm, percent);
     var nextPoint = requireServerRaidSafeInteger(member.point, "보유 포인트") + reward;
     requireServerRaidSafeInteger(nextPoint, "공격 보상 지급 후 포인트");
     var account = member.serverRaidAccount;
@@ -33091,7 +33112,7 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], paid: false };
     var nextAttackReward = requireServerRaidSafeInteger(participant.attackReward + reward, "실지급 공격 보상 합계");
     var eventId = getServerRaidEventId(event);
-    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", remaining: GLOBAL_CONFIG.serverRaid.limits.attacks - participant.attacks.length - 1, critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
+    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", rewardPercent: percent, remaining: GLOBAL_CONFIG.serverRaid.limits.attacks - participant.attacks.length - 1, critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
     member.serverRaidAccount = account;
     member.point = nextPoint;
     participant.damage = addServerRaidInteger(participant.damage, damage);
@@ -33259,7 +33280,7 @@ function buildServerRaidLockMessage(nick) {
 
 // 준비 안내와 규칙 더보기를 만드는 함수
 function buildServerRaidPreparationNotice(round) {
-    var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 공격 기회: 계정당 5회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 전 레이드매력의 1%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
+    var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 공격 기회: 계정당 5회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 전 레이드매력의 " + GLOBAL_CONFIG.serverRaid.rewards.attackPercent + "%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
     if (round) lines.splice(5, 0, buildServerRaidTimeNotice(round));
     for (var i = 0; i < GLOBAL_CONFIG.serverRaid.rewards.ranks.length; i++) lines.push((i + 1) + "위: " + numberWithCommas(GLOBAL_CONFIG.serverRaid.rewards.ranks[i]) + " 포인트");
     lines.push("", "※ 해당 회차 1회 이상 공격한", "참가자에게 인당 지급됩니다.", "※ 공격 보상과 순위 보상은 별도 지급!", "※ 동점은 공동 순위·동일 보상입니다.", "", "⭐ 우승 서버는 누적 우승 횟수 +1", "서버명 옆에 우승 기록이 남습니다!", "━━━━━━━━━━━━", "👉 공격 참여: /레이드공격", "", "우리 서버의 이름으로 도전하세요! 🐹");
@@ -33271,7 +33292,8 @@ function buildServerRaidAttackMessage(data, participant, attack, nick) {
     var round = data.serverRaid.current;
     var rows = buildServerRaidResults(round), server = null;
     for (var i = 0; i < rows.length; i++) if (rows[i].id === participant.server) server = rows[i];
-    var rewardGuide = attack.rewardBasis === "damage" ? "공격 데미지의 1% 지급 (당시 기준)" : "레이드매력의 1% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
+    var percent = getServerRaidAttackPercent(attack); // 현재 설정 대신 이 공격의 실제 지급 비율을 표시
+    var rewardGuide = attack.rewardBasis === "damage" ? "공격 데미지의 " + percent + "% 지급 (당시 기준)" : "레이드매력의 " + percent + "% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
     return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n⚪ 무속성 · 속성 상성 미적용\n━━━━━━━━━━━━\n⚔️ " + nick + "의 공격!\n\n💥 공격 데미지: " + numberWithCommas(attack.D) + "💞\n├ 레이드매력: " + numberWithCommas(attack.R) + "💞\n" + (attack.critical ? "└ 🔥 치명타 발동!" : "└ 일반 공격 · 치명타 미발동") + "\n\n💰 획득 포인트: 🅟" + numberWithCommas(attack.P) + "\n└ " + rewardGuide + "\n\n🎟️ 남은 공격: " + attack.remaining + "/5회\n━━━━━━━━━━━━\n🏰 우리 서버 현황\n" + formatServerRaidServer(data, participant.server) + "\n\n🏆 현재 서버 순위: " + server.rank + "위\n👾 서버 누적 데미지: " + numberWithCommas(server.damage) + "💞\n└ 이번 공격까지 합산된 기록입니다.";
 }
 
@@ -33386,8 +33408,9 @@ function getServerRaidLatestRecord(data, user) {
 function getServerRaidAttackRewardGuide(attacks) {
     if (!attacks || !attacks.length) return "공격 당시 기준으로 지급된 포인트";
     var basis = attacks[0].rewardBasis === "damage" ? "damage" : "raidCharm";
-    for (var i = 1; i < attacks.length; i++) if ((attacks[i].rewardBasis === "damage" ? "damage" : "raidCharm") !== basis) return "공격 당시 기준으로 지급된 포인트";
-    return basis === "damage" ? "공격마다 최종 데미지의 1% (당시 기준)" : "공격마다 레이드매력의 1%";
+    var percent = getServerRaidAttackPercent(attacks[0]); // 같은 기준이어도 비율이 다르면 당시 실제 지급 합계로만 안내
+    for (var i = 1; i < attacks.length; i++) if ((attacks[i].rewardBasis === "damage" ? "damage" : "raidCharm") !== basis || getServerRaidAttackPercent(attacks[i]) !== percent) return "공격 당시 기준으로 지급된 포인트";
+    return basis === "damage" ? "공격마다 최종 데미지의 " + percent + "% (당시 기준)" : "공격마다 레이드매력의 " + percent + "%";
 }
 
 // 공통 누적 집계에서 본인의 데미지·기여도·순위를 추가하는 함수
