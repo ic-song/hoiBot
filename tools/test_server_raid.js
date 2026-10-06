@@ -816,11 +816,11 @@ group("0데미지 참가도 0%·동점 순위·기록 유지·공통 치명타 A
     assert.strictEqual(c.calculateCriticalDamage({ upgrade: 300 }, 0, 300, meta), 0); assert.strictEqual(meta.critical, true);
 });
 
-group("10분 마감은 시작 명령 시각에 확정·KST 공지·빈번한 폴링 없이 경계 자동 종료", () => {
+group("정식 운영 30분 마감은 시작 명령 시각에 확정·KST 공지·빈번한 폴링 없이 경계 자동 종료", () => {
     const requested = now; run("/서버대전시작", "master");
-    const initial = read().serverRaid.current; assert.strictEqual(initial.requestedAt, requested); assert.strictEqual(initial.durationMs, 600000); assert.strictEqual(initial.autoEndAt, requested + 600000);
+    const initial = read().serverRaid.current; assert.strictEqual(initial.requestedAt, requested); assert.strictEqual(initial.durationMs, 1800000); assert.strictEqual(initial.autoEndAt, requested + 1800000);
     tick(); tick(60000); attack("a", "timed");
-    assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 10분") && t.text.includes("자동 종료: " + c.formatServerRaidKstTime(initial.autoEndAt))));
+    assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 30분") && t.text.includes("자동 종료: " + c.formatServerRaidKstTime(initial.autoEndAt))));
     assert.strictEqual(timers.size, 1); assert.strictEqual([...timers.values()][0].at, initial.autoEndAt);
     const traceCount = traces.length; tick(1000); assert.strictEqual(traces.length, traceCount);
     now = initial.autoEndAt - 1; assert(attack("b", "last-valid").includes("획득 포인트"));
@@ -845,7 +845,10 @@ group("수동 종료는 예약 취소·자동/수동 동시 요청 및 이전 �
 group("중복 시작·진행 중 30분 설정 변경은 기존 마감 불변·다음 회차만 30분", () => {
     const duration = c.GLOBAL_CONFIG.serverRaid.timers.durationMs;
     try {
+        c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 600000;
         start(); const round = read().serverRaid.current, timerId = [...timers.keys()][0];
+        assert.strictEqual(round.durationMs, 600000); assert.strictEqual(round.autoEndAt, round.requestedAt + 600000);
+        assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 10분")));
         c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 1800000;
         assert(run("/서버대전시작", "master").includes("지금은 서버 레이드대전"));
         assert.deepStrictEqual(read().serverRaid.current, round); assert(timers.has(timerId));
@@ -920,8 +923,8 @@ group("시작 공지 실패 재시도는 마감을 연장하지 않고 종료 �
 });
 
 group("기존 마감 없는 회차는 새 설정 소급 없음·DEV/PROD 타이머와 정산 분리", () => {
-    start(); const d = read(); delete d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationMs; delete d.serverRaid.current.requestedAt; write(d);
-    tick(600000); assert.strictEqual(read().serverRaid.current.state, "ACTIVE"); assert.strictEqual(timers.size, 0); end();
+    start(); const d = read(), previousDeadline = d.serverRaid.current.autoEndAt; delete d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationMs; delete d.serverRaid.current.requestedAt; write(d);
+    now = previousDeadline; tick(0); assert.strictEqual(read().serverRaid.current.state, "ACTIVE"); assert.strictEqual(timers.size, 0); end();
     start(); start(true); let dev = read(true); dev.member.a.R = 200000; write(dev, true);
     attack("a", "prod", false); attack("a", "dev", true); assert.strictEqual(timers.size, 2);
     now = Math.max(read().serverRaid.current.autoEndAt, read(true).serverRaid.current.autoEndAt); tick(0);

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.602"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.603"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -984,7 +984,7 @@ const GLOBAL_CONFIG = {
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
         limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
-        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 600000 }, // 우선 10분 테스트. 정식 전환 시 durationMs를 1800000으로 변경
+        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 1800000 }, // 정식 운영 30분. 시작 명령 처리부터 준비 60초도 포함
         rewards: { attackDivisor: 100, ranks: [500000000, 450000000, 400000000, 350000000, 300000000, 250000000, 200000000, 150000000, 100000000, 50000000] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
         authentication: { operatorIds: [] }, // 네이티브 콜백·신뢰된 내부 어댑터의 운영 주체 ID. 닉네임은 인증에 사용하지 않음
