@@ -153,7 +153,7 @@ group("정확한 6개 명령·접미 미실행·MASTER 및 인증된 운영봇 �
     for (const user of ["a", "admin", "오픈채팅봇"]) for (const msg of ["/서버대전시작", "/서버대전종료", "/서버대전전체초기화"]) {
         const before = disk[memberPath]; assert(run(msg, user).includes("권한")); assert.strictEqual(disk[memberPath], before);
     }
-    assert(run("/서버대전시작", "master", undefined, "room1").includes("공성전 또는 팻 테스트방")); assert(!read().serverRaid);
+    assert(c.isServerRaidCommandRoom("room1", true, c.createCommandContext(false, "room1"), "/서버대전시작")); assert(!read().serverRaid);
     c.GLOBAL_CONFIG.serverRaid.authentication.operatorIds = ["trusted-bot"];
     run("/서버대전시작", "오픈채팅봇", { id: "bot-start", operatorId: "trusted-bot" }); assert(c.isServerRaidLocked(read()));
     assert(run("/서버대전전체초기화", "오픈채팅봇", { operatorId: "trusted-bot" }).includes("권한"));
@@ -664,8 +664,8 @@ group("조회 명령 새 이름 2종과 안내 동기화·구 이름은 레이�
     const before = disk[memberPath]; assert(run("/서버레이드순위 호이서버2").includes("서버명을 입력하지")); assert.strictEqual(disk[memberPath], before);
 });
 
-group("실행 명령 운영 2방·DEV 테스트방 한정·타 방 실행 차단·방 간 5회 공유", () => {
-    const commands = ["/서버대전시작", "/서버대전종료", "/서버대전전체초기화", "/레이드공격", "/레이드기록", "/서버레이드기록"];
+group("공격·초기화 운영 2방·DEV 테스트방 한정·타 방 공격 차단·방 간 5회 공유", () => {
+    const commands = ["/서버대전전체초기화", "/레이드공격", "/레이드기록", "/서버레이드기록"];
     const before = JSON.stringify(disk);
     for (const room of ["room1", "room90", "room92", "private", "room8 "]) for (const user of ["master", "admin", "a"]) for (const msg of commands) {
         traces = []; assert(run(msg, user, undefined, room).includes("공성전 또는 팻 테스트방"));
@@ -676,15 +676,10 @@ group("실행 명령 운영 2방·DEV 테스트방 한정·타 방 실행 차단
         traces = []; assert(run(msg, "master", undefined, room, false).includes("공성전 또는 팻 테스트방"));
         assert(!traces.some(t => t.type === "load" || t.type === "save"));
     }
-    for (const msg of commands) {
+    for (const msg of commands.concat(["/서버대전시작", "/서버대전종료"])) {
         traces = []; assert(run("dev" + msg, "master", undefined, "room8").includes("DEV 레이드 명령어는 팻 테스트방"));
         assert(!traces.some(t => t.type === "load" || t.type === "save"));
     }
-    c.GLOBAL_CONFIG.serverRaid.authentication.operatorIds = ["trusted-bot"];
-    try {
-        traces = []; assert(run("/서버대전시작", "오픈채팅봇", { operatorId: "trusted-bot" }, "room1").includes("공성전 또는 팻 테스트방"));
-        assert(!traces.some(t => t.type === "load" || t.type === "save"));
-    } finally { c.GLOBAL_CONFIG.serverRaid.authentication.operatorIds = []; }
     run("/서버대전시작", "master", undefined, "test"); tick(); tick(60000);
     const active = disk[memberPath]; traces = [];
     assert(run("/레이드공격", "a", undefined, "room1").includes("공성전 또는 팻 테스트방"));
@@ -1012,6 +1007,42 @@ group("수치 변경 전후의 준비·공격·순위 UI는 숫자 외 문구/�
         current.member.a.serverRaidAccount.latest.attackReward = 1000; write(current);
         assert.strictEqual(stripNumbers(personal), stripNumbers(run("/레이드순위"))); assert.strictEqual(server, run("/서버레이드순위"));
     } finally { c.GLOBAL_CONFIG.serverRaid.rewards.ranks = ranks; c.GLOBAL_CONFIG.serverRaid.rewards.attackPercent = percent; }
+});
+
+group("기본 7인수 전체 콜백 MASTER 시작·종료는 모든 단체방·일대일톡에서 허용", () => {
+    const flow = c.commandDataFlowLock, depth = c.autoDailyQuestInternalDepth;
+    c.commandDataFlowLock = { readLock: () => lock(), writeLock: () => lock() }; c.autoDailyQuestInternalDepth = 0;
+    try {
+        for (const [room, isGroup] of [["room1", true], ["room90", true], ["unknown-room", true], ["private", false]]) {
+            const traceStart = traces.length; // 이전 회차 공지를 제외하고 이번 입력방의 발송 횟수만 확인
+            replies = []; c.response(room, "/서버대전시작", "master", isGroup, c.replier, null, "com.kakao.talk");
+            const round = read().serverRaid.current; assert.strictEqual(round.state, "PREP"); assert.strictEqual(round.originRoom, room); assert.strictEqual(round.durationMs, 900000);
+            tick(); tick(60000); assert.strictEqual(read().serverRaid.current.state, "ACTIVE"); attack("a", "all-room-" + room);
+            const endRoom = room === "private" ? "unknown-room" : "private";
+            c.response(endRoom, "/서버대전종료", "master", endRoom !== "private", c.replier, null, "com.kakao.talk"); tick();
+            assert.strictEqual(read().serverRaid.current, null); assert.strictEqual(read().serverRaid.history.at(-1).endReason, "manual");
+            assert.strictEqual(traces.slice(traceStart).filter(t => t.type === "notice" && t.room === room && t.text.includes("60초 뒤")).length, 1);
+            const paid = disk[memberPath]; c.response(room, "/서버대전종료", "master", isGroup, c.replier, null, "com.kakao.talk"); tick(); assert.strictEqual(disk[memberPath], paid);
+        }
+        assert.strictEqual(read().serverRaid.completed, 4); assert.strictEqual(read().member.a.point, 2200012000);
+    } finally { c.commandDataFlowLock = flow; c.autoDailyQuestInternalDepth = depth; }
+});
+
+group("모든 방에서 일반·관리자·닉네임 운영봇 거부·인증된 운영봇 기존 권한 유지", () => {
+    for (const user of ["a", "admin", "오픈채팅봇"]) for (const room of ["room1", "unknown-room", "private"]) for (const msg of ["/서버대전시작", "/서버대전종료"]) {
+        const before = disk[memberPath]; assert(run(msg, user, undefined, room, room !== "private").includes("권한")); assert.strictEqual(disk[memberPath], before); assert.strictEqual(timers.size, 0);
+    }
+    c.GLOBAL_CONFIG.serverRaid.authentication.operatorIds = ["trusted-bot"];
+    try {
+        run("/서버대전시작", "오픈채팅봇", { operatorId: "trusted-bot" }, "unknown-room"); tick(); tick(60000); attack();
+        const before = disk[memberPath], timerIds = [...timers.keys()];
+        for (const user of ["a", "admin", "오픈채팅봇"]) for (const msg of ["/서버대전시작", "/서버대전종료"]) {
+            assert(run(msg, user, undefined, "room1").includes("권한")); assert.strictEqual(disk[memberPath], before); assert.deepStrictEqual([...timers.keys()], timerIds);
+        }
+        assert(run("/서버대전종료", "오픈채팅봇", { operatorId: "trusted-bot" }, "private", false).includes("권한")); assert.strictEqual(disk[memberPath], before);
+        run("/서버대전종료", "오픈채팅봇", { operatorId: "trusted-bot" }, "room90"); tick();
+        assert.strictEqual(read().serverRaid.current, null); assert.strictEqual(read().member.a.point, 1300003000);
+    } finally { c.GLOBAL_CONFIG.serverRaid.authentication.operatorIds = []; }
 });
 
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");

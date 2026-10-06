@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.605"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.606"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -988,7 +988,7 @@ const GLOBAL_CONFIG = {
         rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
         authentication: { operatorIds: [] }, // 네이티브 콜백·신뢰된 내부 어댑터의 운영 주체 ID. 닉네임은 인증에 사용하지 않음
-        rooms: { production: [room8, testRoom], development: testRoom }, // 운영은 두 명령어방, DEV는 팻 테스트방으로 한정
+        rooms: { production: [room8, testRoom], development: testRoom }, // 운영 공격·초기화는 두 명령어방, DEV는 팻 테스트방으로 한정
         links: { commandRoom: "https://open.kakao.com/o/gaP4Xybh", startImage: "https://ibb.co/HfncBxCg", endImage: "https://ibb.co/YTQHyYZV" }
     },
     miniPetCollection: { // 미니펫 컬렉션 시즌 운영 설정
@@ -2809,7 +2809,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var raidPetData = loadJsonFile(memberPetPath);
             var raidGuildData = loadJsonFile(guildPath);
             var raidNick = data.member && data.member[sender] ? "[" + checkRank(data, raidPetData, raidGuildData, sender) + "] 님" : "[" + sender + "] 님";
-            var raidMaster = isMasterIdentity(sender); // 레이드 명령 전용 방을 먼저 확인한 뒤 기존 MASTER 명단을 사용
+            var raidMaster = isMasterIdentity(sender); // 시작·종료는 방과 무관하게 기존 MASTER 명단으로 권한 확인
             var raidOperator = raidMaster || isServerRaidVerifiedOperator(serverRaidEvent, isGroupChat);
             if ((msg === "/서버대전전체초기화" && !raidMaster) || ((msg === "/서버대전시작" || msg === "/서버대전종료") && !raidOperator)) {
                 replyServerRaidSafely(replier, serverRaidHeader() + raidNick + ",\n해당 명령어를 사용할 권한이 없습니다.");
@@ -32812,10 +32812,10 @@ function isServerRaidCommand(msg) {
     return isServerRaidMutationCommand(msg) || msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg) || msg === "/레이드기록" || msg === "/서버레이드기록";
 }
 
-// 운영 조회는 모든 방에 허용하고 실행·DEV 명령은 지정 방으로 제한하는 함수
+// 운영 시작·종료·조회는 모든 방에 허용하고 공격·초기화·DEV는 지정 방으로 제한하는 함수
 function isServerRaidCommandRoom(room, isGroupChat, ctx, msg) {
     if (ctx.isDev) return isGroupChat === true && room === GLOBAL_CONFIG.serverRaid.rooms.development;
-    if (isServerRaidQueryCommand(msg)) return true;
+    if (msg === "/서버대전시작" || msg === "/서버대전종료" || isServerRaidQueryCommand(msg)) return true;
     return isGroupChat === true && GLOBAL_CONFIG.serverRaid.rooms.production.indexOf(room) !== -1;
 }
 
