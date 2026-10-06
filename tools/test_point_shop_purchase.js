@@ -360,3 +360,90 @@ for (const [kind, boxName] of [["1만", smallBox], ["10만", largeBox]]) {
     assert(!Object.hasOwn(read().member[user].bag, boxName));
 }
 console.log("PASS 19: 두 상자 9999개 구매·전체 금액 차감·최대 개봉 지급량 일치");
+
+// 20. 실제 등록 명령과 다음 입력의 공통 전처리를 연결해 가격 재설정을 검증한다.
+const addShopStart = source.indexOf('if ((msg === "/상점추가" ||');
+const addShopEnd = source.indexOf('if (msg.startsWith("/상점삭제")', addShopStart);
+assert(addShopStart >= 0 && addShopEnd > addShopStart);
+const addShopScript = "(function () {" + source.slice(addShopStart, addShopEnd) + "})()";
+c.isMaster = sender => sender === "MASTER";
+const transferItem = c.GLOBAL_CONFIG.serverTransfer.itemName;
+reset(transferItem, 100000000000); c.sender = "MASTER";
+let transferMemberBefore = JSON.stringify(read().member);
+assert(run("/상점추가 " + transferItem + " 300000000000", addShopScript).includes("300,000,000,000"));
+assert.strictEqual(read().shop[transferItem], 300000000000);
+assert.strictEqual(JSON.stringify(read().member), transferMemberBefore);
+assert(events.indexOf("reply") > events.lastIndexOf("save:" + files[0]));
+for (const msg of ["/상점", "/정보", "일반 대화", "/상점"]) {
+    run(msg, bootstrapScript); assert.strictEqual(read().shop[transferItem], 300000000000);
+}
+assert(!read().migrations);
+console.log("PASS 20: 실제 상점추가 3천억 저장·다음 입력/재로드 가격 유지·재고/포인트 미변경");
+
+// 21. 이전 가격으로 재수정하거나 삭제해도 자동 덮어쓰기·재등록이 없어야 한다.
+for (const price of [100000000000, 450000000000, 0, max]) {
+    c.sender = "MASTER"; run("/상점추가 " + transferItem + " " + price, addShopScript);
+    run("/상점", bootstrapScript); assert.strictEqual(read().shop[transferItem], price);
+}
+edit(d => { delete d.shop[transferItem]; }); run("/상점", bootstrapScript);
+assert(!Object.hasOwn(read().shop, transferItem));
+c.sender = "MASTER"; run("/상점추가 " + transferItem + " 300000000000", addShopScript);
+assert.strictEqual(read().shop[transferItem], 300000000000);
+console.log("PASS 21: 기존가격/무료/최대값 재수정·삭제·재등록에서 자동 덮어쓰기 없음");
+
+// 22. 캐스팅 손실·무한대·문법 오류·권한 없는 입력은 상품을 바꾸지 않는다.
+for (const raw of ["9007199254740992", "9007199254740993", "9".repeat(400), "-1", "1.5", "1e3", "Infinity", "NaN", "300000000000 해봐"]) {
+    reset(transferItem, 100000000000); c.sender = "MASTER"; before = originalFiles();
+    const response = run("/상점추가 " + transferItem + " " + raw, addShopScript);
+    assert.deepStrictEqual(originalFiles(), before); assert(!response.includes("추가되었습니다"));
+}
+for (const msg of ["/상점추가설명 상품 1", "문구 /상점추가 상품 1", "/상점추가 상품\n이름 1", "/상점추가   1"]) {
+    reset(); c.sender = "MASTER"; before = originalFiles(); run(msg, addShopScript); assert.deepStrictEqual(originalFiles(), before);
+}
+reset(); before = originalFiles(); run("/상점추가 " + transferItem + " 300000000000", addShopScript); assert.deepStrictEqual(originalFiles(), before);
+c.sender = "MASTER"; assert(run("/상점추가", addShopScript).includes("형식"));
+assert(c.isExclusiveDataMutationCommandMessage("/상점추가 " + transferItem + " 300000000000"));
+assert(c.isExclusiveDataMutationCommandMessage("dev/상점추가 " + transferItem + " 300000000000"));
+assert(!c.isExclusiveDataMutationCommandMessage("/상점추가 " + transferItem + " 300000000000 해봐"));
+console.log("PASS 22: 안전정수 초과/캐스팅 손실/Infinity/접미·접두·멀티라인·일반유저 미등록");
+
+// 23. 저장 실패는 성공 안내 없이 원래 가격을 복구하고 DEV 변경은 운영과 분리한다.
+reset(transferItem, 100000000000); c.sender = "MASTER"; before = originalFiles(); failure = files[0];
+assert.throws(() => run("/상점추가 " + transferItem + " 300000000000", addShopScript), /replace failed/);
+assert.deepStrictEqual(originalFiles(), before); assert(!replies.some(text => text.includes("추가되었습니다")));
+reset(transferItem, 100000000000); c.sender = "MASTER"; before = originalFiles();
+assert(run("dev/상점추가 " + transferItem + " 300000000000", addShopScript).includes("추가되었습니다"));
+assert.deepStrictEqual(originalFiles(), before); assert.strictEqual(read(0, true).shop[transferItem], 300000000000);
+run("dev/상점", bootstrapScript); assert.strictEqual(read(0, true).shop[transferItem], 300000000000);
+console.log("PASS 23: 등록 저장 실패 복구·성공 안내 차단·DEV/PROD 가격 분리");
+
+// 24. 저장된 가격으로 실제 상점 표시와 세금 포함 결제가 일치한다.
+reset(transferItem, 100000000000); c.sender = "MASTER";
+run("/상점추가 " + transferItem + " 300000000000", addShopScript); run("/상점", bootstrapScript);
+const shopUiStart = infoSource.indexOf('let itemList = Object.keys(data.shop).map(', infoSource.indexOf('if (msg === "/상점")'));
+const shopUiEnd = infoSource.indexOf("if (itemList.length > 0)", shopUiStart);
+assert(shopUiStart > 0 && shopUiEnd > shopUiStart);
+const infoShop = { data: read(), numberWithCommas: n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ","), GLOBAL_CONFIG: { serverTransfer: { itemName: transferItem, description: "호이서버1~7 및 호이월드 커뮤니티로 변경할 수 있습니다." } } };
+vm.createContext(infoShop);
+const shopUi = vm.runInContext("(function(){" + infoSource.slice(shopUiStart, shopUiEnd) + "return itemList.join('\\n');})()", infoShop);
+assert(shopUi.includes("🅟300,000,000,000")); assert(shopUi.includes("세금: 🅟15,000,000,000"));
+c.sender = user; assert(run("/구매 1 1").includes("구매 완료"));
+assert.strictEqual(read().member[user].point, 185000000000); assert.strictEqual(read().member[user].bag[transferItem], 1);
+console.log("PASS 24: 실제 Info 상점 3천억/세금150억 표시·구매3150억 차감·이동권1개 지급");
+
+// 25. 이동권 부족 안내도 고정 가격 없이 실제 등록된 가격을 사용한다.
+const transferStart = source.indexOf('if (msg === "/서버변경" ||');
+let transferEnd = -1, transferDepth = 0;
+for (let i = source.indexOf("{", transferStart); i < source.length; i++) {
+    if (source[i] === "{") transferDepth++;
+    else if (source[i] === "}" && --transferDepth === 0) { transferEnd = i + 1; break; }
+}
+assert(transferStart >= 0 && transferEnd > transferStart);
+const transferScript = "(function () {" + source.slice(transferStart, transferEnd) + "})()";
+vm.runInContext(fn("normalizeHoiServerLabel"), c);
+for (const price of [100000000000, 300000000000, 450000000000, 0]) {
+    reset(transferItem, price); const beforeTransfer = originalFiles();
+    const message = run("/서버변경 호이서버6", transferScript);
+    assert(message.includes("판매 가격: 🅟" + c.numberWithCommas(price))); assert.deepStrictEqual(originalFiles(), beforeTransfer);
+}
+console.log("PASS 25: 실제 서버변경 이동권 부족 안내는 저장된 최신 가격·무료 가격과 일치");

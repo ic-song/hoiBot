@@ -83,7 +83,7 @@ vm.runInContext(block(main, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GL
 for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile",
     "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
-    "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage"]) vm.runInContext(block(main, "function " + name + "("), c);
+    "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(block(main, "function " + name + "("), c);
 vm.runInContext(main.slice(main.indexOf("function serverRaidHeader("), main.indexOf("// 길드 영지전 관련 함수들")), c);
 const entryStart = main.indexOf("// 서버 레이드대전 진입:");
 const entryEnd = main.indexOf('if (ctx.isDev && msg === "/데이터백업")', entryStart);

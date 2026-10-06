@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.607"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.608"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -1062,7 +1062,6 @@ const GLOBAL_CONFIG = {
     },
     serverTransfer: { // 호이서버 이동권과 이동 가능한 서버
         itemName: "서버이동권🖱[호이서버 전용](/서버변경 서버이름)",
-        itemPrice: 100000000000,
         names: ["호이서버1", "호이서버2", "호이서버3", "호이서버4", "호이서버5", "호이서버6", "호이서버7", "호이월드 커뮤니티"],
         labels: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "호이월드 커뮤니티"]
     },
@@ -3667,10 +3666,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (!data) data = loadJsonFile(filePath);
         addResponseTiming("member.json 로드", commonStepStart);
         var pointShopBootstrapChanged = syncStoneBoxShopItems(data); // 돌멩이 단가와 상자 가격 동기화
-        if (data.shop && data.shop[GLOBAL_CONFIG.serverTransfer.itemName] !== GLOBAL_CONFIG.serverTransfer.itemPrice) {
-            data.shop[GLOBAL_CONFIG.serverTransfer.itemName] = GLOBAL_CONFIG.serverTransfer.itemPrice;
-            pointShopBootstrapChanged = true;
-        }
         var incomingServerChanged = room === room15 && isGroupChat === true && assignUnspecifiedMemberServer(data, sender, roomToServer[room]); // 신규 방은 짧은 일반 채팅에서도 미지정 소속을 결정
         if (pointShopBootstrapChanged || incomingServerChanged) saveJsonFile(data, filePath);
         commonStepStart = Date.now();
@@ -7863,17 +7858,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         defenseCount: 0
                     };
                 }
-                if (msg.startsWith("/상점추가") && isMaster(sender)) {
-                    let regex = /\/상점추가\s+(.+)\s+(\d+)\s*$/;
+                if ((msg === "/상점추가" || /^\/상점추가\s+[^\r\n]+\s+\d+\s*$/.test(msg)) && isMaster(sender)) {
+                    let regex = /^\/상점추가\s+([^\r\n]+)\s+(\d+)\s*$/;
                     let match = msg.match(regex);
                     if (match) {
-                        let itemName = match[1];
-                        let itemPrice = parseInt(match[2], 10);
+                        let itemName = match[1].trim();
+                        let itemPrice = Number(match[2]);
+                        if (!itemName) {
+                            replier.reply("올바른 명령어 형식을 사용해주세요. 예: /상점추가 [물건] [가격]");
+                            return;
+                        }
+                        if (!isPointShopSafeCount(itemPrice)) {
+                            replier.reply("❌ 가격은 0~" + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxSafeNumber) + " 사이의 정수로 입력해주세요.\n상품은 등록하거나 변경하지 않았습니다.");
+                            return;
+                        }
+                        if (!data.shop || typeof data.shop !== "object" || data.shop instanceof Array) throw new Error("상점 정보를 확인할 수 없습니다.");
                         data.shop[itemName] = itemPrice;
+                        saveJsonFile(data, filePath);
                         replier.reply("상점에 " + itemName + "이(가) 🅟" + numberWithCommas(itemPrice) + "로 추가되었습니다.");
                     } else {
                         replier.reply("올바른 명령어 형식을 사용해주세요. 예: /상점추가 [물건] [가격]");
                     }
+                    return;
                 }
                 if (msg.startsWith("/상점삭제") && sender == "호이 남") {
                     let regexShop = /\/상점삭제\s+(\d+)\s*$/;
@@ -19543,7 +19549,9 @@ replier.reply(
                         return;
                     }
                     if (transferCount < 1) {
-                        replier.reply(transferNick + "\n서버이동권이 부족합니다. 🎫\n\n보유 수량: 0개\n필요 수량: 1개\n\n상점에서 서버이동권을 구매해주세요.\n판매 가격: 1,000억 포인트\n\n※ 소속 서버는 변경되지 않았습니다.");
+                        var transferShopPrice = data.shop && data.shop[transferConfig.itemName]; // 실제 저장된 판매 가격과 부족 안내를 일치시킴
+                        var transferPriceGuide = isPointShopSafeCount(transferShopPrice) ? "\n판매 가격: 🅟" + numberWithCommas(transferShopPrice) : "";
+                        replier.reply(transferNick + "\n서버이동권이 부족합니다. 🎫\n\n보유 수량: 0개\n필요 수량: 1개\n\n상점에서 서버이동권을 구매해주세요." + transferPriceGuide + "\n\n※ 소속 서버는 변경되지 않았습니다.");
                         return;
                     }
                     var transferPrevious = transferUser.server;
@@ -31633,6 +31641,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
+        /^\/상점추가\s+[^\r\n]+\s+\d+\s*$/.test(command) ||
         getRaidSealCraftRequest(command) !== null ||
         command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "/스타터중복회수 실행" || command === "출발한다" || command === "다음에 한다" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
