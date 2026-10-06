@@ -816,11 +816,11 @@ group("0데미지 참가도 0%·동점 순위·기록 유지·공통 치명타 A
     assert.strictEqual(c.calculateCriticalDamage({ upgrade: 300 }, 0, 300, meta), 0); assert.strictEqual(meta.critical, true);
 });
 
-group("정식 운영 30분 마감은 시작 명령 시각에 확정·KST 공지·빈번한 폴링 없이 경계 자동 종료", () => {
+group("운영 적용 10분 마감은 시작 명령 시각에 확정·KST 공지·빈번한 폴링 없이 경계 자동 종료", () => {
     const requested = now; run("/서버대전시작", "master");
-    const initial = read().serverRaid.current; assert.strictEqual(initial.requestedAt, requested); assert.strictEqual(initial.durationMs, 1800000); assert.strictEqual(initial.autoEndAt, requested + 1800000);
+    const initial = read().serverRaid.current; assert.strictEqual(initial.requestedAt, requested); assert.strictEqual(initial.durationMs, 600000); assert.strictEqual(initial.autoEndAt, requested + 600000);
     tick(); tick(60000); attack("a", "timed");
-    assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 30분") && t.text.includes("자동 종료: " + c.formatServerRaidKstTime(initial.autoEndAt))));
+    assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 10분") && t.text.includes("자동 종료: " + c.formatServerRaidKstTime(initial.autoEndAt))));
     assert.strictEqual(timers.size, 1); assert.strictEqual([...timers.values()][0].at, initial.autoEndAt);
     const traceCount = traces.length; tick(1000); assert.strictEqual(traces.length, traceCount);
     now = initial.autoEndAt - 1; assert(attack("b", "last-valid").includes("획득 포인트"));
@@ -842,20 +842,20 @@ group("수동 종료는 예약 취소·자동/수동 동시 요청 및 이전 �
     assert.strictEqual(read().serverRaid.completed, 2); assert.strictEqual(read().serverRaid.history[1].endReason, "automatic");
 });
 
-group("중복 시작·진행 중 30분 설정 변경은 기존 마감 불변·다음 회차만 30분", () => {
+group("중복 시작·진행 중 10분 설정 변경은 기존 30분 마감 불변·다음 회차만 10분", () => {
     const duration = c.GLOBAL_CONFIG.serverRaid.timers.durationMs;
     try {
-        c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 600000;
-        start(); const round = read().serverRaid.current, timerId = [...timers.keys()][0];
-        assert.strictEqual(round.durationMs, 600000); assert.strictEqual(round.autoEndAt, round.requestedAt + 600000);
-        assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 10분")));
         c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 1800000;
+        start(); const round = read().serverRaid.current, timerId = [...timers.keys()][0];
+        assert.strictEqual(round.durationMs, 1800000); assert.strictEqual(round.autoEndAt, round.requestedAt + 1800000);
+        assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 30분")));
+        c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 600000;
         assert(run("/서버대전시작", "master").includes("지금은 서버 레이드대전"));
         assert.deepStrictEqual(read().serverRaid.current, round); assert(timers.has(timerId));
         end(); const request = now; run("/서버대전시작", "master"); tick(); tick(60000);
-        const next = read().serverRaid.current; assert.strictEqual(next.autoEndAt, request + 1800000); assert.strictEqual(next.durationMs, 1800000);
-        assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 30분")));
-        now = next.autoEndAt - 1; assert(attack("a", "30-last").includes("획득 포인트")); tick(1);
+        const next = read().serverRaid.current; assert.strictEqual(next.autoEndAt, request + 600000); assert.strictEqual(next.durationMs, 600000);
+        assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 10분")));
+        now = next.autoEndAt - 1; assert(attack("a", "10-last").includes("획득 포인트")); tick(1);
         assert.strictEqual(read().serverRaid.current, null); assert.strictEqual(read().serverRaid.completed, 2);
     } finally { c.GLOBAL_CONFIG.serverRaid.timers.durationMs = duration; }
 });
