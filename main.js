@@ -984,7 +984,7 @@ const GLOBAL_CONFIG = {
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
         limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
-        timers: { preparationMs: 60000, retryMs: 2000 },
+        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 600000 }, // 우선 10분 테스트. 정식 전환 시 durationMs를 1800000으로 변경
         rewards: { attackDivisor: 100, ranks: [500000000, 450000000, 400000000, 350000000, 300000000, 250000000, 200000000, 150000000, 100000000, 50000000] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
         authentication: { operatorIds: [] }, // 네이티브 콜백·신뢰된 내부 어댑터의 운영 주체 ID. 닉네임은 인증에 사용하지 않음
@@ -2801,10 +2801,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         var data = loadJsonFile(filePath);
-        // 레이드 명령이 잠금·중복 종료 안내로 반환돼도 재시작 후 미완료 작업을 재개한다.
-        if (data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
         var raidCommand = isServerRaidCommand(msg);
         var raidLocked = isServerRaidLocked(data);
+        // 일반 입력은 기존 작업을 재개하고, 레이드 명령은 운영 권한 검사 뒤 재개한다.
+        if (!raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
         if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg))) {
             var raidPetData = loadJsonFile(memberPetPath);
             var raidGuildData = loadJsonFile(guildPath);
@@ -2815,6 +2815,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replyServerRaidSafely(replier, serverRaidHeader() + raidNick + ",\n해당 명령어를 사용할 권한이 없습니다.");
                 return;
             }
+            if (raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
             if (raidLocked && !isServerRaidQueryCommand(msg) && msg !== "/레이드공격" && msg !== "/서버대전종료" && msg !== "/서버대전전체초기화") {
                 replyServerRaidSafely(replier, buildServerRaidLockMessage(raidNick));
                 return;
@@ -32957,26 +32958,59 @@ function queueServerRaidNotice(state, round, kind, text, ctx) {
     state.outbox.push({ id: id, generation: state.generation, text: text, deliveries: deliveries });
 }
 
+// 새 회차에 저장된 종료 시각으로 진행 시간과 KST 마감을 안내하는 함수
+function buildServerRaidTimeNotice(round) {
+    if (round.autoEndAt === undefined) return ""; // 이전 진행 회차에는 종료 시각을 새로 만들지 않음
+    requireServerRaidSafeInteger(round.durationMs, "대전 진행 시간");
+    requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
+    return "⏱️ 진행 시간: " + (round.durationMs / 60000) + "분\n🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt) + "\n※ 운영 상황에 따라 조기 종료될 수 있습니다.";
+}
+
+// 저장된 회차 종료 시각이 지났는지 확인하는 함수
+function isServerRaidAutoEndDue(round, now) {
+    if (!round || round.autoEndAt === undefined) return false;
+    requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
+    return (round.state === "PREP" || round.state === "ACTIVE") && now >= round.autoEndAt;
+}
+
+// 준비·종료 마감과 미완료 공지의 가장 이른 다음 예약 간격을 계산하는 함수
+function getServerRaidWorkDelay(state, now, retry) {
+    var round = state.current, delay = retry; // 공지 실패가 있으면 해당 재시도 시각도 비교
+    if (round && round.state === "PREP") delay = delay === null ? round.prepareUntil - now : Math.min(delay, round.prepareUntil - now);
+    if (round && (round.state === "PREP" || round.state === "ACTIVE") && round.autoEndAt !== undefined) {
+        requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
+        delay = delay === null ? round.autoEndAt - now : Math.min(delay, round.autoEndAt - now);
+    }
+    if (round && round.state === "SETTLING") delay = delay === null ? GLOBAL_CONFIG.serverRaid.timers.retryMs : Math.min(delay, GLOBAL_CONFIG.serverRaid.timers.retryMs);
+    for (var i = 0; i < state.outbox.length; i++) for (var j = 0; j < state.outbox[i].deliveries.length; j++) if (!state.outbox[i].deliveries[j].sent) {
+        if (!state.outbox[i].deliveries[j].cancelled) delay = delay === null ? GLOBAL_CONFIG.serverRaid.timers.retryMs : Math.min(delay, GLOBAL_CONFIG.serverRaid.timers.retryMs);
+    }
+    return Math.max(1, delay === null ? GLOBAL_CONFIG.serverRaid.timers.retryMs : delay);
+}
+
 // 회차 생성과 준비 공지를 같은 데이터 변경으로 구성하는 함수
 function startServerRaid(data, now, generation, room, ctx) {
     if (isServerRaidLocked(data)) throw new Error("이미 진행 중인 서버 레이드대전");
+    var duration = requireServerRaidSafeInteger(GLOBAL_CONFIG.serverRaid.timers.durationMs, "대전 진행 시간");
+    if (duration <= GLOBAL_CONFIG.serverRaid.timers.preparationMs) throw new Error("대전 진행 시간은 준비 시간보다 길어야 합니다");
+    var deadline = requireServerRaidSafeInteger(now + duration, "자동 종료 시각"); // 시작 명령 처리 시각부터 준비 시간을 포함해 확정
     if (!data.serverRaid) data.serverRaid = createServerRaidState(generation);
     var state = data.serverRaid;
     requireServerRaidSafeInteger(state.sequence + 1, "회차 번호");
     state.sequence++;
-    var round = { id: state.generation + ":" + state.sequence, state: "PREP", prepareUntil: now + GLOBAL_CONFIG.serverRaid.timers.preparationMs, startedAt: null, originRoom: room, accounts: {}, results: [] };
+    var round = { id: state.generation + ":" + state.sequence, state: "PREP", requestedAt: now, durationMs: duration, autoEndAt: deadline, prepareUntil: now + GLOBAL_CONFIG.serverRaid.timers.preparationMs, startedAt: null, originRoom: room, accounts: {}, results: [] };
     state.current = round;
-    queueServerRaidNotice(state, round, "prepare", buildServerRaidPreparationNotice(), ctx);
+    queueServerRaidNotice(state, round, "prepare", buildServerRaidPreparationNotice(round), ctx);
     return round;
 }
 
 // 준비 마감 시각을 기준으로 한 번만 공격을 활성화하는 함수
 function activateServerRaid(data, now, ctx) {
     var state = data.serverRaid, round = state && state.current;
-    if (!round || round.state !== "PREP" || now < round.prepareUntil) return false;
+    if (!round || round.state !== "PREP" || now < round.prepareUntil || isServerRaidAutoEndDue(round, now)) return false;
     round.state = "ACTIVE";
     round.startedAt = now; // 실제 공격 활성화 시각. 준비 마감은 원래 값으로 유지하며 시작 일시는 최초 한 번만 확정
-    queueServerRaidNotice(state, round, "start", "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n이미지링크:" + GLOBAL_CONFIG.serverRaid.links.startImage + "\n━━━━━━━━━━━━\n📢 서버 레이드대전을 시작합니다!\n\n오톡 세상을 멸망케 할\n거대 호월이 등장!\n\n🐹 “크아아아앙!!”\n\n우리 서버의 힘을 모아\n호월이의 폭주를 막아주세요! 🔥\n━━━━━━━━━━━━\n🎟️ 공격 기회: 계정당 5회\n👉 지금 공격: /레이드공격", ctx);
+    queueServerRaidNotice(state, round, "start", "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n이미지링크:" + GLOBAL_CONFIG.serverRaid.links.startImage + "\n━━━━━━━━━━━━\n📢 서버 레이드대전을 시작합니다!\n" + buildServerRaidTimeNotice(round) + "\n\n오톡 세상을 멸망케 할\n거대 호월이 등장!\n\n🐹 “크아아아앙!!”\n\n우리 서버의 힘을 모아\n호월이의 폭주를 막아주세요! 🔥\n━━━━━━━━━━━━\n🎟️ 공격 기회: 계정당 5회\n👉 지금 공격: /레이드공격", ctx);
     return true;
 }
 
@@ -33024,6 +33058,7 @@ function getServerRaidAttackCheck(data, user, now, event) {
     var receipt = eventId && data.serverRaid && data.serverRaid.eventReceipts[eventId];
     if (receipt && (!round || receipt.roundId !== round.id)) return { message: "이미 처리된 공격 이벤트입니다.\n이전 회차의 공격은 다시 반영하지 않습니다." };
     if (!round) return { message: "현재 진행 중인 서버 레이드대전이 없습니다.\n\n대전 시작 안내 후 참여해주세요! 🐹" };
+    if (isServerRaidAutoEndDue(round, now)) return { message: "대전 진행 시간이 종료되어 공격 접수가 마감되었습니다.\n자동 종료와 보상 정산을 기다려주세요." };
     if (round.state === "PREP") return { message: "아직 공격 준비 시간입니다!\n\n⏳ 공격 시작까지 " + Math.max(0, Math.ceil((round.prepareUntil - now) / 1000)) + "초\n시작 안내 후 다시 공격해주세요.\n\n👉 /레이드공격" };
     if (round.state !== "ACTIVE") return { message: "이번 대전의 공격 접수가 마감되었습니다.\n\n🏆 최종 순위와 보상을 정산 중입니다.\n종료 안내를 기다려주세요!" };
     var member = data.member[user], server = normalizeHoiServerLabel(member.server);
@@ -33111,20 +33146,28 @@ function buildServerRaidResults(round, freeze) {
 }
 
 // 종료 승인 또는 준비 취소를 구성하고 신규 공격을 마감하는 함수
-function closeServerRaid(data, ctx) {
+function closeServerRaid(data, ctx, reason) {
     var state = data.serverRaid, round = state && state.current;
     if (!round) return { changed: false, message: "종료할 서버 레이드대전이 없습니다." };
     if (round.state === "SETTLING") return { changed: false, message: "현재 서버 레이드대전 종료 처리가 진행 중입니다.\n정산 완료를 기다려주세요." };
-    if (round.state === "PREP") {
+    var automatic = reason === "automatic" || isServerRaidAutoEndDue(round, Date.now());
+    if (round.state === "PREP" && !automatic) {
         state.outbox = state.outbox.filter(function (item) { return item.id.indexOf(round.id + ":") !== 0; });
         queueServerRaidNotice(state, round, "cancel", serverRaidHeader() + "📢 이번 서버 레이드대전의 시작이 취소되었습니다.\n\n다음 시작 안내를 기다려주세요! 🐹", ctx);
         state.current = null;
         return { changed: true };
     }
+    for (var n = 0; n < state.outbox.length; n++) if (state.outbox[n].id === round.id + ":prepare" || state.outbox[n].id === round.id + ":start") {
+        var pending = state.outbox[n].deliveries;
+        for (var d = 0; d < pending.length; d++) if (!pending[d].sent) pending[d].cancelled = true; // 종료 후 늦은 시작 공지는 보내지 않고 실제 발송 상태는 보존
+    }
     round.state = "SETTLING";
+    round.endReason = automatic ? "automatic" : "manual";
+    round.closedAt = Date.now();
     round.results = buildServerRaidResults(round, true);
     var endText = round.results.length ? "🐹 “크앙… 항복이다!\n오톡 세상 정복은 다음 주로 미루겠다…”\n\n여러분의 활약으로\n호월이의 폭주를 막아냈습니다! 🎉" : "🐹 “오늘은 조용하군… 다음 대전을 기다리겠다!”";
-    queueServerRaidNotice(state, round, "end", "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n이미지링크:" + GLOBAL_CONFIG.serverRaid.links.endImage + "\n━━━━━━━━━━━━\n📢 서버 레이드대전이 종료되었습니다!\n\n" + endText, ctx);
+    var endGuide = automatic ? "⏰ 진행 시간이 종료되어\n서버 레이드대전이 자동 종료되었습니다." : "📢 운영에 의해\n서버 레이드대전이 조기 종료되었습니다.";
+    queueServerRaidNotice(state, round, "end", "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n이미지링크:" + GLOBAL_CONFIG.serverRaid.links.endImage + "\n━━━━━━━━━━━━\n" + endGuide + "\n\n📊 최종 순위와 보상을 집계합니다.\n\n" + endText, ctx);
     return { changed: true };
 }
 
@@ -33215,8 +33258,9 @@ function buildServerRaidLockMessage(nick) {
 }
 
 // 준비 안내와 규칙 더보기를 만드는 함수
-function buildServerRaidPreparationNotice() {
+function buildServerRaidPreparationNotice(round) {
     var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 공격 기회: 계정당 5회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 전 레이드매력의 1%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
+    if (round) lines.splice(5, 0, buildServerRaidTimeNotice(round));
     for (var i = 0; i < GLOBAL_CONFIG.serverRaid.rewards.ranks.length; i++) lines.push((i + 1) + "위: " + numberWithCommas(GLOBAL_CONFIG.serverRaid.rewards.ranks[i]) + " 포인트");
     lines.push("", "※ 해당 회차 1회 이상 공격한", "참가자에게 인당 지급됩니다.", "※ 공격 보상과 순위 보상은 별도 지급!", "※ 동점은 공동 순위·동일 보상입니다.", "", "⭐ 우승 서버는 누적 우승 횟수 +1", "서버명 옆에 우승 기록이 남습니다!", "━━━━━━━━━━━━", "👉 공격 참여: /레이드공격", "", "우리 서버의 이름으로 도전하세요! 🐹");
     return lines.join("\n");
@@ -33324,7 +33368,8 @@ function getServerRaidLatestRecord(data, user) {
     var participant = getServerRaidCurrentParticipant(data, member);
     if (participant) {
         var round = data.serverRaid.current;
-        return { state: round.state, attacks: participant.attacks, record: { startedAt: round.startedAt, server: participant.server, serverRank: participant.serverRank, attackReward: participant.attackReward, rankReward: participant.rankReward, paid: participant.paid } };
+        var displayState = isServerRaidAutoEndDue(round, Date.now()) ? "SETTLING" : round.state; // 타이머가 늦어져도 마감 후 진행 중으로 안내하지 않음
+        return { state: displayState, attacks: participant.attacks, record: { startedAt: round.startedAt, server: participant.server, serverRank: participant.serverRank, attackReward: participant.attackReward, rankReward: participant.rankReward, paid: participant.paid } };
     }
     var latest = account.latest;
     if (!latest || latest.server !== normalizeHoiServerLabel(member.server) || latest.period !== account.period) return null;
@@ -33400,10 +33445,11 @@ function clearServerRaidWorkTimer(ctx) {
     if (serverRaidWorkTimers[key]) { clearTimeout(serverRaidWorkTimers[key]); delete serverRaidWorkTimers[key]; }
 }
 
-// 저장 상태에 준비·정산·미발송 공지가 남았는지 확인하는 함수
+// 저장 상태에 준비·자동 종료·정산·미발송 공지가 남았는지 확인하는 함수
 function serverRaidHasWork(state) {
     if (state.current && (state.current.state === "PREP" || state.current.state === "SETTLING")) return true;
-    for (var i = 0; i < state.outbox.length; i++) for (var j = 0; j < state.outbox[i].deliveries.length; j++) if (!state.outbox[i].deliveries[j].sent) return true;
+    if (state.current && state.current.state === "ACTIVE" && state.current.autoEndAt !== undefined) return true;
+    for (var i = 0; i < state.outbox.length; i++) for (var j = 0; j < state.outbox[i].deliveries.length; j++) if (!state.outbox[i].deliveries[j].sent && !state.outbox[i].deliveries[j].cancelled) return true;
     return false;
 }
 
@@ -33420,6 +33466,10 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
             beginDataSaveTransaction(); entered = true;
             var latest = loadJsonFile(filePath), state = latest.serverRaid;
             if (!state || state.generation !== generation || state.sequence !== sequence) return;
+            if (isServerRaidAutoEndDue(state.current, Date.now()) && closeServerRaid(latest, ctx, "automatic").changed) {
+                saveJsonFile(latest, filePath);
+                endDataSaveTransaction(); beginDataSaveTransaction(); // 마감 확정 후에는 정산 재시도만 수행
+            }
             if (activateServerRaid(latest, Date.now(), ctx)) {
                 saveJsonFile(latest, filePath);
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 확정된 단계 이후 공지 실패로 전투 상태를 롤백하지 않음
@@ -33444,7 +33494,7 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
                     if (notice.generation !== generation) continue;
                     for (var j = 0; j < notice.deliveries.length; j++) {
                         var delivery = notice.deliveries[j];
-                        if (delivery.sent) continue;
+                        if (delivery.sent || delivery.cancelled) continue;
                         try {
                             if (noticeMsg(notice.text, [delivery.room]) === false) { retry = GLOBAL_CONFIG.serverRaid.timers.retryMs; break; }
                         } catch (noticeError) { debuggerLog("[ServerRaid notice] " + noticeError); retry = GLOBAL_CONFIG.serverRaid.timers.retryMs; break; }
@@ -33455,7 +33505,7 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
                     if (retry !== null) break; // 사전·시작·종료 공지의 발송 순서를 유지
                 }
             }
-            if (serverRaidHasWork(state)) retry = state.current && state.current.state === "PREP" && retry === null ? Math.max(1, state.current.prepareUntil - Date.now()) : GLOBAL_CONFIG.serverRaid.timers.retryMs;
+            if (serverRaidHasWork(state)) retry = getServerRaidWorkDelay(state, Date.now(), retry);
         } catch (workError) {
             debuggerLog("[ServerRaid work] " + workError);
             retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
