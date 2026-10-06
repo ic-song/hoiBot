@@ -177,15 +177,15 @@ group("준비 취소·옛 타이머 무효·완료 회차와 보상 미증가", 
     const s = read().serverRaid; assert(!s.current); assert.strictEqual(s.completed, 0); assert.strictEqual(s.history.length, 0); assert.deepStrictEqual(s.wins, {});
     assert(!traces.some(t => t.type === "notice" && t.text.includes("크아아아앙")));
 });
-group("최종 D1% 버림·치명타 보상 반영·각 공격 R/D/P 보존", () => {
+group("치명타 전 R1% 버림·치명타 데미지와 보상 분리·각 공격 R/D/P 보존", () => {
     start(); const d = read(); d.member.a.R = 100099; write(d);
     const output = attack(); let current = read(); const a = current.serverRaid.current.accounts[current.member.a.serverRaidAccount.id];
     assert.deepStrictEqual([a.attacks[0].R, a.attacks[0].D, a.attacks[0].P], [100099, 100099, 1000]);
     vm.runInContext("Math.random=function(){return 0}", c);
     const critical = attack("a", "crit"); current = read(); const result = current.serverRaid.current.accounts[current.member.a.serverRaidAccount.id].attacks[1];
-    assert.strictEqual(result.D, 170168); assert.strictEqual(result.P, 1701); assert(critical.includes("치명타 발동"));
+    assert.strictEqual(result.D, 170168); assert.strictEqual(result.P, 1000); assert(critical.includes("치명타 발동"));
     assert(output.includes("레이드매력의 1% 지급")); assert(!output.includes("치명타 적용"));
-    assert(critical.includes("치명타 적용 레이드매력의 1% 지급")); assert.strictEqual(current.member.a.point, 1000002701);
+    assert(critical.includes("레이드매력의 1% 지급")); assert(!critical.includes("일반 공격")); assert.strictEqual(current.member.a.point, 1000002000);
 });
 group("공성전 방 공격은 계정 서버 고정·6회 요청 중 5회만 반영", () => {
     start(); for (let i = 0; i < 6; i++) attack("a", "allowed-room-" + i, false, i % 2 ? "test" : "room8");
@@ -217,9 +217,9 @@ group("기본 7인수 콜백 시작·공격·여러 방 및 재시작 후 계정
     end(); const paid = disk[memberPath]; end(); tick();
     assert.strictEqual(disk[memberPath], paid); assert.strictEqual(read().member.a.point, 1500005000);
 });
-group("MASTER 포함 Main·Info 잠금·기록 인수 안내보다 잠금 우선", () => {
+group("MASTER 포함 Main·Info 일반 명령 잠금·서버 이동 및 출석 잠금 유지", () => {
     start();
-    for (const user of ["a", "master", "admin"]) for (const msg of ["/정보 a", "/내정보", "/서버순위", "ㅈㅈㅈ", "/종합순위", "/레이드순위", "/서버레이드순위 호이서버2", "/서버변경 호이서버2", "/서버이동 a 호이서버2[2030]", "ㅊㅊ", "출발한다"]) {
+    for (const user of ["a", "master", "admin"]) for (const msg of ["/정보 a", "/내정보", "/서버순위", "ㅈㅈㅈ", "/종합순위", "/서버변경 호이서버2", "/서버이동 a 호이서버2[2030]", "ㅊㅊ", "출발한다"]) {
         const before = disk[memberPath]; assert(run(msg, user).includes("지금은 서버 레이드대전"), user + msg); assert.strictEqual(disk[memberPath], before);
     }
     assert(infoContext.isInfoServerRaidLocked(read()));
@@ -273,11 +273,11 @@ group("10위5천만·미참여 무보상·유효0데미지 참가·전체 미참
 });
 group("최신 개인 기록 유지·KST·누적 회차/공격 구분·더보기와 미참여 조회", () => {
     start(); for (let i = 0; i < 5; i++) attack("a", "a" + i); attack("b", "b"); end();
-    const personal = run("/레이드순위"); assert(personal.includes("2026.10.05 21:01")); assert(!personal.includes("/5회")); assert(!personal.includes("서버 전체 데미지")); assert(personal.includes("✅ 보상 지급 완료"));
+    const personal = run("/레이드순위"); assert(personal.includes("2026.10.05 21:01")); assert(!personal.includes("/5회")); assert(!personal.includes("서버 전체 데미지")); assert(personal.includes("✅ 지급 완료"));
     const latest = clone(read().member.a.serverRaidAccount.latest); start(); end(); assert.deepStrictEqual(read().member.a.serverRaidAccount.latest, latest);
-    const cumulative = run("/서버레이드순위"); assert(cumulative.includes("누적 진행: 2회")); assert(cumulative.includes("참가 1회 · 공격 5회")); assert(cumulative.includes("83.33%")); assert(cumulative.includes("← 나"));
-    assert(cumulative.indexOf("나의 서버 기여도") < cumulative.indexOf("<ALLSEE>"));
-    const before = disk[memberPath]; assert(run("/서버레이드순위", "c").includes("순위: 미참여")); assert(run("/서버레이드순위 호이서버2").includes("서버명을 입력하지")); assert.strictEqual(disk[memberPath], before);
+    const cumulative = run("/서버레이드순위"); assert(cumulative.includes("우승: 1회")); assert(cumulative.includes("참가 1회 · 공격 5회")); assert(cumulative.includes("83.33%")); assert(cumulative.includes("← 나"));
+    assert(cumulative.indexOf("📊 기여도") < cumulative.indexOf("<ALLSEE>"));
+    const before = disk[memberPath]; assert(run("/서버레이드순위", "c").includes("참가 기록 없음")); assert(run("/서버레이드순위 호이서버2").includes("서버명을 입력하지")); assert.strictEqual(disk[memberPath], before);
 });
 group("이동·재입장 기록 미복원·남은 명단 기여도 재계산·확정 개인 결과 보존", () => {
     start(); attack("a", "a"); attack("b", "b"); end(); const d = read();
@@ -433,7 +433,7 @@ group("이전부터 대기 중인 펫이름·추천인·관리자 소식 입력�
 group("기록 조회에서도 기존 출석·계정정지·일대일 패스 제한 유지", () => {
     for (const msg of ["/레이드순위", "/서버레이드순위"]) {
         const before = disk[memberPath];
-        assert(run(msg, "absent").includes("출석체크")); assert(run(msg, "suspended").includes("계정정지")); assert(run(msg, "noPass", undefined, "private", false).includes("공성전 또는 팻 테스트방"));
+        assert(run(msg, "absent").includes("출석체크")); assert(run(msg, "suspended").includes("계정정지")); assert(run(msg, "noPass", undefined, "private", false).includes("프리미엄 필요"));
         assert.strictEqual(disk[memberPath], before);
     }
 });
@@ -613,19 +613,19 @@ group("실제 레이드 계산·인장·홈/길드 큐브·레벨·퀘스트 합
     } finally { for (const [name, original] of originals) c[name] = original; }
 });
 
-group("제보 치명타 수치 재현·최종값 1% 지급 및 이전 지급 기록 재전송 유지", () => {
+group("제보 치명타 수치 재현·R1% 지급 및 이전 D1% 지급 기록 재전송 유지", () => {
     start(); const d = read(); d.member.a.R = 116601136; write(d);
     const originalUpgrade = c.calculateEffectivePetUpgradeLevel; c.calculateEffectivePetUpgradeLevel = () => 882;
     vm.runInContext("Math.random=function(){return 0}", c);
     try {
         const output = attack("a", "reported-critical"), current = read();
         const participant = current.serverRaid.current.accounts[current.member.a.serverRaidAccount.id], row = participant.attacks[0];
-        assert.strictEqual(row.D, 876840543); assert.strictEqual(row.P, 8768405);
-        assert(output.includes("레이드매력: 116,601,136")); assert(output.includes("획득 보상: 🅟8,768,405"));
-        assert(output.includes("치명타 적용 레이드매력의 1% 지급"));
-        // 보완 전 저장된 공격은 당시 R1% 지급액과 설명을 그대로 유지한다.
-        delete row.rewardBasis; row.P = 1166011; participant.attackReward = 1166011; current.member.a.point = 1001166011; write(current);
-        const old = disk[memberPath]; assert(attack("a", "reported-critical").includes("레이드매력의 1% 지급"));
+        assert.strictEqual(row.D, 876840543); assert.strictEqual(row.P, 1166011);
+        assert(output.includes("레이드매력: 116,601,136")); assert(output.includes("획득 포인트: 🅟1,166,011"));
+        assert(output.includes("레이드매력의 1% 지급"));
+        // 직전 버전에서 지급된 D1% 공격은 당시 지급액과 설명을 유지한다.
+        row.rewardBasis = "damage"; row.P = 8768405; participant.attackReward = 8768405; current.member.a.point = 1008768405; write(current);
+        const old = disk[memberPath]; assert(attack("a", "reported-critical").includes("공격 데미지의 1% 지급 (당시 기준)"));
         assert.strictEqual(disk[memberPath], old);
     } finally { c.calculateEffectivePetUpgradeLevel = originalUpgrade; }
 });
@@ -664,8 +664,8 @@ group("조회 명령 새 이름 2종과 안내 동기화·구 이름은 레이�
     const before = disk[memberPath]; assert(run("/서버레이드순위 호이서버2").includes("서버명을 입력하지")); assert.strictEqual(disk[memberPath], before);
 });
 
-group("운영 2방 허용·DEV 테스트방 한정·타 방과 일대일은 읽기/저장 전 차단·방 간 5회 공유", () => {
-    const commands = ["/서버대전시작", "/서버대전종료", "/서버대전전체초기화", "/레이드공격", "/레이드순위", "/서버레이드순위", "/서버레이드순위 호이서버2", "/레이드기록", "/서버레이드기록"];
+group("실행 명령 운영 2방·DEV 테스트방 한정·타 방 실행 차단·방 간 5회 공유", () => {
+    const commands = ["/서버대전시작", "/서버대전종료", "/서버대전전체초기화", "/레이드공격", "/레이드기록", "/서버레이드기록"];
     const before = JSON.stringify(disk);
     for (const room of ["room1", "room90", "room92", "private", "room8 "]) for (const user of ["master", "admin", "a"]) for (const msg of commands) {
         traces = []; assert(run(msg, user, undefined, room).includes("공성전 또는 팻 테스트방"));
@@ -692,7 +692,128 @@ group("운영 2방 허용·DEV 테스트방 한정·타 방과 일대일은 읽�
     for (let i = 0; i < 6; i++) run("/레이드공격", "a", undefined, i % 2 ? "test" : "room8");
     const d = read(); assert.strictEqual(d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id].attacks.length, 5);
     run("/서버대전종료", "master", undefined, "test"); tick();
-    assert(run("/레이드순위", "a", undefined, "test").includes("보상 지급 완료"));
+    assert(run("/레이드순위", "a", undefined, "test").includes("✅ 지급 완료"));
+});
+
+group("공격 UI 순서·일반/치명타 단일 상태·0매력 실제 치명타·마지막 0회", () => {
+    start(); const plain = attack("a", "ui-normal");
+    assert(plain.indexOf("공격 데미지:") < plain.indexOf("레이드매력:"));
+    assert(plain.includes("└ 일반 공격 · 치명타 미발동")); assert(!plain.includes("🔥 치명타 발동!"));
+    assert(plain.includes("💰 획득 포인트: 🅟1,000"));
+    assert(plain.indexOf("🏰 우리 서버 현황") < plain.indexOf("현재 서버 순위:"));
+    assert(plain.includes("이번 공격까지 합산된 기록입니다."));
+    for (let i = 1; i < 5; i++) attack("a", "ui-" + i);
+    assert(replies.join("\n").includes("남은 공격: 0/5회"));
+    const d = read(); d.member.b.R = 0; write(d);
+    vm.runInContext("Math.random=function(){return 0}", c);
+    const zeroCritical = attack("b", "crit"), z = read();
+    const row = z.serverRaid.current.accounts[z.member.b.serverRaidAccount.id].attacks[0];
+    assert.strictEqual(row.R, 0); assert.strictEqual(row.D, 0); assert.strictEqual(row.P, 0); assert.strictEqual(row.critical, true);
+    assert(zeroCritical.includes("└ 🔥 치명타 발동!")); assert(!zeroCritical.includes("일반 공격"));
+});
+
+group("같은 회차에 이전 D1%·신규 R1% 혼합 시 실제 지급 합계와 과거 기준 보존", () => {
+    start(); attack("a", "old"); let d = read(), p = d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id];
+    p.attacks[0].D = 170000; p.attacks[0].P = 1700; p.attacks[0].critical = true; p.attacks[0].rewardBasis = "damage";
+    p.damage = "170000"; p.attackReward = 1700; d.member.a.point = 1000001700; write(d);
+    const before = disk[memberPath]; const replay = attack("a", "old");
+    assert(replay.includes("획득 포인트: 🅟1,700")); assert(replay.includes("당시 기준")); assert.strictEqual(disk[memberPath], before);
+    vm.runInContext("Math.random=function(){return 0}", c);
+    attack("a", "crit"); end(); d = read();
+    assert.strictEqual(d.member.a.serverRaidAccount.latest.attackReward, 2700);
+    const output = run("/레이드순위"); assert(output.includes("🅟2,700")); assert(output.includes("🅟500,002,700"));
+    assert(output.includes("공격 당시 기준으로 지급된 포인트")); assert(!output.includes("공격마다 레이드매력의 1%"));
+    assert.strictEqual(c.getServerRaidAttackRewardGuide([{ rewardBasis: "damage" }]), "공격마다 최종 데미지의 1% (당시 기준)");
+    assert.strictEqual(c.getServerRaidAttackRewardGuide([{}]), "공격마다 레이드매력의 1%");
+    assert.strictEqual(c.getServerRaidAttackRewardGuide(null), "공격 당시 기준으로 지급된 포인트");
+});
+
+group("실제 7인수 콜백 순위 조회는 모든 운영방·개인톡에서 준비/진행/정산/완료 중 허용", () => {
+    const originalFlow = c.commandDataFlowLock, originalDepth = c.autoDailyQuestInternalDepth;
+    c.commandDataFlowLock = { readLock: () => lock(), writeLock: () => lock() }; c.autoDailyQuestInternalDepth = 0;
+    function verify(state) {
+        assert.strictEqual(read().serverRaid.current ? read().serverRaid.current.state : "DONE", state);
+        const before = JSON.stringify(disk);
+        for (const room of ["room1", "room15", "room90", "room92", "unknown", "room8", "test", "private"]) for (const msg of ["/레이드순위", "/서버레이드순위"]) {
+            replies = []; traces = []; c.response(room, msg, "a", room !== "private", c.replier, {}, "com.kakao.talk");
+            assert.strictEqual(replies.length, 1, room + msg + state);
+            assert(replies[0].includes(msg === "/레이드순위" ? "내 레이드 기록" : "서버 누적 순위"));
+            assert(!traces.some(t => t.type === "save" || t.type === "notice")); assert.strictEqual(JSON.stringify(disk), before);
+        }
+    }
+    try {
+        run("/서버대전시작", "master"); verify("PREP"); tick(); tick(60000);
+        attack("a", "live"); verify("ACTIVE"); run("/서버대전종료", "master"); verify("SETTLING"); tick(); verify("DONE");
+        for (const msg of ["dev/레이드순위", "dev/서버레이드순위"]) assert(run(msg, "master", undefined, "room1").includes("DEV 레이드 명령어는 팻 테스트방"));
+        const before = disk[memberPath]; assert(run("/서버레이드순위 안내", "a", undefined, "room1").includes("서버명을 입력하지")); assert.strictEqual(disk[memberPath], before);
+    } finally { c.commandDataFlowLock = originalFlow; c.autoDailyQuestInternalDepth = originalDepth; }
+});
+
+group("여러 회차 누적 개인/서버 기여도·순위 일치 및 진행 중 공격 실시간 합산", () => {
+    const d = read(); d.member.b.R = 300000; write(d);
+    start(); attack("a", "r1a"); attack("b", "r1b"); end(); start(); attack("a", "r2a"); end();
+    for (const msg of ["/레이드순위", "/서버레이드순위"]) {
+        const output = run(msg); assert(output.includes("데미지: 200,000💞")); assert(output.includes("기여도: 40.00%")); assert(output.includes("순위: 2위 / 2명"));
+    }
+    start(); attack("a", "r3a"); attack("a", "r3a2");
+    const before = disk[memberPath], summary = c.buildServerRaidCumulativeRecord(read(), "a");
+    assert.strictEqual(summary.total, "700000"); assert.strictEqual(summary.own.damage, "400000");
+    assert.strictEqual(summary.rows.length, 2); assert.strictEqual(summary.own.participations, 3); assert.strictEqual(summary.own.attackCount, 4);
+    for (const msg of ["/레이드순위", "/서버레이드순위"]) {
+        const output = run(msg); assert(output.includes("기여도: 57.14%")); assert(output.includes("순위: 1위 / 2명"));
+    }
+    const personal = run("/레이드순위"); assert(personal.includes("⏳ 대전 진행 중")); assert(personal.includes("서버 순위: 집계 중"));
+    assert(!personal.includes("✅ 지급 완료")); assert(!personal.includes("💵 보상 합계")); assert.strictEqual(disk[memberPath], before);
+});
+
+group("정산 일부 완료·재시작에서도 누적 중복 없음·최신 회차는 정산 중 표시", () => {
+    start(); attack("a", "round1a"); attack("b", "round1b"); end();
+    start(); attack("a", "round2a"); attack("b", "round2b"); run("/서버대전종료", "master");
+    let d = read(), id = d.member.a.serverRaidAccount.id;
+    assert(c.settleServerRaidParticipant(d, c.buildServerRaidAccountIndex(d), id)); write(d);
+    const snapshot = disk[memberPath], partial = c.buildServerRaidCumulativeRecord(d, "a");
+    assert.strictEqual(partial.total, "400000"); assert(partial.rows.every(row => row.damage === "200000" && row.participations === 2 && row.attackCount === 2));
+    let personal = run("/레이드순위"); assert(personal.includes("⏳ 정산 중")); assert(!personal.includes("✅ 지급 완료")); assert(!personal.includes("💵 보상 합계"));
+    assert.strictEqual(disk[memberPath], snapshot); c.serverRaidWorkTimers = {}; timers.clear();
+    run("/서버레이드순위", "a", undefined, "unknown"); tick();
+    const after = c.buildServerRaidCumulativeRecord(read(), "a"); assert.strictEqual(after.total, partial.total); assert.deepStrictEqual(clone(after.rows), clone(partial.rows));
+    personal = run("/레이드순위"); assert(personal.includes("✅ 지급 완료")); assert(personal.includes("🅟500,001,000"));
+});
+
+group("두 순위 UI 전체보기 정확히 1회·이동 안내 위·최근 참가/명단 아래·빈 기록 생략", () => {
+    for (const msg of ["/레이드순위", "/서버레이드순위"]) assert(!run(msg).includes("<ALLSEE>"));
+    assert(run("/서버레이드순위").includes("누적 참가자: 0명")); assert(run("/서버레이드순위").includes("👾 누적: 0💞"));
+    assert(run("/서버레이드순위").includes("⭐0")); start(); attack("a", "allsee"); end();
+    for (const msg of ["/레이드순위", "/서버레이드순위"]) {
+        const output = run(msg), [summary, detail] = output.split("<ALLSEE>");
+        assert.strictEqual(output.split("<ALLSEE>").length, 2); assert.strictEqual(replies.length, 1);
+        assert(summary.includes(msg === "/레이드순위" ? "/서버레이드순위" : "/레이드순위"));
+        assert(summary.includes("📊 기여도:")); assert(!summary.includes("💰 공격 보상"));
+        assert(detail.includes(msg === "/레이드순위" ? "📋 최근 참가" : "👥 누적 기여도 순위"));
+    }
+    const stranger = run("/서버레이드순위", "c"); assert(stranger.split("<ALLSEE>")[0].includes("참가 기록 없음")); assert(stranger.split("<ALLSEE>")[1].includes("💛a"));
+});
+
+group("동점 공동 메달·큰 정수 누적·조회자 ID·닉네임 변경·서버 이동과 초기화", () => {
+    start(); attack("a", "a"); attack("b", "b"); end();
+    let d = read(); d.member.renamed = d.member.a; delete d.member.a; write(d);
+    const output = run("/서버레이드순위", "renamed");
+    assert(output.includes("🥇 [💛renamed] 님 ← 나")); assert(output.includes("🥇 [💛b] 님")); assert(!output.includes("🥈"));
+    const id = d.member.renamed.serverRaidAccount.id; assert.strictEqual(c.buildServerRaidCumulativeRecord(d, "renamed").own.id, id);
+    d.member.renamed.serverRaidAccount.total.damage = "90071992547409910000"; d.member.b.serverRaidAccount.total.damage = "90071992547409910000"; write(d);
+    const summary = c.buildServerRaidCumulativeRecord(read(), "renamed"); assert.strictEqual(summary.total, "180143985094819820000"); assert.strictEqual(c.serverRaidPercent(summary.own.damage, summary.total), "50.00%");
+    c.applyServerRaidMembershipChange(d.member.renamed, c.GLOBAL_CONFIG.serverRaid.servers[1]); write(d);
+    assert(!run("/레이드순위", "renamed").includes("<ALLSEE>")); assert(run("/서버레이드순위", "b").includes("기여도: 100.00%"));
+    run("/서버대전전체초기화", "master"); assert(run("/서버레이드순위", "b").includes("누적 참가자: 0명"));
+});
+
+group("0데미지 참가도 0%·동점 순위·기록 유지·공통 치명타 API 기존 반환값 보존", () => {
+    let d = read(); d.member.a.R = 0; d.member.b.R = 0; write(d); start(); attack("a", "a"); attack("b", "b");
+    const active = run("/서버레이드순위"); assert(active.includes("누적 참가자: 2명")); assert(active.includes("기여도: 0.00%")); assert(!active.includes("NaN"));
+    end(); assert(run("/레이드순위").includes("기여도: 0.00%")); assert(run("/레이드순위").includes("순위: 1위 / 2명"));
+    vm.runInContext("Math.random=function(){return 0}", c); const meta = {};
+    assert.strictEqual(c.calculateCriticalDamage({ upgrade: 300 }, 100000, 300), 170000);
+    assert.strictEqual(c.calculateCriticalDamage({ upgrade: 300 }, 0, 300, meta), 0); assert.strictEqual(meta.critical, true);
 });
 
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");

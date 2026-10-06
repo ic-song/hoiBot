@@ -4395,21 +4395,25 @@ Status: PARTIAL
 
 - `main.js`: `/서버대전시작`, `/서버대전종료`, `/서버대전전체초기화`, `/레이드공격`, `/레이드순위`, `/서버레이드순위`.
 - 실행 명령은 인수 없이 정확히 입력한다. `/서버레이드순위 서버명`은 사용법만 출력한다. 이전 `/레이드기록`, `/서버레이드기록`은 새 이름만 안내하며 기록 조회·파일 IO를 수행하지 않는다.
-- 운영 명령 6종은 단체방 `공성전`과 `팻 테스트방`에서 허용한다. DEV 명령은 `팻 테스트방`으로 한정한다. 다른 방과 일대일톡은 데이터 로드·저장 전 차단하며 두 운영방의 계정당 공격 한도는 합산 5회다.
+- 운영 시작·종료·초기화·공격은 단체방 `공성전`과 `팻 테스트방`에서 허용한다. `/레이드순위`, `/서버레이드순위`는 모든 운영방·일대일톡에서 준비·진행·정산 중에도 조회한다. 일대일 호이패스·출석·계정정지 조건은 유지한다. DEV 명령은 `팻 테스트방`으로 한정한다. 다른 방의 실행은 데이터 로드·저장 전 차단하며 두 공격방의 계정당 공격 한도는 합산 5회다.
 - `Info.js`: 기존 정보·순위의 잠금 및 서버 누적 우승 표시.
 - 기획: `서버_레이드대전_개발기획서_초안` (`83c393bdd7aa8266843001b9d40ca710`). 본문은 보존하며, 원격 운영 반영 확인 후 상태·실제 반영일·버전을 갱신한다.
 - 종료 UI 기획: `서버_레이드대전_상금표시_allsee_수정기획서` (`86f393bdd7aa83beb61301637c06ccfd`). 공격 보상은 2026-10-06 사용자 수정 요청을 적용한다.
 - 추가 수정 기획: `서버_레이드대전_추가_수정_기획서` (`aae393bdd7aa83acbb3c81809e181067`). 명령어방은 사용자가 확정한 공성전·팻 테스트방이며 대전 중 일반 명령 잠금은 기존 정책을 유지한다.
+- 최신 공격 UI 기획: `서버_레이드대전_공격결과_UI_개선_기획서` (`7a2393bdd7aa828bac708180f5be72ad`). 사용자 결정으로 새 공격의 보상은 치명타 전 레이드매력의 1%이며 기존 지급 기록은 보존한다.
+- 최신 순위 UI 기획: `서버_레이드순위_UI_allsee_최종기획서` (`346393bdd7aa839b9a4c01bac2e5da26`). 누적 기록·최근 회차를 분리하고 요약 아래 ALLSEE를 한 번 사용한다. 사용자 결정으로 운영 조회 2종은 모든 방에서 허용한다.
 
 ## Related Helpers
 
 - 회차: `createServerRaidState`, `startServerRaid`, `activateServerRaid`, `closeServerRaid`, `resetServerRaid`.
 - 공격: `getServerRaidAttackCheck`, `applyServerRaidAttack`, 기존 `calculateRaidExp`, `calculateCriticalDamage`, `calculateEffectivePetUpgradeLevel`.
 - 수신 식별값: `getServerRaidCallbackEvent`, `getServerRaidNativeId`, `getServerRaidEventId`, `createServerRaidAttackEvent`.
-- 명령방: `isServerRaidCommandRoom`, `GLOBAL_CONFIG.serverRaid.rooms`. 방 검사 후 레이드 운영 권한에 기존 MASTER 명단의 `isMasterIdentity`를 사용한다.
+- 명령방: `isServerRaidCommandRoom`, `isServerRaidQueryCommand`, `GLOBAL_CONFIG.serverRaid.rooms`. 조회만 운영 방 제한·대전 잠금에서 제외하며 실행 방 검사 후 기존 MASTER 명단의 `isMasterIdentity`를 사용한다.
 - 순위·정산: `buildServerRaidResults`, `rankServerRaidRows`, `settleServerRaidParticipant`, `buildServerRaidAccountIndex`, `finishServerRaidSettlement`.
 - 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
 - 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
+- 공통 누적 조회: `getServerRaidCurrentParticipant`, `buildServerRaidCumulativeRecord`, `appendServerRaidOwnRecord`. 같은 현재 소속·기간·계정 집합에서 정산 누적과 미지급 진행 회차를 한 번만 합산한다. 개인·서버의 데미지·기여도·순위가 같은 기준이다.
+- 최근 참가 조회: `getServerRaidLatestRecord`, `getServerRaidAttackRewardGuide`. 진행·정산 회차에 참여했으면 해당 회차를 우선하며, 과거 공격은 당시 실제 지급 기준을 안내한다. 조회 헬퍼는 파일 IO·지급·저장을 하지 않는다.
 - 출력: `formatServerRaidServer` / `formatInfoServerRaidServer`, `isServerRaidLocked` / `isInfoServerRaidLocked`.
 - 상금 출력: `formatServerRaidPrize`, `getServerRaidResultPrize`, `buildServerRaidResultNotice`. 종료 시 확정된 참가자 1인당 지급액을 사용하고, 이전 저장 형식은 참가자의 확정 금액을 읽는다. 출력 헬퍼는 지급하거나 저장하지 않는다.
 
@@ -4417,10 +4421,11 @@ Status: PARTIAL
 
 - 기존 `member.json`의 `data.serverRaid`에 초기화 세대, 회차 번호, 준비·진행·정산 상태, 완료 회차 수, 서버 우승, 공식 결과, 원본 이벤트 처리 상태, 방별 공지 완료 상태를 저장한다.
 - `data.member[user].serverRaidAccount`는 내부 UUID·소속 기간·최근 개인 기록·현재 서버 누적 참가 기록이다. 닉네임 키가 바뀌어도 같은 회원 객체의 UUID를 재사용하고 새 회원은 새 UUID를 받는다.
-- 공격마다 R(레이드매력), D(치명타 포함 최종 데미지), P(버림 처리한 D의 1%)를 구분해 저장한다. 새 공격은 `rewardBasis: "damage"`를 저장한다. 이전 공격은 당시 지급액·기준을 유지하며 재전송 시 재계산·추가 지급하지 않는다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
+- 공격마다 R(레이드매력), D(치명타 포함 최종 데미지), P(버림 처리한 R의 1%)를 구분해 저장한다. 새 공격은 `rewardBasis: "raidCharm"`을 저장한다. 이전 `damage` 기준 공격·같은 회차의 혼합 기록은 당시 지급액·기준을 유지하며 재전송 시 재계산·추가 지급하지 않는다. 실제 치명타 판정은 기존 `calculateCriticalDamage`의 선택 결과 인수로 함께 받아 0매력에서도 유지한다. 기존 호출의 숫자 반환값은 유지한다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
 - R은 기존 `calculateRaidExp`로 계산하며 가방의 레이드타격대인장(개당 +600)과 홈뱃지·길드 큐브·레벨·퀘스트 보너스를 포함한다. 종합매력을 사용하지 않으며 포함된 보너스를 중복 가산하지 않는다.
 - 공격·종료·초기화는 명령 쓰기 잠금과 기존 데이터 트랜잭션 잠금으로 직렬화한다. 공격 횟수·포인트·데미지·이벤트 완료 상태를 `member.json`에 한 번에 저장한다.
 - 정산은 미지급 참가자의 포인트와 완료 상태를 묶어 한 번 저장한 뒤 우승·완료 횟수·확정 결과를 저장한다. 이미 지급된 계정은 재시도 시 건너뛴다. 조회용 기록은 서버와 소속 기간이 모두 일치할 때만 작성한다.
+- 누적 조회는 미지급 진행 참가자의 공격·참가 1회를 추가하고, 지급 완료된 참가자는 이미 기록된 누적만 사용해 부분 정산·재시작에서도 중복되지 않는다. 최근 회차가 진행·정산 중이면 확정 보상 합계·지급 완료 문구를 표시하지 않는다. 기록 없는 화면에는 ALLSEE를 생략하고 0 데미지 기여도는 0.00%로 표시한다. 현재 소속 기간의 이동·초기화 정책은 유지한다.
 - `scheduleServerRaidWork`는 예약 작업의 진입점이며 로드·저장·발송을 담당한다. 일반 계산·변경 헬퍼에는 파일 IO가 없다. 준비 마감, 초기화 세대, 회차 번호, 타이머 식별값을 재검사한다.
 - 명령 진입에서 회원 파일을 읽은 직후 미완료 준비·정산·공지를 재예약한다. 재시작 후 레이드 명령이 잠금·중복 종료 안내로 조기 반환돼도 DEV/PROD 작업을 재개한다. 이미 예약된 환경에는 타이머를 추가하지 않는다.
 - 공지는 기존 `noticeMsg` 대상 목록을 재사용하고 입력방을 중복 제외한다. 저장된 완료 방은 재발송하지 않는다. API 발송 성공과 완료 상태 저장 사이의 종료·저장 실패에는 실제 전달 여부가 불명확하여 공지 중복 가능성이 남는다. 공지 재시도로 보상을 다시 지급하지 않는다.
@@ -4441,7 +4446,7 @@ Status: PARTIAL
 ## Validation
 
 - `node tools/test_server_raid.js`: 실제 명령 진입·예약 작업·보호 저장 함수를 합성 데이터와 메모리 파일시스템에서 실행한다.
-- 46개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 실제 Main/Info 레이드 계산에서 인장·홈/길드 큐브·레벨·퀘스트 합산을 대조하며, 제보 치명타 수치·이전 지급 기록·확정 상금 표시·명령 이름·방 제한도 검증한다. 확장 인수·내부 어댑터 경로의 원본 ID 재전송 차단도 유지한다.
+- 54개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 실제 Main/Info 레이드 계산에서 인장·홈/길드 큐브·레벨·퀘스트 합산을 대조하며, 제보 치명타 수치·이전 지급 기록·확정 상금 표시·명령 이름·방 제한도 검증한다. 새 UI·R1%·0매력 치명타·D/R 혼합 지급 기록·모든 운영방 조회·여러 회차 누적 일치·부분 정산 재시작·ALLSEE 위치를 추가 검증한다. 확장 인수·내부 어댑터 경로의 원본 ID 재전송 차단도 유지한다.
 - DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
 
 ---

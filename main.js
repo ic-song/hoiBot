@@ -2779,7 +2779,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         // 서버 레이드대전 진입: 다른 명령 전처리·자동 저장보다 먼저 잠금과 권한을 검사한다.
         var serverRaidEvent = getServerRaidCallbackEvent(arguments, packageName); // 기본 7인수 콜백을 지원하며 확장 ID는 제공될 때만 사용
-        if (isServerRaidCommand(msg) && !isServerRaidCommandRoom(room, isGroupChat, ctx)) {
+        if (isServerRaidCommand(msg) && !isServerRaidCommandRoom(room, isGroupChat, ctx, msg)) {
             replyServerRaidSafely(replier, serverRaidHeader() + (ctx.isDev ? "DEV 레이드 명령어는 팻 테스트방에서만 사용할 수 있습니다." : "레이드 명령어는 공성전 또는 팻 테스트방에서만 사용할 수 있습니다.\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom));
             return;
         }
@@ -2815,7 +2815,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replyServerRaidSafely(replier, serverRaidHeader() + raidNick + ",\n해당 명령어를 사용할 권한이 없습니다.");
                 return;
             }
-            if (raidLocked && msg !== "/레이드공격" && msg !== "/서버대전종료" && msg !== "/서버대전전체초기화") {
+            if (raidLocked && !isServerRaidQueryCommand(msg) && msg !== "/레이드공격" && msg !== "/서버대전종료" && msg !== "/서버대전전체초기화") {
                 replyServerRaidSafely(replier, buildServerRaidLockMessage(raidNick));
                 return;
             }
@@ -2888,8 +2888,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 var raidSkills = loadJsonFile(petSkillDataPath);
                 var raidR = calculateRaidExp(sender, data, raidPetData, raidHomeData, raidSkills, false, raidGuildData);
                 requireServerRaidSafeInteger(raidR, "레이드매력");
-                var raidD = calculateCriticalDamage(raidPetData[sender], raidR, calculateEffectivePetUpgradeLevel(sender, data, raidPetData));
-                var raidAttack = applyServerRaidAttack(data, sender, String(java.util.UUID.randomUUID()), serverRaidEvent, raidR, raidD);
+                var raidCriticalResult = {}; // 데미지가 같아도 실제 치명타 판정값을 보존
+                var raidD = calculateCriticalDamage(raidPetData[sender], raidR, calculateEffectivePetUpgradeLevel(sender, data, raidPetData), raidCriticalResult);
+                var raidAttack = applyServerRaidAttack(data, sender, String(java.util.UUID.randomUUID()), serverRaidEvent, raidR, raidD, raidCriticalResult.critical);
                 var raidAttackMessage = buildServerRaidAttackMessage(data, raidAttack.participant, raidAttack.attack, raidNick);
                 saveJsonFile(data, filePath);
                 replyServerRaidSafely(replier, raidAttackMessage);
@@ -32810,9 +32811,16 @@ function isServerRaidCommand(msg) {
     return isServerRaidMutationCommand(msg) || msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg) || msg === "/레이드기록" || msg === "/서버레이드기록";
 }
 
-// 레거시 레이드 명령을 운영·DEV 각각의 단체 명령어방으로 제한하는 함수
-function isServerRaidCommandRoom(room, isGroupChat, ctx) {
-    return isGroupChat === true && (ctx.isDev ? room === GLOBAL_CONFIG.serverRaid.rooms.development : GLOBAL_CONFIG.serverRaid.rooms.production.indexOf(room) !== -1);
+// 운영 조회는 모든 방에 허용하고 실행·DEV 명령은 지정 방으로 제한하는 함수
+function isServerRaidCommandRoom(room, isGroupChat, ctx, msg) {
+    if (ctx.isDev) return isGroupChat === true && room === GLOBAL_CONFIG.serverRaid.rooms.development;
+    if (isServerRaidQueryCommand(msg)) return true;
+    return isGroupChat === true && GLOBAL_CONFIG.serverRaid.rooms.production.indexOf(room) !== -1;
+}
+
+// 모든 운영방에서 조회를 허용할 정확한 명령을 판별하는 함수
+function isServerRaidQueryCommand(msg) {
+    return msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg);
 }
 
 // 회차·보상 변경 명령을 DEV 접두사와 함께 판별하는 함수
@@ -33032,14 +33040,14 @@ function getServerRaidAttackCheck(data, user, now, event) {
 }
 
 // 공격 R·D·P와 횟수·서버 집계를 한 저장 단위로 변경하는 함수
-function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damage) {
+function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damage, critical) {
     var check = getServerRaidAttackCheck(data, user, Date.now(), event);
     if (check.message) throw new Error(check.message);
     if (check.replay) return { participant: check.participant, attack: check.replay, replay: true };
     requireServerRaidSafeInteger(raidCharm, "레이드매력");
     requireServerRaidSafeInteger(damage, "공격 데미지");
     var member = data.member[user], round = data.serverRaid.current;
-    var reward = Math.floor(damage / GLOBAL_CONFIG.serverRaid.rewards.attackDivisor); // 치명타 포함 최종 공격값의 1%를 버림 처리
+    var reward = Math.floor(raidCharm / GLOBAL_CONFIG.serverRaid.rewards.attackDivisor); // 치명타 전 레이드매력의 1%를 버림 처리
     var nextPoint = requireServerRaidSafeInteger(member.point, "보유 포인트") + reward;
     requireServerRaidSafeInteger(nextPoint, "공격 보상 지급 후 포인트");
     var account = member.serverRaidAccount;
@@ -33048,7 +33056,7 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], paid: false };
     var nextAttackReward = requireServerRaidSafeInteger(participant.attackReward + reward, "실지급 공격 보상 합계");
     var eventId = getServerRaidEventId(event);
-    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "damage", remaining: GLOBAL_CONFIG.serverRaid.limits.attacks - participant.attacks.length - 1, critical: damage !== raidCharm };
+    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", remaining: GLOBAL_CONFIG.serverRaid.limits.attacks - participant.attacks.length - 1, critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
     member.serverRaidAccount = account;
     member.point = nextPoint;
     participant.damage = addServerRaidInteger(participant.damage, damage);
@@ -33203,12 +33211,12 @@ function applyServerRaidMembershipChange(member, destination) {
 
 // 명령 잠금 안내를 만드는 함수
 function buildServerRaidLockMessage(nick) {
-    return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n" + nick + ",\n지금은 서버 레이드대전 시간입니다!\n\n⛔ 서버 레이드대전 종료 전까지\n/레이드공격 외의 명령어는\n사용할 수 없습니다.\n\n우리 서버의 승리를 위해\n서버 레이드대전에 참여해주세요! 🔥\n━━━━━━━━━━━━\n📍 명령어방 안내\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom + "\n\n👉 공격 참여: /레이드공격";
+    return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n" + nick + ",\n지금은 서버 레이드대전 시간입니다!\n\n⛔ 서버 레이드대전 종료 전까지\n일반 게임 명령어는 사용할 수 없습니다.\n\n📋 순위 조회는 모든 방에서 가능합니다.\n/레이드순위 · /서버레이드순위\n\n우리 서버의 승리를 위해\n서버 레이드대전에 참여해주세요! 🔥\n━━━━━━━━━━━━\n📍 명령어방 안내\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom + "\n\n👉 공격 참여: /레이드공격";
 }
 
 // 준비 안내와 규칙 더보기를 만드는 함수
 function buildServerRaidPreparationNotice() {
-    var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 공격 기회: 계정당 5회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 포함 공격 데미지의 1%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
+    var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 공격 기회: 계정당 5회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 전 레이드매력의 1%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
     for (var i = 0; i < GLOBAL_CONFIG.serverRaid.rewards.ranks.length; i++) lines.push((i + 1) + "위: " + numberWithCommas(GLOBAL_CONFIG.serverRaid.rewards.ranks[i]) + " 포인트");
     lines.push("", "※ 해당 회차 1회 이상 공격한", "참가자에게 인당 지급됩니다.", "※ 공격 보상과 순위 보상은 별도 지급!", "※ 동점은 공동 순위·동일 보상입니다.", "", "⭐ 우승 서버는 누적 우승 횟수 +1", "서버명 옆에 우승 기록이 남습니다!", "━━━━━━━━━━━━", "👉 공격 참여: /레이드공격", "", "우리 서버의 이름으로 도전하세요! 🐹");
     return lines.join("\n");
@@ -33219,8 +33227,8 @@ function buildServerRaidAttackMessage(data, participant, attack, nick) {
     var round = data.serverRaid.current;
     var rows = buildServerRaidResults(round), server = null;
     for (var i = 0; i < rows.length; i++) if (rows[i].id === participant.server) server = rows[i];
-    var rewardGuide = attack.rewardBasis === "damage" && attack.critical ? "치명타 적용 레이드매력의 1% 지급" : "레이드매력의 1% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
-    return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n" + nick + "의 공격!\n\n👑 레이드 보스: 호월이🐹\n⚪ 무속성 · 속성 상성 미적용\n\n👾 레이드매력: " + numberWithCommas(attack.R) + "💞\n" + (attack.critical ? "💥 치명타 발동!\n" : "") + "👾 공격 데미지: " + numberWithCommas(attack.D) + "💞\n💰 획득 보상: 🅟" + numberWithCommas(attack.P) + "\n└ " + rewardGuide + "\n🎟️ 남은 공격: " + attack.remaining + "/5회\n━━━━━━━━━━━━\n🏰 소속 서버: " + formatServerRaidServer(data, participant.server) + "\n👾 누적 데미지: " + numberWithCommas(server.damage) + "💞\n🏆 현재 서버 순위: " + server.rank + "위";
+    var rewardGuide = attack.rewardBasis === "damage" ? "공격 데미지의 1% 지급 (당시 기준)" : "레이드매력의 1% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
+    return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n⚪ 무속성 · 속성 상성 미적용\n━━━━━━━━━━━━\n⚔️ " + nick + "의 공격!\n\n💥 공격 데미지: " + numberWithCommas(attack.D) + "💞\n├ 레이드매력: " + numberWithCommas(attack.R) + "💞\n" + (attack.critical ? "└ 🔥 치명타 발동!" : "└ 일반 공격 · 치명타 미발동") + "\n\n💰 획득 포인트: 🅟" + numberWithCommas(attack.P) + "\n└ " + rewardGuide + "\n\n🎟️ 남은 공격: " + attack.remaining + "/5회\n━━━━━━━━━━━━\n🏰 우리 서버 현황\n" + formatServerRaidServer(data, participant.server) + "\n\n🏆 현재 서버 순위: " + server.rank + "위\n👾 서버 누적 데미지: " + numberWithCommas(server.damage) + "💞\n└ 이번 공격까지 합산된 기록입니다.";
 }
 
 // 상금을 반올림 없이 억·천만·만·포인트 단위로 표시하는 함수
@@ -33271,35 +33279,112 @@ function formatServerRaidKstTime(timestamp) {
     return date.getUTCFullYear() + "." + pad(date.getUTCMonth() + 1) + "." + pad(date.getUTCDate()) + " " + pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes());
 }
 
-// 현재 소속 기간에서 확정된 최근 개인 기록을 출력하는 함수
-function buildServerRaidPersonalRecord(data, user, nick) {
-    var member = data.member[user], account = member.serverRaidAccount;
-    var latest = account && account.latest;
-    var header = "👉 우리 서버 누적 참가 기록: /서버레이드순위\n\n👑 서버 레이드대전 👑\n📋 나의 최근 참가 기록\n━━━━━━━━━━━━\n" + nick + "\n\n";
-    if (!latest || latest.server !== normalizeHoiServerLabel(member.server) || latest.period !== account.period) return header + "현재 소속 서버에서 정산 완료된\n참가 기록이 없습니다.\n\n다음 서버 레이드대전에 참여해주세요! 🐹";
-    return header + "🗓️ 참가 일시: " + formatServerRaidKstTime(latest.startedAt) + "\n🏰 참가 서버: " + formatServerRaidServer(data, latest.server) + "\n👾 나의 누적 데미지: " + numberWithCommas(latest.damage) + "💞\n📊 서버 기여도: " + latest.percent + "\n🏅 서버 내 기여도 순위: " + latest.rank + "위 / " + latest.participants + "명\n━━━━━━━━━━━━\n💰 공격 보상 합계: " + numberWithCommas(latest.attackReward) + " 포인트\n🏆 서버 최종 순위: " + latest.serverRank + "위\n🎁 순위 보상: " + numberWithCommas(latest.rankReward) + " 포인트\n\n" + (latest.paid ? "✅ 보상 지급 완료" : "보상 정산 중");
+// 현재 소속 기간에 공격한 진행 회차 참가자를 읽는 함수
+function getServerRaidCurrentParticipant(data, member) {
+    var account = member.serverRaidAccount, round = data.serverRaid && data.serverRaid.current;
+    var participant = account && round && round.accounts[account.id];
+    if (!participant || !participant.attacks.length || participant.server !== normalizeHoiServerLabel(member.server) || participant.period !== account.period) return null;
+    return participant;
 }
 
-// 현재 서버에 남아 있는 계정들의 누적 기록을 원본에서 집계하는 함수
-function buildServerRaidServerRecord(data, user, petData, guildData) {
+// 개인·서버 조회에 같은 참가자와 진행 중 공격을 한 번만 합산하는 함수
+function buildServerRaidCumulativeRecord(data, user) {
     var member = data.member[user], server = normalizeHoiServerLabel(member.server);
-    if (GLOBAL_CONFIG.serverRaid.servers.indexOf(server) === -1) return serverRaidHeader() + "[" + checkRank(data, petData, guildData, user) + "] 님,\n참가 가능한 소속 서버를 확인할 수 없습니다.\n\n계정의 소속 서버를 확인해주세요.";
-    var rows = [], names = Object.keys(data.member), total = "0", own = null;
+    var ownId = member.serverRaidAccount && member.serverRaidAccount.id;
+    var rows = [], names = Object.keys(data.member), total = "0", own = null, ids = {};
     for (var i = 0; i < names.length; i++) {
-        var current = data.member[names[i]], account = current.serverRaidAccount, record = account && account.total;
-        if (normalizeHoiServerLabel(current.server) !== server || !record || record.server !== server || record.period !== account.period) continue;
-        rows.push({ id: account.id, user: names[i], damage: record.damage, participations: record.participations, attackCount: record.attackCount });
-        total = addServerRaidInteger(total, record.damage);
+        var current = data.member[names[i]], account = current.serverRaidAccount;
+        if (!account || normalizeHoiServerLabel(current.server) !== server) continue;
+        var record = account.total;
+        if (record && (record.server !== server || record.period !== account.period)) record = null;
+        var participant = getServerRaidCurrentParticipant(data, current);
+        if (!record && !participant) continue;
+        if (ids[account.id]) throw new Error("중복된 서버 레이드대전 계정 ID");
+        ids[account.id] = true;
+        var damage = record ? record.damage : "0"; // 이미 정산된 누적 데미지
+        var participations = record ? record.participations : 0;
+        var attackCount = record ? record.attackCount : 0;
+        if (participant && !participant.paid) { // 지급 완료 참가자의 이번 회차는 누적 기록에 이미 포함됨
+            damage = addServerRaidInteger(damage, participant.damage);
+            participations++;
+            attackCount += participant.attacks.length;
+        }
+        rows.push({ id: account.id, user: names[i], damage: damage, participations: participations, attackCount: attackCount });
+        total = addServerRaidInteger(total, damage);
     }
     rankServerRaidRows(rows);
-    for (var j = 0; j < rows.length; j++) if (rows[j].user === user) own = rows[j];
-    var lines = ["👉 나의 최근 참가 기록: /레이드순위", "", "👑 서버 레이드대전 👑", "📋 서버 누적 참가 기록", "━━━━━━━━━━━━━", "🏰 " + formatServerRaidServer(data, server), "", "🗓️ 누적 진행: " + (data.serverRaid ? data.serverRaid.completed : 0) + "회", "👥 누적 참가자: " + rows.length + "명", "└ 중복 계정 제외", "", "📊 나의 서버 기여도: " + (own ? serverRaidPercent(own.damage, total) : "0.00%"), "🏅 서버 내 기여도 순위: " + (own ? own.rank + "위 / " + rows.length + "명" : "미참여"), "━━━━━━━━━━━━━"];
-    if (!rows.length) lines.push("현재 소속 참가자의 누적 기록이 없습니다.", "다음 서버 레이드대전에 참여해주세요! 🐹");
-    else {
-        lines.push("👥 누적 참가자 명단", allsee, "");
-        for (var r = 0; r < rows.length; r++) lines.push(rows[r].rank + ". [" + checkRank(data, petData, guildData, rows[r].user) + "] 님" + (rows[r].user === user ? " ← 나" : ""), "└ 🎟️ 참가 " + rows[r].participations + "회 · 공격 " + rows[r].attackCount + "회", "└ 👾 누적 데미지: " + numberWithCommas(rows[r].damage) + "💞", "└ 📊 서버 기여도: " + serverRaidPercent(rows[r].damage, total), "");
-        lines.push("━━━━━━━━━━━━━", "📊 현재 소속 참가자의 누적 데미지 순입니다.", "※ 한 회차에 여러 번 공격해도 참가 1회로 집계됩니다.");
+    for (var j = 0; j < rows.length; j++) if (rows[j].id === ownId) own = rows[j];
+    return { server: server, rows: rows, total: total, own: own };
+}
+
+// 진행·정산 중 참가를 우선하여 실제 최근 참가 기록을 읽는 함수
+function getServerRaidLatestRecord(data, user) {
+    var member = data.member[user], account = member.serverRaidAccount;
+    if (!account) return null;
+    var participant = getServerRaidCurrentParticipant(data, member);
+    if (participant) {
+        var round = data.serverRaid.current;
+        return { state: round.state, attacks: participant.attacks, record: { startedAt: round.startedAt, server: participant.server, serverRank: participant.serverRank, attackReward: participant.attackReward, rankReward: participant.rankReward, paid: participant.paid } };
     }
+    var latest = account.latest;
+    if (!latest || latest.server !== normalizeHoiServerLabel(member.server) || latest.period !== account.period) return null;
+    var history = data.serverRaid && data.serverRaid.history, attacks = null;
+    if (history) for (var i = history.length - 1; i >= 0; i--) if (history[i].id === latest.roundId) {
+        var saved = history[i].accounts[account.id];
+        attacks = saved && saved.attacks;
+        break;
+    }
+    return { state: latest.paid ? "DONE" : "SETTLING", attacks: attacks, record: latest };
+}
+
+// 최근 회차의 실제 공격 지급 기준을 재계산 없이 안내하는 함수
+function getServerRaidAttackRewardGuide(attacks) {
+    if (!attacks || !attacks.length) return "공격 당시 기준으로 지급된 포인트";
+    var basis = attacks[0].rewardBasis === "damage" ? "damage" : "raidCharm";
+    for (var i = 1; i < attacks.length; i++) if ((attacks[i].rewardBasis === "damage" ? "damage" : "raidCharm") !== basis) return "공격 당시 기준으로 지급된 포인트";
+    return basis === "damage" ? "공격마다 최종 데미지의 1% (당시 기준)" : "공격마다 레이드매력의 1%";
+}
+
+// 공통 누적 집계에서 본인의 데미지·기여도·순위를 추가하는 함수
+function appendServerRaidOwnRecord(lines, summary) {
+    if (!summary.own) { lines.push("참가 기록 없음"); return; }
+    lines.push("👾 데미지: " + numberWithCommas(summary.own.damage) + "💞", "📊 기여도: " + serverRaidPercent(summary.own.damage, summary.total), "🏅 순위: " + summary.own.rank + "위 / " + summary.rows.length + "명");
+}
+
+// 누적 기록과 최근 참가·실지급 보상을 전체보기로 구분하는 함수
+function buildServerRaidPersonalRecord(data, user, nick) {
+    var summary = buildServerRaidCumulativeRecord(data, user), view = getServerRaidLatestRecord(data, user);
+    var lines = ["👑 서버 레이드대전 👑", "📋 내 레이드 기록", "━━━━━━━━━━━━━", nick, "", "📊 내 누적 기록"];
+    appendServerRaidOwnRecord(lines, summary);
+    lines.push("━━━━━━━━━━━━━", "👉 서버 기록: /서버레이드순위");
+    if (!view) { lines.push("", "아직 참가 기록이 없습니다."); return lines.join("\n"); }
+    var latest = view.record;
+    var complete = view.state === "DONE" && latest.paid === true; // 실제 지급이 확인된 완료 회차만 합계를 확정 표시
+    lines.push("", "📂 최근 참가 · 보상 펼쳐보기", allsee, "━━━━━━━━━━━━━", "📋 최근 참가", "🗓️ " + formatServerRaidKstTime(latest.startedAt), "🏰 " + formatServerRaidServer(data, latest.server), "🏆 서버 순위: " + (latest.serverRank ? latest.serverRank + "위" : "집계 중"), "━━━━━━━━━━━━━", "💰 공격 보상", "🅟" + numberWithCommas(latest.attackReward), "└ " + getServerRaidAttackRewardGuide(view.attacks), "", "🎁 순위 보상");
+    if (complete) {
+        var rewardTotal = requireServerRaidSafeInteger(latest.attackReward + latest.rankReward, "실지급 보상 합계");
+        lines.push("🅟" + numberWithCommas(latest.rankReward), "└ 서버 " + latest.serverRank + "위 · 참여자 1인당", "", "💵 보상 합계", "🅟" + numberWithCommas(rewardTotal), "", "✅ 지급 완료");
+    } else lines.push(view.state === "SETTLING" ? "정산 중" : "종료 후 확정", "", view.state === "SETTLING" ? "⏳ 정산 중" : "⏳ 대전 진행 중");
+    lines.push("━━━━━━━━━━━━━", "※ 기여도·개인 순위는 누적 기준입니다.", "※ 참가 정보·보상은 최근 회차 기준입니다.");
+    return lines.join("\n");
+}
+
+// 같은 누적 집계의 서버 요약과 전체 명단을 전체보기로 구분하는 함수
+function buildServerRaidServerRecord(data, user, petData, guildData) {
+    var summary = buildServerRaidCumulativeRecord(data, user), server = summary.server;
+    if (GLOBAL_CONFIG.serverRaid.servers.indexOf(server) === -1) return serverRaidHeader() + "[" + checkRank(data, petData, guildData, user) + "] 님,\n참가 가능한 소속 서버를 확인할 수 없습니다.\n\n계정의 소속 서버를 확인해주세요.";
+    var wins = data.serverRaid && data.serverRaid.wins[server] || 0;
+    var lines = ["👑 서버 레이드대전 👑", "🏆 서버 누적 순위", "━━━━━━━━━━━━━", "🏰 " + formatServerRaidServer(data, server), "🏆 우승: " + wins + "회", "👥 누적 참가자: " + summary.rows.length + "명", "👾 누적: " + numberWithCommas(summary.total) + "💞", "━━━━━━━━━━━━━", "🙋 내 누적 기록", "[" + checkRank(data, petData, guildData, user) + "] 님", ""];
+    appendServerRaidOwnRecord(lines, summary);
+    lines.push("━━━━━━━━━━━━━", "👉 내 기록: /레이드순위");
+    if (!summary.rows.length) { lines.push("", "현재 소속 참가자의 누적 기록이 없습니다."); return lines.join("\n"); }
+    lines.push("", "📂 전체 순위 펼쳐보기", allsee, "━━━━━━━━━━━━━", "👥 누적 기여도 순위", "");
+    var medals = ["🥇", "🥈", "🥉"];
+    for (var r = 0; r < summary.rows.length; r++) {
+        var row = summary.rows[r], prefix = row.rank <= 3 ? medals[row.rank - 1] : row.rank + "위.";
+        lines.push(prefix + " [" + checkRank(data, petData, guildData, row.user) + "] 님" + (summary.own && row.id === summary.own.id ? " ← 나" : ""), "👾 " + numberWithCommas(row.damage) + "💞", "📊 " + serverRaidPercent(row.damage, summary.total) + " · 참가 " + row.participations + "회 · 공격 " + row.attackCount + "회", "");
+    }
+    lines.push("━━━━━━━━━━━━━", "※ 현재 소속 참가자의 누적 데미지 순입니다.", "※ 참가 인원은 중복 계정 제외입니다.", "※ 한 회차에 여러 번 공격해도 참가 1회입니다.");
     return lines.join("\n");
 }
 
@@ -38143,12 +38228,14 @@ function getCritMultiplier(upgradeLevel) {
  * 크리티컬 데미지 계산 함수
  * @param {object} petObj - 유저 펫 정보
  * @param {number} damage - 기본 데미지
+ * @param {object} result - 선택 항목. 실제 치명타 판정값을 함께 받을 객체
  * @returns {number} - 크리티컬이 적용된 최종 데미지
  */
-function calculateCriticalDamage(petObj, damage, effectiveUpgradeLevel) {
+function calculateCriticalDamage(petObj, damage, effectiveUpgradeLevel, result) {
     var upgradeLevel = typeof effectiveUpgradeLevel === "number" ? effectiveUpgradeLevel : ((petObj && petObj.upgrade) || 0);
     var critChance = calculateCritChance(upgradeLevel);
     var isCritical = Math.random() < critChance;
+    if (result) result.critical = isCritical; // 선택한 호출에서 실제 치명타 판정값을 함께 사용
 
     if (isCritical) {
         return Math.round(damage * getCritMultiplier(upgradeLevel)); //  301+ 배수 반영
