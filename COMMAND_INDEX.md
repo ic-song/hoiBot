@@ -4492,7 +4492,7 @@ Status: VERIFIED
 
 ## Data Usage / Save Flow
 
-- `data.shop[GLOBAL_CONFIG.serverTransfer.itemName]`에 1,000억 포인트 상품을 등록한다.
+- 서버이동권 판매가는 `data.shop[GLOBAL_CONFIG.serverTransfer.itemName]`에 저장된 값을 사용한다. `/상점추가`로 등록·가격 수정하며, 일반 입력이나 재시작에서 고정 금액으로 덮어쓰거나 자동 등록하지 않는다. `/서버변경`의 부족 안내도 실제 저장 가격을 표시한다.
 - 서버 변경은 대상 계정의 `server`와 이동권 1개를 함께 변경하고 `filePath`에 저장한다. 안내·실패·같은 서버 요청은 변경하지 않는다.
 - `/서버변경`과 관리자 `/서버이동`의 실제 소속 변경은 `applyServerRaidMembershipChange`를 통해 개인 레이드 조회 기록을 지우고 소속 기간을 증가시킨다. 실패 시 소속·이동권·레이드 조회 기록을 함께 유지하며 완료 응답 전에 저장한다.
 - 관리자·순위 이모지 표시 설정은 계정의 `displaySettings`에 별개로 저장하며 실제 관리자 권한과 순위 수치는 유지한다.
