@@ -6145,7 +6145,7 @@ Status: VERIFIED
 - 맞짱은 참여 시점 종합매력에 상성·크리티컬을 적용한 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 상세보기는 양측 기본/상성/최종 매력, 크리티컬, 비교식과 매력 차이를 카드형 UI로 표시한다.
 - `/맞짱시간체크 [닉네임]` measures only the named user's 종합매력 calculation and reports response-entry total, diagnostic-branch, home-load, total calculation, response common processing timings for data loads/normalizers, and detailed component timings for castle, raid, equipment, home, pet, mini-pet, intimacy, pet skill, and upgrade bonus; 0ms detail rows are hidden; it does not select an opponent or run `runMatzangBattle`
-- `buildTotalExpTimeCheckDetail`은 명령에서 로드된 `guildData`를 전달받아 티어 스킬도 합산한다. 실전과 공통인 `getPetModeCharmPercent`·`applyPercentWithExactFloor`로 최종 합계를 계산하며 퍼센트 적용 전 합계도 별도로 표시한다. 세부 항목을 다시 로드하거나 저장하지 않는다.
+- `buildTotalExpTimeCheckDetail`은 명령에서 로드된 `guildData`를 전달받아 티어 스킬도 합산한다. 실전과 공통인 `getPetModeCharmPercent`·`applyPercentWithExactFloor`로 최종 합계를 계산하며 퍼센트 적용 전 합계도 별도로 표시한다. 반환하는 `castleBase`, `raidBase`, `rows`는 매력 버프 진단에서도 사용한다. 시간체크 화면은 기존처럼 0ms 행을 숨기지만 `rows`에는 모든 항목을 유지한다. 세부 항목을 다시 로드하거나 저장하지 않는다.
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
@@ -7307,6 +7307,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `buildCharmBuffDebugMessage`
+- `buildTotalExpTimeCheckDetail` (퍼센트 적용 전 실제 합계·상세 항목)
 - `getHomeBadgeCubeOptionDebugDetail`
 - `formatHomeBadgeCubeDebugOptionFormula`
 - `calculateCastleExp`
@@ -7319,6 +7320,7 @@ Status: VERIFIED
 
 - `member.json -> member[user].pass.premium`
 - `member.json -> member[user].homeBadgeCube`
+- `member.json -> member[user].adventureQuest.totals` (캐슬·레이드 퀘스트 보너스)
 - `member.json -> matzangField.participants[user].totalExp`
 - `member_pet.json -> [user]`
 - `homeData.json -> [user]`
@@ -7331,7 +7333,9 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/디버깅모드`가 ON일 때 지정한 닉네임 또는 명령 실행자의 기본 펫·미니펫·가구·펫강화 수치와 홈뱃지 기본 옵션, 기본합계 100% 버프, 프리미엄 +3%p, 길드공헌 큐브, 최종 캐슬·레이드·종합매력 계산 일치 여부를 테스트방에 출력한다.
+- `/디버깅모드`가 ON일 때 지정한 닉네임 또는 명령 실행자의 봇 버전·기본 매력 구성·홈뱃지·길드·모험가 레벨·퀘스트 보너스와 최종 캐슬·레이드·종합매력 계산 일치 여부를 `팻 테스트방`에 출력한다.
+- 기본 매력은 보너스가 붙은 최종값을 역산하지 않고 `buildTotalExpTimeCheckDetail`의 퍼센트 적용 전 구성 합계를 사용한다. 정령·반지·펜던트·가방, 펫, 대표·보조 미니펫, 가구, 펫스킬, 캐슬 친밀도 등을 계산 시간과 무관하게 표시한다.
+- 레벨은 0.01%, 퀘스트와 합산 비율은 0.001% 단위까지 표시하며 `내림(기본 × (1 + 합산 비율 / 100))`을 공용 계산값과 비교한다. 실제 매력 계산·재화·장착·보상 정책은 바꾸지 않는다.
 - `/펫정보`, `/종합순위`, `/캐슬대전`, `/시련의탑`은 현재 공용 계산값을 사용한다. 맞짱필드는 참여 시점 종합매력 스냅샷과 전투 시점의 현재 유효 펫강화 치명타를 함께 사용하고, 길드영지전은 시작 시점 캐슬매력·치명타 스냅샷을 사용하므로 현재값과 차이가 날 수 있다.
 - 맞짱필드 또는 길드영지전 진행 중에도 권한이 있는 운영자가 진단할 수 있다.
 
@@ -7700,7 +7704,7 @@ Status: VERIFIED
 - `/레벨` 하단 안내는 진행 안내 → 전체 기록 → `👉 타이틀 장착 /퀘스트타이틀` 순서이며 전체보기 앞에 표시한다. 타이틀 목록에서 `/퀘스트타이틀장착 [번호]`로 장착한다.
 - 캐슬·레이드 각각의 레벨 보너스: `(레벨 - 1) × 0.15% + 일반 승급 × 0.5% + 대승급 × 5%`.
 - 캐슬·레이드 보너스 적용은 0.01% 정수 단위로 계산해 경계값의 부동소수점 내림 오차를 방지한다.
-- `/매력버프체크`의 계산 검증은 모험가 레벨·홈뱃지·길드큐브 비율을 같은 가산식으로 합산한다.
+- `/매력버프체크`의 계산 검증은 실제 기본 구성 합계에 모험가 레벨·퀘스트·홈뱃지·길드큐브 비율을 같은 가산식으로 합산한다. 퀘스트가 붙은 값을 기본값으로 역산하지 않는다.
 - 10레벨마다 승급, 100레벨마다 대승급하며 1000레벨 이후에는 마지막 칭호를 유지하고 보상 주기는 계속된다.
 - `/레벨순위`는 본인의 레벨·전체 순위·전체 계정 수와 바로 위 고유 순위의 레벨 또는 EXP 차이를 상단에 표시한다. 단독 1위는 현재 레벨 이전의 필요 EXP까지 합산한 누적 EXP로 2위와의 차이를 표시하고, 공동 1위는 차이 0으로 표시한다. 목록은 레벨 내림차순, 동률이면 EXP 내림차순으로 정렬하며 `1, 1, 3` 공동순위와 TOP 50을 유지한다. 상위 5명은 기본 화면에, 6번째부터는 `allsee` 뒤에 표시하고 본인이 TOP 50 밖이어도 상단의 내 순위는 유지한다.
 - 모험가 EXP의 계산·저장 정밀도는 유지하고 `/레벨`, 종합정보, 프리미엄 가방, 대전·탐험·출석·퀘스트·자동일퀘 결과, 관리자 수정 결과와 `/레벨순위`의 EXP 표시는 소수부를 제거한다. 자동일퀘 합계는 화면 문자열이 아니라 실제 지급값을 집계한다.

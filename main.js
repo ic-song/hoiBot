@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.610"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.611"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -49374,12 +49374,14 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     var guildCastlePercent = getGuildContributionCubeMemberPercent(data, guildData, user, "castle");
     var guildRaidPercent = getGuildContributionCubeMemberPercent(data, guildData, user, "raid");
     var adventureLevelPercent = getAdventureLevelCharmPercent(data && data.member && data.member[user] ? data.member[user].lv : 1); // 모험가 레벨의 캐슬·레이드 공통 보너스
-    var castleWithLevel = calculateCastleExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 제외, 모험가 레벨 포함 캐슬매력
-    var raidWithLevel = calculateRaidExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 제외, 모험가 레벨 포함 레이드매력
-    var castleBase = removePercentWithExactCeil(castleWithLevel, adventureLevelPercent); // 정수 원본 캐슬매력 역산
-    var raidBase = removePercentWithExactCeil(raidWithLevel, adventureLevelPercent); // 정수 원본 레이드매력 역산
-    var castleTotalPercent = adventureLevelPercent + castleHomeDetail.appliedPercent + guildCastlePercent; // 레벨·홈뱃지·길드큐브 캐슬 합산 퍼센트
-    var raidTotalPercent = adventureLevelPercent + raidHomeDetail.appliedPercent + guildRaidPercent; // 레벨·홈뱃지·길드큐브 레이드 합산 퍼센트
+    var charmDetail = buildTotalExpTimeCheckDetail(user, data, petData, homeData, petSkillData, guildData); // 퍼센트 적용 전 실제 구성 합계와 상세 항목
+    var castleBase = charmDetail.castleBase; // 레벨·퀘스트·큐브 적용 전 캐슬매력 원본
+    var raidBase = charmDetail.raidBase; // 레벨·퀘스트·큐브 적용 전 레이드매력 원본
+    var questTotals = data && data.member && data.member[user] && data.member[user].adventureQuest ? data.member[user].adventureQuest.totals : null;
+    var castleQuestPercent = questTotals ? Number(questTotals.castlePercent) || 0 : 0;
+    var raidQuestPercent = questTotals ? Number(questTotals.raidPercent) || 0 : 0;
+    var castleTotalPercent = adventureLevelPercent + castleHomeDetail.appliedPercent + guildCastlePercent + castleQuestPercent; // 캐슬의 모든 합산 퍼센트
+    var raidTotalPercent = adventureLevelPercent + raidHomeDetail.appliedPercent + guildRaidPercent + raidQuestPercent; // 레이드의 모든 합산 퍼센트
     var expectedCastle = applyPercentWithExactFloor(castleBase, castleTotalPercent); // 표시 수식으로 재계산한 캐슬매력
     var expectedRaid = applyPercentWithExactFloor(raidBase, raidTotalPercent); // 표시 수식으로 재계산한 레이드매력
     var actualCastle = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
@@ -49393,6 +49395,7 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     var premiumActive = isHoiPassPremiumActive(data, user);
     var lines = ["[🧪 매력 버프 적용 체크]", "대상: [" + checkRank(data, petData, guildData, user) + "] 님", "━━━━━━━━━━━━━━━"];
 
+    lines.push("봇 버전: ver_" + HoiBotVersion);
     lines.push("호패프리미엄: " + (premiumActive ? "ON" : "OFF"));
     lines.push("대표 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeIds[0] || "없음"));
     lines.push("보조 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeIds[1] || "없음"));
@@ -49404,20 +49407,31 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     lines.push("가구: " + numberWithCommas(rawHomeExp) + (appliedHomeExp !== rawHomeExp ? " → " + numberWithCommas(appliedHomeExp) + " (인테리어 장인)" : ""));
     lines.push("펫강화: " + baseUpgradeLevel + "강 → " + actualUpgradeLevel + "강 / 종합매력 +" + numberWithCommas(upgradeCharm));
     lines.push("");
+    lines.push("[퍼센트 적용 전 상세]");
+    for (var detailIndex = 0; detailIndex < charmDetail.rows.length; detailIndex++) {
+        var detailRow = charmDetail.rows[detailIndex]; // 시간과 관계없이 출력할 기본 매력 구성 항목
+        if (detailRow.label.indexOf("-최종합계") !== -1 || detailRow.label === "강화 보너스") continue;
+        lines.push(detailRow.label + ": " + numberWithCommas(detailRow.value));
+    }
+    lines.push("");
     lines.push("[캐슬매력]");
     lines.push("기본 매력: " + numberWithCommas(castleBase));
-    lines.push("모험가 레벨: +" + formatHomeBadgeCubeCardPercent(adventureLevelPercent));
+    lines.push("모험가 레벨: +" + formatAdventureLevelPercent(adventureLevelPercent) + "%");
+    lines.push("퀘스트: +" + formatAdventureQuestPercent(castleQuestPercent) + "%");
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(castleHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildCastlePercent));
-    lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(castleTotalPercent));
+    lines.push("합산 버프: +" + formatAdventureQuestPercent(castleTotalPercent) + "%");
+    lines.push("계산식: 내림(" + numberWithCommas(castleBase) + " × (1 + " + formatAdventureQuestPercent(castleTotalPercent) + " / 100))");
     lines.push("계산 검증: " + numberWithCommas(expectedCastle) + " / 공용함수 " + numberWithCommas(actualCastle) + (expectedCastle === actualCastle ? " [✅일치]" : " [❌불일치]"));
     lines.push("");
     lines.push("[레이드매력]");
     lines.push("기본 매력: " + numberWithCommas(raidBase));
-    lines.push("모험가 레벨: +" + formatHomeBadgeCubeCardPercent(adventureLevelPercent));
+    lines.push("모험가 레벨: +" + formatAdventureLevelPercent(adventureLevelPercent) + "%");
+    lines.push("퀘스트: +" + formatAdventureQuestPercent(raidQuestPercent) + "%");
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(raidHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildRaidPercent));
-    lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(raidTotalPercent));
+    lines.push("합산 버프: +" + formatAdventureQuestPercent(raidTotalPercent) + "%");
+    lines.push("계산식: 내림(" + numberWithCommas(raidBase) + " × (1 + " + formatAdventureQuestPercent(raidTotalPercent) + " / 100))");
     lines.push("계산 검증: " + numberWithCommas(expectedRaid) + " / 공용함수 " + numberWithCommas(actualRaid) + (expectedRaid === actualRaid ? " [✅일치]" : " [❌불일치]"));
     lines.push("");
     lines.push("[종합매력]");
@@ -51711,7 +51725,10 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData, guildD
 function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillData, guildData) {
     var result = {
         total: 0,
-        lines: []
+        lines: [],
+        castleBase: 0, // 퍼센트 적용 전 캐슬매력 합계
+        raidBase: 0, // 퍼센트 적용 전 레이드매력 합계
+        rows: [] // 계산 시간과 무관한 상세 매력 구성 항목
     };
     if (!petData || !petData[sender]) return result;
 
@@ -51744,7 +51761,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     var castleItemExp = measure("캐슬-공격아이템", function () {
         return calculateCastleItem(sender, data) || 0;
     });
-    var castleEquipmentExp = measure("캐슬-정령/반지/가방", function () {
+    var castleEquipmentExp = measure("캐슬-정령/반지/펜던트/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { castleExp: 0 };
         return itemInfo.castleExp || 0;
     });
@@ -51767,7 +51784,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     });
     var castleBase = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp; // 퍼센트 적용 전 진단 합계
 
-    var raidEquipmentExp = measure("레이드-정령/반지/가방", function () {
+    var raidEquipmentExp = measure("레이드-정령/반지/펜던트/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { raidExp: 0 };
         return itemInfo.raidExp || 0;
     });
@@ -51798,6 +51815,9 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
 
     result.total = parseInt(castleTotal + raidTotal + upgradeBonus, 10);
     if (isNaN(result.total)) result.total = 0;
+    result.castleBase = castleBase;
+    result.raidBase = raidBase;
+    result.rows = rows;
     result.lines.push("캐슬 합계: " + numberWithCommas(castleTotal) + "💕");
     result.lines.push("레이드 합계: " + numberWithCommas(raidTotal) + "💕");
     result.lines.push("퍼센트 적용 전: 캐슬 " + numberWithCommas(castleBase) + "💕 · 레이드 " + numberWithCommas(raidBase) + "💕");
