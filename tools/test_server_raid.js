@@ -1300,4 +1300,116 @@ group("활성화 저장 실패는 마감 미확정·재시도 성공부터 30분
     failNotice = null; tick(2000); assert.strictEqual(read().serverRaid.current.startedAt, round.startedAt);
 });
 
+// 실제 기본 7인수 콜백으로 남은 턴 조회의 전처리와 조기 반환까지 검증한다.
+function turnCallback(msg, user = "a", room = "room1", isGroup = true) {
+    const flow = c.commandDataFlowLock, depth = c.autoDailyQuestInternalDepth;
+    c.commandDataFlowLock = { readLock: () => lock(), writeLock: () => lock() }; c.autoDailyQuestInternalDepth = 0;
+    replies = [];
+    try { c.response(room, msg, user, isGroup, c.replier, null, "com.kakao.talk"); }
+    finally { c.commandDataFlowLock = flow; c.autoDailyQuestInternalDepth = depth; }
+    return replies.join("\n");
+}
+
+group("남은 턴 두 별칭·앞뒤 공백·실제 7인수 콜백과 정확한 UI", () => {
+    start(); const before = JSON.stringify(disk), timerCount = timers.size, traceStart = traces.length;
+    const expected = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━\n[💛a] 님의 남은 턴\n\n🎟️ 남은 공격: 5/5회\n━━━━━━━━━━━━\n👉 공격 참여: /레이드공격";
+    for (const msg of ["/레이드턴", "ㄹㄹ", "  /레이드턴 \t", "\n ㄹㄹ\n"]) assert.strictEqual(turnCallback(msg), expected);
+    assert.strictEqual(JSON.stringify(disk), before); assert.strictEqual(timers.size, timerCount);
+    assert(!traces.slice(traceStart).some(t => t.type === "save" || t.type === "notice"));
+    assert.strictEqual(read().member.a.serverRaidAccount, undefined); // 조회로 계정·참가 기록을 만들지 않는다.
+    for (const msg of ["/레이드턴 1", "/레이드턴 대상", "/레이드턴 해봐", "/레이드턴추가", "ㄹㄹㄹ", "ㄹㄹ 1", "ㄹㄹ 대상"]) {
+        assert(!c.isServerRaidTurnQueryCommand(msg)); assert(!c.isServerRaidCommand(msg));
+        const output = run(msg); assert(!output.includes("님의 남은 턴"));
+    }
+    assert.strictEqual(JSON.stringify(disk), before);
+});
+
+group("이번 회차 정상 2회는 3/5·5회와 초과 시도는 0/5·반복 조회 무차감", () => {
+    start(); attack("a", "turn-1"); attack("a", "turn-2");
+    const three = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━\n[💛a] 님의 남은 턴\n\n🎟️ 남은 공격: 3/5회\n━━━━━━━━━━━━\n👉 공격 참여: /레이드공격";
+    assert.strictEqual(turnCallback("/레이드턴"), three); assert.strictEqual(turnCallback("ㄹㄹ"), three);
+    for (let i = 3; i <= 7; i++) attack("a", "turn-" + i);
+    const before = JSON.stringify(disk), traceStart = traces.length;
+    const zero = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━\n[💛a] 님의 남은 턴\n\n🎟️ 남은 공격: 0/5회\n✅ 이번 대전의 공격 턴을 모두 사용했습니다.\n━━━━━━━━━━━━\n다음 서버 레이드대전에 참여해주세요!";
+    for (let i = 0; i < 5; i++) for (const msg of ["/레이드턴", "ㄹㄹ"]) assert.strictEqual(turnCallback(msg), zero);
+    assert.strictEqual(JSON.stringify(disk), before); assert(!traces.slice(traceStart).some(t => t.type === "save"));
+    const d = read(), p = d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id];
+    assert.strictEqual(p.attacks.length, 5); assert.strictEqual(p.excessAttempts, 2);
+});
+
+group("남은 턴 조회는 모든 운영방·패스 일대일 허용·DEV는 테스트방만", () => {
+    start(); attack(); start(true); attack("a", "dev-1", true); attack("a", "dev-2", true);
+    const before = JSON.stringify(disk);
+    for (const room of ["room8", "test", "room1", "unknown-room"]) for (const msg of ["/레이드턴", "ㄹㄹ"]) assert(turnCallback(msg, "a", room).includes("4/5회"));
+    assert(turnCallback("ㄹㄹ", "a", "private", false).includes("4/5회"));
+    for (const msg of ["dev/레이드턴", "dev/ㄹㄹ", "dev/  ㄹㄹ  "]) {
+        assert(turnCallback(msg, "a", "test").includes("3/5회"));
+        assert(turnCallback(msg, "a", "room8").includes("팻 테스트방에서만"));
+        assert(turnCallback(msg, "a", "test", false).includes("팻 테스트방에서만"));
+    }
+    assert.strictEqual(JSON.stringify(disk), before);
+});
+
+group("남은 턴도 기존 가입·출석·정지·일대일 패스 조건 유지", () => {
+    start(); const before = JSON.stringify(disk);
+    for (const msg of ["/레이드턴", "ㄹㄹ"]) {
+        assert(turnCallback(msg, "missing").includes("/모험시작"));
+        assert(turnCallback(msg, "absent").includes("출석체크부터"));
+        assert(turnCallback(msg, "suspended").includes("계정정지"));
+        assert(turnCallback(msg, "noPass", "private", false).includes("프리미엄 필요"));
+        assert(turnCallback(msg, "noPass").includes("5/5회"));
+    }
+    assert.strictEqual(JSON.stringify(disk), before);
+});
+
+group("미시작·준비·정산·완료·마감 경계는 미진행 안내·조회로 종료/정산하지 않음", () => {
+    const idle = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━\n[💛a] 님,\n현재 진행 중인 서버 레이드대전이 없습니다.\n━━━━━━━━━━━━\n대전 시작 후 남은 공격 턴을 확인해주세요!";
+    assert.strictEqual(turnCallback("/레이드턴"), idle);
+    start(); attack(); const original = read();
+    for (const state of ["PREP", "SETTLING", "COMPLETE"]) {
+        const d = clone(original); d.serverRaid.current.state = state; write(d);
+        const before = JSON.stringify(disk), timerCount = timers.size;
+        assert.strictEqual(turnCallback("ㄹㄹ"), idle); assert.strictEqual(JSON.stringify(disk), before); assert.strictEqual(timers.size, timerCount);
+    }
+    write(original); now = original.serverRaid.current.autoEndAt - 1; assert(turnCallback("ㄹㄹ").includes("4/5회"));
+    for (const offset of [0, 1, 60000]) {
+        now = original.serverRaid.current.autoEndAt + offset; const before = JSON.stringify(disk);
+        assert.strictEqual(turnCallback("/레이드턴"), idle); assert.strictEqual(JSON.stringify(disk), before);
+        assert.strictEqual(read().serverRaid.current.state, "ACTIVE");
+    }
+    const d = read(); d.serverRaid.current = null; write(d); assert.strictEqual(turnCallback("ㄹㄹ"), idle);
+});
+
+group("남은 턴은 누적·다른 계정 무관·닉네임 변경/재시작 유지·새 회차 5회", () => {
+    start(); attack("a", "first"); attack("a", "second"); attack("b", "other"); end(); start();
+    assert(turnCallback("/레이드턴").includes("5/5회")); attack("a", "next");
+    let d = read(); d.member.a.serverRaidAccount.total.attackCount = 9999;
+    d.member.renamed = d.member.a; delete d.member.a; write(d);
+    const pets = JSON.parse(disk[root + "member_pet.json"]); pets.renamed = pets.a; delete pets.a; disk[root + "member_pet.json"] = JSON.stringify(pets);
+    c.serverRaidWorkTimers = {}; timers.clear(); const before = JSON.stringify(disk);
+    assert(turnCallback("ㄹㄹ", "renamed").includes("[💛renamed] 님의 남은 턴"));
+    assert(turnCallback("/레이드턴", "renamed").includes("4/5회")); assert(turnCallback("ㄹㄹ", "b").includes("5/5회"));
+    assert.strictEqual(JSON.stringify(disk), before); assert.strictEqual(timers.size, 0);
+    end(); start(); assert(turnCallback("ㄹㄹ", "renamed").includes("5/5회"));
+});
+
+group("이동 후 소속 기간·계정 ID는 기존 참가자 판별 기준 적용·음수 남은 턴 방지", () => {
+    start(); attack(); const original = read(), id = original.member.a.serverRaidAccount.id;
+    for (const change of [d => d.member.a.serverRaidAccount.period++, d => d.member.a.serverRaidAccount.id = "new-account", d => d.member.a.server = c.GLOBAL_CONFIG.serverRaid.servers[1]]) {
+        const d = clone(original); change(d); write(d); const before = JSON.stringify(disk);
+        assert(turnCallback("ㄹㄹ").includes("5/5회")); assert.strictEqual(JSON.stringify(disk), before);
+    }
+    const d = clone(original); d.serverRaid.current.accounts[id].attacks = Array(6).fill(d.serverRaid.current.accounts[id].attacks[0]); write(d);
+    const before = JSON.stringify(disk); assert(turnCallback("ㄹㄹ").includes("0/5회")); assert.strictEqual(JSON.stringify(disk), before);
+});
+
+group("남은 턴 조회도 JSON 로드 실패를 숨기지 않음·불필요한 매력 계산 파일 IO 없음", () => {
+    start(); const traceStart = traces.length; turnCallback("ㄹㄹ");
+    const loads = traces.slice(traceStart).filter(t => t.type === "load").map(t => t.path);
+    assert.deepStrictEqual(loads.sort(), [memberPath, root + "member_pet.json", root + "guild.json"].sort());
+    for (const bad of [undefined, "{broken"]) {
+        disk[memberPath] = bad; const before = JSON.stringify(disk); assert.throws(() => run("/레이드턴")); assert.strictEqual(JSON.stringify(disk), before);
+    }
+});
+
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");

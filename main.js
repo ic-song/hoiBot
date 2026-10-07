@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.611"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.612"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2786,6 +2786,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier = createContextReplier(replier, ctx);
         }
         // 서버 레이드대전 진입: 다른 명령 전처리·자동 저장보다 먼저 잠금과 권한을 검사한다.
+        var raidTurnInput = String(msg || "").trim(); // 남은 턴 조회 두 명령만 앞뒤 공백 허용
+        if (ctx.isDev && raidTurnInput === "/ㄹㄹ") raidTurnInput = "ㄹㄹ"; // DEV 전처리가 붙인 슬래시만 제거
+        if (isServerRaidTurnQueryCommand(raidTurnInput)) msg = raidTurnInput;
         var serverRaidEvent = getServerRaidCallbackEvent(arguments, packageName); // 기본 7인수 콜백을 지원하며 확장 ID는 제공될 때만 사용
         if (isServerRaidCommand(msg) && !isServerRaidCommandRoom(room, isGroupChat, ctx, msg)) {
             replyServerRaidSafely(replier, serverRaidHeader() + (ctx.isDev ? "DEV 레이드 명령어는 팻 테스트방에서만 사용할 수 있습니다." : "레이드 명령어는 공성전 또는 팻 테스트방에서만 사용할 수 있습니다.\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom));
@@ -2823,7 +2826,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replyServerRaidSafely(replier, serverRaidHeader() + raidNick + ",\n해당 명령어를 사용할 권한이 없습니다.");
                 return;
             }
-            if (raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
+            if (raidCommand && !isServerRaidTurnQueryCommand(msg) && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
             if (raidLocked && !isServerRaidQueryCommand(msg) && msg !== "/레이드공격" && msg !== "/서버대전종료" && msg !== "/서버대전전체초기화") {
                 if (isServerRaidAutoEndDue(data.serverRaid.current, Date.now()) && closeServerRaid(data, ctx, "automatic").changed) {
                     saveJsonFile(data, filePath); // 일반 게임 처리를 막은 상태에서 마감과 정산 대기 상태를 먼저 확정
@@ -2880,6 +2883,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             if (!hasAttendedToday(data, sender) && !isAttendanceFreeCommand(msg, sender)) {
                 replyServerRaidSafely(replier, buildAttendanceRequiredMessage(data, raidPetData, raidGuildData, sender));
+                return;
+            }
+            if (isServerRaidTurnQueryCommand(msg)) {
+                replyServerRaidSafely(replier, buildServerRaidTurnMessage(data, sender, raidNick, Date.now()));
                 return;
             }
             if (msg === "/레이드공격") {
@@ -32867,7 +32874,7 @@ function serverRaidHeader() {
 
 // 서버 레이드대전의 정확한 명령 및 인수 안내를 판별하는 함수
 function isServerRaidCommand(msg) {
-    return isServerRaidMutationCommand(msg) || msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg) || msg === "/레이드기록" || msg === "/서버레이드기록";
+    return isServerRaidMutationCommand(msg) || isServerRaidQueryCommand(msg) || msg === "/레이드기록" || msg === "/서버레이드기록";
 }
 
 // 운영 시작·종료·조회는 모든 방에 허용하고 공격·초기화·DEV는 지정 방으로 제한하는 함수
@@ -32879,7 +32886,26 @@ function isServerRaidCommandRoom(room, isGroupChat, ctx, msg) {
 
 // 모든 운영방에서 조회를 허용할 정확한 명령을 판별하는 함수
 function isServerRaidQueryCommand(msg) {
-    return msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg);
+    return isServerRaidTurnQueryCommand(msg) || msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg);
+}
+
+// 본인의 남은 공격 턴을 조회할 두 명령을 정확히 판별하는 함수
+function isServerRaidTurnQueryCommand(msg) {
+    return msg === "/레이드턴" || msg === "ㄹㄹ";
+}
+
+// 진행 회차의 정상 공격만 읽어 남은 턴을 안내하는 함수
+function buildServerRaidTurnMessage(data, user, nick, now) {
+    var round = data.serverRaid && data.serverRaid.current;
+    if (!round || round.state !== "ACTIVE" || isServerRaidAutoEndDue(round, now)) {
+        return serverRaidHeader() + nick + ",\n현재 진행 중인 서버 레이드대전이 없습니다.\n━━━━━━━━━━━━\n대전 시작 후 남은 공격 턴을 확인해주세요!";
+    }
+    var participant = getServerRaidCurrentParticipant(data, data.member[user]);
+    var limit = GLOBAL_CONFIG.serverRaid.limits.attacks;
+    var remaining = Math.max(0, limit - (participant ? participant.attacks.length : 0)); // 누적·초과 시도는 제외
+    var message = serverRaidHeader() + nick + "의 남은 턴\n\n🎟️ 남은 공격: " + remaining + "/" + limit + "회\n";
+    if (remaining === 0) return message + "✅ 이번 대전의 공격 턴을 모두 사용했습니다.\n━━━━━━━━━━━━\n다음 서버 레이드대전에 참여해주세요!";
+    return message + "━━━━━━━━━━━━\n👉 공격 참여: /레이드공격";
 }
 
 // 회차·보상 변경 명령을 DEV 접두사와 함께 판별하는 함수
