@@ -98,7 +98,7 @@ vm.runInContext("function runAdminMove(){" + block(main, "if (/^\\/서버이동\
 const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank };
 vm.createContext(infoContext);
 vm.runInContext(block(info, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", infoContext);
-for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isInfoServerRaidLocked", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"])
+for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isInfoServerRaidLocked", "isInfoServerRaidAdditionalCommand", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"])
     vm.runInContext(block(info, "function " + name + "("), infoContext);
 
 function reset() {
@@ -106,6 +106,7 @@ function reset() {
     disk = {}; traces = []; replies = []; failWrite = null; failNotice = null; replyFailure = false;
     c.serverRaidWorkTimers = {}; c.dataSaveTransactionThreadLocal.remove(); c.commandContextThreadLocal.remove();
     c.worldNewsDraftState = {};
+    c.exploreInterval = false;
     const member = {}, pets = {};
     for (const user of ["master", "admin", "a", "b", "c", "absent", "suspended", "noPass", "오픈채팅봇", "unassigned"]) {
         member[user] = { point: 1000000000, server: c.GLOBAL_CONFIG.serverRaid.servers[0], agree: true, bag: { unchanged: 7 } };
@@ -223,15 +224,15 @@ group("기본 7인수 콜백 시작·공격·여러 방 및 재시작 후 계정
     end(); const paid = disk[memberPath]; end(); tick();
     assert.strictEqual(disk[memberPath], paid); assert.strictEqual(read().member.a.point, 1300015000);
 });
-group("MASTER 포함 Main·Info 일반 명령 잠금·서버 이동 및 출석 잠금 유지", () => {
+group("MASTER 포함 Main·Info 미허용 명령 잠금·서버 이동 제한 유지", () => {
     start();
-    for (const user of ["a", "master", "admin"]) for (const msg of ["/정보 a", "/내정보", "/서버순위", "ㅈㅈㅈ", "/종합순위", "/서버변경 호이서버2", "/서버이동 a 호이서버2[2030]", "ㅊㅊ", "출발한다"]) {
+    for (const user of ["a", "master", "admin"]) for (const msg of ["/미니펫정보 a", "/내정보", "/서버순위", "ㅈㅈㅈ", "/종합순위", "/서버변경 호이서버2", "/서버이동 a 호이서버2[2030]", "ㄹㄹㄹ", "출발한다"]) {
         const before = disk[memberPath]; assert(run(msg, user).includes("지금은 서버 레이드대전"), user + msg); assert.strictEqual(disk[memberPath], before);
     }
     assert(infoContext.isInfoServerRaidLocked(read()));
     const before = disk[memberPath]; assert.strictEqual(run("일반 대화"), ""); assert.strictEqual(disk[memberPath], before);
     assert(entryStart < main.indexOf('if (msg === "/데이터상태")'));
-    assert(info.indexOf("if (isInfoServerRaidLocked(data)) return") < info.indexOf("var isGlobalInfoCommand ="));
+    assert(info.indexOf("if (isInfoServerRaidLocked(data) && !isInfoServerRaidAdditionalCommand(msg)) return") < info.indexOf("var isGlobalInfoCommand ="));
 });
 group("참가 자격·출석·정지·일대일 패스·유효 소속·미등록 검사", () => {
     start();
@@ -820,7 +821,7 @@ group("0데미지 참가도 0%·동점 순위·기록 유지·공통 치명타 A
 group("최종본 30분은 실제 공격 활성화부터·준비 60초 별도·KST 공지·경계 자동 종료", () => {
     const requested = now; run("/서버대전시작", "master");
     let initial = read().serverRaid.current; assert.strictEqual(initial.requestedAt, requested); assert.strictEqual(initial.durationMs, 1800000); assert.strictEqual(initial.autoEndAt, undefined);
-    assert(run("/정보").includes("공격 시작 후 30분"));
+    assert(run("/미니펫정보").includes("공격 시작 후 30분"));
     tick(); tick(60000); attack("a", "timed");
     initial = read().serverRaid.current; assert.strictEqual(initial.autoEndAt, initial.startedAt + 1800000); assert.strictEqual(initial.startedAt, requested + 60001);
     assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 30분") && t.text.includes("자동 종료: " + c.formatServerRaidKstTime(initial.autoEndAt))));
@@ -1057,15 +1058,15 @@ group("모든 방에서 일반·관리자·닉네임 운영봇 거부·인증된
 group("최종 잠금 안내는 실제 채크랭크·저장 마감 KST·문구/줄바꿈 전체 일치", () => {
     now = Date.parse("2026-10-06T05:25:00Z"); run("/서버대전시작", "master");
     const expected = "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n[💛a] 님,\n지금은 서버 레이드대전 시간입니다!\n🕒 자동 종료: 2026.10.06 14:56\n\n⛔ 서버 레이드대전 종료 전까지\n일반 게임 명령어는 사용할 수 없습니다.\n\n우리 서버의 승리를 위해\n서버 레이드대전에 참여해주세요! 🔥\n━━━━━━━━━━━━\n📍 명령어방 안내\nhttps://open.kakao.com/o/gaP4Xybh\n\n👉 공격 참여: /레이드공격";
-    assert(run("/정보").includes("🕒 자동 종료: 공격 시작 후 30분")); tick(); tick(60000);
+    assert(run("/미니펫정보").includes("🕒 자동 종료: 공격 시작 후 30분")); tick(); tick(60000);
     const before = disk[memberPath];
-    assert.strictEqual(run("/정보"), expected); assert.strictEqual(replies.length, 1); assert.strictEqual(disk[memberPath], before);
+    assert.strictEqual(run("/미니펫정보"), expected); assert.strictEqual(replies.length, 1); assert.strictEqual(disk[memberPath], before);
     assert.strictEqual(run("/출첵", "b"), expected.replace("[💛a]", "[💛b]"));
     const duration = c.GLOBAL_CONFIG.serverRaid.timers.durationMs;
-    try { c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 3600000; assert.strictEqual(run("/정보"), expected); }
+    try { c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 3600000; assert.strictEqual(run("/미니펫정보"), expected); }
     finally { c.GLOBAL_CONFIG.serverRaid.timers.durationMs = duration; }
     reset(); now = Date.parse("2026-10-06T14:39:00Z"); start();
-    assert(run("/정보").includes("🕒 자동 종료: 2026.10.07 00:10"));
+    assert(run("/미니펫정보").includes("🕒 자동 종료: 2026.10.07 00:10"));
 });
 
 group("실제 7인수 콜백 일반/관리자 명령·단축 명령 차단은 안내 1회·재화/횟수/상점 무변경", () => {
@@ -1077,7 +1078,7 @@ group("실제 7인수 콜백 일반/관리자 명령·단축 명령 차단은 �
             if (stage === "ACTIVE") { tick(); tick(60000); attack(); }
             if (stage === "SETTLING") run("/서버대전종료", "master");
             const before = disk[memberPath];
-            for (const user of ["a", "master", "admin", "오픈채팅봇"]) for (const msg of ["/정보", "/출첵", "ㅊㅊ", "/구매 1 9999", "/서버변경 새서버", "/상점추가 서버이동권🖱[호이서버 전용](/서버변경 서버이름) 300000000000"]) {
+            for (const user of ["a", "master", "admin", "오픈채팅봇"]) for (const msg of ["/미니펫정보", "/출첵", "ㄹㄹㄹ", "/구매 1 9999", "/서버변경 새서버", "/상점추가 서버이동권🖱[호이서버 전용](/서버변경 서버이름) 300000000000"]) {
                 replies = []; c.response("room1", msg, user, true, c.replier, null, "com.kakao.talk");
                 assert.strictEqual(replies.length, 1, stage + ":" + msg);
                 assert(replies[0].includes("[💛" + user + "] 님,"));
@@ -1087,7 +1088,7 @@ group("실제 7인수 콜백 일반/관리자 명령·단축 명령 차단은 �
             // 실제 Info 콜백의 잠금 검사까지 실행해 두 스크립트가 안내를 중복하지 않는지 확인한다.
             const begin = info.indexOf("var plainCommands ="), guardEnd = info.indexOf("if (data && data.member", begin);
             assert(begin > 0 && guardEnd > begin);
-            infoContext.msg = "/정보"; infoContext.room = "room1"; infoContext.sender = "a";
+            infoContext.msg = "/미니펫정보"; infoContext.room = "room1"; infoContext.sender = "a";
             infoContext.filePath = memberPath; infoContext.loadJsonFile = () => read();
             vm.runInContext("function probeInfoEntry(){" + info.slice(begin, guardEnd) + "throw Error('잠금 이후 분기 실행');}", infoContext);
             vm.runInContext("probeInfoEntry()", infoContext); assert.strictEqual(disk[memberPath], before);
@@ -1124,7 +1125,7 @@ group("마감 우선 저장 실패는 게임 무실행·마감 미확정·기존
 
 group("마감 후 안내 전송 실패도 종료 확정 유지·준비 장기 중단은 늦은 시작 없이 종료", () => {
     start(); attack(); now = read().serverRaid.current.autoEndAt; replyFailure = true;
-    run("/정보"); assert.strictEqual(read().serverRaid.current.state, "SETTLING"); replyFailure = false;
+    run("/미니펫정보"); assert.strictEqual(read().serverRaid.current.state, "SETTLING"); replyFailure = false;
     tick(); assert.strictEqual(read().member.a.point, 1300003000); assert.strictEqual(read().serverRaid.completed, 1);
     reset(); const legacyDeadline = legacyPreparation(); c.serverRaidWorkTimers = {}; timers.clear(); now = legacyDeadline + 10000;
     assert(run("/출첵").includes("정산 완료")); tick(); assert.strictEqual(read().serverRaid.current, null);
@@ -1133,14 +1134,14 @@ group("마감 후 안내 전송 실패도 종료 확정 유지·준비 장기 �
 
 group("DEV 안내/마감 우선 종료는 운영과 분리·이전 마감 없는 회차에는 가짜 시각 미표시", () => {
     start(); start(true); attack("a", null, true); const production = disk[memberPath];
-    assert(run("dev/정보").includes("🕒 자동 종료: " + c.formatServerRaidKstTime(read(true).serverRaid.current.autoEndAt)));
-    now = read(true).serverRaid.current.autoEndAt; assert(run("dev/정보").includes("정산 완료")); assert.strictEqual(disk[memberPath], production);
+    assert(run("dev/미니펫정보").includes("🕒 자동 종료: " + c.formatServerRaidKstTime(read(true).serverRaid.current.autoEndAt)));
+    now = read(true).serverRaid.current.autoEndAt; assert(run("dev/미니펫정보").includes("정산 완료")); assert.strictEqual(disk[memberPath], production);
     // DEV 정산 예약만 진행하고 운영의 아직 실행되지 않은 타이머는 그대로 둔다.
     const devTimer = c.serverRaidWorkTimers[c.createCommandContext(true, "test").key()];
     const scheduled = timers.get(devTimer); assert(scheduled); timers.delete(devTimer); scheduled.fn();
     assert.strictEqual(read(true).serverRaid.current, null); assert.strictEqual(read(true).member.a.point, 1300003000); assert.strictEqual(disk[memberPath], production);
     reset(); start(); const d = read(); delete d.serverRaid.current.durationBasis; delete d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationMs; write(d);
-    now += 1800000; const old = disk[memberPath]; assert(!run("/정보").includes("🕒 자동 종료:"));
+    now += 1800000; const old = disk[memberPath]; assert(!run("/미니펫정보").includes("🕒 자동 종료:"));
     assert.strictEqual(disk[memberPath], old); end(); assert.strictEqual(c.isServerRaidLocked(read()), false);
 });
 
@@ -1416,6 +1417,185 @@ group("남은 턴 조회도 JSON 로드 실패를 숨기지 않음·불필요한
     for (const bad of [undefined, "{broken"]) {
         disk[memberPath] = bad; const before = JSON.stringify(disk); assert.throws(() => run("/레이드턴")); assert.strictEqual(JSON.stringify(disk), before);
     }
+});
+
+const additionalCommands = ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "/패키지지급", "/패키지가방", "/패키지사용", "/가방"];
+group("추가 10종과 기존 인수는 준비·진행·정산 모두 기존 처리로 통과·레이드 기록 무변경", () => {
+    start(); attack();
+    for (const state of ["PREP", "ACTIVE", "SETTLING"]) {
+        const d = read(); d.serverRaid.current.state = state; write(d);
+        for (const msg of additionalCommands.concat(["/미정 공백 이름", "/정보 공백 이름", "/패키지가방 공백 이름", "/패키지지급 공백 이름 1 2", "/패키지사용 1", "/패키지사용 1 2"])) {
+            const before = disk[memberPath]; assert(c.isServerRaidAdditionalCommand(msg), msg);
+            assert.strictEqual(run(msg), "", state + " " + msg); assert.strictEqual(disk[memberPath], before);
+        }
+        for (const msg of ["/정보", "/정보 공백 이름", "/포인트"]) assert(infoContext.isInfoServerRaidAdditionalCommand(msg));
+    }
+});
+group("추가 예외 접미·잘못된 숫자·미지정 별칭은 잠금 유지·기존 레이드 명령 유지", () => {
+    start();
+    for (const msg of ["/정보확인", "/미정추가", "/주기리셋 1", "/펫탐험정산 해봐", "/포인트 대상", "/가방 1", "ㅍㅍㅍ", "ㄴㄴㄴ", "/패키자사용", "/패키지사용 1 2 해봐", "/패키지사용 1 -1", "/패키지사용 1 1.5", "/패키지지급 a 1 2 해봐", "/패키지지급 a 1 1e3"]) {
+        assert(!c.isServerRaidAdditionalCommand(msg), msg);
+        const before = disk[memberPath]; assert(run(msg).includes("종료 전까지"), msg); assert.strictEqual(disk[memberPath], before);
+        assert(!infoContext.isInfoServerRaidAdditionalCommand(msg), msg);
+    }
+    for (const msg of ["/레이드공격", "/레이드턴", "ㄹㄹ", "/레이드순위", "/서버레이드순위", "/서버대전시작", "/서버대전종료", "/서버대전전체초기화"]) assert(c.isServerRaidCommand(msg), msg);
+});
+
+// 변경된 실제 진입부와 기존 자격 검사·명령 분기·저장 함수를 함께 실행한다.
+// 공통 전처리와 전체 보상 엔진은 별도 회귀 테스트 범위이며 아래에는 합성 의존성을 공급한다.
+for (const name of ["assertPackageLogData", "getPackageByListNumber", "getPackageBagItemName", "getUserPackageBagList", "appendPackageLog", "parsePackageGrantCommand", "grantPackageToUser", "parsePackageUseCommand", "validatePackageUse", "applyPackageRewards", "usePackageFromBag", "processAttendanceForUser", "stopAllIntervals", "buildManualPetExploreSettlementMessage", "startInterval", "intervalWithMinutes", "intervalWithSeconds", "interval", "stopInterval", "isAccountSuspensionBlockedMessage"])
+    vm.runInContext(block(main, "function " + name + "("), c);
+Object.assign(c, {
+    packageInfoPath: root + "packageInfo.json", packageLogPath: root + "packageLog.json", petExplorePath: root + "explore.json", setint: 60, castleSiegeFlag: false,
+    isAdminIdentity: c.isAdmin, getChatExperienceQueryTarget: () => null, isPassFreeHomeBadgeCommand: () => false,
+    getAttendanceNoticeCommandPrefix: () => null, recordBlockedPrivateChatAttempt: () => false,
+    getBlockedPrivateChatNoticeKind: () => "missing", normalizeMiniPetRewardBoxItemName: v => v,
+    attendanceLightPath: root + "attendanceLight.json", buildPendingUserIdCheckMessage: name => "확인 대상: " + name,
+    buildUserSupportPassLines: () => [], isHoiPassPremiumActive: () => false, validateGuildTerritoryAutoAttack: () => ({ ok: false }),
+    normalizeUniversalCollectionKeyBagItems: () => false, generateBagOutput: bag => ({ bagOutput: Object.keys(bag).join(", "), sortedItemList: Object.keys(bag) }),
+    addPoint: (data, user, amount) => { data.member[user].point += amount; },
+    getAttendanceKstDateKey: () => "2026-10-05", RankBonus: () => ({}), hasPetSkill: () => false,
+    rollAndCalculateMultiplier: () => 1, buildBattleExperienceRewardMessage: () => "EXP 합성 표시",
+    buildAdventureBoosterDepletionMessage: () => "", buildAttendanceCompleteMessage: () => "출석체크 완료",
+    getHighestMajorPromotionLevel: () => 0,
+    addMemberExperienceWithTierBonus(data, user, amount) { data.member[user].exp = (data.member[user].exp || 0) + amount; return { levelUps: [], boosterResult: { usedBooster: 0, extraExperience: 0 } }; },
+    initPetExploreData: d => d, cleanupInvalidPetExploreUsers() {}, isChuseokExploreEventActive: () => false,
+    getExploreTotalCount: () => 0, shouldAnnouncePetExploreStart: () => false, incrementDailyExploreCountForParticipants() {},
+    doPetExploreInterval(data) { data.member.a.point += 123; return "합성 탐험 보상"; },
+    setInterval(fn, delay) { c.pendingExploreCallback = fn; traces.push({ type: "exploreTimer", delay }); return "explore-interval"; },
+    clearInterval(id) { traces.push({ type: "clearExploreTimer", id }); }
+});
+const privateStart = main.indexOf("if (!isGroupChat) {", main.indexOf("var isChatExperienceQueryOperator") - 150);
+assert(privateStart >= 0);
+const privateGuard = block(main.slice(privateStart), "if (!isGroupChat) {");
+const extraPrelude = main.slice(main.indexOf("if (ctx.isDev) {", main.indexOf("function response(")), entryStart);
+for (const name of ["buildUserPackageBagMessage", "getOperationNotice", "normalizeOperationNoticeText"])
+    vm.runInContext(block(main, "function " + name + "("), c);
+const legacyMarkers = ['if (msg === "ㅊㅊ") {', 'if (msg === "/주기리셋" &&', 'if (exploreInterval == true ||', 'if (msg === "/미정" ||', 'if (/^\\/패키지지급\\s+', 'if (msg === "/패키지가방" ||', 'if (msg === "/패키지사용" ||', 'if (msg === "/가방" ||'];
+vm.runInContext("function runAdditionalLegacy(){" + extraPrelude + main.slice(entryStart, entryEnd) +
+    privateGuard + block(main, "if (isAccountSuspensionBlockedMessage(msg)) {") +
+    "var petData=loadJsonFile(memberPetPath), petSkillData=loadJsonFile(petSkillDataPath), guildData=loadJsonFile(guildPath);" +
+    block(main, "if (!hasAttendedToday(data, sender) && isAttendanceGameCommand(msg)") +
+    legacyMarkers.map(marker => block(main, marker)).join("\n") + "}", c);
+function additionalFixture(dev = false) {
+    const prefix = dev ? devRoot : root;
+    disk[prefix + "packageInfo.json"] = JSON.stringify([{ id: "synthetic", name: "합성 패키지", enabled: true, rewards: [{ type: "point", count: 11 }, { type: "item", name: "합성 돌멩이", count: 3 }] }]);
+    disk[prefix + "packageLog.json"] = JSON.stringify({ lastId: 0, logs: [] }); disk[prefix + "explore.json"] = "{}";
+    disk[prefix + "attendanceLight.json"] = JSON.stringify({ users: {} });
+}
+function ordinary(msg, user = "a", room = user === "master" ? "room92" : "room8", groupChat = true) {
+    replies = []; c.msg = msg; c.sender = user; c.room = room; c.isGroupChat = groupChat;
+    c.ctx = c.createCommandContext(c.isDevCommandMessage(msg), room);
+    const previous = c.enterCommandContext(c.ctx), originalReplier = c.replier; c.beginDataSaveTransaction();
+    try { c.runAdditionalLegacy(); }
+    catch (e) { c.rollbackDataSaveTransaction(); throw e; }
+    finally { c.endDataSaveTransaction(); c.exitCommandContext(previous); c.replier = originalReplier; }
+    return replies.join("\n");
+}
+group("실제 패키지 지급·사용·수량 제한과 탐험 정산 저장는 레이드 기록·예약·보상 보존", () => {
+    additionalFixture(); start(); attack(); const before = read(), raid = clone(before.serverRaid), deadline = before.serverRaid.current.autoEndAt, timer = JSON.stringify(c.serverRaidWorkTimers);
+    assert.strictEqual(Object.keys(c.serverRaidWorkTimers).length, 1);
+    assert(ordinary("/패키지지급 a 1 2", "master").includes("지급 완료"));
+    assert(ordinary("/패키지사용 1 1").includes("사용 완료"));
+    assert.strictEqual(read().member.a.bag["합성 패키지"], 1); assert.strictEqual(read().member.a.bag["합성 돌멩이"], 3);
+    assert.strictEqual(read().member.a.point, before.member.a.point + 11);
+    const snapshot = JSON.stringify(disk); ordinary("/패키지지급 a 1 1", "a"); ordinary("/패키지사용 1 1001"); ordinary("/패키지사용 1 1 해봐"); assert.strictEqual(JSON.stringify(disk), snapshot);
+    assert(ordinary("/펫탐험정산", "master").includes("정산을 완료")); assert.strictEqual(read().member.a.point, before.member.a.point + 134);
+    assert.deepStrictEqual(read().serverRaid, raid); assert.strictEqual(JSON.stringify(c.serverRaidWorkTimers), timer);
+    assert.strictEqual(read().serverRaid.current.autoEndAt, deadline);
+    const log = JSON.parse(disk[root + "packageLog.json"]); assert.deepStrictEqual(log.logs.map(x => x.type), ["GRANT", "USE"]);
+    tick(deadline - now); const settled = read(); assert.strictEqual(settled.serverRaid.completed, 1);
+    assert.strictEqual(settled.member.a.point, before.member.a.point + 134 + 300000000);
+    tick(10000); assert.strictEqual(read().member.a.point, settled.member.a.point);
+});
+group("패키지 두 파일 저장 실패는 지급·소모·로그·레이드 상태 모두 복구", () => {
+    additionalFixture(); start(); attack(); ordinary("/패키지지급 a 1 2", "master");
+    for (const command of ["/패키지사용 1", "/패키지지급 a 1 2"]) {
+        const before = disk[memberPath], beforeLog = disk[root + "packageLog.json"];
+        failWrite = (_d, p) => p === root + "packageLog.json";
+        assert.throws(() => ordinary(command, command.includes("지급") ? "master" : "a"));
+        assert.strictEqual(disk[memberPath], before); assert.strictEqual(disk[root + "packageLog.json"], beforeLog);
+    }
+});
+group("실제 출석 보상·중복 출석·정지·출석·일대일 패스 조건 유지", () => {
+    additionalFixture(); start(); attack(); const before = read(), raid = clone(before.serverRaid);
+    assert(ordinary("ㅊㅊ").includes("출석체크 완료")); const first = disk[memberPath];
+    assert(ordinary("ㅊㅊ").includes("이미 출첵")); assert.strictEqual(disk[memberPath], first);
+    assert.deepStrictEqual(read().serverRaid, raid); assert(read().member.a.point > before.member.a.point);
+    for (const [user, chat, expected] of [["suspended", true, "계정정지"], ["absent", true, "출석체크부터"], ["noPass", false, "프리미엄 필요"]]) {
+        const saved = disk[memberPath]; assert(ordinary("/패키지사용 1", user, "room8", chat).includes(expected)); assert.strictEqual(disk[memberPath], saved);
+    }
+});
+group("실제 주기 리셋은 기존 방·권한 유지·레이드 자동종료 타이머 별도 보존", () => {
+    start(); const d = read(); d.intervalIDs = [91, 92]; d.previnterval = 100; write(d);
+    const raid = clone(d.serverRaid), timer = JSON.stringify(c.serverRaidWorkTimers);
+    assert.strictEqual(Object.keys(c.serverRaidWorkTimers).length, 1);
+    for (const [user, room] of [["a", "room90"], ["admin", "room8"]]) { const before = disk[memberPath]; assert.strictEqual(ordinary("/주기리셋", user, room), ""); assert.strictEqual(disk[memberPath], before); }
+    assert(ordinary("/주기리셋", "admin", "room90").includes("주기리셋완"));
+    assert.deepStrictEqual(traces.filter(t => t.type === "clearExploreTimer").map(t => t.id), [91, 92]);
+    assert.strictEqual(JSON.stringify(c.serverRaidWorkTimers), timer); assert.deepStrictEqual(read().serverRaid, raid);
+    tick(d.serverRaid.current.autoEndAt - now); assert.strictEqual(read().serverRaid.completed, 1);
+});
+group("DEV 출석 별칭·패키지·탐험 저장는 DEV 한정·운영 상태와 포인트 보존", () => {
+    additionalFixture(true); start(true); attack("a", "dev-extra", true);
+    const prod = disk[memberPath]; const raid = clone(read(true).serverRaid);
+    assert(ordinary("dev/ㅊㅊ", "a", "test").includes("출석체크 완료"));
+    assert(ordinary("dev/패키지지급 a 1 1", "master", "test").includes("지급 완료"));
+    assert(ordinary("dev/패키지사용 1", "a", "test").includes("사용 완료"));
+    assert(ordinary("dev/펫탐험정산", "master", "test").includes("정산을 완료"));
+    assert.strictEqual(disk[memberPath], prod); assert.deepStrictEqual(read(true).serverRaid, raid);
+});
+
+group("기존 미정·가방·패키지가방 분기로 조회·타인 조회 관리자 권한 유지", () => {
+    additionalFixture(); start(); ordinary("/패키지지급 a 1 2", "master");
+    const before = JSON.stringify(disk);
+    assert(ordinary("/미정 a", "master").includes("확인 대상: a")); assert(ordinary("/미정 a").includes("관리자만"));
+    assert(ordinary("/패키지가방").includes("합성 패키지"));
+    assert(ordinary("/패키지가방 a", "master").includes("합성 패키지")); assert.strictEqual(ordinary("/패키지가방 a", "b"), "");
+    assert(ordinary("/가방").includes("합성 패키지")); assert.strictEqual(JSON.stringify(disk), before);
+});
+
+for (const name of ["isGlobalInfoCommandAllowed", "isInfoAttendanceFreeCommand", "isInfoCommandBlockedDuringGuildTerritoryWar", "isMatzangInfoOperatorCommandMessage"])
+    vm.runInContext(block(info, "function " + name + "("), infoContext);
+Object.assign(infoContext, {
+    filePath: memberPath, guildPath: c.guildPath, memberPetPath: c.memberPetPath, petSkillDataPath: c.petSkillDataPath,
+    memberTitlePath: root + "titles.json", petTitlePath: root + "petTitles.json", petExplorePath: c.petExplorePath,
+    petHomeActivityFile: root + "activity.json", replier: c.replier, Api: c.Api, room91: c.room91,
+    loadJsonFile: p => vm.runInContext("JSON.parse(" + JSON.stringify(disk[p]) + ")", infoContext),
+    isAdminIdentity: user => user === "admin", isMasterIdentity: user => user === "master", isAdmin: user => user === "admin", isMaster: user => user === "master",
+    hasInfoPrivateChatPass: (_d, user) => user !== "noPass", isAccountSuspensionBlockedMessage: c.isAccountSuspensionBlockedMessage,
+    isAccountSuspended: c.isAccountSuspended, getInfoAttendanceKstDateKey: () => "2026-10-05", getInfoHoiPassPremiumHeader: () => "",
+    getInfoUnreadPetHomeAlertCount: () => 0
+});
+const infoGuardStart = info.indexOf("if (isInfoServerRaidLocked(data)");
+const infoGuardEnd = info.indexOf('if (msg.startsWith("/정보")', infoGuardStart);
+vm.runInContext("function runAdditionalInfo(){var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
+    block(info, 'if (msg.startsWith("/정보")') + block(info, 'if (msg === "/포인트" ||') + "}", infoContext);
+group("Info 실제 자격 검사와 포인트·정보 분기·읽기 전용·접미 차단", () => {
+    additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].recent = "2026-10-05"; write(d);
+    disk[root + "titles.json"] = JSON.stringify({ member: {} }); disk[root + "petTitles.json"] = "{}"; disk[root + "activity.json"] = "{}";
+    function query(msg, user = "a", groupChat = true) {
+        replies = []; Object.assign(infoContext, { msg, sender: user, isGroupChat: groupChat, ctx: { isDev: false } }); infoContext.runAdditionalInfo(); return replies.join("\n");
+    }
+    const before = JSON.stringify(disk);
+    assert(query("/포인트").includes("1,000,000,000")); assert(query("/정보 미등록", "master").includes("등록되지 않은"));
+    assert.strictEqual(query("/정보 미등록"), ""); assert.strictEqual(query("/포인트", "absent"), "");
+    assert.strictEqual(query("/포인트", "noPass", false), ""); assert(query("/포인트", "suspended").includes("계정정지"));
+    assert.strictEqual(query("/정보확인", "master"), ""); assert.strictEqual(query("/포인트 대상"), "");
+    assert.strictEqual(JSON.stringify(disk), before);
+});
+
+group("실제 자동탐험 타이머의 차단 표시 정리·다음 허용 명령에서 탐험 추가 실행 방지", () => {
+    additionalFixture(); start(); ordinary("/펫탐험정산", "master");
+    const before = read(), timer = JSON.stringify(c.serverRaidWorkTimers); replies = [];
+    const flow = c.commandDataFlowLock, depth = c.autoDailyQuestInternalDepth;
+    c.commandDataFlowLock = { readLock: () => lock(), writeLock: () => lock() }; c.autoDailyQuestInternalDepth = 0;
+    try { c.pendingExploreCallback(); } // 실제 startInterval이 등록한 기본 7인수 response 콜백
+    finally { c.commandDataFlowLock = flow; c.autoDailyQuestInternalDepth = depth; }
+    assert(replies.join("\n").includes("종료 전까지")); assert.strictEqual(c.exploreInterval, false);
+    assert(ordinary("/패키지지급 a 1 1", "master").includes("지급 완료"));
+    assert.strictEqual(read().member.a.point, before.member.a.point); assert.deepStrictEqual(read().serverRaid, before.serverRaid);
+    assert.strictEqual(JSON.stringify(c.serverRaidWorkTimers), timer);
 });
 
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.613"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.614"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -987,6 +987,7 @@ const GLOBAL_CONFIG = {
         testRoomOnly: false
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
+        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "/패키지지급", "/패키지가방", "/패키지사용", "/가방"] }, // 기존 허용 명령에 더할 예외
         limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
         timers: { preparationMs: 60000, retryMs: 2000, durationMs: 1800000 }, // 준비 60초와 별도로 실제 공격 활성화부터 30분
         penalties: { chargeFromAttempt: 2, pointCost: 50000000 }, // 초과 첫 시도는 경고, 두 번째부터 잔액 충분 시 5천만 차감
@@ -2783,6 +2784,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
+            if (msg === "/ㅊㅊ") msg = "ㅊㅊ"; // DEV 전처리가 붙인 슬래시를 제거해 기존 출석 단축어 사용
             replier = createContextReplier(replier, ctx);
         }
         // 서버 레이드대전 진입: 다른 명령 전처리·자동 저장보다 먼저 잠금과 권한을 검사한다.
@@ -2814,9 +2816,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var data = loadJsonFile(filePath);
         var raidCommand = isServerRaidCommand(msg);
         var raidLocked = isServerRaidLocked(data);
+        if (raidLocked && msg === "/펫탐험자동정산") exploreInterval = false; // 차단된 자동 탐험이 다음 허용 명령에서 실행되지 않도록 예약 표시 정리
         // 일반 입력은 기존 작업을 재개하고, 레이드 명령은 운영 권한 검사 뒤 재개한다.
         if (!raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
-        if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg))) {
+        if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg) && !isServerRaidAdditionalCommand(msg))) {
             var raidPetData = loadJsonFile(memberPetPath);
             var raidGuildData = loadJsonFile(guildPath);
             var raidNick = data.member && data.member[sender] ? "[" + checkRank(data, raidPetData, raidGuildData, sender) + "] 님" : "[" + sender + "] 님";
@@ -32892,6 +32895,15 @@ function isServerRaidQueryCommand(msg) {
 // 본인의 남은 공격 턴을 조회할 두 명령을 정확히 판별하는 함수
 function isServerRaidTurnQueryCommand(msg) {
     return msg === "/레이드턴" || msg === "ㄹㄹ";
+}
+
+// 대전 중 기존 명령 처리로 통과시킬 추가 예외와 해당 인수 형식을 확인하는 함수
+function isServerRaidAdditionalCommand(msg) {
+    return GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
+        /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
+        /^\/패키지가방\s+.+$/.test(msg) ||
+        /^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg) ||
+        /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg);
 }
 
 // 진행 회차의 정상 공격만 읽어 남은 턴을 안내하는 함수

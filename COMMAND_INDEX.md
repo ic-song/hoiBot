@@ -4448,16 +4448,18 @@ Status: PARTIAL
 - 이전 수치 조정 기획: `[최종본]서버_레이드대전_권한_및_자동종료_기획서 (1)서버 레이드대전 수치 조정 기획서` (`dce393bdd7aa821b916f016d21e5df86`). 치명타 전 레이드매력의 3%, 서버 1~10위 참여자 1인당 3억부터 3천만씩 감소한 상금은 유지한다. 당시 시작 명령부터 준비 포함 15분 정책은 다음 최신 기획으로 대체한다. 이미 시작한 회차의 마감과 확정된 상금·공격 지급 기록은 보존한다.
 - 최신 수정 기획: `[최종최종]레이드대전_수정_기획서 (1)` (`05f393bdd7aa8234a214811a6061a605`). 준비 60초와 별도로 실제 공격 활성화부터 30분 진행한다. `/레이드순위`의 기여도 아래·순위 위에 정상 누적 공격횟수를 표시하고 기존 ALLSEE 위치를 유지한다. 회차별·계정별 첫 초과 시도는 경고와 0포인트, 두 번째부터 매회 5천만 포인트를 차감한다. 사용자 확정으로 잔액이 부족하면 차감 없이 안내하고 초과 횟수만 기록한다. 실패·초과 시도는 정상 누적 횟수·데미지·보상에서 제외한다.
 - 명령 제한 안내 기획: `서버_레이드대전_명령어_제한_안내_수정_기획서` (`bc4393bdd7aa83cd98218174d4985a63`). `buildServerRaidLockMessage`는 입력자의 기존 채크랭크와 저장된 회차 마감을 KST `YYYY.MM.DD HH:mm`으로 표시한다. 일반 게임·단축 명령은 실행 전에 안내 1회 후 종료한다. 마감에 도달한 차단 입력은 기존 `closeServerRaid`로 자동 종료 상태를 저장하고 예약 정산을 재개한다. 정산 중에는 대전 참여 안내 대신 종료 처리 안내를 출력하며 정산 완료 후 잠금을 해제한다. 일반 채팅·허용된 순위 조회·공격·운영 종료의 기존 동작은 유지한다.
+- 추가 허용 기획: `서버_레이드대전_사용_가능_명령어` (`fde393bdd7aa83568600012f8c15e410`). 준비·진행·정산 중 기존 레이드 명령에 더해 `ㅊㅊ`, `/미정`, `/정보`, `/주기리셋`, `/펫탐험정산`, `/포인트`, `/패키지지급`, `/패키지가방`, `/패키지사용`, `/가방`을 기존 처리로 통과시킨다. 기존 대상 이름·패키지 번호·수량 인수 형식만 허용하며 접미 설명·유사 명령·미지정 별칭은 잠금을 유지한다. 원래 권한·출석·정지·일대일 패스·다른 대전 제한은 계속 검사한다. DEV `dev/ㅊㅊ`는 기존 출석 단축어로 정규화한다.
 
 ## Related Helpers
 
 - 회차: `createServerRaidState`, `startServerRaid`, `activateServerRaid`, `closeServerRaid`, `resetServerRaid`.
+- 추가 예외: `isServerRaidAdditionalCommand`, `GLOBAL_CONFIG.serverRaid.commands.additionalExact`. 레이드 진입부의 일반 잠금만 제외하고 기존 명령 처리로 연결한다. Info는 `isInfoServerRaidAdditionalCommand`와 해당 파일의 설정으로 `/정보`·`/포인트`만 통과시킨다. 두 판별 함수에는 파일 IO·저장·권한 변경이 없다.
 - 남은 턴: `isServerRaidTurnQueryCommand`, `buildServerRaidTurnMessage`, `getServerRaidCurrentParticipant`. ACTIVE이면서 저장된 마감 전인 회차의 동일 계정·소속 기간 `attacks.length`만 읽어 `max(0, GLOBAL_CONFIG.serverRaid.limits.attacks - 사용 횟수)`를 표시한다. 누적·초과 시도는 제외한다. 준비·정산·완료·마감 도달은 미진행 안내를 출력한다. 조회 중 계정/참여 기록 생성·포인트 차감·저장·예약 작업 재개를 하지 않는다.
 - 자동 종료: `isServerRaidAutoEndDue`, `getServerRaidWorkDelay`, `buildServerRaidTimeNotice`, `GLOBAL_CONFIG.serverRaid.timers.durationMs`. 준비·자동 종료·공지 재시도 중 가장 이른 시각으로 기존 환경별 타이머 1개를 재사용한다.
 - 공격: `getServerRaidAttackCheck`, `applyServerRaidAttack`, 기존 `calculateRaidExp`, `calculateCriticalDamage`, `calculateEffectivePetUpgradeLevel`.
 - 초과 시도: `applyServerRaidExcessAttempt`, `buildServerRaidExcessMessage`, `GLOBAL_CONFIG.serverRaid.penalties`. 정상 공격 계산 전에 별도 분기로 처리하고 저장한 실제 차감·부족 결과로 안내한다. 두 헬퍼는 파일 IO가 없다.
 - 수신 식별값: `getServerRaidCallbackEvent`, `getServerRaidNativeId`, `getServerRaidEventId`, `createServerRaidAttackEvent`.
-- 명령방: `isServerRaidCommandRoom`, `isServerRaidQueryCommand`, `GLOBAL_CONFIG.serverRaid.rooms`. 운영 시작·종료·조회는 방 제한에서 제외한다. 시작·종료는 기존 MASTER 명단의 `isMasterIdentity`와 인증된 운영봇 권한을 검사한다. 조회만 대전 잠금에서 제외하며 시작·종료의 기존 중복 처리 정책은 유지한다.
+- 명령방: `isServerRaidCommandRoom`, `isServerRaidQueryCommand`, `GLOBAL_CONFIG.serverRaid.rooms`. 운영 시작·종료·조회는 방 제한에서 제외한다. 시작·종료는 기존 MASTER 명단의 `isMasterIdentity`와 인증된 운영봇 권한을 검사한다. 레이드 조회는 대전 잠금에서 제외하며 시작·종료의 기존 중복 처리 정책은 유지한다. 일반 명령의 추가 예외는 별도 판별 함수를 사용한다.
 - 순위·정산: `buildServerRaidResults`, `rankServerRaidRows`, `settleServerRaidParticipant`, `buildServerRaidAccountIndex`, `finishServerRaidSettlement`.
 - 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
 - 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
@@ -4474,6 +4476,8 @@ Status: PARTIAL
 - 공격마다 R(레이드매력), D(치명타 포함 최종 데미지), P(버림 처리한 R의 3%)를 구분해 저장한다. `calculateServerRaidAttackReward`는 몫·나머지 계산으로 큰 안전 정수에서도 정확히 버린다. 새 공격은 `rewardBasis: "raidCharm"`, `rewardPercent: 3`을 저장하고 `getServerRaidAttackPercent`는 이전 비율 미기록 공격을 당시 1%로 읽는다. 이전 `damage`·R1% 공격과 혼합 기록은 당시 지급액·기준·비율을 유지하며 재전송 시 재계산·추가 지급하지 않는다. 실제 치명타 판정은 기존 `calculateCriticalDamage`의 선택 결과 인수로 함께 받아 0매력에서도 유지한다. 기존 호출의 숫자 반환값은 유지한다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
 - R은 기존 `calculateRaidExp`로 계산하며 가방의 레이드타격대인장(개당 +600)과 홈뱃지·길드 큐브·레벨·퀘스트 보너스를 포함한다. 종합매력을 사용하지 않으며 포함된 보너스를 중복 가산하지 않는다.
 - 공격·종료·초기화는 명령 쓰기 잠금과 기존 데이터 트랜잭션 잠금으로 직렬화한다. 공격 횟수·포인트·데미지·이벤트 완료 상태를 `member.json`에 한 번에 저장한다.
+- 추가 허용 명령은 기존 공통 전처리·권한 검사·파일 로드·저장·복구 흐름을 사용하며 레이드 공격/보상 기록과 마감을 직접 수정하지 않는다. 패키지 지급·사용은 기존 회원 파일과 패키지 로그 저장 트랜잭션을 유지한다. 수동 탐험의 `stopAllIntervals`는 탐험 `intervalIDs`만 정리하며 별도 `serverRaidWorkTimers`의 자동 종료 예약은 보존한다.
+- 대전 중 차단된 `/펫탐험자동정산`은 `exploreInterval` 실행 표시를 해제한다. 이전 자동 탐험 예약이 다음 허용 명령에서 의도치 않게 실행되지 않도록 하며, 대전 종료 후 자동 정산과 수동 `/펫탐험정산`의 기존 흐름은 유지한다.
 - 초과 시도는 참가자의 `excessAttempts`, `excessEvents`에 횟수·실제 차감액·부족 여부·당시 비용을 기록하고 `eventReceipts`에 회차·계정·초과 구분을 함께 저장한다. 회원 포인트와 같은 저장 단위로 확정한 뒤 안내한다. 저장 실패는 모두 복구하며 응답 실패 후 같은 원본 ID를 재전송해도 재차감하지 않는다. 부족 결과 재전송은 이후 입금돼도 다시 차감하지 않는다. 이전 참가자의 새 필드가 없으면 첫 초과부터 기록하며 다음 회차 참가자는 초과 0회로 생성한다. 정상 공격 목록·데미지·공격 보상은 변경하지 않는다.
 - 정산은 미지급 참가자의 포인트와 완료 상태를 묶어 한 번 저장한 뒤 우승·완료 횟수·확정 결과를 저장한다. 이미 지급된 계정은 재시도 시 건너뛴다. 조회용 기록은 서버와 소속 기간이 모두 일치할 때만 작성한다.
 - 누적 조회는 미지급 진행 참가자의 정상 공격·참가 1회를 추가하고, 지급 완료된 참가자는 이미 기록된 누적만 사용해 부분 정산·재시작에서도 중복되지 않는다. 개인 화면의 `🎯 누적 공격: N회`는 정상 공격만 세 자리 쉼표로 표시하며 서버 화면의 기존 요약은 유지한다. 최근 회차가 진행·정산 중이면 확정 보상 합계·지급 완료 문구를 표시하지 않는다. 기록 없는 화면에는 ALLSEE를 생략하고 0 데미지 기여도는 0.00%로 표시한다. 현재 소속 기간의 이동·초기화 정책은 유지한다.
@@ -4500,6 +4504,7 @@ Status: PARTIAL
 - `node tools/test_server_raid.js`: 실제 명령 진입·예약 작업·보호 저장 함수를 합성 데이터와 메모리 파일시스템에서 실행한다.
 - 97개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 실제 Main/Info 레이드 계산에서 인장·홈/길드 큐브·레벨·퀘스트 합산을 대조하며, 제보 치명타 수치·이전 지급 기록·확정 상금 표시·명령 이름·방 제한도 검증한다. 기존 UI 유지·R3%·0매력 치명타·D/R 및 1%/3% 혼합 지급 기록·모든 운영방 조회·여러 회차 누적 일치·부분 정산 재시작·ALLSEE 위치를 검증한다. 실제 활성화부터 30분·기존 10/15분 유지·마감 경계·수동/자동 경합·공지/저장 실패·중복 시작·재시작·늦은 준비 안내 취소·권한 없는 타이머 미변경을 검증한다. 첫 초과 경고·2회부터 각 5천만 차감·잔액 경계·부족 시 기록만·원본 ID 재전송·닉네임 변경·다음 회차·초기화·DEV 분리·정상 누적 횟수/콤마를 검증한다.
 - 남은 턴 조회 8개 그룹은 별칭·공백·접미 거부·5/3/0회·반복 무차감·전체 운영방/DEV 제한·가입/출석/정지/패스·마감 경계·회차/닉네임/소속 기간·로드 실패를 실제 7인수 콜백과 합성 파일 IO로 검증한다.
+- 추가 허용 10개 그룹을 포함해 총 107개 그룹을 검증한다. 준비·진행·정산의 10종/인수 통과, 접미·숫자·별칭 거부, 기존 명령 유지, 실제 패키지 지급/사용/두 파일 저장 실패 복구, 출석/조회/권한, 탐험 정산·주기 리셋의 레이드 예약 보존과 자동 종료 상금, DEV 저장 분리, 실제 자동 탐험 콜백 차단 후 다음 허용 명령의 불필요한 탐험 실행 방지를 확인한다. 새 명령 통합 검증은 실제 진입부·자격 검사·명령 분기·저장 함수에 합성 보상/표시 의존성을 연결하며 전체 공통 전처리·기기 실행을 대신하지 않는다.
 - DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
 
 ---

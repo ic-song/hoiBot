@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    serverRaid: { commands: { additionalExact: ["/정보", "/포인트"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
 		additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
@@ -564,7 +565,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (msg === "/스타터중복확인" && room !== testRoom) return;
 		let data = loadJsonFile(filePath);
 		// 레이드 잠금은 MASTER·전역 정보 예외보다 우선하고 안내는 main.js에서만 출력한다.
-		if (isInfoServerRaidLocked(data)) return;
+		if (isInfoServerRaidLocked(data) && !isInfoServerRaidAdditionalCommand(msg)) return;
 		if (data && data.member && data.member[sender] && !isInfoAttendanceFreeCommand(msg, sender)) {
 			var attendanceMember = data.member[sender];
 			if (String(attendanceMember.recent || "") !== getInfoAttendanceKstDateKey()) return;
@@ -2283,6 +2284,11 @@ function normalizeRankServerName(serverName) {
 function isInfoServerRaidLocked(data) {
 	var round = data && data.serverRaid && data.serverRaid.current;
 	return !!(round && (round.state === "PREP" || round.state === "ACTIVE" || round.state === "SETTLING"));
+}
+
+// 대전 중 기존 권한·출석 검사를 거쳐 사용할 Info 명령의 정확한 형식을 확인하는 함수
+function isInfoServerRaidAdditionalCommand(msg) {
+    return GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 || /^\/정보\s+\S(?:.*\S)?\s*$/.test(msg);
 }
 
 // 기존 서버명 뒤에 같은 원본의 누적 우승 횟수를 덧붙이는 함수
