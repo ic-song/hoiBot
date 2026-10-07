@@ -4453,7 +4453,7 @@ Status: PARTIAL
 ## Related Helpers
 
 - 회차: `createServerRaidState`, `startServerRaid`, `activateServerRaid`, `closeServerRaid`, `resetServerRaid`.
-- 추가 예외: `isServerRaidAdditionalCommand`, `GLOBAL_CONFIG.serverRaid.commands.additionalExact`. 레이드 진입부의 일반 잠금만 제외하고 기존 명령 처리로 연결한다. Info는 `isInfoServerRaidAdditionalCommand`와 해당 파일의 설정으로 `/정보`·`/포인트`만 통과시킨다. 두 판별 함수에는 파일 IO·저장·권한 변경이 없다.
+- 추가 예외: `isServerRaidAdditionalCommand`, `GLOBAL_CONFIG.serverRaid.commands.additionalExact`. 레이드 진입부의 일반 잠금만 제외하고 기존 명령 처리로 연결한다. Info는 `isInfoServerRaidAdditionalCommand`와 해당 파일의 설정으로 `/정보`·`/포인트`·포인트 단축키 `ㅍㅍㅍ`를 통과시킨다. 두 판별 함수에는 파일 IO·저장·권한 변경이 없다. DEV `dev/ㅍㅍㅍ`는 Main·Info 모두 기존 포인트 단축어로 정규화한다.
 - 남은 턴: `isServerRaidTurnQueryCommand`, `buildServerRaidTurnMessage`, `getServerRaidCurrentParticipant`. ACTIVE이면서 저장된 마감 전인 회차의 동일 계정·소속 기간 `attacks.length`만 읽어 `max(0, GLOBAL_CONFIG.serverRaid.limits.attacks - 사용 횟수)`를 표시한다. 누적·초과 시도는 제외한다. 준비·정산·완료·마감 도달은 미진행 안내를 출력한다. 조회 중 계정/참여 기록 생성·포인트 차감·저장·예약 작업 재개를 하지 않는다.
 - 자동 종료: `isServerRaidAutoEndDue`, `getServerRaidWorkDelay`, `buildServerRaidTimeNotice`, `GLOBAL_CONFIG.serverRaid.timers.durationMs`. 준비·자동 종료·공지 재시도 중 가장 이른 시각으로 기존 환경별 타이머 1개를 재사용한다.
 - 공격: `getServerRaidAttackCheck`, `applyServerRaidAttack`, 기존 `calculateRaidExp`, `calculateCriticalDamage`, `calculateEffectivePetUpgradeLevel`.
@@ -4504,7 +4504,7 @@ Status: PARTIAL
 - `node tools/test_server_raid.js`: 실제 명령 진입·예약 작업·보호 저장 함수를 합성 데이터와 메모리 파일시스템에서 실행한다.
 - 97개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 실제 Main/Info 레이드 계산에서 인장·홈/길드 큐브·레벨·퀘스트 합산을 대조하며, 제보 치명타 수치·이전 지급 기록·확정 상금 표시·명령 이름·방 제한도 검증한다. 기존 UI 유지·R3%·0매력 치명타·D/R 및 1%/3% 혼합 지급 기록·모든 운영방 조회·여러 회차 누적 일치·부분 정산 재시작·ALLSEE 위치를 검증한다. 실제 활성화부터 30분·기존 10/15분 유지·마감 경계·수동/자동 경합·공지/저장 실패·중복 시작·재시작·늦은 준비 안내 취소·권한 없는 타이머 미변경을 검증한다. 첫 초과 경고·2회부터 각 5천만 차감·잔액 경계·부족 시 기록만·원본 ID 재전송·닉네임 변경·다음 회차·초기화·DEV 분리·정상 누적 횟수/콤마를 검증한다.
 - 남은 턴 조회 8개 그룹은 별칭·공백·접미 거부·5/3/0회·반복 무차감·전체 운영방/DEV 제한·가입/출석/정지/패스·마감 경계·회차/닉네임/소속 기간·로드 실패를 실제 7인수 콜백과 합성 파일 IO로 검증한다.
-- 추가 허용 10개 그룹을 포함해 총 107개 그룹을 검증한다. 준비·진행·정산의 10종/인수 통과, 접미·숫자·별칭 거부, 기존 명령 유지, 실제 패키지 지급/사용/두 파일 저장 실패 복구, 출석/조회/권한, 탐험 정산·주기 리셋의 레이드 예약 보존과 자동 종료 상금, DEV 저장 분리, 실제 자동 탐험 콜백 차단 후 다음 허용 명령의 불필요한 탐험 실행 방지를 확인한다. 새 명령 통합 검증은 실제 진입부·자격 검사·명령 분기·저장 함수에 합성 보상/표시 의존성을 연결하며 전체 공통 전처리·기기 실행을 대신하지 않는다.
+- 추가 허용 11개 그룹을 포함해 총 108개 그룹을 검증한다. 준비·진행·정산의 10종/인수 통과, 접미·숫자·별칭 거부, 기존 명령 유지, 실제 패키지 지급/사용/두 파일 저장 실패 복구, 출석/조회/권한, 탐험 정산·주기 리셋의 레이드 예약 보존과 자동 종료 상금, DEV 저장 분리, 실제 자동 탐험 콜백 차단 후 다음 허용 명령의 불필요한 탐험 실행 방지, `/포인트`·`ㅍㅍㅍ` 동일 출력·기존 자격 검사·무저장·DEV 단축어 정규화를 확인한다. 새 명령 통합 검증은 실제 진입부·자격 검사·명령 분기·저장 함수에 합성 보상/표시 의존성을 연결하며 전체 공통 전처리·기기 실행을 대신하지 않는다.
 - DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
 
 ---
@@ -4891,6 +4891,7 @@ Status: VERIFIED
 - `/포인트확인`
 ## AI Notes
 - `/포인트` and `ㅍㅍㅍ` show held 다이아 from the same `data.member[sender].diamond` field used by `/내정보`; active hoi/newbie pass users additionally see the unread home-alert count only when it is greater than zero, without marking alerts as read.
+- `/포인트`·`ㅍㅍㅍ` 모두 서버 레이드대전 준비·진행·정산 중 허용되며 기존 출석·정지·일대일 패스 조건을 검사한다. DEV `dev/포인트`·`dev/ㅍㅍㅍ`는 같은 DEV 회원 데이터로 조회한다.
 
 ---
 

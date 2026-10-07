@@ -1419,7 +1419,7 @@ group("남은 턴 조회도 JSON 로드 실패를 숨기지 않음·불필요한
     }
 });
 
-const additionalCommands = ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "/패키지지급", "/패키지가방", "/패키지사용", "/가방"];
+const additionalCommands = ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방"];
 group("추가 10종과 기존 인수는 준비·진행·정산 모두 기존 처리로 통과·레이드 기록 무변경", () => {
     start(); attack();
     for (const state of ["PREP", "ACTIVE", "SETTLING"]) {
@@ -1428,12 +1428,12 @@ group("추가 10종과 기존 인수는 준비·진행·정산 모두 기존 처
             const before = disk[memberPath]; assert(c.isServerRaidAdditionalCommand(msg), msg);
             assert.strictEqual(run(msg), "", state + " " + msg); assert.strictEqual(disk[memberPath], before);
         }
-        for (const msg of ["/정보", "/정보 공백 이름", "/포인트"]) assert(infoContext.isInfoServerRaidAdditionalCommand(msg));
+        for (const msg of ["/정보", "/정보 공백 이름", "/포인트", "ㅍㅍㅍ"]) assert(infoContext.isInfoServerRaidAdditionalCommand(msg));
     }
 });
 group("추가 예외 접미·잘못된 숫자·미지정 별칭은 잠금 유지·기존 레이드 명령 유지", () => {
     start();
-    for (const msg of ["/정보확인", "/미정추가", "/주기리셋 1", "/펫탐험정산 해봐", "/포인트 대상", "/가방 1", "ㅍㅍㅍ", "ㄴㄴㄴ", "/패키자사용", "/패키지사용 1 2 해봐", "/패키지사용 1 -1", "/패키지사용 1 1.5", "/패키지지급 a 1 2 해봐", "/패키지지급 a 1 1e3"]) {
+    for (const msg of ["/정보확인", "/미정추가", "/주기리셋 1", "/펫탐험정산 해봐", "/포인트 대상", "/가방 1", "ㄴㄴㄴ", "/패키자사용", "/패키지사용 1 2 해봐", "/패키지사용 1 -1", "/패키지사용 1 1.5", "/패키지지급 a 1 2 해봐", "/패키지지급 a 1 1e3"]) {
         assert(!c.isServerRaidAdditionalCommand(msg), msg);
         const before = disk[memberPath]; assert(run(msg).includes("종료 전까지"), msg); assert.strictEqual(disk[memberPath], before);
         assert(!infoContext.isInfoServerRaidAdditionalCommand(msg), msg);
@@ -1561,15 +1561,18 @@ Object.assign(infoContext, {
     filePath: memberPath, guildPath: c.guildPath, memberPetPath: c.memberPetPath, petSkillDataPath: c.petSkillDataPath,
     memberTitlePath: root + "titles.json", petTitlePath: root + "petTitles.json", petExplorePath: c.petExplorePath,
     petHomeActivityFile: root + "activity.json", replier: c.replier, Api: c.Api, room91: c.room91,
-    loadJsonFile: p => vm.runInContext("JSON.parse(" + JSON.stringify(disk[p]) + ")", infoContext),
+    loadJsonFile: p => vm.runInContext("JSON.parse(" + JSON.stringify(disk[infoContext.ctx.isDev ? p.replace(root, devRoot) : p]) + ")", infoContext),
     isAdminIdentity: user => user === "admin", isMasterIdentity: user => user === "master", isAdmin: user => user === "admin", isMaster: user => user === "master",
-    hasInfoPrivateChatPass: (_d, user) => user !== "noPass", isAccountSuspensionBlockedMessage: c.isAccountSuspensionBlockedMessage,
+    hasInfoPrivateChatPass: (_d, user) => user !== "noPass", ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES: ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"],
+    stripDevCommandPrefix: c.stripDevCommandPrefix, createContextReplier: c.createContextReplier,
     isAccountSuspended: c.isAccountSuspended, getInfoAttendanceKstDateKey: () => "2026-10-05", getInfoHoiPassPremiumHeader: () => "",
     getInfoUnreadPetHomeAlertCount: () => 0
 });
+vm.runInContext(block(info, "function isAccountSuspensionBlockedMessage("), infoContext);
 const infoGuardStart = info.indexOf("if (isInfoServerRaidLocked(data)");
 const infoGuardEnd = info.indexOf('if (msg.startsWith("/정보")', infoGuardStart);
-vm.runInContext("function runAdditionalInfo(){var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
+const infoDevPrelude = block(info.slice(info.indexOf("function response(")), "if (ctx.isDev) {");
+vm.runInContext("function runAdditionalInfo(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
     block(info, 'if (msg.startsWith("/정보")') + block(info, 'if (msg === "/포인트" ||') + "}", infoContext);
 group("Info 실제 자격 검사와 포인트·정보 분기·읽기 전용·접미 차단", () => {
     additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].recent = "2026-10-05"; write(d);
@@ -1596,6 +1599,34 @@ group("실제 자동탐험 타이머의 차단 표시 정리·다음 허용 명�
     assert(ordinary("/패키지지급 a 1 1", "master").includes("지급 완료"));
     assert.strictEqual(read().member.a.point, before.member.a.point); assert.deepStrictEqual(read().serverRaid, before.serverRaid);
     assert.strictEqual(JSON.stringify(c.serverRaidWorkTimers), timer);
+});
+
+group("포인트 단축키 ㅍㅍㅍ는 준비·진행·정산/DEV 동일 출력·기존 자격·무저장 유지", () => {
+    additionalFixture(); additionalFixture(true); start(); start(true);
+    for (const prefix of [root, devRoot]) {
+        const d = JSON.parse(disk[prefix + "member.json"]);
+        for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].recent = "2026-10-05";
+        disk[prefix + "member.json"] = JSON.stringify(d);
+        disk[prefix + "titles.json"] = JSON.stringify({ member: {} }); disk[prefix + "petTitles.json"] = "{}"; disk[prefix + "activity.json"] = "{}";
+    }
+    function query(msg, user = "a", groupChat = true) {
+        const original = infoContext.replier; replies = [];
+        Object.assign(infoContext, { msg, sender: user, isGroupChat: groupChat, ctx: c.createCommandContext(msg.indexOf("dev/") === 0, "test") });
+        try { infoContext.runAdditionalInfo(); return replies.join("\n"); }
+        finally { infoContext.replier = original; }
+    }
+    for (const state of ["PREP", "ACTIVE", "SETTLING"]) {
+        for (const dev of [false, true]) {
+            const d = read(dev); d.serverRaid.current.state = state; write(d, dev);
+            const before = JSON.stringify(disk), point = dev ? "dev/포인트" : "/포인트", alias = dev ? "dev/ㅍㅍㅍ" : "ㅍㅍㅍ";
+            assert.strictEqual(ordinary(alias, "a", dev ? "test" : "room8"), "");
+            const output = query(alias); assert(output.includes("님의 포인트")); assert.strictEqual(output, query(point));
+            assert.strictEqual(query(alias, "absent"), ""); assert.strictEqual(query(alias, "noPass", false), ""); assert(query(alias, "suspended").includes("계정정지"));
+            assert.strictEqual(query(alias + " 1"), ""); assert.strictEqual(query(alias + "ㅍ"), "");
+            assert(!c.isServerRaidAdditionalCommand("ㅍㅍㅍ 1")); assert(!c.isServerRaidAdditionalCommand("ㅍㅍㅍㅍ"));
+            assert.strictEqual(JSON.stringify(disk), before);
+        }
+    }
 });
 
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");

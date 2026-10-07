@@ -7,7 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
-    serverRaid: { commands: { additionalExact: ["/정보", "/포인트"] } }, // Info에서 처리하는 추가 허용 명령
+    serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
 		additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
@@ -547,6 +547,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		msg = String(msg || "").trim();
 		if (ctx.isDev) {
 			msg = stripDevCommandPrefix(msg);
+			if (msg === "/ㅍㅍㅍ") msg = "ㅍㅍㅍ"; // 기존 포인트 단축어로 DEV 입력 정규화
 			replier = createContextReplier(replier, ctx);
 		}
 

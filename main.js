@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.614"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.615"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -987,7 +987,7 @@ const GLOBAL_CONFIG = {
         testRoomOnly: false
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
-        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "/패키지지급", "/패키지가방", "/패키지사용", "/가방"] }, // 기존 허용 명령에 더할 예외
+        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방"] }, // 기존 허용 명령에 더할 예외
         limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
         timers: { preparationMs: 60000, retryMs: 2000, durationMs: 1800000 }, // 준비 60초와 별도로 실제 공격 활성화부터 30분
         penalties: { chargeFromAttempt: 2, pointCost: 50000000 }, // 초과 첫 시도는 경고, 두 번째부터 잔액 충분 시 5천만 차감
@@ -2784,7 +2784,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
-            if (msg === "/ㅊㅊ") msg = "ㅊㅊ"; // DEV 전처리가 붙인 슬래시를 제거해 기존 출석 단축어 사용
+            if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
             replier = createContextReplier(replier, ctx);
         }
         // 서버 레이드대전 진입: 다른 명령 전처리·자동 저장보다 먼저 잠금과 권한을 검사한다.
