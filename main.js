@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.609"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.610"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -213,7 +213,11 @@ const PET_SKILL_LIST = [
     { name: "👻 유령왕의 망령낫", grade: "S", rate: 0, requiredTier: "유령왕", raidExp: 16000000, castleExp: 16000000, equipComment: "뒤를 봐… 아니, 보지 마!", tierExclusive: true, effect: "유령왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,600만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
     { name: "🐶 왕왕왕의 수호왕 갑주", grade: "S", rate: 0, requiredTier: "왕왕왕", raidExp: 18000000, castleExp: 18000000, equipComment: "왕왕! 물지는 않고 때릴게!", tierExclusive: true, effect: "왕왕왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,800만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
     { name: "🐉 용용용의 용신 여의주", grade: "S", rate: 0, requiredTier: "용용용", raidExp: 21000000, castleExp: 21000000, equipComment: "소원을 말해 봐! 들어준다고는 안 했어!", tierExclusive: true, effect: "용용용 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,100만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
-    { name: "🐦‍🔥 피닉스의 불멸 성검", grade: "S", rate: 0, requiredTier: "피닉스", raidExp: 25000000, castleExp: 25000000, equipComment: "타버렸다… 아니, 다시 살아났다!", tierExclusive: true, effect: "피닉스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,500만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" }
+    { name: "🐦‍🔥 피닉스의 불멸 성검", grade: "S", rate: 0, requiredTier: "피닉스", raidExp: 25000000, castleExp: 25000000, equipComment: "타버렸다… 아니, 다시 살아났다!", tierExclusive: true, effect: "피닉스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,500만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "레이드정복자", grade: "SS", raidExp: 7000000, hideRateInInfo: true, equipComment: "이번 보스는 좀 버티려나?", equipCommentNoColon: true, effect: "왕국을 짓밟던 거대 마수들을 무릎 꿇린 전설의 비기입니다. 그 이름 앞에서는 보스조차 사냥감이 됩니다.\n장착 시 레이드매력 700만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "호월토벌대", grade: "한정판", limitedEdition: true, openable: false, raidExp: 3000000, hideRateInInfo: true, equipComment: "호월이 어디 있어? 간식 줄게, 나와 봐!", equipCommentNoColon: true, effect: "“저 볼주머니엔 분명 보물이 있다!” 거대 호월이의 포효에도 눈 하나 깜짝하지 않는 별난 토벌대의 비법입니다.\n장착 시 레이드매력 300만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "레이드돌격대", grade: "A", raidExp: 2000000, hideRateInInfo: true, equipComment: "내가 먼저 간다! 다들 따라와!", equipCommentNoColon: true, effect: "모두가 거대한 그림자에 압도될 때, 가장 먼저 보스의 발밑으로 뛰어듭니다. 두려움을 함성으로 바꾸는 돌격대의 전투술입니다.\n장착 시 레이드매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "레이드타격대", grade: "B", raidExp: 1000000, hideRateInInfo: true, equipComment: "다 같이 치자! 하나, 둘, 셋!", equipCommentNoColon: true, effect: "작은 발톱도 같은 곳을 백 번 두드리면 거인의 갑옷을 뚫습니다. 서로의 호흡을 맞추며 익힌 타격대의 합동 공격술입니다.\n장착 시 레이드매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." }
 ];
 
 var bidItems = [];
@@ -1951,6 +1955,10 @@ blockedNicknameTerms: [
         largeVerandaItemName: "베란다 대확장📙(/베란다오픈)",
         largeVerandaSkillName: "베란다 대확장",
         largeVerandaFurnitureSlotBonus: 6,
+        raidSubjugation: {
+            itemName: "호월토벌대📙 확정(/호월토벌대오픈)",
+            skillName: "호월토벌대"
+        },
         prayer: {
             rewardItemName: "주간상자🌼",
             dailyFlagKey: "isGidoFlag",
@@ -5335,6 +5343,29 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         dupMsg += "- " + PET_SKILL_COMPAT_GROUPS[dg].map(formatPetSkillName).join(" ↔ ") + "\n";
                     }
                     replier.reply(dupMsg.trim());
+                    return;
+                }
+
+                if (msg === "/호월토벌대오픈") {
+                    if (!petData[sender] || !petData[sender].petname) {
+                        replier.reply("펫이 없습니다.");
+                        return;
+                    }
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.petSkill.raidSubjugation.itemName, 1)) {
+                        replier.reply("❌ " + GLOBAL_CONFIG.petSkill.raidSubjugation.itemName + " 아이템이 필요합니다.");
+                        return;
+                    }
+                    if (getPetSkillBagRemainCount(petSkillData, sender) < 1) {
+                        replier.reply("❌ 스킬가방 공간이 부족합니다. 스킬가방을 정리한 뒤 다시 시도해주세요.");
+                        return;
+                    }
+                    if (addPetSkillToBag(petSkillData, sender, GLOBAL_CONFIG.petSkill.raidSubjugation.skillName, 1) !== 1) {
+                        throw new Error("호월토벌대 스킬가방 지급 실패");
+                    }
+                    removeItem(data, sender, GLOBAL_CONFIG.petSkill.raidSubjugation.itemName, 1);
+                    saveJsonFile(data, filePath);
+                    saveJsonFile(petSkillData, petSkillDataPath);
+                    replier.reply("🎉 [" + checkRank(data, petData, guildData, sender) + "] 님,\n호월토벌대📙를 획득했습니다!\n\n📙 펫스킬가방에 추가되었습니다.\n👉 장착: /펫스킬장착 [번호]");
                     return;
                 }
 
@@ -31656,6 +31687,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/상점추가\s+[^\r\n]+\s+\d+\s*$/.test(command) ||
         getRaidSealCraftRequest(command) !== null ||
         command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "/스타터중복회수 실행" || command === "출발한다" || command === "다음에 한다" ||
+        command === "/호월토벌대오픈" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -47282,6 +47314,7 @@ function buildPetSkillInfoMessage(skillInfo) {
     var skillTitle = formatPetSkillName(skillInfo.name) + (skillInfo.limitedEdition === true ? "[" + skillInfo.grade + "]" : "");
     var rateLabel = skillInfo.charmCondition === "creationMiniPet" || skillInfo.charmCondition === "eliteMiniPet" ? "획득 확률" : "확률";
     var skillRateLine = skillInfo.openable === false ? (skillInfo.showUnopenableRate === true ? "\n확률: /펫스킬오픈 획득 불가" : "") : "\n" + rateLabel + ": " + formatPetSkillRate(getPetSkillActualRate(skillInfo)) + "%";
+    if (skillInfo.hideRateInInfo === true) skillRateLine = "";
     var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
     return skillTitle + "\n등급: " + skillInfo.grade + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine;
 }

@@ -120,7 +120,11 @@ const GLOBAL_CONFIG = {
 			"아르카나 하우스": { raidExp: 500000, castleExp: 500000, condition: "arcanaFurniture" },
 			"큐피드의 활": { raidExp: 250000, castleExp: 250000 },
 			"도깨비 방망이": { raidExp: 100000, castleExp: 100000 },
-			"낡은 목검": { raidExp: 50000, castleExp: 50000 }
+			"낡은 목검": { raidExp: 50000, castleExp: 50000 },
+			"레이드정복자": { raidExp: 7000000 },
+			"호월토벌대": { raidExp: 3000000 },
+			"레이드돌격대": { raidExp: 2000000 },
+			"레이드타격대": { raidExp: 1000000 }
 		}
 	},
 	starterRecovery: { // 퀘스트 경로 스타터팩 중복 지급 회수 기준
