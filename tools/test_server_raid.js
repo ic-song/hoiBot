@@ -144,6 +144,12 @@ function tick(ms = 1, limit = 10) {
 function start(dev = false) { run((dev ? "dev/" : "/") + "서버대전시작", "master"); tick(); tick(60000); }
 function attack(user = "a", id = "event-1", dev = false, room) { return run((dev ? "dev/" : "/") + "레이드공격", user, id === null ? undefined : { id }, room); }
 function end(dev = false) { run((dev ? "dev/" : "/") + "서버대전종료", "master"); tick(); }
+// 기존 시작 명령 기준 15분 회차를 합성하여 새 버전의 이전 회차 호환을 검증한다.
+function legacyPreparation() {
+    run("/서버대전시작", "master"); const d = read(), round = d.serverRaid.current;
+    delete round.durationBasis; round.durationMs = 900000; round.autoEndAt = round.requestedAt + round.durationMs;
+    write(d); return round.autoEndAt;
+}
 function group(name, f) { reset(); f(); groups++; console.log("PASS " + groups + ": " + name); }
 
 group("정확한 6개 명령·접미 미실행·MASTER 및 인증된 운영봇 권한", () => {
@@ -811,11 +817,13 @@ group("0데미지 참가도 0%·동점 순위·기록 유지·공통 치명타 A
     assert.strictEqual(c.calculateCriticalDamage({ upgrade: 300 }, 0, 300, meta), 0); assert.strictEqual(meta.critical, true);
 });
 
-group("최종본 15분 마감은 시작 명령 시각에 확정·KST 공지·빈번한 폴링 없이 경계 자동 종료", () => {
+group("최종본 30분은 실제 공격 활성화부터·준비 60초 별도·KST 공지·경계 자동 종료", () => {
     const requested = now; run("/서버대전시작", "master");
-    const initial = read().serverRaid.current; assert.strictEqual(initial.requestedAt, requested); assert.strictEqual(initial.durationMs, 900000); assert.strictEqual(initial.autoEndAt, requested + 900000);
+    let initial = read().serverRaid.current; assert.strictEqual(initial.requestedAt, requested); assert.strictEqual(initial.durationMs, 1800000); assert.strictEqual(initial.autoEndAt, undefined);
+    assert(run("/정보").includes("공격 시작 후 30분"));
     tick(); tick(60000); attack("a", "timed");
-    assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 15분") && t.text.includes("자동 종료: " + c.formatServerRaidKstTime(initial.autoEndAt))));
+    initial = read().serverRaid.current; assert.strictEqual(initial.autoEndAt, initial.startedAt + 1800000); assert.strictEqual(initial.startedAt, requested + 60001);
+    assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 30분") && t.text.includes("자동 종료: " + c.formatServerRaidKstTime(initial.autoEndAt))));
     assert.strictEqual(timers.size, 1); assert.strictEqual([...timers.values()][0].at, initial.autoEndAt);
     const traceCount = traces.length; tick(1000); assert.strictEqual(traces.length, traceCount);
     now = initial.autoEndAt - 1; assert(attack("b", "last-valid").includes("획득 포인트"));
@@ -842,13 +850,13 @@ group("중복 시작·진행 중 15분 설정 변경은 기존 10분 마감 불�
     try {
         c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 600000;
         start(); const round = read().serverRaid.current, timerId = [...timers.keys()][0];
-        assert.strictEqual(round.durationMs, 600000); assert.strictEqual(round.autoEndAt, round.requestedAt + 600000);
+        assert.strictEqual(round.durationMs, 600000); assert.strictEqual(round.autoEndAt, round.startedAt + 600000);
         assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 10분")));
         c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 900000;
         assert(run("/서버대전시작", "master").includes("지금은 서버 레이드대전"));
         assert.deepStrictEqual(read().serverRaid.current, round); assert(timers.has(timerId));
         end(); const request = now; run("/서버대전시작", "master"); tick(); tick(60000);
-        const next = read().serverRaid.current; assert.strictEqual(next.autoEndAt, request + 900000); assert.strictEqual(next.durationMs, 900000);
+        const next = read().serverRaid.current; assert.strictEqual(next.startedAt, request + 60001); assert.strictEqual(next.autoEndAt, next.startedAt + 900000); assert.strictEqual(next.durationMs, 900000);
         assert(traces.some(t => t.type === "notice" && t.text.includes("진행 시간: 15분")));
         now = next.autoEndAt - 1; assert(attack("a", "15-last").includes("획득 포인트")); tick(1);
         assert.strictEqual(read().serverRaid.current, null); assert.strictEqual(read().serverRaid.completed, 2);
@@ -878,8 +886,8 @@ group("진행 중 재시작은 저장 마감 유지·기한 초과 공격 차단
     tick(); assert.strictEqual(read().serverRaid.current, null); assert.strictEqual(read().member.a.point, 1300003000);
 });
 
-group("준비 중 장기 중단 후 마감 경과 시 시작 없이 종료·늦은 준비/시작 공지 취소", () => {
-    run("/서버대전시작", "master"); const deadline = read().serverRaid.current.autoEndAt;
+group("기존 준비 회차는 장기 중단 후 옛 마감 유지·늦은 준비/시작 공지 취소", () => {
+    const deadline = legacyPreparation();
     c.serverRaidWorkTimers = {}; timers.clear(); now = deadline + 1000;
     run("/서버레이드순위", "a", undefined, "unknown"); tick(); const d = read();
     assert.strictEqual(d.serverRaid.current, null); assert.strictEqual(d.serverRaid.completed, 1); assert.strictEqual(d.serverRaid.history[0].endReason, "automatic");
@@ -908,8 +916,9 @@ group("자동 정산 지급 후 완료 저장 실패·종료 공지 실패도 �
 });
 
 group("시작 공지 실패 재시도는 마감을 연장하지 않고 종료 후 오래된 안내를 발송하지 않음", () => {
-    failNotice = () => true; run("/서버대전시작", "master"); const deadline = read().serverRaid.current.autoEndAt;
-    tick(); tick(60000); assert.strictEqual(read().serverRaid.current.autoEndAt, deadline);
+    failNotice = () => true; run("/서버대전시작", "master");
+    tick(); tick(60000); const deadline = read().serverRaid.current.autoEndAt;
+    tick(2000); assert.strictEqual(read().serverRaid.current.autoEndAt, deadline);
     assert([...timers.values()][0].at <= deadline); now = deadline; tick(0);
     assert.strictEqual(read().serverRaid.current, null); assert.strictEqual(read().serverRaid.completed, 1);
     failNotice = null; tick(2000);
@@ -918,7 +927,7 @@ group("시작 공지 실패 재시도는 마감을 연장하지 않고 종료 �
 });
 
 group("기존 마감 없는 회차는 새 설정 소급 없음·DEV/PROD 타이머와 정산 분리", () => {
-    start(); const d = read(), previousDeadline = d.serverRaid.current.autoEndAt; delete d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationMs; delete d.serverRaid.current.requestedAt; write(d);
+    start(); const d = read(), previousDeadline = d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationBasis; delete d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationMs; delete d.serverRaid.current.requestedAt; write(d);
     now = previousDeadline; tick(0); assert.strictEqual(read().serverRaid.current.state, "ACTIVE"); assert.strictEqual(timers.size, 0); end();
     start(); start(true); let dev = read(true); dev.member.a.R = 200000; write(dev, true);
     attack("a", "prod", false); attack("a", "dev", true); assert.strictEqual(timers.size, 2);
@@ -946,7 +955,7 @@ group("최종본 1~10위 상금은 설정·실제 지급·준비/종료 공지 �
     for (let i = 0; i < 10; i++) { d.member["rank-" + i] = { point: 0, server: c.GLOBAL_CONFIG.serverRaid.servers[i], agree: true, R: 1000 - i * 100 }; pets["rank-" + i] = { petname: "합성펫" }; }
     write(d); disk[root + "member_pet.json"] = JSON.stringify(pets); start();
     const preparation = traces.find(t => t.type === "notice" && t.text.includes("규칙 설명"));
-    assert(preparation.text.includes("레이드매력의 3%")); assert(preparation.text.includes("진행 시간: 15분"));
+    assert(preparation.text.includes("레이드매력의 3%")); assert(preparation.text.includes("진행 시간: 30분"));
     for (let i = 0; i < 10; i++) { assert(preparation.text.includes((i + 1) + "위: " + c.numberWithCommas(prizes[i]))); attack("rank-" + i, "rank-" + i); }
     end(); const done = read(), result = c.buildServerRaidResultNotice(done, done.serverRaid.history[0]);
     for (let i = 0; i < 10; i++) {
@@ -1016,7 +1025,7 @@ group("기본 7인수 전체 콜백 MASTER 시작·종료는 모든 단체방·�
         for (const [room, isGroup] of [["room1", true], ["room90", true], ["unknown-room", true], ["private", false]]) {
             const traceStart = traces.length; // 이전 회차 공지를 제외하고 이번 입력방의 발송 횟수만 확인
             replies = []; c.response(room, "/서버대전시작", "master", isGroup, c.replier, null, "com.kakao.talk");
-            const round = read().serverRaid.current; assert.strictEqual(round.state, "PREP"); assert.strictEqual(round.originRoom, room); assert.strictEqual(round.durationMs, 900000);
+            const round = read().serverRaid.current; assert.strictEqual(round.state, "PREP"); assert.strictEqual(round.originRoom, room); assert.strictEqual(round.durationMs, 1800000);
             tick(); tick(60000); assert.strictEqual(read().serverRaid.current.state, "ACTIVE"); attack("a", "all-room-" + room);
             const endRoom = room === "private" ? "unknown-room" : "private";
             c.response(endRoom, "/서버대전종료", "master", endRoom !== "private", c.replier, null, "com.kakao.talk"); tick();
@@ -1046,15 +1055,16 @@ group("모든 방에서 일반·관리자·닉네임 운영봇 거부·인증된
 });
 
 group("최종 잠금 안내는 실제 채크랭크·저장 마감 KST·문구/줄바꿈 전체 일치", () => {
-    now = Date.parse("2026-10-06T05:41:00Z"); run("/서버대전시작", "master");
+    now = Date.parse("2026-10-06T05:25:00Z"); run("/서버대전시작", "master");
     const expected = "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n[💛a] 님,\n지금은 서버 레이드대전 시간입니다!\n🕒 자동 종료: 2026.10.06 14:56\n\n⛔ 서버 레이드대전 종료 전까지\n일반 게임 명령어는 사용할 수 없습니다.\n\n우리 서버의 승리를 위해\n서버 레이드대전에 참여해주세요! 🔥\n━━━━━━━━━━━━\n📍 명령어방 안내\nhttps://open.kakao.com/o/gaP4Xybh\n\n👉 공격 참여: /레이드공격";
+    assert(run("/정보").includes("🕒 자동 종료: 공격 시작 후 30분")); tick(); tick(60000);
     const before = disk[memberPath];
     assert.strictEqual(run("/정보"), expected); assert.strictEqual(replies.length, 1); assert.strictEqual(disk[memberPath], before);
     assert.strictEqual(run("/출첵", "b"), expected.replace("[💛a]", "[💛b]"));
     const duration = c.GLOBAL_CONFIG.serverRaid.timers.durationMs;
-    try { c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 1800000; assert.strictEqual(run("/정보"), expected); }
+    try { c.GLOBAL_CONFIG.serverRaid.timers.durationMs = 3600000; assert.strictEqual(run("/정보"), expected); }
     finally { c.GLOBAL_CONFIG.serverRaid.timers.durationMs = duration; }
-    reset(); now = Date.parse("2026-10-06T14:55:00Z"); run("/서버대전시작", "master");
+    reset(); now = Date.parse("2026-10-06T14:39:00Z"); start();
     assert(run("/정보").includes("🕒 자동 종료: 2026.10.07 00:10"));
 });
 
@@ -1116,7 +1126,7 @@ group("마감 후 안내 전송 실패도 종료 확정 유지·준비 장기 �
     start(); attack(); now = read().serverRaid.current.autoEndAt; replyFailure = true;
     run("/정보"); assert.strictEqual(read().serverRaid.current.state, "SETTLING"); replyFailure = false;
     tick(); assert.strictEqual(read().member.a.point, 1300003000); assert.strictEqual(read().serverRaid.completed, 1);
-    reset(); run("/서버대전시작", "master"); c.serverRaidWorkTimers = {}; timers.clear(); now = read().serverRaid.current.autoEndAt + 10000;
+    reset(); const legacyDeadline = legacyPreparation(); c.serverRaidWorkTimers = {}; timers.clear(); now = legacyDeadline + 10000;
     assert(run("/출첵").includes("정산 완료")); tick(); assert.strictEqual(read().serverRaid.current, null);
     assert.strictEqual(read().serverRaid.completed, 1); assert(!traces.some(t => t.type === "notice" && (t.text.includes("60초 뒤") || t.text.includes("크아아아앙"))));
 });
@@ -1129,9 +1139,165 @@ group("DEV 안내/마감 우선 종료는 운영과 분리·이전 마감 없는
     const devTimer = c.serverRaidWorkTimers[c.createCommandContext(true, "test").key()];
     const scheduled = timers.get(devTimer); assert(scheduled); timers.delete(devTimer); scheduled.fn();
     assert.strictEqual(read(true).serverRaid.current, null); assert.strictEqual(read(true).member.a.point, 1300003000); assert.strictEqual(disk[memberPath], production);
-    reset(); start(); const d = read(); delete d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationMs; write(d);
+    reset(); start(); const d = read(); delete d.serverRaid.current.durationBasis; delete d.serverRaid.current.autoEndAt; delete d.serverRaid.current.durationMs; write(d);
     now += 1800000; const old = disk[memberPath]; assert(!run("/정보").includes("🕒 자동 종료:"));
     assert.strictEqual(disk[memberPath], old); end(); assert.strictEqual(c.isServerRaidLocked(read()), false);
+});
+
+group("실제 7인수 콜백 5회 정상·6번째 경고·7/8번째 각 5천만 차감·저장 후 안내", () => {
+    const flow = c.commandDataFlowLock, depth = c.autoDailyQuestInternalDepth;
+    c.commandDataFlowLock = { readLock: () => lock(), writeLock: () => lock() }; c.autoDailyQuestInternalDepth = 0;
+    try {
+        start();
+        for (let i = 0; i < 5; i++) c.response(i % 2 ? "test" : "room8", "/레이드공격", "a", true, c.replier, null, "com.kakao.talk");
+        const before = read(), normal = before.serverRaid.current.accounts[before.member.a.serverRaidAccount.id];
+        const warning = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━━\n[💛a] 님,\n이번 대전의 공격 5회를 모두 사용했습니다.\n\n⚠️ 초과 시도: 1회\n💰 차감 포인트: 🅟0\n\n이제부터 추가 공격을 시도할 때마다\n패널티로 5천만 포인트가 차감됩니다.";
+        replies = []; c.response("room8", "/레이드공격", "a", true, c.replier, null, "com.kakao.talk");
+        assert.strictEqual(replies[0], warning); assert.strictEqual(read().member.a.point, before.member.a.point);
+        const traceStart = traces.length;
+        for (let i = 2; i <= 3; i++) {
+            replies = []; c.response("test", "/레이드공격", "a", true, c.replier, null, "com.kakao.talk");
+            assert.strictEqual(replies[0], "👑 서버 레이드대전 👑\n━━━━━━━━━━━━━\n[💛a] 님,\n공격 횟수를 초과하여 패널티가 적용되었습니다.\n\n⚠️ 초과 시도: " + i + "회\n💸 차감 포인트: 🅟50,000,000\n\n이번 대전의 공격 기회를 모두 사용했습니다.\n추가 시도마다 5천만 포인트가 차감됩니다.");
+        }
+        const d = read(), p = d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id];
+        assert.strictEqual(p.excessAttempts, 3); assert.strictEqual(d.member.a.point, before.member.a.point - 100000000);
+        assert.deepStrictEqual(p.attacks, normal.attacks); assert.strictEqual(p.damage, normal.damage); assert.strictEqual(p.attackReward, normal.attackReward);
+        const recent = traces.slice(traceStart); assert(recent.findIndex(t => t.type === "save") < recent.findIndex(t => t.type === "reply"));
+        assert.strictEqual(recent.filter(t => t.type === "save" && t.path === memberPath).length, 2);
+        assert(!recent.some(t => t.type === "load" && (t.path.endsWith("home.json") || t.path.endsWith("skills.json"))));
+        assert(run("/레이드순위").includes("🎯 누적 공격: 5회"));
+        end(); assert.strictEqual(read().member.a.serverRaidAccount.total.attackCount, 5); assert.strictEqual(read().member.a.point, 1200015000);
+    } finally { c.commandDataFlowLock = flow; c.autoDailyQuestInternalDepth = depth; }
+});
+
+group("잔액 0·5천만 미만·정확히 5천만·5천만+1 경계·부족 시 차감 없이 횟수 기록", () => {
+    for (const balance of [0, 49999999, 50000000, 50000001]) {
+        reset(); start(); for (let i = 0; i < 5; i++) attack("a", "normal-" + i);
+        const d = read(); d.member.a.point = balance; write(d); attack("a", "warning");
+        const message = attack("a", "charge"), latest = read(), p = latest.serverRaid.current.accounts[latest.member.a.serverRaidAccount.id];
+        assert.strictEqual(p.excessAttempts, 2); assert.strictEqual(p.excessEvents[c.getServerRaidEventId({ id: "charge" })].charged, balance < 50000000 ? 0 : 50000000);
+        assert.strictEqual(latest.member.a.point, balance < 50000000 ? balance : balance - 50000000);
+        if (balance < 50000000) { assert(message.includes("부족하여")); assert(message.includes("🅟0")); assert(!message.includes("패널티가 적용되었습니다")); }
+        else assert(message.includes("차감 포인트: 🅟50,000,000"));
+        assert.strictEqual(p.attacks.length, 5);
+    }
+});
+
+group("초과 원본 이벤트 재전송·재시작·닉네임 변경·다른 계정/회차 충돌은 중복 차감 없음", () => {
+    start(); for (let i = 0; i < 5; i++) attack("a", "normal-" + i);
+    attack("a", "warning"); const charged = attack("a", "9223372036854775888"), before = disk[memberPath];
+    assert.strictEqual(attack("a", "9223372036854775888"), charged); assert.strictEqual(disk[memberPath], before);
+    assert(attack("a", "normal-0").includes("획득 포인트")); assert.strictEqual(disk[memberPath], before);
+    c.serverRaidWorkTimers = {}; timers.clear();
+    assert.strictEqual(attack("a", "9223372036854775888"), charged); assert.strictEqual(disk[memberPath], before);
+    assert(attack("b", "9223372036854775888").includes("이미 처리")); assert.strictEqual(disk[memberPath], before);
+    let d = read(); d.member.renamed = d.member.a; delete d.member.a; write(d);
+    const pets = JSON.parse(disk[root + "member_pet.json"]); pets.renamed = pets.a; delete pets.a; disk[root + "member_pet.json"] = JSON.stringify(pets);
+    assert(attack("renamed", "9223372036854775888").includes("초과 시도: 2회")); assert.strictEqual(read().member.renamed.point, d.member.renamed.point);
+    assert(attack("renamed", "next-excess").includes("초과 시도: 3회")); assert.strictEqual(read().member.renamed.point, d.member.renamed.point - 50000000);
+    end(); start(); const next = disk[memberPath]; assert(attack("renamed", "9223372036854775888").includes("이전 회차")); assert.strictEqual(disk[memberPath], next);
+    attack("renamed", "new-normal"); d = read(); const p = d.serverRaid.current.accounts[d.member.renamed.serverRaidAccount.id]; assert.strictEqual(p.excessAttempts, 0);
+});
+
+group("부족 결과 재전송은 입금 후에도 무차감·새 시도는 충분한 잔액 차감·과거 비용 보존", () => {
+    start(); for (let i = 0; i < 5; i++) attack("a", "normal-" + i);
+    let d = read(); d.member.a.point = 0; write(d); attack("a", "warning"); const shortage = attack("a", "shortage");
+    d = read(); d.member.a.point = 100000000; write(d); const restored = disk[memberPath];
+    assert.strictEqual(attack("a", "shortage"), shortage); assert.strictEqual(disk[memberPath], restored);
+    const charged = attack("a", "paid"); assert(charged.includes("초과 시도: 3회")); assert.strictEqual(read().member.a.point, 50000000);
+    const cost = c.GLOBAL_CONFIG.serverRaid.penalties.pointCost;
+    try { c.GLOBAL_CONFIG.serverRaid.penalties.pointCost = 60000000; const before = disk[memberPath]; assert.strictEqual(attack("a", "paid"), charged); assert.strictEqual(disk[memberPath], before); }
+    finally { c.GLOBAL_CONFIG.serverRaid.penalties.pointCost = cost; }
+});
+
+group("경고·패널티 저장 실패는 포인트/횟수/이벤트 전부 복구·응답 실패 후 재전송 무차감", () => {
+    start(); for (let i = 0; i < 5; i++) attack("a", "normal-" + i);
+    let before = disk[memberPath]; failWrite = d => Object.values(d.serverRaid.current.accounts).some(p => p.excessAttempts === 1);
+    assert.throws(() => attack("a", "warning")); assert.strictEqual(disk[memberPath], before); assert.strictEqual(replies.length, 0);
+    attack("a", "warning"); before = disk[memberPath];
+    failWrite = d => Object.values(d.serverRaid.current.accounts).some(p => p.excessAttempts === 2);
+    assert.throws(() => attack("a", "paid")); assert.strictEqual(disk[memberPath], before); assert.strictEqual(replies.length, 0);
+    replyFailure = true; attack("a", "paid"); replyFailure = false;
+    const saved = disk[memberPath]; assert(attack("a", "paid").includes("초과 시도: 2회")); assert.strictEqual(disk[memberPath], saved);
+    const d = read(), p = d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id]; assert.strictEqual(p.excessAttempts, 2); assert.strictEqual(d.member.a.point, 950015000);
+});
+
+group("기존 참가자의 새 필드 없는 상태·회차 변경/초기화·DEV 패널티 분리", () => {
+    start(); for (let i = 0; i < 5; i++) attack("a", "normal-" + i);
+    let d = read(), p = d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id]; delete p.excessAttempts; delete p.excessEvents; write(d);
+    assert(attack("a", "warning").includes("초과 시도: 1회")); attack("a", "charge"); end(); start();
+    for (let i = 0; i < 5; i++) attack("a", "new-" + i); assert(attack("a", "new-warning").includes("초과 시도: 1회"));
+    start(true); const production = disk[memberPath];
+    for (let i = 0; i < 7; i++) attack("a", null, true);
+    assert.strictEqual(disk[memberPath], production); assert.strictEqual(read(true).member.a.point, 950015000);
+    assert(run("dev/레이드순위").includes("🎯 누적 공격: 5회"));
+    assert(run("/레이드순위").includes("🎯 누적 공격: 10회"));
+    d = read(); const point = d.member.a.point; run("/서버대전전체초기화", "master");
+    assert.strictEqual(read().member.a.point, point); assert(!run("/레이드순위").includes("🎯 누적 공격:"));
+    assert.strictEqual(read(true).member.a.point, 950015000);
+});
+
+group("잘못된 잔액/횟수/패널티 설정·초과 저장 범위는 부분 변경 없이 실패", () => {
+    start(); for (let i = 0; i < 5; i++) attack("a", "normal-" + i);
+    const original = read(), id = original.member.a.serverRaidAccount.id;
+    for (const invalid of [-1, 1.5, "50000000", null, 9007199254740992]) {
+        const d = clone(original); d.member.a.point = invalid; write(d); const before = disk[memberPath];
+        assert.throws(() => attack("a", "invalid")); assert.strictEqual(disk[memberPath], before);
+    }
+    for (const invalid of [-1, 1.5, "2", null, Number.MAX_SAFE_INTEGER]) {
+        const d = clone(original); d.serverRaid.current.accounts[id].excessAttempts = invalid; write(d); const before = disk[memberPath];
+        assert.throws(() => attack("a", "invalid")); assert.strictEqual(disk[memberPath], before);
+    }
+    write(original); const config = c.GLOBAL_CONFIG.serverRaid.penalties;
+    for (const [key, value] of [["pointCost", 0], ["pointCost", Infinity], ["chargeFromAttempt", 1], ["chargeFromAttempt", 2.5]]) {
+        const old = config[key]; try { config[key] = value; const before = disk[memberPath]; assert.throws(() => attack("a", "invalid")); assert.strictEqual(disk[memberPath], before); } finally { config[key] = old; }
+    }
+});
+
+group("다른 방·부적격·접미 입력·정산·마감 경계에서는 초과 카운트와 패널티 무변경", () => {
+    start(); for (const user of ["a", "absent", "suspended", "noPass"]) {
+        if (user === "a" || user === "noPass") { for (let i = 0; i < 5; i++) attack(user, user + "-" + i); }
+    }
+    for (const [msg, user, room, isGroup] of [["/레이드공격", "a", "unknown", true], ["/레이드공격 1", "a", "room8", true], ["/레이드공격", "noPass", "room8", false], ["/레이드공격", "absent", "room8", true], ["/레이드공격", "suspended", "room8", true]]) {
+        const before = disk[memberPath]; run(msg, user, { id: "blocked" }, room, isGroup); assert.strictEqual(disk[memberPath], before);
+    }
+    let d = read(); d.serverRaid.current.state = "PREP"; write(d); let before = disk[memberPath]; attack("a", "prep"); assert.strictEqual(disk[memberPath], before);
+    d.serverRaid.current.state = "ACTIVE"; write(d); now = d.serverRaid.current.autoEndAt; before = disk[memberPath]; attack("a", "deadline"); assert.strictEqual(disk[memberPath], before);
+    run("/서버대전종료", "master"); before = disk[memberPath]; attack("a", "settling"); assert.strictEqual(disk[memberPath], before);
+});
+
+group("개인 누적 공격은 정상 공격만·콤마/위치/ALLSEE·여러 회차/부분 정산/이동 초기화", () => {
+    start(); for (let i = 0; i < 5; i++) attack("a", "first-" + i); attack("a", "warning"); attack("a", "charge"); end();
+    start(); attack("a", "second"); attack("b", "other"); let output = run("/레이드순위");
+    assert(output.includes("🎯 누적 공격: 6회")); assert(output.indexOf("📊 기여도:") < output.indexOf("🎯 누적 공격:")); assert(output.indexOf("🎯 누적 공격:") < output.indexOf("🏅 순위:"));
+    assert(output.includes("📂 최근 참가 · 보상 펼쳐보기\n<ALLSEE>\n")); assert.strictEqual(output.split("<ALLSEE>").length, 2);
+    assert(!run("/서버레이드순위").includes("🎯 누적 공격:"));
+    run("/서버대전종료", "master"); let d = read(); assert(c.settleServerRaidParticipant(d)); write(d);
+    assert(run("/레이드순위").includes("🎯 누적 공격: 6회")); tick(); assert(run("/레이드순위").includes("🎯 누적 공격: 6회"));
+    d = read(); d.member.a.serverRaidAccount.total.attackCount = 1250; write(d); assert(run("/레이드순위").includes("🎯 누적 공격: 1,250회"));
+    c.applyServerRaidMembershipChange(d, "a", c.GLOBAL_CONFIG.serverRaid.servers[1]); d.member.a.server = c.GLOBAL_CONFIG.serverRaid.servers[1]; write(d);
+    assert(!run("/레이드순위").includes("🎯 누적 공격:"));
+});
+
+group("준비 장기 중단 후 새 회차는 실제 활성화부터 30분·늦은 준비 안내 취소·옛 회차 마감 유지", () => {
+    run("/서버대전시작", "master"); const requested = now; c.serverRaidWorkTimers = {}; timers.clear(); now += 3600000;
+    run("/레이드순위"); tick(); let round = read().serverRaid.current;
+    assert.strictEqual(round.state, "ACTIVE"); assert.strictEqual(round.startedAt, now); assert.strictEqual(round.autoEndAt, now + 1800000); assert.strictEqual(round.requestedAt, requested);
+    assert(!traces.some(t => t.type === "notice" && t.text.includes("60초 뒤"))); assert(traces.some(t => t.type === "notice" && t.text.includes("크아아아앙")));
+    const prepare = read().serverRaid.outbox.find(n => n.id.endsWith(":prepare")); assert(prepare.deliveries.every(d => d.cancelled && !d.sent));
+    end(); reset(); const deadline = legacyPreparation(); tick(); tick(60000); round = read().serverRaid.current;
+    assert.strictEqual(round.autoEndAt, deadline); assert.strictEqual(round.durationMs, 900000); assert.strictEqual(round.durationBasis, undefined);
+    now = deadline; tick(0); assert.strictEqual(read().serverRaid.current, null);
+});
+
+group("활성화 저장 실패는 마감 미확정·재시도 성공부터 30분·공지 재시도는 연장 없음", () => {
+    run("/서버대전시작", "master"); tick(); failWrite = d => d.serverRaid.current && d.serverRaid.current.state === "ACTIVE";
+    tick(60000); assert.strictEqual(read().serverRaid.current.state, "PREP"); assert.strictEqual(read().serverRaid.current.autoEndAt, undefined);
+    assert(!traces.some(t => t.type === "notice" && t.text.includes("크아아아앙")));
+    failNotice = (_room, text) => text.includes("크아아아앙"); tick(2000);
+    const round = read().serverRaid.current; assert.strictEqual(round.startedAt, now); assert.strictEqual(round.autoEndAt, now + 1800000);
+    tick(2000); assert.strictEqual(read().serverRaid.current.autoEndAt, round.autoEndAt);
+    failNotice = null; tick(2000); assert.strictEqual(read().serverRaid.current.startedAt, round.startedAt);
 });
 
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");

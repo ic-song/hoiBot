@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.608"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.609"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -984,7 +984,8 @@ const GLOBAL_CONFIG = {
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
         limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
-        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 900000 }, // 운영 적용 15분. 시작 명령 처리부터 준비 60초도 포함
+        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 1800000 }, // 준비 60초와 별도로 실제 공격 활성화부터 30분
+        penalties: { chargeFromAttempt: 2, pointCost: 50000000 }, // 초과 첫 시도는 경고, 두 번째부터 잔액 충분 시 5천만 차감
         rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
         authentication: { operatorIds: [] }, // 네이티브 콜백·신뢰된 내부 어댑터의 운영 주체 ID. 닉네임은 인증에 사용하지 않음
@@ -2887,6 +2888,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 if (raidAttackCheck.replay) {
                     replyServerRaidSafely(replier, buildServerRaidAttackMessage(data, raidAttackCheck.participant, raidAttackCheck.replay, raidNick));
+                    return;
+                }
+                if (raidAttackCheck.penaltyReplay) {
+                    replyServerRaidSafely(replier, buildServerRaidExcessMessage(raidNick, raidAttackCheck.penaltyReplay));
+                    return;
+                }
+                if (raidAttackCheck.excess) {
+                    var raidExcessResult = applyServerRaidExcessAttempt(data, sender, serverRaidEvent);
+                    var raidExcessMessage = buildServerRaidExcessMessage(raidNick, raidExcessResult.record);
+                    saveJsonFile(data, filePath);
+                    replyServerRaidSafely(replier, raidExcessMessage);
                     return;
                 }
                 var raidHomeData = loadJsonFile(homeDataFile);
@@ -32974,6 +32986,7 @@ function queueServerRaidNotice(state, round, kind, text, ctx) {
 
 // 새 회차에 저장된 종료 시각으로 진행 시간과 KST 마감을 안내하는 함수
 function buildServerRaidTimeNotice(round) {
+    if (round.durationBasis === "activeStart" && round.state === "PREP") return "⏱️ 진행 시간: " + (round.durationMs / 60000) + "분 (공격 시작부터)\n🕒 자동 종료: 공격 시작 후 확정\n※ 운영 상황에 따라 조기 종료될 수 있습니다.";
     if (round.autoEndAt === undefined) return ""; // 이전 진행 회차에는 종료 시각을 새로 만들지 않음
     requireServerRaidSafeInteger(round.durationMs, "대전 진행 시간");
     requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
@@ -33007,12 +33020,13 @@ function startServerRaid(data, now, generation, room, ctx) {
     if (isServerRaidLocked(data)) throw new Error("이미 진행 중인 서버 레이드대전");
     var duration = requireServerRaidSafeInteger(GLOBAL_CONFIG.serverRaid.timers.durationMs, "대전 진행 시간");
     if (duration <= GLOBAL_CONFIG.serverRaid.timers.preparationMs) throw new Error("대전 진행 시간은 준비 시간보다 길어야 합니다");
-    var deadline = requireServerRaidSafeInteger(now + duration, "자동 종료 시각"); // 시작 명령 처리 시각부터 준비 시간을 포함해 확정
+    var prepareUntil = requireServerRaidSafeInteger(now + GLOBAL_CONFIG.serverRaid.timers.preparationMs, "준비 종료 시각");
+    requireServerRaidSafeInteger(prepareUntil + duration, "자동 종료 예정 시각"); // 활성화 지연이 없다면 도달할 예정 시각의 범위만 확인
     if (!data.serverRaid) data.serverRaid = createServerRaidState(generation);
     var state = data.serverRaid;
     requireServerRaidSafeInteger(state.sequence + 1, "회차 번호");
     state.sequence++;
-    var round = { id: state.generation + ":" + state.sequence, state: "PREP", requestedAt: now, durationMs: duration, autoEndAt: deadline, prepareUntil: now + GLOBAL_CONFIG.serverRaid.timers.preparationMs, startedAt: null, originRoom: room, accounts: {}, results: [] };
+    var round = { id: state.generation + ":" + state.sequence, state: "PREP", requestedAt: now, durationMs: duration, durationBasis: "activeStart", prepareUntil: prepareUntil, startedAt: null, originRoom: room, accounts: {}, results: [] };
     state.current = round;
     queueServerRaidNotice(state, round, "prepare", buildServerRaidPreparationNotice(round), ctx);
     return round;
@@ -33022,6 +33036,13 @@ function startServerRaid(data, now, generation, room, ctx) {
 function activateServerRaid(data, now, ctx) {
     var state = data.serverRaid, round = state && state.current;
     if (!round || round.state !== "PREP" || now < round.prepareUntil || isServerRaidAutoEndDue(round, now)) return false;
+    if (round.durationBasis === "activeStart") {
+        round.autoEndAt = requireServerRaidSafeInteger(now + requireServerRaidSafeInteger(round.durationMs, "대전 진행 시간"), "자동 종료 시각"); // 새 회차만 실제 활성화 시각으로 마감을 최초 확정
+        for (var n = 0; n < state.outbox.length; n++) if (state.outbox[n].id === round.id + ":prepare") {
+            var pending = state.outbox[n].deliveries;
+            for (var d = 0; d < pending.length; d++) if (!pending[d].sent) pending[d].cancelled = true; // 활성화 뒤에는 오래된 준비 60초 안내를 보내지 않음
+        }
+    }
     round.state = "ACTIVE";
     round.startedAt = now; // 실제 공격 활성화 시각. 준비 마감은 원래 값으로 유지하며 시작 일시는 최초 한 번만 확정
     queueServerRaidNotice(state, round, "start", "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n이미지링크:" + GLOBAL_CONFIG.serverRaid.links.startImage + "\n━━━━━━━━━━━━\n📢 서버 레이드대전을 시작합니다!\n" + buildServerRaidTimeNotice(round) + "\n\n오톡 세상을 멸망케 할\n거대 호월이 등장!\n\n🐹 “크아아아앙!!”\n\n우리 서버의 힘을 모아\n호월이의 폭주를 막아주세요! 🔥\n━━━━━━━━━━━━\n🎟️ 공격 기회: 계정당 5회\n👉 지금 공격: /레이드공격", ctx);
@@ -33083,8 +33104,9 @@ function getServerRaidAttackCheck(data, user, now, event) {
     if (receipt && (!account || receipt.accountId !== account.id)) return { message: "이미 처리된 공격 이벤트입니다." };
     if (participant && eventId) {
         for (var i = 0; i < participant.attacks.length; i++) if (participant.attacks[i].id === eventId) return { replay: participant.attacks[i], participant: participant };
+        if (participant.excessEvents && participant.excessEvents[eventId]) return { penaltyReplay: participant.excessEvents[eventId], participant: participant };
     }
-    if (participant && participant.attacks.length >= GLOBAL_CONFIG.serverRaid.limits.attacks) return { message: "이번 대전의 공격 기회를 모두 사용했습니다!\n\n🎟️ 남은 공격: 0/5회\n우리 서버의 최종 결과를 기다려주세요! 🏆" };
+    if (participant && participant.attacks.length >= GLOBAL_CONFIG.serverRaid.limits.attacks) return { excess: true, participant: participant };
     return {};
 }
 
@@ -33113,6 +33135,7 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     var check = getServerRaidAttackCheck(data, user, Date.now(), event);
     if (check.message) throw new Error(check.message);
     if (check.replay) return { participant: check.participant, attack: check.replay, replay: true };
+    if (check.excess || check.penaltyReplay) throw new Error("이번 대전의 공격 기회를 모두 사용했습니다.");
     requireServerRaidSafeInteger(raidCharm, "레이드매력");
     requireServerRaidSafeInteger(damage, "공격 데미지");
     var member = data.member[user], round = data.serverRaid.current;
@@ -33123,7 +33146,7 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     var account = member.serverRaidAccount;
     if (!account) account = { id: newAccountId, period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
     var participant = round.accounts[account.id];
-    if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], paid: false };
+    if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], excessAttempts: 0, excessEvents: {}, paid: false };
     var nextAttackReward = requireServerRaidSafeInteger(participant.attackReward + reward, "실지급 공격 보상 합계");
     var eventId = getServerRaidEventId(event);
     var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", rewardPercent: percent, remaining: GLOBAL_CONFIG.serverRaid.limits.attacks - participant.attacks.length - 1, critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
@@ -33135,6 +33158,40 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     round.accounts[account.id] = participant;
     data.serverRaid.eventReceipts[eventId] = { roundId: round.id, accountId: account.id };
     return { participant: participant, attack: attack };
+}
+
+// 초과 시도와 실제 차감액을 변경하고 같은 원본 이벤트의 재전송은 다시 차감하지 않는 함수
+function applyServerRaidExcessAttempt(data, user, event) {
+    var check = getServerRaidAttackCheck(data, user, Date.now(), event);
+    if (check.penaltyReplay) return { record: check.penaltyReplay, replay: true };
+    if (!check.excess) throw new Error(check.message || "초과 공격 시도가 아닙니다.");
+    var participant = check.participant, member = data.member[user], round = data.serverRaid.current;
+    var count = participant.excessAttempts === undefined ? 0 : participant.excessAttempts; // 이전 회차 참가자에는 첫 초과 시도부터 기록
+    var nextCount = requireServerRaidSafeInteger(requireServerRaidSafeInteger(count, "초과 시도 횟수") + 1, "다음 초과 시도 횟수");
+    var config = GLOBAL_CONFIG.serverRaid.penalties;
+    var cost = requireServerRaidSafeInteger(config.pointCost, "초과 시도 패널티");
+    var chargeFrom = requireServerRaidSafeInteger(config.chargeFromAttempt, "패널티 시작 횟수");
+    if (cost <= 0 || chargeFrom < 2) throw new Error("초과 시도 패널티 설정 오류");
+    var heldPoint = requireServerRaidSafeInteger(member.point, "보유 포인트");
+    var insufficient = nextCount >= chargeFrom && heldPoint < cost; // 잔액 부족은 차감 없이 시도만 기록
+    var charged = nextCount >= chargeFrom && !insufficient ? cost : 0;
+    var eventId = getServerRaidEventId(event);
+    var record = { attempt: nextCount, charged: charged, insufficient: insufficient, pointCost: cost };
+    member.point = heldPoint - charged;
+    participant.excessAttempts = nextCount;
+    if (!participant.excessEvents) participant.excessEvents = {};
+    participant.excessEvents[eventId] = record;
+    data.serverRaid.eventReceipts[eventId] = { roundId: round.id, accountId: participant.id, kind: "excess" };
+    return { record: record, replay: false };
+}
+
+// 저장된 초과 시도 결과로 경고·실제 차감·잔액 부족 안내를 만드는 함수
+function buildServerRaidExcessMessage(nick, record) {
+    var header = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━━\n" + nick + ",\n";
+    var costText = formatServerRaidPrize(record.pointCost); // 저장 당시 비용을 사용해 재전송 안내도 같은 금액을 표시
+    if (record.attempt === 1) return header + "이번 대전의 공격 5회를 모두 사용했습니다.\n\n⚠️ 초과 시도: 1회\n💰 차감 포인트: 🅟0\n\n이제부터 추가 공격을 시도할 때마다\n패널티로 " + costText + "가 차감됩니다.";
+    if (record.insufficient) return header + "보유 포인트가 부족하여 패널티를 차감하지 않았습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💰 차감 포인트: 🅟0\n💸 필요한 포인트: 🅟" + numberWithCommas(record.pointCost) + "\n\n이번 대전의 공격 기회를 모두 사용했습니다.\n초과 시도 횟수는 기록됩니다.";
+    return header + "공격 횟수를 초과하여 패널티가 적용되었습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💸 차감 포인트: 🅟" + numberWithCommas(record.charged) + "\n\n이번 대전의 공격 기회를 모두 사용했습니다.\n추가 시도마다 " + costText + "가 차감됩니다.";
 }
 
 // 실제 데미지 동점은 공동 순위로 유지하며 목록을 정렬하는 함수
@@ -33292,7 +33349,8 @@ function buildServerRaidLockMessage(nick, round) {
     var header = "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n" + nick + ",\n";
     if (round && round.state === "SETTLING") return header + "현재 서버 레이드대전 종료 처리가 진행 중입니다.\n정산 완료를 기다려주세요.";
     var deadline = ""; // 이전 종료 시각 없는 회차에는 새 마감을 만들지 않음
-    if (round && round.autoEndAt !== undefined) {
+    if (round && round.durationBasis === "activeStart" && round.state === "PREP") deadline = "\n🕒 자동 종료: 공격 시작 후 " + (round.durationMs / 60000) + "분";
+    else if (round && round.autoEndAt !== undefined) {
         requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
         deadline = "\n🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt);
     }
@@ -33435,16 +33493,18 @@ function getServerRaidAttackRewardGuide(attacks) {
 }
 
 // 공통 누적 집계에서 본인의 데미지·기여도·순위를 추가하는 함수
-function appendServerRaidOwnRecord(lines, summary) {
+function appendServerRaidOwnRecord(lines, summary, showAttackCount) {
     if (!summary.own) { lines.push("참가 기록 없음"); return; }
-    lines.push("👾 데미지: " + numberWithCommas(summary.own.damage) + "💞", "📊 기여도: " + serverRaidPercent(summary.own.damage, summary.total), "🏅 순위: " + summary.own.rank + "위 / " + summary.rows.length + "명");
+    lines.push("👾 데미지: " + numberWithCommas(summary.own.damage) + "💞", "📊 기여도: " + serverRaidPercent(summary.own.damage, summary.total));
+    if (showAttackCount) lines.push("🎯 누적 공격: " + numberWithCommas(requireServerRaidSafeInteger(summary.own.attackCount, "누적 공격 횟수")) + "회");
+    lines.push("🏅 순위: " + summary.own.rank + "위 / " + summary.rows.length + "명");
 }
 
 // 누적 기록과 최근 참가·실지급 보상을 전체보기로 구분하는 함수
 function buildServerRaidPersonalRecord(data, user, nick) {
     var summary = buildServerRaidCumulativeRecord(data, user), view = getServerRaidLatestRecord(data, user);
     var lines = ["👑 서버 레이드대전 👑", "📋 내 레이드 기록", "━━━━━━━━━━━━━", nick, "", "📊 내 누적 기록"];
-    appendServerRaidOwnRecord(lines, summary);
+    appendServerRaidOwnRecord(lines, summary, true);
     lines.push("━━━━━━━━━━━━━", "👉 서버 기록: /서버레이드순위");
     if (!view) { lines.push("", "아직 참가 기록이 없습니다."); return lines.join("\n"); }
     var latest = view.record;
