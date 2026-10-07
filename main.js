@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.612"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.613"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -32904,6 +32904,7 @@ function buildServerRaidTurnMessage(data, user, nick, now) {
     var limit = GLOBAL_CONFIG.serverRaid.limits.attacks;
     var remaining = Math.max(0, limit - (participant ? participant.attacks.length : 0)); // 누적·초과 시도는 제외
     var message = serverRaidHeader() + nick + "의 남은 턴\n\n🎟️ 남은 공격: " + remaining + "/" + limit + "회\n";
+    if (round.autoEndAt !== undefined) message += "🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt) + "\n";
     if (remaining === 0) return message + "✅ 이번 대전의 공격 턴을 모두 사용했습니다.\n━━━━━━━━━━━━\n다음 서버 레이드대전에 참여해주세요!";
     return message + "━━━━━━━━━━━━\n👉 공격 참여: /레이드공격";
 }
