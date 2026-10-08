@@ -987,11 +987,13 @@ const GLOBAL_CONFIG = {
         testRoomOnly: false
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
-        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방"] }, // 기존 허용 명령에 더할 예외
-        limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
+        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방", "/펫정보", "/이체"] }, // 기존 허용 명령에 더할 예외
+        limits: { attacks: 5, ticketAttacks: 5, maxSafeInteger: 9007199254740991 },
+        items: { attackTicket: "서버레이드공격권👾" },
+        legacyPolicy: { attacks: 5, ticketAttacks: 0, chargeFromAttempt: 2, pointCost: 50000000, handicapRanks: [] }, // 기준 미기록 기존 회차는 당시 규칙 유지
         timers: { preparationMs: 60000, retryMs: 2000, durationMs: 1800000 }, // 준비 60초와 별도로 실제 공격 활성화부터 30분
-        penalties: { chargeFromAttempt: 2, pointCost: 50000000 }, // 초과 첫 시도는 경고, 두 번째부터 잔액 충분 시 5천만 차감
-        rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000] },
+        penalties: { chargeFromAttempt: 4, pointCost: 10000000 }, // 초과 3회까지 무료, 네 번째부터 잔액 충분 시 1천만 차감
+        rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000], handicapRanks: [0, 1, 1, 2, 2, 2, 3, 3, 3, 4] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
         authentication: { operatorIds: [] }, // 네이티브 콜백·신뢰된 내부 어댑터의 운영 주체 ID. 닉네임은 인증에 사용하지 않음
         rooms: { production: [room8, testRoom], development: testRoom }, // 운영 공격·초기화는 두 명령어방, DEV는 팻 테스트방으로 한정
@@ -32903,6 +32905,7 @@ function isServerRaidAdditionalCommand(msg) {
         /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
         /^\/패키지가방\s+.+$/.test(msg) ||
         /^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg) ||
+        /^\/이체\s+[^\r\n]+\s+\d+\s*$/.test(msg) ||
         /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg);
 }
 
@@ -32913,11 +32916,13 @@ function buildServerRaidTurnMessage(data, user, nick, now) {
         return serverRaidHeader() + nick + ",\n현재 진행 중인 서버 레이드대전이 없습니다.\n━━━━━━━━━━━━\n대전 시작 후 남은 공격 턴을 확인해주세요!";
     }
     var participant = getServerRaidCurrentParticipant(data, data.member[user]);
-    var limit = GLOBAL_CONFIG.serverRaid.limits.attacks;
-    var remaining = Math.max(0, limit - (participant ? participant.attacks.length : 0)); // 누적·초과 시도는 제외
+    var status = getServerRaidAttackAvailability(round, participant, data.member[user]);
+    var limit = status.policy.attacks;
+    var remaining = status.basicRemaining; // 누적·초과 시도는 제외
     var message = serverRaidHeader() + nick + "의 남은 턴\n\n🎟️ 남은 공격: " + remaining + "/" + limit + "회\n";
+    if (status.policy.ticketAttacks > 0) message = serverRaidHeader() + nick + "의 남은 턴\n\n🎟️ 기본 " + remaining + "/" + limit + " · 추가 " + status.additionalRemaining + "/" + status.policy.ticketAttacks + " 남음\n👾 서공권: " + numberWithCommas(status.held) + "개 보유\n";
     if (round.autoEndAt !== undefined) message += "🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt) + "\n";
-    if (remaining === 0) return message + "✅ 이번 대전의 공격 턴을 모두 사용했습니다.\n━━━━━━━━━━━━\n다음 서버 레이드대전에 참여해주세요!";
+    if (remaining === 0 && status.additionalRemaining === 0) return message + (status.policy.ticketAttacks > 0 ? "✅ 현재 사용할 수 있는 공격 턴이 없습니다." : "✅ 이번 대전의 공격 턴을 모두 사용했습니다.") + "\n━━━━━━━━━━━━\n" + (status.additionalUsed < status.policy.ticketAttacks ? "서공권을 보유하면 추가 공격할 수 있습니다." : "다음 서버 레이드대전에 참여해주세요!");
     return message + "━━━━━━━━━━━━\n👉 공격 참여: /레이드공격";
 }
 
@@ -33093,11 +33098,12 @@ function startServerRaid(data, now, generation, room, ctx) {
     if (duration <= GLOBAL_CONFIG.serverRaid.timers.preparationMs) throw new Error("대전 진행 시간은 준비 시간보다 길어야 합니다");
     var prepareUntil = requireServerRaidSafeInteger(now + GLOBAL_CONFIG.serverRaid.timers.preparationMs, "준비 종료 시각");
     requireServerRaidSafeInteger(prepareUntil + duration, "자동 종료 예정 시각"); // 활성화 지연이 없다면 도달할 예정 시각의 범위만 확인
+    var policy = createServerRaidRoundPolicy(); // 회차 도중 설정이 바뀌어도 횟수·패널티·아이템 보상 기준 유지
     if (!data.serverRaid) data.serverRaid = createServerRaidState(generation);
     var state = data.serverRaid;
     requireServerRaidSafeInteger(state.sequence + 1, "회차 번호");
     state.sequence++;
-    var round = { id: state.generation + ":" + state.sequence, state: "PREP", requestedAt: now, durationMs: duration, durationBasis: "activeStart", prepareUntil: prepareUntil, startedAt: null, originRoom: room, accounts: {}, results: [] };
+    var round = { id: state.generation + ":" + state.sequence, state: "PREP", requestedAt: now, durationMs: duration, durationBasis: "activeStart", prepareUntil: prepareUntil, startedAt: null, originRoom: room, accounts: {}, results: [], policy: policy };
     state.current = round;
     queueServerRaidNotice(state, round, "prepare", buildServerRaidPreparationNotice(round), ctx);
     return round;
@@ -33156,6 +33162,39 @@ function createServerRaidAttackEvent(event) {
     return { id: "legacy-callback:" + String(java.util.UUID.randomUUID()) };
 }
 
+// 새 회차의 공격·패널티·핸디캡 기준을 복사하고 검증하는 함수
+function createServerRaidRoundPolicy() {
+    var config = GLOBAL_CONFIG.serverRaid;
+    var policy = { attacks: config.limits.attacks, ticketAttacks: config.limits.ticketAttacks, ticketItem: config.items.attackTicket, chargeFromAttempt: config.penalties.chargeFromAttempt, pointCost: config.penalties.pointCost, handicapRanks: config.rewards.handicapRanks.slice() };
+    requireServerRaidSafeInteger(policy.attacks, "기본 공격 한도");
+    requireServerRaidSafeInteger(policy.ticketAttacks, "추가 공격 한도");
+    requireServerRaidSafeInteger(policy.chargeFromAttempt, "패널티 시작 횟수");
+    requireServerRaidSafeInteger(policy.pointCost, "패널티 금액");
+    if (policy.attacks <= 0 || policy.chargeFromAttempt < 2 || policy.pointCost <= 0 || !policy.ticketItem) throw new Error("서버 레이드대전 회차 기준 오류");
+    for (var i = 0; i < policy.handicapRanks.length; i++) requireServerRaidSafeInteger(policy.handicapRanks[i], "핸디캡 보상 수량");
+    return policy;
+}
+
+// 기준 미기록 기존 회차에는 공격권을 소급 적용하지 않는 함수
+function getServerRaidRoundPolicy(round) {
+    return round.policy || GLOBAL_CONFIG.serverRaid.legacyPolicy;
+}
+
+// 공격권 수량을 숫자 변환 없이 안전 정수로 확인하는 함수
+function getServerRaidTicketCount(member, item) {
+    var count = member.bag ? member.bag[item] : undefined;
+    return count === undefined ? 0 : requireServerRaidSafeInteger(count, "서공권 보유 수량");
+}
+
+// 실제 정상 공격 수와 가방을 기준으로 기본·추가 공격 가능 횟수를 읽는 함수
+function getServerRaidAttackAvailability(round, participant, member) {
+    var policy = getServerRaidRoundPolicy(round);
+    var used = participant ? participant.attacks.length : 0;
+    var additionalUsed = Math.max(0, used - policy.attacks); // 기본 공격부터 모두 사용하므로 이후 정상 공격만 추가 횟수
+    var held = policy.ticketAttacks > 0 ? getServerRaidTicketCount(member, policy.ticketItem) : 0;
+    return { policy: policy, basicRemaining: Math.max(0, policy.attacks - used), additionalUsed: additionalUsed, additionalRemaining: Math.min(held, Math.max(0, policy.ticketAttacks - additionalUsed)), held: held };
+}
+
 // 공격 단계·소속·재전송·횟수 조건을 변경 없이 확인하는 함수
 function getServerRaidAttackCheck(data, user, now, event) {
     if (event && event.invalid) return { message: "메시지 식별값을 확인할 수 없습니다.\n메신저봇의 콜백 전달값을 확인해주세요." };
@@ -33177,8 +33216,9 @@ function getServerRaidAttackCheck(data, user, now, event) {
         for (var i = 0; i < participant.attacks.length; i++) if (participant.attacks[i].id === eventId) return { replay: participant.attacks[i], participant: participant };
         if (participant.excessEvents && participant.excessEvents[eventId]) return { penaltyReplay: participant.excessEvents[eventId], participant: participant };
     }
-    if (participant && participant.attacks.length >= GLOBAL_CONFIG.serverRaid.limits.attacks) return { excess: true, participant: participant };
-    return {};
+    var available = getServerRaidAttackAvailability(round, participant, member);
+    if (available.basicRemaining === 0 && available.additionalRemaining === 0) return { excess: true, participant: participant };
+    return { ticketRequired: available.basicRemaining === 0, available: available };
 }
 
 // 큰 레이드매력에 정수 백분율을 적용하고 소수점을 정확하게 버리는 함수
@@ -33220,10 +33260,21 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], excessAttempts: 0, excessEvents: {}, paid: false };
     var nextAttackReward = requireServerRaidSafeInteger(participant.attackReward + reward, "실지급 공격 보상 합계");
     var eventId = getServerRaidEventId(event);
-    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", rewardPercent: percent, remaining: GLOBAL_CONFIG.serverRaid.limits.attacks - participant.attacks.length - 1, critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
+    var available = check.available;
+    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", rewardPercent: percent, remaining: Math.max(0, available.basicRemaining - 1), critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
+    if (available.policy.ticketAttacks > 0) {
+        attack.ticketUsed = check.ticketRequired;
+        attack.ticketHeldAfter = available.held - (check.ticketRequired ? 1 : 0);
+        attack.additionalRemaining = Math.min(attack.ticketHeldAfter, available.policy.ticketAttacks - available.additionalUsed - (check.ticketRequired ? 1 : 0));
+    }
+    var nextDamage = addServerRaidInteger(participant.damage, damage); // 지급·소모를 시작하기 전 데미지 합계도 검증
+    if (check.ticketRequired) {
+        member.bag[available.policy.ticketItem] = attack.ticketHeldAfter;
+        if (attack.ticketHeldAfter === 0) delete member.bag[available.policy.ticketItem];
+    }
     member.serverRaidAccount = account;
     member.point = nextPoint;
-    participant.damage = addServerRaidInteger(participant.damage, damage);
+    participant.damage = nextDamage;
     participant.attackReward = nextAttackReward;
     participant.attacks.push(attack);
     round.accounts[account.id] = participant;
@@ -33239,7 +33290,7 @@ function applyServerRaidExcessAttempt(data, user, event) {
     var participant = check.participant, member = data.member[user], round = data.serverRaid.current;
     var count = participant.excessAttempts === undefined ? 0 : participant.excessAttempts; // 이전 회차 참가자에는 첫 초과 시도부터 기록
     var nextCount = requireServerRaidSafeInteger(requireServerRaidSafeInteger(count, "초과 시도 횟수") + 1, "다음 초과 시도 횟수");
-    var config = GLOBAL_CONFIG.serverRaid.penalties;
+    var config = getServerRaidRoundPolicy(round);
     var cost = requireServerRaidSafeInteger(config.pointCost, "초과 시도 패널티");
     var chargeFrom = requireServerRaidSafeInteger(config.chargeFromAttempt, "패널티 시작 횟수");
     if (cost <= 0 || chargeFrom < 2) throw new Error("초과 시도 패널티 설정 오류");
@@ -33247,7 +33298,7 @@ function applyServerRaidExcessAttempt(data, user, event) {
     var insufficient = nextCount >= chargeFrom && heldPoint < cost; // 잔액 부족은 차감 없이 시도만 기록
     var charged = nextCount >= chargeFrom && !insufficient ? cost : 0;
     var eventId = getServerRaidEventId(event);
-    var record = { attempt: nextCount, charged: charged, insufficient: insufficient, pointCost: cost };
+    var record = { attempt: nextCount, charged: charged, insufficient: insufficient, pointCost: cost, chargeFromAttempt: chargeFrom };
     member.point = heldPoint - charged;
     participant.excessAttempts = nextCount;
     if (!participant.excessEvents) participant.excessEvents = {};
@@ -33260,7 +33311,9 @@ function applyServerRaidExcessAttempt(data, user, event) {
 function buildServerRaidExcessMessage(nick, record) {
     var header = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━━\n" + nick + ",\n";
     var costText = formatServerRaidPrize(record.pointCost); // 저장 당시 비용을 사용해 재전송 안내도 같은 금액을 표시
-    if (record.attempt === 1) return header + "이번 대전의 공격 5회를 모두 사용했습니다.\n\n⚠️ 초과 시도: 1회\n💰 차감 포인트: 🅟0\n\n이제부터 추가 공격을 시도할 때마다\n패널티로 " + costText + "가 차감됩니다.";
+    var chargeFrom = record.chargeFromAttempt === undefined ? GLOBAL_CONFIG.serverRaid.legacyPolicy.chargeFromAttempt : record.chargeFromAttempt;
+    if (record.attempt === 1 && chargeFrom === 2) return header + "이번 대전의 공격 5회를 모두 사용했습니다.\n\n⚠️ 초과 시도: 1회\n💰 차감 포인트: 🅟0\n\n이제부터 추가 공격을 시도할 때마다\n패널티로 " + costText + "가 차감됩니다.";
+    if (record.attempt < chargeFrom) return header + "이번 대전의 사용 가능한 공격 기회를 모두 사용했습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💰 차감 포인트: 🅟0\n\n초과 시도 " + chargeFrom + "회째부터 매번\n패널티로 " + costText + "가 차감됩니다.";
     if (record.insufficient) return header + "보유 포인트가 부족하여 패널티를 차감하지 않았습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💰 차감 포인트: 🅟0\n💸 필요한 포인트: 🅟" + numberWithCommas(record.pointCost) + "\n\n이번 대전의 공격 기회를 모두 사용했습니다.\n초과 시도 횟수는 기록됩니다.";
     return header + "공격 횟수를 초과하여 패널티가 적용되었습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💸 차감 포인트: 🅟" + numberWithCommas(record.charged) + "\n\n이번 대전의 공격 기회를 모두 사용했습니다.\n추가 시도마다 " + costText + "가 차감됩니다.";
 }
@@ -33302,6 +33355,8 @@ function buildServerRaidResults(round, freeze) {
                 original.serverRank = rows[r].rank;
                 rows[r].rankReward = GLOBAL_CONFIG.serverRaid.rewards.ranks[rows[r].rank - 1];
                 original.rankReward = rows[r].rankReward;
+                rows[r].handicapReward = getServerRaidRoundPolicy(round).handicapRanks[rows[r].rank - 1] || 0;
+                original.handicapReward = rows[r].handicapReward;
             }
         }
     }
@@ -33359,6 +33414,10 @@ function settleServerRaidParticipant(data, accountIndex, participantId) {
         if (!current) { participant.missingAccount = true; return true; }
         var nextPoint = requireServerRaidSafeInteger(current.member.point, "보유 포인트") + participant.rankReward;
         requireServerRaidSafeInteger(nextPoint, "순위 보상 지급 후 포인트");
+        var ticketReward = participant.handicapReward === undefined ? 0 : requireServerRaidSafeInteger(participant.handicapReward, "핸디캡 보상 수량");
+        if (participant.attacks.length === 0) ticketReward = 0; // 초과·실패 입력은 보상 대상이 아님
+        var ticketItem = getServerRaidRoundPolicy(round).ticketItem;
+        var nextTicketCount = ticketReward > 0 ? requireServerRaidSafeInteger(getServerRaidTicketCount(current.member, ticketItem) + ticketReward, "핸디캡 지급 후 수량") : 0;
         var account = current.account;
         var samePeriod = normalizeHoiServerLabel(current.member.server) === participant.server && account.period === participant.period;
         var total = account.total;
@@ -33368,6 +33427,11 @@ function settleServerRaidParticipant(data, accountIndex, participantId) {
             requireServerRaidSafeInteger(total.attackCount + participant.attacks.length, "누적 공격 횟수");
         }
         current.member.point = nextPoint;
+        if (ticketReward > 0) {
+            if (!current.member.bag) current.member.bag = {};
+            current.member.bag[ticketItem] = nextTicketCount;
+        }
+        participant.handicapPaid = ticketReward;
         participant.paid = true;
         if (samePeriod) {
             total.damage = addServerRaidInteger(total.damage, participant.damage);
@@ -33433,6 +33497,7 @@ function buildServerRaidPreparationNotice(round) {
     var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 공격 기회: 계정당 5회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 전 레이드매력의 " + GLOBAL_CONFIG.serverRaid.rewards.attackPercent + "%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
     if (round) lines.splice(5, 0, buildServerRaidTimeNotice(round));
     for (var i = 0; i < GLOBAL_CONFIG.serverRaid.rewards.ranks.length; i++) lines.push((i + 1) + "위: " + numberWithCommas(GLOBAL_CONFIG.serverRaid.rewards.ranks[i]) + " 포인트");
+    if (round && getServerRaidRoundPolicy(round).ticketAttacks > 0) lines.push("", "👾 서공권 1개당 추가 공격 1회", "기본 5회 이후 최대 5회 추가 공격할 수 있습니다.", "⚠️ 사용 가능한 공격 소진 후 초과 3회는 무료이며", "4회째부터 매번 1천만 포인트가 차감됩니다.", "⚖️ 2~10위 서버의 실제 공격 참여자는", "순위별 서공권 1~4개를 추가로 받습니다.");
     lines.push("", "※ 해당 회차 1회 이상 공격한", "참가자에게 인당 지급됩니다.", "※ 공격 보상과 순위 보상은 별도 지급!", "※ 동점은 공동 순위·동일 보상입니다.", "", "⭐ 우승 서버는 누적 우승 횟수 +1", "서버명 옆에 우승 기록이 남습니다!", "━━━━━━━━━━━━", "👉 공격 참여: /레이드공격", "", "우리 서버의 이름으로 도전하세요! 🐹");
     return lines.join("\n");
 }
@@ -33444,6 +33509,10 @@ function buildServerRaidAttackMessage(data, participant, attack, nick) {
     for (var i = 0; i < rows.length; i++) if (rows[i].id === participant.server) server = rows[i];
     var percent = getServerRaidAttackPercent(attack); // 현재 설정 대신 이 공격의 실제 지급 비율을 표시
     var rewardGuide = attack.rewardBasis === "damage" ? "공격 데미지의 " + percent + "% 지급 (당시 기준)" : "레이드매력의 " + percent + "% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
+    if (attack.ticketHeldAfter !== undefined) {
+        var policy = getServerRaidRoundPolicy(round);
+        return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n⚪ 무속성 · 속성 상성 미적용\n━━━━━━━━━━━━\n⚔️ " + nick + "의 공격!\n\n💥 공격 결과: " + numberWithCommas(attack.D) + "💞\n├ 👾레이드매력: " + numberWithCommas(attack.R) + "💞\n" + (attack.critical ? "└ 🔥치명타 발동!" : "└ 일반 공격 · 치명타 미발동") + "\n\n💰 획득: 🅟" + numberWithCommas(attack.P) + "\n└ " + rewardGuide + "\n\n🎟️ 기본 " + attack.remaining + "/" + policy.attacks + " · 추가 " + attack.additionalRemaining + "/" + policy.ticketAttacks + " 남음\n👾 서공권: " + numberWithCommas(attack.ticketHeldAfter) + "개 보유 · " + (attack.ticketUsed ? "이번 -1개" : "소모 없음") + "\n━━━━━━━━━━━━\n🏰 " + formatServerRaidServer(data, participant.server) + "\n🏆 현재 순위: " + server.rank + "위\n👾 서버 누적: " + numberWithCommas(server.damage) + "💞";
+    }
     return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n⚪ 무속성 · 속성 상성 미적용\n━━━━━━━━━━━━\n⚔️ " + nick + "의 공격!\n\n💥 공격 데미지: " + numberWithCommas(attack.D) + "💞\n├ 레이드매력: " + numberWithCommas(attack.R) + "💞\n" + (attack.critical ? "└ 🔥 치명타 발동!" : "└ 일반 공격 · 치명타 미발동") + "\n\n💰 획득 포인트: 🅟" + numberWithCommas(attack.P) + "\n└ " + rewardGuide + "\n\n🎟️ 남은 공격: " + attack.remaining + "/5회\n━━━━━━━━━━━━\n🏰 우리 서버 현황\n" + formatServerRaidServer(data, participant.server) + "\n\n🏆 현재 서버 순위: " + server.rank + "위\n👾 서버 누적 데미지: " + numberWithCommas(server.damage) + "💞\n└ 이번 공격까지 합산된 기록입니다.";
 }
 
@@ -33480,10 +33549,21 @@ function buildServerRaidResultNotice(data, round) {
     for (var r = 0; r < round.results.length; r++) {
         var row = round.results[r];
         included.push(row.id);
-        lines.push(row.rank + "위 " + formatServerRaidServer(data, row.id), "👾 누적 데미지: " + numberWithCommas(row.damage) + "💞", "💰 상금: " + formatServerRaidPrize(getServerRaidResultPrize(round, row)), "");
+        lines.push(row.rank + "위 " + formatServerRaidServer(data, row.id), "👾 누적 데미지: " + numberWithCommas(row.damage) + "💞", "💰 상금: " + formatServerRaidPrize(getServerRaidResultPrize(round, row)));
+        if (row.rank > 1 && row.handicapReward > 0) {
+            var paidMembers = 0; // 삭제 계정 등 미지급 대상이 있으면 실제 지급 인원만 안내
+            for (var m = 0; m < row.members.length; m++) {
+                var paidParticipant = round.accounts[row.members[m].id];
+                if (paidParticipant && paidParticipant.paid && paidParticipant.handicapPaid === row.handicapReward) paidMembers++;
+            }
+            if (paidMembers > 0) lines.push("⚖️ 핸디캡 보상: 서공권👾 " + row.handicapReward + "개");
+            if (paidMembers < row.members.length) lines.push("└ 핸디캡 실제 지급: " + paidMembers + "/" + row.members.length + "명");
+        }
+        lines.push("");
     }
     for (var s = 0; s < GLOBAL_CONFIG.serverRaid.servers.length; s++) if (included.indexOf(GLOBAL_CONFIG.serverRaid.servers[s]) === -1) lines.push("미참여 " + formatServerRaidServer(data, GLOBAL_CONFIG.serverRaid.servers[s]));
     lines.push("└ 미참여 서버는 상금이 없습니다.", "━━━━━━━━━━━━", "📌 상금 지급 안내", "• 이번 대전에 1회 이상 공격한 참여자에게 1인당 지급됩니다.", "• 공격 시 획득한 포인트와 별도로 지급됩니다.");
+    if (getServerRaidRoundPolicy(round).handicapRanks.length) lines.push("", "⚖️ 핸디캡 보상", "2~10위 서버에서 이번 대전에", "1회 이상 공격한 유저에게 서공권👾을 지급합니다.", "2~3위 1개 · 4~6위 2개", "7~9위 3개 · 10위 4개");
     return lines.join("\n");
 }
 

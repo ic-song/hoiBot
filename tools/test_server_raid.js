@@ -16,7 +16,7 @@ function block(source, marker) {
     throw Error("unclosed " + marker);
 }
 const root = "/sdcard/호이랜드/", devRoot = "/sdcard/호이랜드_dev/", memberPath = root + "member.json";
-let disk, traces, replies, now, timers, nextTimer, uuid, failWrite, failNotice, replyFailure, groups = 0;
+let disk, traces, replies, now, timers, nextTimer, uuid, failWrite, failNotice, replyFailure, groups = 0, ticketMode = false;
 const clone = value => JSON.parse(JSON.stringify(value));
 const lock = () => ({ lock() {}, unlock() {}, tryLock() { return true; } });
 const local = () => ({ value: null, get() { return this.value; }, set(v) { this.value = v; }, remove() { this.value = null; } });
@@ -80,6 +80,7 @@ for (let i = 1; i <= 100; i++) c["room" + i] = "room" + i;
 c.testRoom = "test";
 vm.createContext(c);
 vm.runInContext(block(main, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);
+const ticketConfig = clone(c.GLOBAL_CONFIG.serverRaid); // 신규 기준 검증과 기존 108개 회귀 기준을 분리
 for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile",
     "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
@@ -102,6 +103,9 @@ for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isIn
     vm.runInContext(block(info, "function " + name + "("), infoContext);
 
 function reset() {
+    c.GLOBAL_CONFIG.serverRaid.limits.ticketAttacks = ticketMode ? ticketConfig.limits.ticketAttacks : 0;
+    c.GLOBAL_CONFIG.serverRaid.penalties = clone(ticketMode ? ticketConfig.penalties : { chargeFromAttempt: 2, pointCost: 50000000 });
+    c.GLOBAL_CONFIG.serverRaid.rewards.handicapRanks = clone(ticketMode ? ticketConfig.rewards.handicapRanks : []);
     now = Date.parse("2026-10-05T12:00:00Z"); timers = new Map(); nextTimer = 0; uuid = 0;
     disk = {}; traces = []; replies = []; failWrite = null; failNotice = null; replyFailure = false;
     c.serverRaidWorkTimers = {}; c.dataSaveTransactionThreadLocal.remove(); c.commandContextThreadLocal.remove();
@@ -1249,9 +1253,9 @@ group("잘못된 잔액/횟수/패널티 설정·초과 저장 범위는 부분 
         const d = clone(original); d.serverRaid.current.accounts[id].excessAttempts = invalid; write(d); const before = disk[memberPath];
         assert.throws(() => attack("a", "invalid")); assert.strictEqual(disk[memberPath], before);
     }
-    write(original); const config = c.GLOBAL_CONFIG.serverRaid.penalties;
+    write(original); const config = original.serverRaid.current.policy;
     for (const [key, value] of [["pointCost", 0], ["pointCost", Infinity], ["chargeFromAttempt", 1], ["chargeFromAttempt", 2.5]]) {
-        const old = config[key]; try { config[key] = value; const before = disk[memberPath]; assert.throws(() => attack("a", "invalid")); assert.strictEqual(disk[memberPath], before); } finally { config[key] = old; }
+        const old = config[key]; try { config[key] = value; write(original); const before = disk[memberPath]; assert.throws(() => attack("a", "invalid")); assert.strictEqual(disk[memberPath], before); } finally { config[key] = old; }
     }
 });
 
@@ -1629,4 +1633,233 @@ group("포인트 단축키 ㅍㅍㅍ는 준비·진행·정산/DEV 동일 출력
     }
 });
 
+ticketMode = true;
+const ticketItem = ticketConfig.items.attackTicket;
+function giveTickets(user, count, dev = false) { const d = read(dev); d.member[user].bag[ticketItem] = count; write(d, dev); }
+function participant(user = "a", dev = false) { const d = read(dev); return d.serverRaid.current.accounts[d.member[user].serverRaidAccount.id]; }
+function normalFive(user = "a", dev = false) { for (let i = 0; i < 5; i++) attack(user, user + "-base-" + i, dev); }
+
+group("공격권 0/1/4/5/10개 경계·기본 먼저 사용·최대 10회·3% 보상", () => {
+    for (const held of [0, 1, 4, 5, 10]) {
+        reset(); giveTickets("a", held); start();
+        for (let i = 0; i < 5; i++) { const out = attack("a", "base-" + i); assert(out.includes("소모 없음")); assert.strictEqual(read().member.a.bag[ticketItem], held); }
+        for (let i = 0; i < Math.min(held, 5); i++) {
+            const out = attack("a", "extra-" + i, false, i % 2 ? "test" : "room8"); assert(out.includes("이번 -1개"));
+            assert.strictEqual(read().member.a.bag[ticketItem] || 0, held - i - 1);
+        }
+        const p = participant(), point = read().member.a.point;
+        assert.strictEqual(p.attacks.length, 5 + Math.min(held, 5)); assert.strictEqual(p.damage, String(p.attacks.length * 100000));
+        assert.strictEqual(point, 1000000000 + p.attacks.length * 3000);
+        const out = attack("a", "excess"); assert(out.includes("초과 시도: 1회")); assert.strictEqual(read().member.a.point, point);
+        assert.strictEqual(participant().attacks.length, p.attacks.length); assert.deepStrictEqual(read().member.a.bag, { unchanged: 7, ...(held > 5 ? { [ticketItem]: held - 5 } : held === 0 ? { [ticketItem]: 0 } : {}) });
+    }
+});
+
+group("실제 기본 7인수 콜백은 계정당 10회·11~13 무료·14번째 1천만", () => {
+    const flow = c.commandDataFlowLock, depth = c.autoDailyQuestInternalDepth;
+    c.commandDataFlowLock = { readLock: () => lock(), writeLock: () => lock() }; c.autoDailyQuestInternalDepth = 0;
+    try {
+        giveTickets("a", 6); start();
+        for (let i = 0; i < 14; i++) c.response(i % 2 ? "test" : "room8", "/레이드공격", "a", true, c.replier, null, "com.kakao.talk");
+        assert.strictEqual(participant().attacks.length, 10); assert.strictEqual(participant().excessAttempts, 4);
+        assert.strictEqual(read().member.a.point, 990030000); assert.strictEqual(read().member.a.bag[ticketItem], 1);
+    } finally { c.commandDataFlowLock = flow; c.autoDailyQuestInternalDepth = depth; }
+});
+
+group("신규 패널티 잔액 0/9999999/10000000/10000001·무료 3회·부족 결과 재전송", () => {
+    for (const balance of [0, 9999999, 10000000, 10000001]) {
+        reset(); start(); normalFive(); const d = read(); d.member.a.point = balance; write(d);
+        for (let i = 1; i <= 3; i++) { const out = attack("a", "free-" + i); assert(out.includes("🅟0")); assert(out.includes("4회째")); assert.strictEqual(read().member.a.point, balance); }
+        const out = attack("a", "paid"), before = disk[memberPath];
+        assert.strictEqual(read().member.a.point, balance < 10000000 ? balance : balance - 10000000);
+        assert.strictEqual(participant().excessAttempts, 4); assert.strictEqual(attack("a", "paid"), out); assert.strictEqual(disk[memberPath], before);
+        if (balance < 10000000) { const d = read(); d.member.a.point = 20000000; write(d); const saved = disk[memberPath]; attack("a", "paid"); assert.strictEqual(disk[memberPath], saved); }
+    }
+});
+
+group("도중 공격권 획득은 추가 공격 허용·이전 초과 횟수 유지·추가 5회 한도", () => {
+    start(); normalFive(); attack("a", "free-1"); attack("a", "free-2"); giveTickets("a", 2);
+    attack("a", "extra-1"); attack("a", "extra-2"); assert.strictEqual(participant().excessAttempts, 2);
+    attack("a", "free-3"); const before = read().member.a.point; attack("a", "paid"); assert.strictEqual(read().member.a.point, before - 10000000);
+    giveTickets("a", 10); for (let i = 0; i < 3; i++) attack("a", "remaining-" + i);
+    assert.strictEqual(participant().attacks.length, 10); assert.strictEqual(read().member.a.bag[ticketItem], 7);
+    attack("a", "paid-2"); assert.strictEqual(participant().excessAttempts, 5); assert.strictEqual(read().member.a.bag[ticketItem], 7);
+});
+
+group("추가 공격 실패·저장 교체 실패는 가방/포인트/데미지/횟수 전부 복구", () => {
+    giveTickets("a", 2); start(); normalFive();
+    let before = disk[memberPath]; failWrite = d => Object.values(d.serverRaid.current.accounts).some(p => p.attacks.length === 6);
+    assert.throws(() => attack("a", "fail")); assert.strictEqual(disk[memberPath], before); assert.strictEqual(replies.length, 0);
+    for (const invalid of [-1, 1.5, "2", null, Number.MAX_SAFE_INTEGER + 1]) {
+        giveTickets("a", invalid); before = disk[memberPath]; assert.throws(() => attack("a", "bad")); assert.strictEqual(disk[memberPath], before);
+    }
+    giveTickets("a", 2); const d = read(); d.member.a.point = Number.MAX_SAFE_INTEGER; write(d); before = disk[memberPath];
+    assert.throws(() => attack("a", "overflow")); assert.strictEqual(disk[memberPath], before);
+});
+
+group("추가 공격 응답 실패·원본 ID 재전송·재시작·닉변은 소모와 지급 한 번", () => {
+    giveTickets("a", 3); start(); normalFive(); replyFailure = true; attack("a", "extra"); replyFailure = false;
+    const before = disk[memberPath]; c.serverRaidWorkTimers = {}; timers.clear(); attack("a", "extra"); assert.strictEqual(disk[memberPath], before);
+    const d = read(); d.member.renamed = d.member.a; delete d.member.a; write(d);
+    const pets = JSON.parse(disk[root + "member_pet.json"]); pets.renamed = pets.a; disk[root + "member_pet.json"] = JSON.stringify(pets);
+    const renamed = disk[memberPath]; attack("renamed", "extra"); assert.strictEqual(disk[memberPath], renamed);
+    attack("renamed", "new-extra"); assert.strictEqual(participant("renamed").attacks.length, 7); assert.strictEqual(read().member.renamed.bag[ticketItem], 1);
+});
+
+group("남은 턴은 min(가방,추가한도)·자동 종료·반복 조회 무저장", () => {
+    giveTickets("a", 1); start(); let out = run("/레이드턴"); assert(out.includes("기본 5/5 · 추가 1/5")); assert(out.includes("🕒 자동 종료:"));
+    normalFive(); out = run("ㄹㄹ"); assert(out.includes("기본 0/5 · 추가 1/5")); assert(!out.includes("다음 서버"));
+    attack("a", "extra"); out = run("/레이드턴"); assert(out.includes("추가 0/5")); assert(out.includes("서공권을 보유하면"));
+    giveTickets("a", 10); attack("a", "extra-2"); out = run("ㄹㄹ"); assert(out.includes("추가 3/5"));
+    for (let i = 0; i < 3; i++) attack("a", "extra-rest-" + i);
+    const before = disk[memberPath]; out = run("/레이드턴"); assert(out.includes("추가 0/5")); assert(out.includes("다음 서버"));
+    run("ㄹㄹ"); assert.strictEqual(disk[memberPath], before);
+});
+
+group("새 회차 초기화·남은 공격권 유지·이전 이벤트 차단·DEV 완전 분리", () => {
+    giveTickets("a", 9); start(); normalFive(); attack("a", "extra"); end(); start(); assert(run("ㄹㄹ").includes("기본 5/5 · 추가 5/5"));
+    const before = disk[memberPath]; assert(attack("a", "extra").includes("이전 회차")); assert.strictEqual(disk[memberPath], before);
+    giveTickets("a", 2, true); start(true); normalFive("a", true); attack("a", "dev-extra", true);
+    assert.strictEqual(disk[memberPath], before); assert.strictEqual(read(true).member.a.bag[ticketItem], 1); assert.strictEqual(read().member.a.bag[ticketItem], 8);
+    end(true); assert.strictEqual(disk[memberPath], before);
+});
+
+group("새 규칙은 회차 중 설정 변경 불변·기존 기준 미기록 회차는 5회/5천만 유지", () => {
+    giveTickets("a", 9); start(); c.GLOBAL_CONFIG.serverRaid.limits.ticketAttacks = 0; c.GLOBAL_CONFIG.serverRaid.penalties.pointCost = 123;
+    normalFive(); attack("a", "extra"); assert.strictEqual(participant().attacks.length, 6);
+    let d = read(); delete d.serverRaid.current.policy; d.serverRaid.current.accounts[d.member.a.serverRaidAccount.id].attacks = participant().attacks.slice(0, 5); write(d);
+    const held = read().member.a.bag[ticketItem]; attack("a", "legacy-free"); const point = read().member.a.point; attack("a", "legacy-paid");
+    assert.strictEqual(read().member.a.point, point - 50000000); assert.strictEqual(read().member.a.bag[ticketItem], held); end();
+    assert.strictEqual(read().member.a.bag[ticketItem], held);
+});
+
+function handicapFixture() {
+    start(); const d = read(), pets = JSON.parse(disk[root + "member_pet.json"]);
+    for (let i = 0; i < 10; i++) { const user = "rank-" + i; d.member[user] = { point: 0, agree: true, server: ticketConfig.servers[i], bag: { unchanged: 1 }, R: (10 - i) * 100000 }; pets[user] = { petname: "합성펫" }; }
+    d.member.spectator = { point: 0, agree: true, server: ticketConfig.servers[9], bag: {} }; pets.spectator = { petname: "합성펫" };
+    write(d); disk[root + "member_pet.json"] = JSON.stringify(pets);
+    for (let i = 0; i < 10; i++) attack("rank-" + i, "rank-event-" + i);
+}
+
+group("1~10위 핸디캡 수량·실제 참여자만 지급·기존 상금·ALLSEE 1회", () => {
+    handicapFixture(); end(); const d = read(), round = d.serverRaid.history[0];
+    for (let i = 0; i < 10; i++) {
+        assert.strictEqual(d.member["rank-" + i].bag[ticketItem] || 0, ticketConfig.rewards.handicapRanks[i]);
+        assert.strictEqual(d.member["rank-" + i].point, ticketConfig.rewards.ranks[i] + (10 - i) * 3000);
+    }
+    assert.deepStrictEqual(d.member.spectator.bag, {}); assert.strictEqual(d.member.spectator.point, 0);
+    const output = c.buildServerRaidResultNotice(d, round); assert.strictEqual(output.split("<ALLSEE>").length, 2);
+    assert(output.indexOf("⚖️ 핸디캡 보상") > output.indexOf("<ALLSEE>")); assert.strictEqual(output.split("⚖️ 핸디캡 보상: 서공권👾").length, 10);
+    const paid = disk[memberPath]; run("/서버대전종료", "master"); tick(); assert.strictEqual(disk[memberPath], paid);
+});
+
+group("동점 공동 1위 무공격권·공동3위 각각1개·0데미지 정상공격 인정", () => {
+    handicapFixture(); const d = read(), round = d.serverRaid.current;
+    const byUser = Object.fromEntries(Object.values(round.accounts).map(p => [p.user, p]));
+    byUser["rank-1"].damage = byUser["rank-0"].damage;
+    byUser["rank-3"].damage = byUser["rank-2"].damage; byUser["rank-9"].damage = "0"; write(d); end();
+    const result = read(); assert(!result.member["rank-0"].bag[ticketItem]); assert(!result.member["rank-1"].bag[ticketItem]);
+    assert.strictEqual(result.member["rank-2"].bag[ticketItem], 1); assert.strictEqual(result.member["rank-3"].bag[ticketItem], 1); assert.strictEqual(result.member["rank-9"].bag[ticketItem], 4);
+});
+
+group("핸디캡 정산 저장 실패·완료 확정 실패·재시작도 포인트/아이템 중복 없음", () => {
+    handicapFixture(); run("/서버대전종료", "master"); const before = read();
+    failWrite = d => d.member["rank-1"].bag[ticketItem] === 1; tick(); assert.deepStrictEqual(read().member, before.member); assert.deepStrictEqual(read().serverRaid.current.accounts, before.serverRaid.current.accounts);
+    failWrite = d => d.serverRaid.completed === 1; tick(2000);
+    const paid = read(); assert.strictEqual(paid.member["rank-9"].bag[ticketItem], 4); assert.strictEqual(paid.serverRaid.current.state, "SETTLING");
+    c.serverRaidWorkTimers = {}; timers.clear(); run("/서버대전종료", "master"); tick();
+    assert.strictEqual(read().member["rank-9"].bag[ticketItem], 4); assert.strictEqual(read().member["rank-9"].point, paid.member["rank-9"].point);
+    assert.strictEqual(read().serverRaid.completed, 1);
+});
+
+group("부분 정산·닉변·소속변경·삭제 계정은 원래 공격 서버 기준·지급 UI 실제 일치", () => {
+    handicapFixture(); run("/서버대전종료", "master"); let d = read();
+    d.member.renamed = d.member["rank-1"]; delete d.member["rank-1"]; d.member.renamed.server = ticketConfig.servers[0]; d.member.renamed.serverRaidAccount.period++;
+    delete d.member["rank-2"]; write(d);
+    d = read(); c.settleServerRaidParticipant(d, c.buildServerRaidAccountIndex(d), d.member.renamed.serverRaidAccount.id); write(d);
+    tick(); d = read(); assert.strictEqual(d.member.renamed.bag[ticketItem], 1); assert.strictEqual(d.member.renamed.serverRaidAccount.total, null);
+    const out = c.buildServerRaidResultNotice(d, d.serverRaid.history[0]); assert(out.includes("핸디캡 실제 지급: 0/1명"));
+    const third = out.slice(out.indexOf("3위 " + ticketConfig.servers[2]), out.indexOf("4위 " + ticketConfig.servers[3])); assert(!third.includes("서공권👾 1개"));
+});
+
+group("가방 수량 안전 정수 초과는 상금·아이템·완료 상태 모두 무변경", () => {
+    handicapFixture(); const d = read(); d.member["rank-1"].bag[ticketItem] = Number.MAX_SAFE_INTEGER; write(d); run("/서버대전종료", "master");
+    const before = read(); tick(); assert.deepStrictEqual(read().member, before.member); assert.deepStrictEqual(read().serverRaid.current.accounts, before.serverRaid.current.accounts);
+    let repair = read(); repair.member["rank-1"].bag[ticketItem] = 2; write(repair); tick(2000); assert.strictEqual(read().member["rank-1"].bag[ticketItem], 3);
+});
+
+group("펫정보·이체 기존 인수만 준비/진행/정산 통과·별칭/접미 차단", () => {
+    start();
+    for (const state of ["PREP", "ACTIVE", "SETTLING"]) {
+        const d = read(); d.serverRaid.current.state = state; write(d);
+        for (const msg of ["/펫정보", "/이체", "/이체 공백 이름 100"]) { const before = disk[memberPath]; assert(c.isServerRaidAdditionalCommand(msg)); assert.strictEqual(run(msg), ""); assert.strictEqual(disk[memberPath], before); }
+        assert(infoContext.isInfoServerRaidAdditionalCommand("/펫정보"));
+        for (const msg of ["/펫정보 대상", "/ㅎ", "ㅁㅁㅁ", "/이체 a 100 해봐", "/이체 a -1", "/이체 a 1e3", "/이체수수료변경 2"]) assert(!c.isServerRaidAdditionalCommand(msg), msg);
+    }
+});
+
+for (const name of ["roundToTwo", "isSafePointValue", "parseSafePointAmount", "formatPointValue", "formatTransferFeeRate", "ensureHappyFoundationData", "calculateTransferFee", "addHappyFoundationFee", "isTierKing"]) vm.runInContext(block(main, "function " + name + "("), c);
+c.ticketTierData = { "브론즈": {}, "킹": {}, "퀸": {} };
+vm.runInContext("function runTransferLegacy(){" + extraPrelude + main.slice(entryStart, entryEnd) + privateGuard + block(main, "if (isAccountSuspensionBlockedMessage(msg)) {") +
+    "var petData=loadJsonFile(memberPetPath), petSkillData=loadJsonFile(petSkillDataPath), guildData=loadJsonFile(guildPath);" + block(main, "if (!hasAttendedToday(data, sender) && isAttendanceGameCommand(msg)") +
+    block(main, 'if (msg === "/이체" ||') + "}", c);
+function transfer(msg, user = "a", dev = false, privateChat = false) {
+    const original = c.runAdditionalLegacy; c.runAdditionalLegacy = c.runTransferLegacy;
+    try { return ordinary(dev ? "dev/" + msg.slice(1) : msg, user, dev ? "test" : "room8", !privateChat); }
+    finally { c.runAdditionalLegacy = original; }
+}
+group("실제 이체 분기·수수료·기존 티어/출석/정지/패스·레이드 기록 보존", () => {
+    start(); const fixture = read(); for (const user of Object.keys(fixture.member)) fixture.member[user].rank = { tier: user === "c" ? "브론즈" : "킹" }; write(fixture);
+    for (const state of ["PREP", "ACTIVE", "SETTLING"]) {
+        const d = read(); d.serverRaid.current.state = state; write(d); const before = read();
+        assert(transfer("/이체 b 100").includes("이체했습니다")); assert.strictEqual(read().member.a.point, before.member.a.point - 102); assert.strictEqual(read().member.b.point, before.member.b.point + 100);
+        assert.strictEqual(read().hoiHappyFoundation.totalAmount, (before.hoiHappyFoundation ? before.hoiHappyFoundation.totalAmount : 0) + 2); assert.deepStrictEqual(read().serverRaid, before.serverRaid);
+        const saved = disk[memberPath]; assert(transfer("/이체 b 100", "c").includes("킹 이상")); assert.strictEqual(disk[memberPath], saved);
+        assert(transfer("/이체 b 100", "absent").includes("출석")); assert(transfer("/이체 b 100", "suspended").includes("계정정지")); assert(transfer("/이체 b 100", "noPass", false, true).includes("프리미엄")); assert.strictEqual(disk[memberPath], saved);
+        assert(/종료 전까지|종료 처리가 진행/.test(transfer("/이체 b 100 해봐"))); assert.strictEqual(disk[memberPath], saved);
+    }
+});
+group("실제 이체 저장 실패 전액 복구·DEV 이체는 운영 포인트/레이드 무변경", () => {
+    start(); let d = read(); d.member.a.rank = { tier: "킹" }; write(d); const before = disk[memberPath];
+    failWrite = latest => latest.member.b.point > 1000000000; assert.throws(() => transfer("/이체 b 100")); assert.strictEqual(disk[memberPath], before);
+    start(true); d = read(true); d.member.a.rank = { tier: "킹" }; write(d, true); assert(transfer("/이체 b 100", "a", true).includes("이체했습니다"));
+    assert.strictEqual(disk[memberPath], before); assert.strictEqual(read(true).member.a.point, 999999898); assert.strictEqual(read(true).member.b.point, 1000000100);
+});
+vm.runInContext("function probePetInfoGuard(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
+    'if (msg === "/펫정보") replier.reply("펫정보 분기 도달");}', infoContext);
+group("Info 실제 펫정보 진입·기존 출석/정지/가입/일대일 패스 검사 유지", () => {
+    additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].recent = "2026-10-05"; d.member.unassigned.agree = false; write(d);
+    disk[root + "titles.json"] = JSON.stringify({ member: {} }); disk[root + "petTitles.json"] = "{}";
+    function probe(msg, user = "a", isGroup = true) { replies = []; Object.assign(infoContext, { msg, sender: user, isGroupChat: isGroup, ctx: { isDev: false } }); infoContext.probePetInfoGuard(); return replies.join("\n"); }
+    const before = JSON.stringify(disk);
+    for (const state of ["PREP", "ACTIVE", "SETTLING"]) {
+        const d = read(); d.serverRaid.current.state = state; write(d); assert.strictEqual(probe("/펫정보"), "펫정보 분기 도달");
+        assert.strictEqual(probe("/펫정보", "absent"), ""); assert.strictEqual(probe("/펫정보", "noPass", false), ""); assert.strictEqual(probe("/펫정보", "unassigned"), ""); assert(probe("/펫정보", "suspended").includes("계정정지"));
+        assert.strictEqual(probe("/펫정보 대상"), ""); assert.strictEqual(probe("ㅁㅁㅁ"), "");
+    }
+    const after = JSON.parse(before); after[memberPath] = disk[memberPath]; assert.deepStrictEqual(disk, after);
+});
+group("가방 누락은 미보유 처리·마감/권한/접미 차단은 추가 공격권 미소모", () => {
+    start(); let d = read(); delete d.member.a.bag; write(d); assert(attack().includes("소모 없음")); assert.strictEqual(read().member.a.bag, undefined);
+    giveTickets("b", 3); normalFive("b");
+    for (const [msg, room] of [["/레이드공격", "unknown"], ["/레이드공격 1", "room8"]]) { const before = disk[memberPath]; run(msg, "b", { id: "deny" }, room); assert.strictEqual(disk[memberPath], before); }
+    d = read(); now = d.serverRaid.current.autoEndAt; const before = disk[memberPath]; attack("b", "deadline"); assert.strictEqual(disk[memberPath], before);
+});
+group("공격권 치명타도 R3%·최종 UI 예시 수치/소모·1회와5회 참가 보상 동일", () => {
+    giveTickets("a", 5); start(); normalFive(); const d = read(); d.member.a.R = 26790697; write(d); vm.runInContext("Math.random=function(){return 0}", c);
+    const out = attack("a", "critical-extra"); assert(out.includes("공격 결과: 45,544,185")); assert(out.includes("획득: 🅟803,720")); assert(out.includes("🔥치명타 발동")); assert(out.includes("기본 0/5 · 추가 4/5 남음")); assert(out.includes("4개 보유 · 이번 -1개"));
+    reset(); handicapFixture(); const multi = read(); multi.member.b.server = multi.member.c.server = ticketConfig.servers[1]; multi.member.b.R = multi.member.c.R = 1; write(multi);
+    attack("b", "one"); normalFive("c"); end(); assert.strictEqual(read().member.b.bag[ticketItem], 1); assert.strictEqual(read().member.c.bag[ticketItem], 1);
+});
+group("자동/수동 종료 경합·오래된 예약 재호출도 핸디캡 중복 없음", () => {
+    handicapFixture(); const stale = [...timers.values()][0].fn; const round = read().serverRaid.current;
+    now = round.autoEndAt; run("/서버대전종료", "master"); tick(); const paid = disk[memberPath];
+    stale(); run("/서버대전종료", "master"); tick(); assert.strictEqual(disk[memberPath], paid); assert.strictEqual(read().member["rank-9"].bag[ticketItem], 4); assert.strictEqual(read().serverRaid.completed, 1);
+});
+group("종료 시 핸디캡 표 고정·전체 초기화는 공격권 보존·예전 정산은 소급 없음", () => {
+    handicapFixture(); run("/서버대전종료", "master"); c.GLOBAL_CONFIG.serverRaid.rewards.handicapRanks = [0, 99]; tick(); assert.strictEqual(read().member["rank-1"].bag[ticketItem], 1);
+    const held = read().member["rank-9"].bag[ticketItem]; run("/서버대전전체초기화", "master"); assert.strictEqual(read().member["rank-9"].bag[ticketItem], held);
+    reset(); handicapFixture(); let d = read(); delete d.serverRaid.current.policy; write(d); run("/서버대전종료", "master"); tick(); assert(!read().member["rank-1"].bag[ticketItem]);
+    assert(!c.buildServerRaidResultNotice(read(), read().serverRaid.history[0]).includes("핸디캡 보상"));
+});
 console.log("서버 레이드대전 " + groups + "개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)");
