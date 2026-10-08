@@ -1212,8 +1212,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			homeData = initSweetHomeUser(homeData, sender);
 			let rankData = generateRanking(data, petData, homeData, petSkillData, guildData);
 			let serverRows = buildServerRankingRows(rankData.rows, data);
+			replier.reply(buildCombinedServerRankingMessage(serverRows, sender, data, petData, guildData));
 			replier.reply(buildWorldOverallRankingMessage(rankData.rows, sender, data, petData, guildData));
-			replier.reply(buildStandaloneServerRankingMessage(serverRows, sender, data));
 		} else if (msg === "/서버순위") {
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);

@@ -33,7 +33,7 @@ function context(source, names, extra) {
 let saves = 0;
 let failSave = false;
 const messages = [];
-const move = context(main, ["normalizeHoiServerLabel", "requireServerRaidSafeInteger", "applyServerRaidMembershipChange"], {
+const move = context(main, ["normalizeHoiServerLabel", "requireServerRaidSafeInteger", "applyServerRaidMembershipChange", "isPointShopSafeAmount", "isPointShopSafeCount"], {
     sender: "test", msg: "", filePath: "dev-member.json", petData: {}, guildData: {},
     data: { member: { test: { server: "호이서버6[2030]", bag: {} } } },
     replier: { reply: m => messages.push(m) },
@@ -127,6 +127,34 @@ assert.strictEqual(rank.buildServerMemberListMessage("호이서버6[2030]", grou
 assert(rank.buildServerMemberListMessage("호이월드 커뮤니티", groups).includes("12. "));
 assert.strictEqual(JSON.stringify(data), before);
 console.log("3/5 10개 서버·전체 합산·TOP10·인원 조회·별칭·무변경 PASS");
+
+// 제보된 화면을 실제 명령 분기로 재현해 응답 유형·순서를 확인한다.
+const rankingReplies = [];
+let rankingLoads = 0;
+Object.assign(rank, { data, petData: pets, petSkillData: {}, guildData: {}, sender: "u1", homeDataFile: "synthetic-home.json",
+    initSweetHomeUser: d => d,
+    loadJsonFile: file => { assert.strictEqual(file, "synthetic-home.json"); rankingLoads++; return {}; },
+    saveJsonFile: () => { throw Error("조회 중 저장 금지"); }, replier: { reply: text => rankingReplies.push(text) }
+});
+vm.runInContext("function runRankingCommand(){if(false){}" + block(info, 'else if (msg === "/종합순위" ||') +
+    block(info, 'else if (msg === "/서버순위")') + "}", rank);
+const expectedWorld = rank.buildWorldOverallRankingMessage(rows, "u1", data, pets, {});
+for (const command of ["/종합순위", "ㅈㅈㅈ"]) {
+    rankingReplies.length = 0; rank.msg = command; rank.runRankingCommand();
+    assert.deepStrictEqual(rankingReplies, [combined, expectedWorld], command + "은 서버 현황 → 월드 두 메시지");
+    assert(rankingReplies[0].includes("소속 서버: 호이월드 커뮤니티"));
+    assert(rankingReplies[0].includes("서버 내 순위: 12위"));
+    assert(rankingReplies[0].includes("🏠 우리 서버 개인 종합순위\n<ALLSEE>"));
+    assert(rankingReplies[1].includes("🎯 한 단계 위까지!"));
+    assert(!rankingReplies.includes(standalone), "전체 서버 목록만 별도 출력하지 않음");
+}
+rankingReplies.length = 0; rank.msg = "/서버순위"; rank.runRankingCommand();
+assert.deepStrictEqual(rankingReplies, [combined], "/서버순위의 현행 응답 유지");
+for (const command of ["/종합순위 대상", "ㅈㅈㅈ 해봐", "/서버순위 1"]) {
+    rankingReplies.length = 0; rank.msg = command; rank.runRankingCommand(); assert.deepStrictEqual(rankingReplies, []);
+}
+assert.strictEqual(rankingLoads, 3); assert.strictEqual(JSON.stringify(data), before);
+console.log("종합순위 롤백: 실제 두 별칭·서버/월드 응답 순서·독립 서버 명령 유지·접미 차단·무저장 PASS");
 
 const shopMessages = [];
 const shop = context(info, [], {
