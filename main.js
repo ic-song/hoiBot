@@ -980,6 +980,22 @@ var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 �
 var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 작업의 환경별 타이머
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    fortuneCookie: { // 호츈쿠키의 개봉·보상·추첨 규칙
+        itemName: "호츈쿠키🥠", maxOpen: 100, generalRate: 0.5, specialRate: 0.01,
+        duplicatePoint: 50000000, specialDiamond: 100, titleSalePoint: 15000000,
+        imageLink: "https://ibb.co/dwg4cDpV",
+        rewards: [{ name: "펫 강화석⭐", count: 100 }, { name: "티어 승급티켓🎟", count: 1 }, { name: "다이아상자💎(/다이아상자오픈)", count: 1 }],
+        names: ["쟈기 여","빵미 여","잠자 남","라면 남","또리 여","호이 남","도도 여","맹구 여","플라 여","퍼플 여","윤아 여","사월 여","조사 남","응즈 여","반지 여","뭉뭉 남","벨라 여","만두 여","유유 여","아라 여","오오 여","오늘 여","해인 남","멍멍 남","파이 여","웨이 남","콘트 남","마라 여","리치 여","쑥갓 여","테디 남","돌쇠 남","매실 여","무지 여","여름 여","하은 남","로키 남","베리 여","오픈채팅봇","땅콩 여","거덩 남","메메 남","메탈 남","신이 남","바다 남","오이 여","하든 남","냉면 여","늘보 여","비토 남","공이 남","뒹굴 남","개굴 남","째째 남","왕식 남","히야 여","디브 남","악어 남","강인 남","스킷 남","예하 여","리리 여","봉구 남","뽀얌 여","리안 여","자두 여","잠결 남","뭉이 남","카피 남","포도 남","겨울 남","승묵 여","빵티 남","성현 남","결정 남","요정 남","튜브 여","민고 여","오성 남","몬드 남","삼삼 남","돌팔 남","다퇴 남","문다 남","네네 남","엘리 여","아나 여","기쁨 여","치쿵 여","빈디 남","달이 남","냥덕 여","코몽 여","죠리 여","버거 남","거품 남","시아 여","호치 여","해진 남","쪼쪼 여","피치 여","구마 여","하품 남","아아 여","떨어 여","해치 여","원이 남","꽃잎 여","콩순 여","지노 남","데일 남","산이 여","찐빵 남","비트 남","천라 남","루미 여","수달 여","츠짱 남","제이 남","흑백 여","토토 남","앙꼬 여","대호 남","까꿍 여","왈왈 여","야호 남","진철 남","뿌뿌 여","노을 남","낭만 남","감자 여","빠루 남","지하 여","비쟈 남","호흡 남","라라 여","마루 남","정재 남","콩두 여","느느 남","봄봄 여","빙빙 남","복숭 여","도비 여","만쥬 여","꼬북 여","로나 여","유후 여","시루 남","다롱 여","행운 남","삼오 남","캬라 남","택택 남","구리 남","씽씽 여","슬이 여","라니 남","랄랄 여","워니 남","네간 남","커치 남","프프 남","펭귄 여","태리 여","둘리 여","댕청 남","바보 남","라시 여","보보 남","애옹 여","먕먕 여","거지 남","아지 여","미칸 여","숑숑 여","깡깡 남","허브 남","승천 남","휴맨 남","공주 남","뀽뀽 여","조로 남","나는 남","구경 여","물치 여","이로 남","냥냥 남","성준 남","늑구 남","초코 여","동동 남","찐만 여","치즈 남","테라 남","물개 남","이안 남","새우 여","샘물 남","크앙 남","죠니 여","지훈 남","맥이 여","에그 남","해바 여","용용 여","두냥 남","디어 남","일곰 남","맴밈 남","린코 여","탕아 남","비따 남","집돌 남","라노 남","하루 여","포니 여","하율 여","레르 남","봉투 남","멜론 여","사람 남","화원 남","루나 여","실비 남","아오 남","찬또 여","고장 남","배불 남","모쿠 여","쿠크 여","곽철 남","곰탱 남","진동 남","야옹 여","몽자 여","디아 여","네모 여","지지 여","나나 남","랑이 남","루빈 남","사조 여","시월 남","하운 남","라이 남","만보 여","시골 남","피이 남","어니 남","알림 봇","미미 여","오션 여","악사 남","밍지 여","린치 남","리퐁 남","공통 여","가을 여","준혁 남","켈리 여","쿵야 여","해원 여","코코 남","덕철 남","구두 남","현쓰 남","냉수 여","소솜 여","땡주 남","키위 남","여운 여","유한 남","연이 여","하양 여","소라 여","이슬 여","팬더 여","리프 남","소란 남","광삼 남","완두 여","리본 여","홍삼 남","계치 남","냐냐 여","뿌삐 여","민영 남","내꼬 남","닝닝 남","낮잠 남","민스 남","추추 여","호월 봇","호감 남","단지 남","한결 남","롤대 남","첩추 남","갈배 남","죠이 남","테트 남","고수 남","킁킁 남","허몽 남","에겐 남","달빛 남","깨랑 여","긍정 여","왕눈 남"],
+        concepts: [
+            {"title":"{닉네임}의 축복🍀","quotes":["오늘은 네 편이야, 잘될 거야!","네 행운은 이제 시작이야!","잘 풀릴 거야, 내가 빌었어!","쿠키보다 달콤한 하루 보내!","네가 웃으면 운도 따라와!","작은 기쁨이 널 찾아갈 거야!","기다린 소식이 곧 닿길!","오늘의 주인공은 바로 너야!","행운 한 조각, 네 몫이야!","어제보다 더 반짝일 거야!","좋은 인연이 네 곁에 머물길!","네가 바라던 일이 이루어지길!","오늘은 네 용기를 믿어 봐!","뜻밖의 기쁨을 만나길!","오늘 네 앞길엔 꽃만 놓을게!","걱정은 접고 좋은 꿈 펼쳐!","미소 지을 일이 생길 거야!","네 도전에 순풍이 불길!","네 진심이 반짝이는 날이야!","행운도 널 보고 웃고 있대!","네 소원에 한 걸음 더 다가가!","천천히 가도 좋은 날은 와!","오늘도 네 편에서 빌어 줄게!","별 하나 골라 네 운에 얹었어!","다음 웃음은 네 차례야!","좋은 우연이 널 기다려!","쿠키 속 봄바람을 너에게!","네 하루 끝이 포근하길!","운 좋은 날에 네 이름 썼어!","너답게 빛나는 하루 보내!"]},
+            {"title":"{닉네임}에게 찍힌💢","quotes":["내 쿠키 한 입, 네가 먹었지?","부스러기 탐정이 널 찾는다!","입가에 쿠키 증거 남았어!","간식 당번, 오늘은 네 차례!","내 쿠키에 손 뻗은 거 봤어!","오늘은 내가 네 운세 검사관!","딴청 피워도 쿠키는 안 숨겨져!","한 입만이라더니 반이 없잖아!","쿠키 봉지 소리로 딱 걸렸어!","눈 피하는 걸 보니 너로군!","마지막 조각 앞에선 안 봐줘!","내 쿠키 명단에 네 이름 적었어!","쿠키 재판에 증인으로 나와!","벌칙은 웃긴 표정 세 번이야!","네 별명, 오늘은 부스러기야!","오늘 운세에 잔소리 한 줄!","쿠키 앞에서 양심 검사할게!","입 닦는 속도가 수상한데?","간식 숨기는 솜씨가 늘었네!","쿠키 도둑 역할은 네가 해!","뽑기 전 주문, 까먹었지?","행운 면접에 지각했구나!","네 운세, 장난꾸러기 당첨!","오늘은 내가 장난 한 번 친다!","쿠키 향만 맡았다더니, 정말?","네 쪽지에 장난 도장 찍었어!","쿠키 열기 전에 손 씻었어?","쿠키 조각 개수가 안 맞는데?","쿠키 뒤에 숨으면 모를 줄 알았어?","오늘만 쿠키 감시 대상이야!"]},
+            {"title":"{닉네임}의 원픽💘","quotes":["여기서 네가 제일 좋아!","오늘도 내 원픽은 너야!","좋은 건 너부터 챙겨줄게!","네가 오면 괜히 웃음 나!","같이 있으니까 더 재밌다!","내 행운은 너한테 줄래!","너랑 뽑으니 더 설렌다!","쿠키 한 조각은 네 몫이야!","다음에도 네가 뽑아줘!","너 보면 기분부터 좋아져!","너랑 친해지길 잘했어!","오늘 간식은 너랑 먹을래!","네 이름 보니 반가웠어!","너한텐 좋은 말만 해줄래!","우리 꽤 잘 통하는데?","이 설렘도 쿠키에 넣었어!","너한테만 한 입 더 줄게!","내 쪽지는 네가 가져줘!","오늘도 네 소식 기다렸어!","네 웃음이 제일 반가워!","쿠키보다 네가 더 달달해!","네 칭찬은 내가 맡을게!","너랑 하면 뭐든 재밌어!","이 타이틀 너한테 찰떡이야!","우리 다음 쿠키도 같이 열자!","네 편이라서 기분이 좋아!","살짝 말할게, 너 좀 좋아!","널 보니 좋은 예감이 들어!","네 하루에 나도 끼워줘!","오늘 내 하트는 네 거야!"]},
+            {"title":"{닉네임}의 질투👀","quotes":["내 타이틀만 달고 다녀!","다른 쿠키가 더 맛있어?","내 쪽지는 벌써 잊었어?","내 이름도 한 번 봐줘!","네 원픽 자리는 아직 비었지?","나 뽑은 건 자랑 안 해?","다른 타이틀이랑 눈 맞았어?","내 쿠키도 예뻐해 줘!","오늘은 내 이름 차례야!","나보다 쿠키가 더 좋아?","그 타이틀, 살짝 부럽네!","내 쪽지도 별표 해줘!","딴 데서 행운 받고 왔어?","너 칭찬은 나도 잘해!","내 옆에 하트 빠졌잖아!","내 이름 보면 좀 웃어줘!","다른 쪽지는 왜 또 열어?","나도 네 최애 하고 싶어!","내 타이틀도 잘 어울려!","쿠키 부스러기만 내 몫이야?","방금 누구 타이틀 보고 웃어?","내 쿠키는 왜 아껴 먹어?","자랑할 때 내 이름 빼먹지 마!","내 쪽지만 접어 둔 거야?","나 뽑고도 또 뽑는 거야?","그 축복, 내가 먼저 줬는데!","내 하트도 받아줄 거지?","다음 쿠키엔 또 나왔으면!","나도 네 프로필에 놀러 갈래!","한눈판 만큼 나도 봐줘!"]},
+            {"title":"{닉네임}의 라이벌⚔️","quotes":["다음 승부는 내가 가져간다!","오늘은 네가 먼저 웃어 둬!","내가 네 기록 따라잡는다!","쿠키 운도 실력으로 쳐줘!","네가 뜨면 나도 한 번 더!","우리 승부는 아직 안 끝났어!","이번엔 누가 더 높이 갈까?","네 기록이 내 다음 목표야!","잘 뽑았네, 내 차례도 봐!","이번 판은 절대 안 놓친다!","정상에서 다시 만나자!","막상막하라 더 재밌잖아!","한 발 차이? 금방 따라갈게!","다음 쿠키로 승부 보자!","네 최고 기록, 기억해 뒀다!","질 수 없지, 나도 도전!","운이든 실력이든 겨뤄 보자!","우리 둘 다 최고까지 가자!","네가 앞서면 더 신나지!","이기면 쿠키 하나 더 먹기!","이번엔 내 차례가 될걸!","너만큼은 꼭 따라잡는다!","자랑은 내 결과 보고 해!","승부 전에 간식부터 먹자!","오늘의 한 수, 기대해도 돼!","덕분에 더 열심히 하겠어!","너랑 겨루는 게 제일 재밌어!","내일은 순서가 바뀔걸!","빈틈 보이면 바로 앞선다!","이 승부, 끝까지 가 보자!"]},
+            {"title":"{닉네임}의 비밀친구🤫","quotes":["우리 친한 거 비밀이야!","비밀 간식은 네 몫도 있어!","쿠키 숨긴 곳, 너만 알려줄게!","우리 암호는 바삭바삭이야!","오늘도 비밀 아지트로 와!","눈 마주치면 쿠키 얘기야!","이 쪽지는 우리끼리만 보자!","네 몫은 책상 아래 숨겼어!","비밀 작전은 간식 챙기기!","쉿, 우리 팀 이름은 쿠키야!","몰래 먹으니 더 맛있지?","쿠키 반쪽은 우정의 증표야!","오늘의 암호는 초코 두 조각!","내 비밀 창고 열쇠는 네 거야!","우리끼리 작은 축제 열자!","쿠키 부스러기만 남기고 가!","쪽지 뒤에 보물 지도가 있어!","너 오면 비밀 문을 열어줄게!","쉿, 숨겨 둔 쿠키가 더 있어!","우리만 아는 지름길로 가자!","간식 회의는 둘이서만 하자!","비밀 악수부터 하고 시작해!","오늘 작전명은 쿠키 구출!","웃음 터져도 소리는 줄여!","쉿, 비밀 임무는 같이 놀기!","들키면 쿠키 얘긴 안 한 거야!","다음 쪽지는 쿠키 안에 둘게!","네 쿠키에만 별을 그려 뒀어!","우리 아지트엔 꽝이 없어!","우리만 아는 인사, 바삭!"]},
+            {"title":"호월신의 축복✨","quotes":["그대에게 행운을 내리노라!","호월의 빛이 그대를 비추리라!","그대의 쿠키에 별을 담았노라!","오늘의 축복은 그대의 것이니라!","그대의 이름을 별에 새겼노라!","작은 쿠키에 큰 축복을 담았노라!","내가 그대의 행운이 되어주리라!","그대의 정성에 축복으로 답하노라!","그대의 앞길에 빛을 놓으리라!","용기를 내라, 내가 함께하노라!","내가 고른 행운의 주인이로다!","호월의 별들이 그대를 반기노라!","이 한 입에 신의 마음을 담았노라!","그대에게 빛나는 인연을 보내노라!","그대의 웃음에 나도 미소 짓노라!","쿠키를 연 손에 축복이 깃들리라!","나의 축복을 당당히 지니거라!","마침내 나의 쪽지를 찾았구나!","그대의 소원을 귀담아듣겠노라!","오늘은 신도 그대의 편이니라!","그대의 도전에 박수를 보내노라!","나의 별빛을 그대에게 나누노라!","달빛을 따라 축복을 보냈노라!","그대의 하루에 반짝임을 더하노라!","행운의 문이 그대를 맞이하노라!","호월신의 눈에 그대가 들었노라!","기쁜 마음으로 이 복을 받거라!","그대의 곁에 온기를 남기노라!","그대의 쿠키를 친히 골랐노라!","이 만남 또한 축복이니라!"]}
+        ]
+    },
     nicknameRank: { maxRank: 100 },
     searchAuthentication: { maxKeywordLength: 10, diamondReward: 1, keywordVisibleRows: 5, adminVisibleRows: 3 },
     permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
@@ -989,7 +1005,7 @@ const GLOBAL_CONFIG = {
         testRoomOnly: false
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
-        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방", "/펫정보", "/이체"] }, // 기존 허용 명령에 더할 예외
+        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방", "/펫정보", "/이체", "/기록", "/기록실", "/검색인증", "/검색인증관리", "/검색인증순위", "/검색인증관리순위"] }, // 기존 허용 명령에 더할 예외
         limits: { attacks: 5, ticketAttacks: 5, maxSafeInteger: 9007199254740991 },
         items: { attackTicket: "서버레이드공격권👾" },
         legacyPolicy: { attacks: 5, ticketAttacks: 0, chargeFromAttempt: 2, pointCost: 50000000, handicapRanks: [] }, // 기준 미기록 기존 회차는 당시 규칙 유지
@@ -15278,6 +15294,40 @@ replier.reply(
                 }
 
 // =======================================================
+                if (msg === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(msg)) {
+                    var fortuneNick = "[" + checkRank(data, petData, guildData, sender) + "]";
+                    var fortuneMatch = msg.match(/^\/호츈오픈\s+(\d+)$/);
+                    var fortuneCount = fortuneMatch ? Number(fortuneMatch[1]) : NaN;
+                    if (!isPointShopSafeCount(fortuneCount) || fortuneCount < 1 || fortuneCount > GLOBAL_CONFIG.fortuneCookie.maxOpen) {
+                        replier.reply("🥠 개봉할 수량을 확인해주세요.\n━━━━━━━━━━━━\n" + fortuneNick + " 님\n\n1~100 사이의 정수로 입력해주세요.");
+                        return;
+                    }
+                    var fortuneTitleData = loadJsonFile(memberTitlePath);
+                    var fortuneTitleSnapshot = JSON.stringify(fortuneTitleData);
+                    var fortuneResult = applyFortuneCookieOpen(data, fortuneTitleData, sender, fortuneCount, Math.random, new Date());
+                    if (!fortuneResult.ok) {
+                        if (fortuneResult.reason === "shortage") replier.reply("🥠 호츈쿠키가 부족합니다.\n━━━━━━━━━━━━\n" + fortuneNick + " 님\n\n보유: " + numberWithCommas(fortuneResult.held) + "개\n요청: " + fortuneCount + "개");
+                        else replier.reply("🥠 보유 수량과 보상 데이터를 확인해주세요.\n━━━━━━━━━━━━\n" + fortuneNick + " 님\n\n쿠키 소모와 보상 지급은 없습니다.");
+                        return;
+                    }
+                    if (fortuneResult.newCount > 0) saveJsonFile(fortuneTitleData, memberTitlePath, false, fortuneTitleSnapshot);
+                    saveJsonFile(data, filePath);
+                    endDataSaveTransaction(); beginDataSaveTransaction(); // 지급 확정 후 응답·전체알림 실패로 보상을 되돌리지 않음
+                    try { replier.reply(buildFortuneCookieOpenMessage(fortuneResult, fortuneNick)); }
+                    catch (fortuneReplyError) { debuggerLog("[ERROR : 호츈쿠키 결과 전송 실패]"); }
+                    for (var fortuneNoticeIndex = 0; fortuneNoticeIndex < fortuneResult.results.length; fortuneNoticeIndex++) {
+                        var fortuneNoticeResult = fortuneResult.results[fortuneNoticeIndex];
+                        if (!fortuneNoticeResult.special) continue;
+                        var fortuneNoticeText = buildFortuneCookieSpecialNotice(fortuneNoticeResult, fortuneNick);
+                        var fortuneNoticeRooms = getNoticeTargetRooms(ctx);
+                        for (var fortuneRoomIndex = 0; fortuneRoomIndex < fortuneNoticeRooms.length; fortuneRoomIndex++) {
+                            try {
+                                if (noticeMsg(fortuneNoticeText, [fortuneNoticeRooms[fortuneRoomIndex]]) === false) debuggerLog("[ERROR : 호츈쿠키 특별 알림 일부 전송 실패]");
+                            } catch (fortuneNoticeError) { debuggerLog("[ERROR : 호츈쿠키 특별 알림 전송 실패]"); }
+                        }
+                    }
+                    return;
+                }
 // /아아, /아아 [횟수]
 // =======================================================
                 if (msg === "/아아" || /^\/아아\s+\d+$/.test(msg)) {
@@ -19260,143 +19310,46 @@ replier.reply(
                         replier.reply("올바른 펫 타이틀 설정 형식을 사용해주세요.\n예: /펫타이틀 [번호]");
                     }
                 }
-                if (msg.startsWith("/타이틀정보")) {
+                if (msg === "/타이틀정보" || /^\/타이틀정보\s+\d+\s*$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var regexTitleSale = /\/타이틀정보\s+(\d+)\s*$/;
-                    var matchTitleSale = msg.match(regexTitleSale);
-                    if (matchTitleSale) {
-                        var titleData = loadJsonFile(memberTitlePath);
-                        let titleList = titleData.member[sender].title.list;
-                        var titleNumber = parseInt(matchTitleSale[1], 10);
-                        if (titleList && titleList.length >= titleNumber) {
-                            var saleTitleName = titleList[titleNumber - 1].name;
-                            var saleTitlePrice = titleList[titleNumber - 1].price;
-                            var saleTitleIndate = formatDateTime(titleList[titleNumber - 1].inDate);
-                            var sellPrice = 0;
-                            if (saleTitlePrice < 10000) {
-                                sellPrice = 1000000;
-                            } else {
-                                sellPrice = saleTitlePrice * 0.3;
-                            }
-                            replier.reply(
-                                "[" +
-                                checkRank(data, petData, guildData, sender) +
-                                "] 님의 타이틀 [" +
-                                saleTitleName +
-                                "] 상세정보\n" +
-                                "획득일:" +
-                                saleTitleIndate +
-                                "\n구매액: 🅟" +
-                                numberWithCommas(saleTitlePrice) +
-                                "\n판매가: 🅟" +
-                                numberWithCommas(parseInt(sellPrice))
-                            );
-                        } else {
-                            replier.reply("해당 번호의 타이틀이 존재하지 않습니다.");
-                        }
-                    } else {
-                        replier.reply("올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀정보 [번호]");
-                    }
+                    var titleInfoMatch = msg.match(/^\/타이틀정보\s+(\d+)\s*$/);
+                    var titleInfoData = loadJsonFile(memberTitlePath);
+                    var titleInfoOwner = titleInfoData.member && titleInfoData.member[sender];
+                    var titleInfoList = titleInfoOwner && titleInfoOwner.title && titleInfoOwner.title.list;
+                    var titleInfoNumber = titleInfoMatch ? Number(titleInfoMatch[1]) : 0;
+                    if (Array.isArray(titleInfoList) && isPointShopSafeCount(titleInfoNumber) && titleInfoNumber >= 1 && titleInfoNumber <= titleInfoList.length) {
+                        var titleInfoRow = titleInfoList[titleInfoNumber - 1];
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 [" + titleInfoRow.name + "] 상세정보\n획득일:" + formatDateTime(titleInfoRow.inDate) +
+                            "\n구매액: 🅟" + numberWithCommas(titleInfoRow.price) + "\n판매가: 🅟" + numberWithCommas(getMemberTitleSalePoint(titleInfoRow)));
+                    } else replier.reply(titleInfoMatch ? "해당 번호의 타이틀이 존재하지 않습니다." : "올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀정보 [번호]");
+                    return;
                 }
-                if (msg.startsWith("/타이틀판매")) {
+                if (msg === "/타이틀판매" || /^\/타이틀판매\s+\d+\s*$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var regexTitleSale = /\/타이틀판매\s+(\d+)\s*$/;
-                    var matchTitleSale = msg.match(regexTitleSale);
-                    if (matchTitleSale) {
-                        var titleData = loadJsonFile(memberTitlePath);
-                        let titleList = titleData.member[sender].title.list;
-                        var titleNumber = parseInt(matchTitleSale[1], 10);
-                        if (titleList && titleList.length >= titleNumber) {
-                            var saleTitleName = titleList[titleNumber - 1].name;
-                            var saleTitlePrice = titleList[titleNumber - 1].price;
-                            var sellPrice = 0;
-                            if (saleTitlePrice < 10000) {
-                                sellPrice = 1000000;
-                            } else {
-                                sellPrice = saleTitlePrice * 0.3;
-                            }
-                            if (titleNumber == titleData.member[sender].title.num) {
-                                titleData.member[sender].title.num = null;
-                            }
-                            titleList.splice(titleNumber - 1, 1);
-                            data.member[sender].point += parseInt(sellPrice);
-                            replier.reply(
-                                "[" +
-                                checkRank(data, petData, guildData, sender) +
-                                "] 님의 타이틀 [" +
-                                saleTitleName +
-                                "] \n 🅟" +
-                                numberWithCommas(parseInt(sellPrice)) +
-                                " 포인트에 판매 되었습니다."
-                            );
-                            saveJsonFile(titleData, memberTitlePath);
-                        } else {
-                            replier.reply("해당 번호의 타이틀이 존재하지 않습니다.");
-                        }
-                    } else {
-                        replier.reply("올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀판매 [번호]");
-                    }
+                    var titleSaleMatch = msg.match(/^\/타이틀판매\s+(\d+)\s*$/);
+                    if (!titleSaleMatch) { replier.reply("올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀판매 [번호]"); return; }
+                    var titleSaleData = loadJsonFile(memberTitlePath);
+                    var titleSaleSnapshot = JSON.stringify(titleSaleData);
+                    var titleSaleNumber = Number(titleSaleMatch[1]);
+                    var titleSaleResult = applyMemberTitleSale(data, titleSaleData, sender, titleSaleNumber, titleSaleNumber);
+                    if (!titleSaleResult.ok) { replier.reply("타이틀 번호 또는 포인트 데이터를 확인해주세요. 판매는 처리되지 않았습니다."); return; }
+                    saveJsonFile(titleSaleData, memberTitlePath, false, titleSaleSnapshot);
+                    saveJsonFile(data, filePath);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 [" + titleSaleResult.sold[0] + "] \n 🅟" + numberWithCommas(titleSaleResult.total) + " 포인트에 판매 되었습니다.");
+                    return;
                 }
-                if (msg.startsWith("/타이틀지정판매")) {
+                if (msg === "/타이틀지정판매" || /^\/타이틀지정판매\s+\d+~\d+$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var regexRange = /\/타이틀지정판매\s+(\d+)~(\d+)$/;
-                    var matchRange = msg.match(regexRange);
-
-                    if (matchRange) {
-                        var titleData = loadJsonFile(memberTitlePath);
-                        let titleList = titleData.member[sender].title.list;
-
-                        if (!titleList || titleList.length === 0) {
-                            replier.reply("판매할 타이틀이 없습니다.");
-                            return;
-                        }
-
-                        var start = parseInt(matchRange[1], 10);
-                        var end = parseInt(matchRange[2], 10);
-
-                        if (start > end) {
-                            replier.reply("번호 범위가 올바르지 않습니다.");
-                            return;
-                        }
-
-                        var totalPrice = 0;
-                        var soldCount = 0;
-
-                        // 뒤에서부터 삭제 (번호 밀림 방지)
-                        for (var i = end; i >= start; i--) {
-                            if (titleList.length >= i) {
-                                var saleTitleName = titleList[i - 1].name;
-                                var saleTitlePrice = titleList[i - 1].price;
-
-                                var sellPrice = 0;
-
-                                if (saleTitlePrice < 10000) {
-                                    sellPrice = 1000000;
-                                } else {
-                                    sellPrice = saleTitlePrice * 0.3;
-                                }
-
-                                if (i == titleData.member[sender].title.num) {
-                                    titleData.member[sender].title.num = null;
-                                }
-
-                                titleList.splice(i - 1, 1);
-
-                                totalPrice += parseInt(sellPrice);
-                                soldCount++;
-                            }
-                        }
-
-                        data.member[sender].point += totalPrice;
-
-                        saveJsonFile(titleData, memberTitlePath);
-
-                        replier.reply(
-                            "[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 " + soldCount + "개가 정리되었습니다.\n" + "💰 총 판매금액 : 🅟" + numberWithCommas(totalPrice)
-                        );
-                    } else {
-                        replier.reply("사용법 : /타이틀지정판매 1~3");
-                    }
+                    var titleRangeMatch = msg.match(/^\/타이틀지정판매\s+(\d+)~(\d+)$/);
+                    if (!titleRangeMatch) { replier.reply("사용법 : /타이틀지정판매 1~3"); return; }
+                    var titleRangeData = loadJsonFile(memberTitlePath);
+                    var titleRangeSnapshot = JSON.stringify(titleRangeData);
+                    var titleRangeResult = applyMemberTitleSale(data, titleRangeData, sender, Number(titleRangeMatch[1]), Number(titleRangeMatch[2]));
+                    if (!titleRangeResult.ok) { replier.reply("타이틀 번호 범위 또는 포인트 데이터를 확인해주세요. 판매는 처리되지 않았습니다."); return; }
+                    saveJsonFile(titleRangeData, memberTitlePath, false, titleRangeSnapshot);
+                    saveJsonFile(data, filePath);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 " + titleRangeResult.sold.length + "개가 정리되었습니다.\n💰 총 판매금액 : 🅟" + numberWithCommas(titleRangeResult.total));
+                    return;
                 }
                 if (msg.startsWith("/펫타이틀판매")) {
                     if (castleSiegeFlag) return;
@@ -31669,7 +31622,9 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
+    return command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+        /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
+        command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
         /^\/상점추가\s+[^\r\n]+\s+\d+\s*$/.test(command) ||
         getRaidSealCraftRequest(command) !== null ||
@@ -32029,6 +31984,166 @@ function getCoffeePackageSpecialIndex(roll) {
     }
 
     return -1;
+}
+
+// 쿠키 한 개의 일반·특별·미당첨 결과를 독립적으로 추첨하는 함수
+function rollFortuneCookieTitle(random) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    var draw = random(); // 일반 50%와 특별 1%를 배타적으로 판정
+    if (typeof draw !== "number" || !isFinite(draw) || draw < 0 || draw >= 1) throw new Error("호츈쿠키 추첨값 오류");
+    if (draw >= config.specialRate + config.generalRate) return null;
+    var special = draw < config.specialRate;
+    var generalConceptCount = config.concepts.length - 1; // 마지막 항목은 호월신 전용 콘셉트
+    var concept = config.concepts[special ? generalConceptCount : Math.floor(random() * generalConceptCount)];
+    var head = special ? concept.title : concept.title.replace("{닉네임}", config.names[Math.floor(random() * config.names.length)]);
+    var quote = concept.quotes[Math.floor(random() * concept.quotes.length)];
+    if (!head || !quote || head.indexOf("undefined") !== -1) throw new Error("호츈쿠키 타이틀 추첨 오류");
+    return { name: head + " ⎯ " + quote, head: head, quote: quote, special: special };
+}
+
+// 개봉 전 전체 결과와 재화 경계를 검사한 뒤 쿠키·보상·타이틀을 함께 변경하는 함수
+function applyFortuneCookieOpen(data, titleData, user, count, random, acquiredAt) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    var member = data.member && data.member[user];
+    if (!isPointShopSafeCount(count) || count < 1 || count > config.maxOpen) return { ok: false, reason: "quantity" };
+    if (!member) return { ok: false, reason: "data" };
+    var bag = member.bag;
+    if (bag !== undefined && (!bag || typeof bag !== "object" || Array.isArray(bag))) return { ok: false, reason: "data" };
+    var held = bag && Object.prototype.hasOwnProperty.call(bag, config.itemName) ? bag[config.itemName] : 0;
+    if (!isPointShopSafeCount(held)) return { ok: false, reason: "data" };
+    if (held < count) return { ok: false, reason: "shortage", held: held };
+    if (!titleData || typeof titleData !== "object" || Array.isArray(titleData) ||
+        !titleData.member || typeof titleData.member !== "object" || Array.isArray(titleData.member)) return { ok: false, reason: "data" };
+    var owner = titleData.member[user];
+    if (owner && (!owner.title || !Array.isArray(owner.title.list))) return { ok: false, reason: "data" };
+    var list = owner ? owner.title.list.slice() : [];
+    for (var oldIndex = 0; oldIndex < list.length; oldIndex++) if (!list[oldIndex] || typeof list[oldIndex].name !== "string") return { ok: false, reason: "data" };
+    var results = [], newCount = 0, duplicateCount = 0, specialCount = 0, missed = 0;
+    for (var i = 0; i < count; i++) {
+        var result = rollFortuneCookieTitle(random);
+        if (!result) { missed++; continue; }
+        result.duplicate = false;
+        for (var titleIndex = 0; titleIndex < list.length; titleIndex++) {
+            if (list[titleIndex].name === result.name) { result.duplicate = true; break; }
+        }
+        if (result.duplicate) duplicateCount++;
+        else {
+            newCount++;
+            list.push({ name: result.name, inDate: acquiredAt, price: 0, kind: "fortuneCookie" });
+        }
+        if (result.special) specialCount++;
+        results.push(result);
+    }
+    var pointBonus = duplicateCount * config.duplicatePoint; // 한 개봉 안의 반복 당첨도 중복 보상에 포함
+    var diamondBonus = specialCount * config.specialDiamond; // 특별 당첨은 신규·중복 모두 다이아 지급
+    var point = member.point === undefined ? 0 : member.point;
+    var diamond = member.diamond === undefined ? 0 : member.diamond;
+    if (!isPointShopSafeCount(point) || !isPointShopSafeCount(point + pointBonus) ||
+        !isPointShopSafeCount(diamond) || !isPointShopSafeCount(diamond + diamondBonus)) return { ok: false, reason: "data" };
+    for (var rewardIndex = 0; rewardIndex < config.rewards.length; rewardIndex++) {
+        var reward = config.rewards[rewardIndex];
+        var existing = Object.prototype.hasOwnProperty.call(bag, reward.name) ? bag[reward.name] : 0;
+        if (!isPointShopSafeCount(existing) || !isPointShopSafeCount(existing + reward.count * count)) return { ok: false, reason: "data" };
+    }
+    removeItem(data, user, config.itemName, count);
+    for (var addIndex = 0; addIndex < config.rewards.length; addIndex++) {
+        addItemToBag(bag, config.rewards[addIndex].name, config.rewards[addIndex].count * count);
+    }
+    member.point = point + pointBonus;
+    member.diamond = diamond + diamondBonus;
+    if (newCount > 0) {
+        ensureTitleUserData(titleData, user);
+        titleData.member[user].title.list = list;
+    }
+    return { ok: true, count: count, remaining: held - count, results: results, newCount: newCount,
+        duplicateCount: duplicateCount, specialCount: specialCount, missed: missed, pointBonus: pointBonus, diamondBonus: diamondBonus };
+}
+
+// 호츈쿠키 개인 개봉 결과와 접힌 보상·당첨 내역을 구성하는 함수
+function buildFortuneCookieOpenMessage(result, nick) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    var lines = ["🥠 호츈쿠키 개봉", "━━━━━━━━━━━━", "🥠 소모: " + result.count + "개 🥠 남음: " + numberWithCommas(result.remaining) + "개", "", nick + " 님", ""];
+    if (result.count === 1) {
+        if (result.missed) lines.push("❌ 타이틀 미당첨", "기본 보상은 정상 지급되었습니다.");
+        else {
+            var single = result.results[0];
+            lines.push(single.special ? "⭕ 호월신 특별 당첨!" + (single.duplicate ? " · 중복" : "") : "⭕ 타이틀 당첨!" + (single.duplicate ? " · 중복" : ""), single.head, "└ " + single.quote);
+        }
+    } else {
+        lines.push("⭕ 타이틀 당첨: " + result.results.length + "회");
+        if (result.results.length) lines.push("└ 신규 " + result.newCount + "회 · 중복 " + result.duplicateCount + "회");
+        lines.push("❌ 타이틀 미당첨: " + result.missed + "회");
+        if (result.specialCount) lines.push("", "⭕ 호월신 당첨: " + result.specialCount + "회", "└ 전체 당첨 " + result.results.length + "회에 포함");
+        if (!result.results.length) lines.push("", "기본 보상은 정상 지급되었습니다.");
+    }
+    if (result.pointBonus) lines.push("", "💰 중복 보상: 🅟" + numberWithCommas(result.pointBonus));
+    if (result.diamondBonus) lines.push("💎 특별 보상: 다이아 " + numberWithCommas(result.diamondBonus) + "개");
+    lines.push("━━━━━━━━━━━━", result.count > 1 && result.results.length ? "📦 보상 · 당첨 내역 펼쳐보기" : "📦 받은 보상 펼쳐보기", allsee, "", result.count > 1 ? "📦 기본 보상 합계" : "📦 기본 보상");
+    for (var rewardIndex = 0; rewardIndex < config.rewards.length; rewardIndex++) lines.push(config.rewards[rewardIndex].name + " ×" + numberWithCommas(config.rewards[rewardIndex].count * result.count));
+    if (result.diamondBonus) lines.push("━━━━━━━━━━━━", result.count > 1 ? "✨ 특별 보상 합계" : "✨ 특별 보상", "다이아💎 ×" + numberWithCommas(result.diamondBonus));
+    if (result.pointBonus) lines.push("━━━━━━━━━━━━", result.count > 1 ? "💰 중복 보상 합계" : "🔄 중복 보상", "🅟" + numberWithCommas(result.pointBonus) + " 지급");
+    if (result.count > 1) {
+        var groups = [{ duplicate: false, count: result.newCount, label: "신규" }, { duplicate: true, count: result.duplicateCount, label: "중복" }];
+        for (var groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+            var group = groups[groupIndex];
+            if (!group.count) continue;
+            lines.push("━━━━━━━━━━━━", "⭕ " + group.label + " 당첨 · " + group.count + "회", "");
+            var ordinal = 0;
+            for (var rowIndex = 0; rowIndex < result.results.length; rowIndex++) {
+                var row = result.results[rowIndex];
+                if (row.duplicate !== group.duplicate) continue;
+                lines.push((++ordinal) + ". " + row.head, "└ " + row.quote);
+                if (row.duplicate) lines.push("💰 🅟" + numberWithCommas(config.duplicatePoint) + " 지급");
+                lines.push("");
+            }
+        }
+        if (result.missed && result.results.length) lines.push("━━━━━━━━━━━━", "❌ 타이틀 미당첨 · " + result.missed + "회", "기본 보상은 정상 지급되었습니다.");
+    }
+    if (result.duplicateCount) lines.push("", "※ 중복 타이틀은 추가 지급되지 않습니다.");
+    if (result.specialCount && result.count === 1) lines.push("", "호월신 당첨으로 일반 타이틀은 지급되지 않습니다.");
+    return lines.join("\n");
+}
+
+// 호월신 당첨 한 건의 독립 전체알림을 구성하는 함수
+function buildFortuneCookieSpecialNotice(result, nick) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    return ["[🥠전체알림]", "이미지링크: " + config.imageLink, "호츈쿠키 · 특별 당첨!", "━━━━━━━━━━━━",
+        nick + " 님에게", "✨ 호월신이 강림했습니다! ✨", "⭕ 1% 확률의 특별 당첨!", result.head,
+        "└ " + result.quote, "💎 특별 보상: 다이아 " + config.specialDiamond + "개"].join("\n");
+}
+
+// 쿠키 타이틀은 확정 판매가를 사용하고 기존 타이틀의 판매 계산을 유지하는 함수
+function getMemberTitleSalePoint(title) {
+    if (title.kind === "fortuneCookie") return GLOBAL_CONFIG.fortuneCookie.titleSalePoint;
+    return title.price < 10000 ? 1000000 : parseInt(title.price * 0.3, 10);
+}
+
+// 타이틀 삭제 뒤에도 기존에 장착한 다른 타이틀의 번호를 유지하는 함수
+function removeMemberTitleAt(title, index) {
+    if (Number(title.num) === index + 1) title.num = null;
+    else if (Number(title.num) > index + 1) title.num = Number(title.num) - 1;
+    title.list.splice(index, 1);
+}
+
+// 단일·구간 판매의 포인트 경계를 검사하고 판매 타이틀과 장착 번호를 함께 갱신하는 함수
+function applyMemberTitleSale(data, titleData, user, start, end) {
+    var member = data.member && data.member[user];
+    var title = titleData && titleData.member && titleData.member[user] && titleData.member[user].title;
+    if (!member || !title || !Array.isArray(title.list) || !isPointShopSafeCount(start) ||
+        !isPointShopSafeCount(end) || start < 1 || end < start || start > title.list.length) return { ok: false };
+    var last = Math.min(end, title.list.length); // 기존 구간 판매처럼 보유 범위를 넘는 끝 번호는 제외
+    var total = 0, sold = [];
+    for (var i = start - 1; i < last; i++) {
+        if (!title.list[i]) return { ok: false };
+        var price = getMemberTitleSalePoint(title.list[i]);
+        if (!isPointShopSafeCount(price) || !isPointShopSafeCount(total + price)) return { ok: false };
+        total += price;
+        sold.push(title.list[i].name);
+    }
+    if (!isPointShopSafeCount(member.point) || !isPointShopSafeCount(member.point + total)) return { ok: false };
+    for (var index = last - 1; index >= start - 1; index--) removeMemberTitleAt(title, index);
+    member.point += total;
+    return { ok: true, total: total, sold: sold };
 }
 
 // 사용자 타이틀 데이터 기본 구조 보정 함수
@@ -32892,6 +33007,8 @@ function isServerRaidTurnQueryCommand(msg) {
 // 대전 중 기존 명령 처리로 통과시킬 추가 예외와 해당 인수 형식을 확인하는 함수
 function isServerRaidAdditionalCommand(msg) {
     return GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
+        /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg) ||
+        /^\/검색인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
         /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
         /^\/패키지가방\s+.+$/.test(msg) ||
         /^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg) ||

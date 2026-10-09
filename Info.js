@@ -916,7 +916,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let titleNum = titleData.member[sender].title.num;
 					if (titleList && titleList.length > 0) {
 						let titleOutput = "[" + checkRank(data, petData, guildData, sender) + "]님의 타이틀 목록\n\n";
-						if (titleList.length > 10) {
+						if (titleList.length >= 10) {
 							titleOutput += "타이틀 10개 이상 보유자\n" + allsee;
 						}
 						titleList.forEach((title, index) => {
@@ -943,7 +943,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					let titleNum = titleData.member[targetUser].title.num;
 					if (titleList && titleList.length > 0) {
 						let titleOutput = "[" + checkRank(data, petData, guildData, targetUser) + "]님의 타이틀 목록\n\n";
-						if (titleList.length > 10) {
+						if (titleList.length >= 10) {
 							titleOutput += "타이틀 10개 이상 보유자\n" + allsee;
 						}
 						titleList.forEach((title, index) => {
