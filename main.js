@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.620"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.621"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -996,7 +996,6 @@ const GLOBAL_CONFIG = {
             {"title":"호월신의 축복✨","quotes":["그대에게 행운을 내리노라!","호월의 빛이 그대를 비추리라!","그대의 쿠키에 별을 담았노라!","오늘의 축복은 그대의 것이니라!","그대의 이름을 별에 새겼노라!","작은 쿠키에 큰 축복을 담았노라!","내가 그대의 행운이 되어주리라!","그대의 정성에 축복으로 답하노라!","그대의 앞길에 빛을 놓으리라!","용기를 내라, 내가 함께하노라!","내가 고른 행운의 주인이로다!","호월의 별들이 그대를 반기노라!","이 한 입에 신의 마음을 담았노라!","그대에게 빛나는 인연을 보내노라!","그대의 웃음에 나도 미소 짓노라!","쿠키를 연 손에 축복이 깃들리라!","나의 축복을 당당히 지니거라!","마침내 나의 쪽지를 찾았구나!","그대의 소원을 귀담아듣겠노라!","오늘은 신도 그대의 편이니라!","그대의 도전에 박수를 보내노라!","나의 별빛을 그대에게 나누노라!","달빛을 따라 축복을 보냈노라!","그대의 하루에 반짝임을 더하노라!","행운의 문이 그대를 맞이하노라!","호월신의 눈에 그대가 들었노라!","기쁜 마음으로 이 복을 받거라!","그대의 곁에 온기를 남기노라!","그대의 쿠키를 친히 골랐노라!","이 만남 또한 축복이니라!"]}
         ]
     },
-    nicknameRank: { maxRank: 100 },
     searchAuthentication: { maxKeywordLength: 10, diamondReward: 1, keywordVisibleRows: 5, adminVisibleRows: 3 },
     permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
         additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
@@ -2842,11 +2841,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg) && !isServerRaidAdditionalCommand(msg))) {
             var raidPetData = loadJsonFile(memberPetPath);
             var raidGuildData = loadJsonFile(guildPath);
-            ctx.nicknameRanks = { data: data, petData: raidPetData, guildData: raidGuildData, load: function () {
-                if (!ctx.nicknameRanks.homeData) ctx.nicknameRanks.homeData = loadJsonFile(homeDataFile);
-                if (!ctx.nicknameRanks.petSkillData) ctx.nicknameRanks.petSkillData = loadJsonFile(petSkillDataPath);
-                return buildNicknameWorldRanks(ctx.nicknameRanks.data, ctx.nicknameRanks.petData, ctx.nicknameRanks.homeData, ctx.nicknameRanks.petSkillData, ctx.nicknameRanks.guildData);
-            } };
             var raidNick = data.member && data.member[sender] ? "[" + checkRank(data, raidPetData, raidGuildData, sender) + "] 님" : "[" + sender + "] 님";
             var raidMaster = isMasterIdentity(sender); // 시작·종료는 방과 무관하게 기존 MASTER 명단으로 권한 확인
             var raidOperator = raidMaster || isServerRaidVerifiedOperator(serverRaidEvent, isGroupChat);
@@ -2944,8 +2938,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replyServerRaidSafely(replier, raidExcessMessage);
                     return;
                 }
-                var raidHomeData = ctx.nicknameRanks.homeData || loadJsonFile(homeDataFile);
-                var raidSkills = ctx.nicknameRanks.petSkillData || loadJsonFile(petSkillDataPath);
+                var raidHomeData = loadJsonFile(homeDataFile);
+                var raidSkills = loadJsonFile(petSkillDataPath);
                 var raidR = calculateRaidExp(sender, data, raidPetData, raidHomeData, raidSkills, false, raidGuildData);
                 requireServerRaidSafeInteger(raidR, "레이드매력");
                 var raidCriticalResult = {}; // 데미지가 같아도 실제 치명타 판정값을 보존
@@ -3735,10 +3729,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         commonStepStart = Date.now();
         var guildData = loadJsonFile(guildPath);
         addResponseTiming("guildData.json 로드", commonStepStart);
-        ctx.nicknameRanks = { data: data, petData: petData, guildData: guildData, petSkillData: petSkillData, load: function () {
-            if (!ctx.nicknameRanks.homeData) ctx.nicknameRanks.homeData = loadJsonFile(homeDataFile);
-            return buildNicknameWorldRanks(ctx.nicknameRanks.data, ctx.nicknameRanks.petData, ctx.nicknameRanks.homeData, ctx.nicknameRanks.petSkillData, ctx.nicknameRanks.guildData);
-        } };
         var attendanceNoticeCommandPrefix = getAttendanceNoticeCommandPrefix(msg);
         if (attendanceNoticeCommandPrefix) {
             if (!isMasterIdentity(sender)) {
@@ -8705,16 +8695,6 @@ replier.reply(
                     } else {
                         replier.reply(emojiNick + "\n본인의 순위 이모지를 다시 표시합니다.\n\n숨기려면 /이모지감추기를 입력해주세요.");
                     }
-                    return;
-                }
-                if (msg === "/순위감추기") {
-                    if (!data.member[sender].displaySettings) data.member[sender].displaySettings = {};
-                    data.member[sender].displaySettings.hideWorldRank = data.member[sender].displaySettings.hideWorldRank !== true;
-                    saveJsonFile(data, filePath);
-                    var worldRankHidden = data.member[sender].displaySettings.hideWorldRank;
-                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
-                        (worldRankHidden ? "🙈 닉네임 순위 표시를 껐습니다.\n닉네임 앞 [N등] 표시가 숨겨집니다.\n\n👉 다시 표시 설정: /순위감추기" :
-                        "👁️ 닉네임 순위 표시를 켰습니다.\n월드 종합순위 1~100등이면\n닉네임 앞에 [N등]이 표시됩니다.\n\n👉 다시 숨김 설정: /순위감추기"));
                     return;
                 }
                 if (msg === "/관리자명단") {
@@ -31653,7 +31633,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/알림\s+.+$/.test(command) || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command) ||
         /^\/서버변경\s+\S(?:.*\S)?$/.test(command) || /^\/관리자추가\s+\S(?:.*\S)?$/.test(command) || /^\/관리자삭제\s+\S(?:.*\S)?$/.test(command) ||
-        command === "/관리자감추기" || command === "/이모지감추기" || command === "/순위감추기" || /^\/검색인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(command) || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
+        command === "/관리자감추기" || command === "/이모지감추기" || /^\/검색인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(command) || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
 }
 
 // 자동일퀘 대상 3종이 보너스 횟수까지 완료됐는지 확인하는 함수
@@ -31742,10 +31722,10 @@ function createContextReplier(replier, ctx) {
     };
 }
 
-// 기존 아이디 외곽 괄호와 새 순위·무쌍 접두어를 화면에서 각각 한 번만 출력하는 함수
+// 기존 아이디 외곽 괄호와 무쌍 접두어를 화면에서 각각 한 번만 출력하는 함수
 function formatNicknameRankMessage(message) {
     if (typeof message !== "string") return message;
-    return message.replace(/\[((?:\[무쌍⚔️\])(?:\[\d+등\])?|\[\d+등\])([^\[\]\r\n]+)\]/g, "$1[$2]");
+    return message.replace(/\[(\[무쌍⚔️\])([^\[\]\r\n]+)\]/g, "$1[$2]");
 }
 
 // 영지전 균열 조정 명령어의 정확한 입력 형식을 확인하는 함수
@@ -32941,15 +32921,6 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
             autoDailyBatch.files[path] = data;
             autoDailyBatch.dirtyPaths[path] = true;
             return;
-        }
-        var nicknameRanks = getCurrentContext().nicknameRanks;
-        if (nicknameRanks) {
-            if (path === resolveActiveDataPath(filePath)) nicknameRanks.data = data;
-            if (path === resolveActiveDataPath(memberPetPath)) nicknameRanks.petData = data;
-            if (path === resolveActiveDataPath(guildPath)) nicknameRanks.guildData = data;
-            if (path === resolveActiveDataPath(homeDataFile)) nicknameRanks.homeData = data;
-            if (path === resolveActiveDataPath(petSkillDataPath)) nicknameRanks.petSkillData = data;
-            delete nicknameRanks.rows; // 저장한 현재 장착·스킬·홈 상태로 다음 닉네임 순위를 다시 계산
         }
         var jsonText = JSON.stringify(data);
         if (typeof jsonText !== "string") {
@@ -45020,32 +44991,6 @@ function getMemberRankEmojiForDisplay(member) {
     return member.displaySettings && member.displaySettings.hideRankEmoji === true ? getTierEmojiForMember(member) : (member.rank.emoji || "");
 }
 
-// 현재 월드 종합순위와 같은 점수·동률 순서로 닉네임 순위표를 생성하는 함수
-function buildNicknameWorldRanks(data, petData, homeData, petSkillData, guildData) {
-    var rows = [];
-    for (var name in data.member) {
-        if (!Object.prototype.hasOwnProperty.call(data.member, name)) continue;
-        var score = petData[name] ? (calculateCastleExp(name, data, petData, homeData, petSkillData, false, guildData) || 0) +
-            (calculateRaidExp(name, data, petData, homeData, petSkillData, false, guildData) || 0) + calculatePetUpgradeCharm(name, data, petData) : 0;
-        rows.push({ key: name, totalExp: score });
-    }
-    rows.sort(function (a, b) { return b.totalExp - a.totalExp; });
-    return rows;
-}
-
-// 현재 명령에서 준비한 순위표를 한 번만 계산해 닉네임 접두어를 반환하는 함수
-function getNicknameWorldRank(data, petData, guildData, user) {
-    var member = data.member[user];
-    if (!member || (member.displaySettings && member.displaySettings.hideWorldRank === true)) return 0;
-    var ranking = getCurrentContext().nicknameRanks;
-    if (!ranking || ranking.data !== data) return 0;
-    if (!ranking.rows) ranking.rows = ranking.load();
-    for (var i = 0; i < ranking.rows.length && i < GLOBAL_CONFIG.nicknameRank.maxRank; i++) {
-        if (ranking.rows[i].key === user) return i + 1;
-    }
-    return 0;
-}
-
 function checkRank(data, petData, guildData, user) {
     let userwithrank = user;
     if (!guildData) {
@@ -45111,8 +45056,6 @@ function checkRank(data, petData, guildData, user) {
             }
         }
 
-        var worldNicknameRank = getNicknameWorldRank(data, petData, guildData, user);
-        if (worldNicknameRank) userwithrank = "[" + worldNicknameRank + "등]" + userwithrank;
         var musouChampion = data.petMusou && data.petMusou.currentChampion ? data.petMusou.currentChampion : null;
         if (musouChampion && musouChampion.user === user && musouChampion.expiresAt > new Date().getTime()) {
             userwithrank = "[무쌍⚔️]" + userwithrank;

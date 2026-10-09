@@ -7,7 +7,6 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
-    nicknameRank: { maxRank: 100 },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
@@ -607,10 +606,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		var petData = loadJsonFile(memberPetPath);
 		var petSkillData = loadJsonFile(petSkillDataPath) || {};
-		ctx.nicknameRanks = { data: data, petData: petData, guildData: guildData, load: function () {
-			if (!ctx.nicknameRanks.homeData) ctx.nicknameRanks.homeData = loadJsonFile(homeDataFile);
-			return buildNicknameWorldRanks(data, petData, ctx.nicknameRanks.homeData, petSkillData, guildData);
-		} };
 		var titleData = loadJsonFile(memberTitlePath);
 		var petTitleData = loadJsonFile(petTitlePath);
 
@@ -1963,10 +1958,10 @@ function createContextReplier(replier, ctx) {
 	};
 }
 
-// 기존 아이디 외곽 괄호와 새 순위·무쌍 접두어를 화면에서 각각 한 번만 출력하는 함수
+// 기존 아이디 외곽 괄호와 무쌍 접두어를 화면에서 각각 한 번만 출력하는 함수
 function formatNicknameRankMessage(message) {
 	if (typeof message !== "string") return message;
-	return message.replace(/\[((?:\[무쌍⚔️\])(?:\[\d+등\])?|\[\d+등\])([^\[\]\r\n]+)\]/g, "$1[$2]");
+	return message.replace(/\[(\[무쌍⚔️\])([^\[\]\r\n]+)\]/g, "$1[$2]");
 }
 
 function getDataFileName(path) {
@@ -2245,8 +2240,6 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 
 function generateRanking(data, petData, homeData, petSkillData, guildData) {
 	let userScores = buildNicknameWorldRanks(data, petData, homeData, petSkillData, guildData);
-	var nicknameRanks = getCurrentContext().nicknameRanks;
-	if (nicknameRanks && nicknameRanks.data === data && nicknameRanks.petData === petData && nicknameRanks.guildData === guildData) nicknameRanks.rows = userScores;
 
 	let rankingMsg1 = ""; // 상위 5명 메시지
 	let rankingMsg2 = ""; // 나머지 메시지
@@ -2332,8 +2325,8 @@ function formatOverallUserRow(row, rank, data, petData, guildData, sender) {
 // 공통 닉네임의 접두어와 아이디 괄호를 각각 한 번씩 출력하는 함수
 function formatRankNickname(data, petData, guildData, user) {
 	var text = checkRank(data, petData, guildData, user);
-	var parts = text.match(/^(\[무쌍⚔️\])?(\[\d+등\])?([\s\S]*)$/);
-	return (parts[1] || "") + (parts[2] || "") + "[" + parts[3] + "]";
+	var parts = text.match(/^(\[무쌍⚔️\])?([\s\S]*)$/);
+	return (parts[1] || "") + "[" + parts[2] + "]";
 }
 
 // 서버 합산 순위의 두 줄을 출력하는 함수
@@ -2353,7 +2346,7 @@ function buildWorldOverallRankingMessage(rows, sender, data, petData, guildData)
 		var needed = rows[myIndex - 1].totalExp - rows[myIndex].totalExp + 1; // 바로 윗순위 추월에 필요한 매력
 		lines.push("🎯 한 단계 위까지!\n" + myIndex + "위 [" + checkRank(data, petData, guildData, rows[myIndex - 1].key) + "]님 추월까지\n종합매력💞 +" + numberWithCommas(needed) + " 필요해요!");
 	}
-	lines.push("", "👁️ 닉네임 순위 설정: /순위감추기", "└ 1~100등 · 입력 시 표시 ↔ 숨김", "━━━━━━━━━━━━━");
+	lines.push("", "━━━━━━━━━━━━━");
 	for (var j = 0; j < rows.length; j++) {
 		if (j === 3) lines.push(allsee);
 		lines.push(formatOverallUserRow(rows[j], j + 1, data, petData, guildData, sender));
@@ -3085,7 +3078,7 @@ function getMemberRankEmojiForDisplay(member) {
 	return member.displaySettings && member.displaySettings.hideRankEmoji === true ? getTierEmojiForMember(member) : (member.rank.emoji || "");
 }
 
-// 현재 월드 종합순위와 같은 점수·동률 순서로 닉네임 순위표를 생성하는 함수
+// 월드·서버 종합순위에서 함께 사용하는 점수·동률 순서의 순위표를 생성하는 함수
 function buildNicknameWorldRanks(data, petData, homeData, petSkillData, guildData) {
     var rows = [];
     for (var name in data.member) {
@@ -3096,19 +3089,6 @@ function buildNicknameWorldRanks(data, petData, homeData, petSkillData, guildDat
     }
     rows.sort(function (a, b) { return b.totalExp - a.totalExp; });
     return rows;
-}
-
-// 현재 명령에서 준비한 순위표를 한 번만 계산해 닉네임 접두어를 반환하는 함수
-function getNicknameWorldRank(data, petData, guildData, user) {
-    var member = data.member[user];
-    if (!member || (member.displaySettings && member.displaySettings.hideWorldRank === true)) return 0;
-    var ranking = getCurrentContext().nicknameRanks;
-    if (!ranking || ranking.data !== data) return 0;
-    if (!ranking.rows) ranking.rows = ranking.load();
-    for (var i = 0; i < ranking.rows.length && i < GLOBAL_CONFIG.nicknameRank.maxRank; i++) {
-        if (ranking.rows[i].key === user) return i + 1;
-    }
-    return 0;
 }
 
 function checkRank(data, petData, guildData, user) {
@@ -3172,8 +3152,6 @@ function checkRank(data, petData, guildData, user) {
 			}
 		}
 
-		var worldNicknameRank = getNicknameWorldRank(data, petData, guildData, user);
-		if (worldNicknameRank) userwithrank = "[" + worldNicknameRank + "등]" + userwithrank;
 		var musouChampion = data.petMusou && data.petMusou.currentChampion ? data.petMusou.currentChampion : null;
 		if (musouChampion && musouChampion.user === user && musouChampion.expiresAt > new Date().getTime()) {
 			userwithrank = "[무쌍⚔️]" + userwithrank;

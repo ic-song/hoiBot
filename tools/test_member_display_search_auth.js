@@ -29,7 +29,6 @@ const legacyBranch = block(main, 'if (msg === "/인증" ||');
 const managementBranch = block(main, 'if (msg === "/검색인증관리" ||');
 const rankingBranch = block(main, 'if (msg === "/검색인증순위" ||');
 vm.runInContext("function runAuthBranch(){" + authBranch + legacyBranch + managementBranch + rankingBranch + "}", c);
-vm.runInContext("function runRankToggle(){" + block(main, 'if (msg === "/순위감추기")') + "}", c);
 
 // 저장 위치와 권한은 실제 컨텍스트·저장 함수를 사용한다.
 function runAuth(command, sender = "admin", room = "room90", dev = false) {
@@ -168,70 +167,62 @@ pass("손상 재화·안전정수 초과·응답 실패 시 트랜잭션 복구"
     assert.deepStrictEqual(fixture.read(), before);
 });
 
-// 두 런타임의 실제 공통 닉네임·월드 순위 계산·출력을 같은 합성 데이터로 비교한다.
+// 실제 닉네임 함수는 전체 매력 계산·홈 IO 없이 기존 표시만 구성해야 한다.
 function rankContext(source) {
     const state = {};
     const r = { allsee: "<ALLSEE>", getCurrentContext: () => state, numberWithCommas: n => String(n),
         getMyGuildInfo: () => null, getGuildMasterRankEmoji: () => "", getCheckRankTierEmoji: () => "🌱",
         getVisibleRankEmoji: (_d, _u, e) => e, getRankEmoji: n => String(n), getHoiPassPremiumHeader: () => "",
+        loadJsonFile: () => { throw Error("닉네임 표시에서 파일 IO 금지"); },
         calculateCastleExp: (u, d) => { r.calls++; return d.member[u].score || 0; },
         calculateRaidExp: () => 0, calculatePetUpgradeCharm: () => 0, calls: 0 };
     for (let i = 1; i <= 100; i++) r["room" + i] = "room" + i;
     r.testRoom = "test";
     vm.createContext(r);
     vm.runInContext(block(source, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", r);
-    for (const name of ["buildNicknameWorldRanks", "getNicknameWorldRank", "checkRank", "formatNicknameRankMessage"]) vm.runInContext(block(source, "function " + name + "("), r);
+    for (const name of ["checkRank", "formatNicknameRankMessage"]) vm.runInContext(block(source, "function " + name + "("), r);
     return { r, state };
 }
-for (const [label, source] of [["Main", main], ["Info", info]]) pass(label + " 1/100/101등·무쌍 순서·숨김·동률·반복 출력·순위 이동", () => {
+for (const [label, source] of [["Main", main], ["Info", info]]) pass(label + " 닉네임 자동 순위 제거·반복 출력 전체계산0회·기존 무쌍/숨김 데이터 유지", () => {
     const { r, state } = rankContext(source); const d = { member: {} }, pets = {}, guild = {};
-    for (let i = 1; i <= 101; i++) { const u = "계정" + i + " 남"; d.member[u] = { score: 102 - i }; pets[u] = {}; }
-    state.nicknameRanks = { data: d, petData: pets, guildData: guild, load: () => r.buildNicknameWorldRanks(d, pets, {}, {}, guild) };
+    for (let i = 1; i <= 101; i++) { const u = "계정" + i + " 남"; d.member[u] = { score: 102 - i, displaySettings:{hideWorldRank:i%2===0} }; pets[u] = {}; }
+    state.nicknameRanks = { load: () => { throw Error("제거한 표시 전용 순위 계산 실행"); } };
     const display = u => r.formatNicknameRankMessage("[" + r.checkRank(d, pets, guild, u) + "]");
-    assert.strictEqual(display("계정1 남"), "[1등][🌱계정1 남]");
-    assert.strictEqual(display("계정100 남"), "[100등][🌱계정100 남]");
-    assert.strictEqual(display("계정101 남"), "[🌱계정101 남]");
+    const before=JSON.stringify(d);
+    for(let pass=0;pass<5;pass++)for(const u of Object.keys(d.member)) assert.strictEqual(display(u),"[🌱"+u+"]");
+    assert.strictEqual(r.calls,0);assert.strictEqual(JSON.stringify(d),before);
     d.petMusou = { currentChampion: { user: "계정1 남", expiresAt: Date.now() + 100000 } };
-    assert.strictEqual(display("계정1 남"), "[무쌍⚔️][1등][🌱계정1 남]");
-    assert.strictEqual(r.calls, 101, "닉네임마다 전체 매력 재계산하지 않음");
-    d.member["계정1 남"].displaySettings = { hideWorldRank: true };
     assert.strictEqual(display("계정1 남"), "[무쌍⚔️][🌱계정1 남]");
-    d.member["계정1 남"].score = 0; delete state.nicknameRanks.rows;
-    d.member["계정1 남"].displaySettings.hideWorldRank = false;
-    assert.strictEqual(display("계정1 남"), "[무쌍⚔️][🌱계정1 남]");
-    d.member["계정1 남"].score = 200; delete state.nicknameRanks.rows;
-    assert.strictEqual(display("계정1 남"), "[무쌍⚔️][1등][🌱계정1 남]");
-    assert.strictEqual(r.formatNicknameRankMessage(display("계정1 남")), display("계정1 남"));
-    d.member["계정2 남"].score = 200; delete state.nicknameRanks.rows;
-    assert.strictEqual(display("계정2 남"), "[2등][🌱계정2 남]", "기존 월드 순위의 동률 순서 유지");
+    d.petMusou.currentChampion.expiresAt=0;assert.strictEqual(display("계정1 남"),"[🌱계정1 남]");
+    d.member["변경 남"]=d.member["계정1 남"];delete d.member["계정1 남"];
+    assert.strictEqual(display("변경 남"),"[🌱변경 남]");assert.strictEqual(r.calls,0);
 });
-pass("순위 토글·재입력·닉변·재시작·상위100 밖 설정·후행 인수 차단", () => {
-    seed(); let d = fixture.read(); d.member["신규 남"].displaySettings = { hideAdminTitle: true, hideRankEmoji: true }; fixture.write(d);
-    function toggle(msg, sender, dev = false) {
-        c.msg = msg; c.sender = sender; const ctx = c.createCommandContext(dev, "test"), prev = c.enterCommandContext(ctx);
-        c.data = c.loadJsonFile(c.filePath); c.petData = {}; c.guildData = {};
-        try { c.runRankToggle(); } finally { c.exitCommandContext(prev); }
-    }
-    toggle("/순위감추기", "신규 남"); d = fixture.read(); assert.strictEqual(d.member["신규 남"].displaySettings.hideWorldRank, true);
-    assert(d.member["신규 남"].displaySettings.hideAdminTitle && d.member["신규 남"].displaySettings.hideRankEmoji);
-    d.member["변경 남"] = d.member["신규 남"]; delete d.member["신규 남"]; fixture.write(d);
-    toggle("/순위감추기", "변경 남"); assert.strictEqual(fixture.read().member["변경 남"].displaySettings.hideWorldRank, false);
-    const before = fixture.read(); toggle("/순위감추기 1", "변경 남"); assert.deepStrictEqual(fixture.read(), before);
-    seed(["개발 여"], true); toggle("/순위감추기", "개발 여", true); assert.deepStrictEqual(fixture.read(), before);
-});
-pass("월드 화면 안내 위치·조회 본인/추월대상/목록 동일 포맷·숨김은 순위 수치 보존", () => {
-    const { r, state } = rankContext(info);
+pass("실제 월드·서버 순위와 매력·동률·무쌍 및 기존 목록 생성 유지", () => {
+    const { r } = rankContext(info);
     for (const name of ["buildNicknameWorldRanks", "generateRanking", "formatOverallRankPosition", "formatOverallUserRow", "formatRankNickname", "buildWorldOverallRankingMessage"])
         vm.runInContext(block(info, "function " + name + "("), r);
-    const d = { member: { "첫째 남": { score: 100 }, "둘째 여": { score: 90 } } }, pets = { "첫째 남": {}, "둘째 여": {} }, guild = {};
-    state.nicknameRanks = { data: d, petData: pets, guildData: guild, load: () => { throw Error("이미 계산한 순위 재로드"); } };
-    const rows = r.generateRanking(d, pets, {}, {}, guild).rows;
-    let out = r.formatNicknameRankMessage(r.buildWorldOverallRankingMessage(rows, "둘째 여", d, pets, guild));
-    assert(out.includes("[2등][🌱둘째 여]님")); assert(out.includes("1위 [1등][🌱첫째 남]님 추월까지"));
-    assert(out.indexOf("🎯 한 단계") < out.indexOf("/순위감추기")); assert(out.indexOf("/순위감추기") < out.indexOf("🥇"));
-    d.member["첫째 남"].displaySettings = { hideWorldRank: true };
-    out = r.formatNicknameRankMessage(r.buildWorldOverallRankingMessage(rows, "둘째 여", d, pets, guild));
-    assert(!out.includes("[1등]")); assert(out.includes("1위 [🌱첫째 남]님")); assert(out.includes("월드 순위: 2위"));
+    const d={member:{"첫째 남":{score:100},"둘째 여":{score:90,displaySettings:{hideWorldRank:true}},"셋째 남":{score:90},"펫없는 여":{score:999}}},pets={"첫째 남":{},"둘째 여":{},"셋째 남":{}},guild={};
+    const orig=r.checkRank;let formats=0;r.checkRank=(...args)=>{formats++;return orig(...args);};
+    const rankResult=r.generateRanking(d,pets,{}, {},guild),rows=rankResult.rows;
+    assert.strictEqual(formats,4);assert.strictEqual(r.calls,3);
+    assert(rankResult.rankingMsg1.includes("첫째 남")&&typeof rankResult.rankingMsg2==="string");
+    assert.deepStrictEqual(Array.from(rows,x=>[x.key,x.totalExp]),[["첫째 남",100],["둘째 여",90],["셋째 남",90],["펫없는 여",0]]);
+    d.petMusou={currentChampion:{user:"첫째 남",expiresAt:Date.now()+100000}};
+    const out=r.formatNicknameRankMessage(r.buildWorldOverallRankingMessage(rows,"둘째 여",d,pets,guild));
+    assert(out.includes("월드 순위: 2위")&&out.includes("종합매력: 90"));
+    assert(out.includes("종합매력💞 +11 필요해요!")&&out.includes("[무쌍⚔️][🌱첫째 남]"));
+    assert(!out.includes("/순위감추기")&&!/\[\d+등\]/.test(out));assert.strictEqual(r.calls,3);
+    assert(out.indexOf("🎯 한 단계")<out.indexOf("🥇"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);
+});
+pass("100·1000·5000명 기존 순위 집계·전체 목록 보존·닉네임 출력 중 재집계0회", () => {
+    for(const count of [100,1000,5000]){
+        const {r}=rankContext(info);for(const name of ["buildNicknameWorldRanks","generateRanking","formatOverallRankPosition","formatOverallUserRow","formatRankNickname","buildWorldOverallRankingMessage"]) vm.runInContext(block(info,"function "+name+"("),r);
+        const d={member:{}},pets={},guild={};for(let i=1;i<=count;i++){const u="계정"+i;d.member[u]={score:count-i+1};pets[u]={};}
+        let formats=0;const original=r.checkRank;r.checkRank=(...args)=>{formats++;return original(...args);};
+        const rows=r.generateRanking(d,pets,{}, {},guild).rows;assert.strictEqual(r.calls,count);assert.strictEqual(formats,count);
+        const out=r.buildWorldOverallRankingMessage(rows,"계정"+count,d,pets,guild);
+        assert.strictEqual(r.calls,count);assert.strictEqual(formats,count*2+2);assert(out.includes("월드 순위: "+count+"위"));
+    }
 });
 pass("실제 정보 분기에서 기존 인증 상태 보존·완료/미완료 명칭 출력", () => {
     const output = [], r = { msg: "/정보 신규 남", sender: "호이 남", data: { member: { "신규 남": { join: "20261009", lv: 1, exp: 0, like: 0, diamond: 0, point: 0, bag: {} } } },
@@ -244,25 +235,13 @@ pass("실제 정보 분기에서 기존 인증 상태 보존·완료/미완료 �
     r.data.member["신규 남"].voicecheck = 1; r.runInfo(); assert(output.pop().includes("• 검색인증: 완료"));
     assert(!info.includes("• 보룸인증:"));
 });
-pass("실제 진입 순위 로더의 홈 1회 읽기·저장 후 갱신·정수 경계·데이터 오류 노출", () => {
-    seed(); c.ctx = c.createCommandContext(false, "test"); const prev = c.enterCommandContext(c.ctx);
-    c.data = c.loadJsonFile(c.filePath); c.petData = c.loadJsonFile(c.memberPetPath); c.guildData = c.loadJsonFile(c.guildPath); c.petSkillData = c.loadJsonFile(c.petSkillDataPath);
-    c.calculateCastleExp = (u, d, p, h) => (d.member[u].score || 0) + (h[u] ? h[u].bonus : 0); c.calculateRaidExp = () => 0; c.calculatePetUpgradeCharm = () => 0;
-    for (const name of ["buildNicknameWorldRanks", "getNicknameWorldRank"]) vm.runInContext(block(main, "function " + name + "("), c);
-    try {
-        vm.runInContext(block(main, "ctx.nicknameRanks = { data: data, petData: petData,"), c);
-        fixture.clear(); const initial = c.getNicknameWorldRank(c.data, c.petData, c.guildData, "admin");
-        assert(initial > 0); c.getNicknameWorldRank(c.data, null, c.guildData, "admin");
-        assert.strictEqual(fixture.traces().filter(t => t.type === "load" && t.path === c.homeDataFile).length, 1);
-        c.data.member.admin.score = 10; c.saveJsonFile(c.data, c.filePath);
-        assert.strictEqual(c.getNicknameWorldRank(c.data, c.petData, c.guildData, "admin"), 1);
-        assert.strictEqual(fixture.traces().filter(t => t.type === "load" && t.path === c.homeDataFile).length, 1, "저장 후에도 명령의 홈 데이터 재사용");
-        c.saveJsonFile({ b: { bonus: 20 } }, c.homeDataFile);
-        assert.strictEqual(c.getNicknameWorldRank(c.data, c.petData, c.guildData, "admin"), 2, "다른 객체로 저장한 홈 상태도 현재 순위에 반영");
-        assert(!fixture.read().nicknameRanks, "출력 순위표를 운영 회원 데이터에 저장하지 않음");
-        delete c.ctx.nicknameRanks.rows; c.ctx.nicknameRanks.load = () => { throw Error("홈 JSON 파싱 실패"); };
-        assert.throws(() => c.getNicknameWorldRank(c.data, c.petData, c.guildData, "admin"), /JSON 파싱 실패/);
-        assert(!block(main, "function buildNicknameWorldRanks(").includes("loadJsonFile"));
-    } finally { c.exitCommandContext(prev); }
+pass("표시 전용 명령·로더 제거 및 DEV/운영 저장 분리 유지", () => {
+    for(const source of [main,info]){
+        assert(!source.includes("nicknameRanks")&&!source.includes("getNicknameWorldRank")&&!source.includes("hideWorldRank"));
+        assert(!source.includes("/순위감추기"));
+    }
+    const prev=c.enterCommandContext(c.createCommandContext(true,"test"));
+    try{const before=fixture.read();const d=c.loadJsonFile(c.filePath);d.member.admin.point+=1;c.saveJsonFile(d,c.filePath);assert.deepStrictEqual(fixture.read(),before);assert.strictEqual(fixture.read(true).member.admin.point,d.member.admin.point);}
+    finally{c.exitCommandContext(prev);}
 });
-console.log("신규 2건 " + groups + "개 검증 그룹 통과 (합성 데이터·실제 명령 분기·실제 저장/복구 함수)");
+console.log("검색인증·닉네임 순위 표시 제거 " + groups + "개 검증 그룹 통과 (합성 데이터·실제 명령 분기·실제 저장/복구 함수)");

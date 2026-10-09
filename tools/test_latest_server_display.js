@@ -168,7 +168,7 @@ assert(shopMessages[0].includes(item), "기존 아이템 이름 유지");
 assert(shopMessages[0].includes("🅟100,000,000,000"));
 
 for (const source of [main, info]) {
-    const c = context(source, ["getTierEmojiForMember", "getCheckRankTierEmoji", "getVisibleRankEmoji", "getMemberRankEmojiForDisplay", "getNicknameWorldRank", "checkRank"], {
+    const c = context(source, ["getTierEmojiForMember", "getCheckRankTierEmoji", "getVisibleRankEmoji", "getMemberRankEmojiForDisplay", "checkRank"], {
         ticketTierData: { 킹: { emoji: "👑" }, 벛꽃: { emoji: "🌸" } },
         getMyGuildInfo: () => ({ guild: { rank: 1 } }), getGuildMasterRankEmoji: () => "길드"
     });

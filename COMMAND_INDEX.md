@@ -7803,7 +7803,7 @@ Status: VERIFIED
 - 초월성장과 나 혼자만 레벨업의 장착·프리미엄 잠금·가방 수량을 합산해 1:1 보상한다.
 - 두 스킬은 추첨·컬렉션·장착·관리자 신규 지급·개인 거래·자유시장 신규 등록과 구매 대상에서 제외된다.
 
-# /순위감추기 · 월드 종합순위 닉네임 표시
+# 월드 종합순위 · 닉네임 순위 표시 제거
 
 Status: VERIFIED
 
@@ -7813,19 +7813,18 @@ Status: VERIFIED
 
 ## Related Helpers
 
-- `buildNicknameWorldRanks`, `getNicknameWorldRank`, `checkRank`
+- `buildNicknameWorldRanks` (Info의 실제 종합순위 계산에만 사용), `checkRank`
 - `formatNicknameRankMessage`, `createContextReplier`, `formatRankNickname` (Info)
 - `generateRanking`, `buildWorldOverallRankingMessage` (Info)
 
 ## Data Usage / Save Flow
 
-- `member.json -> member[user].displaySettings.hideWorldRank`: 저장값이 없으면 표시, 본인 설정만 토글하여 `saveJsonFile(data, filePath)` 후 응답한다.
+- `/순위감추기` 명령과 닉네임 앞 `[N등]` 표시를 제거했다. 기존 `displaySettings.hideWorldRank` 저장값은 읽거나 변경하지 않는다.
 - 기존 월드 종합순위와 같은 캐슬·레이드·펫강화 합산 및 동률 정렬을 사용하며 원본 아이디를 바꾸지 않는다.
-- 명령의 스레드별 `ctx.nicknameRanks`에 순위표를 메모리 보관한다. 최초 닉네임 출력 시 진입 흐름에 정의한 로더로 홈 데이터를 한 번 읽고 계산한다. Info 종합순위는 이미 계산한 행을 재사용한다.
-- 저장 후 메모리 순위표를 무효화하여 이후 출력은 변경된 매력으로 재계산한다. 홈/스킬은 명령 컨텍스트에서 재사용하며 새 순위표를 파일로 저장하지 않는다.
-- `checkRank`는 기존 반환 계약대로 무쌍·순위 접두어와 닉네임을 반환한다. 응답/공지의 `formatNicknameRankMessage`가 외곽 괄호를 정리하여 `[무쌍⚔️][N등][아이디]` 순서로 표시한다.
-- 숫자 접두어만 숨기며 기존 무쌍·티어/특별 이모지·실제 순위는 유지한다. `/종합순위`, `ㅈㅈㅈ`의 서버 현황 → 월드 응답 순서도 유지한다.
-- 명령은 정확한 `/순위감추기`만 실행하며 기존 출석·정지·방·대전 제한과 DEV/PROD 저장 경로를 따른다.
+- 닉네임 출력은 전체 회원 매력 계산·정렬·홈 로드를 실행하지 않는다. 표시 전용 컨텍스트와 저장 시 순위표 무효화도 제거했다.
+- Info `/종합순위`, `ㅈㅈㅈ`, `/서버순위`는 기존 요청별 순위 계산과 목록 생성 방식을 유지한다. 닉네임 순위 표시와 `/순위감추기` 안내만 제외한다.
+- `checkRank`는 기존 무쌍·티어/특별 이모지·길드 표시는 유지한다. 응답/공지의 `formatNicknameRankMessage`가 무쌍 접두어의 외곽 괄호를 정리한다.
+- 실제 순위·매력·동률 순서·보상 기준과 `/종합순위`, `ㅈㅈㅈ`의 서버 현황 → 월드 응답 순서는 유지한다.
 
 # /검색인증 · 검색인증 조회 3종
 
