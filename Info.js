@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    nicknameRank: { maxRank: 100 },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
@@ -544,11 +545,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 	var ctx = createCommandContext(isDevCommandMessage(msg), room);
 	var prevCtx = enterCommandContext(ctx);
 	try {
+		replier = createContextReplier(replier, ctx);
 		msg = String(msg || "").trim();
 		if (ctx.isDev) {
 			msg = stripDevCommandPrefix(msg);
 			if (msg === "/ㅍㅍㅍ") msg = "ㅍㅍㅍ"; // 기존 포인트 단축어로 DEV 입력 정규화
-			replier = createContextReplier(replier, ctx);
 		}
 
 		if (ctx.isDev) {
@@ -606,6 +607,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		var petData = loadJsonFile(memberPetPath);
 		var petSkillData = loadJsonFile(petSkillDataPath) || {};
+		ctx.nicknameRanks = { data: data, petData: petData, guildData: guildData, load: function () {
+			if (!ctx.nicknameRanks.homeData) ctx.nicknameRanks.homeData = loadJsonFile(homeDataFile);
+			return buildNicknameWorldRanks(data, petData, ctx.nicknameRanks.homeData, petSkillData, guildData);
+		} };
 		var titleData = loadJsonFile(memberTitlePath);
 		var petTitleData = loadJsonFile(petTitlePath);
 
@@ -646,10 +651,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 					if (petData[targetUser] && petData[targetUser].newimg) {
 						petData[targetUser].petimg = petData[targetUser].newimg;
 					}
-					let voicecheck = "• 보룸인증: 미완료\n";
-					if (memberInfo.voicecheck) {
-						voicecheck = "";
-					}
+					let voicecheck = "• 검색인증: " + (memberInfo.voicecheck ? "완료" : "미완료") + "\n";
 
 					var myGuildInfo = getMyGuildInfo(data, guildData, targetUser);
 					if (data.member[targetUser] && data.member[targetUser].firstSponsor === true) {
@@ -1956,9 +1958,15 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
 	return {
 		reply: function (message) {
-			replier.reply(ctx.header(message));
+			return replier.reply(ctx.header(formatNicknameRankMessage(message)));
 		}
 	};
+}
+
+// 기존 아이디 외곽 괄호와 새 순위·무쌍 접두어를 화면에서 각각 한 번만 출력하는 함수
+function formatNicknameRankMessage(message) {
+	if (typeof message !== "string") return message;
+	return message.replace(/\[((?:\[무쌍⚔️\])(?:\[\d+등\])?|\[\d+등\])([^\[\]\r\n]+)\]/g, "$1[$2]");
 }
 
 function getDataFileName(path) {
@@ -2236,20 +2244,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 }
 
 function generateRanking(data, petData, homeData, petSkillData, guildData) {
-	let members = data.member;
-	let userScores = [];
-
-	// 사용자별 점수 계산 후 배열에 저장
-	for (let key in members) {
-		let castleExp = petData[key] ? calculateCastleExp(key, data, petData, homeData, petSkillData, false, guildData) || 0 : 0;
-		let raidExp = petData[key] ? calculateRaidExp(key, data, petData, homeData, petSkillData, false, guildData) || 0 : 0;
-		let upgradeBonus = petData[key] ? calculatePetUpgradeCharm(key, data, petData) : 0;
-		let totalExp = castleExp + raidExp + upgradeBonus;
-		userScores.push({ key: key, totalExp: totalExp });
-	}
-
-	// 점수를 기준으로 정렬
-	userScores.sort((a, b) => b.totalExp - a.totalExp);
+	let userScores = buildNicknameWorldRanks(data, petData, homeData, petSkillData, guildData);
+	var nicknameRanks = getCurrentContext().nicknameRanks;
+	if (nicknameRanks && nicknameRanks.data === data && nicknameRanks.petData === petData && nicknameRanks.guildData === guildData) nicknameRanks.rows = userScores;
 
 	let rankingMsg1 = ""; // 상위 5명 메시지
 	let rankingMsg2 = ""; // 나머지 메시지
@@ -2259,7 +2256,7 @@ function generateRanking(data, petData, homeData, petSkillData, guildData) {
 		let memberName = userScores[i].key;
 		let Rsender = checkRank(data, petData, guildData, memberName);
 		let rankEmoji = getRankEmoji(i + 1);
-		let message = rankEmoji + Rsender + " - 👑 " + numberWithCommas(userScores[i].totalExp) + "\n";
+		let message = rankEmoji + "[" + Rsender + "] - 👑 " + numberWithCommas(userScores[i].totalExp) + "\n";
 
 		if (i < 5) {
 			rankingMsg1 += message;
@@ -2329,7 +2326,14 @@ function formatOverallRankPosition(rank) {
 
 // 개인 종합순위의 한 줄을 출력하는 함수
 function formatOverallUserRow(row, rank, data, petData, guildData, sender) {
-	return formatOverallRankPosition(rank) + " " + checkRank(data, petData, guildData, row.key) + " · 👑 " + numberWithCommas(row.totalExp) + (row.key === sender ? " ← 나" : "");
+	return formatOverallRankPosition(rank) + " " + formatRankNickname(data, petData, guildData, row.key) + " · 👑 " + numberWithCommas(row.totalExp) + (row.key === sender ? " ← 나" : "");
+}
+
+// 공통 닉네임의 접두어와 아이디 괄호를 각각 한 번씩 출력하는 함수
+function formatRankNickname(data, petData, guildData, user) {
+	var text = checkRank(data, petData, guildData, user);
+	var parts = text.match(/^(\[무쌍⚔️\])?(\[\d+등\])?([\s\S]*)$/);
+	return (parts[1] || "") + (parts[2] || "") + "[" + parts[3] + "]";
 }
 
 // 서버 합산 순위의 두 줄을 출력하는 함수
@@ -2341,7 +2345,7 @@ function formatOverallServerRow(server, rank, myServer, data) {
 function buildWorldOverallRankingMessage(rows, sender, data, petData, guildData) {
 	var myIndex = -1;
 	for (var i = 0; i < rows.length; i++) if (rows[i].key === sender) { myIndex = i; break; }
-	var lines = ["👑 월드 종합순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏆 월드 순위: " + (myIndex < 0 ? "순위없음" : (myIndex + 1) + "위"), "👑 종합매력: " + numberWithCommas(myIndex < 0 ? 0 : rows[myIndex].totalExp), ""];
+	var lines = ["👑 월드 종합순위", "━━━━━━━━━━━━━", formatRankNickname(data, petData, guildData, sender) + "님", "", "🏆 월드 순위: " + (myIndex < 0 ? "순위없음" : (myIndex + 1) + "위"), "👑 종합매력: " + numberWithCommas(myIndex < 0 ? 0 : rows[myIndex].totalExp), ""];
 	if (myIndex === 0 && rows.length > 1) {
 		var lead = rows[0].totalExp - rows[1].totalExp; // 2위와 실제 매력 차이
 		lines.push(lead === 0 ? "👑 2위와 같은 종합매력입니다." : "👑 정상의 자리를 지키는 중!\n2위 [" + checkRank(data, petData, guildData, rows[1].key) + "]님 보다\n종합매력💞 " + numberWithCommas(lead) + " 앞서 있어요!");
@@ -2349,7 +2353,7 @@ function buildWorldOverallRankingMessage(rows, sender, data, petData, guildData)
 		var needed = rows[myIndex - 1].totalExp - rows[myIndex].totalExp + 1; // 바로 윗순위 추월에 필요한 매력
 		lines.push("🎯 한 단계 위까지!\n" + myIndex + "위 [" + checkRank(data, petData, guildData, rows[myIndex - 1].key) + "]님 추월까지\n종합매력💞 +" + numberWithCommas(needed) + " 필요해요!");
 	}
-	lines.push("━━━━━━━━━━━━━");
+	lines.push("", "👁️ 닉네임 순위 설정: /순위감추기", "└ 1~100등 · 입력 시 표시 ↔ 숨김", "━━━━━━━━━━━━━");
 	for (var j = 0; j < rows.length; j++) {
 		if (j === 3) lines.push(allsee);
 		lines.push(formatOverallUserRow(rows[j], j + 1, data, petData, guildData, sender));
@@ -2366,7 +2370,7 @@ function buildCombinedServerRankingMessage(servers, sender, data, petData, guild
 	for (var i = 0; i < servers.length; i++) if (servers[i].name === myServerName) { myServer = servers[i]; serverRank = i + 1; break; }
 	var myUserRank = 0;
 	if (myServer) for (var k = 0; k < myServer.users.length; k++) if (myServer.users[k].key === sender) { myUserRank = k + 1; break; }
-	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버 /서버순위", "━━━━━━━━━━━━━", "[" + checkRank(data, petData, guildData, sender) + "]님", "", "🏠 소속 서버: " + formatInfoServerRaidServer(data, myServerName), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", allsee, ""];
+	var lines = ["🏰 서버 종합순위", "🌐 전체 " + servers.length + "개 서버 /서버순위", "━━━━━━━━━━━━━", formatRankNickname(data, petData, guildData, sender) + "님", "", "🏠 소속 서버: " + formatInfoServerRaidServer(data, myServerName), "🏆 서버 순위: " + (serverRank ? serverRank + "위" : "순위없음") + " · 👤 서버 내 순위: " + (myUserRank ? myUserRank + "위" : "순위없음"), "👑 서버 합산 매력: " + numberWithCommas(myServer ? myServer.totalExp : 0), "━━━━━━━━━━━━━", "🏠 우리 서버 개인 종합순위", allsee, ""];
 	var users = myServer ? myServer.users : [];
 	for (var j = 0; j < users.length && j < 10; j++) {
 		lines.push(formatOverallUserRow(users[j], j + 1, data, petData, guildData, sender));
@@ -3081,6 +3085,32 @@ function getMemberRankEmojiForDisplay(member) {
 	return member.displaySettings && member.displaySettings.hideRankEmoji === true ? getTierEmojiForMember(member) : (member.rank.emoji || "");
 }
 
+// 현재 월드 종합순위와 같은 점수·동률 순서로 닉네임 순위표를 생성하는 함수
+function buildNicknameWorldRanks(data, petData, homeData, petSkillData, guildData) {
+    var rows = [];
+    for (var name in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, name)) continue;
+        var score = petData[name] ? (calculateCastleExp(name, data, petData, homeData, petSkillData, false, guildData) || 0) +
+            (calculateRaidExp(name, data, petData, homeData, petSkillData, false, guildData) || 0) + calculatePetUpgradeCharm(name, data, petData) : 0;
+        rows.push({ key: name, totalExp: score });
+    }
+    rows.sort(function (a, b) { return b.totalExp - a.totalExp; });
+    return rows;
+}
+
+// 현재 명령에서 준비한 순위표를 한 번만 계산해 닉네임 접두어를 반환하는 함수
+function getNicknameWorldRank(data, petData, guildData, user) {
+    var member = data.member[user];
+    if (!member || (member.displaySettings && member.displaySettings.hideWorldRank === true)) return 0;
+    var ranking = getCurrentContext().nicknameRanks;
+    if (!ranking || ranking.data !== data) return 0;
+    if (!ranking.rows) ranking.rows = ranking.load();
+    for (var i = 0; i < ranking.rows.length && i < GLOBAL_CONFIG.nicknameRank.maxRank; i++) {
+        if (ranking.rows[i].key === user) return i + 1;
+    }
+    return 0;
+}
+
 function checkRank(data, petData, guildData, user) {
 	let userwithrank = user;
 
@@ -3142,6 +3172,8 @@ function checkRank(data, petData, guildData, user) {
 			}
 		}
 
+		var worldNicknameRank = getNicknameWorldRank(data, petData, guildData, user);
+		if (worldNicknameRank) userwithrank = "[" + worldNicknameRank + "등]" + userwithrank;
 		var musouChampion = data.petMusou && data.petMusou.currentChampion ? data.petMusou.currentChampion : null;
 		if (musouChampion && musouChampion.user === user && musouChampion.expiresAt > new Date().getTime()) {
 			userwithrank = "[무쌍⚔️]" + userwithrank;

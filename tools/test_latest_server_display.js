@@ -21,7 +21,7 @@ function block(source, marker) {
 // 각 런타임의 현재 설정을 그대로 사용한다.
 function context(source, names, extra) {
     const c = Object.assign({ allsee: "<ALLSEE>", numberWithCommas: n => Number(n).toLocaleString("en-US"),
-        checkRank: (_d, _p, _g, u) => u, getHoiPassPremiumHeader: () => "" }, extra);
+        checkRank: (_d, _p, _g, u) => u, getCurrentContext: () => ({}), formatNicknameRankMessage: text => text, getHoiPassPremiumHeader: () => "" }, extra);
     vm.createContext(c);
     for (let i = 1; i <= 100; i++) if (!("room" + i in c)) c["room" + i] = "room" + i;
     c.testRoom = "test";
@@ -81,7 +81,7 @@ assert.strictEqual(admin.data.member.대상.server, "호이서버6[30]");
 assert(main.includes('roomToServer[room10] = "호이서버6[30]"'));
 console.log("2/5 관리자 이동·서버6·권한·후행 안내문 차단 PASS");
 
-const rank = context(info, ["generateRanking", "normalizeInfoServerLabel", "normalizeRankServerName", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage", "getServerMemberGroups", "buildServerMemberListMessage"], {
+const rank = context(info, ["buildNicknameWorldRanks", "generateRanking", "normalizeInfoServerLabel", "normalizeRankServerName", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatRankNickname", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage", "getServerMemberGroups", "buildServerMemberListMessage"], {
     calculateCastleExp: (u, d) => d.member[u].score || 0, calculateRaidExp: () => 0, calculatePetUpgradeCharm: () => 0,
     getRankEmoji: () => ""
 });
@@ -168,7 +168,7 @@ assert(shopMessages[0].includes(item), "기존 아이템 이름 유지");
 assert(shopMessages[0].includes("🅟100,000,000,000"));
 
 for (const source of [main, info]) {
-    const c = context(source, ["getTierEmojiForMember", "getCheckRankTierEmoji", "getVisibleRankEmoji", "getMemberRankEmojiForDisplay", "checkRank"], {
+    const c = context(source, ["getTierEmojiForMember", "getCheckRankTierEmoji", "getVisibleRankEmoji", "getMemberRankEmojiForDisplay", "getNicknameWorldRank", "checkRank"], {
         ticketTierData: { 킹: { emoji: "👑" }, 벛꽃: { emoji: "🌸" } },
         getMyGuildInfo: () => ({ guild: { rank: 1 } }), getGuildMasterRankEmoji: () => "길드"
     });

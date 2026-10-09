@@ -7802,3 +7802,56 @@ Status: VERIFIED
 - Admin/Master가 인자 없이 정확히 `/펫스킬북보상`을 입력해 실행한다.
 - 초월성장과 나 혼자만 레벨업의 장착·프리미엄 잠금·가방 수량을 합산해 1:1 보상한다.
 - 두 스킬은 추첨·컬렉션·장착·관리자 신규 지급·개인 거래·자유시장 신규 등록과 구매 대상에서 제외된다.
+
+# /순위감추기 · 월드 종합순위 닉네임 표시
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`, `Info.js`
+
+## Related Helpers
+
+- `buildNicknameWorldRanks`, `getNicknameWorldRank`, `checkRank`
+- `formatNicknameRankMessage`, `createContextReplier`, `formatRankNickname` (Info)
+- `generateRanking`, `buildWorldOverallRankingMessage` (Info)
+
+## Data Usage / Save Flow
+
+- `member.json -> member[user].displaySettings.hideWorldRank`: 저장값이 없으면 표시, 본인 설정만 토글하여 `saveJsonFile(data, filePath)` 후 응답한다.
+- 기존 월드 종합순위와 같은 캐슬·레이드·펫강화 합산 및 동률 정렬을 사용하며 원본 아이디를 바꾸지 않는다.
+- 명령의 스레드별 `ctx.nicknameRanks`에 순위표를 메모리 보관한다. 최초 닉네임 출력 시 진입 흐름에 정의한 로더로 홈 데이터를 한 번 읽고 계산한다. Info 종합순위는 이미 계산한 행을 재사용한다.
+- 저장 후 메모리 순위표를 무효화하여 이후 출력은 변경된 매력으로 재계산한다. 홈/스킬은 명령 컨텍스트에서 재사용하며 새 순위표를 파일로 저장하지 않는다.
+- `checkRank`는 기존 반환 계약대로 무쌍·순위 접두어와 닉네임을 반환한다. 응답/공지의 `formatNicknameRankMessage`가 외곽 괄호를 정리하여 `[무쌍⚔️][N등][아이디]` 순서로 표시한다.
+- 숫자 접두어만 숨기며 기존 무쌍·티어/특별 이모지·실제 순위는 유지한다. `/종합순위`, `ㅈㅈㅈ`의 서버 현황 → 월드 응답 순서도 유지한다.
+- 명령은 정확한 `/순위감추기`만 실행하며 기존 출석·정지·방·대전 제한과 DEV/PROD 저장 경로를 따른다.
+
+# /검색인증 · 검색인증 조회 3종
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`, `Info.js`
+
+## Related Helpers
+
+- `normalizeSearchAuthenticationKeyword`, `countSearchAuthenticationCharacters`, `isSearchAuthenticationTarget`
+- `isSearchAuthenticationCount`, `applySearchAuthentication`
+- `buildSearchAuthenticationManagementMessage`, `buildSearchAuthenticationRankingMessage`
+
+## Data Usage / Save Flow
+
+- `member.json -> member[target].voicecheck`: 기존 완료 상태를 계속 사용하며 이미 완료한 대상은 재등록·재보상하지 않는다.
+- `member[target].searchAuthenticationRecord`: 이번 검색어·인증 관리자 계정 식별값·처리 시각. 대상과 관리자 모두 기존 계정 객체를 따라 닉네임 변경 시 기록을 유지한다.
+- `member[operator].diamond`, `member[operator].searchAuthentication`: 보유 다이아와 리뉴얼 이후 인증 인원/실제 누적 다이아/계정 실적 식별값.
+- `searchAuthentication.keywords`: 공백만 제거한 검색어별 누적 횟수 배열. 지인소개 포함, 보룸/보이스룸 별도. 과거 인증을 검색어로 추정하지 않는다.
+- 기존 `join`·`agree`가 있는 `이름 남/여` 계정만 대상으로 삼는다. 기존 `isAdmin` 방 권한을 재사용한다.
+- `/검색인증 아이디 내용`은 아이디 뒤 내용을 끝까지 읽고 공백 제거 후 1~10글자를 검사한다. 정수 재화·집계 경계를 먼저 검사한다.
+- 성공할 때 대상 인증·검색어 횟수·관리자 실적·다이아 1개를 함께 갱신하고 기존 명령 트랜잭션에서 `member.json`을 한 번 저장한다. 저장 실패는 기존 복구 흐름을 따른다. 포인트·달·샵 아이템·과거 `checkCnt`를 변경하지 않는다.
+- `/검색인증관리`는 기존 Admin 운영방, `/검색인증순위`와 `/검색인증관리순위`는 기존 Admin/Master 운영방에서 전체 서버 데이터를 조회한다. 동률은 기존 인증순위와 같은 이름 오름차순.
+- 목록 문구 시작/검색어 6등/관리자 4등부터 ALLSEE. 접을 대상이 없으면 ALLSEE를 넣지 않는다.
+- `/가입인증`, `/가입인증 목록`은 새 관리 조회 화면. `/인증필요`는 기존 Admin 신원 권한으로 모든 방에서 같은 화면을 조회한다. `/인증순위`는 관리자 순위의 별칭.
+- `/인증`, `/보룸인증`, `/가입 아이디`는 새 등록 명령 안내만 보내며 과거 보상을 실행하지 않는다. 인자 없는 `/가입`은 기존 `/모험시작` 안내를 유지한다.
+- Info `/정보`는 기존 `voicecheck` 상태를 검색인증 완료/미완료로 표시한다. `dev/` 저장은 DEV 경로에만 반영한다.
