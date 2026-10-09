@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.619"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.620"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -981,7 +981,7 @@ var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     fortuneCookie: { // 호츈쿠키의 개봉·보상·추첨 규칙
-        itemName: "호츈쿠키🥠", maxOpen: 100, generalRate: 0.5, specialRate: 0.01,
+        itemName: "호츈쿠키🥠(/호츈오픈 숫자)", legacyItemName: "호츈쿠키🥠", maxOpen: 100, generalRate: 0.5, specialRate: 0.01,
         duplicatePoint: 50000000, specialDiamond: 100, titleSalePoint: 15000000,
         imageLink: "https://ibb.co/dwg4cDpV",
         rewards: [{ name: "펫 강화석⭐", count: 100 }, { name: "티어 승급티켓🎟", count: 1 }, { name: "다이아상자💎(/다이아상자오픈)", count: 1 }],
@@ -32009,7 +32009,10 @@ function applyFortuneCookieOpen(data, titleData, user, count, random, acquiredAt
     if (!member) return { ok: false, reason: "data" };
     var bag = member.bag;
     if (bag !== undefined && (!bag || typeof bag !== "object" || Array.isArray(bag))) return { ok: false, reason: "data" };
-    var held = bag && Object.prototype.hasOwnProperty.call(bag, config.itemName) ? bag[config.itemName] : 0;
+    var currentHeld = bag && Object.prototype.hasOwnProperty.call(bag, config.itemName) ? bag[config.itemName] : 0;
+    var legacyHeld = bag && Object.prototype.hasOwnProperty.call(bag, config.legacyItemName) ? bag[config.legacyItemName] : 0;
+    if (!isPointShopSafeCount(currentHeld) || !isPointShopSafeCount(legacyHeld)) return { ok: false, reason: "data" };
+    var held = currentHeld + legacyHeld; // 기존 이름과 명령어가 붙은 이름의 보유 수량 합산
     if (!isPointShopSafeCount(held)) return { ok: false, reason: "data" };
     if (held < count) return { ok: false, reason: "shortage", held: held };
     if (!titleData || typeof titleData !== "object" || Array.isArray(titleData) ||
@@ -32045,7 +32048,9 @@ function applyFortuneCookieOpen(data, titleData, user, count, random, acquiredAt
         var existing = Object.prototype.hasOwnProperty.call(bag, reward.name) ? bag[reward.name] : 0;
         if (!isPointShopSafeCount(existing) || !isPointShopSafeCount(existing + reward.count * count)) return { ok: false, reason: "data" };
     }
-    removeItem(data, user, config.itemName, count);
+    if (held > count) bag[config.itemName] = held - count;
+    else delete bag[config.itemName];
+    delete bag[config.legacyItemName]; // 개봉 성공 시 남은 기존 쿠키도 새 이름으로 통합
     for (var addIndex = 0; addIndex < config.rewards.length; addIndex++) {
         addItemToBag(bag, config.rewards[addIndex].name, config.rewards[addIndex].count * count);
     }

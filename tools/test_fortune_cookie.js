@@ -61,6 +61,48 @@ function command(msg, sender="admin", dev=false, room="room90") {
 function title(dev=false){return fixture.get((dev?"/sdcard/호이랜드_dev/":"/sdcard/호이랜드/")+"member_title.json").member.admin.title;}
 function pass(label, fn){fixture.reset();seed();fn();console.log("PASS "+(++groups)+": "+label);}
 
+pass("아이템명 개봉 명령어·기존 이름 단독 및 혼합 보유의 정확한 소모",()=>{
+ const cfg=c.GLOBAL_CONFIG.fortuneCookie;
+ assert.strictEqual(cfg.itemName,"호츈쿠키🥠(/호츈오픈 숫자)");
+ for(const [current,legacy,count] of [[0,5,2],[3,4,5],[3,4,7],[5,0,2]]){
+  fixture.reset();seed(current);const d=fixture.read();d.member.admin.bag[cfg.legacyItemName]=legacy;fixture.write(d);
+  random(Array(count).fill(.99));command("/호츈오픈 "+count);
+  const bag=fixture.read().member.admin.bag;
+  assert.strictEqual(bag[cfg.itemName]||0,current+legacy-count);
+  assert(!Object.hasOwn(bag,cfg.legacyItemName));
+  assert.strictEqual(bag["펫 강화석⭐"],100*count);
+ }
+});
+pass("기존 쿠키 문자열·음수·소수·무한대 및 합계 초과는 무변경",()=>{
+ const cfg=c.GLOBAL_CONFIG.fortuneCookie;
+ for(const [current,legacy,count] of [[2,"3",1],[2,-1,1],[2,.5,1],[9007199254740991,1,1],[1,1,3]]){
+  fixture.reset();seed(current);const d=fixture.read();d.member.admin.bag[cfg.legacyItemName]=legacy;fixture.write(d);
+  random([]);const before=fixture.raw(c.filePath),bt=fixture.raw(c.memberTitlePath);command("/호츈오픈 "+count);
+  assert.strictEqual(fixture.raw(c.filePath),before);assert.strictEqual(fixture.raw(c.memberTitlePath),bt);
+ }
+ const d=fixture.read(),t=fixture.get(c.memberTitlePath);d.member.admin.bag[cfg.legacyItemName]=Infinity;
+ const before=clone(t);assert.strictEqual(c.applyFortuneCookieOpen(d,t,"admin",1,()=>{throw Error("추첨 금지");},"2026-10-10").ok,false);
+ assert.strictEqual(d.member.admin.bag[cfg.legacyItemName],Infinity);assert.deepStrictEqual(t,before);
+});
+pass("기존·신규 쿠키 혼합 개봉의 저장 실패 복구와 재시도",()=>{
+ const cfg=c.GLOBAL_CONFIG.fortuneCookie;
+ for(const failPath of [c.memberTitlePath,c.filePath]){
+  fixture.reset();seed(2);const d=fixture.read();d.member.admin.bag[cfg.legacyItemName]=3;fixture.write(d);
+  const before=fixture.raw(c.filePath),bt=fixture.raw(c.memberTitlePath);
+  fixture.fail(failPath);random([.1,0,0,0]);assert.throws(()=>command("/호츈오픈 1"),/replace failed/);
+  assert.strictEqual(fixture.raw(c.filePath),before);assert.strictEqual(fixture.raw(c.memberTitlePath),bt);
+  random([.99]);command("/호츈오픈 1");const bag=fixture.read().member.admin.bag;
+  assert.strictEqual(bag[cfg.itemName],4);assert(!Object.hasOwn(bag,cfg.legacyItemName));
+ }
+});
+pass("DEV 기존 쿠키 개봉의 새 이름 통합과 운영 재고 보존",()=>{
+ const cfg=c.GLOBAL_CONFIG.fortuneCookie;seed(0,true);const d=fixture.read(true);d.member.admin.bag[cfg.legacyItemName]=3;fixture.write(d,true);
+ const prod=fixture.raw(c.filePath),pt=fixture.raw(c.memberTitlePath);
+ random([.99]);command("/호츈오픈 1","admin",true,"test");
+ const bag=fixture.read(true).member.admin.bag;assert.strictEqual(bag[cfg.itemName],2);assert(!Object.hasOwn(bag,cfg.legacyItemName));
+ assert.strictEqual(fixture.raw(c.filePath),prod);assert.strictEqual(fixture.raw(c.memberTitlePath),pt);
+});
+
 pass("명단 310개·중복 없음·콘셉트 7개·멘트 각30개·총 조합55830개",()=>{
  const cfg=c.GLOBAL_CONFIG.fortuneCookie;
  assert.strictEqual(cfg.names.length,310);assert.strictEqual(new Set(cfg.names).size,310);
@@ -78,7 +120,7 @@ pass("확률 경계 0·1%·51%·100%와 지정 닉네임·콘셉트·멘트 끝 
 });
 pass("일반 신규 당첨·기본3종·타이틀 원문·기존 장착 유지·저장 후 응답",()=>{
  random([.1,0,0,0]);const text=command("/호츈오픈 1"),d=fixture.read();
- assert.strictEqual(d.member.admin.bag["호츈쿠키🥠"],99);
+ assert.strictEqual(d.member.admin.bag[c.GLOBAL_CONFIG.fortuneCookie.itemName],99);
  assert.strictEqual(d.member.admin.bag["펫 강화석⭐"],100);
  assert.strictEqual(d.member.admin.bag["티어 승급티켓🎟"],1);
  assert.strictEqual(d.member.admin.bag["다이아상자💎(/다이아상자오픈)"],1);
@@ -105,7 +147,7 @@ pass("호월신 신규·중복 모두 다이아100·중복포인트·당첨마�
 });
 pass("100개 전부 미당첨·쿠키0개 제거·기본합산·불필요항목 숨김",()=>{
  random(Array(100).fill(.99));const text=command("/호츈오픈 100"),d=fixture.read();
- assert(!Object.hasOwn(d.member.admin.bag,"호츈쿠키🥠"));assert(text.includes("🥠 남음: 0개"));
+ assert(!Object.hasOwn(d.member.admin.bag,c.GLOBAL_CONFIG.fortuneCookie.itemName));assert(text.includes("🥠 남음: 0개"));
  assert.strictEqual(d.member.admin.bag["펫 강화석⭐"],10000);assert.strictEqual(d.member.admin.bag["티어 승급티켓🎟"],100);
  assert.strictEqual(title().list.length,1);assert(!text.includes("⭕ 신규"));
  assert(!text.includes("✨ 특별 보상")&&!text.includes("💰 중복 보상"));
@@ -119,7 +161,7 @@ pass("보유부족·0·101·소수·지수·무한대·거대숫자·접미 입�
 });
 pass("포인트·다이아·보상아이템 안전정수 초과·음수·문자열은 전부 무변경",()=>{
  const cfg=c.GLOBAL_CONFIG.fortuneCookie,max=9007199254740991;
- for(const [field,value,draw] of [["diamond",max,0],["point",max,.1],["diamond",-1,.99],["diamond","20",.99],["펫 강화석⭐",max,.99],["티어 승급티켓🎟","1",.99],["호츈쿠키🥠","100",.99]]){
+ for(const [field,value,draw] of [["diamond",max,0],["point",max,.1],["diamond",-1,.99],["diamond","20",.99],["펫 강화석⭐",max,.99],["티어 승급티켓🎟","1",.99],[cfg.itemName,"100",.99]]){
   seed();const d=fixture.read();if(["point","diamond"].includes(field))d.member.admin[field]=value;else d.member.admin.bag[field]=value;
   fixture.write(d);if(field==="point"){const t=fixture.get(c.memberTitlePath);t.member.admin.title.list.push({name:"쟈기 여의 축복🍀 ⎯ "+cfg.concepts[0].quotes[0],kind:"fortuneCookie",price:0});fixture.put(c.memberTitlePath,t);}
   random(draw===0?[0,0]:draw===.1?[.1,0,0,0]:[.99]);
@@ -138,13 +180,13 @@ pass("타이틀 파일은 기존 보호대상 밖·스냅샷 저장 실패 시 �
   fixture.reset();seed();const before=fixture.raw(c.filePath),bt=fixture.raw(c.memberTitlePath);
   fixture.fail(failPath);random([.1,0,0,0]);assert.throws(()=>command("/호츈오픈 1"),/replace failed/);
   assert.strictEqual(fixture.raw(c.filePath),before);assert.strictEqual(fixture.raw(c.memberTitlePath),bt);
-  random([.1,0,0,0]);command("/호츈오픈 1");assert.strictEqual(title().list.length,2);assert.strictEqual(fixture.read().member.admin.bag["호츈쿠키🥠"],99);
+  random([.1,0,0,0]);command("/호츈오픈 1");assert.strictEqual(title().list.length,2);assert.strictEqual(fixture.read().member.admin.bag[c.GLOBAL_CONFIG.fortuneCookie.itemName],99);
  }
 });
 pass("결과·공지 전송 실패 후 확정 보상 보존·추가 재지급 없음",()=>{
  fixture.noticeFail(()=>true);fixture.replyFail(true);random([0,0]);command("/호츈오픈 1");
  assert.strictEqual(fixture.read().member.admin.diamond,120);assert.strictEqual(title().list.length,2);
- assert.strictEqual(fixture.read().member.admin.bag["호츈쿠키🥠"],99);assert(c.getDataSaveTransaction()===null);
+ assert.strictEqual(fixture.read().member.admin.bag[c.GLOBAL_CONFIG.fortuneCookie.itemName],99);assert(c.getDataSaveTransaction()===null);
  fixture.replyFail(false);fixture.noticeFail(()=>{throw Error("transport");});random([0,0]);command("/호츈오픈 1");
  assert.strictEqual(fixture.read().member.admin.diamond,220);assert.strictEqual(fixture.read().member.admin.point,1050000000);
  fixture.noticeFail(room=>{if(room==="room1")throw Error("one room failure");return false;});random([0,.04]);command("/호츈오픈 1");
