@@ -20125,7 +20125,7 @@ replier.reply(
                             }
                             resetTicketFlag = true;
                         } else {
-                            replier.reply("오늘 무료대전 " + GLOBAL_CONFIG.daily.castleBattleFree + "회를 모두 사용했습니다.\n캐슬대전리셋권🐶 소지시 최대 " + GLOBAL_CONFIG.daily.castleBattleMax + "회 가능합니다.\n\n캐대리🐶 이(가) 부족하신가요?\nhttps://hoiland123.tistory.com/512");
+                            replier.reply("오늘 무료대전 " + GLOBAL_CONFIG.daily.castleBattleFree + "회를 모두 사용했습니다.\n캐슬대전리셋권🐶 소지시 최대 " + GLOBAL_CONFIG.daily.castleBattleMax + "회 가능합니다.\n\n캐대리🐶 이(가) 부족하신가요?\nhttps://hoiland123.tistory.com/340");
                             return;
                         }
                     }
@@ -20794,7 +20794,7 @@ replier.reply(
                             replier.reply(
                                 "❌ " +
                                 userRank +
-                                "님\n오늘 무료대전 " + GLOBAL_CONFIG.daily.miniPetBattleFree + "회를 모두 사용했습니다.\n미니펫대전리셋권🐹 소지시 최대 " + GLOBAL_CONFIG.daily.miniPetBattleMax + "회 가능합니다.\n\n미대리🐹 이 부족하신가요?\nhttps://hoiland123.tistory.com/512"
+                                "님\n오늘 무료대전 " + GLOBAL_CONFIG.daily.miniPetBattleFree + "회를 모두 사용했습니다.\n미니펫대전리셋권🐹 소지시 최대 " + GLOBAL_CONFIG.daily.miniPetBattleMax + "회 가능합니다.\n\n미대리🐹 이 부족하신가요?\nhttps://hoiland123.tistory.com/309"
                             );
                             return;
                         }
