@@ -17,6 +17,7 @@ return {c,block,reset,read,write,run,start,
 };`)(require, __dirname);
 const c = fixture.c, block = fixture.block;
 c.memberTitlePath = "/sdcard/호이랜드/member_title.json";
+c.attendanceLightPath = "/sdcard/호이랜드/attendanceLight.json";
 c.boardPath = "/sdcard/호이랜드/board.json";
 c.castleSiegeFlag = false;
 c.normalizePendantTransitionBagItem = (_bag, item) => item;
@@ -27,6 +28,7 @@ for (const name of ["isPointShopSafeCount", "rollFortuneCookieTitle", "applyFort
  "buildFortuneCookieOpenMessage", "buildFortuneCookieSpecialNotice", "getMemberTitleSalePoint", "removeMemberTitleAt",
  "applyMemberTitleSale", "ensureTitleUserData", "addItemToBag", "removeItem", "getNoticeTargetRooms", "isAdmin", "isAdminIdentity", "formatDateTime",
  "normalizeSearchAuthenticationKeyword", "countSearchAuthenticationCharacters", "isSearchAuthenticationTarget",
+ "requireSearchAuthenticationLightData", "getSearchAuthenticationTarget",
  "isSearchAuthenticationCount", "applySearchAuthentication", "buildSearchAuthenticationManagementMessage",
  "buildSearchAuthenticationRankingMessage", "isProtectedManagedJsonPath"]) vm.runInContext(block(main, "function " + name + "("), c);
 const markers = ['if (msg === "/호츈오픈" ||', 'if (msg === "/타이틀정보" ||',
@@ -41,6 +43,7 @@ function seed(count = 100, dev = false) {
  d.member.admin.diamond = 20;
  d.member["신규 남"] = {agree:true,join:"20261009",point:0,diamond:0,bag:{}};
  fixture.write(d, dev);
+ fixture.put((dev ? "/sdcard/호이랜드_dev/" : "/sdcard/호이랜드/") + "attendanceLight.json", {users:{}});
  fixture.put((dev ? "/sdcard/호이랜드_dev/" : "/sdcard/호이랜드/") + "member_title.json", {member:{admin:{title:{list:[{name:"기존",price:0,inDate:"2026-10-01"}],num:1}}}});
 }
 function random(values) {

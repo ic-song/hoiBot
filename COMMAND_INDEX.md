@@ -7165,11 +7165,11 @@ Status: VERIFIED
 ## Save Flow
 
 - Existing member attendance continues to update normal member data
-- Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ` or the explicit `/모험시작` flow
+- Users missing from `data.member` return before game-account creation unless they use the explicit `/모험시작` flow. Ordinary group chat with a valid `이름 남/여` ID records only the recognition date in `attendanceLight.json`, without attendance count or rewards, so search-authentication management can find the user.
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/모험시작` validates the Kakao sender nickname before saving the start state; `출발한다` creates the member and migrates any older light-attendance row
 - Registered-user attendance adds the current tier's fixed EXP to the 100 base EXP, applies `호월신의 가호✨` to that subtotal, reports the basic/tier/booster breakdown, and uses the common depletion message when the count reaches zero
-- `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
+- `/미가입출첵` deletes light rows when the exact stored user ID already joined or neither attendance nor recognized general chat occurred for 4+ days. Joined rows transfer search-authentication status to the member before removal, without another reward. It reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by latest activity date, then server order (`호1` through `호7` then `벨`), then name. Member changes and the light-data snapshot are saved in the existing transaction.
 
 ## Related Commands
 
@@ -7265,7 +7265,7 @@ Status: VERIFIED
 - Admin/Master-only command.
 - Accepts `/미출석가입 [아이디]` only when the ID normalizes to `이름 남` or `이름 여`.
 - Invalid IDs reply with usage guidance and return before creating member, pet, title, pet-skill, or light-attendance data.
-- Valid new IDs call `initializeMember`, initialize pet-skill data, save `petSkillData`, and remove an exact matching `attendanceLight.json` row when it exists.
+- Valid new IDs call `initializeMember`, initialize pet-skill data, save `petSkillData`, transfer an existing search-authentication status/record without another reward, and remove an exact matching `attendanceLight.json` row using snapshot storage when it exists. Forced signup keeps its existing policy of not migrating light attendance counts.
 
 ## Related Commands
 
@@ -7837,20 +7837,23 @@ Status: VERIFIED
 ## Related Helpers
 
 - `normalizeSearchAuthenticationKeyword`, `countSearchAuthenticationCharacters`, `isSearchAuthenticationTarget`
+- `requireSearchAuthenticationLightData`, `getSearchAuthenticationTarget`, `recordSearchAuthenticationChat`, `migrateLightSearchAuthenticationToMember`
 - `isSearchAuthenticationCount`, `applySearchAuthentication`
 - `buildSearchAuthenticationManagementMessage`, `buildSearchAuthenticationRankingMessage`
 
 ## Data Usage / Save Flow
 
 - `member.json -> member[target].voicecheck`: 기존 완료 상태를 계속 사용하며 이미 완료한 대상은 재등록·재보상하지 않는다.
+- `attendanceLight.json -> users[target].voicecheck`, `searchAuthenticationRecord`: 미가입 출첵·일반 채팅으로 인식한 유저의 인증 상태. 게임 계정을 생성하지 않고 기존 경량 기록에 저장한다. `chatSeenDate`는 일반 채팅의 인식 날짜만 하루 1회 갱신하며 출석 횟수·보상·메시지 내용은 기록하지 않는다.
 - `member[target].searchAuthenticationRecord`: 이번 검색어·인증 관리자 계정 식별값·처리 시각. 대상과 관리자 모두 기존 계정 객체를 따라 닉네임 변경 시 기록을 유지한다.
 - `member[operator].diamond`, `member[operator].searchAuthentication`: 보유 다이아와 리뉴얼 이후 인증 인원/실제 누적 다이아/계정 실적 식별값.
 - `searchAuthentication.keywords`: 공백만 제거한 검색어별 누적 횟수 배열. 지인소개 포함, 보룸/보이스룸 별도. 과거 인증을 검색어로 추정하지 않는다.
-- 기존 `join`·`agree`가 있는 `이름 남/여` 계정만 대상으로 삼는다. 기존 `isAdmin` 방 권한을 재사용한다.
+- 가입 여부와 무관하게 회원 또는 경량 기록에 존재하는 `이름 남/여` 계정을 대상으로 삼는다. 두 저장소에 같은 아이디가 있으면 한 번만 표시하고, 어느 한쪽에서 인증이 완료됐으면 중복 등록·보상을 막는다. 기존 `isAdmin` 방 권한을 재사용한다.
 - `/검색인증 아이디 내용`은 아이디 뒤 내용을 끝까지 읽고 공백 제거 후 1~10글자를 검사한다. 정수 재화·집계 경계를 먼저 검사한다.
-- 성공할 때 대상 인증·검색어 횟수·관리자 실적·다이아 1개를 함께 갱신하고 기존 명령 트랜잭션에서 `member.json`을 한 번 저장한다. 저장 실패는 기존 복구 흐름을 따른다. 포인트·달·샵 아이템·과거 `checkCnt`를 변경하지 않는다.
+- 성공할 때 대상 인증·검색어 횟수·관리자 실적·다이아 1개를 함께 갱신한다. 가입 대상은 `member.json`, 미가입 대상은 경량 기록을 스냅샷 저장한 뒤 `member.json`을 저장하며 실패 시 기존 명령 트랜잭션으로 함께 복구한다. 포인트·달·샵 아이템·과거 `checkCnt`를 변경하지 않는다.
+- `출발한다`, `/미출석가입`, `/미가입출첵`의 가입완료 정리에서 미가입 인증 상태·기록을 회원으로 이전하고 보상·집계는 다시 지급하지 않는다. 출첵 또는 채팅 인식일 중 최근 날짜로 기존 4일 정리 기준을 적용한다. 계정 삭제 후 다시 인식되면 재인증할 수 있다.
 - `/검색인증관리`는 기존 Admin 운영방, `/검색인증순위`와 `/검색인증관리순위`는 기존 Admin/Master 운영방에서 전체 서버 데이터를 조회한다. 동률은 기존 인증순위와 같은 이름 오름차순.
-- 목록 문구 시작/검색어 6등/관리자 4등부터 ALLSEE. 접을 대상이 없으면 ALLSEE를 넣지 않는다.
+- 관리 목록 문구 시작부터 ALLSEE. 검색어·관리자 순위는 11등부터 ALLSEE이며 10등 이하면 넣지 않는다. 검색어 `기타`는 인증 횟수와 무관하게 마지막 행으로 정렬한다.
 - `/가입인증`, `/가입인증 목록`은 새 관리 조회 화면. `/인증필요`는 기존 Admin 신원 권한으로 모든 방에서 같은 화면을 조회한다. `/인증순위`는 관리자 순위의 별칭.
 - `/인증`, `/보룸인증`, `/가입 아이디`는 새 등록 명령 안내만 보내며 과거 보상을 실행하지 않는다. 인자 없는 `/가입`은 기존 `/모험시작` 안내를 유지한다.
 - Info `/정보`는 기존 `voicecheck` 상태를 검색인증 완료/미완료로 표시한다. `dev/` 저장은 DEV 경로에만 반영한다.

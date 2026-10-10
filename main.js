@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.621"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.622"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -996,7 +996,7 @@ const GLOBAL_CONFIG = {
             {"title":"호월신의 축복✨","quotes":["그대에게 행운을 내리노라!","호월의 빛이 그대를 비추리라!","그대의 쿠키에 별을 담았노라!","오늘의 축복은 그대의 것이니라!","그대의 이름을 별에 새겼노라!","작은 쿠키에 큰 축복을 담았노라!","내가 그대의 행운이 되어주리라!","그대의 정성에 축복으로 답하노라!","그대의 앞길에 빛을 놓으리라!","용기를 내라, 내가 함께하노라!","내가 고른 행운의 주인이로다!","호월의 별들이 그대를 반기노라!","이 한 입에 신의 마음을 담았노라!","그대에게 빛나는 인연을 보내노라!","그대의 웃음에 나도 미소 짓노라!","쿠키를 연 손에 축복이 깃들리라!","나의 축복을 당당히 지니거라!","마침내 나의 쪽지를 찾았구나!","그대의 소원을 귀담아듣겠노라!","오늘은 신도 그대의 편이니라!","그대의 도전에 박수를 보내노라!","나의 별빛을 그대에게 나누노라!","달빛을 따라 축복을 보냈노라!","그대의 하루에 반짝임을 더하노라!","행운의 문이 그대를 맞이하노라!","호월신의 눈에 그대가 들었노라!","기쁜 마음으로 이 복을 받거라!","그대의 곁에 온기를 남기노라!","그대의 쿠키를 친히 골랐노라!","이 만남 또한 축복이니라!"]}
         ]
     },
-    searchAuthentication: { maxKeywordLength: 10, diamondReward: 1, keywordVisibleRows: 5, adminVisibleRows: 3 },
+    searchAuthentication: { maxKeywordLength: 10, diamondReward: 1, keywordVisibleRows: 10, adminVisibleRows: 10, otherKeyword: "기타" },
     permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
         additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
     },
@@ -3770,6 +3770,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (!data.member[sender]) {
+            if (isGroupChat === true && /^[^\s]+ (남|여)$/.test(sender) && String(msg || "").trim()) {
+                var pendingChatLightData = loadJsonFile(attendanceLightPath);
+                var pendingChatLightSnapshot = JSON.stringify(pendingChatLightData);
+                if (recordSearchAuthenticationChat(pendingChatLightData, sender, room)) saveJsonFile(pendingChatLightData, attendanceLightPath, false, pendingChatLightSnapshot);
+            }
             var adventureOnboardingData = loadJsonFile(adventureOnboardingPath) || { users: {} };
             if (!adventureOnboardingData.users || typeof adventureOnboardingData.users !== "object") adventureOnboardingData.users = {};
             var preMemberOnboarding = adventureOnboardingData.users[sender];
@@ -3806,7 +3811,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 data.member[sender].agree = true;
                 data.member[sender].adventureOnboarding = createAdventureOnboardingMemberState();
                 var signupAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
-                if (migrateLightAttendanceToMember(data, signupAttendanceLightData, sender)) saveJsonFile(signupAttendanceLightData, attendanceLightPath);
+                var signupAttendanceLightSnapshot = JSON.stringify(signupAttendanceLightData);
+                if (migrateLightAttendanceToMember(data, signupAttendanceLightData, sender)) saveJsonFile(signupAttendanceLightData, attendanceLightPath, false, signupAttendanceLightSnapshot);
                 saveJsonFile(data, filePath);
                 delete adventureOnboardingData.users[sender];
                 saveJsonFile(adventureOnboardingData, adventureOnboardingPath);
@@ -8013,11 +8019,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     initPetSkillUser(petSkillData, missingAttendanceSignupUserId);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     var missingAttendanceSignupLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+                    var missingAttendanceSignupLightSnapshot = JSON.stringify(missingAttendanceSignupLightData);
                     var missingAttendanceSignupLightRemoved = false;
                     if (missingAttendanceSignupLightData.users && missingAttendanceSignupLightData.users[missingAttendanceSignupUserId]) {
+                        if (migrateLightSearchAuthenticationToMember(data, missingAttendanceSignupLightData, missingAttendanceSignupUserId)) saveJsonFile(data, filePath);
                         delete missingAttendanceSignupLightData.users[missingAttendanceSignupUserId];
                         missingAttendanceSignupLightRemoved = true;
-                        saveJsonFile(missingAttendanceSignupLightData, attendanceLightPath);
+                        saveJsonFile(missingAttendanceSignupLightData, attendanceLightPath, false, missingAttendanceSignupLightSnapshot);
                     }
                     replier.reply(buildMissingAttendanceSignupSuccessMessage(missingAttendanceSignupUserId, missingAttendanceSignupLightRemoved));
                     return;
@@ -8028,8 +8036,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var lightAttendanceData = loadJsonFile(attendanceLightPath) || { users: {} };
+                    var lightAttendanceSnapshot = JSON.stringify(lightAttendanceData);
                     var lightAttendanceResult = pruneLightAttendanceData(data, lightAttendanceData, 4);
-                    saveJsonFile(lightAttendanceData, attendanceLightPath);
+                    if (lightAttendanceResult.authenticationMigrated > 0) saveJsonFile(data, filePath);
+                    saveJsonFile(lightAttendanceData, attendanceLightPath, false, lightAttendanceSnapshot);
                     replier.reply(buildLightAttendanceCleanupMessage(lightAttendanceResult));
                     return;
                 }
@@ -9067,14 +9077,17 @@ replier.reply(
                         return;
                     }
                     var searchAuthTarget = searchAuthMatch[1] + " " + searchAuthMatch[2];
-                    var searchAuthResult = applySearchAuthentication(data, searchAuthTarget, sender, searchAuthMatch[3]);
+                    var searchAuthLightData = loadJsonFile(attendanceLightPath);
+                    var searchAuthLightSnapshot = JSON.stringify(searchAuthLightData);
+                    var searchAuthResult = applySearchAuthentication(data, searchAuthTarget, sender, searchAuthMatch[3], searchAuthLightData);
                     if (!searchAuthResult.ok) {
                         replier.reply(searchAuthResult.message);
                         return;
                     }
+                    if (searchAuthResult.lightTarget) saveJsonFile(searchAuthLightData, attendanceLightPath, false, searchAuthLightSnapshot);
                     saveJsonFile(data, filePath);
                     replier.reply("🎙️ 호월 검색인증 완료 🎙️\n━━━━━━━━━━━━\n👤 대상: " + searchAuthTarget +
-                        "\n🏰 서버: " + (data.member[searchAuthTarget].server ? normalizeHoiServerLabel(data.member[searchAuthTarget].server) : "소속 서버 없음") +
+                        "\n🏰 서버: " + (searchAuthResult.server ? normalizeHoiServerLabel(searchAuthResult.server) : "소속 서버 없음") +
                         "\n🔎 검색어: " + searchAuthResult.keyword + "\n👑 인증 담당: " + sender +
                         "\n\n✅ 검색인증이 완료되었습니다.\n🎁 관리자 보상: 다이아💎 1개");
                     return;
@@ -9122,7 +9135,8 @@ replier.reply(
                         replier.reply("관리자만 사용할 수 있는 명령어입니다.");
                         return;
                     }
-                    replier.reply(buildSearchAuthenticationManagementMessage(data));
+                    var searchAuthManagementLightData = loadJsonFile(attendanceLightPath);
+                    replier.reply(buildSearchAuthenticationManagementMessage(data, searchAuthManagementLightData));
                     return;
                 }
 
@@ -52885,6 +52899,7 @@ function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
     if (!attendanceLightData || !attendanceLightData.users || !attendanceLightData.users[sender]) return false;
     var row = attendanceLightData.users[sender];
     var member = data.member[sender];
+    migrateLightSearchAuthenticationToMember(data, attendanceLightData, sender);
     var rowCnt = parseInt(row.cnt, 10) || 0;
     if (rowCnt > 0) member.cnt = (parseInt(member.cnt, 10) || 0) + rowCnt;
     if (row.recent) member.recent = row.recent;
@@ -52928,25 +52943,30 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
     var removed = [];
     var joined = [];
     var remained = [];
+    var authenticationMigrated = 0; // 중복 지급 없이 정식 계정으로 옮긴 인증 상태 수
 
     for (var name in attendanceLightData.users) {
         if (!attendanceLightData.users.hasOwnProperty(name)) continue;
         var row = attendanceLightData.users[name] || {};
         var dayDiff = getAttendanceDateDiff(row.recent, todayText);
+        var recentActivityDate = row.recent; // 정리 결과에 표시할 마지막 출첵 또는 채팅 인식일
+        var chatDayDiff = getAttendanceDateDiff(row.chatSeenDate, todayText); // 출석 없이 계속 채팅하는 미가입 기록의 유지 기간
+        if (chatDayDiff !== null && (dayDiff === null || chatDayDiff < dayDiff)) { dayDiff = chatDayDiff; recentActivityDate = row.chatSeenDate; }
         if (data && data.member && data.member[name]) {
+            if (migrateLightSearchAuthenticationToMember(data, attendanceLightData, name)) authenticationMigrated++;
             joined.push(name);
             delete attendanceLightData.users[name];
             continue;
         }
         if (dayDiff === null || dayDiff >= staleDays) {
-            removed.push({ name: name, recent: row.recent || "없음", days: dayDiff, server: row.server || "" });
+            removed.push({ name: name, recent: recentActivityDate || "없음", days: dayDiff, server: row.server || "" });
             delete attendanceLightData.users[name];
             continue;
         }
         remained.push({
             name: name,
             cnt: parseInt(row.cnt, 10) || 0,
-            recent: row.recent || "없음",
+            recent: recentActivityDate || "없음",
             days: dayDiff,
             server: row.server || ""
         });
@@ -52955,7 +52975,7 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
     removed.sort(compareLightAttendanceRows);
     remained.sort(compareLightAttendanceRows);
 
-    return { removed: removed, joined: joined, remained: remained, staleDays: staleDays };
+    return { removed: removed, joined: joined, remained: remained, staleDays: staleDays, authenticationMigrated: authenticationMigrated };
 }
 
 // 지정 서버로 표시된 미가입 출첵 기록을 미확인 서버로 되돌리는 함수
@@ -53026,7 +53046,7 @@ function formatLightAttendanceServerName(row) {
 function buildLightAttendanceCleanupMessage(result) {
     var lines = [];
     lines.push("✅ 미가입 출첵 정리 완료");
-    lines.push("삭제 기준: 마지막 출첵 후 " + result.staleDays + "일 이상");
+    lines.push("삭제 기준: 마지막 출첵 또는 채팅 인식 후 " + result.staleDays + "일 이상");
     lines.push("자동삭제: " + result.removed.length + "명");
     lines.push("가입완료 정리: " + result.joined.length + "명");
     if (result.joined.length > 0) {
@@ -59008,9 +59028,50 @@ function countSearchAuthenticationCharacters(text) {
     return text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "_").length;
 }
 
-// 기존 가입·동의 상태와 아이디 규칙으로 미인증 대상을 확인하는 함수
+// 게임 가입과 무관하게 저장된 일반 유저 아이디를 인증 대상으로 확인하는 함수
 function isSearchAuthenticationTarget(name, member) {
-    return !!(member && /^[^\s]+ (남|여)$/.test(name) && member.join && member.agree === true);
+    return !!(member && typeof member === "object" && !Array.isArray(member) && /^[^\s]+ (남|여)$/.test(name));
+}
+
+// 기존 미가입 기록의 구조를 검증하는 함수
+function requireSearchAuthenticationLightData(lightData) {
+    if (!lightData || typeof lightData !== "object" || Array.isArray(lightData) || !lightData.users || typeof lightData.users !== "object" || Array.isArray(lightData.users)) throw new Error("검색인증 미가입 기록 형식 오류");
+    return lightData;
+}
+
+// 미가입 일반 채팅의 인식 날짜만 기록하고 출석 횟수·보상은 변경하지 않는 함수
+function recordSearchAuthenticationChat(lightData, sender, room) {
+    requireSearchAuthenticationLightData(lightData);
+    if (!/^[^\s]+ (남|여)$/.test(sender)) return false;
+    var today = getAttendanceKstDateKey();
+    var row = lightData.users[sender];
+    if (row !== undefined && !isSearchAuthenticationTarget(sender, row)) throw new Error("검색인증 미가입 유저 형식 오류");
+    if (!row) row = { cnt: 0, recent: "", today: 0 };
+    var changed = row.chatSeenDate !== today; // 채팅 내용 없이 날짜만 하루 1회 갱신
+    if (changed) row.chatSeenDate = today;
+    if (!row.server && roomToServer[room]) { row.server = roomToServer[room]; changed = true; }
+    if (changed) lightData.users[sender] = row;
+    return changed;
+}
+
+// 가입·미가입 저장소를 함께 확인하고 같은 아이디의 인증 상태를 중복 검사하는 함수
+function getSearchAuthenticationTarget(data, lightData, target) {
+    requireSearchAuthenticationLightData(lightData);
+    var member = Object.prototype.hasOwnProperty.call(data.member, target) ? data.member[target] : null;
+    var light = Object.prototype.hasOwnProperty.call(lightData.users, target) ? lightData.users[target] : null;
+    var row = member || light;
+    if (!isSearchAuthenticationTarget(target, row)) return null;
+    return { row: row, lightTarget: !member, completed: !!((member && member.voicecheck) || (light && light.voicecheck)) };
+}
+
+// 미가입 인증 상태를 가입 계정으로 옮기며 보상과 집계는 다시 지급하지 않는 함수
+function migrateLightSearchAuthenticationToMember(data, lightData, user) {
+    var member = data && data.member && data.member[user];
+    var light = lightData && lightData.users && lightData.users[user];
+    if (!member || !light || !light.voicecheck || member.voicecheck) return false;
+    member.voicecheck = light.voicecheck;
+    if (light.searchAuthenticationRecord) member.searchAuthenticationRecord = light.searchAuthenticationRecord;
+    return true;
 }
 
 // 재화와 누적 집계의 비음수 안전 정수를 검증하는 함수
@@ -59019,10 +59080,11 @@ function isSearchAuthenticationCount(value) {
 }
 
 // 인증 상태·관리자 실적·검색어 횟수·다이아를 함께 갱신하는 함수
-function applySearchAuthentication(data, target, operator, rawKeyword) {
-    var member = data.member[target], admin = data.member[operator];
-    if (!isSearchAuthenticationTarget(target, member)) return { ok: false, message: "채팅 기록이 확인된 신규 유저만 검색인증할 수 있습니다." };
-    if (member.voicecheck) return { ok: false, message: "이미 검색인증이 완료된 유저입니다." };
+function applySearchAuthentication(data, target, operator, rawKeyword, lightData) {
+    var found = getSearchAuthenticationTarget(data, lightData, target), admin = data.member[operator];
+    if (!found) return { ok: false, message: "채팅 기록이 확인된 신규 유저만 검색인증할 수 있습니다." };
+    if (found.completed) return { ok: false, message: "이미 검색인증이 완료된 유저입니다." };
+    var member = found.row;
     var keyword = normalizeSearchAuthenticationKeyword(rawKeyword);
     if (!keyword) return { ok: false, message: "검색 내용을 입력해 주세요. 지인 소개로 들어왔다면 ‘지인소개’로 입력해 주세요." };
     if (countSearchAuthenticationCharacters(keyword) > GLOBAL_CONFIG.searchAuthentication.maxKeywordLength) return { ok: false, message: "검색 내용은 공백 제외 최대 10글자까지 등록할 수 있습니다." };
@@ -59051,11 +59113,12 @@ function applySearchAuthentication(data, target, operator, rawKeyword) {
     if (keywordRow) keywordRow.count = nextKeywordCount;
     else store.keywords.push({ keyword: keyword, count: nextKeywordCount });
     data.searchAuthentication = store;
-    return { ok: true, keyword: keyword };
+    return { ok: true, keyword: keyword, lightTarget: found.lightTarget, server: member.server };
 }
 
 // 등록 안내와 기존 미인증 대상 목록을 생성하는 함수
-function buildSearchAuthenticationManagementMessage(data) {
+function buildSearchAuthenticationManagementMessage(data, lightData) {
+    requireSearchAuthenticationLightData(lightData);
     var lines = ["🎙️호월 검색 미인증목록🎙️", "━━━━━━━━━━━━", "🔎 무엇을 검색하고 들어오셨나요?",
         "유저가 실제 검색한 내용을 확인해 주세요.", "", "📝 등록: /검색인증 아이디 내용",
         "• 지인 소개로 들어왔다면 ‘지인소개’로 입력", "• 공백 제외 최대 10글자까지 등록",
@@ -59063,16 +59126,21 @@ function buildSearchAuthenticationManagementMessage(data) {
         "💡 검색 내용 예시", "30대 · 2030대 · 수다 · 보룸 · 지인소개", "", "⌨️ 입력 예시",
         "/검색인증 마치 남 30대 수다", "/검색인증 추추 여 지인 소개", "━━━━━━━━━━━━"];
     var targets = [];
-    for (var name in data.member) {
-        if (!Object.prototype.hasOwnProperty.call(data.member, name)) continue;
-        if (isSearchAuthenticationTarget(name, data.member[name]) && !data.member[name].voicecheck) targets.push(name);
+    var names = Object.keys(data.member).concat(Object.keys(lightData.users));
+    var seen = {};
+    for (var nameIndex = 0; nameIndex < names.length; nameIndex++) {
+        var name = names[nameIndex];
+        if (Object.prototype.hasOwnProperty.call(seen, name)) continue;
+        seen[name] = true;
+        var found = getSearchAuthenticationTarget(data, lightData, name);
+        if (found && !found.completed) targets.push({ name: name, server: found.row.server });
     }
     if (!targets.length) lines.push("✅ 검색 미인증 유저가 없습니다.");
     else {
         lines.push(allsee, "📋 미인증목록 펼쳐보기", "");
         for (var i = 0; i < targets.length; i++) {
-            var server = data.member[targets[i]].server;
-            lines.push((i + 1) + ". [" + targets[i] + (server ? "(" + normalizeHoiServerLabel(server) + ")" : "") + "]");
+            var server = targets[i].server;
+            lines.push((i + 1) + ". [" + targets[i].name + (server ? "(" + normalizeHoiServerLabel(server) + ")" : "") + "]");
         }
     }
     return lines.join("\n");
@@ -59093,7 +59161,10 @@ function buildSearchAuthenticationRankingMessage(data, adminRanking) {
         var keywords = data.searchAuthentication ? data.searchAuthentication.keywords : [];
         for (var k = 0; k < keywords.length; k++) rows.push({ name: keywords[k].keyword, count: keywords[k].count });
     }
-    rows.sort(function (a, b) { return b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name, "ko"); });
+    rows.sort(function (a, b) {
+        if (!adminRanking && (a.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword) !== (b.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword)) return a.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword ? 1 : -1;
+        return b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name, "ko");
+    });
     var visible = adminRanking ? GLOBAL_CONFIG.searchAuthentication.adminVisibleRows : GLOBAL_CONFIG.searchAuthentication.keywordVisibleRows;
     if (!rows.length) lines.push(adminRanking ? "아직 검색인증 처리 기록이 없습니다." : "아직 등록된 검색인증 데이터가 없습니다.");
     for (var i = 0; i < rows.length; i++) {
