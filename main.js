@@ -37385,7 +37385,7 @@ function buildBattleExperienceRewardMessage(experienceResult) {
 function buildAdventureBoosterDepletionMessage(data, petData, guildData, user, boosterResult) {
     var member = data && data.member ? data.member[user] : null;
     if (!member || Number(member.boostercnt) !== 0 || !boosterResult || boosterResult.usedBooster <= 0) return "";
-    return "[" + checkRank(data, petData, guildData, user) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.\n안내링크:";
+    return "[" + checkRank(data, petData, guildData, user) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.\n안내링크:https://hoiland123.tistory.com/721";
 }
 
 // 퀘스트 완료 시 기본·티어·가호 경험치를 실제 지급량으로 표시하는 함수
