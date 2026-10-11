@@ -135,6 +135,43 @@ try {
         $replace = $bat.IndexOf('move "%LOCAL_DATA_DIR%" "%ROLLBACK_DIR%"', $start)
         Assert-True ($fail -gt $start -and $replace -gt $fail) 'Missing fail-closed gate.'
     }
+    Test-Group 'Actual BAT guards allow clean latest hoi/prod; reject other, stale or dirty' {
+        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '07_데이터_백업.bat'))
+        $lines = $bat -split '\r?\n'
+        $branchGuard = @($lines | Where-Object { $_.StartsWith('if not "!CURRENT_BRANCH!"') })
+        $dirtyGuard = @($lines | Where-Object { $_.StartsWith('for %%A in ("%GIT_STATUS_FILE%")') })
+        $baseGuard = @($lines | Where-Object { $_.StartsWith('if /i not "!START_HEAD!"') })
+        Assert-True ($branchGuard.Count -eq 1 -and $dirtyGuard.Count -eq 1 -and $baseGuard.Count -eq 1) 'Missing BAT guard.'
+        $status = Join-Path $script:testRoot 'status.txt'
+        $testBat = Join-Path $script:testRoot 'guards.bat'
+        $commands = @('@echo off', 'setlocal EnableExtensions EnableDelayedExpansion',
+            'set "PROD_BRANCH=feature/prod"', 'set "WORK_BRANCH=feature/hoi"',
+            'set "CURRENT_BRANCH=%~1"', 'set "START_HEAD=%~2"', 'set "REMOTE_PROD_HEAD=base"',
+            ('set "GIT_STATUS_FILE=' + $status + '"'), $branchGuard[0], $dirtyGuard[0], $baseGuard[0],
+            'exit /b 0', ':FAIL_SOURCE_BRANCH', 'exit /b 31', ':FAIL_GIT_DIRTY', 'exit /b 32', ':FAIL_GIT_BASE', 'exit /b 33')
+        [IO.File]::WriteAllText($testBat, ($commands -join "`r`n") + "`r`n", [Text.Encoding]::ASCII)
+        foreach ($case in @(
+            @{Branch='feature/hoi'; Head='base'; Dirty=$false; Code=0},
+            @{Branch='feature/prod'; Head='base'; Dirty=$false; Code=0},
+            @{Branch='feature/workflow'; Head='base'; Dirty=$false; Code=31},
+            @{Branch='feature/hoi'; Head='old'; Dirty=$false; Code=33},
+            @{Branch='feature/hoi'; Head='base'; Dirty=$true; Code=32}
+        )) {
+            [IO.File]::WriteAllText($status, $(if ($case.Dirty) { ' M fixture.txt' } else { '' }))
+            & $env:ComSpec /d /c $testBat $case.Branch $case.Head
+            Assert-True ($LASTEXITCODE -eq $case.Code) ('Wrong guard result for ' + $case.Branch + ': ' + $LASTEXITCODE)
+        }
+    }
+    Test-Group 'UTF-8 startup in Korean path with spaces and parentheses' {
+        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '07_데이터_백업.bat'))
+        $startup = $bat.Substring(0, $bat.IndexOf('if not exist "%ADB_EXE%"'))
+        $folder = Join-Path $script:testRoot '한글 작업(테스트)/tools'
+        [IO.Directory]::CreateDirectory($folder) | Out-Null
+        $testBat = Join-Path $folder 'startup.bat'
+        [IO.File]::WriteAllText($testBat, $startup + "exit /b 0`r`n", (New-Object Text.UTF8Encoding($false)))
+        $output = @(& $env:ComSpec /d /c $testBat 2>&1)
+        Assert-True ($LASTEXITCODE -eq 0 -and -not ($output -match 'not recognized')) 'Startup parsed as unintended commands.'
+    }
     Write-Host "All $script:groups mock backup groups passed. No ADB device was accessed."
 } finally {
     $resolved = [IO.Path]::GetFullPath($script:testRoot)
