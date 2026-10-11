@@ -105,6 +105,7 @@ const starter = {
     buildAdventureOnboardingResumeMessage: () => "이미 지급 완료",
     replier: { reply: message => starterReplies.push(message) }
 };
+starter.numberWithCommas = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 vm.createContext(starter);
 const starterStart = main.indexOf("    adventureStarter: {");
 const starterEnd = main.indexOf("    adventureQuest: {", starterStart);
@@ -119,18 +120,23 @@ starter.data.member["신규"] = newMember();
 assert.strictEqual(starter.applyAdventureStarterMemberRewards(starter.data, "신규"), true);
 assert.strictEqual(starter.data.member["신규"].bag[stone], 7);
 assert.strictEqual(starter.data.member["신규"].point, 30000000005);
+assert.strictEqual(starter.data.member["신규"].boostercnt, 30000);
 assert.strictEqual(starter.data.member["신규"].bag["펫 강화석⭐"], 3000);
 assert(starter.buildAdventureStarterCompleteMessage("신규", "친구", false, true).includes(stone + " 3개"));
+assert(starter.buildAdventureStarterCompleteMessage("신규", "친구", false, true).includes("호월신의 가호: 30,000개 지급!"));
+assert(!starter.buildAdventureStarterCompleteMessage("신규", "친구", false, false).includes("30,000개 지급!"));
 assert(!starter.buildAdventureStarterCompleteMessage("신규", "친구", false, false).includes(stone));
 console.log("3/5 스타터 기존 구성 유지·강화석 +3·실제 지급 안내 PASS");
 
 starter.data = JSON.parse(JSON.stringify(starter.data));
 assert.strictEqual(starter.applyAdventureStarterMemberRewards(starter.data, "신규"), false);
 assert.strictEqual(starter.data.member["신규"].bag[stone], 7, "재시작 후 중복 지급 없음");
+assert.strictEqual(starter.data.member["신규"].boostercnt, 30000);
 starter.data.member["신규"] = newMember("APPLYING");
 starter.data.member["신규"].adventureQuest = { receipts: { starterMemberRewards: true } };
 assert.strictEqual(starter.applyAdventureStarterMemberRewards(starter.data, "신규"), false);
 assert.strictEqual(starter.data.member["신규"].bag[stone], 4, "과거 퀘스트 지급자에게 소급 지급하지 않음");
+assert.strictEqual(starter.data.member["신규"].boostercnt, undefined);
 console.log("4/5 재입력·재시작·과거 지급자 미지급 PASS");
 
 starter.data.member["신규"] = newMember();
@@ -139,15 +145,18 @@ vm.runInContext("function runBlessing() {" + extractBlock(main, 'if (msg === "/�
 failHomeSave = true;
 assert.throws(() => starter.runBlessing(), /home save failed/);
 assert.strictEqual(starter.data.member["신규"].bag[stone], 4);
+assert.strictEqual(starter.data.member["신규"].boostercnt, undefined);
 assert.strictEqual(starter.data.member["신규"].adventureOnboarding.receipts.memberRewards, undefined);
 assert.strictEqual(starterReplies.length, 0);
 failHomeSave = false;
 starter.runBlessing();
 assert.strictEqual(starter.data.member["신규"].bag[stone], 7);
+assert.strictEqual(starter.data.member["신규"].boostercnt, 30000);
 assert.strictEqual(starter.data.member["신규"].adventureOnboarding.stage, "COMPLETE");
 assert.strictEqual(saves.at(-1), "dev-member.json");
 assert(starterReplies.at(-1).includes(stone + " 3개"));
 starter.runBlessing();
 assert.strictEqual(starter.data.member["신규"].bag[stone], 7);
 assert.strictEqual(starterReplies.at(-1), "이미 지급 완료");
+assert.strictEqual(starter.data.member["신규"].boostercnt, 30000);
 console.log("5/5 /호여!! 중단 후 재개·동일 저장 경로·완료 재입력 PASS");
