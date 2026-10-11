@@ -92,9 +92,9 @@ if errorlevel 1 goto FAIL_REMOTE_DATA
 echo [OK] %REMOTE_DATA_DIR%
 echo.
 
-echo [4/7] /호이랜드 전체를 짧은 TEMP 경로로 ADB pull
+echo [4/7] /호이랜드 정식 파일을 TEMP로 내려받기 ^(.tmp/.rollback 제외^)
 echo ------------------------------------------------------------
-"%ADB_EXE%" -s "!TARGET_ADB_DEVICE!" pull "%REMOTE_DATA_DIR%" "%PULLED_DATA_DIR%"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0pull_legacy_data.ps1" -AdbExe "%ADB_EXE%" -Device "!TARGET_ADB_DEVICE!" -RemoteDir "%REMOTE_DATA_DIR%" -Destination "%PULLED_DATA_DIR%"
 if errorlevel 1 goto FAIL_PULL
 if not exist "%PULLED_DATA_DIR%\" goto FAIL_PULL
 
@@ -248,7 +248,7 @@ goto FAIL_END
 echo [FAIL] LDPlayer 경로 확인 실패: %REMOTE_DATA_DIR%
 goto FAIL_END
 :FAIL_PULL
-echo [FAIL] /호이랜드 전체 TEMP ADB pull 실패
+echo [FAIL] 정식 데이터 TEMP pull 또는 검증 실패 - 로컬 data 교체 전 중단
 goto FAIL_END
 :FAIL_COPY
 echo [FAIL] 내려받은 데이터의 저장소 교체 후보 복사 실패
