@@ -1,1 +1,1 @@
-{"system":"main","error":{"message":"Verified JSON file replace failed: /sdcard/호이랜드/member_pet_back.json"},"msg":"ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ","room":"😏 30대 반말방｜스치면 친구됨","sender":"맴밈 남"}
+{"system":"main","error":{"message":"java.lang.IndexOutOfBoundsException: Index: 17, Size: 11","fileName":"main","lineNumber":37274},"msg":"/리셋","room":"서버관리자","sender":"호이 남"}
