@@ -6,6 +6,7 @@ set "ADB_EXE=C:\LDPlayer\LDPlayer9\adb.exe"
 set "TARGET_ADB_DEVICE=auto"
 set "REMOTE_DATA_DIR=/storage/emulated/0/호이랜드"
 set "PROD_BRANCH=feature/prod"
+set "WORK_BRANCH=feature/hoi"
 for %%I in ("%~dp0..") do set "TARGET_REPO=%%~fI"
 set "LOCAL_DATA_DIR=%TARGET_REPO%\data"
 set "DID_PUSHD=0"
@@ -42,7 +43,7 @@ set "GIT_STATUS_FILE=%TEMP%\hoibot_git_status_%RUN_TS%_%RANDOM%.txt"
 echo [1/7] Git 사전 안전 확인
 echo ------------------------------------------------------------
 for /f "delims=" %%b in ('git branch --show-current') do set "CURRENT_BRANCH=%%b"
-if not "!CURRENT_BRANCH!"=="%PROD_BRANCH%" goto FAIL_SOURCE_BRANCH
+if not "!CURRENT_BRANCH!"=="%PROD_BRANCH%" if not "!CURRENT_BRANCH!"=="%WORK_BRANCH%" goto FAIL_SOURCE_BRANCH
 
 git status --porcelain=v1 --untracked-files=all > "%GIT_STATUS_FILE%"
 if errorlevel 1 goto FAIL_GIT_STATUS
@@ -53,7 +54,7 @@ if errorlevel 1 goto FAIL_GIT_FETCH
 for /f %%h in ('git rev-parse HEAD') do set "START_HEAD=%%h"
 for /f %%h in ('git rev-parse origin/%PROD_BRANCH%') do set "REMOTE_PROD_HEAD=%%h"
 if /i not "!START_HEAD!"=="!REMOTE_PROD_HEAD!" goto FAIL_GIT_BASE
-echo [OK] clean %PROD_BRANCH% = origin/%PROD_BRANCH%
+echo [OK] clean !CURRENT_BRANCH! = origin/%PROD_BRANCH%
 echo.
 
 if exist "%PULL_ROOT%\" goto FAIL_PATH_COLLISION
@@ -211,7 +212,7 @@ goto FAIL_END
 echo [FAIL] 저장소 경로 이동 실패: !TARGET_REPO!
 goto FAIL_END
 :FAIL_SOURCE_BRANCH
-echo [FAIL] 시작 브랜치는 %PROD_BRANCH%여야 합니다. 현재: !CURRENT_BRANCH!
+echo [FAIL] 시작 브랜치는 %PROD_BRANCH% 또는 %WORK_BRANCH%여야 합니다. 현재: !CURRENT_BRANCH!
 goto FAIL_END
 :FAIL_GIT_STATUS
 echo [FAIL] Git 상태 확인 실패
@@ -224,7 +225,7 @@ echo [FAIL] 원격 Git 정보 갱신 실패
 if "!DATA_REPLACED!"=="1" goto FAIL_GIT_AFTER_DATA
 goto FAIL_END
 :FAIL_GIT_BASE
-echo [FAIL] 현재 %PROD_BRANCH%가 origin/%PROD_BRANCH%와 일치하지 않습니다. 먼저 최신화하세요.
+echo [FAIL] 현재 !CURRENT_BRANCH!가 origin/%PROD_BRANCH%와 일치하지 않습니다. 먼저 최신화하세요.
 goto FAIL_END
 :FAIL_SOURCE_SWITCH
 echo [FAIL] 데이터 작업 브랜치 생성 실패: %SOURCE_BRANCH%
