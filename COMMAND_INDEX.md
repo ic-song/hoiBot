@@ -7836,37 +7836,39 @@ Status: VERIFIED
 - `checkRank`는 기존 무쌍·티어/특별 이모지·길드 표시는 유지한다. 응답/공지의 `formatNicknameRankMessage`가 무쌍 접두어의 외곽 괄호를 정리한다.
 - 실제 순위·매력·동률 순서·보상 기준과 `/종합순위`, `ㅈㅈㅈ`의 서버 현황 → 월드 응답 순서는 유지한다.
 
-# /검색인증 · 검색인증 조회 3종
+# /인증 · 검색인증 조회 및 초기화
 
 Status: VERIFIED
 
-## Files
+## Files / Commands
 
-- `main.js`, `Info.js`
+- main.js: /인증 아이디 사유, /검색인증, /인증순위, /관리자순위, /관리자순위초기화, /인증초기화.
+- 기획: 검색인증_수정요청서 및 해당 명령어 권한 수정 (166393bdd7aa832ab86f01a9a57fb0d8), ver_2.624.
+- 등록·미인증 목록은 Admin 신원 권한, 검색어/관리자 순위는 Admin 또는 MASTER 신원 권한, 초기화 2종은 MASTER 신원 권한이다. 모든 방 및 펫무쌍·서버대전·길드영지전 중 허용하며 다른 명령의 방 권한을 확대하지 않는다. 기존 가입·계정정지·일대일 패스 흐름은 유지한다.
+- /검색인증은 목록, /인증순위는 검색어 순위로 변경됐다. 이전 관리/순위 명령과 /검색인증 인자 형식은 안내만 출력한다. /가입인증·/가입인증 목록·/인증필요는 기존 목록 별칭·권한을 유지한다.
 
 ## Related Helpers
 
-- `normalizeSearchAuthenticationKeyword`, `countSearchAuthenticationCharacters`, `isSearchAuthenticationTarget`
-- `requireSearchAuthenticationLightData`, `getSearchAuthenticationTarget`, `recordSearchAuthenticationChat`, `migrateLightSearchAuthenticationToMember`
-- `isSearchAuthenticationCount`, `applySearchAuthentication`
-- `buildSearchAuthenticationManagementMessage`, `buildSearchAuthenticationRankingMessage`
+- normalizeSearchAuthenticationKeyword, countSearchAuthenticationCharacters, isSearchAuthenticationTarget, isSearchAuthenticationCount.
+- requireSearchAuthenticationLightData, getSearchAuthenticationTarget, getPendingSearchAuthenticationTargets, recordSearchAuthenticationChat, migrateLightSearchAuthenticationToMember.
+- applySearchAuthentication, applyBulkSearchAuthentication, resetSearchAuthenticationAdminStats.
+- buildSearchAuthenticationManagementMessage, buildSearchAuthenticationRankingMessage, isGlobalOperatorCommandAllowed, isExclusiveDataMutationCommandMessage, isServerRaidAdditionalCommand.
 
 ## Data Usage / Save Flow
 
-- `member.json -> member[target].voicecheck`: 기존 완료 상태를 계속 사용하며 이미 완료한 대상은 재등록·재보상하지 않는다.
-- `attendanceLight.json -> users[target].voicecheck`, `searchAuthenticationRecord`: 미가입 출첵·일반 채팅으로 인식한 유저의 인증 상태. 게임 계정을 생성하지 않고 기존 경량 기록에 저장한다. `chatSeenDate`는 일반 채팅의 인식 날짜만 하루 1회 갱신하며 출석 횟수·보상·메시지 내용은 기록하지 않는다.
-- `member[target].searchAuthenticationRecord`: 이번 검색어·인증 관리자 계정 식별값·처리 시각. 대상과 관리자 모두 기존 계정 객체를 따라 닉네임 변경 시 기록을 유지한다.
-- `member[operator].diamond`, `member[operator].searchAuthentication`: 보유 다이아와 리뉴얼 이후 인증 인원/실제 누적 다이아/계정 실적 식별값.
-- `searchAuthentication.keywords`: 공백만 제거한 검색어별 누적 횟수 배열. 지인소개 포함, 보룸/보이스룸 별도. 과거 인증을 검색어로 추정하지 않는다.
-- 가입 여부와 무관하게 회원 또는 경량 기록에 존재하는 `이름 남/여` 계정을 대상으로 삼는다. 두 저장소에 같은 아이디가 있으면 한 번만 표시하고, 어느 한쪽에서 인증이 완료됐으면 중복 등록·보상을 막는다. 기존 `isAdmin` 방 권한을 재사용한다.
-- `/검색인증 아이디 내용`은 아이디 뒤 내용을 끝까지 읽고 공백 제거 후 1~10글자를 검사한다. 정수 재화·집계 경계를 먼저 검사한다.
-- 성공할 때 대상 인증·검색어 횟수·관리자 실적·다이아 1개를 함께 갱신한다. 가입 대상은 `member.json`, 미가입 대상은 경량 기록을 스냅샷 저장한 뒤 `member.json`을 저장하며 실패 시 기존 명령 트랜잭션으로 함께 복구한다. 포인트·달·샵 아이템·과거 `checkCnt`를 변경하지 않는다.
-- `출발한다`, `/미출석가입`, `/미가입출첵`의 가입완료 정리에서 미가입 인증 상태·기록을 회원으로 이전하고 보상·집계는 다시 지급하지 않는다. 출첵 또는 채팅 인식일 중 최근 날짜로 기존 4일 정리 기준을 적용한다. 계정 삭제 후 다시 인식되면 재인증할 수 있다.
-- `/검색인증관리`는 기존 Admin 운영방, `/검색인증순위`와 `/검색인증관리순위`는 기존 Admin/Master 운영방에서 전체 서버 데이터를 조회한다. 동률은 기존 인증순위와 같은 이름 오름차순.
-- 관리 목록 문구 시작부터 ALLSEE. 검색어·관리자 순위는 11등부터 ALLSEE이며 10등 이하면 넣지 않는다. 검색어 `기타`는 인증 횟수와 무관하게 마지막 행으로 정렬한다.
-- `/가입인증`, `/가입인증 목록`은 새 관리 조회 화면. `/인증필요`는 기존 Admin 신원 권한으로 모든 방에서 같은 화면을 조회한다. `/인증순위`는 관리자 순위의 별칭.
-- `/인증`, `/보룸인증`, `/가입 아이디`는 새 등록 명령 안내만 보내며 과거 보상을 실행하지 않는다. 인자 없는 `/가입`은 기존 `/모험시작` 안내를 유지한다.
-- Info `/정보`는 기존 `voicecheck` 상태를 검색인증 완료/미완료로 표시한다. `dev/` 저장은 DEV 경로에만 반영한다.
+- member.json의 member[target].voicecheck, attendanceLight.json의 users[target].voicecheck와 searchAuthenticationRecord를 함께 조회한다. 일반 채팅 인식 기록도 대상으로 삼으며 게임 계정을 생성하지 않는다. 같은 아이디는 중복 제외하고 어느 저장소든 인증 완료이면 다시 보상하지 않는다.
+- 단일 인증은 검색어 공백 제거 후 1~10글자와 안전 정수 경계를 확인하고, 대상 인증·검색어 횟수·관리자 count·보유 boostercnt 및 실지급 boosters 누계를 한 번 갱신한다. 기존 다이아 보유량·diamonds 지급 이력·포인트·moon·checkCnt는 유지한다.
+- 가입 대상은 member.json만 저장한다. 미가입 대상은 경량 기록의 변경 전 스냅샷으로 먼저 저장한 후 member.json을 저장하며 기존 명령 트랜잭션으로 두 파일 실패를 함께 복구한다. 헬퍼에서 파일 IO하지 않는다.
+- /인증초기화는 같은 미인증 대상 집합을 기타로 일괄 인증한다. 사용자 확정으로 관리자 보상·관리자 실적은 제외하며 검색어 기타 횟수만 합산한다. 기존 인증 사유·재화·checkCnt는 보존한다. 반복 입력은 0건·무저장이다.
+- /관리자순위초기화는 모든 실적 형식을 먼저 검사한 뒤 count/diamonds/boosters 통계만 0으로 바꾼다. 계정 실적 id·보유 재화·대상 인증·검색어 통계는 유지한다. 이후 정상 인증은 같은 id에 새 실적을 쌓는다.
+- 변경 명령 3종은 isExclusiveDataMutationCommandMessage의 단독 쓰기 잠금 대상이다. DEV 저장은 기존 컨텍스트로 DEV 경량·회원 파일에만 적용한다.
+- 가입 시 미가입 인증 상태·기록을 이전하며 보상·집계를 다시 지급하지 않는다. 기존 4일 활동 정리·삭제 후 재인식 정책은 유지한다. Info.js의 검색인증 상태 출력은 같은 voicecheck를 계속 사용한다.
+
+## UI / Validation
+
+- 목록 시작부터 ALLSEE, 순위는 10등까지 바로 표시하고 11등부터 ALLSEE. 검색어 기타와 관리자 호이 남은 각각 마지막에 표시한다. 호이 남 계정이 있으면 0 실적도 하단에 표시하고 기록은 유지한다.
+- 새 가호 누계와 과거 다이아 누계는 별도로 표시한다. 등록·목록·보상 안내는 새 명령어와 가호 30개로 통일한다.
+- tools/test_member_display_search_auth.js: 기존 가입·미가입·닉변·이전·정리·저장 실패 29개 회귀 그룹. tools/test_search_authentication_oct12.js: 새 권한·두 초기화·보상 전환·실적 보존·대전 잠금·정수 경계·DEV·부분 저장/응답 실패·일괄 인증 후 가입 이전 11개 그룹.
 
 # /호츈오픈 [수량] · 타이틀 판매
 
@@ -7904,8 +7906,8 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-- `main.js:isServerRaidAdditionalCommand`에서 `/기록`, `/기록 내용`, `/기록실`, `/검색인증 아이디 내용`, `/검색인증관리`, `/검색인증순위`, `/검색인증관리순위`만 기존 예외에 추가한다. `/검색인증`은 기존 입력 안내에 도달한다.
-- PREP·ACTIVE·SETTLING에서 기존 명령 분기로 통과시키며 기록의 기존 Admin/Master 신원 권한, 검색인증의 기존 운영방·Admin/Master 권한, 출석·정지·패스 검사를 확대하지 않는다.
+- `main.js:isServerRaidAdditionalCommand`에서 `/기록`, `/기록 내용`, `/기록실`, `/인증 아이디 사유`, `/검색인증`, `/인증순위`, `/관리자순위`, `/관리자순위초기화`, `/인증초기화`만 기존 예외에 추가한다. `/검색인증`은 미인증 목록으로 연결한다.
+- PREP·ACTIVE·SETTLING에서 기존 명령 분기로 통과시키며 기록의 기존 Admin/Master 신원 권한, 검색인증의 Admin/Master 신원 권한, 출석·정지·패스 검사를 확대하지 않는다.
 - `/기록삭제`, 조회 명령 뒤 추가 인수, 호츈쿠키 개봉은 새 예외가 아니다. 기존 허용 명령과 별칭을 유지한다.
 - 신규 저장 경로 없이 기록의 `board.json`, 검색인증의 `member.json` 저장·중복 방지와 기존 잠금을 그대로 사용한다.
 - 검증: `tools/test_fortune_cookie.js`의 실제 레이드 진입 및 기존 인증 권한 시나리오, `tools/test_server_raid.js`, `tools/test_member_display_search_auth.js`.

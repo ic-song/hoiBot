@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.623"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.624"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -996,7 +996,7 @@ const GLOBAL_CONFIG = {
             {"title":"호월신의 축복✨","quotes":["그대에게 행운을 내리노라!","호월의 빛이 그대를 비추리라!","그대의 쿠키에 별을 담았노라!","오늘의 축복은 그대의 것이니라!","그대의 이름을 별에 새겼노라!","작은 쿠키에 큰 축복을 담았노라!","내가 그대의 행운이 되어주리라!","그대의 정성에 축복으로 답하노라!","그대의 앞길에 빛을 놓으리라!","용기를 내라, 내가 함께하노라!","내가 고른 행운의 주인이로다!","호월의 별들이 그대를 반기노라!","이 한 입에 신의 마음을 담았노라!","그대에게 빛나는 인연을 보내노라!","그대의 웃음에 나도 미소 짓노라!","쿠키를 연 손에 축복이 깃들리라!","나의 축복을 당당히 지니거라!","마침내 나의 쪽지를 찾았구나!","그대의 소원을 귀담아듣겠노라!","오늘은 신도 그대의 편이니라!","그대의 도전에 박수를 보내노라!","나의 별빛을 그대에게 나누노라!","달빛을 따라 축복을 보냈노라!","그대의 하루에 반짝임을 더하노라!","행운의 문이 그대를 맞이하노라!","호월신의 눈에 그대가 들었노라!","기쁜 마음으로 이 복을 받거라!","그대의 곁에 온기를 남기노라!","그대의 쿠키를 친히 골랐노라!","이 만남 또한 축복이니라!"]}
         ]
     },
-    searchAuthentication: { maxKeywordLength: 10, diamondReward: 1, keywordVisibleRows: 10, adminVisibleRows: 10, otherKeyword: "기타" },
+    searchAuthentication: { maxKeywordLength: 10, boosterReward: 30, rewardLabel: "호월신의 가호✨(/호여 숫자)", keywordVisibleRows: 10, adminVisibleRows: 10, otherKeyword: "기타", bottomAdmin: "호이 남" },
     permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
         additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
     },
@@ -1004,7 +1004,7 @@ const GLOBAL_CONFIG = {
         testRoomOnly: false
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
-        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방", "/펫정보", "/이체", "/기록", "/기록실", "/검색인증", "/검색인증관리", "/검색인증순위", "/검색인증관리순위"] }, // 기존 허용 명령에 더할 예외
+        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방", "/펫정보", "/이체", "/기록", "/기록실", "/검색인증", "/검색인증관리", "/검색인증순위", "/검색인증관리순위", "/인증", "/인증순위", "/관리자순위", "/관리자순위초기화", "/인증초기화"] }, // 기존 허용 명령에 더할 예외
         limits: { attacks: 5, ticketAttacks: 10, maxSafeInteger: 9007199254740991 },
         items: { attackTicket: "서버레이드공격권👾" },
         legacyPolicy: { attacks: 5, ticketAttacks: 0, chargeFromAttempt: 2, pointCost: 50000000, handicapRanks: [] }, // 기준 미기록 기존 회차는 당시 규칙 유지
@@ -9070,14 +9070,14 @@ replier.reply(
                         replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
                     }
                 }
-                if (msg === "/검색인증" || /^\/검색인증\s+[\s\S]*$/.test(msg)) {
-                    if (!isAdmin(sender)) {
+                if (msg === "/인증" || /^\/인증\s+[\s\S]*$/.test(msg)) {
+                    if (!isAdminIdentity(sender)) {
                         replier.reply("관리자만 사용할 수 있는 명령어입니다.");
                         return;
                     }
-                    var searchAuthMatch = msg.match(/^\/검색인증\s+([^\s]+)\s+(남|여)(?:\s+([\s\S]*))?$/);
+                    var searchAuthMatch = msg.match(/^\/인증\s+([^\s]+)\s+(남|여)(?:\s+([\s\S]*))?$/);
                     if (!searchAuthMatch || searchAuthMatch[3] === undefined) {
-                        replier.reply("사용법: /검색인증 아이디 내용");
+                        replier.reply("사용법: /인증 아이디 사유");
                         return;
                     }
                     var searchAuthTarget = searchAuthMatch[1] + " " + searchAuthMatch[2];
@@ -9093,11 +9093,11 @@ replier.reply(
                     replier.reply("🎙️ 호월 검색인증 완료 🎙️\n━━━━━━━━━━━━\n👤 대상: " + searchAuthTarget +
                         "\n🏰 서버: " + (searchAuthResult.server ? normalizeHoiServerLabel(searchAuthResult.server) : "소속 서버 없음") +
                         "\n🔎 검색어: " + searchAuthResult.keyword + "\n👑 인증 담당: " + sender +
-                        "\n\n✅ 검색인증이 완료되었습니다.\n🎁 관리자 보상: 다이아💎 1개");
+                        "\n\n✅ 검색인증이 완료되었습니다.\n🎁 관리자 보상: " + GLOBAL_CONFIG.searchAuthentication.rewardLabel + " " + GLOBAL_CONFIG.searchAuthentication.boosterReward + "개");
                     return;
                 }
-                if (msg === "/인증" || /^\/(?:인증|보룸인증|가입)\s+[\s\S]+$/.test(msg) || msg === "/보룸인증") {
-                    replier.reply("📢 검색인증 명령어로 변경되었습니다.\n사용법: /검색인증 아이디 내용\n예시: /검색인증 마치 남 30대 수다");
+                if (/^\/(?:보룸인증|가입)\s+[\s\S]+$/.test(msg) || msg === "/보룸인증") {
+                    replier.reply("📢 검색인증 명령어로 변경되었습니다.\n사용법: /인증 아이디 사유\n예시: /인증 마치 남 30대 수다");
                     return;
                 }
                 if (msg.startsWith("/후원지급 ")) {
@@ -9134,8 +9134,8 @@ replier.reply(
                         replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
                     }
                 }
-                if (msg === "/검색인증관리" || msg === "/가입인증" || msg === "/가입인증 목록" || msg === "/인증필요") {
-                    if (!(msg === "/인증필요" ? isAdminIdentity(sender) : isAdmin(sender))) {
+                if (msg === "/검색인증" || msg === "/가입인증" || msg === "/가입인증 목록" || msg === "/인증필요") {
+                    if (!(msg === "/검색인증" || msg === "/인증필요" ? isAdminIdentity(sender) : isAdmin(sender))) {
                         replier.reply("관리자만 사용할 수 있는 명령어입니다.");
                         return;
                     }
@@ -29299,30 +29299,33 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/검색인증순위" || msg === "/검색인증관리순위" || msg === "/인증순위") {
-                    if (!isMaster(sender) && !isAdmin(sender)) {
+                if (msg === "/인증순위" || msg === "/관리자순위") {
+                    if (!isMasterIdentity(sender) && !isAdminIdentity(sender)) {
                         replier.reply("관리자만 사용할 수 있는 명령어입니다.");
                         return;
                     }
-                    replier.reply(buildSearchAuthenticationRankingMessage(data, msg !== "/검색인증순위"));
+                    replier.reply(buildSearchAuthenticationRankingMessage(data, msg === "/관리자순위"));
                     return;
                 }
-                if (msg === "/인증초기화" && isMaster(sender)) {
-                    var count = 0;
-
-                    for (var name in data.member) {
-                        if (!data.member.hasOwnProperty(name)) continue;
-
-                        if (data.member[name].checkCnt) {
-                            data.member[name].checkCnt = 0;
-                            count++;
-                        }
-                    }
-
-                    saveJsonFile(data, filePath);
-
-                    replier.reply("📋 인증 데이터 초기화 완료\n\n" + "초기화된 유저 수: " + numberWithCommas(count) + "명");
-
+                if (msg === "/관리자순위초기화") {
+                    if (!isMasterIdentity(sender)) { replier.reply("MASTER만 사용할 수 있는 명령어입니다."); return; }
+                    var resetAdminCount = resetSearchAuthenticationAdminStats(data);
+                    if (resetAdminCount > 0) saveJsonFile(data, filePath);
+                    replier.reply("🏅 관리자 인증 실적 초기화 완료\n처리된 관리자: " + numberWithCommas(resetAdminCount) + "명");
+                    return;
+                }
+                if (msg === "/인증초기화") {
+                    if (!isMasterIdentity(sender)) { replier.reply("MASTER만 사용할 수 있는 명령어입니다."); return; }
+                    var bulkAuthLightData = loadJsonFile(attendanceLightPath);
+                    var bulkAuthLightSnapshot = JSON.stringify(bulkAuthLightData);
+                    var bulkAuthResult = applyBulkSearchAuthentication(data, bulkAuthLightData, sender);
+                    if (bulkAuthResult.lightChanged) saveJsonFile(bulkAuthLightData, attendanceLightPath, false, bulkAuthLightSnapshot);
+                    if (bulkAuthResult.count > 0) saveJsonFile(data, filePath);
+                    replier.reply("✅ 검색인증 일괄 처리 완료\n사유: 기타\n처리된 유저: " + numberWithCommas(bulkAuthResult.count) + "명\n관리자 실적·보상 지급 제외");
+                    return;
+                }
+                if (msg === "/검색인증관리" || msg === "/검색인증순위" || msg === "/검색인증관리순위" || /^\/검색인증\s+[\s\S]+$/.test(msg)) {
+                    replier.reply("📢 검색인증 명령어가 변경되었어요!\n등록: /인증 아이디 사유\n미인증 목록: /검색인증\n검색어 순위: /인증순위\n관리자 실적: /관리자순위");
                     return;
                 }
 
@@ -31547,6 +31550,9 @@ function isGuildTerritoryStartOperator(sender) {
 // 방·이벤트 제한 없이 허용할 운영 명령과 기존 역할을 확인하는 함수
 function isGlobalOperatorCommandAllowed(sender, msg) {
     if (typeof msg !== "string") return false;
+    if (msg === "/관리자순위초기화" || msg === "/인증초기화") return isMasterIdentity(sender);
+    if (msg === "/인증순위" || msg === "/관리자순위") return isAdminIdentity(sender) || isMasterIdentity(sender);
+    if (msg === "/검색인증" || msg === "/인증" || /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg)) return isAdminIdentity(sender);
     if (msg === "/인증필요") return isAdminIdentity(sender);
     if (msg === "/미정" || msg.indexOf("/미정 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
     if (msg === "/정보" || msg.indexOf("/정보 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
@@ -31651,7 +31657,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/알림\s+.+$/.test(command) || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command) ||
         /^\/서버변경\s+\S(?:.*\S)?$/.test(command) || /^\/관리자추가\s+\S(?:.*\S)?$/.test(command) || /^\/관리자삭제\s+\S(?:.*\S)?$/.test(command) ||
-        command === "/관리자감추기" || command === "/이모지감추기" || /^\/검색인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(command) || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
+        command === "/관리자감추기" || command === "/이모지감추기" || command === "/관리자순위초기화" || command === "/인증초기화" || /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(command) || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
 }
 
 // 자동일퀘 대상 3종이 보너스 횟수까지 완료됐는지 확인하는 함수
@@ -33002,7 +33008,7 @@ function isServerRaidTurnQueryCommand(msg) {
 function isServerRaidAdditionalCommand(msg) {
     return GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
         /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg) ||
-        /^\/검색인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
+        /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
         /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
         /^\/패키지가방\s+.+$/.test(msg) ||
         /^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg) ||
@@ -59128,58 +59134,108 @@ function applySearchAuthentication(data, target, operator, rawKeyword, lightData
     var keyword = normalizeSearchAuthenticationKeyword(rawKeyword);
     if (!keyword) return { ok: false, message: "검색 내용을 입력해 주세요. 지인 소개로 들어왔다면 ‘지인소개’로 입력해 주세요." };
     if (countSearchAuthenticationCharacters(keyword) > GLOBAL_CONFIG.searchAuthentication.maxKeywordLength) return { ok: false, message: "검색 내용은 공백 제외 최대 10글자까지 등록할 수 있습니다." };
-    var stats = admin.searchAuthentication || { count: 0, diamonds: 0 };
+    var stats = admin.searchAuthentication || { count: 0, diamonds: 0, boosters: 0 };
     var store = data.searchAuthentication || { keywords: [] };
     if (!(store.keywords instanceof Array)) throw new Error("검색인증 집계 형식 오류");
     var keywordRow = null;
     for (var i = 0; i < store.keywords.length; i++) {
         if (store.keywords[i].keyword === keyword) { keywordRow = store.keywords[i]; break; }
     }
-    var reward = GLOBAL_CONFIG.searchAuthentication.diamondReward;
-    if (!isSearchAuthenticationCount(admin.diamond === undefined ? 0 : admin.diamond) ||
-        !isSearchAuthenticationCount(stats.count) || !isSearchAuthenticationCount(stats.diamonds) ||
+    var reward = GLOBAL_CONFIG.searchAuthentication.boosterReward;
+    var oldBoosters = stats.boosters === undefined ? 0 : stats.boosters; // 보상 변경 전 실적에는 가호 지급 이력이 없음
+    if (!isSearchAuthenticationCount(admin.boostercnt === undefined ? 0 : admin.boostercnt) ||
+        !isSearchAuthenticationCount(stats.count) || !isSearchAuthenticationCount(stats.diamonds) || !isSearchAuthenticationCount(oldBoosters) || !isSearchAuthenticationCount(reward) ||
         !isSearchAuthenticationCount(keywordRow ? keywordRow.count : 0)) throw new Error("검색인증 기존 재화·집계 값 오류");
-    var nextDiamond = (admin.diamond === undefined ? 0 : admin.diamond) + reward; // 현재 보유 다이아에 이번 인증 보상만 합산
+    var nextBooster = (admin.boostercnt === undefined ? 0 : admin.boostercnt) + reward; // 현재 가호에 이번 인증 보상만 합산
     var nextCount = stats.count + 1;
-    var nextReward = stats.diamonds + reward; // 다이아 사용과 무관한 실제 인증 보상 누계
+    var nextReward = oldBoosters + reward; // 사용한 가호와 무관한 실제 인증 보상 누계
     var nextKeywordCount = (keywordRow ? keywordRow.count : 0) + 1;
-    if (!isSearchAuthenticationCount(nextDiamond) || !isSearchAuthenticationCount(nextCount) ||
+    if (!isSearchAuthenticationCount(nextBooster) || !isSearchAuthenticationCount(nextCount) ||
         !isSearchAuthenticationCount(nextReward) || !isSearchAuthenticationCount(nextKeywordCount)) throw new Error("검색인증 재화·집계 값 오류");
     var operatorId = stats.id || String(java.util.UUID.randomUUID()); // 관리자 계정 객체와 함께 이동하는 실적 식별값
     member.voicecheck = 1;
     member.searchAuthenticationRecord = { keyword: keyword, operatorId: operatorId, operator: operator, completedAt: formatDateTime(new Date()) };
-    admin.diamond = nextDiamond;
-    admin.searchAuthentication = { id: operatorId, count: nextCount, diamonds: nextReward };
+    admin.boostercnt = nextBooster;
+    stats.id = operatorId;
+    stats.count = nextCount;
+    stats.boosters = nextReward;
+    admin.searchAuthentication = stats; // 과거 다이아 지급 이력은 그대로 보존
     if (keywordRow) keywordRow.count = nextKeywordCount;
     else store.keywords.push({ keyword: keyword, count: nextKeywordCount });
     data.searchAuthentication = store;
     return { ok: true, keyword: keyword, lightTarget: found.lightTarget, server: member.server };
 }
 
+// 같은 아이디를 중복 제외하여 가입·미가입 저장소의 미인증 대상만 반환하는 함수
+function getPendingSearchAuthenticationTargets(data, lightData) {
+    requireSearchAuthenticationLightData(lightData);
+    var names = Object.keys(data.member).concat(Object.keys(lightData.users)), seen = {}, targets = [];
+    for (var i = 0; i < names.length; i++) {
+        var name = names[i];
+        if (Object.prototype.hasOwnProperty.call(seen, name)) continue;
+        seen[name] = true;
+        var found = getSearchAuthenticationTarget(data, lightData, name);
+        if (found && !found.completed) targets.push({ name: name, found: found });
+    }
+    return targets;
+}
+
+// 미인증 유저를 기타로 일괄 인증하고 관리자 실적·보상은 지급하지 않는 함수
+function applyBulkSearchAuthentication(data, lightData, operator) {
+    var targets = getPendingSearchAuthenticationTargets(data, lightData);
+    if (!targets.length) return { count: 0, lightChanged: false };
+    var store = data.searchAuthentication || { keywords: [] }, keywordRow = null;
+    if (!(store.keywords instanceof Array)) throw new Error("검색인증 집계 형식 오류");
+    for (var k = 0; k < store.keywords.length; k++) if (store.keywords[k].keyword === GLOBAL_CONFIG.searchAuthentication.otherKeyword) { keywordRow = store.keywords[k]; break; }
+    var count = keywordRow ? keywordRow.count : 0;
+    var nextCount = count + targets.length; // 이번 일괄 인증을 검색어 기타 통계에만 합산
+    if (!isSearchAuthenticationCount(count) || !isSearchAuthenticationCount(nextCount)) throw new Error("검색인증 집계 값 오류");
+    var completedAt = formatDateTime(new Date()), lightChanged = false;
+    for (var i = 0; i < targets.length; i++) {
+        var target = targets[i];
+        target.found.row.voicecheck = 1;
+        target.found.row.searchAuthenticationRecord = { keyword: GLOBAL_CONFIG.searchAuthentication.otherKeyword, operator: operator, completedAt: completedAt, bulk: true };
+        if (target.found.lightTarget) lightChanged = true;
+    }
+    if (keywordRow) keywordRow.count = nextCount;
+    else store.keywords.push({ keyword: GLOBAL_CONFIG.searchAuthentication.otherKeyword, count: nextCount });
+    data.searchAuthentication = store;
+    return { count: targets.length, lightChanged: lightChanged };
+}
+
+// 관리자 인증 실적 통계만 초기화하고 계정 식별값과 보유 재화는 유지하는 함수
+function resetSearchAuthenticationAdminStats(data) {
+    var targets = []; // 전체 실적 형식을 먼저 검사한 뒤 일괄 초기화
+    for (var name in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, name)) continue;
+        var stats = data.member[name].searchAuthentication;
+        if (stats && (typeof stats !== "object" || Array.isArray(stats) || !isSearchAuthenticationCount(stats.count) || !isSearchAuthenticationCount(stats.diamonds) || !isSearchAuthenticationCount(stats.boosters === undefined ? 0 : stats.boosters))) throw new Error("검색인증 관리자 실적 형식 오류");
+        if (!stats || (stats.count === 0 && stats.diamonds === 0 && (stats.boosters === undefined || stats.boosters === 0))) continue;
+        targets.push(stats);
+    }
+    for (var i = 0; i < targets.length; i++) {
+        targets[i].count = 0;
+        targets[i].diamonds = 0;
+        targets[i].boosters = 0;
+    }
+    return targets.length;
+}
+
 // 등록 안내와 기존 미인증 대상 목록을 생성하는 함수
 function buildSearchAuthenticationManagementMessage(data, lightData) {
     requireSearchAuthenticationLightData(lightData);
     var lines = ["🎙️호월 검색 미인증목록🎙️", "━━━━━━━━━━━━", "🔎 무엇을 검색하고 들어오셨나요?",
-        "유저가 실제 검색한 내용을 확인해 주세요.", "", "📝 등록: /검색인증 아이디 내용",
+        "유저가 실제 검색한 내용을 확인해 주세요.", "", "📝 등록: /인증 아이디 사유",
         "• 지인 소개로 들어왔다면 ‘지인소개’로 입력", "• 공백 제외 최대 10글자까지 등록",
-        "• 띄어쓰기만 다른 내용은 하나로 합산", "• 인증 1명당 관리자 다이아💎 1개 지급", "",
+        "• 띄어쓰기만 다른 내용은 하나로 합산", "• 인증 1명당 관리자 " + GLOBAL_CONFIG.searchAuthentication.rewardLabel + " " + GLOBAL_CONFIG.searchAuthentication.boosterReward + "개 지급", "",
         "💡 검색 내용 예시", "30대 · 2030대 · 수다 · 보룸 · 지인소개", "", "⌨️ 입력 예시",
-        "/검색인증 마치 남 30대 수다", "/검색인증 추추 여 지인 소개", "━━━━━━━━━━━━"];
-    var targets = [];
-    var names = Object.keys(data.member).concat(Object.keys(lightData.users));
-    var seen = {};
-    for (var nameIndex = 0; nameIndex < names.length; nameIndex++) {
-        var name = names[nameIndex];
-        if (Object.prototype.hasOwnProperty.call(seen, name)) continue;
-        seen[name] = true;
-        var found = getSearchAuthenticationTarget(data, lightData, name);
-        if (found && !found.completed) targets.push({ name: name, server: found.row.server });
-    }
+        "/인증 마치 남 30대 수다", "/인증 추추 여 지인 소개", "━━━━━━━━━━━━"];
+    var targets = getPendingSearchAuthenticationTargets(data, lightData);
     if (!targets.length) lines.push("✅ 검색 미인증 유저가 없습니다.");
     else {
         lines.push(allsee, "📋 미인증목록 펼쳐보기", "");
         for (var i = 0; i < targets.length; i++) {
-            var server = targets[i].server;
+            var server = targets[i].found.row.server;
             lines.push((i + 1) + ". [" + targets[i].name + (server ? "(" + normalizeHoiServerLabel(server) + ")" : "") + "]");
         }
     }
@@ -59190,11 +59246,12 @@ function buildSearchAuthenticationManagementMessage(data, lightData) {
 function buildSearchAuthenticationRankingMessage(data, adminRanking) {
     var rows = [], lines;
     if (adminRanking) {
-        lines = ["🏅 검색인증 관리자 순위 🏅", "📊 누적 검색인증 처리 인원 기준", "🎁 인증 1명당 다이아💎 1개 지급", "━━━━━━━━━━━━"];
+        lines = ["🏅 검색인증 관리자 순위 🏅", "📊 누적 검색인증 처리 인원 기준", "🎁 인증 1명당 " + GLOBAL_CONFIG.searchAuthentication.rewardLabel + " " + GLOBAL_CONFIG.searchAuthentication.boosterReward + "개 지급", "━━━━━━━━━━━━"];
         for (var name in data.member) {
             if (!Object.prototype.hasOwnProperty.call(data.member, name)) continue;
             var stats = data.member[name].searchAuthentication;
-            if (stats && stats.count > 0) rows.push({ name: name, count: stats.count, diamonds: stats.diamonds, server: data.member[name].server });
+            if (!stats && name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin) stats = { count: 0, diamonds: 0, boosters: 0 };
+            if (stats && (stats.count > 0 || name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin)) rows.push({ name: name, count: stats.count, diamonds: stats.diamonds, boosters: stats.boosters || 0, server: data.member[name].server });
         }
     } else {
         lines = ["📋 검색 순위 📋", "━━━━━━━━━━━━"];
@@ -59202,6 +59259,7 @@ function buildSearchAuthenticationRankingMessage(data, adminRanking) {
         for (var k = 0; k < keywords.length; k++) rows.push({ name: keywords[k].keyword, count: keywords[k].count });
     }
     rows.sort(function (a, b) {
+        if (adminRanking && (a.name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin) !== (b.name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin)) return a.name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin ? 1 : -1;
         if (!adminRanking && (a.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword) !== (b.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword)) return a.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword ? 1 : -1;
         return b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name, "ko");
     });
@@ -59210,7 +59268,11 @@ function buildSearchAuthenticationRankingMessage(data, adminRanking) {
     for (var i = 0; i < rows.length; i++) {
         if (i === visible) lines.push(allsee);
         lines.push((i + 1) + "등 " + rows[i].name + (adminRanking ? " · " + numberWithCommas(rows[i].count) + "명" : "(" + numberWithCommas(rows[i].count) + "회)"));
-        if (adminRanking) lines.push("└ " + (rows[i].server ? normalizeHoiServerLabel(rows[i].server) : "소속 서버 없음"), "└ 누적 보상: 💎" + numberWithCommas(rows[i].diamonds) + "개", "");
+        if (adminRanking) {
+            lines.push("└ " + (rows[i].server ? normalizeHoiServerLabel(rows[i].server) : "소속 서버 없음"), "└ 누적 가호 보상: ✨" + numberWithCommas(rows[i].boosters) + "개");
+            if (rows[i].diamonds > 0) lines.push("└ 이전 다이아 보상: 💎" + numberWithCommas(rows[i].diamonds) + "개");
+            lines.push("");
+        }
     }
     return lines.join("\n");
 }

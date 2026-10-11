@@ -29,11 +29,11 @@ for (const name of ["isPointShopSafeCount", "rollFortuneCookieTitle", "applyFort
  "applyMemberTitleSale", "ensureTitleUserData", "addItemToBag", "removeItem", "getNoticeTargetRooms", "isAdmin", "isAdminIdentity", "formatDateTime",
  "normalizeSearchAuthenticationKeyword", "countSearchAuthenticationCharacters", "isSearchAuthenticationTarget",
  "requireSearchAuthenticationLightData", "getSearchAuthenticationTarget",
- "isSearchAuthenticationCount", "applySearchAuthentication", "buildSearchAuthenticationManagementMessage",
+ "isSearchAuthenticationCount", "getPendingSearchAuthenticationTargets", "applySearchAuthentication", "buildSearchAuthenticationManagementMessage",
  "buildSearchAuthenticationRankingMessage", "isProtectedManagedJsonPath"]) vm.runInContext(block(main, "function " + name + "("), c);
 const markers = ['if (msg === "/호츈오픈" ||', 'if (msg === "/타이틀정보" ||',
- 'if (msg === "/타이틀판매" ||', 'if (msg === "/타이틀지정판매" ||', 'if (msg === "/검색인증" ||',
- 'if (msg === "/검색인증관리" ||', 'if (msg === "/검색인증순위" ||'];
+ 'if (msg === "/타이틀판매" ||', 'if (msg === "/타이틀지정판매" ||', 'if (msg === "/인증" ||',
+ 'if (msg === "/검색인증" ||', 'if (msg === "/인증순위" ||'];
 vm.runInContext("function runCommands(){" + markers.map(m => block(main, m)).join("\n") + "}", c);
 const clone = x => JSON.parse(JSON.stringify(x));
 let groups = 0;
@@ -237,19 +237,19 @@ pass("실제 Info 타이틀목록 9·10·11개 접기 경계·멘트·장착 표
  for(const count of [9,10,11]){ctx.titleData={member:{admin:{title:{list:Array.from({length:count},(_,i)=>({name:"문구 ⎯ 멘트"+i})),num:2}}}};ctx.render();assert.strictEqual(ctx.out.includes("<ALLSEE>"),count>=10);assert(ctx.out.includes("☞ 2. 문구 ⎯ 멘트1"));}
 });
 pass("대전 PREP·ACTIVE·SETTLING의 실제 진입에서 신규6종 통과·미허용은 차단",()=>{
- fixture.start();const cmds=["/기록","/기록 내용","/기록실","/검색인증 신규 남 수다","/검색인증관리","/검색인증순위","/검색인증관리순위"];
+ fixture.start();const cmds=["/기록","/기록 내용","/기록실","/인증 신규 남 수다","/검색인증","/인증순위","/관리자순위"];
  for(const state of ["PREP","ACTIVE","SETTLING"]){const d=fixture.read();d.serverRaid.current.state=state;fixture.write(d);
   for(const msg of cmds)assert.strictEqual(fixture.run(msg,"admin",undefined,"room90"),"",msg+" "+state);
  }
- assert(!c.isServerRaidAdditionalCommand("/기록삭제 1"));assert(!c.isServerRaidAdditionalCommand("/기록실 추가"));assert(!c.isServerRaidAdditionalCommand("/검색인증순위 추가"));
+ assert(!c.isServerRaidAdditionalCommand("/기록삭제 1"));assert(!c.isServerRaidAdditionalCommand("/기록실 추가"));assert(!c.isServerRaidAdditionalCommand("/인증순위 추가"));
  assert(!c.isServerRaidAdditionalCommand("/호츈오픈 1"));assert(fixture.run("/호츈오픈 1","admin").includes("대전"));
  for(const msg of ["/포인트","ㅍㅍㅍ","/가방","/펫정보","/이체 a 1"])assert(c.isServerRaidAdditionalCommand(msg));
 });
 pass("검색인증 허용은 기존 관리자 방 권한 유지·일반유저·타방 관리자 무변경",()=>{
  const before=fixture.raw(c.filePath);
- command("/검색인증 신규 남 수다","a");assert.strictEqual(fixture.raw(c.filePath),before);
- command("/검색인증 신규 남 수다","admin",false,"room1");assert.strictEqual(fixture.raw(c.filePath),before);
- command("/검색인증 신규 남 수다");assert.strictEqual(fixture.read().member["신규 남"].voicecheck,1);assert.strictEqual(fixture.read().member.admin.diamond,21);
+ command("/인증 신규 남 수다","a");assert.strictEqual(fixture.raw(c.filePath),before);
+ command("/인증 신규 남 수다","admin",false,"room1");assert.strictEqual(fixture.read().member["신규 남"].voicecheck,1);
+ command("/인증 신규 남 수다");assert.strictEqual(fixture.read().member["신규 남"].voicecheck,1);assert.strictEqual(fixture.read().member.admin.diamond,20);assert.strictEqual(fixture.read().member.admin.boostercnt,30);
 });
 pass("개봉100회 최악의 전부특별중복·보상 합산·알림건수",()=>{
  random(Array(200).fill(0));command("/호츈오픈 100");
