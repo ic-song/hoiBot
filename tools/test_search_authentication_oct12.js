@@ -34,7 +34,8 @@ test("과거 다이아 실적·보유 재화 보존·가호30 신규 누계·중
     d.member.admin.searchAuthentication = { id: "stable-admin", count: 8, diamonds: 8 }; fixture.write(d);
     runAuth("/인증 신규 남 수다"); d = fixture.read();
     assert.strictEqual(d.member.admin.diamond,738); assert.strictEqual(d.member.admin.point,123456);
-    assert.strictEqual(d.member.admin.boostercnt,768);
+    assert.strictEqual(d.member.admin.boostercnt,738);
+    assert.strictEqual(d.member.admin.bag[c.GLOBAL_CONFIG.level.boosterItemName],30);
     assert.deepStrictEqual(d.member.admin.searchAuthentication,{id:"stable-admin",count:9,diamonds:8,boosters:30});
     const before=fixture.read(); runAuth("/인증 신규 남 수다"); assert.deepStrictEqual(fixture.read(),before);
     const out=runAuth("/관리자순위"); assert(out.includes("이전 다이아 보상: 💎8개")); assert(out.includes("누적 가호 보상: ✨30개"));
@@ -162,6 +163,27 @@ test("DEV 일괄 인증·관리자 초기화는 DEV 두 저장소만 변경", ()
     runAuth("/관리자순위초기화","master","test",true);
     assert.strictEqual(fixture.read(true).member.admin.searchAuthentication.count,0);
     assert.deepStrictEqual(fixture.read(),before);assert.deepStrictEqual(fixture.get(lightPath),light);
+});
+
+test("가방 기존 수량 합산·없는 가방 생성·손상/정수 초과 사전 차단·활성 가호 보존", () => {
+    const item=c.GLOBAL_CONFIG.level.boosterItemName;
+    for(const count of [0,123,9007199254740961]) {
+        seed();let d=fixture.read();d.member.admin.bag={[item]:count,"돌멩이💎":7};
+        d.member.admin.boostercnt=9007199254740991;fixture.write(d);
+        runAuth("/인증 신규 남 수다");d=fixture.read();
+        assert.strictEqual(d.member.admin.bag[item],count+30);
+        assert.strictEqual(d.member.admin.bag["돌멩이💎"],7);assert.strictEqual(d.member.admin.boostercnt,9007199254740991);
+        const before=fixture.read();runAuth("/인증 신규 남 수다");assert.deepStrictEqual(fixture.read(),before);
+    }
+    seed();let d=fixture.read();delete d.member.admin.bag;fixture.write(d);
+    runAuth("/인증 신규 남 수다");assert.strictEqual(fixture.read().member.admin.bag[item],30);
+    for(const invalid of [null,[],"bag",{[item]:"30"},{[item]:-1},{[item]:0.5},{[item]:9007199254740962}]) {
+        seed();d=fixture.read();d.member.admin.bag=invalid;fixture.write(d);
+        const before=fixture.read();assert.throws(()=>runAuth("/인증 신규 남 수다"));assert.deepStrictEqual(fixture.read(),before);
+        const inMemory=fixture.read(), snapshot=JSON.stringify(inMemory);
+        assert.throws(()=>c.applySearchAuthentication(inMemory,"신규 남","admin","수다",{users:{}}));
+        assert.strictEqual(JSON.stringify(inMemory),snapshot);
+    }
 });
 
 console.log("검색인증 수정요청서 신규 " + groups + "개 검증 그룹 통과");

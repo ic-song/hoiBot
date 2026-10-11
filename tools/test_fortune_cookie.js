@@ -249,7 +249,7 @@ pass("검색인증 허용은 기존 관리자 방 권한 유지·일반유저·�
  const before=fixture.raw(c.filePath);
  command("/인증 신규 남 수다","a");assert.strictEqual(fixture.raw(c.filePath),before);
  command("/인증 신규 남 수다","admin",false,"room1");assert.strictEqual(fixture.read().member["신규 남"].voicecheck,1);
- command("/인증 신규 남 수다");assert.strictEqual(fixture.read().member["신규 남"].voicecheck,1);assert.strictEqual(fixture.read().member.admin.diamond,20);assert.strictEqual(fixture.read().member.admin.boostercnt,30);
+ command("/인증 신규 남 수다");assert.strictEqual(fixture.read().member["신규 남"].voicecheck,1);assert.strictEqual(fixture.read().member.admin.diamond,20);assert.strictEqual(fixture.read().member.admin.boostercnt,undefined);assert.strictEqual(fixture.read().member.admin.bag[c.GLOBAL_CONFIG.level.boosterItemName],30);
 });
 pass("개봉100회 최악의 전부특별중복·보상 합산·알림건수",()=>{
  random(Array(200).fill(0));command("/호츈오픈 100");

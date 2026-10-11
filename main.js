@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.625"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.626"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -59125,7 +59125,7 @@ function isSearchAuthenticationCount(value) {
     return typeof value === "number" && isFinite(value) && value >= 0 && Math.floor(value) === value && value <= 9007199254740991;
 }
 
-// 인증 상태·관리자 실적·검색어 횟수·다이아를 함께 갱신하는 함수
+// 인증 상태·관리자 실적·검색어 횟수·가방 가호 아이템을 함께 갱신하는 함수
 function applySearchAuthentication(data, target, operator, rawKeyword, lightData) {
     var found = getSearchAuthenticationTarget(data, lightData, target), admin = data.member[operator];
     if (!found) return { ok: false, message: "채팅 기록이 확인된 신규 유저만 검색인증할 수 있습니다." };
@@ -59143,19 +59143,24 @@ function applySearchAuthentication(data, target, operator, rawKeyword, lightData
     }
     var reward = GLOBAL_CONFIG.searchAuthentication.boosterReward;
     var oldBoosters = stats.boosters === undefined ? 0 : stats.boosters; // 보상 변경 전 실적에는 가호 지급 이력이 없음
-    if (!isSearchAuthenticationCount(admin.boostercnt === undefined ? 0 : admin.boostercnt) ||
+    var rewardItem = GLOBAL_CONFIG.level.boosterItemName;
+    var bag = admin.bag === undefined ? {} : admin.bag;
+    if (!bag || typeof bag !== "object" || Array.isArray(bag)) throw new Error("검색인증 관리자 가방 형식 오류");
+    var itemCount = Object.prototype.hasOwnProperty.call(bag, rewardItem) ? bag[rewardItem] : 0; // 기존 가방 아이템에 이번 보상만 합산
+    if (!isSearchAuthenticationCount(itemCount) ||
         !isSearchAuthenticationCount(stats.count) || !isSearchAuthenticationCount(stats.diamonds) || !isSearchAuthenticationCount(oldBoosters) || !isSearchAuthenticationCount(reward) ||
         !isSearchAuthenticationCount(keywordRow ? keywordRow.count : 0)) throw new Error("검색인증 기존 재화·집계 값 오류");
-    var nextBooster = (admin.boostercnt === undefined ? 0 : admin.boostercnt) + reward; // 현재 가호에 이번 인증 보상만 합산
+    var nextItemCount = itemCount + reward; // /호여로 사용하기 전까지 가방에 보관할 수량
     var nextCount = stats.count + 1;
-    var nextReward = oldBoosters + reward; // 사용한 가호와 무관한 실제 인증 보상 누계
+    var nextReward = oldBoosters + reward; // 보관·사용 여부와 무관한 실제 인증 보상 누계
     var nextKeywordCount = (keywordRow ? keywordRow.count : 0) + 1;
-    if (!isSearchAuthenticationCount(nextBooster) || !isSearchAuthenticationCount(nextCount) ||
+    if (!isSearchAuthenticationCount(nextItemCount) || !isSearchAuthenticationCount(nextCount) ||
         !isSearchAuthenticationCount(nextReward) || !isSearchAuthenticationCount(nextKeywordCount)) throw new Error("검색인증 재화·집계 값 오류");
     var operatorId = stats.id || String(java.util.UUID.randomUUID()); // 관리자 계정 객체와 함께 이동하는 실적 식별값
     member.voicecheck = 1;
     member.searchAuthenticationRecord = { keyword: keyword, operatorId: operatorId, operator: operator, completedAt: formatDateTime(new Date()) };
-    admin.boostercnt = nextBooster;
+    bag[rewardItem] = nextItemCount;
+    admin.bag = bag;
     stats.id = operatorId;
     stats.count = nextCount;
     stats.boosters = nextReward;

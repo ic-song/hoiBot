@@ -21,6 +21,7 @@ return { c, reset, read, write, block,
   replyFail: v => { replyFailure = v; }
 };`)(require, __dirname);
 const c = fixture.c;
+const rewardItem = c.GLOBAL_CONFIG.level.boosterItemName;
 const block = fixture.block;
 const lightPath = "/sdcard/호이랜드/attendanceLight.json";
 const devLightPath = "/sdcard/호이랜드_dev/attendanceLight.json";
@@ -42,6 +43,7 @@ function pass(name, test) {
 }
 for (const name of ["isAdmin", "isAdminIdentity", "formatDateTime", "normalizeSearchAuthenticationKeyword",
     "countSearchAuthenticationCharacters", "isSearchAuthenticationTarget", "isSearchAuthenticationCount",
+    "hasItem", "removeItem", "normalizePendantTransitionBagItem", "normalizePendantTransitionItemName", "normalizeUniversalCollectionKeyBagItems",
     "requireSearchAuthenticationLightData", "recordSearchAuthenticationChat", "getSearchAuthenticationTarget",
     "migrateLightSearchAuthenticationToMember", "getAttendanceKstDateKey", "getCurrentDate", "getAttendanceDateDiff",
     "migrateLightAttendanceToMember", "pruneLightAttendanceData", "compareLightAttendanceRows", "isProtectedManagedJsonPath",
@@ -62,7 +64,7 @@ const pendingBranch = block(main.slice(pendingStart), "if (!data.member[sender])
 const forcedSignupBranch = block(main, 'if (msg === "/미출석가입" ||');
 const cleanupBranch = block(main, 'if (msg === "/미가입출첵")');
 const pendingIdBranch = block(main, 'if (msg === "/미정" ||');
-vm.runInContext("function runAuthBranch(){" + authBranch + legacyBranch + managementBranch + rankingBranch + block(main, 'if (msg === "/인증초기화")') + block(main, 'if (msg === "/관리자순위초기화")') + forcedSignupBranch + cleanupBranch + pendingIdBranch + pendingBranch + "}", c);
+vm.runInContext("function runAuthBranch(){" + authBranch + legacyBranch + managementBranch + rankingBranch + block(main, 'if (msg === "/인증초기화")') + block(main, 'if (msg === "/관리자순위초기화")') + forcedSignupBranch + cleanupBranch + pendingIdBranch + pendingBranch + block(main, 'if (msg === "/호여" ||') + "}", c);
 
 // 저장 위치와 권한은 실제 컨텍스트·저장 함수를 사용한다.
 function runAuth(command, sender = "admin", room = "room90", dev = false) {
@@ -87,12 +89,13 @@ function seed(names = ["신규 남"], dev = false) {
     for (const name of names) d.member[name] = { join: "20261009", agree: true, server: "호이서버6[2030]", point: 50, bag: {} };
     fixture.write(d, dev);
 }
-pass("공백 제거·성공 시 가호만 +30·누적 기록·실제 단일 파일 저장", () => {
+pass("공백 제거·성공 시 가방 가호 아이템만 +30·누적 기록·실제 단일 파일 저장", () => {
     seed(); const before = fixture.read();
     assert(runAuth("/인증 신규 남 30대 수다").includes("검색어: 30대수다"));
     const d = fixture.read();
     assert.strictEqual(d.member["신규 남"].voicecheck, 1);
-    assert.strictEqual(d.member.admin.boostercnt, 768);
+    assert.strictEqual(d.member.admin.boostercnt, 738);
+    assert.strictEqual(d.member.admin.bag[rewardItem], (before.member.admin.bag[rewardItem] || 0) + 30);
     assert.strictEqual(d.member.admin.point, before.member.admin.point);
     assert.strictEqual(d.member.admin.moon, 9);
     assert.strictEqual(d.member.admin.checkCnt, 99);
@@ -130,7 +133,8 @@ pass("같은 공백 제거값만 합산·지인소개 포함·동의어 별도 �
     ["첫째 남", "둘째 여", "셋째 남", "넷째 여", "다섯 남", "여섯 여", "일곱 남"].forEach((name, i) => runAuth("/인증 " + name + " " + keywords[i]));
     const d = fixture.read(); assert.strictEqual(d.searchAuthentication.keywords.find(r => r.keyword === "지인소개").count, 3);
     assert.strictEqual(d.searchAuthentication.keywords.length, 5);
-    assert.strictEqual(d.member.admin.boostercnt, 948);
+    assert.strictEqual(d.member.admin.boostercnt, 738);
+    assert.strictEqual(d.member.admin.bag[rewardItem], 210);
 });
 pass("관리자 신원 권한 유지·일반 사용자 무변경", () => {
     seed();
@@ -184,27 +188,33 @@ pass("검색어 10/11등·관리자 4/5등 접기·기존 실적 제외·설명 
 pass("가호 사용·관리자/대상 닉변·재시작 후 누적과 중복 방지 유지", () => {
     seed(["신규 남", "신규 여"]); runAuth("/인증 신규 남 수다");
     let d = fixture.read(); const id = d.member.admin.searchAuthentication.id;
-    d.member.admin.boostercnt -= 10; d.member.renamed = d.member.admin; delete d.member.admin;
+    assert(runAuth("/호여 10").includes("가호✨ 10개"));
+    d = fixture.read();
+    assert.strictEqual(d.member.admin.bag[rewardItem], 20); assert.strictEqual(d.member.admin.boostercnt, 748);
+    d.member.renamed = d.member.admin; delete d.member.admin;
     d.member["변경 남"] = d.member["신규 남"]; delete d.member["신규 남"]; fixture.write(d);
     c.Admins = ["renamed"];
     assert(runAuth("/인증 변경 남 수다", "renamed").includes("이미"));
     runAuth("/인증 신규 여 수다", "renamed");
     d = fixture.read(); assert.strictEqual(d.member.renamed.searchAuthentication.id, id);
-    assert.strictEqual(d.member.renamed.searchAuthentication.boosters, 60); assert.strictEqual(d.member.renamed.boostercnt, 788);
+    assert.strictEqual(d.member.renamed.searchAuthentication.boosters, 60); assert.strictEqual(d.member.renamed.boostercnt, 748);
+    assert.strictEqual(d.member.renamed.bag[rewardItem], 50);
     assert(runAuth("/관리자순위", "renamed").includes("renamed · 2명"));
     c.Admins = ["admin"];
 });
 pass("저장 교체 실패 후 전액 미반영·재시도 한 번·DEV 운영 분리", () => {
     seed(); const before = fixture.read(); fixture.fail();
     assert.throws(() => runAuth("/인증 신규 남 수다")); assert.deepStrictEqual(fixture.read(), before);
-    runAuth("/인증 신규 남 수다"); assert.strictEqual(fixture.read().member.admin.boostercnt, 768);
+    runAuth("/인증 신규 남 수다"); assert.strictEqual(fixture.read().member.admin.boostercnt, 738);
+    assert.strictEqual(fixture.read().member.admin.bag[rewardItem], 30);
     seed(["개발 남"], true); const prod = fixture.read();
     assert(runAuth("/인증 개발 남 지인 소개", "admin", "test", true).startsWith("[DEV 테스트환경]"));
-    assert.deepStrictEqual(fixture.read(), prod); assert.strictEqual(fixture.read(true).member.admin.boostercnt, 768);
+    assert.deepStrictEqual(fixture.read(), prod); assert.strictEqual(fixture.read(true).member.admin.boostercnt, 738);
+    assert.strictEqual(fixture.read(true).member.admin.bag[rewardItem], 30);
 });
 pass("손상 재화·안전정수 초과·응답 실패 시 트랜잭션 복구", () => {
     for (const value of ["738", -1, 0.5, 9007199254740991]) {
-        seed(); let d = fixture.read(); d.member.admin.boostercnt = value; fixture.write(d);
+        seed(); let d = fixture.read(); d.member.admin.bag[rewardItem] = value; fixture.write(d);
         assert.throws(() => runAuth("/인증 신규 남 수다")); assert.strictEqual(fixture.read().member["신규 남"].voicecheck, undefined);
     }
     seed(); const before = fixture.read(); fixture.replyFail(true);
@@ -222,7 +232,8 @@ pass("미가입 출첵 기록 조회·인증·재시작 중복 차단·출석 �
     assert.strictEqual(d.member["일반 남"], undefined);
     for (const key of ["cnt", "recent", "today", "server"]) assert.strictEqual(light.users["일반 남"][key], row[key]);
     assert.strictEqual(light.users["일반 남"].voicecheck, 1);
-    assert.strictEqual(d.member.admin.boostercnt, 768);
+    assert.strictEqual(d.member.admin.boostercnt, 738);
+    assert.strictEqual(d.member.admin.bag[rewardItem], 30);
     assert.deepStrictEqual(d.searchAuthentication.keywords, [{ keyword: "지인소개", count: 1 }]);
     assert(!runAuth("/검색인증").includes("일반 남"));
     const before = fixture.raw(lightPath), memberBefore = fixture.read();
@@ -263,7 +274,8 @@ pass("미가입 인증 두 파일 저장 실패·응답 실패 시 함께 복구
         assert.throws(() => runAuth("/인증 일반 여 수다")); fixture.replyFail(false);
         assert.deepStrictEqual(fixture.read(),before); assert.strictEqual(fixture.raw(lightPath),lightBefore);
         assert(runAuth("/인증 일반 여 수다").includes("완료"));
-        assert.strictEqual(fixture.read().member.admin.boostercnt,before.member.admin.boostercnt+30);
+        assert.strictEqual(fixture.read().member.admin.boostercnt,before.member.admin.boostercnt);
+        assert.strictEqual(fixture.read().member.admin.bag[rewardItem],(before.member.admin.bag[rewardItem] || 0)+30);
         assert.strictEqual(fixture.read().member.admin.searchAuthentication.count,(before.member.admin.searchAuthentication?.count || 0)+1);
     }
 });
@@ -272,7 +284,8 @@ pass("미가입 인증 DEV 경로 두 파일만 변경·운영 기록 무변경"
     const before = fixture.read(), lightBefore = fixture.raw(lightPath);
     assert(runAuth("/인증 개발 여 수다","admin","test",true).startsWith("[DEV 테스트환경]"));
     assert.strictEqual(fixture.get(devLightPath).users["개발 여"].voicecheck,1);
-    assert.strictEqual(fixture.read(true).member.admin.boostercnt,768);
+    assert.strictEqual(fixture.read(true).member.admin.boostercnt,738);
+    assert.strictEqual(fixture.read(true).member.admin.bag[rewardItem],30);
     assert.deepStrictEqual(fixture.read(),before); assert.strictEqual(fixture.raw(lightPath),lightBefore);
 });
 pass("미가입 인증 후 실제 모험 시작·가입 분기에서 인증 및 출석 이전·재보상 없음", () => {
@@ -336,7 +349,8 @@ pass("삭제 후 다시 인식한 계정 재인증·살아 있는 계정 중복 
     let light=fixture.get(lightPath); light.users["복귀 남"].chatSeenDate="20261001"; fixture.put(lightPath,light);
     runAuth("/미가입출첵"); assert.strictEqual(fixture.get(lightPath).users["복귀 남"],undefined);
     runAuth("다시 인사","복귀 남","room1"); assert(runAuth("/인증 복귀 남 수다").includes("완료"));
-    assert.strictEqual(fixture.read().member.admin.boostercnt,798);
+    assert.strictEqual(fixture.read().member.admin.boostercnt,738);
+    assert.strictEqual(fixture.read().member.admin.bag[rewardItem],60);
     assert.strictEqual(fixture.read().searchAuthentication.keywords[0].count,2);
 });
 pass("미가입 데이터 누락·손상·잘못된 구조는 인증 및 보상 없이 오류 처리", () => {

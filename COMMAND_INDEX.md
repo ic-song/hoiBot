@@ -7857,7 +7857,7 @@ Status: VERIFIED
 ## Data Usage / Save Flow
 
 - member.json의 member[target].voicecheck, attendanceLight.json의 users[target].voicecheck와 searchAuthenticationRecord를 함께 조회한다. 일반 채팅 인식 기록도 대상으로 삼으며 게임 계정을 생성하지 않는다. 같은 아이디는 중복 제외하고 어느 저장소든 인증 완료이면 다시 보상하지 않는다.
-- 단일 인증은 검색어 공백 제거 후 1~10글자와 안전 정수 경계를 확인하고, 대상 인증·검색어 횟수·관리자 count·보유 boostercnt 및 실지급 boosters 누계를 한 번 갱신한다. 기존 다이아 보유량·diamonds 지급 이력·포인트·moon·checkCnt는 유지한다.
+- 단일 인증은 검색어 공백 제거 후 1~10글자와 안전 정수 경계를 확인하고, 대상 인증·검색어 횟수·관리자 count·가방의 호월신의 가호✨(/호여 숫자) 아이템 및 실지급 boosters 누계를 한 번 갱신한다. 활성 가호 boostercnt는 직접 늘리지 않고 /호여 사용 시 기존 흐름으로 전환한다. 기존 다이아 보유량·diamonds 지급 이력·포인트·moon·checkCnt는 유지한다.
 - 가입 대상은 member.json만 저장한다. 미가입 대상은 경량 기록의 변경 전 스냅샷으로 먼저 저장한 후 member.json을 저장하며 기존 명령 트랜잭션으로 두 파일 실패를 함께 복구한다. 헬퍼에서 파일 IO하지 않는다.
 - /인증초기화는 같은 미인증 대상 집합을 기타로 일괄 인증한다. 사용자 확정으로 관리자 보상·관리자 실적은 제외하며 검색어 기타 횟수만 합산한다. 기존 인증 사유·재화·checkCnt는 보존한다. 반복 입력은 0건·무저장이다.
 - /관리자순위초기화는 모든 실적 형식을 먼저 검사한 뒤 count/diamonds/boosters 통계만 0으로 바꾼다. 계정 실적 id·보유 재화·대상 인증·검색어 통계는 유지한다. 이후 정상 인증은 같은 id에 새 실적을 쌓는다.
@@ -7868,7 +7868,7 @@ Status: VERIFIED
 
 - 목록 시작부터 ALLSEE. /인증순위는 10등까지 바로 표시하고 11등부터 ALLSEE, /관리자순위는 4등까지 바로 표시하고 5등부터 ALLSEE. 검색어 기타와 관리자 호이 남은 각각 마지막에 표시한다. 호이 남 계정이 있으면 0 실적도 하단에 표시하고 기록은 유지한다.
 - 새 가호 누계와 과거 다이아 누계는 별도로 표시한다. 등록·목록·보상 안내는 새 명령어와 가호 30개로 통일한다.
-- tools/test_member_display_search_auth.js: 기존 가입·미가입·닉변·이전·정리·저장 실패 29개 회귀 그룹. tools/test_search_authentication_oct12.js: 새 권한·두 초기화·보상 전환·실적 보존·대전 잠금·정수 경계·DEV·부분 저장/응답 실패·일괄 인증 후 가입 이전 11개 그룹.
+- tools/test_member_display_search_auth.js: 기존 가입·미가입·닉변·이전·정리·저장 실패 29개 회귀 그룹. tools/test_search_authentication_oct12.js: 새 권한·두 초기화·보상 전환·실적 보존·대전 잠금·정수 경계·DEV·부분 저장/응답 실패·일괄 인증 후 가입 이전·가방 보상 정수 경계/활성 가호 보존 12개 그룹.
 
 # /호츈오픈 [수량] · 타이틀 판매
 
