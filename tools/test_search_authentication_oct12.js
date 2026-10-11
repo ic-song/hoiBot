@@ -111,11 +111,13 @@ test("실적 초기화 저장 실패·손상 실적 사전 검사로 부분 변�
     const saved=JSON.stringify(d);assert.throws(()=>c.resetSearchAuthenticationAdminStats(d));assert.strictEqual(JSON.stringify(d),saved);
 });
 
-test("호이 남 최고/동률/0 실적 모두 하단·기타 하단·10/11행 ALLSEE", () => {
+test("호이 남 최고/동률/0 실적 모두 하단·기타 하단·관리자 5등 ALLSEE", () => {
     seed();let d=fixture.read();d.member["호이 남"]={searchAuthentication:{count:100,diamonds:100},server:"호이서버1[30]"};
     for(let i=0;i<10;i++)d.member["담당"+i+" 여"]={searchAuthentication:{count:10-i,diamonds:0,boosters:30}};
     d.searchAuthentication={keywords:[{keyword:"기타",count:100},{keyword:"수다",count:1}]};fixture.write(d);
     let out=runAuth("/관리자순위");assert(out.includes("11등 호이 남 · 100명"));assert(out.indexOf("<ALLSEE>")<out.indexOf("호이 남"));
+    assert(out.indexOf("4등") < out.indexOf("<ALLSEE>") && out.indexOf("<ALLSEE>") < out.indexOf("5등"));
+    assert.strictEqual((out.match(/<ALLSEE>/g) || []).length, 1);
     out=runAuth("/인증순위");assert(out.indexOf("수다")<out.indexOf("기타"));
     d.member["호이 남"].searchAuthentication.count=10;fixture.write(d);
     assert(runAuth("/관리자순위").includes("11등 호이 남 · 10명"));

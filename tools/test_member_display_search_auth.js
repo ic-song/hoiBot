@@ -162,17 +162,24 @@ pass("관리 안내 유지·빈 목록 ALLSEE 없음·목록 시작부터 ALLSEE
     runAuth("/인증 신규 남 수다"); output = runAuth("/검색인증");
     assert(output.includes("검색 미인증 유저가 없습니다.")); assert(!output.includes("<ALLSEE>"));
 });
-pass("검색어·관리자 10/11등 접기·기존 실적 제외·설명 위치", () => {
+pass("검색어 10/11등·관리자 4/5등 접기·기존 실적 제외·설명 위치", () => {
     seed(); assert(runAuth("/인증순위").includes("아직 등록된"));
     assert(runAuth("/관리자순위").includes("아직 검색인증 처리 기록"));
     let d = fixture.read(); d.searchAuthentication = { keywords: Array.from({ length: 11 }, (_, i) => ({ keyword: "검색" + i, count: 20 - i })) };
     for (let i = 0; i < 11; i++) d.member["담당" + i + " 남"] = { server: "호이서버6[30]", searchAuthentication: { count: 20 - i, diamonds: 20 - i } };
     fixture.write(d);
     let out = runAuth("/인증순위"); assert(out.indexOf("<ALLSEE>") > out.indexOf("10등") && out.indexOf("<ALLSEE>") < out.indexOf("11등"));
-    out = runAuth("/관리자순위"); assert(out.indexOf("<ALLSEE>") > out.indexOf("10등") && out.indexOf("<ALLSEE>") < out.indexOf("11등"));
+    out = runAuth("/관리자순위"); assert(out.indexOf("<ALLSEE>") > out.indexOf("4등") && out.indexOf("<ALLSEE>") < out.indexOf("5등"));
+    assert.strictEqual((out.match(/<ALLSEE>/g) || []).length, 1);
     assert(out.indexOf("누적 검색인증") < out.indexOf("1등")); assert(!out.includes("99명"));
     d.searchAuthentication.keywords.pop(); delete d.member["담당10 남"]; fixture.write(d);
-    assert(!runAuth("/인증순위").includes("<ALLSEE>")); assert(!runAuth("/관리자순위").includes("<ALLSEE>"));
+    assert(!runAuth("/인증순위").includes("<ALLSEE>"));
+    for (let i = 4; i < 10; i++) delete d.member["담당" + i + " 남"]; fixture.write(d);
+    assert(!runAuth("/관리자순위").includes("<ALLSEE>"));
+    d.member["담당4 남"] = { searchAuthentication: { count: 16, diamonds: 16 } }; fixture.write(d);
+    out = runAuth("/관리자순위");
+    assert(out.indexOf("<ALLSEE>") > out.indexOf("4등") && out.indexOf("<ALLSEE>") < out.indexOf("5등"));
+    assert.strictEqual((out.match(/<ALLSEE>/g) || []).length, 1);
 });
 pass("가호 사용·관리자/대상 닉변·재시작 후 누적과 중복 방지 유지", () => {
     seed(["신규 남", "신규 여"]); runAuth("/인증 신규 남 수다");
