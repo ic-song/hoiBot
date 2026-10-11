@@ -128,7 +128,7 @@ try {
         Assert-True ([IO.File]::ReadAllText((Join-Path $r.Destination $name)) -ceq $script:files[$name]) 'UTF-8 content changed.'
     }
     Test-Group 'BAT calls filtered pull and retains failure gate before replacement' {
-        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '07_데이터_백업.bat'))
+        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'backup_legacy_data.bat'))
         Assert-True ($bat.Contains('-File "%~dp0pull_legacy_data.ps1"')) 'Filtered pull helper not connected.'
         $start = $bat.IndexOf('-File "%~dp0pull_legacy_data.ps1"')
         $fail = $bat.IndexOf('if errorlevel 1 goto FAIL_PULL', $start)
@@ -136,7 +136,7 @@ try {
         Assert-True ($fail -gt $start -and $replace -gt $fail) 'Missing fail-closed gate.'
     }
     Test-Group 'Actual BAT guards allow clean latest hoi/prod; reject other, stale or dirty' {
-        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '07_데이터_백업.bat'))
+        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'backup_legacy_data.bat'))
         $lines = $bat -split '\r?\n'
         $branchGuard = @($lines | Where-Object { $_.StartsWith('if not "!CURRENT_BRANCH!"') })
         $dirtyGuard = @($lines | Where-Object { $_.StartsWith('for %%A in ("%GIT_STATUS_FILE%")') })
@@ -163,7 +163,7 @@ try {
         }
     }
     Test-Group 'UTF-8 startup in Korean path with spaces and parentheses' {
-        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot '07_데이터_백업.bat'))
+        $bat = [IO.File]::ReadAllText((Join-Path $PSScriptRoot 'backup_legacy_data.bat'))
         $startup = $bat.Substring(0, $bat.IndexOf('if not exist "%ADB_EXE%"'))
         $folder = Join-Path $script:testRoot '한글 작업(테스트)/tools'
         [IO.Directory]::CreateDirectory($folder) | Out-Null
