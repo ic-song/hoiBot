@@ -3046,9 +3046,9 @@ Status: VERIFIED
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
 - `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
-- `/종합순위`와 `ㅈㅈㅈ`는 월드 개인 순위와 소속 서버 순위를 두 메시지로 출력한다. `/서버순위`는 커뮤니티를 포함한 10개 서버 합산 순위를 한 메시지로 출력한다.
+- `/종합순위`와 `ㅈㅈㅈ`는 2026-10-08 사용자 롤백 요청의 기존 캡처에 맞춰 소속 서버 현황·서버 내 개인 TOP 10 통합 화면 → 월드 개인 순위 두 메시지로 출력한다. 전체 서버 목록만 있는 별도 메시지는 추가 출력하지 않는다. `/서버순위`의 현행 소속 서버 현황·개인 TOP 10·10개 서버 합산을 한 메시지로 표시하는 동작은 유지한다.
 - 개인과 서버 합산은 같은 개인 종합매력 결과를 사용한다. `호이서버1-2[30]`은 서버1로, 구 서버6 `[2030]`은 `[30]`으로 집계한다.
-- 통합 서버 메시지는 `🏠 우리 서버 개인 종합순위` 제목 다음에 `allsee`를 한 번 적용하고, 개인 TOP 10과 하단 서버 합산 목록을 함께 접는다. 월드 메시지와 `/서버순위` 단독 화면은 3위 다음에 `allsee`를 적용한다.
+- 통합 서버 메시지는 `🏠 우리 서버 개인 종합순위` 제목 다음에 `allsee`를 한 번 적용하고, 개인 TOP 10과 하단 서버 합산 목록을 함께 접는다. 월드 메시지는 3위 다음에 `allsee`를 적용한다. 조회별 응답·순서·정확한 두 별칭·접미 미실행·조회 데이터 무변경은 `tools/test_latest_server_display.js`의 실제 분기 실행으로 검증한다.
 
 ---
 
@@ -3985,8 +3985,8 @@ Status: VERIFIED
 
 - 티어 전용 펫스킬북 30종은 `/펫스킬확률`과 랜덤 오픈 풀에 포함된다.
 - `/펫스킬확률`은 SS/S/A/B/C/D 등급 테두리 안에 일반 펫스킬과 티어 전용 펫스킬을 함께 표시한다.
-- 일반 등급 총 확률 아래 `한정판 등급` 구역에서 `전설의 몽둥이📙`, `베란다 확장📙`, `베란다 대확장📙`, `전설의 소매치기📙`, `광산에서 재벌까지📙`를 별도로 표시하며, 이 스킬들은 일반 오픈 풀과 총 확률에 포함되지 않는다.
-- `신성한 기도📙[A]`와 `호월신의 총애📙[S]`를 포함한 오픈 가능한 95종 기준으로 SS는 각 0.1%, S는 각 0.3%, A는 각 0.4%, B는 각 0.6%, C는 각 1.5%다. SS~C 합계 59.6%를 제외한 40.4%는 D등급 6종에 균등 배분해 각각 약 6.73%로 추첨한다.
+- 일반 등급 총 확률 아래 `한정판 등급` 구역에서 `전설의 몽둥이📙`, `베란다 확장📙`, `베란다 대확장📙`, `전설의 소매치기📙`, `광산에서 재벌까지📙`, `호월토벌대📙`를 별도로 표시하며, 이 스킬들은 일반 오픈 풀과 총 확률에 포함되지 않는다.
+- 신규 레이드정복자·돌격대·타격대를 포함한 오픈 가능한 96종 기준으로 SS는 각 0.1%, S는 각 0.3%, A는 각 0.4%, B는 각 0.6%, C는 각 1.5%다. SS~C 합계 58.6%를 제외한 41.4%는 D등급 6종에 균등 배분해 각각 6.9%로 추첨한다.
 
 ---
 
@@ -4004,6 +4004,47 @@ Status: VERIFIED
 - Read-only
 ## Related Commands
 - `/펫스킬장착`
+
+---
+
+# /호월토벌대오픈
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+- `Info.js` (장착 후 매력 계산)
+
+## Related Helpers
+
+- `hasItem`, `removeItem`, `getPetSkillBagRemainCount`, `addPetSkillToBag`
+- `isExclusiveDataMutationCommandMessage`, `saveJsonFile`, `rollbackDataSaveTransaction`
+- `getEquippedNonTierPetSkillExp`, `calculateRaidExp`, `calculateTotalExp`
+
+## Data Usage
+
+- `GLOBAL_CONFIG.petSkill.raidSubjugation`
+- `data.member[sender].bag["호월토벌대📙 확정(/호월토벌대오픈)"]`
+- `petSkillData[sender].petSkills.bag["호월토벌대"]`
+
+## Save Flow
+
+- 펫·아이템·스킬가방 여유를 확인하고 확정 아이템 1개를 스킬 1개로 교환한다.
+- 명령 진입에서 읽은 데이터로 처리하며 회원 → 펫스킬 순서로 검증 저장한 뒤 성공 안내한다. 저장 실패 시 기존 명령 트랜잭션이 함께 복구한다.
+- 정확 일치 명령만 실행하며 전용 쓰기 잠금을 사용한다. DEV는 기존 명령 컨텍스트의 경로 분리를 따른다.
+
+## Related Commands
+
+- `/펫스킬가방`, `/펫스킬장착 [번호]`, `/펫스킬소멸 [번호]`, `/펫스킬정보 [스킬이름]`
+
+## AI Notes
+
+- 오픈은 가방 지급만 하며 장착하지 않는다. 호월토벌대는 일반 추첨에서 제외한다.
+- 레이드정복자(SS) 700만·호월토벌대(한정판) 300만·레이드돌격대(A) 200만·레이드타격대(B) 100만은 Main/Info에서 장착 중에만 레이드매력을 가산한다. 캐슬 가산은 없으며 기존 백분율 보너스 계산에 포함된다.
+- 서로 다른 4종은 기존 슬롯 한도 안에서 함께 장착할 수 있고, 동일 스킬은 1개만 허용한다. 소멸하면 해당 매력이 즉시 빠진다.
+- 신규 4종의 `/펫스킬정보`는 확률을 숨기고, 장착 성공 시 스킬별 대사를 출력한다.
+- 기존 컬렉션 정책에 따라 4종 모두 등록 대상이다. 등급별 표시 번호는 일부 이동하지만 이름으로 저장한 기존 등록 수량은 유지한다.
 
 ---
 
@@ -4391,27 +4432,59 @@ Status: VERIFIED
 
 Status: PARTIAL
 
+## 2026-10-11 수정요청서 반영 (ver_2.623)
+
+- 기획: `서버레이드대전 수정요청서_2026-10-12` (`fc0393bdd7aa83db847f8167f9164a77`). 사용자 요청으로 예정일보다 먼저 반영한다.
+- `/레이드전적`은 개인 누적·최근 참가 보상, `/레이드순위`는 현재 소속 서버 유저의 누적 순위다. `/서버대전`은 준비·진행·정산 중인 현재 회차만 조회한다. 종료 후에는 진행 중인 대전이 없다고 안내한다.
+- `buildServerRaidCurrentRows`는 현재 회차의 정상 공격 계정을 서버별로 집계해 등록 10개 서버를 모두 표시한다. 같은 계정은 한 명이며 0데미지 정상 공격도 참가자로 포함한다. 데미지 합산·비교는 기존 정수 문자열 연산, 동점은 기존 공동 순위다. 누적 기록·회원·회차 원본을 변경하거나 저장하지 않는다.
+- `buildServerRaidCurrentStatus`는 실제 소속·KST 종료 시각·승수·데미지·참가 인원을 출력한다. 준비 중에는 준비 종료 시각과 공격 시작 후 마감 확정 안내를 표시한다. 마감 또는 정산 중에는 공격 진행 중이라고 표시하지 않는다. `📂 전체 서버 실시간 순위 펼쳐보기` 바로 뒤에 ALLSEE를 둔다.
+- 새 회차는 기본 5회+서공권 추가 최대 10회로 총 15회다. 시작 시 복사한 회차 정책을 사용해 이미 진행 중인 추가 5회 회차는 기존 한도를 유지한다. 한도 안의 공격은 초과 시도가 아니며 초과 3회 무료·4회째 1천만 규칙은 유지한다.
+- `/레이드턴`·`ㄹㄹ`은 남은 횟수·현재 보유량·마감 뒤에 공격·전적·우리 서버 순위·현황 안내를 표시한다. `/서버레이드전체순위`는 추가하지 않는다.
+- 검증: `tools/test_server_raid.js`는 이전 회차 정책의 130개 회귀 그룹을 유지한다. `tools/test_server_raid_oct12.js`는 실제 새 설정으로 15회 경계·이전 정책 보존·누적/현회차 구분·참가 계정 중복 제외·큰 정수·ALLSEE·7인수 콜백·DEV·저장 실패/재시도를 검증한다. 기기 실행은 운영자 영역이다.
+
+## 2026-10-09 공격권·핸디캡 변경 (ver_2.617)
+
+- 기획: `서버_레이드대전_공격권_핸디캡보상_최종기획서 (1)` (`b02393bdd7aa821a99f1812e8f6d29da`). 아래 과거 5회·초과 2회부터 5천만 설명은 기준 미기록 기존 회차에만 적용한다.
+- ver_2.617 당시 회차는 기본 5회 후 `서버레이드공격권👾` 1개당 추가 1회, 계정당 회차 최대 5회 추가했다. ver_2.623 새 회차의 한도는 위 최신 수정 내용을 따른다.
+- `createServerRaidRoundPolicy`가 시작 시 횟수·아이템명·패널티·핸디캡 지급표를 복사한다. `getServerRaidRoundPolicy`는 기준 미기록 이전 회차에 기존 5회·초과 2회부터 5천만·핸디캡 없음 기준을 적용한다. 진행·정산 중 회차와 과거 완료 회차에는 새 지급 기준을 소급하지 않는다.
+- `getServerRaidAttackAvailability`는 정상 공격 목록에서 기본·추가 사용 횟수를 분리하고, 추가 가능 횟수는 `min(가방 보유 수량, 회차 남은 추가 한도)`로 계산한다. `getServerRaidTicketCount`는 문자열·소수·음수·안전 정수 초과 수량을 거부하고 누락 가방은 미보유로 읽는다. 헬퍼에 파일 IO가 없다.
+- `/레이드공격`은 기존 자격·방·회차·마감·이벤트 검사 뒤 공격권·포인트·데미지·정상 공격·이벤트 완료 기록을 같은 회원 파일 저장으로 확정한다. 저장 실패 복구와 확장 원본 ID 재전송 방지는 기존 트랜잭션을 유지한다. 기본 7인수 콜백은 이전 승인대로 호출마다 별도 시도로 처리한다.
+- 이용 가능한 공격이 없을 때 초과 3회까지 무료, 4회째부터 매회 1천만을 차감한다. 부족하면 차감 없이 초과 횟수만 기록한다. 중간에 공격권을 얻어 정상 추가 공격을 하더라도 초과 누적 횟수는 유지한다. 초과 입력은 데미지·공격 보상·정상 누적 공격에 포함하지 않는다.
+- 공격 결과는 기본·추가 남은 횟수와 공격 직후 서공권 수량·소모 여부를 저장 결과로 표시한다. `/레이드턴`·`ㄹㄹ`은 실제 현재 가방으로 같은 추가 한도를 조회하고 자동 종료 시각을 유지하며 저장하지 않는다.
+- 기존 허용 목록에 `/이체`, `/이체 대상 금액`, `/펫정보`를 추가했다. 이체 대상의 공백과 기존 숫자 형식만 통과하며 접미 설명·수수료 변경·`/ㅎ`·`ㅁㅁㅁ`는 새 예외가 아니다. Main·Info의 기존 가입·출석·계정정지·일대일 패스·티어·다른 대전 제한을 유지한다.
+- 종료 시 정상 공격 1회 이상 참여자의 공격 당시 서버 최종 공동 순위로 핸디캡 수량을 고정한다. 1위 0개, 2~3위 1개, 4~6위 2개, 7~9위 3개, 10위 4개다. 기존 상금과 공격권·지급 완료 상태를 같은 저장으로 처리하고 이미 완료된 참가자는 건너뛴다. 닉네임·현재 소속 변경은 원래 참가 서버의 지급 기준을 바꾸지 않는다.
+- 종료 UI는 기존 ALLSEE 1회를 유지하고 상금 아래 핸디캡을 표시한다. 삭제 계정 등 미지급 대상은 실제 지급 인원을 함께 안내하며 아무도 받지 못한 서버에는 지급됐다는 수량 줄을 출력하지 않는다. 미참여 계정·서버에는 지급하지 않는다.
+- `node tools/test_server_raid.js`는 기존 기준 108개 회귀와 새 기준 22개를 합쳐 130개 그룹을 검증한다. 새 테스트는 실제 7인수 콜백, 0/1/4/5/10개, 초과 3/4회와 잔액 경계, 추가 획득, 저장·응답 실패, 재시작·닉변·DEV 분리, 공동 순위·0데미지·미참여, 부분 정산·삭제 계정·수량 초과, 실제 이체 분기와 Info 펫정보 자격 검사, 치명타 UI·공격 횟수와 무관한 보상·자동/수동 종료 경합·전체 초기화까지 포함한다. 기기 실행·펫정보 전체 렌더링은 이 합성 테스트의 검증 범위가 아니다.
+- 2026-10-09 최종 검증: 130개 그룹 5회 반복 통과, `tools/test_latest_server_display.js` 통과, Main·Info·테스트 문법 검사와 수정 파일 UTF-8·diff 검사 통과. 버전·개발자노트는 ver_2.617로 동기화하며 노션 실제 반영 속성은 원격 운영 소스 검증 후 기록한다.
+
 ## Files / Commands
 
-- `main.js`: `/서버대전시작`, `/서버대전종료`, `/서버대전전체초기화`, `/레이드공격`, `/레이드순위`, `/서버레이드순위`.
-- 실행 명령은 인수 없이 정확히 입력한다. `/서버레이드순위 서버명`은 사용법만 출력한다. 이전 `/레이드기록`, `/서버레이드기록`은 새 이름만 안내하며 기록 조회·파일 IO를 수행하지 않는다.
-- 사용자 후속 결정으로 운영 `/서버대전시작`, `/서버대전종료`는 모든 방·일대일톡에서 허용하며 기존 MASTER·인증된 운영봇 권한을 유지한다. 초기화·공격은 단체방 `공성전`과 `팻 테스트방`에서 허용한다. `/레이드순위`, `/서버레이드순위`는 모든 운영방·일대일톡에서 준비·진행·정산 중에도 조회한다. 조회의 일대일 호이패스·출석·계정정지 조건은 유지한다. DEV 명령은 `팻 테스트방`으로 한정한다. 다른 방의 공격·초기화는 데이터 로드·저장 전 차단하며 두 공격방의 계정당 공격 한도는 합산 5회다.
+- `main.js`: `/서버대전시작`, `/서버대전종료`, `/서버대전전체초기화`, `/레이드공격`, `/레이드전적`, `/레이드순위`, `/서버대전`, `/레이드턴` (별칭 `ㄹㄹ`).
+- 남은 턴 UI는 남은 공격 줄 바로 아래에 저장된 `autoEndAt`을 `formatServerRaidKstTime`으로 변환한 자동 종료 시각을 표시한다. 0회에도 같은 위치에 표시하고 종료 시각이 없는 이전 회차에는 임의 마감을 만들지 않는다. DEV는 해당 DEV 회차의 마감을 사용한다.
+- 남은 턴 조회 기획: `서버레이드대전_남은턴조회_기획서` (`e4b393bdd7aa8301ae678187407aba00`). `/레이드턴`·`ㄹㄹ`만 앞뒤 공백 제거 후 정확히 판별한다. 모든 운영방에서 본인 계정만 조회하며 기존 일대일 패스·출석·정지 조건을 유지한다. DEV는 팻 테스트방으로 한정한다. 일반 잠금·공격 초과 패널티 전에 반환한다.
+- 실행 명령은 인수 없이 정확히 입력한다. 이전 `/레이드기록`은 `/레이드전적`, `/서버레이드기록` 및 `/서버레이드순위`는 `/레이드순위`만 안내하며 기록 조회·파일 IO를 수행하지 않는다. `/서버레이드순위 서버명`도 변경 안내만 출력한다.
+- 사용자 후속 결정으로 운영 `/서버대전시작`, `/서버대전종료`는 모든 방·일대일톡에서 허용하며 기존 MASTER·인증된 운영봇 권한을 유지한다. 초기화·공격은 단체방 `공성전`과 `팻 테스트방`에서 허용한다. `/레이드전적`, `/레이드순위`, `/서버대전`는 모든 운영방·일대일톡에서 준비·진행·정산 중에도 조회한다. 조회의 일대일 호이패스·출석·계정정지 조건은 유지한다. DEV 명령은 `팻 테스트방`으로 한정한다. 다른 방의 공격·초기화는 데이터 로드·저장 전 차단하며 두 공격방의 계정당 공격 한도는 새 회차 기본 5회+추가 최대 10회로 합산 15회다.
 - `Info.js`: 기존 정보·순위의 잠금 및 서버 누적 우승 표시.
 - 기획: `서버_레이드대전_개발기획서_초안` (`83c393bdd7aa8266843001b9d40ca710`). 본문은 보존하며, 원격 운영 반영 확인 후 상태·실제 반영일·버전을 갱신한다.
 - 종료 UI 기획: `서버_레이드대전_상금표시_allsee_수정기획서` (`86f393bdd7aa83beb61301637c06ccfd`). 공격 보상은 2026-10-06 사용자 수정 요청을 적용한다.
 - 추가 수정 기획: `서버_레이드대전_추가_수정_기획서` (`aae393bdd7aa83acbb3c81809e181067`). 명령어방은 사용자가 확정한 공성전·팻 테스트방이며 대전 중 일반 명령 잠금은 기존 정책을 유지한다.
 - 최신 공격 UI 기획: `서버_레이드대전_공격결과_UI_개선_기획서` (`7a2393bdd7aa828bac708180f5be72ad`). 공격 UI를 유지하며 최종 수치 조정 기획에 따라 새 공격의 보상은 치명타 전 레이드매력의 3%다. 기존 지급 기록은 보존한다.
 - 최신 순위 UI 기획: `서버_레이드순위_UI_allsee_최종기획서` (`346393bdd7aa839b9a4c01bac2e5da26`). 누적 기록·최근 회차를 분리하고 요약 아래 ALLSEE를 한 번 사용한다. 사용자 결정으로 운영 조회 2종은 모든 방에서 허용한다.
-- 최종 수치 조정 기획: `[최종본]서버_레이드대전_권한_및_자동종료_기획서 (1)서버 레이드대전 수치 조정 기획서` (`dce393bdd7aa821b916f016d21e5df86`). 시작 명령 처리부터 준비 60초 포함 15분, 치명타 전 레이드매력의 3%, 서버 1~10위 참여자 1인당 3억부터 3천만씩 감소한 상금만 적용한다. 기존 UI·명령·권한·5회 한도·인장·NoticeMsg·ALLSEE는 유지한다. 이미 시작한 회차의 마감과 확정된 상금·공격 지급 기록은 보존한다.
+- 이전 수치 조정 기획: `[최종본]서버_레이드대전_권한_및_자동종료_기획서 (1)서버 레이드대전 수치 조정 기획서` (`dce393bdd7aa821b916f016d21e5df86`). 치명타 전 레이드매력의 3%, 서버 1~10위 참여자 1인당 3억부터 3천만씩 감소한 상금은 유지한다. 당시 시작 명령부터 준비 포함 15분 정책은 다음 최신 기획으로 대체한다. 이미 시작한 회차의 마감과 확정된 상금·공격 지급 기록은 보존한다.
+- 과거 수정 기획 (ver_2.615): `[최종최종]레이드대전_수정_기획서 (1)` (`05f393bdd7aa8234a214811a6061a605`). 준비 60초와 별도로 실제 공격 활성화부터 30분 진행한다. 당시 `/레이드순위`(현재 `/레이드전적`)의 기여도 아래·순위 위에 정상 누적 공격횟수를 표시하고 기존 ALLSEE 위치를 유지한다. 회차별·계정별 첫 초과 시도는 경고와 0포인트, 두 번째부터 매회 5천만 포인트를 차감한다. 사용자 확정으로 잔액이 부족하면 차감 없이 안내하고 초과 횟수만 기록한다. 실패·초과 시도는 정상 누적 횟수·데미지·보상에서 제외한다.
 - 명령 제한 안내 기획: `서버_레이드대전_명령어_제한_안내_수정_기획서` (`bc4393bdd7aa83cd98218174d4985a63`). `buildServerRaidLockMessage`는 입력자의 기존 채크랭크와 저장된 회차 마감을 KST `YYYY.MM.DD HH:mm`으로 표시한다. 일반 게임·단축 명령은 실행 전에 안내 1회 후 종료한다. 마감에 도달한 차단 입력은 기존 `closeServerRaid`로 자동 종료 상태를 저장하고 예약 정산을 재개한다. 정산 중에는 대전 참여 안내 대신 종료 처리 안내를 출력하며 정산 완료 후 잠금을 해제한다. 일반 채팅·허용된 순위 조회·공격·운영 종료의 기존 동작은 유지한다.
+- 추가 허용 기획: `서버_레이드대전_사용_가능_명령어` (`fde393bdd7aa83568600012f8c15e410`). 준비·진행·정산 중 기존 레이드 명령에 더해 `ㅊㅊ`, `/미정`, `/정보`, `/주기리셋`, `/펫탐험정산`, `/포인트`, `/패키지지급`, `/패키지가방`, `/패키지사용`, `/가방`을 기존 처리로 통과시킨다. 기존 대상 이름·패키지 번호·수량 인수 형식만 허용하며 접미 설명·유사 명령·미지정 별칭은 잠금을 유지한다. 원래 권한·출석·정지·일대일 패스·다른 대전 제한은 계속 검사한다. DEV `dev/ㅊㅊ`는 기존 출석 단축어로 정규화한다.
 
 ## Related Helpers
 
 - 회차: `createServerRaidState`, `startServerRaid`, `activateServerRaid`, `closeServerRaid`, `resetServerRaid`.
+- 추가 예외: `isServerRaidAdditionalCommand`, `GLOBAL_CONFIG.serverRaid.commands.additionalExact`. 레이드 진입부의 일반 잠금만 제외하고 기존 명령 처리로 연결한다. Info는 `isInfoServerRaidAdditionalCommand`와 해당 파일의 설정으로 `/정보`·`/포인트`·포인트 단축키 `ㅍㅍㅍ`를 통과시킨다. 두 판별 함수에는 파일 IO·저장·권한 변경이 없다. DEV `dev/ㅍㅍㅍ`는 Main·Info 모두 기존 포인트 단축어로 정규화한다.
+- 남은 턴: `isServerRaidTurnQueryCommand`, `buildServerRaidTurnMessage`, `getServerRaidCurrentParticipant`. ACTIVE이면서 저장된 마감 전인 회차의 동일 계정·소속 기간 `attacks.length`만 읽어 저장된 회차 정책 기준의 기본 남은 횟수와 서공권 보유량/추가 한도를 표시한다. 누적·초과 시도는 제외한다. 준비·정산·완료·마감 도달은 미진행 안내를 출력한다. 조회 중 계정/참여 기록 생성·포인트 차감·저장·예약 작업 재개를 하지 않는다.
 - 자동 종료: `isServerRaidAutoEndDue`, `getServerRaidWorkDelay`, `buildServerRaidTimeNotice`, `GLOBAL_CONFIG.serverRaid.timers.durationMs`. 준비·자동 종료·공지 재시도 중 가장 이른 시각으로 기존 환경별 타이머 1개를 재사용한다.
 - 공격: `getServerRaidAttackCheck`, `applyServerRaidAttack`, 기존 `calculateRaidExp`, `calculateCriticalDamage`, `calculateEffectivePetUpgradeLevel`.
+- 초과 시도: `applyServerRaidExcessAttempt`, `buildServerRaidExcessMessage`, `GLOBAL_CONFIG.serverRaid.penalties`. 정상 공격 계산 전에 별도 분기로 처리하고 저장한 실제 차감·부족 결과로 안내한다. 두 헬퍼는 파일 IO가 없다.
 - 수신 식별값: `getServerRaidCallbackEvent`, `getServerRaidNativeId`, `getServerRaidEventId`, `createServerRaidAttackEvent`.
-- 명령방: `isServerRaidCommandRoom`, `isServerRaidQueryCommand`, `GLOBAL_CONFIG.serverRaid.rooms`. 운영 시작·종료·조회는 방 제한에서 제외한다. 시작·종료는 기존 MASTER 명단의 `isMasterIdentity`와 인증된 운영봇 권한을 검사한다. 조회만 대전 잠금에서 제외하며 시작·종료의 기존 중복 처리 정책은 유지한다.
+- 명령방: `isServerRaidCommandRoom`, `isServerRaidQueryCommand`, `GLOBAL_CONFIG.serverRaid.rooms`. 운영 시작·종료·조회는 방 제한에서 제외한다. 시작·종료는 기존 MASTER 명단의 `isMasterIdentity`와 인증된 운영봇 권한을 검사한다. 레이드 조회는 대전 잠금에서 제외하며 시작·종료의 기존 중복 처리 정책은 유지한다. 일반 명령의 추가 예외는 별도 판별 함수를 사용한다.
 - 순위·정산: `buildServerRaidResults`, `rankServerRaidRows`, `settleServerRaidParticipant`, `buildServerRaidAccountIndex`, `finishServerRaidSettlement`.
 - 정확한 합계·기여도: `addServerRaidInteger`, `compareServerRaidInteger`, `serverRaidPercent`.
 - 이동·조회: `applyServerRaidMembershipChange`, `buildServerRaidPersonalRecord`, `buildServerRaidServerRecord`.
@@ -4423,13 +4496,16 @@ Status: PARTIAL
 ## Data Usage / Save Flow
 
 - 기존 `member.json`의 `data.serverRaid`에 초기화 세대, 회차 번호, 준비·진행·정산 상태, 완료 회차 수, 서버 우승, 공식 결과, 원본 이벤트 처리 상태, 방별 공지 완료 상태를 저장한다.
-- 새 회차에 시작 명령 시각 `requestedAt`, 적용 진행 시간 `durationMs`, 고정 종료 시각 `autoEndAt`을 저장한다. 실제 공격 활성화 시각 `startedAt`은 기존 의미를 유지한다. 설정 변경·중복 시작으로 진행 회차의 마감을 바꾸지 않는다. 이전 종료 시각 없는 회차에는 새 시간을 소급하지 않는다.
+- 새 회차의 준비 단계에는 `requestedAt`, `prepareUntil`, `durationMs`, `durationBasis: "activeStart"`를 저장한다. 준비 60초 이후 실제 활성화 시 `startedAt`과 `autoEndAt = startedAt + durationMs`를 함께 최초 확정한다. 활성화 저장이 실패하면 준비 상태를 유지하며 성공한 재시도 시각부터 계산한다. 준비 중 중단이 길어져도 새 회차는 실제 활성화 후 30분을 확보한다. 활성화 뒤 미발송 준비 안내는 취소하여 오래된 60초 안내를 보내지 않는다. 설정 변경·중복 시작·공지 재시도로 마감을 연장하지 않는다. 표시 기준이 없는 기존 회차는 저장된 마감을 유지하며 종료 시각 없는 이전 회차에는 새 시간을 소급하지 않는다.
 - `data.member[user].serverRaidAccount`는 내부 UUID·소속 기간·최근 개인 기록·현재 서버 누적 참가 기록이다. 닉네임 키가 바뀌어도 같은 회원 객체의 UUID를 재사용하고 새 회원은 새 UUID를 받는다.
 - 공격마다 R(레이드매력), D(치명타 포함 최종 데미지), P(버림 처리한 R의 3%)를 구분해 저장한다. `calculateServerRaidAttackReward`는 몫·나머지 계산으로 큰 안전 정수에서도 정확히 버린다. 새 공격은 `rewardBasis: "raidCharm"`, `rewardPercent: 3`을 저장하고 `getServerRaidAttackPercent`는 이전 비율 미기록 공격을 당시 1%로 읽는다. 이전 `damage`·R1% 공격과 혼합 기록은 당시 지급액·기준·비율을 유지하며 재전송 시 재계산·추가 지급하지 않는다. 실제 치명타 판정은 기존 `calculateCriticalDamage`의 선택 결과 인수로 함께 받아 0매력에서도 유지한다. 기존 호출의 숫자 반환값은 유지한다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
 - R은 기존 `calculateRaidExp`로 계산하며 가방의 레이드타격대인장(개당 +600)과 홈뱃지·길드 큐브·레벨·퀘스트 보너스를 포함한다. 종합매력을 사용하지 않으며 포함된 보너스를 중복 가산하지 않는다.
 - 공격·종료·초기화는 명령 쓰기 잠금과 기존 데이터 트랜잭션 잠금으로 직렬화한다. 공격 횟수·포인트·데미지·이벤트 완료 상태를 `member.json`에 한 번에 저장한다.
+- 추가 허용 명령은 기존 공통 전처리·권한 검사·파일 로드·저장·복구 흐름을 사용하며 레이드 공격/보상 기록과 마감을 직접 수정하지 않는다. 패키지 지급·사용은 기존 회원 파일과 패키지 로그 저장 트랜잭션을 유지한다. 수동 탐험의 `stopAllIntervals`는 탐험 `intervalIDs`만 정리하며 별도 `serverRaidWorkTimers`의 자동 종료 예약은 보존한다.
+- 대전 중 차단된 `/펫탐험자동정산`은 `exploreInterval` 실행 표시를 해제한다. 이전 자동 탐험 예약이 다음 허용 명령에서 의도치 않게 실행되지 않도록 하며, 대전 종료 후 자동 정산과 수동 `/펫탐험정산`의 기존 흐름은 유지한다.
+- 초과 시도는 참가자의 `excessAttempts`, `excessEvents`에 횟수·실제 차감액·부족 여부·당시 비용을 기록하고 `eventReceipts`에 회차·계정·초과 구분을 함께 저장한다. 회원 포인트와 같은 저장 단위로 확정한 뒤 안내한다. 저장 실패는 모두 복구하며 응답 실패 후 같은 원본 ID를 재전송해도 재차감하지 않는다. 부족 결과 재전송은 이후 입금돼도 다시 차감하지 않는다. 이전 참가자의 새 필드가 없으면 첫 초과부터 기록하며 다음 회차 참가자는 초과 0회로 생성한다. 정상 공격 목록·데미지·공격 보상은 변경하지 않는다.
 - 정산은 미지급 참가자의 포인트와 완료 상태를 묶어 한 번 저장한 뒤 우승·완료 횟수·확정 결과를 저장한다. 이미 지급된 계정은 재시도 시 건너뛴다. 조회용 기록은 서버와 소속 기간이 모두 일치할 때만 작성한다.
-- 누적 조회는 미지급 진행 참가자의 공격·참가 1회를 추가하고, 지급 완료된 참가자는 이미 기록된 누적만 사용해 부분 정산·재시작에서도 중복되지 않는다. 최근 회차가 진행·정산 중이면 확정 보상 합계·지급 완료 문구를 표시하지 않는다. 기록 없는 화면에는 ALLSEE를 생략하고 0 데미지 기여도는 0.00%로 표시한다. 현재 소속 기간의 이동·초기화 정책은 유지한다.
+- 누적 조회는 미지급 진행 참가자의 정상 공격·참가 1회를 추가하고, 지급 완료된 참가자는 이미 기록된 누적만 사용해 부분 정산·재시작에서도 중복되지 않는다. 개인 화면의 `🎯 누적 공격: N회`는 정상 공격만 세 자리 쉼표로 표시하며 서버 화면의 기존 요약은 유지한다. 최근 회차가 진행·정산 중이면 확정 보상 합계·지급 완료 문구를 표시하지 않는다. 기록 없는 화면에는 ALLSEE를 생략하고 0 데미지 기여도는 0.00%로 표시한다. 현재 소속 기간의 이동·초기화 정책은 유지한다.
 - `scheduleServerRaidWork`는 예약 작업의 진입점이며 로드·저장·발송을 담당한다. 일반 계산·변경 헬퍼에는 파일 IO가 없다. 준비 마감, 초기화 세대, 회차 번호, 타이머 식별값을 재검사한다.
 - 일반 명령은 회원 파일을 읽은 뒤 미완료 작업을 재예약하며 레이드 운영 명령은 권한 검사 뒤 재예약한다. 권한 없는 시작·종료·초기화는 상태·타이머를 바꾸지 않는다. 재시작 후 허용된 명령이 잠금·중복 종료 안내로 조기 반환돼도 DEV/PROD 준비·자동 종료·정산·공지를 재개한다. 이미 예약된 환경에는 타이머를 추가하지 않는다.
 - 종료 시각 이후 공격은 타이머 실행 여부와 관계없이 거부한다. 수동·자동 종료는 동일한 정산 절차와 회차·세대·타이머 식별값 검사로 중복 지급을 막는다. 종료 때 미발송 준비·시작 안내에는 `cancelled`를 기록해 오래된 공지를 생략하되 실제 발송 상태는 보존한다.
@@ -4440,7 +4516,7 @@ Status: PARTIAL
 
 - 기본 `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)`만으로 시작·공격·종료할 수 있다. 확장 인수는 필수가 아니다. 레거시 지원 버전에서 9번째 `logId`, 10번째 `channelId`, 11번째 `userHash`가 제공되면 `arguments`에서 읽고 앱·방·메시지 범위의 문자열 ID를 사용한다.
 - 네이티브 ID를 Number로 변환하거나 텍스트·시간 해시로 대체하지 않는다. Number로 들어온 ID도 거부한다. 신뢰된 내부 어댑터가 8번째 인수로 제공하는 `{ id: 원본 이벤트 ID 문자열, operatorId: 인증된 운영 주체 ID 문자열 }`도 지원한다.
-- 원본 ID가 없는 기본 콜백의 공격은 호출마다 저장용 UUID를 생성한다. 이 UUID는 재전송 식별값이 아니다. 2026-10-06 사용자 승인에 따라 같은 알림이 다시 전달되어도 새 공격 1회로 처리하며, 방 이동·재시작 여부와 관계없이 계정당 5회 한도를 유지한다. 원본 ID가 제공되는 경우에는 기존 재전송 차단을 유지한다. 제공된 확장 ID가 손상됐거나 Number이면 시작·공격을 차단한다.
+- 원본 ID가 없는 기본 콜백의 공격은 호출마다 저장용 UUID를 생성한다. 이 UUID는 재전송 식별값이 아니다. 2026-10-06 사용자 승인에 따라 같은 알림이 다시 전달되어도 별도 시도로 처리하며, 방 이동·재시작 여부와 관계없이 계정당 정상 5회 한도를 유지한다. 한도 이후 호출은 새 초과 시도이며 두 번째부터 패널티 대상이다. 원본 ID가 제공되는 경우에는 정상 공격·초과 시도의 재전송 차단을 유지한다. 제공된 확장 ID가 손상됐거나 Number이면 시작·공격을 차단한다.
 - 운영봇은 `GLOBAL_CONFIG.serverRaid.authentication.operatorIds`의 등록값과 앱·방·사용자 해시로 구성한 `operatorId`가 일치해야 한다. 초기 등록 목록은 비어 있어 MASTER만 운영 권한을 갖는다. 기본 콜백에서도 MASTER가 모든 방·일대일톡에서 시작·종료할 수 있다. 운영봇의 기존 단체방 인증 조건과 등록 ID 검사는 유지하며 닉네임 `오픈채팅봇`만으로 운영 권한을 부여하지 않는다.
 - 시작·종료 이미지 공유 링크를 기존 텍스트 메시지에 넣었으며 실제 기기의 이미지 표시는 미검증이다. 운영 기기에 직접 연결하지 않는다.
 - 공식 이력과 이벤트 처리 기록을 임의로 삭제하지 않는다. 장기 운영 데이터 규모와 Rhino 기기 처리 시간은 운영 전 검증 항목이다.
@@ -4451,7 +4527,9 @@ Status: PARTIAL
 ## Validation
 
 - `node tools/test_server_raid.js`: 실제 명령 진입·예약 작업·보호 저장 함수를 합성 데이터와 메모리 파일시스템에서 실행한다.
-- 72개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 실제 Main/Info 레이드 계산에서 인장·홈/길드 큐브·레벨·퀘스트 합산을 대조하며, 제보 치명타 수치·이전 지급 기록·확정 상금 표시·명령 이름·방 제한도 검증한다. 기존 UI 유지·R3%·0매력 치명타·D/R 및 1%/3% 혼합 지급 기록·모든 운영방 조회·여러 회차 누적 일치·부분 정산 재시작·ALLSEE 위치를 검증한다. 10/15분 가상 시각·마감 경계·수동/자동 경합·공지 실패·저장 실패·중복 시작·재시작·지연된 시작 안내 취소·구 회차 유지·권한 없는 타이머 미변경도 검증한다. 확장 인수·내부 어댑터 경로의 원본 ID 재전송 차단도 유지한다.
+- 97개 검증 그룹으로 기본 7인수 시작·공격·5회 한도·저장 실패·응답 실패·재시작·중복 정산·DEV 분리를 검증한다. 실제 `response(...)` 전체 콜백의 잠금·컨텍스트 해제와 DEV 헤더·저장 실패 처리, 예약 유실 후 준비·정산 재개도 실행한다. 실제 Main/Info 레이드 계산에서 인장·홈/길드 큐브·레벨·퀘스트 합산을 대조하며, 제보 치명타 수치·이전 지급 기록·확정 상금 표시·명령 이름·방 제한도 검증한다. 기존 UI 유지·R3%·0매력 치명타·D/R 및 1%/3% 혼합 지급 기록·모든 운영방 조회·여러 회차 누적 일치·부분 정산 재시작·ALLSEE 위치를 검증한다. 실제 활성화부터 30분·기존 10/15분 유지·마감 경계·수동/자동 경합·공지/저장 실패·중복 시작·재시작·늦은 준비 안내 취소·권한 없는 타이머 미변경을 검증한다. 첫 초과 경고·2회부터 각 5천만 차감·잔액 경계·부족 시 기록만·원본 ID 재전송·닉네임 변경·다음 회차·초기화·DEV 분리·정상 누적 횟수/콤마를 검증한다.
+- 남은 턴 조회 8개 그룹은 별칭·공백·접미 거부·5/3/0회·반복 무차감·전체 운영방/DEV 제한·가입/출석/정지/패스·마감 경계·회차/닉네임/소속 기간·로드 실패를 실제 7인수 콜백과 합성 파일 IO로 검증한다.
+- 추가 허용 11개 그룹을 포함해 총 108개 그룹을 검증한다. 준비·진행·정산의 10종/인수 통과, 접미·숫자·별칭 거부, 기존 명령 유지, 실제 패키지 지급/사용/두 파일 저장 실패 복구, 출석/조회/권한, 탐험 정산·주기 리셋의 레이드 예약 보존과 자동 종료 상금, DEV 저장 분리, 실제 자동 탐험 콜백 차단 후 다음 허용 명령의 불필요한 탐험 실행 방지, `/포인트`·`ㅍㅍㅍ` 동일 출력·기존 자격 검사·무저장·DEV 단축어 정규화를 확인한다. 새 명령 통합 검증은 실제 진입부·자격 검사·명령 분기·저장 함수에 합성 보상/표시 의존성을 연결하며 전체 공통 전처리·기기 실행을 대신하지 않는다.
 - DEV 데이터가 없는 최초 백업도 기존 권한과 생성 흐름을 유지한다.
 
 ---
@@ -4497,7 +4575,7 @@ Status: VERIFIED
 - `/서버변경`과 관리자 `/서버이동`의 실제 소속 변경은 `applyServerRaidMembershipChange`를 통해 개인 레이드 조회 기록을 지우고 소속 기간을 증가시킨다. 실패 시 소속·이동권·레이드 조회 기록을 함께 유지하며 완료 응답 전에 저장한다.
 - 관리자·순위 이모지 표시 설정은 계정의 `displaySettings`에 별개로 저장하며 실제 관리자 권한과 순위 수치는 유지한다.
 - `/서버순위`는 조회 전용이며 소속 서버의 전체 회원 매력을 합산한다.
-- `/서버순위`에는 소속 서버 개인 TOP 10을 더보기 아래 표시하고, `/종합순위`·`ㅈㅈㅈ`의 서버 영역은 전체 서버 합산 순위를 표시한다. 기존 종합매력 공식·정렬은 유지하고 출력 단계에서만 레이드 누적 우승 `⭐N`을 붙인다.
+- `/서버순위`와 `/종합순위`·`ㅈㅈㅈ`의 통합 서버 화면은 소속 서버 요약 아래 개인 TOP 10과 전체 서버 합산 순위를 더보기 안에 표시한다. `/종합순위`·`ㅈㅈㅈ`는 이 화면 뒤 월드 개인 순위를 출력한다. 기존 종합매력 공식·정렬은 유지하고 출력 단계에서만 레이드 누적 우승 `⭐N`을 붙인다.
 - `/서버이동`, `/서버변경`, 신규 소속 매핑과 순위 집계는 서버6을 `호이서버6[30]`으로 통일한다. 기존 `[2030]` 소속값도 서버6으로 합산한다.
 - 개인 정보와 길드 화면의 서버명도 최신 표기로 출력하며 기존 저장 데이터는 조회만으로 변경하지 않는다.
 - `/서버변경`은 기존 이동권으로 호이서버1~7과 `호이월드 커뮤니티`를 선택한다. 관리자 `/서버이동`도 커뮤니티를 허용하며 채팅방 입장만으로 기존 소속을 변경하지 않는다.
@@ -4838,6 +4916,7 @@ Status: VERIFIED
 - `/포인트확인`
 ## AI Notes
 - `/포인트` and `ㅍㅍㅍ` show held 다이아 from the same `data.member[sender].diamond` field used by `/내정보`; active hoi/newbie pass users additionally see the unread home-alert count only when it is greater than zero, without marking alerts as read.
+- `/포인트`·`ㅍㅍㅍ` 모두 서버 레이드대전 준비·진행·정산 중 허용되며 기존 출석·정지·일대일 패스 조건을 검사한다. DEV `dev/포인트`·`dev/ㅍㅍㅍ`는 같은 DEV 회원 데이터로 조회한다.
 
 ---
 
@@ -6101,7 +6180,7 @@ Status: VERIFIED
 - 맞짱은 참여 시점 종합매력에 상성·크리티컬을 적용한 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 상세보기는 양측 기본/상성/최종 매력, 크리티컬, 비교식과 매력 차이를 카드형 UI로 표시한다.
 - `/맞짱시간체크 [닉네임]` measures only the named user's 종합매력 calculation and reports response-entry total, diagnostic-branch, home-load, total calculation, response common processing timings for data loads/normalizers, and detailed component timings for castle, raid, equipment, home, pet, mini-pet, intimacy, pet skill, and upgrade bonus; 0ms detail rows are hidden; it does not select an opponent or run `runMatzangBattle`
-- `buildTotalExpTimeCheckDetail`은 명령에서 로드된 `guildData`를 전달받아 티어 스킬도 합산한다. 실전과 공통인 `getPetModeCharmPercent`·`applyPercentWithExactFloor`로 최종 합계를 계산하며 퍼센트 적용 전 합계도 별도로 표시한다. 세부 항목을 다시 로드하거나 저장하지 않는다.
+- `buildTotalExpTimeCheckDetail`은 명령에서 로드된 `guildData`를 전달받아 티어 스킬도 합산한다. 실전과 공통인 `getPetModeCharmPercent`·`applyPercentWithExactFloor`로 최종 합계를 계산하며 퍼센트 적용 전 합계도 별도로 표시한다. 반환하는 `castleBase`, `raidBase`, `rows`는 매력 버프 진단에서도 사용한다. 시간체크 화면은 기존처럼 0ms 행을 숨기지만 `rows`에는 모든 항목을 유지한다. 세부 항목을 다시 로드하거나 저장하지 않는다.
 - Event PT is granted only to the user who entered `/맞짱` or `ㅁㅁ`; wins grant 10~15pt, losses grant 5~7pt, and the matched opponent can be K.O. without receiving PT from that command
 - K.O. users remain active and can continue `/맞짱` or `ㅁㅁ` without re-entering while their event count remains
 - Users who are already active in the field cannot re-enter with `/참여` or `ㅊㅇ`
@@ -7040,9 +7119,9 @@ Status: VERIFIED
 - 새 가입자는 펫 이름 확정 후 추천인 입력 대기로 이동한다. 기존 펫 생성 안내 뒤 추천인 등록 안내를 출력하고, 등록 또는 `없음` 선택 후 기존 축복 안내를 출력한다. 기존 `WAIT_BLESSING` 계정은 진행 중인 단계를 유지한다.
 - 추천 등록은 기존 닉네임과 본인 추천 여부, 포인트·횟수 범위를 먼저 확인한 뒤 신규 유저 1억·추천인 5억 포인트, 추천 횟수 +1, 가입 영수증을 같은 `member.json` 저장에 반영한다. 재입력에서는 중복 지급하지 않는다.
 - `/추천인순위`는 본인의 누적 추천 인원·보상을 조회하고 추천 인원 내림차순으로 표시한다. 11위부터 `allsee` 아래에 출력하며 저장하지 않는다.
-- `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 신규 회원의 친밀도 Lv.300(+330,000💕)와 스타터 아이템 18종·300억 포인트·가호 1,000개를 각각 1회 지원한다.
+- `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 신규 회원의 친밀도 Lv.300(+330,000💕)와 스타터 아이템 18종·300억 포인트·가호 30,000개를 각각 1회 지원한다. 기존 지급 완료·과거 퀘스트 지급자는 재지급하지 않는다.
 - 펜던트 강화석📿 3개는 기존 17종과 함께 `memberRewards` 최초 지급 영수증 및 `member.json` 저장에 포함한다. 실제 최초 지급 성공 시에만 완료 안내에 표시하며 기존 지급자에게 소급하지 않는다.
-- 신규 추가 지급은 `GLOBAL_CONFIG.adventureStarter.additionalItems`를 사용한다. 과거 퀘스트 스타터 회수는 기존 `items` 17종만 사용해 펜던트 강화석을 차감하지 않는다.
+- 신규 추가 지급은 `GLOBAL_CONFIG.adventureStarter.additionalItems`를 사용한다. 과거 퀘스트 스타터 회수는 기존 `items` 17종과 `legacyRecoveryBoosters` 1,000개 기준을 유지한다. Info의 과거 후보 조회도 1,000개이며 신규 가호 지급량과 분리한다.
 - 신규 펫의 알 상태는 `/호여!!` 완료 시 기존 외형 목록의 땅·하늘 속성과 외형으로 확정해 `member_pet.json`에 저장한다. 이미 스타터 설정을 완료했지만 알 상태로 남은 펫은 해당 사용자의 다음 `main.js` 응답에서 한 번 보정·저장하며, 이후 조회에서는 다시 뽑지 않는다.
 - `/모험가퀘스트` 최초 참여에서는 스타터팩을 지급하지 않는다. 과거 퀘스트 지급 기록이 있는 회원은 `/호여!!`에서 같은 스타터팩을 다시 지급하지 않는다.
 - 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.
@@ -7096,11 +7175,11 @@ Status: VERIFIED
 ## Save Flow
 
 - Existing member attendance continues to update normal member data
-- Users missing from `data.member` return before command/data creation unless they are using `ㅊㅊ` or the explicit `/모험시작` flow
+- Users missing from `data.member` return before game-account creation unless they use the explicit `/모험시작` flow. Ordinary group chat with a valid `이름 남/여` ID records only the recognition date in `attendanceLight.json`, without attendance count or rewards, so search-authentication management can find the user.
 - Unregistered users using `ㅊㅊ` create or update a lightweight `attendanceLight.json` row, including first-known server info when the room is mapped
 - `/모험시작` validates the Kakao sender nickname before saving the start state; `출발한다` creates the member and migrates any older light-attendance row
 - Registered-user attendance adds the current tier's fixed EXP to the 100 base EXP, applies `호월신의 가호✨` to that subtotal, reports the basic/tier/booster breakdown, and uses the common depletion message when the count reaches zero
-- `/미가입출첵` deletes light rows when the exact stored user ID already joined or has not checked in for 4+ days, reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by date, then server order (`호1` through `호7` then `벨`), then name, then saves `attendanceLight.json`
+- `/미가입출첵` deletes light rows when the exact stored user ID already joined or neither attendance nor recognized general chat occurred for 4+ days. Joined rows transfer search-authentication status to the member before removal, without another reward. It reports automatic-deletion and remaining rows as `server short label / user name`, keeps unknown server values as `미확인`, sorts rows by latest activity date, then server order (`호1` through `호7` then `벨`), then name. Member changes and the light-data snapshot are saved in the existing transaction.
 
 ## Related Commands
 
@@ -7196,7 +7275,7 @@ Status: VERIFIED
 - Admin/Master-only command.
 - Accepts `/미출석가입 [아이디]` only when the ID normalizes to `이름 남` or `이름 여`.
 - Invalid IDs reply with usage guidance and return before creating member, pet, title, pet-skill, or light-attendance data.
-- Valid new IDs call `initializeMember`, initialize pet-skill data, save `petSkillData`, and remove an exact matching `attendanceLight.json` row when it exists.
+- Valid new IDs call `initializeMember`, initialize pet-skill data, save `petSkillData`, transfer an existing search-authentication status/record without another reward, and remove an exact matching `attendanceLight.json` row using snapshot storage when it exists. Forced signup keeps its existing policy of not migrating light attendance counts.
 
 ## Related Commands
 
@@ -7263,6 +7342,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `buildCharmBuffDebugMessage`
+- `buildTotalExpTimeCheckDetail` (퍼센트 적용 전 실제 합계·상세 항목)
 - `getHomeBadgeCubeOptionDebugDetail`
 - `formatHomeBadgeCubeDebugOptionFormula`
 - `calculateCastleExp`
@@ -7275,6 +7355,7 @@ Status: VERIFIED
 
 - `member.json -> member[user].pass.premium`
 - `member.json -> member[user].homeBadgeCube`
+- `member.json -> member[user].adventureQuest.totals` (캐슬·레이드 퀘스트 보너스)
 - `member.json -> matzangField.participants[user].totalExp`
 - `member_pet.json -> [user]`
 - `homeData.json -> [user]`
@@ -7287,7 +7368,9 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/디버깅모드`가 ON일 때 지정한 닉네임 또는 명령 실행자의 기본 펫·미니펫·가구·펫강화 수치와 홈뱃지 기본 옵션, 기본합계 100% 버프, 프리미엄 +3%p, 길드공헌 큐브, 최종 캐슬·레이드·종합매력 계산 일치 여부를 테스트방에 출력한다.
+- `/디버깅모드`가 ON일 때 지정한 닉네임 또는 명령 실행자의 봇 버전·기본 매력 구성·홈뱃지·길드·모험가 레벨·퀘스트 보너스와 최종 캐슬·레이드·종합매력 계산 일치 여부를 `팻 테스트방`에 출력한다.
+- 기본 매력은 보너스가 붙은 최종값을 역산하지 않고 `buildTotalExpTimeCheckDetail`의 퍼센트 적용 전 구성 합계를 사용한다. 정령·반지·펜던트·가방, 펫, 대표·보조 미니펫, 가구, 펫스킬, 캐슬 친밀도 등을 계산 시간과 무관하게 표시한다.
+- 레벨은 0.01%, 퀘스트와 합산 비율은 0.001% 단위까지 표시하며 `내림(기본 × (1 + 합산 비율 / 100))`을 공용 계산값과 비교한다. 실제 매력 계산·재화·장착·보상 정책은 바꾸지 않는다.
 - `/펫정보`, `/종합순위`, `/캐슬대전`, `/시련의탑`은 현재 공용 계산값을 사용한다. 맞짱필드는 참여 시점 종합매력 스냅샷과 전투 시점의 현재 유효 펫강화 치명타를 함께 사용하고, 길드영지전은 시작 시점 캐슬매력·치명타 스냅샷을 사용하므로 현재값과 차이가 날 수 있다.
 - 맞짱필드 또는 길드영지전 진행 중에도 권한이 있는 운영자가 진단할 수 있다.
 
@@ -7656,7 +7739,7 @@ Status: VERIFIED
 - `/레벨` 하단 안내는 진행 안내 → 전체 기록 → `👉 타이틀 장착 /퀘스트타이틀` 순서이며 전체보기 앞에 표시한다. 타이틀 목록에서 `/퀘스트타이틀장착 [번호]`로 장착한다.
 - 캐슬·레이드 각각의 레벨 보너스: `(레벨 - 1) × 0.15% + 일반 승급 × 0.5% + 대승급 × 5%`.
 - 캐슬·레이드 보너스 적용은 0.01% 정수 단위로 계산해 경계값의 부동소수점 내림 오차를 방지한다.
-- `/매력버프체크`의 계산 검증은 모험가 레벨·홈뱃지·길드큐브 비율을 같은 가산식으로 합산한다.
+- `/매력버프체크`의 계산 검증은 실제 기본 구성 합계에 모험가 레벨·퀘스트·홈뱃지·길드큐브 비율을 같은 가산식으로 합산한다. 퀘스트가 붙은 값을 기본값으로 역산하지 않는다.
 - 10레벨마다 승급, 100레벨마다 대승급하며 1000레벨 이후에는 마지막 칭호를 유지하고 보상 주기는 계속된다.
 - `/레벨순위`는 본인의 레벨·전체 순위·전체 계정 수와 바로 위 고유 순위의 레벨 또는 EXP 차이를 상단에 표시한다. 단독 1위는 현재 레벨 이전의 필요 EXP까지 합산한 누적 EXP로 2위와의 차이를 표시하고, 공동 1위는 차이 0으로 표시한다. 목록은 레벨 내림차순, 동률이면 EXP 내림차순으로 정렬하며 `1, 1, 3` 공동순위와 TOP 50을 유지한다. 상위 5명은 기본 화면에, 6번째부터는 `allsee` 뒤에 표시하고 본인이 TOP 50 밖이어도 상단의 내 순위는 유지한다.
 - 모험가 EXP의 계산·저장 정밀도는 유지하고 `/레벨`, 종합정보, 프리미엄 가방, 대전·탐험·출석·퀘스트·자동일퀘 결과, 관리자 수정 결과와 `/레벨순위`의 EXP 표시는 소수부를 제거한다. 자동일퀘 합계는 화면 문자열이 아니라 실제 지급값을 집계한다.
@@ -7729,3 +7812,102 @@ Status: VERIFIED
 - Admin/Master가 인자 없이 정확히 `/펫스킬북보상`을 입력해 실행한다.
 - 초월성장과 나 혼자만 레벨업의 장착·프리미엄 잠금·가방 수량을 합산해 1:1 보상한다.
 - 두 스킬은 추첨·컬렉션·장착·관리자 신규 지급·개인 거래·자유시장 신규 등록과 구매 대상에서 제외된다.
+
+# 월드 종합순위 · 닉네임 순위 표시 제거
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`, `Info.js`
+
+## Related Helpers
+
+- `buildNicknameWorldRanks` (Info의 실제 종합순위 계산에만 사용), `checkRank`
+- `formatNicknameRankMessage`, `createContextReplier`, `formatRankNickname` (Info)
+- `generateRanking`, `buildWorldOverallRankingMessage` (Info)
+
+## Data Usage / Save Flow
+
+- `/순위감추기` 명령과 닉네임 앞 `[N등]` 표시를 제거했다. 기존 `displaySettings.hideWorldRank` 저장값은 읽거나 변경하지 않는다.
+- 기존 월드 종합순위와 같은 캐슬·레이드·펫강화 합산 및 동률 정렬을 사용하며 원본 아이디를 바꾸지 않는다.
+- 닉네임 출력은 전체 회원 매력 계산·정렬·홈 로드를 실행하지 않는다. 표시 전용 컨텍스트와 저장 시 순위표 무효화도 제거했다.
+- Info `/종합순위`, `ㅈㅈㅈ`, `/서버순위`는 기존 요청별 순위 계산과 목록 생성 방식을 유지한다. 닉네임 순위 표시와 `/순위감추기` 안내만 제외한다.
+- `checkRank`는 기존 무쌍·티어/특별 이모지·길드 표시는 유지한다. 응답/공지의 `formatNicknameRankMessage`가 무쌍 접두어의 외곽 괄호를 정리한다.
+- 실제 순위·매력·동률 순서·보상 기준과 `/종합순위`, `ㅈㅈㅈ`의 서버 현황 → 월드 응답 순서는 유지한다.
+
+# /인증 · 검색인증 조회 및 초기화
+
+Status: VERIFIED
+
+## Files / Commands
+
+- main.js: /인증 아이디 사유, /검색인증, /인증순위, /관리자순위, /관리자순위초기화, /인증초기화.
+- 기획: 검색인증_수정요청서 및 해당 명령어 권한 수정 (166393bdd7aa832ab86f01a9a57fb0d8), ver_2.624.
+- 등록·미인증 목록은 Admin 신원 권한, 검색어/관리자 순위는 Admin 또는 MASTER 신원 권한, 초기화 2종은 MASTER 신원 권한이다. 모든 방 및 펫무쌍·서버대전·길드영지전 중 허용하며 다른 명령의 방 권한을 확대하지 않는다. 기존 가입·계정정지·일대일 패스 흐름은 유지한다.
+- /검색인증은 목록, /인증순위는 검색어 순위로 변경됐다. 이전 관리/순위 명령과 /검색인증 인자 형식은 안내만 출력한다. /가입인증·/가입인증 목록·/인증필요는 기존 목록 별칭·권한을 유지한다.
+
+## Related Helpers
+
+- normalizeSearchAuthenticationKeyword, countSearchAuthenticationCharacters, isSearchAuthenticationTarget, isSearchAuthenticationCount.
+- requireSearchAuthenticationLightData, getSearchAuthenticationTarget, getPendingSearchAuthenticationTargets, recordSearchAuthenticationChat, migrateLightSearchAuthenticationToMember.
+- applySearchAuthentication, applyBulkSearchAuthentication, resetSearchAuthenticationAdminStats.
+- buildSearchAuthenticationManagementMessage, buildSearchAuthenticationRankingMessage, isGlobalOperatorCommandAllowed, isExclusiveDataMutationCommandMessage, isServerRaidAdditionalCommand.
+
+## Data Usage / Save Flow
+
+- member.json의 member[target].voicecheck, attendanceLight.json의 users[target].voicecheck와 searchAuthenticationRecord를 함께 조회한다. 일반 채팅 인식 기록도 대상으로 삼으며 게임 계정을 생성하지 않는다. 같은 아이디는 중복 제외하고 어느 저장소든 인증 완료이면 다시 보상하지 않는다.
+- 단일 인증은 검색어 공백 제거 후 1~10글자와 안전 정수 경계를 확인하고, 대상 인증·검색어 횟수·관리자 count·가방의 호월신의 가호✨(/호여 숫자) 아이템 및 실지급 boosters 누계를 한 번 갱신한다. 활성 가호 boostercnt는 직접 늘리지 않고 /호여 사용 시 기존 흐름으로 전환한다. 기존 다이아 보유량·diamonds 지급 이력·포인트·moon·checkCnt는 유지한다.
+- 가입 대상은 member.json만 저장한다. 미가입 대상은 경량 기록의 변경 전 스냅샷으로 먼저 저장한 후 member.json을 저장하며 기존 명령 트랜잭션으로 두 파일 실패를 함께 복구한다. 헬퍼에서 파일 IO하지 않는다.
+- /인증초기화는 같은 미인증 대상 집합을 기타로 일괄 인증한다. 사용자 확정으로 관리자 보상·관리자 실적은 제외하며 검색어 기타 횟수만 합산한다. 기존 인증 사유·재화·checkCnt는 보존한다. 반복 입력은 0건·무저장이다.
+- /관리자순위초기화는 모든 실적 형식을 먼저 검사한 뒤 count/diamonds/boosters 통계만 0으로 바꾼다. 계정 실적 id·보유 재화·대상 인증·검색어 통계는 유지한다. 이후 정상 인증은 같은 id에 새 실적을 쌓는다.
+- 변경 명령 3종은 isExclusiveDataMutationCommandMessage의 단독 쓰기 잠금 대상이다. DEV 저장은 기존 컨텍스트로 DEV 경량·회원 파일에만 적용한다.
+- 가입 시 미가입 인증 상태·기록을 이전하며 보상·집계를 다시 지급하지 않는다. 기존 4일 활동 정리·삭제 후 재인식 정책은 유지한다. Info.js의 검색인증 상태 출력은 같은 voicecheck를 계속 사용한다.
+
+## UI / Validation
+
+- 목록 시작부터 ALLSEE. /인증순위는 10등까지 바로 표시하고 11등부터 ALLSEE, /관리자순위는 4등까지 바로 표시하고 5등부터 ALLSEE. 검색어 기타와 관리자 호이 남은 각각 마지막에 표시한다. 호이 남 계정이 있으면 0 실적도 하단에 표시하고 기록은 유지한다.
+- 새 가호 누계와 과거 다이아 누계는 별도로 표시한다. 등록·목록·보상 안내는 새 명령어와 가호 30개로 통일한다.
+- tools/test_member_display_search_auth.js: 기존 가입·미가입·닉변·이전·정리·저장 실패 29개 회귀 그룹. tools/test_search_authentication_oct12.js: 새 권한·두 초기화·보상 전환·실적 보존·대전 잠금·정수 경계·DEV·부분 저장/응답 실패·일괄 인증 후 가입 이전·가방 보상 정수 경계/활성 가호 보존 12개 그룹.
+
+# /호츈오픈 [수량] · 타이틀 판매
+
+Status: VERIFIED
+
+## Files / Related Helpers
+
+- `main.js`: `GLOBAL_CONFIG.fortuneCookie`, `rollFortuneCookieTitle`, `applyFortuneCookieOpen`, `buildFortuneCookieOpenMessage`, `buildFortuneCookieSpecialNotice`.
+- `isPointShopSafeCount` 재사용: 개봉 수량·보유 재화·보상 합산의 안전 정수 경계.
+- `getMemberTitleSalePoint`, `applyMemberTitleSale`, `removeMemberTitleAt`: 쿠키 고정 판매가·기존 판매가 유지·삭제 뒤 다른 장착 타이틀 번호 보정.
+- `Info.js`: 본인 및 관리자 대상 `/타이틀목록`, 10개부터 ALLSEE.
+
+## Behavior
+
+- `/호츈오픈 숫자`는 1~100 정수만 실행한다. 인수 누락·단일 잘못된 수량은 오류 안내, 추가 설명이 붙은 입력은 실행하지 않는다.
+- `호츈쿠키🥠(/호츈오픈 숫자)`를 소모하고 쿠키마다 펫 강화석⭐ 100개, 티어 승급티켓🎟 1개, 다이아상자💎(/다이아상자오픈) 1개를 지급한다.
+- 기존 `호츈쿠키🥠` 수량도 합산해 개봉한다. 각 수량과 합계의 안전 정수를 검사하며, 개봉 성공 시 남은 쿠키를 새 이름으로 통합한다. 실패 시 기존 보유 상태를 유지한다.
+- 각 쿠키는 일반 50%, 특별 1%, 미당첨 49%의 배타적 결과. 고정 명단 310개·일반 콘셉트 6종·각 멘트 30개는 각각 동일 확률. 특별 멘트도 30개 동일 확률.
+- 타이틀의 이름과 멘트를 합친 전체 문자열로 보유 중복을 확인한다. 한 개봉 안의 반복 결과도 포함하며, 신규는 기존 목록 뒤에 추가하고 자동 장착하지 않는다.
+- 중복은 5천만 포인트, 특별은 신규·중복 모두 다이아 100개 추가. 개인 UI는 합산한 기본·추가 보상과 실제 결과를 표시한다.
+- 특별 당첨마다 기존 전체알림 대상방으로 독립 공지. 한 방의 전송 오류는 다른 방을 중단하지 않는다. 지급 확정 이후 전송 오류는 보상을 되돌리거나 재지급하지 않는다.
+- 쿠키 타이틀만 `kind: fortuneCookie`로 구분해 1,500만 포인트에 판매한다. `/타이틀정보`·`/타이틀판매`·`/타이틀지정판매`에 같은 가격 계산을 적용하고 기존 타이틀 판매가는 유지한다.
+- 기존 가입·출석·계정정지·일대일 패스·대전 제한을 유지한다. 쿠키 개봉은 서버대전 중 새 허용 예외가 아니다.
+
+## Data / Save Flow
+
+- `member.json`: 가방 쿠키·기본 보상, 포인트·다이아.
+- `member_title.json`: 기존 `member[user].title.list`의 `name/inDate/price`와 쿠키 식별 `kind`. 장착 `num`은 유지.
+- 명령 분기에서 타이틀 JSON을 1회 읽고 소모·지급 경계를 전부 검사한 뒤 저장한다. 새 타이틀이 없으면 타이틀 파일을 저장하지 않는다.
+- 타이틀 파일은 현재 기본 보호 목록 밖이므로 `saveJsonFile(..., false, 실행전JSON문자열)`로 기존 원자적 교체·복구에 참여시킨다. 회원 파일 저장 실패 시 먼저 저장한 타이틀도 복구한다.
+- 단일·구간 판매도 같은 스냅샷과 회원 저장을 사용한다. DEV는 기존 경로 해석과 공지방을 재사용한다. 순수 계산·출력 helper에서 파일 IO를 하지 않는다.
+- 검증: `node tools/test_fortune_cookie.js`. 합성 데이터·실제 분기·저장·복구 함수 사용. 기기 실행은 검증 범위 밖.
+
+# 서버대전 중 기록·검색인증 추가 허용
+
+Status: VERIFIED
+
+- `main.js:isServerRaidAdditionalCommand`에서 `/기록`, `/기록 내용`, `/기록실`, `/인증 아이디 사유`, `/검색인증`, `/인증순위`, `/관리자순위`, `/관리자순위초기화`, `/인증초기화`만 기존 예외에 추가한다. `/검색인증`은 미인증 목록으로 연결한다.
+- PREP·ACTIVE·SETTLING에서 기존 명령 분기로 통과시키며 기록의 기존 Admin/Master 신원 권한, 검색인증의 Admin/Master 신원 권한, 출석·정지·패스 검사를 확대하지 않는다.
+- `/기록삭제`, 조회 명령 뒤 추가 인수, 호츈쿠키 개봉은 새 예외가 아니다. 기존 허용 명령과 별칭을 유지한다.
+- 신규 저장 경로 없이 기록의 `board.json`, 검색인증의 `member.json` 저장·중복 방지와 기존 잠금을 그대로 사용한다.
+- 검증: `tools/test_fortune_cookie.js`의 실제 레이드 진입 및 기존 인증 권한 시나리오, `tools/test_server_raid.js`, `tools/test_member_display_search_auth.js`.

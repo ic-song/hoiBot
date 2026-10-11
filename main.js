@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.608"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.626"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -213,7 +213,11 @@ const PET_SKILL_LIST = [
     { name: "👻 유령왕의 망령낫", grade: "S", rate: 0, requiredTier: "유령왕", raidExp: 16000000, castleExp: 16000000, equipComment: "뒤를 봐… 아니, 보지 마!", tierExclusive: true, effect: "유령왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,600만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
     { name: "🐶 왕왕왕의 수호왕 갑주", grade: "S", rate: 0, requiredTier: "왕왕왕", raidExp: 18000000, castleExp: 18000000, equipComment: "왕왕! 물지는 않고 때릴게!", tierExclusive: true, effect: "왕왕왕 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 1,800만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
     { name: "🐉 용용용의 용신 여의주", grade: "S", rate: 0, requiredTier: "용용용", raidExp: 21000000, castleExp: 21000000, equipComment: "소원을 말해 봐! 들어준다고는 안 했어!", tierExclusive: true, effect: "용용용 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,100만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
-    { name: "🐦‍🔥 피닉스의 불멸 성검", grade: "S", rate: 0, requiredTier: "피닉스", raidExp: 25000000, castleExp: 25000000, equipComment: "타버렸다… 아니, 다시 살아났다!", tierExclusive: true, effect: "피닉스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,500만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" }
+    { name: "🐦‍🔥 피닉스의 불멸 성검", grade: "S", rate: 0, requiredTier: "피닉스", raidExp: 25000000, castleExp: 25000000, equipComment: "타버렸다… 아니, 다시 살아났다!", tierExclusive: true, effect: "피닉스 티어부터 장착할 수 있습니다.\n장착 시 레이드/캐슬 매력 각각 2,500만 증가합니다.\n※ 티어매력 상승 펫스킬은 중복 착용이 불가능합니다" },
+    { name: "레이드정복자", grade: "SS", raidExp: 7000000, hideRateInInfo: true, equipComment: "이번 보스는 좀 버티려나?", equipCommentNoColon: true, effect: "왕국을 짓밟던 거대 마수들을 무릎 꿇린 전설의 비기입니다. 그 이름 앞에서는 보스조차 사냥감이 됩니다.\n장착 시 레이드매력 700만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "호월토벌대", grade: "한정판", limitedEdition: true, openable: false, raidExp: 3000000, hideRateInInfo: true, equipComment: "호월이 어디 있어? 간식 줄게, 나와 봐!", equipCommentNoColon: true, effect: "“저 볼주머니엔 분명 보물이 있다!” 거대 호월이의 포효에도 눈 하나 깜짝하지 않는 별난 토벌대의 비법입니다.\n장착 시 레이드매력 300만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "레이드돌격대", grade: "A", raidExp: 2000000, hideRateInInfo: true, equipComment: "내가 먼저 간다! 다들 따라와!", equipCommentNoColon: true, effect: "모두가 거대한 그림자에 압도될 때, 가장 먼저 보스의 발밑으로 뛰어듭니다. 두려움을 함성으로 바꾸는 돌격대의 전투술입니다.\n장착 시 레이드매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." },
+    { name: "레이드타격대", grade: "B", raidExp: 1000000, hideRateInInfo: true, equipComment: "다 같이 치자! 하나, 둘, 셋!", equipCommentNoColon: true, effect: "작은 발톱도 같은 곳을 백 번 두드리면 거인의 갑옷을 뚫습니다. 서로의 호흡을 맞추며 익힌 타격대의 합동 공격술입니다.\n장착 시 레이드매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 레이드매력 상승 펫스킬은 중복 착용이 가능합니다." }
 ];
 
 var bidItems = [];
@@ -976,6 +980,23 @@ var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 �
 var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 작업의 환경별 타이머
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    fortuneCookie: { // 호츈쿠키의 개봉·보상·추첨 규칙
+        itemName: "호츈쿠키🥠(/호츈오픈 숫자)", legacyItemName: "호츈쿠키🥠", maxOpen: 100, generalRate: 0.5, specialRate: 0.01,
+        duplicatePoint: 50000000, specialDiamond: 100, titleSalePoint: 15000000,
+        imageLink: "https://ibb.co/dwg4cDpV",
+        rewards: [{ name: "펫 강화석⭐", count: 100 }, { name: "티어 승급티켓🎟", count: 1 }, { name: "다이아상자💎(/다이아상자오픈)", count: 1 }],
+        names: ["쟈기 여","빵미 여","잠자 남","라면 남","또리 여","호이 남","도도 여","맹구 여","플라 여","퍼플 여","윤아 여","사월 여","조사 남","응즈 여","반지 여","뭉뭉 남","벨라 여","만두 여","유유 여","아라 여","오오 여","오늘 여","해인 남","멍멍 남","파이 여","웨이 남","콘트 남","마라 여","리치 여","쑥갓 여","테디 남","돌쇠 남","매실 여","무지 여","여름 여","하은 남","로키 남","베리 여","오픈채팅봇","땅콩 여","거덩 남","메메 남","메탈 남","신이 남","바다 남","오이 여","하든 남","냉면 여","늘보 여","비토 남","공이 남","뒹굴 남","개굴 남","째째 남","왕식 남","히야 여","디브 남","악어 남","강인 남","스킷 남","예하 여","리리 여","봉구 남","뽀얌 여","리안 여","자두 여","잠결 남","뭉이 남","카피 남","포도 남","겨울 남","승묵 여","빵티 남","성현 남","결정 남","요정 남","튜브 여","민고 여","오성 남","몬드 남","삼삼 남","돌팔 남","다퇴 남","문다 남","네네 남","엘리 여","아나 여","기쁨 여","치쿵 여","빈디 남","달이 남","냥덕 여","코몽 여","죠리 여","버거 남","거품 남","시아 여","호치 여","해진 남","쪼쪼 여","피치 여","구마 여","하품 남","아아 여","떨어 여","해치 여","원이 남","꽃잎 여","콩순 여","지노 남","데일 남","산이 여","찐빵 남","비트 남","천라 남","루미 여","수달 여","츠짱 남","제이 남","흑백 여","토토 남","앙꼬 여","대호 남","까꿍 여","왈왈 여","야호 남","진철 남","뿌뿌 여","노을 남","낭만 남","감자 여","빠루 남","지하 여","비쟈 남","호흡 남","라라 여","마루 남","정재 남","콩두 여","느느 남","봄봄 여","빙빙 남","복숭 여","도비 여","만쥬 여","꼬북 여","로나 여","유후 여","시루 남","다롱 여","행운 남","삼오 남","캬라 남","택택 남","구리 남","씽씽 여","슬이 여","라니 남","랄랄 여","워니 남","네간 남","커치 남","프프 남","펭귄 여","태리 여","둘리 여","댕청 남","바보 남","라시 여","보보 남","애옹 여","먕먕 여","거지 남","아지 여","미칸 여","숑숑 여","깡깡 남","허브 남","승천 남","휴맨 남","공주 남","뀽뀽 여","조로 남","나는 남","구경 여","물치 여","이로 남","냥냥 남","성준 남","늑구 남","초코 여","동동 남","찐만 여","치즈 남","테라 남","물개 남","이안 남","새우 여","샘물 남","크앙 남","죠니 여","지훈 남","맥이 여","에그 남","해바 여","용용 여","두냥 남","디어 남","일곰 남","맴밈 남","린코 여","탕아 남","비따 남","집돌 남","라노 남","하루 여","포니 여","하율 여","레르 남","봉투 남","멜론 여","사람 남","화원 남","루나 여","실비 남","아오 남","찬또 여","고장 남","배불 남","모쿠 여","쿠크 여","곽철 남","곰탱 남","진동 남","야옹 여","몽자 여","디아 여","네모 여","지지 여","나나 남","랑이 남","루빈 남","사조 여","시월 남","하운 남","라이 남","만보 여","시골 남","피이 남","어니 남","알림 봇","미미 여","오션 여","악사 남","밍지 여","린치 남","리퐁 남","공통 여","가을 여","준혁 남","켈리 여","쿵야 여","해원 여","코코 남","덕철 남","구두 남","현쓰 남","냉수 여","소솜 여","땡주 남","키위 남","여운 여","유한 남","연이 여","하양 여","소라 여","이슬 여","팬더 여","리프 남","소란 남","광삼 남","완두 여","리본 여","홍삼 남","계치 남","냐냐 여","뿌삐 여","민영 남","내꼬 남","닝닝 남","낮잠 남","민스 남","추추 여","호월 봇","호감 남","단지 남","한결 남","롤대 남","첩추 남","갈배 남","죠이 남","테트 남","고수 남","킁킁 남","허몽 남","에겐 남","달빛 남","깨랑 여","긍정 여","왕눈 남"],
+        concepts: [
+            {"title":"{닉네임}의 축복🍀","quotes":["오늘은 네 편이야, 잘될 거야!","네 행운은 이제 시작이야!","잘 풀릴 거야, 내가 빌었어!","쿠키보다 달콤한 하루 보내!","네가 웃으면 운도 따라와!","작은 기쁨이 널 찾아갈 거야!","기다린 소식이 곧 닿길!","오늘의 주인공은 바로 너야!","행운 한 조각, 네 몫이야!","어제보다 더 반짝일 거야!","좋은 인연이 네 곁에 머물길!","네가 바라던 일이 이루어지길!","오늘은 네 용기를 믿어 봐!","뜻밖의 기쁨을 만나길!","오늘 네 앞길엔 꽃만 놓을게!","걱정은 접고 좋은 꿈 펼쳐!","미소 지을 일이 생길 거야!","네 도전에 순풍이 불길!","네 진심이 반짝이는 날이야!","행운도 널 보고 웃고 있대!","네 소원에 한 걸음 더 다가가!","천천히 가도 좋은 날은 와!","오늘도 네 편에서 빌어 줄게!","별 하나 골라 네 운에 얹었어!","다음 웃음은 네 차례야!","좋은 우연이 널 기다려!","쿠키 속 봄바람을 너에게!","네 하루 끝이 포근하길!","운 좋은 날에 네 이름 썼어!","너답게 빛나는 하루 보내!"]},
+            {"title":"{닉네임}에게 찍힌💢","quotes":["내 쿠키 한 입, 네가 먹었지?","부스러기 탐정이 널 찾는다!","입가에 쿠키 증거 남았어!","간식 당번, 오늘은 네 차례!","내 쿠키에 손 뻗은 거 봤어!","오늘은 내가 네 운세 검사관!","딴청 피워도 쿠키는 안 숨겨져!","한 입만이라더니 반이 없잖아!","쿠키 봉지 소리로 딱 걸렸어!","눈 피하는 걸 보니 너로군!","마지막 조각 앞에선 안 봐줘!","내 쿠키 명단에 네 이름 적었어!","쿠키 재판에 증인으로 나와!","벌칙은 웃긴 표정 세 번이야!","네 별명, 오늘은 부스러기야!","오늘 운세에 잔소리 한 줄!","쿠키 앞에서 양심 검사할게!","입 닦는 속도가 수상한데?","간식 숨기는 솜씨가 늘었네!","쿠키 도둑 역할은 네가 해!","뽑기 전 주문, 까먹었지?","행운 면접에 지각했구나!","네 운세, 장난꾸러기 당첨!","오늘은 내가 장난 한 번 친다!","쿠키 향만 맡았다더니, 정말?","네 쪽지에 장난 도장 찍었어!","쿠키 열기 전에 손 씻었어?","쿠키 조각 개수가 안 맞는데?","쿠키 뒤에 숨으면 모를 줄 알았어?","오늘만 쿠키 감시 대상이야!"]},
+            {"title":"{닉네임}의 원픽💘","quotes":["여기서 네가 제일 좋아!","오늘도 내 원픽은 너야!","좋은 건 너부터 챙겨줄게!","네가 오면 괜히 웃음 나!","같이 있으니까 더 재밌다!","내 행운은 너한테 줄래!","너랑 뽑으니 더 설렌다!","쿠키 한 조각은 네 몫이야!","다음에도 네가 뽑아줘!","너 보면 기분부터 좋아져!","너랑 친해지길 잘했어!","오늘 간식은 너랑 먹을래!","네 이름 보니 반가웠어!","너한텐 좋은 말만 해줄래!","우리 꽤 잘 통하는데?","이 설렘도 쿠키에 넣었어!","너한테만 한 입 더 줄게!","내 쪽지는 네가 가져줘!","오늘도 네 소식 기다렸어!","네 웃음이 제일 반가워!","쿠키보다 네가 더 달달해!","네 칭찬은 내가 맡을게!","너랑 하면 뭐든 재밌어!","이 타이틀 너한테 찰떡이야!","우리 다음 쿠키도 같이 열자!","네 편이라서 기분이 좋아!","살짝 말할게, 너 좀 좋아!","널 보니 좋은 예감이 들어!","네 하루에 나도 끼워줘!","오늘 내 하트는 네 거야!"]},
+            {"title":"{닉네임}의 질투👀","quotes":["내 타이틀만 달고 다녀!","다른 쿠키가 더 맛있어?","내 쪽지는 벌써 잊었어?","내 이름도 한 번 봐줘!","네 원픽 자리는 아직 비었지?","나 뽑은 건 자랑 안 해?","다른 타이틀이랑 눈 맞았어?","내 쿠키도 예뻐해 줘!","오늘은 내 이름 차례야!","나보다 쿠키가 더 좋아?","그 타이틀, 살짝 부럽네!","내 쪽지도 별표 해줘!","딴 데서 행운 받고 왔어?","너 칭찬은 나도 잘해!","내 옆에 하트 빠졌잖아!","내 이름 보면 좀 웃어줘!","다른 쪽지는 왜 또 열어?","나도 네 최애 하고 싶어!","내 타이틀도 잘 어울려!","쿠키 부스러기만 내 몫이야?","방금 누구 타이틀 보고 웃어?","내 쿠키는 왜 아껴 먹어?","자랑할 때 내 이름 빼먹지 마!","내 쪽지만 접어 둔 거야?","나 뽑고도 또 뽑는 거야?","그 축복, 내가 먼저 줬는데!","내 하트도 받아줄 거지?","다음 쿠키엔 또 나왔으면!","나도 네 프로필에 놀러 갈래!","한눈판 만큼 나도 봐줘!"]},
+            {"title":"{닉네임}의 라이벌⚔️","quotes":["다음 승부는 내가 가져간다!","오늘은 네가 먼저 웃어 둬!","내가 네 기록 따라잡는다!","쿠키 운도 실력으로 쳐줘!","네가 뜨면 나도 한 번 더!","우리 승부는 아직 안 끝났어!","이번엔 누가 더 높이 갈까?","네 기록이 내 다음 목표야!","잘 뽑았네, 내 차례도 봐!","이번 판은 절대 안 놓친다!","정상에서 다시 만나자!","막상막하라 더 재밌잖아!","한 발 차이? 금방 따라갈게!","다음 쿠키로 승부 보자!","네 최고 기록, 기억해 뒀다!","질 수 없지, 나도 도전!","운이든 실력이든 겨뤄 보자!","우리 둘 다 최고까지 가자!","네가 앞서면 더 신나지!","이기면 쿠키 하나 더 먹기!","이번엔 내 차례가 될걸!","너만큼은 꼭 따라잡는다!","자랑은 내 결과 보고 해!","승부 전에 간식부터 먹자!","오늘의 한 수, 기대해도 돼!","덕분에 더 열심히 하겠어!","너랑 겨루는 게 제일 재밌어!","내일은 순서가 바뀔걸!","빈틈 보이면 바로 앞선다!","이 승부, 끝까지 가 보자!"]},
+            {"title":"{닉네임}의 비밀친구🤫","quotes":["우리 친한 거 비밀이야!","비밀 간식은 네 몫도 있어!","쿠키 숨긴 곳, 너만 알려줄게!","우리 암호는 바삭바삭이야!","오늘도 비밀 아지트로 와!","눈 마주치면 쿠키 얘기야!","이 쪽지는 우리끼리만 보자!","네 몫은 책상 아래 숨겼어!","비밀 작전은 간식 챙기기!","쉿, 우리 팀 이름은 쿠키야!","몰래 먹으니 더 맛있지?","쿠키 반쪽은 우정의 증표야!","오늘의 암호는 초코 두 조각!","내 비밀 창고 열쇠는 네 거야!","우리끼리 작은 축제 열자!","쿠키 부스러기만 남기고 가!","쪽지 뒤에 보물 지도가 있어!","너 오면 비밀 문을 열어줄게!","쉿, 숨겨 둔 쿠키가 더 있어!","우리만 아는 지름길로 가자!","간식 회의는 둘이서만 하자!","비밀 악수부터 하고 시작해!","오늘 작전명은 쿠키 구출!","웃음 터져도 소리는 줄여!","쉿, 비밀 임무는 같이 놀기!","들키면 쿠키 얘긴 안 한 거야!","다음 쪽지는 쿠키 안에 둘게!","네 쿠키에만 별을 그려 뒀어!","우리 아지트엔 꽝이 없어!","우리만 아는 인사, 바삭!"]},
+            {"title":"호월신의 축복✨","quotes":["그대에게 행운을 내리노라!","호월의 빛이 그대를 비추리라!","그대의 쿠키에 별을 담았노라!","오늘의 축복은 그대의 것이니라!","그대의 이름을 별에 새겼노라!","작은 쿠키에 큰 축복을 담았노라!","내가 그대의 행운이 되어주리라!","그대의 정성에 축복으로 답하노라!","그대의 앞길에 빛을 놓으리라!","용기를 내라, 내가 함께하노라!","내가 고른 행운의 주인이로다!","호월의 별들이 그대를 반기노라!","이 한 입에 신의 마음을 담았노라!","그대에게 빛나는 인연을 보내노라!","그대의 웃음에 나도 미소 짓노라!","쿠키를 연 손에 축복이 깃들리라!","나의 축복을 당당히 지니거라!","마침내 나의 쪽지를 찾았구나!","그대의 소원을 귀담아듣겠노라!","오늘은 신도 그대의 편이니라!","그대의 도전에 박수를 보내노라!","나의 별빛을 그대에게 나누노라!","달빛을 따라 축복을 보냈노라!","그대의 하루에 반짝임을 더하노라!","행운의 문이 그대를 맞이하노라!","호월신의 눈에 그대가 들었노라!","기쁜 마음으로 이 복을 받거라!","그대의 곁에 온기를 남기노라!","그대의 쿠키를 친히 골랐노라!","이 만남 또한 축복이니라!"]}
+        ]
+    },
+    searchAuthentication: { maxKeywordLength: 10, boosterReward: 30, rewardLabel: "호월신의 가호✨(/호여 숫자)", keywordVisibleRows: 10, adminVisibleRows: 4, otherKeyword: "기타", bottomAdmin: "호이 남" },
     permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
         additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
     },
@@ -983,9 +1004,13 @@ const GLOBAL_CONFIG = {
         testRoomOnly: false
     },
     serverRaid: { // 서버 레이드대전 운영 규칙
-        limits: { attacks: 5, maxSafeInteger: 9007199254740991 },
-        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 900000 }, // 운영 적용 15분. 시작 명령 처리부터 준비 60초도 포함
-        rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000] },
+        commands: { additionalExact: ["ㅊㅊ", "/미정", "/정보", "/주기리셋", "/펫탐험정산", "/포인트", "ㅍㅍㅍ", "/패키지지급", "/패키지가방", "/패키지사용", "/가방", "/펫정보", "/이체", "/기록", "/기록실", "/검색인증", "/검색인증관리", "/검색인증순위", "/검색인증관리순위", "/인증", "/인증순위", "/관리자순위", "/관리자순위초기화", "/인증초기화"] }, // 기존 허용 명령에 더할 예외
+        limits: { attacks: 5, ticketAttacks: 10, maxSafeInteger: 9007199254740991 },
+        items: { attackTicket: "서버레이드공격권👾" },
+        legacyPolicy: { attacks: 5, ticketAttacks: 0, chargeFromAttempt: 2, pointCost: 50000000, handicapRanks: [] }, // 기준 미기록 기존 회차는 당시 규칙 유지
+        timers: { preparationMs: 60000, retryMs: 2000, durationMs: 1800000 }, // 준비 60초와 별도로 실제 공격 활성화부터 30분
+        penalties: { chargeFromAttempt: 4, pointCost: 10000000 }, // 초과 3회까지 무료, 네 번째부터 잔액 충분 시 1천만 차감
+        rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000], handicapRanks: [0, 1, 1, 2, 2, 2, 3, 3, 3, 4] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
         authentication: { operatorIds: [] }, // 네이티브 콜백·신뢰된 내부 어댑터의 운영 주체 ID. 닉네임은 인증에 사용하지 않음
         rooms: { production: [room8, testRoom], development: testRoom }, // 운영 공격·초기화는 두 명령어방, DEV는 팻 테스트방으로 한정
@@ -1950,6 +1975,10 @@ blockedNicknameTerms: [
         largeVerandaItemName: "베란다 대확장📙(/베란다오픈)",
         largeVerandaSkillName: "베란다 대확장",
         largeVerandaFurnitureSlotBonus: 6,
+        raidSubjugation: {
+            itemName: "호월토벌대📙 확정(/호월토벌대오픈)",
+            skillName: "호월토벌대"
+        },
         prayer: {
             rewardItemName: "주간상자🌼",
             dailyFlagKey: "isGidoFlag",
@@ -2152,7 +2181,8 @@ blockedNicknameTerms: [
     },
     adventureStarter: { // 호월신의 축복 스타터팩 지급·회수 기준
         points: 30000000000,
-        boosters: 1000,
+        boosters: 30000,
+        legacyRecoveryBoosters: 1000, // 과거 퀘스트 중복 지급분의 회수 한도
         items: [
             ["전설의 돌맹이🗿", 50],
             ["미니펫뽑기🐹(/미니펫오픈)", 10],
@@ -2767,6 +2797,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        replier = createContextReplier(replier, ctx);
         var responseStartMs = Date.now();
         var responseTimingRows = [];
         function addResponseTiming(label, startMs) {
@@ -2774,16 +2805,19 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
-            replier = createContextReplier(replier, ctx);
+            if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
         }
         // 서버 레이드대전 진입: 다른 명령 전처리·자동 저장보다 먼저 잠금과 권한을 검사한다.
+        var raidTurnInput = String(msg || "").trim(); // 남은 턴 조회 두 명령만 앞뒤 공백 허용
+        if (ctx.isDev && raidTurnInput === "/ㄹㄹ") raidTurnInput = "ㄹㄹ"; // DEV 전처리가 붙인 슬래시만 제거
+        if (isServerRaidTurnQueryCommand(raidTurnInput)) msg = raidTurnInput;
         var serverRaidEvent = getServerRaidCallbackEvent(arguments, packageName); // 기본 7인수 콜백을 지원하며 확장 ID는 제공될 때만 사용
         if (isServerRaidCommand(msg) && !isServerRaidCommandRoom(room, isGroupChat, ctx, msg)) {
             replyServerRaidSafely(replier, serverRaidHeader() + (ctx.isDev ? "DEV 레이드 명령어는 팻 테스트방에서만 사용할 수 있습니다." : "레이드 명령어는 공성전 또는 팻 테스트방에서만 사용할 수 있습니다.\n" + GLOBAL_CONFIG.serverRaid.links.commandRoom));
             return;
         }
-        if (msg === "/레이드기록" || msg === "/서버레이드기록") {
-            var renamedRaidCommand = msg === "/레이드기록" ? "/레이드순위" : "/서버레이드순위";
+        if (msg === "/레이드기록" || msg === "/서버레이드기록" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg)) {
+            var renamedRaidCommand = msg === "/레이드기록" ? "/레이드전적" : "/레이드순위";
             replyServerRaidSafely(replier, "📢 명령어가 변경되었어요!\n" + msg + " → " + renamedRaidCommand + "\n\n👉 " + renamedRaidCommand + " 를 입력해주세요.");
             return;
         }
@@ -2802,9 +2836,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var data = loadJsonFile(filePath);
         var raidCommand = isServerRaidCommand(msg);
         var raidLocked = isServerRaidLocked(data);
+        if (raidLocked && msg === "/펫탐험자동정산") exploreInterval = false; // 차단된 자동 탐험이 다음 허용 명령에서 실행되지 않도록 예약 표시 정리
         // 일반 입력은 기존 작업을 재개하고, 레이드 명령은 운영 권한 검사 뒤 재개한다.
         if (!raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
-        if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg))) {
+        if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg) && !isServerRaidAdditionalCommand(msg))) {
             var raidPetData = loadJsonFile(memberPetPath);
             var raidGuildData = loadJsonFile(guildPath);
             var raidNick = data.member && data.member[sender] ? "[" + checkRank(data, raidPetData, raidGuildData, sender) + "] 님" : "[" + sender + "] 님";
@@ -2814,7 +2849,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replyServerRaidSafely(replier, serverRaidHeader() + raidNick + ",\n해당 명령어를 사용할 권한이 없습니다.");
                 return;
             }
-            if (raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
+            if (raidCommand && !isServerRaidTurnQueryCommand(msg) && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
             if (raidLocked && !isServerRaidQueryCommand(msg) && msg !== "/레이드공격" && msg !== "/서버대전종료" && msg !== "/서버대전전체초기화") {
                 if (isServerRaidAutoEndDue(data.serverRaid.current, Date.now()) && closeServerRaid(data, ctx, "automatic").changed) {
                     saveJsonFile(data, filePath); // 일반 게임 처리를 막은 상태에서 마감과 정산 대기 상태를 먼저 확정
@@ -2873,6 +2908,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replyServerRaidSafely(replier, buildAttendanceRequiredMessage(data, raidPetData, raidGuildData, sender));
                 return;
             }
+            if (isServerRaidTurnQueryCommand(msg)) {
+                replyServerRaidSafely(replier, buildServerRaidTurnMessage(data, sender, raidNick, Date.now()));
+                return;
+            }
             if (msg === "/레이드공격") {
                 if (data.member[sender].agree !== true || !raidPetData[sender] || !raidPetData[sender].petname) {
                     replyServerRaidSafely(replier, serverRaidHeader() + "모험 시작과 펫 생성을 완료한 뒤 참여해주세요.");
@@ -2889,6 +2928,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replyServerRaidSafely(replier, buildServerRaidAttackMessage(data, raidAttackCheck.participant, raidAttackCheck.replay, raidNick));
                     return;
                 }
+                if (raidAttackCheck.penaltyReplay) {
+                    replyServerRaidSafely(replier, buildServerRaidExcessMessage(raidNick, raidAttackCheck.penaltyReplay));
+                    return;
+                }
+                if (raidAttackCheck.excess) {
+                    var raidExcessResult = applyServerRaidExcessAttempt(data, sender, serverRaidEvent);
+                    var raidExcessMessage = buildServerRaidExcessMessage(raidNick, raidExcessResult.record);
+                    saveJsonFile(data, filePath);
+                    replyServerRaidSafely(replier, raidExcessMessage);
+                    return;
+                }
                 var raidHomeData = loadJsonFile(homeDataFile);
                 var raidSkills = loadJsonFile(petSkillDataPath);
                 var raidR = calculateRaidExp(sender, data, raidPetData, raidHomeData, raidSkills, false, raidGuildData);
@@ -2901,15 +2951,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replyServerRaidSafely(replier, raidAttackMessage);
                 return;
             }
-            if (msg === "/레이드순위") {
+            if (msg === "/레이드전적") {
                 replyServerRaidSafely(replier, buildServerRaidPersonalRecord(data, sender, raidNick));
                 return;
             }
-            if (msg === "/서버레이드순위") {
+            if (msg === "/레이드순위") {
                 replyServerRaidSafely(replier, buildServerRaidServerRecord(data, sender, raidPetData, raidGuildData));
                 return;
             }
-            replyServerRaidSafely(replier, serverRaidHeader() + "서버명을 입력하지 않아도\n내 소속 서버의 기록을 확인할 수 있습니다.\n\n👉 /서버레이드순위");
+            if (msg === "/서버대전") {
+                replyServerRaidSafely(replier, buildServerRaidCurrentStatus(data, sender, Date.now()));
+                return;
+            }
             return;
         }
         if (ctx.isDev && msg === "/데이터백업") {
@@ -3721,6 +3774,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (!data.member[sender]) {
+            if (isGroupChat === true && /^[^\s]+ (남|여)$/.test(sender) && String(msg || "").trim()) {
+                var pendingChatLightData = loadJsonFile(attendanceLightPath);
+                var pendingChatLightSnapshot = JSON.stringify(pendingChatLightData);
+                if (recordSearchAuthenticationChat(pendingChatLightData, sender, room)) saveJsonFile(pendingChatLightData, attendanceLightPath, false, pendingChatLightSnapshot);
+            }
             var adventureOnboardingData = loadJsonFile(adventureOnboardingPath) || { users: {} };
             if (!adventureOnboardingData.users || typeof adventureOnboardingData.users !== "object") adventureOnboardingData.users = {};
             var preMemberOnboarding = adventureOnboardingData.users[sender];
@@ -3757,7 +3815,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 data.member[sender].agree = true;
                 data.member[sender].adventureOnboarding = createAdventureOnboardingMemberState();
                 var signupAttendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
-                if (migrateLightAttendanceToMember(data, signupAttendanceLightData, sender)) saveJsonFile(signupAttendanceLightData, attendanceLightPath);
+                var signupAttendanceLightSnapshot = JSON.stringify(signupAttendanceLightData);
+                if (migrateLightAttendanceToMember(data, signupAttendanceLightData, sender)) saveJsonFile(signupAttendanceLightData, attendanceLightPath, false, signupAttendanceLightSnapshot);
                 saveJsonFile(data, filePath);
                 delete adventureOnboardingData.users[sender];
                 saveJsonFile(adventureOnboardingData, adventureOnboardingPath);
@@ -5323,6 +5382,29 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         dupMsg += "- " + PET_SKILL_COMPAT_GROUPS[dg].map(formatPetSkillName).join(" ↔ ") + "\n";
                     }
                     replier.reply(dupMsg.trim());
+                    return;
+                }
+
+                if (msg === "/호월토벌대오픈") {
+                    if (!petData[sender] || !petData[sender].petname) {
+                        replier.reply("펫이 없습니다.");
+                        return;
+                    }
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.petSkill.raidSubjugation.itemName, 1)) {
+                        replier.reply("❌ " + GLOBAL_CONFIG.petSkill.raidSubjugation.itemName + " 아이템이 필요합니다.");
+                        return;
+                    }
+                    if (getPetSkillBagRemainCount(petSkillData, sender) < 1) {
+                        replier.reply("❌ 스킬가방 공간이 부족합니다. 스킬가방을 정리한 뒤 다시 시도해주세요.");
+                        return;
+                    }
+                    if (addPetSkillToBag(petSkillData, sender, GLOBAL_CONFIG.petSkill.raidSubjugation.skillName, 1) !== 1) {
+                        throw new Error("호월토벌대 스킬가방 지급 실패");
+                    }
+                    removeItem(data, sender, GLOBAL_CONFIG.petSkill.raidSubjugation.itemName, 1);
+                    saveJsonFile(data, filePath);
+                    saveJsonFile(petSkillData, petSkillDataPath);
+                    replier.reply("🎉 [" + checkRank(data, petData, guildData, sender) + "] 님,\n호월토벌대📙를 획득했습니다!\n\n📙 펫스킬가방에 추가되었습니다.\n👉 장착: /펫스킬장착 [번호]");
                     return;
                 }
 
@@ -7941,11 +8023,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     initPetSkillUser(petSkillData, missingAttendanceSignupUserId);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     var missingAttendanceSignupLightData = loadJsonFile(attendanceLightPath) || { users: {} };
+                    var missingAttendanceSignupLightSnapshot = JSON.stringify(missingAttendanceSignupLightData);
                     var missingAttendanceSignupLightRemoved = false;
                     if (missingAttendanceSignupLightData.users && missingAttendanceSignupLightData.users[missingAttendanceSignupUserId]) {
+                        if (migrateLightSearchAuthenticationToMember(data, missingAttendanceSignupLightData, missingAttendanceSignupUserId)) saveJsonFile(data, filePath);
                         delete missingAttendanceSignupLightData.users[missingAttendanceSignupUserId];
                         missingAttendanceSignupLightRemoved = true;
-                        saveJsonFile(missingAttendanceSignupLightData, attendanceLightPath);
+                        saveJsonFile(missingAttendanceSignupLightData, attendanceLightPath, false, missingAttendanceSignupLightSnapshot);
                     }
                     replier.reply(buildMissingAttendanceSignupSuccessMessage(missingAttendanceSignupUserId, missingAttendanceSignupLightRemoved));
                     return;
@@ -7956,8 +8040,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     var lightAttendanceData = loadJsonFile(attendanceLightPath) || { users: {} };
+                    var lightAttendanceSnapshot = JSON.stringify(lightAttendanceData);
                     var lightAttendanceResult = pruneLightAttendanceData(data, lightAttendanceData, 4);
-                    saveJsonFile(lightAttendanceData, attendanceLightPath);
+                    if (lightAttendanceResult.authenticationMigrated > 0) saveJsonFile(data, filePath);
+                    saveJsonFile(lightAttendanceData, attendanceLightPath, false, lightAttendanceSnapshot);
                     replier.reply(buildLightAttendanceCleanupMessage(lightAttendanceResult));
                     return;
                 }
@@ -8984,35 +9070,35 @@ replier.reply(
                         replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
                     }
                 }
-                if (msg.startsWith("/인증 ") && isAdmin(sender)) {
-                    var regex = /\/인증\s+([^]+)/;
-                    var match = msg.match(regex);
-                    if (match) {
-                        var targetUservc = match[1];
-                        if (!data.member[targetUservc].voicecheck) {
-                            data.member[targetUservc].voicecheck = 1;
-                            replier.reply("[" + targetUservc + "] 님 보룸인증 완료했습니다.");
-                            // 슬롯코인 증정
-                            if (!data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"]) {
-                                data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"] = 20;
-                            } else {
-                                data.member[sender].bag["펫스윗홈인테리어샵🖼️(/샵오픈)"] += 20;
-                            }
-                            // 포인트 증정
-                            if (!data.member[sender].point) {
-                                // 필드 초기화
-                                data.member[sender].point = 0;
-                            }
-                            data.member[sender].point += 5000000; // 500만 포인트 추가
-                            if (!data.member[sender].checkCnt) {
-                                data.member[sender].checkCnt = 0;
-                            }
-                            data.member[sender].checkCnt += 1;
-                            replier.reply("관리자 [" + checkRank(data, petData, guildData, sender) + "] 님 고생했다.\n펫홈샵🖼️x20, 500만 포인트 증정완");
-                        } else {
-                            replier.reply("이미 보룸인증 완료한 유저입니다.");
-                        }
+                if (msg === "/인증" || /^\/인증\s+[\s\S]*$/.test(msg)) {
+                    if (!isAdminIdentity(sender)) {
+                        replier.reply("관리자만 사용할 수 있는 명령어입니다.");
+                        return;
                     }
+                    var searchAuthMatch = msg.match(/^\/인증\s+([^\s]+)\s+(남|여)(?:\s+([\s\S]*))?$/);
+                    if (!searchAuthMatch || searchAuthMatch[3] === undefined) {
+                        replier.reply("사용법: /인증 아이디 사유");
+                        return;
+                    }
+                    var searchAuthTarget = searchAuthMatch[1] + " " + searchAuthMatch[2];
+                    var searchAuthLightData = loadJsonFile(attendanceLightPath);
+                    var searchAuthLightSnapshot = JSON.stringify(searchAuthLightData);
+                    var searchAuthResult = applySearchAuthentication(data, searchAuthTarget, sender, searchAuthMatch[3], searchAuthLightData);
+                    if (!searchAuthResult.ok) {
+                        replier.reply(searchAuthResult.message);
+                        return;
+                    }
+                    if (searchAuthResult.lightTarget) saveJsonFile(searchAuthLightData, attendanceLightPath, false, searchAuthLightSnapshot);
+                    saveJsonFile(data, filePath);
+                    replier.reply("🎙️ 호월 검색인증 완료 🎙️\n━━━━━━━━━━━━\n👤 대상: " + searchAuthTarget +
+                        "\n🏰 서버: " + (searchAuthResult.server ? normalizeHoiServerLabel(searchAuthResult.server) : "소속 서버 없음") +
+                        "\n🔎 검색어: " + searchAuthResult.keyword + "\n👑 인증 담당: " + sender +
+                        "\n\n✅ 검색인증이 완료되었습니다.\n🎁 관리자 보상: " + GLOBAL_CONFIG.searchAuthentication.rewardLabel + " " + GLOBAL_CONFIG.searchAuthentication.boosterReward + "개");
+                    return;
+                }
+                if (/^\/(?:보룸인증|가입)\s+[\s\S]+$/.test(msg) || msg === "/보룸인증") {
+                    replier.reply("📢 검색인증 명령어로 변경되었습니다.\n사용법: /인증 아이디 사유\n예시: /인증 마치 남 30대 수다");
+                    return;
                 }
                 if (msg.startsWith("/후원지급 ")) {
                     const authorizedUsers33 = ["호이 남"]; // 권한이 있는 사용자 목록
@@ -9048,40 +9134,14 @@ replier.reply(
                         replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
                     }
                 }
-                if (((msg === "/가입인증" || msg === "/가입인증 목록") && isAdmin(sender)) || (msg === "/인증필요" && isAdminIdentity(sender))) {
-                    let checkmsg1 = "\n1일차 : ";
-                    let checkmsg2 = "\n2일차 : ";
-                    let checkmsg3 = "\n3일차 : ";
-                    let checkmsg4 = "\n가입 미인증 유저: ";
-                    let currentDateObj = new Date();
-                    currentDateObj = new Date(currentDateObj.getFullYear(), currentDateObj.getMonth(), currentDateObj.getDate());
-                    for (let user in data.member) {
-                        if (!data.member[user].voicecheck && data.member[user].join && data.member[user].agree === true) {
-                            let join = data.member[user].join;
-                            let server = data.member[user].server ? "(" + normalizeHoiServerLabel(data.member[user].server) + ")" : "";
-                            let joinYear = parseInt(join.substring(0, 4));
-                            let joinMonth = parseInt(join.substring(4, 6)) - 1;
-                            let joinDay = parseInt(join.substring(6, 8));
-                            let joinDate = new Date(joinYear, joinMonth, joinDay);
-                            let daysSinceJoin = Math.floor((currentDateObj - joinDate) / (1000 * 60 * 60 * 24)) + 1;
-                            if (daysSinceJoin === 1) {
-                                checkmsg1 += "[" + user + server + "]\n";
-                            } else if (daysSinceJoin === 2) {
-                                checkmsg2 += "[" + user + server + "]\n";
-                            } else if (daysSinceJoin === 3) {
-                                checkmsg3 += "[" + user + server + "]\n";
-                            } else if (daysSinceJoin > 3) {
-                                checkmsg4 += "[" + user + server + "]\n";
-                            }
-                        }
+                if (msg === "/검색인증" || msg === "/가입인증" || msg === "/가입인증 목록" || msg === "/인증필요") {
+                    if (!(msg === "/검색인증" || msg === "/인증필요" ? isAdminIdentity(sender) : isAdmin(sender))) {
+                        replier.reply("관리자만 사용할 수 있는 명령어입니다.");
+                        return;
                     }
-                    let headerMsg =
-                        "🎙️호월 가입 인증목록🎙️\n\n" +
-                        "1. 가입인증은 /가입 을 하여 게임 이용약관에 동의하는 것을 의미합니다..\n" +
-                        "2. 가입인증은 유저가 /가입 시 3일내로 인증 해야합니다.\n" +
-                        "3. 가입 미인증 대상으로 넘어가면 계정은 삭제처리 됩니다.\n"
-                    "⭐️채팅창에 '교육방'을 적어보세요\n";
-                    replier.reply(headerMsg + checkmsg1 + checkmsg2 + checkmsg3 + checkmsg4);
+                    var searchAuthManagementLightData = loadJsonFile(attendanceLightPath);
+                    replier.reply(buildSearchAuthenticationManagementMessage(data, searchAuthManagementLightData));
+                    return;
                 }
 
                 if (msg.startsWith("/매력") && msg != "/매력박스오픈" && sender == "호이 남") {
@@ -15232,6 +15292,40 @@ replier.reply(
                 }
 
 // =======================================================
+                if (msg === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(msg)) {
+                    var fortuneNick = "[" + checkRank(data, petData, guildData, sender) + "]";
+                    var fortuneMatch = msg.match(/^\/호츈오픈\s+(\d+)$/);
+                    var fortuneCount = fortuneMatch ? Number(fortuneMatch[1]) : NaN;
+                    if (!isPointShopSafeCount(fortuneCount) || fortuneCount < 1 || fortuneCount > GLOBAL_CONFIG.fortuneCookie.maxOpen) {
+                        replier.reply("🥠 개봉할 수량을 확인해주세요.\n━━━━━━━━━━━━\n" + fortuneNick + " 님\n\n1~100 사이의 정수로 입력해주세요.");
+                        return;
+                    }
+                    var fortuneTitleData = loadJsonFile(memberTitlePath);
+                    var fortuneTitleSnapshot = JSON.stringify(fortuneTitleData);
+                    var fortuneResult = applyFortuneCookieOpen(data, fortuneTitleData, sender, fortuneCount, Math.random, new Date());
+                    if (!fortuneResult.ok) {
+                        if (fortuneResult.reason === "shortage") replier.reply("🥠 호츈쿠키가 부족합니다.\n━━━━━━━━━━━━\n" + fortuneNick + " 님\n\n보유: " + numberWithCommas(fortuneResult.held) + "개\n요청: " + fortuneCount + "개");
+                        else replier.reply("🥠 보유 수량과 보상 데이터를 확인해주세요.\n━━━━━━━━━━━━\n" + fortuneNick + " 님\n\n쿠키 소모와 보상 지급은 없습니다.");
+                        return;
+                    }
+                    if (fortuneResult.newCount > 0) saveJsonFile(fortuneTitleData, memberTitlePath, false, fortuneTitleSnapshot);
+                    saveJsonFile(data, filePath);
+                    endDataSaveTransaction(); beginDataSaveTransaction(); // 지급 확정 후 응답·전체알림 실패로 보상을 되돌리지 않음
+                    try { replier.reply(buildFortuneCookieOpenMessage(fortuneResult, fortuneNick)); }
+                    catch (fortuneReplyError) { debuggerLog("[ERROR : 호츈쿠키 결과 전송 실패]"); }
+                    for (var fortuneNoticeIndex = 0; fortuneNoticeIndex < fortuneResult.results.length; fortuneNoticeIndex++) {
+                        var fortuneNoticeResult = fortuneResult.results[fortuneNoticeIndex];
+                        if (!fortuneNoticeResult.special) continue;
+                        var fortuneNoticeText = buildFortuneCookieSpecialNotice(fortuneNoticeResult, fortuneNick);
+                        var fortuneNoticeRooms = getNoticeTargetRooms(ctx);
+                        for (var fortuneRoomIndex = 0; fortuneRoomIndex < fortuneNoticeRooms.length; fortuneRoomIndex++) {
+                            try {
+                                if (noticeMsg(fortuneNoticeText, [fortuneNoticeRooms[fortuneRoomIndex]]) === false) debuggerLog("[ERROR : 호츈쿠키 특별 알림 일부 전송 실패]");
+                            } catch (fortuneNoticeError) { debuggerLog("[ERROR : 호츈쿠키 특별 알림 전송 실패]"); }
+                        }
+                    }
+                    return;
+                }
 // /아아, /아아 [횟수]
 // =======================================================
                 if (msg === "/아아" || /^\/아아\s+\d+$/.test(msg)) {
@@ -19214,143 +19308,46 @@ replier.reply(
                         replier.reply("올바른 펫 타이틀 설정 형식을 사용해주세요.\n예: /펫타이틀 [번호]");
                     }
                 }
-                if (msg.startsWith("/타이틀정보")) {
+                if (msg === "/타이틀정보" || /^\/타이틀정보\s+\d+\s*$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var regexTitleSale = /\/타이틀정보\s+(\d+)\s*$/;
-                    var matchTitleSale = msg.match(regexTitleSale);
-                    if (matchTitleSale) {
-                        var titleData = loadJsonFile(memberTitlePath);
-                        let titleList = titleData.member[sender].title.list;
-                        var titleNumber = parseInt(matchTitleSale[1], 10);
-                        if (titleList && titleList.length >= titleNumber) {
-                            var saleTitleName = titleList[titleNumber - 1].name;
-                            var saleTitlePrice = titleList[titleNumber - 1].price;
-                            var saleTitleIndate = formatDateTime(titleList[titleNumber - 1].inDate);
-                            var sellPrice = 0;
-                            if (saleTitlePrice < 10000) {
-                                sellPrice = 1000000;
-                            } else {
-                                sellPrice = saleTitlePrice * 0.3;
-                            }
-                            replier.reply(
-                                "[" +
-                                checkRank(data, petData, guildData, sender) +
-                                "] 님의 타이틀 [" +
-                                saleTitleName +
-                                "] 상세정보\n" +
-                                "획득일:" +
-                                saleTitleIndate +
-                                "\n구매액: 🅟" +
-                                numberWithCommas(saleTitlePrice) +
-                                "\n판매가: 🅟" +
-                                numberWithCommas(parseInt(sellPrice))
-                            );
-                        } else {
-                            replier.reply("해당 번호의 타이틀이 존재하지 않습니다.");
-                        }
-                    } else {
-                        replier.reply("올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀정보 [번호]");
-                    }
+                    var titleInfoMatch = msg.match(/^\/타이틀정보\s+(\d+)\s*$/);
+                    var titleInfoData = loadJsonFile(memberTitlePath);
+                    var titleInfoOwner = titleInfoData.member && titleInfoData.member[sender];
+                    var titleInfoList = titleInfoOwner && titleInfoOwner.title && titleInfoOwner.title.list;
+                    var titleInfoNumber = titleInfoMatch ? Number(titleInfoMatch[1]) : 0;
+                    if (Array.isArray(titleInfoList) && isPointShopSafeCount(titleInfoNumber) && titleInfoNumber >= 1 && titleInfoNumber <= titleInfoList.length) {
+                        var titleInfoRow = titleInfoList[titleInfoNumber - 1];
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 [" + titleInfoRow.name + "] 상세정보\n획득일:" + formatDateTime(titleInfoRow.inDate) +
+                            "\n구매액: 🅟" + numberWithCommas(titleInfoRow.price) + "\n판매가: 🅟" + numberWithCommas(getMemberTitleSalePoint(titleInfoRow)));
+                    } else replier.reply(titleInfoMatch ? "해당 번호의 타이틀이 존재하지 않습니다." : "올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀정보 [번호]");
+                    return;
                 }
-                if (msg.startsWith("/타이틀판매")) {
+                if (msg === "/타이틀판매" || /^\/타이틀판매\s+\d+\s*$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var regexTitleSale = /\/타이틀판매\s+(\d+)\s*$/;
-                    var matchTitleSale = msg.match(regexTitleSale);
-                    if (matchTitleSale) {
-                        var titleData = loadJsonFile(memberTitlePath);
-                        let titleList = titleData.member[sender].title.list;
-                        var titleNumber = parseInt(matchTitleSale[1], 10);
-                        if (titleList && titleList.length >= titleNumber) {
-                            var saleTitleName = titleList[titleNumber - 1].name;
-                            var saleTitlePrice = titleList[titleNumber - 1].price;
-                            var sellPrice = 0;
-                            if (saleTitlePrice < 10000) {
-                                sellPrice = 1000000;
-                            } else {
-                                sellPrice = saleTitlePrice * 0.3;
-                            }
-                            if (titleNumber == titleData.member[sender].title.num) {
-                                titleData.member[sender].title.num = null;
-                            }
-                            titleList.splice(titleNumber - 1, 1);
-                            data.member[sender].point += parseInt(sellPrice);
-                            replier.reply(
-                                "[" +
-                                checkRank(data, petData, guildData, sender) +
-                                "] 님의 타이틀 [" +
-                                saleTitleName +
-                                "] \n 🅟" +
-                                numberWithCommas(parseInt(sellPrice)) +
-                                " 포인트에 판매 되었습니다."
-                            );
-                            saveJsonFile(titleData, memberTitlePath);
-                        } else {
-                            replier.reply("해당 번호의 타이틀이 존재하지 않습니다.");
-                        }
-                    } else {
-                        replier.reply("올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀판매 [번호]");
-                    }
+                    var titleSaleMatch = msg.match(/^\/타이틀판매\s+(\d+)\s*$/);
+                    if (!titleSaleMatch) { replier.reply("올바른 타이틀 명령어 형식을 사용해주세요. 예: /타이틀판매 [번호]"); return; }
+                    var titleSaleData = loadJsonFile(memberTitlePath);
+                    var titleSaleSnapshot = JSON.stringify(titleSaleData);
+                    var titleSaleNumber = Number(titleSaleMatch[1]);
+                    var titleSaleResult = applyMemberTitleSale(data, titleSaleData, sender, titleSaleNumber, titleSaleNumber);
+                    if (!titleSaleResult.ok) { replier.reply("타이틀 번호 또는 포인트 데이터를 확인해주세요. 판매는 처리되지 않았습니다."); return; }
+                    saveJsonFile(titleSaleData, memberTitlePath, false, titleSaleSnapshot);
+                    saveJsonFile(data, filePath);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 [" + titleSaleResult.sold[0] + "] \n 🅟" + numberWithCommas(titleSaleResult.total) + " 포인트에 판매 되었습니다.");
+                    return;
                 }
-                if (msg.startsWith("/타이틀지정판매")) {
+                if (msg === "/타이틀지정판매" || /^\/타이틀지정판매\s+\d+~\d+$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    var regexRange = /\/타이틀지정판매\s+(\d+)~(\d+)$/;
-                    var matchRange = msg.match(regexRange);
-
-                    if (matchRange) {
-                        var titleData = loadJsonFile(memberTitlePath);
-                        let titleList = titleData.member[sender].title.list;
-
-                        if (!titleList || titleList.length === 0) {
-                            replier.reply("판매할 타이틀이 없습니다.");
-                            return;
-                        }
-
-                        var start = parseInt(matchRange[1], 10);
-                        var end = parseInt(matchRange[2], 10);
-
-                        if (start > end) {
-                            replier.reply("번호 범위가 올바르지 않습니다.");
-                            return;
-                        }
-
-                        var totalPrice = 0;
-                        var soldCount = 0;
-
-                        // 뒤에서부터 삭제 (번호 밀림 방지)
-                        for (var i = end; i >= start; i--) {
-                            if (titleList.length >= i) {
-                                var saleTitleName = titleList[i - 1].name;
-                                var saleTitlePrice = titleList[i - 1].price;
-
-                                var sellPrice = 0;
-
-                                if (saleTitlePrice < 10000) {
-                                    sellPrice = 1000000;
-                                } else {
-                                    sellPrice = saleTitlePrice * 0.3;
-                                }
-
-                                if (i == titleData.member[sender].title.num) {
-                                    titleData.member[sender].title.num = null;
-                                }
-
-                                titleList.splice(i - 1, 1);
-
-                                totalPrice += parseInt(sellPrice);
-                                soldCount++;
-                            }
-                        }
-
-                        data.member[sender].point += totalPrice;
-
-                        saveJsonFile(titleData, memberTitlePath);
-
-                        replier.reply(
-                            "[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 " + soldCount + "개가 정리되었습니다.\n" + "💰 총 판매금액 : 🅟" + numberWithCommas(totalPrice)
-                        );
-                    } else {
-                        replier.reply("사용법 : /타이틀지정판매 1~3");
-                    }
+                    var titleRangeMatch = msg.match(/^\/타이틀지정판매\s+(\d+)~(\d+)$/);
+                    if (!titleRangeMatch) { replier.reply("사용법 : /타이틀지정판매 1~3"); return; }
+                    var titleRangeData = loadJsonFile(memberTitlePath);
+                    var titleRangeSnapshot = JSON.stringify(titleRangeData);
+                    var titleRangeResult = applyMemberTitleSale(data, titleRangeData, sender, Number(titleRangeMatch[1]), Number(titleRangeMatch[2]));
+                    if (!titleRangeResult.ok) { replier.reply("타이틀 번호 범위 또는 포인트 데이터를 확인해주세요. 판매는 처리되지 않았습니다."); return; }
+                    saveJsonFile(titleRangeData, memberTitlePath, false, titleRangeSnapshot);
+                    saveJsonFile(data, filePath);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님의 타이틀 " + titleRangeResult.sold.length + "개가 정리되었습니다.\n💰 총 판매금액 : 🅟" + numberWithCommas(titleRangeResult.total));
+                    return;
                 }
                 if (msg.startsWith("/펫타이틀판매")) {
                     if (castleSiegeFlag) return;
@@ -20132,7 +20129,7 @@ replier.reply(
                             }
                             resetTicketFlag = true;
                         } else {
-                            replier.reply("오늘 무료대전 " + GLOBAL_CONFIG.daily.castleBattleFree + "회를 모두 사용했습니다.\n캐슬대전리셋권🐶 소지시 최대 " + GLOBAL_CONFIG.daily.castleBattleMax + "회 가능합니다.\n\n캐대리🐶 이(가) 부족하신가요?\nhttps://hoiland123.tistory.com/512");
+                            replier.reply("오늘 무료대전 " + GLOBAL_CONFIG.daily.castleBattleFree + "회를 모두 사용했습니다.\n캐슬대전리셋권🐶 소지시 최대 " + GLOBAL_CONFIG.daily.castleBattleMax + "회 가능합니다.\n\n캐대리🐶 이(가) 부족하신가요?\nhttps://hoiland123.tistory.com/340");
                             return;
                         }
                     }
@@ -20801,7 +20798,7 @@ replier.reply(
                             replier.reply(
                                 "❌ " +
                                 userRank +
-                                "님\n오늘 무료대전 " + GLOBAL_CONFIG.daily.miniPetBattleFree + "회를 모두 사용했습니다.\n미니펫대전리셋권🐹 소지시 최대 " + GLOBAL_CONFIG.daily.miniPetBattleMax + "회 가능합니다.\n\n미대리🐹 이 부족하신가요?\nhttps://hoiland123.tistory.com/512"
+                                "님\n오늘 무료대전 " + GLOBAL_CONFIG.daily.miniPetBattleFree + "회를 모두 사용했습니다.\n미니펫대전리셋권🐹 소지시 최대 " + GLOBAL_CONFIG.daily.miniPetBattleMax + "회 가능합니다.\n\n미대리🐹 이 부족하신가요?\nhttps://hoiland123.tistory.com/309"
                             );
                             return;
                         }
@@ -29302,46 +29299,33 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/인증순위" && (isMaster(sender) || isAdmin(sender))) {
-                    var rows = buildCheckCntRanking(data);
-
-                    if (!rows || rows.length === 0) {
-                        replier.reply("📋 인증순위\n\n표시할 데이터가 없습니다.");
+                if (msg === "/인증순위" || msg === "/관리자순위") {
+                    if (!isMasterIdentity(sender) && !isAdminIdentity(sender)) {
+                        replier.reply("관리자만 사용할 수 있는 명령어입니다.");
                         return;
                     }
-
-                    var out = "📋 인증순위[일해라] 📋\n\n";
-
-                    var limit = Math.min(rows.length, 100);
-
-                    for (var i = 0; i < limit; i++) {
-                        if (i == 10) {
-                            out += allsee;
-                        }
-                        var r = rows[i];
-
-                        out += i + 1 + "등 " + r.name + " (" + numberWithCommas(r.cnt) + "회)\n";
-                    }
-
-                    replier.reply(out);
+                    replier.reply(buildSearchAuthenticationRankingMessage(data, msg === "/관리자순위"));
                     return;
                 }
-                if (msg === "/인증초기화" && isMaster(sender)) {
-                    var count = 0;
-
-                    for (var name in data.member) {
-                        if (!data.member.hasOwnProperty(name)) continue;
-
-                        if (data.member[name].checkCnt) {
-                            data.member[name].checkCnt = 0;
-                            count++;
-                        }
-                    }
-
-                    saveJsonFile(data, filePath);
-
-                    replier.reply("📋 인증 데이터 초기화 완료\n\n" + "초기화된 유저 수: " + numberWithCommas(count) + "명");
-
+                if (msg === "/관리자순위초기화") {
+                    if (!isMasterIdentity(sender)) { replier.reply("MASTER만 사용할 수 있는 명령어입니다."); return; }
+                    var resetAdminCount = resetSearchAuthenticationAdminStats(data);
+                    if (resetAdminCount > 0) saveJsonFile(data, filePath);
+                    replier.reply("🏅 관리자 인증 실적 초기화 완료\n처리된 관리자: " + numberWithCommas(resetAdminCount) + "명");
+                    return;
+                }
+                if (msg === "/인증초기화") {
+                    if (!isMasterIdentity(sender)) { replier.reply("MASTER만 사용할 수 있는 명령어입니다."); return; }
+                    var bulkAuthLightData = loadJsonFile(attendanceLightPath);
+                    var bulkAuthLightSnapshot = JSON.stringify(bulkAuthLightData);
+                    var bulkAuthResult = applyBulkSearchAuthentication(data, bulkAuthLightData, sender);
+                    if (bulkAuthResult.lightChanged) saveJsonFile(bulkAuthLightData, attendanceLightPath, false, bulkAuthLightSnapshot);
+                    if (bulkAuthResult.count > 0) saveJsonFile(data, filePath);
+                    replier.reply("✅ 검색인증 일괄 처리 완료\n사유: 기타\n처리된 유저: " + numberWithCommas(bulkAuthResult.count) + "명\n관리자 실적·보상 지급 제외");
+                    return;
+                }
+                if (msg === "/검색인증관리" || msg === "/검색인증순위" || msg === "/검색인증관리순위" || /^\/검색인증\s+[\s\S]+$/.test(msg)) {
+                    replier.reply("📢 검색인증 명령어가 변경되었어요!\n등록: /인증 아이디 사유\n미인증 목록: /검색인증\n검색어 순위: /인증순위\n관리자 실적: /관리자순위");
                     return;
                 }
 
@@ -31566,6 +31550,9 @@ function isGuildTerritoryStartOperator(sender) {
 // 방·이벤트 제한 없이 허용할 운영 명령과 기존 역할을 확인하는 함수
 function isGlobalOperatorCommandAllowed(sender, msg) {
     if (typeof msg !== "string") return false;
+    if (msg === "/관리자순위초기화" || msg === "/인증초기화") return isMasterIdentity(sender);
+    if (msg === "/인증순위" || msg === "/관리자순위") return isAdminIdentity(sender) || isMasterIdentity(sender);
+    if (msg === "/검색인증" || msg === "/인증" || /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg)) return isAdminIdentity(sender);
     if (msg === "/인증필요") return isAdminIdentity(sender);
     if (msg === "/미정" || msg.indexOf("/미정 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
     if (msg === "/정보" || msg.indexOf("/정보 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
@@ -31639,11 +31626,14 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
+    return command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+        /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
+        command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
         /^\/상점추가\s+[^\r\n]+\s+\d+\s*$/.test(command) ||
         getRaidSealCraftRequest(command) !== null ||
         command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "/스타터중복회수 실행" || command === "출발한다" || command === "다음에 한다" ||
+        command === "/호월토벌대오픈" ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -31667,7 +31657,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/알림\s+.+$/.test(command) || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(command) || command === "/글자수전체정리" ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command) ||
         /^\/서버변경\s+\S(?:.*\S)?$/.test(command) || /^\/관리자추가\s+\S(?:.*\S)?$/.test(command) || /^\/관리자삭제\s+\S(?:.*\S)?$/.test(command) ||
-        command === "/관리자감추기" || command === "/이모지감추기" || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
+        command === "/관리자감추기" || command === "/이모지감추기" || command === "/관리자순위초기화" || command === "/인증초기화" || /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(command) || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
 }
 
 // 자동일퀘 대상 3종이 보너스 횟수까지 완료됐는지 확인하는 함수
@@ -31751,9 +31741,15 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
     return {
         reply: function (message) {
-            replier.reply(ctx.header(message));
+            return replier.reply(ctx.header(formatNicknameRankMessage(message)));
         }
     };
+}
+
+// 기존 아이디 외곽 괄호와 무쌍 접두어를 화면에서 각각 한 번만 출력하는 함수
+function formatNicknameRankMessage(message) {
+    if (typeof message !== "string") return message;
+    return message.replace(/\[(\[무쌍⚔️\])([^\[\]\r\n]+)\]/g, "$1[$2]");
 }
 
 // 영지전 균열 조정 명령어의 정확한 입력 형식을 확인하는 함수
@@ -31992,6 +31988,171 @@ function getCoffeePackageSpecialIndex(roll) {
     }
 
     return -1;
+}
+
+// 쿠키 한 개의 일반·특별·미당첨 결과를 독립적으로 추첨하는 함수
+function rollFortuneCookieTitle(random) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    var draw = random(); // 일반 50%와 특별 1%를 배타적으로 판정
+    if (typeof draw !== "number" || !isFinite(draw) || draw < 0 || draw >= 1) throw new Error("호츈쿠키 추첨값 오류");
+    if (draw >= config.specialRate + config.generalRate) return null;
+    var special = draw < config.specialRate;
+    var generalConceptCount = config.concepts.length - 1; // 마지막 항목은 호월신 전용 콘셉트
+    var concept = config.concepts[special ? generalConceptCount : Math.floor(random() * generalConceptCount)];
+    var head = special ? concept.title : concept.title.replace("{닉네임}", config.names[Math.floor(random() * config.names.length)]);
+    var quote = concept.quotes[Math.floor(random() * concept.quotes.length)];
+    if (!head || !quote || head.indexOf("undefined") !== -1) throw new Error("호츈쿠키 타이틀 추첨 오류");
+    return { name: head + " ⎯ " + quote, head: head, quote: quote, special: special };
+}
+
+// 개봉 전 전체 결과와 재화 경계를 검사한 뒤 쿠키·보상·타이틀을 함께 변경하는 함수
+function applyFortuneCookieOpen(data, titleData, user, count, random, acquiredAt) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    var member = data.member && data.member[user];
+    if (!isPointShopSafeCount(count) || count < 1 || count > config.maxOpen) return { ok: false, reason: "quantity" };
+    if (!member) return { ok: false, reason: "data" };
+    var bag = member.bag;
+    if (bag !== undefined && (!bag || typeof bag !== "object" || Array.isArray(bag))) return { ok: false, reason: "data" };
+    var currentHeld = bag && Object.prototype.hasOwnProperty.call(bag, config.itemName) ? bag[config.itemName] : 0;
+    var legacyHeld = bag && Object.prototype.hasOwnProperty.call(bag, config.legacyItemName) ? bag[config.legacyItemName] : 0;
+    if (!isPointShopSafeCount(currentHeld) || !isPointShopSafeCount(legacyHeld)) return { ok: false, reason: "data" };
+    var held = currentHeld + legacyHeld; // 기존 이름과 명령어가 붙은 이름의 보유 수량 합산
+    if (!isPointShopSafeCount(held)) return { ok: false, reason: "data" };
+    if (held < count) return { ok: false, reason: "shortage", held: held };
+    if (!titleData || typeof titleData !== "object" || Array.isArray(titleData) ||
+        !titleData.member || typeof titleData.member !== "object" || Array.isArray(titleData.member)) return { ok: false, reason: "data" };
+    var owner = titleData.member[user];
+    if (owner && (!owner.title || !Array.isArray(owner.title.list))) return { ok: false, reason: "data" };
+    var list = owner ? owner.title.list.slice() : [];
+    for (var oldIndex = 0; oldIndex < list.length; oldIndex++) if (!list[oldIndex] || typeof list[oldIndex].name !== "string") return { ok: false, reason: "data" };
+    var results = [], newCount = 0, duplicateCount = 0, specialCount = 0, missed = 0;
+    for (var i = 0; i < count; i++) {
+        var result = rollFortuneCookieTitle(random);
+        if (!result) { missed++; continue; }
+        result.duplicate = false;
+        for (var titleIndex = 0; titleIndex < list.length; titleIndex++) {
+            if (list[titleIndex].name === result.name) { result.duplicate = true; break; }
+        }
+        if (result.duplicate) duplicateCount++;
+        else {
+            newCount++;
+            list.push({ name: result.name, inDate: acquiredAt, price: 0, kind: "fortuneCookie" });
+        }
+        if (result.special) specialCount++;
+        results.push(result);
+    }
+    var pointBonus = duplicateCount * config.duplicatePoint; // 한 개봉 안의 반복 당첨도 중복 보상에 포함
+    var diamondBonus = specialCount * config.specialDiamond; // 특별 당첨은 신규·중복 모두 다이아 지급
+    var point = member.point === undefined ? 0 : member.point;
+    var diamond = member.diamond === undefined ? 0 : member.diamond;
+    if (!isPointShopSafeCount(point) || !isPointShopSafeCount(point + pointBonus) ||
+        !isPointShopSafeCount(diamond) || !isPointShopSafeCount(diamond + diamondBonus)) return { ok: false, reason: "data" };
+    for (var rewardIndex = 0; rewardIndex < config.rewards.length; rewardIndex++) {
+        var reward = config.rewards[rewardIndex];
+        var existing = Object.prototype.hasOwnProperty.call(bag, reward.name) ? bag[reward.name] : 0;
+        if (!isPointShopSafeCount(existing) || !isPointShopSafeCount(existing + reward.count * count)) return { ok: false, reason: "data" };
+    }
+    if (held > count) bag[config.itemName] = held - count;
+    else delete bag[config.itemName];
+    delete bag[config.legacyItemName]; // 개봉 성공 시 남은 기존 쿠키도 새 이름으로 통합
+    for (var addIndex = 0; addIndex < config.rewards.length; addIndex++) {
+        addItemToBag(bag, config.rewards[addIndex].name, config.rewards[addIndex].count * count);
+    }
+    member.point = point + pointBonus;
+    member.diamond = diamond + diamondBonus;
+    if (newCount > 0) {
+        ensureTitleUserData(titleData, user);
+        titleData.member[user].title.list = list;
+    }
+    return { ok: true, count: count, remaining: held - count, results: results, newCount: newCount,
+        duplicateCount: duplicateCount, specialCount: specialCount, missed: missed, pointBonus: pointBonus, diamondBonus: diamondBonus };
+}
+
+// 호츈쿠키 개인 개봉 결과와 접힌 보상·당첨 내역을 구성하는 함수
+function buildFortuneCookieOpenMessage(result, nick) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    var lines = ["🥠 호츈쿠키 개봉", "━━━━━━━━━━━━", "🥠 소모: " + result.count + "개 🥠 남음: " + numberWithCommas(result.remaining) + "개", "", nick + " 님", ""];
+    if (result.count === 1) {
+        if (result.missed) lines.push("❌ 타이틀 미당첨", "기본 보상은 정상 지급되었습니다.");
+        else {
+            var single = result.results[0];
+            lines.push(single.special ? "⭕ 호월신 특별 당첨!" + (single.duplicate ? " · 중복" : "") : "⭕ 타이틀 당첨!" + (single.duplicate ? " · 중복" : ""), single.head, "└ " + single.quote);
+        }
+    } else {
+        lines.push("⭕ 타이틀 당첨: " + result.results.length + "회");
+        if (result.results.length) lines.push("└ 신규 " + result.newCount + "회 · 중복 " + result.duplicateCount + "회");
+        lines.push("❌ 타이틀 미당첨: " + result.missed + "회");
+        if (result.specialCount) lines.push("", "⭕ 호월신 당첨: " + result.specialCount + "회", "└ 전체 당첨 " + result.results.length + "회에 포함");
+        if (!result.results.length) lines.push("", "기본 보상은 정상 지급되었습니다.");
+    }
+    if (result.pointBonus) lines.push("", "💰 중복 보상: 🅟" + numberWithCommas(result.pointBonus));
+    if (result.diamondBonus) lines.push("💎 특별 보상: 다이아 " + numberWithCommas(result.diamondBonus) + "개");
+    lines.push("━━━━━━━━━━━━", result.count > 1 && result.results.length ? "📦 보상 · 당첨 내역 펼쳐보기" : "📦 받은 보상 펼쳐보기", allsee, "", result.count > 1 ? "📦 기본 보상 합계" : "📦 기본 보상");
+    for (var rewardIndex = 0; rewardIndex < config.rewards.length; rewardIndex++) lines.push(config.rewards[rewardIndex].name + " ×" + numberWithCommas(config.rewards[rewardIndex].count * result.count));
+    if (result.diamondBonus) lines.push("━━━━━━━━━━━━", result.count > 1 ? "✨ 특별 보상 합계" : "✨ 특별 보상", "다이아💎 ×" + numberWithCommas(result.diamondBonus));
+    if (result.pointBonus) lines.push("━━━━━━━━━━━━", result.count > 1 ? "💰 중복 보상 합계" : "🔄 중복 보상", "🅟" + numberWithCommas(result.pointBonus) + " 지급");
+    if (result.count > 1) {
+        var groups = [{ duplicate: false, count: result.newCount, label: "신규" }, { duplicate: true, count: result.duplicateCount, label: "중복" }];
+        for (var groupIndex = 0; groupIndex < groups.length; groupIndex++) {
+            var group = groups[groupIndex];
+            if (!group.count) continue;
+            lines.push("━━━━━━━━━━━━", "⭕ " + group.label + " 당첨 · " + group.count + "회", "");
+            var ordinal = 0;
+            for (var rowIndex = 0; rowIndex < result.results.length; rowIndex++) {
+                var row = result.results[rowIndex];
+                if (row.duplicate !== group.duplicate) continue;
+                lines.push((++ordinal) + ". " + row.head, "└ " + row.quote);
+                if (row.duplicate) lines.push("💰 🅟" + numberWithCommas(config.duplicatePoint) + " 지급");
+                lines.push("");
+            }
+        }
+        if (result.missed && result.results.length) lines.push("━━━━━━━━━━━━", "❌ 타이틀 미당첨 · " + result.missed + "회", "기본 보상은 정상 지급되었습니다.");
+    }
+    if (result.duplicateCount) lines.push("", "※ 중복 타이틀은 추가 지급되지 않습니다.");
+    if (result.specialCount && result.count === 1) lines.push("", "호월신 당첨으로 일반 타이틀은 지급되지 않습니다.");
+    return lines.join("\n");
+}
+
+// 호월신 당첨 한 건의 독립 전체알림을 구성하는 함수
+function buildFortuneCookieSpecialNotice(result, nick) {
+    var config = GLOBAL_CONFIG.fortuneCookie;
+    return ["[🥠전체알림]", "이미지링크: " + config.imageLink, "호츈쿠키 · 특별 당첨!", "━━━━━━━━━━━━",
+        nick + " 님에게", "✨ 호월신이 강림했습니다! ✨", "⭕ 1% 확률의 특별 당첨!", result.head,
+        "└ " + result.quote, "💎 특별 보상: 다이아 " + config.specialDiamond + "개"].join("\n");
+}
+
+// 쿠키 타이틀은 확정 판매가를 사용하고 기존 타이틀의 판매 계산을 유지하는 함수
+function getMemberTitleSalePoint(title) {
+    if (title.kind === "fortuneCookie") return GLOBAL_CONFIG.fortuneCookie.titleSalePoint;
+    return title.price < 10000 ? 1000000 : parseInt(title.price * 0.3, 10);
+}
+
+// 타이틀 삭제 뒤에도 기존에 장착한 다른 타이틀의 번호를 유지하는 함수
+function removeMemberTitleAt(title, index) {
+    if (Number(title.num) === index + 1) title.num = null;
+    else if (Number(title.num) > index + 1) title.num = Number(title.num) - 1;
+    title.list.splice(index, 1);
+}
+
+// 단일·구간 판매의 포인트 경계를 검사하고 판매 타이틀과 장착 번호를 함께 갱신하는 함수
+function applyMemberTitleSale(data, titleData, user, start, end) {
+    var member = data.member && data.member[user];
+    var title = titleData && titleData.member && titleData.member[user] && titleData.member[user].title;
+    if (!member || !title || !Array.isArray(title.list) || !isPointShopSafeCount(start) ||
+        !isPointShopSafeCount(end) || start < 1 || end < start || start > title.list.length) return { ok: false };
+    var last = Math.min(end, title.list.length); // 기존 구간 판매처럼 보유 범위를 넘는 끝 번호는 제외
+    var total = 0, sold = [];
+    for (var i = start - 1; i < last; i++) {
+        if (!title.list[i]) return { ok: false };
+        var price = getMemberTitleSalePoint(title.list[i]);
+        if (!isPointShopSafeCount(price) || !isPointShopSafeCount(total + price)) return { ok: false };
+        total += price;
+        sold.push(title.list[i].name);
+    }
+    if (!isPointShopSafeCount(member.point) || !isPointShopSafeCount(member.point + total)) return { ok: false };
+    for (var index = last - 1; index >= start - 1; index--) removeMemberTitleAt(title, index);
+    member.point += total;
+    return { ok: true, total: total, sold: sold };
 }
 
 // 사용자 타이틀 데이터 기본 구조 보정 함수
@@ -32823,19 +32984,88 @@ function serverRaidHeader() {
 
 // 서버 레이드대전의 정확한 명령 및 인수 안내를 판별하는 함수
 function isServerRaidCommand(msg) {
-    return isServerRaidMutationCommand(msg) || msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg) || msg === "/레이드기록" || msg === "/서버레이드기록";
+    return isServerRaidMutationCommand(msg) || isServerRaidQueryCommand(msg) || msg === "/레이드기록" || msg === "/서버레이드기록" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg);
 }
 
 // 운영 시작·종료·조회는 모든 방에 허용하고 공격·초기화·DEV는 지정 방으로 제한하는 함수
 function isServerRaidCommandRoom(room, isGroupChat, ctx, msg) {
     if (ctx.isDev) return isGroupChat === true && room === GLOBAL_CONFIG.serverRaid.rooms.development;
-    if (msg === "/서버대전시작" || msg === "/서버대전종료" || isServerRaidQueryCommand(msg)) return true;
+    if (msg === "/서버대전시작" || msg === "/서버대전종료" || isServerRaidQueryCommand(msg) || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg)) return true;
     return isGroupChat === true && GLOBAL_CONFIG.serverRaid.rooms.production.indexOf(room) !== -1;
 }
 
 // 모든 운영방에서 조회를 허용할 정확한 명령을 판별하는 함수
 function isServerRaidQueryCommand(msg) {
-    return msg === "/레이드순위" || msg === "/서버레이드순위" || /^\/서버레이드순위\s+[^\r\n]+$/.test(msg);
+    return isServerRaidTurnQueryCommand(msg) || msg === "/레이드전적" || msg === "/레이드순위" || msg === "/서버대전";
+}
+
+// 본인의 남은 공격 턴을 조회할 두 명령을 정확히 판별하는 함수
+function isServerRaidTurnQueryCommand(msg) {
+    return msg === "/레이드턴" || msg === "ㄹㄹ";
+}
+
+// 대전 중 기존 명령 처리로 통과시킬 추가 예외와 해당 인수 형식을 확인하는 함수
+function isServerRaidAdditionalCommand(msg) {
+    return GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
+        /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg) ||
+        /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
+        /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
+        /^\/패키지가방\s+.+$/.test(msg) ||
+        /^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg) ||
+        /^\/이체\s+[^\r\n]+\s+\d+\s*$/.test(msg) ||
+        /^\/패키지사용\s+\d+(\s+\d+)?$/.test(msg);
+}
+
+// 진행 회차의 정상 공격만 읽어 남은 턴을 안내하는 함수
+function buildServerRaidTurnMessage(data, user, nick, now) {
+    var round = data.serverRaid && data.serverRaid.current;
+    if (!round || round.state !== "ACTIVE" || isServerRaidAutoEndDue(round, now)) {
+        return serverRaidHeader() + nick + ",\n현재 진행 중인 서버 레이드대전이 없습니다.\n━━━━━━━━━━━━\n대전 시작 후 남은 공격 턴을 확인해주세요!";
+    }
+    var participant = getServerRaidCurrentParticipant(data, data.member[user]);
+    var status = getServerRaidAttackAvailability(round, participant, data.member[user]);
+    var limit = status.policy.attacks;
+    var remaining = status.basicRemaining; // 누적·초과 시도는 제외
+    var message = serverRaidHeader() + nick + "의 남은 턴\n\n🎟️ 남은 공격: " + remaining + "/" + limit + "회\n";
+    if (status.policy.ticketAttacks > 0) message = serverRaidHeader() + nick + "의 남은 턴\n\n🎟️ 기본 " + remaining + "/" + limit + " · 추가 " + status.additionalRemaining + "/" + status.policy.ticketAttacks + " 남음\n👾 서공권: " + numberWithCommas(status.held) + "개 보유\n";
+    if (round.autoEndAt !== undefined) message += "🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt) + "\n";
+    if (remaining === 0 && status.additionalRemaining === 0) message += (status.policy.ticketAttacks > 0 ? "✅ 현재 사용할 수 있는 공격 턴이 없습니다." : "✅ 이번 대전의 공격 턴을 모두 사용했습니다.") + "\n" + (status.additionalUsed < status.policy.ticketAttacks ? "서공권을 보유하면 추가 공격할 수 있습니다." : "다음 서버 레이드대전에 참여해주세요!") + "\n";
+    return message + "━━━━━━━━━━━━\n👉 공격 참여: /레이드공격\n📋 내 전적: /레이드전적\n🏅 우리 서버 순위: /레이드순위\n👑 진행 현황: /서버대전";
+}
+
+// 현재 회차의 서버별 데미지와 실제 공격 계정 수를 전체 등록 서버로 집계하는 함수
+function buildServerRaidCurrentRows(round) {
+    var attackedRows = buildServerRaidResults(round), rows = []; // 누적 기록 없이 현재 회차의 정상 공격만 집계
+    for (var i = 0; i < GLOBAL_CONFIG.serverRaid.servers.length; i++) {
+        var server = GLOBAL_CONFIG.serverRaid.servers[i], row = { id: server, damage: "0", members: [] };
+        for (var j = 0; j < attackedRows.length; j++) if (attackedRows[j].id === server) { row = attackedRows[j]; break; }
+        rows.push(row);
+    }
+    return rankServerRaidRows(rows);
+}
+
+// 준비·진행·정산 중인 현재 회차 현황과 전체 서버 실시간 순위를 출력하는 함수
+function buildServerRaidCurrentStatus(data, user, now) {
+    var round = data.serverRaid && data.serverRaid.current;
+    var recordGuide = "📋 내 전적: /레이드전적\n🏅 우리 서버 순위: /레이드순위";
+    if (!round || (round.state !== "PREP" && round.state !== "ACTIVE" && round.state !== "SETTLING")) return "👑 서버대전 현황\n━━━━━━━━━━━━\n현재 진행 중인 서버대전이 없습니다.\n\n" + recordGuide;
+    var rows = buildServerRaidCurrentRows(round), server = normalizeHoiServerLabel(data.member[user].server);
+    var own = null; // 조회 계정의 현재 소속 서버 집계
+    for (var i = 0; i < rows.length; i++) if (rows[i].id === server) { own = rows[i]; break; }
+    var accepting = round.state === "ACTIVE" && !isServerRaidAutoEndDue(round, now); // 실제 공격을 접수할 수 있는 상태
+    var lines = ["👑 서버대전 현황", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", round.state === "PREP" ? "⏳ 서버대전 준비 중!" : accepting ? "🔥 서버대전 진행 중!" : "⏳ 서버대전 정산 중!"];
+    if (round.state === "PREP") lines.push("🕒 준비 종료: " + formatServerRaidKstTime(round.prepareUntil), buildServerRaidTimeNotice(round));
+    else if (round.autoEndAt !== undefined) lines.push("🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt));
+    lines.push("", "🏰 우리 서버: " + (own ? server : "참가 가능한 소속 서버 없음"));
+    if (own) lines.push("🏅 현재 순위: " + own.rank + "위 / " + rows.length + "개 서버", "👾 이번 대전 데미지: " + numberWithCommas(own.damage) + "💞", "👥 이번 대전 참가자: " + own.members.length + "명");
+    lines.push("━━━━━━━━━━━━", "👉 공격 참여: /레이드공격", "🎟️ 남은 턴: /레이드턴", recordGuide, "", "📂 전체 서버 실시간 순위 펼쳐보기" + allsee, "🌐 전체 서버 실시간 순위", "━━━━━━━━━━━━");
+    var medals = ["🥇", "🥈", "🥉"];
+    for (var r = 0; r < rows.length; r++) {
+        var row = rows[r], prefix = row.rank <= 3 ? medals[row.rank - 1] + " " : "";
+        lines.push(prefix + row.rank + "위｜" + formatServerRaidServer(data, row.id) + (own && row.id === own.id ? " 📍우리 서버" : ""), "👾 데미지: " + numberWithCommas(row.damage) + "💞", "👥 참가자: " + row.members.length + "명", "━━━━━━━━━━━━");
+    }
+    lines.push("📊 이번 대전의 서버별 합산 데미지 기준", "👥 참가자: 실제 공격한 계정 수", "🔄 최신 현황 확인: /서버대전");
+    return lines.join("\n");
 }
 
 // 회차·보상 변경 명령을 DEV 접두사와 함께 판별하는 함수
@@ -32974,6 +33204,7 @@ function queueServerRaidNotice(state, round, kind, text, ctx) {
 
 // 새 회차에 저장된 종료 시각으로 진행 시간과 KST 마감을 안내하는 함수
 function buildServerRaidTimeNotice(round) {
+    if (round.durationBasis === "activeStart" && round.state === "PREP") return "⏱️ 진행 시간: " + (round.durationMs / 60000) + "분 (공격 시작부터)\n🕒 자동 종료: 공격 시작 후 확정\n※ 운영 상황에 따라 조기 종료될 수 있습니다.";
     if (round.autoEndAt === undefined) return ""; // 이전 진행 회차에는 종료 시각을 새로 만들지 않음
     requireServerRaidSafeInteger(round.durationMs, "대전 진행 시간");
     requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
@@ -33007,12 +33238,14 @@ function startServerRaid(data, now, generation, room, ctx) {
     if (isServerRaidLocked(data)) throw new Error("이미 진행 중인 서버 레이드대전");
     var duration = requireServerRaidSafeInteger(GLOBAL_CONFIG.serverRaid.timers.durationMs, "대전 진행 시간");
     if (duration <= GLOBAL_CONFIG.serverRaid.timers.preparationMs) throw new Error("대전 진행 시간은 준비 시간보다 길어야 합니다");
-    var deadline = requireServerRaidSafeInteger(now + duration, "자동 종료 시각"); // 시작 명령 처리 시각부터 준비 시간을 포함해 확정
+    var prepareUntil = requireServerRaidSafeInteger(now + GLOBAL_CONFIG.serverRaid.timers.preparationMs, "준비 종료 시각");
+    requireServerRaidSafeInteger(prepareUntil + duration, "자동 종료 예정 시각"); // 활성화 지연이 없다면 도달할 예정 시각의 범위만 확인
+    var policy = createServerRaidRoundPolicy(); // 회차 도중 설정이 바뀌어도 횟수·패널티·아이템 보상 기준 유지
     if (!data.serverRaid) data.serverRaid = createServerRaidState(generation);
     var state = data.serverRaid;
     requireServerRaidSafeInteger(state.sequence + 1, "회차 번호");
     state.sequence++;
-    var round = { id: state.generation + ":" + state.sequence, state: "PREP", requestedAt: now, durationMs: duration, autoEndAt: deadline, prepareUntil: now + GLOBAL_CONFIG.serverRaid.timers.preparationMs, startedAt: null, originRoom: room, accounts: {}, results: [] };
+    var round = { id: state.generation + ":" + state.sequence, state: "PREP", requestedAt: now, durationMs: duration, durationBasis: "activeStart", prepareUntil: prepareUntil, startedAt: null, originRoom: room, accounts: {}, results: [], policy: policy };
     state.current = round;
     queueServerRaidNotice(state, round, "prepare", buildServerRaidPreparationNotice(round), ctx);
     return round;
@@ -33022,9 +33255,16 @@ function startServerRaid(data, now, generation, room, ctx) {
 function activateServerRaid(data, now, ctx) {
     var state = data.serverRaid, round = state && state.current;
     if (!round || round.state !== "PREP" || now < round.prepareUntil || isServerRaidAutoEndDue(round, now)) return false;
+    if (round.durationBasis === "activeStart") {
+        round.autoEndAt = requireServerRaidSafeInteger(now + requireServerRaidSafeInteger(round.durationMs, "대전 진행 시간"), "자동 종료 시각"); // 새 회차만 실제 활성화 시각으로 마감을 최초 확정
+        for (var n = 0; n < state.outbox.length; n++) if (state.outbox[n].id === round.id + ":prepare") {
+            var pending = state.outbox[n].deliveries;
+            for (var d = 0; d < pending.length; d++) if (!pending[d].sent) pending[d].cancelled = true; // 활성화 뒤에는 오래된 준비 60초 안내를 보내지 않음
+        }
+    }
     round.state = "ACTIVE";
     round.startedAt = now; // 실제 공격 활성화 시각. 준비 마감은 원래 값으로 유지하며 시작 일시는 최초 한 번만 확정
-    queueServerRaidNotice(state, round, "start", "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n이미지링크:" + GLOBAL_CONFIG.serverRaid.links.startImage + "\n━━━━━━━━━━━━\n📢 서버 레이드대전을 시작합니다!\n" + buildServerRaidTimeNotice(round) + "\n\n오톡 세상을 멸망케 할\n거대 호월이 등장!\n\n🐹 “크아아아앙!!”\n\n우리 서버의 힘을 모아\n호월이의 폭주를 막아주세요! 🔥\n━━━━━━━━━━━━\n🎟️ 공격 기회: 계정당 5회\n👉 지금 공격: /레이드공격", ctx);
+    queueServerRaidNotice(state, round, "start", "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n이미지링크:" + GLOBAL_CONFIG.serverRaid.links.startImage + "\n━━━━━━━━━━━━\n📢 서버 레이드대전을 시작합니다!\n" + buildServerRaidTimeNotice(round) + "\n\n오톡 세상을 멸망케 할\n거대 호월이 등장!\n\n🐹 “크아아아앙!!”\n\n우리 서버의 힘을 모아\n호월이의 폭주를 막아주세요! 🔥\n━━━━━━━━━━━━\n🎟️ 기본 공격: 계정당 " + getServerRaidRoundPolicy(round).attacks + "회\n👾 서공권 추가 공격: 최대 " + getServerRaidRoundPolicy(round).ticketAttacks + "회\n👉 지금 공격: /레이드공격", ctx);
     return true;
 }
 
@@ -33064,6 +33304,39 @@ function createServerRaidAttackEvent(event) {
     return { id: "legacy-callback:" + String(java.util.UUID.randomUUID()) };
 }
 
+// 새 회차의 공격·패널티·핸디캡 기준을 복사하고 검증하는 함수
+function createServerRaidRoundPolicy() {
+    var config = GLOBAL_CONFIG.serverRaid;
+    var policy = { attacks: config.limits.attacks, ticketAttacks: config.limits.ticketAttacks, ticketItem: config.items.attackTicket, chargeFromAttempt: config.penalties.chargeFromAttempt, pointCost: config.penalties.pointCost, handicapRanks: config.rewards.handicapRanks.slice() };
+    requireServerRaidSafeInteger(policy.attacks, "기본 공격 한도");
+    requireServerRaidSafeInteger(policy.ticketAttacks, "추가 공격 한도");
+    requireServerRaidSafeInteger(policy.chargeFromAttempt, "패널티 시작 횟수");
+    requireServerRaidSafeInteger(policy.pointCost, "패널티 금액");
+    if (policy.attacks <= 0 || policy.chargeFromAttempt < 2 || policy.pointCost <= 0 || !policy.ticketItem) throw new Error("서버 레이드대전 회차 기준 오류");
+    for (var i = 0; i < policy.handicapRanks.length; i++) requireServerRaidSafeInteger(policy.handicapRanks[i], "핸디캡 보상 수량");
+    return policy;
+}
+
+// 기준 미기록 기존 회차에는 공격권을 소급 적용하지 않는 함수
+function getServerRaidRoundPolicy(round) {
+    return round.policy || GLOBAL_CONFIG.serverRaid.legacyPolicy;
+}
+
+// 공격권 수량을 숫자 변환 없이 안전 정수로 확인하는 함수
+function getServerRaidTicketCount(member, item) {
+    var count = member.bag ? member.bag[item] : undefined;
+    return count === undefined ? 0 : requireServerRaidSafeInteger(count, "서공권 보유 수량");
+}
+
+// 실제 정상 공격 수와 가방을 기준으로 기본·추가 공격 가능 횟수를 읽는 함수
+function getServerRaidAttackAvailability(round, participant, member) {
+    var policy = getServerRaidRoundPolicy(round);
+    var used = participant ? participant.attacks.length : 0;
+    var additionalUsed = Math.max(0, used - policy.attacks); // 기본 공격부터 모두 사용하므로 이후 정상 공격만 추가 횟수
+    var held = policy.ticketAttacks > 0 ? getServerRaidTicketCount(member, policy.ticketItem) : 0;
+    return { policy: policy, basicRemaining: Math.max(0, policy.attacks - used), additionalUsed: additionalUsed, additionalRemaining: Math.min(held, Math.max(0, policy.ticketAttacks - additionalUsed)), held: held };
+}
+
 // 공격 단계·소속·재전송·횟수 조건을 변경 없이 확인하는 함수
 function getServerRaidAttackCheck(data, user, now, event) {
     if (event && event.invalid) return { message: "메시지 식별값을 확인할 수 없습니다.\n메신저봇의 콜백 전달값을 확인해주세요." };
@@ -33083,9 +33356,11 @@ function getServerRaidAttackCheck(data, user, now, event) {
     if (receipt && (!account || receipt.accountId !== account.id)) return { message: "이미 처리된 공격 이벤트입니다." };
     if (participant && eventId) {
         for (var i = 0; i < participant.attacks.length; i++) if (participant.attacks[i].id === eventId) return { replay: participant.attacks[i], participant: participant };
+        if (participant.excessEvents && participant.excessEvents[eventId]) return { penaltyReplay: participant.excessEvents[eventId], participant: participant };
     }
-    if (participant && participant.attacks.length >= GLOBAL_CONFIG.serverRaid.limits.attacks) return { message: "이번 대전의 공격 기회를 모두 사용했습니다!\n\n🎟️ 남은 공격: 0/5회\n우리 서버의 최종 결과를 기다려주세요! 🏆" };
-    return {};
+    var available = getServerRaidAttackAvailability(round, participant, member);
+    if (available.basicRemaining === 0 && available.additionalRemaining === 0) return { excess: true, participant: participant };
+    return { ticketRequired: available.basicRemaining === 0, available: available };
 }
 
 // 큰 레이드매력에 정수 백분율을 적용하고 소수점을 정확하게 버리는 함수
@@ -33113,6 +33388,7 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     var check = getServerRaidAttackCheck(data, user, Date.now(), event);
     if (check.message) throw new Error(check.message);
     if (check.replay) return { participant: check.participant, attack: check.replay, replay: true };
+    if (check.excess || check.penaltyReplay) throw new Error("이번 대전의 공격 기회를 모두 사용했습니다.");
     requireServerRaidSafeInteger(raidCharm, "레이드매력");
     requireServerRaidSafeInteger(damage, "공격 데미지");
     var member = data.member[user], round = data.serverRaid.current;
@@ -33123,18 +33399,65 @@ function applyServerRaidAttack(data, user, newAccountId, event, raidCharm, damag
     var account = member.serverRaidAccount;
     if (!account) account = { id: newAccountId, period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
     var participant = round.accounts[account.id];
-    if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], paid: false };
+    if (!participant) participant = { id: account.id, user: user, server: normalizeHoiServerLabel(member.server), period: account.period, damage: "0", attackReward: 0, attacks: [], excessAttempts: 0, excessEvents: {}, paid: false };
     var nextAttackReward = requireServerRaidSafeInteger(participant.attackReward + reward, "실지급 공격 보상 합계");
     var eventId = getServerRaidEventId(event);
-    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", rewardPercent: percent, remaining: GLOBAL_CONFIG.serverRaid.limits.attacks - participant.attacks.length - 1, critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
+    var available = check.available;
+    var attack = { id: eventId, R: raidCharm, D: damage, P: reward, rewardBasis: "raidCharm", rewardPercent: percent, remaining: Math.max(0, available.basicRemaining - 1), critical: typeof critical === "boolean" ? critical : damage !== raidCharm };
+    if (available.policy.ticketAttacks > 0) {
+        attack.ticketUsed = check.ticketRequired;
+        attack.ticketHeldAfter = available.held - (check.ticketRequired ? 1 : 0);
+        attack.additionalRemaining = Math.min(attack.ticketHeldAfter, available.policy.ticketAttacks - available.additionalUsed - (check.ticketRequired ? 1 : 0));
+    }
+    var nextDamage = addServerRaidInteger(participant.damage, damage); // 지급·소모를 시작하기 전 데미지 합계도 검증
+    if (check.ticketRequired) {
+        member.bag[available.policy.ticketItem] = attack.ticketHeldAfter;
+        if (attack.ticketHeldAfter === 0) delete member.bag[available.policy.ticketItem];
+    }
     member.serverRaidAccount = account;
     member.point = nextPoint;
-    participant.damage = addServerRaidInteger(participant.damage, damage);
+    participant.damage = nextDamage;
     participant.attackReward = nextAttackReward;
     participant.attacks.push(attack);
     round.accounts[account.id] = participant;
     data.serverRaid.eventReceipts[eventId] = { roundId: round.id, accountId: account.id };
     return { participant: participant, attack: attack };
+}
+
+// 초과 시도와 실제 차감액을 변경하고 같은 원본 이벤트의 재전송은 다시 차감하지 않는 함수
+function applyServerRaidExcessAttempt(data, user, event) {
+    var check = getServerRaidAttackCheck(data, user, Date.now(), event);
+    if (check.penaltyReplay) return { record: check.penaltyReplay, replay: true };
+    if (!check.excess) throw new Error(check.message || "초과 공격 시도가 아닙니다.");
+    var participant = check.participant, member = data.member[user], round = data.serverRaid.current;
+    var count = participant.excessAttempts === undefined ? 0 : participant.excessAttempts; // 이전 회차 참가자에는 첫 초과 시도부터 기록
+    var nextCount = requireServerRaidSafeInteger(requireServerRaidSafeInteger(count, "초과 시도 횟수") + 1, "다음 초과 시도 횟수");
+    var config = getServerRaidRoundPolicy(round);
+    var cost = requireServerRaidSafeInteger(config.pointCost, "초과 시도 패널티");
+    var chargeFrom = requireServerRaidSafeInteger(config.chargeFromAttempt, "패널티 시작 횟수");
+    if (cost <= 0 || chargeFrom < 2) throw new Error("초과 시도 패널티 설정 오류");
+    var heldPoint = requireServerRaidSafeInteger(member.point, "보유 포인트");
+    var insufficient = nextCount >= chargeFrom && heldPoint < cost; // 잔액 부족은 차감 없이 시도만 기록
+    var charged = nextCount >= chargeFrom && !insufficient ? cost : 0;
+    var eventId = getServerRaidEventId(event);
+    var record = { attempt: nextCount, charged: charged, insufficient: insufficient, pointCost: cost, chargeFromAttempt: chargeFrom };
+    member.point = heldPoint - charged;
+    participant.excessAttempts = nextCount;
+    if (!participant.excessEvents) participant.excessEvents = {};
+    participant.excessEvents[eventId] = record;
+    data.serverRaid.eventReceipts[eventId] = { roundId: round.id, accountId: participant.id, kind: "excess" };
+    return { record: record, replay: false };
+}
+
+// 저장된 초과 시도 결과로 경고·실제 차감·잔액 부족 안내를 만드는 함수
+function buildServerRaidExcessMessage(nick, record) {
+    var header = "👑 서버 레이드대전 👑\n━━━━━━━━━━━━━\n" + nick + ",\n";
+    var costText = formatServerRaidPrize(record.pointCost); // 저장 당시 비용을 사용해 재전송 안내도 같은 금액을 표시
+    var chargeFrom = record.chargeFromAttempt === undefined ? GLOBAL_CONFIG.serverRaid.legacyPolicy.chargeFromAttempt : record.chargeFromAttempt;
+    if (record.attempt === 1 && chargeFrom === 2) return header + "이번 대전의 공격 5회를 모두 사용했습니다.\n\n⚠️ 초과 시도: 1회\n💰 차감 포인트: 🅟0\n\n이제부터 추가 공격을 시도할 때마다\n패널티로 " + costText + "가 차감됩니다.";
+    if (record.attempt < chargeFrom) return header + "이번 대전의 사용 가능한 공격 기회를 모두 사용했습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💰 차감 포인트: 🅟0\n\n초과 시도 " + chargeFrom + "회째부터 매번\n패널티로 " + costText + "가 차감됩니다.";
+    if (record.insufficient) return header + "보유 포인트가 부족하여 패널티를 차감하지 않았습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💰 차감 포인트: 🅟0\n💸 필요한 포인트: 🅟" + numberWithCommas(record.pointCost) + "\n\n이번 대전의 공격 기회를 모두 사용했습니다.\n초과 시도 횟수는 기록됩니다.";
+    return header + "공격 횟수를 초과하여 패널티가 적용되었습니다.\n\n⚠️ 초과 시도: " + numberWithCommas(record.attempt) + "회\n💸 차감 포인트: 🅟" + numberWithCommas(record.charged) + "\n\n이번 대전의 공격 기회를 모두 사용했습니다.\n추가 시도마다 " + costText + "가 차감됩니다.";
 }
 
 // 실제 데미지 동점은 공동 순위로 유지하며 목록을 정렬하는 함수
@@ -33174,6 +33497,8 @@ function buildServerRaidResults(round, freeze) {
                 original.serverRank = rows[r].rank;
                 rows[r].rankReward = GLOBAL_CONFIG.serverRaid.rewards.ranks[rows[r].rank - 1];
                 original.rankReward = rows[r].rankReward;
+                rows[r].handicapReward = getServerRaidRoundPolicy(round).handicapRanks[rows[r].rank - 1] || 0;
+                original.handicapReward = rows[r].handicapReward;
             }
         }
     }
@@ -33231,6 +33556,10 @@ function settleServerRaidParticipant(data, accountIndex, participantId) {
         if (!current) { participant.missingAccount = true; return true; }
         var nextPoint = requireServerRaidSafeInteger(current.member.point, "보유 포인트") + participant.rankReward;
         requireServerRaidSafeInteger(nextPoint, "순위 보상 지급 후 포인트");
+        var ticketReward = participant.handicapReward === undefined ? 0 : requireServerRaidSafeInteger(participant.handicapReward, "핸디캡 보상 수량");
+        if (participant.attacks.length === 0) ticketReward = 0; // 초과·실패 입력은 보상 대상이 아님
+        var ticketItem = getServerRaidRoundPolicy(round).ticketItem;
+        var nextTicketCount = ticketReward > 0 ? requireServerRaidSafeInteger(getServerRaidTicketCount(current.member, ticketItem) + ticketReward, "핸디캡 지급 후 수량") : 0;
         var account = current.account;
         var samePeriod = normalizeHoiServerLabel(current.member.server) === participant.server && account.period === participant.period;
         var total = account.total;
@@ -33240,6 +33569,11 @@ function settleServerRaidParticipant(data, accountIndex, participantId) {
             requireServerRaidSafeInteger(total.attackCount + participant.attacks.length, "누적 공격 횟수");
         }
         current.member.point = nextPoint;
+        if (ticketReward > 0) {
+            if (!current.member.bag) current.member.bag = {};
+            current.member.bag[ticketItem] = nextTicketCount;
+        }
+        participant.handicapPaid = ticketReward;
         participant.paid = true;
         if (samePeriod) {
             total.damage = addServerRaidInteger(total.damage, participant.damage);
@@ -33292,7 +33626,8 @@ function buildServerRaidLockMessage(nick, round) {
     var header = "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n━━━━━━━━━━━━\n" + nick + ",\n";
     if (round && round.state === "SETTLING") return header + "현재 서버 레이드대전 종료 처리가 진행 중입니다.\n정산 완료를 기다려주세요.";
     var deadline = ""; // 이전 종료 시각 없는 회차에는 새 마감을 만들지 않음
-    if (round && round.autoEndAt !== undefined) {
+    if (round && round.durationBasis === "activeStart" && round.state === "PREP") deadline = "\n🕒 자동 종료: 공격 시작 후 " + (round.durationMs / 60000) + "분";
+    else if (round && round.autoEndAt !== undefined) {
         requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
         deadline = "\n🕒 자동 종료: " + formatServerRaidKstTime(round.autoEndAt);
     }
@@ -33301,9 +33636,10 @@ function buildServerRaidLockMessage(nick, round) {
 
 // 준비 안내와 규칙 더보기를 만드는 함수
 function buildServerRaidPreparationNotice(round) {
-    var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 공격 기회: 계정당 5회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 전 레이드매력의 " + GLOBAL_CONFIG.serverRaid.rewards.attackPercent + "%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
+    var lines = ["👑 서버 레이드대전 👑", "🐹 호월이를 잡아라!", "━━━━━━━━━━━━", "📢 서버 레이드대전이 60초 뒤에 시작됩니다!", "", "거대 호월이가 곧 등장합니다!", "우리 서버의 힘을 모아 도전하세요! 🔥", "━━━━━━━━━━━━", "📍 명령어방에서 공격을 준비해주세요!", GLOBAL_CONFIG.serverRaid.links.commandRoom, "", "서버 레이드대전 규칙 설명📖", allsee, "━━━━━━━━━━━━", "🎟️ 기본 공격: 계정당 " + (round ? getServerRaidRoundPolicy(round).attacks : GLOBAL_CONFIG.serverRaid.limits.attacks) + "회", "👾 공격 데미지: 레이드매력 기준", "⚪ 무속성 보스 · 속성 상성 미적용", "💥 기존 레이드 치명타 적용", "", "💰 공격할 때마다", "치명타 전 레이드매력의 " + GLOBAL_CONFIG.serverRaid.rewards.attackPercent + "%를 포인트로 획득!", "레이드매력에 큐브·레벨·퀘스트 보너스를 반영합니다.", "━━━━━━━━━━━━", "🏆 우리 서버를 우승으로!", "", "서버원들이 호월이에게 가한", "누적 데미지를 합산하여", "최종 서버 순위를 결정합니다.", "", "🎁 서버 순위별 참가자 보상"];
     if (round) lines.splice(5, 0, buildServerRaidTimeNotice(round));
     for (var i = 0; i < GLOBAL_CONFIG.serverRaid.rewards.ranks.length; i++) lines.push((i + 1) + "위: " + numberWithCommas(GLOBAL_CONFIG.serverRaid.rewards.ranks[i]) + " 포인트");
+    if (round && getServerRaidRoundPolicy(round).ticketAttacks > 0) lines.push("", "👾 서공권 1개당 추가 공격 1회", "기본 " + getServerRaidRoundPolicy(round).attacks + "회 이후 최대 " + getServerRaidRoundPolicy(round).ticketAttacks + "회 추가 공격할 수 있습니다.", "⚠️ 사용 가능한 공격 소진 후 초과 3회는 무료이며", "4회째부터 매번 1천만 포인트가 차감됩니다.", "⚖️ 2~10위 서버의 실제 공격 참여자는", "순위별 서공권 1~4개를 추가로 받습니다.");
     lines.push("", "※ 해당 회차 1회 이상 공격한", "참가자에게 인당 지급됩니다.", "※ 공격 보상과 순위 보상은 별도 지급!", "※ 동점은 공동 순위·동일 보상입니다.", "", "⭐ 우승 서버는 누적 우승 횟수 +1", "서버명 옆에 우승 기록이 남습니다!", "━━━━━━━━━━━━", "👉 공격 참여: /레이드공격", "", "우리 서버의 이름으로 도전하세요! 🐹");
     return lines.join("\n");
 }
@@ -33315,6 +33651,10 @@ function buildServerRaidAttackMessage(data, participant, attack, nick) {
     for (var i = 0; i < rows.length; i++) if (rows[i].id === participant.server) server = rows[i];
     var percent = getServerRaidAttackPercent(attack); // 현재 설정 대신 이 공격의 실제 지급 비율을 표시
     var rewardGuide = attack.rewardBasis === "damage" ? "공격 데미지의 " + percent + "% 지급 (당시 기준)" : "레이드매력의 " + percent + "% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
+    if (attack.ticketHeldAfter !== undefined) {
+        var policy = getServerRaidRoundPolicy(round);
+        return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n⚪ 무속성 · 속성 상성 미적용\n━━━━━━━━━━━━\n⚔️ " + nick + "의 공격!\n\n💥 공격 결과: " + numberWithCommas(attack.D) + "💞\n├ 👾레이드매력: " + numberWithCommas(attack.R) + "💞\n" + (attack.critical ? "└ 🔥치명타 발동!" : "└ 일반 공격 · 치명타 미발동") + "\n\n💰 획득: 🅟" + numberWithCommas(attack.P) + "\n└ " + rewardGuide + "\n\n🎟️ 기본 " + attack.remaining + "/" + policy.attacks + " · 추가 " + attack.additionalRemaining + "/" + policy.ticketAttacks + " 남음\n👾 서공권: " + numberWithCommas(attack.ticketHeldAfter) + "개 보유 · " + (attack.ticketUsed ? "이번 -1개" : "소모 없음") + "\n━━━━━━━━━━━━\n🏰 " + formatServerRaidServer(data, participant.server) + "\n🏆 현재 순위: " + server.rank + "위\n👾 서버 누적: " + numberWithCommas(server.damage) + "💞";
+    }
     return "👑 서버 레이드대전 👑\n🐹 호월이를 잡아라!\n⚪ 무속성 · 속성 상성 미적용\n━━━━━━━━━━━━\n⚔️ " + nick + "의 공격!\n\n💥 공격 데미지: " + numberWithCommas(attack.D) + "💞\n├ 레이드매력: " + numberWithCommas(attack.R) + "💞\n" + (attack.critical ? "└ 🔥 치명타 발동!" : "└ 일반 공격 · 치명타 미발동") + "\n\n💰 획득 포인트: 🅟" + numberWithCommas(attack.P) + "\n└ " + rewardGuide + "\n\n🎟️ 남은 공격: " + attack.remaining + "/5회\n━━━━━━━━━━━━\n🏰 우리 서버 현황\n" + formatServerRaidServer(data, participant.server) + "\n\n🏆 현재 서버 순위: " + server.rank + "위\n👾 서버 누적 데미지: " + numberWithCommas(server.damage) + "💞\n└ 이번 공격까지 합산된 기록입니다.";
 }
 
@@ -33351,10 +33691,21 @@ function buildServerRaidResultNotice(data, round) {
     for (var r = 0; r < round.results.length; r++) {
         var row = round.results[r];
         included.push(row.id);
-        lines.push(row.rank + "위 " + formatServerRaidServer(data, row.id), "👾 누적 데미지: " + numberWithCommas(row.damage) + "💞", "💰 상금: " + formatServerRaidPrize(getServerRaidResultPrize(round, row)), "");
+        lines.push(row.rank + "위 " + formatServerRaidServer(data, row.id), "👾 누적 데미지: " + numberWithCommas(row.damage) + "💞", "💰 상금: " + formatServerRaidPrize(getServerRaidResultPrize(round, row)));
+        if (row.rank > 1 && row.handicapReward > 0) {
+            var paidMembers = 0; // 삭제 계정 등 미지급 대상이 있으면 실제 지급 인원만 안내
+            for (var m = 0; m < row.members.length; m++) {
+                var paidParticipant = round.accounts[row.members[m].id];
+                if (paidParticipant && paidParticipant.paid && paidParticipant.handicapPaid === row.handicapReward) paidMembers++;
+            }
+            if (paidMembers > 0) lines.push("⚖️ 핸디캡 보상: 서공권👾 " + row.handicapReward + "개");
+            if (paidMembers < row.members.length) lines.push("└ 핸디캡 실제 지급: " + paidMembers + "/" + row.members.length + "명");
+        }
+        lines.push("");
     }
     for (var s = 0; s < GLOBAL_CONFIG.serverRaid.servers.length; s++) if (included.indexOf(GLOBAL_CONFIG.serverRaid.servers[s]) === -1) lines.push("미참여 " + formatServerRaidServer(data, GLOBAL_CONFIG.serverRaid.servers[s]));
     lines.push("└ 미참여 서버는 상금이 없습니다.", "━━━━━━━━━━━━", "📌 상금 지급 안내", "• 이번 대전에 1회 이상 공격한 참여자에게 1인당 지급됩니다.", "• 공격 시 획득한 포인트와 별도로 지급됩니다.");
+    if (getServerRaidRoundPolicy(round).handicapRanks.length) lines.push("", "⚖️ 핸디캡 보상", "2~10위 서버에서 이번 대전에", "1회 이상 공격한 유저에게 서공권👾을 지급합니다.", "2~3위 1개 · 4~6위 2개", "7~9위 3개 · 10위 4개");
     return lines.join("\n");
 }
 
@@ -33435,17 +33786,19 @@ function getServerRaidAttackRewardGuide(attacks) {
 }
 
 // 공통 누적 집계에서 본인의 데미지·기여도·순위를 추가하는 함수
-function appendServerRaidOwnRecord(lines, summary) {
+function appendServerRaidOwnRecord(lines, summary, showAttackCount) {
     if (!summary.own) { lines.push("참가 기록 없음"); return; }
-    lines.push("👾 데미지: " + numberWithCommas(summary.own.damage) + "💞", "📊 기여도: " + serverRaidPercent(summary.own.damage, summary.total), "🏅 순위: " + summary.own.rank + "위 / " + summary.rows.length + "명");
+    lines.push("👾 데미지: " + numberWithCommas(summary.own.damage) + "💞", "📊 기여도: " + serverRaidPercent(summary.own.damage, summary.total));
+    if (showAttackCount) lines.push("🎯 누적 공격: " + numberWithCommas(requireServerRaidSafeInteger(summary.own.attackCount, "누적 공격 횟수")) + "회");
+    lines.push("🏅 순위: " + summary.own.rank + "위 / " + summary.rows.length + "명");
 }
 
 // 누적 기록과 최근 참가·실지급 보상을 전체보기로 구분하는 함수
 function buildServerRaidPersonalRecord(data, user, nick) {
     var summary = buildServerRaidCumulativeRecord(data, user), view = getServerRaidLatestRecord(data, user);
     var lines = ["👑 서버 레이드대전 👑", "📋 내 레이드 기록", "━━━━━━━━━━━━━", nick, "", "📊 내 누적 기록"];
-    appendServerRaidOwnRecord(lines, summary);
-    lines.push("━━━━━━━━━━━━━", "👉 서버 기록: /서버레이드순위");
+    appendServerRaidOwnRecord(lines, summary, true);
+    lines.push("━━━━━━━━━━━━━", "👉 서버 기록: /레이드순위");
     if (!view) { lines.push("", "아직 참가 기록이 없습니다."); return lines.join("\n"); }
     var latest = view.record;
     var complete = view.state === "DONE" && latest.paid === true; // 실제 지급이 확인된 완료 회차만 합계를 확정 표시
@@ -33465,7 +33818,7 @@ function buildServerRaidServerRecord(data, user, petData, guildData) {
     var wins = data.serverRaid && data.serverRaid.wins[server] || 0;
     var lines = ["👑 서버 레이드대전 👑", "🏆 서버 누적 순위", "━━━━━━━━━━━━━", "🏰 " + formatServerRaidServer(data, server), "🏆 우승: " + wins + "회", "👥 누적 참가자: " + summary.rows.length + "명", "👾 누적: " + numberWithCommas(summary.total) + "💞", "━━━━━━━━━━━━━", "🙋 내 누적 기록", "[" + checkRank(data, petData, guildData, user) + "] 님", ""];
     appendServerRaidOwnRecord(lines, summary);
-    lines.push("━━━━━━━━━━━━━", "👉 내 기록: /레이드순위");
+    lines.push("━━━━━━━━━━━━━", "👉 내 기록: /레이드전적");
     if (!summary.rows.length) { lines.push("", "현재 소속 참가자의 누적 기록이 없습니다."); return lines.join("\n"); }
     lines.push("", "📂 전체 순위 펼쳐보기", allsee, "━━━━━━━━━━━━━", "👥 누적 기여도 순위", "");
     var medals = ["🥇", "🥈", "🥉"];
@@ -37091,7 +37444,7 @@ function buildBattleExperienceRewardMessage(experienceResult) {
 function buildAdventureBoosterDepletionMessage(data, petData, guildData, user, boosterResult) {
     var member = data && data.member ? data.member[user] : null;
     if (!member || Number(member.boostercnt) !== 0 || !boosterResult || boosterResult.usedBooster <= 0) return "";
-    return "[" + checkRank(data, petData, guildData, user) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.\n안내링크:";
+    return "[" + checkRank(data, petData, guildData, user) + "] 님의\n" + GLOBAL_CONFIG.level.boosterName + " 이(가)\n모두 소진되었습니다.\n안내링크:https://hoiland123.tistory.com/721";
 }
 
 // 퀘스트 완료 시 기본·티어·가호 경험치를 실제 지급량으로 표시하는 함수
@@ -38359,6 +38712,7 @@ function calculateCriticalDamageWithPet(pet, damage) {
  * @param {String} msg - 공지 메시지
  */
 function noticeMsg(msg, targetRooms) {
+    msg = formatNicknameRankMessage(msg);
     var ctx = getCurrentContext();
     var rooms = targetRooms || getNoticeTargetRooms(ctx);
     var successful = true;
@@ -38368,6 +38722,7 @@ function noticeMsg(msg, targetRooms) {
 
 // 대승급 공지를 원래 대화방과 중복되지 않게 전체 방에 전송하는 함수
 function noticeMsgExceptRoom(msg, originRoom) {
+    msg = formatNicknameRankMessage(msg);
     var ctx = getCurrentContext();
     if (ctx.isDev) {
         var devRoom = isDebuggerFlag ? testRoom : room8;
@@ -47222,6 +47577,7 @@ function buildPetSkillInfoMessage(skillInfo) {
     var skillTitle = formatPetSkillName(skillInfo.name) + (skillInfo.limitedEdition === true ? "[" + skillInfo.grade + "]" : "");
     var rateLabel = skillInfo.charmCondition === "creationMiniPet" || skillInfo.charmCondition === "eliteMiniPet" ? "획득 확률" : "확률";
     var skillRateLine = skillInfo.openable === false ? (skillInfo.showUnopenableRate === true ? "\n확률: /펫스킬오픈 획득 불가" : "") : "\n" + rateLabel + ": " + formatPetSkillRate(getPetSkillActualRate(skillInfo)) + "%";
+    if (skillInfo.hideRateInInfo === true) skillRateLine = "";
     var tierSkillInfoLine = buildTierPetSkillInfoLine(skillInfo);
     return skillTitle + "\n등급: " + skillInfo.grade + skillRateLine + "\n효과: " + skillInfo.effect + tierSkillInfoLine;
 }
@@ -49281,12 +49637,14 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     var guildCastlePercent = getGuildContributionCubeMemberPercent(data, guildData, user, "castle");
     var guildRaidPercent = getGuildContributionCubeMemberPercent(data, guildData, user, "raid");
     var adventureLevelPercent = getAdventureLevelCharmPercent(data && data.member && data.member[user] ? data.member[user].lv : 1); // 모험가 레벨의 캐슬·레이드 공통 보너스
-    var castleWithLevel = calculateCastleExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 제외, 모험가 레벨 포함 캐슬매력
-    var raidWithLevel = calculateRaidExp(user, data, petData, homeData, petSkillData, true, null); // 홈뱃지·길드큐브 제외, 모험가 레벨 포함 레이드매력
-    var castleBase = removePercentWithExactCeil(castleWithLevel, adventureLevelPercent); // 정수 원본 캐슬매력 역산
-    var raidBase = removePercentWithExactCeil(raidWithLevel, adventureLevelPercent); // 정수 원본 레이드매력 역산
-    var castleTotalPercent = adventureLevelPercent + castleHomeDetail.appliedPercent + guildCastlePercent; // 레벨·홈뱃지·길드큐브 캐슬 합산 퍼센트
-    var raidTotalPercent = adventureLevelPercent + raidHomeDetail.appliedPercent + guildRaidPercent; // 레벨·홈뱃지·길드큐브 레이드 합산 퍼센트
+    var charmDetail = buildTotalExpTimeCheckDetail(user, data, petData, homeData, petSkillData, guildData); // 퍼센트 적용 전 실제 구성 합계와 상세 항목
+    var castleBase = charmDetail.castleBase; // 레벨·퀘스트·큐브 적용 전 캐슬매력 원본
+    var raidBase = charmDetail.raidBase; // 레벨·퀘스트·큐브 적용 전 레이드매력 원본
+    var questTotals = data && data.member && data.member[user] && data.member[user].adventureQuest ? data.member[user].adventureQuest.totals : null;
+    var castleQuestPercent = questTotals ? Number(questTotals.castlePercent) || 0 : 0;
+    var raidQuestPercent = questTotals ? Number(questTotals.raidPercent) || 0 : 0;
+    var castleTotalPercent = adventureLevelPercent + castleHomeDetail.appliedPercent + guildCastlePercent + castleQuestPercent; // 캐슬의 모든 합산 퍼센트
+    var raidTotalPercent = adventureLevelPercent + raidHomeDetail.appliedPercent + guildRaidPercent + raidQuestPercent; // 레이드의 모든 합산 퍼센트
     var expectedCastle = applyPercentWithExactFloor(castleBase, castleTotalPercent); // 표시 수식으로 재계산한 캐슬매력
     var expectedRaid = applyPercentWithExactFloor(raidBase, raidTotalPercent); // 표시 수식으로 재계산한 레이드매력
     var actualCastle = calculateCastleExp(user, data, petData, homeData, petSkillData, false, guildData);
@@ -49300,6 +49658,7 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     var premiumActive = isHoiPassPremiumActive(data, user);
     var lines = ["[🧪 매력 버프 적용 체크]", "대상: [" + checkRank(data, petData, guildData, user) + "] 님", "━━━━━━━━━━━━━━━"];
 
+    lines.push("봇 버전: ver_" + HoiBotVersion);
     lines.push("호패프리미엄: " + (premiumActive ? "ON" : "OFF"));
     lines.push("대표 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeIds[0] || "없음"));
     lines.push("보조 홈뱃지 ID: " + (castleHomeDetail.equippedBadgeIds[1] || "없음"));
@@ -49311,20 +49670,31 @@ function buildCharmBuffDebugMessage(data, petData, homeData, petSkillData, guild
     lines.push("가구: " + numberWithCommas(rawHomeExp) + (appliedHomeExp !== rawHomeExp ? " → " + numberWithCommas(appliedHomeExp) + " (인테리어 장인)" : ""));
     lines.push("펫강화: " + baseUpgradeLevel + "강 → " + actualUpgradeLevel + "강 / 종합매력 +" + numberWithCommas(upgradeCharm));
     lines.push("");
+    lines.push("[퍼센트 적용 전 상세]");
+    for (var detailIndex = 0; detailIndex < charmDetail.rows.length; detailIndex++) {
+        var detailRow = charmDetail.rows[detailIndex]; // 시간과 관계없이 출력할 기본 매력 구성 항목
+        if (detailRow.label.indexOf("-최종합계") !== -1 || detailRow.label === "강화 보너스") continue;
+        lines.push(detailRow.label + ": " + numberWithCommas(detailRow.value));
+    }
+    lines.push("");
     lines.push("[캐슬매력]");
     lines.push("기본 매력: " + numberWithCommas(castleBase));
-    lines.push("모험가 레벨: +" + formatHomeBadgeCubeCardPercent(adventureLevelPercent));
+    lines.push("모험가 레벨: +" + formatAdventureLevelPercent(adventureLevelPercent) + "%");
+    lines.push("퀘스트: +" + formatAdventureQuestPercent(castleQuestPercent) + "%");
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(castleHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildCastlePercent));
-    lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(castleTotalPercent));
+    lines.push("합산 버프: +" + formatAdventureQuestPercent(castleTotalPercent) + "%");
+    lines.push("계산식: 내림(" + numberWithCommas(castleBase) + " × (1 + " + formatAdventureQuestPercent(castleTotalPercent) + " / 100))");
     lines.push("계산 검증: " + numberWithCommas(expectedCastle) + " / 공용함수 " + numberWithCommas(actualCastle) + (expectedCastle === actualCastle ? " [✅일치]" : " [❌불일치]"));
     lines.push("");
     lines.push("[레이드매력]");
     lines.push("기본 매력: " + numberWithCommas(raidBase));
-    lines.push("모험가 레벨: +" + formatHomeBadgeCubeCardPercent(adventureLevelPercent));
+    lines.push("모험가 레벨: +" + formatAdventureLevelPercent(adventureLevelPercent) + "%");
+    lines.push("퀘스트: +" + formatAdventureQuestPercent(raidQuestPercent) + "%");
     lines.push("홈뱃지: " + formatHomeBadgeCubeDebugOptionFormula(raidHomeDetail));
     lines.push("길드큐브: +" + formatHomeBadgeCubeCardPercent(guildRaidPercent));
-    lines.push("합산 버프: +" + formatHomeBadgeCubeCardPercent(raidTotalPercent));
+    lines.push("합산 버프: +" + formatAdventureQuestPercent(raidTotalPercent) + "%");
+    lines.push("계산식: 내림(" + numberWithCommas(raidBase) + " × (1 + " + formatAdventureQuestPercent(raidTotalPercent) + " / 100))");
     lines.push("계산 검증: " + numberWithCommas(expectedRaid) + " / 공용함수 " + numberWithCommas(actualRaid) + (expectedRaid === actualRaid ? " [✅일치]" : " [❌불일치]"));
     lines.push("");
     lines.push("[종합매력]");
@@ -51618,7 +51988,10 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData, guildD
 function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillData, guildData) {
     var result = {
         total: 0,
-        lines: []
+        lines: [],
+        castleBase: 0, // 퍼센트 적용 전 캐슬매력 합계
+        raidBase: 0, // 퍼센트 적용 전 레이드매력 합계
+        rows: [] // 계산 시간과 무관한 상세 매력 구성 항목
     };
     if (!petData || !petData[sender]) return result;
 
@@ -51651,7 +52024,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     var castleItemExp = measure("캐슬-공격아이템", function () {
         return calculateCastleItem(sender, data) || 0;
     });
-    var castleEquipmentExp = measure("캐슬-정령/반지/가방", function () {
+    var castleEquipmentExp = measure("캐슬-정령/반지/펜던트/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { castleExp: 0 };
         return itemInfo.castleExp || 0;
     });
@@ -51674,7 +52047,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     });
     var castleBase = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp; // 퍼센트 적용 전 진단 합계
 
-    var raidEquipmentExp = measure("레이드-정령/반지/가방", function () {
+    var raidEquipmentExp = measure("레이드-정령/반지/펜던트/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { raidExp: 0 };
         return itemInfo.raidExp || 0;
     });
@@ -51705,6 +52078,9 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
 
     result.total = parseInt(castleTotal + raidTotal + upgradeBonus, 10);
     if (isNaN(result.total)) result.total = 0;
+    result.castleBase = castleBase;
+    result.raidBase = raidBase;
+    result.rows = rows;
     result.lines.push("캐슬 합계: " + numberWithCommas(castleTotal) + "💕");
     result.lines.push("레이드 합계: " + numberWithCommas(raidTotal) + "💕");
     result.lines.push("퍼센트 적용 전: 캐슬 " + numberWithCommas(castleBase) + "💕 · 레이드 " + numberWithCommas(raidBase) + "💕");
@@ -52253,6 +52629,7 @@ function buildAdventureStarterCompleteMessage(user, petName, intimacyGranted, me
         "🐾 " + petName + "의 기본 세팅 완료!\n" +
         "📙 펫스킬 학개론 장착 완료!\n" +
         (intimacyGranted ? "🐾 친밀도 Lv.300 (매력 330,000💕) 지원 완료!\n" : "") +
+        (memberRewardsGranted ? "✨ 호월신의 가호: " + numberWithCommas(GLOBAL_CONFIG.adventureStarter.boosters) + "개 지급!\n" : "") +
         (additionalItemLines ? "🎁 추가 스타터 아이템\n" + additionalItemLines : "") +
         "━━━━━━━━━━━━━━━\n" +
         "🐾 먼저, 함께할 펫을 만나보세요!\n\n" +
@@ -52334,11 +52711,11 @@ function getAdventureStarterRecoveryStatus(member) {
     var missing = []; // 원래 지급량 대비 회수할 수 없는 항목
     var invalid = []; // 음수·소수 등 데이터 오류 항목
     var points = getAdventureStarterRecoverableCount(member.point, starter.points); // 실제 회수 가능한 포인트
-    var boosters = getAdventureStarterRecoverableCount(member.boostercnt, starter.boosters); // 실제 회수 가능한 가호
+    var boosters = getAdventureStarterRecoverableCount(member.boostercnt, starter.legacyRecoveryBoosters); // 실제 회수 가능한 과거 가호
     if (points === null) invalid.push("포인트");
     else if (points < starter.points) missing.push("포인트 " + points + "/" + starter.points);
     if (boosters === null) invalid.push("가호");
-    else if (boosters < starter.boosters) missing.push("가호 " + boosters + "/" + starter.boosters);
+    else if (boosters < starter.legacyRecoveryBoosters) missing.push("가호 " + boosters + "/" + starter.legacyRecoveryBoosters);
     var bag = member.bag && typeof member.bag === "object" ? member.bag : {};
     if (member.bag !== undefined && member.bag !== null && typeof member.bag !== "object") invalid.push("가방");
     var items = {}; // 아이템별 실제 회수 가능한 수량
@@ -52408,7 +52785,7 @@ function applyAdventureStarterRecovery(member, recoveredAt) {
         boosters: status.boosters,
         items: recoveredItems,
         missingPoints: starter.points - status.points,
-        missingBoosters: starter.boosters - status.boosters,
+        missingBoosters: starter.legacyRecoveryBoosters - status.boosters,
         missingItems: missingItems
     };
     return true;
@@ -52568,6 +52945,7 @@ function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
     if (!attendanceLightData || !attendanceLightData.users || !attendanceLightData.users[sender]) return false;
     var row = attendanceLightData.users[sender];
     var member = data.member[sender];
+    migrateLightSearchAuthenticationToMember(data, attendanceLightData, sender);
     var rowCnt = parseInt(row.cnt, 10) || 0;
     if (rowCnt > 0) member.cnt = (parseInt(member.cnt, 10) || 0) + rowCnt;
     if (row.recent) member.recent = row.recent;
@@ -52611,25 +52989,30 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
     var removed = [];
     var joined = [];
     var remained = [];
+    var authenticationMigrated = 0; // 중복 지급 없이 정식 계정으로 옮긴 인증 상태 수
 
     for (var name in attendanceLightData.users) {
         if (!attendanceLightData.users.hasOwnProperty(name)) continue;
         var row = attendanceLightData.users[name] || {};
         var dayDiff = getAttendanceDateDiff(row.recent, todayText);
+        var recentActivityDate = row.recent; // 정리 결과에 표시할 마지막 출첵 또는 채팅 인식일
+        var chatDayDiff = getAttendanceDateDiff(row.chatSeenDate, todayText); // 출석 없이 계속 채팅하는 미가입 기록의 유지 기간
+        if (chatDayDiff !== null && (dayDiff === null || chatDayDiff < dayDiff)) { dayDiff = chatDayDiff; recentActivityDate = row.chatSeenDate; }
         if (data && data.member && data.member[name]) {
+            if (migrateLightSearchAuthenticationToMember(data, attendanceLightData, name)) authenticationMigrated++;
             joined.push(name);
             delete attendanceLightData.users[name];
             continue;
         }
         if (dayDiff === null || dayDiff >= staleDays) {
-            removed.push({ name: name, recent: row.recent || "없음", days: dayDiff, server: row.server || "" });
+            removed.push({ name: name, recent: recentActivityDate || "없음", days: dayDiff, server: row.server || "" });
             delete attendanceLightData.users[name];
             continue;
         }
         remained.push({
             name: name,
             cnt: parseInt(row.cnt, 10) || 0,
-            recent: row.recent || "없음",
+            recent: recentActivityDate || "없음",
             days: dayDiff,
             server: row.server || ""
         });
@@ -52638,7 +53021,7 @@ function pruneLightAttendanceData(data, attendanceLightData, staleDays) {
     removed.sort(compareLightAttendanceRows);
     remained.sort(compareLightAttendanceRows);
 
-    return { removed: removed, joined: joined, remained: remained, staleDays: staleDays };
+    return { removed: removed, joined: joined, remained: remained, staleDays: staleDays, authenticationMigrated: authenticationMigrated };
 }
 
 // 지정 서버로 표시된 미가입 출첵 기록을 미확인 서버로 되돌리는 함수
@@ -52709,7 +53092,7 @@ function formatLightAttendanceServerName(row) {
 function buildLightAttendanceCleanupMessage(result) {
     var lines = [];
     lines.push("✅ 미가입 출첵 정리 완료");
-    lines.push("삭제 기준: 마지막 출첵 후 " + result.staleDays + "일 이상");
+    lines.push("삭제 기준: 마지막 출첵 또는 채팅 인식 후 " + result.staleDays + "일 이상");
     lines.push("자동삭제: " + result.removed.length + "명");
     lines.push("가입완료 정리: " + result.joined.length + "명");
     if (result.joined.length > 0) {
@@ -58679,6 +59062,224 @@ function formatKoreanShort(num) {
     }
 
     return numberWithCommas(num);
+}
+
+// 공백만 제거하여 검색어 저장·길이 검사·집계 기준을 통일하는 함수
+function normalizeSearchAuthenticationKeyword(text) {
+    return String(text || "").replace(/\s+/g, "");
+}
+
+// UTF-16 서로게이트 쌍을 한 글자로 계산하는 함수
+function countSearchAuthenticationCharacters(text) {
+    return text.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "_").length;
+}
+
+// 게임 가입과 무관하게 저장된 일반 유저 아이디를 인증 대상으로 확인하는 함수
+function isSearchAuthenticationTarget(name, member) {
+    return !!(member && typeof member === "object" && !Array.isArray(member) && /^[^\s]+ (남|여)$/.test(name));
+}
+
+// 기존 미가입 기록의 구조를 검증하는 함수
+function requireSearchAuthenticationLightData(lightData) {
+    if (!lightData || typeof lightData !== "object" || Array.isArray(lightData) || !lightData.users || typeof lightData.users !== "object" || Array.isArray(lightData.users)) throw new Error("검색인증 미가입 기록 형식 오류");
+    return lightData;
+}
+
+// 미가입 일반 채팅의 인식 날짜만 기록하고 출석 횟수·보상은 변경하지 않는 함수
+function recordSearchAuthenticationChat(lightData, sender, room) {
+    requireSearchAuthenticationLightData(lightData);
+    if (!/^[^\s]+ (남|여)$/.test(sender)) return false;
+    var today = getAttendanceKstDateKey();
+    var row = lightData.users[sender];
+    if (row !== undefined && !isSearchAuthenticationTarget(sender, row)) throw new Error("검색인증 미가입 유저 형식 오류");
+    if (!row) row = { cnt: 0, recent: "", today: 0 };
+    var changed = row.chatSeenDate !== today; // 채팅 내용 없이 날짜만 하루 1회 갱신
+    if (changed) row.chatSeenDate = today;
+    if (!row.server && roomToServer[room]) { row.server = roomToServer[room]; changed = true; }
+    if (changed) lightData.users[sender] = row;
+    return changed;
+}
+
+// 가입·미가입 저장소를 함께 확인하고 같은 아이디의 인증 상태를 중복 검사하는 함수
+function getSearchAuthenticationTarget(data, lightData, target) {
+    requireSearchAuthenticationLightData(lightData);
+    var member = Object.prototype.hasOwnProperty.call(data.member, target) ? data.member[target] : null;
+    var light = Object.prototype.hasOwnProperty.call(lightData.users, target) ? lightData.users[target] : null;
+    var row = member || light;
+    if (!isSearchAuthenticationTarget(target, row)) return null;
+    return { row: row, lightTarget: !member, completed: !!((member && member.voicecheck) || (light && light.voicecheck)) };
+}
+
+// 미가입 인증 상태를 가입 계정으로 옮기며 보상과 집계는 다시 지급하지 않는 함수
+function migrateLightSearchAuthenticationToMember(data, lightData, user) {
+    var member = data && data.member && data.member[user];
+    var light = lightData && lightData.users && lightData.users[user];
+    if (!member || !light || !light.voicecheck || member.voicecheck) return false;
+    member.voicecheck = light.voicecheck;
+    if (light.searchAuthenticationRecord) member.searchAuthenticationRecord = light.searchAuthenticationRecord;
+    return true;
+}
+
+// 재화와 누적 집계의 비음수 안전 정수를 검증하는 함수
+function isSearchAuthenticationCount(value) {
+    return typeof value === "number" && isFinite(value) && value >= 0 && Math.floor(value) === value && value <= 9007199254740991;
+}
+
+// 인증 상태·관리자 실적·검색어 횟수·가방 가호 아이템을 함께 갱신하는 함수
+function applySearchAuthentication(data, target, operator, rawKeyword, lightData) {
+    var found = getSearchAuthenticationTarget(data, lightData, target), admin = data.member[operator];
+    if (!found) return { ok: false, message: "채팅 기록이 확인된 신규 유저만 검색인증할 수 있습니다." };
+    if (found.completed) return { ok: false, message: "이미 검색인증이 완료된 유저입니다." };
+    var member = found.row;
+    var keyword = normalizeSearchAuthenticationKeyword(rawKeyword);
+    if (!keyword) return { ok: false, message: "검색 내용을 입력해 주세요. 지인 소개로 들어왔다면 ‘지인소개’로 입력해 주세요." };
+    if (countSearchAuthenticationCharacters(keyword) > GLOBAL_CONFIG.searchAuthentication.maxKeywordLength) return { ok: false, message: "검색 내용은 공백 제외 최대 10글자까지 등록할 수 있습니다." };
+    var stats = admin.searchAuthentication || { count: 0, diamonds: 0, boosters: 0 };
+    var store = data.searchAuthentication || { keywords: [] };
+    if (!(store.keywords instanceof Array)) throw new Error("검색인증 집계 형식 오류");
+    var keywordRow = null;
+    for (var i = 0; i < store.keywords.length; i++) {
+        if (store.keywords[i].keyword === keyword) { keywordRow = store.keywords[i]; break; }
+    }
+    var reward = GLOBAL_CONFIG.searchAuthentication.boosterReward;
+    var oldBoosters = stats.boosters === undefined ? 0 : stats.boosters; // 보상 변경 전 실적에는 가호 지급 이력이 없음
+    var rewardItem = GLOBAL_CONFIG.level.boosterItemName;
+    var bag = admin.bag === undefined ? {} : admin.bag;
+    if (!bag || typeof bag !== "object" || Array.isArray(bag)) throw new Error("검색인증 관리자 가방 형식 오류");
+    var itemCount = Object.prototype.hasOwnProperty.call(bag, rewardItem) ? bag[rewardItem] : 0; // 기존 가방 아이템에 이번 보상만 합산
+    if (!isSearchAuthenticationCount(itemCount) ||
+        !isSearchAuthenticationCount(stats.count) || !isSearchAuthenticationCount(stats.diamonds) || !isSearchAuthenticationCount(oldBoosters) || !isSearchAuthenticationCount(reward) ||
+        !isSearchAuthenticationCount(keywordRow ? keywordRow.count : 0)) throw new Error("검색인증 기존 재화·집계 값 오류");
+    var nextItemCount = itemCount + reward; // /호여로 사용하기 전까지 가방에 보관할 수량
+    var nextCount = stats.count + 1;
+    var nextReward = oldBoosters + reward; // 보관·사용 여부와 무관한 실제 인증 보상 누계
+    var nextKeywordCount = (keywordRow ? keywordRow.count : 0) + 1;
+    if (!isSearchAuthenticationCount(nextItemCount) || !isSearchAuthenticationCount(nextCount) ||
+        !isSearchAuthenticationCount(nextReward) || !isSearchAuthenticationCount(nextKeywordCount)) throw new Error("검색인증 재화·집계 값 오류");
+    var operatorId = stats.id || String(java.util.UUID.randomUUID()); // 관리자 계정 객체와 함께 이동하는 실적 식별값
+    member.voicecheck = 1;
+    member.searchAuthenticationRecord = { keyword: keyword, operatorId: operatorId, operator: operator, completedAt: formatDateTime(new Date()) };
+    bag[rewardItem] = nextItemCount;
+    admin.bag = bag;
+    stats.id = operatorId;
+    stats.count = nextCount;
+    stats.boosters = nextReward;
+    admin.searchAuthentication = stats; // 과거 다이아 지급 이력은 그대로 보존
+    if (keywordRow) keywordRow.count = nextKeywordCount;
+    else store.keywords.push({ keyword: keyword, count: nextKeywordCount });
+    data.searchAuthentication = store;
+    return { ok: true, keyword: keyword, lightTarget: found.lightTarget, server: member.server };
+}
+
+// 같은 아이디를 중복 제외하여 가입·미가입 저장소의 미인증 대상만 반환하는 함수
+function getPendingSearchAuthenticationTargets(data, lightData) {
+    requireSearchAuthenticationLightData(lightData);
+    var names = Object.keys(data.member).concat(Object.keys(lightData.users)), seen = {}, targets = [];
+    for (var i = 0; i < names.length; i++) {
+        var name = names[i];
+        if (Object.prototype.hasOwnProperty.call(seen, name)) continue;
+        seen[name] = true;
+        var found = getSearchAuthenticationTarget(data, lightData, name);
+        if (found && !found.completed) targets.push({ name: name, found: found });
+    }
+    return targets;
+}
+
+// 미인증 유저를 기타로 일괄 인증하고 관리자 실적·보상은 지급하지 않는 함수
+function applyBulkSearchAuthentication(data, lightData, operator) {
+    var targets = getPendingSearchAuthenticationTargets(data, lightData);
+    if (!targets.length) return { count: 0, lightChanged: false };
+    var store = data.searchAuthentication || { keywords: [] }, keywordRow = null;
+    if (!(store.keywords instanceof Array)) throw new Error("검색인증 집계 형식 오류");
+    for (var k = 0; k < store.keywords.length; k++) if (store.keywords[k].keyword === GLOBAL_CONFIG.searchAuthentication.otherKeyword) { keywordRow = store.keywords[k]; break; }
+    var count = keywordRow ? keywordRow.count : 0;
+    var nextCount = count + targets.length; // 이번 일괄 인증을 검색어 기타 통계에만 합산
+    if (!isSearchAuthenticationCount(count) || !isSearchAuthenticationCount(nextCount)) throw new Error("검색인증 집계 값 오류");
+    var completedAt = formatDateTime(new Date()), lightChanged = false;
+    for (var i = 0; i < targets.length; i++) {
+        var target = targets[i];
+        target.found.row.voicecheck = 1;
+        target.found.row.searchAuthenticationRecord = { keyword: GLOBAL_CONFIG.searchAuthentication.otherKeyword, operator: operator, completedAt: completedAt, bulk: true };
+        if (target.found.lightTarget) lightChanged = true;
+    }
+    if (keywordRow) keywordRow.count = nextCount;
+    else store.keywords.push({ keyword: GLOBAL_CONFIG.searchAuthentication.otherKeyword, count: nextCount });
+    data.searchAuthentication = store;
+    return { count: targets.length, lightChanged: lightChanged };
+}
+
+// 관리자 인증 실적 통계만 초기화하고 계정 식별값과 보유 재화는 유지하는 함수
+function resetSearchAuthenticationAdminStats(data) {
+    var targets = []; // 전체 실적 형식을 먼저 검사한 뒤 일괄 초기화
+    for (var name in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, name)) continue;
+        var stats = data.member[name].searchAuthentication;
+        if (stats && (typeof stats !== "object" || Array.isArray(stats) || !isSearchAuthenticationCount(stats.count) || !isSearchAuthenticationCount(stats.diamonds) || !isSearchAuthenticationCount(stats.boosters === undefined ? 0 : stats.boosters))) throw new Error("검색인증 관리자 실적 형식 오류");
+        if (!stats || (stats.count === 0 && stats.diamonds === 0 && (stats.boosters === undefined || stats.boosters === 0))) continue;
+        targets.push(stats);
+    }
+    for (var i = 0; i < targets.length; i++) {
+        targets[i].count = 0;
+        targets[i].diamonds = 0;
+        targets[i].boosters = 0;
+    }
+    return targets.length;
+}
+
+// 등록 안내와 기존 미인증 대상 목록을 생성하는 함수
+function buildSearchAuthenticationManagementMessage(data, lightData) {
+    requireSearchAuthenticationLightData(lightData);
+    var lines = ["🎙️호월 검색 미인증목록🎙️", "━━━━━━━━━━━━", "🔎 무엇을 검색하고 들어오셨나요?",
+        "유저가 실제 검색한 내용을 확인해 주세요.", "", "📝 등록: /인증 아이디 사유",
+        "• 지인 소개로 들어왔다면 ‘지인소개’로 입력", "• 공백 제외 최대 10글자까지 등록",
+        "• 띄어쓰기만 다른 내용은 하나로 합산", "• 인증 1명당 관리자 " + GLOBAL_CONFIG.searchAuthentication.rewardLabel + " " + GLOBAL_CONFIG.searchAuthentication.boosterReward + "개 지급", "",
+        "💡 검색 내용 예시", "30대 · 2030대 · 수다 · 보룸 · 지인소개", "", "⌨️ 입력 예시",
+        "/인증 마치 남 30대 수다", "/인증 추추 여 지인 소개", "━━━━━━━━━━━━"];
+    var targets = getPendingSearchAuthenticationTargets(data, lightData);
+    if (!targets.length) lines.push("✅ 검색 미인증 유저가 없습니다.");
+    else {
+        lines.push(allsee, "📋 미인증목록 펼쳐보기", "");
+        for (var i = 0; i < targets.length; i++) {
+            var server = targets[i].found.row.server;
+            lines.push((i + 1) + ". [" + targets[i].name + (server ? "(" + normalizeHoiServerLabel(server) + ")" : "") + "]");
+        }
+    }
+    return lines.join("\n");
+}
+
+// 신규 검색인증 실적만 기존 인증순위와 같은 동률 이름순으로 출력하는 함수
+function buildSearchAuthenticationRankingMessage(data, adminRanking) {
+    var rows = [], lines;
+    if (adminRanking) {
+        lines = ["🏅 검색인증 관리자 순위 🏅", "📊 누적 검색인증 처리 인원 기준", "🎁 인증 1명당 " + GLOBAL_CONFIG.searchAuthentication.rewardLabel + " " + GLOBAL_CONFIG.searchAuthentication.boosterReward + "개 지급", "━━━━━━━━━━━━"];
+        for (var name in data.member) {
+            if (!Object.prototype.hasOwnProperty.call(data.member, name)) continue;
+            var stats = data.member[name].searchAuthentication;
+            if (!stats && name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin) stats = { count: 0, diamonds: 0, boosters: 0 };
+            if (stats && (stats.count > 0 || name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin)) rows.push({ name: name, count: stats.count, diamonds: stats.diamonds, boosters: stats.boosters || 0, server: data.member[name].server });
+        }
+    } else {
+        lines = ["📋 검색 순위 📋", "━━━━━━━━━━━━"];
+        var keywords = data.searchAuthentication ? data.searchAuthentication.keywords : [];
+        for (var k = 0; k < keywords.length; k++) rows.push({ name: keywords[k].keyword, count: keywords[k].count });
+    }
+    rows.sort(function (a, b) {
+        if (adminRanking && (a.name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin) !== (b.name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin)) return a.name === GLOBAL_CONFIG.searchAuthentication.bottomAdmin ? 1 : -1;
+        if (!adminRanking && (a.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword) !== (b.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword)) return a.name === GLOBAL_CONFIG.searchAuthentication.otherKeyword ? 1 : -1;
+        return b.count !== a.count ? b.count - a.count : a.name.localeCompare(b.name, "ko");
+    });
+    var visible = adminRanking ? GLOBAL_CONFIG.searchAuthentication.adminVisibleRows : GLOBAL_CONFIG.searchAuthentication.keywordVisibleRows;
+    if (!rows.length) lines.push(adminRanking ? "아직 검색인증 처리 기록이 없습니다." : "아직 등록된 검색인증 데이터가 없습니다.");
+    for (var i = 0; i < rows.length; i++) {
+        if (i === visible) lines.push(allsee);
+        lines.push((i + 1) + "등 " + rows[i].name + (adminRanking ? " · " + numberWithCommas(rows[i].count) + "명" : "(" + numberWithCommas(rows[i].count) + "회)"));
+        if (adminRanking) {
+            lines.push("└ " + (rows[i].server ? normalizeHoiServerLabel(rows[i].server) : "소속 서버 없음"), "└ 누적 가호 보상: ✨" + numberWithCommas(rows[i].boosters) + "개");
+            if (rows[i].diamonds > 0) lines.push("└ 이전 다이아 보상: 💎" + numberWithCommas(rows[i].diamonds) + "개");
+            lines.push("");
+        }
+    }
+    return lines.join("\n");
 }
 
 //인증순위

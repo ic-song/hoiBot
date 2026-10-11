@@ -375,7 +375,9 @@ assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFix
 assert.strictEqual(starterFixture.member.newbie.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], 1);
 assert.strictEqual(starterContext.applyAdventureStarterIntimacyReward(starterFixture, "newbie"), false);
 assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "newbie"), true);
+assert.strictEqual(starterFixture.member.newbie.boostercnt, 30000);
 assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "newbie"), false);
+assert.strictEqual(starterFixture.member.newbie.boostercnt, 30000);
 assert.strictEqual(starterFixture.member.newbie.adventureOnboarding.receipts.memberRewards, true);
 assert.strictEqual(starterFixture.member.newbie.bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], 1);
 assert.strictEqual(starterContext.applyAdventureStarterMemberRewards(starterFixture, "existing"), false);

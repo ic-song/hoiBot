@@ -28,7 +28,9 @@ vm.createContext(configContext);
 vm.runInContext("this.mainStarter = ({" + main.slice(configStart, configEnd) + "}).adventureStarter;", configContext);
 vm.runInContext("this.infoStarter = ({" + info.slice(infoStart, infoEnd) + "}).starterRecovery;", configContext);
 const starter = JSON.parse(JSON.stringify(configContext.mainStarter));
-assert.deepStrictEqual({ points: starter.points, boosters: starter.boosters, items: starter.items }, JSON.parse(JSON.stringify(configContext.infoStarter)), "MAIN·Info 과거 회수 기준 일치");
+assert.strictEqual(starter.boosters, 30000, "신규 가입 지급량");
+assert.strictEqual(starter.legacyRecoveryBoosters, 1000, "과거 회수 한도 유지");
+assert.deepStrictEqual({ points: starter.points, boosters: starter.legacyRecoveryBoosters, items: starter.items }, JSON.parse(JSON.stringify(configContext.infoStarter)), "MAIN·Info 과거 회수 기준 일치");
 assert.strictEqual(starter.items.length, 17);
 
 const replies = [];
@@ -38,7 +40,7 @@ for (const item of starter.items) fullBag[item[0]] = item[1];
 function member(bag = fullBag) {
     return {
         point: starter.points,
-        boostercnt: starter.boosters,
+        boostercnt: starter.legacyRecoveryBoosters,
         bag: Object.assign({ "펫 친밀도🐾 [Lv.300](0/1000)+330000💕": 1, "펜던트 강화석📿": 7 }, bag),
         adventureQuest: { currentStage: 2, receipts: { starterMemberRewards: true } }
     };
@@ -52,6 +54,7 @@ const members = {
 };
 members["회수가능"].point += 123;
 members["잔액부족"].point = 10000000000;
+members["회수가능"].boostercnt = 31000;
 members["잔액부족"].boostercnt = 500;
 const context = {
     GLOBAL_CONFIG: { adventureStarter: starter },
@@ -122,7 +125,7 @@ assert.strictEqual(saves, 1);
 assert(replies[0].includes("처리 완료: 4명"));
 assert(replies[0].includes("전액 회수: 2명"));
 assert.strictEqual(members["회수가능"].point, 123);
-assert.strictEqual(members["회수가능"].boostercnt, 0);
+assert.strictEqual(members["회수가능"].boostercnt, 30000, "보유 가호가 많아도 과거 지급분 1,000개만 회수");
 assert.strictEqual(members["회수가능"].bag["땅문서📜"], 1);
 assert.strictEqual(members["회수가능"].bag["펜던트 강화석📿"], 7, "새 추가 지급 재료를 과거 회수에서 차감하지 않음");
 assert.strictEqual(members["회수가능"].bag["펫 친밀도🐾 [Lv.300](0/1000)+330000💕"], 1);
