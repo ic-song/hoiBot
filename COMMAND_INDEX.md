@@ -6925,9 +6925,14 @@ Status: VERIFIED
 - `cleanupDeletedAccountResiduals`
 - `collectDeletedAccountNames`
 - `removeDeletedAccountBoardRows`
+- `getMemberSplitMarker`, `createMemberSplitMigrationStores`, `verifyMemberSplitMigrationSource`, `completeMemberSplitMigration`
+- Storage utilities: `attachMemberSplitStores`, `buildMemberSplitSavePlan`, `writeMemberSplitSlot`, `readPublishedMemberSplitStore`, `preserveMemberSplitBackupStores`
 
 ## Data Usage
 
+- `data.migrations.memberStorageSplit20261012`: split phase, immutable original backup path, published raid/log revisions
+- `serverRaidData.json` / `serverRaidData_next.json`: full `serverRaid`; member retains only current locking state, generation/sequence, wins and pending-notice summary
+- `memberOperationLogs.json` / `memberOperationLogs_next.json`: `supportPassPayoutLogs`, `guildTerritoryAutomationLogs`, `territoryPassAuditLogs`, `petMusouAutomationLogs`
 - `homeData[*].furnitureBag`
 - `placedFurnitureData[*]` after separation, with legacy home fallback before separation
 - `data.member[*].bag`
@@ -6962,6 +6967,10 @@ Status: VERIFIED
 
 ## Save Flow
 
+- Before existing cleanup, write an immutable full-member backup, persist `COPYING` with the original fields retained, copy and read-verify both external stores, then publish `COMPLETE` and remove only the copied fields. Durable checkpoints separate migration from normal cleanup.
+- Completed member loads attach log arrays and save context as non-enumerable properties. Raid command entry, locked game-input entry and the raid timer request `loadJsonFile(filePath, "raid")`; ordinary member reads retain the summary.
+- `saveJsonFile(data, filePath)` writes changed external stores to alternating revision slots before publishing member references. Transaction snapshots restore overwritten slots/delete newly created slots on failure. Stale references are rejected.
+- Member `_back` / `_back2` snapshots preserve matching raid/log generations; valid slots with a different revision may resolve an exact matching generation backup. Missing/invalid active files fail visibly. Split files are never replaced with empty data or silently repaired.
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
 - Saves separated placed furniture cleanup through `saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath)` when the detail file exists
 - Saves member data through `saveJsonFile(data, filePath)`
@@ -6973,6 +6982,10 @@ Status: VERIFIED
 ## AI Notes
 
 - Admin/Master-only maintenance command.
+- Exact `/데이터정리` retains existing room-scoped permissions; `dev/데이터정리` migrates only DEV paths. Initial migration is blocked during raid preparation, progress and settlement.
+- During `COPYING`, other member loads are blocked; bootstrap reads only permissions, and the authorized cleanup command can resume. Re-running after completion skips migration and performs ordinary cleanup.
+- Migration preserves members, currencies, inventory, quest data, raid history/receipts/outbox and logs. Existing cleanup steps below still run and retain their previous deletion policies.
+- Completed migration requires the new main code. Code rollback requires restoring the matching pre-migration full member backup; do not pair a thin member snapshot with legacy code or omit companion files from backups.
 - Does not delete legacy `homeData[*].guestComments`.
 - Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
 - Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.

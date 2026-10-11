@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.626"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.627"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -881,6 +881,17 @@ folder.mkdirs();
 const DATA_ROOT_PATH = "/sdcard/호이랜드/";
 const DEV_DATA_ROOT_PATH = "/sdcard/호이랜드_dev/";
 const filePath = "/sdcard/호이랜드/member.json";
+// 초기 관리자 로드 전에도 필요한 회원 파일 분리 설정
+const MEMBER_STORAGE_SPLIT_CONFIG = {
+    key: "memberStorageSplit20261012", version: 1,
+    raidPath: "/sdcard/호이랜드/serverRaidData.json",
+    raidNextPath: "/sdcard/호이랜드/serverRaidData_next.json",
+    logsPath: "/sdcard/호이랜드/memberOperationLogs.json",
+    logsNextPath: "/sdcard/호이랜드/memberOperationLogs_next.json",
+    backupPrefix: "/sdcard/호이랜드/member_storage_split_backup_",
+    logKeys: ["supportPassPayoutLogs", "guildTerritoryAutomationLogs", "territoryPassAuditLogs", "petMusouAutomationLogs"]
+};
+var memberSplitBackupCache = {}; // 분리 파일의 동일 세대 백업을 반복 복사하지 않음
 const boardPath = "/sdcard/호이랜드/board.json";
 const carrotBoardPath = "/sdcard/호이랜드/carrotBoard.json";
 const itemInfoPath = "/sdcard/호이랜드/itemInfo.json";
@@ -967,7 +978,7 @@ USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
 var protectedJsonSaveLocks = {}; // 보호 JSON과 직전 백업 경로별 저장 잠금
-let initData = loadJsonFile(filePath);
+let initData = loadJsonFile(filePath, "bootstrap");
 let Master = initData.master;
 let Admins = getAdminPayoutUsers(initData);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
@@ -2833,13 +2844,72 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("❌ DEV 데이터가 준비되지 않았습니다. Master가 dev/데이터백업을 먼저 실행해 주세요.");
             return;
         }
-        var data = loadJsonFile(filePath);
+        var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
+        var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
+        var memberStorageMigrationResult = null;
+        // 파일 분리를 먼저 확정한 뒤 기존 데이터 정리 단계를 그대로 실행한다.
+        if (memberStorageCleanupAllowed && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
+            if (!data || !data.member) throw new Error("회원 원본 데이터가 없습니다.");
+            var memberStorageMarker = getMemberSplitMarker(data);
+            if (!memberStorageMarker || memberStorageMarker.phase !== "COMPLETE") {
+                if (isServerRaidLocked(data)) {
+                    replier.reply("❌ 레이드 진행·정산 중에는 파일을 분리할 수 없습니다. 종료 후 /데이터정리를 실행해 주세요.");
+                    return;
+                }
+                if (!memberStorageMarker) {
+                    for (var memberStoreKindIndex = 0; memberStoreKindIndex < 2; memberStoreKindIndex++) {
+                        var memberStoreKind = memberStoreKindIndex === 0 ? "raid" : "logs";
+                        for (var memberStoreSlot = 0; memberStoreSlot < 2; memberStoreSlot++) {
+                            var occupiedStorePath = getMemberSplitStorePath(memberStoreKind, memberStoreSlot);
+                            if (new java.io.File(occupiedStorePath).exists()) throw new Error("기존 분리 파일을 덮어쓸 수 없습니다: " + occupiedStorePath);
+                        }
+                    }
+                    var memberStorageId = String(java.util.UUID.randomUUID());
+                    createMemberSplitMigrationStores(data, { version: MEMBER_STORAGE_SPLIT_CONFIG.version, id: memberStorageId }); // 원본 구조가 잘못되면 복사 단계로 전환하지 않음
+                    var memberStorageBackupPath = resolveActiveDataPath(MEMBER_STORAGE_SPLIT_CONFIG.backupPrefix + memberStorageId + ".json");
+                    if (new java.io.File(memberStorageBackupPath).exists()) throw new Error("파일 분리 원본 백업이 이미 존재합니다.");
+                    var memberStorageBeforeBytes = getMemberSplitByteLength(data);
+                    writeVerifiedJsonFile(memberStorageBackupPath, JSON.stringify(data), true);
+                    memberStorageMarker = { version: MEMBER_STORAGE_SPLIT_CONFIG.version, id: memberStorageId, phase: "COPYING",
+                        backupPath: memberStorageBackupPath, beforeBytes: memberStorageBeforeBytes, startedAt: formatDateTime(new Date()) };
+                    if (!data.migrations) data.migrations = {};
+                    data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = memberStorageMarker;
+                    saveJsonFile(data, filePath);
+                    endDataSaveTransaction(); beginDataSaveTransaction(); // 복사 단계는 재시작 후에도 재개할 수 있도록 먼저 확정
+                }
+                var memberStorageOriginalBackup = loadJsonFile(memberStorageMarker.backupPath);
+                if (!memberStorageOriginalBackup || !memberStorageOriginalBackup.member) throw new Error("파일 분리 원본 백업을 확인할 수 없습니다.");
+                verifyMemberSplitMigrationSource(data, memberStorageOriginalBackup);
+                var memberStorageStores = createMemberSplitMigrationStores(data, memberStorageMarker);
+                var memberStorageKinds = ["raid", "logs"];
+                for (var memberStorageKindIndex = 0; memberStorageKindIndex < memberStorageKinds.length; memberStorageKindIndex++) {
+                    var memberStorageKind = memberStorageKinds[memberStorageKindIndex];
+                    var memberStorageDestination = getMemberSplitStorePath(memberStorageKind, 0);
+                    if (new java.io.File(memberStorageDestination).exists()) {
+                        var memberStoragePrevious = loadJsonFile(memberStorageDestination);
+                        if (!memberStoragePrevious || memberStoragePrevious.id !== memberStorageMarker.id || memberStoragePrevious.revision !== 0) throw new Error("다른 작업의 분리 파일은 덮어쓸 수 없습니다.");
+                    }
+                    saveJsonFile(memberStorageStores[memberStorageKind], memberStorageDestination, true);
+                    var memberStorageVerified = loadJsonFile(memberStorageDestination);
+                    if (JSON.stringify(memberStorageVerified) !== JSON.stringify(memberStorageStores[memberStorageKind])) throw new Error("회원 파일 분리 내용 검증 실패: " + memberStorageKind);
+                }
+                var memberStorageCompleted = completeMemberSplitMigration(data, memberStorageStores, formatDateTime(new Date()));
+                saveJsonFile(memberStorageCompleted, filePath);
+                endDataSaveTransaction(); beginDataSaveTransaction(); // 기존 정리 실패가 완료된 파일 분리를 되돌리지 않도록 확정
+                data = loadJsonFile(filePath);
+                memberStorageMigrationResult = { changed: true, beforeBytes: memberStorageMarker.beforeBytes, afterBytes: getMemberSplitByteLength(memberStorageCompleted),
+                    rounds: memberStorageStores.raid.data.history.length, receipts: Object.keys(memberStorageStores.raid.data.eventReceipts).length, notices: memberStorageStores.raid.data.outbox.length };
+            } else {
+                memberStorageMigrationResult = { changed: false };
+            }
+        }
         var raidCommand = isServerRaidCommand(msg);
         var raidLocked = isServerRaidLocked(data);
         if (raidLocked && msg === "/펫탐험자동정산") exploreInterval = false; // 차단된 자동 탐험이 다음 허용 명령에서 실행되지 않도록 예약 표시 정리
         // 일반 입력은 기존 작업을 재개하고, 레이드 명령은 운영 권한 검사 뒤 재개한다.
         if (!raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
         if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg) && !isServerRaidAdditionalCommand(msg))) {
+            if (data.serverRaid && data.serverRaid.storageSummary === true) data = loadJsonFile(filePath, "raid");
             var raidPetData = loadJsonFile(memberPetPath);
             var raidGuildData = loadJsonFile(guildPath);
             var raidNick = data.member && data.member[sender] ? "[" + checkRank(data, raidPetData, raidGuildData, sender) + "] 님" : "[" + sender + "] 님";
@@ -31350,6 +31420,14 @@ replier.reply(
 
                     var out = "🧹 /데이터정리 완료\n";
                     out += allsee + "\n";
+                    if (memberStorageMigrationResult) {
+                        out += "\n[회원 파일 분리]\n";
+                        if (memberStorageMigrationResult.changed) {
+                            out += "✅ 레이드 기록·운영 로그 분리 완료\n";
+                            out += "회원 파일: " + numberWithCommas(memberStorageMigrationResult.beforeBytes) + " → " + numberWithCommas(memberStorageMigrationResult.afterBytes) + "바이트\n";
+                            out += "보존 기록: 레이드 " + memberStorageMigrationResult.rounds + "회 / 처리 기록 " + memberStorageMigrationResult.receipts + "건 / 공지 " + memberStorageMigrationResult.notices + "건\n";
+                        } else out += "✅ 이미 분리되어 있어 다시 옮기지 않았습니다.\n";
+                    }
 
                     out += "[1] 펫홈 데이터 정리\n";
                     out += "display 삭제 : " + numberWithCommas(totalDisplayRemoved) + "개\n";
@@ -32490,8 +32568,217 @@ function getMissingDevDataFiles() {
     return missing;
 }
 
-// JSON 파일 로드 함수
-function loadJsonFile(path) {
+// 회원 파일 분리의 현재 단계와 파일 참조 정보를 확인하는 함수
+function getMemberSplitMarker(data) {
+    var marker = data && data.migrations && data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key];
+    if (marker === undefined) return null;
+    if (!marker || typeof marker !== "object" || marker.version !== MEMBER_STORAGE_SPLIT_CONFIG.version ||
+        (marker.phase !== "COPYING" && marker.phase !== "COMPLETE") || typeof marker.id !== "string" || !marker.id) throw new Error("잘못된 회원 파일 분리 상태입니다.");
+    if (marker.phase === "COMPLETE") {
+        for (var i = 0; i < 2; i++) {
+            var revision = i === 0 ? marker.raidRevision : marker.logsRevision;
+            if (typeof revision !== "number" || revision < 0 || revision > 9007199254740990 || Math.floor(revision) !== revision) throw new Error("잘못된 분리 파일 버전입니다.");
+        }
+    }
+    return marker;
+}
+
+// 공개된 버전에 따라 회원 분리 파일의 저장 슬롯을 선택하는 함수
+function getMemberSplitStorePath(kind, revision) {
+    var config = MEMBER_STORAGE_SPLIT_CONFIG;
+    return resolveActiveDataPath(kind === "raid" ? (revision % 2 ? config.raidNextPath : config.raidPath) : (revision % 2 ? config.logsNextPath : config.logsPath));
+}
+
+// 회원 백업과 같은 세대의 분리 파일 백업 경로를 반환하는 함수
+function getMemberSplitBackupPath(kind, generation) {
+    var base = kind === "raid" ? MEMBER_STORAGE_SPLIT_CONFIG.raidPath : MEMBER_STORAGE_SPLIT_CONFIG.logsPath;
+    return resolveActiveDataPath(base.substring(0, base.length - 5) + (generation === 2 ? "_back2.json" : "_back.json"));
+}
+
+// 분리 파일의 식별값과 필수 데이터 구조를 검증하는 함수
+function requireMemberSplitStore(store, kind) {
+    if (!store || store.version !== MEMBER_STORAGE_SPLIT_CONFIG.version || typeof store.id !== "string" || !store.id || typeof store.revision !== "number" ||
+        store.revision < 0 || store.revision > 9007199254740990 || Math.floor(store.revision) !== store.revision ||
+        !store.data || typeof store.data !== "object" || store.data instanceof Array) throw new Error("잘못된 회원 분리 파일입니다.");
+    if (kind === "raid") {
+        var raid = store.data;
+        if (!(raid.history instanceof Array) || !(raid.outbox instanceof Array) || !raid.eventReceipts || typeof raid.eventReceipts !== "object" || raid.eventReceipts instanceof Array ||
+            !raid.wins || typeof raid.wins !== "object" || raid.wins instanceof Array || typeof raid.generation !== "string" || typeof raid.sequence !== "number" ||
+            !isFinite(raid.sequence) || raid.sequence < 0 || Math.floor(raid.sequence) !== raid.sequence ||
+            (raid.current !== null && (!raid.current || typeof raid.current !== "object" || raid.current instanceof Array))) throw new Error("잘못된 레이드 분리 데이터입니다.");
+        for (var noticeIndex = 0; noticeIndex < raid.outbox.length; noticeIndex++) {
+            if (!raid.outbox[noticeIndex] || !(raid.outbox[noticeIndex].deliveries instanceof Array)) throw new Error("잘못된 레이드 공지 분리 데이터입니다.");
+            for (var deliveryIndex = 0; deliveryIndex < raid.outbox[noticeIndex].deliveries.length; deliveryIndex++) {
+                if (!raid.outbox[noticeIndex].deliveries[deliveryIndex] || typeof raid.outbox[noticeIndex].deliveries[deliveryIndex] !== "object") throw new Error("잘못된 레이드 공지 전송 데이터입니다.");
+            }
+        }
+    } else {
+        for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
+            if (!(store.data[MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i]] instanceof Array)) throw new Error("잘못된 운영 로그 분리 데이터입니다.");
+        }
+    }
+    return store;
+}
+
+// 분리 파일을 기본값이나 자동 복구로 대체하지 않고 엄격히 읽는 저장 계층 함수
+function readMemberSplitStore(path, kind) {
+    if (!new java.io.File(path).exists()) throw new Error("회원 분리 파일이 없습니다: " + path);
+    return requireMemberSplitStore(parseJsonContent(FileStream.read(path, "utf-8"), path), kind);
+}
+
+// 회원 파일이 참조하는 정확한 버전을 현재 슬롯 또는 같은 세대 백업에서 선택하는 함수
+function readPublishedMemberSplitStore(marker, kind) {
+    var revision = kind === "raid" ? marker.raidRevision : marker.logsRevision;
+    var store = readMemberSplitStore(getMemberSplitStorePath(kind, revision), kind);
+    if (store.id === marker.id && store.revision === revision) return store;
+    for (var generation = 1; generation <= 2; generation++) {
+        var backupPath = getMemberSplitBackupPath(kind, generation);
+        if (!new java.io.File(backupPath).exists()) continue;
+        var backup = readMemberSplitStore(backupPath, kind);
+        if (backup.id === marker.id && backup.revision === revision) return backup;
+    }
+    throw new Error("회원 파일과 분리 파일의 버전이 일치하지 않습니다: " + kind);
+}
+
+// 일반 정보 조회에 필요한 레이드 상태와 우승 횟수만 회원 파일에 남기는 함수
+function buildMemberSplitRaidSummary(raid) {
+    var current = raid.current; // 공격 상세를 제외한 현재 회차 잠금 상태
+    var summary = { storageSummary: true, generation: raid.generation, sequence: raid.sequence, completed: raid.completed,
+        wins: raid.wins, current: current ? { id: current.id, state: current.state, prepareUntil: current.prepareUntil, autoEndAt: current.autoEndAt } : null,
+        hasPendingNotices: false };
+    for (var i = 0; i < raid.outbox.length; i++) {
+        for (var j = 0; j < raid.outbox[i].deliveries.length; j++) {
+            var delivery = raid.outbox[i].deliveries[j];
+            if (!delivery.sent && !delivery.cancelled) summary.hasPendingNotices = true;
+        }
+    }
+    return summary;
+}
+
+// 회원 객체에 저장 대상에서 제외되는 운영 로그와 저장 컨텍스트를 연결하는 함수
+function attachMemberSplitStores(data, marker, logs, raid) {
+    var context = { logsText: JSON.stringify(logs.data), raidText: raid ? JSON.stringify(raid.data) : null };
+    for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
+        var key = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
+        if (Object.prototype.hasOwnProperty.call(data, key)) throw new Error("분리 완료 회원 파일에 운영 로그가 남아 있습니다: " + key);
+        Object.defineProperty(data, key, { value: logs.data[key], writable: true, configurable: true, enumerable: false });
+    }
+    if (raid) data.serverRaid = raid.data;
+    else if (!data.serverRaid || data.serverRaid.storageSummary !== true) throw new Error("회원 파일의 레이드 요약이 잘못되었습니다.");
+    Object.defineProperty(data, "__memberSplitContext", { value: context, writable: true, configurable: true, enumerable: false });
+    return data;
+}
+
+// 로그와 레이드 상세를 분리하고 변경된 저장 슬롯만 계산하는 함수
+function buildMemberSplitSavePlan(data) {
+    var marker = getMemberSplitMarker(data);
+    if (!marker || marker.phase !== "COMPLETE") return null;
+    var context = data.__memberSplitContext, member = {}, nextMarker = {}, logs = {}, raidText = null; // 공개 참조는 전체 저장 성공 후 갱신
+    for (var key in data) if (Object.prototype.hasOwnProperty.call(data, key) && MEMBER_STORAGE_SPLIT_CONFIG.logKeys.indexOf(key) === -1) member[key] = data[key];
+    for (var field in marker) if (Object.prototype.hasOwnProperty.call(marker, field)) nextMarker[field] = marker[field];
+    member.migrations = {};
+    for (var migrationKey in data.migrations) if (Object.prototype.hasOwnProperty.call(data.migrations, migrationKey)) member.migrations[migrationKey] = data.migrations[migrationKey];
+    if (!context) {
+        if (!data.serverRaid || data.serverRaid.storageSummary !== true) throw new Error("분리 데이터 저장 컨텍스트가 없습니다.");
+        for (var n = 0; n < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; n++) if (Object.prototype.hasOwnProperty.call(data, MEMBER_STORAGE_SPLIT_CONFIG.logKeys[n])) throw new Error("분리 로그 저장 컨텍스트가 없습니다.");
+        return { member: member, marker: nextMarker, writes: [] };
+    }
+    for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
+        var logKey = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
+        if (!(data[logKey] instanceof Array)) throw new Error("잘못된 운영 로그입니다: " + logKey);
+        logs[logKey] = data[logKey];
+    }
+    var logsText = JSON.stringify(logs), writes = [];
+    if (logsText !== context.logsText) {
+        nextMarker.logsRevision++;
+        var logStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.logsRevision, data: logs }, "logs");
+        writes.push({ path: getMemberSplitStorePath("logs", nextMarker.logsRevision), text: JSON.stringify(logStore) });
+    }
+    if (context.raidText !== null) {
+        raidText = JSON.stringify(data.serverRaid);
+        member.serverRaid = buildMemberSplitRaidSummary(data.serverRaid);
+        if (raidText !== context.raidText) {
+            nextMarker.raidRevision++;
+            var raidStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.raidRevision, data: data.serverRaid }, "raid");
+            writes.push({ path: getMemberSplitStorePath("raid", nextMarker.raidRevision), text: JSON.stringify(raidStore) });
+        }
+    } else if (!data.serverRaid || data.serverRaid.storageSummary !== true) throw new Error("레이드 상세를 읽지 않은 상태에서 레이드 저장을 요청했습니다.");
+    member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = nextMarker;
+    return { member: member, marker: nextMarker, writes: writes, logsText: logsText, raidText: raidText, context: context };
+}
+
+// 분리 저장 슬롯의 최초 상태를 트랜잭션에 등록하고 검증 저장하는 함수
+function writeMemberSplitSlot(path, text) {
+    var transaction = getDataSaveTransaction(), entry = transaction && transaction.entries[path];
+    if (transaction && transaction.failed) throw new Error("Data save transaction already failed");
+    if (transaction && !entry) {
+        var existed = new java.io.File(path).exists();
+        entry = { path: path, snapshotText: existed ? FileStream.read(path, "utf-8") : null, created: !existed, saved: false };
+        transaction.entries[path] = entry;
+        transaction.order.push(path);
+    }
+    writeVerifiedJsonFile(path, text, true);
+    if (entry) entry.saved = true;
+}
+
+// 회원 백업의 공개 버전과 정확히 맞는 레이드·로그 백업을 함께 보존하는 함수
+function preserveMemberSplitBackupStores(memberText, generation, sourceGeneration) {
+    var member = parseJsonContent(memberText, filePath), marker = getMemberSplitMarker(member);
+    if (!marker || marker.phase !== "COMPLETE") return;
+    var stamp = marker.id + ":" + marker.raidRevision + ":" + marker.logsRevision;
+    var cacheKey = resolveActiveDataPath(filePath) + ":" + generation;
+    if (memberSplitBackupCache[cacheKey] === stamp && new java.io.File(getMemberSplitBackupPath("raid", generation)).exists() && new java.io.File(getMemberSplitBackupPath("logs", generation)).exists()) return;
+    var kinds = ["raid", "logs"];
+    for (var i = 0; i < kinds.length; i++) {
+        var kind = kinds[i], revision = kind === "raid" ? marker.raidRevision : marker.logsRevision;
+        var store = sourceGeneration ? readMemberSplitStore(getMemberSplitBackupPath(kind, sourceGeneration), kind) : readPublishedMemberSplitStore(marker, kind);
+        if (store.id !== marker.id || store.revision !== revision) throw new Error("회원 백업과 분리 백업의 버전이 일치하지 않습니다.");
+        writeMemberSplitSlot(getMemberSplitBackupPath(kind, generation), JSON.stringify(store));
+    }
+    memberSplitBackupCache[cacheKey] = stamp;
+}
+
+// 회원 파일 분리 전후의 실제 UTF-8 저장 바이트 수를 구하는 함수
+function getMemberSplitByteLength(data) {
+    return new java.lang.String(JSON.stringify(data)).getBytes("UTF-8").length;
+}
+
+// 기존 회원 객체에서 레이드·운영 로그 분리 파일의 최초 내용을 구성하는 함수
+function createMemberSplitMigrationStores(data, marker) {
+    var raid = data.serverRaid || createServerRaidState(marker.id), logs = {};
+    for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
+        var key = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
+        logs[key] = data[key] === undefined ? [] : data[key];
+    }
+    return {
+        raid: requireMemberSplitStore({ version: marker.version, id: marker.id, revision: 0, data: raid }, "raid"),
+        logs: requireMemberSplitStore({ version: marker.version, id: marker.id, revision: 0, data: logs }, "logs")
+    };
+}
+
+// 재개 시 복사 중인 회원 데이터가 보존한 원본과 같은지 확인하는 함수
+function verifyMemberSplitMigrationSource(data, original) {
+    var source = JSON.parse(JSON.stringify(data));
+    delete source.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key];
+    if (!original.migrations && Object.keys(source.migrations).length === 0) delete source.migrations;
+    if (JSON.stringify(source) !== JSON.stringify(original)) throw new Error("복사 중인 회원 데이터가 원본 백업과 다릅니다. 파일을 확인해 주세요.");
+}
+
+// 검증된 분리 파일을 참조하도록 회원 객체의 공개 상태만 전환하는 함수
+function completeMemberSplitMigration(data, stores, completedAt) {
+    var member = JSON.parse(JSON.stringify(data)); // 분리 전 회원 정보·재화는 그대로 보존
+    var marker = member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key];
+    marker.phase = "COMPLETE";
+    marker.completedAt = completedAt;
+    marker.raidRevision = 0;
+    marker.logsRevision = 0;
+    member.serverRaid = buildMemberSplitRaidSummary(stores.raid.data);
+    for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) delete member[MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i]];
+    return member;
+}
+
+// 회원 분리 참조와 기존 DEV/PROD 경로를 확인해 JSON을 로드하는 함수
+function loadJsonFile(path, memberStoreMode) {
     var protectedLock = null;
     var transactionLockAcquired = false;
     try {
@@ -32510,12 +32797,24 @@ function loadJsonFile(path) {
         if (file.exists()) {
             let fileContent = FileStream.read(path, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             var loadedData = isProtectedManagedJsonPath(path) ? parseManagedJsonContent(fileContent, path) : parseJsonContent(fileContent, path);
+            if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
+                try {
+                    var splitMarker = getMemberSplitMarker(loadedData);
+                    if (splitMarker && splitMarker.phase === "COPYING" && memberStoreMode !== "migration" && memberStoreMode !== "bootstrap") throw new Error("회원 파일 분리가 중단되어 있습니다. 관리자·MASTER가 /데이터정리를 다시 실행해 주세요.");
+                    if (splitMarker && splitMarker.phase === "COMPLETE" && memberStoreMode !== "bootstrap") {
+                        var splitLogs = readPublishedMemberSplitStore(splitMarker, "logs");
+                        var splitRaid = memberStoreMode === "raid" ? readPublishedMemberSplitStore(splitMarker, "raid") : null;
+                        loadedData = attachMemberSplitStores(loadedData, splitMarker, splitLogs, splitRaid);
+                    }
+                } catch (splitLoadError) { splitLoadError.memberStorageFailure = true; throw splitLoadError; }
+            }
             if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = loadedData;
             return loadedData;
         }
         if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = null;
         return null;
     } catch (e) {
+        if (e.memberStorageFailure || /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(String(new java.io.File(path).getName()))) throw e;
         var errorObj = {
             system: "loadJsonFile",
             path: path,
@@ -32528,6 +32827,7 @@ function loadJsonFile(path) {
         debuggerLog(testRoom, "[ERROR : loadJsonFile]\n" + JSON.stringify(errorObj));
         var recoveryResult = restoreManagedJsonFromBackup(path, "loadJsonFile");
         if (recoveryResult) {
+            if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") return loadJsonFile(path, memberStoreMode); // 복구한 회원 파일도 같은 분리 참조를 엄격히 확인
             if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = recoveryResult.data;
             return recoveryResult.data;
         }
@@ -32694,6 +32994,7 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
 function isProtectedManagedJsonPath(path) {
     var fileName = String(new java.io.File(path).getName());
     return fileName === "member.json" || fileName === "member_back.json" ||
+        /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(fileName) ||
         fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
         fileName === "member_back2.json" || fileName === "member_pet_back2.json" ||
         fileName === "petSkillData.json" || fileName === "petSkillData_back.json" || fileName === "petSkillData_back2.json" ||
@@ -32703,6 +33004,8 @@ function isProtectedManagedJsonPath(path) {
 // 관리 JSON 내용을 엄격하게 파싱하고 파일별 필수 구조를 검증하는 함수
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
+    var splitFileName = String(new java.io.File(path).getName());
+    if (/^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(splitFileName)) return requireMemberSplitStore(parsedData, splitFileName.indexOf("serverRaidData") === 0 ? "raid" : "logs");
     if (String(new java.io.File(path).getName()).indexOf("petHomeActivityData") === 0) {
         return requirePetHomeActivityData(parsedData);
     }
@@ -32812,7 +33115,10 @@ function rollbackDataSaveTransaction() {
             var entry = transaction.entries[transaction.order[i]];
             if (!entry || !entry.saved) continue;
             try {
-                if (entry.snapshotText !== null) {
+                if (entry.created === true) {
+                    var createdFile = new java.io.File(entry.path);
+                    if (createdFile.exists() && !createdFile.delete()) throw new Error("새 분리 파일 롤백 삭제 실패: " + entry.path);
+                } else if (entry.snapshotText !== null) {
                     writeVerifiedJsonFile(entry.path, entry.snapshotText, true);
                 } else {
                     var recoveryResult = restoreManagedJsonFromBackup(entry.path, "transaction rollback");
@@ -32824,6 +33130,7 @@ function rollbackDataSaveTransaction() {
         }
     } finally {
         transaction.rollingBack = false;
+        if (typeof memberSplitBackupCache !== "undefined") memberSplitBackupCache = {};
     }
     if (rollbackErrors.length > 0) {
         throw new Error("Managed JSON rollback failed: " + rollbackErrors.join(", "));
@@ -32886,15 +33193,19 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
                             try {
                                 var currentPrimaryBackupText = FileStream.read(managedBackupPath, "utf-8");
                                 parseManagedJsonContent(currentPrimaryBackupText, managedBackupPath);
+                                if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentPrimaryBackupText, 2, 1);
                                 writeVerifiedJsonFile(secondaryManagedBackupPath, currentPrimaryBackupText, true);
                             } catch (backupRotationError) {
+                                if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" && getMemberSplitMarker(parseJsonContent(currentJsonText, path))) throw backupRotationError;
                                 debuggerLog("[WARN : managed backup rotation] " + managedBackupPath + " " + backupRotationError.toString());
                             }
                         }
                     } else if (!secondaryManagedBackupFile.exists()) {
+                        if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 2, 0);
                         writeVerifiedJsonFile(secondaryManagedBackupPath, currentJsonText, true);
                     }
                 }
+                if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 1, 0);
                 writeVerifiedJsonFile(managedBackupPath, currentJsonText, true);
             } else {
                 seedManagedBackup = true;
@@ -32946,21 +33257,43 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
             autoDailyBatch.dirtyPaths[path] = true;
             return;
         }
-        var jsonText = JSON.stringify(data);
+        var splitPlan = path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
+        var jsonText = JSON.stringify(splitPlan ? splitPlan.member : data);
         if (typeof jsonText !== "string") {
             throw new Error("JSON stringify failed: " + path);
         }
         dataTransactionLock.lock();
         var transactionEntryResult = null;
+        var splitOwnTransaction = false;
         try {
             ensureParentFolder(path);
             if (typeof rollbackSnapshotText === "string" && !getDataSaveTransaction()) {
                 throw new Error("Transactional JSON snapshot requires command transaction: " + path);
             }
             if (isProtectedManagedJsonPath(path) || typeof rollbackSnapshotText === "string") {
-                transactionEntryResult = prepareManagedJsonTransactionEntry(path, skipManagedBackup, rollbackSnapshotText);
+                if (splitPlan) {
+                    if (!getDataSaveTransaction()) { beginDataSaveTransaction(); splitOwnTransaction = true; }
+                    var currentMemberSplitText = FileStream.read(path, "utf-8");
+                    var currentMemberSplitMarker = getMemberSplitMarker(parseJsonContent(currentMemberSplitText, path));
+                    var inputMemberSplitMarker = getMemberSplitMarker(data);
+                    if (!currentMemberSplitMarker || currentMemberSplitMarker.id !== inputMemberSplitMarker.id ||
+                        (currentMemberSplitMarker.phase === "COMPLETE" && (currentMemberSplitMarker.raidRevision !== inputMemberSplitMarker.raidRevision || currentMemberSplitMarker.logsRevision !== inputMemberSplitMarker.logsRevision))) throw new Error("오래된 회원 스냅샷으로 분리 파일을 저장할 수 없습니다.");
+                    if (typeof rollbackSnapshotText !== "string") rollbackSnapshotText = currentMemberSplitText;
+                    else {
+                        var rollbackMember = parseJsonContent(rollbackSnapshotText, path);
+                        if (getMemberSplitMarker(rollbackMember) && rollbackMember.serverRaid && rollbackMember.serverRaid.storageSummary !== true) rollbackMember.serverRaid = buildMemberSplitRaidSummary(rollbackMember.serverRaid);
+                        rollbackSnapshotText = JSON.stringify(rollbackMember);
+                    }
+                }
+                transactionEntryResult = prepareManagedJsonTransactionEntry(path, splitPlan ? false : skipManagedBackup, rollbackSnapshotText);
+                if (splitPlan && skipManagedBackup === true) transactionEntryResult.skipManagedBackup = true;
+                if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].text);
                 writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup);
                 if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
+                if (splitPlan) {
+                    data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = splitPlan.marker;
+                    if (splitPlan.context) { splitPlan.context.logsText = splitPlan.logsText; splitPlan.context.raidText = splitPlan.raidText; }
+                }
             } else {
                 FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             }
@@ -32973,6 +33306,7 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
             }
             throw e;
         } finally {
+            if (splitOwnTransaction) endDataSaveTransaction();
             dataTransactionLock.unlock();
         }
     }
@@ -33846,6 +34180,7 @@ function clearServerRaidWorkTimer(ctx) {
 function serverRaidHasWork(state) {
     if (state.current && (state.current.state === "PREP" || state.current.state === "SETTLING")) return true;
     if (state.current && state.current.state === "ACTIVE" && state.current.autoEndAt !== undefined) return true;
+    if (state.storageSummary === true) return state.hasPendingNotices === true;
     for (var i = 0; i < state.outbox.length; i++) for (var j = 0; j < state.outbox[i].deliveries.length; j++) if (!state.outbox[i].deliveries[j].sent && !state.outbox[i].deliveries[j].cancelled) return true;
     return false;
 }
@@ -33861,7 +34196,7 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
         try {
             dataTransactionLock.lock(); acquired = true;
             beginDataSaveTransaction(); entered = true;
-            var latest = loadJsonFile(filePath), state = latest.serverRaid;
+            var latest = loadJsonFile(filePath, "raid"), state = latest.serverRaid;
             if (!state || state.generation !== generation || state.sequence !== sequence) return;
             if (isServerRaidAutoEndDue(state.current, Date.now()) && closeServerRaid(latest, ctx, "automatic").changed) {
                 saveJsonFile(latest, filePath);
@@ -38913,7 +39248,7 @@ function ensureHoiPassPremiumAutomationSettings(member) {
     return member.premiumAutomation;
 }
 
-// 프리미엄 자동화 처리 내역을 member.json에 제한 개수로 기록하는 함수
+// 프리미엄 자동화 처리 내역을 로드된 운영 로그에 제한 개수로 기록하는 함수
 function appendPetMusouAutomationLog(data, log) {
     if (!(data.petMusouAutomationLogs instanceof Array)) data.petMusouAutomationLogs = [];
     data.petMusouAutomationLogs.push(log);
@@ -39609,7 +39944,7 @@ function appendGuildTerritoryAutomationLog(war, log) {
     if (war.automationLogs.length > logMax) war.automationLogs.splice(0, war.automationLogs.length - logMax);
 }
 
-// 유저별 영지 자동화 설정 변경 로그를 member.json에 추가하는 함수
+// 유저별 영지 자동화 설정 변경 내역을 로드된 운영 로그에 추가하는 함수
 function appendGuildTerritoryAutomationDataLog(data, log) {
     if (!(data.guildTerritoryAutomationLogs instanceof Array)) data.guildTerritoryAutomationLogs = [];
     data.guildTerritoryAutomationLogs.push(log);
