@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.630"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.631"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -36809,10 +36809,10 @@ function getAttendanceKstDateKey() {
     return String(kst.getUTCFullYear()) + (month < 10 ? "0" : "") + month + (day < 10 ? "0" : "") + day;
 }
 
-// 회원의 오늘 출석 완료 여부를 저장된 출석 날짜로 확인하는 함수
+// 회원이 마지막 /리셋 이후 출석했는지 확인하는 함수
 function hasAttendedToday(data, user) {
     var member = data && data.member ? data.member[user] : null;
-    return !!member && String(member.recent || "") === getAttendanceKstDateKey();
+    return !!member && (parseInt(member.today, 10) || 0) > 0;
 }
 
 // 출석 알림 등록 명령의 기존 이름 또는 단축 이름을 반환하는 함수
@@ -36901,18 +36901,11 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
     if (!(data.attend_list instanceof Array)) data.attend_list = [];
     var member = data.member[user];
     var todayText = getAttendanceKstDateKey();
-    var alreadyAttended = String(member.recent || "") === todayText;
+    var alreadyAttended = (parseInt(member.today, 10) || 0) > 0;
     var rankText = checkRank(data, petData, guildData, user);
     if (alreadyAttended) return { ok: false, already: true, message: "[" + rankText + "] 님 이미 출첵 하셨습니다." };
 
     if (!member.bag || typeof member.bag !== "object") member.bag = {};
-    if (data.attend_list_date !== todayText) {
-        data.attend_list = data.attend_list.filter(function (attendee) {
-            return data.member[attendee] && String(data.member[attendee].recent || "") === todayText;
-        });
-        data.attend_list_date = todayText;
-    }
-    if (String(member.recent || "") !== todayText) member.today = 0;
     data.attend_list.push(user);
     member.cnt = (parseInt(member.cnt, 10) || 0) + 1;
     member.today = (parseInt(member.today, 10) || 0) + 1;
@@ -36977,6 +36970,7 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
 // 출석 /리셋 함수
 function resetAttendance(petData, data, replier) {
     for (let user in data.member) {
+        data.member[user].today = 0; // /리셋마다 모든 회원의 새 출석 회차 시작
         if (petData[user]) {
             petData[user].petraid = 0;
             petData[user].raidItemCount = 0;
@@ -53374,12 +53368,7 @@ function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
     if (!member.server && row.server) member.server = row.server;
     if (row.recent === getAttendanceKstDateKey() && row.today > 0) {
         member.today = Math.max(parseInt(member.today, 10) || 0, 1);
-        if (data.attend_list_date !== row.recent) {
-            data.attend_list = data.attend_list instanceof Array ? data.attend_list.filter(function (attendee) {
-                return data.member[attendee] && String(data.member[attendee].recent || "") === row.recent;
-            }) : [];
-            data.attend_list_date = row.recent;
-        }
+        if (!(data.attend_list instanceof Array)) data.attend_list = [];
         if (data.attend_list instanceof Array && data.attend_list.indexOf(sender) === -1) data.attend_list.push(sender);
     }
     delete attendanceLightData.users[sender];

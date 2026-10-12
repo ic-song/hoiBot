@@ -569,7 +569,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (isInfoServerRaidLocked(data) && !isInfoServerRaidAdditionalCommand(msg)) return;
 		if (data && data.member && data.member[sender] && !isInfoAttendanceFreeCommand(msg, sender)) {
 			var attendanceMember = data.member[sender];
-			if (String(attendanceMember.recent || "") !== getInfoAttendanceKstDateKey()) return;
+			if ((parseInt(attendanceMember.today, 10) || 0) <= 0) return;
 		}
 		if (msg === "/스타터중복확인") {
 			if (!isMaster(sender)) return;
