@@ -6972,6 +6972,7 @@ Status: VERIFIED
 - Split-store validation, save-plan log validation and the four root log writers use `Array.isArray` so valid Rhino arrays from another scope are accepted without replacing their existing records. Invalid log fields still fail, and the error identifies the field.
 - `saveJsonFile(data, filePath)` writes changed external stores to alternating revision slots before publishing member references. Transaction snapshots restore overwritten slots/delete newly created slots on failure. Stale references are rejected.
 - Member `_back` / `_back2` snapshots preserve matching raid/log generations; valid slots with a different revision may resolve an exact matching generation backup. Missing/invalid active files fail visibly. Split files are never replaced with empty data or silently repaired.
+- Explicit residual-log repair validates the currently referenced raid/log stores, archives the original member plus both backup generations and all split slots/backups as raw text, then rebuilds both matching backup sets. Only this repair bypasses the old backup rotation; failure rolls back member, slots and backup sets while retaining the immutable archive. Normal saves still reject mismatched backups.
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`
 - Saves separated placed furniture cleanup through `saveJsonFile(placedFurnitureData, petHomePlacedFurniturePath)` when the detail file exists
 - Saves member data through `saveJsonFile(data, filePath)`

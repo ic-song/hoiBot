@@ -237,6 +237,73 @@ function injectResiduals(rows, extra) {
     const d = raw(); d.petMusouAutomationLogs = rows;
     if (extra) Object.assign(d, extra); fixture.write(d); return d;
 }
+
+group("잔류 로그 복구는 버전이 다른 기존 회원·분리 백업도 원본 보존 후 재구성", () => {
+    migrate();
+    for (let i = 0; i < 8; i++) mutate(d => { d.petMusouAutomationLogs.push(native({ index: i })); });
+    const mismatched = JSON.parse(fixture.disk()[root+'memberOperationLogs_back.json']);
+    mismatched.revision = 8; fixture.disk()[root+'memberOperationLogs_back.json'] = JSON.stringify(mismatched);
+    const rows = Array.from({length:9}, (_v,index)=>({residual:index})); const before=injectResiduals(rows);
+    const beforeDisk=clone(fixture.disk()), oldLogs=clone(store('logs').data);
+    c.java.io.File.prototype.lastModified = () => fixture.now()-60001;
+    try { assert(cleanup().includes('잔류 기록 9건 보존')); }
+    finally { c.java.io.File.prototype.lastModified = () => fixture.now(); }
+    assert.deepStrictEqual(raw().member,before.member);
+    assert.deepStrictEqual(store('logs').data.petMusouAutomationLogs,oldLogs.petMusouAutomationLogs.concat(rows));
+    const archivePath=Object.keys(fixture.disk()).find(p=>p.includes('log_recovery_')&&p.endsWith('_backup_set.json'));
+    assert(archivePath); const archived=JSON.parse(fixture.disk()[archivePath]);
+    for(const item of archived.files) assert.equal(item.text,Object.hasOwn(beforeDisk,item.path)?beforeDisk[item.path]:null);
+    for(const generation of [1,2]) {
+        const suffix=generation===1?'_back':'_back2'; const member=JSON.parse(fixture.disk()[root+'member'+suffix+'.json']);
+        assert(!Object.hasOwn(member,'petMusouAutomationLogs'));
+        for(const kind of ['raid','logs']) {
+            const external=JSON.parse(fixture.disk()[root+(kind==='raid'?'serverRaidData':'memberOperationLogs')+suffix+'.json']);
+            assert.equal(external.id,member.migrations[key].id); assert.equal(external.revision,member.migrations[key][kind+'Revision']);
+        }
+    }
+});
+
+for (const suffix of ['_back','_back2']) group('복구는 '+suffix+' 손상·누락 파일도 원문 보관 후 현재 데이터로 재구성', () => {
+    migrate(); injectResiduals([{recovery:true}]);
+    fixture.disk()[root+'member'+suffix+'.json']='broken-member-backup';
+    fixture.disk()[root+'memberOperationLogs'+suffix+'.json']='broken-log-backup';
+    delete fixture.disk()[root+'serverRaidData'+suffix+'.json'];
+    const before=clone(fixture.disk()); cleanup();
+    const archived=JSON.parse(fixture.disk()[Object.keys(fixture.disk()).find(p=>p.endsWith('_backup_set.json'))]);
+    assert.equal(archived.files.find(f=>f.path===root+'member'+suffix+'.json').text,'broken-member-backup');
+    assert.equal(archived.files.find(f=>f.path===root+'memberOperationLogs'+suffix+'.json').text,'broken-log-backup');
+    assert.equal(archived.files.find(f=>f.path===root+'serverRaidData'+suffix+'.json').text,null);
+    assert.deepStrictEqual(raw().member,JSON.parse(before[memberPath]).member);
+    mutate(d=>{ d.petMusouAutomationLogs.push(native({after:true})); });
+    assert.equal(load().petMusouAutomationLogs.length,3);
+});
+
+for (const target of ['serverRaidData_back','memberOperationLogs_back','member_back','serverRaidData_back2','memberOperationLogs_back2','member_back2'])
+group(target+' 재구성 실패: 회원·분리 슬롯·두 백업 세트 전체 원복 후 재시도', () => {
+    migrate(); injectResiduals([{recovery:true}]); const before=clone(fixture.disk());
+    fixture.fail((_d,p)=>p===root+target+'.json'); assert.throws(()=>cleanup());
+    for (const [p,text] of Object.entries(before)) assert.equal(fixture.disk()[p],text,p);
+    for (const p of Object.keys(fixture.disk())) if (!p.includes('log_recovery_')) assert(Object.hasOwn(before,p),'unrestored new file '+p);
+    cleanup(); assert(!Object.hasOwn(raw(),'petMusouAutomationLogs')); assert.equal(load().petMusouAutomationLogs.length,2);
+});
+
+group('원본 보관 실패 또는 현재 레이드 누락이면 백업 재구성 없이 중단', () => {
+    migrate(); injectResiduals([{recovery:true}]); let before=clone(fixture.disk());
+    fixture.fail((_d,p)=>p.endsWith('_backup_set.json')); assert.throws(()=>cleanup());
+    for(const [p,text] of Object.entries(before)) assert.equal(fixture.disk()[p],text,p);
+    delete fixture.disk()[root+'serverRaidData.json']; before=clone(fixture.disk());
+    assert.throws(()=>cleanup(),/회원 분리 파일이 없습니다/); assert.deepStrictEqual(fixture.disk(),before);
+});
+
+group('일반 저장에서는 불일치 백업을 자동 재구성하지 않고 계속 차단', () => {
+    migrate(); mutate(d=>{d.petMusouAutomationLogs.push(native({log:true}));});
+    const backup=JSON.parse(fixture.disk()[root+'memberOperationLogs_back.json']); backup.revision=88;
+    fixture.disk()[root+'memberOperationLogs_back.json']=JSON.stringify(backup); const before=clone(fixture.disk());
+    c.java.io.File.prototype.lastModified = () => fixture.now()-60001;
+    try { assert.throws(()=>mutate(d=>{d.member.a.point++;}),/회원 백업과 분리 백업의 버전이 일치하지 않습니다/); }
+    finally { c.java.io.File.prototype.lastModified = () => fixture.now(); }
+    assert.deepStrictEqual(fixture.disk(),before);
+});
 group("분리 완료 후 잔류 로그 9건: 일반 읽기 오류 재현·명시적 정리로 복구", () => {
     migrate(); const rows = Array.from({ length: 9 }, (_v, index) => ({ feature: 'SYNTHETIC_MUSOU', index }));
     const before = injectResiduals(rows); const oldLogs = clone(store('logs').data); const oldRaid = clone(store('raid'));
@@ -277,7 +344,7 @@ group("권한 없는 복구·접미 안내 입력은 거부·DEV 복구는 운�
     assert.throws(() => run('/데이터정리', 'a'), /운영 로그가 남아/); assert.throws(() => run('/데이터정리 해봐','master',undefined,'test'), /운영 로그가 남아/); assert.deepStrictEqual(fixture.disk(), before);
     migrate(true); const dev = raw(true); dev.petMusouAutomationLogs = [{ dev: true }]; fixture.write(dev, true);
     run('dev/데이터정리','master',undefined,'test'); assert(!Object.hasOwn(raw(true),'petMusouAutomationLogs'));
-    assert.equal(fixture.disk()[memberPath], before[memberPath]); assert(Object.keys(fixture.disk()).filter(p=>p.startsWith(devRoot)&&p.includes('log_recovery_')).length===1);
+    assert.equal(fixture.disk()[memberPath], before[memberPath]); assert(Object.keys(fixture.disk()).filter(p=>p.startsWith(devRoot)&&p.includes('log_recovery_')).length===2);
 });
 group("실제 7인수 MAIN 응답은 관리자에게 잔류 오류와 복구 안내·버전 기록", () => {
     migrate(); injectResiduals([{ recovery: true }]);
