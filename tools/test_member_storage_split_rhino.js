@@ -17,7 +17,8 @@ function block(marker) {
 // Rhino 자체의 비열거 속성·배열·JSON·Java UTF-8 동작을 실제 분리 헬퍼로 검증한다.
 const names = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore",
     "buildMemberSplitRaidSummary", "attachMemberSplitStores", "buildMemberSplitSavePlan", "getMemberSplitByteLength",
-    "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration", "createServerRaidState"];
+    "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration", "createServerRaidState",
+    "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
 const testSource = block("const MEMBER_STORAGE_SPLIT_CONFIG = {") + "\n" + names.map(n => block("function " + n + "(")).join("\n") + `
 function resolveActiveDataPath(path) { return path; }
 var assertions = 0;
@@ -52,6 +53,29 @@ check(getMemberSplitMarker(complete).raidRevision === 0,"unpublished source reta
 check(changed.member.serverRaid.storageSummary === true,"only summary published");
 check(changed.writes[0].path.indexOf("_next.json") !== -1,"alternating slots");
 check(getMemberSplitByteLength({text:"한글✨"}) === new java.lang.String(JSON.stringify({text:"한글✨"})).getBytes("UTF-8").length,"Java UTF-8 bytes");
+var cx=Packages.org.mozilla.javascript.Context.getCurrentContext();
+var foreignScope=cx.initStandardObjects();
+var foreignLogs=cx.evaluateString(foreignScope,'({supportPassPayoutLogs:[{existing:true}],guildTerritoryAutomationLogs:[{existing:true}],territoryPassAuditLogs:[{existing:true}],petMusouAutomationLogs:[{existing:true}]})','foreign-log-scope',1,null);
+check(!(foreignLogs.petMusouAutomationLogs instanceof Array),"distinct Rhino array prototype reproduced");
+check(Array.isArray(foreignLogs.petMusouAutomationLogs),"cross-scope native array");
+var foreignStore={version:1,id:"synthetic-id",revision:0,data:foreignLogs};
+requireMemberSplitStore(foreignStore,"logs");
+var scoped=JSON.parse(thinText);
+attachMemberSplitStores(scoped,getMemberSplitMarker(scoped),foreignStore,null);
+var GLOBAL_CONFIG={petMusou:{automationLogMax:100},guildTerritory:{automation:{logMax:100}},supportPass:{territoryAuditLogMax:100,territoryPayoutLogMax:500}};
+function formatDateTime(date){return "2026-10-12 12:30";}
+function getTodaySupportPassDateValue(){return "2026-10-12";}
+appendPetMusouAutomationLog(scoped,{added:true});
+appendGuildTerritoryAutomationDataLog(scoped,{added:true});
+appendTerritoryPassAuditLog(scoped,"master","synthetic","ADD",null,{permanent:true});
+appendTerritoryPassPayoutLogs(scoped,{grantedUsers:["synthetic"],skippedUsers:[]},"master");
+for(var k=0;k<MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length;k++){
+ var rows=scoped[MEMBER_STORAGE_SPLIT_CONFIG.logKeys[k]];
+ check(rows.length===2 && rows[0].existing===true,"preserved foreign log "+k);
+}
+var scopedPlan=buildMemberSplitSavePlan(scoped);
+check(scopedPlan.writes.length===1,"foreign log save plan");
+requireMemberSplitStore(JSON.parse(scopedPlan.writes[0].text),"logs");
 print("PASS: " + assertions + " Rhino member storage assertions");
 `;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hoibot-split-rhino-"));

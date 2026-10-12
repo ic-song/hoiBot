@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.627"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.628"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -32595,26 +32595,27 @@ function getMemberSplitBackupPath(kind, generation) {
     return resolveActiveDataPath(base.substring(0, base.length - 5) + (generation === 2 ? "_back2.json" : "_back.json"));
 }
 
-// 분리 파일의 식별값과 필수 데이터 구조를 검증하는 함수
+// 분리 파일의 필수 구조를 실행 문맥에 독립적인 배열 판정으로 검증하는 함수
 function requireMemberSplitStore(store, kind) {
     if (!store || store.version !== MEMBER_STORAGE_SPLIT_CONFIG.version || typeof store.id !== "string" || !store.id || typeof store.revision !== "number" ||
         store.revision < 0 || store.revision > 9007199254740990 || Math.floor(store.revision) !== store.revision ||
-        !store.data || typeof store.data !== "object" || store.data instanceof Array) throw new Error("잘못된 회원 분리 파일입니다.");
+        !store.data || typeof store.data !== "object" || Array.isArray(store.data)) throw new Error("잘못된 회원 분리 파일입니다.");
     if (kind === "raid") {
         var raid = store.data;
-        if (!(raid.history instanceof Array) || !(raid.outbox instanceof Array) || !raid.eventReceipts || typeof raid.eventReceipts !== "object" || raid.eventReceipts instanceof Array ||
-            !raid.wins || typeof raid.wins !== "object" || raid.wins instanceof Array || typeof raid.generation !== "string" || typeof raid.sequence !== "number" ||
+        if (!Array.isArray(raid.history) || !Array.isArray(raid.outbox) || !raid.eventReceipts || typeof raid.eventReceipts !== "object" || Array.isArray(raid.eventReceipts) ||
+            !raid.wins || typeof raid.wins !== "object" || Array.isArray(raid.wins) || typeof raid.generation !== "string" || typeof raid.sequence !== "number" ||
             !isFinite(raid.sequence) || raid.sequence < 0 || Math.floor(raid.sequence) !== raid.sequence ||
-            (raid.current !== null && (!raid.current || typeof raid.current !== "object" || raid.current instanceof Array))) throw new Error("잘못된 레이드 분리 데이터입니다.");
+            (raid.current !== null && (!raid.current || typeof raid.current !== "object" || Array.isArray(raid.current)))) throw new Error("잘못된 레이드 분리 데이터입니다.");
         for (var noticeIndex = 0; noticeIndex < raid.outbox.length; noticeIndex++) {
-            if (!raid.outbox[noticeIndex] || !(raid.outbox[noticeIndex].deliveries instanceof Array)) throw new Error("잘못된 레이드 공지 분리 데이터입니다.");
+            if (!raid.outbox[noticeIndex] || !Array.isArray(raid.outbox[noticeIndex].deliveries)) throw new Error("잘못된 레이드 공지 분리 데이터입니다.");
             for (var deliveryIndex = 0; deliveryIndex < raid.outbox[noticeIndex].deliveries.length; deliveryIndex++) {
                 if (!raid.outbox[noticeIndex].deliveries[deliveryIndex] || typeof raid.outbox[noticeIndex].deliveries[deliveryIndex] !== "object") throw new Error("잘못된 레이드 공지 전송 데이터입니다.");
             }
         }
     } else {
         for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
-            if (!(store.data[MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i]] instanceof Array)) throw new Error("잘못된 운영 로그 분리 데이터입니다.");
+            var logKey = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
+            if (!Array.isArray(store.data[logKey])) throw new Error("잘못된 운영 로그 분리 데이터입니다: " + logKey);
         }
     }
     return store;
@@ -32685,7 +32686,7 @@ function buildMemberSplitSavePlan(data) {
     }
     for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
         var logKey = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
-        if (!(data[logKey] instanceof Array)) throw new Error("잘못된 운영 로그입니다: " + logKey);
+        if (!Array.isArray(data[logKey])) throw new Error("잘못된 운영 로그입니다: " + logKey);
         logs[logKey] = data[logKey];
     }
     var logsText = JSON.stringify(logs), writes = [];
@@ -39250,7 +39251,7 @@ function ensureHoiPassPremiumAutomationSettings(member) {
 
 // 프리미엄 자동화 처리 내역을 로드된 운영 로그에 제한 개수로 기록하는 함수
 function appendPetMusouAutomationLog(data, log) {
-    if (!(data.petMusouAutomationLogs instanceof Array)) data.petMusouAutomationLogs = [];
+    if (!Array.isArray(data.petMusouAutomationLogs)) data.petMusouAutomationLogs = [];
     data.petMusouAutomationLogs.push(log);
     var logMax = GLOBAL_CONFIG.petMusou.automationLogMax;
     if (data.petMusouAutomationLogs.length > logMax) data.petMusouAutomationLogs.splice(0, data.petMusouAutomationLogs.length - logMax);
@@ -39946,7 +39947,7 @@ function appendGuildTerritoryAutomationLog(war, log) {
 
 // 유저별 영지 자동화 설정 변경 내역을 로드된 운영 로그에 추가하는 함수
 function appendGuildTerritoryAutomationDataLog(data, log) {
-    if (!(data.guildTerritoryAutomationLogs instanceof Array)) data.guildTerritoryAutomationLogs = [];
+    if (!Array.isArray(data.guildTerritoryAutomationLogs)) data.guildTerritoryAutomationLogs = [];
     data.guildTerritoryAutomationLogs.push(log);
     var logMax = GLOBAL_CONFIG.guildTerritory.automation.logMax;
     if (data.guildTerritoryAutomationLogs.length > logMax) {
@@ -40916,7 +40917,7 @@ function copyTerritoryPassAuditValue(pass) {
 
 // 영지기습패스 추가·연장·삭제 이력을 저장하는 함수
 function appendTerritoryPassAuditLog(data, operator, user, action, beforeValue, afterValue) {
-    if (!(data.territoryPassAuditLogs instanceof Array)) data.territoryPassAuditLogs = [];
+    if (!Array.isArray(data.territoryPassAuditLogs)) data.territoryPassAuditLogs = [];
     data.territoryPassAuditLogs.push({
         operator: operator || "시스템",
         user: user,
@@ -41300,7 +41301,7 @@ function grantSupportPassDailyRewards(data, passKey, rewards) {
 
 // 영지기습패스 일일 지급 결과를 최근 운영 로그에 기록하는 함수
 function appendTerritoryPassPayoutLogs(data, result, operator) {
-    if (!(data.supportPassPayoutLogs instanceof Array)) data.supportPassPayoutLogs = [];
+    if (!Array.isArray(data.supportPassPayoutLogs)) data.supportPassPayoutLogs = [];
     var nowText = formatDateTime(new Date());
     var today = String(getTodaySupportPassDateValue());
     for (var grantedIndex = 0; grantedIndex < result.grantedUsers.length; grantedIndex++) {
@@ -42979,7 +42980,7 @@ function cleanupDeletedAccountResiduals(data, guildData, stores, forcedUserNames
     var accountLogNames = ["supportPassPayoutLogs", "guildTerritoryAutomationLogs", "territoryPassAuditLogs", "petMusouAutomationLogs"];
     for (var logNameIndex = 0; logNameIndex < accountLogNames.length; logNameIndex++) {
         var accountLogs = data[accountLogNames[logNameIndex]];
-        if (!(accountLogs instanceof Array)) continue;
+        if (!Array.isArray(accountLogs)) continue;
         data[accountLogNames[logNameIndex]] = accountLogs.filter(function (log) {
             return !log || (!invalidNames[log.user] && !invalidNames[log.operator]);
         });

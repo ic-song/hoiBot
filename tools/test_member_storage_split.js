@@ -209,6 +209,30 @@ group("나머지 운영 로그 3종도 기존 기록 함수로 분리 파일 저
     assert.equal(persisted.territoryPassAuditLogs.at(-1).expireAt, "영구권"); assert.equal(persisted.supportPassPayoutLogs.length, 3);
     for (const name of c.MEMBER_STORAGE_SPLIT_CONFIG.logKeys) assert(!Object.hasOwn(raw(), name));
 });
+group("다른 실행 문맥의 정상 로그 배열도 검증·추가·저장에서 유지", () => {
+    migrate(); const d = load();
+    const foreignLogs = vm.runInNewContext('({supportPassPayoutLogs:[{existing:true}],guildTerritoryAutomationLogs:[{existing:true}],territoryPassAuditLogs:[{existing:true}],petMusouAutomationLogs:[{existing:true}]})');
+    assert.equal(vm.runInContext('Array', c)[Symbol.hasInstance](foreignLogs.petMusouAutomationLogs), false);
+    c.requireMemberSplitStore({ version: 1, id: 'scope-test', revision: 0, data: foreignLogs }, 'logs');
+    for (const name of c.MEMBER_STORAGE_SPLIT_CONFIG.logKeys) d[name] = foreignLogs[name];
+    c.getTodaySupportPassDateValue = () => '2026-10-12';
+    c.appendPetMusouAutomationLog(d, native({ added: true })); c.appendGuildTerritoryAutomationDataLog(d, native({ added: true }));
+    c.appendTerritoryPassAuditLog(d, 'master', 'a', 'ADD', null, native({ permanent: true }));
+    c.appendTerritoryPassPayoutLogs(d, native({ grantedUsers: ['a'], skippedUsers: [] }), 'master'); save(d);
+    for (const name of c.MEMBER_STORAGE_SPLIT_CONFIG.logKeys) { assert.equal(store('logs').data[name].length, 2); assert(store('logs').data[name][0].existing); }
+});
+group("별도 문맥 JSON 파서로 읽은 회원·레이드·로그도 엄격 검증 후 저장", () => {
+    migrate(); const parser = c.parseJsonContent;
+    c.parseJsonContent = text => vm.runInNewContext('JSON.parse(' + JSON.stringify(text) + ')');
+    try { const d = load('raid'); c.appendPetMusouAutomationLog(d, native({ independentParser: true })); d.serverRaid.sequence++; save(d);
+        assert.equal(raw().migrations[key].logsRevision, 1); assert.equal(store('raid').data.sequence, 1); assert.equal(store('logs').data.petMusouAutomationLogs.length, 2);
+    } finally { c.parseJsonContent = parser; }
+});
+group("실제 손상 로그는 Array.isArray에서도 계속 차단하며 키 표시", () => {
+    migrate(); const logs = store('logs'); logs.data.petMusouAutomationLogs = { length: 0 };
+    fixture.disk()[root + 'memberOperationLogs.json'] = JSON.stringify(logs);
+    assert.throws(() => load(), /운영 로그.*petMusouAutomationLogs/); assert.equal(recoveries, 0);
+});
 group("분리 백업 회전 실패도 저장 중단·원본과 백업 세트 복원", () => {
     migrate(); mutate(d => { d.serverRaid.sequence = 1; }); const before = raw(), priorBackup = fixture.disk()[root + "member_back2.json"];
     c.java.io.File.prototype.lastModified = () => fixture.now() - 60001;

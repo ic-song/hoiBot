@@ -6969,6 +6969,7 @@ Status: VERIFIED
 
 - Before existing cleanup, write an immutable full-member backup, persist `COPYING` with the original fields retained, copy and read-verify both external stores, then publish `COMPLETE` and remove only the copied fields. Durable checkpoints separate migration from normal cleanup.
 - Completed member loads attach log arrays and save context as non-enumerable properties. Raid command entry, locked game-input entry and the raid timer request `loadJsonFile(filePath, "raid")`; ordinary member reads retain the summary.
+- Split-store validation, save-plan log validation and the four root log writers use `Array.isArray` so valid Rhino arrays from another scope are accepted without replacing their existing records. Invalid log fields still fail, and the error identifies the field.
 - `saveJsonFile(data, filePath)` writes changed external stores to alternating revision slots before publishing member references. Transaction snapshots restore overwritten slots/delete newly created slots on failure. Stale references are rejected.
 - Member `_back` / `_back2` snapshots preserve matching raid/log generations; valid slots with a different revision may resolve an exact matching generation backup. Missing/invalid active files fail visibly. Split files are never replaced with empty data or silently repaired.
 - Saves `homeData` through `saveJsonFile(homeData, homeDataFile)`

@@ -85,6 +85,8 @@ tools\05_skills_설치.bat
 
 개발 검증: `node tools/test_member_storage_split.js`. Rhino 검증: `node tools/test_member_storage_split_rhino.js <Rhino JAR 경로>`.
 
+`ver_2.628`은 서로 다른 실행 문맥의 정상 로그 배열도 인식해 기존 기록을 보존합니다. 기존 분리 완료 데이터에서 `/데이터정리`를 다시 실행할 필요는 없습니다. 펫무쌍 시작·턴·정시 시작 통합 검증: `node tools/test_pet_musou_storage_split.js`.
+
 | 파일 | 용도 |
 | --- | --- |
 | `member.json` | 회원 기본 데이터 |
