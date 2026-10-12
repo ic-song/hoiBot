@@ -79,6 +79,7 @@ const c = {
 for (let i = 1; i <= 100; i++) c["room" + i] = "room" + i;
 c.testRoom = "test";
 vm.createContext(c);
+vm.runInContext(main.match(/^const HoiBotVersion = "[^"]+";/m)[0] + ";this.HoiBotVersion=HoiBotVersion;", c);
 vm.runInContext(block(main, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);
 const ticketConfig = clone(c.GLOBAL_CONFIG.serverRaid); // 신규 기준 검증과 기존 108개 회귀 기준을 분리
 for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",

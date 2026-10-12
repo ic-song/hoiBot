@@ -29,7 +29,7 @@ c.FileStream.read = p => { reads.push(p); return fixture.disk()[p]; };
 c.FileStream.write = (p, text) => { fixture.disk()[p] = text; };
 vm.runInContext(block(main, "const MEMBER_STORAGE_SPLIT_CONFIG = {") + ";this.MEMBER_STORAGE_SPLIT_CONFIG=MEMBER_STORAGE_SPLIT_CONFIG;var memberSplitBackupCache={};", c);
 const helpers = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore", "readMemberSplitStore",
-    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "attachMemberSplitStores", "buildMemberSplitSavePlan", "writeMemberSplitSlot",
+    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "writeMemberSplitSlot",
     "preserveMemberSplitBackupStores", "getMemberSplitByteLength", "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration",
     "isProtectedManagedJsonPath", "parseManagedJsonContent", "loadJsonFile", "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
 for (const name of helpers) vm.runInContext(block(main, "function " + name + "("), c);
@@ -232,6 +232,69 @@ group("실제 손상 로그는 Array.isArray에서도 계속 차단하며 키 �
     migrate(); const logs = store('logs'); logs.data.petMusouAutomationLogs = { length: 0 };
     fixture.disk()[root + 'memberOperationLogs.json'] = JSON.stringify(logs);
     assert.throws(() => load(), /운영 로그.*petMusouAutomationLogs/); assert.equal(recoveries, 0);
+});
+function injectResiduals(rows, extra) {
+    const d = raw(); d.petMusouAutomationLogs = rows;
+    if (extra) Object.assign(d, extra); fixture.write(d); return d;
+}
+group("분리 완료 후 잔류 로그 9건: 일반 읽기 오류 재현·명시적 정리로 복구", () => {
+    migrate(); const rows = Array.from({ length: 9 }, (_v, index) => ({ feature: 'SYNTHETIC_MUSOU', index }));
+    const before = injectResiduals(rows); const oldLogs = clone(store('logs').data); const oldRaid = clone(store('raid'));
+    assert.throws(() => load(), /분리 완료 회원 파일에 운영 로그가 남아 있습니다: petMusouAutomationLogs/);
+    assert.equal(recoveries, 0); assert(cleanup().includes('잔류 기록 9건 보존'));
+    assert(!Object.hasOwn(raw(), 'petMusouAutomationLogs')); assert.deepStrictEqual(raw().member, before.member);
+    assert.deepStrictEqual(store('raid'), oldRaid); assert.deepStrictEqual(store('logs').data.petMusouAutomationLogs, oldLogs.petMusouAutomationLogs.concat(rows));
+    assert.equal(load().petMusouAutomationLogs.length, 10);
+    const backup = Object.keys(fixture.disk()).find(p => p.includes('log_recovery_')); assert(backup); assert.deepStrictEqual(JSON.parse(fixture.disk()[backup]), before);
+});
+group("동일한 행도 삭제 없이 보존·복구 재실행에서 중복 추가 없음", () => {
+    migrate(); const existing = clone(store('logs').data.petMusouAutomationLogs);
+    injectResiduals(existing); cleanup(); const count = load().petMusouAutomationLogs.length; assert.equal(count, 2);
+    cleanup(); assert.equal(load().petMusouAutomationLogs.length, count); assert.equal(raw().migrations[key].logsRevision, 1);
+});
+group("빈 잔류 배열도 정리·분리 파일 재작성 없이 회원 필드만 제거", () => {
+    migrate(); injectResiduals([]); assert(cleanup().includes('잔류 로그 필드 1개 정리'));
+    assert(!Object.hasOwn(raw(), 'petMusouAutomationLogs')); assert.equal(raw().migrations[key].logsRevision, 0); assert.equal(load().petMusouAutomationLogs.length, 1);
+});
+group("실제 손상 잔류/분리 데이터는 복구 명령에서도 변경 없이 거부", () => {
+    migrate(); injectResiduals({ length: 9 }); let before = clone(fixture.disk()); assert.throws(() => cleanup(), /잘못된 회원 잔류 운영 로그/); assert.deepStrictEqual(fixture.disk(), before);
+    injectResiduals([{ index: 1 }]); delete fixture.disk()[root+'memberOperationLogs.json']; before = clone(fixture.disk());
+    assert.throws(() => cleanup(), /회원 분리 파일이 없습니다/); assert.deepStrictEqual(fixture.disk(), before);
+});
+for (const target of ['slot','member']) group(target+' 복구 저장 실패: 잔류 원본·분리 기록 유지·재시도 가능', () => {
+    migrate(); const before = injectResiduals([{ recovery: true }]); const oldLogs = clone(store('logs'));
+    fixture.fail((_d, p) => p === (target === 'slot' ? root+'memberOperationLogs_next.json' : memberPath));
+    assert.throws(() => cleanup()); assert.deepStrictEqual(raw(), before); assert.deepStrictEqual(store('logs'), oldLogs);
+    cleanup(); assert(!Object.hasOwn(raw(), 'petMusouAutomationLogs')); assert.equal(load().petMusouAutomationLogs.length, 2);
+});
+group("복구는 진행 대회·소수점·가방 등 게임 데이터와 기존 정리 미실행", () => {
+    migrate(); const before = injectResiduals([{ recovery: true }]); before.petMusou = { active: true, signupOpen: true, startReady: false }; before.member.a.point = 12.7;
+    before.member.a.bag['영지자동공격권⚔️'] = 4; fixture.write(before); cleanup();
+    assert.deepStrictEqual(raw().petMusou, before.petMusou); assert.deepStrictEqual(raw().member, before.member);
+});
+group("권한 없는 복구·접미 안내 입력은 거부·DEV 복구는 운영 무변경", () => {
+    migrate(); injectResiduals([{ recovery: true }]); const before = clone(fixture.disk());
+    assert.throws(() => run('/데이터정리', 'a'), /운영 로그가 남아/); assert.throws(() => run('/데이터정리 해봐','master',undefined,'test'), /운영 로그가 남아/); assert.deepStrictEqual(fixture.disk(), before);
+    migrate(true); const dev = raw(true); dev.petMusouAutomationLogs = [{ dev: true }]; fixture.write(dev, true);
+    run('dev/데이터정리','master',undefined,'test'); assert(!Object.hasOwn(raw(true),'petMusouAutomationLogs'));
+    assert.equal(fixture.disk()[memberPath], before[memberPath]); assert(Object.keys(fixture.disk()).filter(p=>p.startsWith(devRoot)&&p.includes('log_recovery_')).length===1);
+});
+group("실제 7인수 MAIN 응답은 관리자에게 잔류 오류와 복구 안내·버전 기록", () => {
+    migrate(); injectResiduals([{ recovery: true }]);
+    const lock = () => ({ lock(){}, unlock(){} }); c.commandDataFlowLock = { readLock: lock, writeLock: lock };
+    c.autoDailyQuestInternalDepth = 0; c.HoiBotVersion = 'diagnostic-test'; c.errorLogPath = root+'errorLog.json';
+    vm.runInContext(fixture.block(main,'function isAdminIdentity('),c);
+    c.response('test','/호이봇버전','master',true,c.replier,null,'com.kakao.talk');
+    const reply = fixture.traces().filter(t=>t.type==='reply').at(-1).text;
+    assert(reply.includes('MAIN 회원 파일 분리 오류')); assert(reply.includes('petMusouAutomationLogs')); assert(reply.includes('/데이터정리'));
+    const report = JSON.parse(fixture.disk()[c.errorLogPath]); assert.equal(typeof report.error,'string'); assert(report.error.includes('로그가 남아')); assert(report.version);
+    const count = fixture.traces().filter(t=>t.type==='reply').length;
+    c.response('room8','/호이봇버전','a',true,c.replier,null,'com.kakao.talk'); assert.equal(fixture.traces().filter(t=>t.type==='reply').length,count);
+    fixture.fail((_d,p)=>p===root+'memberOperationLogs_next.json');
+    c.response('test','/데이터정리','master',true,c.replier,null,'com.kakao.talk');
+    assert(fixture.traces().filter(t=>t.type==='reply').at(-1).text.includes('MAIN 회원 파일 분리 오류')); assert(raw().petMusouAutomationLogs);
+    c.response('test','/데이터정리','master',true,c.replier,null,'com.kakao.talk');
+    assert(fixture.traces().filter(t=>t.type==='reply').at(-1).text.includes('운영 로그 복구 완료')); assert(!Object.hasOwn(raw(),'petMusouAutomationLogs'));
 });
 group("분리 백업 회전 실패도 저장 중단·원본과 백업 세트 복원", () => {
     migrate(); mutate(d => { d.serverRaid.sequence = 1; }); const before = raw(), priorBackup = fixture.disk()[root + "member_back2.json"];

@@ -16,7 +16,7 @@ function block(marker) {
 }
 // Rhino 자체의 비열거 속성·배열·JSON·Java UTF-8 동작을 실제 분리 헬퍼로 검증한다.
 const names = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore",
-    "buildMemberSplitRaidSummary", "attachMemberSplitStores", "buildMemberSplitSavePlan", "getMemberSplitByteLength",
+    "buildMemberSplitRaidSummary", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "getMemberSplitByteLength",
     "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration", "createServerRaidState",
     "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
 const testSource = block("const MEMBER_STORAGE_SPLIT_CONFIG = {") + "\n" + names.map(n => block("function " + n + "(")).join("\n") + `
@@ -76,6 +76,24 @@ for(var k=0;k<MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length;k++){
 var scopedPlan=buildMemberSplitSavePlan(scoped);
 check(scopedPlan.writes.length===1,"foreign log save plan");
 requireMemberSplitStore(JSON.parse(scopedPlan.writes[0].text),"logs");
+var residualMember=JSON.parse(thinText);
+residualMember.petMusouAutomationLogs=[];
+for(var residualIndex=0;residualIndex<9;residualIndex++) residualMember.petMusouAutomationLogs.push({index:residualIndex});
+var recovery=prepareMemberSplitResidualLogRecovery(residualMember,foreignStore);
+check(recovery.fields===1,"residual fields");
+check(recovery.count===9,"residual count");
+check(recovery.logs.petMusouAutomationLogs.length===11,"existing two plus all nine preserved");
+check(foreignStore.data.petMusouAutomationLogs.length===2,"external input unchanged");
+check(!Object.prototype.hasOwnProperty.call(recovery.member,"petMusouAutomationLogs"),"thin member prepared");
+attachMemberSplitStores(recovery.member,getMemberSplitMarker(recovery.member),foreignStore,null);
+for(var recoveryKey=0;recoveryKey<MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length;recoveryKey++){
+ var field=MEMBER_STORAGE_SPLIT_CONFIG.logKeys[recoveryKey];recovery.member[field]=recovery.logs[field];
+}
+check(buildMemberSplitSavePlan(recovery.member).writes.length===1,"only external logs change");
+residualMember.petMusouAutomationLogs={length:9};
+var corruptRejected=false;
+try{prepareMemberSplitResidualLogRecovery(residualMember,foreignStore);}catch(corruptError){corruptRejected=String(corruptError).indexOf("petMusouAutomationLogs")!==-1;}
+check(corruptRejected,"corrupt residue never normalized");
 print("PASS: " + assertions + " Rhino member storage assertions");
 `;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hoibot-split-rhino-"));

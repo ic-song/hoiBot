@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.628"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.629"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2847,6 +2847,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         var memberStorageMigrationResult = null;
+        var memberStorageRepairing = false;
         // 파일 분리를 먼저 확정한 뒤 기존 데이터 정리 단계를 그대로 실행한다.
         if (memberStorageCleanupAllowed && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
             if (!data || !data.member) throw new Error("회원 원본 데이터가 없습니다.");
@@ -2900,6 +2901,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 memberStorageMigrationResult = { changed: true, beforeBytes: memberStorageMarker.beforeBytes, afterBytes: getMemberSplitByteLength(memberStorageCompleted),
                     rounds: memberStorageStores.raid.data.history.length, receipts: Object.keys(memberStorageStores.raid.data.eventReceipts).length, notices: memberStorageStores.raid.data.outbox.length };
             } else {
+                var memberStorageResidualCount = data.__memberSplitContext ? data.__memberSplitContext.residualLogCount : 0;
+                var memberStorageResidualFields = data.__memberSplitContext ? data.__memberSplitContext.residualLogFieldCount : 0;
+                if (memberStorageResidualFields > 0) {
+                    memberStorageRepairing = true;
+                    var memberStorageRepairId = String(java.util.UUID.randomUUID());
+                    var memberStorageRepairBackup = resolveActiveDataPath(MEMBER_STORAGE_SPLIT_CONFIG.backupPrefix + "log_recovery_" + memberStorageRepairId + ".json");
+                    if (new java.io.File(memberStorageRepairBackup).exists()) throw new Error("잔류 로그 복구 백업이 이미 존재합니다.");
+                    writeVerifiedJsonFile(memberStorageRepairBackup, FileStream.read(resolveActiveDataPath(filePath), "utf-8"), true);
+                    saveJsonFile(data, filePath); // 기존 로그와 잔류 로그를 저장한 후에만 회원 파일에서 잔류 필드를 제거
+                    var memberStorageRepairVerified = loadJsonFile(filePath);
+                    if (memberStorageRepairVerified.__memberSplitContext.logsText !== data.__memberSplitContext.logsText) throw new Error("잔류 운영 로그 복구 내용 검증 실패");
+                    endDataSaveTransaction(); beginDataSaveTransaction();
+                    replier.reply("🧹 /데이터정리: 운영 로그 복구 완료\n\n" +
+                        "✅ 잔류 로그 필드 " + memberStorageResidualFields + "개 정리\n" +
+                        "✅ 잔류 기록 " + numberWithCommas(memberStorageResidualCount) + "건 보존\n" +
+                        "💾 기존 분리 기록과 회원 원본을 함께 보관했습니다.\n" +
+                        "진행 중인 대회 상태와 재화는 그대로 유지합니다.");
+                    return; // 복구 작업으로 만료된 게임 턴을 처리하거나 기존 정리를 함께 실행하지 않음
+                }
                 memberStorageMigrationResult = { changed: false };
             }
         }
@@ -31533,12 +31553,20 @@ replier.reply(
         // if (msg.startsWith("/")) {
         let errorObj = {
             system: "main",
-            error: error,
+            error: String(error),
+            version: "ver_" + HoiBotVersion,
             msg: msg,
             room: room,
             sender: sender
         };
         debuggerLog("[ERROR : Main error]" + allsee + JSON.stringify(errorObj));
+        if ((error.memberStorageFailure || memberStorageRepairing) && (isAdminIdentity(sender) || isMasterIdentity(sender))) {
+            try {
+                var memberStorageErrorText = String(error);
+                replier.reply("❌ MAIN 회원 파일 분리 오류\nver_" + HoiBotVersion + "\n" + memberStorageErrorText.substring(0, 500) +
+                    (memberStorageErrorText.indexOf("분리 완료 회원 파일에 운영 로그가 남아 있습니다") !== -1 ? "\n관리자·MASTER가 기존 명령어방에서 /데이터정리를 실행해 잔류 로그를 복구해 주세요." : ""));
+            } catch (memberStorageNoticeError) { debuggerLog("[ERROR : 회원 파일 분리 오류 안내 실패] " + memberStorageNoticeError); }
+        }
         if (autoDailyQuestInternalDepth > 0 && replier && typeof replier.reply === "function") {
             replier.reply("❌ 자동일퀘 내부 실행 오류가 발생했습니다.\n명령어: " + msg + "\n관리자 로그 확인이 필요합니다.");
         }
@@ -32670,6 +32698,22 @@ function attachMemberSplitStores(data, marker, logs, raid) {
     return data;
 }
 
+// 명시적 데이터 정리에서만 회원 파일의 잔류 로그를 기존 분리 로그에 전부 추가하는 함수
+function prepareMemberSplitResidualLogRecovery(data, logs) {
+    var member = {}, mergedLogs = {}, recoveredCount = 0, recoveredFields = 0;
+    for (var field in data) if (Object.prototype.hasOwnProperty.call(data, field) && MEMBER_STORAGE_SPLIT_CONFIG.logKeys.indexOf(field) === -1) member[field] = data[field];
+    for (var i = 0; i < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; i++) {
+        var key = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[i];
+        mergedLogs[key] = logs.data[key].slice(); // 이미 분리된 기록의 내용과 순서를 보존
+        if (!Object.prototype.hasOwnProperty.call(data, key)) continue;
+        if (!Array.isArray(data[key])) throw new Error("잘못된 회원 잔류 운영 로그입니다: " + key);
+        recoveredFields++;
+        for (var rowIndex = 0; rowIndex < data[key].length; rowIndex++) mergedLogs[key].push(data[key][rowIndex]);
+        recoveredCount += data[key].length; // 보존 우선으로 중복 제거·개수 제한을 적용하지 않음
+    }
+    return { member: member, logs: mergedLogs, count: recoveredCount, fields: recoveredFields };
+}
+
 // 로그와 레이드 상세를 분리하고 변경된 저장 슬롯만 계산하는 함수
 function buildMemberSplitSavePlan(data) {
     var marker = getMemberSplitMarker(data);
@@ -32805,7 +32849,17 @@ function loadJsonFile(path, memberStoreMode) {
                     if (splitMarker && splitMarker.phase === "COMPLETE" && memberStoreMode !== "bootstrap") {
                         var splitLogs = readPublishedMemberSplitStore(splitMarker, "logs");
                         var splitRaid = memberStoreMode === "raid" ? readPublishedMemberSplitStore(splitMarker, "raid") : null;
-                        loadedData = attachMemberSplitStores(loadedData, splitMarker, splitLogs, splitRaid);
+                        var residualRecovery = null;
+                        if (memberStoreMode === "migration") residualRecovery = prepareMemberSplitResidualLogRecovery(loadedData, splitLogs);
+                        loadedData = attachMemberSplitStores(residualRecovery ? residualRecovery.member : loadedData, splitMarker, splitLogs, splitRaid);
+                        if (residualRecovery) {
+                            for (var recoveredLogIndex = 0; recoveredLogIndex < MEMBER_STORAGE_SPLIT_CONFIG.logKeys.length; recoveredLogIndex++) {
+                                var recoveredLogKey = MEMBER_STORAGE_SPLIT_CONFIG.logKeys[recoveredLogIndex];
+                                loadedData[recoveredLogKey] = residualRecovery.logs[recoveredLogKey];
+                            }
+                            loadedData.__memberSplitContext.residualLogCount = residualRecovery.count;
+                            loadedData.__memberSplitContext.residualLogFieldCount = residualRecovery.fields;
+                        }
                     }
                 } catch (splitLoadError) { splitLoadError.memberStorageFailure = true; throw splitLoadError; }
             }
