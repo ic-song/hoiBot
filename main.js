@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.629"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.630"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2908,8 +2908,39 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var memberStorageRepairId = String(java.util.UUID.randomUUID());
                     var memberStorageRepairBackup = resolveActiveDataPath(MEMBER_STORAGE_SPLIT_CONFIG.backupPrefix + "log_recovery_" + memberStorageRepairId + ".json");
                     if (new java.io.File(memberStorageRepairBackup).exists()) throw new Error("잔류 로그 복구 백업이 이미 존재합니다.");
+                    readPublishedMemberSplitStore(memberStorageMarker, "raid"); // 현재 회원이 참조하는 레이드도 정상일 때만 백업 세트를 재구성
                     writeVerifiedJsonFile(memberStorageRepairBackup, FileStream.read(resolveActiveDataPath(filePath), "utf-8"), true);
-                    saveJsonFile(data, filePath); // 기존 로그와 잔류 로그를 저장한 후에만 회원 파일에서 잔류 필드를 제거
+                    var memberStorageRepairSetPath = memberStorageRepairBackup.replace(/\.json$/, "_backup_set.json");
+                    if (new java.io.File(memberStorageRepairSetPath).exists()) throw new Error("잔류 로그 복구 백업 세트가 이미 존재합니다.");
+                    var memberStorageRepairPaths = [resolveActiveDataPath(filePath), getManagedJsonBackupPath(resolveActiveDataPath(filePath)), getManagedJsonSecondaryBackupPath(resolveActiveDataPath(filePath))];
+                    for (var repairKindIndex = 0; repairKindIndex < 2; repairKindIndex++) {
+                        var repairKind = repairKindIndex === 0 ? "raid" : "logs";
+                        for (var repairSlotIndex = 0; repairSlotIndex < 2; repairSlotIndex++) memberStorageRepairPaths.push(getMemberSplitStorePath(repairKind, repairSlotIndex));
+                        for (var repairGeneration = 1; repairGeneration <= 2; repairGeneration++) memberStorageRepairPaths.push(getMemberSplitBackupPath(repairKind, repairGeneration));
+                    }
+                    var memberStorageRepairSet = { version: MEMBER_STORAGE_SPLIT_CONFIG.version, id: memberStorageRepairId, files: [] };
+                    for (var repairPathIndex = 0; repairPathIndex < memberStorageRepairPaths.length; repairPathIndex++) {
+                        var repairPath = memberStorageRepairPaths[repairPathIndex];
+                        var repairFileExists = new java.io.File(repairPath).exists();
+                        var repairOriginalText = repairFileExists ? FileStream.read(repairPath, "utf-8") : null; // 불일치·손상된 옛 백업도 원문으로 보관
+                        if (repairFileExists && repairOriginalText == null) throw new Error("잔류 로그 복구 원본을 읽을 수 없습니다: " + repairPath);
+                        memberStorageRepairSet.files.push({ path: repairPath, text: repairOriginalText });
+                    }
+                    writeVerifiedJsonFile(memberStorageRepairSetPath, JSON.stringify(memberStorageRepairSet), true);
+                    saveJsonFile(data, filePath, true); // 명시적 복구에서만 기존 백업 회전을 생략; 원본·분리 슬롯 롤백은 유지
+                    var memberStorageRepairedText = FileStream.read(resolveActiveDataPath(filePath), "utf-8");
+                    for (var repairBackupGeneration = 1; repairBackupGeneration <= 2; repairBackupGeneration++) {
+                        preserveMemberSplitBackupStores(memberStorageRepairedText, repairBackupGeneration, 0);
+                        var repairedMemberBackupPath = repairBackupGeneration === 1 ? getManagedJsonBackupPath(resolveActiveDataPath(filePath)) : getManagedJsonSecondaryBackupPath(resolveActiveDataPath(filePath));
+                        writeMemberSplitSlot(repairedMemberBackupPath, memberStorageRepairedText); // 백업 세트도 실패 시 원상복구할 저장 항목으로 등록
+                        if (String(FileStream.read(repairedMemberBackupPath, "utf-8")) !== String(memberStorageRepairedText)) throw new Error("복구 회원 백업 내용 검증 실패");
+                        for (var repairedKindIndex = 0; repairedKindIndex < 2; repairedKindIndex++) {
+                            var repairedKind = repairedKindIndex === 0 ? "raid" : "logs";
+                            var repairedStore = readPublishedMemberSplitStore(getMemberSplitMarker(data), repairedKind);
+                            var repairedBackupStore = readMemberSplitStore(getMemberSplitBackupPath(repairedKind, repairBackupGeneration), repairedKind);
+                            if (JSON.stringify(repairedStore) !== JSON.stringify(repairedBackupStore)) throw new Error("복구 분리 백업 내용 검증 실패: " + repairedKind);
+                        }
+                    }
                     var memberStorageRepairVerified = loadJsonFile(filePath);
                     if (memberStorageRepairVerified.__memberSplitContext.logsText !== data.__memberSplitContext.logsText) throw new Error("잔류 운영 로그 복구 내용 검증 실패");
                     endDataSaveTransaction(); beginDataSaveTransaction();
@@ -2917,6 +2948,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         "✅ 잔류 로그 필드 " + memberStorageResidualFields + "개 정리\n" +
                         "✅ 잔류 기록 " + numberWithCommas(memberStorageResidualCount) + "건 보존\n" +
                         "💾 기존 분리 기록과 회원 원본을 함께 보관했습니다.\n" +
+                        "✅ 회원·분리 백업의 버전을 함께 맞췄습니다.\n" +
                         "진행 중인 대회 상태와 재화는 그대로 유지합니다.");
                     return; // 복구 작업으로 만료된 게임 턴을 처리하거나 기존 정리를 함께 실행하지 않음
                 }
