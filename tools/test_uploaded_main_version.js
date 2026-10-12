@@ -48,25 +48,37 @@ public class MockVersionConsole {
         const result = child.spawnSync("cmd.exe", ["/d", "/c", wrapper], { cwd: temp, encoding: "utf8",
             env: { ...process.env, HOIBOT_TEST_VERSION_OUTPUT: output, HOIBOT_TEST_VERSION_EXIT: String(exitCode) } });
         assert.equal(result.status, expected ? 0 : 22, name + "\n" + result.stdout + result.stderr);
-        if (expected) assert(result.stdout.includes("Uploaded version matches local source: ver_2.629"));
+        if (expected) {
+            const expectedVersion = /^const HoiBotVersion\s*=\s*"([^"]+)"/m.exec(fs.readFileSync(local, "utf8"))[1];
+            assert(result.stdout.includes("Uploaded version matches local source: ver_" + expectedVersion));
+        }
         console.log("PASS " + (++groups) + ": " + name);
     }
     for (const mode of ["1", "0"]) {
         const label = mode === "1" ? "direct fake ADB" : "fake LD console";
         run(label + " correct declared version", mode, '3:const HoiBotVersion = "2.629"; // 수정 시 0.001 증가\r\n', 0, true);
+        run(label + " Android repeated CR line ending", mode, '3:const HoiBotVersion = "2.629"; // 수정 시 0.001 증가\r\r\n', 0, true);
+        run(label + " CR only line ending", mode, '3:const HoiBotVersion = "2.629";\r', 0, true);
+        run(label + " unterminated line", mode, '3:const HoiBotVersion = "2.629";', 0, true);
         run(label + " error words in declaration comment accepted", mode, '3:const HoiBotVersion = "2.629"; // error failed not found\r\n', 0, true);
         run(label + " no line number accepted", mode, 'const HoiBotVersion = "2.629";\n', 0, true);
         run(label + " wrong uploaded version rejected", mode, '3:const HoiBotVersion = "2.628";\r\n', 0, false);
+        run(label + " wrong version with Android line ending rejected", mode, '3:const HoiBotVersion = "2.628";\r\r\n', 0, false);
         run(label + " empty result rejected", mode, '', 0, false);
         run(label + " source references do not prove version", mode, '31566:replier.reply("ver_"+HoiBotVersion+memberStorageErrorText);\r\n', 0, false);
         run(label + " duplicate declarations rejected", mode, '3:const HoiBotVersion = "2.629";\n4:const HoiBotVersion = "2.629";\n', 0, false);
         run(label + " transport failure retains exit code through type", mode, '3:const HoiBotVersion = "2.629";\n', 1, false);
         run(label + " error mixed with version rejected", mode, '3:const HoiBotVersion = "2.629";\nadb: error: transport closed\n', 0, false);
+        run(label + " Android line ending with error rejected", mode, '3:const HoiBotVersion = "2.629";\r\r\nadb: error: transport closed\r\r\n', 0, false);
     }
     fs.writeFileSync(local, 'var HoiBotVersion="2.629";\n', "utf8");
     run("invalid local declaration rejected", "1", '3:const HoiBotVersion = "2.629";\n', 0, false);
     fs.writeFileSync(local, localText + 'const HoiBotVersion = "2.629";\n', "utf8");
     run("ambiguous local declaration rejected", "1", '3:const HoiBotVersion = "2.629";\n', 0, false);
+    const actualSource = fs.readFileSync(path.join(repoTools, "..", "main.js"), "utf8");
+    const actualDeclaration = /^const HoiBotVersion[^\r\n]+/m.exec(actualSource)[0];
+    fs.writeFileSync(local, actualSource, "utf8");
+    for (const mode of ["1", "0"]) run("current main.js source with Android line ending mode " + mode, mode, "3:" + actualDeclaration + "\r\r\n", 0, true);
     console.log("PASS: " + groups + " upload version verification groups; fake executables only");
 } finally {
     const resolved = fs.realpathSync(temp), parent = fs.realpathSync(os.tmpdir());

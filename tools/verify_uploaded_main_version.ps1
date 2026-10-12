@@ -10,6 +10,8 @@ try {
     $taskUtf8 = New-Object System.Text.UTF8Encoding($false, $true)
     $taskSourceText = [System.IO.File]::ReadAllText((Resolve-Path -LiteralPath $SourceFile).Path, $taskUtf8)
     $taskRemoteText = [System.IO.File]::ReadAllText((Resolve-Path -LiteralPath $RemoteVersionOutput).Path, $taskUtf8)
+    # Older Android shell transports can return CRCRLF; normalize line breaks before matching.
+    $taskRemoteText = [regex]::Replace($taskRemoteText, '\r\n?', "`n")
     $taskPattern = '(?m)^(?:\d+:)?[ \t]*const[ \t]+HoiBotVersion[ \t]*=[ \t]*"([^"\r\n]+)"[ \t]*;[^\r\n]*\r?$'
     $taskLocalDeclarations = [regex]::Matches($taskSourceText, $taskPattern)
     $taskRemoteDeclarations = [regex]::Matches($taskRemoteText, $taskPattern)
