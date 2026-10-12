@@ -159,14 +159,15 @@ findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%
 if not errorlevel 1 goto FAIL_REMOTE_VERIFY
 echo [VERIFY] Uploaded HoiBotVersion:
 if "%USE_DIRECT_ADB%"=="1" (
-	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "grep -n HoiBotVersion '%TARGET_FILE%'" > "%DEPLOY_LOG%" 2>&1
+	"%ADB_EXE%" -s %TARGET_ADB_DEVICE% shell "grep -n '^const HoiBotVersion =' '%TARGET_FILE%'" > "%DEPLOY_LOG%" 2>&1
 ) else (
-	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell grep -n HoiBotVersion %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
+	"%LD_CONSOLE_EXE%" adb --index %TARGET_LD_INDEX% --command "shell grep -n '^const HoiBotVersion =' %TARGET_FILE%" > "%DEPLOY_LOG%" 2>&1
 )
+set "REMOTE_VERSION_EXIT_CODE=!ERRORLEVEL!"
 type "%DEPLOY_LOG%"
+if not "!REMOTE_VERSION_EXIT_CODE!"=="0" goto FAIL_REMOTE_VERIFY
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0verify_uploaded_main_version.ps1" -SourceFile "%SOURCE_FILE%" -RemoteVersionOutput "%DEPLOY_LOG%"
 if errorlevel 1 goto FAIL_REMOTE_VERIFY
-findstr /i /c:"not found" /c:"No such file" /c:"failed" /c:"error" "%DEPLOY_LOG%" > nul 2>&1
-if not errorlevel 1 goto FAIL_REMOTE_VERIFY
 echo [OK] main.js uploaded
 echo.
 
