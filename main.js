@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.640"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.641"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -8474,10 +8474,12 @@ replier.reply(
     "【 기본 + 현재 티어 → 가호 적용 】\n\n" +
     "💬 채팅: 1 EXP\n" +
     "📅 출석체크: 100 EXP\n" +
-    "🏆 캐슬대전: 50 EXP\n" +
-    "🐹 미니펫대전: 50 EXP\n" +
+    "🏆 캐슬대전: " + GLOBAL_CONFIG.daily.castleBattleExperience.win + " EXP\n" +
+    "🐹 미니펫대전: " + GLOBAL_CONFIG.daily.miniPetBattleExperience.win + " EXP\n" +
     "📜 일일퀘스트: 100 EXP\n" +
-    "🦋 주간퀘스트: 500 EXP\n\n" +
+    "🦋 주간퀘스트: 500 EXP\n" +
+    "🧸 인형뽑기: 인형별 기본 EXP 적용\n" +
+    "└ 획득한 인형에 따라 기본 경험치가 달라집니다.\n\n" +
     "⛰️ 펫탐험 경험치\n" +
     "⛏️ 광산: 3 EXP\n" +
     "⚔️ 던전: 5 EXP\n" +
@@ -8485,7 +8487,8 @@ replier.reply(
     "👑 호패 프리미엄 보상\n" +
     "경험치 보상도 가호 적용 시 3배 획득!\n\n" +
     "※ 현재 티어의 고정 EXP를 기본 EXP에 먼저 더한 뒤\n" +
-    "가호가 충분하면 합계의 3배를 획득합니다.\n\n" +
+    "가호가 충분하면 합계의 3배를 획득합니다.\n" +
+    "인형뽑기 경험치에도 동일하게 적용됩니다.\n\n" +
     "✨ 가호 소모 안내\n" +
     "가호는 추가된 경험치만큼 1:1로 사용되며,\n" +
     "부족하면 남은 수량만큼만 추가 경험치를 획득합니다."
@@ -60071,27 +60074,31 @@ function dollTitle(data,petData,guildData,user,label,emoji) {
 }
 // 인형 획득 결과와 상세 경험치·잔여 재화를 출력하는 함수
 function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
-    var cfg=GLOBAL_CONFIG.doll, lines=[dollTitle(data,petData,guildData,user,"인형뽑기")];
+    var cfg=GLOBAL_CONFIG.doll, title=dollTitle(data,petData,guildData,user,"인형뽑기"), lines=[title];
     if(!result.ok) return lines.concat(["🧸 뽑기에 사용할 이용권이 부족해요.","└ 인형뽑기이용권 1개가 필요해요.","","🧸 이용권 0개 · 보유 🅟"+numberWithCommas(data.member[user].point),"└ 부족한 이용권: 1개","━━━━━━━━━━━━","📖 명령어"+allsee,dollCommandFooter()]).join("\n");
+    var dividerAt=title.lastIndexOf("\n━━━━━━━━━━━━"); // 기존 머리말의 마지막 구분선 앞에 현재 티어 표시
+    lines=[title.substring(0,dividerAt),"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%","━━━━━━━━━━━━",""];
     var d=result.doll;
     if(result.success) {
         lines.push("✅ "+cfg.emojis[d.grade]+" "+cfg.grades[d.grade]+"｜"+d.name,"📏 "+(result.length/10).toFixed(1)+"cm · "+result.size.label,"");
         lines.push(result.fresh ? "✨ 신규 등록 ["+numberWithCommas(Object.keys(result.record.catches).length)+"/1,000종]" : "🔁 중복 획득","└ 💪 "+(result.fresh?"수집":"중복")+" 종합매력 +"+numberWithCommas(result.charm)+"💞");
         if(result.sale>0) lines.push("💰 자동 판매 🅟"+formatDollAmount(result.sale));
-        lines.push("📊 경험치 +"+formatAdventureExperience(result.experience.total)+"exp");
+        lines.push("📊 총 획득 경험치: +"+formatAdventureExperience(result.experience.total)+"exp");
     } else lines.push("❌ 인형뽑기 실패","다음 뽑기에 다시 도전해 보세요!");
-    lines.push("━━━━━━━━━━━━","🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개", "🪙 잔여 🅟"+numberWithCommas(result.remainingPoint));
+    lines.push("","━━━━━━━━━━━━","🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개");
     if(result.ticket && result.remainingTicket===0) lines.push("└ 다음 뽑기부터 이용권을 추가로 준비해 주세요.");
-    lines.push("📖 상세·명령어"+allsee,"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%");
+    lines.push("📖 상세·명령어"+allsee);
     if(result.success) {
         if(result.oldMax!==null && result.length>result.oldMax) lines.push("","🏆 개인 최고 기록 갱신","└ "+(result.oldMax/10).toFixed(1)+"cm → "+(result.length/10).toFixed(1)+"cm");
         if(result.sale>0) lines.push("","💰 자동 판매 상세","└ "+result.size.label+": 기본 🅟"+formatDollAmount(cfg.sale[d.grade])+" ×"+result.size.multiplier+" = 🅟"+formatDollAmount(result.sale));
         var exp=result.experience, boost=exp.boosterResult;
-        lines.push("","📊 경험치 +"+formatAdventureExperience(exp.total)+"exp","├ 인형 기본 +"+formatAdventureExperience(exp.base),(boost.extraExperience>0?"├":"└")+" 티어 보너스 +"+formatAdventureExperience(exp.bonus));
-        if(boost.extraExperience>0) lines.push("└ 가호 추가 +"+formatAdventureExperience(boost.extraExperience),"✨ 가호 "+numberWithCommas(boost.usedBooster)+"개 사용");
+        lines.push("","📊 총 획득 경험치: +"+formatAdventureExperience(exp.total)+"exp","├ 📘 기본: +"+formatAdventureExperience(exp.base)+"exp",(boost.extraExperience>0?"├":"└")+" 🎟️ 티어 보너스: +"+formatAdventureExperience(exp.bonus)+"exp");
+        if(boost.extraExperience>0) lines.push("└ ✨ 가호 추가 보너스: +"+formatAdventureExperience(boost.extraExperience)+"exp","","✨ 호월신의 가호: "+numberWithCommas(boost.usedBooster)+"개 사용");
         lines.push("","📖 획득 등급 보기",getDollCollectionCommand(catalog,result.record,d.id));
     }
-    lines.push("━━━━━━━━━━━━",dollCommandFooter()); return lines.join("\n");
+    if(result.success) lines.push("━━━━━━━━━━━━");
+    else lines.push("");
+    lines.push(dollCommandFooter()); return lines.join("\n");
 }
 // 인형 안내 금액을 억·만 단위로 표시하는 함수
 function formatDollAmount(amount) {
