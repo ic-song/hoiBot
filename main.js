@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.635"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.636"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -994,6 +994,7 @@ var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     doll: {
+        allowedRoom: testRoom, // 테스트 기간에는 기존 팻 테스트방 제목과 정확히 일치해야 함
         ticketName: "인형뽑기이용권🧸(/인형뽑기)", cost: 300000000, shardCount: 16,
         rates: { baseSuccessPercent: 5, tierStepPercent: 1, sizeWeights: [85,14,1] },
         limits: { catalogSize: 1000, publicRanks: 10, personalRanks: 100 },
@@ -2831,6 +2832,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
+        }
+        // 방 제한은 복구·자동 저장·요청 과부하 기록보다 먼저 확인한다.
+        if (isDollTestRoomCommand(msg) && room !== GLOBAL_CONFIG.doll.allowedRoom) {
+            var dollRoomMemberPath = resolveActiveDataPath(filePath);
+            var dollRoomGuildPath = resolveActiveDataPath(guildPath);
+            var dollRoomMemberData = parseJsonContent(FileStream.read(dollRoomMemberPath, "utf-8"), dollRoomMemberPath);
+            var dollRoomGuildData = parseJsonContent(FileStream.read(dollRoomGuildPath, "utf-8"), dollRoomGuildPath);
+            replier.reply(buildDollTestRoomRestrictionMessage(dollRoomMemberData, dollRoomGuildData, sender));
+            return;
         }
         // 서버 레이드대전 진입: 다른 명령 전처리·자동 저장보다 먼저 잠금과 권한을 검사한다.
         var raidTurnInput = String(msg || "").trim(); // 남은 턴 조회 두 명령만 앞뒤 공백 허용
@@ -59843,6 +59853,22 @@ function getDollRequest(msg) {
     }
     if (/^\/인형도감(?:\s+[\s\S]*)?$/.test(String(msg))) return { kind: "invalid" };
     return null;
+}
+// 구현된 인형 명령과 기획의 관리 명령을 방 제한 대상으로 판별하는 함수
+function isDollTestRoomCommand(msg) {
+    return getDollRequest(msg) !== null || msg === "/인형전체초기화";
+}
+// 표시용 사본에서 길드 불일치를 제거해 저장 없이 테스트방 안내를 만드는 함수
+function buildDollTestRoomRestrictionMessage(data, guildData, user) {
+    var displayData = JSON.parse(JSON.stringify(data)); // checkRank의 길드 정리가 원본 저장으로 이어지지 않도록 분리
+    var displayUsers = [user, displayData.HoiCastle && displayData.HoiCastle.lord];
+    for (var i = 0; i < displayUsers.length; i++) {
+        var member = displayData.member[displayUsers[i]];
+        if (!member || !member.guild || !member.guild.id) continue;
+        var guild = guildData && guildData.guilds && guildData.guilds[member.guild.id];
+        if (!guild || !guild.members || !guild.members[displayUsers[i]]) delete member.guild;
+    }
+    return "🧸 [" + checkRank(displayData, {}, guildData || {}, user) + "] 님\n현재 인형뽑기 컨텐츠를 테스트 중이에요.\n📍 관련 명령어는 ‘" + GLOBAL_CONFIG.doll.allowedRoom + "’에서만 이용할 수 있어요.";
 }
 // 인형 계정 기록을 나눠 보관할 파일 번호를 계산하는 함수
 function getDollShard(user) {
