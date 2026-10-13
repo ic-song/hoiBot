@@ -44,17 +44,17 @@ test("인형패스 손상·정수 초과 차단·패스 명령도 테스트방 �
 test("글자수전체정리의 세 대전 허용·정확한 명령 경계",()=>{
  for(const n of ["isGuildTerritoryAllowedDuringWarCommand","isServerRaidAdditionalCommand","isPetMusouAllowedDuringTournamentCommand"]){assert(c[n]("/글자수전체정리"));assert(!c[n]("/글자수전체정리 실행"));}
 });
-test("일퀘 5회·콘텐츠 10회·자동 15회 경계·기존 초과 기록 보존",()=>{
- for(const n of ["trialTowerMax","castleBattleMax","miniPetBattleMax"])assert.strictEqual(c.GLOBAL_CONFIG.daily[n],10);assert.strictEqual(c.GLOBAL_CONFIG.daily.autoDailyBonusRuns,5);
- for(const count of [9,10,14,15,20]){const d={member:{u:{towerCnt:count,battle:{count}}}},p={u:{miniPetBattle:{count}}};const before=JSON.stringify([d,p]);assert.strictEqual(c.isAutoDailyQuestRunComplete(d,p,"u"),count>=15);assert.strictEqual(JSON.stringify([d,p]),before);}
+test("일퀘 5회·콘텐츠 5회·자동 10회 경계·기존 초과 기록 보존",()=>{
+ for(const n of ["trialTowerMax","castleBattleMax","miniPetBattleMax"])assert.strictEqual(c.GLOBAL_CONFIG.daily[n],5);assert.strictEqual(c.GLOBAL_CONFIG.daily.autoDailyBonusRuns,5);
+ for(const count of [4,5,9,10,15,20]){const d={member:{u:{towerCnt:count,battle:{count}}}},p={u:{miniPetBattle:{count}}};const before=JSON.stringify([d,p]);assert.strictEqual(c.isAutoDailyQuestRunComplete(d,p,"u"),count>=10);assert.strictEqual(JSON.stringify([d,p]),before);}
  const oldLoad=c.loadJsonFile;c.loadJsonFile=()=>({record:{}});c.petExplorePath="synthetic";c.initPetExploreData=d=>d;c.cleanupInvalidPetExploreUsers=()=>{};c.savePetExploreMigrationIfNeeded=()=>{};c.getPetExploreRank=()=>null;c.hasActiveHoiOrNewbiePass=()=>false;c.isHoiPassPremiumActive=()=>false;
- try{for(const count of [4,5,9,10,20]){const d={member:{u:{towerCnt:count,battle:{count},exploreCnt:10}}},p={u:{miniPetBattle:{count}}};const s=c.getDailyQuestStatus(d,p,{},"u");assert.strictEqual(s.isComplete,count>=5);assert.strictEqual(s.towerMax,10);assert.strictEqual(d.member.u.towerCnt,count);}}finally{c.loadJsonFile=oldLoad;}
+ try{for(const count of [4,5,9,10,20]){const d={member:{u:{towerCnt:count,battle:{count},exploreCnt:10}}},p={u:{miniPetBattle:{count}}};const s=c.getDailyQuestStatus(d,p,{},"u");assert.strictEqual(s.isComplete,count>=5);assert.strictEqual(s.towerMax,5);assert.strictEqual(d.member.u.towerCnt,count);}}finally{c.loadJsonFile=oldLoad;}
 });
-test("실제 자동 반복은 남은 15회까지만 실행·진행 실패 중단",()=>{
- let count=9,calls=0;c.getAutoDailyQuestSnapshot=()=>({status:{towerUsed:count,towerMax:10}});c.runAutoDailyInternalCommand=()=>{calls++;count++;return[];};c.getLastAutoDailyBlockedMessage=()=>"";c.buildAutoDailyBlockedFallbackMessage=()=>"중단";
- c.runAutoDailyQuestCommands("test","u",true,null,"com.kakao.talk","/시탑","towerUsed","towerMax");assert.strictEqual(calls,6);assert.strictEqual(count,15);
+test("실제 자동 반복은 남은 10회까지만 실행·진행 실패 중단",()=>{
+ let count=4,calls=0;c.getAutoDailyQuestSnapshot=()=>({status:{towerUsed:count,towerMax:5}});c.runAutoDailyInternalCommand=()=>{calls++;count++;return[];};c.getLastAutoDailyBlockedMessage=()=>"";c.buildAutoDailyBlockedFallbackMessage=()=>"중단";
+ c.runAutoDailyQuestCommands("test","u",true,null,"com.kakao.talk","/시탑","towerUsed","towerMax");assert.strictEqual(calls,6);assert.strictEqual(count,10);
  c.runAutoDailyQuestCommands("test","u",true,null,"com.kakao.talk","/시탑","towerUsed","towerMax");assert.strictEqual(calls,6);
- count=10;c.runAutoDailyInternalCommand=()=>{calls++;return[];};c.runAutoDailyQuestCommands("test","u",true,null,"com.kakao.talk","/시탑","towerUsed","towerMax");assert.strictEqual(calls,7);
+ count=5;c.runAutoDailyInternalCommand=()=>{calls++;return[];};c.runAutoDailyQuestCommands("test","u",true,null,"com.kakao.talk","/시탑","towerUsed","towerMax");assert.strictEqual(calls,7);
 });
 test("실제 승패 경험치 분기는 승리 100·패배 25·티어와 가호 순서 유지",()=>{
  for(const [flag,key,result] of [["isWinFlag","castle","castleTierExpResult"],["isWin","mini","miniTierExpResult"]]){
@@ -120,5 +120,22 @@ test("초기화 완료 후 응답과 디버그 로그 전송 모두 실패해도
  seedReset();const member=fixture.read(),original=c.debuggerLog;fixture.replyFail(true);c.debuggerLog=()=>{throw Error("log transport failure");};
  try{assert.doesNotThrow(()=>run("/인형전체초기화",false,"master"));}finally{fixture.replyFail(false);c.debuggerLog=original;}
  assert.deepStrictEqual(fixture.read(),member);assert.strictEqual(fixture.get(root+"member_pet.json").u.dollCharm,undefined);assert.strictEqual(fixture.get(root+"dollPending.json").pending,null);
+});
+test("실제 3종 명령 한도 분기: 일반 5·자동 10·기존 초과 기록 무소모",()=>{
+ const ctx={GLOBAL_CONFIG:c.GLOBAL_CONFIG,guildData:{},autoDailyQuestInternalDepth:0,replier:{reply(){}},checkRank:()=>"u",hasItem:(d,u,n)=>d.member[u].bag[n]>0,removeItem:(d,u,n,q)=>{d.member[u].bag[n]-=q;}};vm.createContext(ctx);
+ const castleVar=main.match(/let joinMaxCnt = GLOBAL_CONFIG.daily.castleBattleMax[^\r\n]+/)[0];
+ const towerVar=main.match(/let maxEnter = GLOBAL_CONFIG.daily.trialTowerMax[^\r\n]+/)[0];
+ const miniVar=main.match(/let miniPetBattleMax = GLOBAL_CONFIG.daily.miniPetBattleMax[^\r\n]+/)[0];
+ const miniStart=main.indexOf('if (petData[sender].miniPetBattle.count >= joinMaxCnt)');
+ vm.runInContext('function castle(data,petData,sender){'+castleVar+'\n'+block(main,'if (data.member[sender].battle.count >= joinMaxCnt)')+'return true;}'+
+  'function tower(data,petData,sender){'+towerVar+'\n'+block(main,'if (data.member[sender].towerCnt >= maxEnter && sender != "호이 남")')+'return true;}'+
+  'function mini(data,petData,sender){var userRank="u",resetItemName="미니펫대전리셋권🐹",joinMaxCnt=GLOBAL_CONFIG.daily.miniPetBattleFree;'+miniVar+'\n'+block(main.slice(miniStart),'if (petData[sender].miniPetBattle.count >= joinMaxCnt)')+'return true;}',ctx);
+ for(const depth of [0,1])for(const count of [0,4,5,9,10,15])for(const command of ['tower','castle','mini']){
+  ctx.autoDailyQuestInternalDepth=depth;const d={member:{u:{towerCnt:count,battle:{count},bag:{'미니펫대전리셋권🐹':99}}}},p={u:{miniPetBattle:{count}}},before=JSON.stringify([d,p]);
+  assert.strictEqual(ctx[command](d,p,"u")===true,count<(depth?10:5));
+  if(count>=(depth?10:5))assert.strictEqual(JSON.stringify([d,p]),before);
+  assert.strictEqual(d.member.u.towerCnt,count);assert.strictEqual(d.member.u.battle.count,count);assert.strictEqual(p.u.miniPetBattle.count,count);
+ }
+ const d={member:{'호이 남':{towerCnt:15}}};assert(ctx.tower(d,{},'호이 남')); // 기존 시련탑 운영자 예외 유지
 });
 console.log("OCT14 확정 정책 "+groups+"개 그룹 통과");
