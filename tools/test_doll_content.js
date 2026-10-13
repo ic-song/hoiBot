@@ -170,4 +170,32 @@ test("특수 이름 저장·복구 마지막 표시 저장 실패·일반 명령
  for(const command of["/인형뽑기 2","/인형뽑기 1 해봐"]){run(command);assert(!fixture.traces().some(t=>t.type==="save"));assert.deepStrictEqual(fixture.read(),before);}
  }finally{c.Math.random=random;}
 });
+
+test("성공 확률 직전·정확한 경계와 최저/최고 크기",()=>{
+ for(const [tier,percent] of [["새싹",5],["킹",15],["호월신",55]]){
+  const x=input();x.d.member.u.rank.tier=tier;assert(draw(x,[(percent-0.0001)/100,0,0,0,0]).success);
+  const y=input();y.d.member.u.rank.tier=tier;assert(!draw(y,[percent/100]).success);
+ }
+ const small=input(),large=input();assert.strictEqual(draw(small,[0,0,0,0,0]).length,cat.dolls[0].minTenths);
+ assert.strictEqual(draw(large,[0,0,0,0.999,0.999999]).length,cat.dolls[0].maxTenths);
+});
+test("손상 티켓·매력 정수 상한·손상 도감은 저장 전 차단",()=>{
+ const random=c.Math.random;c.Math.random=()=>0;
+ try{
+  for(const invalid of [-1,0.5,"1",null,9007199254740992]){
+   install();const d=fixture.read();d.member.u.bag[c.GLOBAL_CONFIG.doll.ticketName]=invalid;fixture.write(d);
+   const before=fixture.read();assert.throws(()=>run());assert.deepStrictEqual(fixture.read(),before);assert(!fixture.traces().some(t=>t.type==="save"));
+  }
+  install();const p=fixture.get(root+"member_pet.json");p.u.dollCharm=9007199254740991;fixture.put(root+"member_pet.json",p);
+  const before=fixture.read();assert.throws(()=>run());assert.deepStrictEqual(fixture.read(),before);assert(!fixture.traces().some(t=>t.type==="save"));
+  install();const bad=JSON.parse(JSON.stringify(catalog));bad.dolls[0].id="D9999";fixture.put(root+"dollCatalog.json",bad);
+  const snapshot=fixture.read();assert.throws(()=>run());assert.deepStrictEqual(fixture.read(),snapshot);assert(!fixture.traces().some(t=>t.type==="save"));
+ }finally{c.Math.random=random;}
+});
+test("복구 목록 전체 검사 후 쓰기·잘못된 경로/JSON 차단",()=>{
+ for(const bad of [{name:"../member.json",text:"{}"},{name:"dollRecords_16.json",text:"{}"},{name:"member.json",text:"{"}]){
+  install();const before=fixture.read();fixture.put(root+"dollPending.json",{pending:[{name:"member.json",text:JSON.stringify({member:{}})},bad]});
+  assert.throws(()=>run("/인형도감"));assert.deepStrictEqual(fixture.read(),before);assert(!fixture.traces().some(t=>t.type==="save"));
+ }
+});
 console.log("인형 규칙·UI·실제 저장 "+groups+"개 그룹 통과");

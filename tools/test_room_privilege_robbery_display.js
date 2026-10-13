@@ -18,7 +18,7 @@ function block(source, marker) {
 }
 for (const [source, label] of [[main, "Main"], [info, "Info"]]) {
     const c = { room90: "호이월드 GM 관리자방", room91: "통합스텝", room92: "서버관리자",
-        testRoom: "팻 테스트방", room8: "명령어방", room: "", Admins: ["admin"], Master: ["master"] };
+        room5: "커뮤니티방", testRoom: "팻 테스트방", room8: "명령어방", room: "", Admins: ["admin"], Master: ["master"] };
     c.getCurrentContext = () => ({ permissionRoom: c.room });
     vm.createContext(c);
     vm.runInContext(block(source, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);

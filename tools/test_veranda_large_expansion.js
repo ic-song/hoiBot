@@ -143,10 +143,12 @@ const threadLocal = {
     remove() { this.value = null; }
 };
 const transactionContext = {
+    filePath: "member.json",
     dataSaveTransactionThreadLocal: threadLocal,
     dataTransactionLock: { lock() {}, unlock() {} },
     resolveActiveDataPath: value => value,
     getAutoDailyBatchContext: () => null,
+    getCurrentContext: () => ({}), // 이 합성 명령에는 계정 삭제 상태가 없음
     getManagedJsonBackupPath: value => value === "skills.json" || value === "member.json" ? value + ".bak" : null,
     isProtectedManagedJsonPath: value => value === "skills.json" || value === "member.json",
     ensureParentFolder: () => {},

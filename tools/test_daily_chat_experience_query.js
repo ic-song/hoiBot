@@ -35,7 +35,7 @@ assert.strictEqual(context.getChatExperienceQueryTarget("/채팅경험치확인"
 assert.strictEqual(context.getChatExperienceQueryTarget("/채팅경험치확인삭제 핑크 여"), null);
 console.log("1/5 대상 닉네임·명령 경계 PASS");
 
-const data = { member: { "핑크 여": { recent: context.today, chatExperienceDaily: { date: context.today, experience: 497, notified: false } } } };
+const data = { member: { "핑크 여": { today: 1, recent: context.today, chatExperienceDaily: { date: context.today, experience: 497, notified: false } } } };
 let output = context.buildDailyChatExperienceStatusMessage(data, "핑크 여");
 assert(output.includes("대상: 핑크 여"));
 assert(output.includes("기준: 2026.09.27 (KST)"));
@@ -59,11 +59,15 @@ assert(context.buildDailyChatExperienceStatusMessage(data, "핑크 여").include
 console.log("3/5 한도 도달·초과 저장값 표시 PASS");
 
 context.today = "20260928";
+// 자정에는 출석을 유지하고 채팅 경험치 날짜만 갱신한다.
+assert(context.buildDailyChatExperienceStatusMessage(data, "핑크 여").includes("상태: 획득 가능"));
+data.member["핑크 여"].today = 0; // /리셋 완료
 output = context.buildDailyChatExperienceStatusMessage(data, "핑크 여");
 assert(output.includes("획득: 0 / 1,000 EXP"));
 assert(output.includes("남음: 1,000 EXP"));
 assert(output.includes("상태: 출석 전"));
 data.member["핑크 여"].recent = context.today;
+data.member["핑크 여"].today = 1;
 delete data.member["핑크 여"].chatExperienceDaily;
 assert(context.buildDailyChatExperienceStatusMessage(data, "핑크 여").includes("상태: 획득 가능"));
 console.log("4/5 날짜 변경·기록 없음 PASS");

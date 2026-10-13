@@ -33,6 +33,7 @@ function fail(stage, file) {
 }
 function FakeFile(file) { this.path = String(file); }
 FakeFile.prototype.exists = function () { return Object.hasOwn(disk, this.path); };
+FakeFile.prototype.getName = function () { return this.path.split("/").pop(); };
 FakeFile.prototype.getPath = function () { return this.path; };
 FakeFile.prototype.delete = function () { delete disk[this.path]; return true; };
 FakeFile.prototype.renameTo = function (to) {
@@ -50,7 +51,7 @@ function threadLocal() {
     return { value: null, get() { return this.value; }, set(v) { this.value = v; }, remove() { this.value = null; } };
 }
 const c = {
-    sender: "호이 남", memberPetPath: petFile, guildData: {}, allsee: "<ALLSEE>",
+    filePath: root + "member.json", sender: "호이 남", memberPetPath: petFile, guildData: {}, allsee: "<ALLSEE>",
     DATA_ROOT_PATH: root, DEV_DATA_ROOT_PATH: devRoot, COMMON_DATA_FILE_MAP: {},
     commandContextThreadLocal: threadLocal(), dataSaveTransactionThreadLocal: threadLocal(),
     dataTransactionLock: noopLock, protectedJsonSaveLocks: {},

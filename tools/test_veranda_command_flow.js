@@ -65,6 +65,7 @@ const context = {
     replier: { reply(message) { replies.push(message); } },
     resolveActiveDataPath: value => value,
     getAutoDailyBatchContext: () => null,
+    getCurrentContext: () => ({}), // 이 합성 명령에는 계정 삭제 상태가 없음
     getManagedJsonBackupPath: file => file === files.member || file === files.skills ? file + ".bak" : null,
     isProtectedManagedJsonPath: file => file === files.member || file === files.skills,
     ensureParentFolder: () => {},
