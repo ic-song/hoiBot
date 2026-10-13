@@ -24,12 +24,12 @@ test("Info 안내/판정도 5회·보상 1개·기존 전체보기 유지",()=>{
  for(const count of [4,5,15]){const x=prepare(count);assert.strictEqual(ic.getDailyQuestStatus(x.d,x.p,{},"u").isComplete,count>=5);const out=ic.buildDailyQuestInfoMessage(x.d,x.p,{},"u");assert(out.includes("시련탑😈["+count+"/5]"));assert(out.includes(c.GLOBAL_CONFIG.doll.ticketName+" 1개"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);}
 });
 c.loadJsonFile=originalLoad;
-test("Main/Info 학개론 실제 슬롯 40/43·친밀도 경계·해제·프리미엄 +7",()=>{
+test("Main/Info 학개론 실제 슬롯 30/33·친밀도 경계·해제·프리미엄 +7",()=>{
  for(const source of [main,info]){vm.runInContext(source.match(/const PET_SKILL_MAX_EQUIP_SLOT = \d+;/)[0].replace("const ","var "),c);vm.runInContext(block(source,"function getPetSkillSlotCount("),c);let level=0,intro=false,premium=false;c.getUserIntimacyInfo=()=>({level});c.hasPetSkill=()=>intro;c.isHoiPassPremiumActive=()=>premium;
  c.isInfoSupportPassActive=()=>premium;
- for(const n of [0,99,100,3999,4000,5000])for(const enabled of [false,true])for(const paid of [false,true]){level=n;intro=enabled;premium=paid;assert.strictEqual(c.getPetSkillSlotCount({}, {},"u"),Math.min(Math.floor(n/100),40)+(enabled?3:0)+(paid?7:0));}
+ for(const n of [0,99,100,2999,3000,3999,4000,5000])for(const enabled of [false,true])for(const paid of [false,true]){level=n;intro=enabled;premium=paid;assert.strictEqual(c.getPetSkillSlotCount({}, {},"u"),Math.min(Math.floor(n/100),30)+(enabled?3:0)+(paid?7:0));}
  }
- assert(main.includes("최대수치 40개가 되면 43개로 확장됩니다."));
+ assert(main.includes("최대수치 30개가 되면 33개로 확장됩니다."));
 });
 test("승급 9단계13%·10단계14%·최고티어55%·변화 안내 제거",()=>{
  const tiers=vm.runInContext("Object.keys(ticketTierData)",c);for(const [at,pct] of [[8,13],[9,14],[50,55]]){const out=c.buildTierPromotionSuccessMessage({},"실제 닉네임",{newTierName:tiers[at],bonus:900});assert(out.includes("[실제 닉네임] 님\n━━━━━━━━━━━━━━━"));assert(out.includes("💞 매력 보상: +900"));assert(out.includes("🧸 인형 성공확률 보너스: "+pct+"% 적용"));assert(!out.includes("% →"));assert(out.includes("📋 승급 준비 확인: /티어"));assert.strictEqual(out.includes("🎯 다음 목표"),at<50);}
