@@ -98,7 +98,7 @@ vm.runInContext(block(main, "function createContextReplier("), c);
 vm.runInContext(block(main, "function formatNicknameRankMessage("), c);
 vm.runInContext("function runTicketMove(){" + block(main, 'if (msg === "/서버변경" ||') + "}", c);
 vm.runInContext("function runAdminMove(){" + block(main, "if (/^\\/서버이동\\s+") + "}", c);
-const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank };
+const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank, java: c.java, DATA_ROOT_PATH: root, resolveActiveDataPath: p => c.resolveActiveDataPath(p) };
 vm.createContext(infoContext);
 vm.runInContext(block(info, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", infoContext);
 for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isInfoServerRaidLocked", "isInfoServerRaidAdditionalCommand", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatRankNickname", "formatOverallUserRow", "formatOverallServerRow", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"])
@@ -1581,7 +1581,7 @@ const infoDevPrelude = block(info.slice(info.indexOf("function response(")), "if
 vm.runInContext("function runAdditionalInfo(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
     block(info, 'if (msg.startsWith("/정보")') + block(info, 'if (msg === "/포인트" ||') + "}", infoContext);
 group("Info 실제 자격 검사와 포인트·정보 분기·읽기 전용·접미 차단", () => {
-    additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].recent = "2026-10-05"; write(d);
+    additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].today = 1; write(d);
     disk[root + "titles.json"] = JSON.stringify({ member: {} }); disk[root + "petTitles.json"] = "{}"; disk[root + "activity.json"] = "{}";
     function query(msg, user = "a", groupChat = true) {
         replies = []; Object.assign(infoContext, { msg, sender: user, isGroupChat: groupChat, ctx: { isDev: false } }); infoContext.runAdditionalInfo(); return replies.join("\n");
@@ -1611,7 +1611,7 @@ group("포인트 단축키 ㅍㅍㅍ는 준비·진행·정산/DEV 동일 출력
     additionalFixture(); additionalFixture(true); start(); start(true);
     for (const prefix of [root, devRoot]) {
         const d = JSON.parse(disk[prefix + "member.json"]);
-        for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].recent = "2026-10-05";
+        for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].today = 1;
         disk[prefix + "member.json"] = JSON.stringify(d);
         disk[prefix + "titles.json"] = JSON.stringify({ member: {} }); disk[prefix + "petTitles.json"] = "{}"; disk[prefix + "activity.json"] = "{}";
     }
@@ -1830,7 +1830,7 @@ group("실제 이체 저장 실패 전액 복구·DEV 이체는 운영 포인트
 vm.runInContext("function probePetInfoGuard(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
     'if (msg === "/펫정보") replier.reply("펫정보 분기 도달");}', infoContext);
 group("Info 실제 펫정보 진입·기존 출석/정지/가입/일대일 패스 검사 유지", () => {
-    additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].recent = "2026-10-05"; d.member.unassigned.agree = false; write(d);
+    additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].today = 1; d.member.unassigned.agree = false; write(d);
     disk[root + "titles.json"] = JSON.stringify({ member: {} }); disk[root + "petTitles.json"] = "{}";
     function probe(msg, user = "a", isGroup = true) { replies = []; Object.assign(infoContext, { msg, sender: user, isGroupChat: isGroup, ctx: { isDev: false } }); infoContext.probePetInfoGuard(); return replies.join("\n"); }
     const before = JSON.stringify(disk);

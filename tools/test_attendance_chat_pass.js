@@ -77,13 +77,27 @@ function round1() {
     assert.strictEqual(c.hasAttendedToday(data, "user"), true);
     assert.strictEqual(c.processAttendanceForUser(data, {}, {}, {}, "user").already, true);
     assert.strictEqual(data.member.user.point, 4500000, "중복 지급 금지");
+    c.today = "20260928";
+    assert.strictEqual(c.hasAttendedToday(data, "user"), true, "자정 이후에도 출석 회차 유지");
+    assert.strictEqual(c.processAttendanceForUser(data, {}, {}, {}, "user").already, true, "리셋 없이 다음 날 중복 지급 금지");
+    assert.strictEqual(data.member.user.point, 4500000);
     data.member.user.today = 0;
     data.attend_list = [];
-    assert.strictEqual(c.processAttendanceForUser(data, {}, {}, {}, "user").already, true, "같은 날짜 /리셋 후 중복 지급 금지");
-    c.today = "20260928";
-    assert.strictEqual(c.hasAttendedToday(data, "user"), false);
-    assert.strictEqual(c.processAttendanceForUser(data, {}, {}, {}, "user").ok, true, "오래된 출석 목록에도 다음 날 허용");
+    assert.strictEqual(c.processAttendanceForUser(data, {}, {}, {}, "user").ok, true, "리셋 후 새 출석 허용");
     assert.strictEqual(data.member.user.today, 1);
+    c.GLOBAL_CONFIG.petSkill = { prayer: { dailyFlagKey: "prayerUsed" } };
+    c.Api = { replyRoom: () => {} };
+    ["room1", "room2", "room3", "testRoom", "room5", "room6", "room7", "room10", "room11", "room12", "room15"].forEach(name => { c[name] = name; });
+    vm.runInContext(extractFunction(main, "resetAttendance"), c);
+    data.member.user.battle = { ticket: 1, count: 3 };
+    data.member.user.dailyQuestCnt = 1;
+    data.member.unlisted = { today: 1, bag: {}, battle: {}, dailyQuestCnt: 1 };
+    c.resetAttendance({}, data, { reply: () => {} });
+    assert.strictEqual(data.member.unlisted.today, 0, "목록에서 누락된 회원도 초기화");
+    assert.strictEqual(data.member.user.dailyQuestCnt, undefined);
+    assert.strictEqual(data.member.user.battle.count, 0);
+    assert.strictEqual(c.processAttendanceForUser(data, {}, {}, {}, "user").ok, true, "같은 날짜에도 새 리셋 회차 출석 허용");
+    assert.strictEqual(c.processAttendanceForUser(JSON.parse(JSON.stringify(data)), {}, {}, {}, "user").already, true, "재시작 후 같은 회차 중복 차단");
     console.log("1/5 출석·중복·날짜 변경 PASS");
 }
 
@@ -195,7 +209,7 @@ function round4() {
     assert(infoContext.isInfoAttendanceFreeCommand("/포인트", "오픈채팅봇"), "오픈채팅봇은 출석 전에도 정보 명령 허용");
     assert(infoContext.isInfoAttendanceFreeCommand("/미출석", "admin"));
     assert(main.includes("!hasAttendedToday(data, sender) && isAttendanceGameCommand(msg)"));
-    assert(info.includes("String(attendanceMember.recent || \"\") !== getInfoAttendanceKstDateKey()"));
+    assert(info.includes("(parseInt(attendanceMember.today, 10) || 0) <= 0"));
     const attendanceEntry = main.search(/if \(msg === "ㅊㅊ"\) \{\s*var attendanceResult/);
     assert(attendanceEntry > 0 && attendanceEntry < main.indexOf('if (matzangField.active && !matzangField.resting'), "출석은 맞짱필드 제한보다 먼저 처리");
     assert(attendanceEntry < main.indexOf('if (msg.length > 3)'), "출석은 채팅 경험치보다 먼저 처리");

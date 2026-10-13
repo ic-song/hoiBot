@@ -564,12 +564,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		if (msg === "/스타터중복확인" && room !== testRoom) return;
+		// 인형 저장 복구 전에는 부분 반영된 재화·매력 정보를 표시하지 않는다.
+		if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists()) {
+			var infoDollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
+			if (!infoDollPending || !Object.prototype.hasOwnProperty.call(infoDollPending, "pending")) throw new Error("인형 복구 기록 형식 오류");
+			if (infoDollPending.pending !== null) return;
+		}
 		let data = loadJsonFile(filePath);
 		// 레이드 잠금은 MASTER·전역 정보 예외보다 우선하고 안내는 main.js에서만 출력한다.
 		if (isInfoServerRaidLocked(data) && !isInfoServerRaidAdditionalCommand(msg)) return;
 		if (data && data.member && data.member[sender] && !isInfoAttendanceFreeCommand(msg, sender)) {
 			var attendanceMember = data.member[sender];
-			if (String(attendanceMember.recent || "") !== getInfoAttendanceKstDateKey()) return;
+			if ((parseInt(attendanceMember.today, 10) || 0) <= 0) return;
 		}
 		if (msg === "/스타터중복확인") {
 			if (!isMaster(sender)) return;
@@ -2180,6 +2186,7 @@ function getMiniPetModeCharm(user, petData) {
 	return primary + support;
 }
 
+// 정보 화면의 캐슬 기본 매력과 퍼센트 보너스를 계산하는 함수
 function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
 	let castleItem = calculateCastleItem(memberName, data) || 0;
 	let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
@@ -2202,7 +2209,9 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 		}
 	}
 	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
-	var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
+	var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
+	if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
+	var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp + dollCharm / 2; // 큐브 적용 전 캐슬 매력 합계
 	var castleCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "castle");
 	castleCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "castle");
 	castleCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
@@ -2229,7 +2238,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 		}
 	}
 	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
-	var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
+	var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
+	if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
+	var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp + dollCharm / 2; // 큐브 적용 전 레이드 매력 합계
 	var raidCubePercent = excludeHomeBadgeCube === true ? 0 : getHomeBadgeCubeActiveOptionPercent(data, memberName, "raid");
 	raidCubePercent += getGuildContributionCubeMemberPercent(data, guildData, memberName, "raid");
 	raidCubePercent += getInfoAdventureLevelSummary(data && data.member && data.member[memberName] ? data.member[memberName].lv : 1).charmPercent;
