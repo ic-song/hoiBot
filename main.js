@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.637"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.638"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -85,7 +85,7 @@ var guildLevelTable = {
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_SYSTEM_VERSION = 2;
 const PET_SKILL_RETIREMENT_COMPENSATION_VERSION = "2026-09-17-v2-collection";
-const PET_SKILL_MAX_EQUIP_SLOT = 30;
+const PET_SKILL_MAX_EQUIP_SLOT = 40;
 const PET_SKILL_BAG_MAX_COUNT = 100;
 const PET_SKILL_SELL_PRICE = 1000000000;
 const PET_SKILL_COMPAT_GROUPS = [
@@ -171,7 +171,7 @@ const PET_SKILL_LIST = [
     { name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +2 획득" },
     { name: "기도", grade: "C", rate: 1.5, effect: "하루 한 번 호월신에게 기도를 올립니다.\n3% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 신성한 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
-    { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
+    { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 40개가 되면 43개로 확장됩니다." },
     { name: "초월성장", grade: "C", rate: 4.5, openable: false, showUnopenableRate: true, retired: true, collectionEligible: false, effect: "레벨 리뉴얼로 폐지되어 효과가 종료되었습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "망므", grade: "C", rate: 4.0, heartBonus: 5, equipComment: "이건 내 망므야!", equipCommentNoColon: true, effect: "하루 마음 보내기 가능 횟수가 5회 증가합니다.\n펫스킬을 해제하면 추가된 일일 한도 5회는 회수됩니다." },
     { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
@@ -995,7 +995,7 @@ var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 
 const GLOBAL_CONFIG = {
     doll: {
         allowedRoom: testRoom, // 테스트 기간에는 기존 팻 테스트방 제목과 정확히 일치해야 함
-        ticketName: "인형뽑기이용권🧸(/인형뽑기)", cost: 1000000000, shardCount: 16,
+        ticketName: "인형뽑기이용권🧸(/인형뽑기)", shardCount: 16,
         dailyPassTickets: 3, broadcastMinGrade: 6,
         rates: { baseSuccessPercent: 5, tierStepPercent: 1, sizeWeights: [85,14,1] },
         limits: { catalogSize: 1000, publicRanks: 10, personalRanks: 100 },
@@ -1726,10 +1726,12 @@ const GLOBAL_CONFIG = {
         passFeedPostMax: 1, // 패스 전용 피드 작성 일퀘 횟수
         passHomeAlertOpenMax: 1, // 패스 전용 홈알림 열기 일퀘 횟수
         passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
+        questTargets: { tower: 5, castle: 5, mini: 5 }, // 콘텐츠 횟수와 별도인 일반 일퀘 목표
+        dailyQuestDollTicketReward: 1, // 일반 일퀘 인형 이용권 보상
         dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
         weeklyQuestExperienceReward: 500, // 주간퀘스트 경험치 보상
-        castleBattleExperience: { win: 75, lose: 25 }, // 캐슬대전 승패 경험치
-        miniPetBattleExperience: { win: 75, lose: 25 }, // 미니펫대전 승패 경험치
+        castleBattleExperience: { win: 100, lose: 25 }, // 캐슬대전 승패 경험치
+        miniPetBattleExperience: { win: 100, lose: 25 }, // 미니펫대전 승패 경험치
         autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정
@@ -17973,9 +17975,9 @@ replier.reply(
                             statusMsg += "대전하여 추가 보상을 지급해요👌\n";
                             statusMsg += "━━━━━━━━━━━━━━━━\n";
                             statusMsg += status.isComplete ? "아직 호이·초보패스 전용 일퀘를 완료하지 못했습니다.\n" : "아직 일일퀘스트를 완료하지 못했습니다.\n";
-                            statusMsg += "시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]\n";
-                            statusMsg += "캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]\n";
-                            statusMsg += "미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]\n";
+                            statusMsg += "시련탑😈[" + status.towerUsed + "/" + status.towerGoal + "][" + getC(status.towerUsed >= status.towerGoal) + "]\n";
+                            statusMsg += "캐대전🏆[" + status.castleUsed + "/" + status.castleGoal + "][" + getC(status.castleUsed >= status.castleGoal) + "]\n";
+                            statusMsg += "미대전🐹[" + status.miniUsed + "/" + status.miniGoal + "][" + getC(status.miniUsed >= status.miniGoal) + "]\n";
                             statusMsg += "펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]\n";
                             if (status.hasPassDailyQuest) {
                                 statusMsg += "━━━━━━━━━━━━━━━━\n";
@@ -33794,7 +33796,7 @@ function queueServerRaidNotice(state, round, kind, text, ctx) {
 
 // 새 회차에 저장된 종료 시각으로 진행 시간과 KST 마감을 안내하는 함수
 function buildServerRaidTimeNotice(round) {
-    if (round.durationBasis === "activeStart" && round.state === "PREP") return "⏱️ 진행 시간: " + (round.durationMs / 60000) + "분 (공격 시작부터)\n🕒 자동 종료: 공격 시작 후 확정\n※ 운영 상황에 따라 조기 종료될 수 있습니다.";
+    if (round.durationBasis === "activeStart" && round.state === "PREP") return "⏱️ 진행 시간: " + (round.durationMs / 60000) + "분 (공격 시작부터)\n🕒 자동 종료 예정: " + formatServerRaidKstTime(requireServerRaidSafeInteger(round.prepareUntil + round.durationMs, "자동 종료 예정 시각")) + "\n※ 공격 시작이 지연되면 종료 시각도 조정됩니다.\n※ 운영 상황에 따라 조기 종료될 수 있습니다.";
     if (round.autoEndAt === undefined) return ""; // 이전 진행 회차에는 종료 시각을 새로 만들지 않음
     requireServerRaidSafeInteger(round.durationMs, "대전 진행 시간");
     requireServerRaidSafeInteger(round.autoEndAt, "자동 종료 시각");
@@ -34485,7 +34487,7 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
                         if (delivery.sent || delivery.cancelled) continue;
                         try {
                             if (noticeMsg(notice.text, [delivery.room]) === false) { retry = GLOBAL_CONFIG.serverRaid.timers.retryMs; break; }
-                        } catch (noticeError) { debuggerLog("[ServerRaid notice] " + noticeError); retry = GLOBAL_CONFIG.serverRaid.timers.retryMs; break; }
+                        } catch (noticeError) { retry = GLOBAL_CONFIG.serverRaid.timers.retryMs; try { debuggerLog("[ServerRaid notice] " + noticeError); } catch (noticeLogError) {} break; }
                         delivery.sent = true;
                         saveJsonFile(latest, filePath);
                         endDataSaveTransaction(); beginDataSaveTransaction();
@@ -34495,8 +34497,8 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
             }
             if (serverRaidHasWork(state)) retry = getServerRaidWorkDelay(state, Date.now(), retry);
         } catch (workError) {
-            debuggerLog("[ServerRaid work] " + workError);
             retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
+            try { debuggerLog("[ServerRaid work] " + workError); } catch (workLogError) {} // 로그 전송 실패가 자동 종료 재예약을 막지 않음
         } finally {
             if (entered) endDataSaveTransaction();
             if (acquired) dataTransactionLock.unlock();
@@ -38737,24 +38739,17 @@ function buildTierPromotionSuccessMessage(data, user, result) {
     var tierNames = Object.keys(ticketTierData);
     var newTierIndex = tierNames.indexOf(result.newTierName);
     var newTier = ticketTierData[result.newTierName];
-    var lines = [
-        "🎉 티어 승급 완료!",
-        "[" + user + "] 님",
-        formatTicketTierLabel(result.newTierName),
-        "매력 보상 +" + numberWithCommas(result.bonus) + "💕",
-        "탐험 보너스 " + getTierExploreBonusPercentByName(result.newTierName) + "%"
-    ];
-    lines.push("티어 경험치 보너스: " + Number(newTier.experienceBonus) + "exp 적용");
-    lines.push("🧸 인형 성공확률 보너스: " + getDollSuccessPercent(result.newTierName) + "% 적용");
+    var lines = ["🏅 티어 승급 완료!", "[" + user + "] 님", "━━━━━━━━━━━━━━━",
+        formatTicketTierLabel(result.newTierName), "💞 매력 보상: +" + numberWithCommas(result.bonus), "━━━━━━━━━━━━━━━",
+        "⛰️ 탐험 보너스: " + getTierExploreBonusPercentByName(result.newTierName) + "% 적용",
+        "📊 티어 경험치 보너스: " + Number(newTier.experienceBonus) + "exp 적용",
+        "🧸 인형 성공확률 보너스: " + getDollSuccessPercent(result.newTierName) + "% 적용", "━━━━━━━━━━━━━━━"];
     if (newTierIndex < tierNames.length - 1) {
-        lines.push("");
-        lines.push("다음 목표 " + formatTicketTierLabel(tierNames[newTierIndex + 1]));
-        lines.push("인형 성공확률 보너스 " + getDollSuccessPercent(result.newTierName) + "% → " + getDollSuccessPercent(tierNames[newTierIndex + 1]) + "%");
-        lines.push("준비 확인: /티어");
+        lines.push("🎯 다음 목표", formatTicketTierLabel(tierNames[newTierIndex + 1]));
     } else {
-        lines.push("");
         lines.push("🏆 현재 최고 티어입니다");
     }
+    lines.push("", "📋 승급 준비 확인: /티어");
     return lines.join("\n");
 }
 
@@ -43482,10 +43477,13 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
     return {
         towerUsed: towerUsed,
         towerMax: towerMax,
+        towerGoal: GLOBAL_CONFIG.daily.questTargets.tower,
         castleUsed: castleUsed,
         castleMax: castleMax,
+        castleGoal: GLOBAL_CONFIG.daily.questTargets.castle,
         miniUsed: miniUsed,
         miniMax: miniMax,
+        miniGoal: GLOBAL_CONFIG.daily.questTargets.mini,
         exploreUsed: exploreUsed,
         exploreMax: exploreMax,
         exploreWin: win,
@@ -43508,7 +43506,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
         passDailyRewardDone: passDailyRewardDone,
         premiumDailyComplete: premiumDailyComplete,
         premiumDailyRewardDone: premiumDailyRewardDone,
-        isComplete: towerUsed >= towerMax && castleUsed >= castleMax && miniUsed >= miniMax && exploreUsed >= exploreMax
+        isComplete: towerUsed >= GLOBAL_CONFIG.daily.questTargets.tower && castleUsed >= GLOBAL_CONFIG.daily.questTargets.castle && miniUsed >= GLOBAL_CONFIG.daily.questTargets.mini && exploreUsed >= exploreMax
     };
 }
 
@@ -43593,6 +43591,9 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
     var boosterDepletionMessage = ""; // 가호가 0개가 된 경우 결과와 분리해 보낼 공통 안내
 
     if (status.isComplete && !status.dailyRewardDone) {
+        if (member.bag !== undefined && (!member.bag || typeof member.bag !== "object" || Array.isArray(member.bag))) throw new Error("일퀘 가방 형식 오류");
+        var dailyDollTickets = member.bag && member.bag[GLOBAL_CONFIG.doll.ticketName] !== undefined ? member.bag[GLOBAL_CONFIG.doll.ticketName] : 0;
+        if (!isSearchAuthenticationCount(dailyDollTickets) || !isSearchAuthenticationCount(dailyDollTickets + GLOBAL_CONFIG.daily.dailyQuestDollTicketReward)) throw new Error("일퀘 인형 이용권 수량 오류");
         var dailyBaseExperience = GLOBAL_CONFIG.daily.dailyQuestExperienceReward;
         var dailyExperienceResult = addMemberExperienceWithTierBonus(data, sender, dailyBaseExperience);
         var dailyBoosterResult = dailyExperienceResult.boosterResult;
@@ -43603,6 +43604,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         addItem(data, sender, "1억포인트상자🪙(/포인트상자오픈)", 1);
         addItem(data, sender, "펫 강화석⭐", 30);
         addItem(data, sender, GLOBAL_CONFIG.sealedVault.vaultItemName, GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward);
+        addItem(data, sender, GLOBAL_CONFIG.doll.ticketName, GLOBAL_CONFIG.daily.dailyQuestDollTicketReward);
         member.dailyQuestCnt = (member.dailyQuestCnt || 0) + 1;
         member.weeklyQuestCnt = Math.min((parseInt(member.weeklyQuestCnt, 10) || 0) + 1, status.weeklyMax);
         status.weeklyUsed = member.weeklyQuestCnt;
@@ -43610,7 +43612,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         claimed = true;
         dailyClaimed = true;
 
-        var dailyRewardMessage = "✅ 일일퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(dailyExperienceResult) + "\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개";
+        var dailyRewardMessage = "✅ 일일퀘스트 보상 지급 완료!\n" + buildQuestExperienceRewardMessage(dailyExperienceResult) + "\n보상 : 다이아상자💎(/다이아상자오픈) 1개\n1억포인트상자🪙(/포인트상자오픈) 1개\n펫 강화석⭐ 30개\n" + GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개\n" + GLOBAL_CONFIG.doll.ticketName + " " + GLOBAL_CONFIG.daily.dailyQuestDollTicketReward + "개";
         var dailyBoosterDepletionMessage = buildAdventureBoosterDepletionMessage(data, petData, guildData, sender, dailyBoosterResult);
         if (dailyBoosterDepletionMessage) boosterDepletionMessage = dailyBoosterDepletionMessage;
         if (dailyExperienceResult.levelUps.length > 0 && !getAutoDailyBatchContext()) dailyRewardMessage += "\n\n" + buildAdventureLevelUpMessage(data, petData, guildData, sender, dailyExperienceResult.levelUps);
@@ -44070,7 +44072,7 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
     var pointDelta = after.point - before.point; // 자동일퀘 후 포인트 증감 계산
     var itemDelta = diffPositiveNumberMap(before.bag, after.bag); // 자동일퀘로 증가한 아이템 계산
     var progressed = towerAttempts + castleAttempts + miniAttempts > 0; // 자동 진행된 콘텐츠 존재 여부
-    var autoTargetsComplete = status.towerUsed >= status.towerMax && status.castleUsed >= status.castleMax && status.miniUsed >= status.miniMax; // 자동일퀘 대상 3종 완료 여부
+    var autoTargetsComplete = status.towerUsed >= status.towerGoal && status.castleUsed >= status.castleGoal && status.miniUsed >= status.miniGoal; // 일반 일퀘 대상 3종 목표 완료 여부
     var lines = []; // 결과 메시지 조립 배열
 
     lines.push("[" + nickName + "] 님");
@@ -44118,9 +44120,9 @@ function buildAutoDailyQuestMessage(sender, before, after, rewardResult, capture
         lines.push(rewardResult.message);
     } else if (!status.isComplete) {
         lines.push("⏳ 일일퀘스트 미완료");
-        lines.push("- 시련탑😈[" + status.towerUsed + "/" + status.towerMax + "]");
-        lines.push("- 캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "]");
-        lines.push("- 미대전🐹[" + status.miniUsed + "/" + status.miniMax + "]");
+        lines.push("- 시련탑😈[" + status.towerUsed + "/" + status.towerGoal + "]");
+        lines.push("- 캐대전🏆[" + status.castleUsed + "/" + status.castleGoal + "]");
+        lines.push("- 미대전🐹[" + status.miniUsed + "/" + status.miniGoal + "]");
         lines.push("- 펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "]");
         if (autoDailyIssues && autoDailyIssues.length > 0) {
             lines.push("");
@@ -45565,9 +45567,9 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     }
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【📜일일 퀘스트 조건 】");
-    lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
-    lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]");
-    lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]");
+    lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerGoal + "][" + getC(status.towerUsed >= status.towerGoal) + "]");
+    lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleGoal + "][" + getC(status.castleUsed >= status.castleGoal) + "]");
+    lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniGoal + "][" + getC(status.miniUsed >= status.miniGoal) + "]");
     lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
     lines.push("");
     lines.push("《🎁 일일 퀘스트 보상》");
@@ -45576,6 +45578,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
     lines.push("펫 강화석⭐ 30개");
     lines.push(GLOBAL_CONFIG.sealedVault.vaultItemName + " " + GLOBAL_CONFIG.sealedVault.dailyQuestVaultReward + "개");
+    lines.push("인형뽑기이용권🧸(/인형뽑기) " + GLOBAL_CONFIG.daily.dailyQuestDollTicketReward + "개");
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【🦋주간 퀘스트 조건 】");
     lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
@@ -60020,7 +60023,7 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
     if (!member || !pet) throw new Error("인형뽑기 회원·펫 데이터 없음");
     var bag=member.bag, tickets=bag && bag[config.ticketName] !== undefined ? bag[config.ticketName] : 0;
     if (!isSearchAuthenticationCount(tickets) || !isSearchAuthenticationCount(member.point)) throw new Error("인형뽑기 재화 값 오류");
-    if (tickets < 1 && member.point < config.cost) return { ok:false, lack:true };
+    if (tickets < 1) return { ok:false, lack:true };
     var random=randomValue || Math.random;
     var probability=getDollSuccessPercent(member.rank ? member.rank.tier : "새싹");
     var success=random()*100 < probability;
@@ -60045,7 +60048,7 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
         if(!isSearchAuthenticationCount(accumulated) || !isSearchAuthenticationCount(count+1)) throw new Error("인형 매력·횟수 범위 초과");
         record.catches[doll.id]={count:count+1,max:old ? Math.max(old.max,length) : length,first:old ? old.first : today};
         var size=getDollSize(doll,length), sale=count>0 ? config.sale[grade]*size.multiplier : 0;
-        var point=member.point-(tickets>0 ? 0 : config.cost)+sale;
+        var point=member.point+sale;
         if(!isSearchAuthenticationCount(point)) throw new Error("인형 포인트 범위 초과");
         member.point=point;
         var experience=addMemberExperienceWithTierBonus(data,user,config.experience[grade]);
@@ -60056,8 +60059,8 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
         result.doll=doll;result.length=length;result.size=size;result.fresh=count===0;result.charm=charm;
         result.sale=sale;result.experience=experience;result.oldMax=old ? old.max : null;
         result.record=record;
-    } else if(tickets<1) member.point-=config.cost;
-    if(tickets>0) removeItem(data,user,config.ticketName,1);
+    }
+    removeItem(data,user,config.ticketName,1);
     result.remainingTicket=member.bag && member.bag[config.ticketName] || 0;
     result.remainingPoint=member.point;
     return result;
@@ -60069,7 +60072,7 @@ function dollTitle(data,petData,guildData,user,label,emoji) {
 // 인형 획득 결과와 상세 경험치·잔여 재화를 출력하는 함수
 function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
     var cfg=GLOBAL_CONFIG.doll, lines=[dollTitle(data,petData,guildData,user,"인형뽑기")];
-    if(!result.ok) return lines.concat(["💰 뽑기에 사용할 포인트가 부족해요.","└ 이용권이 없으면 1회 🅟3억이 필요해요.","","🧸 이용권 0개 · 보유 🅟"+numberWithCommas(data.member[user].point),"└ 부족한 포인트: 🅟"+numberWithCommas(cfg.cost-data.member[user].point),"━━━━━━━━━━━━","📖 명령어"+allsee,dollCommandFooter()]).join("\n");
+    if(!result.ok) return lines.concat(["🧸 뽑기에 사용할 이용권이 부족해요.","└ 인형뽑기이용권 1개가 필요해요.","","🧸 이용권 0개 · 보유 🅟"+numberWithCommas(data.member[user].point),"└ 부족한 이용권: 1개","━━━━━━━━━━━━","📖 명령어"+allsee,dollCommandFooter()]).join("\n");
     var d=result.doll;
     if(result.success) {
         lines.push("✅ "+cfg.emojis[d.grade]+" "+cfg.grades[d.grade]+"｜"+d.name,"📏 "+(result.length/10).toFixed(1)+"cm · "+result.size.label,"");
@@ -60077,8 +60080,8 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
         if(result.sale>0) lines.push("💰 자동 판매 🅟"+formatDollAmount(result.sale));
         lines.push("📊 경험치 +"+formatAdventureExperience(result.experience.total)+"exp");
     } else lines.push("❌ 인형뽑기 실패","다음 뽑기에 다시 도전해 보세요!");
-    lines.push("━━━━━━━━━━━━",result.ticket ? "🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개" : "🪙 🅟"+formatDollAmount(cfg.cost)+" 사용", "🪙 잔여 🅟"+numberWithCommas(result.remainingPoint));
-    if(result.ticket && result.remainingTicket===0) lines.push("└ 이용권이 없으면 다음 뽑기부터 🅟"+formatDollAmount(cfg.cost)+" 자동 사용");
+    lines.push("━━━━━━━━━━━━","🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개", "🪙 잔여 🅟"+numberWithCommas(result.remainingPoint));
+    if(result.ticket && result.remainingTicket===0) lines.push("└ 다음 뽑기부터 이용권을 추가로 준비해 주세요.");
     lines.push("📖 상세·명령어"+allsee,"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%");
     if(result.success) {
         if(result.oldMax!==null && result.length>result.oldMax) lines.push("","🏆 개인 최고 기록 갱신","└ "+(result.oldMax/10).toFixed(1)+"cm → "+(result.length/10).toFixed(1)+"cm");
@@ -60165,7 +60168,7 @@ function buildDollRankingMessage(data,petData,guildData,catalog,index,user) {
 }
 // 인형 이용 방법·확률·판매·수집효과를 안내하는 함수
 function buildDollGuideMessage() {
-    var cfg=GLOBAL_CONFIG.doll,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 우선 사용","• 이용권이 없으면 1회 🅟"+formatDollAmount(cfg.cost)+" 자동 사용","• 성공·실패 모두 비용 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","• 인형뽑기패스: 매일 이용권 "+cfg.dailyPassTickets+"개 지급","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","• 이용권·포인트 사용에 따른 확률 차이는 없어요.","","뽑기 성공 후 등급 확률"];
+    var cfg=GLOBAL_CONFIG.doll,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 1개 사용","• 이용권이 없으면 뽑기를 진행할 수 없어요.","• 성공·실패 모두 이용권 1개 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","• 인형뽑기패스: 매일 이용권 "+cfg.dailyPassTickets+"개 지급","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","","뽑기 성공 후 등급 확률"];
     for(var g=0;g<9;g++)lines.push(cfg.emojis[g]+" "+cfg.grades[g]+" "+cfg.weights[g]/10+"%");
     lines.push("━━━━━━━━━━━━","📊 경험치","• 인형 기본 경험치 + 현재 티어 보너스","• 가호가 충분하면 합계에 3배 적용","• 가호는 추가된 경험치만큼 사용해요.","• 부족하면 기존 규칙대로 보유 수량만 적용해요.","• 신규·중복 모두 경험치를 받아요.","• 실패 시 경험치 지급·가호 사용은 없어요.","━━━━━━━━━━━━","💰 중복 자동 판매","• 신규 인형은 도감 등록, 중복 인형은 자동 판매","• 이번에 뽑은 크기 구분으로 판매가를 계산해요.","");
     for(var s=0;s<9;s++)lines.push(cfg.emojis[s]+" "+cfg.grades[s]+" "+formatDollAmount(cfg.sale[s]));

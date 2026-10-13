@@ -213,7 +213,7 @@ group("charm diagnostic includes tier skills and final percentage bonuses", () =
 
 group("actual pet info and leaderboard command branches use equipped skills", () => {
     const c = contexts[1], replies = [];
-    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1 };
+    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1, questTargets: { tower: 5, castle: 5, mini: 5 } };
     for (const name of ["formatPetInfo", "formatKoreanShort", "getMiniPetUpgradeDisplay"]) vm.runInContext(fn(sources[1], name), c);
     Object.assign(c, {
         msg: "/펫정보", sender: "test", allsee: "<ALLSEE>",
@@ -278,7 +278,7 @@ group("reported elite representative and creation support display matches actual
     Object.assign(c, {
         getHoiPassPremiumHeader: () => "", getMiniPetBattleRank: () => "순위없음", allsee: "<ALLSEE>"
     });
-    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1 };
+    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1, questTargets: { tower: 5, castle: 5, mini: 5 } };
     const f = fixture(c, "엘리트", "창조");
     Object.assign(f.pets.test.miniPet, { name: "아르케", emoji: "🌌", battleExp: 12000000 });
     Object.assign(f.pets.test.miniPetSupport, { name: "호이빛", emoji: "💖", battleExp: 1630000, upgrade: 28 });

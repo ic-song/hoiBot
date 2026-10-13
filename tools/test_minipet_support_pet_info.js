@@ -39,7 +39,7 @@ function makeContext(source, isInfo) {
         checkRank: (_data, _pets, _guild, user) => user,
         getHoiPassPremiumHeader: () => "",
         getMiniPetBattleRank: () => "순위없음",
-        GLOBAL_CONFIG: { daily: { miniPetBattleMax: 15, miniPetBattleFree: 1 } },
+        GLOBAL_CONFIG: { daily: { miniPetBattleMax: 15, miniPetBattleFree: 1, questTargets: { tower: 5, castle: 5, mini: 5 } } },
         allsee: "<ALLSEE>"
     };
     vm.createContext(c);
