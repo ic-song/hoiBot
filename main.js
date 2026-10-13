@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.638"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.639"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -1716,10 +1716,10 @@ const GLOBAL_CONFIG = {
         }
     },
     daily: { // 일일 콘텐츠 진행 설정
-        trialTowerMax: 10, // 시련의탑 하루 최대 횟수
-        castleBattleMax: 10, // 캐슬대전 하루 최대 횟수
+        trialTowerMax: 5, // 시련의탑 하루 최대 횟수
+        castleBattleMax: 5, // 캐슬대전 하루 최대 횟수
         castleBattleFree: 1, // 캐슬대전 무료 횟수
-        miniPetBattleMax: 10, // 미니펫대전 하루 최대 횟수
+        miniPetBattleMax: 5, // 미니펫대전 하루 최대 횟수
         miniPetBattleFree: 1, // 미니펫대전 무료 횟수
         petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
         passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수

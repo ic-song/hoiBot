@@ -8,8 +8,8 @@ c.buildAdventureBoosterDepletionMessage=()=>"";c.getC=x=>x?"✅":"❌";c.hasPetS
 c.initPetExploreData=d=>d;c.cleanupInvalidPetExploreUsers=()=>{};c.savePetExploreMigrationIfNeeded=()=>{};c.getPetExploreRank=()=>null;c.hasActiveHoiOrNewbiePass=()=>false;c.isHoiPassPremiumActive=()=>false;
 function prepare(count=5){const x=input();Object.assign(x.d.member.u,{towerCnt:count,battle:{count},exploreCnt:10,weeklyQuestCnt:0,dailyQuestCnt:0});x.p.u.miniPetBattle={count};return x;}
 const originalLoad=c.loadJsonFile;c.loadJsonFile=()=>({record:{}});
-test("4/5회 경계·탐험 미완료·일반10/자동15와 기존 카운트 유지",()=>{
- for(const count of [0,4,5,10,15,20]){const x=prepare(count),before=JSON.stringify(x);const s=c.getDailyQuestStatus(x.d,x.p,{},"u");assert.strictEqual(s.isComplete,count>=5);assert.strictEqual(s.towerMax,10);assert.strictEqual(s.towerGoal,5);assert.strictEqual(JSON.stringify(x),before);const out=c.buildDailyQuestInfoMessage(x.d,x.p,{},"u");assert(out.includes("시련탑😈["+count+"/5]"));assert(out.includes(c.GLOBAL_CONFIG.doll.ticketName+" 1개"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);}
+test("4/5회 경계·탐험 미완료·일반5/자동10와 기존 카운트 유지",()=>{
+ for(const count of [0,4,5,10,15,20]){const x=prepare(count),before=JSON.stringify(x);const s=c.getDailyQuestStatus(x.d,x.p,{},"u");assert.strictEqual(s.isComplete,count>=5);assert.strictEqual(s.towerMax,5);assert.strictEqual(s.towerGoal,5);assert.strictEqual(JSON.stringify(x),before);const out=c.buildDailyQuestInfoMessage(x.d,x.p,{},"u");assert(out.includes("시련탑😈["+count+"/5]"));assert(out.includes(c.GLOBAL_CONFIG.doll.ticketName+" 1개"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);}
  const x=prepare();x.d.member.u.exploreCnt=9;assert(!c.getDailyQuestStatus(x.d,x.p,{},"u").isComplete);
 });
 test("일퀘 이용권 실제 1개 지급·중복청구 무지급·미완료 무소모·주퀘 병행",()=>{
