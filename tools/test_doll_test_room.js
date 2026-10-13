@@ -23,7 +23,7 @@ c.isRapidUserRequest=()=>{throw Error("차단 입력은 요청 기록을 갱신�
 c.saveJsonFile=()=>{throw Error("차단 입력은 저장하면 안 됨");};
 c.loadJsonFile=()=>{throw Error("차단 입력은 복구 가능한 로드를 하면 안 됨");};
 const root="/sdcard/호이랜드/",devRoot="/sdcard/호이랜드_dev/";
-const commands=["/인형뽑기","/인형도감","/인형도감 일반1","/인형도감 고급2","/인형도감 창조","/인형도감 창조1","/인형도감 오입력","/인형순위","/인형가이드","/인형전체초기화"];
+const commands=["/인형뽑기","/인형도감","/인형도감 일반1","/인형도감 고급2","/인형도감 창조","/인형도감 창조1","/인형도감 오입력","/인형순위","/인형가이드","/인형전체초기화","/인형패스추가, u 영구권","/인형패스삭제, u"];
 let groups=0;
 function test(name,fn){fixture.reset();for(const base of [root,devRoot]){
  fixture.put(base+"member.json",{member:{u:{point:300000000,bag:{ticket:2},today:1,rank:{tier:"킹"}},admin:{},master:{}}});

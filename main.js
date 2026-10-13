@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.636"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.637"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -995,7 +995,8 @@ var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 
 const GLOBAL_CONFIG = {
     doll: {
         allowedRoom: testRoom, // 테스트 기간에는 기존 팻 테스트방 제목과 정확히 일치해야 함
-        ticketName: "인형뽑기이용권🧸(/인형뽑기)", cost: 300000000, shardCount: 16,
+        ticketName: "인형뽑기이용권🧸(/인형뽑기)", cost: 1000000000, shardCount: 16,
+        dailyPassTickets: 3, broadcastMinGrade: 6,
         rates: { baseSuccessPercent: 5, tierStepPercent: 1, sizeWeights: [85,14,1] },
         limits: { catalogSize: 1000, publicRanks: 10, personalRanks: 100 },
         grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조"],
@@ -1715,10 +1716,10 @@ const GLOBAL_CONFIG = {
         }
     },
     daily: { // 일일 콘텐츠 진행 설정
-        trialTowerMax: 15, // 시련의탑 하루 최대 횟수
-        castleBattleMax: 15, // 캐슬대전 하루 최대 횟수
+        trialTowerMax: 10, // 시련의탑 하루 최대 횟수
+        castleBattleMax: 10, // 캐슬대전 하루 최대 횟수
         castleBattleFree: 1, // 캐슬대전 무료 횟수
-        miniPetBattleMax: 15, // 미니펫대전 하루 최대 횟수
+        miniPetBattleMax: 10, // 미니펫대전 하루 최대 횟수
         miniPetBattleFree: 1, // 미니펫대전 무료 횟수
         petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
         passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
@@ -1727,8 +1728,8 @@ const GLOBAL_CONFIG = {
         passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
         dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
         weeklyQuestExperienceReward: 500, // 주간퀘스트 경험치 보상
-        castleBattleExperience: { win: 50, lose: 25 }, // 캐슬대전 승패 경험치
-        miniPetBattleExperience: { win: 50, lose: 25 }, // 미니펫대전 승패 경험치
+        castleBattleExperience: { win: 75, lose: 25 }, // 캐슬대전 승패 경험치
+        miniPetBattleExperience: { win: 75, lose: 25 }, // 미니펫대전 승패 경험치
         autoDailyBonusRuns: 5 // 자동일퀘권 전용 시탑/캐대전/미대전 추가 보상 횟수
     },
     command: { // 명령어 입력/실행 설정
@@ -3446,6 +3447,22 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             out += "- 펜던트: " + (pendantTextLength === null ? "❌ 파일 없음" : numberWithCommas(pendantTextLength) + "자 / " + numberWithCommas(Object.keys(pendantOnlyData).length) + "명") + "\n";
 
+            out += "\n[인형 데이터]\n";
+            var dollStatsNames = ["dollCatalog.json", "dollIndex.json", "dollPending.json"];
+            for (var dollStatsSlot = 0; dollStatsSlot < GLOBAL_CONFIG.doll.shardCount; dollStatsSlot++) dollStatsNames.push("dollRecords_" + dollStatsSlot + ".json");
+            var dollStatsTotalChars = 0, dollStatsRecordUsers = 0; // 실제 존재하는 인형 파일 크기와 분할 도감 계정 수 합계
+            for (var dollStatsIndex = 0; dollStatsIndex < dollStatsNames.length; dollStatsIndex++) {
+                var dollStatsName = dollStatsNames[dollStatsIndex];
+                var dollStatsPath = resolveActiveDataPath(DATA_ROOT_PATH + dollStatsName);
+                if (!new java.io.File(dollStatsPath).exists()) { out += "- " + dollStatsName + ": ❌ 파일 없음\n"; continue; }
+                var dollStatsText = FileStream.read(dollStatsPath, "utf-8");
+                var dollStatsData = parseManagedJsonContent(dollStatsText, dollStatsPath);
+                var dollStatsCount = dollStatsName === "dollCatalog.json" ? validateDollCatalog(dollStatsData).dolls.length : dollStatsName === "dollPending.json" ? null : Object.keys(requireDollStore(dollStatsData).users).length;
+                dollStatsTotalChars += dollStatsText.length;
+                if (dollStatsName.indexOf("dollRecords_") === 0) dollStatsRecordUsers += dollStatsCount;
+                out += "- " + dollStatsName + ": " + numberWithCommas(dollStatsText.length) + "자" + (dollStatsCount === null ? "" : " / " + numberWithCommas(dollStatsCount) + (dollStatsName === "dollCatalog.json" ? "종" : "명")) + "\n";
+            }
+            out += "- 인형 합계: " + numberWithCommas(dollStatsTotalChars) + "자 / 도감 " + numberWithCommas(dollStatsRecordUsers) + "명\n";
             out += "\n[칭호·성장 데이터]\n";
 
             // 회원칭호
@@ -4264,6 +4281,32 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             return;
         }
+        if (msg === "/인형전체초기화") {
+            if (!isMaster(sender)) {
+                replier.reply("❌ MASTER만 사용할 수 있는 명령어입니다.");
+                return;
+            }
+            if (isServerRaidLocked(data) || (petMusou && petMusou.active) || isGuildTerritoryWarCommandLockActive(guildData)) {
+                replier.reply("⚠️ 펫무쌍·길드영지·서버대전 진행 중에는 인형 컨텐츠를 이용할 수 없습니다.");
+                return;
+            }
+            var dollResetNames = ["member_pet.json", "dollIndex.json"];
+            for (var dollResetSlot = 0; dollResetSlot < GLOBAL_CONFIG.doll.shardCount; dollResetSlot++) dollResetNames.push("dollRecords_" + dollResetSlot + ".json");
+            var dollResetSnapshots = [], dollResetObjects = [];
+            for (var dollResetFileIndex = 0; dollResetFileIndex < dollResetNames.length; dollResetFileIndex++) {
+                var dollResetPath = resolveActiveDataPath(DATA_ROOT_PATH + dollResetNames[dollResetFileIndex]);
+                var dollResetText = FileStream.read(dollResetPath, "utf-8");
+                dollResetObjects.push(parseManagedJsonContent(dollResetText, dollResetPath));
+                dollResetSnapshots.push({ name: dollResetNames[dollResetFileIndex], text: dollResetText });
+            }
+            var dollResetResult = resetAllDollRecords(dollResetObjects[0], dollResetObjects[1], dollResetObjects.slice(2));
+            saveJsonFile({ pending: dollResetSnapshots }, DATA_ROOT_PATH + "dollPending.json");
+            for (var dollResetSaveIndex = 1; dollResetSaveIndex < dollResetNames.length; dollResetSaveIndex++) saveJsonFile(dollResetObjects[dollResetSaveIndex], DATA_ROOT_PATH + dollResetNames[dollResetSaveIndex], false, dollResetSnapshots[dollResetSaveIndex].text);
+            saveJsonFile(dollResetObjects[0], memberPetPath);
+            saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
+            try { replier.reply("🧸 인형 전체초기화 완료\n━━━━━━━━━━━━\n도감·수집 기록·순위·누적 인형 매력을 초기화했어요.\n인형 기록: " + numberWithCommas(dollResetResult.users) + "명\n인형패스·이용권·포인트·경험치는 유지됩니다."); } catch (dollResetReplyError) { debuggerLog("인형 초기화 결과 전송 실패: " + dollResetReplyError); }
+            return;
+        }
         var dollRequest = getDollRequest(msg);
         if (dollRequest) {
             if (isServerRaidLocked(data) || (petMusou && petMusou.active) || isGuildTerritoryWarCommandLockActive(guildData)) {
@@ -4317,8 +4360,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (dollResult.success) replier.reply(getDollEmoji(dollResult.doll.name));
                 replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
                 if (dollResult.success && dollResult.experience.levelUps.length > 0) replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, sender, dollResult.experience.levelUps));
-                if (dollResult.success && dollResult.doll.grade >= 4) {
-                    var dollNotice = "[🧸 전체알림]\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형 등장!\n━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이 " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형을 뽑았어요!\n\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + "｜" + dollResult.doll.name + "\n📏 " + (dollResult.length / 10).toFixed(1) + "cm · " + dollResult.size.label + "\n━━━━━━━━━━━━\n" + dollCommandFooter();
+                if (dollResult.success && dollResult.doll.grade >= GLOBAL_CONFIG.doll.broadcastMinGrade) {
+                    var dollNotice = "[🧸 전체알림]\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형 등장!\n━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이 " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형을 뽑았어요!\n\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + "｜" + dollResult.doll.name + "\n📏 " + (dollResult.length / 10).toFixed(1) + "cm · " + dollResult.size.label + "\n━━━━━━━━━━━━";
+
                     if (ctx.isDev) replier.reply(dollNotice); else noticeMsg(dollNotice);
                 }
             } catch (dollReplyError) { debuggerLog("[인형 전송 오류] " + dollReplyError); }
@@ -9472,7 +9516,7 @@ replier.reply(
                     replier.reply(territoryPassCommandResult);
                     return;
                 }
-                if (sender == "호이 남" && (/^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
+                if (sender == "호이 남" && (/^\/인형패스(추가|삭제),\s*.+$/.test(msg) || /^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
                     let result = processUserIDCommand(msg, data, sender);
                     if (String(result || "").indexOf("❌") !== 0 && String(result || "").indexOf("알 수 없는 명령어") !== 0) {
                         saveJsonFile(data, filePath);
@@ -31898,7 +31942,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        command === "/인형뽑기" || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
+        command === "/인형뽑기" || command === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(command) || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
         /^\/달토끼상점구매\s+\d+\s+\d+$/.test(command) ||
         command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
@@ -32039,6 +32083,7 @@ function isGuildTerritoryWarCommandLockActive(guildData) {
 function isGuildTerritoryAllowedDuringWarCommand(msg) {
     if (typeof msg !== "string") return false;
     return (
+        msg === "/글자수전체정리" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지초기화" ||
         msg === "/길드영지종료" ||
@@ -33548,7 +33593,7 @@ function isServerRaidTurnQueryCommand(msg) {
 
 // 대전 중 기존 명령 처리로 통과시킬 추가 예외와 해당 인수 형식을 확인하는 함수
 function isServerRaidAdditionalCommand(msg) {
-    return GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
+    return msg === "/글자수전체정리" || GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
         /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg) ||
         /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
         /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
@@ -40186,7 +40231,7 @@ function isPetMusouStartOperator(sender) {
 
 // 펫무쌍 진행 중 일반 유저에게 허용할 명령어인지 확인하는 함수
 function isPetMusouAllowedDuringTournamentCommand(msg) {
-    return msg === "/무쌍순위" || /^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg);
+    return msg === "/글자수전체정리" || msg === "/무쌍순위" || /^\/펫무쌍공격\s+(?:10|[1-9])$/.test(msg);
 }
 
 // 펫무쌍 누적 벼락 발생확률 운영 명령의 정확한 입력 형식을 확인하는 함수
@@ -41077,7 +41122,8 @@ function getSupportPassConfigs() {
         { key: "premium", label: "호이패스 프리미엄👑", commandNames: ["호패프리미엄"] },
         { key: "contribution", label: "길드공헌패스🎖️", commandNames: ["공헌패스"] },
         { key: "diamond", label: "다이아패스💎", commandNames: ["다이아패스"] },
-        { key: "territory", label: "영지기습패스", commandNames: ["영지패스"] }
+        { key: "territory", label: "영지기습패스", commandNames: ["영지패스"] },
+        { key: "doll", label: "인형뽑기패스🧸", commandNames: ["인형패스"] }
     ];
 }
 
@@ -41172,7 +41218,10 @@ function isSupportPassActive(data, user, passKey) {
     }
     if (pass.permanent === true) return true;
     var expireValue = getSupportPassDateValue(pass.endDate);
-    if (expireValue === null) return true;
+    if (expireValue === null) {
+        if (passKey === "doll") throw new Error("인형패스 종료일 형식 오류");
+        return true;
+    }
     return expireValue >= getTodaySupportPassDateValue();
 }
 
@@ -41496,6 +41545,19 @@ function grantSupportPassDailyRewards(data, passKey, rewards) {
     return result;
 }
 
+// 인형패스 지급 예정 수량을 검사한 뒤 기존 일일 지급 흐름으로 지급하는 함수
+function grantDollPassDailyRewards(data) {
+    var users = getActiveSupportPassUsers(data, "doll");
+    var today = String(getTodaySupportPassDateValue());
+    for (var i = 0; i < users.length; i++) {
+        var member = data.member[users[i]];
+        if (member.pass.doll.dailyRewardLastDate === today) continue;
+        if (member.bag !== undefined && (!member.bag || typeof member.bag !== "object" || Array.isArray(member.bag))) throw new Error("인형패스 가방 형식 오류");
+        var count = member.bag && member.bag[GLOBAL_CONFIG.doll.ticketName] !== undefined ? member.bag[GLOBAL_CONFIG.doll.ticketName] : 0;
+        if (!isSearchAuthenticationCount(count) || !isSearchAuthenticationCount(count + GLOBAL_CONFIG.doll.dailyPassTickets)) throw new Error("인형패스 이용권 수량 오류");
+    }
+    return grantSupportPassDailyRewards(data, "doll", [{ name: GLOBAL_CONFIG.doll.ticketName, count: GLOBAL_CONFIG.doll.dailyPassTickets }]);
+}
 // 영지기습패스 일일 지급 결과를 최근 운영 로그에 기록하는 함수
 function appendTerritoryPassPayoutLogs(data, result, operator) {
     if (!Array.isArray(data.supportPassPayoutLogs)) data.supportPassPayoutLogs = [];
@@ -41538,6 +41600,7 @@ function grantAllSupportPassDailyRewards(data, operator) {
     var config = GLOBAL_CONFIG.supportPass;
     var rows = [];
     rows.push({ label: "호프", result: grantHoiPassPremiumDailyRewards(data) });
+    rows.push({ label: "인형뽑기패스", result: grantDollPassDailyRewards(data) });
     rows.push({ label: "호이패스", result: grantSupportPassDailyRewards(data, "hoi", config.hoiDailyRewards) });
     rows.push({ label: "초보패스", result: grantSupportPassDailyRewards(data, "newbie", config.newbieDailyRewards) });
     rows.push({ label: "공헌패스", result: grantSupportPassDailyRewards(data, "contribution", config.contributionDailyRewards) });
@@ -41900,7 +41963,7 @@ function buildSupportPassListMessage(data, petData, guildData) {
 
 // 후원패스 명령어의 대상과 옵션을 분석하는 함수
 function parseSupportPassCommandMeta(msg) {
-    var passMatch = String(msg || "").match(/^\/(원데이패스|공헌패스|초보패스|초보|호이패스|다이아패스|영지패스)(추가|삭제),\s*([^]+)$/);
+    var passMatch = String(msg || "").match(/^\/(원데이패스|공헌패스|초보패스|초보|호이패스|다이아패스|영지패스|인형패스)(추가|삭제),\s*([^]+)$/);
     if (!passMatch) return null;
     var passConfig = getSupportPassConfigByCommandName(passMatch[1]);
     if (!passConfig) return null;
@@ -41909,7 +41972,7 @@ function parseSupportPassCommandMeta(msg) {
     var tokens = body.split(/\s+/);
     var lastToken = tokens.length > 0 ? tokens[tokens.length - 1] : "";
     var option = action === "추가" && (lastToken === "영구권" || isValidSupportPassDateText(lastToken)) ? lastToken : "";
-    var shouldSplitTerritoryOption = action === "추가" && passConfig.key === "territory";
+    var shouldSplitTerritoryOption = action === "추가" && (passConfig.key === "territory" || passConfig.key === "doll");
     var userIDText = action === "추가" && (option || shouldSplitTerritoryOption) ? tokens.slice(0, tokens.length - 1).join(" ") : body;
     return { config: passConfig, action: action, user: userIDText, option: option };
 }
@@ -42075,8 +42138,8 @@ function processUserIDCommand(msg, data, operator) {
     var userIDText = passMeta.user;
 
     if (action === "추가") {
-        if (passConfig.key === "territory" && !option) {
-            return "❌ 날짜 형식이 올바르지 않습니다.\n\n사용법:\n/영지패스추가, 아이디 YY.MM.DD\n/영지패스추가, 아이디 영구권";
+        if ((passConfig.key === "territory" || passConfig.key === "doll") && !option) {
+            return "❌ 날짜 형식이 올바르지 않습니다.\n\n사용법:\n/" + passConfig.commandNames[0] + "추가, 아이디 YY.MM.DD\n/" + passConfig.commandNames[0] + "추가, 아이디 영구권";
         }
         if (!data.member || !data.member[userIDText]) return "❌ 해당 유저를 찾을 수 없습니다.";
         if (!option) option = "영구권";
@@ -42095,7 +42158,7 @@ function processUserIDCommand(msg, data, operator) {
             endDate: option === "영구권" ? "" : option,
             permanent: option === "영구권"
         };
-        if (passConfig.key === "territory") nextPass.dailyRewardLastDate = previousPass.dailyRewardLastDate || "";
+        if (passConfig.key === "territory" || passConfig.key === "doll") nextPass.dailyRewardLastDate = previousPass.dailyRewardLastDate || "";
         passStore[passConfig.key] = nextPass;
         if (passConfig.key === "territory") {
             passStore[passConfig.key].createdAt = previousPass.createdAt || formatDateTime(new Date());
@@ -43475,7 +43538,7 @@ function editDailyQuestCountsForTest(data, petData, sender, msg) {
         return { ok: false, message: "❌ 존재하지 않는 유저입니다." };
     }
     if (!isValidDailyQuestCount(towerCnt, GLOBAL_CONFIG.daily.trialTowerMax) || !isValidDailyQuestCount(castleCnt, GLOBAL_CONFIG.daily.castleBattleMax) || !isValidDailyQuestCount(miniCnt, GLOBAL_CONFIG.daily.miniPetBattleMax) || !isValidDailyQuestCount(exploreCnt, GLOBAL_CONFIG.daily.petExploreMax)) {
-        return { ok: false, message: "❌ 일퀘 카운트는 시탑/캐대전/미대전 0~15, 펫탐험 0~10 숫자로 입력해주세요." };
+        return { ok: false, message: "❌ 일퀘 카운트는 시탑 0~" + GLOBAL_CONFIG.daily.trialTowerMax + ", 캐대전 0~" + GLOBAL_CONFIG.daily.castleBattleMax + ", 미대전 0~" + GLOBAL_CONFIG.daily.miniPetBattleMax + ", 펫탐험 0~" + GLOBAL_CONFIG.daily.petExploreMax + " 숫자로 입력해주세요." };
     }
     if (dailyRewardCnt !== null && (isNaN(dailyRewardCnt) || dailyRewardCnt < 0)) {
         return { ok: false, message: "❌ 일일보상횟수는 0 이상의 숫자로 입력해주세요." };
@@ -59856,7 +59919,7 @@ function getDollRequest(msg) {
 }
 // 구현된 인형 명령과 기획의 관리 명령을 방 제한 대상으로 판별하는 함수
 function isDollTestRoomCommand(msg) {
-    return getDollRequest(msg) !== null || msg === "/인형전체초기화";
+    return getDollRequest(msg) !== null || msg === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(msg);
 }
 // 표시용 사본에서 길드 불일치를 제거해 저장 없이 테스트방 안내를 만드는 함수
 function buildDollTestRoomRestrictionMessage(data, guildData, user) {
@@ -59869,6 +59932,17 @@ function buildDollTestRoomRestrictionMessage(data, guildData, user) {
         if (!guild || !guild.members || !guild.members[displayUsers[i]]) delete member.guild;
     }
     return "🧸 [" + checkRank(displayData, {}, guildData || {}, user) + "] 님\n현재 인형뽑기 컨텐츠를 테스트 중이에요.\n📍 관련 명령어는 ‘" + GLOBAL_CONFIG.doll.allowedRoom + "’에서만 이용할 수 있어요.";
+}
+// 구독·재화는 건드리지 않고 인형 도감·순위·누적 매력만 초기화하는 함수
+function resetAllDollRecords(petData, index, stores) {
+    if (!petData || typeof petData !== "object" || Array.isArray(petData) || !Array.isArray(stores) || stores.length !== GLOBAL_CONFIG.doll.shardCount) throw new Error("인형 초기화 데이터 형식 오류");
+    requireDollStore(index);
+    var users = 0; // 초기화되는 분할 도감의 계정 기록 수
+    for (var i = 0; i < stores.length; i++) { requireDollStore(stores[i]); users += Object.keys(stores[i].users).length; }
+    index.users = {};
+    for (var slot = 0; slot < stores.length; slot++) stores[slot].users = {};
+    for (var user in petData) if (Object.prototype.hasOwnProperty.call(petData, user) && petData[user]) delete petData[user].dollCharm;
+    return { users: users };
 }
 // 인형 계정 기록을 나눠 보관할 파일 번호를 계산하는 함수
 function getDollShard(user) {
@@ -60000,8 +60074,8 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
         if(result.sale>0) lines.push("💰 자동 판매 🅟"+formatDollAmount(result.sale));
         lines.push("📊 경험치 +"+formatAdventureExperience(result.experience.total)+"exp");
     } else lines.push("❌ 인형뽑기 실패","다음 뽑기에 다시 도전해 보세요!");
-    lines.push("━━━━━━━━━━━━",result.ticket ? "🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개" : "💰 포인트 🅟3억 사용 · 잔여 🅟"+numberWithCommas(result.remainingPoint));
-    if(result.ticket && result.remainingTicket===0) lines.push("└ 이용권이 없으면 다음 뽑기부터 🅟3억 자동 사용");
+    lines.push("━━━━━━━━━━━━",result.ticket ? "🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개" : "🪙 🅟"+formatDollAmount(cfg.cost)+" 사용", "🪙 잔여 🅟"+numberWithCommas(result.remainingPoint));
+    if(result.ticket && result.remainingTicket===0) lines.push("└ 이용권이 없으면 다음 뽑기부터 🅟"+formatDollAmount(cfg.cost)+" 자동 사용");
     lines.push("📖 상세·명령어"+allsee,"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%");
     if(result.success) {
         if(result.oldMax!==null && result.length>result.oldMax) lines.push("","🏆 개인 최고 기록 갱신","└ "+(result.oldMax/10).toFixed(1)+"cm → "+(result.length/10).toFixed(1)+"cm");
@@ -60088,7 +60162,7 @@ function buildDollRankingMessage(data,petData,guildData,catalog,index,user) {
 }
 // 인형 이용 방법·확률·판매·수집효과를 안내하는 함수
 function buildDollGuideMessage() {
-    var cfg=GLOBAL_CONFIG.doll,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 우선 사용","• 이용권이 없으면 1회 🅟3억 자동 사용","• 성공·실패 모두 비용 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","• 이용권·포인트 사용에 따른 확률 차이는 없어요.","","뽑기 성공 후 등급 확률"];
+    var cfg=GLOBAL_CONFIG.doll,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 우선 사용","• 이용권이 없으면 1회 🅟"+formatDollAmount(cfg.cost)+" 자동 사용","• 성공·실패 모두 비용 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","• 인형뽑기패스: 매일 이용권 "+cfg.dailyPassTickets+"개 지급","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","• 이용권·포인트 사용에 따른 확률 차이는 없어요.","","뽑기 성공 후 등급 확률"];
     for(var g=0;g<9;g++)lines.push(cfg.emojis[g]+" "+cfg.grades[g]+" "+cfg.weights[g]/10+"%");
     lines.push("━━━━━━━━━━━━","📊 경험치","• 인형 기본 경험치 + 현재 티어 보너스","• 가호가 충분하면 합계에 3배 적용","• 가호는 추가된 경험치만큼 사용해요.","• 부족하면 기존 규칙대로 보유 수량만 적용해요.","• 신규·중복 모두 경험치를 받아요.","• 실패 시 경험치 지급·가호 사용은 없어요.","━━━━━━━━━━━━","💰 중복 자동 판매","• 신규 인형은 도감 등록, 중복 인형은 자동 판매","• 이번에 뽑은 크기 구분으로 판매가를 계산해요.","");
     for(var s=0;s<9;s++)lines.push(cfg.emojis[s]+" "+cfg.grades[s]+" "+formatDollAmount(cfg.sale[s]));

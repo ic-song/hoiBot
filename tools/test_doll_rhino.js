@@ -4,7 +4,7 @@ const main=fs.readFileSync(path.join(__dirname,"..","main.js"),"utf8");
 const info=fs.readFileSync(path.join(__dirname,"..","Info.js"),"utf8");
 function block(marker){const start=main.indexOf(marker);assert(start>=0,marker);let n=0;for(let i=main.indexOf("{",start);i<main.length;i++){if(main[i]==="{")n++;if(main[i]==="}"&&--n===0)return main.slice(start,i+1);}throw Error(marker);}
 const context={testRoom:"test"};for(let i=1;i<=100;i++)context["room"+i]="room"+i;vm.createContext(context);vm.runInContext(block("const GLOBAL_CONFIG = {").replace("const ","var "),context);vm.runInContext(block("const ticketTierData =").replace("const ","var "),context);
-const names=["parseJsonContent","isSearchAuthenticationCount","roundToTwo","normalizeTicketTierName","getTicketTierStage","getTierExperienceBonus","getLevelRequiredExperience","getAdventureLevelTitle","processAdventureLevelUps","applyAdventureExperienceBooster","addMemberExperienceWithTierBonus","normalizePendantTransitionItemName","normalizeUniversalCollectionKeyBagItems","normalizePendantTransitionBagItem","removeItem","getDollRequest","isDollTestRoomCommand","buildDollTestRoomRestrictionMessage","validateDollCatalog","getDollShard","getDollSuccessPercent","getDollSize","getDollRecordCharm","buildDollRepresentative","compareDollRows","applyDollDraw"];
+const names=["parseJsonContent","isSearchAuthenticationCount","roundToTwo","normalizeTicketTierName","getTicketTierStage","getTierExperienceBonus","getLevelRequiredExperience","getAdventureLevelTitle","processAdventureLevelUps","applyAdventureExperienceBooster","addMemberExperienceWithTierBonus","normalizePendantTransitionItemName","normalizeUniversalCollectionKeyBagItems","normalizePendantTransitionBagItem","removeItem","requireDollStore","resetAllDollRecords","getDollRequest","isDollTestRoomCommand","buildDollTestRoomRestrictionMessage","validateDollCatalog","getDollShard","getDollSuccessPercent","getDollSize","getDollRecordCharm","buildDollRepresentative","compareDollRows","applyDollDraw"];
 const catalog=JSON.parse(fs.readFileSync(path.join(__dirname,"..","data/dollCatalog.json"),"utf8"));
 let text="org.mozilla.javascript.Context.getCurrentContext().compileString("+JSON.stringify(main)+",'main.js',1,null);\norg.mozilla.javascript.Context.getCurrentContext().compileString("+JSON.stringify(info)+",'Info.js',1,null);\nvar GLOBAL_CONFIG="+JSON.stringify(context.GLOBAL_CONFIG)+";\nvar ticketTierData="+JSON.stringify(context.ticketTierData)+";\n"+names.map(n=>block("function "+n+"(")).join("\n")+"\n";
 text += [
@@ -25,6 +25,7 @@ text += [
 "data.member.u.bag[GLOBAL_CONFIG.doll.ticketName]=1;",
 'result=applyDollDraw(data,pet,catalog,store,index,"u","id","2026.10.13",function(){return 0;});',
 'check(pet.u.dollCharm===2525&&pet.u.dollCharm/2===1262.5,"fraction charm");',
+'var stores=[];for(var i=0;i<16;i++)stores.push({schemaVersion:1,users:{u:{}}});resetAllDollRecords(pet,index,stores);check(pet.u.dollCharm===undefined&&Object.keys(index.users).length===0,"reset charm and rank");check(data.member.u.point===1001000000,"reset preserves rewards");',
 'print("PASS Rhino 1.7.15: 1000 catalog, guards, tier, draw, EXP, charm");'
 ].join("\n");
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),"hoibot-doll-rhino-")),file=path.join(dir,"test.js");fs.writeFileSync(file,text,"utf8");
