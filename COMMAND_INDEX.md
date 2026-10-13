@@ -3097,7 +3097,8 @@ Status: VERIFIED
 ## AI Notes
 
 - `/티어` shows the current tier, actual promotion target, shortages, ticket purchase estimate, benefits, and the next action; detailed rows follow `allsee`.
-- `/티어`와 `/티어적용`의 티켓·재료·쿠폰 수량은 천 단위 쉼표로 표시한다.
+- `/티어`와 `/티어적용`의 티켓·재료·쿠폰 수량은 천 단위 쉼표로 표시한다. 인형 성공확률은 실제 뽑기와 같은 `getDollSuccessPercent`로 현재·목표 티어를 계산해 경험치 보너스 아래와 다음 혜택에 표시한다. 기본 5%를 다시 더하지 않는다.
+- `buildTierProgressMessage`는 기본 화면의 금액·할인 안내와 기존 allsee 경계를 유지하면서 구분선·개행을 적용한다. 탐험 문구는 `적용`이며 상점 9,999개 분할 구매 안내만 제거한다. 실제 상점 한도·견적·쿠폰·조합·승급·보상은 변경하지 않는다. 승급 성공에도 현재·다음 인형 성공률을 표시하며 최고 티어에는 다음 목표를 표시하지 않는다.
 - `/티어`의 포인트 상점 견적은 `탈세자📙`의 세금 70% 면제와 `티어 상승론📙`의 티켓 1% 추가 획득을 반영해 실제 최소 구매 수량과 결제액을 표시한다.
 - `/티어적용` supports multi-tier promotion for the sender and does not downgrade other members.
 - `checkRank`는 저장된 티어 이름을 현재 티어 표와 대조해 최신 이모지를 표시하며, 옛 `벚꽃` 표기는 `벛꽃` 티어로 호환한다.

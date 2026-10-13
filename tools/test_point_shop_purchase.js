@@ -207,18 +207,20 @@ reset(); const prodBefore = originalFiles(); assert(run("dev/구매 1 9999").inc
 assert.deepStrictEqual(originalFiles(), prodBefore); assert.strictEqual(read(0, true).member[user].bag[ticket], 9999);
 console.log("PASS 9: DEV 경로 분리·운영 원본 미변경");
 
-// 10. 티어 견적은 총 부족량을 유지하고 나눠 구매할 한도를 안내한다.
+// 10. 티어 견적은 총 부족량을 유지하며 상점 한도 안내는 상점에서만 표시한다.
 vm.runInContext(fn("buildTierQuoteStatusText") + "\n" + fn("buildTierProgressMessage"), c);
 c.formatTicketTierLabel = n => n;
+c.getDollSuccessPercent = () => 5; // 이 검증의 합성 티어 이름은 구매 견적만 검사
 reset(); run("/구매"); c.skills = ["티어 상승론"];
 const quantity = c.getPointShopTierTicketPurchaseQuantity({}, user, 100000);
 assert(quantity + Math.floor(quantity * 0.01) >= 100000 && quantity - 1 + Math.floor((quantity - 1) * 0.01) < 100000);
 const quote = c.buildPointShopPurchaseQuote(c.data, {}, user, ticket, quantity, 7000000); assert(quote.available);
 output = c.buildTierProgressMessage({ user, currentTierName: "일반", targetTierName: "다음", targetTier: {}, additionalRegular: 100000, additionalLegendStone: 0, additionalPetStone: 0, tierTicketPurchaseQuantity: quantity, tierTicketPurchaseBonus: Math.floor(quantity * 0.01), quote, couponHoldings: [] }, false);
-assert(output.includes("9,999개씩 나눠 구매"));
+assert(!output.includes("9,999개씩 나눠 구매"));
+assert(output.includes("💰 티켓 " + c.numberWithCommas(quantity) + "장 구매"));
 assert.strictEqual(Number(infoSource.match(/pointShop: \{ limits: \{ maxPurchaseQuantity: (\d+)/)[1]), c.GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity);
 assert(infoSource.includes('"※ 1회 최대 " + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity)'));
-console.log("PASS 10: 티어 최소 구매 견적·나눠 구매 안내·Main/Info 한도 일치");
+console.log("PASS 10: 티어 최소 구매 견적·구매 안내 삭제·Main/Info 상점 한도 유지");
 
 // 돌멩이 상자의 실제 등록·구매·오픈 흐름도 동일한 저장 검증 환경에서 실행한다.
 vm.runInContext("GLOBAL_CONFIG.stoneBox = " + source.match(/stoneBox: (\{[\s\S]*?\n    \}),\n    pointShop/)[1], c);

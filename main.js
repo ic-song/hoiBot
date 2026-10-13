@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.633"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.634"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -38598,85 +38598,79 @@ function buildTierQuoteStatusText(quote) {
         parts.push("쿠폰 " + couponRates.join("·") + " 적용 예정");
     }
     if (parts.length === 0) return "할인 없음";
-    return parts.join(" · ");
+    return parts.join("\n");
 }
 
 // /티어와 승급 실패가 함께 사용하는 안내 메시지를 만드는 함수
 function buildTierProgressMessage(plan, isApplyFailure) {
     if (!plan) return "티어 정보를 확인할 수 없습니다.";
-    var lines = [];
+    var lines = [], separator = "━━━━━━━━━━━━━━━";
+    var currentDollPercent = getDollSuccessPercent(plan.currentTierName); // 기본 확률을 포함한 현재 티어 최종 성공률
     if (isApplyFailure && plan.isMaxTier) lines.push("🏆 이미 최고 티어예요");
-    else lines.push(isApplyFailure ? "❌ [" + plan.user + "] 님 승급 재료가 부족해요" : "🏅 [" + plan.user + "]님의 티어");
-    lines.push("현재 " + formatTicketTierLabel(plan.currentTierName));
-    lines.push("⛰️ 펫탐험 보너스: " + plan.currentExploreBonus + "% 적용 중");
-    lines.push("📊 티어 경험치 보너스: " + plan.currentExperienceBonus + "exp 적용");
+    else if (isApplyFailure) lines.push("❌ [" + plan.user + "] 님", "승급 재료가 부족해요");
+    else lines.push("🏅 [" + plan.user + "]님의 티어");
+    lines.push(separator, "현재 " + formatTicketTierLabel(plan.currentTierName));
+    if (!plan.isMaxTier) lines.push("목표 " + formatTicketTierLabel(plan.targetTierName));
+    lines.push(separator, "⛰️ 펫탐험 보너스: " + plan.currentExploreBonus + "% 적용",
+        "📊 티어 경험치 보너스: " + plan.currentExperienceBonus + "exp 적용",
+        "🧸 인형 성공확률 보너스: " + currentDollPercent + "% 적용", separator);
     if (plan.isMaxTier) {
-        lines.push("━━━━━━━━━━━━━━━");
         lines.push("🏆 현재 최고 티어입니다");
+    } else if (plan.canPromote) {
+        lines.push("✅ 승급 준비 완료! /티어적용");
+    } else if (plan.craftReady) {
+        lines.push("✅ 재료 준비 완료! /고급티켓조합 " + numberWithCommas(plan.combineCount), "→ /티어적용");
     } else {
-        lines.splice(2, 0, "목표 " + formatTicketTierLabel(plan.targetTierName));
-        lines.push("━━━━━━━━━━━━━━━");
-        if (plan.canPromote) {
-            lines.push("✅ 승급 준비 완료! /티어적용");
-        } else if (plan.craftReady) {
-            lines.push("✅ 재료 준비 완료! /고급티켓조합 " + numberWithCommas(plan.combineCount) + " → /티어적용");
-        } else {
-            lines.push("📦 추가로 필요한 재료");
-            if (plan.additionalRegular > 0) lines.push("티어 승급티켓🎟 x " + numberWithCommas(plan.additionalRegular));
-            if (plan.additionalLegendStone > 0) lines.push("전설의 돌맹이🗿 x " + numberWithCommas(plan.additionalLegendStone));
-            if (plan.additionalPetStone > 0) lines.push("펫 강화석⭐ x " + numberWithCommas(plan.additionalPetStone));
-            if (plan.additionalRegular > 0) {
-                lines.push("");
-                if (plan.quote && plan.quote.available) {
-                    var ticketPurchaseResultText = plan.tierTicketPurchaseBonus > 0 ? " → 총 " + numberWithCommas(plan.tierTicketPurchaseQuantity + plan.tierTicketPurchaseBonus) + "장 획득" : "";
-                    lines.push("💰 티켓 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장 구매" + ticketPurchaseResultText + ": 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
-                    lines.push(buildTierQuoteStatusText(plan.quote) + " · 세금 포함");
-                    if (plan.tierTicketPurchaseQuantity > GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) {
-                        lines.push("※ 상점에서 1회 최대 " + numberWithCommas(GLOBAL_CONFIG.pointShop.limits.maxPurchaseQuantity) + "개씩 나눠 구매해주세요.");
-                    }
-                } else {
-                    lines.push("💰 티켓 구매비: 현재 확인할 수 없어요");
-                }
-            }
-            lines.push("");
-            lines.push("준비 후" + (plan.combineCount > 0 ? " /고급티켓조합 " + numberWithCommas(plan.combineCount) + " →" : "") + " /티어적용");
+        lines.push("📦 추가로 필요한 재료");
+        if (plan.additionalRegular > 0) lines.push("티어 승급티켓🎟 x " + numberWithCommas(plan.additionalRegular));
+        if (plan.additionalLegendStone > 0) lines.push("전설의 돌맹이🗿 x " + numberWithCommas(plan.additionalLegendStone));
+        if (plan.additionalPetStone > 0) lines.push("펫 강화석⭐ x " + numberWithCommas(plan.additionalPetStone));
+        if (plan.additionalRegular > 0) {
+            lines.push(separator);
+            if (plan.quote && plan.quote.available) {
+                lines.push("💰 티켓 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장 구매");
+                if (plan.tierTicketPurchaseBonus > 0) lines.push("→ 총 " + numberWithCommas(plan.tierTicketPurchaseQuantity + plan.tierTicketPurchaseBonus) + "장 획득");
+                lines.push("🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)), "", buildTierQuoteStatusText(plan.quote), "세금 포함");
+            } else lines.push("💰 티켓 구매비: 현재 확인할 수 없어요");
         }
+        lines.push(separator);
+        if (plan.combineCount > 0) lines.push("준비 후 /고급티켓조합 " + numberWithCommas(plan.combineCount), "→ /티어적용");
+        else lines.push("준비 후 /티어적용");
     }
+    lines.push("");
     if (isApplyFailure) lines.push("차감된 포인트·아이템은 없습니다.");
-    lines.push("📋 상세 정보는 전체보기");
-    lines.push(allsee);
-    lines.push("📋 티어 준비 상세");
-    lines.push("티어 승급티켓🎟 보유 " + numberWithCommas(plan.regular) + " / 목표 " + numberWithCommas(plan.targetTier.ticket));
-    lines.push("고급 티어 승급티켓🎫 보유 " + numberWithCommas(plan.advanced) + " / 목표 " + numberWithCommas(plan.targetTier.highticket));
+    lines.push("📋 상세 정보는 전체보기", allsee, "", separator, "📋 티어 준비 상세",
+        "티어 승급티켓🎟", "보유 " + numberWithCommas(plan.regular) + " / 목표 " + numberWithCommas(plan.targetTier.ticket), "",
+        "고급 티어 승급티켓🎫", "보유 " + numberWithCommas(plan.advanced) + " / 목표 " + numberWithCommas(plan.targetTier.highticket));
     if (plan.combineCount > 0) {
-        lines.push("");
-        lines.push("고급티켓 조합 " + numberWithCommas(plan.combineCount) + "개");
-        lines.push("일반티켓 조합 소모 " + numberWithCommas(plan.craftRegular) + "개");
-        lines.push("전설의 돌맹이 조합 소모 " + numberWithCommas(plan.craftLegendStone) + "개");
-        lines.push("펫 강화석 조합 소모 " + numberWithCommas(plan.craftPetStone) + "개");
+        lines.push(separator, "고급티켓 조합 " + numberWithCommas(plan.combineCount) + "개",
+            "일반티켓 조합 소모 " + numberWithCommas(plan.craftRegular) + "개",
+            "전설의 돌맹이 조합 소모 " + numberWithCommas(plan.craftLegendStone) + "개",
+            "펫 강화석 조합 소모 " + numberWithCommas(plan.craftPetStone) + "개");
     }
     if (plan.quote && plan.quote.available) {
-        lines.push("");
-        lines.push("💰 티켓 구매 견적");
-        lines.push("부족 수량 " + numberWithCommas(plan.additionalRegular) + "장");
-        lines.push("실제 구매 수량 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장");
+        lines.push(separator, "💰 티켓 구매 견적",
+            "부족 수량 " + numberWithCommas(plan.additionalRegular) + "장",
+            "실제 구매 수량 " + numberWithCommas(plan.tierTicketPurchaseQuantity) + "장");
         if (plan.tierTicketPurchaseBonus > 0) lines.push("티어 상승론📙 추가 " + numberWithCommas(plan.tierTicketPurchaseBonus) + "장");
-        lines.push("할인 전 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice)));
-        lines.push("할인액 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice - plan.quote.itemPrice)));
-        lines.push("세금 🅟" + numberWithCommas(Math.floor(plan.quote.taxAmount)) + " (" + plan.quote.taxRate + "%)");
-        lines.push("티켓 구매비 🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)));
-        lines.push("※ 다른 조합 재료의 확보 비용은 포함하지 않습니다.");
+        lines.push("", "할인 전 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice)),
+            "할인액 🅟" + numberWithCommas(Math.floor(plan.quote.basePrice - plan.quote.itemPrice)),
+            "세금 🅟" + numberWithCommas(Math.floor(plan.quote.taxAmount)) + " (" + plan.quote.taxRate + "%)", "",
+            "티켓 구매비", "🅟" + numberWithCommas(Math.floor(plan.quote.totalCost)), "",
+            "※ 다른 조합 재료의 확보 비용은", "포함하지 않습니다.", separator);
         for (var couponIndex = 0; couponIndex < plan.couponHoldings.length; couponIndex++) {
             lines.push(plan.couponHoldings[couponIndex].name + " x " + numberWithCommas(plan.couponHoldings[couponIndex].count));
         }
     }
     if (!plan.isMaxTier) {
-        lines.push("");
-        lines.push("🎁 다음 티어 혜택");
-        lines.push("매력 보상 +" + numberWithCommas(plan.targetTier.exp) + "💕");
-        lines.push("탐험 보너스 " + plan.currentExploreBonus + "% → " + plan.targetExploreBonus + "%");
-        lines.push("티어 경험치 보너스 " + plan.currentExperienceBonus + "exp → " + plan.targetExperienceBonus + "exp");
+        var targetDollPercent = getDollSuccessPercent(plan.targetTierName); // 실제 목표 티어의 최종 성공률
+        lines.push(separator, "🎁 다음 티어 혜택",
+            "매력 보상 +" + numberWithCommas(plan.targetTier.exp) + "💕", "",
+            "탐험 보너스", plan.currentExploreBonus + "% → " + plan.targetExploreBonus + "%", "",
+            "티어 경험치 보너스", plan.currentExperienceBonus + "exp → " + plan.targetExperienceBonus + "exp", "",
+            "인형 성공확률 보너스", currentDollPercent + "% → " + targetDollPercent + "%");
     }
+    lines.push(separator);
     return lines.join("\n");
 }
 
@@ -38693,9 +38687,11 @@ function buildTierPromotionSuccessMessage(data, user, result) {
         "탐험 보너스 " + getTierExploreBonusPercentByName(result.newTierName) + "%"
     ];
     lines.push("티어 경험치 보너스: " + Number(newTier.experienceBonus) + "exp 적용");
+    lines.push("🧸 인형 성공확률 보너스: " + getDollSuccessPercent(result.newTierName) + "% 적용");
     if (newTierIndex < tierNames.length - 1) {
         lines.push("");
         lines.push("다음 목표 " + formatTicketTierLabel(tierNames[newTierIndex + 1]));
+        lines.push("인형 성공확률 보너스 " + getDollSuccessPercent(result.newTierName) + "% → " + getDollSuccessPercent(tierNames[newTierIndex + 1]) + "%");
         lines.push("준비 확인: /티어");
     } else {
         lines.push("");
