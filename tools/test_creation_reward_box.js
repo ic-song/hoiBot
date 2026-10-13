@@ -37,6 +37,7 @@ const c = {
     isHoiPassPremiumActive: () => c.premium === true,
     replier: { reply(message) { replies.push(message); } },
     resolveActiveDataPath: p => p, getAutoDailyBatchContext: () => null,
+    getCurrentContext: () => ({}), // 이 합성 명령에는 계정 삭제 상태가 없음
     getManagedJsonBackupPath: p => p + ".bak", isProtectedManagedJsonPath: () => true,
     ensureParentFolder: () => {}, debuggerLog: () => {},
     java: { io: { File: function (p) { this.exists = () => Object.hasOwn(disk, p); } } },

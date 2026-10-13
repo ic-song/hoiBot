@@ -41,6 +41,7 @@ function setup() {
     c.recordAdventureQuestAction = () => { c.questAttempts++; };
     c.replier = { reply: message => c.replies.push(message) };
     c.saveJsonFile = (value, file) => c.saves.push({ file, json: JSON.stringify(value) });
+    c.getEquippedPetSkillNames = () => []; // 조건부 스킬 없는 강화 UI 합성 사례
     vm.createContext(c);
     for (const name of ["buildMiniUpgradeProbabilityTable", "buildMiniUpgradeCostTable", "buildMiniUpgradeCharmTable",
         "isElite", "isMasterMiniPet", "getCharmGainFor", "findBestMiniBoostItem", "getMiniUpgradeTargetInfo",

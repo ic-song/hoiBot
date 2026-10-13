@@ -58,7 +58,7 @@ vm.runInContext(extractFunction("buildAdventureBoosterDepletionMessage"), deplet
 const depletionMessage = depletionContext.buildAdventureBoosterDepletionMessage(
     { member: { "호이 남": { boostercnt: 0 } } }, {}, {}, "호이 남", { usedBooster: 10 }
 );
-if (depletionMessage !== "[💛호이 남_⚔︎] 님의\n호월신의 가호✨ (경험치 3배) 이(가)\n모두 소진되었습니다.\n안내링크:") {
+if (depletionMessage !== "[💛호이 남_⚔︎] 님의\n호월신의 가호✨ (경험치 3배) 이(가)\n모두 소진되었습니다.\n안내링크:https://hoiland123.tistory.com/721") {
     throw new Error("가호 별도 소진 문구 검증 실패: " + depletionMessage);
 }
 
@@ -115,7 +115,7 @@ const tierChecks = [
     'tierProgressPlan.user = checkRank(data, petData, guildData, sender)',
     'tierPlan.user = checkRank(data, petData, guildData, sender)',
     'var promotedRankName = checkRank(data, petData, guildData, sender)',
-    '"❌ [" + plan.user + "] 님 승급 재료가 부족해요"',
+    '"❌ [" + plan.user + "] 님", "승급 재료가 부족해요"',
     '"🏅 [" + plan.user + "]님의 티어"'
 ];
 for (const expected of tierChecks) {

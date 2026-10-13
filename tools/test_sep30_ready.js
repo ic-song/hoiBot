@@ -36,6 +36,7 @@ function context(source, names, extras) {
         numberWithCommas: value => Number(value).toLocaleString("en-US"),
         checkRank: (_data, _pet, _guild, user) => user,
         getHoiPassPremiumHeader: () => "",
+        getEquippedPetSkillNames: () => [], // 조건부 스킬 없는 UI 합성 사례
         getMiniPetBattleRank: () => "1등",
         getMiniPetBagLimit: () => 10,
         getMiniPetCollectionData: () => ({ completedStage: 2, registeredCount: 6, maxCount: 8 }),
@@ -81,7 +82,7 @@ const robbery = mini.buildMiniPetRobberyHistoryMessage("나", members, petData, 
 assert(robbery.includes("최근 약탈 기록: 1건"));
 assert(robbery.indexOf("<ALLSEE>") < robbery.indexOf("1. [상대]"));
 
-const rank = context(info, ["generateRanking", "normalizeInfoServerLabel", "normalizeRankServerName", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"], {
+const rank = context(info, ["formatRankNickname", "formatInfoServerRaidServer", "buildNicknameWorldRanks", "generateRanking", "normalizeInfoServerLabel", "normalizeRankServerName", "buildServerRankingRows", "formatOverallRankPosition", "formatOverallUserRow", "formatOverallServerRow", "buildWorldOverallRankingMessage", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"], {
     calculateCastleExp: user => user === "나" ? 120 : 0,
     calculateRaidExp: user => user === "나" ? 80 : 0,
     calculatePetUpgradeCharm: () => 0,
@@ -126,6 +127,8 @@ const serverState = {
     addItem: (data, user, item) => { data.member[user].bag[item] = (data.member[user].bag[item] || 0) + 1; }
 };
 vm.createContext(serverState);
+for (const name of ["applyServerRaidMembershipChange", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(extractFunction(main, name), serverState);
+serverState.numberWithCommas = n => Number(n).toLocaleString("en-US");
 const serverBlock = extractIfBlock(main, 'if (msg === "/서버변경" ||');
 vm.runInContext("function runServerChange() { " + serverBlock + " }", serverState);
 for (const command of ["/서버변경", "/서버변경 호이서버8", "/서버변경 호이서버1"]) {

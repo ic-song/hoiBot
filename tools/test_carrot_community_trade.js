@@ -140,6 +140,7 @@ c.dataSaveTransactionThreadLocal = { value: null, get() { return this.value; }, 
 c.dataTransactionLock = { lock() {}, unlock() {} };
 c.resolveActiveDataPath = file => file;
 c.getAutoDailyBatchContext = () => null;
+c.getCurrentContext = () => ({}); // 이 합성 명령에는 계정 삭제 상태가 없음
 c.getManagedJsonBackupPath = file => protectedFiles.includes(file) ? file + ".bak" : null;
 c.isProtectedManagedJsonPath = file => protectedFiles.includes(file);
 c.ensureParentFolder = () => {};

@@ -103,7 +103,7 @@ const mainChecks = [
     '!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg)',
     'if (msg === "/기록실") return isAdminIdentity(sender) || isMasterIdentity(sender)',
     'if (msg === "/기록" || /^\\/기록\\s+',
-    'msg === "/인증필요" && isAdminIdentity(sender)',
+    'if (msg === "/인증필요") return isAdminIdentity(sender);',
     'isMasterIdentity(sender) || isAdminIdentity(sender)'
 ];
 for (const expected of mainChecks) {
