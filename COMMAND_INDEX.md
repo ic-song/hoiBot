@@ -7854,6 +7854,39 @@ Status: VERIFIED
 - `checkRank`는 기존 무쌍·티어/특별 이모지·길드 표시는 유지한다. 응답/공지의 `formatNicknameRankMessage`가 무쌍 접두어의 외곽 괄호를 정리한다.
 - 실제 순위·매력·동률 순서·보상 기준과 `/종합순위`, `ㅈㅈㅈ`의 서버 현황 → 월드 응답 순서는 유지한다.
 
+# /인형뽑기 · /인형도감 · /인형순위 · /인형가이드
+
+Status: VERIFIED
+
+## Files / Helpers
+
+- main.js: getDollRequest, applyDollDraw, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
+- MAIN·Info의 캐슬·레이드 기본 매력에 `member_pet.json`의 `dollCharm / 2`를 합산한 뒤 기존 퍼센트를 적용한다. 종합매력·진단도 같은 기본값을 사용한다. 원본 종합매력은 정수로 누적하므로 각 모드 +12.5도 누적 과정에서 보존한다.
+
+## Commands / Policy
+
+- `/인형뽑기`: 정확한 무인수 입력 1회. 이용권 1개 우선, 없으면 3억. 정상 실패도 비용을 사용한다. 신규·중복 모두 기존 티어·가호·레벨업 경험치를 적용하며 최대 기록 갱신 자체에는 별도 보상이 없다. 전설 이상은 전체 알림이다.
+- `/인형도감`: 전체 현황. 일반·고급·희귀는 등급명만 입력하면 목록 선택이며 1/2 상세는 등급 전체 정렬 후 150/110/85종씩 나눈다. 영웅~창조는 전체 목록이다.
+- `/인형순위`: 대표 인형의 등급·최대 크기·획득 횟수·고정 계정 ID순. 공개 10등, 본인 100등까지 표시한다.
+- `/인형가이드`: 별도 이용 방법·확률·경험치·판매·도감·순위·크기·수집효과 안내다.
+- 펫무쌍·길드영지·서버대전 진행 중 네 명령을 차단한다. 기존 가입·출석·정지·개인톡 제한은 유지하며 프리미엄·티어 자격 제한을 추가하지 않는다.
+- 프리미엄 기존 날짜별 구독 지급에 이용권 1개를 추가한다. 같은 날짜 재지급과 `/리셋`에 따른 추가 지급은 하지 않는다.
+
+## Data / Save Flow
+
+- dollCatalog.json: Notion 고정 ID D0001–D1000, 9등급, 0.1cm 정수 크기. 첫 이용 때 검증·캐시하며 DEV도 공통 목록을 읽는다.
+- dollRecords_0.json–dollRecords_15.json: 이름 해시로 분리한 도감·최초일·횟수·최대 크기. dollIndex.json: 순위 대표 기록. 회원 파일에 도감 원본을 넣지 않는다.
+- 뽑기 전 회원·펫·인덱스·해당 기록 원문을 dollPending.json에 보관하고, 명령 트랜잭션 안에서 기록→인덱스→펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 중단된 요청은 다음 MAIN에서 이전 원문으로 복구한다.
+- 저장 완료 뒤 전송 실패는 재추첨·재지급·소모 취소를 하지 않는다. Info는 복구 대기 상태를 표시하지 않는다. DEV 사용자 저장 경로는 분리한다.
+- `/계삭진행`, `/계정잠수삭제`, `/데이터정리`의 기존 삭제 정리와 연결해 인형 도감·순위 잔여 데이터를 함께 제거한다. 재가입은 새 기록이다. 닉네임 변경 기록 이전은 사용자 지시로 제외됐다.
+- 최초 설치 자료와 운영자 확인 절차: docs/DOLL_CONTENT_DEPLOYMENT.md. 누락·손상 파일을 빈 데이터로 바꾸지 않는다.
+
+## Validation
+
+- tools/test_doll_catalog.js: 1,000종 ID·종수·구간·최초 종매 1억.
+- tools/test_doll_content.js: 규칙·도감·순위·UI·실제 저장/롤백·재시작·전송 실패·DEV·프리미엄·삭제·Info 복구 대기·특수 이름 18개 그룹.
+- tools/test_doll_rhino.js: UTF-8 Rhino 1.7.15 MAIN/Info 전체 컴파일 및 핵심 규칙 실행.
+
 # /인증 · 검색인증 조회 및 초기화
 
 Status: VERIFIED

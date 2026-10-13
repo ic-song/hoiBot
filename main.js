@@ -1,9 +1,10 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.632"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.633"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
+var dollCatalogCache = null; // 고정 인형 목록은 첫 이용 때 검증한 뒤 재사용
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
 let privateChatBlockedTracker = {}; // 패스 미사용 유저별 1:1톡 차단 횟수
 let requestMonitorConfig = null;
@@ -946,6 +947,7 @@ var COMMON_DATA_FILE_MAP = {
     "trialTowerBoss.json": true,
     "eventTowerBoss.json": true,
     "hoiBotChangeLog.json": true,
+    "dollCatalog.json": true,
     "petSweetHomeInfo.json": true
 };
 var commandContextThreadLocal = new java.lang.ThreadLocal();
@@ -991,6 +993,17 @@ var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 �
 var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 작업의 환경별 타이머
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    doll: {
+        ticketName: "인형뽑기이용권🧸(/인형뽑기)", cost: 300000000, shardCount: 16,
+        rates: { baseSuccessPercent: 5, tierStepPercent: 1, sizeWeights: [85,14,1] },
+        limits: { catalogSize: 1000, publicRanks: 10, personalRanks: 100 },
+        grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조"],
+        emojis: ["⚪", "🟢", "🔵", "🟣", "🟡", "🔴", "🌌", "🌠", "👑"],
+        counts: [300,220,170,120,80,50,30,20,10], weights: [400,250,150,100,50,25,15,7,3],
+        experience: [8,15,23,77,231,385,770,1540,3850],
+        charm: [2500,5000,15000,30000,125000,250000,650000,1250000,2500000],
+        sale: [1000000,2000000,5000000,10000000,30000000,100000000,300000000,1000000000,3000000000]
+    },
     fortuneCookie: { // 호츈쿠키의 개봉·보상·추첨 규칙
         itemName: "호츈쿠키🥠(/호츈오픈 숫자)", legacyItemName: "호츈쿠키🥠", maxOpen: 100, generalRate: 0.5, specialRate: 0.01,
         duplicatePoint: 50000000, specialDiamond: 100, titleSalePoint: 15000000,
@@ -1199,6 +1212,7 @@ const GLOBAL_CONFIG = {
             questDiamondBoxCount: 5,
             questExperienceReward: 50,
             dailyRewards: [
+                { name: "인형뽑기이용권🧸(/인형뽑기)", count: 1 },
                 { name: "홈뱃지 큐브💟", count: 1 },
                 { name: "펜던트뽑기💎(/펜던트오픈)", count: 10 },
                 { name: "미니펫뽑기🐹(/미니펫오픈)", count: 100 },
@@ -2844,6 +2858,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("❌ DEV 데이터가 준비되지 않았습니다. Master가 dev/데이터백업을 먼저 실행해 주세요.");
             return;
         }
+        // 인형 저장 중 재시작된 경우 기존 원문으로 복구한 뒤 회원 데이터를 읽는다.
+        if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists()) {
+            var dollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
+            if (!dollPending || !Object.prototype.hasOwnProperty.call(dollPending, "pending")) throw new Error("인형 복구 기록 형식 오류");
+            if (dollPending.pending !== null) {
+                if (!(dollPending.pending instanceof Array)) throw new Error("인형 복구 파일 목록 오류");
+                for (var dollRecoveryIndex = 0; dollRecoveryIndex < dollPending.pending.length; dollRecoveryIndex++) {
+                    var dollRecoveryFile = dollPending.pending[dollRecoveryIndex];
+                    if (!/^(member|member_pet|dollIndex|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(dollRecoveryFile.name) || typeof dollRecoveryFile.text !== "string") throw new Error("인형 복구 대상 오류");
+                    parseJsonContent(dollRecoveryFile.text, dollRecoveryFile.name);
+                }
+                for (var dollRestoreIndex = 0; dollRestoreIndex < dollPending.pending.length; dollRestoreIndex++) {
+                    var dollRestoreFile = dollPending.pending[dollRestoreIndex];
+                    writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + dollRestoreFile.name), dollRestoreFile.text, true);
+                }
+                saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
+            }
+        }
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         var memberStorageMigrationResult = null;
@@ -2953,6 +2985,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return; // 복구 작업으로 만료된 게임 턴을 처리하거나 기존 정리를 함께 실행하지 않음
                 }
                 memberStorageMigrationResult = { changed: false };
+            }
+        }
+        if ((/^\/계삭진행(?:\s|$)/.test(msg) || /^\/계정잠수삭제(?:\s|$)/.test(msg) || msg === "/데이터정리") && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists() && (isMasterIdentity(sender) || (msg === "/데이터정리" && isAdminIdentity(sender)))) {
+            ctx.dollDeletion = { index: requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollIndex.json")), stores: [], snapshots: [], dirty: false };
+            ctx.dollDeletion.indexSnapshot = JSON.stringify(ctx.dollDeletion.index);
+            for (var dollDeleteSlot = 0; dollDeleteSlot < GLOBAL_CONFIG.doll.shardCount; dollDeleteSlot++) {
+                var dollDeleteStore = requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollRecords_" + dollDeleteSlot + ".json"));
+                ctx.dollDeletion.stores.push(dollDeleteStore);
+                ctx.dollDeletion.snapshots.push(JSON.stringify(dollDeleteStore));
             }
         }
         var raidCommand = isServerRaidCommand(msg);
@@ -4211,6 +4252,66 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     "허용 명령어: /참여(ㅊㅇ), /맞짱(ㅁㅁ), /맞짱필드목록, /맞짱순위"
                 );
             }
+            return;
+        }
+        var dollRequest = getDollRequest(msg);
+        if (dollRequest) {
+            if (isServerRaidLocked(data) || (petMusou && petMusou.active) || isGuildTerritoryWarCommandLockActive(guildData)) {
+                replier.reply("⚠️ 펫무쌍·길드영지·서버대전 진행 중에는 인형 컨텐츠를 이용할 수 없습니다.");
+                return;
+            }
+            if (dollRequest.kind === "invalid") {
+                replier.reply(dollTitle(data, petData, guildData, sender, "인형도감") + "\n🔎 조회할 인형 도감을 입력해 주세요.\n👉 예시: /인형도감 고급1\n📖 조회 목록·명령어" + allsee + "\n일반1 · 일반2\n고급1 · 고급2\n희귀1 · 희귀2\n영웅 · 전설 · 신화 · 초월 · 창세 · 창조\n👉 등급 선택: /인형도감 고급\n━━━━━━━━━━━━\n" + dollCommandFooter());
+                return;
+            }
+            if (dollRequest.kind === "guide") {
+                replier.reply((isHoiPassPremiumActive(data, sender) ? "[👑호이패스 프리미엄👑]\n" : "") + buildDollGuideMessage());
+                return;
+            }
+            if (dollCatalogCache === null) dollCatalogCache = validateDollCatalog(loadJsonFile(DATA_ROOT_PATH + "dollCatalog.json"));
+            var dollIndex = requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollIndex.json"));
+            if (dollRequest.kind === "rank") {
+                replier.reply(buildDollRankingMessage(data, petData, guildData, dollCatalogCache, dollIndex, sender));
+                return;
+            }
+            var dollShardName = "dollRecords_" + getDollShard(sender) + ".json";
+            var dollStore = requireDollStore(loadJsonFile(DATA_ROOT_PATH + dollShardName));
+            if (dollRequest.kind === "collection") {
+                var dollUserRecord = Object.prototype.hasOwnProperty.call(dollStore.users, sender) ? dollStore.users[sender] : undefined;
+                replier.reply(buildDollCollectionMessage(data, petData, guildData, dollCatalogCache, dollUserRecord, sender, dollRequest));
+                return;
+            }
+            var dollSnapshotNames = ["member.json", "member_pet.json", "dollIndex.json", dollShardName];
+            var dollSnapshots = [];
+            for (var dollSnapshotIndex = 0; dollSnapshotIndex < dollSnapshotNames.length; dollSnapshotIndex++) {
+                var dollSnapshotName = dollSnapshotNames[dollSnapshotIndex];
+                var dollSnapshotText = FileStream.read(resolveActiveDataPath(DATA_ROOT_PATH + dollSnapshotName), "utf-8");
+                parseJsonContent(dollSnapshotText, dollSnapshotName);
+                dollSnapshots.push({ name: dollSnapshotName, text: dollSnapshotText });
+            }
+            var dollDateKey = getAttendanceKstDateKey();
+            var dollDateText = dollDateKey.substring(0, 4) + "." + dollDateKey.substring(4, 6) + "." + dollDateKey.substring(6, 8);
+            var dollResult = applyDollDraw(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText);
+            if (!dollResult.ok) {
+                replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
+                return;
+            }
+            saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
+            saveJsonFile(dollStore, DATA_ROOT_PATH + dollShardName, false, dollSnapshots[3].text);
+            saveJsonFile(dollIndex, DATA_ROOT_PATH + "dollIndex.json", false, dollSnapshots[2].text);
+            saveJsonFile(petData, memberPetPath);
+            saveJsonFile(data, filePath);
+            saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
+            // 전송 실패는 이미 완료된 소모·보상을 되돌리거나 재추첨하지 않는다.
+            try {
+                if (dollResult.success) replier.reply(getDollEmoji(dollResult.doll.name));
+                replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
+                if (dollResult.success && dollResult.experience.levelUps.length > 0) replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, sender, dollResult.experience.levelUps));
+                if (dollResult.success && dollResult.doll.grade >= 4) {
+                    var dollNotice = "[🧸 전체알림]\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형 등장!\n━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이 " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형을 뽑았어요!\n\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + "｜" + dollResult.doll.name + "\n📏 " + (dollResult.length / 10).toFixed(1) + "cm · " + dollResult.size.label + "\n━━━━━━━━━━━━\n" + dollCommandFooter();
+                    if (ctx.isDev) replier.reply(dollNotice); else noticeMsg(dollNotice);
+                }
+            } catch (dollReplyError) { debuggerLog("[인형 전송 오류] " + dollReplyError); }
             return;
         }
         if (msg === "/펫무쌍준비") {
@@ -31787,7 +31888,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
+        command === "/인형뽑기" || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
         /^\/달토끼상점구매\s+\d+\s+\d+$/.test(command) ||
         command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
@@ -33080,7 +33181,7 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
     var fileName = String(new java.io.File(path).getName());
-    return fileName === "member.json" || fileName === "member_back.json" ||
+    return /^(dollIndex|dollPending|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(fileName) || fileName === "member.json" || fileName === "member_back.json" ||
         /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(fileName) ||
         fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
         fileName === "member_back2.json" || fileName === "member_pet_back2.json" ||
@@ -33092,6 +33193,8 @@ function isProtectedManagedJsonPath(path) {
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
     var splitFileName = String(new java.io.File(path).getName());
+    if (/^(dollIndex|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(splitFileName)) return requireDollStore(parsedData);
+    if (splitFileName === "dollPending.json" && (!parsedData || !Object.prototype.hasOwnProperty.call(parsedData, "pending") || (parsedData.pending !== null && !(parsedData.pending instanceof Array)))) throw new Error("인형 복구 기록 형식 오류");
     if (/^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(splitFileName)) return requireMemberSplitStore(parsedData, splitFileName.indexOf("serverRaidData") === 0 ? "raid" : "logs");
     if (String(new java.io.File(path).getName()).indexOf("petHomeActivityData") === 0) {
         return requirePetHomeActivityData(parsedData);
@@ -33343,6 +33446,14 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
             autoDailyBatch.files[path] = data;
             autoDailyBatch.dirtyPaths[path] = true;
             return;
+        }
+        var dollDeletionState = getCurrentContext().dollDeletion;
+        if (path === resolveActiveDataPath(filePath) && dollDeletionState && dollDeletionState.dirty) {
+            for (var dollDeletionSlot = 0; dollDeletionSlot < dollDeletionState.stores.length; dollDeletionSlot++) {
+                if (JSON.stringify(dollDeletionState.stores[dollDeletionSlot]) !== dollDeletionState.snapshots[dollDeletionSlot]) saveJsonFile(dollDeletionState.stores[dollDeletionSlot], DATA_ROOT_PATH + "dollRecords_" + dollDeletionSlot + ".json", false, dollDeletionState.snapshots[dollDeletionSlot]);
+            }
+            saveJsonFile(dollDeletionState.index, DATA_ROOT_PATH + "dollIndex.json", false, dollDeletionState.indexSnapshot);
+            dollDeletionState.dirty = false;
         }
         var splitPlan = path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
         var jsonText = JSON.stringify(splitPlan ? splitPlan.member : data);
@@ -42996,6 +43107,8 @@ function collectDeletedAccountNames(data, guildData, stores) {
 
 // 회원 목록을 기준으로 모든 계정 귀속 저장소의 잔여 데이터를 일괄 제거하는 함수
 function cleanupDeletedAccountResiduals(data, guildData, stores, forcedUserNames) {
+    var dollDeleteContext = typeof getCurrentContext === "function" ? getCurrentContext().dollDeletion : null;
+    if (dollDeleteContext) pruneDollDeletedAccounts(data, dollDeleteContext);
     stores = stores || {};
     var invalidNames = {};
     if (forcedUserNames instanceof Array) {
@@ -45856,7 +45969,9 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
         }
     }
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "castleExp");
-    var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp; // 큐브 적용 전 캐슬 매력 합계
+    var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
+    if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
+    var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp + dollCharm / 2; // 큐브 적용 전 캐슬 매력 합계
     var castleCubePercent = getPetModeCharmPercent(memberName, data, guildData, "castle", excludeHomeBadgeCube);
     return applyPercentWithExactFloor(castleTotal, castleCubePercent);
 }
@@ -45879,7 +45994,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
         }
     }
     skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "raidExp");
-    var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp; // 큐브 적용 전 레이드 매력 합계
+    var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
+    if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
+    var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp + dollCharm / 2; // 큐브 적용 전 레이드 매력 합계
     var raidCubePercent = getPetModeCharmPercent(memberName, data, guildData, "raid", excludeHomeBadgeCube);
     return applyPercentWithExactFloor(raidTotal, raidCubePercent);
 }
@@ -52461,7 +52578,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     var castleSkillExp = measure("캐슬-펫스킬", function () {
         return calcSkillExp(homeData, "castleExp");
     });
-    var castleBase = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp; // 퍼센트 적용 전 진단 합계
+    var castleBase = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp + (petData[sender].dollCharm === undefined ? 0 : petData[sender].dollCharm / 2); // 퍼센트 적용 전 진단 합계
 
     var raidEquipmentExp = measure("레이드-정령/반지/펜던트/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { raidExp: 0 };
@@ -52481,7 +52598,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     var raidSkillExp = measure("레이드-펫스킬", function () {
         return calcSkillExp(homeData, "raidExp");
     });
-    var raidBase = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp; // 퍼센트 적용 전 진단 합계
+    var raidBase = raidEquipmentExp + raidPetExp + raidMiniPetExp + raidHomeExp + raidSkillExp + (petData[sender].dollCharm === undefined ? 0 : petData[sender].dollCharm / 2); // 퍼센트 적용 전 진단 합계
     var castleTotal = measure("캐슬-최종합계", function () {
         return applyPercentWithExactFloor(castleBase, getPetModeCharmPercent(sender, data, guildData, "castle", false));
     });
@@ -59699,6 +59816,262 @@ function buildSearchAuthenticationRankingMessage(data, adminRanking) {
         }
     }
     return lines.join("\n");
+}
+
+// 삭제된 계정의 인형 도감과 순위 기록을 전용 저장소에서 제거하는 함수
+function pruneDollDeletedAccounts(data, state) {
+    for(var slot=0;slot<state.stores.length;slot++) {
+        for(var user in state.stores[slot].users) {
+            if(!Object.prototype.hasOwnProperty.call(state.stores[slot].users,user) || data.member[user]) continue;
+            delete state.stores[slot].users[user]; delete state.index.users[user]; state.dirty=true;
+        }
+    }
+    for(var name in state.index.users) if(Object.prototype.hasOwnProperty.call(state.index.users,name) && !data.member[name]) {delete state.index.users[name];state.dirty=true;}
+}
+// 인형 이름 끝의 이모지를 단독 메시지로 반환하는 함수
+function getDollEmoji(name) {
+    var match=String(name).match(/[^\u0020-\u007e\uAC00-\uD7A3]+$/);
+    return match ? match[0] : "🧸";
+}
+// 인형 명령어의 정확한 실행 및 조회 입력을 분류하는 함수
+function getDollRequest(msg) {
+    if (msg === "/인형뽑기") return { kind: "draw" };
+    if (msg === "/인형순위") return { kind: "rank" };
+    if (msg === "/인형가이드") return { kind: "guide" };
+    if (msg === "/인형도감") return { kind: "collection", grade: -1, page: 0 };
+    var m = String(msg).match(/^\/인형도감\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조)([12])?$/);
+    if (m) {
+        var g = GLOBAL_CONFIG.doll.grades.indexOf(m[1]);
+        if (m[2] && g > 2) return { kind: "invalid" };
+        return { kind: "collection", grade: g, page: m[2] ? Number(m[2]) : 0 };
+    }
+    if (/^\/인형도감(?:\s+[\s\S]*)?$/.test(String(msg))) return { kind: "invalid" };
+    return null;
+}
+// 인형 계정 기록을 나눠 보관할 파일 번호를 계산하는 함수
+function getDollShard(user) {
+    var hash = 0;
+    for (var i = 0; i < user.length; i++) hash = (hash * 31 + user.charCodeAt(i)) % GLOBAL_CONFIG.doll.shardCount;
+    return hash;
+}
+// 인형 고정 목록의 ID·등급·0.1cm 경계를 검사하는 함수
+function validateDollCatalog(catalog) {
+    if (!catalog || catalog.schemaVersion !== 1 || !(catalog.dolls instanceof Array) || catalog.dolls.length !== GLOBAL_CONFIG.doll.limits.catalogSize) throw new Error("인형 고정 목록 형식 오류");
+    var counts = [0,0,0,0,0,0,0,0,0];
+    for (var i = 0; i < catalog.dolls.length; i++) {
+        var d = catalog.dolls[i], expected = "D" + ("0000" + (i + 1)).slice(-4);
+        if (d.id !== expected || !d.name || !isSearchAuthenticationCount(d.grade) || d.grade > 8 ||
+            !isSearchAuthenticationCount(d.minTenths) || !isSearchAuthenticationCount(d.maxTenths) ||
+            d.minTenths >= d.largeTenths || d.largeTenths >= d.giantTenths || d.giantTenths > d.maxTenths ||
+            d.largeTenths !== Math.ceil((20*d.minTenths+80*d.maxTenths)/100) ||
+            d.giantTenths !== Math.ceil((5*d.minTenths+95*d.maxTenths)/100)) throw new Error("인형 고정 목록 값 오류: " + expected);
+        counts[d.grade]++;
+    }
+    for (var g = 0; g < counts.length; g++) if (counts[g] !== GLOBAL_CONFIG.doll.counts[g]) throw new Error("인형 등급 종수 오류");
+    return catalog;
+}
+// 인형 계정별 저장소의 형식을 검사하는 함수
+function requireDollStore(store) {
+    if (!store || store.schemaVersion !== 1 || !store.users || typeof store.users !== "object" || store.users instanceof Array) throw new Error("인형 저장소 형식 오류");
+    return store;
+}
+// 인형 획득 확률을 기존 티어 단계로 계산하는 함수
+function getDollSuccessPercent(tier) {
+    return GLOBAL_CONFIG.doll.rates.baseSuccessPercent + (getTicketTierStage(tier) - 1) * GLOBAL_CONFIG.doll.rates.tierStepPercent;
+}
+// 크기를 표시값과 동일한 정수 단위로 분류하는 함수
+function getDollSize(doll, tenths) {
+    if (tenths >= doll.giantTenths) return { label: "초대형", multiplier: 2 };
+    if (tenths >= doll.largeTenths) return { label: "대형", multiplier: 1.5 };
+    return { label: "보통", multiplier: 1 };
+}
+// 인형별 수집 횟수에서 고정 누적 종합매력을 계산하는 함수
+function getDollRecordCharm(doll, record) {
+    if (!record) return 0;
+    if (!isSearchAuthenticationCount(record.count) || record.count < 1) throw new Error("인형 획득 횟수 오류");
+    var base = GLOBAL_CONFIG.doll.charm[doll.grade];
+    var total = base + (record.count - 1) * (base / 100);
+    if (!isSearchAuthenticationCount(total)) throw new Error("인형 누적 매력 범위 초과");
+    return total;
+}
+// 인형 순위용 대표 기록을 높은 등급·크기·횟수 순으로 선택하는 함수
+function buildDollRepresentative(catalog, userRecord, user) {
+    var best = null;
+    for (var id in userRecord.catches) {
+        if (!Object.prototype.hasOwnProperty.call(userRecord.catches,id)) continue;
+        var d = catalog.dolls[Number(id.substring(1))-1], r = userRecord.catches[id];
+        if (!d || d.id !== id || !isSearchAuthenticationCount(r.max) || r.max < d.minTenths || r.max > d.maxTenths) throw new Error("인형 크기 기록 오류");
+        getDollRecordCharm(d,r);
+        var row = { id: userRecord.id, name: user, dollId: id, grade: d.grade, max: r.max, count: r.count };
+        if (!best || compareDollRows(row,best) < 0 || (row.grade === best.grade && row.max === best.max && row.count === best.count && row.dollId < best.dollId)) best = row;
+    }
+    return best;
+}
+// 인형 유저 순위를 등급·크기·횟수·고정 계정 ID 순으로 비교하는 함수
+function compareDollRows(a,b) {
+    if (a.grade !== b.grade) return b.grade-a.grade;
+    if (a.max !== b.max) return b.max-a.max;
+    if (a.count !== b.count) return b.count-a.count;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+// 인형 뽑기 1회의 소모·보상·기록 변경을 계산하는 함수
+function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValue) {
+    var config=GLOBAL_CONFIG.doll, member=data.member[user], pet=petData[user];
+    if (!member || !pet) throw new Error("인형뽑기 회원·펫 데이터 없음");
+    var bag=member.bag, tickets=bag && bag[config.ticketName] !== undefined ? bag[config.ticketName] : 0;
+    if (!isSearchAuthenticationCount(tickets) || !isSearchAuthenticationCount(member.point)) throw new Error("인형뽑기 재화 값 오류");
+    if (tickets < 1 && member.point < config.cost) return { ok:false, lack:true };
+    var random=randomValue || Math.random;
+    var probability=getDollSuccessPercent(member.rank ? member.rank.tier : "새싹");
+    var success=random()*100 < probability;
+    var previous=Object.prototype.hasOwnProperty.call(store.users,user) ? store.users[user] : undefined;
+    var record=previous ? JSON.parse(JSON.stringify(previous)) : {id:id,catches:{}};
+    if (!record.id || !record.catches || typeof record.catches !== "object" || record.catches instanceof Array) throw new Error("인형 계정 기록 오류");
+    var result={ok:true,success:success,ticket:tickets>0,probability:probability};
+    if (success) {
+        var roll=Math.floor(random()*1000), grade=0; // 성공 후 등급 확률을 1000 단위로 추첨
+        while (grade<8 && roll>=config.weights[grade]) {roll-=config.weights[grade];grade++;}
+        var dolls=catalog.dolls.filter(function(d){return d.grade===grade;});
+        var doll=dolls[Math.floor(random()*dolls.length)];
+        var sizeRoll=random()*100, low=doll.minTenths, high=doll.largeTenths-1; // 구간별 크기 확률 독립 추첨
+        if(sizeRoll>=config.rates.sizeWeights[0]+config.rates.sizeWeights[1]){low=doll.giantTenths;high=doll.maxTenths;} else if(sizeRoll>=config.rates.sizeWeights[0]){low=doll.largeTenths;high=doll.giantTenths-1;}
+        var length=low+Math.floor(random()*(high-low+1)), old=record.catches[doll.id];
+        var count=old ? old.count : 0;
+        if(old) getDollRecordCharm(doll,old);
+        var charm=count>0 ? config.charm[grade]/100 : config.charm[grade];
+        var previousCharm=pet.dollCharm===undefined ? 0 : pet.dollCharm;
+        if(!isSearchAuthenticationCount(previousCharm)) throw new Error("인형 기존 매력 값 오류");
+        var accumulated=previousCharm+charm; // 캐슬·레이드에 나누기 전 정수 종합매력 누적
+        if(!isSearchAuthenticationCount(accumulated) || !isSearchAuthenticationCount(count+1)) throw new Error("인형 매력·횟수 범위 초과");
+        record.catches[doll.id]={count:count+1,max:old ? Math.max(old.max,length) : length,first:old ? old.first : today};
+        var size=getDollSize(doll,length), sale=count>0 ? config.sale[grade]*size.multiplier : 0;
+        var point=member.point-(tickets>0 ? 0 : config.cost)+sale;
+        if(!isSearchAuthenticationCount(point)) throw new Error("인형 포인트 범위 초과");
+        member.point=point;
+        var experience=addMemberExperienceWithTierBonus(data,user,config.experience[grade]);
+        if(!isSearchAuthenticationCount(member.point)) throw new Error("인형 레벨업 포인트 범위 초과");
+        pet.dollCharm=accumulated;
+        Object.defineProperty(store.users,user,{value:record,writable:true,enumerable:true,configurable:true});
+        Object.defineProperty(index.users,user,{value:buildDollRepresentative(catalog,record,user),writable:true,enumerable:true,configurable:true});
+        result.doll=doll;result.length=length;result.size=size;result.fresh=count===0;result.charm=charm;
+        result.sale=sale;result.experience=experience;result.oldMax=old ? old.max : null;
+        result.record=record;
+    } else if(tickets<1) member.point-=config.cost;
+    if(tickets>0) removeItem(data,user,config.ticketName,1);
+    result.remainingTicket=member.bag && member.bag[config.ticketName] || 0;
+    result.remainingPoint=member.point;
+    return result;
+}
+// 인형 화면의 프리미엄 머리말과 실제 사용자 표시명을 만드는 함수
+function dollTitle(data,petData,guildData,user,label,emoji) {
+    return (isHoiPassPremiumActive(data,user) ? "[👑호이패스 프리미엄👑]\n" : "")+(emoji||"🧸")+" ["+checkRank(data,petData,guildData,user)+"] 님 "+label+"\n━━━━━━━━━━━━";
+}
+// 인형 획득 결과와 상세 경험치·잔여 재화를 출력하는 함수
+function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
+    var cfg=GLOBAL_CONFIG.doll, lines=[dollTitle(data,petData,guildData,user,"인형뽑기")];
+    if(!result.ok) return lines.concat(["💰 뽑기에 사용할 포인트가 부족해요.","└ 이용권이 없으면 1회 🅟3억이 필요해요.","","🧸 이용권 0개 · 보유 🅟"+numberWithCommas(data.member[user].point),"└ 부족한 포인트: 🅟"+numberWithCommas(cfg.cost-data.member[user].point),"━━━━━━━━━━━━","📖 명령어"+allsee,dollCommandFooter()]).join("\n");
+    var d=result.doll;
+    if(result.success) {
+        lines.push("✅ "+cfg.emojis[d.grade]+" "+cfg.grades[d.grade]+"｜"+d.name,"📏 "+(result.length/10).toFixed(1)+"cm · "+result.size.label,"");
+        lines.push(result.fresh ? "✨ 신규 등록 ["+numberWithCommas(Object.keys(result.record.catches).length)+"/1,000종]" : "🔁 중복 획득","└ 💪 "+(result.fresh?"수집":"중복")+" 종합매력 +"+numberWithCommas(result.charm)+"💞");
+        if(result.sale>0) lines.push("💰 자동 판매 🅟"+formatDollAmount(result.sale));
+        lines.push("📊 경험치 +"+formatAdventureExperience(result.experience.total)+"exp");
+    } else lines.push("❌ 인형뽑기 실패","다음 뽑기에 다시 도전해 보세요!");
+    lines.push("━━━━━━━━━━━━",result.ticket ? "🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개" : "💰 포인트 🅟3억 사용 · 잔여 🅟"+numberWithCommas(result.remainingPoint));
+    if(result.ticket && result.remainingTicket===0) lines.push("└ 이용권이 없으면 다음 뽑기부터 🅟3억 자동 사용");
+    lines.push("📖 상세·명령어"+allsee,"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%");
+    if(result.success) {
+        if(result.oldMax!==null && result.length>result.oldMax) lines.push("","🏆 개인 최고 기록 갱신","└ "+(result.oldMax/10).toFixed(1)+"cm → "+(result.length/10).toFixed(1)+"cm");
+        if(result.sale>0) lines.push("","💰 자동 판매 상세","└ "+result.size.label+": 기본 🅟"+formatDollAmount(cfg.sale[d.grade])+" ×"+result.size.multiplier+" = 🅟"+formatDollAmount(result.sale));
+        var exp=result.experience, boost=exp.boosterResult;
+        lines.push("","📊 경험치 +"+formatAdventureExperience(exp.total)+"exp","├ 인형 기본 +"+formatAdventureExperience(exp.base),(boost.extraExperience>0?"├":"└")+" 티어 보너스 +"+formatAdventureExperience(exp.bonus));
+        if(boost.extraExperience>0) lines.push("└ 가호 추가 +"+formatAdventureExperience(boost.extraExperience),"✨ 가호 "+numberWithCommas(boost.usedBooster)+"개 사용");
+        lines.push("","📖 획득 등급 보기",getDollCollectionCommand(catalog,result.record,d.id));
+    }
+    lines.push("━━━━━━━━━━━━",dollCommandFooter()); return lines.join("\n");
+}
+// 인형 안내 금액을 억·만 단위로 표시하는 함수
+function formatDollAmount(amount) {
+    if(amount%100000000===0)return numberWithCommas(amount/100000000)+"억";
+    if(amount%10000===0)return numberWithCommas(amount/10000)+"만";
+    return numberWithCommas(amount);
+}
+// 인형 공통 명령어 안내를 반환하는 함수
+function dollCommandFooter() {
+    return "🧸 /인형뽑기\n📖 /인형도감\n🏆 /인형순위\n📘 /인형가이드\n└ 크기·확률·수집효과 안내";
+}
+// 한 등급의 전체 인형을 발견·최대 크기·고정 번호 순으로 정렬하는 함수
+function getDollCollectionRows(catalog,record,grade) {
+    var catches=record ? record.catches : {};
+    var rows=catalog.dolls.filter(function(d){return d.grade===grade;});
+    rows.sort(function(a,b){
+        var ar=catches[a.id],br=catches[b.id];
+        if(!!ar!==!!br)return ar ? -1 : 1;
+        if(ar && br && ar.max!==br.max)return br.max-ar.max;
+        return a.id<b.id ? -1 : a.id>b.id ? 1 : 0;
+    });return rows;
+}
+// 이번 인형이 실제 정렬되어 있는 상세 목록 명령어를 반환하는 함수
+function getDollCollectionCommand(catalog,record,id) {
+    var doll=catalog.dolls[Number(id.substring(1))-1], grade=doll.grade;
+    var suffix=GLOBAL_CONFIG.doll.grades[grade];
+    if(grade<3){var rows=getDollCollectionRows(catalog,record,grade),pos=0;while(rows[pos].id!==id)pos++;suffix+=pos<rows.length/2 ? "1" : "2";}
+    return "/인형도감 "+suffix;
+}
+// 전체·등급별 도감 요약 및 상세 목록을 출력하는 함수
+function buildDollCollectionMessage(data,petData,guildData,catalog,record,user,request) {
+    var cfg=GLOBAL_CONFIG.doll,catches=record ? record.catches : {},counts=[0,0,0,0,0,0,0,0,0],totals=[0,0,0,0,0,0,0,0,0],charms=[0,0,0,0,0,0,0,0,0];
+    for(var id in catches){if(!Object.prototype.hasOwnProperty.call(catches,id))continue;var d=catalog.dolls[Number(id.substring(1))-1];if(!d||d.id!==id)throw new Error("인형 도감 ID 오류");counts[d.grade]++;totals[d.grade]+=catches[id].count;charms[d.grade]+=getDollRecordCharm(d,catches[id]);}
+    var g=request.grade, lines=[];
+    if(g<0){
+        var discovered=Object.keys(catches).length,sum=0;
+        lines.push(dollTitle(data,petData,guildData,user,"인형도감"),"📚 수집 "+numberWithCommas(discovered)+"/1,000종 · "+(discovered/10).toFixed(1)+"%","");
+        for(var a=0;a<9;a++){lines.push(cfg.emojis[a]+" "+cfg.grades[a]+"｜"+counts[a]+"/"+cfg.counts[a]+"종");sum+=charms[a];}
+        lines.push("━━━━━━━━━━━━","💞 종매 +"+numberWithCommas(sum),"├ ⚔️ 캐슬 +"+numberWithCommas(sum/2),"└ 👾 레이드 +"+numberWithCommas(sum/2),"━━━━━━━━━━━━","📖 등급별 목록·명령어"+allsee);
+        for(var b=0;b<9;b++){if(b<3)lines.push(cfg.emojis[b]+" "+cfg.grades[b]+" · 각 "+cfg.counts[b]/2+"종","/인형도감 "+cfg.grades[b]+"1","/인형도감 "+cfg.grades[b]+"2","");else lines.push(cfg.emojis[b]+" /인형도감 "+cfg.grades[b]);}
+    }else{
+        var label=cfg.grades[g]+(request.page||"");
+        lines.push(dollTitle(data,petData,guildData,user,label+" 인형도감"),"📚 "+cfg.grades[g]+" 전체 수집 "+counts[g]+"/"+cfg.counts[g]+"종","🧸 "+cfg.grades[g]+" 총 획득 "+numberWithCommas(totals[g])+"회");
+        if(g>2||request.page)lines.push("↕️ 수집 우선 · 최고 크기순");
+        lines.push("━━━━━━━━━━━━","💞 "+cfg.grades[g]+" 종매 +"+numberWithCommas(charms[g]),"├ ⚔️ 캐슬 +"+numberWithCommas(charms[g]/2),"└ 👾 레이드 +"+numberWithCommas(charms[g]/2),"━━━━━━━━━━━━");
+        if(g<3&&!request.page)lines.push("📖 목록 선택·명령어"+allsee,"📖 앞 "+cfg.counts[g]/2+"종: /인형도감 "+label+"1","📖 뒤 "+cfg.counts[g]/2+"종: /인형도감 "+label+"2");
+        else{
+            var rows=getDollCollectionRows(catalog,record,g),opposite=g<3 ? "/인형도감 "+cfg.grades[g]+(request.page===1?2:1) : null;
+            if(g<3)rows=rows.slice((request.page-1)*rows.length/2,request.page*rows.length/2);
+            lines.push("📖 인형 목록·명령어"+allsee);if(opposite)lines.push("👉 "+opposite+" 보기");
+            lines.push("📋 "+label+" · "+rows.length+"종","└ No.는 등수가 아닌 고정 도감 번호예요.","");
+            for(var k=0;k<rows.length;k++){var item=rows[k],r=catches[item.id],num=Number(item.id.substring(1));if(!r)lines.push("🔒 No."+num+" "+item.name+" · 미발견","");else lines.push("✅ No."+num+" "+item.name,"📏 최고 "+(r.max/10).toFixed(1)+"cm · "+getDollSize(item,r.max).label,"💞 누적 +"+numberWithCommas(getDollRecordCharm(item,r))+" · 획득 "+numberWithCommas(r.count)+"회","📅 첫 수집 "+r.first,"");}
+            lines.push("━━━━━━━━━━━━");if(opposite)lines.push("👉 "+opposite+" 보기");lines.push("📖 전체 도감: /인형도감","🔎 다른 등급: /인형도감 [등급]");
+        }
+    }
+    lines.push("━━━━━━━━━━━━",dollCommandFooter());return lines.join("\n");
+}
+// 전체 인형 순위와 본인의 100등 이내 기록을 출력하는 함수
+function buildDollRankingMessage(data,petData,guildData,catalog,index,user) {
+    var rows=[];for(var name in index.users)if(Object.prototype.hasOwnProperty.call(index.users,name)&&data.member[name])rows.push(index.users[name]);
+    rows.sort(compareDollRows);var position=-1;for(var i=0;i<rows.length;i++)if(rows[i].name===user)position=i;
+    var lines=[dollTitle(data,petData,guildData,user,"인형순위","🏆"),"📍 내 순위: "+(position<0?"미참여":position>=GLOBAL_CONFIG.doll.limits.personalRanks?"100등 밖":(position+1)+"등 · 전체 유저 기준")];
+    // 순위 한 명의 대표 인형과 크기·획득 횟수를 표시하는 함수
+    function add(row){var d=catalog.dolls[Number(row.dollId.substring(1))-1];lines.push(GLOBAL_CONFIG.doll.emojis[d.grade]+" "+GLOBAL_CONFIG.doll.grades[d.grade]+"｜"+d.name,"📏 최대 "+(row.max/10).toFixed(1)+"cm · 이 인형 획득 "+numberWithCommas(row.count)+"회");}
+    if(position>=0&&position<100)add(rows[position]);
+    if(!rows.length)lines.push("아직 등록된 기록이 없어요.");
+    lines.push("━━━━━━━━━━━━");
+    for(var j=0;j<Math.min(rows.length,GLOBAL_CONFIG.doll.limits.publicRanks);j++){
+        if(j===3)lines.push("내 순위는 100등까지 표시해요.","📋 4~10등·명령어 안내"+allsee);
+        lines.push((j<3?["🥇","🥈","🥉"][j]+" ":"")+(j+1)+"등｜["+checkRank(data,petData,guildData,rows[j].name)+"]");add(rows[j]);lines.push("");
+    }
+    if(rows.length<=3)lines.push("📖 명령어"+allsee);
+    lines.push(dollCommandFooter());return lines.join("\n");
+}
+// 인형 이용 방법·확률·판매·수집효과를 안내하는 함수
+function buildDollGuideMessage() {
+    var cfg=GLOBAL_CONFIG.doll,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 우선 사용","• 이용권이 없으면 1회 🅟3억 자동 사용","• 성공·실패 모두 비용 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","• 이용권·포인트 사용에 따른 확률 차이는 없어요.","","뽑기 성공 후 등급 확률"];
+    for(var g=0;g<9;g++)lines.push(cfg.emojis[g]+" "+cfg.grades[g]+" "+cfg.weights[g]/10+"%");
+    lines.push("━━━━━━━━━━━━","📊 경험치","• 인형 기본 경험치 + 현재 티어 보너스","• 가호가 충분하면 합계에 3배 적용","• 가호는 추가된 경험치만큼 사용해요.","• 부족하면 기존 규칙대로 보유 수량만 적용해요.","• 신규·중복 모두 경험치를 받아요.","• 실패 시 경험치 지급·가호 사용은 없어요.","━━━━━━━━━━━━","💰 중복 자동 판매","• 신규 인형은 도감 등록, 중복 인형은 자동 판매","• 이번에 뽑은 크기 구분으로 판매가를 계산해요.","");
+    for(var s=0;s<9;s++)lines.push(cfg.emojis[s]+" "+cfg.grades[s]+" "+formatDollAmount(cfg.sale[s]));
+    lines.push("━━━━━━━━━━━━","📖 도감","• 수집한 인형 먼저 → 최고 크기순 → 도감 번호순","• 미발견 인형은 뒤에 도감 번호순으로 표시","• 일반 150종씩 · 고급 110종씩 · 희귀 85종씩","• 영웅~창조는 등급명만 입력해요.","• No.는 등수가 아닌 고정 도감 번호예요.","━━━━━━━━━━━━","🏆 순위","• 대표 인형의 등급 → 최고 크기 → 획득 횟수순","• 공개 명단은 10등, 내 순위는 100등까지 표시","• 공동 등수와 순위 보상은 없어요.","━━━━━━━━━━━━","📏 보통·대형·초대형","• 크기 확률: 보통 85% · 대형 14% · 초대형 1%","• 중복 판매가: 보통 ×1 · 대형 ×1.5 · 초대형 ×2","• 인형별 기준 cm 이상이면 해당 배율을 적용해요.","━━━━━━━━━━━━","💪 수집효과","• 최초 획득: 해당 등급 기본 종합매력 100%","• 중복 획득: 해당 등급 기본 종합매력의 1%","• 별도 장착 없이 캐슬·레이드에 절반씩 누적","• 기존 기본 매력에 합산 후 퍼센트 보너스를 적용해요.","");
+    for(var c=0;c<9;c++)lines.push(cfg.emojis[c]+" "+cfg.grades[c]+": +"+numberWithCommas(cfg.charm[c])+" / +"+numberWithCommas(cfg.charm[c]/100)+"💞");
+    lines.push("","📚 1,000종 최초 수집 매력 합계","💞 종매 +100,000,000","├ ⚔️ 캐슬 +50,000,000","└ 👾 레이드 +50,000,000","└ 중복 매력은 별도로 계속 더해져요.","━━━━━━━━━━━━",dollCommandFooter());return lines.join("\n");
 }
 
 //인증순위

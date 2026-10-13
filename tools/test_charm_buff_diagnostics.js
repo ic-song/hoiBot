@@ -167,4 +167,19 @@ group("five repeated reads preserve snapshots and totals", () => {
     const c = setup("main.js"), expected = report(c);
     for (let i = 0; i < 5; i++) assert.strictEqual(report(c), expected);
 });
+group("doll fixed charm is added before percent; halves accumulate and Main/Info agree", () => {
+    for (const filename of ["main.js", "Info.js"]) {
+        const c = setup(filename, 100, 0, 0), f = c.f;
+        c.homePercent = 10; c.levelPercent = 0;
+        for (const [stored, expected] of [[25, 123], [50, 137], [2500, 1485]]) {
+            f.pets.test.dollCharm = stored;
+            assert.strictEqual(c.calculateCastleExp("test", f.data, f.pets, f.home, f.skills, false, f.guild), expected);
+            assert.strictEqual(c.calculateRaidExp("test", f.data, f.pets, f.home, f.skills, false, f.guild), expected);
+            assert.strictEqual(f.pets.test.dollCharm, stored);
+            if (filename === "main.js") assert(!report(c).includes("[❌불일치]"));
+        }
+        f.pets.test.dollCharm = "2500";
+        assert.throws(() => c.calculateRaidExp("test", f.data, f.pets, f.home, f.skills, false, f.guild));
+    }
+});
 console.log("PASS charm buff diagnostics: " + groups + " groups (synthetic data, no runtime IO)");

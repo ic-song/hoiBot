@@ -98,7 +98,7 @@ vm.runInContext(block(main, "function createContextReplier("), c);
 vm.runInContext(block(main, "function formatNicknameRankMessage("), c);
 vm.runInContext("function runTicketMove(){" + block(main, 'if (msg === "/서버변경" ||') + "}", c);
 vm.runInContext("function runAdminMove(){" + block(main, "if (/^\\/서버이동\\s+") + "}", c);
-const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank };
+const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank, java: c.java, DATA_ROOT_PATH: root, resolveActiveDataPath: p => c.resolveActiveDataPath(p) };
 vm.createContext(infoContext);
 vm.runInContext(block(info, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", infoContext);
 for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isInfoServerRaidLocked", "isInfoServerRaidAdditionalCommand", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatRankNickname", "formatOverallUserRow", "formatOverallServerRow", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"])
