@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.634"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.635"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -59852,6 +59852,7 @@ function getDollShard(user) {
 }
 // 인형 고정 목록의 ID·등급·0.1cm 경계를 검사하는 함수
 function validateDollCatalog(catalog) {
+    if (catalog === null || typeof catalog === "undefined") throw new Error("인형 고정 목록 파일 누락: dollCatalog.json. 인형 최초 설치 파일 19개를 /sdcard/호이랜드/에 배치해 주세요.");
     if (!catalog || catalog.schemaVersion !== 1 || !(catalog.dolls instanceof Array) || catalog.dolls.length !== GLOBAL_CONFIG.doll.limits.catalogSize) throw new Error("인형 고정 목록 형식 오류");
     var counts = [0,0,0,0,0,0,0,0,0];
     for (var i = 0; i < catalog.dolls.length; i++) {

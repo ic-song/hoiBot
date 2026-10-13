@@ -198,4 +198,14 @@ test("복구 목록 전체 검사 후 쓰기·잘못된 경로/JSON 차단",()=>
   assert.throws(()=>run("/인형도감"));assert.deepStrictEqual(fixture.read(),before);assert(!fixture.traces().some(t=>t.type==="save"));
  }
 });
+test("운영 백업과 동일한 초기 파일 19개 누락·무저장·설치 후 실행",()=>{
+ vm.runInContext(block(main,"function loadJsonFile(").replace("function loadJsonFile(","function loadDollCatalogActual("),c);
+ const original=c.loadJsonFile;c.loadJsonFile=p=>p===root+"dollCatalog.json"?c.loadDollCatalogActual(p):original(p);
+ try{
+ install();for(const name of ["dollCatalog.json","dollIndex.json","dollPending.json",...Array.from({length:16},(_,i)=>"dollRecords_"+i+".json")])fixture.remove(root+name);
+ const before=fixture.read();for(const msg of ["/인형뽑기","/인형도감"]){assert.throws(()=>run(msg),/인형 고정 목록 파일 누락.*19개/);assert.deepStrictEqual(fixture.read(),before);assert(!fixture.traces().some(t=>t.type==="save"));}
+ install();assert(run("/인형도감").includes("인형도감"));const random=c.Math.random;c.Math.random=()=>0;
+ try{assert(run().includes("신규 등록"));}finally{c.Math.random=random;}
+ }finally{c.loadJsonFile=original;}
+});
 console.log("인형 규칙·UI·실제 저장 "+groups+"개 그룹 통과");
