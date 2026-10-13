@@ -75,7 +75,7 @@ group("준비·정산·마감·종료 화면과 실제 KST 시각·조회 자체
     run("/서버대전시작", "master");
     let d = read(); const round = d.serverRaid.current;
     let text = c.buildServerRaidCurrentStatus(d, "a", fixture.now());
-    assert(text.includes("준비 중")); assert(text.includes("자동 종료: 공격 시작 후 확정"));
+    assert(text.includes("준비 중")); assert(text.includes("자동 종료 예정: " + c.formatServerRaidKstTime(round.prepareUntil + round.durationMs)));
     assert(text.includes(c.formatServerRaidKstTime(round.prepareUntil)));
     tick(60001); d = read();
     assert(c.buildServerRaidCurrentStatus(d, "a", fixture.now()).includes("진행 중"));

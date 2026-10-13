@@ -44,11 +44,11 @@ test("인형패스 손상·정수 초과 차단·패스 명령도 테스트방 �
 test("글자수전체정리의 세 대전 허용·정확한 명령 경계",()=>{
  for(const n of ["isGuildTerritoryAllowedDuringWarCommand","isServerRaidAdditionalCommand","isPetMusouAllowedDuringTournamentCommand"]){assert(c[n]("/글자수전체정리"));assert(!c[n]("/글자수전체정리 실행"));}
 });
-test("일반 10회·자동 15회 경계·배포 전 초과 기록 보존",()=>{
+test("일퀘 5회·콘텐츠 10회·자동 15회 경계·기존 초과 기록 보존",()=>{
  for(const n of ["trialTowerMax","castleBattleMax","miniPetBattleMax"])assert.strictEqual(c.GLOBAL_CONFIG.daily[n],10);assert.strictEqual(c.GLOBAL_CONFIG.daily.autoDailyBonusRuns,5);
  for(const count of [9,10,14,15,20]){const d={member:{u:{towerCnt:count,battle:{count}}}},p={u:{miniPetBattle:{count}}};const before=JSON.stringify([d,p]);assert.strictEqual(c.isAutoDailyQuestRunComplete(d,p,"u"),count>=15);assert.strictEqual(JSON.stringify([d,p]),before);}
  const oldLoad=c.loadJsonFile;c.loadJsonFile=()=>({record:{}});c.petExplorePath="synthetic";c.initPetExploreData=d=>d;c.cleanupInvalidPetExploreUsers=()=>{};c.savePetExploreMigrationIfNeeded=()=>{};c.getPetExploreRank=()=>null;c.hasActiveHoiOrNewbiePass=()=>false;c.isHoiPassPremiumActive=()=>false;
- try{for(const count of [9,10,20]){const d={member:{u:{towerCnt:count,battle:{count},exploreCnt:10}}},p={u:{miniPetBattle:{count}}};const s=c.getDailyQuestStatus(d,p,{},"u");assert.strictEqual(s.isComplete,count>=10);assert.strictEqual(s.towerMax,10);assert.strictEqual(d.member.u.towerCnt,count);}}finally{c.loadJsonFile=oldLoad;}
+ try{for(const count of [4,5,9,10,20]){const d={member:{u:{towerCnt:count,battle:{count},exploreCnt:10}}},p={u:{miniPetBattle:{count}}};const s=c.getDailyQuestStatus(d,p,{},"u");assert.strictEqual(s.isComplete,count>=5);assert.strictEqual(s.towerMax,10);assert.strictEqual(d.member.u.towerCnt,count);}}finally{c.loadJsonFile=oldLoad;}
 });
 test("실제 자동 반복은 남은 15회까지만 실행·진행 실패 중단",()=>{
  let count=9,calls=0;c.getAutoDailyQuestSnapshot=()=>({status:{towerUsed:count,towerMax:10}});c.runAutoDailyInternalCommand=()=>{calls++;count++;return[];};c.getLastAutoDailyBlockedMessage=()=>"";c.buildAutoDailyBlockedFallbackMessage=()=>"중단";
@@ -56,16 +56,16 @@ test("실제 자동 반복은 남은 15회까지만 실행·진행 실패 중단
  c.runAutoDailyQuestCommands("test","u",true,null,"com.kakao.talk","/시탑","towerUsed","towerMax");assert.strictEqual(calls,6);
  count=10;c.runAutoDailyInternalCommand=()=>{calls++;return[];};c.runAutoDailyQuestCommands("test","u",true,null,"com.kakao.talk","/시탑","towerUsed","towerMax");assert.strictEqual(calls,7);
 });
-test("실제 승패 경험치 분기는 승리 75·패배 25·티어와 가호 순서 유지",()=>{
+test("실제 승패 경험치 분기는 승리 100·패배 25·티어와 가호 순서 유지",()=>{
  for(const [flag,key,result] of [["isWinFlag","castle","castleTierExpResult"],["isWin","mini","miniTierExpResult"]]){
   const marker="let expGain = "+flag+" ? GLOBAL_CONFIG.daily."+(key==="castle"?"castleBattleExperience":"miniPetBattleExperience");const at=main.indexOf(marker),end=main.indexOf("// ",at);assert(at>0&&end>at);
   vm.runInContext("function probe"+key+"(data,sender,"+flag+"){"+main.slice(at,end)+"return "+result+";}",c);
-  for(const win of [true,false]){const x=input();const r=c["probe"+key](x.d,"u",win);assert.strictEqual(r.base,win?75:25);assert.strictEqual(r.total,(r.base+15)*3);assert.strictEqual(r.boosterResult.usedBooster,(r.base+15)*2);}
+  for(const win of [true,false]){const x=input();const r=c["probe"+key](x.d,"u",win);assert.strictEqual(r.base,win?100:25);assert.strictEqual(r.total,(r.base+15)*3);assert.strictEqual(r.boosterResult.usedBooster,(r.base+15)*2);}
  }
 });
 
-test("10억 포인트 성공/실패·부족 무소모·잔액 분리·알림 등급",()=>{
- for(const roll of [0,0.999]){const x=input(0,1000000000);const r=draw(x,[roll,0,0,0,0]);assert(r.ok);assert.strictEqual(x.d.member.u.point,0);const out=c.buildDollDrawMessage(x.d,x.p,{},cat,"u",r);assert(out.includes("🪙 🅟10억 사용\n🪙 잔여 🅟0"));}
+test("포인트만으로 진행 불가·부족 무소모·잔액 분리·알림 등급",()=>{
+ for(const roll of [0,0.999]){const x=input(0,1000000000);const r=draw(x,[roll,0,0,0,0]);assert(!r.ok);assert.strictEqual(x.d.member.u.point,1000000000);const out=c.buildDollDrawMessage(x.d,x.p,{},cat,"u",r);assert(out.includes("이용권이 부족해요"));}
  const x=input(0,999999999),before=JSON.stringify(x);assert(!draw(x).ok);assert.strictEqual(JSON.stringify(x),before);
  assert.strictEqual(c.GLOBAL_CONFIG.doll.broadcastMinGrade,6);let notices=[];c.noticeMsg=m=>notices.push(m);const random=c.Math.random;
  try{for(const [roll,expected] of [[0.75,0],[0.9,0],[0.95,0],[0.975,1],[0.99,1],[0.998,1]]){install();notices=[];let n=0;c.Math.random=()=>[0,roll,0,0,0][n++];run();assert.strictEqual(notices.length,expected);if(expected){assert(notices[0].includes("cm"));for(const cmd of ["/인형뽑기","/인형도감","/인형순위","/인형가이드"])assert(!notices[0].includes(cmd));}}}finally{c.Math.random=random;}

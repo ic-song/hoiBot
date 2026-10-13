@@ -5,7 +5,7 @@ const room92 = "서버관리자";
 
 // 크리티컬 정보
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
-const PET_SKILL_MAX_EQUIP_SLOT = 30;
+const PET_SKILL_MAX_EQUIP_SLOT = 40;
 const GLOBAL_CONFIG = {
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
@@ -78,6 +78,8 @@ const GLOBAL_CONFIG = {
 		passFeedPostMax: 1, // 패스 전용 피드 작성 일퀘 횟수
 		passHomeAlertOpenMax: 1, // 패스 전용 홈알림 열기 일퀘 횟수
 		passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
+		questTargets: { tower: 5, castle: 5, mini: 5 }, // 콘텐츠 횟수와 별도인 일반 일퀘 목표
+		dailyQuestDollTicketReward: 1, // 일반 일퀘 인형 이용권 보상
 		dailyQuestExperienceReward: 100, // 일반 일일퀘스트 경험치 보상
 		weeklyQuestExperienceReward: 500 // 주간퀘스트 경험치 보상
 	},
@@ -1386,26 +1388,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var skillStore = initPetSkillUser(petSkillData, sender);
 			var skillSlot = getPetSkillSlotCount(data, petSkillData, sender);
 
-			// 기록: 시련탑(요구사항: 15)
+			// 일퀘 기록: 시련탑 목표
 			var towerUsed = data.member[sender] && data.member[sender].towerCnt ? data.member[sender].towerCnt : 0;
-			var towerMax = GLOBAL_CONFIG.daily.trialTowerMax;
+			var towerMax = GLOBAL_CONFIG.daily.questTargets.tower;
 			var towerFloor = trialTower.user && trialTower.user[sender] ? trialTower.user[sender].floor || 0 : 0;
 
-			// 기록: 캐슬대전(요구사항: 15)
+			// 일퀘 기록: 캐슬대전 목표
 			var battleObj = data.member[sender] && data.member[sender].battle ? data.member[sender].battle : null;
 			var castleUsed = battleObj ? battleObj.count || 0 : 0;
-			var castleMax = GLOBAL_CONFIG.daily.castleBattleMax;
+			var castleMax = GLOBAL_CONFIG.daily.questTargets.castle;
 			var castleScore = battleObj ? battleObj.score || 0 : 0;
 			var castleRankName = getCastleBattleRankEmoji(data.member[sender].battle.score, castleBattleData);
 
-			// 기록: 미니펫대전(요구사항: 15)
+			// 일퀘 기록: 미니펫대전 목표
 			var miniBattle = petData[sender] && petData[sender].miniPetBattle ? petData[sender].miniPetBattle : { win: 0, lose: 0, count: 0 };
 			var miniWin = miniBattle.win || 0;
 			var miniLose = miniBattle.lose || 0;
 			var miniTotal = miniWin + miniLose;
 			var miniRate = miniTotal > 0 ? ((miniWin / miniTotal) * 100).toFixed(2) : "0.00";
 			var miniUsed = miniBattle.count || 0;
-			var miniMax = GLOBAL_CONFIG.daily.miniPetBattleMax;
+			var miniMax = GLOBAL_CONFIG.daily.questTargets.mini;
 
 			// 기록: 레이드(요구사항: 5)
 			var raidUsed = petData[sender] && petData[sender].raidItemCount ? petData[sender].raidItemCount : 0;
@@ -2895,9 +2897,9 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	}
 	lines.push("━━━━━━━━━━━━");
 	lines.push("📜일일 퀘스트 조건📜");
-	lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerMax + "][" + getC(status.towerUsed >= status.towerMax) + "]");
-	lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleMax + "][" + getC(status.castleUsed >= status.castleMax) + "]");
-	lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniMax + "][" + getC(status.miniUsed >= status.miniMax) + "]");
+	lines.push("시련탑😈[" + status.towerUsed + "/" + status.towerGoal + "][" + getC(status.towerUsed >= status.towerGoal) + "]");
+	lines.push("캐대전🏆[" + status.castleUsed + "/" + status.castleGoal + "][" + getC(status.castleUsed >= status.castleGoal) + "]");
+	lines.push("미대전🐹[" + status.miniUsed + "/" + status.miniGoal + "][" + getC(status.miniUsed >= status.miniGoal) + "]");
 	lines.push("펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]");
 	lines.push("");
 	lines.push("《🎁 일일 퀘스트 보상》");
@@ -2906,6 +2908,7 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
 	lines.push("1억포인트상자🪙(/포인트상자오픈) 1개");
 	lines.push("펫 강화석⭐ 30개");
 	lines.push(GLOBAL_CONFIG.sealedVault.vaultItemName + " 1개");
+	lines.push("인형뽑기이용권🧸(/인형뽑기) " + GLOBAL_CONFIG.daily.dailyQuestDollTicketReward + "개");
 	lines.push("━━━━━━━━━━━━");
 	lines.push("🦋주간 퀘스트 조건🦋");
 	lines.push("일일 퀘스트 7번 완료📜(" + status.weeklyUsed + "/" + status.weeklyMax + ")");
@@ -2970,10 +2973,13 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 	return {
 		towerUsed: towerUsed,
 		towerMax: towerMax,
+		towerGoal: GLOBAL_CONFIG.daily.questTargets.tower,
 		castleUsed: castleUsed,
 		castleMax: castleMax,
+		castleGoal: GLOBAL_CONFIG.daily.questTargets.castle,
 		miniUsed: miniUsed,
 		miniMax: miniMax,
+		miniGoal: GLOBAL_CONFIG.daily.questTargets.mini,
 		exploreUsed: exploreUsed,
 		exploreMax: exploreMax,
 		exploreWin: win,
@@ -2996,7 +3002,7 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
 		passDailyRewardDone: passDailyRewardDone,
 		premiumDailyComplete: premiumDailyComplete,
 		premiumDailyRewardDone: premiumDailyRewardDone,
-		isComplete: towerUsed >= towerMax && castleUsed >= castleMax && miniUsed >= miniMax && exploreUsed >= exploreMax
+		isComplete: towerUsed >= GLOBAL_CONFIG.daily.questTargets.tower && castleUsed >= GLOBAL_CONFIG.daily.questTargets.castle && miniUsed >= GLOBAL_CONFIG.daily.questTargets.mini && exploreUsed >= exploreMax
 	};
 }
 
