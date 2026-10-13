@@ -96,7 +96,7 @@ pass("공백 제거·성공 시 가방 가호 아이템만 +30·누적 기록·�
     assert.strictEqual(d.member["신규 남"].voicecheck, 1);
     assert.strictEqual(d.member.admin.boostercnt, 738);
     assert.strictEqual(d.member.admin.bag[rewardItem], (before.member.admin.bag[rewardItem] || 0) + 30);
-    assert.strictEqual(d.member.admin.point, before.member.admin.point);
+    assert.strictEqual(d.member.admin.point, before.member.admin.point + 50000000);
     assert.strictEqual(d.member.admin.moon, 9);
     assert.strictEqual(d.member.admin.checkCnt, 99);
     assert.strictEqual(d.member.admin.searchAuthentication.count, 1);

@@ -4408,7 +4408,7 @@ Status: VERIFIED
 ## Save Flow
 - `/관리자추가` and `/관리자삭제` mutate `data.admin` and save `filePath`
 - 실제 관리자 등록·해제 성공 시 대상 회원 가방에 서버이동권을 1개 지급하고 같은 `filePath`에 저장한다. 중복 등록·삭제에는 지급하지 않는다.
-- `/관리자일당` reads `data.admin`, gives existing members `GLOBAL_CONFIG.admin.dailyPayoutPoint` (10억) points, reports actual paid count, and saves `filePath`
+- `/관리자일당` reads `data.admin`, gives existing members `GLOBAL_CONFIG.admin.dailyPayoutPoint` (3억) points, reports actual paid count, and saves `filePath`; 인증 수당 누계에는 합산하지 않는다.
 - `/부방상여 아이템이름/갯수`는 마지막 `/숫자`를 수량으로 해석하고, `data.admin`의 실제 가입 유저에게 입력 아이템을 지급한 뒤 대상 수와 지급 내역을 출력하고 `filePath`를 저장한다.
 ## Related Commands
 - `/관리자명단`
@@ -7885,7 +7885,7 @@ Status: VERIFIED
 ## UI / Validation
 
 - 목록 시작부터 ALLSEE. /인증순위는 10등까지 바로 표시하고 11등부터 ALLSEE, /관리자순위는 4등까지 바로 표시하고 5등부터 ALLSEE. 검색어 기타와 관리자 호이 남은 각각 마지막에 표시한다. 호이 남 계정이 있으면 0 실적도 하단에 표시하고 기록은 유지한다.
-- 새 가호 누계와 과거 다이아 누계는 별도로 표시한다. 등록·목록·보상 안내는 새 명령어와 가호 30개로 통일한다.
+- 새 가호 누계와 과거 다이아 누계는 별도로 표시한다. 정상 `/인증`은 관리자에게 가방 가호 30개와 포인트 5천만을 지급하고 `searchAuthentication.points`에 실제 지급 누계만 저장한다. 기존 누계 미기록은 0부터 시작하며 과거 인증은 소급하지 않는다. `/관리자순위`는 누적 인증 수당을 별도 줄로 표시하고 `/관리자순위초기화`는 이 누계도 초기화하되 보유 잔액은 유지한다. `/인증초기화`의 일괄 인증은 수당을 지급하지 않는다. 신규 잔액·누계의 손상과 안전정수 초과는 변경 전에 차단하며 기존 두 파일 저장 롤백·DEV 분리를 유지한다.
 - tools/test_member_display_search_auth.js: 기존 가입·미가입·닉변·이전·정리·저장 실패 29개 회귀 그룹. tools/test_search_authentication_oct12.js: 새 권한·두 초기화·보상 전환·실적 보존·대전 잠금·정수 경계·DEV·부분 저장/응답 실패·일괄 인증 후 가입 이전·가방 보상 정수 경계/활성 가호 보존 12개 그룹.
 
 # /호츈오픈 [수량] · 타이틀 판매

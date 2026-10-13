@@ -33,10 +33,10 @@ test("과거 다이아 실적·보유 재화 보존·가호30 신규 누계·중
     seed(); let d = fixture.read();
     d.member.admin.searchAuthentication = { id: "stable-admin", count: 8, diamonds: 8 }; fixture.write(d);
     runAuth("/인증 신규 남 수다"); d = fixture.read();
-    assert.strictEqual(d.member.admin.diamond,738); assert.strictEqual(d.member.admin.point,123456);
+    assert.strictEqual(d.member.admin.diamond,738); assert.strictEqual(d.member.admin.point,50123456);
     assert.strictEqual(d.member.admin.boostercnt,738);
     assert.strictEqual(d.member.admin.bag[c.GLOBAL_CONFIG.level.boosterItemName],30);
-    assert.deepStrictEqual(d.member.admin.searchAuthentication,{id:"stable-admin",count:9,diamonds:8,boosters:30});
+    assert.deepStrictEqual(d.member.admin.searchAuthentication,{id:"stable-admin",count:9,diamonds:8,boosters:30,points:50000000});
     const before=fixture.read(); runAuth("/인증 신규 남 수다"); assert.deepStrictEqual(fixture.read(),before);
     const out=runAuth("/관리자순위"); assert(out.includes("이전 다이아 보상: 💎8개")); assert(out.includes("누적 가호 보상: ✨30개"));
 });
@@ -95,7 +95,7 @@ test("관리자 실적 초기화는 실적만 변경·식별값/기존 인증/�
     seedBulk(); let d=fixture.read(); d.searchAuthentication={keywords:[{keyword:"수다",count:8}]}; fixture.write(d);
     const before=fixture.read(); const light=fixture.get(lightPath);
     assert(runAuth("/관리자순위초기화","master","room1").includes("처리된 관리자: 1명"));
-    d=fixture.read();assert.deepStrictEqual(d.member.admin.searchAuthentication,{id:"old-admin",count:0,diamonds:0,boosters:0});
+    d=fixture.read();assert.deepStrictEqual(d.member.admin.searchAuthentication,{id:"old-admin",count:0,diamonds:0,boosters:0,points:0});
     for(const key of ["diamond","boostercnt","point","checkCnt"]) assert.strictEqual(d.member.admin[key],before.member.admin[key]);
     assert.deepStrictEqual(d.member["완료 남"],before.member["완료 남"]);assert.deepStrictEqual(d.searchAuthentication,before.searchAuthentication);
     assert.deepStrictEqual(fixture.get(lightPath),light);
@@ -184,6 +184,58 @@ test("가방 기존 수량 합산·없는 가방 생성·손상/정수 초과 �
         assert.throws(()=>c.applySearchAuthentication(inMemory,"신규 남","admin","수다",{users:{}}));
         assert.strictEqual(JSON.stringify(inMemory),snapshot);
     }
+});
+
+test("인증 수당은 실제 지급분만 누적·과거 실적 소급 없음·관리자순위 표시", () => {
+    seed(); let d=fixture.read(); d.member.admin.searchAuthentication={id:"existing",count:20,diamonds:2,boosters:600}; fixture.write(d);
+    let out=runAuth("/관리자순위"); assert(out.includes("누적 인증 수당\n🅟0"));
+    out=runAuth("/인증 신규 남 수다"); assert(out.includes("🅟50,000,000 포인트 지급"));
+    d=fixture.read(); assert.strictEqual(d.member.admin.point,50123456); assert.strictEqual(d.member.admin.searchAuthentication.points,50000000);
+    assert.strictEqual(d.member.admin.searchAuthentication.count,21); assert.strictEqual(d.member.admin.searchAuthentication.boosters,630);
+    const saved=fixture.read(); runAuth("/인증 신규 남 수다"); assert.deepStrictEqual(fixture.read(),saved);
+    assert(runAuth("/관리자순위").includes("누적 인증 수당\n🅟50,000,000"));
+    runAuth("/관리자순위초기화","master"); assert.strictEqual(fixture.read().member.admin.point,50123456); assert.strictEqual(fixture.read().member.admin.searchAuthentication.points,0);
+});
+
+test("포인트 잔액·수당 누계 손상과 안전정수 초과는 인증 전 차단", () => {
+    for(const field of ["balance","total"]) for(const invalid of [-1,"1",0.5,9007199254740991]) {
+        seed(); let d=fixture.read();
+        if(field==="balance") d.member.admin.point=invalid;
+        else d.member.admin.searchAuthentication={count:2,diamonds:0,boosters:60,points:invalid};
+        fixture.write(d); const before=fixture.read();
+        assert.throws(()=>runAuth("/인증 신규 남 수다")); assert.deepStrictEqual(fixture.read(),before);
+    }
+});
+
+test("미가입 수당 두 파일 저장 실패 복구·재시도·DEV 분리", () => {
+    for(const failed of [lightPath,c.filePath]) {
+        seed([]); putLight({"신규 남":{chatSeenDate:"20261013",voicecheck:0}});
+        const before=fixture.read(), light=fixture.get(lightPath); fixture.failPath(failed);
+        assert.throws(()=>runAuth("/인증 신규 남 수다")); assert.deepStrictEqual(fixture.read(),before); assert.deepStrictEqual(fixture.get(lightPath),light);
+        fixture.failPath("none"); runAuth("/인증 신규 남 수다"); assert.strictEqual(fixture.read().member.admin.point,50123456);
+    }
+    seed(); seed(["신규 남"],true); const before=fixture.read();
+    runAuth("/인증 신규 남 수다","admin","test",true);
+    assert.strictEqual(fixture.read(true).member.admin.searchAuthentication.points,50000000); assert.deepStrictEqual(fixture.read(),before);
+});
+
+test("인증 횟수 0이어도 지급 누계 초기화·손상 누계 사전 차단", () => {
+    seed(); let d=fixture.read(); d.member.admin.searchAuthentication={id:"keep",count:0,diamonds:0,boosters:0,points:50000000}; fixture.write(d);
+    const balance=d.member.admin.point; assert(runAuth("/관리자순위초기화","master").includes("처리된 관리자: 1명"));
+    d=fixture.read(); assert.strictEqual(d.member.admin.point,balance); assert.strictEqual(d.member.admin.searchAuthentication.points,0); assert.strictEqual(d.member.admin.searchAuthentication.id,"keep");
+    d.member.admin.searchAuthentication.points="50000000"; const snapshot=JSON.stringify(d); assert.throws(()=>c.resetSearchAuthenticationAdminStats(d)); assert.strictEqual(JSON.stringify(d),snapshot);
+});
+
+test("관리자 일당 실제 분기 3억·권한·지급 인원·인증 누계 미합산", () => {
+    vm.runInContext(block(main,"function getAdminPayoutUsers("),c);
+    vm.runInContext("function runPayout(data,sender,replier){var msg='/관리자일당';"+block(main,'if (msg === "/관리자일당")')+"}",c);
+    seed(); let d=fixture.read(); d.admin={admin:true,missing:true}; d.member.admin.searchAuthentication={count:1,diamonds:0,boosters:30,points:50000000};
+    const outputs=[];
+    c.runPayout(d,"호이 남",{reply:text=>outputs.push(text)});
+    assert.strictEqual(d.member.admin.point,300123456); assert.strictEqual(d.member.admin.searchAuthentication.points,50000000);
+    assert(outputs[0].includes("🅟3억")&&outputs[0].includes("지급 관리자 수: 1명"));
+    const saved=JSON.stringify(d); c.runPayout(d,"admin",{reply:()=>{}}); assert.strictEqual(JSON.stringify(d),saved);
+    c.runPayout(d,"오픈채팅봇",{reply:()=>{}}); assert.strictEqual(d.member.admin.point,600123456);
 });
 
 console.log("검색인증 수정요청서 신규 " + groups + "개 검증 그룹 통과");
