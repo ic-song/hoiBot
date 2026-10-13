@@ -4304,7 +4304,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             for (var dollResetSaveIndex = 1; dollResetSaveIndex < dollResetNames.length; dollResetSaveIndex++) saveJsonFile(dollResetObjects[dollResetSaveIndex], DATA_ROOT_PATH + dollResetNames[dollResetSaveIndex], false, dollResetSnapshots[dollResetSaveIndex].text);
             saveJsonFile(dollResetObjects[0], memberPetPath);
             saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
-            try { replier.reply("🧸 인형 전체초기화 완료\n━━━━━━━━━━━━\n도감·수집 기록·순위·누적 인형 매력을 초기화했어요.\n인형 기록: " + numberWithCommas(dollResetResult.users) + "명\n인형패스·이용권·포인트·경험치는 유지됩니다."); } catch (dollResetReplyError) { debuggerLog("인형 초기화 결과 전송 실패: " + dollResetReplyError); }
+            try { replier.reply("🧸 인형 전체초기화 완료\n━━━━━━━━━━━━\n도감·수집 기록·순위·누적 인형 매력을 초기화했어요.\n인형 기록: " + numberWithCommas(dollResetResult.users) + "명\n인형패스·이용권·포인트·경험치는 유지됩니다."); } catch (dollResetReplyError) {
+                // 완료된 초기화는 디버그 로그 전송 실패로 되돌리지 않는다.
+                try { debuggerLog("인형 초기화 결과 전송 실패: " + dollResetReplyError); } catch (dollResetLogError) {}
+            }
             return;
         }
         var dollRequest = getDollRequest(msg);

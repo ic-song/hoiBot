@@ -2,7 +2,7 @@ const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require(
 const main=fs.readFileSync(path.join(__dirname,"..","main.js"),"utf8");
 const old=fs.readFileSync(path.join(__dirname,"test_doll_content.js"),"utf8");
 const {c,fixture,block,input,draw,install,run,cat,root,devRoot}=new Function("require","__dirname",old+"\nreturn {c,fixture,block,input,draw,install,run,cat,root,devRoot};")(require,__dirname);
-for(const name of ["getSupportPassConfigs","getSupportPassConfigByCommandName","ensureSupportPassStore","parseSupportPassCommandMeta","getSupportPassDateValue","isValidSupportPassDateText","isSupportPassActive","getActiveSupportPassUsers","grantSupportPassDailyRewards","grantDollPassDailyRewards","grantAllSupportPassDailyRewards","buildSupportPassPayoutResultMessage","appendTerritoryPassPayoutLogs","buildSupportPassSaveCheckMessage","processUserIDCommand","isDollTestRoomCommand","buildUserSupportPassLines","formatSupportPassStatus","isGuildTerritoryAllowedDuringWarCommand","isGuildTerritoryRiftControlCommandMessage","isServerRaidAdditionalCommand","isPetMusouAllowedDuringTournamentCommand","isAutoDailyQuestRunComplete","getDailyQuestStatus","runAutoDailyQuestCommands","buildBattleExperienceRewardMessage"])
+for(const name of ["addItem","getSupportPassConfigs","getSupportPassConfigByCommandName","ensureSupportPassStore","parseSupportPassCommandMeta","getSupportPassDateValue","isValidSupportPassDateText","isSupportPassActive","getActiveSupportPassUsers","grantSupportPassDailyRewards","grantDollPassDailyRewards","grantAllSupportPassDailyRewards","buildSupportPassPayoutResultMessage","appendTerritoryPassPayoutLogs","buildSupportPassSaveCheckMessage","processUserIDCommand","isDollTestRoomCommand","buildUserSupportPassLines","formatSupportPassStatus","isGuildTerritoryAllowedDuringWarCommand","isGuildTerritoryRiftControlCommandMessage","isServerRaidAdditionalCommand","isPetMusouAllowedDuringTournamentCommand","isAutoDailyQuestRunComplete","getDailyQuestStatus","runAutoDailyQuestCommands","buildBattleExperienceRewardMessage"])
  vm.runInContext(block(main,"function "+name+"("),c);
 let day=20261014;c.getTodaySupportPassDateValue=()=>day;let groups=0;
 function test(name,fn){fixture.reset();day=20261014;fn();console.log("PASS OCT14 "+(++groups)+": "+name);}
@@ -93,5 +93,32 @@ test("실제 자동출첵 지급·프리미엄1+인형3·반복/리셋 중복 �
  pay("u");assert.strictEqual(fixture.read().member.u.bag[c.GLOBAL_CONFIG.doll.ticketName],0);pay("master");assert.strictEqual(fixture.read().member.u.bag[c.GLOBAL_CONFIG.doll.ticketName],4);pay("master");assert.strictEqual(fixture.read().member.u.bag[c.GLOBAL_CONFIG.doll.ticketName],4);
  const reset=fixture.read();reset.member.u.today=0;fixture.write(reset);pay("master");assert.strictEqual(fixture.read().member.u.bag[c.GLOBAL_CONFIG.doll.ticketName],4);
  day=20261015;const before=fixture.read();fixture.failPath(c.filePath);assert.throws(()=>pay("master"));assert.deepStrictEqual(fixture.read(),before);fixture.failPath("none");pay("master");assert.strictEqual(fixture.read().member.u.bag[c.GLOBAL_CONFIG.doll.ticketName],8);
+});
+
+test("초기화 파일 누락/손상은 쓰기 전 차단·복구 기록도 보존",()=>{
+ for(const mode of ["missing","corrupt"]){for(const name of ["dollIndex.json","dollRecords_15.json","member_pet.json"]){fixture.reset();seedReset();const member=fixture.read(),pending=fixture.raw(root+"dollPending.json");if(mode==="missing")fixture.remove(root+name);else fixture.corrupt(root+name);assert.throws(()=>run("/인형전체초기화",false,"master"));assert.deepStrictEqual(fixture.read(),member);assert.strictEqual(fixture.raw(root+"dollPending.json"),pending);assert(!fixture.traces().some(t=>t.type==="save"));}}
+});
+test("초기화 강제 중단 뒤 18개 원문 복구·성공 전송 실패 보존",()=>{
+ seedReset();const names=["member_pet.json","dollIndex.json",...Array.from({length:16},(_,i)=>"dollRecords_"+i+".json")];const snapshots=names.map(name=>({name,text:fixture.raw(root+name)}));const member=fixture.read();fixture.put(root+"dollPending.json",{pending:snapshots});fixture.put(root+"dollIndex.json",{schemaVersion:1,users:{}});const pet=fixture.get(root+"member_pet.json");delete pet.u.dollCharm;fixture.put(root+"member_pet.json",pet);
+ run("/인형도감");for(const snap of snapshots)assert.deepStrictEqual(fixture.get(root+snap.name),JSON.parse(snap.text));assert.deepStrictEqual(fixture.read(),member);
+ seedReset();const kept=fixture.read();fixture.replyFail(true);try{run("/인형전체초기화",false,"master");}finally{fixture.replyFail(false);}assert.strictEqual(fixture.get(root+"member_pet.json").u.dollCharm,undefined);assert.deepStrictEqual(fixture.read(),kept);assert.strictEqual(fixture.get(root+"dollPending.json").pending,null);
+});
+test("MASTER도 대전 중 초기화 금지·첫 복구 표시 저장 실패 원복",()=>{
+ for(const active of ["musou","raid","territory"]){seedReset();const ctx=c.createCommandContext(false,"test"),prev=c.enterCommandContext(ctx);const original=c.isServerRaidLocked;c.beginDataSaveTransaction();try{c.msg="/인형전체초기화";c.sender="master";c.data=c.loadJsonFile(c.filePath);c.petData=c.loadJsonFile(c.memberPetPath);c.guildData={};c.petMusou={active:active==="musou"};c.territoryLocked=active==="territory";c.isServerRaidLocked=()=>active==="raid";fixture.clear();const before=fixture.get(root+"member_pet.json");c.runDollBranch();assert(fixture.replies().join("").includes("진행 중"));assert.deepStrictEqual(fixture.get(root+"member_pet.json"),before);assert(!fixture.traces().some(t=>t.type==="save"));}finally{c.isServerRaidLocked=original;c.petMusou={active:false};c.territoryLocked=false;c.endDataSaveTransaction();c.exitCommandContext(prev);}}
+ seedReset();const p=fixture.get(root+"member_pet.json");fixture.failNth(root+"dollPending.json",1);assert.throws(()=>run("/인형전체초기화",false,"master"));assert.deepStrictEqual(fixture.get(root+"member_pet.json"),p);assert.strictEqual(fixture.get(root+"dollPending.json").pending,null);fixture.failPath("none");
+});
+test("패스 만료일 당일/다음날·손상 날짜·다중 계정 사전 검증",()=>{
+ const ticket=c.GLOBAL_CONFIG.doll.ticketName;const d={member:{u:{bag:{},pass:{doll:{enabled:true,endDate:"26.10.14"}}}}};assert.strictEqual(c.grantDollPassDailyRewards(d).grantedUserCount,1);day=20261015;assert.strictEqual(c.grantDollPassDailyRewards(d).grantedUserCount,0);assert.strictEqual(d.member.u.bag[ticket],3);
+ const bad={member:{a:{pass:{doll:{enabled:true,permanent:true}},bag:{}},b:{pass:{doll:{enabled:true,permanent:true}},bag:{[ticket]:9007199254740990}}}};const before=JSON.stringify(bad);assert.throws(()=>c.grantDollPassDailyRewards(bad));assert.strictEqual(JSON.stringify(bad),before);
+ d.member.u.pass.doll.endDate="26.02.30";const corrupt=JSON.stringify(d);assert.throws(()=>c.grantDollPassDailyRewards(d),/종료일/);assert.strictEqual(JSON.stringify(d),corrupt);
+});
+test("KST 자정 지급 날짜 경계·인형패스 가방 누락과 안전 정수 최대",()=>{
+ for(const [instant,key] of [["2026-10-14T14:59:59.999Z",20261014],["2026-10-14T15:00:00.000Z",20261015]]){class AtTime extends Date{constructor(...args){super(...(args.length?args:[Date.parse(instant)]));}}const ctx=vm.createContext({Date:AtTime});vm.runInContext(block(main,"function getTodaySupportPassDateValue("),ctx);assert.strictEqual(ctx.getTodaySupportPassDateValue(),key);}
+ const ticket=c.GLOBAL_CONFIG.doll.ticketName,d={member:{u:{pass:{doll:{enabled:true,permanent:true}}}}};c.grantDollPassDailyRewards(d);assert.strictEqual(d.member.u.bag[ticket],3);const edge={member:{u:{pass:{doll:{enabled:true,permanent:true}},bag:{[ticket]:9007199254740988}}}};c.grantDollPassDailyRewards(edge);assert.strictEqual(edge.member.u.bag[ticket],9007199254740991);assert.strictEqual(c.grantDollPassDailyRewards(edge).grantedUserCount,0);
+});
+test("초기화 완료 후 응답과 디버그 로그 전송 모두 실패해도 초기화 보존",()=>{
+ seedReset();const member=fixture.read(),original=c.debuggerLog;fixture.replyFail(true);c.debuggerLog=()=>{throw Error("log transport failure");};
+ try{assert.doesNotThrow(()=>run("/인형전체초기화",false,"master"));}finally{fixture.replyFail(false);c.debuggerLog=original;}
+ assert.deepStrictEqual(fixture.read(),member);assert.strictEqual(fixture.get(root+"member_pet.json").u.dollCharm,undefined);assert.strictEqual(fixture.get(root+"dollPending.json").pending,null);
 });
 console.log("OCT14 확정 정책 "+groups+"개 그룹 통과");

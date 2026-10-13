@@ -7888,7 +7888,7 @@ Status: VERIFIED
 
 - tools/test_doll_catalog.js: 1,000종 ID·종수·구간·최초 종매 1억.
 - tools/test_doll_content.js: 규칙·도감·순위·UI·실제 저장/롤백·재시작·전송 실패·DEV·프리미엄·삭제·Info 복구 대기·특수 이름·설치 누락 22개 그룹.
-- tools/test_oct14_ready.js: 초기화 권한·18개 파일 저장 실패·DEV·패스 등록/삭제/지급·중복 지급·기간·일반 10/자동 15회·승리 75/패배 25·알림·통계·포인트 경계 14개 그룹.
+- tools/test_oct14_ready.js: 초기화 권한·18개 파일 저장 실패·DEV·패스 등록/삭제/지급·중복 지급·기간·일반 10/자동 15회·승리 75/패배 25·알림·통계·포인트 경계·파일 누락/손상·KST 자정·18개 원문 복구·응답/디버그 전송 실패 20개 그룹.
 - tools/test_doll_test_room.js: 실제 MAIN 진입부의 방 제목·사용자 역할·DEV·무저장·인형 파일 누락·길드 불일치·다른 명령 8개 그룹.
 - tools/test_doll_rhino.js: UTF-8 Rhino 1.7.15 MAIN/Info 전체 컴파일 및 핵심 규칙 실행.
 
