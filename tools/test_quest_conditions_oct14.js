@@ -36,9 +36,10 @@ assert(heartAt>0&&heartEnd>heartAt);vm.runInContext("function heartBranch(){"+ma
 c.homeDataFile="/sdcard/호이랜드/petSweetHomeData.json";c.petHomeActivityFile="/sdcard/호이랜드/petHomeActivityData.json";
 function heartSetup(){install();const d=fixture.read();d.member.v=JSON.parse(JSON.stringify(d.member.u));fixture.write(d);fixture.put(c.homeDataFile,{u:{},v:{}});fixture.put(c.petHomeActivityFile,{users:{u:{heartUsage:{count:0}},v:{heartUsage:{count:0}}},alerts:{}});Object.assign(c,{hasActiveHoiPassAccess:()=>true,findTargetAtStart:(text,m)=>{const n=Object.keys(m).find(n=>text===n||text.startsWith(n+" "));return{target:n,rest:n?text.slice(n.length).trim():text};},initSweetHomeUser:d=>d,requirePetHomeActivityData:d=>d,getPetHomeTodayText:()=>"20261014",snapshotPetHomeSocialUser:(d,u)=>JSON.parse(JSON.stringify(d.users[u])),restorePetHomeSocialUser:(d,u,s)=>d.users[u]=s,getPetHomeHeartUsageStatus:()=>({remaining:10,limit:10}),getPetHomeAlertList:(d,u)=>d.alerts[u]||[],getPetHomeSocialUser:(d,u)=>d.users[u],applyPetHomeHeartExpressions:(h,n,q)=>{h.heartExpressions={count:q};return[];},addPetHomeBadgeStat:()=>{},addPetHomeHeartAllocationAlerts:()=>{},awardPetHomeAchievementBadges:()=>[],addPetHomeBadgeAwardAlerts:()=>{},buildPetHomeHeartAllocationText:()=>"마음"});}
 function heartRun(msg){const ctx=c.createCommandContext(false,"test"),prev=c.enterCommandContext(ctx);c.beginDataSaveTransaction();c.msg=msg;c.sender="u";c.data=c.loadJsonFile(c.filePath);c.petData=c.loadJsonFile(c.memberPetPath);c.petSkillData={};c.guildData={};try{c.heartBranch();}catch(e){c.rollbackDataSaveTransaction();throw e;}finally{c.endDataSaveTransaction();c.exitCommandContext(prev);}}
-test("실제 /마음 정상 저장만 인정·다른 마음표현/본인/수량오류/자격/한도 거절",()=>{
+test("정상 마음표현 5종 인정·본인/수량오류/자격/한도 거절",()=>{
  heartSetup();heartRun("/마음 v");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);
- for(const msg of ["/사랑해 v","/마음","/마음 unknown","/마음 u","/마음 v 0","/마음 v 1 해봐"]){heartSetup();heartRun(msg);assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,undefined);}
+ for(const name of ["마음","사랑해","귀여워","응원해","멋져요"]){heartSetup();heartRun("/"+name+" v 2");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);}
+ for(const msg of ["/마음","/마음 unknown","/마음 u","/마음 v 0","/마음 v 1 해봐"]){heartSetup();heartRun(msg);assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,undefined);}
  heartSetup();c.hasActiveHoiPassAccess=()=>false;heartRun("/마음 v");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,undefined);
  heartSetup();c.getPetHomeHeartUsageStatus=()=>({remaining:0,limit:1});heartRun("/마음 v");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,undefined);
 });
@@ -72,5 +73,30 @@ test("모험가 실제 완료 명령 5회 수령·다음 단계 재청구 차단
 });
 test("마음 저장 완료 후 응답/디버그 로그 모두 실패해도 진행도 보존",()=>{
  heartSetup();const log=c.debuggerLog;c.debuggerLog=()=>{throw Error("log transport");};fixture.replyFail(true);try{heartRun("/마음 v");}finally{fixture.replyFail(false);c.debuggerLog=log;}assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.homeDataFile).v.heartExpressions.count,1);
+});
+test("마음 두 입력과 감정표현 4종은 같은 완료 조건·조회 별칭·기존 UI 공유",()=>{
+ vm.runInContext('function questQuery(){'+block(main,'if (msg === "/퀘스트" || msg === "ㄹㄹㄹ" || msg === "/ㅋ")')+'}',c);
+ for(const command of ["/마음 v","/마음 v 2","/귀여워 v 2","/응원해 v 2","/멋져요 v 2","/사랑해 v 2"]){
+  heartSetup();heartRun(command);assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.petHomeActivityFile).users.u.heartUsage.count,command.endsWith(' 2')?2:1);
+  c.data=c.loadJsonFile(c.filePath);c.data.base=true;c.petData=c.loadJsonFile(c.memberPetPath);const before=JSON.stringify(c.data);const texts=[],replier=c.replier;c.replier={reply:s=>texts.push(s)};c.castleSiegeFlag=false;statusSetup();
+  try{for(const alias of ["/퀘스트","/ㅋ"]){c.msg=alias;c.questQuery();}assert.strictEqual(texts[0],texts[1]);assert(texts[0].includes("마음 주기💗(/마음 닉네임)[1/1][✅]"));assert(!texts[0].includes("/귀여워"));assert.strictEqual(JSON.stringify(c.data),before);}finally{c.replier=replier;c.loadJsonFile=realLoad;}
+ }
+});
+test("5종 모두 잘못된 입력·본인·상대 미이용·발신 미이용·잔여 부족은 무변경",()=>{
+ for(const name of ["마음","귀여워","응원해","멋져요","사랑해"]){
+  for(const tail of [""," unknown 1"," u 1"," v 0"," v -1"," v 1.5"," v abc"," v 1 해봐"]){heartSetup();const before=fixture.read(),home=fixture.get(c.homeDataFile);heartRun('/'+name+tail);assert.deepStrictEqual(fixture.read(),before);assert.deepStrictEqual(fixture.get(c.homeDataFile),home);}
+  for(const reject of ['sender','target','quantity']){heartSetup();const before=fixture.read();if(reject==='quantity')c.getPetHomeHeartUsageStatus=()=>({remaining:1,limit:1});else c.hasActiveHoiPassAccess=(_d,u)=>u!==(reject==='sender'?'u':'v');heartRun('/'+name+' v 2');assert.deepStrictEqual(fixture.read(),before);}
+ }
+});
+test("추가 4종의 각 저장 실패는 홈·활동·회원 진행도 원복하고 재시도 1회 인정",()=>{
+ for(const name of ["귀여워","응원해","멋져요","사랑해"])for(const p of [c.homeDataFile,c.petHomeActivityFile,c.filePath]){
+  heartSetup();const before=fixture.read(),home=fixture.get(c.homeDataFile),activity=fixture.get(c.petHomeActivityFile),write=c.FileStream.write;let fail=true;fixture.failPath(p);c.FileStream.write=(target,text)=>{if(target===p&&fail){fail=false;throw Error('write failure');}return write(target,text);};
+  try{assert.throws(()=>heartRun('/'+name+' v 2'));}finally{c.FileStream.write=write;}assert.deepStrictEqual(fixture.read(),before);assert.deepStrictEqual(fixture.get(c.homeDataFile),home);assert.deepStrictEqual(fixture.get(c.petHomeActivityFile),activity);fixture.failPath('none');heartRun('/'+name+' v 2');assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.petHomeActivityFile).users.u.heartUsage.count,2);
+ }
+});
+test("새 인정 명령 반복·응답 실패에서도 완료는 1회로 유지하고 자동 보상은 없음",()=>{
+ for(const name of ["귀여워","응원해","멋져요","사랑해"]){heartSetup();heartRun('/'+name+' v 1');heartRun('/'+name+' v 1');assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.read().member.u.passDailyQuestCnt,undefined);
+  const logger=c.debuggerLog;c.debuggerLog=()=>{throw Error('log transport');};fixture.replyFail(true);try{heartRun('/'+name+' v 1');}finally{fixture.replyFail(false);c.debuggerLog=logger;}assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.petHomeActivityFile).users.u.heartUsage.count,3);
+ }
 });
 console.log("Quest conditions "+groups+" groups passed");
