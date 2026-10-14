@@ -363,7 +363,7 @@ const starterConfigStart = main.indexOf("    adventureStarter: {");
 const starterConfigEnd = main.indexOf("    adventureQuest: {", starterConfigStart);
 assert(starterConfigStart >= 0 && starterConfigEnd > starterConfigStart);
 vm.runInContext("GLOBAL_CONFIG.adventureStarter = ({" + main.slice(starterConfigStart, starterConfigEnd) + "}).adventureStarter;", starterContext);
-vm.runInContext(["applyAdventureStarterIntimacyReward", "applyAdventureStarterMemberRewards"].map(name => extractFunction(name)).join("\n"), starterContext);
+vm.runInContext(["isSearchAuthenticationCount", "applyAdventureStarterIntimacyReward", "applyAdventureStarterMemberRewards"].map(name => extractFunction(name)).join("\n"), starterContext);
 const starterFixture = { member: {
     newbie: { bag: {}, adventureOnboarding: { stage: "APPLYING", receipts: {} }, adventureQuest: { receipts: {} } },
     existing: { bag: { "펫 친밀도🐾 [Lv.100](0/1000)+110000💕": 1 }, adventureQuest: { receipts: {} } },

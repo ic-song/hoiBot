@@ -110,7 +110,7 @@ vm.createContext(starter);
 const starterStart = main.indexOf("    adventureStarter: {");
 const starterEnd = main.indexOf("    adventureQuest: {", starterStart);
 vm.runInContext("this.GLOBAL_CONFIG = ({" + main.slice(starterStart, starterEnd) + "});", starter);
-for (const name of ["applyAdventureStarterMemberRewards", "buildAdventureStarterCompleteMessage"]) {
+for (const name of ["isSearchAuthenticationCount", "applyAdventureStarterMemberRewards", "buildAdventureStarterCompleteMessage"]) {
     vm.runInContext(extractBlock(main, "function " + name + "("), starter);
 }
 function newMember(stage = "WAIT_BLESSING") {

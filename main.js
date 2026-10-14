@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.652"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.653"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2237,6 +2237,12 @@ blockedNicknameTerms: [
         ],
         additionalItems: [ // 신규 스타터 추가 지급이며 과거 퀘스트 지급분 회수에서 제외
             ["펜던트 강화석📿", 3]
+        ],
+        dollItems: [ // 신규 /호여!! 최초 보상에만 합산하며 과거 지급자는 소급하지 않음
+            ["인형뽑기이용권🧸(/인형뽑기)", 20],
+            ["인형뽑기확률UP🧸(50%)", 5],
+            ["인형뽑기확률UP🧸(40%)", 5],
+            ["인형뽑기확률UP🧸(30%)", 5]
         ]
     },
     referral: { // 캐릭터 생성 후 추천인 등록 보상·순위 설정
@@ -4400,6 +4406,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var dollDateText = dollDateKey.substring(0, 4) + "." + dollDateKey.substring(4, 6) + "." + dollDateKey.substring(6, 8);
             var dollResult = applyDollDraw(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText);
             if (!dollResult.ok) {
+                if (isDebuggerFlag) { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} }
                 replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
                 return;
             }
@@ -4409,6 +4416,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(petData, memberPetPath);
             saveJsonFile(data, filePath);
             saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
+            if (isDebuggerFlag) { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} } // 로그 전송 실패는 완료된 소모·보상을 되돌리지 않음
             // 전송 실패는 이미 완료된 소모·보상을 되돌리거나 재추첨하지 않는다.
             try {
                 if (dollResult.success) replier.reply(getDollEmoji(dollResult.doll.name));
@@ -45769,6 +45777,12 @@ function generateBagOutput(bagItems, includeDonationNotice) {
             "확성기📢(/알림 내용 30자)",
             "티어 승급티켓🎟",
             "고급 티어 승급티켓🎫",
+            "인형뽑기이용권🧸(/인형뽑기)",
+            "인형뽑기확률UP🧸(50%)",
+            "인형뽑기확률UP🧸(40%)",
+            "인형뽑기확률UP🧸(30%)",
+            "인형뽑기확률UP🧸(20%)",
+            "인형뽑기확률UP🧸(10%)",
             GLOBAL_CONFIG.items.pendantOpenTicketName,
             GLOBAL_CONFIG.items.pendantEnhanceStoneName,
             GLOBAL_CONFIG.items.pendantRestoreStoneName,
@@ -53367,9 +53381,12 @@ function buildAdventureQuestTitleMessage(data, petData, guildData, user) {
 // 호월신의 축복 적용 완료 안내 문구를 생성하는 함수
 function buildAdventureStarterCompleteMessage(user, petName, intimacyGranted, memberRewardsGranted) {
     var additionalItemLines = ""; // 이번 최초 지급에서 실제 추가된 스타터 아이템 안내
+    var dollItemLines = ""; // 실제 지급한 인형 스타터 4종의 별도 안내
     if (memberRewardsGranted) {
         var additionalItems = GLOBAL_CONFIG.adventureStarter.additionalItems;
         for (var i = 0; i < additionalItems.length; i++) additionalItemLines += additionalItems[i][0] + " " + additionalItems[i][1] + "개\n";
+        var dollItems = GLOBAL_CONFIG.adventureStarter.dollItems || [];
+        for (var d = 0; d < dollItems.length; d++) dollItemLines += dollItems[d][0] + " " + dollItems[d][1] + "개\n";
     }
     return "[" + user + "]님에게 호월신의 축복✨이 깃듭니다!\n\n" +
         "🐾 " + petName + "의 기본 세팅 완료!\n" +
@@ -53377,6 +53394,7 @@ function buildAdventureStarterCompleteMessage(user, petName, intimacyGranted, me
         (intimacyGranted ? "🐾 친밀도 Lv.300 (매력 330,000💕) 지원 완료!\n" : "") +
         (memberRewardsGranted ? "✨ 호월신의 가호: " + numberWithCommas(GLOBAL_CONFIG.adventureStarter.boosters) + "개 지급!\n" : "") +
         (additionalItemLines ? "🎁 추가 스타터 아이템\n" + additionalItemLines : "") +
+        (dollItemLines ? "\n🧸 인형뽑기 스타터 아이템 추가 지급\n\n" + dollItemLines : "") +
         "━━━━━━━━━━━━━━━\n" +
         "🐾 먼저, 함께할 펫을 만나보세요!\n\n" +
         "채팅창에 /펫정보 를 입력하면\n" +
@@ -53431,10 +53449,16 @@ function applyAdventureStarterMemberRewards(data, user) {
     if (quest && quest.receipts && quest.receipts.starterMemberRewards === true) return false;
 
     var starter = GLOBAL_CONFIG.adventureStarter;
+    var dollItems = starter.dollItems || [];
+    for (var d = 0; d < dollItems.length; d++) {
+        var ownedDollItem = member.bag && member.bag[dollItems[d][0]] !== undefined ? member.bag[dollItems[d][0]] : 0;
+        if (!isSearchAuthenticationCount(ownedDollItem) || !isSearchAuthenticationCount(ownedDollItem + dollItems[d][1])) throw new Error("스타터 인형 아이템 수량 오류");
+    }
     addPoint(data, user, starter.points);
     member.boostercnt = Math.max(0, parseInt(member.boostercnt, 10) || 0) + starter.boosters;
     for (var i = 0; i < starter.items.length; i++) addItem(data, user, starter.items[i][0], starter.items[i][1]);
     for (var j = 0; j < starter.additionalItems.length; j++) addItem(data, user, starter.additionalItems[j][0], starter.additionalItems[j][1]);
+    for (var k = 0; k < dollItems.length; k++) addItem(data, user, dollItems[k][0], dollItems[k][1]);
 
     onboarding.receipts.memberRewards = true;
     return true;
@@ -60163,15 +60187,17 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
     if (!isSearchAuthenticationCount(tickets) || !isSearchAuthenticationCount(member.point)) throw new Error("인형뽑기 재화 값 오류");
     if (tickets < 1) return { ok:false, lack:true };
     var random=randomValue || Math.random;
-    var probability=getDollSuccessPercent(member.rank ? member.rank.tier : "새싹");
-    var baseProbability=probability, up=config.probabilityUp, upName=null, upPercent=0; // 티어 확률과 자동 선택한 한 종류의 추가 확률
+    var drawTier=member.rank ? member.rank.tier : "새싹";
+    var probability=getDollSuccessPercent(drawTier);
+    var baseProbability=probability, up=config.probabilityUp, upName=null, upPercent=0, upBefore=0; // 티어 확률과 자동 선택한 한 종류의 추가 확률·사용 전 수량
     for(var u=0;u<up.percents.length;u++) {
         var candidate=up.itemPrefix+"("+up.percents[u]+"%)", quantity=bag[candidate]===undefined ? 0 : bag[candidate];
         if(!isSearchAuthenticationCount(quantity)) throw new Error("인형뽑기 확률UP 수량 오류");
-        if(!upName && quantity>0){upName=candidate;upPercent=up.percents[u];}
+        if(!upName && quantity>0){upName=candidate;upPercent=up.percents[u];upBefore=quantity;}
     }
     probability=Math.min(up.maxSuccessPercent,baseProbability+upPercent);
-    var success=random()*100 < probability;
+    var successRandom=random(), successRoll=successRandom*100; // 판정에 실제 사용한 난수를 재추첨 없이 보관
+    var success=successRoll < probability;
     var previous=Object.prototype.hasOwnProperty.call(store.users,user) ? store.users[user] : undefined;
     var record=previous ? JSON.parse(JSON.stringify(previous)) : {id:id,catches:{}};
     if (!record.id || !record.catches || typeof record.catches !== "object" || record.catches instanceof Array) throw new Error("인형 계정 기록 오류");
@@ -60211,7 +60237,22 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
     member.passDollDrawCnt = GLOBAL_CONFIG.daily.passDollDrawMax; // 정상 실패를 포함한 실제 이용권 사용만 인정
     result.remainingTicket=member.bag && member.bag[config.ticketName] || 0;
     result.remainingPoint=member.point;
+    result.debug={tier:normalizeTicketTierName(drawTier),tierStage:getTicketTierStage(drawTier),tierStep:config.rates.tierStepPercent,base:config.rates.baseSuccessPercent,tierBonus:baseProbability-config.rates.baseSuccessPercent,tierProbability:baseProbability,
+        upName:upName,upPercent:upPercent,beforeLimit:baseProbability+upPercent,max:up.maxSuccessPercent,finalProbability:probability,random:successRandom,roll:successRoll,
+        ticketBefore:tickets,ticketAfter:result.remainingTicket,upBefore:upBefore,upAfter:upName?result.remainingProbabilityUp:0};
     return result;
+}
+// 인형 뽑기의 실제 확률·난수·소모 정보를 기존 디버그 출력 대상으로 보내기 위한 문구를 만드는 함수
+function buildDollDrawDebugMessage(result) {
+    var d=result.debug;
+    if (!result.ok || !d) return "[인형뽑기 디버그]\n이용권 부족: 난수 판정 없음 · 이용권/확률UP 소모 0개";
+    return "[인형뽑기 디버그]\n기본 성공률: "+d.base+"%\n티어: "+d.tier+" · 단계 "+d.tierStage+" · 추가 "+d.tierBonus+"%p\n티어 계산: ("+d.tierStage+" - 1) × "+d.tierStep+"%p = "+d.tierBonus+"%p\n"+
+        "확률UP: "+(d.upName || "없음")+" · 추가 "+d.upPercent+"%p\n"+
+        "계산식: "+d.base+"% + 티어 "+d.tierBonus+"%p = "+d.tierProbability+"% → + 확률UP "+d.upPercent+"%p = "+d.beforeLimit+"% (퍼센트포인트 가산)\n"+
+        "확률 제한: 하한 제한 없음 · 상한 "+d.max+"% · 상한 적용 "+(d.beforeLimit>d.max?"예":"아니오")+" · "+d.beforeLimit+"% → "+d.finalProbability+"%\n"+
+        "최종 성공률: "+d.finalProbability+"%\n난수 원값 [0,1): "+d.random+"\n판정값 [0,100): "+d.roll+"\n"+
+        "비교식: "+d.roll+" < "+d.finalProbability+" = "+result.success+" · "+(result.success?"성공":"실패")+"\n"+
+        "이용권: "+d.ticketBefore+" → "+d.ticketAfter+" (1개 사용)\n확률UP: "+(d.upName?d.upName+" "+d.upBefore+" → "+d.upAfter+" (1개 사용)":"없음 · 0개 사용");
 }
 // 인형 화면의 프리미엄 머리말과 실제 사용자 표시명을 만드는 함수
 function dollTitle(data,petData,guildData,user,label,emoji) {
