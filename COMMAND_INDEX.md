@@ -6917,6 +6917,12 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+- ver_2.646: 기존 `member_pet[*].miniPetRobberyHistory` 전체를 `miniPetRobberyHistory.json`으로 옮기고 회원 `migrations.miniPetRobberySplit20261014 = true`를 게시한다. 최초 기록 사본 `miniPetRobberyHistory_legacy.json`을 보존한다. 원래 중복 행 개수와 같은 ID의 다른 내용도 보존하며, 재이전 시 이미 옮긴 동일 행을 개수별로 대조해 중복 추가하지 않는다. 완료 후 기존 펫 배열을 제거한다. 누락·손상·초기 경로 충돌은 오류로 중단한다.
+- `requireMiniPetRobberyStore`, `getMiniPetRobberyRows`, `validateMiniPetRobberyPending`, `buildMiniPetRobberyMigration`은 이미 로드한 데이터를 검증·조회·계획하며 파일 IO를 하지 않는다. 복구·이전·강탈·조회 진입부에서 IO를 수행한다.
+- `miniPetRobberyPending.json`은 회원·펫·이력 세 파일의 작업 전 원문을 보관한다. 명령 저장 트랜잭션으로 파일 실패를 원복하고, 중단 시 MAIN 진입과 운영 재컴파일의 타이머 시작 전 원문을 복구한다. 초기 이전의 없던 이력 파일만 삭제 복구를 허용한다. 복구 원문 전체를 검증하기 전에는 쓰지 않는다. DEV 복구는 다음 DEV 요청에서 수행한다.
+- 분리 후 약탈자가 실행하는 미니펫대전과 약탈자 이력 조회만 이력을 로드한다. 강탈 성공 때 포인트·대전 횟수·별도 이력을 함께 저장하며, 자동일퀘는 최초 원문을 유지하다 일괄 저장 성공 후 복구 표시를 비운다. MAIN의 본인·다른 유저 미니펫정보는 별도 이력에서 최근 50건을 출력한다. Info는 복구 대기 중 부분 정보를 출력하지 않는다.
+- tools/test_robbery_history_split.js: 실제 정리·약탈 저장·복구·자동일퀘 일괄 저장·재컴파일·Info 차단·DEV·일반 명령 미로드 등 정상/예외 12개 그룹. tools/test_doll_rhino.js는 실제 Rhino에서 이전·재이전·특수 이름 보존을 추가 검증한다.
+
 - ver_2.645: 기존 가방 명칭 정리 시 원본 수량이 숫자 `0`인 항목은 제외하고 회원 파일에 저장한다. 완료 안내에 제거한 항목 수·회원 수를 표시한다. 기존 권한·DEV/PROD·저장 트랜잭션·양수 보유량·구독 기록은 유지한다. 분리 완료 파일의 잔류 로그 복구 전용 경로는 기존대로 복구만 수행하므로 일반 정리는 재실행 때 적용된다.
 - tools/test_member_storage_split.js: 실제 정리 본문으로 숫자 0 삭제·양수/소수/안전 정수 상한·구독 보존·명칭 통합·재실행·DEV 격리·이후 저장 실패 원복을 포함한 55개 그룹을 검증한다.
 

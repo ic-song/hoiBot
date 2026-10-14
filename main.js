@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.645"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.646"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -1741,6 +1741,7 @@ const GLOBAL_CONFIG = {
         batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
     },
     miniPet: { // 미니펫 시스템 설정
+        robberyHistory: { fileName: "miniPetRobberyHistory.json", pendingName: "miniPetRobberyPending.json", backupName: "miniPetRobberyHistory_legacy.json", markerKey: "miniPetRobberySplit20261014", schemaVersion: 1 },
         openMaxCount: 3000, // 미니펫오픈 1회 최대 수량
         battleBagMin: 5, // 미니펫대전 최소 가방 보유 수
         battleBagMax: 9, // 미니펫대전 최대 가방 보유 수
@@ -2892,9 +2893,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
             }
         }
+        // 강탈 기록·회원·펫 저장 중 중단된 요청을 세 파일의 원문으로 복구한다.
+        var robberyConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
+        var robberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyConfig.pendingName);
+        if (!(getAutoDailyBatchContext() && getAutoDailyBatchContext().robberyPending) && new java.io.File(robberyPendingPath).exists()) {
+            var robberyPending = loadJsonFile(robberyPendingPath);
+            validateMiniPetRobberyPending(robberyPending);
+            if (robberyPending.pending !== null) {
+                for (var rp = 0; rp < robberyPending.pending.length; rp++) {
+                    var recoveryRow = robberyPending.pending[rp], recoveryPath = resolveActiveDataPath(DATA_ROOT_PATH + recoveryRow.name);
+                    if (recoveryRow.text === null) {
+                        var absentHistoryFile = new java.io.File(recoveryPath);
+                        if (absentHistoryFile.exists() && !absentHistoryFile.delete()) throw new Error("강탈 기록 초기 이전 복구 실패");
+                    } else writeVerifiedJsonFile(recoveryPath, recoveryRow.text, true);
+                }
+                writeMemberSplitSlot(robberyPendingPath, JSON.stringify({ pending: null }));
+                endDataSaveTransaction(); beginDataSaveTransaction(); // 복구 완료 이후 새 명령 실패와 복구를 분리
+            }
+        }
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         var memberStorageMigrationResult = null;
+        if (data.migrations && data.migrations[robberyConfig.markerKey] !== undefined && data.migrations[robberyConfig.markerKey] !== true) throw new Error("강탈 기록 분리 표시 오류");
         var memberStorageRepairing = false;
         // 파일 분리를 먼저 확정한 뒤 기존 데이터 정리 단계를 그대로 실행한다.
         if (memberStorageCleanupAllowed && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
@@ -21023,6 +21043,10 @@ replier.reply(
                     if (castleSiegeFlag) {
                         return;
                     }
+                    var separatedRobbery = data.migrations && data.migrations[GLOBAL_CONFIG.miniPet.robberyHistory.markerKey] === true;
+                    var robberyHistoryData = separatedRobbery && hasPetSkill(petSkillData, sender, "약탈자") ? requireMiniPetRobberyStore(loadJsonFile(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.fileName)) : null;
+                    if (robberyHistoryData && petData[sender].miniPetRobberyHistory !== undefined) throw new Error("기존 강탈 기록이 남아 있습니다. /데이터정리를 실행해 주세요.");
+                    var robberyHistorySnapshots = null;
                     let rewards = [
                         {
                             item: "펫 강화석⭐",
@@ -21218,12 +21242,24 @@ replier.reply(
                     }
                     if (hasPetSkill(petSkillData, sender, "약탈자")) {
                         if (Math.random() < 0.7) {
+                            if (robberyHistoryData) {
+                                var robberyBatch = getAutoDailyBatchContext();
+                                var robberySnapshotNames = ["member.json", "member_pet.json", GLOBAL_CONFIG.miniPet.robberyHistory.fileName];
+                                robberyHistorySnapshots = [];
+                                for (var rs = 0; rs < robberySnapshotNames.length; rs++) robberyHistorySnapshots.push({ name: robberySnapshotNames[rs], text: FileStream.read(resolveActiveDataPath(DATA_ROOT_PATH + robberySnapshotNames[rs]), "utf-8") });
+                                var robberySavePending = { pending: robberyHistorySnapshots };
+                                validateMiniPetRobberyPending(robberySavePending);
+                                if (!robberyBatch || !robberyBatch.robberyPending) {
+                                    writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), JSON.stringify(robberySavePending));
+                                    if (robberyBatch) { robberyBatch.robberyPending = true; robberyBatch.robberySnapshots = robberyHistorySnapshots; }
+                                }
+                            }
                             data.member[targetName].point = (data.member[targetName].point || 0) - GLOBAL_CONFIG.petSkill.effects.robberStealPoint;
                             addPoint(data, sender, GLOBAL_CONFIG.petSkill.effects.robberStealPoint);
-                            if (!petData[sender].miniPetRobberyHistory) petData[sender].miniPetRobberyHistory = [];
+                            var robberyHistory = robberyHistoryData ? getMiniPetRobberyRows(robberyHistoryData, sender, true) : (petData[sender].miniPetRobberyHistory || (petData[sender].miniPetRobberyHistory = []));
                             var robberyEventId = getAttendanceKstDateKey() + ":" + petData[sender].miniPetBattle.count; // 하루 대전 횟수로 식별한 성공 사건
-                            var robberyExists = petData[sender].miniPetRobberyHistory.some(function (row) { return row.id === robberyEventId; });
-                            if (!robberyExists) petData[sender].miniPetRobberyHistory.push({ id: robberyEventId, target: targetName, amount: GLOBAL_CONFIG.petSkill.effects.robberStealPoint, at: getMiniPetRobberyDateTime() });
+                            var robberyExists = robberyHistory.some(function (row) { return row.id === robberyEventId; });
+                            if (!robberyExists) robberyHistory.push({ id: robberyEventId, target: targetName, amount: GLOBAL_CONFIG.petSkill.effects.robberStealPoint, at: getMiniPetRobberyDateTime() });
                             replier.reply("약탈자📙\n" + userRank + "님의 약탈 본능 발동!\n상대 [" + checkRank(data, petData, guildData, targetName) + "]에게서 🅟" + numberWithCommas(GLOBAL_CONFIG.petSkill.effects.robberStealPoint) + " 포인트를 약탈합니다.");
                         }
                     }
@@ -21236,8 +21272,12 @@ replier.reply(
                         }
                     }
                     recordAdventureQuestAction(data, sender, 3, "miniBattle", 1);
-                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(petData, memberPetPath, false, robberyHistorySnapshots ? robberyHistorySnapshots[1].text : undefined);
                     saveJsonFile(data, filePath);
+                    if (robberyHistorySnapshots) {
+                        writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.fileName), JSON.stringify(robberyHistoryData));
+                        if (!getAutoDailyBatchContext()) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), JSON.stringify({ pending: null }));
+                    }
                     return;
                 }
 
@@ -23017,7 +23057,10 @@ replier.reply(
                     var miniTitleForInfo = loadJsonFile(miniPetTitlePath);
                     var robberEquippedForInfo = hasPetSkill(petSkillData, sender, "약탈자");
                     replier.reply(buildMiniPetInfoRenewedMessage(sender, data, petData, guildData, miniTitleForInfo, robberEquippedForInfo, petSkillData));
-                    if (robberEquippedForInfo) replier.reply(buildMiniPetRobberyHistoryMessage(sender, data, petData, guildData));
+                    if (robberEquippedForInfo) {
+                        var robberyInfoStore = data.migrations && data.migrations[GLOBAL_CONFIG.miniPet.robberyHistory.markerKey] === true ? requireMiniPetRobberyStore(loadJsonFile(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.fileName)) : null;
+                        replier.reply(buildMiniPetRobberyHistoryMessage(sender, data, petData, guildData, robberyInfoStore));
+                    }
                     return;
                 }
                 if (msg.startsWith("/미니펫조합태초+") || msg.startsWith("/미니펫조합창세") || msg.startsWith("/미니펫조합창조")) {
@@ -23154,7 +23197,10 @@ replier.reply(
                     var miniTitleForTarget = loadJsonFile(miniPetTitlePath);
                     var robberEquippedForTarget = hasPetSkill(petSkillData, targetName, "약탈자");
                     replier.reply(buildMiniPetInfoRenewedMessage(targetName, data, petData, guildData, miniTitleForTarget, robberEquippedForTarget, petSkillData));
-                    if (robberEquippedForTarget) replier.reply(buildMiniPetRobberyHistoryMessage(targetName, data, petData, guildData));
+                    if (robberEquippedForTarget) {
+                        var robberyTargetStore = data.migrations && data.migrations[GLOBAL_CONFIG.miniPet.robberyHistory.markerKey] === true ? requireMiniPetRobberyStore(loadJsonFile(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.fileName)) : null;
+                        replier.reply(buildMiniPetRobberyHistoryMessage(targetName, data, petData, guildData, robberyTargetStore));
+                    }
                     return;
                 }
                 if (msg == "/미니펫전체정리") {
@@ -31331,6 +31377,29 @@ replier.reply(
                         replier.reply("❌ 메인 데이터가 없습니다.");
                         return;
                     }
+                    var robberyCleanupConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
+                    var robberyCleanupPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.fileName);
+                    var robberyAlreadySeparated = data.migrations && data.migrations[robberyCleanupConfig.markerKey] === true;
+                    if (!robberyAlreadySeparated && new java.io.File(robberyCleanupPath).exists()) throw new Error("강탈 기록 파일이 이미 있습니다. 원본과 분리 표시를 확인해 주세요.");
+                    var robberyCleanupStore = robberyAlreadySeparated ? requireMiniPetRobberyStore(loadJsonFile(robberyCleanupPath)) : null;
+                    var robberyMigration = buildMiniPetRobberyMigration(petData, robberyCleanupStore);
+                    var robberyMigrationPending = null;
+                    if (!robberyAlreadySeparated || robberyMigration.users.length > 0) {
+                        robberyMigrationPending = { pending: [
+                            { name: "member.json", text: FileStream.read(resolveActiveDataPath(filePath), "utf-8") },
+                            { name: "member_pet.json", text: FileStream.read(resolveActiveDataPath(memberPetPath), "utf-8") },
+                            { name: robberyCleanupConfig.fileName, text: robberyAlreadySeparated ? FileStream.read(robberyCleanupPath, "utf-8") : null }
+                        ] };
+                        validateMiniPetRobberyPending(robberyMigrationPending);
+                        var robberyLegacyPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.backupName);
+                        if (new java.io.File(robberyLegacyPath).exists()) requireMiniPetRobberyStore(loadJsonFile(robberyLegacyPath));
+                        else writeVerifiedJsonFile(robberyLegacyPath, JSON.stringify(robberyMigration.legacy), true);
+                        writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), JSON.stringify(robberyMigrationPending));
+                        writeMemberSplitSlot(robberyCleanupPath, JSON.stringify(robberyMigration.store));
+                        for (var rm = 0; rm < robberyMigration.users.length; rm++) delete petData[robberyMigration.users[rm]].miniPetRobberyHistory;
+                        if (!data.migrations) data.migrations = {};
+                        data.migrations[robberyCleanupConfig.markerKey] = true;
+                    }
 
                     var homeData = loadJsonFile(homeDataFile);
                     var placedFurnitureCleanupData = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists() ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
@@ -31637,7 +31706,7 @@ replier.reply(
                     saveJsonFile(homeData, homeDataFile);
                     if (placedFurnitureCleanupData) saveJsonFile(placedFurnitureCleanupData, petHomePlacedFurniturePath);
                     saveJsonFile(data, filePath);
-                    saveJsonFile(petData, memberPetPath);
+                    saveJsonFile(petData, memberPetPath, false, robberyMigrationPending ? robberyMigrationPending.pending[1].text : undefined);
                     saveJsonFile(petSkillData, petSkillDataPath);
                     saveJsonFile(currencyLogData, currencyLogPath);
                     saveJsonFile(guildData, guildPath);
@@ -31655,9 +31724,12 @@ replier.reply(
                     saveJsonFile(boardCleanupData, boardPath);
                     saveJsonFile(carrotBoardCleanupData, carrotBoardPath);
                     saveJsonFile(packageLogCleanupData, packageLogPath);
+                    if (robberyMigrationPending) writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.pendingName), JSON.stringify({ pending: null }));
 
                     var out = "🧹 /데이터정리 완료\n";
                     out += allsee + "\n";
+                    out += "\n[강탈 이력 분리]\n";
+                    out += robberyMigrationPending ? "✅ 전체 기록 보존 · 추가 이전 " + numberWithCommas(robberyMigration.added) + "건 / " + numberWithCommas(robberyMigration.users.length) + "명\n" : "✅ 이미 분리되어 있어 다시 옮기지 않았습니다.\n";
                     if (memberStorageMigrationResult) {
                         out += "\n[회원 파일 분리]\n";
                         if (memberStorageMigrationResult.changed) {
@@ -33268,7 +33340,7 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
     var fileName = String(new java.io.File(path).getName());
-    return /^(dollIndex|dollPending|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(fileName) || fileName === "member.json" || fileName === "member_back.json" ||
+    return /^miniPetRobbery(?:History(?:_legacy)?|Pending)\.json$/.test(fileName) || /^(dollIndex|dollPending|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(fileName) || fileName === "member.json" || fileName === "member_back.json" ||
         /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(fileName) ||
         fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
         fileName === "member_back2.json" || fileName === "member_pet_back2.json" ||
@@ -33280,6 +33352,8 @@ function isProtectedManagedJsonPath(path) {
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
     var splitFileName = String(new java.io.File(path).getName());
+    if (/^miniPetRobberyHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireMiniPetRobberyStore(parsedData);
+    if (splitFileName === "miniPetRobberyPending.json") { validateMiniPetRobberyPending(parsedData); return parsedData; }
     if (/^(dollIndex|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(splitFileName)) return requireDollStore(parsedData);
     if (splitFileName === "dollPending.json" && (!parsedData || !Object.prototype.hasOwnProperty.call(parsedData, "pending") || (parsedData.pending !== null && !(parsedData.pending instanceof Array)))) throw new Error("인형 복구 기록 형식 오류");
     if (/^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(splitFileName)) return requireMemberSplitStore(parsedData, splitFileName.indexOf("serverRaidData") === 0 ? "raid" : "logs");
@@ -43791,7 +43865,14 @@ function commitAutoDailyBatch() {
     try {
         for (var i = 0; i < commitOrder.length; i++) {
             var resolvedPath = resolveActiveDataPath(commitOrder[i]);
-            if (batch.dirtyPaths[resolvedPath]) saveJsonFile(batch.files[resolvedPath], resolvedPath);
+            if (batch.dirtyPaths[resolvedPath]) {
+                var robberyBatchSnapshot = batch.robberyPending && batch.robberySnapshots ? (resolvedPath === resolveActiveDataPath(memberPetPath) ? batch.robberySnapshots[1].text : resolvedPath === resolveActiveDataPath(filePath) ? batch.robberySnapshots[0].text : undefined) : undefined;
+                saveJsonFile(batch.files[resolvedPath], resolvedPath, false, robberyBatchSnapshot);
+            }
+        }
+        if (batch.robberyPending) {
+            writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName), JSON.stringify({ pending: null }));
+            batch.robberyPending = false;
         }
     } finally {
         batch.committing = false;
@@ -60398,8 +60479,9 @@ function buildMiniPetInfoRenewedMessage(user, data, petData, guildData, titleDat
 }
 
 // 장착한 약탈자의 최근 성공 기록을 별도 메시지로 출력하는 함수
-function buildMiniPetRobberyHistoryMessage(user, data, petData, guildData) {
-    var history = petData[user] && petData[user].miniPetRobberyHistory ? petData[user].miniPetRobberyHistory : [];
+function buildMiniPetRobberyHistoryMessage(user, data, petData, guildData, historyStore) {
+    if (historyStore && petData[user] && petData[user].miniPetRobberyHistory !== undefined) throw new Error("기존 강탈 기록이 남아 있습니다. /데이터정리를 실행해 주세요.");
+    var history = historyStore ? (Object.prototype.hasOwnProperty.call(historyStore.users, user) ? historyStore.users[user] : []) : petData[user] && petData[user].miniPetRobberyHistory ? petData[user].miniPetRobberyHistory : [];
     var recent = history.slice(Math.max(0, history.length - 50)).reverse(); // 최신순 최대 50건
     var lines = ["약탈자📙 [S]", "[" + checkRank(data, petData, guildData, user) + "]님의 약탈 기록", allsee, "━━━━━━━━━━━━━", "미니펫대전 시 70% 확률로", "상대의 1,000만 포인트를 훔칩니다.", "", "📜 최근 약탈 기록: " + recent.length + "건"];
     if (!recent.length) return lines.concat(["아직 약탈에 성공한 기록이 없습니다."]).join("\n");
@@ -60407,6 +60489,73 @@ function buildMiniPetRobberyHistoryMessage(user, data, petData, guildData) {
     for (var i = 0; i < recent.length; i++) lines.push((i + 1) + ". [" + recent[i].target + "] · " + numberWithCommas(recent[i].amount) + " 포인트\n   └ " + recent[i].at);
     lines.push("━━━━━━━━━━━━━");
     return lines.join("\n");
+}
+
+// 별도 강탈 이력의 구조와 기록 수량을 엄격히 확인하는 함수
+function requireMiniPetRobberyStore(store) {
+    if (!store || store.schemaVersion !== GLOBAL_CONFIG.miniPet.robberyHistory.schemaVersion || !store.users || typeof store.users !== "object" || Array.isArray(store.users)) throw new Error("강탈 기록 파일 형식 오류");
+    for (var user in store.users) {
+        if (!Object.prototype.hasOwnProperty.call(store.users, user)) continue;
+        var rows = store.users[user];
+        if (!Array.isArray(rows)) throw new Error("강탈 기록 목록 형식 오류");
+        for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            if (!row || typeof row.id !== "string" || !row.id || typeof row.target !== "string" || typeof row.at !== "string" || !isSearchAuthenticationCount(row.amount)) throw new Error("강탈 기록 내용 오류");
+        }
+    }
+    return store;
+}
+
+// 이미 읽은 별도 이력에서 사용자의 배열을 가져오거나 추가하는 함수
+function getMiniPetRobberyRows(store, user, create) {
+    if (!Object.prototype.hasOwnProperty.call(store.users, user)) {
+        if (!create) return [];
+        Object.defineProperty(store.users, user, { value: [], enumerable: true, configurable: true, writable: true });
+    }
+    return store.users[user];
+}
+
+// 복구 대상 세 파일을 모두 검증하고 잘못된 경로와 초기 파일 누락을 차단하는 함수
+function validateMiniPetRobberyPending(journal) {
+    if (!journal || !Object.prototype.hasOwnProperty.call(journal, "pending")) throw new Error("강탈 복구 기록 형식 오류");
+    if (journal.pending === null) return;
+    var config = GLOBAL_CONFIG.miniPet.robberyHistory;
+    var names = ["member.json", "member_pet.json", config.fileName];
+    if (!Array.isArray(journal.pending) || journal.pending.length !== names.length) throw new Error("강탈 복구 파일 목록 오류");
+    for (var i = 0; i < names.length; i++) {
+        var row = journal.pending[i];
+        if (!row || row.name !== names[i] || (typeof row.text !== "string" && !(i === 2 && row.text === null))) throw new Error("강탈 복구 대상 오류");
+        if (row.text !== null) {
+            var parsed = JSON.parse(row.text);
+            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("강탈 복구 원문 오류");
+            if (i === 0 && (!parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("강탈 복구 회원 형식 오류");
+            if (i === 2) requireMiniPetRobberyStore(parsed);
+        }
+    }
+    var member = JSON.parse(journal.pending[0].text);
+    if (journal.pending[2].text === null && member.migrations && member.migrations[config.markerKey]) throw new Error("분리 완료 강탈 기록 복구 원문 없음");
+}
+
+// 기존 배열의 모든 기록과 중복 개수를 보존하며 분리 또는 잔류 기록 복구 계획을 만드는 함수
+function buildMiniPetRobberyMigration(petData, store) {
+    var config = GLOBAL_CONFIG.miniPet.robberyHistory;
+    var next = store ? JSON.parse(JSON.stringify(requireMiniPetRobberyStore(store))) : { schemaVersion: config.schemaVersion, users: {} };
+    var legacy = { schemaVersion: config.schemaVersion, users: {} }, names = [], added = 0;
+    for (var user in petData) {
+        if (!Object.prototype.hasOwnProperty.call(petData, user) || !petData[user] || !Object.prototype.hasOwnProperty.call(petData[user], "miniPetRobberyHistory")) continue;
+        var source = petData[user].miniPetRobberyHistory;
+        Object.defineProperty(legacy.users, user, { value: source, enumerable: true, configurable: true, writable: true });
+        requireMiniPetRobberyStore(legacy);
+        var target = getMiniPetRobberyRows(next, user, true), available = {}; // 이전 저장과 같은 기록은 개수별로 대조
+        for (var i = 0; i < target.length; i++) { var key = JSON.stringify(target[i]); available[key] = (available[key] || 0) + 1; }
+        for (var j = 0; j < source.length; j++) {
+            var signature = JSON.stringify(source[j]);
+            if (available[signature] > 0) available[signature]--;
+            else { target.push(JSON.parse(signature)); added++; }
+        }
+        names.push(user);
+    }
+    return { store: requireMiniPetRobberyStore(next), legacy: legacy, users: names, added: added };
 }
 
 // 미니펫 보유 목록과 컬렉션 현황을 출력하는 함수
@@ -60815,6 +60964,25 @@ function buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetC
 }
 
 // 컴파일 후에도 저장된 운영 회차의 준비 시각·미완료 정산·공지를 이어서 처리한다.
+// 운영 타이머가 시작되기 전에 중단된 강탈 저장을 복구한다. DEV는 다음 DEV 요청에서 복구한다.
+var startupRobberyConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
+var startupRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRobberyConfig.pendingName);
+if (new java.io.File(startupRobberyPendingPath).exists()) {
+    var startupRobberyPending = loadJsonFile(startupRobberyPendingPath);
+    validateMiniPetRobberyPending(startupRobberyPending);
+    if (startupRobberyPending.pending !== null) {
+        for (var startupRowIndex = 0; startupRowIndex < startupRobberyPending.pending.length; startupRowIndex++) {
+            var startupRow = startupRobberyPending.pending[startupRowIndex];
+            var startupPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRow.name);
+            if (startupRow.text === null) {
+                var startupHistoryFile = new java.io.File(startupPath);
+                if (startupHistoryFile.exists() && !startupHistoryFile.delete()) throw new Error("강탈 기록 초기 이전 복구 실패");
+            } else writeVerifiedJsonFile(startupPath, startupRow.text, true);
+        }
+        writeMemberSplitSlot(startupRobberyPendingPath, JSON.stringify({ pending: null }));
+        initData = loadJsonFile(filePath, "bootstrap");
+    }
+}
 if (initData.serverRaid && serverRaidHasWork(initData.serverRaid)) {
     scheduleServerRaidWork(createCommandContext(false, room8), initData.serverRaid.generation, 1, initData.serverRaid.sequence);
 }
