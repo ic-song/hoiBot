@@ -22,7 +22,7 @@ const inventory = {};
 const config = {
     adventureQuest: {
         tutorialMaxStage: 16,
-        battleResultGoal: 10,
+        battleResultGoal: 5,
         starterSkillBookCount: 1,
         homeBadgeCubeCount: 100,
         castlePercentPerStage: 0.005,
@@ -117,12 +117,12 @@ for (const battleStage of [
     state.currentStage = battleStage.number;
     state.progress = {};
     assert.strictEqual(context.recordAdventureQuestAction(data, user, battleStage.number + 1, battleStage.key, 1), false, "다른 단계의 전투는 미기록");
-    for (let i = 0; i < 9; i++) assert.strictEqual(context.recordAdventureQuestAction(data, user, battleStage.number, battleStage.key, 1), true);
-    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, false, "9회는 미완료");
-    assert(context.getAdventureQuestGoalLines(state, { complete: false }, false)[0].includes("9/10회"));
+    for (let i = 0; i < 4; i++) assert.strictEqual(context.recordAdventureQuestAction(data, user, battleStage.number, battleStage.key, 1), true);
+    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, false, "4회는 미완료");
+    assert(context.getAdventureQuestGoalLines(state, { complete: false }, false)[0].includes("4/5회"));
     context.recordAdventureQuestAction(data, user, battleStage.number, battleStage.key, 1);
-    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true, "10회는 완료");
-    assert(context.getAdventureQuestGoalLines(state, { complete: true }, false)[0].includes("[✅] " + battleStage.label + " 정상 결과 · 10/10회"));
+    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true, "5회는 완료");
+    assert(context.getAdventureQuestGoalLines(state, { complete: true }, false)[0].includes("[✅] " + battleStage.label + " 정상 결과 · 5/5회"));
 }
 
 state.currentStage = 6;

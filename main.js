@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.641"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.642"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -1724,6 +1724,8 @@ const GLOBAL_CONFIG = {
         petExploreMax: 10, // 펫탐험 일퀘 완료 횟수
         passPetHomeCommentMax: 1, // 패스 전용 펫홈 댓글 일퀘 횟수
         passFeedPostMax: 1, // 패스 전용 피드 작성 일퀘 횟수
+        passHeartGiveMax: 1, // 패스 전용 마음 주기 일퀘 목표
+        passDollDrawMax: 1, // 패스 전용 정상 인형뽑기 일퀘 목표
         passHomeAlertOpenMax: 1, // 패스 전용 홈알림 열기 일퀘 횟수
         passDailyPointBoxReward: 2, // 패스 전용 일퀘 1억 포인트상자 보상 수량
         questTargets: { tower: 5, castle: 5, mini: 5 }, // 콘텐츠 횟수와 별도인 일반 일퀘 목표
@@ -2244,7 +2246,7 @@ blockedNicknameTerms: [
     adventureQuest: { // 모험가 퀘스트 튜토리얼 설정
         seasonMaxStage: 100,
         tutorialMaxStage: 16,
-        battleResultGoal: 10,
+        battleResultGoal: 5,
         castlePercentPerStage: 0.005,
         raidPercentPerStage: 0.005,
         experiencePerStage: 1000,
@@ -2266,9 +2268,9 @@ blockedNicknameTerms: [
         stages: [
             { number: 1, title: "호식이와 첫 만남", objective: "모험가 퀘스트에 참여하기", commands: "/모험가퀘스트 → /퀘스트완료", story: "호월킹덤 광장에 도착한 모험가를 호식이가 맞습니다.", npcStart: "호월킹덤에 온 걸 환영한다냥! 난 호식이야. 앞으로 함께할 펫부터 만나볼까? 모험 준비물도 챙겨줄게!", npcComplete: "좋아, 준비가 끝났다냥! 이제 광장에서 하나씩 배워보자.", record: "광장에서 펫과 함께 모험 준비를 마쳤다." },
             { number: 2, title: "첫 티어 달기", objective: "티어 승급티켓🎟 보유 후 /티어적용 입력", commands: "/티어적용 → /퀘스트완료", story: "호식이가 티어 사용법을 알려줍니다.", npcStart: "모험가라면 자기 티어쯤은 있어야지! 티어티켓을 준비하고 /티어적용을 입력해보자냥.", npcComplete: "티어 적용 명령도 확인했네! 네가 쌓아갈 성장의 첫 표식이다냥.", record: "티어티켓을 보유하고 티어 적용 명령을 입력했다." },
-            { number: 3, title: "작은 친구들의 대전", objective: "미니펫대전 정상 결과 10회", commands: "/미니펫대전 → /퀘스트완료", story: "미니펫대전을 경험하며 전투 흐름을 익힙니다.", npcStart: "작다고 얕보면 큰코다친다냥! 미니펫대전을 10판 해보고 와. 이기고 지는 것보다 익숙해지는 게 먼저야.", npcComplete: "10판이나 해냈구나! 작은 친구들의 실력도 제법이지?", record: "미니펫대전 10판을 마쳤다." },
-            { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 10회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 10판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 10판을 마쳤다." },
-            { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 10회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 10판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 10판을 마쳤다." },
+            { number: 3, title: "작은 친구들의 대전", objective: "미니펫대전 정상 결과 5회", commands: "/미니펫대전 → /퀘스트완료", story: "미니펫대전을 경험하며 전투 흐름을 익힙니다.", npcStart: "작다고 얕보면 큰코다친다냥! 미니펫대전을 5판 해보고 와. 이기고 지는 것보다 익숙해지는 게 먼저야.", npcComplete: "5판이나 해냈구나! 작은 친구들의 실력도 제법이지?", record: "미니펫대전 5판을 마쳤다." },
+            { number: 4, title: "캐슬대전 출전", objective: "캐슬대전 정상 결과 5회", commands: "/캐슬대전 → /퀘스트완료", story: "캐슬대전을 치르며 전장의 분위기를 익힙니다.", npcStart: "이번엔 캐슬대전이야! 5판을 뛰어보면 전장의 분위기를 알게 될 거다냥.", npcComplete: "캐슬대전도 익혔네! 이제 전장 이야기를 들어도 낯설지 않겠다냥.", record: "캐슬대전 5판을 마쳤다." },
+            { number: 5, title: "시련에 도전하기", objective: "시련의탑 정상 결과 5회", commands: "/시련의탑 → /퀘스트완료", story: "시련의탑에 도전하며 꾸준한 도전을 배웁니다.", npcStart: "시련의탑에 도전해볼 시간이야! 5판을 마치고 돌아와. 첫 도전부터 완벽할 필요는 없다냥.", npcComplete: "시련의탑 도전도 마쳤구나. 꾸준히 도전하는 법을 배웠다냥!", record: "시련의탑 5판을 마쳤다." },
             { number: 6, title: "첫 펫 탐험 떠나기", objective: "첫 탐험 결과 받기", commands: "/지도 → /탐 [번호] → 탐험 결과 받기 → /퀘스트완료", story: "지도를 펼쳐 첫 펫 탐험을 떠나고 결과를 받습니다.", npcStart: "이제 지도를 펼쳐 첫 모험을 떠나 보자냥!\n/지도에서 마음에 드는 탐험지를 살펴본 뒤,\n/탐 [번호]를 입력하면 출발할 수 있다냥.\n탐험에 실패해도 괜찮으니, 편하게 도전해 보라냥!", npcComplete: "첫 탐험을 다녀왔구나! 성공이든 실패든 경험을 쌓은 게 중요하다냥.", record: "펫과 함께 첫 탐험을 다녀와 결과를 받았다." },
             { number: 7, title: "든든하게 먹고 출발", objective: "펫먹이 100,000개 이상을 한 번에 사용", commands: "/냠냠 100000 → /퀘스트완료", story: "호식이가 준비한 먹이로 펫의 배를 든든히 채웁니다.", npcStart: "배가 든든해야 모험도 신나지! 펫먹이 10만 개를 챙겨줄 테니 네 친구에게 한 번에 10만 개 이상 먹여봐라냥!", npcComplete: "아주 잘 먹었다냥! 배도 든든해졌으니 다음 준비를 시작해 보자냥!", record: "펫에게 먹이 10만 개 이상을 한 번에 먹였다." },
             { number: 8, title: "첫 펫스킬 익히기", objective: "스킬북 1개 오픈 후 유효한 펫스킬 장착", commands: "/펫스킬오픈 1 → /펫스킬장착 [번호] → /퀘스트완료", story: "스킬북을 열고 배운 펫스킬을 실제로 장착합니다.", npcStart: "스킬북 속에 어떤 기술이 숨어 있을까? 한 권 열어보고 펫스킬을 장착해봐. 읽기만 해선 쓸 수 없다냥!", npcComplete: "스킬이 제대로 장착됐네! 이제 배운 기술을 써볼 수 있겠다냥.", record: "스킬북을 열어 펫스킬을 장착했다." },
@@ -17977,20 +17979,21 @@ replier.reply(
                             statusMsg += "시탑,캐대,미대 5판을 추가로\n";
                             statusMsg += "대전하여 추가 보상을 지급해요👌\n";
                             statusMsg += "━━━━━━━━━━━━━━━━\n";
-                            statusMsg += status.isComplete ? "아직 호이·초보패스 전용 일퀘를 완료하지 못했습니다.\n" : "아직 일일퀘스트를 완료하지 못했습니다.\n";
+                            statusMsg += status.isComplete ? "아직 호이패스 전용 일퀘를 완료하지 못했습니다.\n" : "아직 일일퀘스트를 완료하지 못했습니다.\n";
                             statusMsg += "시련탑😈[" + status.towerUsed + "/" + status.towerGoal + "][" + getC(status.towerUsed >= status.towerGoal) + "]\n";
                             statusMsg += "캐대전🏆[" + status.castleUsed + "/" + status.castleGoal + "][" + getC(status.castleUsed >= status.castleGoal) + "]\n";
                             statusMsg += "미대전🐹[" + status.miniUsed + "/" + status.miniGoal + "][" + getC(status.miniUsed >= status.miniGoal) + "]\n";
                             statusMsg += "펫탐험⛰️[" + status.exploreUsed + "/" + status.exploreMax + "][" + getC(status.exploreUsed >= status.exploreMax) + "]\n";
                             if (status.hasPassDailyQuest) {
                                 statusMsg += "━━━━━━━━━━━━━━━━\n";
-                                statusMsg += "【 🐶호이,초보패스🐥전용 일퀘 조건 】\n";
-                                statusMsg += "펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]\n";
-                                statusMsg += "피드 글 작성✍️[" + status.feedPostUsed + "/" + status.feedPostMax + "][" + getC(status.feedPostUsed >= status.feedPostMax) + "]\n";
-                                statusMsg += "홈알림 열기🔔[" + status.homeAlertOpenUsed + "/" + status.homeAlertOpenMax + "][" + getC(status.homeAlertOpenUsed >= status.homeAlertOpenMax) + "]\n";
+                                statusMsg += "【 🐶호이패스 전용 일퀘 조건 】\n";
+                                statusMsg += "━━━━━━━━━━━━━━━━\n";
+                                statusMsg += "마음 주기💗(/마음 닉네임)[" + status.passHeartGiveUsed + "/" + status.passHeartGiveMax + "][" + getC(status.passHeartGiveUsed >= status.passHeartGiveMax) + "]\n";
+                                statusMsg += "인형뽑기🧸(/인형뽑기)[" + status.passDollDrawUsed + "/" + status.passDollDrawMax + "][" + getC(status.passDollDrawUsed >= status.passDollDrawMax) + "]\n";
+                                statusMsg += "홈알림 열기🔔(/홈알림)[" + status.homeAlertOpenUsed + "/" + status.homeAlertOpenMax + "][" + getC(status.homeAlertOpenUsed >= status.homeAlertOpenMax) + "]\n";
                                 statusMsg += "\n";
                                 if (status.hasBasePassDailyQuest) {
-                                    statusMsg += status.passDailyRewardDone ? "[✅ 호패,초패 퀘스트 보상 지급 완료]\n" : "《🎁 호패,초패 퀘스트 보상》\n1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개\n";
+                                    statusMsg += status.passDailyRewardDone ? "[✅ 호이패스 퀘스트 보상 지급 완료]\n" : "《🎁 호이패스 퀘스트 보상》\n1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개\n";
                                 }
                                 if (status.hasPremiumDailyQuest) {
                                     statusMsg += "\n" + (status.premiumDailyRewardDone ? "[✅ 호이패스 프리미엄 추가 보상 지급 완료]\n" : "《👑 호이패스 프리미엄 추가 보상》\n📊 경험치: +" + GLOBAL_CONFIG.supportPass.premium.questExperienceReward + "exp\n다이아상자💎(/다이아상자오픈) " + GLOBAL_CONFIG.supportPass.premium.questDiamondBoxCount + "개\n");
@@ -24833,6 +24836,7 @@ replier.reply(
                         replier.reply("사용 가능한 마음표현 횟수가 부족합니다.💞\n남은 마음: " + heartUsageStatus.remaining + "개 / 오늘 한도: " + heartUsageStatus.limit + "개");
                         return;
                     }
+                    var previousPassHeartGiveCnt = data.member[sender].passHeartGiveCnt; // 저장 실패 시 일퀘 진행도 함께 원복
                     var hadPreviousHeartExpressions = heartTargetHome.hasOwnProperty("heartExpressions");
                     var previousHeartExpressions = heartTargetHome.heartExpressions;
                     if (previousHeartExpressions && typeof previousHeartExpressions === "object") {
@@ -24850,10 +24854,14 @@ replier.reply(
                     addPetHomeHeartAllocationAlerts(petHomeActivityDataForHeart, heartTargetName, sender, heartAllocations);
                     var heartAwardedBadges = awardPetHomeAchievementBadges(petHomeActivityDataForHeart, heartTargetName);
                     addPetHomeBadgeAwardAlerts(petHomeActivityDataForHeart, heartTargetName, heartAwardedBadges);
+                    if (heartCommandName === "마음") data.member[sender].passHeartGiveCnt = GLOBAL_CONFIG.daily.passHeartGiveMax;
                     try {
                         saveJsonFile(heartHomeData, homeDataFile);
                         saveJsonFile(petHomeActivityDataForHeart, petHomeActivityFile);
+                        if (heartCommandName === "마음") saveJsonFile(data, filePath);
                     } catch (heartSaveError) {
+                        if (previousPassHeartGiveCnt === undefined) delete data.member[sender].passHeartGiveCnt;
+                        else data.member[sender].passHeartGiveCnt = previousPassHeartGiveCnt;
                         if (hadPreviousHeartExpressions) heartTargetHome.heartExpressions = previousHeartExpressions;
                         else delete heartTargetHome.heartExpressions;
                         if (hadPreviousHeartDate) heartSenderHome.lastHeartExpressionDate = previousHeartDate;
@@ -24871,11 +24879,16 @@ replier.reply(
                         throw heartSaveError;
                     }
 
-                    replier.reply(
-                        "💞 " + checkRank(data, petData, guildData, heartTargetName) + "님의 펫홈에\n[" +
-                        buildPetHomeHeartAllocationText(heartAllocations) +
-                        "] 마음을 표현했습니다!\n\n남은 마음: " + (heartUsageStatus.unlimited ? "무제한" : (heartUsageStatus.remaining - heartUseCount) + "개")
-                    );
+                    // 저장 완료 뒤 응답 실패는 마음 지급과 일퀘 진행도를 되돌리지 않음
+                    try {
+                        replier.reply(
+                            "💞 " + checkRank(data, petData, guildData, heartTargetName) + "님의 펫홈에\n[" +
+                            buildPetHomeHeartAllocationText(heartAllocations) +
+                            "] 마음을 표현했습니다!\n\n남은 마음: " + (heartUsageStatus.unlimited ? "무제한" : (heartUsageStatus.remaining - heartUseCount) + "개")
+                        );
+                    } catch (heartReplyError) {
+                        try { debuggerLog("[마음 응답 전송 오류] " + heartReplyError); } catch (heartReplyLogError) {}
+                    }
                     return;
                 }
                 if (msg === "/댓글삭제" || /^\/댓글삭제\s+\d+$/.test(msg)) {
@@ -37188,6 +37201,8 @@ function resetAttendance(petData, data, replier) {
         data.member[user].petHomeCommentCnt = 0;
         data.member[user].feedPostCnt = 0;
         data.member[user].homeAlertOpenCnt = 0;
+        data.member[user].passHeartGiveCnt = 0;
+        data.member[user].passDollDrawCnt = 0;
         data.member[user].towerCnt = 0;
         if (data.member[user].exploreCnt !== undefined) {
             delete data.member[user].exploreCnt;
@@ -43465,12 +43480,12 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
     var hasBasePassDailyQuest = hasActiveHoiOrNewbiePass(data, sender); // 호이·초보패스 포인트상자 일퀘 적용 여부
     var hasPremiumDailyQuest = isHoiPassPremiumActive(data, sender); // 호이패스 프리미엄 다이아상자 일퀘 적용 여부
     var hasPassDailyQuest = hasBasePassDailyQuest || hasPremiumDailyQuest;
-    var petHomeCommentUsed = parseInt(member.petHomeCommentCnt, 10) || 0;
-    var feedPostUsed = parseInt(member.feedPostCnt, 10) || 0;
-    var homeAlertOpenUsed = parseInt(member.homeAlertOpenCnt, 10) || 0;
+    var passHeartGiveUsed = Math.min(GLOBAL_CONFIG.daily.passHeartGiveMax, Math.max(0, parseInt(member.passHeartGiveCnt, 10) || 0));
+    var passDollDrawUsed = Math.min(GLOBAL_CONFIG.daily.passDollDrawMax, Math.max(0, parseInt(member.passDollDrawCnt, 10) || 0));
+    var homeAlertOpenUsed = Math.min(GLOBAL_CONFIG.daily.passHomeAlertOpenMax, Math.max(0, parseInt(member.homeAlertOpenCnt, 10) || 0));
     var passQuestConditionsComplete =
-        petHomeCommentUsed >= GLOBAL_CONFIG.daily.passPetHomeCommentMax &&
-        feedPostUsed >= GLOBAL_CONFIG.daily.passFeedPostMax &&
+        passHeartGiveUsed >= GLOBAL_CONFIG.daily.passHeartGiveMax &&
+        passDollDrawUsed >= GLOBAL_CONFIG.daily.passDollDrawMax &&
         homeAlertOpenUsed >= GLOBAL_CONFIG.daily.passHomeAlertOpenMax; // 패스 전용 3종 완료 여부
     var passDailyComplete = hasBasePassDailyQuest && passQuestConditionsComplete;
     var premiumDailyComplete = hasPremiumDailyQuest && passQuestConditionsComplete;
@@ -43499,10 +43514,10 @@ function getDailyQuestStatus(data, petData, guildData, sender) {
         hasPassDailyQuest: hasPassDailyQuest,
         hasBasePassDailyQuest: hasBasePassDailyQuest,
         hasPremiumDailyQuest: hasPremiumDailyQuest,
-        petHomeCommentUsed: petHomeCommentUsed,
-        petHomeCommentMax: GLOBAL_CONFIG.daily.passPetHomeCommentMax,
-        feedPostUsed: feedPostUsed,
-        feedPostMax: GLOBAL_CONFIG.daily.passFeedPostMax,
+        passHeartGiveUsed: passHeartGiveUsed,
+        passHeartGiveMax: GLOBAL_CONFIG.daily.passHeartGiveMax,
+        passDollDrawUsed: passDollDrawUsed,
+        passDollDrawMax: GLOBAL_CONFIG.daily.passDollDrawMax,
         homeAlertOpenUsed: homeAlertOpenUsed,
         homeAlertOpenMax: GLOBAL_CONFIG.daily.passHomeAlertOpenMax,
         passDailyComplete: passDailyComplete,
@@ -43627,7 +43642,7 @@ function claimQuestReward(data, petData, guildData, petSkillData, sender) {
         member.passDailyQuestCnt = (member.passDailyQuestCnt || 0) + 1;
         claimed = true;
         passDailyClaimed = true;
-        messages.push("✅ 호이·초보패스 전용 일퀘 보상 지급 완료!\n보상 : 1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개");
+        messages.push("✅ 호이패스 전용 일퀘 보상 지급 완료!\n보상 : 1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개");
     }
 
     if (status.premiumDailyComplete && !status.premiumDailyRewardDone) {
@@ -45536,24 +45551,24 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
     var status = getDailyQuestStatus(data, petData, guildData, sender);
     var lines = [];
     lines.push("[" + checkRank(data, petData, guildData, sender) + "] 님");
-    lines.push("📜 일일 · 주간 · 🐶호패,초패🐥 ");
+    lines.push("📜 일일 · 주간 · 🐶호이패스 ");
     lines.push("퀘스트 보상 안내 🦋 ");
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("팁: 자동일퀘권📝 소지시 자동일퀘 가능");
     lines.push("시탑,캐대,미대 5판을 추가로");
     lines.push("대전하여 추가 보상을 지급해요👌" + allsee);
     lines.push("━━━━━━━━━━━━━━━━");
-    lines.push("【 🐶호이,초보패스🐥전용 일퀘 조건 】");
+    lines.push("【 🐶호이패스 전용 일퀘 조건 】");
     if (status.hasPassDailyQuest) {
         lines.push("━━━━━━━━━━━━━━━━");
-        lines.push("펫홈 댓글 달성📝[" + status.petHomeCommentUsed + "/" + status.petHomeCommentMax + "][" + getC(status.petHomeCommentUsed >= status.petHomeCommentMax) + "]");
-        lines.push("피드 글 작성✍️[" + status.feedPostUsed + "/" + status.feedPostMax + "][" + getC(status.feedPostUsed >= status.feedPostMax) + "]");
-        lines.push("홈알림 열기🔔[" + status.homeAlertOpenUsed + "/" + status.homeAlertOpenMax + "][" + getC(status.homeAlertOpenUsed >= status.homeAlertOpenMax) + "]");
+        lines.push("마음 주기💗(/마음 닉네임)[" + status.passHeartGiveUsed + "/" + status.passHeartGiveMax + "][" + getC(status.passHeartGiveUsed >= status.passHeartGiveMax) + "]");
+        lines.push("인형뽑기🧸(/인형뽑기)[" + status.passDollDrawUsed + "/" + status.passDollDrawMax + "][" + getC(status.passDollDrawUsed >= status.passDollDrawMax) + "]");
+        lines.push("홈알림 열기🔔(/홈알림)[" + status.homeAlertOpenUsed + "/" + status.homeAlertOpenMax + "][" + getC(status.homeAlertOpenUsed >= status.homeAlertOpenMax) + "]");
         lines.push("");
         if (status.hasBasePassDailyQuest) {
-            lines.push("《🎁 호패,초패 퀘스트 보상》");
+            lines.push("《🎁 호이패스 퀘스트 보상》");
             lines.push("1억포인트상자🪙(/포인트상자오픈) " + GLOBAL_CONFIG.daily.passDailyPointBoxReward + "개");
-            if (status.passDailyRewardDone) lines.push("[✅ 금일 호패,초패 일퀘 보상 지급 완료]");
+            if (status.passDailyRewardDone) lines.push("[✅ 금일 호이패스 일퀘 보상 지급 완료]");
         }
         if (status.hasPremiumDailyQuest) {
             lines.push("《👑 호이패스 프리미엄 추가 보상》");
@@ -45564,9 +45579,9 @@ function buildDailyQuestInfoMessage(data, petData, guildData, sender) {
         lines.push("");
     } else {
         lines.push("");
-        lines.push("펫홈 댓글 달성📝[호패,초패 회원전용]");
-        lines.push("피드 글 작성✍️[호패,초패 회원전용]");
-        lines.push("홈알림 열기🔔[호패,초패 회원전용]");
+        lines.push("마음 주기💗(/마음 닉네임)[호이패스 회원전용]");
+        lines.push("인형뽑기🧸(/인형뽑기)[호이패스 회원전용]");
+        lines.push("홈알림 열기🔔(/홈알림)[호이패스 회원전용]");
     }
     lines.push("━━━━━━━━━━━━━━━━");
     lines.push("【📜일일 퀘스트 조건 】");
@@ -60064,6 +60079,7 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
         result.record=record;
     }
     removeItem(data,user,config.ticketName,1);
+    member.passDollDrawCnt = GLOBAL_CONFIG.daily.passDollDrawMax; // 정상 실패를 포함한 실제 이용권 사용만 인정
     result.remainingTicket=member.bag && member.bag[config.ticketName] || 0;
     result.remainingPoint=member.point;
     return result;
