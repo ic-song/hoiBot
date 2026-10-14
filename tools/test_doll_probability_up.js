@@ -79,10 +79,11 @@ test('패스 다중 계정 사전 검사·UP 손상/넘침 시 전체 무변경'
   const before=JSON.stringify(d);assert.throws(()=>c.grantDollPassDailyRewards(d),/확률UP 수량/);assert.strictEqual(JSON.stringify(d),before);
  }
 });
-test('MAIN/Info 가방 5종 설명·정렬/번호/수량 불변·가이드 확률/지급 구성',()=>{
+test('MAIN/Info 가방 5종은 이름·수량만 표시·정렬/번호 불변·가이드 확률/지급 구성',()=>{
  c.normalizeItemName=x=>x;const items={};for(const p of [10,20,30,40,50])items[up(p)]=3;
  let expected;for(const src of [main,info]){vm.runInContext(block(src,'function generateBagOutput('),c);const bag=c.generateBagOutput(items);
-  for(const p of [10,20,30,40,50])assert(bag.bagOutput.includes(up(p)+' x 3\n   └ 성공률 +'+p+'%p · 보유 시 높은 확률부터 자동 사용 · 성공·실패 모두 1개 소모'));
+  for(const p of [10,20,30,40,50])assert(bag.bagOutput.split('\n').some(line=>line.endsWith(up(p)+' x 3')));
+  assert(!bag.bagOutput.includes('└ 성공률'));assert(!bag.bagOutput.includes('자동 사용'));assert.strictEqual(bag.bagOutput.split('\n').filter(line=>/^\s*\d+\./.test(line)).length,5);
   if(expected)assert.strictEqual(bag.bagOutput,expected);expected=bag.bagOutput;assert.strictEqual(bag.sortedItemList.length,5);
  }
  const guide=c.buildDollGuideMessage();for(const text of ['최대 100%','50% → 40% → 30% → 20% → 10%','일일퀘스트 완료: 이용권 1개','인형뽑기확률UP🧸(20%) 3개','등급·크기 추첨과 보상은 기존 규칙'])assert(guide.includes(text));
