@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.647"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.648"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -2246,6 +2246,7 @@ blockedNicknameTerms: [
         visibleRankCount: 10
     },
     adventureQuest: { // 모험가 퀘스트 튜토리얼 설정
+        history: { fileName: "adventureQuestHistory.json", pendingName: "adventureQuestHistoryPending.json", backupName: "adventureQuestHistory_legacy.json", markerKey: "adventureQuestHistorySplit20261014", schemaVersion: 1 },
         seasonMaxStage: 100,
         tutorialMaxStage: 16,
         battleResultGoal: 5,
@@ -2911,6 +2912,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 복구 완료 이후 새 명령 실패와 복구를 분리
             }
         }
+        recoverAdventureRecordPending(); // 회원을 읽기 전에 중단된 기록·회원·분리 저장본을 함께 복구
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
         var memberStorageMigrationResult = null;
@@ -3022,6 +3024,30 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 memberStorageMigrationResult = { changed: false };
             }
+        }
+        if (memberStorageCleanupAllowed) {
+            var adventureHistoryConfig = GLOBAL_CONFIG.adventureQuest.history;
+            if (!data.migrations || data.migrations[adventureHistoryConfig.markerKey] !== true) {
+                var adventureHistoryPath = resolveActiveDataPath(DATA_ROOT_PATH + adventureHistoryConfig.fileName);
+                if (new java.io.File(adventureHistoryPath).exists()) throw new Error("퀘스트 기록 파일이 이미 있습니다. 분리 상태를 확인해 주세요.");
+                var adventureMigration = buildAdventureRecordMigration(data);
+                var adventureOriginalPath = resolveActiveDataPath(DATA_ROOT_PATH + adventureHistoryConfig.backupName);
+                if (new java.io.File(adventureOriginalPath).exists()) requireAdventureRecordStore(loadJsonFile(adventureOriginalPath));
+                else writeVerifiedJsonFile(adventureOriginalPath, JSON.stringify(adventureMigration.store), true);
+                if (!data.migrations) data.migrations = {};
+                data.migrations[adventureHistoryConfig.markerKey] = true;
+                Object.defineProperty(data, "__adventureRecordContext", { value: { store: adventureMigration.store, text: null }, configurable: true, enumerable: false });
+                saveJsonFile(data, filePath);
+                endDataSaveTransaction(); beginDataSaveTransaction(); // 별도 이전을 확정한 뒤 일반 정리와 분리
+                replier.reply("🧹 /데이터정리: 퀘스트 기록 분리 완료\n\n✅ 완료 기록 " + numberWithCommas(adventureMigration.records) + "건\n✅ 획득 타이틀 " + numberWithCommas(adventureMigration.titles) + "건\n✅ 기존 기록·보상·진행 상태를 유지했습니다.\n\n다른 데이터도 정리하려면 /데이터정리를 다시 실행해 주세요.");
+                return;
+            }
+        }
+        if ((/^\/계삭진행(?:\s|$)/.test(msg) || /^\/계정잠수삭제(?:\s|$)/.test(msg)) && isMasterIdentity(sender) && data.migrations && data.migrations[GLOBAL_CONFIG.adventureQuest.history.markerKey] === true) {
+            var adventureDeletionPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName);
+            var adventureDeletionText = FileStream.read(adventureDeletionPath, "utf-8");
+            var adventureDeletionStore = requireAdventureRecordStore(loadJsonFile(adventureDeletionPath));
+            Object.defineProperty(data, "__adventureRecordContext", { value: { store: adventureDeletionStore, text: adventureDeletionText, deletion: true }, configurable: true, enumerable: false });
         }
         if ((/^\/계삭진행(?:\s|$)/.test(msg) || /^\/계정잠수삭제(?:\s|$)/.test(msg) || msg === "/데이터정리") && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists() && (isMasterIdentity(sender) || (msg === "/데이터정리" && isAdminIdentity(sender)))) {
             ctx.dollDeletion = { index: requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollIndex.json")), stores: [], snapshots: [], dirty: false };
@@ -17853,6 +17879,13 @@ replier.reply(
                         return;
                     }
                     var adventureQuestState = getAdventureQuestState(data, sender, true);
+                    var adventureRecordConfig = GLOBAL_CONFIG.adventureQuest.history;
+                    if (data.migrations && data.migrations[adventureRecordConfig.markerKey] === true) {
+                        var adventureRecordPath = resolveActiveDataPath(DATA_ROOT_PATH + adventureRecordConfig.fileName);
+                        var adventureRecordText = FileStream.read(adventureRecordPath, "utf-8");
+                        var adventureRecordStore = requireAdventureRecordStore(loadJsonFile(adventureRecordPath));
+                        attachAdventureRecordStore(data, adventureRecordStore, sender, adventureRecordText);
+                    }
                     var adventureQuestChanged = false;
                     var adventureQuestNeedsHome = adventureQuestState.currentStage === 8 || adventureQuestState.currentStage === 9 || adventureQuestState.currentStage === 10;
                     var adventureQuestHomeInfo = adventureQuestNeedsHome ? loadJsonFile(homeInfoFile) : null;
@@ -17906,6 +17939,7 @@ replier.reply(
                             return;
                         }
                         adventureQuestState.equippedTitle = 0;
+                        delete adventureQuestState.equippedTitleName;
                         saveJsonFile(data, filePath);
                         replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님 퀘스트 타이틀을 해제했어요.");
                         return;
@@ -17923,6 +17957,8 @@ replier.reply(
                             return;
                         }
                         adventureQuestState.equippedTitle = adventureTitleNumber;
+                        adventureQuestState.equippedTitleName = adventureTitleConfig.title;
+                        for (var titleNameIndex = 0; titleNameIndex < adventureQuestState.titles.length; titleNameIndex++) if (adventureQuestState.titles[titleNameIndex].number === adventureTitleNumber) adventureQuestState.equippedTitleName = adventureQuestState.titles[titleNameIndex].title;
                         saveJsonFile(data, filePath);
                         replier.reply("✅ [" + checkRank(data, petData, guildData, sender) + "] 님 퀘스트 타이틀을 장착했어요.\n🏅 " + adventureTitleConfig.title);
                         return;
@@ -31467,141 +31503,21 @@ replier.reply(
 
                     }
 
-                    // 아이템 명칭 변경
-                    var itemChangeMap = {
-                        "캐슬공격권⚔": "영지공격권⚔",
-                        "캐슬기습공격권🔥(60%)": "영지기습공격권🔥(10%)",
-                        "캐슬절대방어권🛡(50%)": "영지절대방어권🛡(20%)",
-                        "캐슬기습공격권🔥(100%)": "영지기습공격권🔥(40%)",
-                        "캐슬절대방어권🛡(100%)": "영지절대방어권🛡(50%)"
-                    };
-
-                    var itemChangeCount = 0;
-                    var itemUserLogs = [];
-                    var zeroBagItemRemovedCount = 0; // 숫자 0인 가방 항목 삭제 수
-                    var zeroBagItemRemovedUserCount = 0; // 0개 항목을 정리한 회원 수
-
+                    // 가방에서 실제 수량이 숫자 0인 항목만 반복 정리
+                    var zeroBagItemRemovedCount = 0;
+                    var zeroBagItemRemovedUserCount = 0;
                     for (var memberName in data.member) {
+                        if (!Object.prototype.hasOwnProperty.call(data.member, memberName)) continue;
                         var member = data.member[memberName];
                         if (!member || !member.bag) continue;
-
-                        var newBag = {};
-                        var userChangeCount = 0;
                         var userZeroBagItemRemovedCount = 0;
-
                         for (var itemName in member.bag) {
-                            if (member.bag[itemName] === 0) {
-                                zeroBagItemRemovedCount++;
-                                userZeroBagItemRemovedCount++;
-                                continue;
-                            }
-                            var itemCount = member.bag[itemName] || 0;
-                            var newName = itemChangeMap[itemName] || itemName;
-
-                            if (itemChangeMap[itemName]) {
-                                itemChangeCount += itemCount;
-                                userChangeCount += itemCount;
-                            }
-
-                            if (!newBag[newName]) newBag[newName] = 0;
-                            newBag[newName] += itemCount;
+                            if (!Object.prototype.hasOwnProperty.call(member.bag, itemName) || member.bag[itemName] !== 0) continue;
+                            delete member.bag[itemName];
+                            zeroBagItemRemovedCount++;
+                            userZeroBagItemRemovedCount++;
                         }
-
-                        member.bag = newBag;
                         if (userZeroBagItemRemovedCount > 0) zeroBagItemRemovedUserCount++;
-
-                        if (userChangeCount > 0) {
-                            itemUserLogs.push(memberName + " : " + numberWithCommas(userChangeCount) + "개");
-                        }
-                    }
-
-                    var invalidAutoAttackItemName = "영지자동공격권⚔️"; // 잘못 지급된 독립 자동공격권 명칭
-                    var invalidAutoAttackItemRemovedUserCount = 0; // 가방에서 잘못 지급된 아이템 키를 삭제한 유저 수
-                    var invalidAutoAttackItemRemovedCount = 0; // 실제 수거한 잘못 지급 아이템 총수량
-                    var invalidAutoAttackFlagRemovedUserCount = 0; // 잘못 생성된 권한 플래그를 삭제한 유저 수
-                    var invalidAutoAttackFlagRemovedCount = 0; // 삭제한 잘못된 권한 플래그 총개수
-                    var invalidAutoAttackCleanupLogs = [];
-                    for (var invalidAutoAttackUser in data.member) {
-                        if (!data.member.hasOwnProperty(invalidAutoAttackUser)) continue;
-                        var invalidAutoAttackMember = data.member[invalidAutoAttackUser];
-                        if (!invalidAutoAttackMember || typeof invalidAutoAttackMember !== "object") continue;
-
-                        var removedAutoAttackItemCount = 0; // 해당 유저에게서 수거한 아이템 수량
-                        var removedAutoAttackFlags = [];
-                        if (invalidAutoAttackMember.bag && invalidAutoAttackMember.bag.hasOwnProperty(invalidAutoAttackItemName)) {
-                            removedAutoAttackItemCount = Math.max(0, Math.floor(Number(invalidAutoAttackMember.bag[invalidAutoAttackItemName]) || 0));
-                            delete invalidAutoAttackMember.bag[invalidAutoAttackItemName];
-                            invalidAutoAttackItemRemovedUserCount++;
-                            invalidAutoAttackItemRemovedCount += removedAutoAttackItemCount;
-                        }
-                        if (invalidAutoAttackMember.guildTerritoryAutoAttackGranted !== undefined) {
-                            delete invalidAutoAttackMember.guildTerritoryAutoAttackGranted;
-                            removedAutoAttackFlags.push("최초지급");
-                            invalidAutoAttackFlagRemovedCount++;
-                        }
-                        if (invalidAutoAttackMember.guildTerritoryAutoAttackPermanent !== undefined) {
-                            delete invalidAutoAttackMember.guildTerritoryAutoAttackPermanent;
-                            removedAutoAttackFlags.push("영구권한");
-                            invalidAutoAttackFlagRemovedCount++;
-                        }
-                        if (removedAutoAttackFlags.length > 0) invalidAutoAttackFlagRemovedUserCount++;
-                        if (removedAutoAttackItemCount > 0 || removedAutoAttackFlags.length > 0) {
-                            var invalidAutoAttackCleanupParts = [];
-                            if (removedAutoAttackItemCount > 0) invalidAutoAttackCleanupParts.push("아이템 " + numberWithCommas(removedAutoAttackItemCount) + "개");
-                            if (removedAutoAttackFlags.length > 0) invalidAutoAttackCleanupParts.push("권한플래그 " + removedAutoAttackFlags.join(", "));
-                            invalidAutoAttackCleanupLogs.push(invalidAutoAttackUser + " : " + invalidAutoAttackCleanupParts.join(" / "));
-                        }
-                    }
-
-                    var petSkillMoveCount = 0;
-                    var petSkillDeleteCount = 0;
-                    var petCharDeleteCount = 0;
-                    var petSkillUserLogs = [];
-
-                    for (var petUser in petData) {
-                        if (!petData[petUser]) continue;
-                        if ((!petData[petUser].petSkills || typeof petData[petUser].petSkills !== "object") && petData[petUser].petchar === undefined) continue;
-
-                        var oldSkills = petData[petUser].petSkills || {};
-                        var newSkills = initPetSkillUser(petSkillData, petUser);
-                        var movedForUser = 0;
-
-                        if (petData[petUser].petchar !== undefined) {
-                            delete petData[petUser].petchar;
-                            petCharDeleteCount++;
-                        }
-
-                        if (oldSkills.equipped instanceof Array) {
-                            for (var psEq = 0; psEq < oldSkills.equipped.length; psEq++) {
-                                var eqName = normalizePetSkillName(oldSkills.equipped[psEq]);
-                                if (!eqName) continue;
-                                if (newSkills.equipped.map(normalizePetSkillName).indexOf(eqName) === -1) {
-                                    newSkills.equipped.push(eqName);
-                                    movedForUser++;
-                                }
-                            }
-                        }
-
-                        if (oldSkills.bag && typeof oldSkills.bag === "object") {
-                            for (var psName in oldSkills.bag) {
-                                if (!oldSkills.bag.hasOwnProperty(psName)) continue;
-                                var normalizedSkillName = normalizePetSkillName(psName);
-                                var skillCount = parseInt(oldSkills.bag[psName], 10) || 0;
-                                if (!normalizedSkillName || skillCount <= 0) continue;
-                                newSkills.bag[normalizedSkillName] = (newSkills.bag[normalizedSkillName] || 0) + skillCount;
-                                movedForUser += skillCount;
-                            }
-                        }
-
-                        if (petData[petUser].petSkills !== undefined) {
-                            delete petData[petUser].petSkills;
-                            petSkillDeleteCount++;
-                        }
-
-                        if (movedForUser > 0) {
-                            petSkillMoveCount += movedForUser;
-                            petSkillUserLogs.push(petUser + " : " + numberWithCommas(movedForUser) + "개");
-                        }
                     }
 
                     var pointFloorUserCount = 0;
@@ -31619,65 +31535,6 @@ replier.reply(
                             pointFloorUserCount++;
                             pointFloorTotalAmount += beforePoint - afterPoint;
                             pointFloorUserLogs.push(pointUser + " : " + formatPointValue(beforePoint) + " → " + numberWithCommas(afterPoint));
-                        }
-                    }
-
-                    var legacyPassListKeys = ["allowedUsers2", "allowedUsers4", "allowedUsers6", "allowedUsersHoipass", "allowedUsersDiamondPass"];
-                    var legacyPassRemovedLogs = [];
-                    for (var legacyPassIndex = 0; legacyPassIndex < legacyPassListKeys.length; legacyPassIndex++) {
-                        var legacyPassKey = legacyPassListKeys[legacyPassIndex];
-                        if (data[legacyPassKey] !== undefined) {
-                            var legacyPassCount = data[legacyPassKey] instanceof Array ? data[legacyPassKey].length : 0;
-                            delete data[legacyPassKey];
-                            legacyPassRemovedLogs.push(legacyPassKey + " : " + numberWithCommas(legacyPassCount) + "명");
-                        }
-                    }
-
-                    var petRingDeleteUserCount = 0; // 장착 반지 데이터가 삭제된 유저 수
-                    var ringRewardMigrationDeleteUserCount = 0; // 반지 보상 플래그가 삭제된 유저 수
-                    var petRingDeleteLogs = [];
-                    for (var ringCleanupUser in petData) {
-                        if (!petData.hasOwnProperty(ringCleanupUser)) continue;
-                        var ringCleanupPet = petData[ringCleanupUser];
-                        if (!ringCleanupPet || typeof ringCleanupPet !== "object") continue;
-
-                        var removedRingForUser = false;
-                        var removedMigrationForUser = false;
-                        if (ringCleanupPet.ring !== undefined) {
-                            delete ringCleanupPet.ring;
-                            petRingDeleteUserCount++;
-                            removedRingForUser = true;
-                        }
-                        if (ringCleanupPet.ringRewardMigration !== undefined) {
-                            delete ringCleanupPet.ringRewardMigration;
-                            ringRewardMigrationDeleteUserCount++;
-                            removedMigrationForUser = true;
-                        }
-                        if (removedRingForUser || removedMigrationForUser) {
-                            var ringCleanupParts = [];
-                            if (removedRingForUser) ringCleanupParts.push("반지");
-                            if (removedMigrationForUser) ringCleanupParts.push("보상플래그");
-                            petRingDeleteLogs.push(ringCleanupUser + " : " + ringCleanupParts.join(", ") + " 삭제");
-                        }
-                    }
-
-                    var guildRingDeleteGuildCount = 0; // 반지 데이터가 삭제된 길드 수
-                    var guildRingDeleteTotalAmount = 0; // 삭제된 반지 총수량
-                    var guildRingDeleteLogs = [];
-                    if (guildData && guildData.guilds) {
-                        for (var cleanupGuildId in guildData.guilds) {
-                            if (!guildData.guilds.hasOwnProperty(cleanupGuildId)) continue;
-                            var cleanupGuild = guildData.guilds[cleanupGuildId];
-                            if (!cleanupGuild || !cleanupGuild.warehouse) continue;
-                            var oldGuildRingAmount = Math.floor(Number(cleanupGuild.warehouse.ring) || 0); // 삭제 전 길드창고 반지 수량
-                            if (cleanupGuild.warehouse.ring !== undefined) {
-                                delete cleanupGuild.warehouse.ring;
-                            }
-                            if (oldGuildRingAmount > 0) {
-                                guildRingDeleteGuildCount++;
-                                guildRingDeleteTotalAmount += oldGuildRingAmount;
-                                guildRingDeleteLogs.push(cleanupGuild.name + "(" + (cleanupGuild.mark || "") + ") : 💍x" + numberWithCommas(oldGuildRingAmount) + " 삭제");
-                            }
                         }
                     }
 
@@ -31749,28 +31606,10 @@ replier.reply(
                         out += "\n펫홈 정리할 데이터 없음\n";
                     }
 
-                    out += "\n\n[2] 아이템 명칭 변경\n";
-                    out += "변경된 아이템 수량 : " + numberWithCommas(itemChangeCount) + "개\n";
+                    out += "\n\n[2] 가방 수량 0 항목 정리\n";
                     out += "가방 수량 0 항목 삭제 : " + numberWithCommas(zeroBagItemRemovedCount) + "개 / " + numberWithCommas(zeroBagItemRemovedUserCount) + "명\n";
 
-                    if (itemUserLogs.length > 0) {
-                        out += "\n[아이템 변경 유저]\n" + itemUserLogs.join("\n");
-                    } else {
-                        out += "\n변경할 아이템 없음\n";
-                    }
-
-                    out += "\n\n[3] 펫스킬 데이터 이동\n";
-                    out += "이동된 펫스킬 수량 : " + numberWithCommas(petSkillMoveCount) + "개\n";
-                    out += "삭제된 petData.petchar 유저 : " + numberWithCommas(petCharDeleteCount) + "명\n";
-                    out += "petData.petSkills 삭제 유저 : " + numberWithCommas(petSkillDeleteCount) + "명\n";
-
-                    if (petSkillUserLogs.length > 0) {
-                        out += "\n[펫스킬 이동 유저]\n" + petSkillUserLogs.join("\n");
-                    } else {
-                        out += "\n이동할 펫스킬 데이터 없음\n";
-                    }
-
-                    out += "\n\n[4] 포인트 소수점 정리\n";
+                    out += "\n\n[3] 포인트 소수점 정리\n";
                     out += "정리된 유저 : " + numberWithCommas(pointFloorUserCount) + "명\n";
                     out += "제거된 소수점 포인트 총합 : 🅟" + formatPointValue(pointFloorTotalAmount);
 
@@ -31780,44 +31619,7 @@ replier.reply(
                         out += "\n소수점 포인트 없음";
                     }
 
-                    out += "\n\n[5] 레거시 패스 명단 데이터 제거\n";
-                    if (legacyPassRemovedLogs.length > 0) {
-                        out += legacyPassRemovedLogs.join("\n");
-                    } else {
-                        out += "제거할 레거시 패스 명단 없음";
-                    }
-
-                    out += "\n\n[6] 유저 기존 반지 데이터 삭제\n";
-                    out += "반지 삭제 유저 : " + numberWithCommas(petRingDeleteUserCount) + "명\n";
-                    out += "보상 플래그 삭제 유저 : " + numberWithCommas(ringRewardMigrationDeleteUserCount) + "명\n";
-                    if (petRingDeleteLogs.length > 0) {
-                        out += "\n[삭제된 유저 반지 데이터]\n" + petRingDeleteLogs.join("\n");
-                    } else {
-                        out += "\n삭제할 유저 반지 데이터 없음";
-                    }
-
-                    out += "\n\n[7] 길드창고 기존 반지 데이터 삭제\n";
-                    out += "삭제 길드 : " + numberWithCommas(guildRingDeleteGuildCount) + "개\n";
-                    out += "삭제 수량 : 💍x" + numberWithCommas(guildRingDeleteTotalAmount) + "\n";
-                    out += "※ 펜던트 강화석📿 수량으로 이전하지 않습니다.\n";
-                    if (guildRingDeleteLogs.length > 0) {
-                        out += "\n[삭제된 길드창고 반지 데이터]\n" + guildRingDeleteLogs.join("\n");
-                    } else {
-                        out += "\n삭제할 길드창고 반지 데이터 없음";
-                    }
-
-                    out += "\n\n[8] 잘못 지급된 영지자동공격 데이터 정리\n";
-                    out += invalidAutoAttackItemName + " 수거 유저 : " + numberWithCommas(invalidAutoAttackItemRemovedUserCount) + "명\n";
-                    out += "수거 수량 : " + numberWithCommas(invalidAutoAttackItemRemovedCount) + "개\n";
-                    out += "권한 플래그 삭제 유저 : " + numberWithCommas(invalidAutoAttackFlagRemovedUserCount) + "명\n";
-                    out += "권한 플래그 삭제 건수 : " + numberWithCommas(invalidAutoAttackFlagRemovedCount) + "건";
-                    if (invalidAutoAttackCleanupLogs.length > 0) {
-                        out += "\n[영지자동공격 데이터 정리 유저]\n" + invalidAutoAttackCleanupLogs.join("\n");
-                    } else {
-                        out += "\n수거할 영지자동공격 데이터 없음";
-                    }
-
-                    out += "\n\n[9] 회원 목록 외 잔여 데이터 정리\n";
+                    out += "\n\n[4] 회원 목록 외 잔여 데이터 정리\n";
                     out += "정리된 잔여 식별자 : " + numberWithCommas(residualAccountNames.length) + "개";
                     if (residualAccountNames.length > 0) {
                         out += "\n※ 실제 삭제 계정 수가 아니라 회원 목록에 없는 닉네임 식별자 수입니다.";
@@ -33208,6 +33010,8 @@ function loadJsonFile(path, memberStoreMode) {
             if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
                 try {
                     var splitMarker = getMemberSplitMarker(loadedData);
+                    var adventureSplitConfig = memberStoreMode === "bootstrap" ? null : GLOBAL_CONFIG.adventureQuest.history;
+                    if (adventureSplitConfig && loadedData.migrations && loadedData.migrations[adventureSplitConfig.markerKey] !== undefined && loadedData.migrations[adventureSplitConfig.markerKey] !== true) throw new Error("퀘스트 기록 분리 표시 오류");
                     if (splitMarker && splitMarker.phase === "COPYING" && memberStoreMode !== "migration" && memberStoreMode !== "bootstrap") throw new Error("회원 파일 분리가 중단되어 있습니다. 관리자·MASTER가 /데이터정리를 다시 실행해 주세요.");
                     if (splitMarker && splitMarker.phase === "COMPLETE" && memberStoreMode !== "bootstrap") {
                         var splitLogs = readPublishedMemberSplitStore(splitMarker, "logs");
@@ -33410,6 +33214,7 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
 
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
+    if (/^adventureQuestHistory(?:_legacy|Pending)?\.json$/.test(String(new java.io.File(path).getName()))) return true;
     var fileName = String(new java.io.File(path).getName());
     return /^miniPetRobbery(?:History(?:_legacy)?|Pending)\.json$/.test(fileName) || /^(dollIndex|dollPending|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(fileName) || fileName === "member.json" || fileName === "member_back.json" ||
         /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(fileName) ||
@@ -33423,6 +33228,8 @@ function isProtectedManagedJsonPath(path) {
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
     var splitFileName = String(new java.io.File(path).getName());
+    if (/^adventureQuestHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireAdventureRecordStore(parsedData);
+    if (splitFileName === "adventureQuestHistoryPending.json") { validateAdventureRecordPending(parsedData); return parsedData; }
     if (/^miniPetRobberyHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireMiniPetRobberyStore(parsedData);
     if (splitFileName === "miniPetRobberyPending.json") { validateMiniPetRobberyPending(parsedData); return parsedData; }
     if (/^(dollIndex|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(splitFileName)) return requireDollStore(parsedData);
@@ -33702,6 +33509,7 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
             if (typeof rollbackSnapshotText === "string" && !getDataSaveTransaction()) {
                 throw new Error("Transactional JSON snapshot requires command transaction: " + path);
             }
+            if (path === resolveActiveDataPath(filePath) && data.__adventureRecordContext && !getDataSaveTransaction()) { beginDataSaveTransaction(); splitOwnTransaction = true; }
             if (isProtectedManagedJsonPath(path) || typeof rollbackSnapshotText === "string") {
                 if (splitPlan) {
                     if (!getDataSaveTransaction()) { beginDataSaveTransaction(); splitOwnTransaction = true; }
@@ -33719,12 +33527,38 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                 }
                 transactionEntryResult = prepareManagedJsonTransactionEntry(path, splitPlan ? false : skipManagedBackup, rollbackSnapshotText);
                 if (splitPlan && skipManagedBackup === true) transactionEntryResult.skipManagedBackup = true;
+                var adventureRecordContext = path === resolveActiveDataPath(filePath) ? data.__adventureRecordContext : null;
+                if (adventureRecordContext && adventureRecordContext.deletion) {
+                    for (var deletedAdventureUser in adventureRecordContext.store.users) if (Object.prototype.hasOwnProperty.call(adventureRecordContext.store.users, deletedAdventureUser) && !Object.prototype.hasOwnProperty.call(data.member, deletedAdventureUser)) delete adventureRecordContext.store.users[deletedAdventureUser];
+                }
+                var adventureRecordChanged = adventureRecordContext && JSON.stringify(adventureRecordContext.store) !== adventureRecordContext.text;
+                var adventurePendingPath = null;
+                if (adventureRecordChanged) {
+                    requireAdventureRecordStore(adventureRecordContext.store);
+                    var adventureJournal = { pending: [] }, adventureRecoveryNames = getAdventureRecordRecoveryNames();
+                    for (var ar = 0; ar < adventureRecoveryNames.length; ar++) {
+                        var adventureRecoveryPath = resolveActiveDataPath(DATA_ROOT_PATH + adventureRecoveryNames[ar]);
+                        adventureJournal.pending.push({ name: adventureRecoveryNames[ar], text: new java.io.File(adventureRecoveryPath).exists() ? FileStream.read(adventureRecoveryPath, "utf-8") : null });
+                    }
+                    validateAdventureRecordPending(adventureJournal);
+                    if (splitPlan) {
+                        readPublishedMemberSplitStore(currentMemberSplitMarker, "raid");
+                        readPublishedMemberSplitStore(currentMemberSplitMarker, "logs");
+                    }
+                    adventurePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.pendingName);
+                    writeMemberSplitSlot(adventurePendingPath, JSON.stringify(adventureJournal));
+                    writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName), JSON.stringify(adventureRecordContext.store));
+                }
                 if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].text);
                 writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup);
                 if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
                 if (splitPlan) {
                     data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = splitPlan.marker;
                     if (splitPlan.context) { splitPlan.context.logsText = splitPlan.logsText; splitPlan.context.raidText = splitPlan.raidText; }
+                }
+                if (adventureRecordChanged) {
+                    writeMemberSplitSlot(adventurePendingPath, JSON.stringify({ pending: null }));
+                    adventureRecordContext.text = JSON.stringify(adventureRecordContext.store);
                 }
             } else {
                 FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
@@ -53097,6 +52931,115 @@ function buildAdventurePetCreatedMessage(user, petName) {
     return buildAdventurePetCreatedIntroMessage(user, petName) + "\n\n" + buildAdventureBlessingPromptMessage();
 }
 
+// 별도 퀘스트 완료 기록과 타이틀의 구조를 엄격하게 검증하는 함수
+function requireAdventureRecordStore(store) {
+    if (!store || store.schemaVersion !== GLOBAL_CONFIG.adventureQuest.history.schemaVersion || !store.users || typeof store.users !== "object" || Array.isArray(store.users)) throw new Error("퀘스트 기록 파일 형식 오류");
+    for (var user in store.users) if (Object.prototype.hasOwnProperty.call(store.users, user)) {
+        var entry = store.users[user];
+        if (!entry || !Array.isArray(entry.records) || !Array.isArray(entry.titles)) throw new Error("퀘스트 기록 목록 형식 오류");
+        for (var r = 0; r < entry.records.length; r++) {
+            var row = entry.records[r];
+            if (!row || typeof row.stage !== "number" || !isFinite(row.stage) || row.stage < 1 || Math.floor(row.stage) !== row.stage || typeof row.title !== "string" || typeof row.summary !== "string" || typeof row.completedAt !== "string") throw new Error("퀘스트 완료 기록 형식 오류");
+        }
+        for (var t = 0; t < entry.titles.length; t++) {
+            var title = entry.titles[t];
+            if (!title || typeof title.number !== "number" || !isFinite(title.number) || title.number < 1 || Math.floor(title.number) !== title.number || typeof title.title !== "string" || typeof title.obtainedAt !== "string") throw new Error("퀘스트 타이틀 형식 오류");
+        }
+    }
+    return store;
+}
+
+// 기존 배열의 내용과 순서를 보존해 회원 파일에서 분리할 기록을 구성하는 함수
+function buildAdventureRecordMigration(data) {
+    var store = { schemaVersion: GLOBAL_CONFIG.adventureQuest.history.schemaVersion, users: {} }, records = 0, titles = 0;
+    if (!data || !data.member || typeof data.member !== "object") throw new Error("퀘스트 기록 이전 회원 형식 오류");
+    for (var user in data.member) if (Object.prototype.hasOwnProperty.call(data.member, user)) {
+        var quest = data.member[user] && data.member[user].adventureQuest;
+        if (!quest) continue;
+        if (typeof quest !== "object" || Array.isArray(quest) || !Array.isArray(quest.records) || !Array.isArray(quest.titles)) throw new Error("기존 퀘스트 기록을 확인할 수 없습니다.");
+        Object.defineProperty(store.users, user, { value: { records: quest.records, titles: quest.titles }, writable: true, configurable: true, enumerable: true });
+        records += quest.records.length; titles += quest.titles.length;
+    }
+    requireAdventureRecordStore(store); // 모든 회원의 원본 검증이 끝난 뒤에만 회원 배열 제거
+    for (var name in store.users) if (Object.prototype.hasOwnProperty.call(store.users, name)) {
+        var state = data.member[name].adventureQuest;
+        for (var i = 0; i < state.titles.length; i++) if (state.titles[i].number === state.equippedTitle) state.equippedTitleName = state.titles[i].title;
+        delete state.records; delete state.titles;
+    }
+    return { store: store, records: records, titles: titles };
+}
+
+// 로드한 사용자 기록 배열을 JSON 저장에서 제외되는 속성으로 연결하는 함수
+function attachAdventureRecordStore(data, store, user, text) {
+    requireAdventureRecordStore(store);
+    var quest = data.member[user].adventureQuest;
+    if (Object.prototype.hasOwnProperty.call(quest, "records") || Object.prototype.hasOwnProperty.call(quest, "titles")) throw new Error("기존 퀘스트 기록이 회원 파일에 남아 있습니다.");
+    if (!Object.prototype.hasOwnProperty.call(store.users, user)) {
+        if (quest.completedStages.length > 0) throw new Error("완료한 퀘스트 기록이 별도 파일에 없습니다.");
+        Object.defineProperty(store.users, user, { value: { records: [], titles: [] }, writable: true, configurable: true, enumerable: true });
+    }
+    var rows = store.users[user];
+    for (var c = 0; c < quest.completedStages.length; c++) {
+        var stage = quest.completedStages[c], foundRecord = false, foundTitle = false;
+        for (var r = 0; r < rows.records.length; r++) if (rows.records[r].stage === stage) foundRecord = true;
+        for (var t = 0; t < rows.titles.length; t++) if (rows.titles[t].number === stage) foundTitle = true;
+        if (!foundRecord || !foundTitle) throw new Error("회원 완료 단계와 퀘스트 기록이 일치하지 않습니다.");
+    }
+    for (var ri = 0; ri < rows.records.length; ri++) if (quest.completedStages.indexOf(rows.records[ri].stage) < 0) throw new Error("회원 백업보다 새로운 퀘스트 기록이 있습니다.");
+    for (var ti = 0; ti < rows.titles.length; ti++) if (quest.completedStages.indexOf(rows.titles[ti].number) < 0) throw new Error("회원 백업보다 새로운 퀘스트 타이틀이 있습니다.");
+    Object.defineProperty(quest, "records", { value: rows.records, writable: true, configurable: true, enumerable: false });
+    Object.defineProperty(quest, "titles", { value: rows.titles, writable: true, configurable: true, enumerable: false });
+    Object.defineProperty(data, "__adventureRecordContext", { value: { store: store, text: text }, configurable: true, enumerable: false });
+}
+
+// 퀘스트 기록과 회원이 참조하는 전체 저장·백업 세트의 복구 파일명을 반환하는 함수
+function getAdventureRecordRecoveryNames() {
+    return ["member.json", "member_back.json", "member_back2.json", GLOBAL_CONFIG.adventureQuest.history.fileName,
+        "serverRaidData.json", "serverRaidData_next.json", "serverRaidData_back.json", "serverRaidData_back2.json",
+        "memberOperationLogs.json", "memberOperationLogs_next.json", "memberOperationLogs_back.json", "memberOperationLogs_back2.json"];
+}
+
+// 모든 복구 원문을 검증하여 일부만 복구되는 상황과 임의 파일 덮어쓰기를 차단하는 함수
+function validateAdventureRecordPending(pending) {
+    if (!pending || !Object.prototype.hasOwnProperty.call(pending, "pending") || (pending.pending !== null && !Array.isArray(pending.pending))) throw new Error("퀘스트 기록 복구 형식 오류");
+    if (pending.pending === null) return;
+    var names = getAdventureRecordRecoveryNames(), seen = {};
+    if (pending.pending.length !== names.length) throw new Error("퀘스트 기록 복구 목록 오류");
+    for (var i = 0; i < pending.pending.length; i++) {
+        var row = pending.pending[i];
+        if (!row || names.indexOf(row.name) < 0 || seen[row.name] || (row.text !== null && typeof row.text !== "string") || (row.name === "member.json" && row.text === null)) throw new Error("퀘스트 기록 복구 대상 오류");
+        seen[row.name] = true;
+        if (row.text !== null) {
+            var parsed = parseJsonContent(row.text, row.name);
+            if (/^member(?:_back2?)?\.json$/.test(row.name) && (!parsed || !parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("퀘스트 기록 복구 회원 원문 오류");
+            if (row.name === GLOBAL_CONFIG.adventureQuest.history.fileName) requireAdventureRecordStore(parsed);
+            else if (/^(serverRaidData|memberOperationLogs)/.test(row.name)) requireMemberSplitStore(parsed, row.name.indexOf("serverRaidData") === 0 ? "raid" : "logs");
+        }
+    }
+}
+
+// 진입 시 중단된 퀘스트 저장의 원문 전체를 복구하는 저장 계층 함수
+function recoverAdventureRecordPending() {
+    dataTransactionLock.lock();
+    try {
+    var pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.pendingName);
+    if (!new java.io.File(pendingPath).exists()) return false;
+    var pending = parseJsonContent(FileStream.read(pendingPath, "utf-8"), pendingPath);
+    validateAdventureRecordPending(pending);
+    if (pending.pending === null) return false;
+    for (var i = pending.pending.length - 1; i >= 0; i--) {
+        var row = pending.pending[i], path = resolveActiveDataPath(DATA_ROOT_PATH + row.name);
+        if (row.text === null) {
+            var absent = new java.io.File(path);
+            if (absent.exists() && !absent.delete()) throw new Error("퀘스트 기록 복구 파일 제거 실패");
+        } else writeVerifiedJsonFile(path, row.text, true);
+    }
+    writeVerifiedJsonFile(pendingPath, JSON.stringify({ pending: null }), true);
+    memberSplitBackupCache = {};
+    return true;
+    } finally { dataTransactionLock.unlock(); }
+}
+
 // 모험가 퀘스트 진행 상태를 생성하거나 정규화하는 함수
 function getAdventureQuestState(data, user, createIfMissing) {
     var member = data && data.member ? data.member[user] : null;
@@ -53116,12 +53059,19 @@ function getAdventureQuestState(data, user, createIfMissing) {
             startedAt: formatDateTime(new Date()),
             stageStartedAt: formatDateTime(new Date())
         };
+        if (GLOBAL_CONFIG.adventureQuest.history && data.migrations && data.migrations[GLOBAL_CONFIG.adventureQuest.history.markerKey] === true) {
+            delete member.adventureQuest.records; delete member.adventureQuest.titles;
+        }
     }
     var state = member.adventureQuest;
     state.currentStage = Math.max(1, parseInt(state.currentStage, 10) || 1);
     if (!(state.completedStages instanceof Array)) state.completedStages = [];
-    if (!(state.records instanceof Array)) state.records = [];
-    if (!(state.titles instanceof Array)) state.titles = [];
+    var historyConfig = GLOBAL_CONFIG.adventureQuest.history;
+    var historySeparated = historyConfig && data.migrations && data.migrations[historyConfig.markerKey] === true;
+    if (!historySeparated) {
+        if (!(state.records instanceof Array)) state.records = [];
+        if (!(state.titles instanceof Array)) state.titles = [];
+    } else if (!data.__adventureRecordContext && (Object.prototype.hasOwnProperty.call(state, "records") || Object.prototype.hasOwnProperty.call(state, "titles"))) throw new Error("기존 퀘스트 기록이 회원 파일에 남아 있습니다.");
     if (!state.progress || typeof state.progress !== "object" || state.progress instanceof Array) state.progress = {};
     if (!state.receipts || typeof state.receipts !== "object" || state.receipts instanceof Array) state.receipts = {};
     if (!state.totals || typeof state.totals !== "object" || state.totals instanceof Array) state.totals = {};
@@ -53268,6 +53218,7 @@ function completeAdventureQuestStage(data, user) {
     var stage = state ? state.currentStage : 0;
     var config = getAdventureQuestStageConfig(stage);
     if (!member || !state || !config || state.completedStages.indexOf(stage) >= 0) return null;
+    if (!Array.isArray(state.records) || !Array.isArray(state.titles)) throw new Error("퀘스트 완료 기록을 먼저 읽어야 합니다.");
     var diamondBoxes = stage * 5;
     member.exp = roundToTwo((Number(member.exp) || 0) + GLOBAL_CONFIG.adventureQuest.experiencePerStage);
     var levelUps = processAdventureLevelUps(member);
@@ -61056,6 +61007,7 @@ if (new java.io.File(startupRobberyPendingPath).exists()) {
         initData = loadJsonFile(filePath, "bootstrap");
     }
 }
+if (recoverAdventureRecordPending()) initData = loadJsonFile(filePath, "bootstrap");
 if (recoverMemberSplitPublication()) initData = loadJsonFile(filePath, "bootstrap");
 if (initData.serverRaid && serverRaidHasWork(initData.serverRaid)) {
     scheduleServerRaidWork(createCommandContext(false, room8), initData.serverRaid.generation, 1, initData.serverRaid.sequence);
