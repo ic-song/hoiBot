@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.644"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.645"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -31409,6 +31409,8 @@ replier.reply(
 
                     var itemChangeCount = 0;
                     var itemUserLogs = [];
+                    var zeroBagItemRemovedCount = 0; // 숫자 0인 가방 항목 삭제 수
+                    var zeroBagItemRemovedUserCount = 0; // 0개 항목을 정리한 회원 수
 
                     for (var memberName in data.member) {
                         var member = data.member[memberName];
@@ -31416,8 +31418,14 @@ replier.reply(
 
                         var newBag = {};
                         var userChangeCount = 0;
+                        var userZeroBagItemRemovedCount = 0;
 
                         for (var itemName in member.bag) {
+                            if (member.bag[itemName] === 0) {
+                                zeroBagItemRemovedCount++;
+                                userZeroBagItemRemovedCount++;
+                                continue;
+                            }
                             var itemCount = member.bag[itemName] || 0;
                             var newName = itemChangeMap[itemName] || itemName;
 
@@ -31431,6 +31439,7 @@ replier.reply(
                         }
 
                         member.bag = newBag;
+                        if (userZeroBagItemRemovedCount > 0) zeroBagItemRemovedUserCount++;
 
                         if (userChangeCount > 0) {
                             itemUserLogs.push(memberName + " : " + numberWithCommas(userChangeCount) + "개");
@@ -31670,6 +31679,7 @@ replier.reply(
 
                     out += "\n\n[2] 아이템 명칭 변경\n";
                     out += "변경된 아이템 수량 : " + numberWithCommas(itemChangeCount) + "개\n";
+                    out += "가방 수량 0 항목 삭제 : " + numberWithCommas(zeroBagItemRemovedCount) + "개 / " + numberWithCommas(zeroBagItemRemovedUserCount) + "명\n";
 
                     if (itemUserLogs.length > 0) {
                         out += "\n[아이템 변경 유저]\n" + itemUserLogs.join("\n");

@@ -381,6 +381,7 @@ function prepareCleanupBody() {
         if (!Object.hasOwn(fixture.disk(), c[match[1]])) fixture.disk()[c[match[1]]] = JSON.stringify({ member: {}, user: {}, users: {}, alerts: {}, recentVisitors: {}, petHomeSocial: {} });
     }
     c.petHomePlacedFurniturePath = root + "not-separated-furniture.json";
+    delete fixture.disk()[c.petHomePlacedFurniturePath];
     c.formatPointValue = String;
     vm.runInContext("function runCleanupBody(data,petData,petSkillData,guildData,currencyLogData,memberStorageMigrationResult){" + cleanupBlock + "}", c);
 }
@@ -400,5 +401,41 @@ group("이후 기존 정리 저장 실패로 완료된 마이그레이션이 취
     try { assert.throws(() => c.runCleanupBody(d, loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }))); }
     finally { c.endDataSaveTransaction(); }
     assert.deepStrictEqual(raw(), before); assert.equal(load("raid").serverRaid.history.length, 1); assert.equal(raw().migrations[key].phase, "COMPLETE");
+});
+group("가방 숫자 0만 제거·보유 재화/구독/명칭 통합 보존·재실행 0건", () => {
+    migrate(); prepareCleanupBody(); const d = load();
+    d.member.a.bag = native({ "빈이용권": 0, "빈확률UP": 0, "보유이용권": 3, "캐슬공격권⚔": 0, "영지공격권⚔": 2 });
+    d.member.admin.bag = native({ "빈가방항목": 0, "정수상한": 9007199254740991, "소수": 0.5 });
+    d.member.a.pass = native({ doll: { enabled: true, permanent: true, dailyRewardLastDate: "20261014" } });
+    const passBefore = clone(d.member.a.pass);
+    c.sender = "admin"; c.msg = "/데이터정리";
+    const execute = data => c.runCleanupBody(data, loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }));
+    execute(d);
+    assert.deepStrictEqual(raw().member.a.bag, { "보유이용권": 3, "영지공격권⚔": 2 });
+    assert.deepStrictEqual(raw().member.admin.bag, { "정수상한": 9007199254740991, "소수": 0.5 });
+    assert.deepStrictEqual(raw().member.a.pass, passBefore);
+    assert(fixture.traces().filter(t => t.type === "reply").at(-1).text.includes("가방 수량 0 항목 삭제 : 4개 / 2명"));
+    execute(load());
+    assert(fixture.traces().filter(t => t.type === "reply").at(-1).text.includes("가방 수량 0 항목 삭제 : 0개 / 0명"));
+});
+group("가방 0 항목 정리는 DEV만 저장·이후 저장 실패 시 원상복구", () => {
+    migrate(); prepareCleanupBody(); const d = load(); d.member.a.bag.zero = 0; save(d);
+    const before = clone(raw()); c.sender = "admin"; c.msg = "/데이터정리";
+    c.beginDataSaveTransaction(); fixture.fail((_d, p) => p === c.memberPetPath);
+    try { assert.throws(() => c.runCleanupBody(load(), loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }))); }
+    finally { c.endDataSaveTransaction(); fixture.fail(() => false); }
+    assert.deepStrictEqual(raw(), before);
+    migrate(true);
+    for (const [p, text] of Object.entries(fixture.disk())) {
+        if (p.startsWith(root) && !Object.hasOwn(fixture.disk(), devRoot + p.slice(root.length))) fixture.disk()[devRoot + p.slice(root.length)] = text;
+    }
+    const prev = c.enterCommandContext(c.createCommandContext(true, "test"));
+    try {
+        const dev = c.loadJsonFile(memberPath); dev.member.a.bag.zero = 0;
+        c.saveJsonFile(dev, memberPath);
+        c.runCleanupBody(c.loadJsonFile(memberPath), c.loadJsonFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }));
+        assert(!Object.hasOwn(raw(true).member.a.bag, "zero"));
+        assert.deepStrictEqual(raw(), before);
+    } finally { c.exitCommandContext(prev); }
 });
 console.log("PASS: " + groups + " member storage split groups (synthetic data only)");
