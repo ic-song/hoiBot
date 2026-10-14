@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
@@ -298,6 +299,7 @@ function buildInfoLevelMessage(data, petData, guildData, user) {
 	var quest = member.adventureQuest && typeof member.adventureQuest === "object" ? member.adventureQuest : null;
 	var questCompleted = quest && quest.completedStages instanceof Array ? Math.min(16, quest.completedStages.length) : 0;
 	var questTitle = "";
+	if (quest && quest.equippedTitle && typeof quest.equippedTitleName === "string") questTitle = quest.equippedTitleName;
 	if (quest && quest.equippedTitle && quest.titles instanceof Array) {
 		for (var titleIndex = 0; titleIndex < quest.titles.length; titleIndex++) {
 			if (quest.titles[titleIndex].number === quest.equippedTitle) questTitle = quest.titles[titleIndex].title;
@@ -581,6 +583,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var infoRobberyPending = loadJsonFile(infoRobberyPendingPath);
 			if (!infoRobberyPending || !Object.prototype.hasOwnProperty.call(infoRobberyPending, "pending") || (infoRobberyPending.pending !== null && !Array.isArray(infoRobberyPending.pending))) throw new Error("강탈 복구 기록 형식 오류");
 			if (infoRobberyPending.pending !== null) return;
+		}
+		var infoAdventurePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.historyPendingName);
+		if (new java.io.File(infoAdventurePendingPath).exists()) {
+			var infoAdventurePending = loadJsonFile(infoAdventurePendingPath);
+			if (!infoAdventurePending || !Object.prototype.hasOwnProperty.call(infoAdventurePending, "pending") || (infoAdventurePending.pending !== null && !Array.isArray(infoAdventurePending.pending))) throw new Error("퀘스트 기록 복구 형식 오류");
+			if (infoAdventurePending.pending !== null) return;
 		}
 		let data = loadJsonFile(filePath);
 		// 레이드 잠금은 MASTER·전역 정보 예외보다 우선하고 안내는 main.js에서만 출력한다.

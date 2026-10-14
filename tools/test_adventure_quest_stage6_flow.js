@@ -25,7 +25,7 @@ const replies = [];
 const context = {
     data, sender: "tester", msg: "", petData: {}, guildData: {}, petSkillData: {},
     filePath: "synthetic-member.json", petExplorePath: "synthetic-explore.json", homeDataFile: "synthetic-home.json",
-    GLOBAL_CONFIG: { petExplore: { chuseokEvent: { slot: "11", participationFee: 50000000, rewardMin: 1, rewardMax: 1 }, experienceRewards: { event: 10 }, slots: { regularMax: 9 } } },
+    GLOBAL_CONFIG: { adventureQuest: {}, petExplore: { chuseokEvent: { slot: "11", participationFee: 50000000, rewardMin: 1, rewardMax: 1 }, experienceRewards: { event: 10 }, slots: { regularMax: 9 } } },
     replier: { reply: message => replies.push(message) },
     loadJsonFile: file => file === "synthetic-explore.json" ? explore : {},
     saveJsonFile: (_value, file) => saves.push(file),

@@ -389,10 +389,10 @@ group("실제 기존 정리 본문과 완료 UI도 분리 회원·로그를 정�
     migrate(); prepareCleanupBody(); const d = load(); d.member.a.point = 12.7; d.member.a.bag["영지자동공격권⚔️"] = 3;
     c.sender = "admin"; c.msg = "/데이터정리";
     c.runCleanupBody(d, loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }));
-    assert.equal(raw().member.a.point, 12); assert(!raw().member.a.bag["영지자동공격권⚔️"]); assert(raw().serverRaid.storageSummary);
+    assert.equal(raw().member.a.point, 12); assert.equal(raw().member.a.bag["영지자동공격권⚔️"], 3); assert(raw().serverRaid.storageSummary);
     assert.equal(store("logs").data.petMusouAutomationLogs.length, 1);
     const output = fixture.traces().filter(t => t.type === "reply").at(-1).text;
-    assert(output.includes("회원 파일 분리")); assert(output.includes("[9] 회원 목록 외 잔여 데이터 정리"));
+    assert(output.includes("회원 파일 분리")); assert(output.includes("[4] 회원 목록 외 잔여 데이터 정리")); assert(!output.includes("잘못 지급된 영지자동공격"));
 });
 function loadFile(p) { return c.loadJsonFile(p); }
 group("이후 기존 정리 저장 실패로 완료된 마이그레이션이 취소되지 않음", () => {
@@ -402,7 +402,7 @@ group("이후 기존 정리 저장 실패로 완료된 마이그레이션이 취
     finally { c.endDataSaveTransaction(); }
     assert.deepStrictEqual(raw(), before); assert.equal(load("raid").serverRaid.history.length, 1); assert.equal(raw().migrations[key].phase, "COMPLETE");
 });
-group("가방 숫자 0만 제거·보유 재화/구독/명칭 통합 보존·재실행 0건", () => {
+group("가방 숫자 0만 제거·보유 재화/구독 보존·재실행 0건", () => {
     migrate(); prepareCleanupBody(); const d = load();
     d.member.a.bag = native({ "빈이용권": 0, "빈확률UP": 0, "보유이용권": 3, "캐슬공격권⚔": 0, "영지공격권⚔": 2 });
     d.member.admin.bag = native({ "빈가방항목": 0, "정수상한": 9007199254740991, "소수": 0.5 });

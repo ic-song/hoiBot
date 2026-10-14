@@ -7004,12 +7004,10 @@ Status: VERIFIED
 - Migration preserves members, currencies, inventory, quest data, raid history/receipts/outbox and logs. Existing cleanup steps below still run and retain their previous deletion policies.
 - Completed migration requires the new main code. Code rollback requires restoring the matching pre-migration full member backup; do not pair a thin member snapshot with legacy code or omit companion files from backups.
 - Does not delete legacy `homeData[*].guestComments`.
-- Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
-- Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
-- Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
-- Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
-- Step 8 removes every mistakenly issued `영지자동공격권⚔️` from member bags and deletes the obsolete first-grant/permanent-entitlement flags. Re-running the cleanup is idempotent and does not disable a valid `영지기습패스` user's current auto-attack setting.
-- Step 9 detects identifiers absent from `data.member` only from current account-owned data and removes their account data and cross-user references. Historical-only references such as comment authors, social actors/visitors, completed market logs, board records, automation/audit logs, and package logs do not independently make an identifier a cleanup target. `attendanceLightData` is not used as an orphan source because it intentionally stores pre-signup attendance, but a confirmed deleted account discovered in another store is removed from it too. The result count is shown as `잔여 식별자` rather than an actual deleted-account count.
+- Recurring steps now cover pet-home garbage, strictly numeric zero bag entries, decimal points and orphan-account references. Positive/negative/fractional/string quantities and current subscription data are not changed by zero-item cleanup.
+- Completed one-time item renames, pet-skill relocation, legacy pass-list deletion, old user/guild rings and mistakenly granted independent auto-attack items/flags were removed at the user's request. Restoring an old snapshot does not re-enable those retired transformations.
+- First `/데이터정리` after this version migrates quest history/title arrays and returns before general cleanup. Re-running skips this completed migration; current member-split and robbery storage checks remain.
+- Orphan cleanup detects identifiers absent from `data.member` only from current account-owned data and removes their account data and cross-user references. Historical-only references such as comment authors, social actors/visitors, completed market logs, board records, automation/audit logs, and package logs do not independently make an identifier a cleanup target. `attendanceLightData` is not used as an orphan source because it intentionally stores pre-signup attendance, but a confirmed deleted account discovered in another store is removed from it too. The result count is shown as `잔여 식별자` rather than an actual deleted-account count.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
@@ -7081,12 +7079,16 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.member[사용자].adventureQuest`: 현재 단계, 단계별 행동, 지급 영수증, 완료 기록·타이틀, 누적 보상
+- `data.member[사용자].adventureQuest`: 현재 단계, 단계별 행동, 지급 영수증, 완료 단계, 장착 타이틀 번호/표시 이름, 누적 보상
+- `adventureQuestHistory.json`: 사용자별 기존 완료 기록/획득 타이틀의 전체 배열과 순서. `adventureQuestHistory_legacy.json`은 최초 이전 원본 기록 보관용이다.
+- `data.migrations.adventureQuestHistorySplit20261014`: 완료 표시; `/데이터정리` 재실행은 다시 이전하지 않는다.
+- `adventureQuestHistoryPending.json`: 회원 본문·기록·회원 백업·raid/log 저장 슬롯/백업 원문. 저장 중단 시 MAIN 진입/시작에서 전체 검증 후 복구하며 Info는 복구 대기 중 부분 정보를 표시하지 않는다.
 - `memberPet.json`, `petSkillData`, 펫홈·탐험·홈뱃지 자료: 완료 시 실제 적용 상태 확인
 
 ## Save Flow
 
 - `/퀘스트완료`는 다른 퀘스트 조회·타이틀 명령과 같이 채팅방 제한 없이 실행한다. 완료 조건과 보상·저장 흐름은 기존 규칙을 따른다.
+- 분리 후 퀘스트 명령 진입에서 기록을 한 번 로드해 `attachAdventureRecordStore`로 배열을 비열거 연결한다. 일반 행동/정보/보상 계산은 과거 배열을 다시 생성하거나 로드하지 않는다. `saveJsonFile`은 실제 기록 변경 시 복구 원문을 먼저 저장하고 기록·회원/보상을 함께 저장한 뒤 완료 표시를 지운다. 실패 시 트랜잭션 롤백, 중단 시 원문 복구를 사용한다. 이전 회원 백업보다 새 기록이 있거나 완료 단계와 기록이 다르면 완료/재지급을 차단한다. 명시적 계정 삭제는 해당 계정의 별도 기록도 삭제한다.
 - 스타터 회원 보상은 `/호여!!`에서 지급한다. 7·8·14단계 최초 1회 지급 재료는 단계 최초 진입 시 영수증을 기록하고 `member.json`에 함께 저장한다. 화면에는 실제 아이템명과 `최초 1회 지급`을 표시한다.
 - 대부분의 행동 기록은 실제 기능 성공 흐름에서 기록한다. 2단계는 티어 승급티켓🎟 1개 이상을 보유한 상태의 `/티어적용` 입력만 인정하며 상점 조회·구매·티어 조회와 실제 승급 성공은 요구하지 않는다. 6단계는 `/지도` 조회, 실제 `/탐 [번호]` 지정, 해당 탐험지의 정산 결과 수령 순서로 완료한다. 7단계는 `/냠냠 [수량]`으로 펫먹이 100,000개 이상을 한 번에 정상 사용하면 완료한다. 13단계는 다이아상점 조회 후 상품명이 `홈뱃지뽑기🛡️`로 시작하는 상품 구매만 인정하고, 그런 상품이 없을 때만 다른 상품 구매를 인정한다. 묶음 내용물이 아닌 구매 명령의 수량을 합산하며 구매 시점에만 기록하므로 과거 구매는 자동 소급하지 않는다.
 - 3~5단계는 해당 단계가 진행 중일 때 미니펫대전·캐슬대전·시련의탑의 정상 결과를 각각 1회씩 기록하며, 5회부터 완료할 수 있다. 일일 콘텐츠 입장 상한도 5회이며 자동일퀘 추가 보상 5회는 별도다.
