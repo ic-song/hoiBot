@@ -36,7 +36,7 @@ test("승급 9단계13%·10단계14%·최고티어55%·변화 안내 제거",()=
 });
 test("이용권 없음·고액 포인트라도 RNG/기록/재화 무변경·기존 중복 판매 유지",()=>{
  for(const point of [0,1000000000,Number.MAX_SAFE_INTEGER]){const x=input(0,point),before=JSON.stringify(x);const r=c.applyDollDraw(x.d,x.p,cat,x.s,x.idx,"u","id","20261014",()=>{throw Error("must not draw");});assert(!r.ok&&r.lack);assert.strictEqual(JSON.stringify(x),before);const out=c.buildDollDrawMessage(x.d,x.p,{},cat,"u",r);assert(!out.includes("포인트가 부족"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);}
- const x=input(2,0);draw(x);const r=draw(x);assert(r.sale>0);assert.strictEqual(x.d.member.u.point,r.sale);assert(!c.buildDollGuideMessage().includes("자동 사용"));
+ const x=input(2,0);draw(x);const r=draw(x);assert(r.sale>0);assert.strictEqual(x.d.member.u.point,r.sale);assert(c.buildDollGuideMessage().includes("/인형뽑기 입력 시 이용권 1개 사용"));
 });
 const harness=fs.readFileSync(path.join(__dirname,"test_server_raid.js"),"utf8");
 const raid=new Function("require","__dirname",harness.slice(0,harness.indexOf('\ngroup("'))+`\nreturn {c,run,tick,read,write,reset:()=>{reset();c.GLOBAL_CONFIG.serverRaid=clone(ticketConfig);},now:()=>now,traces:()=>traces,pending:()=>timers.size};`)(require,__dirname);

@@ -3460,6 +3460,8 @@ function generateBagOutput(bagItems) {
 		for (var b = 0; b < koreanItems.length; b++) {
 			var it2 = koreanItems[b];
 			bagOutput += "   " + ++index + ". " + it2 + " x " + bagItems[it2] + "\n";
+			var dollUpMatch = /^인형뽑기확률UP🧸\((10|20|30|40|50)%\)$/.exec(it2);
+			if (dollUpMatch) bagOutput += "   └ 성공률 +" + dollUpMatch[1] + "%p · 보유 시 높은 확률부터 자동 사용 · 성공·실패 모두 1개 소모\n";
 			sortedItemList.push(it2);
 		}
 
