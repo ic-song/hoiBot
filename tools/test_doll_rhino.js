@@ -27,6 +27,7 @@ text += [
 'check(pet.u.dollCharm===2525&&pet.u.dollCharm/2===1262.5,"fraction charm");',
 'var stores=[];for(var i=0;i<16;i++)stores.push({schemaVersion:1,users:{u:{}}});resetAllDollRecords(pet,index,stores);check(pet.u.dollCharm===undefined&&Object.keys(index.users).length===0,"reset charm and rank");check(data.member.u.point===1001000000,"reset preserves rewards");',
 'print("PASS Rhino 1.7.15: 1000 catalog, guards, tier, draw, EXP, charm");'
+,'data.member.u.bag[GLOBAL_CONFIG.doll.ticketName]=1;data.member.u.bag["인형뽑기확률UP🧸(50%)"]=2;data.member.u.bag["인형뽑기확률UP🧸(20%)"]=3;data.member.u.rank.tier="호월신";result=applyDollDraw(data,pet,catalog,store,index,"u","id","2026.10.14",function(){return 0.999999;});check(result.success&&result.probability===100&&result.remainingProbabilityUp===1,"UP cap and consume");check(data.member.u.bag["인형뽑기확률UP🧸(20%)"]===3,"UP priority single type");print("PASS Rhino probability UP: cap, priority, consumption");'
 ].join("\n");
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),"hoibot-doll-rhino-")),file=path.join(dir,"test.js");fs.writeFileSync(file,text,"utf8");
 const result=child.spawnSync("java",["-Dfile.encoding=UTF-8","-cp",path.resolve(jar),"org.mozilla.javascript.tools.shell.Main","-opt","-1","-version","200","-encoding","UTF-8","-f",file],{encoding:"utf8"});process.stdout.write(result.stdout||"");process.stderr.write(result.stderr||"");assert.strictEqual(result.status,0);

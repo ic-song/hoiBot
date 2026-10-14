@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.643"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.644"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -997,6 +997,7 @@ const GLOBAL_CONFIG = {
         allowedRoom: null, // 정식 공개: 인형 전용 방 제한 해제, 기존 권한·이용 조건 유지
         ticketName: "인형뽑기이용권🧸(/인형뽑기)", shardCount: 16,
         dailyPassTickets: 3, broadcastMinGrade: 6,
+        probabilityUp: { itemPrefix: "인형뽑기확률UP🧸", percents: [50,40,30,20,10], maxSuccessPercent: 100, dailyPassPercent: 20, dailyPassCount: 3 },
         rates: { baseSuccessPercent: 5, tierStepPercent: 1, sizeWeights: [85,14,1] },
         limits: { catalogSize: 1000, publicRanks: 10, personalRanks: 100 },
         grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조"],
@@ -41563,6 +41564,8 @@ function grantSupportPassDailyRewards(data, passKey, rewards) {
 
 // 인형패스 지급 예정 수량을 검사한 뒤 기존 일일 지급 흐름으로 지급하는 함수
 function grantDollPassDailyRewards(data) {
+    var up = GLOBAL_CONFIG.doll.probabilityUp;
+    var upName = up.itemPrefix + "(" + up.dailyPassPercent + "%)";
     var users = getActiveSupportPassUsers(data, "doll");
     var today = String(getTodaySupportPassDateValue());
     for (var i = 0; i < users.length; i++) {
@@ -41571,8 +41574,10 @@ function grantDollPassDailyRewards(data) {
         if (member.bag !== undefined && (!member.bag || typeof member.bag !== "object" || Array.isArray(member.bag))) throw new Error("인형패스 가방 형식 오류");
         var count = member.bag && member.bag[GLOBAL_CONFIG.doll.ticketName] !== undefined ? member.bag[GLOBAL_CONFIG.doll.ticketName] : 0;
         if (!isSearchAuthenticationCount(count) || !isSearchAuthenticationCount(count + GLOBAL_CONFIG.doll.dailyPassTickets)) throw new Error("인형패스 이용권 수량 오류");
+        var upCount = member.bag && member.bag[upName] !== undefined ? member.bag[upName] : 0;
+        if (!isSearchAuthenticationCount(upCount) || !isSearchAuthenticationCount(upCount + up.dailyPassCount)) throw new Error("인형패스 확률UP 수량 오류");
     }
-    return grantSupportPassDailyRewards(data, "doll", [{ name: GLOBAL_CONFIG.doll.ticketName, count: GLOBAL_CONFIG.doll.dailyPassTickets }]);
+    return grantSupportPassDailyRewards(data, "doll", [{ name: GLOBAL_CONFIG.doll.ticketName, count: GLOBAL_CONFIG.doll.dailyPassTickets }, { name: upName, count: up.dailyPassCount }]);
 }
 // 영지기습패스 일일 지급 결과를 최근 운영 로그에 기록하는 함수
 function appendTerritoryPassPayoutLogs(data, result, operator) {
@@ -46022,6 +46027,8 @@ function generateBagOutput(bagItems, includeDonationNotice) {
         for (var b = 0; b < koreanItems.length; b++) {
             var it2 = koreanItems[b];
             bagOutput += "   " + ++index + ". " + it2 + " x " + bagItems[it2] + "\n";
+            var dollUpMatch = /^인형뽑기확률UP🧸\((10|20|30|40|50)%\)$/.exec(it2);
+            if (dollUpMatch) bagOutput += "   └ 성공률 +" + dollUpMatch[1] + "%p · 보유 시 높은 확률부터 자동 사용 · 성공·실패 모두 1개 소모\n";
             sortedItemList.push(it2);
         }
 
@@ -60044,11 +60051,19 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
     if (tickets < 1) return { ok:false, lack:true };
     var random=randomValue || Math.random;
     var probability=getDollSuccessPercent(member.rank ? member.rank.tier : "새싹");
+    var baseProbability=probability, up=config.probabilityUp, upName=null, upPercent=0; // 티어 확률과 자동 선택한 한 종류의 추가 확률
+    for(var u=0;u<up.percents.length;u++) {
+        var candidate=up.itemPrefix+"("+up.percents[u]+"%)", quantity=bag[candidate]===undefined ? 0 : bag[candidate];
+        if(!isSearchAuthenticationCount(quantity)) throw new Error("인형뽑기 확률UP 수량 오류");
+        if(!upName && quantity>0){upName=candidate;upPercent=up.percents[u];}
+    }
+    probability=Math.min(up.maxSuccessPercent,baseProbability+upPercent);
     var success=random()*100 < probability;
     var previous=Object.prototype.hasOwnProperty.call(store.users,user) ? store.users[user] : undefined;
     var record=previous ? JSON.parse(JSON.stringify(previous)) : {id:id,catches:{}};
     if (!record.id || !record.catches || typeof record.catches !== "object" || record.catches instanceof Array) throw new Error("인형 계정 기록 오류");
     var result={ok:true,success:success,ticket:tickets>0,probability:probability};
+    if(upName){result.probabilityUpName=upName;result.probabilityUpPercent=upPercent;result.baseProbability=baseProbability;}
     if (success) {
         var roll=Math.floor(random()*1000), grade=0; // 성공 후 등급 확률을 1000 단위로 추첨
         while (grade<8 && roll>=config.weights[grade]) {roll-=config.weights[grade];grade++;}
@@ -60079,6 +60094,7 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
         result.record=record;
     }
     removeItem(data,user,config.ticketName,1);
+    if(upName){removeItem(data,user,upName,1);result.remainingProbabilityUp=member.bag[upName] || 0;}
     member.passDollDrawCnt = GLOBAL_CONFIG.daily.passDollDrawMax; // 정상 실패를 포함한 실제 이용권 사용만 인정
     result.remainingTicket=member.bag && member.bag[config.ticketName] || 0;
     result.remainingPoint=member.point;
@@ -60093,7 +60109,9 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
     var cfg=GLOBAL_CONFIG.doll, title=dollTitle(data,petData,guildData,user,"인형뽑기"), lines=[title];
     if(!result.ok) return lines.concat(["🧸 뽑기에 사용할 이용권이 부족해요.","└ 인형뽑기이용권 1개가 필요해요.","","🧸 이용권 0개 · 보유 🅟"+numberWithCommas(data.member[user].point),"└ 부족한 이용권: 1개","━━━━━━━━━━━━","📖 명령어"+allsee,dollCommandFooter()]).join("\n");
     var dividerAt=title.lastIndexOf("\n━━━━━━━━━━━━"); // 기존 머리말의 마지막 구분선 앞에 현재 티어 표시
-    lines=[title.substring(0,dividerAt),"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%","━━━━━━━━━━━━",""];
+    lines=[title.substring(0,dividerAt),"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%"];
+    if(result.probabilityUpName) lines.push("└ 기존 "+result.baseProbability+"% + 아이템 "+result.probabilityUpPercent+"%");
+    lines.push("━━━━━━━━━━━━","");
     var d=result.doll;
     if(result.success) {
         lines.push("✅ "+cfg.emojis[d.grade]+" "+cfg.grades[d.grade]+"｜"+d.name,"📏 "+(result.length/10).toFixed(1)+"cm · "+result.size.label,"");
@@ -60103,6 +60121,7 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
     } else lines.push("❌ 인형뽑기 실패","다음 뽑기에 다시 도전해 보세요!");
     lines.push("","━━━━━━━━━━━━","🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개");
     if(result.ticket && result.remainingTicket===0) lines.push("└ 다음 뽑기부터 이용권을 추가로 준비해 주세요.");
+    if(result.probabilityUpName) lines.push("📈 "+result.probabilityUpName,"└ 1개 사용 · 잔여 "+numberWithCommas(result.remainingProbabilityUp)+"개","");
     lines.push("📖 상세·명령어"+allsee);
     if(result.success) {
         if(result.oldMax!==null && result.length>result.oldMax) lines.push("","🏆 개인 최고 기록 갱신","└ "+(result.oldMax/10).toFixed(1)+"cm → "+(result.length/10).toFixed(1)+"cm");
@@ -60191,7 +60210,7 @@ function buildDollRankingMessage(data,petData,guildData,catalog,index,user) {
 }
 // 인형 이용 방법·확률·판매·수집효과를 안내하는 함수
 function buildDollGuideMessage() {
-    var cfg=GLOBAL_CONFIG.doll,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 1개 사용","• 이용권이 없으면 뽑기를 진행할 수 없어요.","• 성공·실패 모두 이용권 1개 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","• 인형뽑기패스: 매일 이용권 "+cfg.dailyPassTickets+"개 지급","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","","뽑기 성공 후 등급 확률"];
+    var cfg=GLOBAL_CONFIG.doll,up=cfg.probabilityUp,lines=["📘 인형가이드 및 확률 안내","━━━━━━━━━━━━","이용 방법부터 크기·수집효과까지","전체보기에서 확인하세요."+allsee,"🧸 이용 방법","• /인형뽑기 입력 시 이용권 1개 사용","• 이용권이 없으면 뽑기를 진행할 수 없어요.","• 성공·실패 모두 이용권 1개 차감","• 호이패스 프리미엄: 매일 이용권 1개 지급","• 일일퀘스트 완료: 이용권 1개 지급","• 인형뽑기패스: 매일 아래 아이템 지급","  ├ 인형뽑기이용권🧸 "+cfg.dailyPassTickets+"개","  └ "+up.itemPrefix+"("+up.dailyPassPercent+"%) "+up.dailyPassCount+"개","━━━━━━━━━━━━","🎯 성공률","• 새싹 5%부터 티어 한 단계마다 +1%p","• 킹 15% · 호월신 55%","• 확률UP 적용 후 최종 성공률은 최대 "+up.maxSuccessPercent+"%예요.","━━━━━━━━━━━━","📈 "+up.itemPrefix+" 안내","• /가방에 보유하면 인형뽑기 시 자동 사용해요.","• 기존 성공률에 아이템의 확률을 더해요.","  예) 기존 20% + 확률UP(50%) = 70%","• 높은 확률의 아이템부터 한 번에 1개 사용해요.","  순서: "+up.percents.join("% → ")+"%","• 여러 확률UP 아이템을 동시에 사용하지 않아요.","• 성공·실패 모두 적용된 아이템 1개가 소모돼요.","• 이용권은 확률UP 아이템과 별도로 1개 사용해요.","• 뽑기가 실행되지 않으면 아이템도 소모되지 않아요.","• 확률UP 아이템이 없으면 기존 성공률로 진행해요.","• 뽑기 성공 여부에만 적용되며, 등급·크기 추첨과 보상은 기존 규칙을 따라요.","━━━━━━━━━━━━","🎲 뽑기 성공 후 등급 확률"];
     for(var g=0;g<9;g++)lines.push(cfg.emojis[g]+" "+cfg.grades[g]+" "+cfg.weights[g]/10+"%");
     lines.push("━━━━━━━━━━━━","📊 경험치","• 인형 기본 경험치 + 현재 티어 보너스","• 가호가 충분하면 합계에 3배 적용","• 가호는 추가된 경험치만큼 사용해요.","• 부족하면 기존 규칙대로 보유 수량만 적용해요.","• 신규·중복 모두 경험치를 받아요.","• 실패 시 경험치 지급·가호 사용은 없어요.","━━━━━━━━━━━━","💰 중복 자동 판매","• 신규 인형은 도감 등록, 중복 인형은 자동 판매","• 이번에 뽑은 크기 구분으로 판매가를 계산해요.","");
     for(var s=0;s<9;s++)lines.push(cfg.emojis[s]+" "+cfg.grades[s]+" "+formatDollAmount(cfg.sale[s]));
