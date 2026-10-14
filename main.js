@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.646"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.647"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -32976,6 +32976,77 @@ function buildMemberSplitRaidSummary(raid) {
     return summary;
 }
 
+// 회원 본문이 직전 정상 백업과 같은 경우에만 누락된 레이드 게시 버전을 복구하는 함수
+function buildMemberSplitPublicationRecovery(member, backup, raid, logs) {
+    var marker = getMemberSplitMarker(member), prior = getMemberSplitMarker(backup);
+    if (!marker || !prior || marker.phase !== "COMPLETE" || prior.phase !== "COMPLETE" || marker.id !== prior.id ||
+        marker.raidRevision !== prior.raidRevision + 1 || marker.logsRevision !== prior.logsRevision) throw new Error("회원 게시 복구 기준이 일치하지 않습니다.");
+    requireMemberSplitStore(raid, "raid"); requireMemberSplitStore(logs, "logs");
+    if (raid.id !== marker.id || raid.revision !== prior.raidRevision || logs.id !== marker.id || logs.revision !== marker.logsRevision) throw new Error("회원 게시 복구 분리 기록이 일치하지 않습니다.");
+    var comparison = JSON.parse(JSON.stringify(member)); // 재화·구독·회원 및 다른 모든 기록까지 직전 백업과 대조
+    comparison.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key].raidRevision = prior.raidRevision;
+    if (JSON.stringify(comparison) !== JSON.stringify(backup) || JSON.stringify(member.serverRaid) !== JSON.stringify(buildMemberSplitRaidSummary(raid.data))) throw new Error("회원 게시 복구 중 기존 기록 차이를 발견했습니다.");
+    if (raid.data.current !== null) throw new Error("진행·정산 중인 레이드는 게시 복구할 수 없습니다.");
+    for (var h = 0; h < raid.data.history.length; h++) {
+        var round = raid.data.history[h];
+        if (!round || round.state !== "DONE" || !round.accounts || typeof round.accounts !== "object") throw new Error("레이드 지급 기록을 확인할 수 없습니다.");
+        for (var account in round.accounts) if (Object.prototype.hasOwnProperty.call(round.accounts, account) && round.accounts[account].paid !== true) throw new Error("미지급 레이드는 게시 복구할 수 없습니다.");
+    }
+    var recoveredRaid = JSON.parse(JSON.stringify(raid)), cancelled = 0;
+    recoveredRaid.revision = marker.raidRevision; // 회원 본문과 지급액을 되돌리지 않고 참조하는 저장 슬롯을 완성
+    for (var n = 0; n < recoveredRaid.data.outbox.length; n++) {
+        var notice = recoveredRaid.data.outbox[n];
+        if (notice.generation !== recoveredRaid.data.generation) throw new Error("레이드 공지 세대가 일치하지 않습니다.");
+        for (var d = 0; d < notice.deliveries.length; d++) {
+            var delivery = notice.deliveries[d];
+            if (!delivery.sent && !delivery.cancelled) { delivery.cancelled = true; cancelled++; }
+        }
+    }
+    var recoveredMember = JSON.parse(JSON.stringify(member));
+    recoveredMember.serverRaid = buildMemberSplitRaidSummary(recoveredRaid.data);
+    return { member: recoveredMember, raid: recoveredRaid, cancelled: cancelled };
+}
+
+// 시작 시 정확한 직전 백업 검증과 원문 보관 후 중단된 게시만 트랜잭션으로 완성하는 저장 계층 함수
+function recoverMemberSplitPublication() {
+    dataTransactionLock.lock();
+    var entered = false;
+    try {
+        var memberPath = resolveActiveDataPath(filePath), memberText = FileStream.read(memberPath, "utf-8");
+        var member = parseJsonContent(memberText, memberPath), marker = getMemberSplitMarker(member);
+        if (!marker || marker.phase !== "COMPLETE") return false;
+        var raidPath = getMemberSplitStorePath("raid", marker.raidRevision), currentRaid = readMemberSplitStore(raidPath, "raid");
+        if (currentRaid.id === marker.id && currentRaid.revision === marker.raidRevision) return false;
+        for (var generation = 1; generation <= 2; generation++) {
+            var matchingPath = getMemberSplitBackupPath("raid", generation);
+            if (!new java.io.File(matchingPath).exists()) continue;
+            var matching = readMemberSplitStore(matchingPath, "raid");
+            if (matching.id === marker.id && matching.revision === marker.raidRevision) return false; // 정상적인 기존 백업 선택 경로 유지
+        }
+        if (currentRaid.id !== marker.id || currentRaid.revision >= marker.raidRevision) throw new Error("회원 게시 복구 저장 슬롯이 일치하지 않습니다.");
+        var backupPath = getManagedJsonBackupPath(memberPath), backupText = FileStream.read(backupPath, "utf-8");
+        var backup = parseJsonContent(backupText, backupPath), prior = getMemberSplitMarker(backup);
+        if (!prior) throw new Error("회원 게시 복구 백업이 없습니다.");
+        var priorRaid = readPublishedMemberSplitStore(prior, "raid"), logs = readPublishedMemberSplitStore(marker, "logs");
+        var plan = buildMemberSplitPublicationRecovery(member, backup, priorRaid, logs);
+        var archivePath = resolveActiveDataPath(MEMBER_STORAGE_SPLIT_CONFIG.backupPrefix + "publication_recovery_" + String(java.util.UUID.randomUUID()) + ".json");
+        if (new java.io.File(archivePath).exists()) throw new Error("회원 게시 복구 원본 보관 경로가 이미 있습니다.");
+        writeVerifiedJsonFile(archivePath, JSON.stringify({ memberText: memberText, raidText: FileStream.read(raidPath, "utf-8"), backupText: backupText, raidSource: priorRaid }), true);
+        beginDataSaveTransaction(); entered = true;
+        writeMemberSplitSlot(raidPath, JSON.stringify(plan.raid));
+        writeMemberSplitSlot(memberPath, JSON.stringify(plan.member));
+        var verified = loadJsonFile(filePath, "raid");
+        if (JSON.stringify(verified.member) !== JSON.stringify(member.member) || JSON.stringify(verified.serverRaid) !== JSON.stringify(plan.raid.data)) throw new Error("회원 게시 복구 내용 검증 실패");
+        return true;
+    } catch (recoveryError) {
+        if (entered) rollbackDataSaveTransaction();
+        throw recoveryError;
+    } finally {
+        if (entered) endDataSaveTransaction();
+        dataTransactionLock.unlock();
+    }
+}
+
 // 회원 객체에 저장 대상에서 제외되는 운영 로그와 저장 컨텍스트를 연결하는 함수
 function attachMemberSplitStores(data, marker, logs, raid) {
     var context = { logsText: JSON.stringify(logs.data), raidText: raid ? JSON.stringify(raid.data) : null };
@@ -33574,8 +33645,10 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
             if (rollbackFile.exists()) rollbackFile.renameTo(targetFile);
             throw new Error("Verified JSON file replace failed: " + path);
         }
+        var publishedTransaction = getDataSaveTransaction();
+        if (publishedTransaction && !publishedTransaction.rollingBack && publishedTransaction.entries[path]) publishedTransaction.entries[path].saved = true; // 교체 직후 등록해 후속 정리 실패도 원본 복구 대상에 포함
         if (rollbackFile.exists() && !rollbackFile.delete()) {
-            debuggerLog("[WARN : JSON rollback cleanup] " + rollbackFile.getPath());
+            try { debuggerLog("[WARN : JSON rollback cleanup] " + rollbackFile.getPath()); } catch (cleanupLogError) {} // 완료된 저장은 로그 전송 실패로 취소하지 않음
         }
     } catch (e) {
         if (!targetFile.exists() && rollbackFile.exists()) {
@@ -33657,11 +33730,11 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                 FileStream.write(path, jsonText, "utf-8"); // 명시적으로 UTF-8 인코딩 사용
             }
         } catch (e) {
-            debuggerLog("[ERROR : saveJsonFile] " + path + " " + e.toString());
+            try { debuggerLog("[ERROR : saveJsonFile] " + path + " " + e.toString()); } catch (saveLogError) {}
             try {
                 rollbackDataSaveTransaction();
             } catch (rollbackError) {
-                debuggerLog("[ERROR : saveJsonFile rollback] " + rollbackError.toString());
+                try { debuggerLog("[ERROR : saveJsonFile rollback] " + rollbackError.toString()); } catch (rollbackLogError) {}
             }
             throw e;
         } finally {
@@ -60983,6 +61056,7 @@ if (new java.io.File(startupRobberyPendingPath).exists()) {
         initData = loadJsonFile(filePath, "bootstrap");
     }
 }
+if (recoverMemberSplitPublication()) initData = loadJsonFile(filePath, "bootstrap");
 if (initData.serverRaid && serverRaidHasWork(initData.serverRaid)) {
     scheduleServerRaidWork(createCommandContext(false, room8), initData.serverRaid.generation, 1, initData.serverRaid.sequence);
 }

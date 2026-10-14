@@ -29,7 +29,7 @@ c.FileStream.read = p => { reads.push(p); return fixture.disk()[p]; };
 c.FileStream.write = (p, text) => { fixture.disk()[p] = text; };
 vm.runInContext(block(main, "const MEMBER_STORAGE_SPLIT_CONFIG = {") + ";this.MEMBER_STORAGE_SPLIT_CONFIG=MEMBER_STORAGE_SPLIT_CONFIG;var memberSplitBackupCache={};", c);
 const helpers = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore", "readMemberSplitStore",
-    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "writeMemberSplitSlot",
+    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "buildMemberSplitPublicationRecovery", "recoverMemberSplitPublication", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "writeMemberSplitSlot",
     "preserveMemberSplitBackupStores", "getMemberSplitByteLength", "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration",
     "isProtectedManagedJsonPath", "parseManagedJsonContent", "loadJsonFile", "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
 for (const name of helpers) vm.runInContext(block(main, "function " + name + "("), c);

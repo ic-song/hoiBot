@@ -6941,6 +6941,8 @@ Status: VERIFIED
 ## Data Usage
 
 - `data.migrations.memberStorageSplit20261012`: split phase, immutable original backup path, published raid/log revisions
+- Startup `recoverMemberSplitPublication` strictly compares the full member body against the prior primary backup via `buildMemberSplitPublicationRecovery`. Only one missing raid publication with identical member/log records, matching raid summary, no current round, and fully paid history is eligible. It archives raw inputs, publishes the existing referenced raid slot, preserves all payouts, and cancels historical unsent deliveries. Missing/corrupt/foreign stores and changed records still fail; ordinary loads do not silently select a different revision.
+- `writeVerifiedJsonFile` records a transaction entry as saved immediately after replacement; cleanup/transport logging failure cannot leave a published member outside rollback tracking.
 - `serverRaidData.json` / `serverRaidData_next.json`: full `serverRaid`; member retains only current locking state, generation/sequence, wins and pending-notice summary
 - `memberOperationLogs.json` / `memberOperationLogs_next.json`: `supportPassPayoutLogs`, `guildTerritoryAutomationLogs`, `territoryPassAuditLogs`, `petMusouAutomationLogs`
 - `homeData[*].furnitureBag`
