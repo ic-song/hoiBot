@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.642"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.643"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -994,7 +994,7 @@ var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     doll: {
-        allowedRoom: testRoom, // 테스트 기간에는 기존 팻 테스트방 제목과 정확히 일치해야 함
+        allowedRoom: null, // 정식 공개: 인형 전용 방 제한 해제, 기존 권한·이용 조건 유지
         ticketName: "인형뽑기이용권🧸(/인형뽑기)", shardCount: 16,
         dailyPassTickets: 3, broadcastMinGrade: 6,
         rates: { baseSuccessPercent: 5, tierStepPercent: 1, sizeWeights: [85,14,1] },
@@ -2839,7 +2839,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
         }
         // 방 제한은 복구·자동 저장·요청 과부하 기록보다 먼저 확인한다.
-        if (isDollTestRoomCommand(msg) && room !== GLOBAL_CONFIG.doll.allowedRoom) {
+        if (GLOBAL_CONFIG.doll.allowedRoom && isDollTestRoomCommand(msg) && room !== GLOBAL_CONFIG.doll.allowedRoom) {
             var dollRoomMemberPath = resolveActiveDataPath(filePath);
             var dollRoomGuildPath = resolveActiveDataPath(guildPath);
             var dollRoomMemberData = parseJsonContent(FileStream.read(dollRoomMemberPath, "utf-8"), dollRoomMemberPath);
