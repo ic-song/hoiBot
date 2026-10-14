@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.648"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.649"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -24937,11 +24937,11 @@ replier.reply(
                     addPetHomeHeartAllocationAlerts(petHomeActivityDataForHeart, heartTargetName, sender, heartAllocations);
                     var heartAwardedBadges = awardPetHomeAchievementBadges(petHomeActivityDataForHeart, heartTargetName);
                     addPetHomeBadgeAwardAlerts(petHomeActivityDataForHeart, heartTargetName, heartAwardedBadges);
-                    if (heartCommandName === "마음") data.member[sender].passHeartGiveCnt = GLOBAL_CONFIG.daily.passHeartGiveMax;
+                    data.member[sender].passHeartGiveCnt = GLOBAL_CONFIG.daily.passHeartGiveMax; // 정상 마음표현 5종은 동일한 패스 일퀘 조건을 공유
                     try {
                         saveJsonFile(heartHomeData, homeDataFile);
                         saveJsonFile(petHomeActivityDataForHeart, petHomeActivityFile);
-                        if (heartCommandName === "마음") saveJsonFile(data, filePath);
+                        saveJsonFile(data, filePath);
                     } catch (heartSaveError) {
                         if (previousPassHeartGiveCnt === undefined) delete data.member[sender].passHeartGiveCnt;
                         else data.member[sender].passHeartGiveCnt = previousPassHeartGiveCnt;
@@ -60222,7 +60222,7 @@ function dollTitle(data,petData,guildData,user,label,emoji) {
 // 인형 획득 결과와 상세 경험치·잔여 재화를 출력하는 함수
 function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
     var cfg=GLOBAL_CONFIG.doll, title=dollTitle(data,petData,guildData,user,"인형뽑기"), lines=[title];
-    if(!result.ok) return lines.concat(["🧸 뽑기에 사용할 이용권이 부족해요.","└ 인형뽑기이용권 1개가 필요해요.","","🧸 이용권 0개 · 보유 🅟"+numberWithCommas(data.member[user].point),"└ 부족한 이용권: 1개","━━━━━━━━━━━━","📖 명령어"+allsee,dollCommandFooter()]).join("\n");
+    if(!result.ok) return lines.concat(["","🧸 뽑기에 사용할 이용권이 부족해요.","└ 인형뽑기이용권 1개가 필요해요.","","🧸 이용권 0개","└ 부족한 이용권: 1개","","━━━━━━━━━━━━","📖 상세·명령어"+allsee,"",dollCommandFooter()]).join("\n");
     var dividerAt=title.lastIndexOf("\n━━━━━━━━━━━━"); // 기존 머리말의 마지막 구분선 앞에 현재 티어 표시
     lines=[title.substring(0,dividerAt),"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%"];
     if(result.probabilityUpName) lines.push("└ 기존 "+result.baseProbability+"% + 아이템 "+result.probabilityUpPercent+"%");

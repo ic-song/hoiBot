@@ -17,8 +17,10 @@ test("실패 결과·잔여 포인트 줄 제거·마지막 이용권·추가 �
 test("중복 판매·최대 크기 갱신·실제 경험치 유지",()=>{
  const x=input(2,0,0);draw(x);const r=draw(x,[0,0,0,0.995,0.999]),s=output(x,r);checkCommon(s,r);assert(s.includes("🔁 중복 획득"));assert(s.includes("💰 자동 판매"));assert(s.includes("개인 최고 기록 갱신"));assert.strictEqual(x.d.member.u.point,r.sale);assert(s.includes("📖 획득 등급 보기\n"+c.getDollCollectionCommand(cat,r.record,r.doll.id)));
 });
-test("이용권 부족 UI는 이전 출력 그대로·무소모",()=>{
- const old=cp.execFileSync("git",["show","e06bf91b98da6e69c1cfb7192453421a903ae050:main.js"],{encoding:"utf8",maxBuffer:16000000});vm.runInContext(block(old,"function buildDollDrawMessage(").replace("function buildDollDrawMessage(","function oldDollMessage("),c);const x=input(0,9999999),before=JSON.stringify(x),r=draw(x);assert.strictEqual(output(x,r),c.oldDollMessage(x.d,x.p,{},cat,"u",r));assert.strictEqual(JSON.stringify(x),before);
+test("이용권 부족 UI는 노션의 빈 줄·상세 제목·전체보기 유지·포인트 미표시·무소모",()=>{
+ const x=input(0,9999999),before=JSON.stringify(x),r=draw(x),s=output(x,r);
+ assert.strictEqual(s,"🧸 [u] 님 인형뽑기\n━━━━━━━━━━━━\n\n🧸 뽑기에 사용할 이용권이 부족해요.\n└ 인형뽑기이용권 1개가 필요해요.\n\n🧸 이용권 0개\n└ 부족한 이용권: 1개\n\n━━━━━━━━━━━━\n📖 상세·명령어<ALLSEE>\n\n🧸 /인형뽑기\n📖 /인형도감\n🏆 /인형순위\n📘 /인형가이드\n└ 크기·확률·수집효과 안내");assert.strictEqual(JSON.stringify(x),before);
+ const premium=c.isHoiPassPremiumActive;c.isHoiPassPremiumActive=()=>true;try{assert.strictEqual(output(x,r),"[👑호이패스 프리미엄👑]\n"+s);}finally{c.isHoiPassPremiumActive=premium;}
 });
 vm.runInContext(block(main,'if (msg === "/호여" || /^\\/호여\\s+\\d+$/.test(msg))').replace(/^if /,'function blessingCommand(){if ')+"}",c);
 test("실제 /호여 10 지급·가호 안내100/인형별 EXP·저장 1회",()=>{
