@@ -374,7 +374,7 @@ group("분리 백업 회전 실패도 저장 중단·원본과 백업 세트 복
 // 기존 긴 정리 명령도 실제 분기로 실행하여 비열거 로그·얇은 회원 저장과의 호환을 확인한다.
 function prepareCleanupBody() {
     const cleanupBlock = block(main, 'if (msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender)))');
-    for (const name of ["collectDeletedAccountNames", "cleanupDeletedAccountResiduals", "removeDeletedAccountBoardRows", "initPetHomeCommentsData", "requirePetHomeActivityData", "ensureFreeMarketData", "ensurePunchRankData"])
+    for (const name of ["collectDeletedAccountNames", "cleanupDeletedAccountResiduals", "removeDeletedAccountBoardRows", "initPetHomeCommentsData", "requirePetHomeActivityData", "ensureFreeMarketData", "ensurePunchRankData", "requireMiniPetRobberyStore", "getMiniPetRobberyRows", "validateMiniPetRobberyPending", "buildMiniPetRobberyMigration", "isSearchAuthenticationCount"])
         vm.runInContext(block(main, "function " + name + "("), c);
     for (const match of cleanupBlock.matchAll(/(?:loadJsonFile\(|saveJsonFile\(\w+,\s*)(\w+)\)/g)) {
         if (!c[match[1]]) c[match[1]] = root + match[1] + ".json";
@@ -383,7 +383,7 @@ function prepareCleanupBody() {
     c.petHomePlacedFurniturePath = root + "not-separated-furniture.json";
     delete fixture.disk()[c.petHomePlacedFurniturePath];
     c.formatPointValue = String;
-    vm.runInContext("function runCleanupBody(data,petData,petSkillData,guildData,currencyLogData,memberStorageMigrationResult){" + cleanupBlock + "}", c);
+    vm.runInContext("function runCleanupBody(data,petData,petSkillData,guildData,currencyLogData,memberStorageMigrationResult){beginDataSaveTransaction();try{" + cleanupBlock + "}catch(error){rollbackDataSaveTransaction();throw error;}finally{endDataSaveTransaction();}}", c);
 }
 group("실제 기존 정리 본문과 완료 UI도 분리 회원·로그를 정상 저장", () => {
     migrate(); prepareCleanupBody(); const d = load(); d.member.a.point = 12.7; d.member.a.bag["영지자동공격권⚔️"] = 3;

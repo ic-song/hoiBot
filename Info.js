@@ -89,6 +89,7 @@ const GLOBAL_CONFIG = {
 		batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
 	},
 	miniPet: { // 미니펫 시스템 설정
+		robberyHistory: { pendingName: "miniPetRobberyPending.json" },
 		battleBagMin: 5, // 미니펫대전 최소 가방 보유 수
 		battleBagMax: 13, // 미니펫대전 최대 가방 보유 수
 		cleanupTriggerCount: 13, // 미니펫 가방 정리 대상 기준
@@ -573,6 +574,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var infoDollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
 			if (!infoDollPending || !Object.prototype.hasOwnProperty.call(infoDollPending, "pending")) throw new Error("인형 복구 기록 형식 오류");
 			if (infoDollPending.pending !== null) return;
+		}
+		// 강탈 저장 복구가 끝나기 전에는 부분 반영된 포인트·펫 정보를 표시하지 않는다.
+		var infoRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.robberyHistory.pendingName);
+		if (new java.io.File(infoRobberyPendingPath).exists()) {
+			var infoRobberyPending = loadJsonFile(infoRobberyPendingPath);
+			if (!infoRobberyPending || !Object.prototype.hasOwnProperty.call(infoRobberyPending, "pending") || (infoRobberyPending.pending !== null && !Array.isArray(infoRobberyPending.pending))) throw new Error("강탈 복구 기록 형식 오류");
+			if (infoRobberyPending.pending !== null) return;
 		}
 		let data = loadJsonFile(filePath);
 		// 레이드 잠금은 MASTER·전역 정보 예외보다 우선하고 안내는 main.js에서만 출력한다.
