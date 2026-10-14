@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.651"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.652"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -46025,8 +46025,6 @@ function generateBagOutput(bagItems, includeDonationNotice) {
         for (var b = 0; b < koreanItems.length; b++) {
             var it2 = koreanItems[b];
             bagOutput += "   " + ++index + ". " + it2 + " x " + bagItems[it2] + "\n";
-            var dollUpMatch = /^인형뽑기확률UP🧸\((10|20|30|40|50)%\)$/.exec(it2);
-            if (dollUpMatch) bagOutput += "   └ 성공률 +" + dollUpMatch[1] + "%p · 성공·실패 모두 1개 소모\n";
             sortedItemList.push(it2);
         }
 
