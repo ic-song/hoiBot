@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.658"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.659"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -6255,6 +6255,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     isFreeMarketConfirmed = true;
                 }
 
+                var freeMarketRollbackText = null;
+                if (isFreeMarketRegisterCommand(msg) || /^\/(?:자유시장구매|자유시장취소|거래소강제취소)\s+\d+$/.test(msg)) {
+                    freeMarketRollbackText = FileStream.read(resolveActiveDataPath(freeMarketPath), "utf-8"); // 거래 시작 전 시장 원문을 같은 명령의 롤백에 사용
+                    parseJsonContent(freeMarketRollbackText, freeMarketPath);
+                }
+
                 if (msg === "/자유시장생성") {
                     if (!(isAdmin(sender) || isMaster(sender))) {
                         replier.reply("❌ 해당 명령어는 Admin/Master만 사용할 수 있습니다.");
@@ -6352,7 +6358,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, bagMarketCarrotFee);
                     addFreeMarketListing(freeMarketBagData, "bag", sender, bagMarketItemName, bagMarketCount, bagMarketPrice, null, bagMarketCarrotFee);
                     saveJsonFile(data, filePath);
-                    saveJsonFile(freeMarketBagData, freeMarketPath);
+                    saveJsonFile(freeMarketBagData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6440,7 +6446,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addFreeMarketListing(freeMarketMiniData, "miniPet", sender, getFreeMarketMiniPetDisplayName(miniMarketTarget), miniMarketCount, miniMarketPrice, { pets: miniMarketPicked }, miniMarketCarrotFee);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
-                    saveJsonFile(freeMarketMiniData, freeMarketPath);
+                    saveJsonFile(freeMarketMiniData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6470,7 +6476,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + furnitureMarketActiveCount + "/" + furnitureMarketLimit + "건\n요청: +1건");
                         return;
                     }
-                    var furnitureHomeData = loadJsonFile(homeDataFile) || {};
+                    var furnitureHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var furnitureHomeData = parseJsonContent(furnitureHomeDataRollbackText, homeDataFile);
                     furnitureHomeData = initSweetHomeUser(furnitureHomeData, sender);
                     var furnitureMarketBag = sortFurnitureList(furnitureHomeData[sender].furnitureBag || []);
                     if (furnitureMarketIndex < 1 || furnitureMarketIndex > furnitureMarketBag.length) {
@@ -6515,8 +6522,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     sortFurnitureList(furnitureMarketBag);
                     addFreeMarketListing(freeMarketFurnitureData, "furniture", sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, { furnitures: furnitureMarketPicked }, furnitureMarketCarrotFee);
                     saveJsonFile(data, filePath);
-                    saveJsonFile(furnitureHomeData, homeDataFile);
-                    saveJsonFile(freeMarketFurnitureData, freeMarketPath);
+                    saveJsonFile(furnitureHomeData, homeDataFile, false, furnitureHomeDataRollbackText);
+                    saveJsonFile(freeMarketFurnitureData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6576,7 +6583,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addFreeMarketListing(freeMarketSkillData, "skill", sender, normalizePetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, null, skillMarketCarrotFee);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketSkillData, freeMarketPath);
+                    saveJsonFile(freeMarketSkillData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6592,17 +6599,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (/^\/펜던트거래등록\s+\d+\s+\d+$/.test(msg)) {
                     var pendantMarketResultEarly = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg, isFreeMarketConfirmed);
-                    replier.reply(pendantMarketResultEarly.message);
                     if (pendantMarketResultEarly.pending) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
+                        replier.reply(pendantMarketResultEarly.message);
                         return;
                     }
                     if (pendantMarketResultEarly.ok) {
                         saveJsonFile(data, filePath);
                         saveJsonFile(petData, memberPetPath);
-                        saveJsonFile(pendantMarketResultEarly.freeMarketData, freeMarketPath);
+                        saveJsonFile(pendantMarketResultEarly.freeMarketData, freeMarketPath, false, freeMarketRollbackText);
                         clearFreeMarketConfirmState(sender);
                     }
+                    replier.reply(pendantMarketResultEarly.message);
                     return;
                 }
 
@@ -6623,16 +6631,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 본인이 등록한 물품만 취소할 수 있습니다.");
                         return;
                     }
-                    var cancelHomeData = loadJsonFile(homeDataFile) || {};
+                    var cancelHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var cancelHomeData = parseJsonContent(cancelHomeDataRollbackText, homeDataFile);
                     returnFreeMarketItemToOwner(data, petData, petSkillData, cancelHomeData, cancelListing, sender);
                     var cancelRefundedCarrotFee = refundFreeMarketCancelCarrotFee(data, sender, cancelListing);
                     removeFreeMarketListing(freeMarketCancelData, cancelListing.id);
                     saveJsonFile(data, filePath);
                     if (cancelListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
                     if (cancelListing.type === "pendant") saveJsonFile(petData, memberPetPath);
-                    if (cancelListing.type === "furniture") saveJsonFile(cancelHomeData, homeDataFile);
+                    if (cancelListing.type === "furniture") saveJsonFile(cancelHomeData, homeDataFile, false, cancelHomeDataRollbackText);
                     if (cancelListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketCancelData, freeMarketPath);
+                    saveJsonFile(freeMarketCancelData, freeMarketPath, false, freeMarketRollbackText);
                     replier.reply(
                         "🏪 자유시장 등록 취소\n" +
                         "━━━━━━━━━━━━\n" +
@@ -6654,16 +6663,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
                         return;
                     }
-                    var forceHomeData = loadJsonFile(homeDataFile) || {};
+                    var forceHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var forceHomeData = parseJsonContent(forceHomeDataRollbackText, homeDataFile);
                     returnFreeMarketItemToOwner(data, petData, petSkillData, forceHomeData, forceListing, forceListing.seller);
                     var forceRefundedCarrotFee = refundFreeMarketCancelCarrotFee(data, forceListing.seller, forceListing);
                     removeFreeMarketListing(freeMarketForceData, forceListing.id);
                     saveJsonFile(data, filePath);
                     if (forceListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
                     if (forceListing.type === "pendant") saveJsonFile(petData, memberPetPath);
-                    if (forceListing.type === "furniture") saveJsonFile(forceHomeData, homeDataFile);
+                    if (forceListing.type === "furniture") saveJsonFile(forceHomeData, homeDataFile, false, forceHomeDataRollbackText);
                     if (forceListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketForceData, freeMarketPath);
+                    saveJsonFile(freeMarketForceData, freeMarketPath, false, freeMarketRollbackText);
                     replier.reply(
                         "🛠 자유시장 강제취소 완료\n" +
                         "━━━━━━━━━━━━\n" +
@@ -6715,7 +6725,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 포인트가 부족합니다.\n필요: 🅟" + numberWithCommas(buyPrice) + "\n보유: 🅟" + numberWithCommas(data.member[sender].point || 0));
                         return;
                     }
-                    var buyHomeData = loadJsonFile(homeDataFile) || {};
+                    var buyHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var buyHomeData = parseJsonContent(buyHomeDataRollbackText, homeDataFile);
                     if (buyListing.type === "miniPet") {
                         if (!petData[sender]) petData[sender] = {};
                         if (!Array.isArray(petData[sender].miniPetBag)) petData[sender].miniPetBag = [];
@@ -6759,9 +6770,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath);
                     if (buyListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
                     if (buyListing.type === "pendant") saveJsonFile(petData, memberPetPath);
-                    if (buyListing.type === "furniture") saveJsonFile(buyHomeData, homeDataFile);
+                    if (buyListing.type === "furniture") saveJsonFile(buyHomeData, homeDataFile, false, buyHomeDataRollbackText);
                     if (buyListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketBuyData, freeMarketPath);
+                    saveJsonFile(freeMarketBuyData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "]님\n" +
@@ -25813,7 +25824,7 @@ replier.reply(
                     let maxBag = getFurnitureBagLimit(data, sender);
                     // 헤더
                     var out = getHoiPassPremiumHeader(data, sender) + "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
-                    "좋아홈💌x" +
+                    out += "좋아홈💌x" +
                     (userHome.likeCnt || 0) +
                     "개\n" +
                     "현재 배치된 가구 (" +

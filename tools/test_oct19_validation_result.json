@@ -1,0 +1,536 @@
+{
+  "schemaVersion": 1,
+  "dateKst": "2026-10-19",
+  "developmentVersion": "ver_2.659",
+  "baseCommit": "b954692272514daddd39c9a56affb4b90a34dc66",
+  "sourceSha256": {
+    "main.js": "d75cfd39f3bf8f1d0cd70a916aac7a0f2d4ffb4e9cdf058135de3d819d4d6c27",
+    "Info.js": "a947c99dcff5edeb9c07bf3afc7d6c6ee681ffd1e4ec3075812a9c9c3465df51"
+  },
+  "summary": {
+    "total": 66,
+    "passed": 66,
+    "failed": 0,
+    "snapshotFiles": 1143,
+    "snapshotChangesDuringTests": [],
+    "intentionalChangesSinceStart": [
+      "data\\hoiBotChangeLog.json"
+    ],
+    "jsonParseErrors": []
+  },
+  "fixes": [
+    {
+      "problem": "가구 거래의 마지막 시장 저장 실패 시 가구 소유 상태만 남음",
+      "change": "명령 진입의 시장 원문과 가구 변경 전 원문을 기존 검증 저장/롤백 인수에 연결",
+      "test": "test_oct19_market_flow.js 그룹5: 5종 등록/구매/취소 저장 지점마다 실패 주입 후 원문 일치"
+    },
+    {
+      "problem": "펜던트 등록 성공 안내가 파일 저장보다 먼저 발송됨",
+      "change": "확인 안내는 유지하고 성공 안내는 전체 저장 후 전송",
+      "test": "test_oct19_market_flow.js 그룹5: 저장 실패 시 완료 안내 없음"
+    },
+    {
+      "problem": "가구가방의 배치 수와 장착 한도 문자열이 응답에 추가되지 않음",
+      "change": "기존 안내 문자열을 응답에 연결",
+      "test": "test_oct19_furniture_flow.js 4그룹: 기존/분리 저장과 평수 경계 및 보너스 표시 일치"
+    },
+    {
+      "problem": "기존 창세상자 테스트가 새 3단계 설정 배열을 모의 환경에 제공하지 않음",
+      "change": "기존 설정 자리표시자에 합성 인형상자 배열 보완",
+      "test": "test_creation_reward_box.js 8개 그룹 통과"
+    }
+  ],
+  "coverage": [
+    {
+      "commands": [
+        "/인형상자오픈 등급 [수량]"
+      ],
+      "data": [
+        "dollCatalog.json",
+        "member.json",
+        "member_pet.json",
+        "dollIndex.json",
+        "dollRecords_N.json",
+        "dollPending.json"
+      ],
+      "expected": "1~100개·생략1개·동일등급·기존보상·엘리트무차감·저장실패원복/재시작복구",
+      "actual": "16그룹 통과: 손상재화·중간오류·1000종전수선택·100개vs단일100회·특수계정·알림오류 포함"
+    },
+    {
+      "commands": [
+        "/가방거래등록",
+        "/미니펫거래등록",
+        "/가구거래등록",
+        "/스킬거래등록",
+        "/펜던트거래등록",
+        "/자유시장구매",
+        "/자유시장취소",
+        "/거래소강제취소"
+      ],
+      "data": [
+        "member.json",
+        "member_pet.json",
+        "petSkillData.json",
+        "homeDataFile",
+        "freeMarket.json"
+      ],
+      "expected": "실제 개당비용·17/10% 정산·회원권반환·오입력무소모·전체저장원복·DEV격리",
+      "actual": "8그룹 통과, 일반/회원권×거래5종 정상 등록·구매·취소 및 저장지점별 실패·수신한도/권한 검증"
+    },
+    {
+      "commands": [
+        "/길드공헌",
+        "/길드공헌추가",
+        "/모험가퀘스트",
+        "/퀘스트완료",
+        "/가구장착",
+        "/가구가방",
+        "/펫홈"
+      ],
+      "data": [
+        "guildData",
+        "member.json",
+        "homeDataFile"
+      ],
+      "expected": "도달레벨 보상·중복미지급·14단계횟수안내·평수경계/기존보너스보존",
+      "actual": "test_oct19_ready.js 6그룹·기존 퀘스트 회귀 및 test_oct19_furniture_flow.js 4그룹 통과: 실제 가구 장착/가방 응답, 기존·분리 저장, 100/104/105/109/110/115/200평 경계와 보너스 검증"
+    },
+    {
+      "commands": [
+        "Rhino 응답 잠금 경로"
+      ],
+      "data": [
+        "Java ReentrantLock",
+        "ReentrantReadWriteLock",
+        "ThreadLocal",
+        "합성 재고 임계구역"
+      ],
+      "expected": "동시 실행 직렬화·예외 후 잠금 해제·다음 입력 처리",
+      "actual": "실제 응답 진입/해제 코드와 Java 스레드20쌍 검증 통과. 게임 본문은 합성 임계구역으로 대체"
+    }
+  ],
+  "validationBoundary": [
+    "MAIN/Info 전체 소스 Rhino1.7.15 컴파일 및 핵심 헬퍼 실행을 검증함. 단말 MessengerBot 자체 실행/업로드/재컴파일은 수행하지 않음.",
+    "인형 저장 중단은 기존 dollPending 복구를 검증함. 자유시장 검증은 같은 명령에서 발생한 저장 예외의 롤백이며 강제 프로세스 종료의 파일 간 영속 원자성까지 보장하는 새 저널은 추가하지 않음.",
+    "동시성 시험은 실제 잠금 경로+Java 스레드+합성 임계구역이며 Android 전체 콜백의 실기기 부하 시험은 아님.",
+    "운영 데이터 1143개 파일의 테스트 전후 해시 변화 없음. 작업 시작 대비 의도한 변경은 개발자노트뿐임.",
+    "운영 반영/Notion 상태 변경/카카오톡 알림/스킬 수정 없음."
+  ],
+  "excluded": [
+    "test_uploaded_main_version.js 및 PowerShell 운영반영/데이터동기화 테스트: 이번 게임 변경 범위 밖의 워크플로 시험"
+  ],
+  "runs": [
+    {
+      "test": "test_adventure_booster_hotfix.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.158
+    },
+    {
+      "test": "test_adventure_history_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.565
+    },
+    {
+      "test": "test_adventure_quest_stage6_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.153
+    },
+    {
+      "test": "test_adventure_quest_tutorial.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.222
+    },
+    {
+      "test": "test_adventure_starter_pet_appearance.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.143
+    },
+    {
+      "test": "test_adventure_starter_recovery.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.139
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 0.169
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 0.167
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "3"
+      ],
+      "exit": 0,
+      "seconds": 0.182
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "4"
+      ],
+      "exit": 0,
+      "seconds": 0.133
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "5"
+      ],
+      "exit": 0,
+      "seconds": 0.139
+    },
+    {
+      "test": "test_authority_badge.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.162
+    },
+    {
+      "test": "test_carrot_community_trade.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.182
+    },
+    {
+      "test": "test_character_referral.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.192
+    },
+    {
+      "test": "test_charm_buff_diagnostics.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.245
+    },
+    {
+      "test": "test_creation_reward_box.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.269
+    },
+    {
+      "test": "test_daily_chat_experience_query.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.164
+    },
+    {
+      "test": "test_doll_boxes.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.311
+    },
+    {
+      "test": "test_doll_catalog.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.13
+    },
+    {
+      "test": "test_doll_content.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.685
+    },
+    {
+      "test": "test_doll_probability_up.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.912
+    },
+    {
+      "test": "test_doll_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 2.965
+    },
+    {
+      "test": "test_doll_test_room.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.466
+    },
+    {
+      "test": "test_doll_ui_blessing.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.989
+    },
+    {
+      "test": "test_fortune_cookie.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.495
+    },
+    {
+      "test": "test_growth_potion.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.269
+    },
+    {
+      "test": "test_home_badge_cube_edit.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.234
+    },
+    {
+      "test": "test_info_guild_territory_command_lock.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.217
+    },
+    {
+      "test": "test_info_starter_duplicate_audit.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.202
+    },
+    {
+      "test": "test_latest_server_display.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.329
+    },
+    {
+      "test": "test_main_test_room_only.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.202
+    },
+    {
+      "test": "test_member_display_search_auth.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.699
+    },
+    {
+      "test": "test_member_publication_recovery.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.556
+    },
+    {
+      "test": "test_member_storage_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.016
+    },
+    {
+      "test": "test_member_storage_split_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 0.914
+    },
+    {
+      "test": "test_minipet_admin_add.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.254
+    },
+    {
+      "test": "test_minipet_conditional_skill.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.289
+    },
+    {
+      "test": "test_minipet_support_pet_info.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.188
+    },
+    {
+      "test": "test_oct14_followup.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.19
+    },
+    {
+      "test": "test_oct14_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.882
+    },
+    {
+      "test": "test_oct16_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.737
+    },
+    {
+      "test": "test_oct19_furniture_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.447
+    },
+    {
+      "test": "test_oct19_lock_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 1.995
+    },
+    {
+      "test": "test_oct19_market_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.005
+    },
+    {
+      "test": "test_oct19_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.681
+    },
+    {
+      "test": "test_operator_privileges.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.212
+    },
+    {
+      "test": "test_pet_explore_manual_settlement_message.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.195
+    },
+    {
+      "test": "test_pet_musou_storage_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.504
+    },
+    {
+      "test": "test_pet_skill_retirement.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.217
+    },
+    {
+      "test": "test_point_shop_purchase.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.448
+    },
+    {
+      "test": "test_quest_conditions_oct14.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.81
+    },
+    {
+      "test": "test_raid_pet_skills.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.784
+    },
+    {
+      "test": "test_raid_seal_minipet_queries.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.346
+    },
+    {
+      "test": "test_reset_auto_attendance_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.18
+    },
+    {
+      "test": "test_robbery_history_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.802
+    },
+    {
+      "test": "test_room_privilege_robbery_display.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.185
+    },
+    {
+      "test": "test_room_server6_ingress.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.154
+    },
+    {
+      "test": "test_search_authentication_oct12.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.418
+    },
+    {
+      "test": "test_sep30_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.217
+    },
+    {
+      "test": "test_server_check_starter_stones.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.171
+    },
+    {
+      "test": "test_server_raid.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 4.812
+    },
+    {
+      "test": "test_server_raid_oct12.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.745
+    },
+    {
+      "test": "test_support_upgrade_level_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.718
+    },
+    {
+      "test": "test_tier_ui_oct13.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.215
+    },
+    {
+      "test": "test_veranda_command_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.231
+    },
+    {
+      "test": "test_veranda_large_expansion.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.209
+    }
+  ]
+}

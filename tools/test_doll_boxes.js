@@ -159,4 +159,87 @@ test("MAIN/Info 가방에서 10종 모두 동일한 아이템명·연속 번호"
     }
 });
 
-console.log("인형상자 10개 그룹 통과");
+test("재고·포인트 손상/정수 범위와 필수 파일 오류는 실제 저장 무변경", () => {
+    const names = ["member.json", "member_pet.json", "dollIndex.json", "dollRecords_" + c.getDollShard("u") + ".json", "dollPending.json"];
+    const snapshot = () => names.map(name => fixture.raw(root + name));
+    for (const value of [-1, 1.5, "3", null, Number.MAX_SAFE_INTEGER + 1]) {
+        for (const field of ["box", "point"]) {
+            prepare(); const d = fixture.read();
+            if (field === "box") d.member.u.bag[box(0)] = value; else d.member.u.point = value;
+            fixture.write(d); const before = snapshot();
+            assert.throws(() => run("/인형상자오픈 일반 2")); assert.deepStrictEqual(snapshot(), before);
+        }
+    }
+    for (const name of ["dollIndex.json", "dollRecords_" + c.getDollShard("u") + ".json", "dollCatalog.json", "member_pet.json"]) {
+        fixture.reset(); prepare(); fixture.corrupt(root + name); const before = snapshot();
+        assert.throws(() => run("/인형상자오픈 일반 2")); assert.deepStrictEqual(snapshot(), before);
+        fixture.reset(); prepare(); fixture.remove(root + name); const missingBefore = snapshot();
+        assert.throws(() => run("/인형상자오픈 일반 2")); assert.deepStrictEqual(snapshot(), missingBefore);
+    }
+});
+
+test("2회차 포인트 넘침·중간 난수 오류는 이전 획득까지 저장하지 않음", () => {
+    const original = c.Math.random;
+    try {
+        prepare(); const d = fixture.read(); d.member.u.point = Number.MAX_SAFE_INTEGER - 500000; fixture.write(d);
+        const before = ["member.json", "member_pet.json", "dollIndex.json", "dollRecords_" + c.getDollShard("u") + ".json"].map(name => fixture.raw(root + name));
+        c.Math.random = () => 0;
+        assert.throws(() => run("/인형상자오픈 일반 3"), /포인트/);
+        assert.deepStrictEqual(["member.json", "member_pet.json", "dollIndex.json", "dollRecords_" + c.getDollShard("u") + ".json"].map(name => fixture.raw(root + name)), before);
+        assert.strictEqual(fixture.get(root + "dollPending.json").pending, null);
+        prepare(); const memberBefore = clone(fixture.read()); let calls = 0;
+        c.Math.random = () => { if (++calls === 7) throw Error("synthetic middle draw failure"); return 0; };
+        assert.throws(() => run("/인형상자오픈 일반 3"), /middle draw/);
+        assert.deepStrictEqual(fixture.read(), memberBefore); assert.strictEqual(Object.keys(fixture.get(root + "dollIndex.json").users).length, 0);
+    } finally { c.Math.random = original; }
+});
+
+test("9등급의 실제 1000종을 모두 선택할 수 있고 목록 밖을 뽑지 않음", () => {
+    let checked = 0;
+    for (let grade = 0; grade < 9; grade++) {
+        const pool = cat.dolls.filter(doll => doll.grade === grade);
+        for (let at = 0; at < pool.length; at++) {
+            const x = stocked(grade, 1); let calls = 0;
+            const r = open(x, grade, 1, () => ++calls === 1 ? (at + 0.5) / pool.length : 0);
+            assert.strictEqual(r.results[0].doll.id, pool[at].id); checked++;
+        }
+    }
+    assert.strictEqual(checked, 1000);
+});
+
+test("100개 처리와 같은 난수의 1개씩 100회는 보상·도감·가호 최종 상태 동일", () => {
+    const random = seed => () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+    for (const grade of [0, 3, 8]) {
+        const batch = stocked(grade, 100), singles = stocked(grade, 100);
+        batch.d.member.u.boostercnt = singles.d.member.u.boostercnt = 100;
+        const r = open(batch, grade, 100, random(1900 + grade));
+        const stream = random(1900 + grade), rows = [];
+        for (let i = 0; i < 100; i++) rows.push(open(singles, grade, 1, stream));
+        assert.deepStrictEqual(clone(batch), clone(singles));
+        for (const key of ["charm", "sale", "freshCount", "duplicateCount"]) assert.strictEqual(r[key], rows.reduce((sum, row) => sum + row[key], 0));
+    }
+});
+
+test("유사 입력 150여개는 소모하지 않고 수량 생략/탭/선행0은 정확히 분류", () => {
+    const suffixes = ["-1", "+1", "0", "0.5", "1.0", "1e2", "0x10", "Infinity", "NaN", "１００", "101", "1 해봐", "1 2", "999999999999999999999"];
+    for (const grade of cfg.grades) {
+        for (const suffix of suffixes) assert(c.getDollBoxRequest("/인형상자오픈 " + grade + " " + suffix).error);
+        assert.strictEqual(c.getDollBoxRequest("/인형상자오픈\t" + grade + "\t001").count, 1);
+    }
+    for (const command of ["/인형상자오픈방법", "/인형상자오픈!", "인형상자오픈 일반 1", "다른 /인형상자오픈 일반 1"]) assert.strictEqual(c.getDollBoxRequest(command), null);
+});
+
+test("특수 계정명·패스 일퀘 보존·초보티어·알림 예외는 지급 중복 없음", () => {
+    for (const user of ["__proto__", "constructor", "toString"]) {
+        const x = stocked(); Object.defineProperty(x.d.member, user, { value: x.d.member.u, enumerable: true }); Object.defineProperty(x.p, user, { value: { petexp: 1 }, enumerable: true });
+        x.d.member[user].rank.tier = "새싹"; x.d.member[user].passDollDrawCnt = 1;
+        const r = c.applyDollBoxOpen(x.d, x.p, cat, x.s, x.idx, user, "special-id", "2026.10.19", { grade: 0, count: 3 }, () => 0);
+        assert(r.ok); assert.strictEqual(x.d.member[user].passDollDrawCnt, 1); assert(Object.prototype.hasOwnProperty.call(x.s.users, user));
+        assert.strictEqual(x.s.users[user].catches.D0001.count, 3);
+    }
+    prepare(6, 2); const random = c.Math.random, notice = c.noticeMsg; c.Math.random = () => 0; c.noticeMsg = () => { throw Error("synthetic notice failure"); };
+    try { run("/인형상자오픈 초월 2"); assert.strictEqual(fixture.read().member.u.bag[box(6)] || 0, 0); assert.strictEqual(fixture.get(root + "dollPending.json").pending, null); }
+    finally { c.Math.random = random; c.noticeMsg = notice; }
+});
+
+console.log("인형상자 " + groups + "개 그룹 통과");

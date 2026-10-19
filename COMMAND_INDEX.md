@@ -5906,7 +5906,7 @@ Status: VERIFIED
 - `refreshMiniPetSortIndex`
 - `initSweetHomeUser`
 - `initPetSkillUser`
-- `addHappyFoundationFee`
+- `addHappyFoundationLedgerAmount`
 - `isMemberTierKing`
 
 ## Data Usage
@@ -5926,6 +5926,7 @@ Status: VERIFIED
 - Registration saves `freeMarketPath` and the mutated owner storage file
 - Purchase saves `freeMarketPath`, `filePath`, and the purchased item storage file
 - Cancel/force-cancel saves `freeMarketPath`, `filePath`, and the restored item storage file
+- ver_2.659 captures the market JSON text at command entry and passes it to `saveJsonFile` as the rollback snapshot. Furniture registration/purchase/cancellation also captures the home JSON before mutation, so later save errors roll back both ownership and the listing. Missing/invalid JSON still fails naturally. Pendant registration sends success only after all saves pass.
 - Account deletion removes related free-market listings/logs and saves `freeMarketPath`
 
 ## Related Commands
@@ -5935,8 +5936,8 @@ Status: VERIFIED
 - `/가구거래등록 [가구가방번호] [갯수] [판매금액]`
 - `/스킬거래등록 [스킬가방번호] [갯수] [판매금액]`
 - `/펜던트거래등록 [펜던트가방번호] [판매금액]`
-- `/자유시장확인`
-- `/자유시장확인취소`
+- `자유시장거래`
+- `자유시장거래취소`
 - `/자유시장구매 [번호]`
 - `/자유시장취소 [번호]`
 - `/거래소강제취소 [번호]`
@@ -5950,13 +5951,13 @@ Status: VERIFIED
 
 - Free-market storage is isolated in `freeMarket.json`; item ownership still mutates the original owner/buyer storage files
 - Active listing numbers are display-order numbers from recent-first `/자유시장`; purchase confirmation stores the immutable listing id to avoid buying a shifted listing
-- Registration and purchase commands show a confirmation UI first; `/자유시장확인` re-runs validation before mutation, and `/자유시장확인취소` clears the pending request
+- Registration and purchase commands show a confirmation UI first; `자유시장거래` re-runs validation before mutation, and `자유시장거래취소` clears the pending request
 - Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
 - Completed logs keep only sold trades, newest first, capped at 100 entries
 - Registration fees consume `🥕당근이세요?` immediately; cancel/force-cancel refunds the stored `carrotFee` only when the seller currently holds `자유시장회원권🏪`
-- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 10%, and sellers holding `자유시장회원권🏪` use 7%
+- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 17%, and sellers holding `자유시장회원권🏪` use 10%
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
-- `/자유시장거래현황` appends `자회원🏪(수수료 7%)` to completed trade rows only when the completed log recorded `memberFeeApplied: true`
+- `/자유시장거래현황` appends the logged member fee rate only when `memberFeeApplied: true`; old 5%/7% rows keep their recorded rate.
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
 - `/자유시장` and `/자유시장거래현황` append `[개당 ...]` to item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
 - `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
@@ -8091,3 +8092,6 @@ Status: VERIFIED
 - GLOBAL_CONFIG.carrotTrade.costs: 일반 1, 미니펫/가구 100, 스킬/펜던트 300. 개인 스킬 거래와 시장 묶음 등록의 수량 배수는 유지한다. 개인 펜던트 마지막 인수는 기존 가방번호다.
 - 자유시장 판매자 수수료 일반 17%·회원권 10%, 목록/현황/안내 동기화. 과거 완료 로그의 실제 수수료율과 등록 취소의 기존 carrotFee 반환액은 보존한다. 기존 회원/펫/가구/스킬/시장 저장 흐름을 사용한다.
 - tools/test_oct19_ready.js와 tools/test_carrot_community_trade.js는 합성 데이터에서 경계·보너스·수수료·이력·취소·거래 저장 실패를 확인한다.
+- ver_2.659 시장·가구 원문 스냅샷을 같은 명령의 저장 롤백에 연결한다. tools/test_oct19_market_flow.js는 거래 5종의 등록/구매/취소·모든 저장 지점 실패·DEV 격리·관리자 취소를 검증한다. tools/test_oct19_lock_rhino.js는 실제 응답 진입부 잠금과 합성 임계구역을 Java 스레드 20쌍으로 검증한다.
+
+- ver_2.659 `/가구가방`의 배치 수·장착 한도 안내를 응답에 연결했다. tools/test_oct19_furniture_flow.js는 기존 목록·분리 상세, 평수 경계, 한도 초과 차단과 스킬·프리미엄 보너스를 실제 장착/가방 분기에서 검증한다.
