@@ -3707,13 +3707,20 @@ Status: VERIFIED
 - `generateBagOutput`
 - `isTradableItem`
 - `isMemberTierKing`
+- `getCarrotTradeRequest`, `getCarrotTradeRows`, `validateCarrotTrade`, `findCarrotTradeConfirmedRow`
+- `applyConfirmedCarrotTrade`, `buildCarrotTradeMessage`, `buildCarrotTradeNotice`, `startCarrotTradeExpiry`
 ## Data Usage
 - `data.member[sender].bag`
 - `data.member[receiver].bag`
 ## Save Flow
-- Trades bag items between users and saves member data
+- 최초 요청은 검증과 확인창만 출력하며 거래 파일을 저장하지 않는다. 같은 계정·단체방 여부·방의 정확한 확인 응답만 처리한다.
+- `거래한다`는 원래 명령으로 출석·계정정지·대전·장소 공통 검사를 거친 뒤 최신 대상으로 재검증한다. 기존 약관 범위와 펜던트의 부수 보상 차이도 유지한다.
+- `carrotTradePending`은 DEV/PROD 계정별 1건이며 60초 자동 만료한다. `안한다`·만료·재검증/저장 실패는 대기를 끝내고 전송하지 않는다. 새 요청은 기존 대상·시간을 덮어쓰지 않는다.
+- 실제 아이템 내용과 ID(있는 경우), 최초 순서/번호를 보존한다. 번호가 바뀌어도 대상을 식별하면 진행하며 식별 불가 시 취소한다.
+- 확정 시 회원 저장 후 해당 pet/skill/home 파일을 기존 명령 트랜잭션으로 저장한다. 가구 원문은 변경 전 진입부에서 읽어 롤백 인수로 전달한다.
+- 완료 응답은 모든 저장 뒤 전송하며 응답 실패가 완료된 이전을 되돌리지 않는다. 메모리 대기는 재컴파일 후 재실행되지 않으며, 새 영속 저널은 추가하지 않는다.
 - 일반 아이템·미니펫·펫스킬·가구 거래 완료 안내는 관련 파일 저장이 모두 성공한 뒤 출력한다.
-- 가구 거래는 로드 직후 원본 스냅샷을 만들고 `saveJsonFile(homeData, homeDataFile, false, snapshot)`으로 검증 저장 및 명령 트랜잭션 롤백에 포함한다.
+- 가구 거래는 진입부에서 읽은 원문 스냅샷을 사용하고 `saveJsonFile(homeData, homeDataFile, false, snapshot)`으로 검증 저장 및 명령 트랜잭션 롤백에 포함한다.
 ## Related Commands
 - `/당근게시판`
 - `/당근완료`
@@ -3728,11 +3735,18 @@ Status: VERIFIED
 - `GLOBAL_CONFIG.carrotTrade.communityRoom`은 기존 `room5`의 `호이월드 커뮤니티[티어 킹 이상 입장가능]`이다. 회원의 소속 서버와 DEV 여부는 거래 장소 예외가 아니다.
 - response의 패스·출석 검사 및 게임 데이터 변경 전에 차단한다. 패스 미보유 일대일톡에도 `buildCarrotTradeBlockedMessage`의 체크랭크·입장 링크·미소모 안내를 한 번 출력하고 종료한다.
 - 차단 시 `member.json`, `member_pet.json`, 가구·펫스킬 데이터, 당근온도기 및 거래 횟수는 변경·저장하지 않는다. 안내용 member·pet·guild 로드는 command entry에서 수행한다.
-- 기존 수수료는 일반 아이템 수량당 1개, 미니펫 20개, 가구 10개, 펫스킬 수량당 50개이다. 기획 표의 가구 5개와 다르지만 기존 거래 조건 유지 요구를 따른다.
+- 개당 당근 기준은 일반 1개, 미니펫·가구 100개, 펫스킬·펜던트 300개이다. 일반/스킬은 기존 수량을 곱하고 미니펫·가구·펜던트는 기존 단건 전송이다.
 - 실행 분기는 닉네임과 마지막 정수 인수를 전체 패턴으로 확인한다. 접미 안내 문구·음수·소수는 거래를 실행하지 않는다. 가구 번호 상한을 검사한다.
 - `/당근게시판`, `/당근등록`, `/당근완료`, `/당근게시판삭제`, `/펜던트당근`, 자유시장은 이번 커뮤니티 전용 제한 대상이 아니다.
 
 ---
+
+
+## Confirmation UI and Validation
+- `buildCarrotTradeMessage`는 자유시장 miniPet/furniture 상세·펜던트 형식을 재사용하며 체크랭크 닉네임, 쉼표, 총 당근·잔여량을 표시한다.
+- `haveCarrotTradeNumbersChanged`는 확인 이후·전송 이후 번호 변경이 실제로 확인된 경우에만 다음 가방 확인 안내를 추가한다.
+- 만료 콜백은 응답과 같은 잠금 순서를 사용하고 거래 고유 ID가 일치하는 대기만 취소한다. 이전 거래 타이머는 새 거래/완료 거래를 건드리지 않는다.
+- tools/test_carrot_confirmation.js: 실제 진입·검증·이전·저장·타이머·UI 16그룹. tools/test_carrot_confirmation_rhino.js: 전체 컴파일·실제 명령과 Java 잠금 20쌍(합성 파일 저장).
 
 # /당근완료
 Status: VERIFIED
@@ -4278,7 +4292,7 @@ Status: VERIFIED
 - `/당근`
 
 ## AI Notes
-- 공통 커뮤니티 제한과 정확한 인수 검사는 `/당근` 항목을 참고한다. 수량당 당근 50개와 기존 양쪽 킹 이상·스킬가방 한도 조건을 유지한다.
+- 공통 커뮤니티 제한과 정확한 인수 검사는 `/당근` 항목을 참고한다. 수량당 당근 300개와 기존 양쪽 킹 이상·스킬가방 한도 조건을 유지한다.
 
 ---
 

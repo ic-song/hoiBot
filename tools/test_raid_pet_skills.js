@@ -130,7 +130,7 @@ vm.runInContext("GLOBAL_CONFIG.petSkillCollection = " + source.match(/petSkillCo
     "getOpenablePetSkillCountByGrade", "getPetSkillFixedActualRateTotal", "getPetSkillActualRate",
     "formatPetSkillRate", "buildTierPetSkillInfoLine", "buildPetSkillInfoMessage", "pickRandomPetSkill",
     "isPetSkillCharmConditionActive", "getEquippedNonTierPetSkillExp", "getPetSkillCollectionTargetList",
-    "getPetSkillCollectionCount", "normalizePetSkillStoredNames", "isExclusiveDataMutationCommandMessage"
+    "getPetSkillCollectionCount", "normalizePetSkillStoredNames", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage"
 ].forEach(name => vm.runInContext(extractFunction(name), context));
 
 function reset() {

@@ -14,7 +14,7 @@ assert(responseStart >= 0 && enterEnd > responseStart && finallyStart > enterEnd
 const probe = main.slice(responseStart, enterEnd).replace("function response(", "function probeResponseLock(") + "        runCriticalSection(msg);\n" + main.slice(finallyStart, finallyEnd);
 const configContext = { testRoom: "test" }; for (let i = 1; i <= 100; i++) configContext["room" + i] = "room" + i;
 vm.createContext(configContext); vm.runInContext(block("const GLOBAL_CONFIG = {").replace("const ", "var "), configContext);
-const names = ["getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "isDevCommandMessage", "stripDevCommandPrefix", "isAutoDailyEntryCommandMessage", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock", "getDollBoxRequest", "isSearchAuthenticationCount"];
+const names = ["getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "isDevCommandMessage", "stripDevCommandPrefix", "isAutoDailyEntryCommandMessage", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock", "getDollBoxRequest", "isSearchAuthenticationCount"];
 const script = "var GLOBAL_CONFIG=" + JSON.stringify(configContext.GLOBAL_CONFIG) + ";\n" + names.map(name => block("function " + name + "(")).join("\n") + "\n" + probe + `
 var testRoom="test", commandDataFlowLock=new java.util.concurrent.locks.ReentrantReadWriteLock(true);
 var dataTransactionLock=new java.util.concurrent.locks.ReentrantLock(), dataSaveTransactionThreadLocal=new java.lang.ThreadLocal();

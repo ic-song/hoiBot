@@ -1,8 +1,9 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.660"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.661"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
+var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
 var dollCatalogCache = null; // 고정 인형 목록은 첫 이용 때 검증한 뒤 재사용
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
@@ -1063,6 +1064,8 @@ const GLOBAL_CONFIG = {
     },
     carrotTrade: { // 당근거래를 허용할 실제 단체방과 입장 안내
         costs: { bag: 1, miniPet: 100, furniture: 100, skill: 300, pendant: 300 }, // 개인거래·자유시장 등록의 개당 당근 기준
+        confirmationTimeoutMs: 60000, thermometerReward: 2,
+        labels: { bag: "🥕 당근거래", miniPet: "🐹 미니펫 당근거래", furniture: "🪑 가구 당근거래", skill: "📙 스킬 당근거래", pendant: "📿 펜던트 당근거래" },
         communityRoom: room5,
         communityLink: "https://open.kakao.com/o/gvG4xl6h"
     },
@@ -2854,6 +2857,26 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
+        }
+        // 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.
+        var carrotTradeAnswer = null;
+        var carrotInputReply = getCarrotTradeReply(msg, ctx.isDev);
+        if (carrotInputReply) {
+            var carrotAnswerKey = getCarrotTradePendingKey(sender, ctx.isDev), carrotAnswerState = carrotTradePending[carrotAnswerKey];
+            if (carrotAnswerState && carrotAnswerState.room === room && carrotAnswerState.isGroupChat === isGroupChat && carrotAnswerState.status === "pending") {
+                clearCarrotTradePending(carrotAnswerKey, carrotAnswerState.id);
+                if (new Date().getTime() >= carrotAnswerState.expiresAt) {
+                    replyCarrotTradeSafely(replier, buildCarrotTradeNotice(carrotAnswerState.header, "expired"));
+                    return;
+                }
+                if (carrotInputReply === "안한다") {
+                    replyCarrotTradeSafely(replier, buildCarrotTradeNotice(carrotAnswerState.header, "cancel"));
+                    return;
+                }
+                carrotAnswerState.status = "processing";
+                carrotTradeAnswer = carrotAnswerState;
+                msg = carrotAnswerState.command;
+            }
         }
         // 방 제한은 복구·자동 저장·요청 과부하 기록보다 먼저 확인한다.
         if (GLOBAL_CONFIG.doll.allowedRoom && isDollTestRoomCommand(msg) && room !== GLOBAL_CONFIG.doll.allowedRoom) {
@@ -6139,85 +6162,74 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
 
-                if (/^\/펫스킬당근\s+.+\s+\d+\s+\d+$/.test(msg)) {
-                    var skillTradeArgs = msg.trim().split(/\s+/);
-                    if (skillTradeArgs.length < 4) {
-                        replier.reply("사용법: /펫스킬당근 [받을유저닉] [스킬가방번호] [수량]");
+                if (isCarrotTradeEntryMessage(msg) || (getCarrotTradeReply(msg, ctx.isDev) && carrotTradePending[getCarrotTradePendingKey(sender, ctx.isDev)] && carrotTradePending[getCarrotTradePendingKey(sender, ctx.isDev)].room === room && carrotTradePending[getCarrotTradePendingKey(sender, ctx.isDev)].isGroupChat === isGroupChat)) {
+                    var carrotKey = getCarrotTradePendingKey(sender, ctx.isDev), carrotState = carrotTradeAnswer || carrotTradePending[carrotKey];
+                    var carrotReply = carrotTradeAnswer ? "거래한다" : getCarrotTradeReply(msg, ctx.isDev), carrotNow = new Date().getTime();
+                    var carrotSenderText = checkRank(data, petData, guildData, sender), carrotHeader = "[" + carrotSenderText + "] 님";
+                    if (carrotState && carrotState.status === "pending" && carrotNow >= carrotState.expiresAt) {
+                        clearCarrotTradePending(carrotKey, carrotState.id);
+                        replyCarrotTradeSafely(carrotState.replier, buildCarrotTradeNotice(carrotState.header, "expired"));
+                        carrotState = null;
+                        if (carrotReply) return;
+                    }
+                    if (!carrotReply && carrotState) {
+                        replier.reply(buildCarrotTradeNotice(carrotHeader, "pending"));
                         return;
                     }
-                    var skillTradeCount = parseInt(skillTradeArgs[skillTradeArgs.length - 1], 10);
-                    var skillTradeIndex = parseInt(skillTradeArgs[skillTradeArgs.length - 2], 10);
-                    var skillReceiver = skillTradeArgs.slice(1, skillTradeArgs.length - 2).join(" ");
-                    if (!data.member[skillReceiver]) {
-                        replier.reply("❌ 받는 유저 [" + skillReceiver + "]님이 존재하지 않습니다.");
+                    if (carrotReply === "안한다") {
+                        clearCarrotTradePending(carrotKey, carrotState.id);
+                        replyCarrotTradeSafely(replier, buildCarrotTradeNotice(carrotHeader, "cancel"));
                         return;
                     }
-                    if (sender === skillReceiver || isNaN(skillTradeCount) || skillTradeCount <= 0) {
-                        replier.reply("❌ 올바른 거래 대상과 수량을 입력해주세요.");
+                    var carrotRequest = carrotReply ? carrotState.request : getCarrotTradeRequest(msg);
+                    if (carrotRequest.error) { replier.reply(buildCarrotTradeNotice(carrotHeader, carrotRequest.error)); return; }
+                    if (carrotReply) {
+                        carrotState.status = "processing";
+                        clearCarrotTradePending(carrotKey, carrotState.id); // 실패·재시도에서도 같은 확인 응답을 다시 실행하지 않는다.
+                    }
+                    var carrotHomeData = null, carrotHomeText = null, carrotItemList = null;
+                    if (carrotRequest.type === "furniture") {
+                        carrotHomeText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8");
+                        carrotHomeData = parseJsonContent(carrotHomeText, homeDataFile);
+                    }
+                    if (carrotRequest.type === "bag") carrotItemList = loadJsonFile(itemListPath);
+                    var carrotChecked = validateCarrotTrade(data, petData, petSkillData, carrotHomeData, carrotItemList, sender, carrotRequest, carrotReply ? carrotState : null);
+                    if (carrotChecked.error) {
+                        replier.reply(buildCarrotTradeNotice(carrotHeader, carrotChecked.error, carrotChecked));
                         return;
                     }
-                    var senderTierForSkill = data.member[sender].rank.tier;
-                    if (!isTierKing(senderTierForSkill)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 당근 거래는 티어 👑킹 이상부터 가능합니다.");
+                    var carrotTargetText = checkRank(data, petData, guildData, carrotRequest.target);
+                    if (!carrotReply) {
+                        var carrotSelected = carrotChecked.row;
+                        carrotState = { id: String(java.util.UUID.randomUUID()), status: "pending", command: msg, sender: sender, room: room, isGroupChat: isGroupChat, request: carrotRequest,
+                            index: carrotSelected.number, fingerprint: carrotSelected.fingerprint, text: carrotSelected.text,
+                            itemId: carrotSelected.value && carrotSelected.value.id !== undefined && carrotSelected.value.id !== null ? String(carrotSelected.value.id) : null,
+                            order: carrotChecked.rows.map(function(row) { return row.fingerprint; }), numbers: carrotChecked.rows.map(function(row) { return row.number; }),
+                            header: carrotHeader, replier: replier, expiresAt: 0 };
+                        carrotTradePending[carrotKey] = carrotState;
+                        try {
+                            replier.reply(buildCarrotTradeMessage(carrotHeader, carrotRequest, carrotSenderText, carrotTargetText, carrotState.text, false));
+                            carrotState.expiresAt = new Date().getTime() + GLOBAL_CONFIG.carrotTrade.confirmationTimeoutMs;
+                            startCarrotTradeExpiry(carrotKey, carrotState, replier);
+                        } catch (carrotConfirmError) {
+                            clearCarrotTradePending(carrotKey, carrotState.id);
+                            throw carrotConfirmError;
+                        }
                         return;
                     }
-                    if (!isMemberTierKing(data, skillReceiver)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, skillReceiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
-                        return;
-                    }
-                    var senderSkillBag = getPetSkillBagList(petSkillData, sender);
-                    if (isNaN(skillTradeIndex) || skillTradeIndex < 1 || skillTradeIndex > senderSkillBag.length) {
-                        replier.reply("❌ 유효하지 않은 스킬가방 번호입니다.");
-                        return;
-                    }
-                    var tradeSkillName = senderSkillBag[skillTradeIndex - 1];
-                    if (isRetiredPetSkill(tradeSkillName)) {
-                        replier.reply("❌ 폐지된 펫스킬은 거래할 수 없습니다.\n관리자에게 /펫스킬북보상 처리를 요청해 주세요.");
-                        return;
-                    }
-                    var senderSkillStore = initPetSkillUser(petSkillData, sender);
-                    if ((senderSkillStore.bag[tradeSkillName] || 0) < skillTradeCount) {
-                        replier.reply("❌ 스킬북 수량이 부족합니다.");
-                        return;
-                    }
-                    var receiverSkillRemain = getPetSkillBagRemainCount(petSkillData, skillReceiver);
-                    if (receiverSkillRemain < skillTradeCount) {
-                        replier.reply(
-                            "❌ [" +
-                            checkRank(data, petData, guildData, skillReceiver) +
-                            "] 님의 스킬가방 공간이 부족합니다.\n현재: " +
-                            numberWithCommas(getPetSkillBagTotalCount(petSkillData, skillReceiver)) +
-                            "/" +
-                            PET_SKILL_BAG_MAX_COUNT +
-                            "\n남은 공간: " +
-                            numberWithCommas(receiverSkillRemain) +
-                            "개"
-                        );
-                        return;
-                    }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, skillTradeCount * GLOBAL_CONFIG.carrotTrade.costs.skill)) {
-                        replier.reply("❌ 🥕당근이세요? 아이템이 부족합니다.");
-                        return;
-                    }
-                    removePetSkillFromBag(petSkillData, sender, tradeSkillName, skillTradeCount);
-                    addPetSkillToBag(petSkillData, skillReceiver, tradeSkillName, skillTradeCount);
-                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, skillTradeCount * GLOBAL_CONFIG.carrotTrade.costs.skill);
-                    addItem(data, skillReceiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
-                    if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
-                    data.member[sender].carrotGiven += 1;
+                    var carrotHadDisplay = carrotRequest.type === "furniture" && carrotChecked.row.value.display !== undefined;
+                    applyConfirmedCarrotTrade(data, petData, petSkillData, carrotHomeData, sender, carrotRequest, carrotChecked.row);
+                    var carrotRemainingRows = getCarrotTradeRows(data, petData, petSkillData, carrotHomeData, sender, carrotRequest.type);
+                    var carrotNumbersChanged = haveCarrotTradeNumbersChanged(carrotState, carrotChecked.row, carrotRemainingRows);
                     saveJsonFile(data, filePath);
-                    saveJsonFile(petSkillData, petSkillDataPath);
-                    replier.reply(
-                        "📙스킬 당근거래 완료!\n[" +
-                        checkRank(data, petData, guildData, sender) +
-                        "] 님 => [" +
-                        checkRank(data, petData, guildData, skillReceiver) +
-                        "] 님에게\n" +
-                        formatPetSkillName(tradeSkillName) +
-                        " " +
-                        skillTradeCount +
-                        "개를 보냈습니다."
-                    );
+                    if (carrotRequest.type === "miniPet" || carrotRequest.type === "pendant") saveJsonFile(petData, memberPetPath);
+                    if (carrotRequest.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
+                    if (carrotRequest.type === "furniture") saveJsonFile(carrotHomeData, homeDataFile, false, carrotHomeText);
+                    var carrotRemaining = data.member[sender].bag[GLOBAL_CONFIG.items.carrotName] || 0;
+                    replyCarrotTradeSafely(replier, buildCarrotTradeMessage(carrotHeader, carrotRequest, carrotSenderText, carrotTargetText, carrotState.text, true, carrotRemaining, carrotNumbersChanged));
+                    if (carrotHadDisplay) {
+                        try { Api.replyRoom(testRoom, "[" + room + "] [가구당근] [" + sender + "] → [" + carrotRequest.target + "]: " + carrotChecked.row.value.name + (carrotChecked.row.value.emoji || "") + " (.display 키 제거됨)"); } catch (carrotLogError) {}
+                    }
                     return;
                 }
 
@@ -7155,272 +7167,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님\n🥕당근게시글이 삭제되었습니다.\n\n🥕당근! 🥕당근!");
                     return;
                 }
-                if (/^\/당근\s+.+\s+\d+\s+\d+$/.test(msg)) {
-                    var args = msg.trim().split(/\s+/);
-                    if (args.length < 4) {
-                        replier.reply("사용법: /당근 [받을유저닉] [가방번호] [수량]");
-                        return;
-                    }
-                    var count = parseInt(args[args.length - 1], 10);
-                    var bagIndex = parseInt(args[args.length - 2], 10);
-                    var receiver = args.slice(1, args.length - 2).join(" "); // 닉네임 합치기
-                    if (sender == receiver || count <= 0) {
-                        replier.reply("당근농사꾼🧑‍🌾 : 되겠냐 ㅇㅅㅋ야");
-                        return;
-                    }
-                    if (!data.member[receiver]) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 받는 유저 [" + receiver + "]님이 존재하지 않습니다.");
-                        return;
-                    }
-                    var senderTier = data.member[sender].rank.tier;
-                    if (!isTierKing(senderTier)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + ']님 당근 거래는 티어 👑킹 이상부터 가능합니다.\n채팅창에 "티어 컨텐츠"를 입력해보세요.');
-                        return;
-                    }
-                    if (!isMemberTierKing(data, receiver)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, receiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
-                        return;
-                    }
-                    var bagInfo = generateBagOutput(data.member[sender].bag);
-                    var sortedItemList = bagInfo.sortedItemList;
-                    if (!sortedItemList || bagIndex < 1 || bagIndex > sortedItemList.length) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 유효하지 않은 가방 번호입니다.");
-                        return;
-                    }
-                    var itemName = sortedItemList[bagIndex - 1];
-                    var itemCount = data.member[sender].bag[itemName] || 0;
-                    if (itemCount < count) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 아이템 수량이 부족합니다.(필요 : " + count + ", 보유 : " + itemCount + ")");
-                        return;
-                    }
-                    if (!isTradableItem(itemName)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 [" + itemName + "] 아이템은 당근 거래가 불가능합니다.");
-                        return;
-                    }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, count)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 🥕당근이세요? 아이템이 부족합니다.(보유 : " + (data.member[sender].bag[GLOBAL_CONFIG.items.carrotName] || 0) + ")");
-                        return;
-                    }
-                    if (itemName == "슬롯가방🎒(+5)" && (data.member[receiver].bag["슬롯가방🎒(+5)"] || 0) + count > 20) {
-                        replier.reply(
-                            "❌ [" +
-                            checkRank(data, petData, guildData, sender) +
-                            "]님\n[" +
-                            checkRank(data, petData, guildData, receiver) +
-                            "] 님의 슬롯가방은 최대 20개까지만 소지 가능합니다.\n거래가 취소되었습니다."
-                        );
-                        return;
-                    }
-                    removeItem(data, sender, itemName, count);
-                    addItem(data, receiver, itemName, count);
-                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, count);
-                    addItem(data, receiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
-                    if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
-                    data.member[sender].carrotGiven += 1;
-                    saveJsonFile(data, filePath);
-                    replier.reply(
-                        "🥕당근거래 완료!\n\n[" +
-                        checkRank(data, petData, guildData, sender) +
-                        "] 님 => [" +
-                        checkRank(data, petData, guildData, receiver) +
-                        "] 님에게\n" +
-                        itemName +
-                        " " +
-                        count +
-                        "개를 보냈습니다.\n\n" +
-                        "- 🥕당근이세요? -" +
-                        count +
-                        "개 차감(보유 : " +
-                        (data.member[sender].bag[GLOBAL_CONFIG.items.carrotName] || 0) +
-                        "개)\n" +
-                        "- 🌡️당근온도기 +2개 지급\n"
-                    );
-                    return;
-                }
-                if (/^\/미니펫당근\s+.+\s+\d+$/.test(msg)) {
-                    let args = msg.trim().split(/\s+/);
-                    if (args.length < 3) {
-                        replier.reply("❌ 사용법: /미니펫당근 [받는닉네임] [미니펫가방번호]");
-                        return;
-                    }
-                    // 마지막 토큰 = sortIndex
-                    let petIndex = parseInt(args[args.length - 1], 10);
-                    // 중간 = 닉네임
-                    let receiver = args.slice(1, args.length - 1).join(" ");
-                    var senderTier = data.member[sender].rank.tier;
-                    if (!isTierKing(senderTier)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님 당근 거래는 티어 👑킹 이상부터 가능합니다.");
-                        return;
-                    }
-                    if (sender == receiver) {
-                        replier.reply("❌ 자기 자신에게는 보낼 수 없습니다.");
-                        return;
-                    }
-                    if (!data.member[receiver]) {
-                        replier.reply("❌ 받는 유저 [" + receiver + "] 가 존재하지 않습니다.");
-                        return;
-                    }
-                    if (!isMemberTierKing(data, receiver)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, receiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
-                        return;
-                    }
-                    if (!petData[sender] || !Array.isArray(petData[sender].miniPetBag)) {
-                        replier.reply("❌ [" + sender + "]님의 미니펫 가방이 비어있거나 존재하지 않습니다.");
-                        return;
-                    }
-                    let bag = petData[sender].miniPetBag;
-                    if (isNaN(petIndex) || petIndex < 1) {
-                        replier.reply("❌ 유효하지 않은 미니펫 번호입니다.");
-                        return;
-                    }
-                    let pet = bag.find((p) => p.sortIndex === petIndex);
-                    if (!pet || !pet.name || !pet.emoji || !pet.grade) {
-                        replier.reply("❌ 미니펫 정보가 손상되었습니다.");
-                        return;
-                    }
-                    if (isMiniPetBagFull(data, petData, receiver)) {
-                        replier.reply(
-                            "❌ [" + receiver + "]님의 미니펫 가방이 가득 찼습니다.\n불필요한 펫을 정리해주세요.\n *1개의 소장 공간만 있어도 여러개 오픈가능\n/미니펫정리 입력하여 미니펫판매"
-                        );
-                        return;
-                    }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.miniPet)) {
-                        replier.reply("❌ " + GLOBAL_CONFIG.items.carrotName + " 아이템이 부족합니다.");
-                        return;
-                    }
-                    let removeIndex = bag.indexOf(pet);
-                    if (removeIndex !== -1) {
-                        bag.splice(removeIndex, 1);
-                    }
-                    if (!petData[receiver]) petData[receiver] = {};
-                    if (!Array.isArray(petData[receiver].miniPetBag)) petData[receiver].miniPetBag = [];
-                    petData[receiver].miniPetBag.push(pet);
-                    //거래 후 양쪽 가방 정렬 + sortIndex 재부여
-                    refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
-                    refreshMiniPetSortIndex(petData, receiver, miniPetData.gradeTable);
-                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.miniPet);
-                    addItem(data, receiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
-                    if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
-                    data.member[sender].carrotGiven += 1;
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(petData, memberPetPath);
-                    replier.reply(
-                        "🧸미니펫 당근거래 완료!\n\n" +
-                        "[" +
-                        checkRank(data, petData, guildData, sender) +
-                        "] 님 => [" +
-                        checkRank(data, petData, guildData, receiver) +
-                        "] 님에게\n" +
-                        "[" +
-                        pet.name +
-                        pet.emoji +
-                        "] 미니펫을 보냈습니다.\n\n" +
-                        "- 🥕당근이세요? -" + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.miniPet) + "개 차감(보유 : " +
-                        (data.member[sender].bag[GLOBAL_CONFIG.items.carrotName] || 0) +
-                        "개)\n" +
-                        "- 🌡️당근온도기 +2개 지급"
-                    );
-                    return;
-                }
-                if (/^\/가구당근\s+.+\s+\d+$/.test(msg)) {
-                    let args = msg.trim().split(/\s+/);
-                    if (args.length < 3) {
-                        replier.reply("❌ 사용법: /가구당근 [받는닉네임] [가구번호]");
-                        return;
-                    }
-                    let furnIndex = parseInt(args[args.length - 1], 10);
-                    let receiver = args.slice(1, args.length - 1).join(" "); // 받는사람
-                    // 티어 확인 (킹 이상)
-                    var senderTier = data.member[sender].rank.tier;
-                    if (!isTierKing(senderTier)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, sender) + "]님, 가구 거래는 티어 👑킹 이상부터 가능합니다.");
-                        return;
-                    }
-                    if (sender == receiver) {
-                        replier.reply("❌ 자기 자신에게는 보낼 수 없습니다.");
-                        return;
-                    }
-                    if (!data.member[receiver]) {
-                        replier.reply("❌ 받는 유저 [" + receiver + "] 가 존재하지 않습니다.");
-                        return;
-                    }
-                    if (!isMemberTierKing(data, receiver)) {
-                        replier.reply("❌[" + checkRank(data, petData, guildData, receiver) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다.");
-                        return;
-                    }
-                    let homeData = loadJsonFile(homeDataFile);
-                    var furnitureTradeHomeSnapshot = JSON.stringify(homeData); // 거래 전 가구 원본을 저장 실패 시 복구
-                    homeData = initSweetHomeUser(homeData, receiver);
-                    homeData = initSweetHomeUser(homeData, sender);
-                    let senderBag = homeData[sender].furnitureBag;
-                    let receiverBag = homeData[receiver].furnitureBag;
-                    // 가구 존재 확인
-                    if (senderBag.length === 0) {
-                        replier.reply("❌ [" + sender + "]님의 가구 가방이 비어있습니다.");
-                        return;
-                    }
-                    if (isNaN(furnIndex) || furnIndex < 1 || furnIndex > senderBag.length) {
-                        replier.reply("❌ 유효하지 않은 가구 번호입니다.");
-                        return;
-                    }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.furniture)) {
-                        replier.reply("❌ " + GLOBAL_CONFIG.items.carrotName + " 아이템이 부족합니다.");
-                        return;
-                    }
-                    if (receiverBag.length >= getFurnitureBagLimit(data, receiver)) {
-                        replier.reply("❌ [" + receiver + "]님의 가구 가방이 가득 찼습니다.\n불필요한 가구를 정리해주세요.");
-                        return;
-                    }
-                    if (senderBag.length > getFurnitureBagLimit(data, sender)) {
-                        replier.reply("❌ [" + sender + "]님의 가구 가방이 가득 찼습니다.\n불필요한 가구를 정리해주세요.");
-                        return;
-                    }
-                    sortFurnitureList(senderBag);
-                    let idx = furnIndex - 1;
-                    let furniture = senderBag[idx];
-                    // 가구 데이터에서 .display 키 제거 (있는 경우)
-                    let hasDisplayKey = furniture && furniture.display !== undefined;
-                    if (hasDisplayKey) {
-                        delete furniture.display;
-                    }
-                    // 전송 처리
-                    senderBag.splice(idx, 1);
-                    receiverBag.push(furniture);
-                    // 거래 후 정렬 및 번호 재부여
-                    sortFurnitureList(senderBag);
-                    sortFurnitureList(receiverBag);
-                    // 재화 이동
-                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.furniture);
-                    addItem(data, receiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
-                    // 통계 기록
-                    if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
-                    data.member[sender].carrotGiven++;
-                    // 저장
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(homeData, homeDataFile, false, furnitureTradeHomeSnapshot);
-                    let tradeMsg =
-                        "🏡가구 당근거래 완료!\n\n" +
-                        "[" +
-                        checkRank(data, petData, guildData, sender) +
-                        "] 님 → [" +
-                        checkRank(data, petData, guildData, receiver) +
-                        "] 님에게\n" +
-                        "📦 [" +
-                        furniture.name +
-                        (furniture.emoji || "") +
-                        "] 가구를 보냈습니다.\n\n" +
-                        "- 🥕당근이세요? " + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.furniture) + "개 차감 (보유: " +
-                        (data.member[sender].bag[GLOBAL_CONFIG.items.carrotName] || 0) +
-                        "개)\n" +
-                        "- 🌡️당근온도기 2개 지급";
-                    replier.reply(tradeMsg);
-                    // .display 키가 있는 경우에만 펫 테스트방에 상세 기록
-                    if (hasDisplayKey) {
-                        let testRoomMsg = "[" + room + "] [가구당근] [" + sender + "] → [" + receiver + "]: " + furniture.name + (furniture.emoji || "") + " (.display 키 제거됨)";
-                        Api.replyRoom(testRoom, testRoomMsg);
-                    }
-                    return;
-                }
+
                 if (msg.startsWith("/온도 ")) {
                     var args = msg.trim().split(" ");
                     if (args.length < 2) {
@@ -21891,19 +21638,7 @@ replier.reply(
                     replier.reply(buildTextLengthCleanupMessage(miniCleanAllResult, furnitureCleanAllResult, pendantCleanAllResultForText));
                     return;
                 }
-                if (msg === "/펜던트당근" || msg === "/펜던트당근거래" || /^\/펜던트당근(?:거래)?\s+.+$/.test(msg)) {
-                    if (!/^\/펜던트당근(?:거래)?\s+.+\s+\d+$/.test(msg)) {
-                        replier.reply("예) /펜던트당근 [거래대상닉네임] [펜던트가방번호]");
-                        return;
-                    }
-                    var pendantTradeResult = tradePendantByCarrot(data, petData, guildData, sender, msg);
-                    replier.reply(pendantTradeResult.message);
-                    if (pendantTradeResult.ok) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(petData, memberPetPath);
-                    }
-                    return;
-                }
+
                 if (/^\/펜던트추가\s+.+$/.test(msg) && isMaster(sender)) {
                     var pendantAddResult = addPendantByAdmin(petData, msg);
                     replier.reply(pendantAddResult.message);
@@ -31866,7 +31601,7 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+    return isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
         command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
@@ -49050,6 +48785,249 @@ function hasPoint(data, user, amount) {
 function addPoint(data, user, delta) {
     data.member[user].point += delta;
 }
+// 당근거래 5종의 입력 범위를 식별하는 함수
+function isCarrotTradeEntryMessage(msg) {
+    return /^\/(?:당근|미니펫당근|가구당근|펫스킬당근|펜던트당근(?:거래)?)(?:\s|$)/.test(String(msg));
+}
+
+// DEV 전처리와 앞뒤 공백을 고려해 정확한 확인 응답만 반환하는 함수
+function getCarrotTradeReply(msg, isDev) {
+    var text = String(msg).trim();
+    if (isDev && text.charAt(0) === "/") text = text.substring(1);
+    return text === "거래한다" || text === "안한다" ? text : "";
+}
+
+// 환경별 계정의 확인 대기 키를 반환하는 함수
+function getCarrotTradePendingKey(sender, isDev) {
+    return (isDev ? "$DEV:" : "$PROD:") + sender;
+}
+
+// 원래 거래를 보존한 채 해당 식별값의 대기만 해제하는 함수
+function clearCarrotTradePending(key, id) {
+    if (carrotTradePending[key] && carrotTradePending[key].id === id) delete carrotTradePending[key];
+}
+
+// 번호 재배정 필드만 제외하고 실제 아이템 내용을 안정적으로 비교하는 함수
+function getCarrotTradeFingerprint(value, top) {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (value instanceof Array) return "[" + value.map(function(row) { return getCarrotTradeFingerprint(row, false); }).join(",") + "]";
+    var keys = Object.keys(value).sort(), rows = [];
+    for (var i = 0; i < keys.length; i++) {
+        if (top && keys[i] === "sortIndex") continue;
+        rows.push(JSON.stringify(keys[i]) + ":" + getCarrotTradeFingerprint(value[keys[i]], false));
+    }
+    return "{" + rows.join(",") + "}";
+}
+
+// 기존 입력 형식과 단건·다건 지원 범위를 유지하여 거래 요청을 해석하는 함수
+function getCarrotTradeRequest(msg) {
+    var text = String(msg), match, type;
+    if ((match = text.match(/^\/당근\s+(.+)\s+(\d+)\s+(\d+)$/))) type = "bag";
+    else if ((match = text.match(/^\/펫스킬당근\s+(.+)\s+(\d+)\s+(\d+)$/))) type = "skill";
+    else if ((match = text.match(/^\/(미니펫당근|가구당근|펜던트당근(?:거래)?)\s+(.+)\s+(\d+)$/))) {
+        type = match[1] === "미니펫당근" ? "miniPet" : match[1] === "가구당근" ? "furniture" : "pendant";
+        match = [match[0], match[2], match[3]];
+    } else return { error: "명령어의 받는 유저·가방 번호·수량을 확인해 주세요." };
+    var index = Number(match[2]), count = match[3] === undefined ? 1 : Number(match[3]);
+    if (!isSearchAuthenticationCount(index) || index < 1 || !isSearchAuthenticationCount(count) || count < 1) return { error: "가방 번호와 수량은 1 이상의 정수로 입력해 주세요." };
+    var cost = GLOBAL_CONFIG.carrotTrade.costs[type] * count; // 모든 화면·검사·차감에서 사용하는 동일한 총 비용
+    if (!isSearchAuthenticationCount(cost)) return { error: "거래 수량을 안전하게 처리할 수 없습니다." };
+    return { type: type, command: text, target: match[1].trim(), index: index, count: count, cost: cost };
+}
+
+// 원본 데이터를 변경하지 않고 기존 가방 정렬과 실제 표시 정보를 수집하는 함수
+function getCarrotTradeRows(data, petData, petSkillData, homeData, sender, type) {
+    var rows = [], list = [], i, bag;
+    if (type === "bag") {
+        bag = data.member[sender].bag || {};
+        list = generateBagOutput(bag).sortedItemList;
+        for (i = 0; i < list.length; i++) rows.push({ number: i + 1, key: list[i], count: bag[list[i]], text: list[i].replace(/(\/인형상자오픈)\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/g, "$1$2"), fingerprint: list[i] });
+    } else if (type === "skill") {
+        var view = Object.create(null); view[sender] = JSON.parse(JSON.stringify(petSkillData[sender] || {})); // 가방 정규화가 최초 확인의 원본을 바꾸지 않도록 복사
+        list = getPetSkillBagList(view, sender); bag = view[sender].petSkills.bag;
+        for (i = 0; i < list.length; i++) rows.push({ number: i + 1, key: list[i], count: bag[list[i]], text: formatPetSkillName(list[i]), fingerprint: list[i] });
+    } else {
+        if (type === "furniture") list = (homeData[sender] && homeData[sender].furnitureBag || []).slice();
+        else list = (petData[sender] && petData[sender][type === "miniPet" ? "miniPetBag" : "pendantBag"] || []).slice();
+        if (type === "furniture") sortFurnitureList(list);
+        if (type === "pendant") sortPendantBagByGrade(list);
+        if (type === "miniPet") list.sort(function(a, b) { return a.sortIndex - b.sortIndex; });
+        for (i = 0; i < list.length; i++) {
+            var item = list[i];
+            rows.push({ number: type === "miniPet" ? item.sortIndex : i + 1, value: item, count: 1,
+                text: type === "miniPet" ? formatFreeMarketMiniPetDetail(item) : type === "furniture" ? formatFreeMarketFurnitureDetail(item) : formatPendantDisplay(item),
+                fingerprint: getCarrotTradeFingerprint(item, true) });
+        }
+    }
+    return rows;
+}
+
+// 최초 확인한 실제 대상을 번호가 바뀐 뒤에도 찾되 구분이 불명확하면 취소하는 함수
+function findCarrotTradeConfirmedRow(rows, state) {
+    var matches = [], idMatches = [], i;
+    for (i = 0; i < rows.length; i++) {
+        if (rows[i].fingerprint === state.fingerprint) matches.push(rows[i]);
+        if (state.itemId !== null && rows[i].value && String(rows[i].value.id) === state.itemId) idMatches.push(rows[i]);
+    }
+    if (state.itemId !== null) {
+        if (idMatches.length > 1) return { error: "number" };
+        if (idMatches.length === 1 && idMatches[0].fingerprint !== state.fingerprint) return { error: "확인한 아이템 정보가 변경되었습니다." };
+    }
+    if (matches.length === 1) return { row: matches[0] };
+    if (matches.length > 1) {
+        var order = rows.map(function(row) { return row.fingerprint; });
+        if (JSON.stringify(order) === JSON.stringify(state.order)) {
+            for (i = 0; i < rows.length; i++) if (rows[i].number === state.index && rows[i].fingerprint === state.fingerprint) return { row: rows[i] };
+        }
+        return { error: "number" };
+    }
+    return { error: "보낼 아이템을 찾을 수 없거나 확인한 아이템 정보가 변경되었습니다." };
+}
+
+// 기존 거래 자격·재고·수신 공간과 확인한 비용·정보를 재검증하는 함수
+function validateCarrotTrade(data, petData, petSkillData, homeData, itemListData, sender, request, state) {
+    var type = request.type, target = request.target;
+    if (!Object.prototype.hasOwnProperty.call(data.member, target) || !data.member[target] || (type === "pendant" && (!Object.prototype.hasOwnProperty.call(petData, target) || !petData[target]))) return { error: "받는 유저를 찾을 수 없습니다." };
+    if (type !== "skill" && !data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, request.command || "")) return { error: "이용약관 동의 후 거래할 수 있습니다." };
+    if (sender === target && type !== "pendant") return { error: "자기 자신에게는 보낼 수 없습니다." };
+    if (!isMemberTierKing(data, sender) || !isMemberTierKing(data, target)) return { error: "보내는 사람과 받는 사람 모두 티어 👑킹 이상이어야 합니다." };
+    var rows = getCarrotTradeRows(data, petData, petSkillData, homeData, sender, type), row = null;
+    if (state) {
+        var found = findCarrotTradeConfirmedRow(rows, state);
+        if (found.error) return found;
+        row = found.row;
+    } else for (var i = 0; i < rows.length; i++) if (rows[i].number === request.index) { row = rows[i]; break; }
+    if (!row) return { error: "유효하지 않은 가방 번호이거나 보낼 아이템이 없습니다." };
+    if (!isSearchAuthenticationCount(row.count) || row.count < request.count) return { error: "보낼 아이템의 수량이 부족합니다." };
+    if (type === "bag") {
+        if (row.key === GLOBAL_CONFIG.items.carrotName) return { error: "당근 아이템은 거래할 수 없습니다." };
+        if (!isTradableItem(row.key, itemListData)) return { error: "해당 아이템은 현재 거래할 수 없습니다." };
+        if (row.key === "슬롯가방🎒(+5)" && ((data.member[target].bag || {})[row.key] || 0) + request.count > 20) return { error: "받는 유저의 슬롯가방은 최대 20개까지만 소지 가능합니다." };
+        var receiverCount = (data.member[target].bag || {})[row.key] || 0;
+        if (!isSearchAuthenticationCount(receiverCount) || !isSearchAuthenticationCount(receiverCount + request.count)) return { error: "받는 유저의 아이템 수량을 안전하게 처리할 수 없습니다." };
+    }
+    if (type === "miniPet") {
+        if (!row.value.name || !row.value.emoji || !row.value.grade) return { error: "미니펫 정보가 손상되었습니다." };
+        if (isMiniPetBagFull(data, petData, target)) return { error: "받는 유저의 미니펫 가방이 가득 찼습니다." };
+    }
+    if (type === "furniture") {
+        var targetFurniture = homeData[target] && homeData[target].furnitureBag || [];
+        if (targetFurniture.length >= getFurnitureBagLimit(data, target) || rows.length > getFurnitureBagLimit(data, sender)) return { error: "가구 가방이 가득 찼습니다. 불필요한 가구를 정리해 주세요." };
+    }
+    if (type === "skill") {
+        if (isRetiredPetSkill(row.key)) return { error: "폐지된 펫스킬은 거래할 수 없습니다." };
+        var skillView = Object.create(null); skillView[target] = JSON.parse(JSON.stringify(petSkillData[target] || {}));
+        if (getPetSkillBagRemainCount(skillView, target) < request.count) return { error: "받는 유저의 스킬가방 공간이 부족합니다." };
+    }
+    if (type === "pendant" && (petData[target].pendantBag || []).length >= getPendantBagLimit()) return { error: "받는 유저의 펜던트가방 공간이 부족합니다." };
+    if (type !== "pendant") {
+        var rewardValue = (data.member[target].bag || {})[GLOBAL_CONFIG.items.carrotThermometerName];
+        var rewardCount = rewardValue === undefined ? 0 : rewardValue;
+        var addedReward = GLOBAL_CONFIG.carrotTrade.thermometerReward + (type === "bag" && row.key === GLOBAL_CONFIG.items.carrotThermometerName ? request.count : 0);
+        var givenCount = data.member[sender].carrotGiven === undefined ? 0 : data.member[sender].carrotGiven;
+        if (!isSearchAuthenticationCount(rewardCount) || !isSearchAuthenticationCount(rewardCount + addedReward) || !isSearchAuthenticationCount(givenCount) || !isSearchAuthenticationCount(givenCount + 1)) return { error: "거래 보상과 통계를 안전하게 처리할 수 없습니다." };
+    }
+    var cost = GLOBAL_CONFIG.carrotTrade.costs[type] * request.count;
+    if (!isSearchAuthenticationCount(cost) || cost !== request.cost) return { error: "확인한 당근 소모 기준이 변경되었습니다. 다시 요청해 주세요." };
+    var carrotValue = (data.member[sender].bag || {})[GLOBAL_CONFIG.items.carrotName];
+    var carrots = carrotValue === undefined ? 0 : carrotValue;
+    if (!isSearchAuthenticationCount(carrots)) throw new Error("당근 보유량 오류");
+    if (carrots < cost) return { error: "lack", cost: cost, carrots: carrots };
+    if (state && row.text !== state.text) return { error: "확인한 아이템 정보가 변경되었습니다." };
+    return { row: row, rows: rows, carrots: carrots };
+}
+
+// 당근거래 종류별 확인·완료창을 동일한 실제 대상과 비용으로 만드는 함수
+function buildCarrotTradeMessage(header, request, senderText, targetText, itemText, completed, remaining, numberChanged) {
+    var labels = GLOBAL_CONFIG.carrotTrade.labels, title = labels[request.type], unit = request.type === "miniPet" ? "마리" : "개";
+    var lines = [header, title + (completed ? " 완료!" : " 확인!"), "━━━━━━━━━━━━", "[" + senderText + "] ⇒ [" + targetText + "]",
+        itemText + " " + numberWithCommas(request.count) + unit + (completed ? "를 보냈습니다." : "를 보내시겠습니까?")];
+    if (completed) {
+        lines.push("━━━━━━━━━━━━", "🥕 소모 " + numberWithCommas(request.cost) + "개", "👌 잔여 " + numberWithCommas(remaining) + "개");
+        if (numberChanged) lines.push("※ 가방 번호가 변경되었습니다. 다음 거래 전 가방을 확인해 주세요.");
+    } else lines.push("🥕 당근 " + numberWithCommas(request.cost) + "개 소모", "━━━━━━━━━━━━", "✅ 거래한다 / ❌ 안한다", "※ 60초 이내에 입력해 주세요.");
+    return lines.join("\n");
+}
+
+// 취소·만료·재검증 실패의 공통 안내를 신청자 닉네임 첫 줄로 만드는 함수
+function buildCarrotTradeNotice(header, reason, detail) {
+    if (reason === "cancel") return header + "\n❌ 당근거래가 취소되었습니다.\n━━━━━━━━━━━━\n아이템과 당근은 차감되지 않았습니다.";
+    if (reason === "expired") return header + "\n⌛ 확인 시간이 만료되었습니다.\n━━━━━━━━━━━━\n당근거래가 자동 취소되었습니다.\n아이템과 당근은 차감되지 않았습니다.";
+    if (reason === "pending") return header + "\n⚠️ 확인 대기 중인 당근거래가 있습니다.\n━━━━━━━━━━━━\n기존 거래를 먼저 확정하거나 취소해 주세요.\n새로운 거래 요청은 접수되지 않았습니다.";
+    if (reason === "number") return header + "\n⚠️ 가방 번호가 변경되었습니다.\n━━━━━━━━━━━━\n아이템 전송이 취소되었습니다.\n가방 번호를 확인한 후 다시 시도해 주세요.\n※ 아이템과 당근은 차감되지 않았습니다.";
+    if (reason === "lack") return header + "\n❌ 당근이 부족합니다!\n━━━━━━━━━━━━\n🥕 필요 " + numberWithCommas(detail.cost) + "개 · 보유 " + numberWithCommas(detail.carrots) + "개\n🥕 부족 " + numberWithCommas(detail.cost - detail.carrots) + "개\n━━━━━━━━━━━━\n아이템 전송이 취소되었습니다.";
+    return header + "\n❌ 당근거래를 진행할 수 없습니다.\n━━━━━━━━━━━━\n" + reason + "\n아이템 전송이 취소되었습니다.";
+}
+
+// 저장 완료·만료 후 전송 실패가 거래 상태를 되돌리지 않도록 안내하는 함수
+function replyCarrotTradeSafely(replier, message) {
+    try { replier.reply(message); } catch (error) { try { debuggerLog("당근거래 안내 실패: " + error); } catch (logError) {} }
+}
+
+// 해당 거래의 만료만 처리하고 이전 타이머가 새 거래를 취소하지 않도록 하는 함수
+function startCarrotTradeExpiry(key, state, replier) {
+    setTimeout(function() {
+        var flowLock = commandDataFlowLock.writeLock();
+        flowLock.lock(); dataTransactionLock.lock();
+        try {
+            var current = carrotTradePending[key];
+            if (!current || current.id !== state.id || current.status !== "pending") return;
+            if (new Date().getTime() < current.expiresAt) { startCarrotTradeExpiry(key, current, replier); return; }
+            clearCarrotTradePending(key, state.id);
+            replyCarrotTradeSafely(replier, buildCarrotTradeNotice(state.header, "expired"));
+        } finally { dataTransactionLock.unlock(); flowLock.unlock(); }
+    }, Math.max(1, state.expiresAt - new Date().getTime()));
+}
+
+// 재검증된 실제 대상만 기존 이전·부수 보상 규칙으로 옮기는 함수
+function applyConfirmedCarrotTrade(data, petData, petSkillData, homeData, sender, request, row) {
+    var target = request.target, type = request.type, sourceBag, targetBag, item = row.value;
+    if (type === "bag") { removeItem(data, sender, row.key, request.count); addItem(data, target, row.key, request.count); }
+    else if (type === "skill") { removePetSkillFromBag(petSkillData, sender, row.key, request.count); addPetSkillToBag(petSkillData, target, row.key, request.count); }
+    else {
+        if (type === "furniture") {
+            initSweetHomeUser(homeData, sender); initSweetHomeUser(homeData, target);
+            sourceBag = homeData[sender].furnitureBag; targetBag = homeData[target].furnitureBag;
+            if (item.display !== undefined) delete item.display;
+        } else {
+            var field = type === "miniPet" ? "miniPetBag" : "pendantBag";
+            sourceBag = petData[sender][field];
+            if (!petData[target]) petData[target] = {};
+            if (!Array.isArray(petData[target][field])) petData[target][field] = [];
+            targetBag = petData[target][field];
+        }
+        var actualIndex = sourceBag.indexOf(item);
+        if (actualIndex < 0) throw new Error("당근거래 실제 대상 없음");
+        sourceBag.splice(actualIndex, 1); targetBag.push(item);
+        if (type === "miniPet") { refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable); refreshMiniPetSortIndex(petData, target, miniPetData.gradeTable); }
+        if (type === "furniture") { sortFurnitureList(sourceBag); sortFurnitureList(targetBag); }
+        if (type === "pendant") sortPendantBagByGrade(sourceBag);
+    }
+    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, request.cost);
+    if (type !== "pendant") {
+        addItem(data, target, GLOBAL_CONFIG.items.carrotThermometerName, GLOBAL_CONFIG.carrotTrade.thermometerReward);
+        data.member[sender].carrotGiven = (data.member[sender].carrotGiven || 0) + 1;
+    }
+}
+
+// 확인 시점 또는 전송 뒤 남은 아이템의 실제 가방 번호 변경을 판정하는 함수
+function haveCarrotTradeNumbersChanged(state, selectedRow, remainingRows) {
+    if (selectedRow.number !== state.index) return true;
+    var previous = Object.create(null), objectTrade = state.request.type !== "bag" && state.request.type !== "skill";
+    for (var i = 0; i < state.order.length; i++) {
+        if (objectTrade && state.numbers[i] === state.index && state.order[i] === state.fingerprint) continue;
+        var key = "$" + state.order[i];
+        if (!previous[key]) previous[key] = [];
+        previous[key].push(state.numbers[i]);
+    }
+    for (var j = 0; j < remainingRows.length; j++) {
+        var numbers = previous["$" + remainingRows[j].fingerprint];
+        if (numbers && numbers.length && numbers.shift() !== remainingRows[j].number) return true;
+    }
+    return false;
+}
+
+
 // 커뮤니티 제한 대상인 당근거래 네 명령어만 식별하는 함수
 function isCarrotTradeCommand(msg) {
     return /^\/(?:당근|미니펫당근|가구당근|펫스킬당근)(?:\s|$)/.test(msg);
@@ -49062,18 +49040,18 @@ function isCarrotTradeRoomAllowed(room, isGroupChat) {
 
 // 거래 차단 시 아이템 미소모 안내와 커뮤니티 링크를 출력하는 함수
 function buildCarrotTradeBlockedMessage(nickname) {
-    return "[" + nickname + "]님,\n🚫 이곳에서는 당근거래가 불가능합니다.\n━━━━━━━━━━━━\n🥕 당근거래는 「호이월드 커뮤니티」 방에서만 이용할 수 있습니다.\n\n다른 서버 및 일대일톡에서는 거래할 수 없습니다.\n\n👇 아래 커뮤니티 방에서 거래해 주세요!\n" + GLOBAL_CONFIG.carrotTrade.communityLink + "\n\n※ 거래가 진행되지 않아 아이템은 소모되지 않았습니다.";
+    return "[" + nickname + "] 님\n🚫 이곳에서는 당근거래가 불가능합니다.\n━━━━━━━━━━━━\n🥕 당근거래는 「호이월드 커뮤니티」 방에서만 이용할 수 있습니다.\n\n다른 서버 및 일대일톡에서는 거래할 수 없습니다.\n\n👇 아래 커뮤니티 방에서 거래해 주세요!\n" + GLOBAL_CONFIG.carrotTrade.communityLink + "\n\n※ 거래가 진행되지 않아 아이템은 소모되지 않았습니다.";
 }
 
 // 당근 거래가 불가능한 아이템을 확인하는 함수
-function isTradableItem(itemName) {
+function isTradableItem(itemName, itemListData) {
     var raw = String(itemName || "");
     var base = normalizeItemName(raw);
 
     if (base === "펫 친밀도🐾") return false;
     if (raw === GLOBAL_CONFIG.sealedVault.keyItemName || base === GLOBAL_CONFIG.sealedVault.keyItemName) return false;
 
-    var itemListData = loadJsonFile(itemListPath);
+    if (arguments.length < 2) itemListData = loadJsonFile(itemListPath);
 
     var untradable = itemListData && itemListData.untradableList ? itemListData.untradableList : [];
 
