@@ -1,0 +1,705 @@
+{
+  "dateKst": "2026-10-19",
+  "developmentVersion": "ver_2.661",
+  "notionPage": "https://www.notion.so/c93393bdd7aa8227be5c81408f37400f",
+  "baseCommit": "29d6578ed142d901935a2ba7fa191f721a7f3883",
+  "sourceSha256": {
+    "main.js": "3fc95374e6a020beecb1d6e9e4f49573ad881f679969581a8e8ba8b703ef5b1b",
+    "Info.js": "5b75967ceca2d50559457d2684afc24ff23beb84bdf083594c91c1cc507a282b"
+  },
+  "summary": {
+    "total": 68,
+    "passed": 68,
+    "failed": 0,
+    "snapshotFiles": 1143,
+    "snapshotChangesDuringTests": [],
+    "jsonParseErrors": []
+  },
+  "runs": [
+    {
+      "test": "test_adventure_booster_hotfix.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.115
+    },
+    {
+      "test": "test_adventure_history_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.398
+    },
+    {
+      "test": "test_adventure_quest_stage6_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.109
+    },
+    {
+      "test": "test_adventure_quest_tutorial.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.121
+    },
+    {
+      "test": "test_adventure_starter_pet_appearance.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.099
+    },
+    {
+      "test": "test_adventure_starter_recovery.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.128
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 0.148
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 0.175
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "3"
+      ],
+      "exit": 0,
+      "seconds": 0.142
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "4"
+      ],
+      "exit": 0,
+      "seconds": 0.138
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "5"
+      ],
+      "exit": 0,
+      "seconds": 0.109
+    },
+    {
+      "test": "test_authority_badge.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.136
+    },
+    {
+      "test": "test_carrot_community_trade.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.294
+    },
+    {
+      "test": "test_carrot_confirmation.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.362
+    },
+    {
+      "test": "test_carrot_confirmation_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 2.35
+    },
+    {
+      "test": "test_character_referral.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.139
+    },
+    {
+      "test": "test_charm_buff_diagnostics.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.0
+    },
+    {
+      "test": "test_creation_reward_box.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.203
+    },
+    {
+      "test": "test_daily_chat_experience_query.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.14
+    },
+    {
+      "test": "test_doll_boxes.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.278
+    },
+    {
+      "test": "test_doll_catalog.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.167
+    },
+    {
+      "test": "test_doll_content.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.801
+    },
+    {
+      "test": "test_doll_probability_up.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.8
+    },
+    {
+      "test": "test_doll_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 2.404
+    },
+    {
+      "test": "test_doll_test_room.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.451
+    },
+    {
+      "test": "test_doll_ui_blessing.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.586
+    },
+    {
+      "test": "test_fortune_cookie.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.346
+    },
+    {
+      "test": "test_growth_potion.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.184
+    },
+    {
+      "test": "test_home_badge_cube_edit.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.213
+    },
+    {
+      "test": "test_info_guild_territory_command_lock.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.208
+    },
+    {
+      "test": "test_info_starter_duplicate_audit.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.154
+    },
+    {
+      "test": "test_latest_server_display.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.304
+    },
+    {
+      "test": "test_main_test_room_only.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.179
+    },
+    {
+      "test": "test_member_display_search_auth.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.637
+    },
+    {
+      "test": "test_member_publication_recovery.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.488
+    },
+    {
+      "test": "test_member_storage_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.834
+    },
+    {
+      "test": "test_member_storage_split_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 0.73
+    },
+    {
+      "test": "test_minipet_admin_add.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.208
+    },
+    {
+      "test": "test_minipet_conditional_skill.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.246
+    },
+    {
+      "test": "test_minipet_support_pet_info.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.157
+    },
+    {
+      "test": "test_oct14_followup.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.867
+    },
+    {
+      "test": "test_oct14_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.775
+    },
+    {
+      "test": "test_oct16_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.575
+    },
+    {
+      "test": "test_oct19_furniture_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.358
+    },
+    {
+      "test": "test_oct19_lock_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 1.655
+    },
+    {
+      "test": "test_oct19_market_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.609
+    },
+    {
+      "test": "test_oct19_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.451
+    },
+    {
+      "test": "test_operator_privileges.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.185
+    },
+    {
+      "test": "test_pet_explore_manual_settlement_message.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.172
+    },
+    {
+      "test": "test_pet_musou_storage_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.44
+    },
+    {
+      "test": "test_pet_skill_retirement.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.196
+    },
+    {
+      "test": "test_point_shop_purchase.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.275
+    },
+    {
+      "test": "test_quest_conditions_oct14.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.509
+    },
+    {
+      "test": "test_raid_pet_skills.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.523
+    },
+    {
+      "test": "test_raid_seal_minipet_queries.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.181
+    },
+    {
+      "test": "test_reset_auto_attendance_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.187
+    },
+    {
+      "test": "test_robbery_history_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.704
+    },
+    {
+      "test": "test_room_privilege_robbery_display.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.21
+    },
+    {
+      "test": "test_room_server6_ingress.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.207
+    },
+    {
+      "test": "test_search_authentication_oct12.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.507
+    },
+    {
+      "test": "test_sep30_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.195
+    },
+    {
+      "test": "test_server_check_starter_stones.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.17
+    },
+    {
+      "test": "test_server_raid.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 2.874
+    },
+    {
+      "test": "test_server_raid_oct12.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.521
+    },
+    {
+      "test": "test_support_upgrade_level_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.471
+    },
+    {
+      "test": "test_tier_ui_oct13.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.166
+    },
+    {
+      "test": "test_veranda_command_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.16
+    },
+    {
+      "test": "test_veranda_large_expansion.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.175
+    }
+  ],
+  "boundaries": [
+    "Synthetic filesystem/data only; no Android runtime/device upload or compilation",
+    "Node tests execute actual command/validation/transfer/timer and real JSON save/rollback functions; Rhino tests compile full Main/Info and execute actual carrot command helpers with real Java threads and response locks but synthetic filesystem",
+    "Pending confirmation is memory state; recompilation discards it without replaying transfers",
+    "Save exceptions roll back through existing command transactions; no new durable multi-file journal guaranteeing crash atomicity under forced process kill",
+    "Production branch, Notion properties/body and version notification remain unchanged before approval"
+  ],
+  "excluded": [
+    "test_uploaded_main_version.js and PowerShell deployment/data-sync workflow tests (unrelated to this feature)"
+  ],
+  "criteria": [
+    {
+      "number": 1,
+      "scenario": "정상 명령어 최초 입력",
+      "expected": "확인창만 출력하며 전송·차감 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        1
+      ]
+    },
+    {
+      "number": 2,
+      "scenario": "펫스킬북 2개 전송",
+      "expected": "확인창·검사·차감·완료창 모두 당근 600개 기준",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        1,
+        2
+      ]
+    },
+    {
+      "number": 3,
+      "scenario": "펫스킬북 2개, 당근 500개 보유",
+      "expected": "필요 600개·보유 500개·부족 100개 표시, 전송·차감 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        2
+      ]
+    },
+    {
+      "number": 4,
+      "scenario": "총 필요 당근을 정확히 보유",
+      "expected": "정상 전송 후 잔여 0개 표시",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        2
+      ]
+    },
+    {
+      "number": 5,
+      "scenario": "확인 후 당근을 다른 곳에서 사용",
+      "expected": "확정 시 현재 보유량으로 재검사",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        2
+      ]
+    },
+    {
+      "number": 6,
+      "scenario": "본인이 같은 방에서 ‘거래한다’ 입력",
+      "expected": "유효한 대기 거래 1건만 확정",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        1,
+        3
+      ]
+    },
+    {
+      "number": 7,
+      "scenario": "다른 사람 또는 다른 방에서 응답",
+      "expected": "기존 대기 거래에 영향 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        3
+      ]
+    },
+    {
+      "number": 8,
+      "scenario": "앞뒤 공백 외에 다른 문구가 포함된 응답",
+      "expected": "확정·취소 문구로 처리하지 않음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        3
+      ]
+    },
+    {
+      "number": 9,
+      "scenario": "‘거래한다’ 연속 입력",
+      "expected": "중복 지급·중복 차감 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        1,
+        10
+      ]
+    },
+    {
+      "number": 10,
+      "scenario": "‘안한다’ 입력 또는 60초 경과",
+      "expected": "전송·차감 없이 종료",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        4,
+        5
+      ]
+    },
+    {
+      "number": 11,
+      "scenario": "대기 중 다른 당근 명령어 입력",
+      "expected": "새 요청 미접수, 기존 거래 및 원래 만료시각 유지",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        4
+      ]
+    },
+    {
+      "number": 12,
+      "scenario": "가방 번호만 변경되고 원래 대상 식별 가능",
+      "expected": "기존 대상 기준으로 재검증·처리, 정상 완료 시 번호 변경 안내 추가",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        6,
+        12
+      ]
+    },
+    {
+      "number": 13,
+      "scenario": "가방 번호 변경으로 원래 대상 식별 불가",
+      "expected": "신청자 닉네임과 가방 재확인 안내 표시, 전송·차감 없이 취소",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        7
+      ]
+    },
+    {
+      "number": 14,
+      "scenario": "정상 전송 후 남은 아이템 번호가 변경됨",
+      "expected": "완료창 잔여량 아래에 다음 거래 전 가방 확인 문구 추가",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        12,
+        14
+      ]
+    },
+    {
+      "number": 15,
+      "scenario": "아이템 소멸·정보 변경·수량 부족·받는 계정 소멸",
+      "expected": "사유 안내 후 전송·차감 없이 취소",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        6,
+        8
+      ]
+    },
+    {
+      "number": 16,
+      "scenario": "전송·차감 처리 중 오류",
+      "expected": "일부만 반영되지 않으며 성공 완료창을 출력하지 않음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        10
+      ]
+    },
+    {
+      "number": 17,
+      "scenario": "완료창 출력",
+      "expected": "실제 전송 대상·수량·총 소모량·보내는 사람의 실제 잔여량 표시",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        1,
+        12
+      ]
+    },
+    {
+      "number": 18,
+      "scenario": "기존 거래 조건 비교",
+      "expected": "기존 권한·제한·수량 지원 범위·아이템 이전 규칙 유지, 포인트 차감 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        1,
+        13,
+        15
+      ]
+    },
+    {
+      "number": 19,
+      "scenario": "당근 아이템 자체 전송 시도",
+      "expected": "최초 검증에서 기존 거래 불가 규칙으로 거절, 확인 대기·전송·차감 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        9
+      ]
+    },
+    {
+      "number": 20,
+      "scenario": "강화 등이 다른 동명 아이템 확인",
+      "expected": "자유시장 거래 기준의 강화·등급·옵션 표시로 대상 구분",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        12,
+        16
+      ]
+    },
+    {
+      "number": 21,
+      "scenario": "A거래 취소 후 B거래 대기 중 A 만료 처리 실행",
+      "expected": "B거래 유지, B의 만료시각 유지, A의 만료 안내 중복 출력 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        5
+      ]
+    },
+    {
+      "number": 22,
+      "scenario": "UI 치환 및 마감",
+      "expected": "숫자는 괄호 없이 출력, 확인·완료·공통 안내 모두 맨 첫 줄에 신청자 `[채크랭크] 님` 표시, 닉네임→제목→구분선→내용 순서, 끝에 불필요한 구분선 없음",
+      "status": "PASS",
+      "test": "tools/test_carrot_confirmation.js",
+      "groups": [
+        1,
+        2,
+        12
+      ]
+    }
+  ],
+  "supplementalValidation": {
+    "test": "test_carrot_confirmation.js",
+    "exit": 0,
+    "groups": 16,
+    "reason": "Final spec reconciliation added explicit same-name/different-enhancement transfer checks after the 68-run suite; runtime source unchanged"
+  },
+  "review": {
+    "specSection8Criteria": 22,
+    "mappedAndPassed": 22,
+    "newCommandGroups": 16,
+    "specRecheckedUnchanged": true,
+    "productionReflection": false,
+    "notionStatusUpdates": false
+  }
+}
