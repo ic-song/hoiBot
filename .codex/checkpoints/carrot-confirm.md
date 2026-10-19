@@ -1,11 +1,11 @@
 # 당근거래 최종확인과 UI 개발
 
 - 작업 키: carrot-confirm
-- 작업 상태: 진행 중
-- 정리 후보: 아니요
-- 체크포인트 버전: 4
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 체크포인트 버전: 5
 - 마지막 갱신: 2026-10-19 Asia/Seoul
-- 목표: 노션 READY 기획대로 5종 확인 흐름·UI를 구현하고 반영 전 기획 대조·개발·일반/예외 테스트 완료 보고.
+- 목표: 기획대로 5종 확인 흐름·UI 구현, 반영 전 기획/개발/일반·예외 검증 및 승인 후 운영 반영·노션 동기화.
 - 기획: https://www.notion.so/c93393bdd7aa8227be5c81408f37400f (상태 🛠 READY, 예정 26.10.19 재확인)
 - 승인 범위: 개발·검증 완료 후 사용자가 운영 반영과 노션 상태 갱신 승인.
 - 저장소/브랜치: C:/Users/user/Desktop/hoiBot, feature/carrot-confirm
@@ -18,9 +18,11 @@
 - 검증 완료: 전체 68회 통과, 새 기능 16그룹 및 Rhino 전체 컴파일·실제 명령/Java 동시확정20쌍 통과. 기획 확인 항목22개 대조 PASS. 데이터1143개 해시 변화/JSON 오류0, 문법·UTF-8·diff 검증.
 - 근거: tools/carrot_confirmation_validation.md, tools/test_carrot_confirmation_result.json. Android 단말 미검증, 강제 프로세스 종료의 신규 영속 저널 없음.
 - 보존: 사용자 미추적 .codex-remote-attachments/, 개발환경_고도화/runtime/. 다른 완료 체크포인트 변경 없음.
-- 소스 푸시: de91adeecf190e32857ccb28840290bc52054e3e. 원격 feature/carrot-confirm과 PR134 head 일치 검증.
-- 정리 후보 기준 커밋: de91adeecf190e32857ccb28840290bc52054e3e
-- 검토 PR: https://github.com/ic-song/hoiBot/pull/134 (draft, base feature/prod, OPEN).
-- 운영 경계: origin/feature/prod 29d6578e/ver_2.660 그대로. 노션 22항목 기획 본문 재확인 동일, 상태 READY/실제 반영 속성 공란 유지. 카카오 알림·스킬 변경 없음.
-- 운영 반영 시작: 검증 소스 SHA256, 68회/16그룹·기획22항목 PASS, 버전/개발자노트 2.661·반영일 확인. 원격 prod 29d6578e 유지·소스 2커밋만 포함.
-- 다음 행동: 이 체크포인트 소스 푸시 후 PR134 운영 병합·원격 검증. 이후 기존 노션의 상태/운영일/버전 갱신과 카카오 버전 알림. 본문은 보존.
+- 검증 소스: de91adeecf190e32857ccb28840290bc52054e3e. 운영 반영 전 23c3f78b까지 소스 푸시 확인 후 PR134 병합.
+- 정리 후보 기준 커밋: a97898c94aad384f55659bfd06e66ad4bce44337
+- 검토 PR: https://github.com/ic-song/hoiBot/pull/134 (MERGED, base feature/prod, 2026-10-19 KST).
+- 운영 완료: origin/feature/prod a97898c94aad384f55659bfd06e66ad4bce44337, ver_2.661. 원격 SHA와 검증 소스 트리 동일·조상 포함·main/Info SHA256·개발자노트 버전/날짜 재검증.
+- 노션 완료: 당근거래_최종확인_및_UI개선_기획서 1건 상태=🧪 DEV, 운영반영일=2026-10-19(KST), 운영반영버전=ver_2.661 재조회 확인. 본문·예정일 보존.
+- 알림: PlayMCP 카카오톡 나에게 보내기로 정확히 ver_2.661 전송 성공. 로컬 스킬 변경 없음. Android 운영 단말 접속·업로드·컴파일 미수행.
+- 운영 반영 검증: 68회/16그룹·기획22항목 PASS 근거와 실제 반영 파일 해시 일치. 원격 반영 후 main/Info 문법·diff 재검증. 완료 기록은 원래 소스 브랜치에 저장.
+- 다음 행동: 없음. 승인된 운영 Git 반영·노션 속성 갱신·알림까지 완료.
