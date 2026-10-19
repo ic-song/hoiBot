@@ -1,10 +1,10 @@
 # 10월 19일 READY 5건 개발
 
 - 작업 키: oct19-ready
-- 작업 상태: 진행 중
-- 정리 후보: 아니요
-- 정리 후보 기준 커밋: 2da5512069d5227f9470d6a70cb3e9608d4aaa17
-- 체크포인트 버전: 8
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: df2652e8c2b0375b8eb9aa9a6a70944ce634aeba
+- 체크포인트 버전: 9
 - 마지막 갱신: 2026-10-19 Asia/Seoul
 - 목표: 노션 10/19 예정 READY 5건을 기존 Rhino 봇에 구현·검증.
 - 승인 범위: 길드 보상, 퀘스트14 안내, 가구 슬롯, 당근/시장 비용, 인형상자10종. 엘리트 데이터 없으면 무차감 안내. 사용자가 5건 운영 반영 및 노션 상태 갱신 승인.
@@ -14,7 +14,7 @@
 - 기준: origin/feature/prod ead6876111bc4a94e8ccf3b3b686d8f86b7d581f, ver_2.653
 - 마지막 소스 푸시: 2da5512069d5227f9470d6a70cb3e9608d4aaa17 (원격 feature/oct19-ready·PR132 head 일치 검증)
 - 체크포인트 Git 추적: 예. 소스 커밋에 포함하며 완료 상태 갱신도 같은 원격 브랜치에 저장.
-- 검토 PR: https://github.com/ic-song/hoiBot/pull/132 (draft, base feature/prod, head feature/oct19-ready)
+- 검토 PR: https://github.com/ic-song/hoiBot/pull/132 (MERGED, base feature/prod, 2026-10-19 KST)
 - 완료: 노션 DB 실제 상태/예정일·5건 본문 확인, 원격 기준 일치, 기존 관련 테스트5개 통과.
 - 기획 문서 ID: ec3393bdd7aa8362bf1401f688efe9a3, 410393bdd7aa8308a9fa018aa22305f3, 43f393bdd7aa83fd9d4881c7a51f3243, de6393bdd7aa8254af6381098f789ec3, ba3393bdd7aa821797f601de1d43fb66
 - 주의: 기존 1,000종/9등급 카탈로그·일반뽑기 확률 보존. 11/1 도감확장 제외. 인형 획득 공통 부분만 최소 추출하고 기존 pending/롤백 저장 재사용.
@@ -23,11 +23,13 @@
 - 구현 완료: 기존4건과 상자 경로. applyDollAcquisition 공통 추출, 기존 pending/롤백 저장 재사용, 3500자 기준 결과 분할. MAIN/Info 가방 10종 표시.
 - 초기 검증: test_doll_boxes.js(당시 신규10+기존22그룹), test_oct19_ready.js(6그룹), test_adventure_quest_tutorial.js, test_veranda_large_expansion.js, test_veranda_command_flow.js, test_raid_pet_skills.js, test_carrot_community_trade.js, test_doll_probability_up.js, test_doll_ui_blessing.js, test_oct16_ready.js, test_doll_test_room.js 모두 통과. test_doll_rhino.js로 Rhino1.7.15 MAIN/Info 전체 컴파일·상자100개/엘리트 무차감 실행 통과. node --check 양쪽, git diff --check, UTF-8·버전 일치 통과.
 - 완료 버전: 개발자노트 2.654~2.659 추가, HoiBotVersion=2.659. COMMAND_INDEX/REGISTRY 동기화. 실제 Android 런타임 검증은 운영자 영역.
-- 완료 범위: 사용자 요청 개발·검증·소스 저장·검토 PR 준비 완료. 원격 feature/prod는 ead68761/ver_2.653 유지. 노션 READY/실제 반영일/버전 유지. 카카오톡 운영 버전 알림 미발송, 스킬 변경 없음.
+- 완료 범위: 개발·66회 검증·소스 푸시·PR132 병합·원격 prod 검증·노션 5건 속성 갱신·카카오톡 버전 알림 완료. 스킬 변경 없음.
 - 추가 요청: 개발·일반/예외 검증 완료 후 5건 운영 반영 및 노션 상태 갱신 승인.
 - 추가 검증 완료: 66회 실행 모두 통과. 인형상자 16그룹, 실제 시장 명령 8그룹, 실제 가구 명령 4그룹, Rhino 실제 잠금 코드/합성 임계구역 Java 스레드 20쌍 포함.
 - 검증 수정: 시장/가구 저장 실패 원문 롤백, 펜던트 성공 안내 시점, 가구가방 배치 수/한도 표시 보완. 창세상자 시험 설정 fixture도 동기화.
 - 검증 근거: tools/test_oct19_validation_result.json. 운영 데이터 1143개 테스트 전후 해시 동일, JSON 파싱 오류 0. 실제 Android 단말 검증과 시장 프로세스 강제 종료의 파일 간 원자성 보장은 범위 밖.
 - 원격 완료: 소스·시험·검증 근거와 체크포인트 v6가 2da55120에 포함되어 원격 저장됨. PR132 본문에 66회 통과·ver_2.659·실기기/시장 강제종료 검증 경계 반영 확인.
-- 운영 반영 진행: 원격 prod ead68761 그대로, 소스 4개 커밋만 포함하며 66회 결과/소스 해시/버전 일치 확인. 노션 5건 READY 확인.
-- 다음 행동: 소스 체크포인트 푸시 후 prod 병합·검증·푸시. 원격 확인 후 노션 상태/실제일/버전 및 카카오 버전 알림 갱신. 노션 본문은 보존.
+- 운영 반영 완료: origin/feature/prod df2652e8c2b0375b8eb9aa9a6a70944ce634aeba, ver_2.659. 검증 소스 651cb6a3 포함과 전체 트리 동일, main/Info SHA256·버전/개발자노트 일치 및 문법 재검증.
+- 노션 완료: 길드 보상·퀘스트14·인형상자·가구 슬롯·당근/시장 비용 5건 모두 상태=🧪 DEV, 운영반영일=2026-10-19(KST), 운영반영버전=ver_2.659 재조회 검증. 본문과 예정일 보존.
+- 버전 알림: PlayMCP 카카오톡 나에게 보내기에서 정확히 ver_2.659 전송 성공 확인. 운영 단말 접속/업로드/컴파일 미수행.
+- 다음 행동: 없음. 승인된 5건 운영 Git 반영과 노션 상태 갱신 완료. 이 완료 기록은 원래 개발 브랜치에 저장하며 운영 소스 변경은 없음.
