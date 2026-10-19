@@ -1,13 +1,13 @@
 # 10월 19일 READY 5건 개발
 
 - 작업 키: oct19-ready
-- 작업 상태: 작업 완료
-- 정리 후보: 예
+- 작업 상태: 진행 중
+- 정리 후보: 아니요
 - 정리 후보 기준 커밋: 2da5512069d5227f9470d6a70cb3e9608d4aaa17
-- 체크포인트 버전: 7
+- 체크포인트 버전: 8
 - 마지막 갱신: 2026-10-19 Asia/Seoul
 - 목표: 노션 10/19 예정 READY 5건을 기존 Rhino 봇에 구현·검증.
-- 승인 범위: 길드 보상, 퀘스트14 안내, 가구 슬롯, 당근/시장 비용, 인형상자10종. 엘리트 데이터 없으면 무차감 안내. 운영 반영은 아직 요청되지 않음.
+- 승인 범위: 길드 보상, 퀘스트14 안내, 가구 슬롯, 당근/시장 비용, 인형상자10종. 엘리트 데이터 없으면 무차감 안내. 사용자가 5건 운영 반영 및 노션 상태 갱신 승인.
 - 선언된 파일 범위: main.js, Info.js, 관련 tools/test_*.js, COMMAND_INDEX.md, COMMAND_REGISTRY.md, data/hoiBotChangeLog.json, 이 체크포인트.
 - 저장소/작업 트리: C:/Users/user/Desktop/hoiBot
 - 브랜치: feature/oct19-ready
@@ -24,9 +24,10 @@
 - 초기 검증: test_doll_boxes.js(당시 신규10+기존22그룹), test_oct19_ready.js(6그룹), test_adventure_quest_tutorial.js, test_veranda_large_expansion.js, test_veranda_command_flow.js, test_raid_pet_skills.js, test_carrot_community_trade.js, test_doll_probability_up.js, test_doll_ui_blessing.js, test_oct16_ready.js, test_doll_test_room.js 모두 통과. test_doll_rhino.js로 Rhino1.7.15 MAIN/Info 전체 컴파일·상자100개/엘리트 무차감 실행 통과. node --check 양쪽, git diff --check, UTF-8·버전 일치 통과.
 - 완료 버전: 개발자노트 2.654~2.659 추가, HoiBotVersion=2.659. COMMAND_INDEX/REGISTRY 동기화. 실제 Android 런타임 검증은 운영자 영역.
 - 완료 범위: 사용자 요청 개발·검증·소스 저장·검토 PR 준비 완료. 원격 feature/prod는 ead68761/ver_2.653 유지. 노션 READY/실제 반영일/버전 유지. 카카오톡 운영 버전 알림 미발송, 스킬 변경 없음.
-- 추가 요청: 개발 검증·일반 테스트·예외 테스트 모두 수행. 운영 반영은 계속 미요청.
+- 추가 요청: 개발·일반/예외 검증 완료 후 5건 운영 반영 및 노션 상태 갱신 승인.
 - 추가 검증 완료: 66회 실행 모두 통과. 인형상자 16그룹, 실제 시장 명령 8그룹, 실제 가구 명령 4그룹, Rhino 실제 잠금 코드/합성 임계구역 Java 스레드 20쌍 포함.
 - 검증 수정: 시장/가구 저장 실패 원문 롤백, 펜던트 성공 안내 시점, 가구가방 배치 수/한도 표시 보완. 창세상자 시험 설정 fixture도 동기화.
 - 검증 근거: tools/test_oct19_validation_result.json. 운영 데이터 1143개 테스트 전후 해시 동일, JSON 파싱 오류 0. 실제 Android 단말 검증과 시장 프로세스 강제 종료의 파일 간 원자성 보장은 범위 밖.
 - 원격 완료: 소스·시험·검증 근거와 체크포인트 v6가 2da55120에 포함되어 원격 저장됨. PR132 본문에 66회 통과·ver_2.659·실기기/시장 강제종료 검증 경계 반영 확인.
-- 다음 행동: 없음. 사용자 요청 개발·일반/예외 검증 완료. 운영 반영은 별도 요청 범위.
+- 운영 반영 진행: 원격 prod ead68761 그대로, 소스 4개 커밋만 포함하며 66회 결과/소스 해시/버전 일치 확인. 노션 5건 READY 확인.
+- 다음 행동: 소스 체크포인트 푸시 후 prod 병합·검증·푸시. 원격 확인 후 노션 상태/실제일/버전 및 카카오 버전 알림 갱신. 노션 본문은 보존.
