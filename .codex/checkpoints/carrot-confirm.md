@@ -1,9 +1,9 @@
 # 당근거래 최종확인과 UI 개발
 
 - 작업 키: carrot-confirm
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 2
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 체크포인트 버전: 3
 - 마지막 갱신: 2026-10-19 Asia/Seoul
 - 목표: 노션 READY 기획대로 5종 확인 흐름·UI를 구현하고 반영 전 기획 대조·개발·일반/예외 테스트 완료 보고.
 - 기획: https://www.notion.so/c93393bdd7aa8227be5c81408f37400f (상태 🛠 READY, 예정 26.10.19 재확인)
@@ -18,4 +18,8 @@
 - 검증 완료: 전체 68회 통과, 새 기능 16그룹 및 Rhino 전체 컴파일·실제 명령/Java 동시확정20쌍 통과. 기획 확인 항목22개 대조 PASS. 데이터1143개 해시 변화/JSON 오류0, 문법·UTF-8·diff 검증.
 - 근거: tools/carrot_confirmation_validation.md, tools/test_carrot_confirmation_result.json. Android 단말 미검증, 강제 프로세스 종료의 신규 영속 저널 없음.
 - 보존: 사용자 미추적 .codex-remote-attachments/, 개발환경_고도화/runtime/. 다른 완료 체크포인트 변경 없음.
-- 다음 행동: 검증 소스·증거를 feature/carrot-confirm에 커밋·푸시하고 운영 전 draft PR을 작성. 원격 prod와 노션 READY/본문은 유지.
+- 소스 푸시: de91adeecf190e32857ccb28840290bc52054e3e. 원격 feature/carrot-confirm과 PR134 head 일치 검증.
+- 정리 후보 기준 커밋: de91adeecf190e32857ccb28840290bc52054e3e
+- 검토 PR: https://github.com/ic-song/hoiBot/pull/134 (draft, base feature/prod, OPEN).
+- 운영 경계: origin/feature/prod 29d6578e/ver_2.660 그대로. 노션 22항목 기획 본문 재확인 동일, 상태 READY/실제 반영 속성 공란 유지. 카카오 알림·스킬 변경 없음.
+- 다음 행동: 없음. 승인된 개발·기획 대조·개발/일반/예외 검증·소스 저장 완료. 운영 반영은 별도 요청 범위.
