@@ -61,6 +61,8 @@ for (const match of fn("generateBagOutput").matchAll(/GLOBAL_CONFIG\.([\w]+)\.([
     if (!c.GLOBAL_CONFIG[match[1]]) c.GLOBAL_CONFIG[match[1]] = {};
     c.GLOBAL_CONFIG[match[1]][match[2]] = "기존설정:" + match[1] + "." + match[2];
 }
+// 가방의 인형상자 설정은 배열까지 참조하므로 창세상자와 무관한 합성 이름을 제공한다.
+c.GLOBAL_CONFIG.doll.boxes = { itemNames: Array.from({ length: 10 }, (_, i) => "합성인형상자" + i) };
 for (const name of ["hasItem", "removeItem", "addItem", "normalizeMiniPetRewardBoxItemName", "getOwnedMiniPetRewardBoxItem", "getMiniPetBagLimit", "sortMiniPetBag", "refreshMiniPetSortIndex", "getMiniPetModeCharm",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "saveJsonFile",
     "getPackageBagItemName", "getUserPackageBagList", "getPackageByListNumber", "assertPackageLogData", "appendPackageLog", "formatPackageRewardSummary",

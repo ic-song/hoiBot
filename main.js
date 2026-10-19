@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.653"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.659"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -70,15 +70,15 @@ var guildLevelTable = {
 
     10: { need: 40000, reward: { petFoodAll: 100000 } },
     11: { need: 50000, reward: { fund: 300000000000 } },
-    12: { need: 60000, reward: { petSkillBook: 30000 } },
-    13: { need: 70000, reward: { petSkillBook: 35000 } },
+    12: { need: 60000, reward: { miniPet: 30000 } },
+    13: { need: 70000, reward: { petSkillBook: 700 } },
     14: { need: 80000, reward: { fund: 500000000000 } },
     15: { need: 90000, reward: { pet: 100000 } },
 
     16: { need: 100000, reward: { petFoodAll: 300000 } },
     17: { need: 120000, reward: { fund: 700000000000 } },
-    18: { need: 150000, reward: { petSkillBook: 60000 } },
-    19: { need: 180000, reward: { petSkillBook: 70000 } },
+    18: { need: 150000, reward: { miniPet: 70000 } },
+    19: { need: 180000, reward: { petSkillBook: 1500 } },
     20: { need: 250000, reward: { fund: 900000000000 } }
 };
 
@@ -771,7 +771,7 @@ const ticketTierData = {
 const towerTips = [
     "/펫홈 에 가구를 장착하면 매력이 올라갑니다!",
     "/펫강화를 하면 펫의 치명타확률이 올라갑니다!",
-    "/집짓기 를 하면 5평마다 가구를 추가 할 수 있습니다.",
+    "펫스윗홈은 100평 이후 5평이 증가할 때마다 가구 장착 가능 수가 1개씩 증가합니다.",
     "/펫먹이조합 [숫자] 를 통하여 캐슬매력을 상승이 가능합니다.",
     "속성은 하늘 -> 땅 -> 바다 -> 하늘 순서로 유리합니다.",
     "시탑 부스터🔮를 소지하면 마정석을 2배 획득합니다.",
@@ -993,8 +993,15 @@ var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 �
 var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 작업의 환경별 타이머
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } }, // 평수별 가구 장착 수 계산 기준
     doll: {
         allowedRoom: null, // 정식 공개: 인형 전용 방 제한 해제, 기존 권한·이용 조건 유지
+        boxes: {
+            maxOpenCount: 100, messageMaxLength: 3500,
+            grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조", "엘리트"],
+            emojis: ["⚪", "🟢", "🔵", "🟣", "🟡", "🔴", "🌌", "🌠", "👑", "💠"],
+            itemNames: ["일반인형상자⚪(/인형상자오픈 일반 숫자)", "고급인형상자🟢(/인형상자오픈 고급 숫자)", "희귀인형상자🔵(/인형상자오픈 희귀 숫자)", "영웅인형상자🟣(/인형상자오픈 영웅 숫자)", "전설인형상자🟡(/인형상자오픈 전설 숫자)", "신화인형상자🔴(/인형상자오픈 신화 숫자)", "초월인형상자🌌(/인형상자오픈 초월 숫자)", "창세인형상자🌠(/인형상자오픈 창세 숫자)", "창조인형상자👑(/인형상자오픈 창조 숫자)", "엘리트인형상자💠(/인형상자오픈 엘리트 숫자)"]
+        },
         ticketName: "인형뽑기이용권🧸(/인형뽑기)", shardCount: 16,
         dailyPassTickets: 3, broadcastMinGrade: 6,
         probabilityUp: { itemPrefix: "인형뽑기확률UP🧸", percents: [50,40,30,20,10], maxSuccessPercent: 100, dailyPassPercent: 20, dailyPassCount: 3 },
@@ -1055,6 +1062,7 @@ const GLOBAL_CONFIG = {
         resultLink: "https://ibb.co/jkbgrzHt"
     },
     carrotTrade: { // 당근거래를 허용할 실제 단체방과 입장 안내
+        costs: { bag: 1, miniPet: 100, furniture: 100, skill: 300, pendant: 300 }, // 개인거래·자유시장 등록의 개당 당근 기준
         communityRoom: room5,
         communityLink: "https://open.kakao.com/o/gvG4xl6h"
     },
@@ -1991,9 +1999,9 @@ blockedNicknameTerms: [
     freeMarket: { // 자유시장 설정
         memberTicketItemName: "자유시장회원권🏪",
         merchantSkillName: "타고난 장사꾼",
-        tradeFeeRate: 0.1, // 자유시장 기본 거래 수수료율
-        memberTradeFeeRate: 0.05, // 자유시장회원권 보유자 거래 수수료율
-        memberFeeTag: "자회원🏪(수수료 5%)"
+        tradeFeeRate: 0.17, // 자유시장 기본 거래 수수료율
+        memberTradeFeeRate: 0.1, // 자유시장회원권 보유자 거래 수수료율
+        memberFeeTag: "자회원🏪(수수료 10%)"
     },
     titleGift: { // 타이틀 선물 설정
         itemName: "타이틀선물권💝(/타이틀선물 닉네임 내용)",
@@ -2288,7 +2296,7 @@ blockedNicknameTerms: [
             { number: 11, title: "미니펫 강화 입문", objective: "유효한 미니펫 강화 시도 1회", commands: "/미니펫강화 [가방번호] → /퀘스트완료", story: "미니펫 강화를 한 번 진행해 강화 과정을 익힙니다.", npcStart: "미니펫도 함께 강해져야 한다냥. 가방에서 강화할 친구를 골라 한 번 강화해봐!", npcComplete: "미니펫 강화 방법을 익혔네! 다음에도 대상부터 꼭 확인해라냥.", record: "미니펫 강화를 한 번 진행했다." },
             { number: 12, title: "펜던트 강화 입문", objective: "유효한 펜던트 강화 시도 1회", commands: "/펜던트강화 [번호] → 진행시켜 → /퀘스트완료", story: "펜던트 강화에 도전해 성공과 실패 과정을 경험합니다.", npcStart: "목에 건 펜던트도 든든한 힘이 된다냥. 강화할 펜던트를 확인하고 한 번 도전해봐!", npcComplete: "펜던트 강화도 해봤구나! 준비물을 확인하는 습관을 들여라냥.", record: "펜던트 강화를 한 번 진행했다." },
             { number: 13, title: "홈뱃지 고르기", objective: "다이아상점 조회 후 홈뱃지 상품 2개 구매", commands: "/다이아상점 → /다이아상점구매 [번호] [개수] → /퀘스트완료", story: "다이아상점에서 사용할 상품을 준비합니다.", npcStart: "다이아상점에서 홈뱃지뽑기🛡️를 두 개 골라봐라냥.", npcComplete: "상품을 준비했네! 다음엔 홈뱃지에 힘을 더하고 적용하는 법을 배우자.", record: "다이아상점에서 홈뱃지 두 개를 구매했다." },
-            { number: 14, title: "홈뱃지에 힘을 더하자", objective: "홈뱃지 큐브 실제 사용 1회 및 홈뱃지 장착 유지", commands: "/홈뱃지장착 [번호] → /홈뱃지큐브 [슬롯] [옵션] → /퀘스트완료", story: "호식이가 건넨 큐브로 장착한 홈뱃지의 힘을 키웁니다.", npcStart: "홈뱃지 큐브 100개를 챙겨줄게! 큐브를 사용하고 홈뱃지가 장착돼 효과를 주고 있는지도 확인해봐라냥.", npcComplete: "홈뱃지가 제대로 적용됐네! 준비한 보람이 있다냥.", record: "홈뱃지 큐브를 사용하고 홈뱃지를 적용했다." },
+            { number: 14, title: "홈뱃지에 힘을 더하자", objective: "홈뱃지 큐브 실제 사용 1회 및 홈뱃지 장착 유지", commands: "/홈뱃지장착 [번호] → /홈뱃지큐브 [슬롯] [옵션] [사용횟수] → /퀘스트완료", story: "호식이가 건넨 큐브로 장착한 홈뱃지의 힘을 키웁니다.", npcStart: "홈뱃지 큐브 100개를 챙겨줄게! 큐브를 사용하고 홈뱃지가 장착돼 효과를 주고 있는지도 확인해봐라냥.", npcComplete: "홈뱃지가 제대로 적용됐네! 준비한 보람이 있다냥.", record: "홈뱃지 큐브를 사용하고 홈뱃지를 적용했다." },
             { number: 15, title: "펫과 함께 한 단계 더", objective: "유효한 펫 강화 시도 1회", commands: "/펫강화 [횟수] → /퀘스트완료", story: "함께하는 펫의 강화를 한 번 진행합니다.", npcStart: "이번엔 네 곁을 지키는 펫 차례야. 펫 강화를 한 번 해보고 와. 도전하는 법을 배우는 거다냥!", npcComplete: "펫 강화까지 해냈네! 너와 펫이 함께 자라는 모습이 좋다냥.", record: "펫 강화를 한 번 진행했다." },
             { number: 16, title: "야, 너 친구 없지?", objective: "길드목록 정상 조회 1회", commands: "/길드목록 → /퀘스트완료", story: "함께할 동료를 찾을 수 있는 길드목록을 둘러봅니다.", npcStart: "야, 너 친구 없지? 😼 펫 친구 말고 같이 모험할 친구 말이야! /길드목록에서 둘러보고 와. 가입은 마음에 드는 곳을 찾은 다음에 해도 돼!", npcComplete: "함께할 동료들도 둘러봤구나. 광장 수업은 끝났어! Lv.17이 되면 첫 본편 의뢰로 모험을 이어가라냥.", record: "길드목록을 둘러보고 광장 튜토리얼을 마쳤다." }
         ]
@@ -4373,6 +4381,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("⚠️ 펫무쌍·길드영지·서버대전 진행 중에는 인형 컨텐츠를 이용할 수 없습니다.");
                 return;
             }
+            if (dollRequest.kind === "box" && dollRequest.error) {
+                replier.reply(buildDollBoxErrorMessage(data, petData, guildData, sender, { reason: dollRequest.error }));
+                return;
+            }
             if (dollRequest.kind === "invalid") {
                 replier.reply(dollTitle(data, petData, guildData, sender, "인형도감") + "\n🔎 조회할 인형 도감을 입력해 주세요.\n👉 예시: /인형도감 고급1\n📖 조회 목록·명령어" + allsee + "\n일반1 · 일반2\n고급1 · 고급2\n희귀1 · 희귀2\n영웅 · 전설 · 신화 · 초월 · 창세 · 창조\n👉 등급 선택: /인형도감 고급\n━━━━━━━━━━━━\n" + dollCommandFooter());
                 return;
@@ -4404,10 +4416,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             var dollDateKey = getAttendanceKstDateKey();
             var dollDateText = dollDateKey.substring(0, 4) + "." + dollDateKey.substring(4, 6) + "." + dollDateKey.substring(6, 8);
-            var dollResult = applyDollDraw(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText);
+            var dollResult = dollRequest.kind === "box" ?
+                applyDollBoxOpen(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText, dollRequest) :
+                applyDollDraw(data, petData, dollCatalogCache, dollStore, dollIndex, sender, String(java.util.UUID.randomUUID()), dollDateText);
             if (!dollResult.ok) {
-                if (isDebuggerFlag) { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} }
-                replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
+                if (isDebuggerFlag && dollRequest.kind !== "box") { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} }
+                replier.reply(dollRequest.kind === "box" ? buildDollBoxErrorMessage(data, petData, guildData, sender, dollResult) : buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
                 return;
             }
             saveJsonFile({ pending: dollSnapshots }, DATA_ROOT_PATH + "dollPending.json");
@@ -4416,16 +4430,24 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             saveJsonFile(petData, memberPetPath);
             saveJsonFile(data, filePath);
             saveJsonFile({ pending: null }, DATA_ROOT_PATH + "dollPending.json");
-            if (isDebuggerFlag) { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} } // 로그 전송 실패는 완료된 소모·보상을 되돌리지 않음
+            if (isDebuggerFlag && dollRequest.kind !== "box") { try { debuggerLog(buildDollDrawDebugMessage(dollResult)); } catch (dollDebugError) {} } // 로그 전송 실패는 완료된 소모·보상을 되돌리지 않음
             // 전송 실패는 이미 완료된 소모·보상을 되돌리거나 재추첨하지 않는다.
             try {
-                if (dollResult.success) replier.reply(getDollEmoji(dollResult.doll.name));
-                replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
+                if (dollRequest.kind === "box") {
+                    var dollBoxMessages = buildDollBoxMessages(data, petData, guildData, dollCatalogCache, sender, dollResult);
+                    for (var dollBoxMessageIndex = 0; dollBoxMessageIndex < dollBoxMessages.length; dollBoxMessageIndex++) replier.reply(dollBoxMessages[dollBoxMessageIndex]);
+                } else {
+                    if (dollResult.success) replier.reply(getDollEmoji(dollResult.doll.name));
+                    replier.reply(buildDollDrawMessage(data, petData, guildData, dollCatalogCache, sender, dollResult));
+                }
                 if (dollResult.success && dollResult.experience.levelUps.length > 0) replier.reply(buildAdventureLevelUpMessage(data, petData, guildData, sender, dollResult.experience.levelUps));
-                if (dollResult.success && dollResult.doll.grade >= GLOBAL_CONFIG.doll.broadcastMinGrade) {
-                    var dollNotice = "[🧸 전체알림]\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형 등장!\n━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이 " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + " 등급 인형을 뽑았어요!\n\n" + GLOBAL_CONFIG.doll.emojis[dollResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollResult.doll.grade] + "｜" + dollResult.doll.name + "\n📏 " + (dollResult.length / 10).toFixed(1) + "cm · " + dollResult.size.label + "\n━━━━━━━━━━━━";
-
-                    if (ctx.isDev) replier.reply(dollNotice); else noticeMsg(dollNotice);
+                var dollNoticeRows = dollRequest.kind === "box" ? dollResult.results : [dollResult];
+                for (var dollNoticeIndex = 0; dollNoticeIndex < dollNoticeRows.length; dollNoticeIndex++) {
+                    var dollNoticeResult = dollNoticeRows[dollNoticeIndex];
+                    if (dollNoticeResult.success && dollNoticeResult.doll.grade >= GLOBAL_CONFIG.doll.broadcastMinGrade) {
+                        var dollNotice = "[🧸 전체알림]\n" + GLOBAL_CONFIG.doll.emojis[dollNoticeResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollNoticeResult.doll.grade] + " 등급 인형 등장!\n━━━━━━━━━━━━\n[" + checkRank(data, petData, guildData, sender) + "] 님이 " + GLOBAL_CONFIG.doll.grades[dollNoticeResult.doll.grade] + " 등급 인형을 뽑았어요!\n\n" + GLOBAL_CONFIG.doll.emojis[dollNoticeResult.doll.grade] + " " + GLOBAL_CONFIG.doll.grades[dollNoticeResult.doll.grade] + "｜" + dollNoticeResult.doll.name + "\n📏 " + (dollNoticeResult.length / 10).toFixed(1) + "cm · " + dollNoticeResult.size.label + "\n━━━━━━━━━━━━";
+                        if (ctx.isDev) replier.reply(dollNotice); else noticeMsg(dollNotice);
+                    }
                 }
             } catch (dollReplyError) { debuggerLog("[인형 전송 오류] " + dollReplyError); }
             return;
@@ -6173,13 +6195,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         );
                         return;
                     }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, skillTradeCount * 50)) {
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, skillTradeCount * GLOBAL_CONFIG.carrotTrade.costs.skill)) {
                         replier.reply("❌ 🥕당근이세요? 아이템이 부족합니다.");
                         return;
                     }
                     removePetSkillFromBag(petSkillData, sender, tradeSkillName, skillTradeCount);
                     addPetSkillToBag(petSkillData, skillReceiver, tradeSkillName, skillTradeCount);
-                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, skillTradeCount * 50);
+                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, skillTradeCount * GLOBAL_CONFIG.carrotTrade.costs.skill);
                     addItem(data, skillReceiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
                     if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
                     data.member[sender].carrotGiven += 1;
@@ -6231,6 +6253,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     msg = freeMarketConfirmState.command;
                     isFreeMarketConfirmed = true;
+                }
+
+                var freeMarketRollbackText = null;
+                if (isFreeMarketRegisterCommand(msg) || /^\/(?:자유시장구매|자유시장취소|거래소강제취소)\s+\d+$/.test(msg)) {
+                    freeMarketRollbackText = FileStream.read(resolveActiveDataPath(freeMarketPath), "utf-8"); // 거래 시작 전 시장 원문을 같은 명령의 롤백에 사용
+                    parseJsonContent(freeMarketRollbackText, freeMarketPath);
                 }
 
                 if (msg === "/자유시장생성") {
@@ -6330,7 +6358,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, bagMarketCarrotFee);
                     addFreeMarketListing(freeMarketBagData, "bag", sender, bagMarketItemName, bagMarketCount, bagMarketPrice, null, bagMarketCarrotFee);
                     saveJsonFile(data, filePath);
-                    saveJsonFile(freeMarketBagData, freeMarketPath);
+                    saveJsonFile(freeMarketBagData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6418,7 +6446,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addFreeMarketListing(freeMarketMiniData, "miniPet", sender, getFreeMarketMiniPetDisplayName(miniMarketTarget), miniMarketCount, miniMarketPrice, { pets: miniMarketPicked }, miniMarketCarrotFee);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
-                    saveJsonFile(freeMarketMiniData, freeMarketPath);
+                    saveJsonFile(freeMarketMiniData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6448,7 +6476,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + furnitureMarketActiveCount + "/" + furnitureMarketLimit + "건\n요청: +1건");
                         return;
                     }
-                    var furnitureHomeData = loadJsonFile(homeDataFile) || {};
+                    var furnitureHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var furnitureHomeData = parseJsonContent(furnitureHomeDataRollbackText, homeDataFile);
                     furnitureHomeData = initSweetHomeUser(furnitureHomeData, sender);
                     var furnitureMarketBag = sortFurnitureList(furnitureHomeData[sender].furnitureBag || []);
                     if (furnitureMarketIndex < 1 || furnitureMarketIndex > furnitureMarketBag.length) {
@@ -6493,8 +6522,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     sortFurnitureList(furnitureMarketBag);
                     addFreeMarketListing(freeMarketFurnitureData, "furniture", sender, getFreeMarketFurnitureDisplayName(furnitureMarketTarget), furnitureMarketCount, furnitureMarketPrice, { furnitures: furnitureMarketPicked }, furnitureMarketCarrotFee);
                     saveJsonFile(data, filePath);
-                    saveJsonFile(furnitureHomeData, homeDataFile);
-                    saveJsonFile(freeMarketFurnitureData, freeMarketPath);
+                    saveJsonFile(furnitureHomeData, homeDataFile, false, furnitureHomeDataRollbackText);
+                    saveJsonFile(freeMarketFurnitureData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6554,7 +6583,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     addFreeMarketListing(freeMarketSkillData, "skill", sender, normalizePetSkillName(skillMarketName), skillMarketCount, skillMarketPrice, null, skillMarketCarrotFee);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketSkillData, freeMarketPath);
+                    saveJsonFile(freeMarketSkillData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "] 님\n" +
@@ -6570,17 +6599,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 if (/^\/펜던트거래등록\s+\d+\s+\d+$/.test(msg)) {
                     var pendantMarketResultEarly = registerPendantFreeMarket(data, petData, petSkillData, guildData, sender, msg, isFreeMarketConfirmed);
-                    replier.reply(pendantMarketResultEarly.message);
                     if (pendantMarketResultEarly.pending) {
                         setFreeMarketConfirmState(sender, "register", msg, 0);
+                        replier.reply(pendantMarketResultEarly.message);
                         return;
                     }
                     if (pendantMarketResultEarly.ok) {
                         saveJsonFile(data, filePath);
                         saveJsonFile(petData, memberPetPath);
-                        saveJsonFile(pendantMarketResultEarly.freeMarketData, freeMarketPath);
+                        saveJsonFile(pendantMarketResultEarly.freeMarketData, freeMarketPath, false, freeMarketRollbackText);
                         clearFreeMarketConfirmState(sender);
                     }
+                    replier.reply(pendantMarketResultEarly.message);
                     return;
                 }
 
@@ -6601,16 +6631,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 본인이 등록한 물품만 취소할 수 있습니다.");
                         return;
                     }
-                    var cancelHomeData = loadJsonFile(homeDataFile) || {};
+                    var cancelHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var cancelHomeData = parseJsonContent(cancelHomeDataRollbackText, homeDataFile);
                     returnFreeMarketItemToOwner(data, petData, petSkillData, cancelHomeData, cancelListing, sender);
                     var cancelRefundedCarrotFee = refundFreeMarketCancelCarrotFee(data, sender, cancelListing);
                     removeFreeMarketListing(freeMarketCancelData, cancelListing.id);
                     saveJsonFile(data, filePath);
                     if (cancelListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
                     if (cancelListing.type === "pendant") saveJsonFile(petData, memberPetPath);
-                    if (cancelListing.type === "furniture") saveJsonFile(cancelHomeData, homeDataFile);
+                    if (cancelListing.type === "furniture") saveJsonFile(cancelHomeData, homeDataFile, false, cancelHomeDataRollbackText);
                     if (cancelListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketCancelData, freeMarketPath);
+                    saveJsonFile(freeMarketCancelData, freeMarketPath, false, freeMarketRollbackText);
                     replier.reply(
                         "🏪 자유시장 등록 취소\n" +
                         "━━━━━━━━━━━━\n" +
@@ -6632,16 +6663,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 존재하지 않는 자유시장 번호입니다.");
                         return;
                     }
-                    var forceHomeData = loadJsonFile(homeDataFile) || {};
+                    var forceHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var forceHomeData = parseJsonContent(forceHomeDataRollbackText, homeDataFile);
                     returnFreeMarketItemToOwner(data, petData, petSkillData, forceHomeData, forceListing, forceListing.seller);
                     var forceRefundedCarrotFee = refundFreeMarketCancelCarrotFee(data, forceListing.seller, forceListing);
                     removeFreeMarketListing(freeMarketForceData, forceListing.id);
                     saveJsonFile(data, filePath);
                     if (forceListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
                     if (forceListing.type === "pendant") saveJsonFile(petData, memberPetPath);
-                    if (forceListing.type === "furniture") saveJsonFile(forceHomeData, homeDataFile);
+                    if (forceListing.type === "furniture") saveJsonFile(forceHomeData, homeDataFile, false, forceHomeDataRollbackText);
                     if (forceListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketForceData, freeMarketPath);
+                    saveJsonFile(freeMarketForceData, freeMarketPath, false, freeMarketRollbackText);
                     replier.reply(
                         "🛠 자유시장 강제취소 완료\n" +
                         "━━━━━━━━━━━━\n" +
@@ -6693,7 +6725,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 포인트가 부족합니다.\n필요: 🅟" + numberWithCommas(buyPrice) + "\n보유: 🅟" + numberWithCommas(data.member[sender].point || 0));
                         return;
                     }
-                    var buyHomeData = loadJsonFile(homeDataFile) || {};
+                    var buyHomeDataRollbackText = FileStream.read(resolveActiveDataPath(homeDataFile), "utf-8"); // 가구 변경 전 원문 보존
+                    var buyHomeData = parseJsonContent(buyHomeDataRollbackText, homeDataFile);
                     if (buyListing.type === "miniPet") {
                         if (!petData[sender]) petData[sender] = {};
                         if (!Array.isArray(petData[sender].miniPetBag)) petData[sender].miniPetBag = [];
@@ -6737,9 +6770,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath);
                     if (buyListing.type === "miniPet") saveJsonFile(petData, memberPetPath);
                     if (buyListing.type === "pendant") saveJsonFile(petData, memberPetPath);
-                    if (buyListing.type === "furniture") saveJsonFile(buyHomeData, homeDataFile);
+                    if (buyListing.type === "furniture") saveJsonFile(buyHomeData, homeDataFile, false, buyHomeDataRollbackText);
                     if (buyListing.type === "skill") saveJsonFile(petSkillData, petSkillDataPath);
-                    saveJsonFile(freeMarketBuyData, freeMarketPath);
+                    saveJsonFile(freeMarketBuyData, freeMarketPath, false, freeMarketRollbackText);
                     clearFreeMarketConfirmState(sender);
                     replier.reply(
                         "[" + checkRank(data, petData, guildData, sender) + "]님\n" +
@@ -7251,7 +7284,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         );
                         return;
                     }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, 20)) {
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.miniPet)) {
                         replier.reply("❌ " + GLOBAL_CONFIG.items.carrotName + " 아이템이 부족합니다.");
                         return;
                     }
@@ -7265,7 +7298,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     //거래 후 양쪽 가방 정렬 + sortIndex 재부여
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
                     refreshMiniPetSortIndex(petData, receiver, miniPetData.gradeTable);
-                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, 20);
+                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.miniPet);
                     addItem(data, receiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
                     if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
                     data.member[sender].carrotGiven += 1;
@@ -7282,7 +7315,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         pet.name +
                         pet.emoji +
                         "] 미니펫을 보냈습니다.\n\n" +
-                        "- 🥕당근이세요? -20개 차감(보유 : " +
+                        "- 🥕당근이세요? -" + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.miniPet) + "개 차감(보유 : " +
                         (data.member[sender].bag[GLOBAL_CONFIG.items.carrotName] || 0) +
                         "개)\n" +
                         "- 🌡️당근온도기 +2개 지급"
@@ -7330,7 +7363,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("❌ 유효하지 않은 가구 번호입니다.");
                         return;
                     }
-                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, 10)) {
+                    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.furniture)) {
                         replier.reply("❌ " + GLOBAL_CONFIG.items.carrotName + " 아이템이 부족합니다.");
                         return;
                     }
@@ -7357,7 +7390,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     sortFurnitureList(senderBag);
                     sortFurnitureList(receiverBag);
                     // 재화 이동
-                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, 10);
+                    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.furniture);
                     addItem(data, receiver, GLOBAL_CONFIG.items.carrotThermometerName, 2);
                     // 통계 기록
                     if (!data.member[sender].carrotGiven) data.member[sender].carrotGiven = 0;
@@ -7376,7 +7409,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         furniture.name +
                         (furniture.emoji || "") +
                         "] 가구를 보냈습니다.\n\n" +
-                        "- 🥕당근이세요? 10개 차감 (보유: " +
+                        "- 🥕당근이세요? " + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.furniture) + "개 차감 (보유: " +
                         (data.member[sender].bag[GLOBAL_CONFIG.items.carrotName] || 0) +
                         "개)\n" +
                         "- 🌡️당근온도기 2개 지급";
@@ -25791,7 +25824,7 @@ replier.reply(
                     let maxBag = getFurnitureBagLimit(data, sender);
                     // 헤더
                     var out = getHoiPassPremiumHeader(data, sender) + "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
-                    "좋아홈💌x" +
+                    out += "좋아홈💌x" +
                     (userHome.likeCnt || 0) +
                     "개\n" +
                     "현재 배치된 가구 (" +
@@ -31856,7 +31889,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        command === "/인형뽑기" || command === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(command) || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
+        command === "/인형뽑기" || /^\/인형상자오픈\s+(?:일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?:\s+\d+)?$/.test(command) || command === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(command) || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
         /^\/달토끼상점구매\s+\d+\s+\d+$/.test(command) ||
         command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
@@ -45783,6 +45816,16 @@ function generateBagOutput(bagItems, includeDonationNotice) {
             "인형뽑기확률UP🧸(30%)",
             "인형뽑기확률UP🧸(20%)",
             "인형뽑기확률UP🧸(10%)",
+            GLOBAL_CONFIG.doll.boxes.itemNames[0],
+            GLOBAL_CONFIG.doll.boxes.itemNames[1],
+            GLOBAL_CONFIG.doll.boxes.itemNames[2],
+            GLOBAL_CONFIG.doll.boxes.itemNames[3],
+            GLOBAL_CONFIG.doll.boxes.itemNames[4],
+            GLOBAL_CONFIG.doll.boxes.itemNames[5],
+            GLOBAL_CONFIG.doll.boxes.itemNames[6],
+            GLOBAL_CONFIG.doll.boxes.itemNames[7],
+            GLOBAL_CONFIG.doll.boxes.itemNames[8],
+            GLOBAL_CONFIG.doll.boxes.itemNames[9],
             GLOBAL_CONFIG.items.pendantOpenTicketName,
             GLOBAL_CONFIG.items.pendantEnhanceStoneName,
             GLOBAL_CONFIG.items.pendantRestoreStoneName,
@@ -47667,11 +47710,7 @@ function buildFreeMarketRegisterUsageMessage() {
 }
 
 function getFreeMarketCarrotFee(type, quantity) {
-    var perOne = 1;
-    if (type === "miniPet") perOne = 20;
-    else if (type === "furniture") perOne = 5;
-    else if (type === "skill") perOne = 50;
-    else if (type === "pendant") perOne = 100;
+    var perOne = GLOBAL_CONFIG.carrotTrade.costs[type] || GLOBAL_CONFIG.carrotTrade.costs.bag;
     return perOne * quantity;
 }
 
@@ -47728,8 +47767,8 @@ function buildFreeMarketListMessage(data, petData, guildData, freeMarketData) {
     var listings = getFreeMarketActiveListings(freeMarketData);
     var out = "🏪 호이월드 자유시장 🏪\n";
     out += "━━━━━━━━━━━━\n";
-    out += "💰수수료: 판매금액의 10%\n";
-    out += "🏪 자유시장회원권: 소지시 수수료 5%\n";
+    out += "💰수수료: 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
+    out += "🏪 자유시장회원권: 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n";
     out += "🛒구매: /자유시장구매 [번호]\n";
     out += "❌취소: /자유시장취소 [번호]\n";
     out += "📖판매: 채팅창에 '자유시장 판매가이드'\n";
@@ -47764,8 +47803,8 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
     out += "━━━━━━━━━━━━\n";
     out += "📖 최근 판매 완료된 거래금액이 표시됩니다\n";
     out += "📋[아이템x갯수][금액][판매]🤝[구매]\n";
-    out += "💰수수료는 판매금액의 10%\n";
-    out += "🏪 자유시장회원권 소지시 수수료 5%\n"
+    out += "💰수수료는 판매금액의 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.tradeFeeRate * 100) + "%\n";
+    out += "🏪 자유시장회원권 소지시 수수료 " + formatTransferFeeRate(GLOBAL_CONFIG.freeMarket.memberTradeFeeRate * 100) + "%\n"
     out += "━━━━━━━━━━━━\n";
     out += "자유시장 거래현황 보기가기👈" + allsee + "\n";
     out += "최근 판매 완료된 거래가 표시됩니다.\n\n";
@@ -47775,7 +47814,7 @@ function buildFreeMarketHistoryMessage(data, petData, guildData, freeMarketData)
     for (var i = 0; i < logs.length; i++) {
         //	if (i === 0)
         var log = logs[i];
-        var memberFeeTag = isFreeMarketMemberFeeLog(log) ? " " + GLOBAL_CONFIG.freeMarket.memberFeeTag : "";
+        var memberFeeTag = isFreeMarketMemberFeeLog(log) ? " " + (Number(log.feeRate) === GLOBAL_CONFIG.freeMarket.memberTradeFeeRate ? GLOBAL_CONFIG.freeMarket.memberFeeTag : "자회원🏪(수수료 " + formatTransferFeeRate(Number(log.feeRate) * 100) + "%)") : "";
         var completedTimeText = formatFreeMarketDisplayTime(log.completedAt, log.completedAtMs);
         out += (i + 1) + ". [" + log.itemName + "x" + numberWithCommas(log.quantity || 0) + "개" + formatFreeMarketUnitPriceText(log) + "]\n└[" + formatFreeMarketPoint(log.price || 0) + "][" + checkRank(data, petData, guildData, log.seller) + "]🤝[" + checkRank(data, petData, guildData, log.buyer) + "]" + memberFeeTag;
         if (completedTimeText) out += "\n  └(" + completedTimeText + ")";
@@ -51708,13 +51747,13 @@ function getFurnitureMaxSlots(data, petData, userName, floor, petSkillData) {
 
     var slotSize;
 
-    if (floor < 100) {
+    if (floor < GLOBAL_CONFIG.sweetHome.furniture.baseFloor) {
         // 0~99평: 5평마다 1개 추가
-        slotSize = Math.floor(floor / 5) + 1;
+        slotSize = Math.floor(floor / GLOBAL_CONFIG.sweetHome.furniture.initialFloorStep) + 1;
     } else {
-        // 100평 이상: 10평마다 1개 추가
-        var baseAt100 = Math.floor(100 / 5) + 1; // 21
-        var extra = Math.floor((floor - 100) / 10);
+        // 100평 이상: 5평마다 1개 추가
+        var baseAt100 = Math.floor(GLOBAL_CONFIG.sweetHome.furniture.baseFloor / GLOBAL_CONFIG.sweetHome.furniture.initialFloorStep) + 1; // 100평 기준 장착 수
+        var extra = Math.floor((floor - GLOBAL_CONFIG.sweetHome.furniture.baseFloor) / GLOBAL_CONFIG.sweetHome.furniture.additionalFloorStep); // 기준 평수 초과분의 추가 장착 수
         slotSize = baseAt100 + extra;
     }
 
@@ -53336,7 +53375,7 @@ function buildAdventureQuestIncompleteMessage(data, petData, guildData, user, ch
     var p = state.progress || {};
     if (state.currentStage === 8 && p.skillBookOpened) commands = ["/펫스킬장착 [번호]", "/퀘스트완료"];
     else if (state.currentStage === 13 && p.diamondShopViewed) commands = ["/다이아상점구매 [번호] [개수]", "/퀘스트완료"];
-    else if (state.currentStage === 14) commands = (check.badgeApplied || (check.badgeEquipped && !p.homeBadgeCubeUsed)) ? ["/홈뱃지큐브 [슬롯] [옵션]", "/퀘스트완료"] : p.homeBadgeCubeUsed ? ["/홈뱃지장착 [번호]", "/퀘스트완료"] : ["/홈뱃지장착 [번호]", "/홈뱃지큐브 [슬롯] [옵션]", "/퀘스트완료"];
+    else if (state.currentStage === 14) commands = (check.badgeApplied || (check.badgeEquipped && !p.homeBadgeCubeUsed)) ? ["/홈뱃지큐브 [슬롯] [옵션] [사용횟수]", "/퀘스트완료"] : p.homeBadgeCubeUsed ? ["/홈뱃지장착 [번호]", "/퀘스트완료"] : ["/홈뱃지장착 [번호]", "/홈뱃지큐브 [슬롯] [옵션] [사용횟수]", "/퀘스트완료"];
     for (var i = 0; i < commands.length; i++) lines.push("👉 " + commands[i]);
     return lines.join("\n");
 }
@@ -56665,16 +56704,16 @@ function tradePendantByCarrot(data, petData, guildData, sender, msg) {
     if (!data.member[target] || !petData[target]) return { ok: false, message: "거래 대상 유저를 찾을 수 없습니다." };
     if (!isMemberTierKing(data, sender)) return { ok: false, message: "❌[" + checkRank(data, petData, guildData, sender) + "]님 펜던트 거래는 티어 👑킹 이상부터 가능합니다." };
     if (!isMemberTierKing(data, target)) return { ok: false, message: "❌[" + checkRank(data, petData, guildData, target) + "]님은 티어 👑킹 미만이라 당근 거래 물품을 받을 수 없습니다." };
-    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100)) return { ok: false, message: "펜던트 거래 수수료 당근🥕 100개가 부족합니다." };
+    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.pendant)) return { ok: false, message: "펜던트 거래 수수료 당근🥕 " + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.pendant) + "개가 부족합니다." };
     var senderBag = getPendantBag(petData, sender);
     sortPendantBagByGrade(senderBag);
     var targetBag = getPendantBag(petData, target);
     if (targetBag.length >= getPendantBagLimit()) return { ok: false, message: "상대 펜던트가방 공간이 부족합니다." };
     if (index < 1 || index > senderBag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
     var pendant = senderBag.splice(index - 1, 1)[0];
-    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100);
+    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.pendant);
     targetBag.push(pendant);
-    return { ok: true, message: "펜던트 당근거래 완료\n━━━━━━━━━━━━━\n보낸 유저: " + sender + "\n받은 유저: " + target + "\n" + formatPendantDisplay(pendant) + "\n수수료: 당근🥕 100개" };
+    return { ok: true, message: "펜던트 당근거래 완료\n━━━━━━━━━━━━━\n보낸 유저: " + sender + "\n받은 유저: " + target + "\n" + formatPendantDisplay(pendant) + "\n수수료: 당근🥕 " + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.pendant) + "개" };
 }
 
 // 펜던트 자유시장 등록 처리
@@ -56689,7 +56728,7 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
     var activeCount = countFreeMarketActiveListingsBySeller(freeMarketData, sender);
     var limit = getFreeMarketRegisterLimit(data, petSkillData, sender);
     if (activeCount + 1 > limit) return { ok: false, message: "❌ 자유시장 등록 가능 건수를 초과했습니다.\n현재: " + activeCount + "/" + limit + "건\n요청: +1건" };
-    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100)) return { ok: false, message: "펜던트 거래 등록 수수료 당근🥕 100개가 부족합니다." };
+    if (!hasItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.pendant)) return { ok: false, message: "펜던트 거래 등록 수수료 당근🥕 " + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.pendant) + "개가 부족합니다." };
     var bag = getPendantBag(petData, sender);
     sortPendantBagByGrade(bag);
     if (index < 1 || index > bag.length) return { ok: false, message: "해당 번호의 펜던트가 존재하지 않습니다." };
@@ -56697,13 +56736,13 @@ function registerPendantFreeMarket(data, petData, petSkillData, guildData, sende
         return {
             ok: true,
             pending: true,
-            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, 100, "")
+            message: buildFreeMarketRegisterConfirmMessage(data, petData, guildData, sender, formatPendantDisplay(bag[index - 1]), 1, price, GLOBAL_CONFIG.carrotTrade.costs.pendant, "")
         };
     }
     var pendant = bag.splice(index - 1, 1)[0];
-    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, 100);
-    addFreeMarketListing(freeMarketData, "pendant", sender, formatPendantDisplay(pendant), 1, price, { pendants: [cloneFreeMarketObject(pendant)] }, 100);
-    return { ok: true, freeMarketData: freeMarketData, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatPendantDisplay(pendant) + "]\n🅟" + numberWithCommas(price) + "에 등록되었습니다.\n\n※ 등록 수수료 [당근🥕 100개]가 차감되었습니다.\n" + buildFreeMarketTradeFeeNotice(data, sender) };
+    removeItem(data, sender, GLOBAL_CONFIG.items.carrotName, GLOBAL_CONFIG.carrotTrade.costs.pendant);
+    addFreeMarketListing(freeMarketData, "pendant", sender, formatPendantDisplay(pendant), 1, price, { pendants: [cloneFreeMarketObject(pendant)] }, GLOBAL_CONFIG.carrotTrade.costs.pendant);
+    return { ok: true, freeMarketData: freeMarketData, message: "[" + checkRank(data, petData, guildData, sender) + "] 님\n🏪 자유시장 등록 완료\n━━━━━━━━━━━━\n[" + formatPendantDisplay(pendant) + "]\n🅟" + numberWithCommas(price) + "에 등록되었습니다.\n\n※ 등록 수수료 [당근🥕 " + numberWithCommas(GLOBAL_CONFIG.carrotTrade.costs.pendant) + "개]가 차감되었습니다.\n" + buildFreeMarketTradeFeeNotice(data, sender) };
 }
 
 // 관리자 펜던트 지급 처리
@@ -59186,6 +59225,11 @@ function checkGuildLevelUp(data, guildData, g) {
             rewardTexts.push("펫스킬북 조각📙 " + numberWithCommas(reward.petSkillBook) + "개");
         }
 
+        if (reward.miniPet) {
+            g.warehouse.miniPet += reward.miniPet;
+            rewardTexts.push("미니펫 강화석💫 " + numberWithCommas(reward.miniPet) + "개");
+        }
+
         if (reward.pet) {
             g.warehouse.pet += reward.pet;
             rewardTexts.push("펫 강화석⭐️ " + numberWithCommas(reward.pet) + "개");
@@ -60070,8 +60114,101 @@ function getDollEmoji(name) {
     var match=String(name).match(/[^\u0020-\u007e\uAC00-\uD7A3]+$/);
     return match ? match[0] : "🧸";
 }
+// 인형상자 명령의 등급·기본 수량·최대 수량을 전체 입력으로 검증하는 함수
+function getDollBoxRequest(msg) {
+    var text = String(msg), config = GLOBAL_CONFIG.doll.boxes;
+    if (!/^\/인형상자오픈(?:\s|$)/.test(text)) return null;
+    var match = text.match(/^\/인형상자오픈\s+(\S+)(?:\s+(\S+))?$/);
+    if (!match) return { kind: "box", error: "usage" };
+    var grade = config.grades.indexOf(match[1]);
+    if (grade < 0) return { kind: "box", error: "usage" };
+    if (match[2] !== undefined && !/^\d+$/.test(match[2])) return { kind: "box", error: "quantity" };
+    var count = match[2] === undefined ? 1 : Number(match[2]); // 수량 생략은 1개이며 일일 사용 제한은 없음
+    if (!isSearchAuthenticationCount(count) || count < 1 || count > config.maxOpenCount) return { kind: "box", error: "quantity" };
+    return { kind: "box", grade: grade, count: count };
+}
+
+// 인형상자 재고와 실제 등급 목록을 검증한 뒤 개별 획득을 순서대로 반영하는 함수
+function applyDollBoxOpen(data, petData, catalog, store, index, user, id, today, request, randomValue) {
+    var config = GLOBAL_CONFIG.doll.boxes, member = data.member[user], pet = petData[user];
+    if (!request || request.error || !isSearchAuthenticationCount(request.grade) || request.grade >= config.grades.length || !isSearchAuthenticationCount(request.count) || request.count < 1 || request.count > config.maxOpenCount) return { ok: false, reason: "quantity" };
+    var dolls = catalog.dolls.filter(function(doll) { return doll.grade === request.grade; });
+    if (dolls.length === 0) return { ok: false, reason: "unavailable", grade: request.grade };
+    if (!member || !pet) throw new Error("인형상자 회원·펫 데이터 없음");
+    var itemName = config.itemNames[request.grade], bag = member.bag || {};
+    var available = bag[itemName] === undefined ? 0 : bag[itemName];
+    if (!isSearchAuthenticationCount(available) || !isSearchAuthenticationCount(member.point)) throw new Error("인형상자 재화 값 오류");
+    if (available < request.count) return { ok: false, reason: "lack", grade: request.grade, count: request.count, available: available };
+    var previous = Object.prototype.hasOwnProperty.call(store.users, user) ? store.users[user] : null;
+    var record = previous ? JSON.parse(JSON.stringify(previous)) : { id: id, catches: {} };
+    if (!record.id || !record.catches || typeof record.catches !== "object" || record.catches instanceof Array) throw new Error("인형 계정 기록 오류");
+    var random = randomValue || Math.random;
+    var result = { ok: true, success: true, grade: request.grade, count: request.count, boxItemName: itemName, results: [], freshCount: 0, duplicateCount: 0, charm: 0, sale: 0,
+        experience: { base: 0, bonus: 0, total: 0, boosterResult: { extraExperience: 0, usedBooster: 0 }, levelUps: [] } };
+    for (var i = 0; i < request.count; i++) {
+        var doll = dolls[Math.floor(random() * dolls.length)];
+        var acquired = applyDollAcquisition(data, petData, catalog, store, index, user, record, doll, today, random);
+        result.results.push(acquired);
+        if (acquired.fresh) result.freshCount++; else result.duplicateCount++;
+        result.charm += acquired.charm;
+        result.sale += acquired.sale;
+        result.experience.base += acquired.experience.base;
+        result.experience.bonus += acquired.experience.bonus;
+        result.experience.total += acquired.experience.total;
+        result.experience.boosterResult.extraExperience += acquired.experience.boosterResult.extraExperience;
+        result.experience.boosterResult.usedBooster += acquired.experience.boosterResult.usedBooster;
+        result.experience.levelUps = result.experience.levelUps.concat(acquired.experience.levelUps);
+    }
+    removeItem(data, user, itemName, request.count);
+    result.remainingBox = member.bag[itemName] || 0;
+    return result;
+}
+
+// 인형상자 사용법·수량·재고·등급 데이터 준비 상태를 안내하는 함수
+function buildDollBoxErrorMessage(data, petData, guildData, user, result) {
+    var config = GLOBAL_CONFIG.doll.boxes, title = dollTitle(data, petData, guildData, user, "인형상자 안내");
+    if (result.reason === "unavailable") return title + "\n" + config.grades[result.grade] + " 인형 데이터가 아직 준비되지 않았어요.\n데이터 반영 후 개봉할 수 있어요.\n상자와 재화는 차감하지 않았어요.";
+    if (result.reason === "lack") return title + "\n" + config.itemNames[result.grade] + "가 부족합니다.\n보유: " + numberWithCommas(result.available) + "개 · 요청: " + numberWithCommas(result.count) + "개";
+    if (result.reason === "quantity") return title + "\n개봉 수량은 1~" + config.maxOpenCount + " 사이의 정수로 입력해 주세요.\n예시: /인형상자오픈 고급 10";
+    return title + "\n사용법: /인형상자오픈 등급 숫자\n예시: /인형상자오픈 고급 10\n수량을 생략하면 1개를 개봉해요.\n한 번에 최대 " + config.maxOpenCount + "개까지 개봉할 수 있어요.\n\n사용 가능 등급\n" + config.grades.join(" · ") + "\n\n상자 1개당 해당 등급 인형 1개를 획득해요.\n같은 인형이 중복으로 나올 수 있어요.";
+}
+
+// 실제 개봉 결과의 요약과 전체 획득 목록을 누락 없이 길이별로 나누는 함수
+function buildDollBoxMessages(data, petData, guildData, catalog, user, result) {
+    var config = GLOBAL_CONFIG.doll.boxes;
+    if (!result.ok) return [buildDollBoxErrorMessage(data, petData, guildData, user, result)];
+    if (result.count === 1) {
+        var single = {}, acquired = result.results[0];
+        for (var key in acquired) if (Object.prototype.hasOwnProperty.call(acquired, key)) single[key] = acquired[key];
+        single.ok = true; single.boxItemName = result.boxItemName; single.remainingBox = result.remainingBox;
+        return [buildDollDrawMessage(data, petData, guildData, catalog, user, single)];
+    }
+    var exp = result.experience, boost = exp.boosterResult;
+    var lines = [dollTitle(data, petData, guildData, user, "인형상자 개봉"), config.emojis[result.grade] + " " + config.grades[result.grade] + " 인형 " + result.count + "개 획득",
+        "📚 신규 " + result.freshCount + "종 · 중복 " + result.duplicateCount + "회", "", "💞 획득 종합매력: +" + numberWithCommas(result.charm), "📊 총 획득 경험치: +" + formatAdventureExperience(exp.total) + "exp"];
+    if (result.sale > 0) lines.push("🪙 중복 자동 판매: 🅟" + numberWithCommas(result.sale));
+    if (boost.usedBooster > 0) lines.push("✨ 호월신의 가호: " + numberWithCommas(boost.usedBooster) + "개 사용");
+    lines.push("━━━━━━━━━━━━", "📦 " + result.boxItemName + " " + result.count + "개 사용 · 잔여 " + numberWithCommas(result.remainingBox) + "개", "📖 획득 상세·명령어" + allsee, "🎁 획득 목록");
+    for (var i = 0; i < result.results.length; i++) {
+        var row = result.results[i];
+        lines.push((i + 1) + ". " + row.doll.name + " · " + (row.length / 10).toFixed(1) + "cm · " + row.size.label + " · " + (row.fresh ? "신규" : "중복"));
+    }
+    lines.push("", "📊 총 획득 경험치: +" + formatAdventureExperience(exp.total) + "exp", "├ 📘 인형 기본: +" + formatAdventureExperience(exp.base) + "exp", (boost.usedBooster > 0 ? "├" : "└") + " 🎟️ 티어 보너스: +" + formatAdventureExperience(exp.bonus) + "exp");
+    if (boost.usedBooster > 0) lines.push("└ ✨ 가호 추가: +" + formatAdventureExperience(boost.extraExperience) + "exp");
+    lines.push("", "📖 등급 도감: /인형도감 " + config.grades[result.grade], "📦 상자 개봉: /인형상자오픈 " + config.grades[result.grade] + " 숫자");
+    var messages = [], text = "";
+    for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+        if (text && text.length + lines[lineIndex].length + 1 > config.messageMaxLength) { messages.push(text); text = "📖 인형상자 획득 상세 (계속)" + allsee; }
+        text += (text ? "\n" : "") + lines[lineIndex];
+    }
+    if (text) messages.push(text);
+    return messages;
+}
+
 // 인형 명령어의 정확한 실행 및 조회 입력을 분류하는 함수
 function getDollRequest(msg) {
+    var boxRequest = getDollBoxRequest(msg);
+    if (boxRequest) return boxRequest;
     if (msg === "/인형뽑기") return { kind: "draw" };
     if (msg === "/인형순위") return { kind: "rank" };
     if (msg === "/인형가이드") return { kind: "guide" };
@@ -60179,6 +60316,32 @@ function compareDollRows(a,b) {
     if (a.count !== b.count) return b.count-a.count;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
+// 선택된 인형의 크기·신규/중복 보상·경험치·도감·순위를 공통 반영하는 함수
+function applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,today,random) {
+    var config=GLOBAL_CONFIG.doll, member=data.member[user], pet=petData[user], grade=doll.grade;
+    if (!isSearchAuthenticationCount(config.charm[grade]) || !isSearchAuthenticationCount(config.sale[grade]) || !isSearchAuthenticationCount(config.experience[grade])) throw new Error("인형 등급 보상 값 오류");
+    var sizeRoll=random()*100, low=doll.minTenths, high=doll.largeTenths-1; // 구간별 크기 확률 독립 추첨
+    if(sizeRoll>=config.rates.sizeWeights[0]+config.rates.sizeWeights[1]){low=doll.giantTenths;high=doll.maxTenths;} else if(sizeRoll>=config.rates.sizeWeights[0]){low=doll.largeTenths;high=doll.giantTenths-1;}
+    var length=low+Math.floor(random()*(high-low+1)), old=record.catches[doll.id];
+    var count=old ? old.count : 0;
+    if(old) getDollRecordCharm(doll,old);
+    var charm=count>0 ? config.charm[grade]/100 : config.charm[grade];
+    var previousCharm=pet.dollCharm===undefined ? 0 : pet.dollCharm;
+    if(!isSearchAuthenticationCount(previousCharm)) throw new Error("인형 기존 매력 값 오류");
+    var accumulated=previousCharm+charm; // 캐슬·레이드에 나누기 전 정수 종합매력 누적
+    if(!isSearchAuthenticationCount(accumulated) || !isSearchAuthenticationCount(count+1)) throw new Error("인형 매력·횟수 범위 초과");
+    record.catches[doll.id]={count:count+1,max:old ? Math.max(old.max,length) : length,first:old ? old.first : today};
+    var size=getDollSize(doll,length), sale=count>0 ? config.sale[grade]*size.multiplier : 0;
+    var point=member.point+sale;
+    if(!isSearchAuthenticationCount(point)) throw new Error("인형 포인트 범위 초과");
+    member.point=point;
+    var experience=addMemberExperienceWithTierBonus(data,user,config.experience[grade]);
+    if(!isSearchAuthenticationCount(member.point)) throw new Error("인형 레벨업 포인트 범위 초과");
+    pet.dollCharm=accumulated;
+    Object.defineProperty(store.users,user,{value:record,writable:true,enumerable:true,configurable:true});
+    Object.defineProperty(index.users,user,{value:buildDollRepresentative(catalog,record,user),writable:true,enumerable:true,configurable:true});
+    return { success:true, doll:doll, length:length, size:size, fresh:count===0, charm:charm, sale:sale, experience:experience, oldMax:old ? old.max : null, record:record };
+}
 // 인형 뽑기 1회의 소모·보상·기록 변경을 계산하는 함수
 function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValue) {
     var config=GLOBAL_CONFIG.doll, member=data.member[user], pet=petData[user];
@@ -60208,29 +60371,8 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
         while (grade<8 && roll>=config.weights[grade]) {roll-=config.weights[grade];grade++;}
         var dolls=catalog.dolls.filter(function(d){return d.grade===grade;});
         var doll=dolls[Math.floor(random()*dolls.length)];
-        var sizeRoll=random()*100, low=doll.minTenths, high=doll.largeTenths-1; // 구간별 크기 확률 독립 추첨
-        if(sizeRoll>=config.rates.sizeWeights[0]+config.rates.sizeWeights[1]){low=doll.giantTenths;high=doll.maxTenths;} else if(sizeRoll>=config.rates.sizeWeights[0]){low=doll.largeTenths;high=doll.giantTenths-1;}
-        var length=low+Math.floor(random()*(high-low+1)), old=record.catches[doll.id];
-        var count=old ? old.count : 0;
-        if(old) getDollRecordCharm(doll,old);
-        var charm=count>0 ? config.charm[grade]/100 : config.charm[grade];
-        var previousCharm=pet.dollCharm===undefined ? 0 : pet.dollCharm;
-        if(!isSearchAuthenticationCount(previousCharm)) throw new Error("인형 기존 매력 값 오류");
-        var accumulated=previousCharm+charm; // 캐슬·레이드에 나누기 전 정수 종합매력 누적
-        if(!isSearchAuthenticationCount(accumulated) || !isSearchAuthenticationCount(count+1)) throw new Error("인형 매력·횟수 범위 초과");
-        record.catches[doll.id]={count:count+1,max:old ? Math.max(old.max,length) : length,first:old ? old.first : today};
-        var size=getDollSize(doll,length), sale=count>0 ? config.sale[grade]*size.multiplier : 0;
-        var point=member.point+sale;
-        if(!isSearchAuthenticationCount(point)) throw new Error("인형 포인트 범위 초과");
-        member.point=point;
-        var experience=addMemberExperienceWithTierBonus(data,user,config.experience[grade]);
-        if(!isSearchAuthenticationCount(member.point)) throw new Error("인형 레벨업 포인트 범위 초과");
-        pet.dollCharm=accumulated;
-        Object.defineProperty(store.users,user,{value:record,writable:true,enumerable:true,configurable:true});
-        Object.defineProperty(index.users,user,{value:buildDollRepresentative(catalog,record,user),writable:true,enumerable:true,configurable:true});
-        result.doll=doll;result.length=length;result.size=size;result.fresh=count===0;result.charm=charm;
-        result.sale=sale;result.experience=experience;result.oldMax=old ? old.max : null;
-        result.record=record;
+        var acquired=applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,today,random);
+        for (var key in acquired) if (Object.prototype.hasOwnProperty.call(acquired,key)) result[key]=acquired[key];
     }
     removeItem(data,user,config.ticketName,1);
     if(upName){removeItem(data,user,upName,1);result.remainingProbabilityUp=member.bag[upName] || 0;}
@@ -60260,10 +60402,10 @@ function dollTitle(data,petData,guildData,user,label,emoji) {
 }
 // 인형 획득 결과와 상세 경험치·잔여 재화를 출력하는 함수
 function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
-    var cfg=GLOBAL_CONFIG.doll, title=dollTitle(data,petData,guildData,user,"인형뽑기"), lines=[title];
+    var cfg=GLOBAL_CONFIG.doll, title=dollTitle(data,petData,guildData,user,result.boxItemName ? "인형상자 개봉" : "인형뽑기"), lines=[title];
     if(!result.ok) return lines.concat(["","🧸 뽑기에 사용할 이용권이 부족해요.","└ 인형뽑기이용권 1개가 필요해요.","","🧸 이용권 0개","└ 부족한 이용권: 1개","","━━━━━━━━━━━━","📖 상세·명령어"+allsee,"",dollCommandFooter()]).join("\n");
     var dividerAt=title.lastIndexOf("\n━━━━━━━━━━━━"); // 기존 머리말의 마지막 구분선 앞에 현재 티어 표시
-    lines=[title.substring(0,dividerAt),"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%"];
+    lines=result.boxItemName ? [title.substring(0,dividerAt)] : [title.substring(0,dividerAt),"🎟️ 티어: "+normalizeTicketTierName(data.member[user].rank ? data.member[user].rank.tier : "새싹")+" · 성공률 "+result.probability+"%"];
     if(result.probabilityUpName) lines.push("└ 기존 "+result.baseProbability+"% + 아이템 "+result.probabilityUpPercent+"%");
     lines.push("━━━━━━━━━━━━","");
     var d=result.doll;
@@ -60273,7 +60415,7 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
         if(result.sale>0) lines.push("💰 자동 판매 🅟"+formatDollAmount(result.sale));
         lines.push("📊 총 획득 경험치: +"+formatAdventureExperience(result.experience.total)+"exp");
     } else lines.push("❌ 인형뽑기 실패","다음 뽑기에 다시 도전해 보세요!");
-    lines.push("","━━━━━━━━━━━━","🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개");
+    lines.push("","━━━━━━━━━━━━",result.boxItemName ? "📦 "+result.boxItemName+" 1개 사용 · 잔여 "+numberWithCommas(result.remainingBox)+"개" : "🧸 이용권 1개 사용 · 잔여 "+numberWithCommas(result.remainingTicket)+"개");
     if(result.ticket && result.remainingTicket===0) lines.push("└ 다음 뽑기부터 이용권을 추가로 준비해 주세요.");
     if(result.probabilityUpName) lines.push("📈 "+result.probabilityUpName,"└ 1개 사용 · 잔여 "+numberWithCommas(result.remainingProbabilityUp)+"개","");
     lines.push("📖 상세·명령어"+allsee);
@@ -60287,6 +60429,7 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
     }
     if(result.success) lines.push("━━━━━━━━━━━━");
     else lines.push("");
+    if(result.boxItemName) lines.push("📦 /인형상자오픈 "+cfg.boxes.grades[d.grade]+" 숫자");
     lines.push(dollCommandFooter()); return lines.join("\n");
 }
 // 인형 안내 금액을 억·만 단위로 표시하는 함수

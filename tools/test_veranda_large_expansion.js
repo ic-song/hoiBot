@@ -19,6 +19,7 @@ function extractFunction(name) {
 
 const context = {
     GLOBAL_CONFIG: {
+        sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } },
         petSkill: {
             verandaFurnitureSlotBonus: 3,
             largeVerandaSkillName: "베란다 대확장",
