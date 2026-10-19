@@ -1,9 +1,10 @@
 # 10월 19일 READY 5건 개발
 
 - 작업 키: oct19-ready
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 3
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 정리 후보 기준 커밋: d46f72868501fff96b2a6de1e5d364fdd8b260ef
+- 체크포인트 버전: 4
 - 마지막 갱신: 2026-10-19 Asia/Seoul
 - 목표: 노션 10/19 예정 READY 5건을 기존 Rhino 봇에 구현·검증.
 - 승인 범위: 길드 보상, 퀘스트14 안내, 가구 슬롯, 당근/시장 비용, 인형상자10종. 엘리트 데이터 없으면 무차감 안내. 운영 반영은 아직 요청되지 않음.
@@ -11,13 +12,16 @@
 - 저장소/작업 트리: C:/Users/user/Desktop/hoiBot
 - 브랜치: feature/oct19-ready
 - 기준: origin/feature/prod ead6876111bc4a94e8ccf3b3b686d8f86b7d581f, ver_2.653
-- 마지막 푸시: 없음
+- 마지막 소스 푸시: d46f72868501fff96b2a6de1e5d364fdd8b260ef (원격 feature/oct19-ready 일치 검증)
+- 체크포인트 Git 추적: 예. 소스 커밋에 포함하며 완료 상태 갱신도 같은 원격 브랜치에 저장.
+- 검토 PR: https://github.com/ic-song/hoiBot/pull/132 (draft, base feature/prod, head feature/oct19-ready)
 - 완료: 노션 DB 실제 상태/예정일·5건 본문 확인, 원격 기준 일치, 기존 관련 테스트5개 통과.
 - 기획 문서 ID: ec3393bdd7aa8362bf1401f688efe9a3, 410393bdd7aa8308a9fa018aa22305f3, 43f393bdd7aa83fd9d4881c7a51f3243, de6393bdd7aa8254af6381098f789ec3, ba3393bdd7aa821797f601de1d43fb66
 - 주의: 기존 1,000종/9등급 카탈로그·일반뽑기 확률 보존. 11/1 도감확장 제외. 인형 획득 공통 부분만 최소 추출하고 기존 pending/롤백 저장 재사용.
 - 확정사항: 사용자가 복잡도를 고려하여 1회 최대 100개 승인. 수량 생략 1개·일일 제한 없음. 엘리트는 빈 목록이면 무차감 안내.
 - 사용자 기존 미추적 항목: .codex-remote-attachments/, 개발환경_고도화/runtime/ 보존.
-- 진행: 기존4건과 상자 경로 구현. applyDollAcquisition 공통 추출, 기존 pending/롤백 저장 재사용, 3500자 기준 결과 분할. MAIN/Info 가방 10종 표시.
+- 구현 완료: 기존4건과 상자 경로. applyDollAcquisition 공통 추출, 기존 pending/롤백 저장 재사용, 3500자 기준 결과 분할. MAIN/Info 가방 10종 표시.
 - 검증: test_doll_boxes.js(신규10+기존22그룹), test_oct19_ready.js(6그룹), test_adventure_quest_tutorial.js, test_veranda_large_expansion.js, test_veranda_command_flow.js, test_raid_pet_skills.js, test_carrot_community_trade.js, test_doll_probability_up.js, test_doll_ui_blessing.js, test_oct16_ready.js, test_doll_test_room.js 모두 통과. test_doll_rhino.js로 Rhino1.7.15 MAIN/Info 전체 컴파일·상자100개/엘리트 무차감 실행 통과. node --check 양쪽, git diff --check, UTF-8·버전 일치 통과.
 - 완료 버전: 개발자노트 2.654~2.658 추가, HoiBotVersion=2.658. COMMAND_INDEX/REGISTRY 동기화. 실제 Android 런타임 검증은 운영자 영역.
-- 다음 행동: 검증된 파일만 소스 브랜치 커밋·푸시하고 feature/prod 대상 검토 PR 준비. feature/prod/Notion 상태 변경은 하지 않음.
+- 완료 범위: 사용자 요청 개발·검증·소스 저장·검토 PR 준비 완료. 원격 feature/prod는 ead68761/ver_2.653 유지. 노션 READY/실제 반영일/버전 유지. 카카오톡 운영 버전 알림 미발송, 스킬 변경 없음.
+- 다음 행동: 승인된 개발 범위의 잔여 작업 없음. 운영 반영을 새로 요청하면 PR132의 검증된 변경을 반영하고 원격 검증 후 노션5건을 DEV/실제일/버전으로 갱신.
