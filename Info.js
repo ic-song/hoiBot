@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈 일반 숫자)", "고급인형상자🟢(/인형상자오픈 고급 숫자)", "희귀인형상자🔵(/인형상자오픈 희귀 숫자)", "영웅인형상자🟣(/인형상자오픈 영웅 숫자)", "전설인형상자🟡(/인형상자오픈 전설 숫자)", "신화인형상자🔴(/인형상자오픈 신화 숫자)", "초월인형상자🌌(/인형상자오픈 초월 숫자)", "창세인형상자🌠(/인형상자오픈 창세 숫자)", "창조인형상자👑(/인형상자오픈 창조 숫자)", "엘리트인형상자💠(/인형상자오픈 엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
     adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
@@ -3226,6 +3227,16 @@ function generateBagOutput(bagItems) {
             "인형뽑기확률UP🧸(30%)",
             "인형뽑기확률UP🧸(20%)",
             "인형뽑기확률UP🧸(10%)",
+            GLOBAL_CONFIG.doll.boxes.itemNames[0],
+            GLOBAL_CONFIG.doll.boxes.itemNames[1],
+            GLOBAL_CONFIG.doll.boxes.itemNames[2],
+            GLOBAL_CONFIG.doll.boxes.itemNames[3],
+            GLOBAL_CONFIG.doll.boxes.itemNames[4],
+            GLOBAL_CONFIG.doll.boxes.itemNames[5],
+            GLOBAL_CONFIG.doll.boxes.itemNames[6],
+            GLOBAL_CONFIG.doll.boxes.itemNames[7],
+            GLOBAL_CONFIG.doll.boxes.itemNames[8],
+            GLOBAL_CONFIG.doll.boxes.itemNames[9],
             GLOBAL_CONFIG.items.pendantOpenTicketName,
             GLOBAL_CONFIG.items.pendantEnhanceStoneName,
             GLOBAL_CONFIG.items.pendantRestoreStoneName,

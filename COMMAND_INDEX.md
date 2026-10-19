@@ -7875,7 +7875,7 @@ Status: VERIFIED
 
 ## Files / Helpers
 
-- main.js: getDollRequest, applyDollDraw, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
+- main.js: getDollRequest, applyDollDraw, applyDollAcquisition, getDollBoxRequest, applyDollBoxOpen, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
 - MAIN·Info의 캐슬·레이드 기본 매력에 `member_pet.json`의 `dollCharm / 2`를 합산한 뒤 기존 퍼센트를 적용한다. 종합매력·진단도 같은 기본값을 사용한다. 원본 종합매력은 정수로 누적하므로 각 모드 +12.5도 누적 과정에서 보존한다.
 
 ## Commands / Policy
@@ -8039,3 +8039,55 @@ Status: VERIFIED
 - 마음 지급 저장 완료 뒤 응답·디버그 로그가 함께 실패해도 지급/일퀘 진행도를 유지한다. 실제 로드/저장 오류는 기존 원복 경로로 실패하며 숨기지 않는다.
 - 첫 호이패스 문서의 `/퀘스트완료` 언급은 현재 명령 역할 및 명령/별칭 변경 제외 조항을 근거로 `/일퀘완료`의 오기로 해석한다. `/퀘스트완료`는 모험가 전용이며 이름/라우팅을 변경하거나 일일 보상을 함께 지급하지 않는다.
 - 최종 검증: 신규 13개 그룹·전체 57회 테스트와 Rhino 1.7.15, Main/Info 문법·UTF-8·JSON·버전 일치 검사 통과.
+
+
+---
+
+# /인형상자오픈
+
+Status: VERIFIED
+
+## Files
+
+- main.js: GLOBAL_CONFIG.doll.boxes, getDollBoxRequest, applyDollBoxOpen, applyDollAcquisition, buildDollBoxErrorMessage, buildDollBoxMessages.
+- Info.js: generateBagOutput의 동일한 10종 상자 표시.
+
+## Commands and Behavior
+
+- `/인형상자오픈 등급 [수량]`: 수량 생략 1개, 1회 1~100개, 일일 제한 없음. 등급은 일반·고급·희귀·영웅·전설·신화·초월·창세·창조·엘리트.
+- 실행 입력 전체를 검증한다. 0·음수·소수·101개 이상·추가 문구는 개봉하지 않는다. 재고 부족은 일부만 처리하지 않는다.
+- 실제 카탈로그의 같은 등급 안에서 동일 확률로 추첨한다. 상자용 목록을 복사하지 않는다. 엘리트 등급의 실제 데이터가 없으면 상자·가호·포인트·도감 무변경 안내.
+- 일반 뽑기의 성공률·등급 추첨·이용권·확률UP 소모·패스 일퀘 집계를 실행하지 않는다. 가입 등 기존 공통 조건과 대전 차단·명령 잠금은 유지한다.
+- applyDollAcquisition을 일반 뽑기와 공유하여 크기·도감 신규/중복·경험치·티어·가호·레벨업·매력·순위·판매를 동일하게 처리한다. 획득을 순서대로 반영하므로 같은 인형도 첫 신규 이후 중복으로 계산한다.
+- 1개는 기존 획득 화면을 사용하고 비용·잔여를 상자로 표시한다. 다중 개봉은 실제 합계와 전체 획득 목록을 allsee 아래에 표시하며 3,500자 기준으로 누락 없이 분할한다.
+- 기존 초월·창세·창조 전체알림 기준을 유지한다. 기존 1,000종 카탈로그·9등급·일반 뽑기 확률은 그대로다.
+
+## Save Flow
+
+- 별도 저장 파일은 추가하지 않는다. 회원 가방, member_pet.json의 매력, dollIndex.json, 해당 dollRecords_N.json을 기존 인형 저장 트랜잭션에 함께 반영한다.
+- 진입 흐름에서 원문을 읽고 dollPending.json에 복구 기록을 먼저 저장한다. 도감→인덱스→펫→회원→복구 표시 해제 후 결과를 전송한다.
+- 저장 오류는 기존 롤백, 강제 중단은 다음 MAIN 복구 경로를 사용한다. 전송 실패는 이미 완료된 지급·상자 소모를 되돌리지 않는다. DEV는 기존 경로 분리를 유지한다.
+
+## Validation
+
+- tools/test_doll_boxes.js: 전체 입력, 9등급 추첨/보상 동등성, 연속 중복, 크기별 판매, 가호 소진, 100개 결과 분할, 실제 저장/복구/재시도, 엘리트 무차감, 대전 차단, 알림, MAIN/Info 가방.
+- tools/test_doll_rhino.js: 전체 MAIN/Info 컴파일과 기존 뽑기·100개 상자·엘리트 무차감·명령 경계 실행.
+
+---
+
+# 2026-10-19 길드 보상 · 퀘스트14 · 가구 슬롯 · 당근 비용
+
+Status: VERIFIED
+
+## Files and Helpers
+
+- main.js: guildLevelTable, checkGuildLevelUp, buildAdventureQuestMessage, buildAdventureQuestIncompleteMessage, getFurnitureMaxSlots, getFreeMarketCarrotFee, getFreeMarketTradeFeeRate, tradePendantByCarrot, registerPendantFreeMarket.
+
+## Behavior and Save Flow
+
+- 도달 길드 레벨 13·19는 miniPet 창고 30,000·70,000개, 14·20은 petSkillBook 창고 700·1,500개. 보상표 키는 출발 레벨 12·18·13·19다. 기존 길드 저장과 레벨업 지급을 재사용하며 과거 달성 보상을 다시 지급하지 않는다.
+- 모험가 퀘스트14 기본/미완료 안내에 `/홈뱃지큐브 [슬롯] [옵션] [사용횟수]`를 표시한다. 완료 조건·큐브 실행·보상은 유지한다.
+- getFurnitureMaxSlots는 100평까지 기존 규칙, 초과분은 floor((평수-100)/5). 보너스 전 100·104평 21개, 105·109평 22개, 110평 23개, 200평 41개다. 기존 건물주·베란다·프리미엄을 합산하고 현재 평수에서 매번 산출하므로 별도 이전/중복 증가가 없다.
+- GLOBAL_CONFIG.carrotTrade.costs: 일반 1, 미니펫/가구 100, 스킬/펜던트 300. 개인 스킬 거래와 시장 묶음 등록의 수량 배수는 유지한다. 개인 펜던트 마지막 인수는 기존 가방번호다.
+- 자유시장 판매자 수수료 일반 17%·회원권 10%, 목록/현황/안내 동기화. 과거 완료 로그의 실제 수수료율과 등록 취소의 기존 carrotFee 반환액은 보존한다. 기존 회원/펫/가구/스킬/시장 저장 흐름을 사용한다.
+- tools/test_oct19_ready.js와 tools/test_carrot_community_trade.js는 합성 데이터에서 경계·보너스·수수료·이력·취소·거래 저장 실패를 확인한다.

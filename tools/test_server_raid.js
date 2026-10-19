@@ -95,7 +95,7 @@ const responseStart = main.indexOf("function response(room, msg, sender, isGroup
 const responseEnd = main.indexOf("///////////////////////////////////////////////////////////////////////////////////////////////", responseStart);
 assert(responseStart >= 0 && responseEnd > responseStart);
 vm.runInContext(main.slice(responseStart, responseEnd), c);
-for(const name of ["getDollRequest","isDollTestRoomCommand","buildDollTestRoomRestrictionMessage"]) vm.runInContext(block(main,"function "+name+"("),c);
+for(const name of ["getDollBoxRequest","getDollRequest","isDollTestRoomCommand","buildDollTestRoomRestrictionMessage"]) vm.runInContext(block(main,"function "+name+"("),c);
 vm.runInContext(block(main, "function createContextReplier("), c);
 vm.runInContext(block(main, "function formatNicknameRankMessage("), c);
 vm.runInContext("function runTicketMove(){" + block(main, 'if (msg === "/서버변경" ||') + "}", c);

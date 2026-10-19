@@ -44,6 +44,7 @@ const threadLocal = { value: null, get() { return this.value; }, set(value) { th
 const context = {
     sender: user,
     GLOBAL_CONFIG: {
+        sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } },
         petSkill: { raidSubjugation: {}, largeVerandaItemName: itemName, largeVerandaSkillName: "베란다 대확장", largeVerandaFurnitureSlotBonus: 6, verandaFurnitureSlotBonus: 3, unbindItemName: unbindName },
         supportPass: { premium: { furnitureSlotBonusCount: 0, furnitureBagBaseCount: 100, furnitureBagBonusCount: 0, skillSlotBonus: 0 } },
         diamondTycoon: { skillName: "광산에서 재벌까지" }

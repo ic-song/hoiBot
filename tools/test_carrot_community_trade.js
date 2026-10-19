@@ -36,7 +36,7 @@ const inputs = ["/당근 " + receiver + " 1 2", "/미니펫당근 " + receiver +
 const c = {
     sender: giver, guildData: {}, room, isGroupChat: true,
     filePath: "member.json", memberPetPath: "member_pet.json", guildPath: "guild.json", homeDataFile: "home.json", petSkillDataPath: "skill.json",
-    GLOBAL_CONFIG: { carrotTrade: { communityRoom: room, communityLink: source.match(/communityLink: "([^"]+)"/)[1] }, items: { carrotName: carrot, carrotThermometerName: thermometer },
+    GLOBAL_CONFIG: { carrotTrade: { costs: { bag: 1, miniPet: 100, furniture: 100, skill: 300, pendant: 300 }, communityRoom: room, communityLink: source.match(/communityLink: "([^"]+)"/)[1] }, items: { carrotName: carrot, carrotThermometerName: thermometer },
         supportPass: { premium: { miniPetBagBaseCount: 10, miniPetBagBonusCount: 5 } }, petSkill: {} },
     miniPetData: { gradeTable: [{ grade: "일반" }] }, PET_SKILL_BAG_MAX_COUNT: 100,
     normalizePendantTransitionBagItem: (_bag, name) => name, normalizePetSkillName: name => name,
@@ -60,7 +60,7 @@ for (const name of ["isCarrotTradeCommand", "isCarrotTradeRoomAllowed", "buildCa
     vm.runInContext(fn(name), c);
 function reset() {
     c.data = vm.runInContext("JSON.parse(" + JSON.stringify(JSON.stringify({ member: {
-        [giver]: { rank: { tier: "킹" }, room: "호이서버1[30]", bag: { [carrot]: 200, "합성아이템": 5 } },
+        [giver]: { rank: { tier: "킹" }, room: "호이서버1[30]", bag: { [carrot]: 2000, "합성아이템": 5 } },
         [receiver]: { rank: { tier: "킹" }, room: "호이서버2[2030]", bag: {} }
     } })) + ")", c);
     c.petData = { [giver]: { miniPetBag: [{ name: "합성펫", emoji: "🐹", grade: "일반", battleExp: 100, sortIndex: 1 }] }, [receiver]: { miniPetBag: [] } };
@@ -95,10 +95,10 @@ for (const destination of ["호이서버1[30]", "서버관리자", "팻 테스�
 }
 console.log("PASS 1: 네 거래의 다른 방·일대일톡 차단과 전체 데이터 미변경");
 
-// 2. 소속 서버가 다른 회원도 실제 커뮤니티 단체방에서는 기존 수수료로 거래한다.
+// 2. 소속 서버가 다른 회원도 실제 커뮤니티 단체방에서는 변경 수수료로 거래한다.
 for (let i = 0; i < inputs.length; i++) {
     reset(); run(inputs[i]);
-    assert.strictEqual(c.data.member[giver].bag[carrot], 200 - [2, 20, 10, 100][i]);
+    assert.strictEqual(c.data.member[giver].bag[carrot], 2000 - [2, 100, 100, 600][i]);
     assert.strictEqual(c.data.member[receiver].bag[thermometer], 2);
     assert.strictEqual(c.data.member[giver].carrotGiven, 1);
     if (i === 0) { assert.strictEqual(c.data.member[giver].bag["합성아이템"], 3); assert.strictEqual(c.data.member[receiver].bag["합성아이템"], 2); }
@@ -107,7 +107,7 @@ for (let i = 0; i < inputs.length; i++) {
     if (i === 3) { assert.strictEqual(c.petSkillData[giver].petSkills.bag["기도"], 2); assert.strictEqual(c.petSkillData[receiver].petSkills.bag["기도"], 2); }
     assert(c.saves.includes("member.json"));
 }
-console.log("PASS 2: 소속 서버 무관 정상 거래·기존 수수료·온도기·거래 횟수");
+console.log("PASS 2: 소속 서버 무관 정상 거래·변경 수수료·온도기·거래 횟수");
 
 // 3. 킹 미만, 아이템 부족, 잘못된 가방 번호에서는 거래가 진행되지 않는다.
 for (const msg of inputs) {
