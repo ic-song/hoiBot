@@ -37,7 +37,7 @@ text += "\n" + [
  'var boxResult=applyDollBoxOpen(data,pet,catalog,store,index,"u","id","2026.10.19",{grade:0,count:100},function(){return 0;});check(boxResult.ok&&boxResult.results.length===100&&boxResult.remainingBox===0,"box max100");',
  'check(data.member.u.passDollDrawCnt===passCount&&data.member.u.bag[GLOBAL_CONFIG.doll.ticketName]===tickets,"box excludes ticket and quest");',
  'var boxBefore=JSON.stringify(data);boxResult=applyDollBoxOpen(data,pet,catalog,store,index,"u","id","2026.10.19",{grade:9,count:1},function(){throw new Error("must not draw");});check(!boxResult.ok&&boxResult.reason==="unavailable"&&JSON.stringify(data)===boxBefore,"elite unavailable no debit");',
- 'check(getDollBoxRequest("/인형상자오픈 일반").count===1&&getDollBoxRequest("/인형상자오픈 일반 101").error,"box parser bounds");print("PASS Rhino boxes: 100, shared rewards, elite no debit, parser");'
+ 'check(getDollBoxRequest("/인형상자오픈일반").count===1&&getDollBoxRequest("/인형상자오픈 일반 101").error,"box parser bounds");print("PASS Rhino boxes: 100, shared rewards, elite no debit, parser");'
 ].join("\n");
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),"hoibot-doll-rhino-")),file=path.join(dir,"test.js");fs.writeFileSync(file,text,"utf8");
 const result=child.spawnSync("java",["-Dfile.encoding=UTF-8","-cp",path.resolve(jar),"org.mozilla.javascript.tools.shell.Main","-opt","-1","-version","200","-encoding","UTF-8","-f",file],{encoding:"utf8"});process.stdout.write(result.stdout||"");process.stderr.write(result.stderr||"");assert.strictEqual(result.status,0);

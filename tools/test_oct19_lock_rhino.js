@@ -39,12 +39,12 @@ function worker(msg,ready,start){return new java.lang.Thread(new java.lang.Runna
  catch(e){errors.add(String(e));}finally{org.mozilla.javascript.Context.exit();}
 }}));}
 check(isExclusiveDataMutationCommandMessage("/인형상자오픈 일반 100"),"box exclusive");
-check(isExclusiveDataMutationCommandMessage("dev/인형상자오픈 엘리트 1"),"DEV box exclusive");
+check(isExclusiveDataMutationCommandMessage("dev/인형상자오픈엘리트 1"),"DEV box exclusive");
 check(!isExclusiveDataMutationCommandMessage("/인형상자오픈 일반 1 해봐"),"suffix is not an execution");
 for(var round=0;round<20;round++){
  stock.set(100);paid.set(0);calls.set(0);maxActive.set(0);errors.clear();
  var ready=new java.util.concurrent.CountDownLatch(2),start=new java.util.concurrent.CountDownLatch(1);
- var a=worker("/인형상자오픈 일반 100",ready,start),b=worker("/인형상자오픈 일반 100",ready,start);
+ var a=worker("/인형상자오픈 일반 100",ready,start),b=worker("/인형상자오픈일반 100",ready,start);
  a.start();b.start();check(ready.await(5,java.util.concurrent.TimeUnit.SECONDS),"workers ready");start.countDown();a.join(5000);b.join(5000);
  check(!a.isAlive()&&!b.isAlive(),"no deadlock");check(errors.isEmpty(),"worker errors "+errors);
  check(stock.get()===0&&paid.get()===100&&calls.get()===2&&maxActive.get()===1,"duplicate race "+round);
@@ -52,7 +52,7 @@ for(var round=0;round<20;round++){
 print("PASS Rhino real Java threads: 20 simultaneous box pairs, one stock/debit, exclusive execution");
 stock.set(100);paid.set(0);calls.set(0);errors.clear();failNext.set(true);
 var ready=new java.util.concurrent.CountDownLatch(2),start=new java.util.concurrent.CountDownLatch(1);
-var a=worker("/인형상자오픈 일반 100",ready,start),b=worker("/인형상자오픈 일반 100",ready,start);
+var a=worker("/인형상자오픈 일반 100",ready,start),b=worker("/인형상자오픈일반 100",ready,start);
 a.start();b.start();check(ready.await(5,java.util.concurrent.TimeUnit.SECONDS),"error workers ready");start.countDown();a.join(5000);b.join(5000);
 check(!a.isAlive()&&!b.isAlive()&&errors.size()===1&&paid.get()===100&&stock.get()===0,"exception releases both locks");
 check(String(errors.peek()).indexOf("synthetic critical error")>=0,"expected critical error");

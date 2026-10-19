@@ -242,4 +242,78 @@ test("특수 계정명·패스 일퀘 보존·초보티어·알림 예외는 지
     finally { c.Math.random = random; c.noticeMsg = notice; }
 });
 
+
+test("붙여 쓴 10등급 명령과 안내·기존 공백 명령 호환·접미 문구 차단", () => {
+    for (let grade = 0; grade < cfg.grades.length; grade++) {
+        const name = cfg.grades[grade];
+        for (const separator of ["", " ", "\t"]) {
+            const command = "/인형상자오픈" + separator + name;
+            assert.strictEqual(c.getDollRequest(command).count, 1);
+            assert.strictEqual(c.getDollRequest(command + " 100").grade, grade);
+            assert.strictEqual(c.getDollRequest(command + " 100").count, 100);
+            for (const suffix of ["0", "101", "-1", "1.2", "NaN", "1 해봐", "1 2"])
+                assert(c.getDollRequest(command + " " + suffix).error);
+        }
+        assert.strictEqual(c.getDollRequest("/인형상자오픈" + name + "설명"), null);
+        assert(cfg.itemNames[grade].includes("/인형상자오픈" + name + " 숫자"));
+    }
+    const x = stocked(), text = c.buildDollBoxErrorMessage(x.d, x.p, {}, "u", { reason: "quantity" });
+    assert(text.includes("/인형상자오픈고급 10")); assert(!text.includes("/인형상자오픈 고급"));
+});
+
+test("기존·새 상자 재고 합산·정확한 차감·잘못된 기존 재고 무변경", () => {
+    for (let grade = 0; grade < 9; grade++) {
+        const legacy = box(grade).replace("/인형상자오픈", "/인형상자오픈 ");
+        for (const [oldCount, newCount, count] of [[3, 0, 2], [2, 3, 4], [3, 2, 1], [0, 3, 3]]) {
+            const x = stocked(grade, newCount); x.d.member.u.bag[legacy] = oldCount;
+            const r = open(x, grade, count);
+            assert(r.ok); assert.strictEqual(r.remainingBox, oldCount + newCount - count);
+            assert.strictEqual(x.d.member.u.bag[legacy] || 0, Math.max(0, oldCount - count));
+            assert.strictEqual(x.d.member.u.bag[box(grade)] || 0, newCount - Math.max(0, count - oldCount));
+            assert(!c.buildDollBoxMessages(x.d, x.p, {}, cat, "u", r).join("\n").includes("/인형상자오픈 "));
+        }
+        for (const value of [-1, 1.5, "3", null, Number.MAX_SAFE_INTEGER]) {
+            const x = stocked(grade); x.d.member.u.bag[legacy] = value; const before = JSON.stringify(x);
+            assert.throws(() => open(x, grade)); assert.strictEqual(JSON.stringify(x), before);
+        }
+        const x = stocked(grade, 1); x.d.member.u.bag[legacy] = 1; const before = JSON.stringify(x);
+        assert.strictEqual(open(x, grade, 3).available, 2); assert.strictEqual(JSON.stringify(x), before);
+    }
+});
+
+test("붙인 실제 명령의 기존 재고 저장·실패 원복·DEV 격리·엘리트 무차감", () => {
+    const legacy = box(1).replace("/인형상자오픈", "/인형상자오픈 ");
+    const random = c.Math.random; c.Math.random = () => 0;
+    try {
+        const setup = (dev = false) => { prepare(1, 1, dev); const d = fixture.read(dev); d.member.u.bag[legacy] = 2; fixture.write(d, dev); };
+        setup(); assert(run("/인형상자오픈고급 2").includes("잔여 1개"));
+        assert.strictEqual(fixture.read().member.u.bag[legacy], undefined); assert.strictEqual(fixture.read().member.u.bag[box(1)], 1);
+        setup(); const before = clone(fixture.read()); fixture.failPath(root + "member.json");
+        assert.throws(() => run("/인형상자오픈고급 3")); assert.deepStrictEqual(fixture.read(), before);
+        run("/인형상자오픈고급 3"); assert.strictEqual(fixture.read().member.u.bag[legacy], undefined); assert.strictEqual(fixture.read().member.u.bag[box(1)], undefined);
+        setup(); setup(true); const prod = clone(fixture.read()); run("/인형상자오픈고급", true);
+        assert.deepStrictEqual(fixture.read(), prod); assert.strictEqual(fixture.read(true).member.u.bag[legacy], 1);
+        prepare(9); const elite = fixture.read(), oldElite = box(9).replace("/인형상자오픈", "/인형상자오픈 "); elite.member.u.bag[oldElite] = 2; fixture.write(elite);
+        const eliteBefore = clone(fixture.read()); assert(run("/인형상자오픈엘리트").includes("차감하지 않았어요")); assert.deepStrictEqual(fixture.read(), eliteBefore);
+    } finally { c.Math.random = random; }
+});
+
+test("MAIN/Info 기존·새 이름 혼합 가방은 붙인 표기·원래 재고와 번호 보존", () => {
+    const info = fs.readFileSync(path.join(__dirname, "..", "Info.js"), "utf8");
+    for (const source of [main, info]) {
+        vm.runInContext(block(source, "function generateBagOutput("), c);
+        const bag = {};
+        cfg.itemNames.forEach((name, i) => { bag[name] = i + 1; bag[name.replace("/인형상자오픈", "/인형상자오픈 ")] = i + 2; });
+        const before = JSON.stringify(bag), result = c.generateBagOutput(bag);
+        assert.strictEqual(JSON.stringify(bag), before); assert.strictEqual(result.sortedItemList.length, 20);
+        assert.strictEqual(new Set(result.sortedItemList).size, 20); assert(!result.bagOutput.includes("/인형상자오픈 "));
+        result.sortedItemList.forEach((key, i) => {
+            const label = key.replace(/(\/인형상자오픈)\s+/, "$1");
+            assert(result.bagOutput.includes((i + 1) + ". " + label + " x " + bag[key]));
+        });
+        const infoNames = vm.runInNewContext("(" + block(info, "const GLOBAL_CONFIG = {").replace("const GLOBAL_CONFIG = ", "") + ")").doll.boxes.itemNames;
+        assert.deepStrictEqual(Array.from(infoNames), Array.from(cfg.itemNames));
+    }
+});
+
 console.log("인형상자 " + groups + "개 그룹 통과");
