@@ -34248,6 +34248,7 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
                 saveJsonFile(latest, filePath);
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 확정된 단계 이후 공지 실패로 전투 상태를 롤백하지 않음
             }
+            var blockedNoticeRooms = []; // 이번에 실패한 방의 후속 공지만 보류해 방별 발송 순서 유지
             for (var pass = 0; pass < 2; pass++) {
                 if (pass === 1) {
                     var participantKeys = state.current && state.current.state === "SETTLING" ? Object.keys(state.current.accounts) : [];
@@ -34262,21 +34263,28 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
                         endDataSaveTransaction(); beginDataSaveTransaction();
                     }
                 }
-                if (retry !== null) continue; // 공지 실패와 관계없이 정산하되 공지 순서는 유지
                 for (var i = 0; i < state.outbox.length; i++) {
                     var notice = state.outbox[i];
                     if (notice.generation !== generation) continue;
                     for (var j = 0; j < notice.deliveries.length; j++) {
                         var delivery = notice.deliveries[j];
-                        if (delivery.sent || delivery.cancelled) continue;
+                        if (delivery.sent || delivery.cancelled || blockedNoticeRooms.indexOf(delivery.room) !== -1) continue;
                         try {
-                            if (noticeMsg(notice.text, [delivery.room]) === false) { retry = GLOBAL_CONFIG.serverRaid.timers.retryMs; break; }
-                        } catch (noticeError) { retry = GLOBAL_CONFIG.serverRaid.timers.retryMs; try { debuggerLog("[ServerRaid notice] " + noticeError); } catch (noticeLogError) {} break; }
+                            if (noticeMsg(notice.text, [delivery.room]) === false) {
+                                blockedNoticeRooms.push(delivery.room);
+                                retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
+                                continue;
+                            }
+                        } catch (noticeError) {
+                            blockedNoticeRooms.push(delivery.room);
+                            retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
+                            try { debuggerLog("[ServerRaid notice] " + noticeError); } catch (noticeLogError) {}
+                            continue;
+                        }
                         delivery.sent = true;
                         saveJsonFile(latest, filePath);
                         endDataSaveTransaction(); beginDataSaveTransaction();
                     }
-                    if (retry !== null) break; // 사전·시작·종료 공지의 발송 순서를 유지
                 }
             }
             if (serverRaidHasWork(state)) retry = getServerRaidWorkDelay(state, Date.now(), retry);
