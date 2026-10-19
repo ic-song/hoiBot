@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.659"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.660"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
@@ -1000,7 +1000,7 @@ const GLOBAL_CONFIG = {
             maxOpenCount: 100, messageMaxLength: 3500,
             grades: ["일반", "고급", "희귀", "영웅", "전설", "신화", "초월", "창세", "창조", "엘리트"],
             emojis: ["⚪", "🟢", "🔵", "🟣", "🟡", "🔴", "🌌", "🌠", "👑", "💠"],
-            itemNames: ["일반인형상자⚪(/인형상자오픈 일반 숫자)", "고급인형상자🟢(/인형상자오픈 고급 숫자)", "희귀인형상자🔵(/인형상자오픈 희귀 숫자)", "영웅인형상자🟣(/인형상자오픈 영웅 숫자)", "전설인형상자🟡(/인형상자오픈 전설 숫자)", "신화인형상자🔴(/인형상자오픈 신화 숫자)", "초월인형상자🌌(/인형상자오픈 초월 숫자)", "창세인형상자🌠(/인형상자오픈 창세 숫자)", "창조인형상자👑(/인형상자오픈 창조 숫자)", "엘리트인형상자💠(/인형상자오픈 엘리트 숫자)"]
+            itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"]
         },
         ticketName: "인형뽑기이용권🧸(/인형뽑기)", shardCount: 16,
         dailyPassTickets: 3, broadcastMinGrade: 6,
@@ -31889,7 +31889,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
-        command === "/인형뽑기" || /^\/인형상자오픈\s+(?:일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?:\s+\d+)?$/.test(command) || command === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(command) || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
+        command === "/인형뽑기" || /^\/인형상자오픈\s*(?:일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?:\s+\d+)?$/.test(command) || command === "/인형전체초기화" || /^\/인형패스(?:추가|삭제),\s*.+$/.test(command) || command === "/티어적용" || /^\/부스터수정\s+.+\s+[+-]?\d+$/.test(command) || /^\/황금당근오픈\s+\d+$/.test(command) || /^\/황금당근수정\s+.+\s+[+-]?\d+$/.test(command) ||
         /^\/달토끼상점구매\s+\d+\s+\d+$/.test(command) ||
         command === "/추석이벤트활성화" || command === "/추석이벤트비활성화" ||
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
@@ -46046,6 +46046,8 @@ function generateBagOutput(bagItems, includeDonationNotice) {
             var sItem = specialItems[i];
             if (sItem === intimacyItemKey) continue;
             if (bagItems[sItem]) specialItemsSorted.push(sItem);
+            var legacyDollBoxItem = sItem.replace(/(\/인형상자오픈)(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/, "$1 $2");
+            if (legacyDollBoxItem !== sItem && bagItems[legacyDollBoxItem]) specialItemsSorted.push(legacyDollBoxItem);
         }
 
         //  2) 나머지 아이템(특수 제외 + 친밀도 제외)
@@ -46054,7 +46056,7 @@ function generateBagOutput(bagItems, includeDonationNotice) {
         for (var j = 0; j < bagKeys.length; j++) {
             var key = bagKeys[j];
             if (key === intimacyItemKey) continue;
-            if (specialItems.indexOf(key) !== -1) continue;
+            if (specialItems.indexOf(key) !== -1 || specialItemsSorted.indexOf(key) !== -1) continue;
             otherItems.push(key);
         }
 
@@ -46091,7 +46093,8 @@ function generateBagOutput(bagItems, includeDonationNotice) {
             sortedItemList.push(it3);
         }
 
-        bagOutput = bagOutput.trim();
+        // 기존 상자 재고의 저장 키와 가방 번호는 보존하고 사용법 표기만 붙여서 출력한다.
+        bagOutput = bagOutput.trim().replace(/(\/인형상자오픈)\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/g, "$1$2");
     }
 
     return {
@@ -60117,8 +60120,8 @@ function getDollEmoji(name) {
 // 인형상자 명령의 등급·기본 수량·최대 수량을 전체 입력으로 검증하는 함수
 function getDollBoxRequest(msg) {
     var text = String(msg), config = GLOBAL_CONFIG.doll.boxes;
-    if (!/^\/인형상자오픈(?:\s|$)/.test(text)) return null;
-    var match = text.match(/^\/인형상자오픈\s+(\S+)(?:\s+(\S+))?$/);
+    if (!/^\/인형상자오픈(?:\s|$|(?:일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?:\s|$))/.test(text)) return null;
+    var match = text.match(/^\/인형상자오픈\s*(\S+)(?:\s+(\S+))?$/);
     if (!match) return { kind: "box", error: "usage" };
     var grade = config.grades.indexOf(match[1]);
     if (grade < 0) return { kind: "box", error: "usage" };
@@ -60136,8 +60139,11 @@ function applyDollBoxOpen(data, petData, catalog, store, index, user, id, today,
     if (dolls.length === 0) return { ok: false, reason: "unavailable", grade: request.grade };
     if (!member || !pet) throw new Error("인형상자 회원·펫 데이터 없음");
     var itemName = config.itemNames[request.grade], bag = member.bag || {};
-    var available = bag[itemName] === undefined ? 0 : bag[itemName];
-    if (!isSearchAuthenticationCount(available) || !isSearchAuthenticationCount(member.point)) throw new Error("인형상자 재화 값 오류");
+    var legacyItemName = itemName.replace("/인형상자오픈", "/인형상자오픈 "); // 공백이 있던 기존 지급 상자의 저장 키
+    var currentCount = bag[itemName] === undefined ? 0 : bag[itemName];
+    var legacyCount = bag[legacyItemName] === undefined ? 0 : bag[legacyItemName];
+    var available = currentCount + legacyCount; // 새 이름과 기존 이름으로 보유한 상자를 합산
+    if (!isSearchAuthenticationCount(currentCount) || !isSearchAuthenticationCount(legacyCount) || !isSearchAuthenticationCount(available) || !isSearchAuthenticationCount(member.point)) throw new Error("인형상자 재화 값 오류");
     if (available < request.count) return { ok: false, reason: "lack", grade: request.grade, count: request.count, available: available };
     var previous = Object.prototype.hasOwnProperty.call(store.users, user) ? store.users[user] : null;
     var record = previous ? JSON.parse(JSON.stringify(previous)) : { id: id, catches: {} };
@@ -60159,8 +60165,10 @@ function applyDollBoxOpen(data, petData, catalog, store, index, user, id, today,
         result.experience.boosterResult.usedBooster += acquired.experience.boosterResult.usedBooster;
         result.experience.levelUps = result.experience.levelUps.concat(acquired.experience.levelUps);
     }
-    removeItem(data, user, itemName, request.count);
-    result.remainingBox = member.bag[itemName] || 0;
+    var legacyUsed = Math.min(legacyCount, request.count); // 기존 이름의 상자부터 사용하고 부족한 수량만 새 이름에서 차감
+    if (legacyUsed > 0) removeItem(data, user, legacyItemName, legacyUsed);
+    if (request.count > legacyUsed) removeItem(data, user, itemName, request.count - legacyUsed);
+    result.remainingBox = available - request.count;
     return result;
 }
 
@@ -60169,8 +60177,8 @@ function buildDollBoxErrorMessage(data, petData, guildData, user, result) {
     var config = GLOBAL_CONFIG.doll.boxes, title = dollTitle(data, petData, guildData, user, "인형상자 안내");
     if (result.reason === "unavailable") return title + "\n" + config.grades[result.grade] + " 인형 데이터가 아직 준비되지 않았어요.\n데이터 반영 후 개봉할 수 있어요.\n상자와 재화는 차감하지 않았어요.";
     if (result.reason === "lack") return title + "\n" + config.itemNames[result.grade] + "가 부족합니다.\n보유: " + numberWithCommas(result.available) + "개 · 요청: " + numberWithCommas(result.count) + "개";
-    if (result.reason === "quantity") return title + "\n개봉 수량은 1~" + config.maxOpenCount + " 사이의 정수로 입력해 주세요.\n예시: /인형상자오픈 고급 10";
-    return title + "\n사용법: /인형상자오픈 등급 숫자\n예시: /인형상자오픈 고급 10\n수량을 생략하면 1개를 개봉해요.\n한 번에 최대 " + config.maxOpenCount + "개까지 개봉할 수 있어요.\n\n사용 가능 등급\n" + config.grades.join(" · ") + "\n\n상자 1개당 해당 등급 인형 1개를 획득해요.\n같은 인형이 중복으로 나올 수 있어요.";
+    if (result.reason === "quantity") return title + "\n개봉 수량은 1~" + config.maxOpenCount + " 사이의 정수로 입력해 주세요.\n예시: /인형상자오픈고급 10";
+    return title + "\n사용법: /인형상자오픈등급 숫자\n예시: /인형상자오픈고급 10\n수량을 생략하면 1개를 개봉해요.\n한 번에 최대 " + config.maxOpenCount + "개까지 개봉할 수 있어요.\n\n사용 가능 등급\n" + config.grades.join(" · ") + "\n\n상자 1개당 해당 등급 인형 1개를 획득해요.\n같은 인형이 중복으로 나올 수 있어요.";
 }
 
 // 실제 개봉 결과의 요약과 전체 획득 목록을 누락 없이 길이별로 나누는 함수
@@ -60195,7 +60203,7 @@ function buildDollBoxMessages(data, petData, guildData, catalog, user, result) {
     }
     lines.push("", "📊 총 획득 경험치: +" + formatAdventureExperience(exp.total) + "exp", "├ 📘 인형 기본: +" + formatAdventureExperience(exp.base) + "exp", (boost.usedBooster > 0 ? "├" : "└") + " 🎟️ 티어 보너스: +" + formatAdventureExperience(exp.bonus) + "exp");
     if (boost.usedBooster > 0) lines.push("└ ✨ 가호 추가: +" + formatAdventureExperience(boost.extraExperience) + "exp");
-    lines.push("", "📖 등급 도감: /인형도감 " + config.grades[result.grade], "📦 상자 개봉: /인형상자오픈 " + config.grades[result.grade] + " 숫자");
+    lines.push("", "📖 등급 도감: /인형도감 " + config.grades[result.grade], "📦 상자 개봉: /인형상자오픈" + config.grades[result.grade] + " 숫자");
     var messages = [], text = "";
     for (var lineIndex = 0; lineIndex < lines.length; lineIndex++) {
         if (text && text.length + lines[lineIndex].length + 1 > config.messageMaxLength) { messages.push(text); text = "📖 인형상자 획득 상세 (계속)" + allsee; }
@@ -60429,7 +60437,7 @@ function buildDollDrawMessage(data,petData,guildData,catalog,user,result) {
     }
     if(result.success) lines.push("━━━━━━━━━━━━");
     else lines.push("");
-    if(result.boxItemName) lines.push("📦 /인형상자오픈 "+cfg.boxes.grades[d.grade]+" 숫자");
+    if(result.boxItemName) lines.push("📦 /인형상자오픈"+cfg.boxes.grades[d.grade]+" 숫자");
     lines.push(dollCommandFooter()); return lines.join("\n");
 }
 // 인형 안내 금액을 억·만 단위로 표시하는 함수

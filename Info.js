@@ -7,7 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
-    doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈 일반 숫자)", "고급인형상자🟢(/인형상자오픈 고급 숫자)", "희귀인형상자🔵(/인형상자오픈 희귀 숫자)", "영웅인형상자🟣(/인형상자오픈 영웅 숫자)", "전설인형상자🟡(/인형상자오픈 전설 숫자)", "신화인형상자🔴(/인형상자오픈 신화 숫자)", "초월인형상자🌌(/인형상자오픈 초월 숫자)", "창세인형상자🌠(/인형상자오픈 창세 숫자)", "창조인형상자👑(/인형상자오픈 창조 숫자)", "엘리트인형상자💠(/인형상자오픈 엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
+    doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
     adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
@@ -3457,6 +3457,8 @@ function generateBagOutput(bagItems) {
 			var sItem = specialItems[i];
 			if (sItem === intimacyItemKey) continue;
 			if (bagItems[sItem]) specialItemsSorted.push(sItem);
+			var legacyDollBoxItem = sItem.replace(/(\/인형상자오픈)(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/, "$1 $2");
+			if (legacyDollBoxItem !== sItem && bagItems[legacyDollBoxItem]) specialItemsSorted.push(legacyDollBoxItem);
 		}
 
 		//  2) 나머지 아이템(특수 제외 + 친밀도 제외)
@@ -3465,7 +3467,7 @@ function generateBagOutput(bagItems) {
 		for (var j = 0; j < bagKeys.length; j++) {
 			var key = bagKeys[j];
 			if (key === intimacyItemKey) continue;
-			if (specialItems.indexOf(key) !== -1) continue;
+			if (specialItems.indexOf(key) !== -1 || specialItemsSorted.indexOf(key) !== -1) continue;
 			otherItems.push(key);
 		}
 
@@ -3502,7 +3504,8 @@ function generateBagOutput(bagItems) {
 			sortedItemList.push(it3);
 		}
 
-		bagOutput = bagOutput.trim();
+		// 기존 상자 재고의 저장 키와 가방 번호는 보존하고 사용법 표기만 붙여서 출력한다.
+		bagOutput = bagOutput.trim().replace(/(\/인형상자오픈)\s+(일반|고급|희귀|영웅|전설|신화|초월|창세|창조|엘리트)(?= 숫자\))/g, "$1$2");
 	}
 
 	return {

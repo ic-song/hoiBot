@@ -6,6 +6,17 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+
+## 2026-10-19 - 인형상자 개봉 명령의 등급 공백 제거
+
+Status: DEVELOPMENT_VALIDATED
+
+- 변경된 기획의 `/인형상자오픈고급 10`은 기존 파서가 요구한 명령·등급 사이 공백 때문에 인식되지 않았다. 잠금 판정·아이템 사용법·결과/오류 안내도 이전 형식을 사용했다.
+- 10등급의 붙인 입력을 지원하고 표기를 통일한다. 기존 공백 명령은 호환한다. 상자는 전체 이름이 가방 키이므로 기존 키를 단순 교체하지 않고, 기존/새 이름의 수량을 검증·합산해 기존 재고부터 차감한다. 가방 번호와 원본 키는 보존하고 MAIN/Info 표시만 새 형식으로 출력한다.
+- `tools/test_doll_boxes.js` 20그룹(기존 인형 22그룹 포함 실행), 전체 JavaScript 회귀 66회, Rhino 전체 컴파일·실행과 실제 Java 잠금 20쌍이 통과했다. 재고 혼합·손상·오입력·저장 실패/재시도·DEV 분리·엘리트 무차감 포함. 데이터 1,143개 해시 변화와 JSON 파싱 오류는 없다. 증거: `tools/test_doll_box_spacing_result.json`. 실제 단말 검증은 수행하지 않았다.
+
+---
+
 Add new runtime error records below this line.
 
 ## 2026-10-14 - 회원 공개 버전과 서버대전 저장 슬롯 불일치
