@@ -2,11 +2,11 @@
 
 - 작업 키: server-raid-delivery
 - 작업 상태: 검증 완료
-- 체크포인트 버전: 3
+- 체크포인트 버전: 4
 - 마지막 갱신: 2026-10-20 (Asia/Seoul)
 - 정리 후보: 아니요
-- 승인 범위: 실패한 방만 재시도하도록 수정, 재시작·예외 검증 후 운영 반영 전 보고. 운영 반영은 미승인.
-- 파일 범위: main.js, tools/test_server_raid_delivery*.js, 관련 검증 증거, COMMAND_INDEX.md, ERROR_FIX_LOG.md, 이 체크포인트. 운영 반영 시 버전·개발자노트 갱신 예정.
+- 승인 범위: 개발·재시작/예외 검증 후 사용자가 운영 반영 승인. 후속 명시 지시로 노션은 갱신하지 않고 운영 반영만 진행.
+- 파일 범위: main.js, data/hoiBotChangeLog.json, tools/test_server_raid_delivery*.js, 관련 검증 증거, COMMAND_INDEX.md, ERROR_FIX_LOG.md, 이 체크포인트.
 - 브랜치: feature/bugFix, 기준 origin/feature/prod=285aded2. 기존 미추적 폴더 보존.
 - 조사: 기존 업로드본의 완료 회차 결과 공지가 후원문의방 1곳에 미발송. 공지 실패의 전역 break가 뒤의 방·회차 공지까지 차단함. 발신자별 회차 분리는 없음.
 - 구현 판단: 기존 저장·잠금·회차·타이머 구조 유지. 작업 1회 동안 실패한 방을 기억해 그 방의 후속 공지만 보류. 저장 실패는 기존 전체 작업 중단·재예약 유지.
@@ -16,6 +16,6 @@
 - 데이터: 운영 스냅샷 1157개 해시 변경0, JSON 오류0. UTF-8/문법/diff 통과.
 - 증거: tools/server_raid_delivery_validation.md, tools/test_server_raid_delivery_result.json.
 - 경계: 실제 Android 앱/세션은 실행하지 않음. 발송 직후 완료 저장 전 중단의 공지 중복 가능성은 기존과 같음. 발송 불가 방은 연결 복구까지 기존 간격 재시도.
-- 운영 미반영: prod=285aded2/ver_2.661 유지. 개발자노트/버전·노션·운영 알림 미변경, 스킬 변경 없음. 사용자 요청대로 운영 전 보고 대기.
-- 다음 행동: 운영 반영 전 결과 보고 완료 후 사용자 운영 반영 요청 대기. 승인 시 최신 prod 확인 → 버전/개발자노트 갱신 → 소스 푸시 → prod 반영·원격 확인 → 기존 노션 대응 문서 검색·속성 갱신.
+- 운영 반영 시작: prod=285aded2/ver_2.661 기준 재확인. 소스 버전과 개발자노트에 2026-10-20/ver_2.662 준비. 노션은 사용자 명시 지시로 갱신하지 않음. 스킬 변경 없음.
+- 다음 행동: 버전 포함 최종 검증 → 소스 푸시 → PR/prod 반영·원격 확인 → PlayMCP 버전 알림 → 소스 브랜치 정리.
 - Git 추적/원격: 검증 소스·증거·체크포인트가 9984c88993adab1fb7a2653c2b648d66a87281e2에 포함되어 origin/feature/bugFix와 일치함을 ls-remote로 확인. prod=285aded26aa3ef7738244303faaed90937881aa1 유지 확인. 이 완료 기록도 같은 소스 브랜치에 저장.

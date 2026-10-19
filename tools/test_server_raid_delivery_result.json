@@ -108,5 +108,52 @@
     "Android MessengerBot force-stop/session reacquisition not exercised; operator-only runtime.",
     "Notification sent before saved delivery acknowledgement can be repeated after crash; existing at-least-once boundary retained.",
     "Unavailable rooms retain pending notifications and existing retry interval."
-  ]
+  ],
+  "releaseValidation": {
+    "dateKST": "2026-10-20",
+    "version": "2.662",
+    "commands": [
+      {
+        "command": "node --check main.js",
+        "exitCode": 0,
+        "summaries": []
+      },
+      {
+        "command": "node tools/test_server_raid_delivery.js",
+        "exitCode": 0,
+        "summaries": [
+          "서버대전 방별 공지 18개 검증 그룹 통과 (새 VM 재시작·합성 저장/전송)"
+        ]
+      },
+      {
+        "command": "node tools/test_server_raid.js",
+        "exitCode": 0,
+        "summaries": [
+          "서버 레이드대전 130개 검증 그룹 통과 (합성 데이터·메모리 파일 IO·실제 저장 함수·실제 진입/예약 작업)"
+        ]
+      },
+      {
+        "command": "node tools/test_server_raid_oct12.js",
+        "exitCode": 0,
+        "summaries": [
+          "서버 레이드 수정요청서 신규 11개 검증 그룹 통과"
+        ]
+      },
+      {
+        "command": "node tools/test_server_raid_delivery_rhino.js C:\\Users\\user\\AppData\\Local\\Temp\\hoibot-rhino-1.7.15.jar",
+        "exitCode": 0,
+        "summaries": [
+          "PASS Rhino delivery: false failure isolation, per-room order, fresh global-scope restart, persisted acknowledgements",
+          "PASS Rhino delivery exceptions: transport and logging throw, later rooms continue, failed room remains pending",
+          "PASS Rhino PREP restart: saved preparation resumes, late activation gets 30 minutes, no old preparation notice",
+          "PASS Rhino ACTIVE/completed restart: overdue auto settlement, point/handicap once, real Java lock/context release, pending-only delivery",
+          "PASS Rhino SETTLING restart: partially paid accounts resume without duplicate rewards"
+        ]
+      }
+    ],
+    "mainSha256": "f96d552f463eddeae65978b3ad83d3bea018e21177400277bed63a86ab257187",
+    "changelogSha256": "cc4f9a4a2c48517d0016cdec7fb24f7f9981dcaef0bdbed689b7f3aace9332a6",
+    "versionOnlyMainChangeSinceValidation": true,
+    "notionUpdate": "Skipped at explicit user request"
+  }
 }
