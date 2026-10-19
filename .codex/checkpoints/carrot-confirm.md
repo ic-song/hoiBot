@@ -1,13 +1,13 @@
 # 당근거래 최종확인과 UI 개발
 
 - 작업 키: carrot-confirm
-- 작업 상태: 작업 완료
-- 정리 후보: 예
-- 체크포인트 버전: 3
+- 작업 상태: 진행 중
+- 정리 후보: 아니요
+- 체크포인트 버전: 4
 - 마지막 갱신: 2026-10-19 Asia/Seoul
 - 목표: 노션 READY 기획대로 5종 확인 흐름·UI를 구현하고 반영 전 기획 대조·개발·일반/예외 테스트 완료 보고.
 - 기획: https://www.notion.so/c93393bdd7aa8227be5c81408f37400f (상태 🛠 READY, 예정 26.10.19 재확인)
-- 승인 범위: 개발·검증·개발 브랜치 소스 저장과 검토 PR. 운영 반영은 명시적으로 제외.
+- 승인 범위: 개발·검증 완료 후 사용자가 운영 반영과 노션 상태 갱신 승인.
 - 저장소/브랜치: C:/Users/user/Desktop/hoiBot, feature/carrot-confirm
 - 기준: origin/feature/prod 29d6578ed142d901935a2ba7fa191f721a7f3883, ver_2.660
 - 파일 범위: main.js, 관련 tools 테스트·검증 증거, COMMAND_INDEX.md, COMMAND_REGISTRY.md, data/hoiBotChangeLog.json, 이 체크포인트.
@@ -22,4 +22,5 @@
 - 정리 후보 기준 커밋: de91adeecf190e32857ccb28840290bc52054e3e
 - 검토 PR: https://github.com/ic-song/hoiBot/pull/134 (draft, base feature/prod, OPEN).
 - 운영 경계: origin/feature/prod 29d6578e/ver_2.660 그대로. 노션 22항목 기획 본문 재확인 동일, 상태 READY/실제 반영 속성 공란 유지. 카카오 알림·스킬 변경 없음.
-- 다음 행동: 없음. 승인된 개발·기획 대조·개발/일반/예외 검증·소스 저장 완료. 운영 반영은 별도 요청 범위.
+- 운영 반영 시작: 검증 소스 SHA256, 68회/16그룹·기획22항목 PASS, 버전/개발자노트 2.661·반영일 확인. 원격 prod 29d6578e 유지·소스 2커밋만 포함.
+- 다음 행동: 이 체크포인트 소스 푸시 후 PR134 운영 병합·원격 검증. 이후 기존 노션의 상태/운영일/버전 갱신과 카카오 버전 알림. 본문은 보존.
