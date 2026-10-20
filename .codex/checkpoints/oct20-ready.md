@@ -1,0 +1,28 @@
+# 10월 20일 READY 3건
+
+- 작업 키: oct20-ready
+- 작업 상태: 운영 반영 승인 / 버전·개발자노트 최종 검증 중
+- 체크포인트 버전: 5
+- 마지막 갱신: 2026-10-20 (Asia/Seoul)
+- 정리 후보: 아니요
+- 승인 범위: 오늘 예정 READY 3건 전체 기획 검토·개발·검증 후 사용자가 운영 반영과 노션 상태 갱신 승인. 구글드라이브 언급은 다른 채팅 메시지라고 사용자가 취소.
+- 기획: 모험시작_호여_안내문구_간소화(a0e393bdd7aa821996bb81c2d5a9fba3), 기록실_데이터이관_및_초기화(33a393bdd7aa83e39f76810440233725), 주문기록방_권한_적용(c65393bdd7aa83c68e1c81a087f465ff). 모두 상태 READY·예정26.10.20 확인. 본문 전체 읽음. 노션 본문·상태 변경하지 않음.
+- 브랜치/기준: feature/oct20-ready, origin/feature/prod=d34e3a783f99b4f0a40c71e37223b9706b9d349b, ver_2.662.
+- 파일 범위: main.js, Info.js, 관련 tools 테스트·증거, COMMAND_INDEX/REGISTRY, 이 체크포인트. 필요 시 버전·개발자노트는 운영 승인 단계에서 갱신.
+- 요구1: buildAdventureStarterCompleteMessage의 출력만 기획 예문으로 축소. 기본 세팅·학개론·친밀도300·가호30000·기존 및 인형4종 지급/영수증 유지.
+- 요구2: 기존 board.record 전부 보관소1로 이관·현재기록 초기화 1회. 새 기록은 현재만, archive 불변. 실패/재시작/반복에 원본·신규 보존. 원본 snapshot record3752개. 별도 파일 간 저장보다 기존 board 한 JSON에 archive와 초기화를 원자 저장하는 안 검토. 보관소는 페이지 조회로 전체 접근, 새 exact/full-pattern 명령 사용.
+- 요구3: 주문기록방(명칭 그대로)을 서버관리자방 동급에 추가. 일반 회원 역할은 기존대로, 그 방의 오픈채팅봇만 모든 관리 권한 허용. 봇 필터·공통/개별 방·event 제한 모두 확인. 수신자 키/표시 sender를 다른 사용자로 바꾸지 않음.
+- 권한 조사: room92 직접 비교는 Main isAdmin/isMaster/isServerAdminRoomOperator 및 Info isAdmin/isMaster에만 있음. additionalServerAdminRooms에 주문기록방 추가로 일반 역할/향후 예외 동기화 가능. Main 소유자 sender==호이남 등의 명령 권한 조건 141개+Info2개 발견. 필요 시 권한 조건 행만 검토된 개별 패치, 전체 파일 regex 치환/구조 개편 금지. 게임 횟수 특례(sender != 호이남) 등은 관리 권한과 분리해 보존.
+- 검증 계획: 안내 exact text+기존 스타터 지급/재시도, 이관 무손실/반복/저장실패/손상/DEV/보관소 조회/현재기록변경, Main·Info 일반/관리/MASTER/봇 방별 권한·실제명령·이벤트·오인식 회귀, Rhino 컴파일/실행, 데이터 해시/UTF8.
+- 보존: 기존 미추적 .codex-remote-attachments/, 개발환경_고도화/runtime/. 과거 carrot/oct19 체크포인트 진행중 표시는 이미 운영 병합된 기록의 오래된 상태이며 이번 파일에서 바꾸지 않음.
+- 구현: 스타터 완료 UI만 간소화. board.recordArchive1에 이전 기록을 한 번 저장하고 record 초기화. board/backup2세대를 기존 검증 저장 보호에 추가. 부팅/첫 DEV 기록 요청에서 원본 부재+검증된 .rollback의 교체 중단만 복구하며 손상/누락 JSON은 기본값으로 숨기지 않음. 보관소20건 페이지, 등록/중요/삭제는 현재만.
+- 권한: Main·Info 추가 방 목록에 주문기록방. 같은 방의 오픈채팅봇만 role·identity 권한. 기존 운영자 비교 조건 133곳 및 경매마감/후원지급 목록 조건은 개별 행 패치로 봇 예외 추가. 원래 sender 유지. 게임 횟수 특례·전역 이벤트 제한은 보존.
+- 초기 검증: 신규17그룹 통과(합성3752개 전체 페이지·133조건 구버전 대조·정상/오입력/역할/실패/반복/DEV/교체 중단). tools/test_oct20_rhino.js로 실제 Java UTF8 파일·원자 저장/백업·새 전역 스코프 재시작·rename 사이 중단 복구·DEV·권한/UI 5시나리오 통과.
+- 회귀: 최초71실행에서 기존 테스트의 변경 전 UI/권한 마커·추출 helper fixture를 갱신했고 Rhino jar placeholder는 실제 TEMP 경로로 보정. 실패13개 중12개 재통과 확인, 마지막 스타터 UI도 수정 후 통과. 최종 전체 재실행 예정.
+- 스냅샷 해시 기준: C:/Users/user/AppData/Local/Temp/hoibot-oct20-zNvanD/hashes.json (1157개). 원본 테스트 입력은 사용하지 않음.
+- 최종 검증: 신규18그룹·Rhino 실제 Java 파일/새 스코프/교체중단 복구 5시나리오 통과. 전체72회 모두 통과. 변경 JS 문법·UTF8·diff, 스냅샷1157개 해시변경0/JSON오류0. 지급 함수5개 본문은 기준 커밋과 동일. source hashes와 실행 목록은 tools/test_oct20_ready_result.json.
+- 기획 대조: 3건 본문 재조회 동일. 모두 READY/예정26.10.20, 본문·상태/실제 반영 속성 유지. COMMAND_INDEX/REGISTRY 동기화 완료. tools/oct20_ready_validation.md에 기획별 완료 기준·경계 정리.
+- 운영 경계: origin/feature/prod=d34e3a78/ver_2.662 유지. 런타임 업로드/컴파일·실제 데이터 이관 없음. 버전/개발자노트·노션·카카오 알림·스킬 변경 없음.
+- 다음 행동: 최신 prod=d34e3a78 대조 완료. 소스 브랜치의 2.663 버전·개발자노트를 검증·푸시하고 PR136을 prod에 병합. 원격 검증 후 노션3건 상태/일자/버전만 갱신하고 정확한 버전 카카오 알림 전송.
+- Git 추적/원격: 구현·검증 증거 커밋 52a67ff8f4b39a91200442d5d2e0a8cf0c6094d2를 origin/feature/oct20-ready에서 확인. 이 체크포인트 완료 기록도 같은 소스 브랜치에 추가 푸시한다.
+- 검토용 PR: https://github.com/ic-song/hoiBot/pull/136 (DRAFT, base=feature/prod, 이 채팅에 첨부). 운영 브랜치 d34e3a783f99b4f0a40c71e37223b9706b9d349b 유지 확인.

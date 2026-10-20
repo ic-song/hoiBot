@@ -75,7 +75,7 @@ group('자동일퀘 여러 강탈의 복구 표시 유지·일괄 저장/실패 
 group('분리 후 강제 중단·컴파일 전 복구·Info 부분 표시 차단',()=>{
  seed();transact(()=>cleanup());const d=load();d.member.a.point=100000000;d.member.admin.point=100000000;save(d);
  const names=['member.json','member_pet.json',cfg.fileName],rows=names.map(name=>({name,text:fixture.disk()[root+name]}));fixture.disk()[pendingPath]=JSON.stringify({pending:rows});const changed=raw();changed.member.a.point+=10000000;fixture.disk()[root+'member.json']=JSON.stringify(changed);const hist=JSON.parse(fixture.disk()[historyPath]);hist.users.a.push(row(99));fixture.disk()[historyPath]=JSON.stringify(hist);
- const start=main.indexOf('// 운영 타이머가 시작되기 전에 중단된 강탈 저장'),end=main.indexOf('if (initData.serverRaid &&',start);vm.runInContext(main.slice(start,end),c);for(const row of rows)assert.strictEqual(fixture.disk()[root+row.name],row.text);assert.strictEqual(c.loadJsonFile(pendingPath).pending,null);
+ const start=main.indexOf('// 운영 타이머가 시작되기 전에 중단된 강탈 저장'),end=main.indexOf('// 재컴파일 시에도 이미 보관한 기록',start);assert(end>start);vm.runInContext(main.slice(start,end),c);for(const row of rows)assert.strictEqual(fixture.disk()[root+row.name],row.text);assert.strictEqual(c.loadJsonFile(pendingPath).pending,null);
  const info=fs.readFileSync(path.join(__dirname,'..','Info.js'),'utf8'),begin=info.indexOf('// 강탈 저장 복구가 끝나기 전에는'),finish=info.indexOf('let data = loadJsonFile(filePath);',begin);vm.runInContext('function infoRobberyProbe(){'+info.slice(begin,finish)+'return "allowed";}',c);assert.strictEqual(c.infoRobberyProbe(),'allowed');fixture.disk()[pendingPath]=JSON.stringify({pending:rows});assert.strictEqual(c.infoRobberyProbe(),undefined);
 });
 group('일반 명령은 이력 파일 미로드·잔류 기록은 명시적 정리 안내',()=>{

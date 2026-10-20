@@ -101,7 +101,7 @@ const mainChecks = [
     'retirementRecord && retirementRecord.status === "COMPLETE" && retirementCollectionRecord && retirementCollectionRecord.status === "COMPLETE"',
     'isGlobalOperatorCommandAllowed(sender, msg)',
     '!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg)',
-    'if (msg === "/기록실") return isAdminIdentity(sender) || isMasterIdentity(sender)',
+    'if (msg === "/기록실" || msg === "/기록보관소1"',
     'if (msg === "/기록" || /^\\/기록\\s+',
     'if (msg === "/인증필요") return isAdminIdentity(sender);',
     'isMasterIdentity(sender) || isAdminIdentity(sender)'

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.662"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.663"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
@@ -1033,8 +1033,10 @@ const GLOBAL_CONFIG = {
     },
     searchAuthentication: { maxKeywordLength: 10, boosterReward: 30, pointReward: 50000000, rewardLabel: "호월신의 가호✨(/호여 숫자)", keywordVisibleRows: 10, adminVisibleRows: 4, otherKeyword: "기타", bottomAdmin: "호이 남" },
     permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
-        additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
+        additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방", "주문기록방"],
+        orderLogRoom: "주문기록방"
     },
+    recordRoom: { archivePageSize: 20 }, // 보관소에서 누락 없이 조회할 페이지당 기록 수
     maintenance: { // MAIN 명령어의 임시 테스트방 한정 설정
         testRoomOnly: false
     },
@@ -3458,7 +3460,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             return;
         }
-        if (msg == "/글자수통계" && sender == "호이 남") {
+        if (msg == "/글자수통계" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
             var out = "📊 글자수 통계\n\n[핵심 데이터]\n";
 
             // 멤버
@@ -4314,7 +4316,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (isPetMusouLightningRateCommand(msg)) {
-            if (sender !== "호이 남") {
+            if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                 replier.reply("❌ /벼락확률 명령어를 사용할 권한이 없습니다.");
                 return;
             }
@@ -6798,7 +6800,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if (msg.startsWith("/행복단장변경 ")) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         return;
                     }
 
@@ -7073,7 +7075,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
 
-                if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg)) {
+                if (!data.member[sender].agree && !isGlobalOperatorCommandAllowed(sender, msg) && !isOrderLogRoomBot(sender)) {
                     // 약관동의 안할 시 사용불가
                     saveJsonFile(data, filePath);
                     return;
@@ -7328,11 +7330,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("주기리셋");
                     }
                 }
-                if (msg == "/디버깅모드" && (sender == "호이 남" || sender == "쓱싹 여" || sender == "찰리 봇")) {
+                if (msg == "/디버깅모드" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || sender == "쓱싹 여" || sender == "찰리 봇")) {
                     let debugMode = debuggerToggle();
                     replier.reply("디버깅 모드 : " + (debugMode ? "ON" : "OFF"));
                 }
-                if ((msg === "/매력버프체크" || /^\/매력버프체크\s+\S(?:.*\S)?$/.test(msg)) && (sender == "호이 남" || sender == "쓱싹 여" || sender == "찰리 봇")) {
+                if ((msg === "/매력버프체크" || /^\/매력버프체크\s+\S(?:.*\S)?$/.test(msg)) && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || sender == "쓱싹 여" || sender == "찰리 봇")) {
                     if (!isDebuggerFlag) {
                         replier.reply("❌ /디버깅모드를 먼저 켜주세요.");
                         return;
@@ -7431,7 +7433,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     "리리 여",
                     "콩두 여"
                 ]; // 권한을 가진 사용자 목록
-                if (msg.startsWith("/경매마감 ") && authorizedUsers5.includes(sender)) {
+                if (msg.startsWith("/경매마감 ") && (authorizedUsers5.includes(sender) || isOrderLogRoomBot(sender))) {
                     var regex = /\/경매마감\s+(\d+)\s*$/;
                     var match = msg.match(regex);
                     if (!match) {
@@ -7479,7 +7481,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("호이상점이 초기화가 되었습니다");
                 }
                 if (msg === "/계정정지해제" || /^\/계정정지해제\s+.+$/.test(msg)) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
@@ -7504,7 +7506,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
 
                 if (msg === "/계정정지" || /^\/계정정지\s+.+$/.test(msg)) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("❌ 해당 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
@@ -7793,7 +7795,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     replier.reply("백업 완료");
                 }
 
-                if (msg == "/펫탐험전체전적초기화" && (sender == "호이 남" || isMaster(sender))) {
+                if (msg == "/펫탐험전체전적초기화" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender))) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
@@ -8002,7 +8004,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         };
                         delete data.member[memberName].battle.lastBattleDateTime; //공격날자 초기화 + 상팔 241023
                     });
-                } else if (msg.startsWith("/캐슬스코어 ") && sender == "호이 남") {
+                } else if (msg.startsWith("/캐슬스코어 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let msgParts = msg.split(" ");
                     if (msgParts.length >= 3) {
                         let targetName = msgParts.slice(1, -1).join(" "); // 이름
@@ -8024,7 +8026,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     } else {
                         replier.reply("잘못된 형식입니다. /캐슬스코어 아이디 점수 형식으로 입력해주세요.");
                     }
-                } else if (msg.startsWith("/캐슬대전횟수리셋 ") && sender == "호이 남") {
+                } else if (msg.startsWith("/캐슬대전횟수리셋 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let msgParts = msg.split(" ");
                     if (msgParts.length >= 3) {
                         let targetName = msgParts.slice(1, -1).join(" "); // 이름
@@ -8051,7 +8053,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     });
                     replier.reply("영주수익순위가 초기화되었습니다.");
                 }
-                if (msg === "/캐슬초기화" && sender == "호이 남") {
+                if (msg === "/캐슬초기화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     data.HoiCastle = {
                         lord: "호이 남",
                         taxRate: 12,
@@ -8082,7 +8084,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     return;
                 }
-                if (msg.startsWith("/상점삭제") && sender == "호이 남") {
+                if (msg.startsWith("/상점삭제") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let regexShop = /\/상점삭제\s+(\d+)\s*$/;
                     let matchShop = msg.match(regexShop);
                     if (matchShop) {
@@ -8861,7 +8863,7 @@ replier.reply(
                         replier.reply("이 기능은 관리자만 사용할 수 있습니다.");
                     }
                 }
-                if (msg.startsWith("/외형 ") && sender == "호이 남") {
+                if (msg.startsWith("/외형 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var regex = /\/외형\s+([^]+)\s+([^]+)/;
                     var match = msg.match(regex);
                     if (match) {
@@ -8879,7 +8881,7 @@ replier.reply(
                         return;
                     }
                 }
-                if (msg === "/좋아리셋" && sender == "호이 남") {
+                if (msg === "/좋아리셋" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     for (let user in data.member) {
                         if (!data.member[user].like0) {
                             data.member[user].like0 = data.member[user].like;
@@ -8890,11 +8892,11 @@ replier.reply(
                     }
                     replier.reply("리셋완.");
                 }
-                if (msg === "/레벨수정" && sender === "호이 남") {
+                if (msg === "/레벨수정" && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     replier.reply("사용법: /레벨수정 [아이디] [레벨]\n예: /레벨수정 호이 남 265");
                     return;
                 }
-                if (/^\/레벨수정\s+.+\s+\d+$/.test(msg) && sender === "호이 남") {
+                if (/^\/레벨수정\s+.+\s+\d+$/.test(msg) && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     var levelEditMatch = msg.match(/^\/레벨수정\s+(.+?)\s+(\d+)$/);
                     var levelEditTarget = levelEditMatch ? levelEditMatch[1].trim() : "";
                     var levelEditValue = levelEditMatch ? Number(levelEditMatch[2]) : 0;
@@ -8921,11 +8923,11 @@ replier.reply(
                     replier.reply(buildAdventureLevelEditMessage(data, petData, guildData, levelEditTarget, levelEditBeforeLevel, levelEditValue, levelEditBeforeExp));
                     return;
                 }
-                if (msg === "/경험치수정" && sender === "호이 남") {
+                if (msg === "/경험치수정" && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     replier.reply("사용법: /경험치수정 [아이디] [경험치]\n예: /경험치수정 호이 남 1000");
                     return;
                 }
-                if (/^\/경험치수정\s+.+\s+\d+$/.test(msg) && sender === "호이 남") {
+                if (/^\/경험치수정\s+.+\s+\d+$/.test(msg) && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     var experienceEditMatch = msg.match(/^\/경험치수정\s+(.+?)\s+(\d+)$/);
                     var experienceEditTarget = experienceEditMatch ? experienceEditMatch[1].trim() : "";
                     var experienceEditValue = experienceEditMatch ? Number(experienceEditMatch[2]) : -1;
@@ -8962,7 +8964,7 @@ replier.reply(
                     replier.reply(experienceEditMessage);
                     return;
                 }
-                if (msg === "/레벨초기화" && sender === "호이 남") {
+                if (msg === "/레벨초기화" && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     if (!data.migrations || !data.migrations[GLOBAL_CONFIG.level.migrationKey]) {
                         replier.reply("❌ 레벨 리뉴얼 적용이 완료되지 않았습니다.\n먼저 /레벨리뉴얼점검 후 /레벨리뉴얼적용 을 실행해주세요.");
                         return;
@@ -9081,12 +9083,12 @@ replier.reply(
                     replier.reply("✅ 환생버섯 회수·환급 완료\n━━━━━━━━━━━━\n대상 " + numberWithCommas(rebirthRecallResult.inspection.mushroomUserCount) + "명\n회수 " + numberWithCommas(rebirthRecallResult.inspection.mushroomTotal) + "개\n환급 포인트: 🅟" + numberWithCommas(rebirthRecallResult.inspection.mushroomRefundTotal) + "\n원본 백업: " + resolveActiveDataPath(GLOBAL_CONFIG.level.rebirthRecallBackupPath));
                     return;
                 }
-                if (msg === "/r" && sender == "호이 남") {
+                if (msg === "/r" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     data.member[sender].cntlike = 0;
                 }
 
                 if (msg === "/선물전달" || /^\/선물전달\s+.+\/\d+$/.test(msg)) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
                         return;
                     }
@@ -9116,7 +9118,7 @@ replier.reply(
                     replier.reply("✅ 전체 유저 선물 전달이 완료되었습니다.\n지급 대상: " + numberWithCommas(giftRecipientCount) + "명");
                 }
                 if (msg === "/프리미엄전달" || /^\/프리미엄전달\s+.+\/\d+$/.test(msg)) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("이 기능은 호이 남만 사용할 수 있습니다.");
                         return;
                     }
@@ -9224,7 +9226,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/후원지급 ")) {
                     const authorizedUsers33 = ["호이 남"]; // 권한이 있는 사용자 목록
-                    if (authorizedUsers33.includes(sender)) {
+                    if (authorizedUsers33.includes(sender) || isOrderLogRoomBot(sender)) {
                         const pattern33 = /^\/후원지급\s+(.+?)\/(.+?)\/(\d+)$/; // 슬래시로 구분, 아이디와 아이템 모두 띄어쓰기 포함
                         var match = msg.match(pattern33);
                         if (match) {
@@ -9266,7 +9268,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg.startsWith("/매력") && msg != "/매력박스오픈" && sender == "호이 남") {
+                if (msg.startsWith("/매력") && msg != "/매력박스오픈" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var regex = /\/매력\s+([^]+)\s+(\d+)/;
                     var match = msg.match(regex);
                     if (match) {
@@ -9287,7 +9289,7 @@ replier.reply(
                     }
                     return;
                 }
-                if (msg.startsWith("/펫제거 ") && sender == "호이 남") {
+                if (msg.startsWith("/펫제거 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var regex = /\/펫제거\s+([^]+)/;
                     var match = msg.match(regex);
                     if (match) {
@@ -9302,7 +9304,7 @@ replier.reply(
                         }
                     }
                 }
-                if (msg.startsWith("/이름") && sender == "호이 남") {
+                if (msg.startsWith("/이름") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var regex = /\/이름\s+([^]+)\s*,\s+([^]+)/;
                     var match = msg.match(regex);
                     if (match) {
@@ -9319,7 +9321,7 @@ replier.reply(
                     }
                 }
 
-                if (sender == "호이 남" && isHoiPassPremiumAdminCommandMessage(msg)) {
+                if ((sender == "호이 남" || isOrderLogRoomBot(sender)) && isHoiPassPremiumAdminCommandMessage(msg)) {
                     var premiumCommandActivityData = requirePetHomeActivityData(loadJsonFile(petHomeActivityFile));
                     var premiumCommandResult = processHoiPassPremiumCommand(msg, data, petSkillData, premiumCommandActivityData, sender);
                     if (premiumCommandResult.changed) {
@@ -9361,7 +9363,7 @@ replier.reply(
                     replier.reply(territoryPassCommandResult);
                     return;
                 }
-                if (sender == "호이 남" && (/^\/인형패스(추가|삭제),\s*.+$/.test(msg) || /^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
+                if ((sender == "호이 남" || isOrderLogRoomBot(sender)) && (/^\/인형패스(추가|삭제),\s*.+$/.test(msg) || /^\/원데이패스(추가|삭제),\s*.+$/.test(msg) || /^\/공헌패스(추가|삭제),\s*.+$/.test(msg) || /^\/초보(패스)?(추가|삭제),\s*.+$/.test(msg) || /^\/호이패스(추가|삭제),\s*.+$/.test(msg) || /^\/다이아패스(추가|삭제),\s*.+$/.test(msg))) {
                     let result = processUserIDCommand(msg, data, sender);
                     if (String(result || "").indexOf("❌") !== 0 && String(result || "").indexOf("알 수 없는 명령어") !== 0) {
                         saveJsonFile(data, filePath);
@@ -9623,7 +9625,7 @@ replier.reply(
 
                 if (msg.startsWith("/발렌,")) {
                     var userId = msg.split(",")[1].trim();
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (data.member[userId] !== undefined) {
@@ -9640,7 +9642,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/화이트,")) {
                     var userId = msg.split(",")[1].trim();
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (data.member[userId] !== undefined) {
@@ -9875,7 +9877,7 @@ replier.reply(
                 for (let i = 1; i <= 5; i++) {
                     if (msg.startsWith("/슬롯" + i + ", ")) {
                         var commandParts = msg.split(", ");
-                        if (sender !== "호이 남") {
+                        if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                             replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                         } else {
                             if (commandParts.length !== 2) {
@@ -9902,7 +9904,7 @@ replier.reply(
                 // /슬롯모두 지급 (1~5 패키지 전부, 개수 기본 1)
                 if (msg.startsWith("/슬롯모두, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -9930,7 +9932,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/상중하모두, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -9960,7 +9962,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/한글1, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -9980,7 +9982,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/한글2, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10000,7 +10002,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/상, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10020,7 +10022,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/중, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10040,7 +10042,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/하, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10062,7 +10064,7 @@ replier.reply(
 
                 if (msg.startsWith("/초보2, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10084,7 +10086,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보3, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10106,7 +10108,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보4, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10128,7 +10130,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보5, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10150,7 +10152,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보6, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10172,7 +10174,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보7, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10194,7 +10196,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보8, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10216,7 +10218,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보9, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10238,7 +10240,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보10, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10260,7 +10262,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보11, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10282,7 +10284,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보12, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10304,7 +10306,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보13, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10326,7 +10328,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보14, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10348,7 +10350,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보15, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10370,7 +10372,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보16, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10392,7 +10394,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보17, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10565,7 +10567,7 @@ replier.reply(
                     }
                 }
                 if (msg.startsWith("/벚꽃모두1, ")) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
@@ -10604,7 +10606,7 @@ replier.reply(
                     replier.reply("[" + targetUserId + "]님에게 벚꽃패키지🌸[1~3] 지급 완료!");
                 }
                 if (msg.startsWith("/벚꽃모두2, ")) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
@@ -10643,7 +10645,7 @@ replier.reply(
                     replier.reply("[" + targetUserId + "]님에게 벚꽃패키지🌸[4~6] 지급 완료!");
                 }
                 if (msg.startsWith("/벚꽃모두3, ")) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
@@ -10682,7 +10684,7 @@ replier.reply(
                     replier.reply("[" + targetUserId + "]님에게 벚꽃패키지🌸[7~9] 지급 완료!");
                 }
                 if (msg.startsWith("/초보모두, ")) {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                         return;
                     }
@@ -10718,7 +10720,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보18, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10740,7 +10742,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보19, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10762,7 +10764,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보20, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10784,7 +10786,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보21, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10807,7 +10809,7 @@ replier.reply(
 
                 if (msg.startsWith("/초보22, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10830,7 +10832,7 @@ replier.reply(
 
                 if (msg.startsWith("/초보23, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10853,7 +10855,7 @@ replier.reply(
 
                 if (msg.startsWith("/초보24, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10876,7 +10878,7 @@ replier.reply(
 
                 if (msg.startsWith("/초보25, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10898,7 +10900,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/초보26, ")) {
                     var commandParts = msg.split(", ");
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10920,7 +10922,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/확률패키지, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10942,7 +10944,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/십자군, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10964,7 +10966,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/날씨, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -10988,7 +10990,7 @@ replier.reply(
                 for (var i = 0; i < 로켓명령.length; i++) {
                     if (msg.startsWith(로켓명령[i])) {
                         var commandParts = msg.split(", ");
-                        if (sender !== "호이 남") {
+                        if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                             replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                         } else if (commandParts.length !== 2) {
                             replier.reply("명령어 형식이 잘못되었습니다. 올바른 형식: " + 로켓명령[i] + "사용자아이디");
@@ -11012,7 +11014,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/미대리, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11034,7 +11036,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/미과장, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11056,7 +11058,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/미차장, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11078,7 +11080,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/파워, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11100,7 +11102,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/파워2, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11122,7 +11124,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/난방1, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11144,7 +11146,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/난방2, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11166,7 +11168,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/난방3, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11188,7 +11190,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/난방4, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11210,7 +11212,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/솔로, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11232,7 +11234,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/레슨, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11255,7 +11257,7 @@ replier.reply(
                 for (var i = 1; i <= 10; i++) {
                     if (msg.startsWith("/씁" + i + ", ")) {
                         var commandParts = msg.split(", ");
-                        if (sender !== "호이 남") {
+                        if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                             replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                         } else {
                             if (commandParts.length !== 2) {
@@ -11279,7 +11281,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/당근1, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11301,7 +11303,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/당근이지2, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11323,7 +11325,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/당근이지3, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11345,7 +11347,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/당근이지4, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11367,7 +11369,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/이사, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11389,7 +11391,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/스승, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11437,7 +11439,7 @@ replier.reply(
 
                 if (msg.startsWith("/부스터, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11459,7 +11461,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/부스터2, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11481,7 +11483,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/부스터3, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11503,7 +11505,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/부스터4, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11525,7 +11527,7 @@ replier.reply(
                 }
                 if (msg.startsWith("/부스터6, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11548,7 +11550,7 @@ replier.reply(
 
                 if (msg.startsWith("/카드, ")) {
                     var commandParts = msg.split(", "); // 명령어를 ", " 기준으로 나눕니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         if (commandParts.length !== 2) {
@@ -11968,7 +11970,7 @@ replier.reply(
                 if (msg.startsWith("/컴퓨터, ")) {
                     var commandParts = msg.split(", "); // 명령어와 인자를 ", " 기준으로 나눕니다.
                     // 명령어 사용 권한 확인: sender가 '호이 남'이 아니면 실행하지 않습니다.
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("해당 명령어를 사용할 권한이 없습니다.");
                     } else {
                         // 명령어 형식 확인: 올바른 형식은 "/컴퓨터, 사용자아이디" 입니다.
@@ -15310,7 +15312,7 @@ replier.reply(
 // /펀치순위초기화
 // =======================================================
                 if (msg === "/펀치순위초기화") {
-                    if (sender !== "호이 남") {
+                    if ((sender !== "호이 남" && !isOrderLogRoomBot(sender))) {
                         replier.reply("❌ 해당 명령어는 관리자만 사용할 수 있습니다.");
                         return;
                     }
@@ -18412,7 +18414,7 @@ replier.reply(
                     saveJsonFile(petData, memberPetPath);
                     return;
                 }
-                if (msg.startsWith("/미니펫강화속성 ") && sender == "호이 남") {
+                if (msg.startsWith("/미니펫강화속성 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let args = msg.replace("/미니펫강화속성", "").trim().split(" ");
                     if (args.length < 3) {
                         replier.reply("❌ 사용법: /미니펫강화속성 [아이디] [가방번호] [강화수치]\n(가방번호 0 = 장착 미니펫)");
@@ -19019,17 +19021,17 @@ replier.reply(
                     }
                 }
 
-                if (msg == "/판매금지아이템" && sender == "호이 남") {
+                if (msg == "/판매금지아이템" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var itemListData = loadJsonFile(itemListPath);
                     replier.reply("비활성화된 아이템 목록 (" + itemListData.nonItems.length + "개)\n" + allsee + "\n" + itemListData.nonItems.join(", "));
                     return;
                 }
-                if (msg == "/당근금지아이템" && sender == "호이 남") {
+                if (msg == "/당근금지아이템" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var itemListData = loadJsonFile(itemListPath);
                     replier.reply("비활성화된 아이템 목록 (" + itemListData.untradableList.length + "개)\n" + allsee + "\n" + itemListData.untradableList.join(", "));
                     return;
                 }
-                if (msg.startsWith("/판매금지아이템추가 ") && sender == "호이 남") {
+                if (msg.startsWith("/판매금지아이템추가 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var itemListData = loadJsonFile(itemListPath);
                     let itemName = msg.replace("/판매금지아이템추가", "").trim();
                     if (!itemName) {
@@ -19045,7 +19047,7 @@ replier.reply(
                     saveJsonFile(itemListData, itemListPath);
                     return;
                 }
-                if (msg.startsWith("/당근금지아이템추가 ") && sender == "호이 남") {
+                if (msg.startsWith("/당근금지아이템추가 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var itemListData = loadJsonFile(itemListPath);
                     let itemName = msg.replace("/당근금지아이템추가", "").trim();
                     if (!itemName) {
@@ -19061,7 +19063,7 @@ replier.reply(
                     saveJsonFile(itemListData, itemListPath);
                     return;
                 }
-                if (msg.startsWith("/판매금지아이템제거 ") && sender == "호이 남") {
+                if (msg.startsWith("/판매금지아이템제거 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var itemListData = loadJsonFile(itemListPath);
                     let itemName = msg.replace("/판매금지아이템제거", "").trim();
                     if (!itemName) {
@@ -19082,7 +19084,7 @@ replier.reply(
                     saveJsonFile(itemListData, itemListPath);
                     return;
                 }
-                if (msg.startsWith("/당근금지아이템제거 ") && sender == "호이 남") {
+                if (msg.startsWith("/당근금지아이템제거 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var itemListData = loadJsonFile(itemListPath);
                     let itemName = msg.replace("/당근금지아이템제거", "").trim();
                     if (!itemName) {
@@ -20469,12 +20471,34 @@ replier.reply(
                     return;
                 }
 
+                var recordCommandBoard = null;
+                if (isRecordRoomCommand(msg)) {
+                    var recordIdentityCommand = msg === "/기록실" || msg === "/기록보관소1" || /^\/기록보관소1\s+\d+$/.test(msg) || msg === "/기록" || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg);
+                    if (recordIdentityCommand ? !(isMasterIdentity(sender) || isAdminIdentity(sender)) : !(isMaster(sender) || isAdmin(sender))) return;
+                    var recordCurrentFile = new java.io.File(resolveActiveDataPath(boardPath));
+                    var recordRollbackFile = new java.io.File(resolveActiveDataPath(boardPath) + ".rollback");
+                    if (!recordCurrentFile.exists() && recordRollbackFile.exists()) {
+                        var recordRecoveryBoard = loadJsonFile(String(recordRollbackFile.getPath()));
+                        if (!recordRecoveryBoard || !Array.isArray(recordRecoveryBoard.record)) throw new Error("기록실 교체 복구 형식 오류");
+                        prepareRecordRoomArchive(recordRecoveryBoard); // 기존 원문을 검증한 뒤 파일 이름만 복구
+                        if (!recordRollbackFile.renameTo(recordCurrentFile)) throw new Error("기록실 교체 복구 실패");
+                    }
+                    recordCommandBoard = loadJsonFile(boardPath);
+                    if (prepareRecordRoomArchive(recordCommandBoard)) saveJsonFile(recordCommandBoard, boardPath);
+                }
+
+                if (msg === "/기록보관소1" || /^\/기록보관소1\s+\d+$/.test(msg)) {
+                    var archivePage = msg === "/기록보관소1" ? 1 : Number(msg.trim().split(/\s+/)[1]);
+                    replier.reply(buildRecordArchiveMessage(recordCommandBoard, data, petData, guildData, archivePage));
+                    return;
+                }
+
                 if (msg === "/기록실") {
                     if (!(isMasterIdentity(sender) || isAdminIdentity(sender))) {
                         // replier.reply('❌ 권한이 없습니다.');
                         return;
                     }
-                    var board = loadJsonFile(boardPath);
+                    var board = recordCommandBoard;
                     if (!board.record || board.record.length === 0) {
                         replier.reply("📌 등록된 기록이 없습니다.");
                         return;
@@ -20491,7 +20515,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg.startsWith("/기록삭제")) {
+                if (msg === "/기록삭제" || /^\/기록삭제\s+\d+$/.test(msg)) {
                     if (!(isMaster(sender) || isAdmin(sender))) {
                         // replier.reply('❌ 권한이 없습니다.');
                         return;
@@ -20504,7 +20528,7 @@ replier.reply(
                         return;
                     }
                     var deleteIndex = parseInt(deleteArgs[1], 10);
-                    var board = loadJsonFile(boardPath);
+                    var board = recordCommandBoard;
                     if (!board.record || board.record.length === 0) {
                         replier.reply("📌 등록된 기록이 없습니다.");
                         return;
@@ -20518,7 +20542,7 @@ replier.reply(
                     replier.reply("✅ " + deleteIndex + "번 기록이 삭제되었습니다.\n내용 : " + removed.content + " (" + removed.date + ")");
                     return;
                 }
-                if (msg.startsWith("/빌런")) {
+                if (msg === "/빌런" || /^\/빌런\s+\d+$/.test(msg)) {
                     if (!(isMaster(sender) || isAdmin(sender))) {
                         // replier.reply('❌ 권한이 없습니다.');
                         return;
@@ -20531,7 +20555,7 @@ replier.reply(
                         return;
                     }
                     var importantIndex = parseInt(importantArgs[1], 10);
-                    var board = loadJsonFile(boardPath);
+                    var board = recordCommandBoard;
                     if (!board.record || board.record.length === 0) {
                         replier.reply("📌 등록된 기록이 없습니다.");
                         return;
@@ -20562,7 +20586,7 @@ replier.reply(
                         replier.reply("사용법: /기록 [내용]\n관리자/마스터만 기록을 등록할 수 있습니다.");
                         return;
                     }
-                    var board = loadJsonFile(boardPath);
+                    var board = recordCommandBoard;
                     if (!board.record) board.record = [];
                     var recordContent = msg.substring(4).trim();
                     if (recordContent.startsWith("凸")) {
@@ -20738,7 +20762,7 @@ replier.reply(
                         }
                     }
                 }
-                if (msg === "/소지품저장" && (sender == "호이 남" || sender == "젤리 남")) {
+                if (msg === "/소지품저장" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || sender == "젤리 남")) {
                     let memberBagCheck = {};
                     let members = Object.keys(data.member);
                     for (let user of members) {
@@ -21105,7 +21129,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg.startsWith("/미니펫대전횟수 ") && sender == "호이 남") {
+                if (msg.startsWith("/미니펫대전횟수 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let args = msg.split(" ");
                     if (args.length < 3) {
                         replier.reply("❌ 사용법: /미니펫대전횟수 아이디 [숫자]");
@@ -21195,7 +21219,7 @@ replier.reply(
                     saveJsonFile(data, filePath);
                     return;
                 }
-                if (msg === "/펫데이터비교" && sender == "호이 남") {
+                if (msg === "/펫데이터비교" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     replier.reply("member.json 회원 수=> " + Object.keys(data.member).length);
                     replier.reply("member_pet.json 회원 수 => " + Object.keys(petData).length);
                 }
@@ -21301,7 +21325,7 @@ replier.reply(
                     replier.reply(out);
                     return;
                 }
-                if (msg === "/펫데이터동기화" && sender == "호이 남") {
+                if (msg === "/펫데이터동기화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let dataKeys = Object.keys(data.member);
                     let petDataKeys = Object.keys(petData);
                     let array = [];
@@ -21316,7 +21340,7 @@ replier.reply(
                     saveJsonFile(petData, memberPetPath);
                     return;
                 }
-                if (msg === "/펫타이틀동기화" && sender == "호이 남") {
+                if (msg === "/펫타이틀동기화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let dataKeys = Object.keys(data.member);
                     var petTitleData = loadJsonFile(petTitlePath);
                     let petTitleDataKeys = Object.keys(petTitleData.member);
@@ -21332,7 +21356,7 @@ replier.reply(
                     saveJsonFile(petTitleData, petTitlePath);
                     return;
                 }
-                if (msg === "/시련의탑동기화" && sender == "호이 남") {
+                if (msg === "/시련의탑동기화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let dataKeys = Object.keys(data.member);
                     var trialTower = loadJsonFile(trialTowerPath);
                     let trialTowerKeys = Object.keys(trialTower.user);
@@ -21868,10 +21892,10 @@ replier.reply(
                 if (msg.startsWith("/반지속성") && isMaster(sender)) {
                     replier.reply("반지속성 수정은 펜던트 콘텐츠 전환으로 종료되었습니다.");
                     return;
-                } else if (msg == "/정령정보" && sender == "호이 남") {
+                } else if (msg == "/정령정보" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     replier.reply(JSON.stringify(petData[sender].elemental));
                     replier.reply(JSON.stringify(calculateItemInfo("elemental", sender, data, petData)));
-                } else if (msg == "/반지정보" && sender == "호이 남") {
+                } else if (msg == "/반지정보" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     replier.reply("반지정보 조회는 펜던트 콘텐츠 전환으로 종료되었습니다.");
                     return;
                 } else if (msg === "/티어보상지급" && (sender == "호이 남" || sender == "오픈채팅봇")) {
@@ -22113,7 +22137,7 @@ replier.reply(
                         replier.reply("❌ 조합 가능한 재료가 없습니다.");
                     }
                 }
-                if (msg.startsWith("/시련의탑수정") && sender == "호이 남") {
+                if (msg.startsWith("/시련의탑수정") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let regex = /^\/시련의탑수정\s+(.+?)\s+(\d+)$/;
                     var trialTower = loadJsonFile(trialTowerPath);
                     let match = msg.match(regex);
@@ -22137,13 +22161,13 @@ replier.reply(
                     // 결과 메시지 출력
                     replier.reply(targetUser + "[님의 시련의 탑 층수가 " + newFloor + "층으로 변경되었습니다.");
                 }
-                if (msg == "/시련의탑시즌초기화" && sender == "호이 남") {
+                if (msg == "/시련의탑시즌초기화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var trialTower = loadJsonFile(trialTowerPath);
                     trialTower.user = {};
                     saveJsonFile(trialTower, trialTowerPath);
                     let message = "시련의탑데이터가 초기화 되었습니다";
                     replier.reply(message);
-                } else if (msg == "/시련의탑시즌시작" && sender == "호이 남") {
+                } else if (msg == "/시련의탑시즌시작" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var trialTower = loadJsonFile(trialTowerPath);
                     trialTower.flag = true;
                     saveJsonFile(trialTower, trialTowerPath);
@@ -22151,7 +22175,7 @@ replier.reply(
                         '[알림]\n시련의탑😈 시즌이 시작되었습니다.\n\n다른 차원과 이 세계를 이어주는 통로\n"게이트"가 열려 마물이 던전을 통하여\n오톡세계를 침입하였습니다.\n\n용사님들 오톡세계의 평화를 위해\n시련의 탑😈을 등반하여 주세요!!';
                     noticeMsg(message);
                     return;
-                } else if (msg == "/시련의탑시즌종료" && sender == "호이 남") {
+                } else if (msg == "/시련의탑시즌종료" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var trialTower = loadJsonFile(trialTowerPath);
                     trialTower.flag = false;
                     saveJsonFile(trialTower, trialTowerPath);
@@ -22502,7 +22526,7 @@ replier.reply(
                     saveJsonFile(data, filePath);
                     return;
                 }
-                if ((msg === "/미니펫추가" || /^\/미니펫추가\s+\S+\s+\S+\s+\S+(?:\s+\S+)*\s+\S+\s+(?!\d+(?:\s|$))\S+\s+\d+\s+\d+$/.test(msg)) && sender === "호이 남") {
+                if ((msg === "/미니펫추가" || /^\/미니펫추가\s+\S+\s+\S+\s+\S+(?:\s+\S+)*\s+\S+\s+(?!\d+(?:\s|$))\S+\s+\d+\s+\d+$/.test(msg)) && (sender === "호이 남" || isOrderLogRoomBot(sender))) {
                     let args = msg.replace("/미니펫추가", "").trim().split(/\s+/);
                     if (args.length < 7) {
                         replier.reply("❌ 사용법: /미니펫추가 [아이디(2단어)] [이름] [이모지] [등급] [가격] [매력도]");
@@ -22599,7 +22623,7 @@ replier.reply(
                     saveJsonFile(data, filePath);
                     return;
                 }
-                if (msg.startsWith("/미니펫삭제 ") && sender == "호이 남") {
+                if (msg.startsWith("/미니펫삭제 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let args = msg.replace("/미니펫삭제", "").trim().split(" ");
                     if (args.length < 2) {
                         replier.reply("❌ 사용법: /미니펫삭제 [아이디] [번호]");
@@ -22631,7 +22655,7 @@ replier.reply(
                     }
                     return;
                 }
-                if (msg.startsWith("/미니펫해제 ") && sender == "호이 남") {
+                if (msg.startsWith("/미니펫해제 ") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let target = msg.replace("/미니펫해제", "").trim();
                     if (!petData[target] || !petData[target].miniPet) {
                         replier.reply("[" + checkRank(data, petData, guildData, target) + "]님은 현재 장착 중인 미니펫이 없습니다.");
@@ -26369,7 +26393,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg.startsWith("/탐험알림") && sender == "호이 남") {
+                if (msg.startsWith("/탐험알림") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
@@ -26387,7 +26411,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/펫탐험이벤트활성화" && sender == "호이 남") {
+                if (msg === "/펫탐험이벤트활성화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = setDiamondMineEventConfig(petExploreData, true);
                     saveJsonFile(petExploreData, petExplorePath);
@@ -26395,7 +26419,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/펫탐험이벤트비활성화" && sender == "호이 남") {
+                if (msg === "/펫탐험이벤트비활성화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
@@ -26411,7 +26435,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/레이드이벤트활성화" && sender == "호이 남") {
+                if (msg === "/레이드이벤트활성화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
@@ -26424,7 +26448,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/레이드이벤트비활성화" && sender == "호이 남") {
+                if (msg === "/레이드이벤트비활성화" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     var petExploreData = loadJsonFile(petExplorePath);
                     petExploreData = initPetExploreData(petExploreData);
                     cleanupInvalidPetExploreUsers(petExploreData, data);
@@ -26442,7 +26466,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/추석이벤트활성화" && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                if (msg === "/추석이벤트활성화" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
                     var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
                     petExploreData.chuseokEvent.active = true;
                     saveJsonFile(petExploreData, petExplorePath);
@@ -26450,7 +26474,7 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "/추석이벤트비활성화" && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                if (msg === "/추석이벤트비활성화" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
                     var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
                     petExploreData.chuseokEvent.active = false;
                     petExploreData.chuseokEvent.balances = {};
@@ -26530,7 +26554,7 @@ replier.reply(
                     return;
                 }
 
-                if (/^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(msg) && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                if (/^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(msg) && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
                     var moonShopAddMatch = msg.match(/^\/달토끼상점추가\s+(.+)\s+(\d+)\s+(\d+)\s+(\d+)$/);
                     var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
                     var moonShopProductName = moonShopAddMatch[1].trim();
@@ -26555,11 +26579,11 @@ replier.reply(
                 }
 
                 if (msg === "/달토끼상점추가" || msg.indexOf("/달토끼상점추가 ") === 0) {
-                    if (sender == "호이 남" || isMaster(sender) || isAdmin(sender)) replier.reply("사용법: /달토끼상점추가 [상품명] [상품갯수] [황금당근필요갯수] [계정당구매횟수]");
+                    if ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender)) replier.reply("사용법: /달토끼상점추가 [상품명] [상품갯수] [황금당근필요갯수] [계정당구매횟수]");
                     return;
                 }
 
-                if (/^\/달토끼상점삭제\s+\d+$/.test(msg) && (sender == "호이 남" || isMaster(sender) || isAdmin(sender))) {
+                if (/^\/달토끼상점삭제\s+\d+$/.test(msg) && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender) || isAdmin(sender))) {
                     var petExploreData = initPetExploreData(loadJsonFile(petExplorePath));
                     var moonShopDeleteId = parseInt(msg.trim().split(/\s+/)[1], 10);
                     var moonShopDeleteItem = getChuseokShopItem(petExploreData, moonShopDeleteId);
@@ -26587,7 +26611,7 @@ replier.reply(
                 }
 
                 if (msg === "/탐험유저확인" || /^\/탐험유저확인\s+(0|[1-9]|10|11)$/.test(msg)) {
-                    if (!(sender == "호이 남" || isAdmin(sender) || isMaster(sender))) return;
+                    if (!((sender == "호이 남" || isOrderLogRoomBot(sender)) || isAdmin(sender) || isMaster(sender))) return;
                     var petExploreData = loadJsonFile(petExplorePath);
                     var cleanupResult = cleanupInvalidPetExploreUsers(petExploreData, data);
                     if (cleanupResult.total > 0) savePetExploreMigrationIfNeeded(petExploreData);
@@ -27675,7 +27699,7 @@ replier.reply(
                 // (관리자권한 전용) /길드해지 길드명 : 길드 자체 삭제
                 if (msg === "/길드해지" || /^\/길드해지\s+\S(?:.*\S)?$/.test(msg)) {
                     // 권한 체크 (관리자권한만)
-                    if (!(sender === "호이 남" || isMaster(sender))) {
+                    if (!((sender === "호이 남" || isOrderLogRoomBot(sender)) || isMaster(sender))) {
                         replier.reply("❌ 관리자권한 사용자만 길드를 해지(삭제)할 수 있습니다.");
                         return;
                     }
@@ -31126,7 +31150,7 @@ replier.reply(
                
 
                 //@# =====================
-                if (msg.startsWith("/명치한대 ") && (sender == "호이 남" || sender == "맹구 여")) {
+                if (msg.startsWith("/명치한대 ") && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || sender == "맹구 여")) {
                     var target = msg.replace("/명치한대", "").trim();
 
                     // 기본 검증
@@ -31490,29 +31514,74 @@ function buildHoiBotChangeLogMessage(changeLogData) {
 }
 
 // 관리자 권한 여부를 확인하는 함수
+// 기록실 명령의 정확한 실행 범위를 판별하는 함수
+function isRecordRoomCommand(msg) {
+    return msg === "/기록실" || msg === "/기록보관소1" || /^\/기록보관소1\s+\d+$/.test(msg) ||
+        msg === "/기록삭제" || /^\/기록삭제\s+\d+$/.test(msg) || msg === "/빌런" || /^\/빌런\s+\d+$/.test(msg) ||
+        msg === "/기록" || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg);
+}
+
+// 원본과 보관소의 기록 형식을 확인하고 최초 한 번만 현재 기록을 비우는 함수
+function prepareRecordRoomArchive(board) {
+    if (!board || typeof board !== "object" || Array.isArray(board)) throw new Error("기록실 데이터 형식 오류");
+    if (board.record !== undefined && !Array.isArray(board.record)) throw new Error("기록실 목록 형식 오류");
+    if (Object.prototype.hasOwnProperty.call(board, "recordArchive1")) {
+        if (!board.recordArchive1 || board.recordArchive1.version !== 1 || !Array.isArray(board.recordArchive1.records) || !Array.isArray(board.record)) throw new Error("기록보관소1 형식 오류");
+        return false;
+    }
+    board.recordArchive1 = { version: 1, records: JSON.parse(JSON.stringify(board.record || [])) };
+    board.record = [];
+    return true;
+}
+
+// 보관소 원본 순서와 중요 표시를 유지해 지정 페이지를 생성하는 함수
+function buildRecordArchiveMessage(board, data, petData, guildData, page) {
+    var records = board.recordArchive1.records, size = GLOBAL_CONFIG.recordRoom.archivePageSize;
+    var pages = Math.max(1, Math.ceil(records.length / size)); // 빈 보관소도 첫 페이지로 조회
+    if (!isSearchAuthenticationCount(page) || page < 1 || page > pages) return "❌ 유효한 보관소 페이지를 입력해 주세요. (1 ~ " + pages + ")\n👉 /기록보관소1 [페이지]";
+    var lines = ["📜 기록보관소1", "전체 " + records.length + "건 · " + page + "/" + pages + "페이지", ""];
+    for (var i = (page - 1) * size; i < Math.min(page * size, records.length); i++) {
+        var entry = records[i], important = entry.content.indexOf("凸") === 0;
+        lines.push((important ? "凸" : "") + (i + 1) + ". [" + checkRank(data, petData, guildData, entry.user) + "] : " + (important ? entry.content.substring(1) : entry.content) + " (" + entry.date + ")");
+    }
+    if (records.length === 0) lines.push("📌 등록된 기록이 없습니다.");
+    lines.push("", "👉 /기록보관소1 [페이지]");
+    return lines.join("\n");
+}
+
+// 주문기록방의 오픈채팅봇에 한정된 관리 실행 권한을 확인하는 함수
+function isOrderLogRoomBot(sender) {
+    return sender === "오픈채팅봇" && getCurrentContext().permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom;
+}
+
 function isAdmin(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
+    if (sender === "오픈채팅봇" && permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom) return true;
     return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 
 // 마스터 권한 여부를 확인하는 함수
 function isMaster(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
+    if (sender === "오픈채팅봇" && permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom) return true;
     return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 
-// 채팅방과 관계없이 Admin 명단에 포함된 사용자인지 확인하는 함수
+// Admin 명단 또는 현재 주문기록방 봇의 관리 권한을 확인하는 함수
 function isAdminIdentity(sender) {
+    if (isOrderLogRoomBot(sender)) return true;
     return Admins.indexOf(sender) !== -1;
 }
 
-// 채팅방과 관계없이 Master 명단에 포함된 사용자인지 확인하는 함수
+// Master 명단 또는 현재 주문기록방 봇의 관리 권한을 확인하는 함수
 function isMasterIdentity(sender) {
+    if (isOrderLogRoomBot(sender)) return true;
     return Master.indexOf(sender) !== -1;
 }
 
 // 서버관리자방에서 등록된 Admin·Master의 운영 권한을 확인하는 함수
 function isServerAdminRoomOperator(sender) {
+    if (isOrderLogRoomBot(sender)) return true;
     var permissionRoom = getCurrentContext().permissionRoom;
     return (permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1) && (Admins.indexOf(sender) !== -1 || Master.indexOf(sender) !== -1);
 }
@@ -31531,7 +31600,7 @@ function isGlobalOperatorCommandAllowed(sender, msg) {
     if (msg === "/인증필요") return isAdminIdentity(sender);
     if (msg === "/미정" || msg.indexOf("/미정 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
     if (msg === "/정보" || msg.indexOf("/정보 ") === 0) return isAdminIdentity(sender) || isMasterIdentity(sender);
-    if (msg === "/기록실") return isAdminIdentity(sender) || isMasterIdentity(sender);
+    if (msg === "/기록실" || msg === "/기록보관소1" || /^\/기록보관소1\s+\d+$/.test(msg)) return isAdminIdentity(sender) || isMasterIdentity(sender);
     if (msg === "/기록" || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg)) return isAdminIdentity(sender) || isMasterIdentity(sender);
     return false;
 }
@@ -32845,6 +32914,7 @@ function getManagedJsonBackupPath(path) {
     if (fileName === "member_pet.json") backupFileName = "member_pet_back.json";
     if (fileName === "petSkillData.json") backupFileName = "petSkillData_back.json";
     if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back.json";
+    if (fileName === "board.json") backupFileName = "board_back.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -32858,6 +32928,7 @@ function getManagedJsonSecondaryBackupPath(path) {
     if (fileName === "member_pet.json") backupFileName = "member_pet_back2.json";
     if (fileName === "petSkillData.json") backupFileName = "petSkillData_back2.json";
     if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back2.json";
+    if (fileName === "board.json") backupFileName = "board_back2.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -32997,7 +33068,8 @@ function isProtectedManagedJsonPath(path) {
         fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
         fileName === "member_back2.json" || fileName === "member_pet_back2.json" ||
         fileName === "petSkillData.json" || fileName === "petSkillData_back.json" || fileName === "petSkillData_back2.json" ||
-        fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json" || fileName === "petHomeActivityData_back2.json";
+        fileName === "petHomeActivityData.json" || fileName === "petHomeActivityData_back.json" || fileName === "petHomeActivityData_back2.json" ||
+        fileName === "board.json" || fileName === "board_back.json" || fileName === "board_back2.json";
 }
 
 // 관리 JSON 내용을 엄격하게 파싱하고 파일별 필수 구조를 검증하는 함수
@@ -33382,7 +33454,7 @@ function isServerRaidTurnQueryCommand(msg) {
 
 // 대전 중 기존 명령 처리로 통과시킬 추가 예외와 해당 인수 형식을 확인하는 함수
 function isServerRaidAdditionalCommand(msg) {
-    return msg === "/글자수전체정리" || GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
+    return msg === "/기록보관소1" || /^\/기록보관소1\s+\d+$/.test(msg) || msg === "/글자수전체정리" || GLOBAL_CONFIG.serverRaid.commands.additionalExact.indexOf(msg) !== -1 ||
         /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(msg) ||
         /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(msg) ||
         /^\/(?:미정|정보)\s+\S(?:.*\S)?\s*$/.test(msg) ||
@@ -53408,25 +53480,11 @@ function buildAdventureQuestTitleMessage(data, petData, guildData, user) {
 
 // 호월신의 축복 적용 완료 안내 문구를 생성하는 함수
 function buildAdventureStarterCompleteMessage(user, petName, intimacyGranted, memberRewardsGranted) {
-    var additionalItemLines = ""; // 이번 최초 지급에서 실제 추가된 스타터 아이템 안내
-    var dollItemLines = ""; // 실제 지급한 인형 스타터 4종의 별도 안내
-    if (memberRewardsGranted) {
-        var additionalItems = GLOBAL_CONFIG.adventureStarter.additionalItems;
-        for (var i = 0; i < additionalItems.length; i++) additionalItemLines += additionalItems[i][0] + " " + additionalItems[i][1] + "개\n";
-        var dollItems = GLOBAL_CONFIG.adventureStarter.dollItems || [];
-        for (var d = 0; d < dollItems.length; d++) dollItemLines += dollItems[d][0] + " " + dollItems[d][1] + "개\n";
-    }
-    return "[" + user + "]님에게 호월신의 축복✨이 깃듭니다!\n\n" +
-        "🐾 " + petName + "의 기본 세팅 완료!\n" +
-        "📙 펫스킬 학개론 장착 완료!\n" +
-        (intimacyGranted ? "🐾 친밀도 Lv.300 (매력 330,000💕) 지원 완료!\n" : "") +
-        (memberRewardsGranted ? "✨ 호월신의 가호: " + numberWithCommas(GLOBAL_CONFIG.adventureStarter.boosters) + "개 지급!\n" : "") +
-        (additionalItemLines ? "🎁 추가 스타터 아이템\n" + additionalItemLines : "") +
-        (dollItemLines ? "\n🧸 인형뽑기 스타터 아이템 추가 지급\n\n" + dollItemLines : "") +
+    return "[" + user + "]님에게 호월신의 축복✨이 깃듭니다!\n" +
         "━━━━━━━━━━━━━━━\n" +
         "🐾 먼저, 함께할 펫을 만나보세요!\n\n" +
         "채팅창에 /펫정보 를 입력하면\n" +
-        petName + "의 능력과 장착 정보를 확인할 수 있어요.\n" +
+        "능력과 장착 정보를 확인할 수 있어요.\n" +
         "━━━━━━━━━━━━━━━\n" +
         "🎒 /가방 → 지급받은 재화와 아이템 확인\n" +
         "🌟 /레벨 → 모험가 레벨 확인\n\n" +
@@ -61185,6 +61243,17 @@ if (new java.io.File(startupRobberyPendingPath).exists()) {
 }
 if (recoverAdventureRecordPending()) initData = loadJsonFile(filePath, "bootstrap");
 if (recoverMemberSplitPublication()) initData = loadJsonFile(filePath, "bootstrap");
+// 재컴파일 시에도 이미 보관한 기록과 새 기록을 유지한다.
+var startupRecordCurrentFile = new java.io.File(resolveActiveDataPath(boardPath));
+var startupRecordRollbackFile = new java.io.File(resolveActiveDataPath(boardPath) + ".rollback");
+if (!startupRecordCurrentFile.exists() && startupRecordRollbackFile.exists()) {
+    var startupRecordRecoveryBoard = loadJsonFile(String(startupRecordRollbackFile.getPath()));
+    if (!startupRecordRecoveryBoard || !Array.isArray(startupRecordRecoveryBoard.record)) throw new Error("기록실 교체 복구 형식 오류");
+    prepareRecordRoomArchive(startupRecordRecoveryBoard);
+    if (!startupRecordRollbackFile.renameTo(startupRecordCurrentFile)) throw new Error("기록실 교체 복구 실패");
+}
+var startupRecordBoard = loadJsonFile(boardPath);
+if (prepareRecordRoomArchive(startupRecordBoard)) saveJsonFile(startupRecordBoard, boardPath);
 if (initData.serverRaid && serverRaidHasWork(initData.serverRaid)) {
     scheduleServerRaidWork(createCommandContext(false, room8), initData.serverRaid.generation, 1, initData.serverRaid.sequence);
 }

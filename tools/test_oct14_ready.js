@@ -2,7 +2,7 @@ const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require(
 const main=fs.readFileSync(path.join(__dirname,"..","main.js"),"utf8");
 const old=fs.readFileSync(path.join(__dirname,"test_doll_content.js"),"utf8");
 const {c,fixture,block,input,draw,install,run,cat,root,devRoot}=new Function("require","__dirname",old+"\nreturn {c,fixture,block,input,draw,install,run,cat,root,devRoot};")(require,__dirname);
-for(const name of ["addItem","getSupportPassConfigs","getSupportPassConfigByCommandName","ensureSupportPassStore","parseSupportPassCommandMeta","getSupportPassDateValue","isValidSupportPassDateText","isSupportPassActive","getActiveSupportPassUsers","grantSupportPassDailyRewards","grantDollPassDailyRewards","grantAllSupportPassDailyRewards","buildSupportPassPayoutResultMessage","appendTerritoryPassPayoutLogs","buildSupportPassSaveCheckMessage","processUserIDCommand","isDollTestRoomCommand","buildUserSupportPassLines","formatSupportPassStatus","isGuildTerritoryAllowedDuringWarCommand","isGuildTerritoryRiftControlCommandMessage","isServerRaidAdditionalCommand","isPetMusouAllowedDuringTournamentCommand","isAutoDailyQuestRunComplete","getDailyQuestStatus","runAutoDailyQuestCommands","buildBattleExperienceRewardMessage"])
+for(const name of ["isOrderLogRoomBot","addItem","getSupportPassConfigs","getSupportPassConfigByCommandName","ensureSupportPassStore","parseSupportPassCommandMeta","getSupportPassDateValue","isValidSupportPassDateText","isSupportPassActive","getActiveSupportPassUsers","grantSupportPassDailyRewards","grantDollPassDailyRewards","grantAllSupportPassDailyRewards","buildSupportPassPayoutResultMessage","appendTerritoryPassPayoutLogs","buildSupportPassSaveCheckMessage","processUserIDCommand","isDollTestRoomCommand","buildUserSupportPassLines","formatSupportPassStatus","isGuildTerritoryAllowedDuringWarCommand","isGuildTerritoryRiftControlCommandMessage","isServerRaidAdditionalCommand","isPetMusouAllowedDuringTournamentCommand","isAutoDailyQuestRunComplete","getDailyQuestStatus","runAutoDailyQuestCommands","buildBattleExperienceRewardMessage"])
  vm.runInContext(block(main,"function "+name+"("),c);
 let day=20261014;c.getTodaySupportPassDateValue=()=>day;let groups=0;
 function test(name,fn){fixture.reset();day=20261014;fn();console.log("PASS OCT14 "+(++groups)+": "+name);}
@@ -80,7 +80,7 @@ test("초기화 마지막 복구 표시 실패·복구 후 매력과 구독 보�
 });
 
 test("실제 패스 관리 분기 권한·저장·실패 원복",()=>{
- vm.runInContext('function passCommandProbe(){'+block(main,'if (sender == "호이 남" && (/^\\/인형패스')+'}',c);
+ vm.runInContext('function passCommandProbe(){'+block(main,'if ((sender == "호이 남" || isOrderLogRoomBot(sender)) && (/^\\/인형패스')+'}',c);
  function command(user,msg){const ctx=c.createCommandContext(false,"test"),prev=c.enterCommandContext(ctx);c.beginDataSaveTransaction();c.sender=user;c.msg=msg;c.data=c.loadJsonFile(c.filePath);try{c.passCommandProbe();}catch(e){c.rollbackDataSaveTransaction();throw e;}finally{c.endDataSaveTransaction();c.exitCommandContext(prev);}}
  install();const before=fixture.read();command("admin","/인형패스추가, u 영구권");assert.deepStrictEqual(fixture.read(),before);
  command("호이 남","/인형패스추가, u 영구권");assert(fixture.read().member.u.pass.doll.permanent);
