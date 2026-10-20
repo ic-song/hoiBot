@@ -29,10 +29,13 @@ c.FileStream.read = p => { reads.push(p); return fixture.disk()[p]; };
 c.FileStream.write = (p, text) => { fixture.disk()[p] = text; };
 vm.runInContext(block(main, "const MEMBER_STORAGE_SPLIT_CONFIG = {") + ";this.MEMBER_STORAGE_SPLIT_CONFIG=MEMBER_STORAGE_SPLIT_CONFIG;var memberSplitBackupCache={};", c);
 const helpers = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore", "readMemberSplitStore",
-    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "buildMemberSplitPublicationRecovery", "recoverMemberSplitPublication", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "writeMemberSplitSlot",
+    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "buildMemberSplitPublicationRecovery", "recoverMemberSplitPublication", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "stringifyMemberSplitStore", "writeMemberSplitSlot",
     "preserveMemberSplitBackupStores", "getMemberSplitByteLength", "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration",
     "isProtectedManagedJsonPath", "parseManagedJsonContent", "loadJsonFile", "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
-for (const name of helpers) vm.runInContext(block(main, "function " + name + "("), c);
+for (const name of helpers) { // 구 기준 소스를 주입하는 I/O 비교도 같은 하니스를 사용한다.
+    if (name === "stringifyMemberSplitStore" && !main.includes("function " + name + "(")) continue;
+    vm.runInContext(block(main, "function " + name + "("), c);
+}
 const key = c.MEMBER_STORAGE_SPLIT_CONFIG.key;
 const raw = (dev = false) => fixture.read(dev);
 const load = (mode, dev = false) => {
