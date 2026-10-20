@@ -539,5 +539,49 @@
       "Info.js": "f98773cbe0a33f8f3efe084c03b49a0a64e8b11ac2cbcacf97be83bc43da584d",
       "data/hoiBotChangeLog.json": "4aad12daab691dd2afb1936234813b08bb284c2ec9553e86660aa80165088107"
     }
+  },
+  "productionReflection": {
+    "dateKST": "2026-10-20",
+    "version": "ver_2.663",
+    "sourceCommit": "427973539409e7b9abe2ad403e7cd3bc8babe6a5",
+    "mergeCommit": "36ee71096d0aaa7a2477063bb78bb309561d31b1",
+    "pr": "https://github.com/ic-song/hoiBot/pull/136",
+    "remoteVerified": true,
+    "notion": [
+      {
+        "id": "a0e393bdd7aa821996bb81c2d5a9fba3",
+        "status": "🧪 DEV",
+        "productionDate": "2026-10-20",
+        "productionVersion": "ver_2.663",
+        "verified": true,
+        "bodyUnchanged": true,
+        "plannedDateUnchanged": true
+      },
+      {
+        "id": "33a393bdd7aa83e39f76810440233725",
+        "status": "🧪 DEV",
+        "productionDate": "2026-10-20",
+        "productionVersion": "ver_2.663",
+        "verified": true,
+        "bodyUnchanged": true,
+        "plannedDateUnchanged": true
+      },
+      {
+        "id": "c65393bdd7aa83c68e1c81a087f465ff",
+        "status": "🧪 DEV",
+        "productionDate": "2026-10-20",
+        "productionVersion": "ver_2.663",
+        "verified": true,
+        "bodyUnchanged": true,
+        "plannedDateUnchanged": true
+      }
+    ],
+    "kakaoVersionNotification": {
+      "message": "ver_2.663",
+      "success": true,
+      "sends": 1
+    },
+    "skillsChanged": false,
+    "runtimeUploadOrCompilePerformed": false
   }
 }
