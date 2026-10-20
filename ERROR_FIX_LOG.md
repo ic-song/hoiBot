@@ -6,6 +6,14 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-10-21 - 레이드 공격 안내의 개인 순위 정렬 생략
+
+Status: DEVELOPMENT_VALIDATED_PENDING_PRODUCTION
+
+- 공격 안내는 서버 순위만 사용하지만 전체 참가자의 개인 순위도 매번 정렬했다. 공격 안내에서만 개인 정렬을 생략하고, 조회와 종료 정산은 기존대로 유지한다. `freeze === true`는 생략 옵션을 줘도 개인 순위·기여도·상금·핸디캡을 확정한다.
+- 사용자 요청에 따라 개인 정렬 최적화만 ver_2.665로 준비했다. 기존 초안 PR #138의 저장 원문 재사용·응답 잠금 변경은 포함하지 않았다. main 전체 차이 검증으로 버전과 정렬 변경 외의 실행 코드가 기준96633c05와 동일함을 확인했다.
+- Node146그룹, Rhino 전체 MAIN/Info 컴파일 및 공지·동시성·재시작9시나리오, 규모별 전후 메시지/정산 대조를 통과했다. 합성5,000명 안내 생성266.29→77.77ms이며 실제 Android 응답시간을 나타내지는 않는다. 상세 조건과 표본은 tools/raid_ranking_validation.md 및 tools/raid_ranking_prod_result.json 참고.
+
 ## 2026-10-20 - 서버대전 공지 지연의 공격 잠금과 반복 전체 저장
 
 Status: PRODUCTION_REFLECTED (2026-10-21, ver_2.664, PR #137)

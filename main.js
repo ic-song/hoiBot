@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.664"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.665"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
@@ -33928,7 +33928,7 @@ function rankServerRaidRows(rows) {
 }
 
 // 정상 공격 참가자만 서버별 순위와 개인 확정 기여도로 집계하는 함수
-function buildServerRaidResults(round, freeze) {
+function buildServerRaidResults(round, freeze, skipMemberRanks) {
     var map = {}, keys = Object.keys(round.accounts), rows = [];
     for (var i = 0; i < keys.length; i++) {
         var participant = round.accounts[keys[i]];
@@ -33940,6 +33940,7 @@ function buildServerRaidResults(round, freeze) {
     var servers = Object.keys(map);
     for (var s = 0; s < servers.length; s++) rows.push(map[servers[s]]);
     rankServerRaidRows(rows);
+    if (skipMemberRanks === true && freeze !== true) return rows; // 공격 안내에는 서버 순위만 필요하므로 개인 정렬은 생략
     for (var r = 0; r < rows.length; r++) {
         rankServerRaidRows(rows[r].members);
         for (var m = 0; m < rows[r].members.length; m++) {
@@ -34101,7 +34102,7 @@ function buildServerRaidPreparationNotice(round) {
 // 저장된 공격 결과와 현재 서버 집계를 출력하는 함수
 function buildServerRaidAttackMessage(data, participant, attack, nick) {
     var round = data.serverRaid.current;
-    var rows = buildServerRaidResults(round), server = null;
+    var rows = buildServerRaidResults(round, false, true), server = null;
     for (var i = 0; i < rows.length; i++) if (rows[i].id === participant.server) server = rows[i];
     var percent = getServerRaidAttackPercent(attack); // 현재 설정 대신 이 공격의 실제 지급 비율을 표시
     var rewardGuide = attack.rewardBasis === "damage" ? "공격 데미지의 " + percent + "% 지급 (당시 기준)" : "레이드매력의 " + percent + "% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
