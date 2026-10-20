@@ -138,9 +138,11 @@ function runTests() {
     });
     test("발송 완료 저장 실패는 후속 전송 중단·재시작 복구·성공 저장 방 중복 없음", h => {
         h.transport(() => true); seedNotices(h, ["room1", "room2", "room3"]);
-        h.failWrite(d => d.serverRaid.outbox[0].deliveries[1].sent); h.tick();
-        assert(!h.attempts().some(a => a.room === "room3")); assert(h.read().serverRaid.outbox[0].deliveries[0].sent);
-        assert(!h.read().serverRaid.outbox[0].deliveries[1].sent);
+        const receiptKey = room => JSON.stringify(["synthetic:first", room]);
+        h.failWrite((d, p) => p.endsWith("serverRaidNoticeReceipts.json") && d.sent[receiptKey("room2")]); h.tick();
+        const receipts = JSON.parse(h.persist().disk[h.c.DATA_ROOT_PATH + "serverRaidNoticeReceipts.json"]);
+        assert(!h.attempts().some(a => a.room === "room3")); assert(receipts.sent[receiptKey("room1")]);
+        assert(!receipts.sent[receiptKey("room2")]);
         // 발송 직후 완료 저장 전 중단은 기존 at-least-once 경계로 재발송할 수 있다.
         h = createFixture(h.persist()); h.transport(() => true); h.boot(); h.tick();
         assert(!h.attempts().some(a => a.room === "room1" && a.text === "first")); assert.strictEqual(pending(h).length, 0);
@@ -166,7 +168,7 @@ function runTests() {
     test("발송 완료 저장 후 강제 중단을 재현해 새 VM이 해당 방을 재발송하지 않음", h => {
         h.transport(() => true); seedNotices(h, ["room1", "room2"]);
         const save = h.c.saveJsonFile; let crash;
-        h.c.saveJsonFile = (d, p) => { save(d, p); if (!crash) { crash = h.persist(); throw Error("process stopped after persisted ack"); } };
+        h.c.saveJsonFile = (d, p, ...args) => { save(d, p, ...args); if (!crash && p.endsWith("serverRaidNoticeReceipts.json")) { crash = h.persist(); throw Error("process stopped after persisted ack"); } };
         h.tick(); assert(crash); h = createFixture(crash); h.transport(() => true); h.boot(); h.tick();
         assert(!h.attempts().some(a => a.room === "room1" && a.text === "first")); assert.strictEqual(pending(h).length, 0);
     });
@@ -191,7 +193,8 @@ function runTests() {
     test("모든 방이 실패해도 자동 종료·정산은 완료하고 환경별 예약은 하나만 유지", h => {
         participatingRound(h); h.transport(() => false); h.jump(h.read().serverRaid.current.autoEndAt); h.tick(0); paidOnce(h);
         const failedRooms = h.attempts().map(a => a.room); assert.strictEqual(new Set(failedRooms).size, failedRooms.length);
-        assert.strictEqual(h.timers().size, 1); h.schedule(); h.schedule(); assert.strictEqual(h.timers().size, 1);
+        assert.strictEqual(h.timers().size, 1); h.schedule(); h.schedule(); assert.strictEqual(h.timers().size, 2);
+        h.tick(1); assert.strictEqual(h.timers().size, 1); // 전투 확인 1개와 공지 재시도 1개는 별도 예약
         h.transport(() => true); h.tick(2000); paidOnce(h); assert.strictEqual(pending(h).length, 0); assert.strictEqual(h.timers().size, 0);
     });
     console.log("서버대전 방별 공지 " + count + "개 검증 그룹 통과 (새 VM 재시작·합성 저장/전송)");

@@ -73,9 +73,12 @@ const c = {
     } },
     loadJsonFile(p) { traces.push({ type: "load", path: p }); return vm.runInContext("JSON.parse(" + JSON.stringify(disk[c.resolveActiveDataPath(p)]) + ")", c); },
     serverRaidWorkTimers: {},
+    serverRaidNoticeWorkers: {},
+    serverRaidNoticeMemberRevisions: {},
     setTimeout(fn, delay) { const id = ++nextTimer; timers.set(id, { fn, at: now + delay }); return id; },
     clearTimeout(id) { timers.delete(id); }
 };
+c.java.lang = { Runnable: function (r) { return r; }, Thread: function (r) { this.setDaemon = () => {}; this.start = () => r.run(); } };
 for (let i = 1; i <= 100; i++) c["room" + i] = "room" + i;
 c.testRoom = "test";
 vm.createContext(c);
@@ -83,7 +86,7 @@ vm.runInContext(main.match(/^const HoiBotVersion = "[^"]+";/m)[0] + ";this.HoiBo
 vm.runInContext(block(main, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);
 const ticketConfig = clone(c.GLOBAL_CONFIG.serverRaid); // 신규 기준 검증과 기존 108개 회귀 기준을 분리
 for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
-    "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile",
+    "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile", "writeMemberSplitSlot", "parseJsonContent",
     "requireAdventureRecordStore", "buildAdventureRecordMigration", "attachAdventureRecordStore", "getAdventureRecordRecoveryNames", "validateAdventureRecordPending", "recoverAdventureRecordPending",
     "isOrderLogRoomBot", "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
     "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(block(main, "function " + name + "("), c);
@@ -112,7 +115,7 @@ function reset() {
     c.GLOBAL_CONFIG.serverRaid.rewards.handicapRanks = clone(ticketMode ? ticketConfig.rewards.handicapRanks : []);
     now = Date.parse("2026-10-05T12:00:00Z"); timers = new Map(); nextTimer = 0; uuid = 0;
     disk = {}; traces = []; replies = []; failWrite = null; failNotice = null; replyFailure = false;
-    c.serverRaidWorkTimers = {}; c.dataSaveTransactionThreadLocal.remove(); c.commandContextThreadLocal.remove();
+    c.serverRaidWorkTimers = {}; c.serverRaidNoticeWorkers = {}; c.dataSaveTransactionThreadLocal.remove(); c.commandContextThreadLocal.remove();
     c.worldNewsDraftState = {};
     c.exploreInterval = false;
     const member = {}, pets = {};
@@ -363,7 +366,9 @@ group("공지 일부 실패는 완료 방 재발송 없이 미완료만 재시�
     const sent = traces.filter(t => t.type === "notice" && t.room === "room1" && t.text.includes("이번 대전 우승")).length; assert.strictEqual(sent, 1);
     failNotice = null; tick(2000); assert.strictEqual(traces.filter(t => t.type === "notice" && t.room === "room1" && t.text.includes("이번 대전 우승")).length, 1);
     assert.strictEqual(read().member.a.point, d.member.a.point); assert.deepStrictEqual(read().serverRaid.wins, d.serverRaid.wins);
-    const end1 = traces.findIndex(t => t.type === "notice" && t.text.includes("항복이다")); const firstPay = traces.findIndex(t => t.type === "save" && t.data.member.a.point === 1300003000); assert(end1 < firstPay);
+    const end1 = traces.findIndex(t => t.type === "notice" && t.room === "room1" && t.text.includes("항복이다"));
+    const result1 = traces.findIndex(t => t.type === "notice" && t.room === "room1" && t.text.includes("이번 대전 우승"));
+    assert(end1 >= 0 && end1 < result1); // 정산은 전송과 독립적으로 완료하되 방별 종료→결과 순서는 보존
 });
 group("전체 초기화 권한·옛 작업 세대 차단·일반 재화와 가방 보존", () => {
     start(); attack(); run("/서버대전종료", "master"); const stale = [...timers.values()][0].fn; const before = disk[memberPath];
@@ -433,7 +438,7 @@ group("참가자 1,000명 정산 저장은 인원수만큼 반복하지 않음",
     }
     write(d); run("/서버대전종료", "master"); traces = []; tick();
     const saves = traces.filter(t => t.type === "save" && t.path === memberPath);
-    assert.strictEqual(saves.length, 28); // 지급 1 + 완료 1 + 신규 일반방을 포함한 공지 13방에 공지 2회
+    assert.strictEqual(saves.length, 3); // 지급 1 + 완료 1 + 13방 종료·결과 공지 상태를 묶어서 확정 1
     assert.strictEqual(read().member["synthetic-999"].point, 300000000); assert.strictEqual(read().serverRaid.completed, 1);
     assert.strictEqual(read().member["synthetic-999"].serverRaidAccount.total.participations, 1);
 });
