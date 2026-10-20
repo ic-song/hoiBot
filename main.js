@@ -2842,6 +2842,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     var commandContextEntered = false;
     var ctx = null;
     var prevCtx = null;
+    var raidAttackReplyQueue = null;
+    var raidAttackReplyTarget = null;
     responseDataLock.lock();
     //데이터 검사
     try {
@@ -2854,6 +2856,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
         replier = createContextReplier(replier, ctx);
+        // 공격 안내는 저장/롤백과 잠금 해제를 마친 뒤 원래 응답 객체로 보낸다.
+        if (msg === "/레이드공격" || (ctx.isDev && stripDevCommandPrefix(msg) === "/레이드공격")) {
+            raidAttackReplyQueue = [];
+            raidAttackReplyTarget = replier;
+            replier = { reply: function (text) { raidAttackReplyQueue.push(text); } };
+        }
         var responseStartMs = Date.now();
         var responseTimingRows = [];
         function addResponseTiming(label, startMs) {
@@ -31474,6 +31482,12 @@ replier.reply(
         if (dataSaveTransactionEntered) endDataSaveTransaction();
         if (responseTransactionAcquired) dataTransactionLock.unlock();
         responseDataLock.unlock();
+        if (raidAttackReplyQueue && raidAttackReplyQueue.length > 0) {
+            var raidReplyPrevious = enterCommandContext(ctx);
+            try {
+                for (var raidReplyIndex = 0; raidReplyIndex < raidAttackReplyQueue.length; raidReplyIndex++) replyServerRaidSafely(raidAttackReplyTarget, raidAttackReplyQueue[raidReplyIndex]);
+            } finally { exitCommandContext(raidReplyPrevious); }
+        }
     }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -32595,7 +32609,10 @@ function requireMemberSplitStore(store, kind) {
 // 분리 파일을 기본값이나 자동 복구로 대체하지 않고 엄격히 읽는 저장 계층 함수
 function readMemberSplitStore(path, kind) {
     if (!new java.io.File(path).exists()) throw new Error("회원 분리 파일이 없습니다: " + path);
-    return requireMemberSplitStore(parseJsonContent(FileStream.read(path, "utf-8"), path), kind);
+    var text = FileStream.read(path, "utf-8");
+    var store = requireMemberSplitStore(parseJsonContent(text, path), kind);
+    Object.defineProperty(store, "__memberSplitSourceText", { value: text, enumerable: false });
+    return store;
 }
 
 // 회원 파일이 참조하는 정확한 버전을 현재 슬롯 또는 같은 세대 백업에서 선택하는 함수
@@ -32751,7 +32768,7 @@ function buildMemberSplitSavePlan(data) {
     if (logsText !== context.logsText) {
         nextMarker.logsRevision++;
         var logStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.logsRevision, data: logs }, "logs");
-        writes.push({ path: getMemberSplitStorePath("logs", nextMarker.logsRevision), text: JSON.stringify(logStore) });
+        writes.push({ path: getMemberSplitStorePath("logs", nextMarker.logsRevision), text: stringifyMemberSplitStore(logStore, logsText) });
     }
     if (context.raidText !== null) {
         raidText = JSON.stringify(data.serverRaid);
@@ -32759,11 +32776,17 @@ function buildMemberSplitSavePlan(data) {
         if (raidText !== context.raidText) {
             nextMarker.raidRevision++;
             var raidStore = requireMemberSplitStore({ version: marker.version, id: marker.id, revision: nextMarker.raidRevision, data: data.serverRaid }, "raid");
-            writes.push({ path: getMemberSplitStorePath("raid", nextMarker.raidRevision), text: JSON.stringify(raidStore) });
+            writes.push({ path: getMemberSplitStorePath("raid", nextMarker.raidRevision), text: stringifyMemberSplitStore(raidStore, raidText) });
         }
     } else if (!data.serverRaid || data.serverRaid.storageSummary !== true) throw new Error("레이드 상세를 읽지 않은 상태에서 레이드 저장을 요청했습니다.");
     member.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = nextMarker;
     return { member: member, marker: nextMarker, writes: writes, logsText: logsText, raidText: raidText, context: context };
+}
+
+// 이미 직렬화한 분리 데이터 본문을 재사용해 동일한 저장 JSON을 구성하는 함수
+function stringifyMemberSplitStore(store, dataText) {
+    var header = JSON.stringify({ version: store.version, id: store.id, revision: store.revision });
+    return header.substring(0, header.length - 1) + ',"data":' + dataText + header.substring(header.length - 1);
 }
 
 // 분리 저장 슬롯의 최초 상태를 트랜잭션에 등록하고 검증 저장하는 함수
@@ -32781,8 +32804,8 @@ function writeMemberSplitSlot(path, text) {
 }
 
 // 회원 백업의 공개 버전과 정확히 맞는 레이드·로그 백업을 함께 보존하는 함수
-function preserveMemberSplitBackupStores(memberText, generation, sourceGeneration, forceCopy) {
-    var member = parseJsonContent(memberText, filePath), marker = getMemberSplitMarker(member);
+function preserveMemberSplitBackupStores(memberText, generation, sourceGeneration, forceCopy, verifiedMember) {
+    var member = verifiedMember || parseJsonContent(memberText, filePath), marker = getMemberSplitMarker(member);
     if (!marker || marker.phase !== "COMPLETE") return;
     var kinds = ["raid", "logs"];
     for (var i = 0; i < kinds.length; i++) {
@@ -32791,7 +32814,7 @@ function preserveMemberSplitBackupStores(memberText, generation, sourceGeneratio
         if (!forceCopy && !sourceGeneration && memberSplitBackupCache[cacheKey] === stamp && new java.io.File(getMemberSplitBackupPath(kind, generation)).exists()) continue;
         var store = sourceGeneration ? readMemberSplitStore(getMemberSplitBackupPath(kind, sourceGeneration), kind) : readPublishedMemberSplitStore(marker, kind);
         if (store.id !== marker.id || store.revision !== revision) throw new Error("회원 백업과 분리 백업의 버전이 일치하지 않습니다.");
-        writeMemberSplitSlot(getMemberSplitBackupPath(kind, generation), JSON.stringify(store));
+        writeMemberSplitSlot(getMemberSplitBackupPath(kind, generation), store.__memberSplitSourceText || JSON.stringify(store));
         memberSplitBackupCache[cacheKey] = stamp;
     }
 }
@@ -33229,7 +33252,7 @@ function getProtectedJsonSaveLock(path) {
 }
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
-function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
+function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup) {
     var lock = getProtectedJsonSaveLock(path);
     var targetFile = new java.io.File(path);
     var tempFile = new java.io.File(path + ".tmp");
@@ -33263,8 +33286,9 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
         var secondaryManagedBackupPath = getManagedJsonSecondaryBackupPath(path);
         if (managedBackupPath && skipManagedBackup !== true) {
             if (targetFile.exists()) {
-                var currentJsonText = FileStream.read(path, "utf-8");
-                parseManagedJsonContent(currentJsonText, path);
+                var reuseMemberBackup = verifiedMemberBackup && verifiedMemberBackup.path === path && path === resolveActiveDataPath(filePath); // 같은 저장 잠금에서 방금 읽고 검증한 회원 원문만 재사용
+                var currentJsonText = reuseMemberBackup ? verifiedMemberBackup.text : FileStream.read(path, "utf-8");
+                if (!reuseMemberBackup) parseManagedJsonContent(currentJsonText, path);
                 var currentPrimaryBackupFile = new java.io.File(managedBackupPath);
                 if (secondaryManagedBackupPath) {
                     var secondaryManagedBackupFile = new java.io.File(secondaryManagedBackupPath);
@@ -33283,11 +33307,11 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
                             }
                         }
                     } else if (!secondaryManagedBackupFile.exists()) {
-                        if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 2, 0);
+                        if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 2, 0, false, reuseMemberBackup ? verifiedMemberBackup.data : null);
                         writeVerifiedJsonFile(secondaryManagedBackupPath, currentJsonText, true);
                     }
                 }
-                if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 1, 0);
+                if (path === resolveActiveDataPath(filePath) && typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") preserveMemberSplitBackupStores(currentJsonText, 1, 0, false, reuseMemberBackup ? verifiedMemberBackup.data : null);
                 writeVerifiedJsonFile(managedBackupPath, currentJsonText, true);
             } else {
                 seedManagedBackup = true;
@@ -33368,7 +33392,8 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                 if (splitPlan) {
                     if (!getDataSaveTransaction()) { beginDataSaveTransaction(); splitOwnTransaction = true; }
                     var currentMemberSplitText = FileStream.read(path, "utf-8");
-                    var currentMemberSplitMarker = getMemberSplitMarker(parseJsonContent(currentMemberSplitText, path));
+                    var currentMemberSplitData = parseJsonContent(currentMemberSplitText, path);
+                    var currentMemberSplitMarker = getMemberSplitMarker(currentMemberSplitData);
                     var inputMemberSplitMarker = getMemberSplitMarker(data);
                     if (!currentMemberSplitMarker || currentMemberSplitMarker.id !== inputMemberSplitMarker.id ||
                         (currentMemberSplitMarker.phase === "COMPLETE" && (currentMemberSplitMarker.raidRevision !== inputMemberSplitMarker.raidRevision || currentMemberSplitMarker.logsRevision !== inputMemberSplitMarker.logsRevision))) throw new Error("오래된 회원 스냅샷으로 분리 파일을 저장할 수 없습니다.");
@@ -33404,7 +33429,7 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
                     writeMemberSplitSlot(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.adventureQuest.history.fileName), JSON.stringify(adventureRecordContext.store));
                 }
                 if (splitPlan) for (var splitIndex = 0; splitIndex < splitPlan.writes.length; splitIndex++) writeMemberSplitSlot(splitPlan.writes[splitIndex].path, splitPlan.writes[splitIndex].text);
-                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup);
+                writeVerifiedJsonFile(path, jsonText, transactionEntryResult.skipManagedBackup, splitPlan ? { path: path, text: currentMemberSplitText, data: currentMemberSplitData } : null);
                 if (transactionEntryResult.entry) transactionEntryResult.entry.saved = true;
                 if (splitPlan) {
                     data.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key] = splitPlan.marker;
@@ -33928,7 +33953,7 @@ function rankServerRaidRows(rows) {
 }
 
 // 정상 공격 참가자만 서버별 순위와 개인 확정 기여도로 집계하는 함수
-function buildServerRaidResults(round, freeze) {
+function buildServerRaidResults(round, freeze, skipMemberRanks) {
     var map = {}, keys = Object.keys(round.accounts), rows = [];
     for (var i = 0; i < keys.length; i++) {
         var participant = round.accounts[keys[i]];
@@ -33940,6 +33965,7 @@ function buildServerRaidResults(round, freeze) {
     var servers = Object.keys(map);
     for (var s = 0; s < servers.length; s++) rows.push(map[servers[s]]);
     rankServerRaidRows(rows);
+    if (skipMemberRanks === true && freeze !== true) return rows; // 공격 안내에는 서버 순위만 필요하므로 개인 정렬은 생략
     for (var r = 0; r < rows.length; r++) {
         rankServerRaidRows(rows[r].members);
         for (var m = 0; m < rows[r].members.length; m++) {
@@ -34101,7 +34127,7 @@ function buildServerRaidPreparationNotice(round) {
 // 저장된 공격 결과와 현재 서버 집계를 출력하는 함수
 function buildServerRaidAttackMessage(data, participant, attack, nick) {
     var round = data.serverRaid.current;
-    var rows = buildServerRaidResults(round), server = null;
+    var rows = buildServerRaidResults(round, false, true), server = null;
     for (var i = 0; i < rows.length; i++) if (rows[i].id === participant.server) server = rows[i];
     var percent = getServerRaidAttackPercent(attack); // 현재 설정 대신 이 공격의 실제 지급 비율을 표시
     var rewardGuide = attack.rewardBasis === "damage" ? "공격 데미지의 " + percent + "% 지급 (당시 기준)" : "레이드매력의 " + percent + "% 지급"; // 이전에 지급한 공격은 당시 기준으로 안내
@@ -34287,7 +34313,7 @@ function buildServerRaidServerRecord(data, user, petData, guildData) {
 // 응답 발송 실패가 이미 저장한 공격·보상을 되돌리지 않게 하는 함수
 function replyServerRaidSafely(replier, text) {
     try { replier.reply(text); }
-    catch (replyError) { debuggerLog("[ServerRaid reply] " + replyError); }
+    catch (replyError) { try { debuggerLog("[ServerRaid reply] " + replyError); } catch (replyLogError) {} }
 }
 
 // 환경에 예약된 서버 레이드 작업을 취소하는 함수

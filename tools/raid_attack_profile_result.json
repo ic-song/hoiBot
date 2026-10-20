@@ -1,0 +1,1033 @@
+{
+  "baseline": "96633c05dd0c6eb66e24f6fb786bcae7a4c3fc62",
+  "environment": "local Rhino 1.7.15 interpreter + actual Java files/fsync, synthetic input; not Android timing",
+  "samples": 10,
+  "warmup": 5,
+  "gameAndMessagesEqual": true,
+  "before": {
+    "totalMedianMs": 255.43689999729395,
+    "phaseMedianMs": {
+      "commandLockWait": 0.016599997878074646,
+      "dataLockWait": 0.007899999618530273,
+      "memberRead": 36.34229999780655,
+      "petGuildRead": 1.9809000045061111,
+      "eligibility": 0.08879999816417694,
+      "homeSkillsRead": 0.660400003194809,
+      "calculation": 0.2603999972343445,
+      "mutation": 0.2401999980211258,
+      "message": 0.2619999945163727,
+      "save": 218.5730000063777,
+      "reply": 0.065700002014637
+    },
+    "io": {
+      "readBytes": 26666427,
+      "reads": 16,
+      "syncs": 4
+    },
+    "samples": [
+      {
+        "totalMs": 250.01289999485016,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.023800000548362732
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.009599998593330383
+          },
+          {
+            "label": "memberRead",
+            "ms": 38.21949999779463
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.9809000045061111
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.07459999620914459
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.8025000020861626
+          },
+          {
+            "label": "calculation",
+            "ms": 0.33249999582767487
+          },
+          {
+            "label": "mutation",
+            "ms": 0.2842999994754791
+          },
+          {
+            "label": "message",
+            "ms": 0.3815000057220459
+          },
+          {
+            "label": "save",
+            "ms": 207.7943999990821
+          },
+          {
+            "label": "reply",
+            "ms": 0.065700002014637
+          }
+        ]
+      },
+      {
+        "totalMs": 255.43689999729395,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.015500001609325409
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.007199995219707489
+          },
+          {
+            "label": "memberRead",
+            "ms": 33.4776000007987
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.778499998152256
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.07540000230073929
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.660400003194809
+          },
+          {
+            "label": "calculation",
+            "ms": 0.2603999972343445
+          },
+          {
+            "label": "mutation",
+            "ms": 0.22529999911785126
+          },
+          {
+            "label": "message",
+            "ms": 0.23579999804496765
+          },
+          {
+            "label": "save",
+            "ms": 218.5730000063777
+          },
+          {
+            "label": "reply",
+            "ms": 0.08389999717473984
+          }
+        ]
+      },
+      {
+        "totalMs": 252.50959999859333,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.014899998903274536
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.020899996161460876
+          },
+          {
+            "label": "memberRead",
+            "ms": 34.22399999946356
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.8865000009536743
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.14230000227689743
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.6423000022768974
+          },
+          {
+            "label": "calculation",
+            "ms": 0.24379999935626984
+          },
+          {
+            "label": "mutation",
+            "ms": 0.2401999980211258
+          },
+          {
+            "label": "message",
+            "ms": 0.2062000036239624
+          },
+          {
+            "label": "save",
+            "ms": 214.0936999991536
+          },
+          {
+            "label": "reply",
+            "ms": 0.09160000085830688
+          }
+        ]
+      },
+      {
+        "totalMs": 248.9285999983549,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.03739999979734421
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.01720000058412552
+          },
+          {
+            "label": "memberRead",
+            "ms": 34.62659999728203
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.312100000679493
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.08609999716281891
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.5766000002622604
+          },
+          {
+            "label": "calculation",
+            "ms": 0.2379000037908554
+          },
+          {
+            "label": "mutation",
+            "ms": 0.20729999989271164
+          },
+          {
+            "label": "message",
+            "ms": 0.25209999829530716
+          },
+          {
+            "label": "save",
+            "ms": 211.45459999889135
+          },
+          {
+            "label": "reply",
+            "ms": 0.051600001752376556
+          }
+        ]
+      },
+      {
+        "totalMs": 254.51749999821186,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.015299998223781586
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.0076000019907951355
+          },
+          {
+            "label": "memberRead",
+            "ms": 36.34229999780655
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.5988999977707863
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.06980000436306
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.5414000004529953
+          },
+          {
+            "label": "calculation",
+            "ms": 0.21220000088214874
+          },
+          {
+            "label": "mutation",
+            "ms": 0.19999999552965164
+          },
+          {
+            "label": "message",
+            "ms": 0.20930000394582748
+          },
+          {
+            "label": "save",
+            "ms": 215.20889999717474
+          },
+          {
+            "label": "reply",
+            "ms": 0.051899999380111694
+          }
+        ]
+      },
+      {
+        "totalMs": 249.41919999569654,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.016599997878074646
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.007299996912479401
+          },
+          {
+            "label": "memberRead",
+            "ms": 34.893800005316734
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.3445999994874
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.08879999816417694
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.5807999968528748
+          },
+          {
+            "label": "calculation",
+            "ms": 0.21790000051259995
+          },
+          {
+            "label": "mutation",
+            "ms": 0.18380000442266464
+          },
+          {
+            "label": "message",
+            "ms": 0.2619999945163727
+          },
+          {
+            "label": "save",
+            "ms": 210.73750000447035
+          },
+          {
+            "label": "reply",
+            "ms": 0.04249999672174454
+          }
+        ]
+      },
+      {
+        "totalMs": 281.80729999393225,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.013299994170665741
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.006000004708766937
+          },
+          {
+            "label": "memberRead",
+            "ms": 34.01069999486208
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.5985000059008598
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.06560000032186508
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.5848999992012978
+          },
+          {
+            "label": "calculation",
+            "ms": 0.19709999859333038
+          },
+          {
+            "label": "mutation",
+            "ms": 0.19550000131130219
+          },
+          {
+            "label": "message",
+            "ms": 0.2501999959349632
+          },
+          {
+            "label": "save",
+            "ms": 244.7199999988079
+          },
+          {
+            "label": "reply",
+            "ms": 0.07699999958276749
+          }
+        ]
+      },
+      {
+        "totalMs": 334.7605999931693,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.030399993062019348
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.016700007021427155
+          },
+          {
+            "label": "memberRead",
+            "ms": 56.655699998140335
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.1755999997258186
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.17469999939203262
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 2.0450000017881393
+          },
+          {
+            "label": "calculation",
+            "ms": 0.6515999957919121
+          },
+          {
+            "label": "mutation",
+            "ms": 0.5883000046014786
+          },
+          {
+            "label": "message",
+            "ms": 0.6673999950289726
+          },
+          {
+            "label": "save",
+            "ms": 271.6291000023484
+          },
+          {
+            "label": "reply",
+            "ms": 0.05259999632835388
+          }
+        ]
+      },
+      {
+        "totalMs": 321.332800000906,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.01720000058412552
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.007899999618530273
+          },
+          {
+            "label": "memberRead",
+            "ms": 42.956300005316734
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.4815999940037727
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.12190000712871552
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 1.7092999964952469
+          },
+          {
+            "label": "calculation",
+            "ms": 0.5676999986171722
+          },
+          {
+            "label": "mutation",
+            "ms": 0.4943000003695488
+          },
+          {
+            "label": "message",
+            "ms": 0.7357999980449677
+          },
+          {
+            "label": "save",
+            "ms": 272.1275000050664
+          },
+          {
+            "label": "reply",
+            "ms": 0.07259999960660934
+          }
+        ]
+      },
+      {
+        "totalMs": 297.10960000008345,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.014600001275539398
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.007299996912479401
+          },
+          {
+            "label": "memberRead",
+            "ms": 41.19990000128746
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.6024999991059303
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.14159999787807465
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.9239000007510185
+          },
+          {
+            "label": "calculation",
+            "ms": 0.28999999910593033
+          },
+          {
+            "label": "mutation",
+            "ms": 0.2750000059604645
+          },
+          {
+            "label": "message",
+            "ms": 0.27719999849796295
+          },
+          {
+            "label": "save",
+            "ms": 251.27639999985695
+          },
+          {
+            "label": "reply",
+            "ms": 0.053199999034404755
+          }
+        ]
+      }
+    ]
+  },
+  "after": {
+    "totalMedianMs": 198.8488000035286,
+    "phaseMedianMs": {
+      "commandLockWait": 0.0195000022649765,
+      "dataLockWait": 0.007799997925758362,
+      "memberRead": 36.40039999783039,
+      "petGuildRead": 1.944700002670288,
+      "eligibility": 0.09290000051259995,
+      "homeSkillsRead": 0.8320000022649765,
+      "calculation": 0.3288999944925308,
+      "mutation": 0.3342999964952469,
+      "message": 0.19439999759197235,
+      "save": 155.444200001657,
+      "reply": 0.03539999574422836
+    },
+    "io": {
+      "readBytes": 25263749,
+      "reads": 15,
+      "syncs": 4
+    },
+    "samples": [
+      {
+        "totalMs": 223.47749999910593,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.028499998152256012
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.014299996197223663
+          },
+          {
+            "label": "memberRead",
+            "ms": 41.39680000394583
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.3240000009536743
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.14350000023841858
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.9521999955177307
+          },
+          {
+            "label": "calculation",
+            "ms": 0.48189999908208847
+          },
+          {
+            "label": "mutation",
+            "ms": 0.446600005030632
+          },
+          {
+            "label": "message",
+            "ms": 0.3839999958872795
+          },
+          {
+            "label": "save",
+            "ms": 177.10330000519753
+          },
+          {
+            "label": "reply",
+            "ms": 0.039100006222724915
+          }
+        ]
+      },
+      {
+        "totalMs": 223.28920000046492,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.0195000022649765
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.007799997925758362
+          },
+          {
+            "label": "memberRead",
+            "ms": 36.25940000265837
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.156199999153614
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.11459999531507492
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.9118999987840652
+          },
+          {
+            "label": "calculation",
+            "ms": 0.38930000364780426
+          },
+          {
+            "label": "mutation",
+            "ms": 0.3342999964952469
+          },
+          {
+            "label": "message",
+            "ms": 0.3310000002384186
+          },
+          {
+            "label": "save",
+            "ms": 182.5629000067711
+          },
+          {
+            "label": "reply",
+            "ms": 0.03800000250339508
+          }
+        ]
+      },
+      {
+        "totalMs": 192.0328999981284,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.015999995172023773
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.007800005376338959
+          },
+          {
+            "label": "memberRead",
+            "ms": 37.20789999514818
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.8012000024318695
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.07410000264644623
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.6381999999284744
+          },
+          {
+            "label": "calculation",
+            "ms": 0.2703999951481819
+          },
+          {
+            "label": "mutation",
+            "ms": 0.45750000327825546
+          },
+          {
+            "label": "message",
+            "ms": 0.19089999794960022
+          },
+          {
+            "label": "save",
+            "ms": 150.81050000339746
+          },
+          {
+            "label": "reply",
+            "ms": 0.04899999499320984
+          }
+        ]
+      },
+      {
+        "totalMs": 307.528599999845,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.02250000089406967
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.008599996566772461
+          },
+          {
+            "label": "memberRead",
+            "ms": 36.40039999783039
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.944700002670288
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.09459999948740005
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.7005000039935112
+          },
+          {
+            "label": "calculation",
+            "ms": 0.3288999944925308
+          },
+          {
+            "label": "mutation",
+            "ms": 0.23360000550746918
+          },
+          {
+            "label": "message",
+            "ms": 0.17969999462366104
+          },
+          {
+            "label": "save",
+            "ms": 267.478900000453
+          },
+          {
+            "label": "reply",
+            "ms": 0.02889999747276306
+          }
+        ]
+      },
+      {
+        "totalMs": 198.8488000035286,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.013700000941753387
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.0064999982714653015
+          },
+          {
+            "label": "memberRead",
+            "ms": 39.97089999914169
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.8698000013828278
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.0958000048995018
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.593299999833107
+          },
+          {
+            "label": "calculation",
+            "ms": 0.2923999950289726
+          },
+          {
+            "label": "mutation",
+            "ms": 0.2955000028014183
+          },
+          {
+            "label": "message",
+            "ms": 0.13520000129938126
+          },
+          {
+            "label": "save",
+            "ms": 155.444200001657
+          },
+          {
+            "label": "reply",
+            "ms": 0.03539999574422836
+          }
+        ]
+      },
+      {
+        "totalMs": 187.83799999952316,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.01390000432729721
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.006700001657009125
+          },
+          {
+            "label": "memberRead",
+            "ms": 34.287999995052814
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.4220000058412552
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.0713999941945076
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.5192000046372414
+          },
+          {
+            "label": "calculation",
+            "ms": 0.22109999507665634
+          },
+          {
+            "label": "mutation",
+            "ms": 0.18950000405311584
+          },
+          {
+            "label": "message",
+            "ms": 0.16420000046491623
+          },
+          {
+            "label": "save",
+            "ms": 150.65169999748468
+          },
+          {
+            "label": "reply",
+            "ms": 0.07289999723434448
+          }
+        ]
+      },
+      {
+        "totalMs": 200.54749999940395,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.031199999153614044
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.01590000092983246
+          },
+          {
+            "label": "memberRead",
+            "ms": 37.20030000060797
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.5043999999761581
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.08609999716281891
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.5575000047683716
+          },
+          {
+            "label": "calculation",
+            "ms": 0.23070000112056732
+          },
+          {
+            "label": "mutation",
+            "ms": 0.20189999788999557
+          },
+          {
+            "label": "message",
+            "ms": 0.16420000046491623
+          },
+          {
+            "label": "save",
+            "ms": 160.4438000023365
+          },
+          {
+            "label": "reply",
+            "ms": 0.019699998199939728
+          }
+        ]
+      },
+      {
+        "totalMs": 192.98659999668598,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.014399997889995575
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.006400004029273987
+          },
+          {
+            "label": "memberRead",
+            "ms": 35.39599999785423
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 1.687600001692772
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.07419999688863754
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 0.8320000022649765
+          },
+          {
+            "label": "calculation",
+            "ms": 0.2695999965071678
+          },
+          {
+            "label": "mutation",
+            "ms": 0.29340000450611115
+          },
+          {
+            "label": "message",
+            "ms": 0.19439999759197235
+          },
+          {
+            "label": "save",
+            "ms": 154.1089000031352
+          },
+          {
+            "label": "reply",
+            "ms": 0.017899997532367706
+          }
+        ]
+      },
+      {
+        "totalMs": 189.24379999935627,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.024100005626678467
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.006099998950958252
+          },
+          {
+            "label": "memberRead",
+            "ms": 35.2664999961853
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.5477000027894974
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.0746999979019165
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 1.8268000036478043
+          },
+          {
+            "label": "calculation",
+            "ms": 0.3825000002980232
+          },
+          {
+            "label": "mutation",
+            "ms": 0.38609999418258667
+          },
+          {
+            "label": "message",
+            "ms": 0.3197000026702881
+          },
+          {
+            "label": "save",
+            "ms": 148.31490000337362
+          },
+          {
+            "label": "reply",
+            "ms": 0.016699999570846558
+          }
+        ]
+      },
+      {
+        "totalMs": 181.86110000312328,
+        "rows": [
+          {
+            "label": "commandLockWait",
+            "ms": 0.012000001966953278
+          },
+          {
+            "label": "dataLockWait",
+            "ms": 0.006099998950958252
+          },
+          {
+            "label": "memberRead",
+            "ms": 32.31909999996424
+          },
+          {
+            "label": "petGuildRead",
+            "ms": 2.4222999960184097
+          },
+          {
+            "label": "eligibility",
+            "ms": 0.09290000051259995
+          },
+          {
+            "label": "homeSkillsRead",
+            "ms": 1.4966000020503998
+          },
+          {
+            "label": "calculation",
+            "ms": 0.38610000163316727
+          },
+          {
+            "label": "mutation",
+            "ms": 0.34449999779462814
+          },
+          {
+            "label": "message",
+            "ms": 0.19839999824762344
+          },
+          {
+            "label": "save",
+            "ms": 144.49930000305176
+          },
+          {
+            "label": "reply",
+            "ms": 0.014799997210502625
+          }
+        ]
+      }
+    ]
+  }
+}
