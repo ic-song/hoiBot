@@ -513,5 +513,31 @@
     "Fresh Rhino scope and actual Java file rename simulate restart/publication gap; no Android device access.",
     "Legacy 7-argument callback and existing nickname/room-name bot identification retained.",
     "Production reflection, version/changelog increment and Notion completion properties await separate user request."
-  ]
+  ],
+  "productionPreparation": {
+    "dateKST": "2026-10-20",
+    "version": "2.663",
+    "latestProdBase": "d34e3a783f99b4f0a40c71e37223b9706b9d349b",
+    "runtimeDiffSinceFullSuite": "main.js HoiBotVersion only; Info.js unchanged",
+    "syntax": "PASS",
+    "oct20Groups": 18,
+    "rhinoScenarios": 5,
+    "changeLogOutput": "PASS - matching version, exact increment, existing entries retained, same-date heading grouped",
+    "checkoutLineEndingOnlyChanges": [
+      "tools/test_oct20_ready.js",
+      "tools/test_oct20_rhino.js"
+    ],
+    "dataSnapshots": {
+      "baselineFiles": 1157,
+      "changed": [
+        "data/hoiBotChangeLog.json"
+      ],
+      "gameDataChanges": 0
+    },
+    "sourceHashes": {
+      "main.js": "c6578bbdfaaf161e7e42f48412565b54e8df91845c9fcafff7766ece45445607",
+      "Info.js": "f98773cbe0a33f8f3efe084c03b49a0a64e8b11ac2cbcacf97be83bc43da584d",
+      "data/hoiBotChangeLog.json": "4aad12daab691dd2afb1936234813b08bb284c2ec9553e86660aa80165088107"
+    }
+  }
 }
