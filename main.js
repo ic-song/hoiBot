@@ -991,7 +991,9 @@ var guildTerritoryOpeningTimers = {};// 길드 영토전 개전 타이머 관리
 var petMusouOpeningTimers = {}; // 펫무쌍 30초 시작 유예 타이머 관리 객체 (실행 컨텍스트별 timerId)
 var petMusouTurnTimers = {}; // 펫무쌍 턴 타이머 관리 객체 (실행 컨텍스트별 timerId)
 var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 감시 객체 (실행 컨텍스트별 timerId)
-var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산·공지 작업의 환경별 타이머
+var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산 작업의 환경별 타이머
+var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 중복 없이 관리
+var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
     sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } }, // 평수별 가구 장착 수 계산 기준
@@ -1046,6 +1048,7 @@ const GLOBAL_CONFIG = {
         items: { attackTicket: "서버레이드공격권👾" },
         legacyPolicy: { attacks: 5, ticketAttacks: 0, chargeFromAttempt: 2, pointCost: 50000000, handicapRanks: [] }, // 기준 미기록 기존 회차는 당시 규칙 유지
         timers: { preparationMs: 60000, retryMs: 2000, durationMs: 1800000 }, // 준비 60초와 별도로 실제 공격 활성화부터 30분
+        delivery: { receiptFileName: "serverRaidNoticeReceipts.json", maxBatch: 100 },
         penalties: { chargeFromAttempt: 4, pointCost: 10000000 }, // 초과 3회까지 무료, 네 번째부터 잔액 충분 시 1천만 차감
         rewards: { attackPercent: 3, attackDivisor: 100, ranks: [300000000, 270000000, 240000000, 210000000, 180000000, 150000000, 120000000, 90000000, 60000000, 30000000], handicapRanks: [0, 1, 1, 2, 2, 2, 3, 3, 3, 4] },
         servers: ["호이서버1[30]", "호이서버2[2030]", "호이서버3[3040]", "호이서버4[3040]", "호이서버5[2030]", "호이서버6[30]", "호이서버7[2030]", "벨라서버1[2030]", "벨라서버2[30]", "호이월드 커뮤니티"],
@@ -3039,7 +3042,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     saveJsonFile(data, filePath, true); // 명시적 복구에서만 기존 백업 회전을 생략; 원본·분리 슬롯 롤백은 유지
                     var memberStorageRepairedText = FileStream.read(resolveActiveDataPath(filePath), "utf-8");
                     for (var repairBackupGeneration = 1; repairBackupGeneration <= 2; repairBackupGeneration++) {
-                        preserveMemberSplitBackupStores(memberStorageRepairedText, repairBackupGeneration, 0);
+                        preserveMemberSplitBackupStores(memberStorageRepairedText, repairBackupGeneration, 0, true);
                         var repairedMemberBackupPath = repairBackupGeneration === 1 ? getManagedJsonBackupPath(resolveActiveDataPath(filePath)) : getManagedJsonSecondaryBackupPath(resolveActiveDataPath(filePath));
                         writeMemberSplitSlot(repairedMemberBackupPath, memberStorageRepairedText); // 백업 세트도 실패 시 원상복구할 저장 항목으로 등록
                         if (String(FileStream.read(repairedMemberBackupPath, "utf-8")) !== String(memberStorageRepairedText)) throw new Error("복구 회원 백업 내용 검증 실패");
@@ -3127,6 +3130,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 resetServerRaid(data, String(java.util.UUID.randomUUID()));
                 saveJsonFile(data, filePath);
                 clearServerRaidWorkTimer(ctx);
+                cancelServerRaidNoticeWork(ctx);
                 replyServerRaidSafely(replier, "👑 서버 레이드대전 👑\n🗑️ 전체 기록 초기화\n━━━━━━━━━━━━\n✅ 모든 서버 레이드대전 기록이 초기화되었습니다.\n\n⭐ 서버 누적 우승 횟수: 전체 0회\n📋 서버·개인 참가 기록: 전체 삭제\n👾 데미지·기여도 기록: 전체 삭제\n🏆 회차별 순위·정산 기록: 전체 삭제\n━━━━━━━━━━━━\n새로운 서버 레이드대전을 시작할 수 있습니다.\n\n👉 /서버대전시작");
                 return;
             }
@@ -32777,20 +32781,19 @@ function writeMemberSplitSlot(path, text) {
 }
 
 // 회원 백업의 공개 버전과 정확히 맞는 레이드·로그 백업을 함께 보존하는 함수
-function preserveMemberSplitBackupStores(memberText, generation, sourceGeneration) {
+function preserveMemberSplitBackupStores(memberText, generation, sourceGeneration, forceCopy) {
     var member = parseJsonContent(memberText, filePath), marker = getMemberSplitMarker(member);
     if (!marker || marker.phase !== "COMPLETE") return;
-    var stamp = marker.id + ":" + marker.raidRevision + ":" + marker.logsRevision;
-    var cacheKey = resolveActiveDataPath(filePath) + ":" + generation;
-    if (memberSplitBackupCache[cacheKey] === stamp && new java.io.File(getMemberSplitBackupPath("raid", generation)).exists() && new java.io.File(getMemberSplitBackupPath("logs", generation)).exists()) return;
     var kinds = ["raid", "logs"];
     for (var i = 0; i < kinds.length; i++) {
         var kind = kinds[i], revision = kind === "raid" ? marker.raidRevision : marker.logsRevision;
+        var stamp = marker.id + ":" + revision, cacheKey = resolveActiveDataPath(filePath) + ":" + generation + ":" + kind;
+        if (!forceCopy && !sourceGeneration && memberSplitBackupCache[cacheKey] === stamp && new java.io.File(getMemberSplitBackupPath(kind, generation)).exists()) continue;
         var store = sourceGeneration ? readMemberSplitStore(getMemberSplitBackupPath(kind, sourceGeneration), kind) : readPublishedMemberSplitStore(marker, kind);
         if (store.id !== marker.id || store.revision !== revision) throw new Error("회원 백업과 분리 백업의 버전이 일치하지 않습니다.");
         writeMemberSplitSlot(getMemberSplitBackupPath(kind, generation), JSON.stringify(store));
+        memberSplitBackupCache[cacheKey] = stamp;
     }
-    memberSplitBackupCache[cacheKey] = stamp;
 }
 
 // 회원 파일 분리 전후의 실제 UTF-8 저장 바이트 수를 구하는 함수
@@ -33061,6 +33064,7 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
 
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
+    if (String(new java.io.File(path).getName()) === "serverRaidNoticeReceipts.json") return true;
     if (/^adventureQuestHistory(?:_legacy|Pending)?\.json$/.test(String(new java.io.File(path).getName()))) return true;
     var fileName = String(new java.io.File(path).getName());
     return /^miniPetRobbery(?:History(?:_legacy)?|Pending)\.json$/.test(fileName) || /^(dollIndex|dollPending|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(fileName) || fileName === "member.json" || fileName === "member_back.json" ||
@@ -33076,6 +33080,7 @@ function isProtectedManagedJsonPath(path) {
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
     var splitFileName = String(new java.io.File(path).getName());
+    if (splitFileName === "serverRaidNoticeReceipts.json") return requireServerRaidNoticeReceipts(parsedData);
     if (/^adventureQuestHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireAdventureRecordStore(parsedData);
     if (splitFileName === "adventureQuestHistoryPending.json") { validateAdventureRecordPending(parsedData); return parsedData; }
     if (/^miniPetRobberyHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireMiniPetRobberyStore(parsedData);
@@ -33300,6 +33305,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup) {
             if (rollbackFile.exists()) rollbackFile.renameTo(targetFile);
             throw new Error("Verified JSON file replace failed: " + path);
         }
+        if (typeof serverRaidNoticeMemberRevisions !== "undefined" && path === resolveActiveDataPath(filePath)) serverRaidNoticeMemberRevisions[path] = (serverRaidNoticeMemberRevisions[path] || 0) + 1;
         var publishedTransaction = getDataSaveTransaction();
         if (publishedTransaction && !publishedTransaction.rollingBack && publishedTransaction.entries[path]) publishedTransaction.entries[path].saved = true; // 교체 직후 등록해 후속 정리 실패도 원본 복구 대상에 포함
         if (rollbackFile.exists() && !rollbackFile.delete()) {
@@ -33667,7 +33673,7 @@ function isServerRaidAutoEndDue(round, now) {
 }
 
 // 준비·종료 마감과 미완료 공지의 가장 이른 다음 예약 간격을 계산하는 함수
-function getServerRaidWorkDelay(state, now, retry) {
+function getServerRaidWorkDelay(state, now, retry, stateOnly) {
     var round = state.current, delay = retry; // 공지 실패가 있으면 해당 재시도 시각도 비교
     if (round && round.state === "PREP") delay = delay === null ? round.prepareUntil - now : Math.min(delay, round.prepareUntil - now);
     if (round && (round.state === "PREP" || round.state === "ACTIVE") && round.autoEndAt !== undefined) {
@@ -33675,10 +33681,10 @@ function getServerRaidWorkDelay(state, now, retry) {
         delay = delay === null ? round.autoEndAt - now : Math.min(delay, round.autoEndAt - now);
     }
     if (round && round.state === "SETTLING") delay = delay === null ? GLOBAL_CONFIG.serverRaid.timers.retryMs : Math.min(delay, GLOBAL_CONFIG.serverRaid.timers.retryMs);
-    for (var i = 0; i < state.outbox.length; i++) for (var j = 0; j < state.outbox[i].deliveries.length; j++) if (!state.outbox[i].deliveries[j].sent) {
+    for (var i = 0; !stateOnly && i < state.outbox.length; i++) for (var j = 0; j < state.outbox[i].deliveries.length; j++) if (!state.outbox[i].deliveries[j].sent) {
         if (!state.outbox[i].deliveries[j].cancelled) delay = delay === null ? GLOBAL_CONFIG.serverRaid.timers.retryMs : Math.min(delay, GLOBAL_CONFIG.serverRaid.timers.retryMs);
     }
-    return Math.max(1, delay === null ? GLOBAL_CONFIG.serverRaid.timers.retryMs : delay);
+    return delay === null && stateOnly ? null : Math.max(1, delay === null ? GLOBAL_CONFIG.serverRaid.timers.retryMs : delay);
 }
 
 // 회차 생성과 준비 공지를 같은 데이터 변경으로 구성하는 함수
@@ -34299,13 +34305,13 @@ function serverRaidHasWork(state) {
     return false;
 }
 
-// 서버 레이드 예약 작업 진입점: 세대 재검사·로드·단일 파일 저장·공지 발송을 직렬 수행한다.
+// 준비·마감·정산만 데이터 잠금 안에서 처리하고 공지는 별도 작업에 맡기는 함수
 function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
     var key = ctx.key();
     if (serverRaidWorkTimers[key]) return;
     var timerId = setTimeout(function () {
         if (serverRaidWorkTimers[key] !== timerId) return; // 취소된 콜백이 새 타이머를 지우거나 새 회차를 처리하지 않음
-        var previous = enterCommandContext(ctx), entered = false, acquired = false, retry = null;
+        var previous = enterCommandContext(ctx), entered = false, acquired = false, retry = null, notices = false, failure = null;
         delete serverRaidWorkTimers[key];
         try {
             dataTransactionLock.lock(); acquired = true;
@@ -34320,57 +34326,188 @@ function scheduleServerRaidWork(ctx, generation, delayMs, sequence) {
                 saveJsonFile(latest, filePath);
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 확정된 단계 이후 공지 실패로 전투 상태를 롤백하지 않음
             }
-            var blockedNoticeRooms = []; // 이번에 실패한 방의 후속 공지만 보류해 방별 발송 순서 유지
-            for (var pass = 0; pass < 2; pass++) {
-                if (pass === 1) {
-                    var participantKeys = state.current && state.current.state === "SETTLING" ? Object.keys(state.current.accounts) : [];
-                    var accountIndex = buildServerRaidAccountIndex(latest), settlementChanged = false;
-                    for (var p = 0; p < participantKeys.length; p++) if (settleServerRaidParticipant(latest, accountIndex, participantKeys[p])) settlementChanged = true;
-                    if (settlementChanged) {
-                        saveJsonFile(latest, filePath);
-                        endDataSaveTransaction(); beginDataSaveTransaction(); // 지급과 각 계정 완료 상태를 한 번에 저장하여 전체 파일 반복 쓰기 방지
-                    }
-                    if (finishServerRaidSettlement(latest, Date.now(), ctx)) {
-                        saveJsonFile(latest, filePath);
-                        endDataSaveTransaction(); beginDataSaveTransaction();
-                    }
-                }
-                for (var i = 0; i < state.outbox.length; i++) {
-                    var notice = state.outbox[i];
-                    if (notice.generation !== generation) continue;
-                    for (var j = 0; j < notice.deliveries.length; j++) {
-                        var delivery = notice.deliveries[j];
-                        if (delivery.sent || delivery.cancelled || blockedNoticeRooms.indexOf(delivery.room) !== -1) continue;
-                        try {
-                            if (noticeMsg(notice.text, [delivery.room]) === false) {
-                                blockedNoticeRooms.push(delivery.room);
-                                retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
-                                continue;
-                            }
-                        } catch (noticeError) {
-                            blockedNoticeRooms.push(delivery.room);
-                            retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
-                            try { debuggerLog("[ServerRaid notice] " + noticeError); } catch (noticeLogError) {}
-                            continue;
-                        }
-                        delivery.sent = true;
-                        saveJsonFile(latest, filePath);
-                        endDataSaveTransaction(); beginDataSaveTransaction();
-                    }
-                }
+            var participantKeys = state.current && state.current.state === "SETTLING" ? Object.keys(state.current.accounts) : [];
+            var accountIndex = buildServerRaidAccountIndex(latest), settlementChanged = false;
+            for (var p = 0; p < participantKeys.length; p++) if (settleServerRaidParticipant(latest, accountIndex, participantKeys[p])) settlementChanged = true;
+            if (settlementChanged) {
+                saveJsonFile(latest, filePath);
+                endDataSaveTransaction(); beginDataSaveTransaction();
             }
-            if (serverRaidHasWork(state)) retry = getServerRaidWorkDelay(state, Date.now(), retry);
+            if (finishServerRaidSettlement(latest, Date.now(), ctx)) {
+                saveJsonFile(latest, filePath);
+                endDataSaveTransaction(); beginDataSaveTransaction();
+            }
+            notices = pickServerRaidNotice(state, []) !== null;
+            retry = getServerRaidWorkDelay(state, Date.now(), null, true);
         } catch (workError) {
             retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
-            try { debuggerLog("[ServerRaid work] " + workError); } catch (workLogError) {} // 로그 전송 실패가 자동 종료 재예약을 막지 않음
+            failure = workError;
         } finally {
             if (entered) endDataSaveTransaction();
             if (acquired) dataTransactionLock.unlock();
             exitCommandContext(previous);
             if (retry !== null) scheduleServerRaidWork(ctx, generation, retry, sequence);
+            if (notices) scheduleServerRaidNoticeWork(ctx, 0);
+            if (failure) { try { debuggerLog("[ServerRaid work] " + failure); } catch (workLogError) {} }
         }
     }, delayMs);
     serverRaidWorkTimers[key] = timerId;
+}
+
+// 전송 영수증의 형식을 검사하고 손상·누락을 빈 값으로 숨기지 않는 함수
+function requireServerRaidNoticeReceipts(store) {
+    if (!store || store.version !== 1 || typeof store.generation !== "string" || !store.generation || !store.sent || typeof store.sent !== "object" || Array.isArray(store.sent)) throw new Error("서버대전 공지 영수증 형식 오류");
+    for (var key in store.sent) if (Object.prototype.hasOwnProperty.call(store.sent, key) && store.sent[key] !== true) throw new Error("서버대전 공지 영수증 값 오류");
+    return store;
+}
+
+// 공지 ID와 방명을 충돌 없는 전송 영수증 키로 만드는 함수
+function getServerRaidNoticeReceiptKey(id, room) {
+    return JSON.stringify([id, room]);
+}
+
+// 영수증에 확정된 성공 방만 현재 공지 사본에 반영하는 함수
+function applyServerRaidNoticeReceipts(state, store) {
+    requireServerRaidNoticeReceipts(store);
+    if (store.generation !== state.generation) throw new Error("서버대전 공지 영수증 세대 불일치");
+    var changed = false;
+    for (var i = 0; i < state.outbox.length; i++) {
+        var notice = state.outbox[i];
+        if (notice.generation !== state.generation) continue;
+        for (var j = 0; j < notice.deliveries.length; j++) {
+            var delivery = notice.deliveries[j];
+            if (!delivery.sent && store.sent[getServerRaidNoticeReceiptKey(notice.id, delivery.room)] === true) { delivery.sent = true; changed = true; }
+        }
+    }
+    return changed;
+}
+
+// 같은 방의 순서를 지키며 이번 작업에서 아직 실패하지 않은 첫 공지를 선택하는 함수
+function pickServerRaidNotice(state, blockedRooms) {
+    for (var i = 0; i < state.outbox.length; i++) {
+        var notice = state.outbox[i];
+        if (notice.generation !== state.generation) continue;
+        for (var j = 0; j < notice.deliveries.length; j++) {
+            var delivery = notice.deliveries[j];
+            if (!delivery.sent && !delivery.cancelled && blockedRooms.indexOf(delivery.room) === -1) return { generation: state.generation, id: notice.id, room: delivery.room, text: notice.text };
+        }
+    }
+    return null;
+}
+
+// 전체 초기화 시 대기 작업은 취소하고 실행 중 전송은 반환 후 종료시키는 함수
+function cancelServerRaidNoticeWork(ctx) {
+    var key = ctx.key(), worker = serverRaidNoticeWorkers[key];
+    if (!worker) return;
+    worker.cancelled = true;
+    if (!worker.running) { clearTimeout(worker.timer); delete serverRaidNoticeWorkers[key]; }
+}
+
+// 공지를 전용 Java 스레드에서 전송해 전투 타이머와 명령을 막지 않는 함수
+function scheduleServerRaidNoticeWork(ctx, delayMs) {
+    var key = ctx.key();
+    dataTransactionLock.lock();
+    try {
+        var previousWorker = serverRaidNoticeWorkers[key];
+        if (previousWorker) {
+            if (previousWorker.running || previousWorker.at <= Date.now() + delayMs) return;
+            clearTimeout(previousWorker.timer);
+            delete serverRaidNoticeWorkers[key];
+        }
+        var worker = { timer: null, running: false, cancelled: false, at: Date.now() + delayMs };
+        serverRaidNoticeWorkers[key] = worker;
+        worker.timer = setTimeout(function () {
+            dataTransactionLock.lock();
+            try {
+                if (serverRaidNoticeWorkers[key] !== worker || worker.cancelled) return;
+                worker.running = true;
+            } finally { dataTransactionLock.unlock(); }
+            try {
+                var thread = new java.lang.Thread(new java.lang.Runnable({ run: function () { runServerRaidNotices(ctx, worker); } }));
+                thread.setDaemon(true);
+                thread.start();
+            } catch (threadError) {
+                dataTransactionLock.lock();
+                try { if (serverRaidNoticeWorkers[key] === worker) delete serverRaidNoticeWorkers[key]; }
+                finally { dataTransactionLock.unlock(); }
+                scheduleServerRaidNoticeWork(ctx, GLOBAL_CONFIG.serverRaid.timers.retryMs);
+            }
+        }, delayMs);
+    } finally { dataTransactionLock.unlock(); }
+}
+
+// 방별 성공은 작은 영수증에 즉시 저장하고 공지 상태는 묶어서 확정하는 함수
+function runServerRaidNotices(ctx, worker) {
+    var previous = enterCommandContext(ctx), key = ctx.key(), retry = null, blockedRooms = [];
+    var receiptPath = DATA_ROOT_PATH + GLOBAL_CONFIG.serverRaid.delivery.receiptFileName;
+    var memberPath = resolveActiveDataPath(filePath), cachedMember = null, memberRevision = -1, noticesChanged = false;
+    try {
+        for (var attempt = 0; attempt < GLOBAL_CONFIG.serverRaid.delivery.maxBatch; attempt++) {
+            var row = null;
+            dataTransactionLock.lock();
+            beginDataSaveTransaction();
+            try {
+                if (serverRaidNoticeWorkers[key] !== worker || worker.cancelled) break;
+                var publishedRevision = serverRaidNoticeMemberRevisions[memberPath] || 0;
+                if (!cachedMember || memberRevision !== publishedRevision) {
+                    cachedMember = loadJsonFile(filePath, "raid");
+                    memberRevision = publishedRevision;
+                    noticesChanged = false;
+                }
+                var latest = cachedMember, state = latest.serverRaid, receiptStore = null, applied = false;
+                if (!state) break;
+                if (state.noticeReceiptsVersion === 1) {
+                    receiptStore = requireServerRaidNoticeReceipts(parseJsonContent(FileStream.read(resolveActiveDataPath(receiptPath), "utf-8"), receiptPath));
+                    applied = applyServerRaidNoticeReceipts(state, receiptStore);
+                    if (applied) noticesChanged = true;
+                } else if (state.noticeReceiptsVersion !== undefined) throw new Error("서버대전 공지 영수증 버전 오류");
+                row = pickServerRaidNotice(state, blockedRooms);
+                if (!row) {
+                    if (noticesChanged) saveJsonFile(latest, filePath);
+                    retry = pickServerRaidNotice(state, []) ? GLOBAL_CONFIG.serverRaid.timers.retryMs : null;
+                    break;
+                }
+                if (!receiptStore) {
+                    var activeReceiptPath = resolveActiveDataPath(receiptPath);
+                    if (new java.io.File(activeReceiptPath).exists()) requireServerRaidNoticeReceipts(parseJsonContent(FileStream.read(activeReceiptPath, "utf-8"), receiptPath));
+                    receiptStore = { version: 1, generation: state.generation, sent: {} };
+                    writeMemberSplitSlot(activeReceiptPath, JSON.stringify(receiptStore));
+                    state.noticeReceiptsVersion = 1;
+                    saveJsonFile(latest, filePath);
+                }
+            } catch (readError) { rollbackDataSaveTransaction(); throw readError; }
+            finally { endDataSaveTransaction(); dataTransactionLock.unlock(); }
+
+            // 전송 API와 실패 로그는 데이터 잠금 밖에서 호출한다.
+            var sent = false;
+            try { sent = noticeMsg(row.text, [row.room]) !== false; }
+            catch (noticeError) { try { debuggerLog("[ServerRaid notice] " + noticeError); } catch (ignoreNoticeLog) {} }
+            if (!sent) { blockedRooms.push(row.room); continue; }
+
+            dataTransactionLock.lock();
+            beginDataSaveTransaction();
+            try {
+                var receiptText = FileStream.read(resolveActiveDataPath(receiptPath), "utf-8");
+                var receipt = requireServerRaidNoticeReceipts(parseJsonContent(receiptText, receiptPath));
+                if (receipt.generation === row.generation) {
+                    receipt.sent[getServerRaidNoticeReceiptKey(row.id, row.room)] = true;
+                    saveJsonFile(receipt, receiptPath, false, receiptText);
+                }
+            } catch (ackError) { rollbackDataSaveTransaction(); throw ackError; }
+            finally { endDataSaveTransaction(); dataTransactionLock.unlock(); }
+            retry = 0; // 한 묶음 한도에 닿으면 저장된 영수증을 기준으로 즉시 이어서 처리
+        }
+    } catch (workError) {
+        retry = GLOBAL_CONFIG.serverRaid.timers.retryMs;
+        try { debuggerLog("[ServerRaid delivery] " + workError); } catch (ignoreDeliveryLog) {}
+    } finally {
+        dataTransactionLock.lock();
+        try { if (serverRaidNoticeWorkers[key] === worker) delete serverRaidNoticeWorkers[key]; }
+        finally { dataTransactionLock.unlock(); }
+        exitCommandContext(previous);
+        if (worker.cancelled) retry = 0;
+        if (retry !== null) scheduleServerRaidNoticeWork(ctx, retry);
+    }
 }
 
 // 정산에서 모든 내부 계정을 한 번만 탐색하고 중복 ID를 검출하는 함수

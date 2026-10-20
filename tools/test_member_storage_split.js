@@ -18,7 +18,7 @@ const reads = [];
 let recoveries = 0, groups = 0;
 c.java.io.File.prototype.getName = function () { return this.path.split("/").pop(); };
 c.java.io.File.prototype.lastModified = () => fixture.now();
-c.java.lang = { String: function (v) { this.getBytes = () => Buffer.from(String(v), "utf8"); } };
+c.java.lang.String = function (v) { this.getBytes = () => Buffer.from(String(v), "utf8"); };
 c.formatDateTime = d => d.toISOString();
 c.MANAGED_BACKUP_SECONDARY_ROTATION_MS = 60000;
 c.parseJsonContent = text => vm.runInContext("JSON.parse(" + JSON.stringify(text) + ")", c);
