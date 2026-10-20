@@ -88,7 +88,7 @@ const c = {
     } }
 };
 vm.createContext(c);
-for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
+for (const name of ["isOrderLogRoomBot", "isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile", "loadJsonFile",
     "addMiniPetToUserBag", "getMiniPetBagLimit", "sortMiniPetBag", "refreshMiniPetSortIndex", "buildMiniPetBagRenewedMessage"])
     vm.runInContext(fn(name), c);

@@ -12,7 +12,8 @@ const GLOBAL_CONFIG = {
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
 	pointShop: { limits: { maxPurchaseQuantity: 9999 } }, // 포인트 상점 1회 구매 한도
 	permissions: { // 서버관리자방과 동일한 권한을 허용할 추가 운영방
-		additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방"]
+		additionalServerAdminRooms: ["원탁의 호월", "호이월드 GM 관리자방", "주문기록방"],
+		orderLogRoom: "주문기록방"
 	},
 	level: { // 모험가 레벨 표시 설정
 		expBase: 1000,
@@ -216,22 +217,31 @@ var commandContextThreadLocal = new java.lang.ThreadLocal();
 var initData = loadJsonFile(filePath);
 var Master = initData.master;
 var Admins = Object.keys(initData.admin);
+// 주문기록방의 오픈채팅봇에 한정된 관리 실행 권한을 확인하는 함수
+function isOrderLogRoomBot(sender) {
+	return sender === "오픈채팅봇" && getCurrentContext().permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom;
+}
+
 function isAdmin(sender) {
 	var permissionRoom = getCurrentContext().permissionRoom;
+	if (sender === "오픈채팅봇" && permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom) return true;
 	return Admins.includes(sender) && (permissionRoom === room90 || permissionRoom === testRoom || permissionRoom === room91 || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 function isMaster(sender) {
 	var permissionRoom = getCurrentContext().permissionRoom;
+	if (sender === "오픈채팅봇" && permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom) return true;
 	return Master.includes(sender) && (permissionRoom === testRoom || permissionRoom === room92 || GLOBAL_CONFIG.permissions.additionalServerAdminRooms.indexOf(permissionRoom) !== -1);
 }
 
-// 채팅방과 관계없이 Admin 명단에 포함된 사용자인지 확인하는 함수
+// Admin 명단 또는 현재 주문기록방 봇의 관리 권한을 확인하는 함수
 function isAdminIdentity(sender) {
+	if (isOrderLogRoomBot(sender)) return true;
 	return Admins.indexOf(sender) !== -1;
 }
 
-// 채팅방과 관계없이 Master 명단에 포함된 사용자인지 확인하는 함수
+// Master 명단 또는 현재 주문기록방 봇의 관리 권한을 확인하는 함수
 function isMasterIdentity(sender) {
+	if (isOrderLogRoomBot(sender)) return true;
 	return Master.indexOf(sender) !== -1;
 }
 
@@ -628,7 +638,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
 			return;
 		}
-		if (!isGlobalInfoCommand && data && data.member && data.member[sender] && data.member[sender].agree != true) {
+		if (!isGlobalInfoCommand && !isOrderLogRoomBot(sender) && data && data.member && data.member[sender] && data.member[sender].agree != true) {
 			return;
 		}
 		var petData = loadJsonFile(memberPetPath);
@@ -1690,7 +1700,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 
-		if (msg === "/펫주인" && (sender == "호이 남" || sender == "젤리 남")) {
+		if (msg === "/펫주인" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || sender == "젤리 남")) {
 			let ownermsg = "🐶펫 주인확인🐱\n\n";
 			for (let user in data.member) {
 				if (petData[user] && petData[user].petname) {
@@ -1702,7 +1712,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 			replier.reply(ownermsg);
 		}
-		if (msg === "/포인트확인" && (sender == "호이 남" || sender == "젤리 남")) {
+		if (msg === "/포인트확인" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || sender == "젤리 남")) {
 			let pointRank = pointRanking(data.member);
 			let resultMsg = "🏆 포인트 잔액 순위 🏆\n\n";
 			resultMsg += pointRank;

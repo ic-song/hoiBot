@@ -1,0 +1,517 @@
+{
+  "dateKST": "2026-10-20",
+  "branch": "feature/oct20-ready",
+  "baseCommit": "d34e3a783f99b4f0a40c71e37223b9706b9d349b",
+  "productionReflected": false,
+  "versionUnchanged": "2.662",
+  "notionPages": [
+    "a0e393bdd7aa821996bb81c2d5a9fba3",
+    "33a393bdd7aa83e39f76810440233725",
+    "c65393bdd7aa83c68e1c81a087f465ff"
+  ],
+  "notionStatus": "READY, planned 26.10.20, unchanged body and properties confirmed",
+  "summary": {
+    "invocations": 72,
+    "passed": 72,
+    "newGroups": 18,
+    "rhinoScenarios": 5,
+    "permissionConditionsCompared": 133
+  },
+  "dataSnapshots": {
+    "files": 1157,
+    "changed": [],
+    "invalidJson": []
+  },
+  "starterGrantFunctionsUnchanged": {
+    "applyAdventureStarterMemberRewards": true,
+    "applyAdventureStarterPetSettings": true,
+    "applyAdventureStarterSkill": true,
+    "applyAdventureStarterHome": true,
+    "applyAdventureStarterIntimacyReward": true
+  },
+  "sourceHashes": {
+    "main.js": "1953e3397d421fedf6fb7d6f0204a353f30c930df6b4e7fcfdea3937b8214163",
+    "Info.js": "f98773cbe0a33f8f3efe084c03b49a0a64e8b11ac2cbcacf97be83bc43da584d",
+    "tools/test_oct20_ready.js": "d895ed621d86b58c388cfa8d797d80cc471e6a3b14d3c675c231effc726ced24",
+    "tools/test_oct20_rhino.js": "d96dcf4a70351e90d9502a2e6361469311e3975bc31def08cea3815bc366b582"
+  },
+  "syntaxChecks": [
+    "Info.js",
+    "main.js",
+    "tools/test_minipet_admin_add.js",
+    "tools/test_oct14_ready.js",
+    "tools/test_oct16_ready.js",
+    "tools/test_operator_privileges.js",
+    "tools/test_pet_skill_retirement.js",
+    "tools/test_robbery_history_split.js",
+    "tools/test_room_privilege_robbery_display.js",
+    "tools/test_server_check_starter_stones.js",
+    "tools/test_server_raid.js",
+    "tools/test_oct20_ready.js",
+    "tools/test_oct20_rhino.js"
+  ],
+  "utf8": "PASS",
+  "diffCheck": "PASS",
+  "runs": [
+    {
+      "test": "test_adventure_booster_hotfix.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.109
+    },
+    {
+      "test": "test_adventure_history_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.392
+    },
+    {
+      "test": "test_adventure_quest_stage6_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.146
+    },
+    {
+      "test": "test_adventure_quest_tutorial.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.155
+    },
+    {
+      "test": "test_adventure_starter_pet_appearance.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.112
+    },
+    {
+      "test": "test_adventure_starter_recovery.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.113
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "1"
+      ],
+      "exit": 0,
+      "seconds": 0.153
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "2"
+      ],
+      "exit": 0,
+      "seconds": 0.121
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "3"
+      ],
+      "exit": 0,
+      "seconds": 0.113
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "4"
+      ],
+      "exit": 0,
+      "seconds": 0.096
+    },
+    {
+      "test": "test_attendance_chat_pass.js",
+      "args": [
+        "5"
+      ],
+      "exit": 0,
+      "seconds": 0.119
+    },
+    {
+      "test": "test_authority_badge.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.119
+    },
+    {
+      "test": "test_carrot_community_trade.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.333
+    },
+    {
+      "test": "test_carrot_confirmation.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.719
+    },
+    {
+      "test": "test_carrot_confirmation_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 3.598
+    },
+    {
+      "test": "test_character_referral.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.202
+    },
+    {
+      "test": "test_charm_buff_diagnostics.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.375
+    },
+    {
+      "test": "test_creation_reward_box.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.173
+    },
+    {
+      "test": "test_daily_chat_experience_query.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.336
+    },
+    {
+      "test": "test_doll_boxes.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.876
+    },
+    {
+      "test": "test_doll_catalog.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.132
+    },
+    {
+      "test": "test_doll_content.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.828
+    },
+    {
+      "test": "test_doll_probability_up.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.815
+    },
+    {
+      "test": "test_doll_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 2.458
+    },
+    {
+      "test": "test_doll_test_room.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.414
+    },
+    {
+      "test": "test_doll_ui_blessing.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.534
+    },
+    {
+      "test": "test_fortune_cookie.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.322
+    },
+    {
+      "test": "test_growth_potion.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.128
+    },
+    {
+      "test": "test_home_badge_cube_edit.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.099
+    },
+    {
+      "test": "test_info_guild_territory_command_lock.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.09
+    },
+    {
+      "test": "test_info_starter_duplicate_audit.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.079
+    },
+    {
+      "test": "test_latest_server_display.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.14
+    },
+    {
+      "test": "test_main_test_room_only.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.089
+    },
+    {
+      "test": "test_member_display_search_auth.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.304
+    },
+    {
+      "test": "test_member_publication_recovery.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.24
+    },
+    {
+      "test": "test_member_storage_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.596
+    },
+    {
+      "test": "test_member_storage_split_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 0.951
+    },
+    {
+      "test": "test_minipet_admin_add.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.2
+    },
+    {
+      "test": "test_minipet_conditional_skill.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.279
+    },
+    {
+      "test": "test_minipet_support_pet_info.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.15
+    },
+    {
+      "test": "test_oct14_followup.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.935
+    },
+    {
+      "test": "test_oct14_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.712
+    },
+    {
+      "test": "test_oct16_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.871
+    },
+    {
+      "test": "test_oct19_furniture_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.378
+    },
+    {
+      "test": "test_oct19_lock_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 1.398
+    },
+    {
+      "test": "test_oct19_market_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.62
+    },
+    {
+      "test": "test_oct19_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.498
+    },
+    {
+      "test": "test_operator_privileges.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.151
+    },
+    {
+      "test": "test_pet_explore_manual_settlement_message.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.146
+    },
+    {
+      "test": "test_pet_musou_storage_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.407
+    },
+    {
+      "test": "test_pet_skill_retirement.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.132
+    },
+    {
+      "test": "test_point_shop_purchase.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.201
+    },
+    {
+      "test": "test_quest_conditions_oct14.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.207
+    },
+    {
+      "test": "test_raid_pet_skills.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.517
+    },
+    {
+      "test": "test_raid_seal_minipet_queries.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.178
+    },
+    {
+      "test": "test_reset_auto_attendance_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.121
+    },
+    {
+      "test": "test_robbery_history_split.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.942
+    },
+    {
+      "test": "test_room_privilege_robbery_display.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.117
+    },
+    {
+      "test": "test_room_server6_ingress.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.109
+    },
+    {
+      "test": "test_search_authentication_oct12.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.282
+    },
+    {
+      "test": "test_sep30_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.141
+    },
+    {
+      "test": "test_server_check_starter_stones.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.116
+    },
+    {
+      "test": "test_server_raid.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 4.277
+    },
+    {
+      "test": "test_server_raid_oct12.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.386
+    },
+    {
+      "test": "test_support_upgrade_level_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.404
+    },
+    {
+      "test": "test_tier_ui_oct13.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.111
+    },
+    {
+      "test": "test_veranda_command_flow.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.141
+    },
+    {
+      "test": "test_veranda_large_expansion.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 0.139
+    },
+    {
+      "test": "test_oct20_ready.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 1.643
+    },
+    {
+      "test": "test_server_raid_delivery.js",
+      "args": [],
+      "exit": 0,
+      "seconds": 2.467
+    },
+    {
+      "test": "test_server_raid_delivery_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 3.573
+    },
+    {
+      "test": "test_oct20_rhino.js",
+      "args": [
+        "<Rhino 1.7.15 jar>"
+      ],
+      "exit": 0,
+      "seconds": 4.573
+    }
+  ],
+  "boundaries": [
+    "Synthetic data and temporary Java files only; production snapshots untouched.",
+    "Fresh Rhino scope and actual Java file rename simulate restart/publication gap; no Android device access.",
+    "Legacy 7-argument callback and existing nickname/room-name bot identification retained.",
+    "Production reflection, version/changelog increment and Notion completion properties await separate user request."
+  ]
+}

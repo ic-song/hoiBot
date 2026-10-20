@@ -4435,7 +4435,8 @@ Status: VERIFIED
 - Payout commands no longer keep separate hardcoded recipient arrays
 - `isAdmin` requires both `data.admin` membership and execution in `호이월드 GM 관리자방`, `원탁의 호월`, `팻 테스트방`, `통합스텝`, or `서버관리자`
 - `isMaster` requires both `data.master` membership and execution in `팻 테스트방`, `서버관리자`, `원탁의 호월`, or `호이월드 GM 관리자방`
-- `GLOBAL_CONFIG.permissions.additionalServerAdminRooms`는 추가 운영방 두 곳을 관리한다. Main·Info에 동일하게 적용하고, Main의 `isServerAdminRoomOperator`를 사용하는 길드영지·펫무쌍 시작 권한도 서버관리자방과 동일하게 허용한다. 일반 유저는 방에 들어가도 관리자·MASTER 권한을 얻지 않는다.
+- `GLOBAL_CONFIG.permissions.additionalServerAdminRooms`는 원탁의 호월·호이월드 GM 관리자방·주문기록방을 관리한다. Main·Info에 동일하게 적용하고, Main의 `isServerAdminRoomOperator`를 사용하는 길드영지·펫무쌍 시작 권한도 서버관리자방과 동일하게 허용한다. 일반 유저는 방에 들어가도 관리자·MASTER 권한을 얻지 않는다.
+- 2026-10-20 주문기록방: `isOrderLogRoomBot`는 정확한 방명과 기존 `오픈채팅봇` 이름으로만 판별한다. 해당 방의 봇에는 Admin/Master 및 신원 권한을 허용하며, 기존 운영자 닉네임 직접 검사 관리 조건 133곳과 경매마감·후원지급 목록 검사도 이 예외를 연결한다. 원래 발신자·회원 키를 바꾸거나 명단에 영구 등록하지 않는다. 다른 방의 봇·일반 사용자와 게임 횟수 특례·전역 이벤트 명령 제한은 유지한다. 이후 관리 명령은 공통 역할 함수와 추가 운영방 목록을 사용한다.
 - `/주기리셋` and `/자동탐험시작` additionally allow an Admin or `오픈채팅봇` in `호이월드 GM 관리자방`; their existing Master access remains available in Master-authorized rooms
 - `/관리자일당` authorization remains `호이 남` and `오픈채팅봇`
 - `/부방상여` authorization remains `호이 남`
@@ -7171,6 +7172,7 @@ Status: VERIFIED
 - ver_2.653 `GLOBAL_CONFIG.adventureStarter.dollItems`의 이용권 20개·확률UP 50/40/30% 각 5개도 같은 최초 지급 영수증과 저장을 공유한다. 기존 지급자는 소급하지 않으며 실제 지급 시에만 별도 안내한다. 과거 스타터 회수 대상 17종은 유지한다.
 - 펜던트 강화석📿 3개는 기존 17종과 함께 `memberRewards` 최초 지급 영수증 및 `member.json` 저장에 포함한다. 실제 최초 지급 성공 시에만 완료 안내에 표시하며 기존 지급자에게 소급하지 않는다.
 - 신규 추가 지급은 `GLOBAL_CONFIG.adventureStarter.additionalItems`를 사용한다. 과거 퀘스트 스타터 회수는 기존 `items` 17종과 `legacyRecoveryBoosters` 1,000개 기준을 유지한다. Info의 과거 후보 조회도 1,000개이며 신규 가호 지급량과 분리한다.
+- 2026-10-20 안내 간소화: `buildAdventureStarterCompleteMessage`는 축복 한 줄 직후 구분선, 펫정보·가방·레벨·가이드 안내만 표시한다. 기본 세팅·학개론·친밀도300·가호30000·스타터와 인형 아이템의 실제 지급·조건·영수증은 변경하지 않는다. 닉네임은 실제 대상이며 펫 이름·상세 지급 목록은 안내에서 생략한다.
 - 신규 펫의 알 상태는 `/호여!!` 완료 시 기존 외형 목록의 땅·하늘 속성과 외형으로 확정해 `member_pet.json`에 저장한다. 이미 스타터 설정을 완료했지만 알 상태로 남은 펫은 해당 사용자의 다음 `main.js` 응답에서 한 번 보정·저장하며, 이후 조회에서는 다시 뽑지 않는다.
 - `/모험가퀘스트` 최초 참여에서는 스타터팩을 지급하지 않는다. 과거 퀘스트 지급 기록이 있는 회원은 `/호여!!`에서 같은 스타터팩을 다시 지급하지 않는다.
 - 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.
@@ -7819,6 +7821,9 @@ Status: VERIFIED
 - `/정보`는 권한이 확인된 경우 1:1톡 패스·이벤트 제한을 통과하며, 일반 사용자의 기존 제한은 유지한다.
 - `/기록 [내용]`과 `/기록실`은 기존 Admin/Master 권한을 유지하며 모든 방과 이벤트 진행 중에 사용할 수 있다.
 - `/기록` 등록은 정확한 명령 형식만 허용해 `/기록삭제` 등 다른 기록 관리 명령과 충돌하지 않는다.
+- 2026-10-20 기록실 이관: 부팅 시 기존 `board.record` 전체를 같은 JSON의 `recordArchive1.records`에 깊은 복사하고 현재 기록을 비운다. `prepareRecordRoomArchive`는 순수 변경·검증 함수이며 기존 보관소가 있으면 새 기록을 다시 초기화하지 않는다. `board.json`·`board_back.json`·`board_back2.json`은 기존 검증 저장·백업·명령 롤백 대상이다. 파일 교체 사이 중단으로 원본이 없고 `.rollback`이 있을 때만 부팅/첫 DEV 기록 요청에서 원문 검증 후 이름을 복구한다. 누락·손상 원본을 빈 데이터로 바꾸지 않는다.
+- `/기록보관소1 [페이지]`는 Admin/Master 신원 권한으로 모든 방에서 기존 기록실과 같은 이벤트 예외로 조회한다. 생략은1, 페이지당20건이며 원래 순번·내용·날짜·중요 표시를 보존한다. `/기록실`·`/기록`·`/기록삭제 [번호]`·`/빌런 [번호]`은 현재 기록만 조회/변경한다. 숫자 뒤 설명 문구는 실행하지 않는다. 일반 계산 헬퍼에는 파일 IO가 없으며 명령 진입에서 한 번 로드한다.
+- 검증: `tools/test_oct20_ready.js`의 전체 페이지·이관/반복/저장 실패/복구/DEV·권한 조건 비교와 `tools/test_oct20_rhino.js`의 실제 Java 파일 저장·백업·새 전역 스코프 복원. 원본 데이터 스냅샷은 테스트에서 수정하지 않는다.
 
 ---
 

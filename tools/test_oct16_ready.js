@@ -2,7 +2,7 @@ const assert=require('assert'),fs=require('fs'),path=require('path'),vm=require(
 const main=fs.readFileSync(path.join(__dirname,'..','main.js'),'utf8'),info=fs.readFileSync(path.join(__dirname,'..','Info.js'),'utf8');
 const base=fs.readFileSync(path.join(__dirname,'test_doll_content.js'),'utf8');
 const {c,fixture,block,input,draw,cat,install,run,inRealm}=new Function('require','__dirname',base+'\nreturn {c,fixture,block,input,draw,cat,install,run,inRealm};')(require,__dirname);
-for(const name of ['buildDollDrawDebugMessage','getAdventureOnboardingMemberState','getAdventureBlessingItemName','applyAdventureStarterMemberRewards','buildAdventureStarterCompleteMessage','debuggerToggle'])vm.runInContext(block(main,'function '+name+'('),c);
+for(const name of ['isOrderLogRoomBot','buildDollDrawDebugMessage','getAdventureOnboardingMemberState','getAdventureBlessingItemName','applyAdventureStarterMemberRewards','buildAdventureStarterCompleteMessage','debuggerToggle'])vm.runInContext(block(main,'function '+name+'('),c);
 const root='/sdcard/호이랜드/',devRoot='/sdcard/호이랜드_dev/',clone=v=>JSON.parse(JSON.stringify(v)),up=p=>'인형뽑기확률UP🧸('+p+'%)';
 let groups=0;function test(name,fn){fixture.reset();c.isDebuggerFlag=false;fn();console.log('PASS OCT16 '+(++groups)+': '+name);}
 c.addPoint=(d,u,n)=>{d.member[u].point+=n;};c.addItem=(d,u,n,q)=>{d.member[u].bag[n]=(d.member[u].bag[n]||0)+q;};c.formatDateTime=()=> '2026-10-15 10:00';
@@ -15,7 +15,7 @@ test('Starter exact four rewards, existing rewards, receipt and UI agree; repeat
  seedStarter();const before=fixture.read();starter();const after=fixture.read();
  for(const [n,q] of c.GLOBAL_CONFIG.adventureStarter.dollItems)assert.strictEqual(after.member.u.bag[n],(before.member.u.bag[n]||0)+q);
  assert.strictEqual(after.member.u.point,before.member.u.point+c.GLOBAL_CONFIG.adventureStarter.points);assert.strictEqual(after.member.u.adventureOnboarding.receipts.memberRewards,true);
- const text=fixture.replies().join('\n');assert(text.includes('🧸 인형뽑기 스타터 아이템 추가 지급\n\n인형뽑기이용권🧸(/인형뽑기) 20개\n인형뽑기확률UP🧸(50%) 5개\n인형뽑기확률UP🧸(40%) 5개\n인형뽑기확률UP🧸(30%) 5개'));assert(text.includes('펜던트 강화석📿 3개'));starter();assert.deepStrictEqual(fixture.read(),after);
+ const text=fixture.replies().join('\n');assert(text.includes('호월신의 축복✨이 깃듭니다!\n━━━━━━━━━━━━━━━'));assert(!text.includes('인형뽑기 스타터 아이템 추가 지급'));assert(!text.includes('펜던트 강화석📿 3개'));starter();assert.deepStrictEqual(fixture.read(),after);
 });
 test('Prior recipients, quest recipients and wrong onboarding stage are never granted retroactively',()=>{
  for(const mode of ['paid','quest','complete','wrong']){seedStarter();const d=fixture.read();if(mode==='paid')d.member.u.adventureOnboarding.receipts.memberRewards=true;if(mode==='quest')d.member.u.adventureQuest={receipts:{starterMemberRewards:true}};if(mode==='complete')d.member.u.adventureOnboarding.stage='COMPLETE';if(mode==='wrong')d.member.u.adventureOnboarding.stage='WAIT_REFERRAL';fixture.write(d);const before=clone(d.member.u.bag);starter();const after=fixture.read().member.u.bag;for(const [n] of c.GLOBAL_CONFIG.adventureStarter.dollItems)assert.strictEqual(after[n],before[n]);assert(!fixture.replies().join('\n').includes('인형뽑기 스타터 아이템 추가 지급'));}

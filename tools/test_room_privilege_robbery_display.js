@@ -22,7 +22,7 @@ for (const [source, label] of [[main, "Main"], [info, "Info"]]) {
     c.getCurrentContext = () => ({ permissionRoom: c.room });
     vm.createContext(c);
     vm.runInContext(block(source, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);
-    for (const name of ["isAdmin", "isMaster"]) vm.runInContext(block(source, "function " + name + "("), c);
+    for (const name of ["isOrderLogRoomBot", "isAdmin", "isMaster"]) vm.runInContext(block(source, "function " + name + "("), c);
     if (source === main) for (const name of ["isServerAdminRoomOperator", "isGuildTerritoryStartOperator", "isPetMusouStartOperator"]) {
         vm.runInContext(block(source, "function " + name + "("), c);
     }

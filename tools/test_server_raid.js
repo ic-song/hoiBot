@@ -85,7 +85,7 @@ const ticketConfig = clone(c.GLOBAL_CONFIG.serverRaid); // 신규 기준 검증�
 for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile",
     "requireAdventureRecordStore", "buildAdventureRecordMigration", "attachAdventureRecordStore", "getAdventureRecordRecoveryNames", "validateAdventureRecordPending", "recoverAdventureRecordPending",
-    "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
+    "isOrderLogRoomBot", "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
     "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(block(main, "function " + name + "("), c);
 vm.runInContext(main.slice(main.indexOf("function serverRaidHeader("), main.indexOf("// 길드 영지전 관련 함수들")), c);
 const entryStart = main.indexOf("// 서버 레이드대전 진입:");
@@ -1563,7 +1563,7 @@ group("기존 미정·가방·패키지가방 분기로 조회·타인 조회 �
     assert(ordinary("/가방").includes("합성 패키지")); assert.strictEqual(JSON.stringify(disk), before);
 });
 
-for (const name of ["isGlobalInfoCommandAllowed", "isInfoAttendanceFreeCommand", "isInfoCommandBlockedDuringGuildTerritoryWar", "isMatzangInfoOperatorCommandMessage"])
+for (const name of ["isOrderLogRoomBot", "isGlobalInfoCommandAllowed", "isInfoAttendanceFreeCommand", "isInfoCommandBlockedDuringGuildTerritoryWar", "isMatzangInfoOperatorCommandMessage"])
     vm.runInContext(block(info, "function " + name + "("), infoContext);
 Object.assign(infoContext, {
     filePath: memberPath, guildPath: c.guildPath, memberPetPath: c.memberPetPath, petSkillDataPath: c.petSkillDataPath,
@@ -1571,6 +1571,7 @@ Object.assign(infoContext, {
     petHomeActivityFile: root + "activity.json", replier: c.replier, Api: c.Api, room91: c.room91,
     loadJsonFile: p => vm.runInContext("JSON.parse(" + JSON.stringify(disk[infoContext.ctx.isDev ? p.replace(root, devRoot) : p]) + ")", infoContext),
     isAdminIdentity: user => user === "admin", isMasterIdentity: user => user === "master", isAdmin: user => user === "admin", isMaster: user => user === "master",
+    getCurrentContext: () => infoContext.ctx,
     hasInfoPrivateChatPass: (_d, user) => user !== "noPass", ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES: ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"],
     stripDevCommandPrefix: c.stripDevCommandPrefix, createContextReplier: c.createContextReplier,
     isAccountSuspended: c.isAccountSuspended, getInfoAttendanceKstDateKey: () => "2026-10-05", getInfoHoiPassPremiumHeader: () => "",
