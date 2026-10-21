@@ -85,4 +85,18 @@ test("필터리스트 권한·정확한 명령·DEV 분리·Info 중복 차단",
 test("추가·제거 쉼표 분리는 내부 띄어쓰기 보존·완전 일치 제거",()=>{
  const {h,call}=fixture();call("/필터추가  한 문구  , 둘째,한 문구");assert.deepStrictEqual(h.read().messageFilterWords,["한 문구","둘째"]);call("/필터제거 한");assert.deepStrictEqual(h.read().messageFilterWords,["한 문구","둘째"]);call("/필터제거  한 문구 , 둘째 ");assert.deepStrictEqual(h.read().messageFilterWords,[]);
 });
+test("중복 제외 299개에서 300개 허용·301개 일괄 추가는 전체 무저장",()=>{
+ const {h,c,call}=fixture();const words=Array.from({length:299},(_,i)=>"등록"+i);const data=h.read();data.messageFilterWords=words;h.write(data);c.setMessageFilterCache(words,"PROD",true);let saves=0;const save=c.saveJsonFile;c.saveJsonFile=(...a)=>{saves++;return save(...a);};
+ const before=h.persist();const reply=call("/필터추가 등록0,새문구,다른문구","admin","test",true).replies[0];assert(reply.includes("최대 300개")&&reply.includes("신규 요청 2개"));assert.equal(saves,0);assert.deepStrictEqual(h.persist(),before);assert.deepStrictEqual(clone(c.getCachedMessageFilterWords(false)),words);
+ call("/필터추가 등록0,새문구,새문구","admin","test",true);assert.equal(h.read().messageFilterWords.length,300);assert.equal(saves,1);
+});
+test("300개 중복 추가는 무저장·신규 추가 거절·제거 후 다시 추가 가능",()=>{
+ const {h,c,call}=fixture(),data=h.read();data.messageFilterWords=Array.from({length:300},(_,i)=>"등록"+i);h.write(data);c.setMessageFilterCache(data.messageFilterWords,"PROD",true);let saves=0;const save=c.saveJsonFile;c.saveJsonFile=(...a)=>{saves++;return save(...a);};assert(call("/필터추가 등록0,등록0").replies[0].includes("추가 0개"));assert(call("/필터추가 신규").replies[0].includes("최대 300개"));assert.equal(saves,0);call("/필터제거 등록0");call("/필터추가 신규");assert.equal(h.read().messageFilterWords.length,300);assert.equal(saves,2);
+});
+test("DEV 300개 상한은 운영 파일·캐시와 별도",()=>{
+ const {h,c,call}=fixture(),data=h.read(true);data.messageFilterWords=Array.from({length:300},(_,i)=>"개발"+i);h.write(data,true);c.setMessageFilterCache(data.messageFilterWords,"DEV",true);const before=h.persist();assert(call("dev/필터추가 초과").replies[0].includes("최대 300개"));assert.deepStrictEqual(h.persist(),before);call("/필터추가 운영신규");assert.deepStrictEqual(h.read().messageFilterWords,["운영신규"]);assert.deepStrictEqual(h.read(true),data);
+});
+test("기존 300개 초과 목록은 보존하고 신규만 거절·중복과 제거 허용",()=>{
+ const {h,c,call,initialize}=fixture(),data=h.read();data.messageFilterWords=Array.from({length:302},(_,i)=>"기존"+i);h.write(data);initialize();const before=h.persist();assert(call("/필터추가 기존0").replies[0].includes("추가 0개"));assert(call("/필터추가 신규").replies[0].includes("최대 300개"));assert.deepStrictEqual(h.persist(),before);call("/필터제거 기존0");assert.equal(h.read().messageFilterWords.length,301);assert.equal(c.getCachedMessageFilterWords(false).length,301);
+});
 console.log("PASS message filter: "+groups+" groups (synthetic only)");
