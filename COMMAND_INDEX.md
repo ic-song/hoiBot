@@ -22,6 +22,41 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /필터추가, /필터제거
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: 관리 명령과 게임 명령 차단
+- `Info.js`: 조회 명령 차단
+
+## Related Helpers
+
+- `readMessageFilterWords`, `setMessageFilterCache`, `getCachedMessageFilterWords`
+- `getMessageFilterRequest`, `containsMessageFilterWord`
+- `isMessageFilterCommandInput`, `changeMessageFilterWords` (Main)
+
+## Behavior
+
+- `/필터추가 단어1,단어2`, `/필터제거 단어1,단어2`. 기존 방별 관리자·MASTER 권한으로 관리한다.
+- 쉼표로 나누고 앞뒤 공백·중복을 제거한다. 빈 구간이 있으면 전체 요청을 저장하지 않는다. 인자 없이 입력하면 사용법과 현재 목록을 안내한다.
+- 슬래시 명령과 기존 단축·확인 명령만 비교한다. 일반 대화는 목록 조회·단어 비교를 건너뛴다.
+- 등록 문자열이 명령 전체에 포함되면 응답 없이 처리 중단. 대소문자를 구분하며 정규식으로 해석하지 않는다.
+- 관리 명령은 자기 차단을 피하기 위해 필터 비교에서 제외한다. 관리 권한은 그대로 검사한다.
+
+## Data Usage / Save Flow
+
+- 환경별 `member.json.messageFilterWords` 선택 필드. 기존 데이터에 필드가 없으면 빈 목록이며 손상된 값은 오류 처리한다.
+- 컴파일 시 기존 회원 로드 결과와 DEV 초기 데이터에서 목록을 구성한다. 매 명령마다 필터 파일을 다시 읽지 않는다.
+- 실제 추가·제거 시 진입 흐름에서 회원을 읽고 기존 `saveJsonFile`로 저장한 뒤 캐시를 갱신한다. 중복 추가·미등록 제거는 저장하지 않는다.
+- Main이 Java System 환경별 공유 속성에 게시하고 Info는 변경 시에만 재해석한다. Main 변경은 Info 재컴파일 없이 반영된다.
+- DEV/PROD 목록은 분리한다. 기존 DEV 백업 완료 시 복사한 목록으로 DEV 캐시를 갱신한다.
+- 파일을 직접 편집한 경우 Main을 재컴파일해야 한다. Main과 Info 변경은 함께 배포해야 한다.
+- `/데이터정리` 및 기존 댓글 데이터 삭제는 이번 작업에 포함하지 않는다.
+
+---
+
 # 권한 타이틀뱃지
 
 Status: VERIFIED

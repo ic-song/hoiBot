@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main과 같은 환경별 필터 메모리 공유 키
     doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
     adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
     serverRaid: { commands: { additionalExact: ["/정보", "/포인트", "ㅍㅍㅍ", "/펫정보"] } }, // Info에서 처리하는 추가 허용 명령
@@ -220,6 +221,59 @@ var Admins = Object.keys(initData.admin);
 // 주문기록방의 오픈채팅봇에 한정된 관리 실행 권한을 확인하는 함수
 function isOrderLogRoomBot(sender) {
 	return sender === "오픈채팅봇" && getCurrentContext().permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom;
+}
+
+// 회원에 저장된 선택적 필터 목록을 검증하고 독립 배열로 반환하는 함수
+function readMessageFilterWords(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("필터 회원 데이터를 읽을 수 없습니다.");
+    var words = data.messageFilterWords;
+    if (words === undefined) return [];
+    if (!Array.isArray(words)) throw new Error("필터 목록 형식 오류");
+    for (var i = 0; i < words.length; i++) {
+        if (typeof words[i] !== "string" || !words[i] || words[i] !== words[i].trim() || /[\r\n,]/.test(words[i]) || words.indexOf(words[i]) !== i) throw new Error("필터 단어 형식 오류");
+    }
+    return words.slice();
+}
+
+// 검증한 필터를 환경별 메모리에 두고 Main의 변경을 Info에 공유하는 함수
+function setMessageFilterCache(words, environment, publish) {
+    var text = JSON.stringify(words);
+    if (publish) java.lang.System.setProperty(GLOBAL_CONFIG.messageFilter.sharedPrefix + environment, text);
+    messageFilterCaches[environment] = { words: words.slice(), text: text };
+}
+
+// 디스크 접근 없이 공유 목록이 바뀐 경우에만 메모리 필터를 갱신하는 함수
+function getCachedMessageFilterWords(isDev) {
+    var environment = isDev ? "DEV" : "PROD", cached = messageFilterCaches[environment];
+    var shared = java.lang.System.getProperty(GLOBAL_CONFIG.messageFilter.sharedPrefix + environment);
+    if (shared !== null && (!cached || cached.text !== String(shared))) {
+        setMessageFilterCache(readMessageFilterWords({ messageFilterWords: JSON.parse(String(shared)) }), environment, false);
+        cached = messageFilterCaches[environment];
+    }
+    if (!cached) throw new Error("필터 메모리가 초기화되지 않았습니다.");
+    if (cached.error) throw new Error(cached.error);
+    return cached.words;
+}
+
+// 정확한 필터 관리 명령과 쉼표로 구분한 중복 없는 단어를 해석하는 함수
+function getMessageFilterRequest(msg) {
+    if (typeof msg !== "string" || /[\r\n]/.test(msg)) return null;
+    var match = msg.match(/^\/필터(추가|제거)(?:[ \t]+([^\r\n]+))?$/);
+    if (!match) return null;
+    var request = { action: match[1], words: [] }, parts = match[2] ? match[2].split(",") : [];
+    if (!parts.length) request.error = "필터 단어를 입력해주세요.";
+    for (var i = 0; i < parts.length; i++) {
+        var word = parts[i].trim();
+        if (!word) request.error = "쉼표 사이의 빈 단어를 확인해주세요.";
+        else if (request.words.indexOf(word) === -1) request.words.push(word);
+    }
+    return request;
+}
+
+// 정규식 해석 없이 등록된 문자열의 포함 여부를 확인하는 함수
+function containsMessageFilterWord(msg, words) {
+    for (var i = 0; i < words.length; i++) if (msg.indexOf(words[i]) !== -1) return true;
+    return false;
 }
 
 function isAdmin(sender) {
@@ -558,6 +612,15 @@ function isInfoAttendanceFreeCommand(msg, sender) {
 	return (isAdmin(sender) || isMaster(sender)) && isMatzangInfoOperatorCommandMessage(msg);
 }
 
+var messageFilterCaches = {};
+setMessageFilterCache(readMessageFilterWords(initData), "PROD", false);
+var messageFilterDevMemberPath = DEV_DATA_ROOT_PATH + "member.json";
+try {
+    setMessageFilterCache(new java.io.File(messageFilterDevMemberPath).exists() ? readMessageFilterWords(JSON.parse(FileStream.read(messageFilterDevMemberPath, "utf-8"))) : [], "DEV", false);
+} catch (messageFilterDevError) {
+    messageFilterCaches.DEV = { error: String(messageFilterDevError), text: JSON.stringify({ error: String(messageFilterDevError) }) };
+}
+
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
 	var ctx = createCommandContext(isDevCommandMessage(msg), room);
 	var prevCtx = enterCommandContext(ctx);
@@ -568,6 +631,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			msg = stripDevCommandPrefix(msg);
 			if (msg === "/ㅍㅍㅍ") msg = "ㅍㅍㅍ"; // 기존 포인트 단축어로 DEV 입력 정규화
 		}
+		if (getMessageFilterRequest(msg)) return; // 관리 명령은 Main에서만 처리
+		if ((msg.charAt(0) === "/" || ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"].indexOf(msg) !== -1) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
 
 		if (ctx.isDev) {
 			var missingDevFiles = getMissingDevDataFiles();

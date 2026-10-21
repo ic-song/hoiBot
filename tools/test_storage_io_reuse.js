@@ -63,10 +63,9 @@ test("매력·치명타·공격권·패널티·공격 반영·정산 계산 함�
  const h=fixture();for(const name of ["calculateRaidExp","calculateCriticalDamage","getServerRaidAttackCheck","getServerRaidAttackAvailability","getServerRaidRoundPolicy","calculateServerRaidAttackReward","applyServerRaidAttack","applyServerRaidExcessAttempt","settleServerRaidParticipant","finishServerRaidSettlement"])
  assert.equal(h.fixture.block(h.fixture.main,"function "+name+"("),h.fixture.block(baselineSource,"function "+name+"("),name);
 });
-test("최신 운영 main의 저장 함수와 버전 외 실행 코드 전체가 동일",()=>{
- const h=fixture(),names=["readMemberSplitStore","buildMemberSplitSavePlan","preserveMemberSplitBackupStores","writeVerifiedJsonFile","saveJsonFile"];
- function outside(s){s=s.replace(/\r\n/g,"\n");for(const n of names)s=s.replace(h.fixture.block(s,"function "+n+"("),"STORAGE_FUNCTION_"+n);if(s.includes("function stringifyMemberSplitStore("))s=s.replace("// 이미 직렬화한 분리 데이터 본문을 재사용해 동일한 저장 JSON을 구성하는 함수\n"+h.fixture.block(s,"function stringifyMemberSplitStore(")+"\n\n","");return s.replace(/const HoiBotVersion = "[^"]+";/,'const HoiBotVersion = "VERSION";');}
- assert.equal(outside(h.fixture.main),outside(baselineSource));
+test("검증한 운영 저장 함수는 관련 없는 명령 추가에도 그대로 유지",()=>{
+ const h=fixture(),validated=require("child_process").execFileSync("git",["show","c12e97358731619280a4b70a7b9cbb0770c8807d:main.js"],{encoding:"utf8",maxBuffer:20*1024*1024});
+ for(const name of ["readMemberSplitStore","buildMemberSplitSavePlan","preserveMemberSplitBackupStores","writeVerifiedJsonFile","saveJsonFile","stringifyMemberSplitStore"])assert.equal(h.fixture.block(h.fixture.main,"function "+name+"("),h.fixture.block(validated,"function "+name+"("),name);
 });
 test("같은 합성 공격의 최종 파일·쓰기량·fsync는 동일하고 중복 읽기만 감소",()=>{
  function run(source){const h=storageFixture(source);h.setup();const d=h.fixture.read();d.syntheticPadding="m".repeat(1000000);d.serverRaid.history=[{id:"synthetic-past",note:"r".repeat(1000000)}];h.fixture.write(d);h.migrate();h.fixture.start();const io=measure(h,f=>f.attack("a","storage-compare"));return {h,io};}

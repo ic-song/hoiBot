@@ -996,6 +996,7 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main·Info의 환경별 필터 메모리 공유 키
     sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } }, // 평수별 가구 장착 수 계산 기준
     doll: {
         allowedRoom: null, // 정식 공개: 인형 전용 방 제한 해제, 기존 권한·이용 조건 유지
@@ -2829,8 +2830,20 @@ const miniPetData = loadJsonFile(miniPetPath);
 // DEV 환경에서 길드 영토전이 활성화되어 있는지 확인
 
 //메인채팅응답기능
+var messageFilterCaches = {};
+setMessageFilterCache(readMessageFilterWords(initData), "PROD", true);
+var messageFilterDevMemberPath = DEV_DATA_ROOT_PATH + "member.json";
+try {
+    setMessageFilterCache(new java.io.File(messageFilterDevMemberPath).exists() ? readMessageFilterWords(parseJsonContent(FileStream.read(messageFilterDevMemberPath, "utf-8"), messageFilterDevMemberPath)) : [], "DEV", true);
+} catch (messageFilterDevError) {
+    var messageFilterDevErrorText = JSON.stringify({ error: String(messageFilterDevError) });
+    java.lang.System.setProperty(GLOBAL_CONFIG.messageFilter.sharedPrefix + "DEV", messageFilterDevErrorText);
+    messageFilterCaches.DEV = { error: String(messageFilterDevError), text: messageFilterDevErrorText };
+}
+
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
     if (msg === "/메인방제한" || msg === "/메인방제한 ON" || msg === "/메인방제한 OFF") {
+        if (containsMessageFilterWord(msg, getCachedMessageFilterWords(false))) return;
         if (room !== testRoom || !isMasterIdentity(sender)) return;
         if (msg === "/메인방제한 ON") GLOBAL_CONFIG.maintenance.testRoomOnly = true;
         if (msg === "/메인방제한 OFF") GLOBAL_CONFIG.maintenance.testRoomOnly = false;
@@ -2865,6 +2878,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             msg = stripDevCommandPrefix(msg);
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
         }
+        var messageFilterRequest = getMessageFilterRequest(msg);
+        if (messageFilterRequest) {
+            if (!isAdmin(sender) && !isMaster(sender)) return;
+            if (messageFilterRequest.error) {
+                replier.reply(messageFilterRequest.error + "\n사용법: /필터추가 단어1,단어2\n/필터제거 단어1,단어2\n현재 필터: " + (getCachedMessageFilterWords(ctx.isDev).join(", ") || "없음"));
+                return;
+            }
+            var messageFilterMember = loadJsonFile(filePath);
+            var messageFilterChange = changeMessageFilterWords(readMessageFilterWords(messageFilterMember), messageFilterRequest);
+            if (messageFilterChange.count > 0) {
+                messageFilterMember.messageFilterWords = messageFilterChange.words;
+                saveJsonFile(messageFilterMember, filePath);
+                setMessageFilterCache(messageFilterChange.words, ctx.isDev ? "DEV" : "PROD", true);
+            }
+            try { replier.reply("✅ 필터 " + messageFilterRequest.action + " " + messageFilterChange.count + "개 · 현재 " + messageFilterChange.words.length + "개\n" + messageFilterRequest.words.join(", ")); }
+            catch (filterReplyError) { try { debuggerLog("[필터 응답] " + filterReplyError); } catch (filterLogError) {} }
+            return;
+        }
+        if (isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
         // 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.
         var carrotTradeAnswer = null;
         var carrotInputReply = getCarrotTradeReply(msg, ctx.isDev);
@@ -31560,6 +31592,77 @@ function isOrderLogRoomBot(sender) {
     return sender === "오픈채팅봇" && getCurrentContext().permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom;
 }
 
+// 회원에 저장된 선택적 필터 목록을 검증하고 독립 배열로 반환하는 함수
+function readMessageFilterWords(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("필터 회원 데이터를 읽을 수 없습니다.");
+    var words = data.messageFilterWords;
+    if (words === undefined) return [];
+    if (!Array.isArray(words)) throw new Error("필터 목록 형식 오류");
+    for (var i = 0; i < words.length; i++) {
+        if (typeof words[i] !== "string" || !words[i] || words[i] !== words[i].trim() || /[\r\n,]/.test(words[i]) || words.indexOf(words[i]) !== i) throw new Error("필터 단어 형식 오류");
+    }
+    return words.slice();
+}
+
+// 검증한 필터를 환경별 메모리에 두고 Main의 변경을 Info에 공유하는 함수
+function setMessageFilterCache(words, environment, publish) {
+    var text = JSON.stringify(words);
+    if (publish) java.lang.System.setProperty(GLOBAL_CONFIG.messageFilter.sharedPrefix + environment, text);
+    messageFilterCaches[environment] = { words: words.slice(), text: text };
+}
+
+// 디스크 접근 없이 공유 목록이 바뀐 경우에만 메모리 필터를 갱신하는 함수
+function getCachedMessageFilterWords(isDev) {
+    var environment = isDev ? "DEV" : "PROD", cached = messageFilterCaches[environment];
+    var shared = java.lang.System.getProperty(GLOBAL_CONFIG.messageFilter.sharedPrefix + environment);
+    if (shared !== null && (!cached || cached.text !== String(shared))) {
+        setMessageFilterCache(readMessageFilterWords({ messageFilterWords: JSON.parse(String(shared)) }), environment, false);
+        cached = messageFilterCaches[environment];
+    }
+    if (!cached) throw new Error("필터 메모리가 초기화되지 않았습니다.");
+    if (cached.error) throw new Error(cached.error);
+    return cached.words;
+}
+
+// 정확한 필터 관리 명령과 쉼표로 구분한 중복 없는 단어를 해석하는 함수
+function getMessageFilterRequest(msg) {
+    if (typeof msg !== "string" || /[\r\n]/.test(msg)) return null;
+    var match = msg.match(/^\/필터(추가|제거)(?:[ \t]+([^\r\n]+))?$/);
+    if (!match) return null;
+    var request = { action: match[1], words: [] }, parts = match[2] ? match[2].split(",") : [];
+    if (!parts.length) request.error = "필터 단어를 입력해주세요.";
+    for (var i = 0; i < parts.length; i++) {
+        var word = parts[i].trim();
+        if (!word) request.error = "쉼표 사이의 빈 단어를 확인해주세요.";
+        else if (request.words.indexOf(word) === -1) request.words.push(word);
+    }
+    return request;
+}
+
+// 정규식 해석 없이 등록된 문자열의 포함 여부를 확인하는 함수
+function containsMessageFilterWord(msg, words) {
+    for (var i = 0; i < words.length; i++) if (msg.indexOf(words[i]) !== -1) return true;
+    return false;
+}
+
+// 일반 대화와 구분해 슬래시·기존 단축 명령만 필터 대상으로 확인하는 함수
+function isMessageFilterCommandInput(msg) {
+    if (typeof msg !== "string") return false;
+    var command = msg.trim();
+    return isAttendanceGameCommand(command) || command === "ㅊㅊ" || command === "호월 봇 이용약관" || command === "출발한다" || command === "다음에 한다" || isServerRaidTurnQueryCommand(command) || !!getCarrotTradeReply(command, false);
+}
+
+// 필터 추가·제거를 메모리 복사본에 적용해 실제 변경 수를 반환하는 함수
+function changeMessageFilterWords(words, request) {
+    var next = words.slice(), count = 0;
+    for (var i = 0; i < request.words.length; i++) {
+        var index = next.indexOf(request.words[i]);
+        if (request.action === "추가" && index === -1) { next.push(request.words[i]); count++; }
+        if (request.action === "제거" && index !== -1) { next.splice(index, 1); count++; }
+    }
+    return { words: next, count: count };
+}
+
 function isAdmin(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
     if (sender === "오픈채팅봇" && permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom) return true;
@@ -31676,7 +31779,7 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+    return /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
         command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
@@ -32504,7 +32607,7 @@ function backupDevDataFromProduction() {
     var devFolder = new java.io.File(DEV_DATA_ROOT_PATH);
     if (!devFolder.exists()) devFolder.mkdirs();
 
-    var copied = [];
+    var copied = [], copiedMessageFilterWords = null;
     var sourceRoot = new java.io.File(DATA_ROOT_PATH);
     var sourceFiles = sourceRoot.listFiles();
     if (!sourceFiles) return "❌ 운영 데이터 폴더를 읽을 수 없습니다.";
@@ -32517,10 +32620,13 @@ function backupDevDataFromProduction() {
         var sourcePath = DATA_ROOT_PATH + fileName;
         var targetPath = DEV_DATA_ROOT_PATH + fileName;
         ensureParentFolder(targetPath);
-        FileStream.write(targetPath, FileStream.read(sourcePath, "utf-8"), "utf-8");
+        var sourceText = FileStream.read(sourcePath, "utf-8");
+        FileStream.write(targetPath, sourceText, "utf-8");
+        if (fileName === "member.json") copiedMessageFilterWords = readMessageFilterWords(parseJsonContent(sourceText, sourcePath));
         copied.push(fileName);
     }
 
+    if (copiedMessageFilterWords) setMessageFilterCache(copiedMessageFilterWords, "DEV", true);
     return "✅ DEV 데이터 백업 완료\n\n운영 데이터를 테스트 환경으로 복사했습니다.\n\n- " + copied.join("\n- ");
 }
 // DEV 데이터 파일 존재 여부 확인 함수
