@@ -998,7 +998,7 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; shows one placed furniture item before the `allsee` fold, migrates a legacy one-line review into feed storage when needed, then replies with the home body and guestbook comments without showing the latest feed. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/펫홈`: loads home, placed furniture, activity and comments once. Shows house, final furniture charm, village level/progress and distinct furniture TOP 3, followed by the guestbook in one reply. Other-user visits retain cumulative counts, visitor records and badge awards. Over-limit historical comment lists are saved as the latest 30 with separate pinned copies preserved; normal views skip comment serialization/saves.
 - `/댓글`: active hoi/newbie pass users write up to 30 characters and pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
 - `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
 - `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
@@ -1020,7 +1020,7 @@ Status: VERIFIED
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
-- `/홈알림` and `ㅎㄹ`: run under the response data write lock, read up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, show feed alerts with a leading `📰` marker, mark alerts read, and complete the pass `홈알림 열기` daily condition only after activity/member saves succeed; both files roll back together on failure.
+- `/홈알림` and `ㅎㄹ`: keep pass access, 100 activity alerts, read handling and daily completion with existing rollback. Display cumulative visits, visit-badge progress/ownership, all five received-heart totals and the current social/follow data. Recent-visitor list output is removed; visitor storage and badge progression remain.
 - `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. Stored feeds are not included in `/펫홈` output.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
 - `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/팔로워순위`는 실제 팔로워에 `인플루언서📙` 1,000명과 `셀럽📙` 2,000명을 합산하고, `/마음순위`는 각 유저의 귀여워·멋져요·응원해·사랑해 받은 수를 표시한다.
@@ -1047,16 +1047,16 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/펫홈` output is split into two replies: home body first and comments second. Feed creation, deletion, alerts, and stored data remain available, but the latest feed is no longer shown by `/펫홈`.
+- `/펫홈` combines the new home/village/TOP 3 body and guestbook. Feed commands/storage remain available; the latest feed is not shown here.
 - Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
-- `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
+- `/펫홈` and `/가구정보` use the queried owner's house, skills, charm, levels and furniture. Preview TOP 3 numbers never replace the actual equipped-item indices.
 - `/홈뱃지` shows both equipped badge slots and the final applied-effect summary first, inserts `allsee` immediately after that summary, then keeps command guides, cube guides, collection summary, and the owned-badge list folded.
 - Standalone full/special badge lists, badge details, pet-home feed output, and follower/heart/badge ranking output identify the requesting or target user with `[checkRank] 님`.
 - `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.
 - `/특별뱃지목록 [코드]` shows one special badge by `S01` or `[S01]`, while the no-argument command keeps showing all S01–S10 badges.
-- Furniture list inserts `allsee` from the second placed furniture.
-- Comment message uses the guestbook header, inserts `allsee` after the first pinned comment (or after the empty-pin guide), and shows the latest 50 comments while storing up to 50 comments.
+- `/펫홈` shows at most three distinct furniture names before the guestbook; the complete equipped list is at the bottom of `/가구정보`, after its single `allsee` marker.
+- Recent comment storage keeps exactly the latest 30; separate pinned copies survive pruning. Guestbook `allsee` follows the first pin or the header when no pin exists. A completely empty guestbook omits empty numbers/sections.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
 - Duplicate pet-home comments by the same writer are allowed.
 - `/댓글`, `/댓글핀`, `/좋아홈` 성공 메시지는 포인트 차감·소모 문구를 표시하지 않는다.
@@ -1064,7 +1064,7 @@ Status: VERIFIED
 - `/좋아홈` also uses an exact/full-pattern guard so `/좋아홈순위` and `/좋아홈초기화` do not enter the mutation branch.
 - `petHomeActivityData.json` is intentionally initialized by `/펫홈활동파일생성`; missing or invalid files follow the existing load/error flow and are not silently replaced.
 - Legacy valid activity files gain empty `petHomeSocial` and `migrations` containers, while invalid existing social structures still fail validation.
-- `/펫홈` displays stored follower/following counts and the representative badge even after pass expiry; social/badge commands and mutual-heart benefits remain locked until pass activation.
+- Social counts and representative badge are displayed through `/홈알림`; its existing active-pass access remains. `/펫홈` no longer displays social, visitor, pet or doll details.
 
 ---
 
@@ -2007,40 +2007,42 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `main.js`: `/가구정보`
-
 ## Files
 
-- `main.js`
+- `main.js`, `Info.js` (shared combat arithmetic)
 
 ## Related Helpers
 
-- `initSweetHomeUser`
-- `sortFurnitureList`
-- `normalizePlacedFurnitureSummary`
-- `getFurnitureExp`
-- `checkRank`
+- `getPetHomeFurnitureCharm`, `getPetHomeVillageState`, `getPetHomeVillageLevelLimit`
+- `buildPetHomeFurnitureInfoMessage`, `buildPetHomeFurnitureSkillMessage`, `getPlacedFurnitureList`
 
-## Data Usage
+## Data Usage and Save Flow
 
-- `homeData[targetUser].furnitureBag`
-- `homeData[targetUser].placedFurnitureSummary`
+- Home summary, original equipped-item order and queried owner's equipped skills; no save or inventory sorting on this command.
+- No argument queries self; a nickname including spaces queries that owner. No Admin/Master restriction. Only self views show executable bag/registration guides.
+- Final charm/village above `allsee`; explanation and active skills precede the complete equipped list at the very bottom.
+- Castle/raid calculators in both scripts and Main diagnostics add the same scoped extra once before existing overall buffs. `/종합순위` reflects it; `/가구순위` retains individual base values.
+- Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds 10% of final pet-home charm; unequipped ownership gives no effect. Its S-grade detail hides probability using the existing flag.
 
-## Save Flow
+---
 
-- Saves `homeDataFile` after user initialization, furniture-bag sorting, and legacy summary normalization.
+# /별채등록 [가구가방번호] …
 
-## Related Commands
+Status: VERIFIED
 
-- `/가구가방`
-- `/가구순위`
+## Files / Helpers
 
-## AI Notes
+- `main.js`: `preparePetHomeVillageRegistration`, `buildPetHomeVillageRegistrationMessage`, `getPetHomeFurnitureCharm`
 
-- Admin/master inspection path for another user's furniture state
-- Best anchor when home data exists but output for a target user looks wrong
+## Input and Mutation
+
+- Exact command or full numeric-argument pattern; 1–10 distinct bag numbers across royal/arcana grades. Extra guide text does not execute.
+- `등록한다` / `등록안한다`: same account, room, group-chat mode and DEV/PROD context, 60-second pending state. Confirmation state is memory-only and expires/restarts without consuming items.
+- Sort with the existing bag-number convention. Revalidate full bag fingerprint, individual ownership/equipment, grade capacities, skills and predicted effect. Changed bag cancels all; changed effects require another confirmation.
+- State: `homeData[user].lumiereVillage.{royal,arcana}.{level,progress}`. Missing state reads as zero without creating/saving it. Each 10 same-grade pieces gives one level; each 10 actual house-area units permits one level per annex. At-cap overflow cancels the entire mixed request.
+- On confirmation remove pending first, consume only selected unequipped pieces, persist the new home once with the existing command transaction and pre-mutation snapshot. No skill/member-file rewrite or permanent per-registration history.
+- Royal uses 10 equipped pieces; arcana uses 5 owned pieces (bag plus equipped). Losing arcana eligibility updates its base and village contribution and may lower final charm.
+- Active state adds roughly 90 bytes per registering user; calculation helpers perform no file IO.
 
 ---
 

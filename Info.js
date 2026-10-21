@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, royalPercent: 10, arcanaPercent: 15, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
     messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main과 같은 환경별 필터 메모리 공유 키
     doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
     adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
@@ -635,7 +636,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (ctx.isDev && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(msg)) msg = msg.substring(1);
 		if (msg === "/초기화" || msg === "/댓글초기화" || msg === "/피드초기화" || msg === "1삭제" || msg === "2취소" || /^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)) return;
 		if (msg === "/필터데이터정리" || msg === "/필터리스트") return;
-		if (msg === "/글자수전체정리") return;
+		if (msg === "/글자수전체정리" || msg === "등록한다" || msg === "등록안한다" || msg === "/등록한다" || msg === "/등록안한다") return;
 		if ((msg.charAt(0) === "/" || ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"].indexOf(msg) !== -1) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
 
 		if (ctx.isDev) {
@@ -1607,7 +1608,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 
 			if (homeData[sender]) {
-				resultMsg += "펫홈🏡: " + homeData[sender].houseName + "(+" + numberWithCommas(homeTotalExp) + "💕)" + "[+" + homeData[sender].floor + "평]\n";
+				resultMsg += "펫홈🏡: " + homeData[sender].houseName + "(+" + numberWithCommas(homeTotalExp) + "💞)" + "[+" + homeData[sender].floor + "평]\n";
 			}
 
 			resultMsg += "━ ✦ (일일 · 주간 퀘스트 상세정보) ✦ ━ \n";
@@ -2300,6 +2301,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
 
+	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
+
 	// 펫 스킬
 	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
 	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
@@ -2328,6 +2331,8 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
+
+	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
 
 	// 펫스킬
 	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
@@ -4004,6 +4009,46 @@ function getFurnitureExp(userData) {
 	}
 
 	return total;
+}
+
+// 기존 유저는 0부터 시작하고 저장된 별채 성장 값의 형식을 검증하는 함수
+function getPetHomeVillageState(userHome) {
+    var stored = userHome && userHome.lumiereVillage;
+    if (stored === undefined) return { royal: { level: 0, progress: 0 }, arcana: { level: 0, progress: 0 } };
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) throw new Error("별채 데이터 형식 오류");
+    var result = {};
+    var keys = ["royal", "arcana"];
+    for (var i = 0; i < keys.length; i++) {
+        var value = stored[keys[i]];
+        if (!value || typeof value.level !== "number" || typeof value.progress !== "number" ||
+            !isFinite(value.level) || value.level < 0 || Math.floor(value.level) !== value.level || value.level > 9007199254740991 ||
+            !isFinite(value.progress) || value.progress < 0 || Math.floor(value.progress) !== value.progress || value.progress >= GLOBAL_CONFIG.petHomeVillage.materialsPerLevel) throw new Error("별채 성장 값 오류");
+        result[keys[i]] = { level: value.level, progress: value.progress };
+    }
+    return result;
+}
+
+// 현재 집 면적에서 각 별채가 성장할 수 있는 레벨을 계산하는 함수
+function getPetHomeVillageLevelLimit(userHome) {
+    return Math.floor(Math.max(0, Number(userHome && userHome.floor) || 0) / GLOBAL_CONFIG.petHomeVillage.areaPerLevel);
+}
+
+// 인테리어 장인을 제외한 가구·하우스 스킬의 별채 추가분을 계산하는 함수
+function getPetHomeFurnitureCharm(homeData, petSkillData, user) {
+    var home = homeData && homeData[user] ? homeData[user] : {};
+    var state = getPetHomeVillageState(home);
+    var furniture = getFurnitureExp(home); // 한 모드에 적용되는 가구 기본 매력
+    var equipped = getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
+    var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
+    var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
+    var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
+    var percent = state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+    var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
+    var oldHome = Number(home.exp || 0) + furniture;
+    var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
+    var dream = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? Math.floor((base + bonus + interior) * GLOBAL_CONFIG.petHomeVillage.dreamPercent / 100) : 0; // 현재 펫홈 최종 매력의 신규 스킬 추가분
+    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, dream: dream, bonus: bonus + dream,
+        castle: base + bonus + interior + dream, raid: base + bonus + interior + dream, total: (base + bonus + interior + dream) * 2 };
 }
 
 function getHomeTotalExp(homeData, username) {

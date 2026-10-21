@@ -59,8 +59,9 @@ test("재시작 새 VM도 원래 공격·보상·한도를 복원하고 같은 �
  assert.equal(next.load("raid").member.a.point,1000003000);next.fixture.attack("a","survive");sameDisk(next.fixture.disk(),saved);
  next.fixture.attack("a","new");assert.equal(next.load("raid").member.a.point,1000006000);next.fixture.end();const closed=next.load("raid");assert.equal(closed.serverRaid.completed,1);assert.equal(closed.member.a.point,1300006000);
 });
-test("매력·치명타·공격권·패널티·공격 반영·정산 계산 함수는 운영 기준 원문과 동일",()=>{
- const h=fixture();for(const name of ["calculateRaidExp","calculateCriticalDamage","getServerRaidAttackCheck","getServerRaidAttackAvailability","getServerRaidRoundPolicy","calculateServerRaidAttackReward","applyServerRaidAttack","applyServerRaidExcessAttempt","settleServerRaidParticipant","finishServerRaidSettlement"])
+// 별채 추가분은 test_pet_home_village의 실제 계산 대조로 확인하고 나머지 전투 규칙의 원문은 보존한다.
+test("치명타·공격권·패널티·공격 반영·정산 계산 함수는 운영 기준 원문과 동일",()=>{
+ const h=fixture();for(const name of ["calculateCriticalDamage","getServerRaidAttackCheck","getServerRaidAttackAvailability","getServerRaidRoundPolicy","calculateServerRaidAttackReward","applyServerRaidAttack","applyServerRaidExcessAttempt","settleServerRaidParticipant","finishServerRaidSettlement"])
  assert.equal(h.fixture.block(h.fixture.main,"function "+name+"("),h.fixture.block(baselineSource,"function "+name+"("),name);
 });
 test("검증한 운영 저장 함수는 관련 없는 명령 추가에도 그대로 유지",()=>{

@@ -38,6 +38,7 @@ function runtime(main,root,scenario){
  code+="var filePath=DATA_ROOT_PATH+'member.json',memberPetPath=DATA_ROOT_PATH+'member_pet.json',guildPath=DATA_ROOT_PATH+'guild.json',homeDataFile=DATA_ROOT_PATH+'home.json',petSkillDataPath=DATA_ROOT_PATH+'skills.json';\n";
  code+="var GLOBAL_CONFIG="+JSON.stringify(sample.config)+",MEMBER_STORAGE_SPLIT_CONFIG="+JSON.stringify(split)+";\n";
  for(const name of names){if(name==="stringifyMemberSplitStore"&&!main.includes("function "+name+"("))continue;code+=block("function "+name+"(")+"\n";}
+ if(main.includes("function getPetHomeFurnitureCharm("))for(const name of ["getPetHomeVillageState","getPetHomeFurnitureCharm","getFurnitureExp","getPlacedFurnitureCountByGrade","getOwnedFurnitureCountByGrade","normalizePlacedFurnitureSummary","initPetSkillUser"])code+=block("function "+name+"(")+"\n";
  code+=main.slice(main.indexOf("function serverRaidHeader("),main.indexOf("// 길드 영지전 관련 함수들"))+"\n";
  code+="var commandContextThreadLocal=new java.lang.ThreadLocal(),dataSaveTransactionThreadLocal=new java.lang.ThreadLocal(),dataTransactionLock=new java.util.concurrent.locks.ReentrantLock(),commandDataFlowLock=new java.util.concurrent.locks.ReentrantReadWriteLock(true),protectedJsonSaveLocks={},memberSplitBackupCache={},serverRaidNoticeMemberRevisions={},serverRaidWorkTimers={},serverRaidNoticeWorkers={};\n";
  code+="var MANAGED_BACKUP_SECONDARY_ROTATION_MS=86400000,isDebuggerFlag=false,testRoom='test',allsee='<ALLSEE>',BASE_CRIT_DAMAGE_MULTIPLIER=1.7,raidSpecialItem={dept2:{}},itemInfoData={},clock="+sample.now+";\n";
