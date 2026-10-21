@@ -73,8 +73,8 @@ test("실제 분리 회원 저장에서도 필터만 변경·레이드/로그와
 });
 test("필터리스트 실제 콜백은 등록 순서·번호·개수·빈 목록 안내, 파일 IO 없음",()=>{
  const {h,c,call}=fixture();const before=h.persist();let reads=0,saves=0;const read=c.FileStream.read;c.FileStream.read=(...args)=>{reads++;return read(...args);};c.saveJsonFile=()=>{saves++;};
- assert(call("/필터리스트","admin","test",true).replies[0].includes("등록된 필터가 없습니다."));c.setMessageFilterCache(["한 문구","둘째","필터"],"PROD",true);
- const output=call("/필터리스트","admin","test",true).replies[0];assert(output.includes("3개")&&output.includes("1. 한 문구\n2. 둘째\n3. 필터"));assert.equal(reads,0);assert.equal(saves,0);assert.deepStrictEqual(h.persist(),before);
+ const emptyOutput=call("/필터리스트","admin","test",true).replies[0];assert(emptyOutput.includes("현재 등록: 0/300개")&&emptyOutput.includes("등록된 필터가 없습니다."));c.setMessageFilterCache(["한 문구","둘째","필터"],"PROD",true);
+ const output=call("/필터리스트","admin","test",true).replies[0];assert(output.includes("현재 등록: 3/300개")&&output.includes("1. 한 문구\n2. 둘째\n3. 필터"));assert(output.indexOf(c.allsee)>output.indexOf("현재 등록:")&&output.indexOf(c.allsee)<output.indexOf("1. 한 문구"));const oldLimit=c.GLOBAL_CONFIG.messageFilter.maxWords;c.GLOBAL_CONFIG.messageFilter.maxWords=400;assert(call("/필터리스트","admin","test",true).replies[0].includes("현재 등록: 3/400개"));c.GLOBAL_CONFIG.messageFilter.maxWords=oldLimit;assert.equal(reads,0);assert.equal(saves,0);assert.deepStrictEqual(h.persist(),before);
 });
 test("필터리스트 권한·정확한 명령·DEV 분리·Info 중복 차단",()=>{
  const {h,c,call}=fixture();c.setMessageFilterCache(["운영목록"],"PROD",true);c.setMessageFilterCache(["개발목록"],"DEV",true);
