@@ -4518,6 +4518,7 @@ Status: PARTIAL
 - R은 기존 `calculateRaidExp`로 계산하며 가방의 레이드타격대인장(개당 +600)과 홈뱃지·길드 큐브·레벨·퀘스트 보너스를 포함한다. 종합매력을 사용하지 않으며 포함된 보너스를 중복 가산하지 않는다.
 - 공격·종료·초기화는 명령 쓰기 잠금과 기존 데이터 트랜잭션 잠금으로 직렬화한다. 공격 횟수·포인트·데미지·이벤트 완료 상태를 `member.json`에 한 번에 저장한다.
 - 공격 안내는 `buildServerRaidResults(round, false, true)`로 서버 순위 집계 뒤 개인 순위 정렬을 생략한다. 조회/종료 정산은 기존 정렬을 유지하며 `freeze === true`는 생략 인수와 무관하게 개인 결과를 확정한다. `tools/test_raid_ranking.js`와 `tools/test_raid_ranking_rhino.js`에서 서버/개인 정산·메시지 일치를 대조한다.
+- 분리 저장은 `stringifyMemberSplitStore`로 비교용 JSON 본문을 재사용한다. `readMemberSplitStore`의 비열거 `__memberSplitSourceText`는 방금 검증한 분리 원문을 해당 백업 호출에서 재사용하며 파일 형식에는 추가하지 않는다. `saveJsonFile`은 같은 저장 잠금에서 읽고 검사한 회원 원문/파싱 결과를 `writeVerifiedJsonFile`/`preserveMemberSplitBackupStores`에 전달한다. 명령 간 캐시·백업/fsync 생략 없이 중복 작업만 줄인다. 검증 근거는 `tools/storage_io_reuse_validation.md`를 따른다.
 - 추가 허용 명령은 기존 공통 전처리·권한 검사·파일 로드·저장·복구 흐름을 사용하며 레이드 공격/보상 기록과 마감을 직접 수정하지 않는다. 패키지 지급·사용은 기존 회원 파일과 패키지 로그 저장 트랜잭션을 유지한다. 수동 탐험의 `stopAllIntervals`는 탐험 `intervalIDs`만 정리하며 별도 `serverRaidWorkTimers`의 자동 종료 예약은 보존한다.
 - 대전 중 차단된 `/펫탐험자동정산`은 `exploreInterval` 실행 표시를 해제한다. 이전 자동 탐험 예약이 다음 허용 명령에서 의도치 않게 실행되지 않도록 하며, 대전 종료 후 자동 정산과 수동 `/펫탐험정산`의 기존 흐름은 유지한다.
 - 초과 시도는 참가자의 `excessAttempts`, `excessEvents`에 횟수·실제 차감액·부족 여부·당시 비용을 기록하고 `eventReceipts`에 회차·계정·초과 구분을 함께 저장한다. 회원 포인트와 같은 저장 단위로 확정한 뒤 안내한다. 저장 실패는 모두 복구하며 응답 실패 후 같은 원본 ID를 재전송해도 재차감하지 않는다. 부족 결과 재전송은 이후 입금돼도 다시 차감하지 않는다. 이전 참가자의 새 필드가 없으면 첫 초과부터 기록하며 다음 회차 참가자는 초과 0회로 생성한다. 정상 공격 목록·데미지·공격 보상은 변경하지 않는다.
