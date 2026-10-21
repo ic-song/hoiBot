@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.670"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.671"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
@@ -996,7 +996,7 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
-    messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main·Info의 환경별 필터 메모리 공유 키
+    messageFilter: { maxWords: 300, sharedPrefix: "hoibot.messageFilter." }, // 등록 상한과 Main·Info의 환경별 필터 메모리 공유 키
     sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } }, // 평수별 가구 장착 수 계산 기준
     doll: {
         allowedRoom: null, // 정식 공개: 인형 전용 방 제한 해제, 기존 권한·이용 조건 유지
@@ -2898,6 +2898,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             var messageFilterMember = loadJsonFile(filePath);
             var messageFilterChange = changeMessageFilterWords(readMessageFilterWords(messageFilterMember), messageFilterRequest);
+            if (messageFilterChange.error) { replier.reply(messageFilterChange.error); return; }
             if (messageFilterChange.count > 0) {
                 messageFilterMember.messageFilterWords = messageFilterChange.words;
                 saveJsonFile(messageFilterMember, filePath);
@@ -31689,6 +31690,9 @@ function changeMessageFilterWords(words, request) {
         var index = next.indexOf(request.words[i]);
         if (request.action === "추가" && index === -1) { next.push(request.words[i]); count++; }
         if (request.action === "제거" && index !== -1) { next.splice(index, 1); count++; }
+    }
+    if (request.action === "추가" && count > 0 && next.length > GLOBAL_CONFIG.messageFilter.maxWords) {
+        return { words: words.slice(), count: 0, error: "필터는 최대 " + GLOBAL_CONFIG.messageFilter.maxWords + "개까지 등록할 수 있습니다.\n현재 " + words.length + "개 · 신규 요청 " + count + "개\n이번 요청은 추가하지 않았습니다. 기존 문구를 제거한 뒤 다시 시도해주세요." };
     }
     return { words: next, count: count };
 }
