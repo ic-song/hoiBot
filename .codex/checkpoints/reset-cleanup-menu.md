@@ -1,0 +1,21 @@
+# 운영용 정리 2종 초기화 메뉴 통합
+
+- 작업 키: reset-cleanup-menu
+- 체크포인트 버전: 6
+- 마지막 갱신: 2026-10-22 (Asia/Seoul)
+- 상태: 진행 중
+- 정리 후보: 아니요
+- 목표: 운영용 글자수/필터 데이터 정리를 /초기화 번호 선택·1삭제/2취소에 통합. 사용자가 5개에서 2개로 범위를 축소했다. 기존 권한·정리 기준·저장 경로 유지. 검증·예외테스트 후 운영반영 전 보고.
+- 범위: main.js, Info.js, COMMAND_INDEX.md, COMMAND_REGISTRY.md, 관련 합성 테스트·검증 기록, 이 체크포인트. 실제 데이터 변경·운영반영·운영 앱 접근·Notion 변경 없음.
+- 작업 트리: C:/Users/user/Desktop/hoiBot, feature/reset-cleanup-menu. 기준 origin/feature/prod 0d26cbd0ebe6f706e621a90eb4da8bbe1a357d53 / ver_2.673. 원격 운영 최신 동기화 후 분기.
+- 기존 상태: 초기화 30항목, 60초 사용자/방/DEV 바인딩·확인 1회 소비·기존 실행 연결 재사용. 별도 영속 세션이나 정리 알고리즘 추가하지 않음.
+- 권한: 글자수는 MASTER 또는 GM 관리자방 Admin/오픈채팅봇, 필터는 Admin/MASTER. 기존 실행부도 다시 검사.
+- 보존: /데이터정리·일반 사용자 /정리/ㅇㅇㅇ·개인 가방 정리·정기 리셋 유지. 과거 carrot-confirm/oct19-ready 체크포인트는 기록이 오래되었으나 해당 소스 커밋이 origin/prod에 포함됨을 확인, 변경하지 않음. 관련 없는 미추적 파일과 PR138 보존.
+- 구현: 기존 30항목 뒤에 글자수/필터 정리 2항목만 추가. [정리] 표시·범위 확인·기존 실행 연결, 글자수 방별 권한 재검사, Info 직접 안내 입력 반환. 미니펫/가구/펜던트 개별 전체 정리는 기존대로 유지. 정리 계산·실행·저장 및 이후 게임 본문은 기준과 동일.
+- 검증: 신규 글자수 14·필터 정리 14·기존 초기화 22그룹 통과. Rhino 신규/기존 각 5시나리오 및 실제 Java 동시 확인 각 20쌍 통과. 레이드130·필터19·인형22/10월14정책21·방제한 회귀, 문법·엄격 UTF-8·diff 검증 통과. tools/reset_cleanup_validation.md에 결과와 실기기/강제종료 한계 기록.
+- 운영 경계: data/·notice.js·HoiBotVersion/개발자노트 무변경, origin/feature/prod 0d26cbd0/ver_2.673 유지. 운영반영·Notion·카카오 알림·스킬 수정 없음.
+- 소스 근거: 7fde22fa19f211a8a1f6aa811fb6edd07f05a287 원격 feature/reset-cleanup-menu 푸시·일치 검증. 검토용 draft PR https://github.com/ic-song/hoiBot/pull/147 (base feature/prod, OPEN, draft) 생성·채팅 첨부. origin/feature/prod 기준 커밋 유지 재확인.
+- 운영 승인: 검증 보고 후 사용자가 "운영반영"을 요청했다. 최신 origin/feature/prod 0d26cbd0 동기화·차이 없음 확인 후 ver_2.674와 개발자노트(2026-10-22 KST)를 준비한다.
+- 운영 전 재검증: ver_2.674에서 Node 핵심 50그룹·Rhino10시나리오(실제 Java 동시 확인 각20쌍) 통과. Main/Info 구문·엄격 UTF-8·버전/개발자노트/0.001 증가/2026-10-22 확인. data/ 변경은 개발자노트뿐, 실제 게임 데이터와 notice.js 보존.
+- Notion 확인: 기획 DB 검색·초기화/글자수/필터 제목 조회 후 기존 글자수 기능 기획 LIVE 본문 확인. 이번 메뉴 통합 READY/HOTFIX 항목은 없음. 기존 LIVE 기능/대전허용 문서·닉네임 필터 TODO는 별개이므로 상태/실제일/버전/본문을 변경하지 않는다.
+- 다음: 변경 버전으로 핵심 메뉴·정리·Rhino 재검증 → 소스 푸시 → PR147 병합 → 원격 prod 확인 → 정확한 버전 카카오 알림 → 완료 기록. 실제 정리는 실행하지 않는다.

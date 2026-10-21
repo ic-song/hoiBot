@@ -30,11 +30,20 @@ function fixture(saved) {
     const start=h.main.indexOf('function response('),end=h.main.indexOf('// 확인 응답도',start);
     vm.runInContext(h.main.slice(start,end).replace('function response(','function probeCleanup(')+'return "passed";}catch(error){rollbackDataSaveTransaction();throw error;}finally{if(commandContextEntered)exitCommandContext(prevCtx);if(dataSaveTransactionEntered)endDataSaveTransaction();if(responseTransactionAcquired)dataTransactionLock.unlock();responseDataLock.unlock();}}',c);
     c.setMessageFilterCache(['禁止'],'PROD',true); c.setMessageFilterCache(['禁止'],'DEV',true);
-    function call(msg='/필터데이터정리',user='admin',room='test',reply,actual=false) {
+    function rawCall(msg,user='admin',room='test',reply,actual=false) {
         const replies=[];const result=(actual?c.response:c.probeCleanup)(room,msg,user,true,{reply:reply||((s)=>replies.push(String(s)))},{},'com.kakao.talk');return {result,replies};
     }
+    function call(msg='/필터데이터정리',user='admin',room='test',reply,actual=false) {
+        const dev=msg==='dev/필터데이터정리';
+        if(msg!=='/필터데이터정리'&&!dev)return rawCall(msg,user,room,reply,actual);
+        rawCall(dev?'dev/초기화':'/초기화',user,room);
+        const state=c.manualResetSessions[(dev?'DEV:':'PROD:')+user];
+        assert(state&&state.choices.includes('filterCleanup'),'filter cleanup permission');
+        rawCall((dev?'dev/':'')+(state.choices.indexOf('filterCleanup')+1),user,room);
+        return rawCall((dev?'dev/':'')+'1삭제',user,room,reply,actual);
+    }
     function read(i,dev=false) { return JSON.parse(c.FileStream.read((dev?c.DEV_DATA_ROOT_PATH:root)+names[i])); }
-    return {h,c,call,read,names,root};
+    return {h,c,call,rawCall,read,names,root};
 }
 test('댓글·픽·피드·이전 한줄평·일반/펫 타이틀·알림 정리와 무관 데이터 보존',()=>{
     const f=fixture(),before=records();const output=f.call(undefined,undefined,undefined,undefined,true).replies[0];assert(output.includes('댓글: 1개')&&output.includes('홈알림: 2개'));
@@ -44,14 +53,13 @@ test('댓글·픽·피드·이전 한줄평·일반/펫 타이틀·알림 정리
     assert.equal(f.read(2).member.other.title.num,null);const activity=f.read(4);assert.equal(activity.alerts.owner.length,2);assert.deepStrictEqual(activity.recentVisitors,before[4].recentVisitors);assert.deepStrictEqual(activity.petHomeSocial,before[4].petHomeSocial);
 });
 test('정확한 명령·방별 권한·MASTER·배타 잠금·필터 자기 차단 예외',()=>{
-    const f=fixture(),before=f.h.persist();for(const user of ['a','unassigned']){assert.equal(f.call(undefined,user).replies.length,0);assert.deepStrictEqual(f.h.persist(),before);}
-    assert.equal(f.call(undefined,'admin','room8').replies.length,0);assert.deepStrictEqual(f.h.persist(),before);
-    assert.equal(f.call('/필터데이터정리 1').result,'passed');assert.equal(f.call('/필터데이터정리방법').result,'passed');
-    assert(f.c.isExclusiveDataMutationCommandMessage('/필터데이터정리'));assert(f.c.isExclusiveDataMutationCommandMessage('dev/필터데이터정리'));assert(!f.c.isExclusiveDataMutationCommandMessage('/필터데이터정리 1'));
+    const f=fixture(),before=f.h.persist();for(const [user,room] of [['a','test'],['unassigned','test'],['admin','room8']]){f.rawCall('/초기화',user,room);const state=f.c.manualResetSessions['PROD:'+user];assert(!state||!state.choices.includes('filterCleanup'));assert.deepStrictEqual(f.h.persist(),before);}
+    for(const msg of ['/필터데이터정리','/필터데이터정리 1','/필터데이터정리방법']){assert(f.rawCall(msg).replies[0].includes('통합되었습니다'));assert.deepStrictEqual(f.h.persist(),before);}
+    assert(f.c.isExclusiveDataMutationCommandMessage('/필터데이터정리'));assert(f.c.isExclusiveDataMutationCommandMessage('dev/필터데이터정리'));assert(f.c.isExclusiveDataMutationCommandMessage('/필터데이터정리 1'));
     f.c.setMessageFilterCache(['필터','禁止'],'PROD',true);assert(f.call(undefined,'master').replies[0].includes('완료'));
 });
-test('빈 필터는 데이터 파일 읽기·저장 없음',()=>{
-    const f=fixture();f.c.setMessageFilterCache([],'PROD',true);let reads=0;const read=f.c.FileStream.read;f.c.FileStream.read=(...a)=>{reads++;return read(...a);};const before=f.h.persist();assert(f.call().replies[0].includes('등록된 필터가 없어'));assert.equal(reads,0);assert.deepStrictEqual(f.h.persist(),before);
+test('빈 필터 확인 후에는 정리 대상 파일 읽기·저장 없음',()=>{
+    const f=fixture();f.c.setMessageFilterCache([],'PROD',true);const reads=[];const read=f.c.loadJsonFile;f.c.loadJsonFile=(p,...a)=>{reads.push(p);return read(p,...a);};const before=f.h.persist();assert(f.call().replies[0].includes('등록된 필터가 없어'));assert(reads.every(p=>p===f.c.filePath||p===f.c.guildPath));assert.deepStrictEqual(f.h.persist(),before);
 });
 test('재실행은 0건·무저장·필터는 제거하지 않음',()=>{
     const f=fixture();f.call();const before=f.h.persist();let saves=0;const save=f.c.saveJsonFile;f.c.saveJsonFile=(...a)=>{saves++;return save(...a);};const output=f.call().replies[0];assert(output.includes('댓글: 0개'));assert.equal(saves,0);assert.deepStrictEqual(f.h.persist(),before);assert.deepStrictEqual(clone(f.c.getCachedMessageFilterWords(false)),['禁止']);
@@ -76,6 +84,18 @@ test('정규식 기호·대소문자·긴 문구·이모지와 한 행 다중 �
 });
 test('완료 응답/로그 실패는 확정 저장을 되돌리지 않고 새 VM 재실행도 무중복',()=>{
     const f=fixture();f.c.debuggerLog=()=>{throw Error('log');};f.call(undefined,undefined,undefined,()=>{throw Error('reply');});assert.equal(f.read(0).comments.owner.length,1);const next=fixture(f.h.persist());assert(next.call().replies[0].includes('댓글: 0개'));
+});
+test('메뉴·선택은 정리 파일을 읽거나 저장하지 않고 확인 시 최신 필터로 처리',()=>{
+    const f=fixture(),before=f.h.persist();const reads=[],read=f.c.loadJsonFile;f.c.loadJsonFile=(p,...args)=>{reads.push(p);return read(p,...args);};
+    f.rawCall('/초기화');const choices=f.c.manualResetSessions['PROD:admin'].choices;const output=f.rawCall(String(choices.indexOf('filterCleanup')+1)).replies[0];
+    assert(output.includes('확인 시점의 등록 필터'));assert(reads.every(p=>p===f.c.filePath||p===f.c.guildPath));assert.deepStrictEqual(f.h.persist(),before);
+    f.c.setMessageFilterCache(['通常'],'PROD',true);f.rawCall('1삭제');assert.equal(f.read(0).comments.owner.length,1);assert.equal(f.read(0).comments.owner[0].text,'禁止文');assert.equal(f.read(0).pinnedComments.owner.length,1);assert.equal(f.read(1).owner.feeds[0].content,'禁止文');
+});
+test('필터 정리의 취소·만료·권한 상실·재컴파일은 확인 대기와 함께 무삭제',()=>{
+    for(const mode of ['cancel','expire','role','restart']){const f=fixture();f.rawCall('/초기화');const choices=f.c.manualResetSessions['PROD:admin'].choices;f.rawCall(String(choices.indexOf('filterCleanup')+1));const before=f.h.persist();
+        if(mode==='cancel')f.rawCall('2취소');if(mode==='expire')f.h.advance(60000);if(mode==='role')f.c.Admins=[];
+        if(mode==='restart'){const next=fixture(before);next.rawCall('1삭제');assert.deepStrictEqual(next.h.persist(),before);}else{f.rawCall('1삭제');assert.deepStrictEqual(f.h.persist().disk,before.disk);assert(!f.c.manualResetSessions['PROD:admin']);}
+    }
 });
 test('Info는 정리 명령에서 데이터 읽기 전에 종료',()=>{
     const f=fixture(),start=f.h.info.indexOf('if (getMessageFilterRequest(msg))'),end=f.h.info.indexOf('if (ctx.isDev)',start),ic={getMessageFilterRequest:()=>null,containsMessageFilterWord:()=>{throw Error('must bypass');},getCachedMessageFilterWords:()=>{throw Error('must bypass');}};vm.createContext(ic);vm.runInContext('function check(msg){var ctx={isDev:false};'+f.h.info.slice(start,end)+'return "passed";}',ic);assert.equal(ic.check('/필터데이터정리'),undefined);
