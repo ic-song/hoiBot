@@ -632,6 +632,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (msg === "/ㅍㅍㅍ") msg = "ㅍㅍㅍ"; // 기존 포인트 단축어로 DEV 입력 정규화
 		}
 		if (getMessageFilterRequest(msg)) return; // 관리 명령은 Main에서만 처리
+		if (msg === "/필터데이터정리") return;
 		if ((msg.charAt(0) === "/" || ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"].indexOf(msg) !== -1) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
 
 		if (ctx.isDev) {

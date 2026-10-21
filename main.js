@@ -2896,6 +2896,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             catch (filterReplyError) { try { debuggerLog("[필터 응답] " + filterReplyError); } catch (filterLogError) {} }
             return;
         }
+        if (msg === "/필터데이터정리") {
+            if (!isAdmin(sender) && !isMaster(sender)) return;
+            var cleanupFilterWords = getCachedMessageFilterWords(ctx.isDev).slice(); // 실행 시작 시점의 필터 목록 고정
+            if (!cleanupFilterWords.length) { replier.reply("등록된 필터가 없어 데이터를 정리하지 않았습니다."); return; }
+            var cleanupFilterPaths = [petHomeCommentsFile, homeDataFile, memberTitlePath, petTitlePath, petHomeActivityFile];
+            var cleanupFilterStores = [], cleanupFilterSnapshots = [];
+            for (var cleanupLoadIndex = 0; cleanupLoadIndex < cleanupFilterPaths.length; cleanupLoadIndex++) {
+                var cleanupStore = loadJsonFile(cleanupFilterPaths[cleanupLoadIndex]);
+                cleanupFilterStores.push(cleanupStore);
+                cleanupFilterSnapshots.push(JSON.stringify(cleanupStore));
+            }
+            var cleanupFilterResult = cleanupMessageFilterData(cleanupFilterStores, cleanupFilterWords);
+            for (var cleanupSaveIndex = 0; cleanupSaveIndex < cleanupFilterPaths.length; cleanupSaveIndex++) {
+                if (cleanupFilterResult.changed[cleanupSaveIndex]) saveJsonFile(cleanupFilterStores[cleanupSaveIndex], cleanupFilterPaths[cleanupSaveIndex], false, cleanupFilterSnapshots[cleanupSaveIndex]);
+            }
+            try { replier.reply("🧹 필터 데이터 정리 완료\n댓글: " + cleanupFilterResult.comments + "개\n픽 댓글: " + cleanupFilterResult.pinned + "개\n피드: " + cleanupFilterResult.feeds + "개\n이전 한줄평: " + cleanupFilterResult.legacyFeeds + "개\n타이틀: " + cleanupFilterResult.titles + "개\n펫 타이틀: " + cleanupFilterResult.petTitles + "개\n홈알림: " + cleanupFilterResult.alerts + "개"); }
+            catch (cleanupReplyError) { try { debuggerLog("[필터 정리 응답] " + cleanupReplyError); } catch (cleanupLogError) {} }
+            return;
+        }
         if (isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
         // 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.
         var carrotTradeAnswer = null;
@@ -31663,6 +31682,86 @@ function changeMessageFilterWords(words, request) {
     return { words: next, count: count };
 }
 
+// 이미 읽은 댓글·홈·타이틀·알림에서 필터에 일치하는 항목만 제거하는 함수
+function cleanupMessageFilterData(stores, words) {
+    var result = { changed: [false, false, false, false, false], comments: 0, pinned: 0, feeds: 0, legacyFeeds: 0, titles: 0, petTitles: 0, alerts: 0 };
+    // 손상된 저장소를 빈 데이터로 대체하지 않고 정리 중단
+    function requireMap(value) {
+        if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("필터 정리 데이터 형식 오류");
+        return value;
+    }
+    // 본문 필드만 비교하고 남은 항목의 순서와 부가 데이터를 보존
+    function removeRows(rows, field) {
+        if (!Array.isArray(rows)) throw new Error("필터 정리 목록 형식 오류");
+        var kept = [];
+        for (var i = 0; i < rows.length; i++) {
+            requireMap(rows[i]);
+            if (typeof rows[i][field] !== "string") throw new Error("필터 정리 본문 형식 오류");
+            if (!containsMessageFilterWord(rows[i][field], words)) kept.push(rows[i]);
+        }
+        return kept;
+    }
+    for (var storeIndex = 0; storeIndex < stores.length; storeIndex++) requireMap(stores[storeIndex]);
+    var comments = stores[0], homes = stores[1], activity = stores[4];
+    var commentFields = ["comments", "pinnedComments"], commentCounts = ["comments", "pinned"];
+    for (var kind = 0; kind < commentFields.length; kind++) {
+        var owners = requireMap(comments[commentFields[kind]]);
+        for (var owner in owners) {
+            if (!Object.prototype.hasOwnProperty.call(owners, owner)) continue;
+            var keptComments = removeRows(owners[owner], "text");
+            result[commentCounts[kind]] += owners[owner].length - keptComments.length;
+            if (keptComments.length !== owners[owner].length) { owners[owner] = keptComments; result.changed[0] = true; }
+        }
+    }
+    for (var homeOwner in homes) {
+        if (!Object.prototype.hasOwnProperty.call(homes, homeOwner)) continue;
+        var home = requireMap(homes[homeOwner]);
+        if (home.feeds !== undefined) {
+            var keptFeeds = removeRows(home.feeds, "content");
+            result.feeds += home.feeds.length - keptFeeds.length;
+            if (keptFeeds.length !== home.feeds.length) { home.feeds = keptFeeds; result.changed[1] = true; }
+        }
+        if (home.comment !== undefined && typeof home.comment !== "string") throw new Error("필터 정리 이전 한줄평 형식 오류");
+        if (typeof home.comment === "string" && containsMessageFilterWord(home.comment, words)) {
+            delete home.comment; delete home.commentTime; result.legacyFeeds++; result.changed[1] = true;
+        }
+    }
+    for (var titleStoreIndex = 2; titleStoreIndex <= 3; titleStoreIndex++) {
+        var titleOwners = requireMap(stores[titleStoreIndex].member);
+        for (var titleOwner in titleOwners) {
+            if (!Object.prototype.hasOwnProperty.call(titleOwners, titleOwner)) continue;
+            var title = requireMap(requireMap(titleOwners[titleOwner]).title);
+            var keptTitles = removeRows(title.list, "name"), selected = null; // 삭제 전 선택한 개체의 새 번호
+            if (keptTitles.length === title.list.length) continue;
+            for (var titleIndex = 0; titleIndex < title.list.length; titleIndex++) {
+                if (titleIndex + 1 == title.num) {
+                    var keptIndex = keptTitles.indexOf(title.list[titleIndex]);
+                    selected = keptIndex < 0 ? null : keptIndex + 1;
+                    break;
+                }
+            }
+            if (title.num !== undefined && title.num !== null && title.num !== 0) title.num = selected;
+            result[titleStoreIndex === 2 ? "titles" : "petTitles"] += title.list.length - keptTitles.length;
+            title.list = keptTitles; result.changed[titleStoreIndex] = true;
+        }
+    }
+    var alertOwners = requireMap(activity.alerts);
+    for (var alertOwner in alertOwners) {
+        if (!Object.prototype.hasOwnProperty.call(alertOwners, alertOwner)) continue;
+        var alerts = alertOwners[alertOwner], keptAlerts = [];
+        if (!Array.isArray(alerts)) throw new Error("필터 정리 알림 목록 형식 오류");
+        for (var alertIndex = 0; alertIndex < alerts.length; alertIndex++) {
+            var alert = requireMap(alerts[alertIndex]);
+            var field = alert.type === "comment" ? "commentPreview" : (alert.type === "feed" ? "feedContent" : null);
+            if (field && alert[field] !== undefined && typeof alert[field] !== "string") throw new Error("필터 정리 알림 본문 형식 오류");
+            if (!field || typeof alert[field] !== "string" || !containsMessageFilterWord(alert[field], words)) keptAlerts.push(alert);
+        }
+        result.alerts += alerts.length - keptAlerts.length;
+        if (keptAlerts.length !== alerts.length) { alertOwners[alertOwner] = keptAlerts; result.changed[4] = true; }
+    }
+    return result;
+}
+
 function isAdmin(sender) {
     var permissionRoom = getCurrentContext().permissionRoom;
     if (sender === "오픈채팅봇" && permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom) return true;
@@ -31779,7 +31878,7 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+    return command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
         command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||

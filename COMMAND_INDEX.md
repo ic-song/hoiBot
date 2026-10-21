@@ -57,6 +57,32 @@ Status: VERIFIED
 
 ---
 
+# /필터데이터정리
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: 정확히 `/필터데이터정리` 입력 시 기존 방별 관리자·MASTER 권한으로 실행한다.
+- `Info.js`: 같은 명령은 데이터 읽기 전에 반환하여 중복 처리하지 않는다.
+
+## Related Helpers
+
+- `cleanupMessageFilterData`: 이미 읽은 저장소에 삭제 계획을 적용하고 종류별 개수·파일 변경 여부를 반환한다. 파일 IO 없음.
+- `getCachedMessageFilterWords`, `containsMessageFilterWord`: 현재 환경의 등록 문구를 실행 시점에 고정해 기존 문자열 포함 규칙으로 비교한다.
+
+## Data Usage / Save Flow
+
+- 일반·픽 댓글의 `text`, 홈 `feeds[*].content`와 이전 한줄평 `comment`, 일반·펫 타이틀 `title.list[*].name`, 댓글·피드 홈알림의 `commentPreview`·`feedContent`만 비교한다.
+- 전체 사용자가 대상이며 작성자·닉네임·가격·방문·소셜 통계·가구·기존 `guestComments`·포인트는 삭제 조건으로 사용하지 않는다.
+- 삭제된 타이틀을 장착 중이면 해제하며 남아 있는 장착 타이틀의 번호를 보정한다. 잘못된 기존 장착 번호는 해당 목록이 실제로 줄어들 때만 해제한다.
+- `petHomeComments.json`, `petSweetHomeData.json`, `member_title.json`, `pet_title.json`, `petHomeActivityData.json`을 진입부에서 각각 한 번 로드하고 모두 처리한 뒤 변경 파일만 기존 `saveJsonFile`로 저장한다. 실패 시 기존 명령 트랜잭션과 작업 전 스냅샷으로 원복한다.
+- 필터가 비어 있으면 정리 파일을 읽지 않는다. 재실행 시 이미 제거된 항목은 재삭제하지 않으며 변경 없으면 저장하지 않는다. 손상·누락·파싱 오류는 중단하며 빈 파일로 덮지 않는다.
+- 배타 쓰기 잠금을 사용하고 DEV/PROD 저장 경로와 필터 목록은 분리한다. 필터에 관리 명령 문구가 있더라도 권한 있는 관리자는 정리할 수 있다.
+- 기존 `/데이터정리` 동작과 백업 파일은 유지한다. 강제 앱 종료의 여러 파일 동시 원자성은 기존 트랜잭션과 동일하며, 중단 후 재실행은 남은 항목만 처리한다.
+
+---
+
 # 권한 타이틀뱃지
 
 Status: VERIFIED
