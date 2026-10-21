@@ -14,5 +14,6 @@
 - `node tools/test_message_filter_rhino.js <Rhino 1.7.15 jar>`: 8시나리오 통과. Main·Info 전체 컴파일, 별도 Rhino 전역 간 실제 Java 캐시 공유, 반복 검사 무파일 읽기, 일반 대화 비교 제외, 초기 목록 복원, DEV 백업 갱신, 손상 값 거부, 새 정리 함수의 7종 처리/타이틀 보정/재실행 검증.
 - `node tools/test_storage_io_reuse.js`: 기존 저장/백업/fsync/복구 21그룹 통과. `node tools/test_main_test_room_only.js` 통과.
 - Main/Info 문법·엄격한 UTF-8·diff 공백 검사, 기존 `/데이터정리` 본문 및 운영 데이터 스냅샷 무변경 확인.
+- 운영반영 직전 최신 prod ab1c58f7 기준으로 위 정리 12그룹·필터 12그룹·Rhino 8시나리오·저장 21그룹·메인방 제한을 다시 실행해 통과했다. 버전·개발자노트 ver_2.669 일치와 data는 개발자노트 외 무변경을 확인했다.
 
-운영반영·버전 갱신·실제 데이터 삭제는 수행하지 않았다. 실제 Android 앱 실행은 미검증이며 Main·Info를 함께 적용해야 한다.
+운영반영 승인에 따라 버전·개발자노트를 ver_2.669로 갱신했다. 실제 데이터 삭제는 수행하지 않았다. 실제 Android 앱 실행은 미검증이며 Main·Info를 함께 적용해야 한다.
