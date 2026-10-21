@@ -95,6 +95,8 @@ for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createComma
     "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(block(main, "function " + name + "("), c);
 vm.runInContext(main.slice(main.indexOf("function serverRaidHeader("), main.indexOf("// 길드 영지전 관련 함수들")), c);
 const filterHelpers = ["readMessageFilterWords", "setMessageFilterCache", "getCachedMessageFilterWords", "getMessageFilterRequest", "containsMessageFilterWord", "isMessageFilterCommandInput", "changeMessageFilterWords"];
+for (const name of ["isManualResetLegacyCommand", "isManualResetInput", "isManualResetEntryAllowed", "advanceManualResetSession", "resetAllPetHomeContent"]) if (main.includes("function " + name + "(")) vm.runInContext(block(main, "function " + name + "("), c);
+c.manualResetSessions = {};
 for(const name of filterHelpers) if(main.includes("function "+name+"(")) vm.runInContext(block(main,"function "+name+"("),c);
 const entryStart = main.indexOf("// 서버 레이드대전 진입:");
 const entryEnd = main.indexOf('if (ctx.isDev && msg === "/데이터백업")', entryStart);
@@ -117,6 +119,7 @@ for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isIn
     vm.runInContext(block(info, "function " + name + "("), infoContext);
 
 function reset() {
+    c.manualResetSessions = {};
     filterSharedProperties.clear();
     c.messageFilterCaches = { PROD: { words: [], text: "[]" }, DEV: { words: [], text: "[]" } };
     c.GLOBAL_CONFIG.serverRaid.limits.ticketAttacks = ticketMode ? 5 : 0; // 저장된 이전 회차의 추가 공격 5회 정책을 회귀 검증

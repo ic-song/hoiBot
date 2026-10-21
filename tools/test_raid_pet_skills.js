@@ -108,6 +108,8 @@ const context = {
     hasEquippedCreationMiniPet: () => false
 };
 vm.createContext(context);
+vm.runInContext("GLOBAL_CONFIG.manualReset = " + source.match(/manualReset: (\{[\s\S]*?\n    \}),/)[1], context);
+for (const name of ["isManualResetInput", "isManualResetLegacyCommand"]) vm.runInContext(extractFunction(name), context);
 // 실제 정의와 설정을 읽고, 파일 저장·외부 응답만 메모리로 대체한다.
 vm.runInContext("PET_SKILL_LIST = " + source.match(/const PET_SKILL_LIST = (\[[\s\S]*?\n\]);/)[1], context);
 vm.runInContext("PET_SKILL_COMPAT_GROUPS = " + source.match(/const PET_SKILL_COMPAT_GROUPS = (\[[\s\S]*?\n\]);/)[1], context);
