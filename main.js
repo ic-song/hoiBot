@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.666"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.667"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
@@ -1266,12 +1266,12 @@ const GLOBAL_CONFIG = {
         bonusAttackCount: 1,
         startGraceMs: 60000,
         turnTimeoutMs: 12000,
-        attackRewardPoint: 200000000,
+        attackRewardPoint: 150000000,
         realFlagDiscoveryBonusPoint: 200000000,
         attackRewardBonusSkillName: "무쌍귀신",
         attackRewardBonusPoint: 100000000,
         timeoutPenaltyPoint: 100000000,
-        winnerRewardPoint: 3000000000,
+        winnerRewardPoint: 1500000000,
         titleDurationMs: 24 * 60 * 60 * 1000,
         lightningStartRate: 0.01,
         lightningStepRate: 0.02,
@@ -1285,9 +1285,11 @@ const GLOBAL_CONFIG = {
             coupons: [
                 { name: "티켓이벤트할인쿠폰🎟️(10%)", rate: 10, weight: 70 },
                 { name: "티켓이벤트할인쿠폰🎟️(20%)", rate: 20, weight: 15 },
-                { name: "티켓이벤트할인쿠폰🎟️(30%)", rate: 30, weight: 7 },
-                { name: "티켓이벤트할인쿠폰🎟️(40%)", rate: 40, weight: 5 },
-                { name: "티켓이벤트할인쿠폰🎟️(50%)", rate: 50, weight: 3 }
+                { name: "티켓이벤트할인쿠폰🎟️(30%)", rate: 30, weight: 7 }
+            ],
+            legacyCoupons: [ // 신규 드랍은 중단하되 기존 보유 쿠폰의 사용·회수는 유지
+                { name: "티켓이벤트할인쿠폰🎟️(40%)", rate: 40 },
+                { name: "티켓이벤트할인쿠폰🎟️(50%)", rate: 50 }
             ]
         },
         items: {
@@ -38617,7 +38619,7 @@ function buildTierProgressPlan(data, petSkillData, user) {
     var additionalLegendStone = Math.max(0, craftLegendStone - (parseInt(bag["전설의 돌맹이🗿"], 10) || 0));
     var additionalPetStone = Math.max(0, craftPetStone - (parseInt(bag["펫 강화석⭐"], 10) || 0));
     var couponHoldings = [];
-    var tierCoupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var tierCoupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons.concat(GLOBAL_CONFIG.petMusou.ticketEvent.legacyCoupons);
     for (var couponIndex = 0; couponIndex < tierCoupons.length; couponIndex++) {
         couponHoldings.push({ name: tierCoupons[couponIndex].name, count: parseInt(bag[tierCoupons[couponIndex].name], 10) || 0 });
     }
@@ -39740,7 +39742,7 @@ function processPetMusouTicketEventAdminCommand(msg, data, operator) {
         };
     }
 
-    var couponConfig = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
+    var couponConfig = GLOBAL_CONFIG.petMusou.ticketEvent.coupons.concat(GLOBAL_CONFIG.petMusou.ticketEvent.legacyCoupons);
     var removedCounts = [];
     var totalRemovedCount = 0;
     for (var couponIndex = 0; couponIndex < couponConfig.length; couponIndex++) removedCounts[couponIndex] = 0;
@@ -39767,7 +39769,9 @@ function processPetMusouTicketEventAdminCommand(msg, data, operator) {
 function grantPetMusouTicketEventCoupon(data, user) {
     if (!isPetMusouTicketEventActive(data) || !data.member || !data.member[user]) return null;
     var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons;
-    var roll = Math.floor(Math.random() * 100) + 1;
+    var totalWeight = 0; // 남은 쿠폰의 기존 가중치 비율을 유지하는 추첨 범위
+    for (var weightIndex = 0; weightIndex < coupons.length; weightIndex++) totalWeight += coupons[weightIndex].weight;
+    var roll = Math.floor(Math.random() * totalWeight) + 1;
     var cumulativeWeight = 0;
     var selectedCoupon = coupons[0];
     for (var i = 0; i < coupons.length; i++) {
@@ -39918,7 +39922,7 @@ function buildTicketEventCouponPurchasePlan(data, user, itemName, quantity, unit
     var bag = data && data.member && data.member[user] ? data.member[user].bag : null;
     if (!bag) return plan;
     var remainingQuantity = quantity; // 아직 쿠폰을 적용하지 않은 구매 수량
-    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons.slice();
+    var coupons = GLOBAL_CONFIG.petMusou.ticketEvent.coupons.concat(GLOBAL_CONFIG.petMusou.ticketEvent.legacyCoupons);
     coupons.sort(function (a, b) { return b.rate - a.rate; });
     for (var i = 0; i < coupons.length && remainingQuantity > 0; i++) {
         var heldCount = typeof bag[coupons[i].name] === "undefined" ? 0 : bag[coupons[i].name];
@@ -40546,7 +40550,7 @@ function finishPetMusou(data, petData, petSkillData, guildData, reason) {
             "━━━━━━━━━━━━━━━━\n" +
             "🚩 최종 점령자: [" + checkRank(data, petData, guildData, winner).replace(/^\[무쌍⚔️\]/, "") + "]\n" +
             "🏳️ 소속길드: " + (guildInfo ? formatGuildDisplay(guildInfo.guild) : "길드 정보 없음") + "\n\n" +
-            "우승 상금🤑: 🅟30억\n" +
+            "우승 상금🤑: 🅟" + (GLOBAL_CONFIG.petMusou.winnerRewardPoint / 100000000) + "억\n" +
             "전용 칭호⚔️: [무쌍⚔️]\n" +
             "적용 기간⏰: 24시간\n" +
             "누적 무쌍⚔️: " + (data.member[winner].musouWinCount || 0) + "회\n\n" +
