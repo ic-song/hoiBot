@@ -71,4 +71,18 @@ test("실제 분리 회원 저장에서도 필터만 변경·레이드/로그와
  c.response("test","/필터추가 분리검사","admin",true,{reply(){}},{},"com.kakao.talk");assert.deepStrictEqual(clone(h.load().messageFilterWords),["분리검사"]);assert.deepStrictEqual(clone(h.store("raid")),raid);assert.deepStrictEqual(clone(h.store("logs")),logs);assert.deepStrictEqual(clone(c.getMemberSplitMarker(h.load())),clone(before));
  for(const s of ["/필터추가 가","/필터제거 가","dev/필터추가 가"])assert(c.isExclusiveDataMutationCommandMessage(s));
 });
+test("필터리스트 실제 콜백은 등록 순서·번호·개수·빈 목록 안내, 파일 IO 없음",()=>{
+ const {h,c,call}=fixture();const before=h.persist();let reads=0,saves=0;const read=c.FileStream.read;c.FileStream.read=(...args)=>{reads++;return read(...args);};c.saveJsonFile=()=>{saves++;};
+ assert(call("/필터리스트","admin","test",true).replies[0].includes("등록된 필터가 없습니다."));c.setMessageFilterCache(["한 문구","둘째","필터"],"PROD",true);
+ const output=call("/필터리스트","admin","test",true).replies[0];assert(output.includes("3개")&&output.includes("1. 한 문구\n2. 둘째\n3. 필터"));assert.equal(reads,0);assert.equal(saves,0);assert.deepStrictEqual(h.persist(),before);
+});
+test("필터리스트 권한·정확한 명령·DEV 분리·Info 중복 차단",()=>{
+ const {h,c,call}=fixture();c.setMessageFilterCache(["운영목록"],"PROD",true);c.setMessageFilterCache(["개발목록"],"DEV",true);
+ assert.equal(call("/필터리스트","a","test",true).replies.length,0);assert.equal(call("/필터리스트","admin","room8",true).replies.length,0);assert(call("/필터리스트","master","test",true).replies[0].includes("운영목록"));assert(call("dev/필터리스트","admin","test",true).replies[0].includes("개발목록"));
+ for(const msg of ["/필터리스트 1","/필터리스트방법","/필터리스트 해봐"])assert.equal(call(msg).result,"passed");
+ const ic={getMessageFilterRequest:()=>null,containsMessageFilterWord:()=>{throw Error("Info must bypass");},getCachedMessageFilterWords:()=>{throw Error("Info must bypass");}};vm.createContext(ic);const start=h.info.indexOf('if (getMessageFilterRequest(msg))'),end=h.info.indexOf('if (ctx.isDev)',start);vm.runInContext('function check(msg){var ctx={isDev:false};'+h.info.slice(start,end)+'return "passed";}',ic);assert.equal(ic.check("/필터리스트"),undefined);
+});
+test("추가·제거 쉼표 분리는 내부 띄어쓰기 보존·완전 일치 제거",()=>{
+ const {h,call}=fixture();call("/필터추가  한 문구  , 둘째,한 문구");assert.deepStrictEqual(h.read().messageFilterWords,["한 문구","둘째"]);call("/필터제거 한");assert.deepStrictEqual(h.read().messageFilterWords,["한 문구","둘째"]);call("/필터제거  한 문구 , 둘째 ");assert.deepStrictEqual(h.read().messageFilterWords,[]);
+});
 console.log("PASS message filter: "+groups+" groups (synthetic only)");
