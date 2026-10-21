@@ -2881,7 +2881,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (msg === "/필터리스트") {
             if (!isAdmin(sender) && !isMaster(sender)) return;
             var listedFilterWords = getCachedMessageFilterWords(ctx.isDev).slice();
-            var filterListLines = ["📋 필터 목록 · " + listedFilterWords.length + "개"];
+            var filterListLines = ["📋 필터 목록\n현재 등록: " + listedFilterWords.length + "/" + GLOBAL_CONFIG.messageFilter.maxWords + "개"];
             if (listedFilterWords.length) {
                 filterListLines.push(allsee);
                 for (var filterListIndex = 0; filterListIndex < listedFilterWords.length; filterListIndex++) filterListLines.push((filterListIndex + 1) + ". " + listedFilterWords[filterListIndex]);
