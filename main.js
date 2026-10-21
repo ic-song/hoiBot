@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.672"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.673"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
@@ -996,6 +996,41 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    manualReset: {
+        timeoutMs: 60000,
+        entries: [
+            { id: "comments", name: "전체 댓글", command: "/댓글초기화", role: "admin", scope: "전체 사용자의 일반·픽 댓글과 댓글 홈알림" },
+            { id: "feeds", name: "전체 피드", command: "/피드초기화", role: "admin", scope: "전체 사용자의 피드·이전 한줄평과 피드 홈알림" },
+            { id: "homeVisits", name: "펫홈 방문 횟수", command: "/펫홈방문초기화", role: "admin", scope: "전체 사용자의 홈 방문 횟수" },
+            { id: "homeLikes", name: "좋아홈 횟수", command: "/좋아홈초기화", role: "admin", scope: "전체 사용자의 좋아홈 횟수" },
+            { id: "dolls", name: "인형 전체 기록", command: "/인형전체초기화", role: "master", scope: "전체 도감·수집 기록·순위·누적 인형 매력 (구독·재화 유지)" },
+            { id: "serverRaid", name: "서버 레이드대전", command: "/서버대전전체초기화", role: "master", scope: "전체 대전·개인 참가 기록·순위·우승 횟수 (지급 포인트 유지)" },
+            { id: "musou", name: "펫무쌍", command: "/펫무쌍전체초기화", role: "musou", scope: "전체 참가·진행·회차·현재 칭호·누적 전적 (지급 재화 유지)" },
+            { id: "castleBattle", name: "캐슬대전", command: "/캐슬대전초기화", role: "castleOperator", scope: "전체 사용자의 캐슬대전 승패·점수·공격 횟수" },
+            { id: "castleCount", name: "사용자 캐슬대전 횟수", command: "/캐슬대전횟수리셋", role: "operator", args: "userCount", scope: "지정 사용자의 캐슬대전 공격 횟수를 입력값으로 변경" },
+            { id: "castle", name: "캐슬 운영 정보", command: "/캐슬초기화", role: "operator", scope: "영주·세율·수익·방어 횟수를 기본값으로 변경" },
+            { id: "earnings", name: "영주 수익 순위", command: "/영주수익순위초기화", role: "master", scope: "전체 사용자의 영주 수익 기록" },
+            { id: "punch", name: "펀치 순위", command: "/펀치순위초기화", role: "operator", scope: "전체 펀치 순위 기록" },
+            { id: "explore", name: "펫 탐험 전적", command: "/펫탐험전체전적초기화", role: "explore", scope: "전체 사용자의 펫 탐험 전적" },
+            { id: "tower", name: "시련의 탑 시즌", command: "/시련의탑시즌초기화", role: "operator", scope: "전체 사용자의 시련의 탑 기록" },
+            { id: "guilds", name: "길드 전체", command: "/길드전체초기화", role: "admin", scope: "전체 길드와 회원의 길드 소속 연결" },
+            { id: "territory", name: "길드 영지 점령", command: "/길드영지초기화", role: "master", scope: "모든 영지 점령·영주 정보 (대전 진행 상태 유지)" },
+            { id: "guildBoard", name: "내 길드 게시판", command: "/길드게시판초기화", role: "guildLeader", scope: "본인 길드의 게시글 (공지 유지)" },
+            { id: "contribution", name: "사용자 공헌 구매 횟수", command: "/공헌구매초기화", role: "master", args: "user", scope: "지정 사용자의 공헌 구매 횟수" },
+            { id: "diamonds", name: "다이아 전체", command: "/다이아전체초기화", role: "master", scope: "전체 다이아 보유량과 관련 누적 기록" },
+            { id: "level", name: "레벨 테스트 데이터", command: "/레벨초기화", role: "operator", scope: "리뉴얼 테스트용 전체 레벨·EXP·가호 등 (포인트·아이템 유지)" },
+            { id: "likes", name: "현재 좋아요", command: "/좋아리셋", role: "operator", scope: "현재 좋아요를 누적으로 옮긴 뒤 현재값 0으로 변경" },
+            { id: "weekly", name: "주간 퀘스트 횟수", command: "/주간횟수초기화", role: "master", scope: "전체 사용자의 주간 퀘스트 횟수" },
+            { id: "miniPetBattle", name: "내 미니펫 전적", command: "/미니펫전적초기화", role: "member", scope: "본인의 미니펫 전적 (초기화권 1개 사용)" },
+            { id: "collection", name: "사용자 미니펫 컬렉션", command: "/미니펫컬렉션초기화", role: "master", args: "user", scope: "지정 사용자의 컬렉션 진행 상태 (지급 보상 유지)" },
+            { id: "pendant", name: "사용자 장착 펜던트", command: "/펜던트장착초기화", role: "master", args: "user", scope: "지정 사용자의 장착 펜던트 제거" },
+            { id: "lightServer", name: "미가입 출첵 서버 표시", command: "/미가입출첵서버초기화", role: "admin", args: "server", scope: "지정 서버 미가입 출첵 기록의 소속 표시" },
+            { id: "adminRank", name: "관리자 인증 실적", command: "/관리자순위초기화", role: "masterIdentity", scope: "관리자 인증 실적 (대상 인증·보상 유지)" },
+            { id: "authentication", name: "미인증 사용자 일괄 인증", command: "/인증초기화", role: "masterIdentity", scope: "삭제가 아니라 미인증 사용자를 기타 사유로 일괄 인증 (보상 제외)" },
+            { id: "masters", name: "마스터 명단", command: "/마스터초기화@@@", role: "master", scope: "마스터 명단을 기본 운영자 명단으로 변경" },
+            { id: "ownFeeds", name: "내 피드 전체", command: "/피드전체삭제", role: "pass", scope: "본인의 피드 전체 삭제 (기존 패스 조건 유지)" }
+        ]
+    },
     messageFilter: { maxWords: 300, sharedPrefix: "hoibot.messageFilter." }, // 등록 상한과 Main·Info의 환경별 필터 메모리 공유 키
     sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } }, // 평수별 가구 장착 수 계산 기준
     doll: {
@@ -2830,6 +2865,7 @@ const miniPetData = loadJsonFile(miniPetPath);
 // DEV 환경에서 길드 영토전이 활성화되어 있는지 확인
 
 //메인채팅응답기능
+var manualResetSessions = {}; // 확인 대기는 컴파일 시 소멸하며 디스크에 저장하지 않음
 var messageFilterCaches = {};
 setMessageFilterCache(readMessageFilterWords(initData), "PROD", true);
 var messageFilterDevMemberPath = DEV_DATA_ROOT_PATH + "member.json";
@@ -2877,6 +2913,57 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
+        }
+        var resetProbeKey = (ctx.isDev ? "DEV:" : "PROD:") + sender;
+        var resetProbeSession = manualResetSessions[resetProbeKey];
+        var resetSameScope = resetProbeSession && resetProbeSession.room === room && resetProbeSession.isGroupChat === isGroupChat;
+        if (ctx.isDev && (/^\/(?:1삭제|2취소)$/.test(msg) || (resetSameScope && /^\/\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)))) msg = msg.substring(1);
+        if (isManualResetInput(msg) && (!/^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg) || resetSameScope)) {
+            var resetSessionKey = (ctx.isDev ? "DEV:" : "PROD:") + sender;
+            var resetSession = manualResetSessions[resetSessionKey];
+            if (isManualResetLegacyCommand(msg)) {
+                delete manualResetSessions[resetSessionKey];
+                replier.reply("초기화 명령이 통합되었습니다.\n/초기화 → 번호 선택 → 1삭제 또는 2취소 순서로 진행해주세요.");
+                return;
+            }
+            if (msg !== "/초기화") {
+                if (!resetSession || resetSession.room !== room || resetSession.isGroupChat !== isGroupChat) return;
+                if (Date.now() >= resetSession.expiresAt || msg === "2취소") {
+                    delete manualResetSessions[resetSessionKey];
+                    replier.reply(msg === "2취소" ? "초기화를 취소했습니다. 삭제한 데이터는 없습니다." : "초기화 확인 시간이 만료되었습니다. /초기화부터 다시 진행해주세요.");
+                    return;
+                }
+            }
+            try {
+                var resetMenuMember = loadJsonFile(filePath);
+                var resetMenuGuild = loadJsonFile(guildPath);
+                var resetDecision = advanceManualResetSession(msg, sender, room, isGroupChat, resetSessionKey, resetMenuMember, resetMenuGuild);
+            } catch (resetMenuLoadError) { delete manualResetSessions[resetSessionKey]; throw resetMenuLoadError; }
+            if (resetDecision.entry && (resetDecision.entry.id === "comments" || resetDecision.entry.id === "feeds")) {
+                try {
+                    var resetContentPath = resetDecision.entry.id === "comments" ? petHomeCommentsFile : homeDataFile;
+                    var resetContentData = loadJsonFile(resetContentPath);
+                    var resetActivityData = loadJsonFile(petHomeActivityFile);
+                    var resetContentSnapshot = JSON.stringify(resetContentData), resetActivitySnapshot = JSON.stringify(resetActivityData);
+                    var resetContentResult = resetAllPetHomeContent(resetContentData, resetActivityData, resetDecision.entry.id);
+                    var resetContentSummary = "일반 댓글: " + resetContentResult.comments + "개 / 픽 댓글: " + resetContentResult.pinned + "개\n피드: " + resetContentResult.feeds + "개 / 이전 한줄평: " + resetContentResult.legacy + "개\n관련 알림: " + resetContentResult.alerts + "개";
+                    if (resetDecision.execute) {
+                        if (resetContentResult.contentChanged) saveJsonFile(resetContentData, resetContentPath, false, resetContentSnapshot);
+                        if (resetContentResult.alerts) saveJsonFile(resetActivityData, petHomeActivityFile, false, resetActivitySnapshot);
+                        try { replier.reply("✅ " + resetDecision.entry.name + " 초기화 완료\n" + resetContentSummary); } catch (resetReplyError) { try { debuggerLog("초기화 완료 응답 실패: " + resetReplyError); } catch (resetLogError) {} }
+                        return;
+                    }
+                    resetDecision.reply += "\n\n현재 대상 건수\n" + resetContentSummary + "\n※ 실제 삭제는 확인 시점의 최신 데이터를 기준으로 합니다.";
+                } catch (resetContentError) { delete manualResetSessions[resetSessionKey]; throw resetContentError; }
+            }
+            if (!resetDecision.execute) {
+                if (resetDecision.reply) {
+                    try { replier.reply(resetDecision.reply); } catch (resetMenuReplyError) { delete manualResetSessions[resetSessionKey]; throw resetMenuReplyError; }
+                }
+                return;
+            }
+            msg = resetDecision.command; // 확인을 소비한 이 응답만 기존 실행 분기로 연결
+            ctx.manualResetConfirmed = msg;
         }
         if (msg === "/필터리스트") {
             if (!isAdmin(sender) && !isMaster(sender)) return;
@@ -2927,7 +3014,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             catch (cleanupReplyError) { try { debuggerLog("[필터 정리 응답] " + cleanupReplyError); } catch (cleanupLogError) {} }
             return;
         }
-        if (isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
+        if (!ctx.manualResetConfirmed && isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
         // 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.
         var carrotTradeAnswer = null;
         var carrotInputReply = getCarrotTradeReply(msg, ctx.isDev);
@@ -31623,6 +31710,131 @@ function isOrderLogRoomBot(sender) {
     return sender === "오픈채팅봇" && getCurrentContext().permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom;
 }
 
+// 원래의 수동 초기화 입력을 실행하지 않고 통합 메뉴로 안내할지 확인하는 함수
+function isManualResetLegacyCommand(msg) {
+    if (typeof msg !== "string" || msg.charAt(0) !== "/") return false;
+    var entries = GLOBAL_CONFIG.manualReset.entries;
+    for (var i = 0; i < entries.length; i++) if (msg.indexOf(entries[i].command) === 0) return true;
+    return false;
+}
+
+// 통합 메뉴·번호 선택·최종 응답만 초기화 상태 흐름으로 분류하는 함수
+function isManualResetInput(msg) {
+    return typeof msg === "string" && (msg === "/초기화" || msg === "1삭제" || msg === "2취소" || /^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg) || isManualResetLegacyCommand(msg));
+}
+
+// 기존 역할·방·패스·길드장 조건으로 메뉴 표시와 확인 시 권한을 검사하는 함수
+function isManualResetEntryAllowed(entry, sender, memberData, guildData) {
+    var role = entry.role, operator = sender === "호이 남" || isOrderLogRoomBot(sender);
+    if (role === "master") return isMaster(sender);
+    if (role === "masterIdentity") return isMasterIdentity(sender);
+    if (role === "admin") return isAdmin(sender) || isMaster(sender);
+    if (role === "operator") return operator;
+    if (role === "castleOperator") return sender === "호이 남" || sender === "오픈채팅봇";
+    if (role === "explore") return operator || isMaster(sender);
+    if (role === "musou") return isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇";
+    var member = memberData.member && Object.prototype.hasOwnProperty.call(memberData.member, sender) ? memberData.member[sender] : null;
+    if (!member) return false;
+    if (role === "member") return true;
+    if (role === "pass") return hasActiveHoiPassAccess(memberData, sender);
+    if (role === "guildLeader") {
+        var guild = member.guild && guildData.guilds && guildData.guilds[member.guild.id];
+        return !!(guild && isGuildLeader(guild, sender));
+    }
+    return false;
+}
+
+// 메모리 메뉴 선택을 검증하고 단 한 번의 실행 명령 또는 안내를 반환하는 함수
+function advanceManualResetSession(msg, sender, room, isGroupChat, key, memberData, guildData) {
+    if (!memberData || !memberData.member || typeof memberData.member !== "object" || Array.isArray(memberData.member)) throw new Error("초기화 회원 데이터 형식 오류");
+    if (!guildData || typeof guildData !== "object" || Array.isArray(guildData)) throw new Error("초기화 길드 데이터 형식 오류");
+    var entries = GLOBAL_CONFIG.manualReset.entries, session = manualResetSessions[key], now = Date.now();
+    if (msg === "/초기화") {
+        for (var oldKey in manualResetSessions) if (Object.prototype.hasOwnProperty.call(manualResetSessions, oldKey) && now >= manualResetSessions[oldKey].expiresAt) delete manualResetSessions[oldKey];
+        var choices = [], lines = ["🧹 초기화 메뉴", "번호 선택 → 범위 확인 → 1삭제 / 2취소", allsee];
+        for (var entryIndex = 0; entryIndex < entries.length; entryIndex++) {
+            if (!isManualResetEntryAllowed(entries[entryIndex], sender, memberData, guildData)) continue;
+            choices.push(entries[entryIndex].id);
+            var usage = entries[entryIndex].args === "user" ? "번호 아이디" : entries[entryIndex].args === "userCount" ? "번호 아이디 횟수" : entries[entryIndex].args === "server" ? "번호 서버" : "번호";
+            lines.push(choices.length + ". " + entries[entryIndex].name + " (입력: " + usage + ")");
+        }
+        if (!choices.length) { delete manualResetSessions[key]; return { reply: "사용할 수 있는 초기화 항목이 없습니다." }; }
+        manualResetSessions[key] = { stage: "menu", choices: choices, room: room, isGroupChat: isGroupChat, expiresAt: now + GLOBAL_CONFIG.manualReset.timeoutMs };
+        lines.push("\n60초 안에 번호를 입력해주세요. 취소: 2취소\n정기 리셋·데이터 정리·일회성 이전 명령은 기존 방식으로 유지됩니다.");
+        return { reply: lines.join("\n") };
+    }
+    if (!session || session.room !== room || session.isGroupChat !== isGroupChat || now >= session.expiresAt) return {};
+    if (session.stage === "confirm") {
+        var confirmedEntry = null;
+        for (var confirmedIndex = 0; confirmedIndex < entries.length; confirmedIndex++) if (entries[confirmedIndex].id === session.entryId) confirmedEntry = entries[confirmedIndex];
+        if (!confirmedEntry || !isManualResetEntryAllowed(confirmedEntry, sender, memberData, guildData)) { delete manualResetSessions[key]; return { reply: "초기화 권한이 변경되었습니다. 다시 /초기화로 확인해주세요." }; }
+        if (confirmedEntry.id === "guildBoard" && (!memberData.member[sender].guild || memberData.member[sender].guild.id !== session.guildId)) { delete manualResetSessions[key]; return { reply: "선택 후 길드가 변경되어 취소했습니다. /초기화부터 다시 진행해주세요." }; }
+        if (msg !== "1삭제") return { reply: "선택한 항목을 확인 중입니다. 1삭제 또는 2취소를 입력해주세요. 항목을 바꾸려면 /초기화로 다시 시작해주세요." };
+        delete manualResetSessions[key];
+        return { execute: true, entry: confirmedEntry, command: session.command };
+    }
+    var choiceMatch = msg.match(/^(\d+)(?:[ \t]+([^\r\n]+))?$/);
+    if (!choiceMatch) return { reply: "먼저 메뉴의 번호를 선택해주세요. 취소: 2취소" };
+    var choiceIndex = Number(choiceMatch[1]) - 1, chosenEntry = null, args = choiceMatch[2] ? choiceMatch[2].trim() : "";
+    if (choiceIndex < 0 || choiceIndex >= session.choices.length || Math.floor(choiceIndex) !== choiceIndex) return { reply: "메뉴에 있는 번호를 입력해주세요." };
+    for (var chosenIndex = 0; chosenIndex < entries.length; chosenIndex++) if (entries[chosenIndex].id === session.choices[choiceIndex]) chosenEntry = entries[chosenIndex];
+    if (!chosenEntry || !isManualResetEntryAllowed(chosenEntry, sender, memberData, guildData)) { delete manualResetSessions[key]; return { reply: "초기화 권한이 변경되었습니다. 다시 /초기화로 확인해주세요." }; }
+    if (!chosenEntry.args && args) return { reply: "이 항목은 번호만 입력해주세요." };
+    var target = args;
+    if (chosenEntry.args === "server" && !/^(?:호[1-7]|벨[1-2]|GM|서버장)$/.test(args)) return { reply: "번호 뒤에 서버를 입력해주세요. 예: " + choiceMatch[1] + " 호1" };
+    if (chosenEntry.args === "userCount") {
+        var targetMatch = args.match(/^(.+?)\s+(\d+)$/);
+        if (!targetMatch || Number(targetMatch[2]) > 9007199254740991) return { reply: "번호 뒤에 아이디와 0 이상의 횟수를 입력해주세요." };
+        target = targetMatch[1].trim();
+        args = target + " " + Number(targetMatch[2]); // 기존 횟수 변경 분기가 해석하는 공백 구분으로 정규화
+    }
+    if ((chosenEntry.args === "user" || chosenEntry.args === "userCount") && (!target || !Object.prototype.hasOwnProperty.call(memberData.member, target))) return { reply: "번호 뒤에 존재하는 아이디를 입력해주세요." };
+    var command = chosenEntry.command + (args ? " " + args : "");
+    manualResetSessions[key] = { stage: "confirm", entryId: chosenEntry.id, command: command, room: room, isGroupChat: isGroupChat, guildId: chosenEntry.id === "guildBoard" ? memberData.member[sender].guild.id : null, expiresAt: now + GLOBAL_CONFIG.manualReset.timeoutMs };
+    return { entry: chosenEntry, reply: "선택한 데이터는 [" + chosenEntry.name + "]입니다.\n범위: " + chosenEntry.scope + (args ? "\n지정 대상: " + args : "") + "\n정말 초기화하시겠습니까?\n1삭제 / 2취소\n60초 안에 입력해주세요. 기존 실행 조건은 삭제 직전에 다시 검사합니다." };
+}
+
+// 이미 읽은 전체 댓글 또는 피드와 같은 종류의 홈알림만 초기화하는 함수
+function resetAllPetHomeContent(contentData, activityData, kind) {
+    if (!contentData || typeof contentData !== "object" || Array.isArray(contentData) || !activityData || !activityData.alerts || typeof activityData.alerts !== "object" || Array.isArray(activityData.alerts)) throw new Error("펫홈 초기화 데이터 형식 오류");
+    if (kind !== "comments" && kind !== "feeds") throw new Error("펫홈 초기화 종류 오류");
+    var result = { comments: 0, pinned: 0, feeds: 0, legacy: 0, alerts: 0, contentChanged: false };
+    if (kind === "comments") {
+        var fields = ["comments", "pinnedComments"];
+        for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+            var map = contentData[fields[fieldIndex]];
+            if (!map || typeof map !== "object" || Array.isArray(map)) throw new Error("댓글 초기화 목록 형식 오류");
+            for (var owner in map) {
+                if (!Object.prototype.hasOwnProperty.call(map, owner)) continue;
+                if (!Array.isArray(map[owner])) throw new Error("댓글 초기화 사용자 목록 형식 오류");
+                result[fieldIndex === 0 ? "comments" : "pinned"] += map[owner].length;
+                if (map[owner].length) { map[owner] = []; result.contentChanged = true; }
+            }
+        }
+    } else {
+        for (var feedOwner in contentData) {
+            if (!Object.prototype.hasOwnProperty.call(contentData, feedOwner)) continue;
+            var home = contentData[feedOwner];
+            if (!home || typeof home !== "object" || Array.isArray(home) || (home.feeds !== undefined && !Array.isArray(home.feeds)) || (home.comment !== undefined && typeof home.comment !== "string")) throw new Error("피드 초기화 사용자 데이터 형식 오류");
+            if (home.feeds && home.feeds.length) { result.feeds += home.feeds.length; home.feeds = []; result.contentChanged = true; }
+            if (home.comment !== undefined) { if (home.comment) result.legacy++; delete home.comment; delete home.commentTime; result.contentChanged = true; }
+        }
+    }
+    var alertType = kind === "comments" ? "comment" : "feed";
+    for (var alertOwner in activityData.alerts) {
+        if (!Object.prototype.hasOwnProperty.call(activityData.alerts, alertOwner)) continue;
+        var alerts = activityData.alerts[alertOwner], keptAlerts = [];
+        if (!Array.isArray(alerts)) throw new Error("펫홈 초기화 알림 목록 형식 오류");
+        for (var alertIndex = 0; alertIndex < alerts.length; alertIndex++) {
+            if (!alerts[alertIndex] || typeof alerts[alertIndex] !== "object" || typeof alerts[alertIndex].type !== "string") throw new Error("펫홈 초기화 알림 형식 오류");
+            if (alerts[alertIndex].type === alertType) result.alerts++;
+            else keptAlerts.push(alerts[alertIndex]);
+        }
+        if (keptAlerts.length !== alerts.length) activityData.alerts[alertOwner] = keptAlerts;
+    }
+    return result;
+}
+
 // 회원에 저장된 선택적 필터 목록을 검증하고 독립 배열로 반환하는 함수
 function readMessageFilterWords(data) {
     if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("필터 회원 데이터를 읽을 수 없습니다.");
@@ -31893,7 +32105,8 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    return command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+    if (isDevCommandMessage(msg) && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(command)) command = command.substring(1);
+    return isManualResetInput(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
         command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||

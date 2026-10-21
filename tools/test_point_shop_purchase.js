@@ -68,6 +68,8 @@ const c = {
     GLOBAL_CONFIG: { pointShop: {}, petMusou: {}, petSkill: {}, items: { carrotName: "🥕당근이세요?" }, pet: { evolutionRequiredExp: 600 }, happyFoundation: { transferFeeMin: 0, transferFeeMax: 100 } }
 };
 vm.createContext(c);
+vm.runInContext("GLOBAL_CONFIG.manualReset = " + source.match(/manualReset: (\{[\s\S]*?\n    \}),/)[1], c);
+for (const name of ["isManualResetInput", "isManualResetLegacyCommand"]) vm.runInContext(fn(name), c);
 vm.runInContext("GLOBAL_CONFIG.pointShop = " + source.match(/pointShop: (\{[\s\S]*?\n    \}),\n    guaranteedPackage/)[1], c);
 vm.runInContext("GLOBAL_CONFIG.petSkill.shopDiscounts = " + source.match(/shopDiscounts: (\{[\s\S]*?\n        \})/)[1], c);
 vm.runInContext("GLOBAL_CONFIG.petMusou.ticketEvent = " + source.match(/ticketEvent: (\{\s*coupons: [\s\S]*?\n        \})/)[1] + ";", c);

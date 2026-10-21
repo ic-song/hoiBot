@@ -632,6 +632,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (msg === "/ㅍㅍㅍ") msg = "ㅍㅍㅍ"; // 기존 포인트 단축어로 DEV 입력 정규화
 		}
 		if (getMessageFilterRequest(msg)) return; // 관리 명령은 Main에서만 처리
+		if (ctx.isDev && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(msg)) msg = msg.substring(1);
+		if (msg === "/초기화" || msg === "/댓글초기화" || msg === "/피드초기화" || msg === "1삭제" || msg === "2취소" || /^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)) return;
 		if (msg === "/필터데이터정리" || msg === "/필터리스트") return;
 		if ((msg.charAt(0) === "/" || ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"].indexOf(msg) !== -1) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
 
