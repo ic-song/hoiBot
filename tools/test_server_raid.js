@@ -79,6 +79,9 @@ const c = {
     clearTimeout(id) { timers.delete(id); }
 };
 c.java.lang = { Runnable: function (r) { return r; }, Thread: function (r) { this.setDaemon = () => {}; this.start = () => r.run(); } };
+const filterSharedProperties = new Map();
+c.java.lang.System = { getProperty: k => filterSharedProperties.has(k) ? filterSharedProperties.get(k) : null, setProperty(k,v) { filterSharedProperties.set(k,String(v)); } };
+c.messageFilterCaches = { PROD: { words: [], text: "[]" }, DEV: { words: [], text: "[]" } };
 for (let i = 1; i <= 100; i++) c["room" + i] = "room" + i;
 c.testRoom = "test";
 vm.createContext(c);
@@ -91,6 +94,8 @@ for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createComma
     "isOrderLogRoomBot", "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
     "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(block(main, "function " + name + "("), c);
 vm.runInContext(main.slice(main.indexOf("function serverRaidHeader("), main.indexOf("// 길드 영지전 관련 함수들")), c);
+const filterHelpers = ["readMessageFilterWords", "setMessageFilterCache", "getCachedMessageFilterWords", "getMessageFilterRequest", "containsMessageFilterWord", "isMessageFilterCommandInput", "changeMessageFilterWords"];
+for(const name of filterHelpers) if(main.includes("function "+name+"(")) vm.runInContext(block(main,"function "+name+"("),c);
 const entryStart = main.indexOf("// 서버 레이드대전 진입:");
 const entryEnd = main.indexOf('if (ctx.isDev && msg === "/데이터백업")', entryStart);
 vm.runInContext("function runEntry(){" + main.slice(entryStart, entryEnd) + "}", c);
@@ -106,10 +111,14 @@ vm.runInContext("function runAdminMove(){" + block(main, "if (/^\\/서버이동\
 const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank, java: c.java, DATA_ROOT_PATH: root, resolveActiveDataPath: p => c.resolveActiveDataPath(p) };
 vm.createContext(infoContext);
 vm.runInContext(block(info, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", infoContext);
+infoContext.messageFilterCaches = { PROD: { words: [], text: "[]" }, DEV: { words: [], text: "[]" } };
+for(const name of filterHelpers.slice(0,5)) if(info.includes("function "+name+"(")) vm.runInContext(block(info,"function "+name+"("),infoContext);
 for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isInfoServerRaidLocked", "isInfoServerRaidAdditionalCommand", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatRankNickname", "formatOverallUserRow", "formatOverallServerRow", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"])
     vm.runInContext(block(info, "function " + name + "("), infoContext);
 
 function reset() {
+    filterSharedProperties.clear();
+    c.messageFilterCaches = { PROD: { words: [], text: "[]" }, DEV: { words: [], text: "[]" } };
     c.GLOBAL_CONFIG.serverRaid.limits.ticketAttacks = ticketMode ? 5 : 0; // 저장된 이전 회차의 추가 공격 5회 정책을 회귀 검증
     c.GLOBAL_CONFIG.serverRaid.penalties = clone(ticketMode ? ticketConfig.penalties : { chargeFromAttempt: 2, pointCost: 50000000 });
     c.GLOBAL_CONFIG.serverRaid.rewards.handicapRanks = clone(ticketMode ? ticketConfig.rewards.handicapRanks : []);

@@ -1,0 +1,35 @@
+const assert=require("assert"),fs=require("fs"),path=require("path"),os=require("os"),child=require("child_process");
+const {createFixture}=require("./test_server_raid_delivery.js");
+const h=createFixture(),jar=process.argv[2];assert(jar&&fs.existsSync(jar),"Rhino jar required");
+const dir=fs.mkdtempSync(path.join(os.tmpdir(),"hoibot-message-filter-")),root=dir.replace(/\\/g,"/")+"/";
+fs.mkdirSync(path.join(dir,"dev"));for(const p of ["member.json","dev/member.json"])fs.writeFileSync(path.join(dir,p),JSON.stringify({member:{synthetic:{}},messageFilterWords:p.startsWith("dev")?["데브검사"]:["운영검사"]}),"utf8");
+const helpers=["readMessageFilterWords","setMessageFilterCache","getCachedMessageFilterWords","getMessageFilterRequest","containsMessageFilterWord"];
+// Main·Info를 실제 Java VM의 서로 다른 Rhino 전역으로 만들어 공유 메모리와 초기 읽기 횟수를 확인한다.
+function scopeSource(source,publish){
+ let code="var GLOBAL_CONFIG="+JSON.stringify(h.c.GLOBAL_CONFIG)+",DATA_ROOT_PATH="+JSON.stringify(root)+",DEV_DATA_ROOT_PATH="+JSON.stringify(root+"dev/")+";GLOBAL_CONFIG.messageFilter.sharedPrefix='hoibot.test.filter.'+java.lang.System.nanoTime()+'.';\n";
+ for(const name of helpers)code+=h.block(source,"function "+name+"(")+"\n";
+ code+="var reads=0,comparisons=0,FileStream={read:function(p){reads++;return String(new java.lang.String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(String(p))),'UTF-8'));},write:function(p,t){java.nio.file.Files.write(java.nio.file.Paths.get(String(p)),new java.lang.String(t).getBytes('UTF-8'));}};var initData=JSON.parse(FileStream.read(DATA_ROOT_PATH+'member.json'));function parseJsonContent(t){return JSON.parse(t);}function ensureParentFolder(p){new java.io.File(p).getParentFile().mkdirs();}\n";
+ const start=source.indexOf("var messageFilterCaches = {};"),end=source.indexOf("function response(",start);code+=source.slice(start,end);
+ if(publish){for(const name of ["isAttendanceGameCommand","isServerRaidTurnQueryCommand","getCarrotTradeReply","isMessageFilterCommandInput","changeMessageFilterWords","backupDevDataFromProduction"])code+=h.block(source,"function "+name+"(")+"\n";}
+ code+="var nativeCompare=containsMessageFilterWord;containsMessageFilterWord=function(m,w){comparisons++;return nativeCompare(m,w);};function checkCommand(msg,dev){return "+(publish?"isMessageFilterCommandInput(msg)":"(msg.charAt(0)==='/'||['ㅈㅈㅈ','ㅍㅍㅍ','ㅁㅁㅁ'].indexOf(msg)!==-1)")+"&&containsMessageFilterWord(msg,getCachedMessageFilterWords(dev));}\n";
+ return code;
+}
+const mainScript=scopeSource(h.main,true),infoScript=scopeSource(h.info,false);
+const script=`
+var cx=org.mozilla.javascript.Context.getCurrentContext();
+function check(v,s){if(!v)throw Error(s);}function evaluate(scope,text){var value=cx.evaluateString(scope,text,'filter-test',1,null);return value instanceof java.lang.Number?Number(value):value instanceof java.lang.Boolean?value.booleanValue():value;}
+cx.compileString(${JSON.stringify(h.main)},'main.js',1,null);cx.compileString(${JSON.stringify(h.info)},'Info.js',1,null);print('PASS Rhino: complete Main/Info compilation');
+var main=cx.initStandardObjects(),info=cx.initStandardObjects();evaluate(main,${JSON.stringify(mainScript)});evaluate(info,${JSON.stringify(infoScript)});
+var prefix=String(evaluate(main,'GLOBAL_CONFIG.messageFilter.sharedPrefix'));evaluate(info,'GLOBAL_CONFIG.messageFilter.sharedPrefix='+JSON.stringify(prefix));
+check(evaluate(main,'reads')===2&&evaluate(info,'reads')===2,'compile loads PROD/DEV once');
+evaluate(main,'reads=0;comparisons=0');evaluate(info,'reads=0;comparisons=0');
+for(var i=0;i<1000;i++){check(evaluate(main,"checkCommand('/정보 운영검사',false)")===true,'main command block');check(evaluate(info,"checkCommand('/정보 운영검사',false)")===true,'info command block');}
+check(evaluate(main,'reads')===0&&evaluate(info,'reads')===0,'commands do not read files');print('PASS Rhino: 1000 commands per scope, no filter file reads');
+evaluate(main,"checkCommand('운영검사 일반 대화',false)");evaluate(info,"checkCommand('운영검사 일반 대화',false)");check(evaluate(main,'comparisons')===1000&&evaluate(info,'comparisons')===1000,'ordinary chat bypass');print('PASS Rhino: ordinary chat bypasses comparisons');
+evaluate(main,"setMessageFilterCache(['새검사'],'PROD',true)");check(evaluate(info,"checkCommand('/정보 새검사',false)")===true,'Info sees Main update without compile');check(evaluate(info,"checkCommand('/정보 운영검사',false)")===false,'old term removed');check(evaluate(info,"checkCommand('/정보 데브검사',true)")===true,'DEV retained');check(evaluate(main,'reads')===0&&evaluate(info,'reads')===0,'refresh uses shared Java property only');print('PASS Rhino: real Java shared property sync and DEV isolation');
+evaluate(main,"var changed=changeMessageFilterWords(getCachedMessageFilterWords(false),getMessageFilterRequest('/필터추가 메모리,이모지✨'));var member={member:{synthetic:{}},messageFilterWords:changed.words};java.nio.file.Files.write(java.nio.file.Paths.get(DATA_ROOT_PATH+'member.json'),new java.lang.String(JSON.stringify(member)).getBytes('UTF-8'));setMessageFilterCache(changed.words,'PROD',true)");
+var restarted=cx.initStandardObjects();evaluate(restarted,${JSON.stringify(mainScript)});check(evaluate(restarted,"checkCommand('/정보 이모지✨',false)")===true,'saved term restored');check(evaluate(restarted,'reads')===2,'restart reads each environment once');print('PASS Rhino: fresh scope restores persisted list');
+evaluate(main,'backupDevDataFromProduction()');check(evaluate(main,"checkCommand('/정보 메모리',true)")===true,'DEV backup refresh');check(evaluate(info,"checkCommand('/정보 메모리',true)")===true,'Info DEV refresh');print('PASS Rhino: existing DEV backup refreshes both memory caches');
+var rejected=false;try{evaluate(main,'readMessageFilterWords({messageFilterWords:null})');}catch(e){rejected=true;}check(rejected,'invalid filter not normalized');print('PASS Rhino: invalid persisted data rejected');
+`;
+const file=path.join(dir,"test.js");fs.writeFileSync(file,script,"utf8");const r=child.spawnSync("java",["-Xmx1024m","-Dfile.encoding=UTF-8","-cp",path.resolve(jar),"org.mozilla.javascript.tools.shell.Main","-opt","-1","-version","200","-encoding","UTF-8","-f",file],{encoding:"utf8",timeout:60000,maxBuffer:3*1024*1024});process.stdout.write(r.stdout||"");process.stderr.write(r.stderr||"");assert.equal(r.status,0);
