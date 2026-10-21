@@ -1028,7 +1028,9 @@ const GLOBAL_CONFIG = {
             { id: "adminRank", name: "관리자 인증 실적", command: "/관리자순위초기화", role: "masterIdentity", scope: "관리자 인증 실적 (대상 인증·보상 유지)" },
             { id: "authentication", name: "미인증 사용자 일괄 인증", command: "/인증초기화", role: "masterIdentity", scope: "삭제가 아니라 미인증 사용자를 기타 사유로 일괄 인증 (보상 제외)" },
             { id: "masters", name: "마스터 명단", command: "/마스터초기화@@@", role: "master", scope: "마스터 명단을 기본 운영자 명단으로 변경" },
-            { id: "ownFeeds", name: "내 피드 전체", command: "/피드전체삭제", role: "pass", scope: "본인의 피드 전체 삭제 (기존 패스 조건 유지)" }
+            { id: "ownFeeds", name: "내 피드 전체", command: "/피드전체삭제", role: "pass", scope: "본인의 피드 전체 삭제 (기존 패스 조건 유지)" },
+            { id: "textCleanup", name: "글자수 전체 정리", command: "/글자수전체정리", role: "textCleanup", cleanup: true, scope: "미니펫·가구·펜던트 가방의 초과분을 각 기존 정렬·보관 한도에 따라 함께 영구 삭제 (장착 데이터 유지)" },
+            { id: "filterCleanup", name: "필터 데이터 정리", command: "/필터데이터정리", role: "admin", cleanup: true, scope: "확인 시점의 등록 필터에 해당하는 일반·픽 댓글, 피드·이전 한줄평, 일반·펫 타이틀과 관련 홈알림만 제거 (필터 목록 유지)" }
         ]
     },
     messageFilter: { maxWords: 300, sharedPrefix: "hoibot.messageFilter." }, // 등록 상한과 Main·Info의 환경별 필터 메모리 공유 키
@@ -2923,7 +2925,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var resetSession = manualResetSessions[resetSessionKey];
             if (isManualResetLegacyCommand(msg)) {
                 delete manualResetSessions[resetSessionKey];
-                replier.reply("초기화 명령이 통합되었습니다.\n/초기화 → 번호 선택 → 1삭제 또는 2취소 순서로 진행해주세요.");
+                replier.reply("초기화·운영 정리 명령이 통합되었습니다.\n/초기화 → 번호 선택 → 1삭제 또는 2취소 순서로 진행해주세요.");
                 return;
             }
             if (msg !== "/초기화") {
@@ -31733,6 +31735,7 @@ function isManualResetEntryAllowed(entry, sender, memberData, guildData) {
     if (role === "castleOperator") return sender === "호이 남" || sender === "오픈채팅봇";
     if (role === "explore") return operator || isMaster(sender);
     if (role === "musou") return isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇";
+    if (role === "textCleanup") return isMaster(sender) || (getCurrentContext().permissionRoom === room90 && (isAdmin(sender) || sender === "오픈채팅봇"));
     var member = memberData.member && Object.prototype.hasOwnProperty.call(memberData.member, sender) ? memberData.member[sender] : null;
     if (!member) return false;
     if (role === "member") return true;
@@ -31756,11 +31759,11 @@ function advanceManualResetSession(msg, sender, room, isGroupChat, key, memberDa
             if (!isManualResetEntryAllowed(entries[entryIndex], sender, memberData, guildData)) continue;
             choices.push(entries[entryIndex].id);
             var usage = entries[entryIndex].args === "user" ? "번호 아이디" : entries[entryIndex].args === "userCount" ? "번호 아이디 횟수" : entries[entryIndex].args === "server" ? "번호 서버" : "번호";
-            lines.push(choices.length + ". " + entries[entryIndex].name + " (입력: " + usage + ")");
+            lines.push(choices.length + ". " + (entries[entryIndex].cleanup ? "[정리] " : "") + entries[entryIndex].name + " (입력: " + usage + ")");
         }
         if (!choices.length) { delete manualResetSessions[key]; return { reply: "사용할 수 있는 초기화 항목이 없습니다." }; }
         manualResetSessions[key] = { stage: "menu", choices: choices, room: room, isGroupChat: isGroupChat, expiresAt: now + GLOBAL_CONFIG.manualReset.timeoutMs };
-        lines.push("\n60초 안에 번호를 입력해주세요. 취소: 2취소\n정기 리셋·데이터 정리·일회성 이전 명령은 기존 방식으로 유지됩니다.");
+        lines.push("\n60초 안에 번호를 입력해주세요. 취소: 2취소\n정기 리셋·/데이터정리·개인 가방 정리·일회성 이전 명령은 기존 방식으로 유지됩니다.");
         return { reply: lines.join("\n") };
     }
     if (!session || session.room !== room || session.isGroupChat !== isGroupChat || now >= session.expiresAt) return {};
@@ -31791,7 +31794,7 @@ function advanceManualResetSession(msg, sender, room, isGroupChat, key, memberDa
     if ((chosenEntry.args === "user" || chosenEntry.args === "userCount") && (!target || !Object.prototype.hasOwnProperty.call(memberData.member, target))) return { reply: "번호 뒤에 존재하는 아이디를 입력해주세요." };
     var command = chosenEntry.command + (args ? " " + args : "");
     manualResetSessions[key] = { stage: "confirm", entryId: chosenEntry.id, command: command, room: room, isGroupChat: isGroupChat, guildId: chosenEntry.id === "guildBoard" ? memberData.member[sender].guild.id : null, expiresAt: now + GLOBAL_CONFIG.manualReset.timeoutMs };
-    return { entry: chosenEntry, reply: "선택한 데이터는 [" + chosenEntry.name + "]입니다.\n범위: " + chosenEntry.scope + (args ? "\n지정 대상: " + args : "") + "\n정말 초기화하시겠습니까?\n1삭제 / 2취소\n60초 안에 입력해주세요. 기존 실행 조건은 삭제 직전에 다시 검사합니다." };
+    return { entry: chosenEntry, reply: "선택한 데이터는 [" + (chosenEntry.cleanup ? "정리: " : "") + chosenEntry.name + "]입니다.\n범위: " + chosenEntry.scope + (args ? "\n지정 대상: " + args : "") + (chosenEntry.cleanup ? "\n정말 정리하시겠습니까?" : "\n정말 초기화하시겠습니까?") + "\n1삭제 / 2취소\n60초 안에 입력해주세요. 기존 실행 조건은 삭제 직전에 다시 검사합니다." };
 }
 
 // 이미 읽은 전체 댓글 또는 피드와 같은 종류의 홈알림만 초기화하는 함수
