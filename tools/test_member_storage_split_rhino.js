@@ -16,7 +16,7 @@ function block(marker) {
 }
 // Rhino 자체의 비열거 속성·배열·JSON·Java UTF-8 동작을 실제 분리 헬퍼로 검증한다.
 const names = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore",
-    "buildMemberSplitRaidSummary", "buildMemberSplitPublicationRecovery", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "getMemberSplitByteLength",
+    "buildMemberSplitRaidSummary", "buildMemberSplitPublicationRecovery", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "stringifyMemberSplitStore", "getMemberSplitByteLength",
     "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration", "createServerRaidState",
     "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
 const testSource = block("const MEMBER_STORAGE_SPLIT_CONFIG = {") + "\n" + names.map(n => block("function " + n + "(")).join("\n") + `

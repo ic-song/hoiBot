@@ -6,6 +6,15 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-10-21 - 저장 내부의 중복 읽기·파싱·직렬화 감소
+
+Status: DEVELOPMENT_VALIDATED_PENDING_PRODUCTION
+
+- 최신 운영91fc5ba0/ver_2.665에서 저장 개선만 분리했다. 같은 저장 잠금에서 새로 검증한 회원 원문/파싱 결과와 분리 백업 원문, 이미 직렬화한 본문을 재사용한다. 매력/피해/보상/공격권/개인 정렬 개선과 응답/공지 잠금은 기준대로 유지한다.
+- 기존 백업 생성/회전/검증/fsync/원자 교체/롤백/재시작 복구를 생략하지 않는다. 누락·손상·오래된 객체를 빈 값으로 처리하지 않으며 새 데이터 형식이나 명령 간 캐시를 추가하지 않았다.
+- 최신 기준과 정상 저장·교체4단계 실패·fsync4단계 실패 뒤 전체 파일을 대조했다. 쓰기량과 동기화 횟수는 같고 읽기만 줄었다. Node 주요257그룹, 공통 저장 영향70그룹+베란다2스크립트, Rhino 분리35단언/공지9/기록실5/실제 Java 파일 계측을 통과했다.
+- PC Rhino 합성 계측의 공격 분기 중위415.58→345.20ms, 저장378.90→309.62ms다. 운영 Android 실측은 아니다. 상세 조건·표본은 tools/storage_io_reuse_validation.md와 tools/storage_io_reuse_profile_result.json에 보존한다. 반영 준비 버전은 ver_2.666이다.
+
 ## 2026-10-21 - 레이드 공격 안내의 개인 순위 정렬 생략
 
 Status: PRODUCTION_REFLECTED (2026-10-21, ver_2.665, PR #139)

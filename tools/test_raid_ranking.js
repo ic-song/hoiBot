@@ -7,9 +7,10 @@ function test(name,fn){fn();console.log("PASS "+(++groups)+": "+name);}
 // 실제 레이드 도메인을 사용하는 독립 VM 두 개에서 운영 기준과 현재 결과를 비교한다.
 function fixtures(){const h=createFixture(),old=createFixture();for(const n of ["buildServerRaidResults","buildServerRaidAttackMessage"])vm.runInContext(h.block(baseline,"function "+n+"("),old.c);return {h,old};}
 function roundOf(h,count){const round={accounts:{}},servers=h.c.GLOBAL_CONFIG.serverRaid.servers;for(let i=0;i<count;i++)round.accounts["id"+i]={id:"id"+i,server:servers[i%servers.length],damage:i%5===0?"90071992547409912345":String(i%7),attacks:i%19===0?[]:[{id:"event"+i,R:10,D:10,P:0,remaining:4,critical:false}],attackReward:0};return round;}
-test("운영 main 전체 차이는 버전·개인 정렬 생략·공격 안내 호출만 포함",()=>{
+test("개인 정렬 변경 유지와 현재 버전·개발자노트 일치",()=>{
  const h=createFixture();const expected=baseline.replace('const HoiBotVersion = "2.664"','const HoiBotVersion = "2.665"').replace('function buildServerRaidResults(round, freeze) {','function buildServerRaidResults(round, freeze, skipMemberRanks) {').replace('    rankServerRaidRows(rows);\n    for (var r = 0; r < rows.length; r++) {','    rankServerRaidRows(rows);\n    if (skipMemberRanks === true && freeze !== true) return rows; // 공격 안내에는 서버 순위만 필요하므로 개인 정렬은 생략\n    for (var r = 0; r < rows.length; r++) {').replace('var rows = buildServerRaidResults(round), server = null;','var rows = buildServerRaidResults(round, false, true), server = null;');
- assert.equal(h.main,expected);const entries=JSON.parse(fs.readFileSync(path.join(__dirname,"..","data","hoiBotChangeLog.json"),"utf8")).entries;assert.equal(entries[0].version,"2.665");assert.equal(entries[0].date,"2026-10-21");assert.equal(Number(entries[0].version)-Number(entries[1].version)<0.001001,true);
+ for(const name of ["buildServerRaidResults","buildServerRaidAttackMessage","rankServerRaidRows"])assert.equal(h.block(h.main,"function "+name+"("),h.block(expected,"function "+name+"("));
+ const entries=JSON.parse(fs.readFileSync(path.join(__dirname,"..","data","hoiBotChangeLog.json"),"utf8")).entries;assert.equal(entries[0].version,h.main.match(/const HoiBotVersion = "([^"]+)"/)[1]);assert.equal(Math.round(Number(entries[0].version)*1000)-Math.round(Number(entries[1].version)*1000),1);
 });
 test("1,500명·큰 정수 피해에서도 서버 합계/공동 순위와 신구 공격 UI 완전 일치",()=>{
  const {h,old}=fixtures(),round=roundOf(h,1500),original=JSON.stringify(round);const expected=old.c.buildServerRaidResults(clone(round)),actual=h.c.buildServerRaidResults(round,false,true);
