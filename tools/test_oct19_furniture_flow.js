@@ -8,7 +8,7 @@ c.hasPetSkill = (skills, name, skill) => !!(skills[name] && skills[name].indexOf
 c.isHoiPassPremiumActive = (data, name) => !!data.member[name].premium;
 c.checkRank = (_d, _p, _g, name) => name; c.getHoiPassPremiumHeader = () => "";
 c.getFurnitureBagLimit = () => 100; c.recordAdventureQuestAction = () => false;
-for (const name of ["getFurnitureMaxSlots", "initSweetHomeUser", "sortFurnitureList", "getPlacedFurnitureList", "requirePlacedFurnitureDataMap", "ensurePlacedFurnitureUser", "canCreatePlacedFurnitureData", "refreshPlacedFurnitureSummary", "normalizePlacedFurnitureSummary", "buildPlacedFurnitureSummary", "getFurnitureExp", "getHomeTotalExp"])
+for (const name of ["buildPetHomeFurnitureBagMessage", "formatPetHomeFurniture", "getFurnitureMaxSlots", "initSweetHomeUser", "sortFurnitureList", "getPlacedFurnitureList", "requirePlacedFurnitureDataMap", "ensurePlacedFurnitureUser", "canCreatePlacedFurnitureData", "refreshPlacedFurnitureSummary", "normalizePlacedFurnitureSummary", "buildPlacedFurnitureSummary", "getFurnitureExp", "getHomeTotalExp"])
     vm.runInContext(block(main, "function " + name + "("), c);
 vm.runInContext("function furnitureBranch(){" + block(main, 'if (msg === "/가구장착" ||') + block(main, 'if (msg == "/가구가방")') + "}", c);
 const clone = value => JSON.parse(JSON.stringify(value));

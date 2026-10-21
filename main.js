@@ -1,8 +1,9 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.674"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.676"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
+var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
 var dollCatalogCache = null; // 고정 인형 목록은 첫 이용 때 검증한 뒤 재사용
@@ -44,6 +45,8 @@ const ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES = [
     "ㄱㄱㄱ",
     "가입한다",
     "등록",
+    "등록한다",
+    "등록안한다",
     "ㄴㄴ",
     "시작한다",
     "거절한다",
@@ -117,6 +120,7 @@ const PET_SKILL_LIST = [
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "[엘리트] 등급 미니펫 장착 시 장착 슬롯에 따라 추가 매력을 획득합니다.\n\n🐹 대표 장착 · 100% 반영\n캐슬매력 +150만 · 레이드매력 +150만\n└ 종합매력 +300만💞\n\n🛡️ 보조 장착 · 50% 반영\n캐슬매력 +75만 · 레이드매력 +75만\n└ 종합매력 +150만💞\n\n※ 대표·보조 모두 조건 충족 시 각각 합산됩니다.\n※ 위 수치는 다른 퍼센트 보너스 적용 전 기준입니다.\n※ 펫스킬 해제 또는 조건 미충족 시 해당 보너스가 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
+    { name: "느그 집 마련의 꿈", grade: "S", hideRateInInfo: true, effect: "장착 시 펫홈 빌리지에서 얻는 캐슬매력과 레이드매력이 각각 10% 증가합니다.\n펫스킬을 해제하면 해당 스킬로 적용된 추가 매력 버프가 제거됩니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
     { name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
     { name: "호월신의 총애", grade: "S", rate: 0.3, effect: "하루 한 번 호월신에게 특별한 기도를 올립니다.\n7% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 신성한 기도📙와 중복 장착할 수 없습니다." },
@@ -1445,14 +1449,15 @@ const GLOBAL_CONFIG = {
         notifyEvery: 3, // 패스 미사용 1:1톡 운영 알림 주기
         messagePreviewMaxLength: 100 // 운영 알림에 표시할 최근 메시지 최대 길이
     },
+    petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, royalPercent: 10, arcanaPercent: 15, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
     petHomeComments: { // 펫홈 방명록 댓글 설정
-        maxStored: 50, // 최근 댓글 보관 개수
+        maxStored: 30, // 최근 댓글 보관 개수
         maxLength: 30, // 댓글 최대 글자 수
         maxPinned: 3, // 댓글핀 최대 개수
         pinCost: 50000000 // 댓글핀 등록 비용
     },
     petHomeDisplay: { // 펫홈 화면 표시 설정
-        furniturePreviewCount: 1 // 접기 전 표시할 장착 가구 개수
+        furniturePreviewCount: 3 // 펫홈에 표시할 종류별 대표 가구 개수
     },
     petHomeActivity: { // 펫홈 마음표현·활동 알림 설정
         maxAlerts: 100,
@@ -2914,7 +2919,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
         if (ctx.isDev) {
             msg = stripDevCommandPrefix(msg);
-            if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
+            if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ" || msg === "/등록한다" || msg === "/등록안한다") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
         }
         var resetProbeKey = (ctx.isDev ? "DEV:" : "PROD:") + sender;
         var resetProbeSession = manualResetSessions[resetProbeKey];
@@ -14588,7 +14593,7 @@ replier.reply(
                         let furnitureGrade = randomBoutique.grade;
 
                         // 표시 이름: 예) 부쉐론 귀걸이🔗(+41350💕)[부띠끄]
-                        let displayName = furnitureName + "(+" + furnitureExp + "💕)[" + furnitureGrade + "]";
+                        let displayName = furnitureName + "(+" + furnitureExp + "💞)[" + furnitureGrade + "]";
 
                         // 🏡 SweetHome 데이터 업데이트
                         let homeData = loadJsonFile(homeDataFile);
@@ -14631,7 +14636,7 @@ replier.reply(
                             let furnitureName = "샤넬 컬렉션🎩";
                             let furnitureExp = 56050;
                             let furnitureGrade = "시그니엘";
-                            let displayName = furnitureName + "(+" + furnitureExp + "💕)[" + furnitureGrade + "]";
+                            let displayName = furnitureName + "(+" + furnitureExp + "💞)[" + furnitureGrade + "]";
                             let homeData = loadJsonFile(homeDataFile);
                             homeData = initSweetHomeUser(homeData, targetName);
                             homeData = addFurniture(homeData, sender, furnitureName, furnitureExp, 0, furnitureGrade, displayName);
@@ -17015,7 +17020,7 @@ replier.reply(
                         throw royalOpenError;
                     }
 
-                    replier.reply("🏡 로열패키지 확정 오픈!\n\n고대서적📘(+140,000💕)[로열 루미에르]을(를) 획득했습니다.");
+                    replier.reply("🏡 로열패키지 확정 오픈!\n\n고대서적📘(+140,000💞)[로열 루미에르]을(를) 획득했습니다.");
                     return;
                 }
 
@@ -24739,60 +24744,21 @@ replier.reply(
                             throw petHomeVisitSaveError;
                         }
                     }
-                    let floor = userHome.floor || 0;
-                    let houseName = userHome.houseName || "서울역 4번출구🚉";
-                    let exp = userHome.exp || 0;
-                    let visitCnt = userHome.visitCnt || 0;
-                    let likeCnt = userHome.likeCnt || 0;
-                    // 가구 매력 계산 (장착 요약값 기준)
-                    let furnitureExp = getFurnitureExp(userHome); // 없으면 0 나와도 괜찮게 작성돼 있음
-                    let totalExp = exp + furnitureExp;
-                    if (hasPetSkill(petSkillData, targetName, "인테리어 장인")) {
-                        totalExp = Math.floor(totalExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
-                    }
-                    if (hasPetSkill(petSkillData, targetName, "로열 하우스")) {
-                        var royalLumiereCountForHome = getPlacedFurnitureCountByGrade(homeData, targetName, "로열 루미에르");
-                        if (royalLumiereCountForHome >= 10) {
-                            totalExp += 300000;
-                        }
-                    }
-                    if (hasPetSkill(petSkillData, targetName, "아르카나 하우스") && getOwnedFurnitureCountByGrade(homeData, targetName, "아르카나 루미에르") >= 5) {
-                        totalExp += 1000000;
-                    }
-                    ////////////////////////////////////////
                     var placedArr = getPlacedFurnitureList(homeData, placedFurnitureDataForHome, targetName);
                     var maxSlots = getFurnitureMaxSlots(data, petData, targetName, userHome.floor || 0, petSkillData);
-                    ////////
-                    let header = "🏡[" + nickName + "] 님의 펫하우스🏡\n━━━━━━━━━━━━\n";
-                    var targetHomeSocial = getPetHomeSocialUser(petHomeActivityDataForHome, targetName);
-                    var targetFollowerDisplayCount = targetHomeSocial.followers.length + getPetSkillFollowerBonus(petSkillData, targetName); // 실제 팔로워와 장착 스킬 보너스 합계
-                    let lineSocial = "팔로워🐾 " + targetFollowerDisplayCount + "명 | 팔로잉🎀 " + targetHomeSocial.following.length + "명\n" +
-                        "대표 뱃지: " + getPetHomeEquippedBadgeText(petHomeActivityDataForHome, targetName) + "\n\n";
-                    let lineHeart = buildPetHomeHeartExpressionMessage(userHome);
-                    let lineStats = "좋아홈💌 x" + likeCnt + " | 방문자🫂 " + numberWithCommas(visitCnt) + "명\n\n";
-                    let displayHouseName = houseName.indexOf("[🏡]") === 0 ? houseName : "[🏡]" + houseName; // 집 아이콘 중복 방지
-                    let lineHouseInfo = displayHouseName + "[+" + floor + "평]\n";
-                    let lineComentend = "━｡★ﾟ━━━━━━━━━｡★ﾟ━\n";
-                    let lineFurniture = "✦･ﾟ━장착된 가구🪑 (" + placedArr.length + "/" + maxSlots + ")━━━✦\n" + "✧･ﾟ━적용 가구매력 [" + numberWithCommas(furnitureExp) + "💕]━✧\n" + lineHouseInfo;
-                    if (placedArr.length === 0) {
-                        lineFurniture += "[배치된 가구가 없습니다.]\n";
-                    } else {
-                        for (var i = 0; i < placedArr.length; i++) {
-                            if (i == GLOBAL_CONFIG.petHomeDisplay.furniturePreviewCount) {
-                                lineFurniture += allsee;
-                            }
-                            var p = placedArr[i];
-                            var pExp = p.exp || 0;
-                            lineFurniture += i + 1 + ". " + p.name + "(+" + numberWithCommas(pExp) + "💕)\n";
+                    var homeCommentsData = loadJsonFile(petHomeCommentsFile);
+                    var homeCommentsNeedTrim = false;
+                    if (homeCommentsData.comments) {
+                        for (var commentOwner in homeCommentsData.comments) {
+                            if (Object.prototype.hasOwnProperty.call(homeCommentsData.comments, commentOwner) && homeCommentsData.comments[commentOwner].length > GLOBAL_CONFIG.petHomeComments.maxStored) { homeCommentsNeedTrim = true; break; }
                         }
                     }
-                    lineFurniture += "────────────────\n";
+                    var homeCommentsSnapshot = homeCommentsNeedTrim ? JSON.stringify(homeCommentsData) : null;
+                    initPetHomeCommentsData(homeCommentsData);
+                    if (homeCommentsNeedTrim) saveJsonFile(homeCommentsData, petHomeCommentsFile, false, homeCommentsSnapshot);
                     if (feedMigrationResultForHome.migrated && targetName === sender) saveJsonFile(homeData, homeDataFile);
-                    replier.reply(header + lineSocial + lineHeart + lineStats + lineComentend + lineFurniture);
-                    var petHomeCommentsData = initPetHomeCommentsData(loadJsonFile(petHomeCommentsFile));
-                    var petHomeCommentList = getPetHomeCommentList(petHomeCommentsData, targetName);
-                    var petHomePinnedCommentList = getPetHomePinnedCommentList(petHomeCommentsData, targetName);
-                    replier.reply(buildPetHomeCommentsMessage(data, petData, guildData, targetName, petHomeCommentList, petHomePinnedCommentList));
+                    replier.reply(buildPetHomeVillageMessage(data, petData, petSkillData, guildData, homeData, targetName, placedArr, maxSlots) + "\n━━━━━━ ✦ ━━━━━━\n" +
+                        buildPetHomeCommentsMessage(data, petData, guildData, targetName, getPetHomeCommentList(homeCommentsData, targetName), getPetHomePinnedCommentList(homeCommentsData, targetName), true));
                     return;
                 }
                 if (msg === "/홈알림" || msg === "ㅎㄹ") {
@@ -25350,7 +25316,7 @@ replier.reply(
                     var cleanedListMsgArr = [];
                     for (var i = 0; i < cleanedItems.length; i++) {
                         var it = cleanedItems[i];
-                        cleanedListMsgArr.push(i + 1 + ". " + it.name + "(+" + numberWithCommas(it.exp || 0) + "💕)");
+                        cleanedListMsgArr.push(i + 1 + ". " + it.name + "(+" + numberWithCommas(it.exp || 0) + "💞)");
                     }
                     var resultMsg =
                         "🧹[ " +
@@ -25426,7 +25392,7 @@ replier.reply(
                         removed.name +
                         "(+" +
                         numberWithCommas(removed.exp || 0) +
-                        "💕)\n━━━━━━━━━━━━━━━\n" +
+                        "💞)\n━━━━━━━━━━━━━━━\n" +
                         "가구 가방: " +
                         userHome.furnitureBag.length +
                         "/" +
@@ -25583,7 +25549,8 @@ replier.reply(
 
                     var removedName =
                         (removedFurniture.display || removedFurniture.displayName) ||
-                        (removedFurniture.name + "(+" + numberWithCommas(removedFurniture.exp || 0) + "💕)[" + (removedFurniture.grade || "등급없음") + "]");
+                        (removedFurniture.name + "(+" + numberWithCommas(removedFurniture.exp || 0) + "💞)[" + (removedFurniture.grade || "등급없음") + "]");
+                    removedName = removedName.replace(/💕\)/g, "💞)"); // 기존 저장 표시의 매력 이모지만 변경
 
                     replier.reply(
                         "✅ 가구 삭제 완료\n\n" +
@@ -25633,7 +25600,7 @@ replier.reply(
                         replier.reply("매력수치는 숫자로 입력해주세요.\n예) /가구추가 🏆호이 남 호이의 마음💌 10000 쥬 엘");
                         return;
                     }
-                    let displayName = furnName + "(+" + expNum + "💕)[" + grade + "]";
+                    let displayName = furnName + "(+" + expNum + "💞)[" + grade + "]";
                     homeData = addFurniture(homeData, targetName, furnName, expNum, 0, grade, displayName);
                     saveJsonFile(homeData, homeDataFile);
                     replier.reply(
@@ -25644,7 +25611,7 @@ replier.reply(
                         "🎨 이름: " +
                         furnName +
                         "\n" +
-                        "💕 매력: " +
+                        "💞 매력: " +
                         expNum +
                         "\n" +
                         "🎖 등급: " +
@@ -25655,126 +25622,79 @@ replier.reply(
                     );
                     return;
                 }
-                if (msg.indexOf("/가구정보") === 0) {
-                    var targetUser = msg.replace("/가구정보", "").trim();
-
-                    if (!(isAdmin(sender) || isMaster(sender))) {
-                        // replier.reply("해당 명령어는 Admin/Master만 사용할 수 있습니다.");
+                if (msg === "/별채등록" || /^\/별채등록(?:\s+\d+)+$/.test(msg) || msg === "등록한다" || msg === "등록안한다") {
+                    var villageKey = (ctx.isDev ? "DEV:" : "PROD:") + sender;
+                    var villageNow = Date.now(), villagePending = petHomeVillagePending[villageKey];
+                    var villageHeader = "[" + checkRank(data, petData, guildData, sender) + "] 님";
+                    var villageAnswer = msg === "등록한다" || msg === "등록안한다";
+                    for (var expiredVillageKey in petHomeVillagePending) {
+                        if (Object.prototype.hasOwnProperty.call(petHomeVillagePending, expiredVillageKey) && villageNow >= petHomeVillagePending[expiredVillageKey].expiresAt) delete petHomeVillagePending[expiredVillageKey];
+                    }
+                    if (villageAnswer && (!villagePending || villagePending.room !== room || villagePending.isGroupChat !== isGroupChat)) return;
+                    if (villageAnswer && villageNow >= villagePending.expiresAt) {
+                        replier.reply(villageHeader + "\n❌ 별채 등록 확인 시간이 지났어요. 다시 선택해주세요.");
                         return;
                     }
-
-                    if (!targetUser) {
-                        replier.reply("올바른 형식: /가구정보 아이디");
+                    if (msg === "등록안한다") {
+                        delete petHomeVillagePending[villageKey];
+                        replier.reply(villageHeader + "\n❌ 별채 등록을 취소했어요.\n가구는 소모되지 않았어요.");
                         return;
                     }
-
-                    let homeData = loadJsonFile(homeDataFile);
-
-                    if (!homeData || !homeData[targetUser]) {
+                    if (msg === "/별채등록") {
+                        replier.reply(villageHeader + "\n📥 /별채등록 [가구가방번호] …\n한 번에 미장착 로열·아르카나 가구를 합계 1~10개 등록할 수 있어요.");
+                        return;
+                    }
+                    var villageNumbers = villageAnswer ? villagePending.numbers : msg.trim().split(/\s+/).slice(1).map(function (value) { return Number(value); });
+                    var villageHomeData = loadJsonFile(homeDataFile), villageHomeSnapshot = JSON.stringify(villageHomeData);
+                    villageHomeData = initSweetHomeUser(villageHomeData, sender);
+                    villageHomeData[sender].furnitureBag = sortFurnitureList(villageHomeData[sender].furnitureBag);
+                    var villagePlacedExists = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                    if (!villagePlacedExists && !canCreatePlacedFurnitureData(villageHomeData)) throw new Error("장착 가구 상세 파일이 없습니다.");
+                    var villagePlacedData = villagePlacedExists ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                    var villagePlaced = getPlacedFurnitureList(villageHomeData, villagePlacedData, sender);
+                    var villageResult = preparePetHomeVillageRegistration(villageHomeData, petSkillData, sender, villageNumbers, villagePlaced);
+                    if (villageAnswer && JSON.stringify(villageHomeData[sender].furnitureBag) !== villagePending.bagFingerprint) {
+                        delete petHomeVillagePending[villageKey];
+                        replier.reply(villageHeader + "\n❌ 가구가방 내용이 변경되어 등록을 취소했어요. 다시 확인 후 선택해주세요.\n가구는 소모되지 않았어요.");
+                        return;
+                    }
+                    if (villageResult.error) {
+                        delete petHomeVillagePending[villageKey];
+                        replier.reply(villageHeader + "\n❌ " + villageResult.error);
+                        return;
+                    }
+                    if (!villageAnswer || villageResult.effectFingerprint !== villagePending.effectFingerprint) {
+                        petHomeVillagePending[villageKey] = { numbers: villageNumbers, bagFingerprint: villageResult.bagFingerprint, effectFingerprint: villageResult.effectFingerprint,
+                            room: room, isGroupChat: isGroupChat, expiresAt: villageNow + GLOBAL_CONFIG.petHomeVillage.confirmationTimeoutMs };
+                        replier.reply((villageAnswer ? villageHeader + "\n⚠️ 예상 효과가 변경되어 다시 확인해주세요.\n\n" : "") + buildPetHomeVillageRegistrationMessage(villageHeader, villageResult, false));
+                        return;
+                    }
+                    delete petHomeVillagePending[villageKey]; // 저장 실패·중복 응답으로 같은 확인 요청을 다시 소비하지 않음
+                    villageHomeData[sender] = villageResult.home;
+                    saveJsonFile(villageHomeData, homeDataFile, false, villageHomeSnapshot);
+                    replier.reply(buildPetHomeVillageRegistrationMessage(villageHeader, villageResult, true));
+                    return;
+                }
+                if (msg === "/가구정보" || /^\/가구정보\s+.+$/.test(msg)) {
+                    var targetUser = msg === "/가구정보" ? sender : msg.substring("/가구정보".length).trim();
+                    if (!isRegisteredHomeMember(data, targetUser)) {
                         replier.reply("유저 아이디를 확인해주세요.");
                         return;
                     }
-
-                    // 대상 유저 기준
-                    var nickName = checkRank(data, petData, guildData, targetUser);
-
-                    homeData = initSweetHomeUser(homeData, targetUser);
-                    homeData[targetUser].furnitureBag = sortFurnitureList(homeData[targetUser].furnitureBag);
-
-                    var userHome = homeData[targetUser];
-                    var placedSummary = normalizePlacedFurnitureSummary(userHome.placedFurnitureSummary);
-                    var bagArr = userHome.furnitureBag || [];
-                    var maxSlots = getFurnitureMaxSlots(data, petData, targetUser, userHome.floor || 0, petSkillData);
-                    var placedExp = getFurnitureExp(userHome);
-
-                    let floor = userHome.floor || 0;
-                    let houseName = userHome.houseName || "서울역 4번출구🚉";
-                    let totalExp = getHomeTotalExp(homeData, targetUser);
-                    let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
-                    let maxBag = getFurnitureBagLimit(data, targetUser);
-
-                    var out = getHoiPassPremiumHeader(data, targetUser) + "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
-                    out += "좋아홈💌x" + (userHome.likeCnt || 0) + "개\n";
-                    out += "현재 배치된 가구 (" + placedSummary.count + "/" + maxSlots + ")\n";
-                    out += "(매력 " + numberWithCommas(placedExp) + "💕 적용중)\n";
-                    out += "━━━━━━━━━━━━━━━\n";
-                    if (bagArr.length === 0) {
-                        out += "\n[가방에 보유 중인 가구 없음]";
-                    } else {
-                        out += "\n※ 가구 장착: /가구장착 [번호]";
-                        out += "\n※ 가구 판매: /가구판매 [번호]";
-                        out += "\n※ 장착 가구판매: /집청소 [번호]";
-                        out += "\n※ 장착 귀속해제: /가구해제 [번호]\n";
-                        out += "━━━━━━━━━━━━━━\n✧━인벤토리 가구 목록🪑━✧\n";
-
-                        for (var j = 0; j < bagArr.length; j++) {
-                            if (j == 5) {
-                                out += allsee;
-                            }
-
-                            var b = bagArr[j];
-                            var bExp = b.exp || 0;
-                            out += j + 1 + ". " + b.name + "(+" + numberWithCommas(bExp) + "💕)[" + (b.grade || "등급없음") + "]\n";
-                        }
-                    }
-
-                    saveJsonFile(homeData, homeDataFile);
-                    replier.reply(out);
+                    var furnitureInfoHomeData = loadJsonFile(homeDataFile);
+                    furnitureInfoHomeData = initSweetHomeUser(furnitureInfoHomeData, targetUser);
+                    var infoPlacedExists = new java.io.File(resolveActiveDataPath(petHomePlacedFurniturePath)).exists();
+                    if (!infoPlacedExists && !canCreatePlacedFurnitureData(furnitureInfoHomeData)) throw new Error("장착 가구 상세 파일이 없습니다.");
+                    var infoPlacedData = infoPlacedExists ? requirePlacedFurnitureDataMap(loadJsonFile(petHomePlacedFurniturePath)) : null;
+                    var infoPlaced = getPlacedFurnitureList(furnitureInfoHomeData, infoPlacedData, targetUser);
+                    replier.reply(buildPetHomeFurnitureInfoMessage(data, petData, petSkillData, guildData, furnitureInfoHomeData, targetUser, sender, infoPlaced));
                     return;
                 }
                 if (msg == "/가구가방") {
-                    var nickName = checkRank(data, petData, guildData, sender);
-                    let homeData = loadJsonFile(homeDataFile);
+                    var homeData = loadJsonFile(homeDataFile);
                     homeData = initSweetHomeUser(homeData, sender);
                     homeData[sender].furnitureBag = sortFurnitureList(homeData[sender].furnitureBag);
-                    // 안전하게 초기화
-                    var userHome = homeData[sender];
-                    var placedSummary = normalizePlacedFurnitureSummary(userHome.placedFurnitureSummary);
-                    var bagArr = userHome.furnitureBag || [];
-                    var maxSlots = getFurnitureMaxSlots(data, petData, sender, userHome.floor || 0, petSkillData);
-                    var placedExp = getFurnitureExp(userHome);
-                    //집정보
-                    let floor = userHome.floor || 0;
-                    let houseName = userHome.houseName || "서울역 4번출구🚉";
-                    let totalExp = getHomeTotalExp(homeData, sender);
-                    let lineHouseInfo = houseName + "(+" + numberWithCommas(totalExp) + "💕)" + "[+" + floor + "평]\n";
-                    let maxBag = getFurnitureBagLimit(data, sender);
-                    // 헤더
-                    var out = getHoiPassPremiumHeader(data, sender) + "[" + nickName + "] 가구 가방🛌 [" + bagArr.length + "/" + maxBag + "]\n" + lineHouseInfo;
-                    out += "좋아홈💌x" +
-                    (userHome.likeCnt || 0) +
-                    "개\n" +
-                    "현재 배치된 가구 (" +
-                    placedSummary.count +
-                    "/" +
-                    maxSlots +
-                    ")\n" +
-                    "(매력 " +
-                    numberWithCommas(placedExp) +
-                    "💕 적용중)\n" +
-                    "━━━━━━━━━━━━━━━\n";
-                    // 가방 목록 (→ 여기 번호가 /가구장착 번호 의 대상)
-                    if (bagArr.length === 0) {
-                        out += "\n[가방에 보유 중인 가구 없음]";
-                    } else {
-                        out += "━━━━━━━━━━━━━━";
-                        out += "\n※ 가구 장착: /가구장착 [번호]";
-                        out += "\n※ 가구 판매: /가구판매 [번호]";
-                        out += "\n※ 장착 가구판매: /집청소 [번호]";
-                        out += "\n※ 장착 귀속해제: /가구해제 [번호]\n";
-                        out += "━━━━━━━━━━━━━━\n✧━인벤토리 가구 목록🪑━✧\n";
-                        for (var j = 0; j < bagArr.length; j++) {
-                            if (j == 3) {
-                                out += allsee;
-                            }
-                            var b = bagArr[j];
-                            var bExp = b.exp || 0;
-                            out += j + 1 + ". " + b.name + "(+" + numberWithCommas(bExp) + "💕)[" + (b.grade || "등급없음") + "]\n";
-                        }
-                    }
-                    //  out += "\n※ 가구 장착: /가구장착 [번호]";
-                    // out += "\n※ 가구 판매: /가구판매 [번호]";
-                    //  out += "\n※ 펫홈에 장착된 가구판매: /집청소 [번호]";
+                    var out = buildPetHomeFurnitureBagMessage(data, petData, petSkillData, guildData, homeData, sender);
                     saveJsonFile(homeData, homeDataFile);
                     replier.reply(out);
                     return;
@@ -25906,7 +25826,7 @@ replier.reply(
                         movedItem.name +
                         "(+" +
                         numberWithCommas(itemExp) +
-                        "💕) 를 배치했습니다!\n\n" +
+                        "💞) 를 배치했습니다!\n\n" +
                         "현재 배치: " +
                         placedFurnitureList.length +
                         "/" +
@@ -25915,7 +25835,7 @@ replier.reply(
                         (isHoiPassPremiumActive(data, sender) ? "호패프리미엄👑: +" + GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount + "\n" : "") +
                         "적용 매력: " +
                         numberWithCommas(placedExp) +
-                        "💕";
+                        "💞";
                     if (hasPetSkill(petSkillData, sender, "로열 하우스")) {
                         var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, sender, "로열 루미에르");
                         if (royalLumiereCount >= 10) {
@@ -25925,7 +25845,7 @@ replier.reply(
                     if (hasPetSkill(petSkillData, sender, "아르카나 하우스") && getOwnedFurnitureCountByGrade(homeData, sender, "아르카나 루미에르") >= 5) {
                         replyMsg += "\n\n아르카나 하우스📙 어서오게 이런 집은 처음이지?";
                     }
-                    replier.reply(replyMsg);
+                    replier.reply(replyMsg + "\n🔎 장착 후 매력 확인: /가구정보");
                 }
                 if (msg === "/가구판매" || /^\/가구판매\s+\d+$/.test(msg)) {
                     var parts = msg.trim().split(/\s+/);
@@ -25968,7 +25888,7 @@ replier.reply(
                         soldItem.name +
                         "(+" +
                         numberWithCommas(itemExpVal) +
-                        "💕) 을(를)\n" +
+                        "💞) 을(를)\n" +
                         "가구정리센터에 보냈습니다.\n\n" +
                         "🅟" +
                         numberWithCommas(rewardPoint) +
@@ -26007,7 +25927,7 @@ replier.reply(
                         }
                     }
                     if (removedItems.length === 0) {
-                        replier.reply("[" + nickName + "]님, 조건(" + limitVal + "💕 이하)에 맞는 가구가 없습니다.");
+                        replier.reply("[" + nickName + "]님, 조건(" + limitVal + "💞 이하)에 맞는 가구가 없습니다.");
                         return;
                     }
                     userHome.furnitureBag = remainItems;
@@ -26024,7 +25944,7 @@ replier.reply(
                         var gtxt = j == 10 ? allsee : "";
                         var it = removedItems[j];
                         var itExpVal = it.exp || 0;
-                        removedListMsg.push(gtxt + (j + 1) + ". " + it.name + "(+" + numberWithCommas(itExpVal) + "💕)");
+                        removedListMsg.push(gtxt + (j + 1) + ". " + it.name + "(+" + numberWithCommas(itExpVal) + "💞)");
                     }
                     var replyMsg =
                         "🏡[" +
@@ -32108,6 +32028,7 @@ function isAutoDailyEntryCommandMessage(msg) {
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
+    if (isDevCommandMessage(msg) && (command === "/등록한다" || command === "/등록안한다")) command = command.substring(1);
     if (isDevCommandMessage(msg) && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(command)) command = command.substring(1);
     return isManualResetInput(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
@@ -32138,6 +32059,8 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/달토끼상점추가\s+.+\s+\d+\s+\d+\s+\d+$/.test(command) || /^\/달토끼상점삭제\s+\d+$/.test(command) ||
         command === "/소식" || command === "/소식등록" || /^\/소식삭제\s+\d+$/.test(command) ||
         /^\/알림\s+.+$/.test(command) || /^\/기록\s+\S(?:[\s\S]*\S)?\s*$/.test(command) || command === "/글자수전체정리" ||
+        command === "/별채등록" || /^\/별채등록(?:\s+\d+)+$/.test(command) || command === "등록한다" || command === "등록안한다" ||
+        command === "/펫홈" || /^\/펫홈\s+.+$/.test(command) || command === "/가구정보" || /^\/가구정보\s+.+$/.test(command) ||
         command === "/홈알림" || command === "ㅎㄹ" || /^\/피드(?:\s+[\s\S]+)?$/.test(command) ||
         /^\/서버변경\s+\S(?:.*\S)?$/.test(command) || /^\/관리자추가\s+\S(?:.*\S)?$/.test(command) || /^\/관리자삭제\s+\S(?:.*\S)?$/.test(command) ||
         command === "/관리자감추기" || command === "/이모지감추기" || command === "/관리자순위초기화" || command === "/인증초기화" || /^\/인증\s+[^\s]+\s+(?:남|여)\s+[\s\S]+$/.test(command) || /^\/미니펫보조장착\s+\d+$/.test(command) || command === "/보조귀속해제" || command === "입양할래";
@@ -37485,7 +37408,7 @@ function isAttendanceFreeCommand(msg, sender) {
 // 슬래시 명령과 기존 비슬래시 게임 트리거를 출석 제한 대상으로 확인하는 함수
 function isAttendanceGameCommand(msg) {
     if (msg.charAt(0) === "/") return true;
-    var plainCommands = ["ㅊㅇ", "ㅁㅁ", "ㅈㅈ", "ㅅㅅ", "ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ", "ㅇㅇㅇ", "ㄹㄹㄹ", "ㅇㅋㅋ", "ㅎㅎㅎ", "ㄴㄴㄴ", "ㄱㄱㄱ", "ㅎㄹ", "쫄아뜸", "승급할거임", "쫄았음", "진행시켜", "생각해볼게", "장착할래", "입양할래", "집뚝딱", "생각해본다", "홈뱃지취소", "홈뱃지교체", "홈뱃지해제확정", "등록", "ㄴㄴ", "가입한다", "영지종료보상", "해방열쇠조합", "자유시장거래", "자유시장거래취소", "이쁘다"];
+    var plainCommands = ["ㅊㅇ", "ㅁㅁ", "ㅈㅈ", "ㅅㅅ", "ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ", "ㅇㅇㅇ", "ㄹㄹㄹ", "ㅇㅋㅋ", "ㅎㅎㅎ", "ㄴㄴㄴ", "ㄱㄱㄱ", "ㅎㄹ", "쫄아뜸", "승급할거임", "쫄았음", "진행시켜", "생각해볼게", "장착할래", "입양할래", "집뚝딱", "생각해본다", "등록한다", "등록안한다", "홈뱃지취소", "홈뱃지교체", "홈뱃지해제확정", "등록", "ㄴㄴ", "가입한다", "영지종료보상", "해방열쇠조합", "자유시장거래", "자유시장거래취소", "이쁘다"];
     return plainCommands.indexOf(msg) !== -1;
 }
 
@@ -46520,6 +46443,8 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
     var intimacyExp = getIntimacyExpFromBag(bagItems);
 
+    homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
+
     // 펫 스킬
     var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
     if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
@@ -46544,6 +46469,8 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
     }
+
+    homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
 
     // 펫스킬
     let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
@@ -50466,6 +50393,9 @@ function initPetHomeCommentsData(commentsData) {
     if (!commentsData || typeof commentsData !== "object") commentsData = {};
     if (!commentsData.comments || typeof commentsData.comments !== "object") commentsData.comments = {};
     if (!commentsData.pinnedComments || typeof commentsData.pinnedComments !== "object") commentsData.pinnedComments = {};
+    for (var owner in commentsData.comments) {
+        if (Object.prototype.hasOwnProperty.call(commentsData.comments, owner)) trimPetHomeComments(commentsData.comments[owner], commentsData.pinnedComments[owner] || []);
+    }
     return commentsData;
 }
 
@@ -51928,9 +51858,11 @@ function getPetHomeCommentPreview(comment) {
 // 펫홈 화면의 마음표현 누적 영역을 생성하는 함수
 function buildPetHomeHeartExpressionMessage(userHome) {
     var counts = ensurePetHomeHeartExpressions(userHome);
-    return "💞━━ 나를 향한 마음표현 ━━💞\n" +
+    var likes = Number(userHome.likeCnt) || 0;
+    var total = counts.cute + counts.cheer + counts.cool + counts.love + likes; // 다섯 반응의 누적 합계
+    return "💞 받은 마음 누적 " + numberWithCommas(total) + "개\n" +
         "귀여워🐾 x" + counts.cute + " | 응원해⭐ x" + counts.cheer + "\n" +
-        "멋져요✨ x" + counts.cool + " | 사랑해💖 x" + counts.love + "\n";
+        "멋져요✨ x" + counts.cool + " | 사랑해💖 x" + counts.love + "\n좋아홈💌 x" + likes + "\n";
 }
 
 // 다른 유저의 행동으로 생성된 홈알림인지 확인하는 함수
@@ -51971,10 +51903,9 @@ function formatPetHomeActivityAlert(data, petData, guildData, alert) {
     return actorName + "님의 펫홈 활동이 있습니다.";
 }
 
-// 홈알림과 최근 방문자 목록 메시지를 생성하는 함수
+// 홈알림·누적 방문·방문 뱃지와 받은 마음 정보를 생성하는 함수
 function buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sender, activityData, homeData) {
     var alerts = getPetHomeAlertList(activityData, sender);
-    var visitors = getPetHomeRecentVisitorList(activityData, sender);
     var social = getPetHomeSocialUser(activityData, sender);
     var mutualCount = getPetHomeMutualUsers(activityData, sender).length; // 현재 보존된 맞팔 관계 수
     var heartStatus = getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, sender); // 활성 패스 기준 오늘 마음 사용 현황
@@ -51991,7 +51922,9 @@ function buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sen
         "맞팔🤝 " + mutualCount + "명 | 남은 마음💌: " + (heartStatus.unlimited ? "무제한" : heartStatus.remaining + "개") + "\n" +
         "━━━━━━━━━━━━\n" +
         "새로운 알림🔔 " + unreadCount + "개 | 보관📭 " + alerts.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxAlerts + "\n" +
-        "최근 방문자👣 " + visitors.length + "/" + GLOBAL_CONFIG.petHomeActivity.maxRecentVisitors + "명\n" +
+        "누적 방문👣 " + numberWithCommas(homeData && homeData[sender] ? homeData[sender].visitCnt || 0 : 0) + "회\n" +
+        buildPetHomeVisitBadgeMessage(activityData, sender) + "\n" +
+        buildPetHomeHeartExpressionMessage(homeData && homeData[sender] ? homeData[sender] : {}) + "\n" +
         allsee + "\n\n";
 
     out += "🔔 최근 활동 알림\n━━━━━━━━━━━━\n";
@@ -52013,17 +51946,6 @@ function buildPetHomeActivityMessage(data, petData, petSkillData, guildData, sen
 
     out += "\n\n" + buildPetHomeFollowListMessage(data, petData, guildData, activityData, sender, "followers", false) + "\n\n";
     out += buildPetHomeFollowListMessage(data, petData, guildData, activityData, sender, "following", false) + "\n\n";
-    out += "👣 최근 방문자\n━━━━━━━━━━━━\n";
-    if (visitors.length === 0) {
-        out += "등록된 최근 방문자가 없습니다.";
-    } else {
-        for (var visitorIndex = 0; visitorIndex < visitors.length; visitorIndex++) {
-            var visitor = visitors[visitorIndex] || {};
-            var visitorId = visitor.visitorId || "알 수 없는 유저";
-            var visitorName = data.member && data.member[visitorId] ? checkRank(data, petData, guildData, visitorId) : visitorId;
-            out += (visitorIndex + 1) + ". " + visitorName + " ─ " + (visitor.visitedAt || "시간 정보 없음") + "\n";
-        }
-    }
     return out.trim();
 }
 
@@ -52221,66 +52143,198 @@ function isPinnedPetHomeComment(comment, pinnedComments) {
     return false;
 }
 
+// 별채별 현재 성장 상태와 다음 면적 안내를 생성하는 함수
+function buildPetHomeVillageStatus(homeData, petSkillData, user, detail, charm) {
+    var home = homeData[user];
+    if (!charm) charm = getPetHomeFurnitureCharm(homeData, petSkillData, user);
+    var limit = getPetHomeVillageLevelLimit(home), config = GLOBAL_CONFIG.petHomeVillage;
+    var out = "🏛️ 루미에르 빌리지\n📐 " + (Number(home.floor) || 0) + "평 · 각 별채 Lv." + limit + "까지\n💞 빌리지 종매 버프 +" + charm.percent + "% 적용 중\n";
+    var keys = ["royal", "arcana"], labels = ["🏰 로열 별채", "👑 아르카나 별채"];
+    for (var i = 0; i < keys.length; i++) {
+        var state = charm.state[keys[i]], locked = state.level >= limit;
+        out += labels[i] + " · Lv." + state.level + " · " + (locked ? "🔒 집 확장 필요" : "[📦" + state.progress + "/" + config.materialsPerLevel + "]") + "\n";
+        if (locked && detail) out += "└ 집 " + ((state.level + 1) * config.areaPerLevel) + "평부터 Lv." + (state.level + 1) + " 성장 가능\n";
+    }
+    return out.trim();
+}
+
+// 가구 원래 수치와 등급 태그를 공통 매력 이모지로 표시하는 함수
+function formatPetHomeFurniture(item, includeGrade) {
+    return item.name + "(+" + numberWithCommas(Number(item.exp) || 0) + "💞)" + (includeGrade && item.grade ? "[" + item.grade + "]" : "");
+}
+
+// 장착 순서를 건드리지 않고 종류별 가장 매력이 높은 가구 세 개를 표시하는 함수
+function buildPetHomeVillageMessage(data, petData, petSkillData, guildData, homeData, user, placed, maxSlots) {
+    var home = homeData[user], charm = getPetHomeFurnitureCharm(homeData, petSkillData, user);
+    var out = "🏡 [" + checkRank(data, petData, guildData, user) + "] 님의 펫홈\n━━━━━━ ✦ ━━━━━━\n🏡 " + (home.houseName || "서울역 4번출구🚉") + " [+" + (home.floor || 0) + "평]\n💞 가구 종합매력 +" + numberWithCommas(charm.total) + "\n────── ✧ ──────\n";
+    out += buildPetHomeVillageStatus(homeData, petSkillData, user, false, charm) + "\n━━━━━━ ✦ ━━━━━━\n✨ 우리 집 자랑 가구 TOP " + GLOBAL_CONFIG.petHomeDisplay.furniturePreviewCount + "(🪑" + placed.length + "/" + maxSlots + ")\n\n";
+    var sorted = sortFurnitureList(placed.slice(0)), seen = {}, count = 0;
+    for (var i = 0; i < sorted.length && count < GLOBAL_CONFIG.petHomeDisplay.furniturePreviewCount; i++) {
+        var key = "$" + sorted[i].name;
+        if (Object.prototype.hasOwnProperty.call(seen, key)) continue;
+        seen[key] = true;
+        out += (++count) + ". " + formatPetHomeFurniture(sorted[i], false) + "\n";
+    }
+    if (count === 0) out += "🪑 아직 장착한 가구가 없어요.\n";
+    return out + "🔎 가구·별채 상세: /가구정보 " + user;
+}
+
+// 발동 중인 가구스킬만 기존 판정과 동일한 기준으로 설명하는 함수
+function buildPetHomeFurnitureSkillMessage(petSkillData, homeData, user, charm) {
+    var lines = [];
+    if (charm.royal) lines.push("로열 하우스📙 · 종매 +" + numberWithCommas(charm.royal * 2) + "💞\n└ 로열 가구 10개 이상 장착 시 적용");
+    if (charm.arcana) lines.push("아르카나 하우스📙 · 종매 +" + numberWithCommas(charm.arcana * 2) + "💞\n└ 아르카나 가구 5개 이상 보유 시 적용");
+    if (hasPetSkill(petSkillData, user, "인테리어 장인")) lines.push("인테리어 장인📙 · 기존 10% 효과 유지\n└ 추가 종매 +" + numberWithCommas(charm.interior * 2) + "💞 · 별채 버프 제외");
+    if (hasPetSkill(petSkillData, user, GLOBAL_CONFIG.petHomeVillage.dreamSkillName)) lines.push("느그 집 마련의 꿈📙 · 펫홈 최종 매력 +10%\n└ 추가 종매 +" + numberWithCommas(charm.dream * 2) + "💞 · 해제 시 추가 효과 회수");
+    if (hasPetSkill(petSkillData, user, "건물주")) lines.push("건물주📙 · 장착 +10칸");
+    else if (hasPetSkill(petSkillData, user, "하느님 위에 갓물주")) lines.push("하느님 위에 갓물주📙 · 장착 +15칸");
+    if (hasPetSkill(petSkillData, user, "베란다 확장")) lines.push("베란다 확장📙[한정판] · 장착 +" + GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus + "칸\n└ 해제 시 추가 장착 칸 회수");
+    if (hasPetSkill(petSkillData, user, GLOBAL_CONFIG.petSkill.largeVerandaSkillName)) lines.push("베란다 대확장📙[한정판] · 장착 +" + GLOBAL_CONFIG.petSkill.largeVerandaFurnitureSlotBonus + "칸\n└ 소멸 시 초과한 하단 가구는 가방으로 반환");
+    return lines.length ? "📙 적용 중인 가구스킬\n" + lines.join("\n\n") + "\n\n※ 매력은 빌리지 버프 적용 전 수치입니다.\n━━━━━━ ✦ ━━━━━━\n" : "";
+}
+
+// 대상 유저의 최종 매력·계산·스킬 다음에 원래 번호의 장착 목록을 표시하는 함수
+function buildPetHomeFurnitureInfoMessage(data, petData, petSkillData, guildData, homeData, user, viewer, placed) {
+    var home = homeData[user], charm = getPetHomeFurnitureCharm(homeData, petSkillData, user);
+    var limit = getFurnitureMaxSlots(data, petData, user, home.floor || 0, petSkillData);
+    var out = "🪑 [" + checkRank(data, petData, guildData, user) + "] 님의 가구정보\n━━━━━━ ✦ ━━━━━━\n🏡 " + (home.houseName || "서울역 4번출구🚉") + " [+" + (home.floor || 0) + "평]\n🪑 가구 장착 " + placed.length + "/" + limit + "\n\n";
+    out += "💞 가구 종합매력 +" + numberWithCommas(charm.total) + "\n⚔️ 캐슬 +" + numberWithCommas(charm.castle) + " · 👾 레이드 +" + numberWithCommas(charm.raid) + "\n────── ✧ ──────\n";
+    out += buildPetHomeVillageStatus(homeData, petSkillData, user, true, charm) + "\n━━━━━━ ✦ ━━━━━━\n📖 계산·스킬·장착 상세\n" + allsee + "\n📊 종매 계산\n💡 가구 매력은 캐슬·레이드에 각각 적용돼요.\n예) 가구 매력 10만\n⚔️ 캐슬 +10만 · 👾 레이드 +10만\n└ 💞 가구 종매 +20만\n\n";
+    out += "🪑 장착 가구 종매 +" + numberWithCommas(charm.furniture * 2) + "💞\n📙 가구스킬 종매 +" + numberWithCommas((charm.royal + charm.arcana) * 2) + "💞\n└ 기본 합계 " + numberWithCommas(charm.base * 2) + "💞\n🏛️ 기본 합계의 " + charm.percent + "% 추가 → +" + numberWithCommas(charm.villageBonus * 2) + "💞\n";
+    if (charm.interior) out += "📙 인테리어 장인 추가 +" + numberWithCommas(charm.interior * 2) + "💞 · 별채 버프 제외\n";
+    if (charm.dream) out += "📙 느그 집 마련의 꿈 추가 +" + numberWithCommas(charm.dream * 2) + "💞\n";
+    out += "💞 최종 가구 종합매력 +" + numberWithCommas(charm.total) + "\n━━━━━━ ✦ ━━━━━━\n";
+    out += buildPetHomeFurnitureSkillMessage(petSkillData, homeData, user, charm);
+    out += "📦 별채 성장 안내\n🏰 로열 가구 10개 → Lv.+1 · 버프 +10%\n👑 아르카나 가구 10개 → Lv.+1 · 버프 +15%\n📐 집 10평당 성장 가능 레벨 +1\n\n※ 버프는 장착 가구 종매와 가구스킬 종매의 합계에 적용됩니다.\n※ 인테리어 장인 추가분은 별채 버프에서 제외됩니다.\n※ 별채 레벨·%는 유지되며, 추가 매력은 현재 가구·스킬에 따라 달라집니다.\n";
+    if (viewer === user) out += "────── ✧ ──────\n🎒 가구 확인: /가구가방\n📥 /별채등록 [가구가방번호] …\n미장착 로열·아르카나 가구 최대 10개\n";
+    out += "━━━━━━ ✦ ━━━━━━\n🪑 전체 장착 가구 (" + placed.length + "/" + limit + ")\n💞 기본 수치 · 캐슬·레이드에 각각 적용\n※ 빌리지 버프 적용 전 가구 자체 수치입니다.\n────── ✧ ──────\n";
+    if (placed.length === 0) out += "🪑 아직 장착한 가구가 없어요.\n";
+    for (var i = 0; i < placed.length; i++) out += (i + 1) + ". " + formatPetHomeFurniture(placed[i], true) + "\n";
+    return out.trim();
+}
+
+// 가방 번호와 관리 안내를 유지하고 별채 등록 안내를 추가하는 함수
+function buildPetHomeFurnitureBagMessage(data, petData, petSkillData, guildData, homeData, user) {
+    var home = homeData[user], bag = home.furnitureBag, summary = normalizePlacedFurnitureSummary(home.placedFurnitureSummary);
+    var limit = getFurnitureMaxSlots(data, petData, user, home.floor || 0, petSkillData);
+    var out = getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 가구 가방🛌 [" + bag.length + "/" + getFurnitureBagLimit(data, user) + "]\n";
+    out += (home.houseName || "서울역 4번출구🚉") + "(+" + numberWithCommas(getHomeTotalExp(homeData, user)) + "💞)[+" + (home.floor || 0) + "평]\n좋아홈💌x" + (home.likeCnt || 0) + "개\n현재 배치된 가구 (" + summary.count + "/" + limit + ")\n(매력 " + numberWithCommas(getFurnitureExp(home)) + "💞 적용중)\n";
+    out += "📥 /별채등록 [가구가방번호] …\n미장착 로열·아르카나 가구 최대 10개\n━━━━━━ ✦ ━━━━━━\n🪑 가구 장착: /가구장착 [번호]\n💡 1번 장착 예시: /가구장착 1\n🔎 적용 매력 확인: /가구정보\n━━━━━━ ✦ ━━━━━━\n✧━인벤토리 가구 목록🪑━✧\n";
+    if (bag.length === 0) out += "[가방에 보유 중인 가구 없음]\n";
+    for (var i = 0; i < bag.length; i++) {
+        if (i === 3) out += allsee;
+        out += (i + 1) + ". " + formatPetHomeFurniture(bag[i], true) + "\n";
+    }
+    return out + "━━━━━━ ✦ ━━━━━━\n🛠️ 가구 관리\n※ 가구 판매: /가구판매 [번호]\n※ 장착 가구판매: /집청소 [번호]\n※ 장착 귀속해제: /가구해제 [번호]\n────── ✧ ──────\n🏰 로열 10개 → 빌리지 버프 +10%\n👑 아르카나 10개 → 빌리지 버프 +15%\n※ 장착 가구 종매 + 가구스킬 종매에 적용";
+}
+
+// 방문 누적을 이용하는 기존 방문 뱃지의 획득·진행 정보를 표시하는 함수
+function buildPetHomeVisitBadgeMessage(activityData, user) {
+    var social = getPetHomeSocialUser(activityData, user), badges = GLOBAL_CONFIG.petHomeActivity.achievementBadges, lines = [];
+    for (var i = 0; i < badges.length; i++) {
+        var badge = badges[i];
+        if (badge.stat !== "totalVisits" && !(badge.requirements && badge.requirements.totalVisits)) continue;
+        var owned = petHomeStringListContains(social.badges, badge.id);
+        lines.push(badge.emoji + " " + badge.name + " [" + badge.id + "] · " + (owned ? "획득" : "누적 방문 " + numberWithCommas(social.badgeStats.totalVisits) + "/" + numberWithCommas(badge.threshold || badge.requirements.totalVisits) + "회"));
+    }
+    return "🏅 방문 뱃지\n" + lines.join("\n");
+}
+
+// 확인 요청의 가방 개체와 예상 효과를 재검증하고 등록 후 상태를 계산하는 함수
+function preparePetHomeVillageRegistration(homeData, petSkillData, user, numbers, placed) {
+    var config = GLOBAL_CONFIG.petHomeVillage, home = homeData[user], selected = [], counts = { royal: 0, arcana: 0 }, used = {};
+    if (numbers.length < 1 || numbers.length > config.maxRegister) return { error: "한 번에 가구가방 번호를 1~" + config.maxRegister + "개 입력해주세요." };
+    var bag = home.furnitureBag, state = getPetHomeVillageState(home), limit = getPetHomeVillageLevelLimit(home);
+    for (var i = 0; i < numbers.length; i++) {
+        var number = numbers[i], item = bag[number - 1];
+        if (!isFinite(number) || number < 1 || Math.floor(number) !== number || !item) return { error: "가방 " + number + "번을 확인해주세요. 미장착 로열·아르카나만 등록할 수 있어요." };
+        if (used[number]) return { error: "같은 가구가방 번호를 중복 입력했어요." };
+        used[number] = true;
+        var key = item.grade === "로열 루미에르" ? "royal" : item.grade === "아르카나 루미에르" ? "arcana" : null;
+        if (!key || item.placedAt !== undefined) return { error: "가방 " + number + "번은 등록할 수 없어요. 미장착 로열·아르카나만 가능해요." };
+        for (var p = 0; p < placed.length; p++) if (item.id !== undefined && String(item.id) === String(placed[p].id)) return { error: "가방 " + number + "번의 장착 상태를 확인해주세요." };
+        counts[key]++;
+        selected.push({ number: number, key: key, item: item });
+    }
+    var keys = ["royal", "arcana"], labels = ["로열", "아르카나"];
+    for (var j = 0; j < keys.length; j++) {
+        var key = keys[j], remaining = Math.max(0, (limit - state[key].level) * config.materialsPerLevel - state[key].progress);
+        if (counts[key] > remaining) return { error: labels[j] + " 가구는 현재 " + remaining + "개까지 추가 등록할 수 있어요. 집을 확장하면 더 성장할 수 있어요.\n모든 가구는 소모되지 않았어요." };
+    }
+    var afterHome = JSON.parse(JSON.stringify(home)), afterData = {};
+    afterData[user] = afterHome;
+    afterHome.lumiereVillage = getPetHomeVillageState(home);
+    var descending = numbers.slice(0).sort(function (a, b) { return b - a; });
+    for (var d = 0; d < descending.length; d++) afterHome.furnitureBag.splice(descending[d] - 1, 1);
+    for (var k = 0; k < keys.length; k++) {
+        var key = keys[k], value = afterHome.lumiereVillage[key], total = value.progress + counts[key];
+        value.level += Math.floor(total / config.materialsPerLevel);
+        value.progress = total % config.materialsPerLevel;
+    }
+    var before = getPetHomeFurnitureCharm(homeData, petSkillData, user), after = getPetHomeFurnitureCharm(afterData, petSkillData, user);
+    return { selected: selected, counts: counts, before: before, after: after, home: afterHome,
+        bagFingerprint: JSON.stringify(bag), effectFingerprint: JSON.stringify({ floor: home.floor, before: before, after: after, skills: getEquippedPetSkillNames(petSkillData, user) }) };
+}
+
+// 가구 소모로 발동 조건이 해제되는 스킬을 안내하는 함수
+function buildPetHomeVillageLostSkillMessage(result) {
+    var lines = [];
+    if (result.before.royal && !result.after.royal) lines.push("로열 하우스📙");
+    if (result.before.arcana && !result.after.arcana) lines.push("아르카나 하우스📙");
+    return lines.length ? "\n⚠️ 가구 소모 시 " + lines.join("·") + "의 조건이 해제됩니다.\n예상·최종 매력에 스킬 효과 해제를 반영했습니다.\n" : "";
+}
+
+// 별채 등록 확인과 저장 완료 후 실제 순변동 메시지를 생성하는 함수
+function buildPetHomeVillageRegistrationMessage(header, result, completed) {
+    var out = header + "\n" + (completed ? "✅ 별채 등록 완료 · 📦" : "📦 별채 등록 확인 · 총 ") + result.selected.length + "개\n━━━━━━ ✦ ━━━━━━\n";
+    if (!completed) {
+        for (var i = 0; i < result.selected.length; i++) {
+            var row = result.selected[i];
+            out += (row.key === "royal" ? "🏰" : "👑") + " 가방 " + row.number + "번 · " + formatPetHomeFurniture(row.item, false) + "\n";
+        }
+    } else {
+        var keys = ["royal", "arcana"], labels = ["🏰 로열 별채", "👑 아르카나 별채"];
+        for (var j = 0; j < keys.length; j++) {
+            var key = keys[j];
+            if (!result.counts[key]) continue;
+            var before = result.before.state[key], after = result.after.state[key];
+            out += labels[j] + " · Lv." + after.level + " · " + (after.level >= getPetHomeVillageLevelLimit(result.home) ? "🔒 집 확장 필요" : "[📦" + after.progress + "/10]") + "\n";
+            var rate = key === "royal" ? GLOBAL_CONFIG.petHomeVillage.royalPercent : GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+            if (after.level > before.level) out += "🎉 레벨업! 누적 +" + before.level * rate + "% → +" + after.level * rate + "%\n";
+        }
+    }
+    out += "────── ✧ ──────\n✨ 빌리지 버프 +" + result.before.percent + "% → +" + result.after.percent + "%\n";
+    out += completed ? "💞 가구 종합매력 +" + numberWithCommas(result.after.total) + "\n" : "💞 예상 종합매력 " + numberWithCommas(result.before.total) + " → " + numberWithCommas(result.after.total) + "\n";
+    out += buildPetHomeVillageLostSkillMessage(result);
+    if (!completed) return out + "\n⚠️ 등록한 가구는 소모되며 복구할 수 없어요.\n등록한다 / 등록안한다\n60초 안에 입력해주세요.";
+    var delta = result.after.total - result.before.total;
+    if (delta !== 0) out += (delta < 0 ? "📉 이번 감소 " : "📈 이번 증가 +") + numberWithCommas(delta) + "💞\n";
+    if (result.before.percent === result.after.percent) out += "📦 같은 등급 가구 10개를 모으면 레벨업해요.\n";
+    return out + "\n🔎 상세 확인: /가구정보";
+}
+
 // 펫홈 댓글을 핀 댓글 보호 후 최대 보관 개수에 맞춰 정리하는 함수
 function trimPetHomeComments(comments, pinnedComments) {
-    var maxStored = GLOBAL_CONFIG.petHomeComments.maxStored;
-    while (comments.length > maxStored) {
-        var removeIndex = -1; // 삭제 가능한 가장 오래된 댓글 위치
-        for (var i = 0; i < comments.length; i++) {
-            if (!isPinnedPetHomeComment(comments[i], pinnedComments)) {
-                removeIndex = i;
-                break;
-            }
-        }
-        if (removeIndex === -1) break;
-        comments.splice(removeIndex, 1);
-    }
+    var excess = comments.length - GLOBAL_CONFIG.petHomeComments.maxStored;
+    if (excess > 0) comments.splice(0, excess);
 }
 
 // 펫홈 댓글 확인 메시지를 생성하는 함수
-function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments, pinnedComments) {
-    var targetNick = checkRank(data, petData, guildData, targetName);
-    var maxStored = GLOBAL_CONFIG.petHomeComments.maxStored;
-    var out = "[" + targetNick + "] 님의 방명록✍️[최대 " + maxStored + "개]\n";
-    if (!(comments instanceof Array)) comments = [];
-    if (!(pinnedComments instanceof Array)) pinnedComments = [];
-
-    var startIndex = comments.length - maxStored;
-    if (startIndex < 0) startIndex = 0;
-    var visibleCount = comments.length - startIndex; // 최근 댓글 노출 개수
-    out += "☆━친구들의 발도장 " + visibleCount + "개 꾹꾹🐾━☆\n";
-
+function buildPetHomeCommentsMessage(data, petData, guildData, targetName, comments, pinnedComments, embedded) {
+    var out = (embedded ? "" : "[" + checkRank(data, petData, guildData, targetName) + "] 님의 방명록\n") + "✍️ 방명록 · 댓글 " + comments.length + "개\n";
+    if (comments.length === 0 && pinnedComments.length === 0) return out + "아직 작성된 댓글이 없어요.";
     if (pinnedComments.length > 0) {
-        out += "\n❤️집주인이 좋아하는 댓글❤️\n";
-        var hasInsertedPinnedAllsee = false;
-        for (var pinIndex = 0; pinIndex < pinnedComments.length; pinIndex++) {
-            var pinned = pinnedComments[pinIndex];
-            if (!pinned) continue;
-            var pinnedNick = checkRank(data, petData, guildData, pinned.from);
-            out += (pinIndex + 1) + ". 📌 [" + pinnedNick + "]: " + pinned.text;
-            if (!hasInsertedPinnedAllsee) {
-                out += allsee;
-                hasInsertedPinnedAllsee = true;
-            }
-            out += "\n";
+        out += "❤️ 집주인이 좋아하는 댓글\n";
+        for (var i = 0; i < pinnedComments.length; i++) {
+            var pin = pinnedComments[i];
+            out += (i + 1) + ". 📌 [" + checkRank(data, petData, guildData, pin.from) + "]: " + pin.text + "\n";
+            if (i === 0) out += allsee + "\n";
         }
-        out += "\n☆━━ 최근 방명록 댓글 ━━☆\n";
-    } else {
-        out += "\n❤️집주인이 좋아하는 댓글❤️\n";
-        out += "현재 댓글핀이 없습니다.\n/댓글핀 [숫자] 로 지정하세요\n";
-        out += allsee + "\n";
-    }
-
-    if (comments.length === 0) {
-        return (out + "아직 등록된 댓글이 없습니다.").trim();
-    }
-
-    for (var i = comments.length - 1; i >= startIndex; i--) {
-        var c = comments[i];
-        if (!c) continue;
-        var commenterNick = checkRank(data, petData, guildData, c.from);
-        var no = comments.length - i;
-        out += no + ". [" + commenterNick + "]: " + c.text + "\n";
+    } else out += allsee + "\n";
+    if (comments.length > 0) out += "────── ✧ ──────\n💬 최근 방명록 댓글\n";
+    for (var j = comments.length - 1; j >= 0; j--) {
+        var comment = comments[j];
+        out += (comments.length - j) + ". [" + checkRank(data, petData, guildData, comment.from) + "]: " + comment.text + "\n";
     }
     return out.trim();
 }
@@ -52745,6 +52799,46 @@ function findTargetAtStart(content, memberMap, allowCommaDelimiter) {
         rest: content
     };
 }
+// 기존 유저는 0부터 시작하고 저장된 별채 성장 값의 형식을 검증하는 함수
+function getPetHomeVillageState(userHome) {
+    var stored = userHome && userHome.lumiereVillage;
+    if (stored === undefined) return { royal: { level: 0, progress: 0 }, arcana: { level: 0, progress: 0 } };
+    if (!stored || typeof stored !== "object" || Array.isArray(stored)) throw new Error("별채 데이터 형식 오류");
+    var result = {};
+    var keys = ["royal", "arcana"];
+    for (var i = 0; i < keys.length; i++) {
+        var value = stored[keys[i]];
+        if (!value || typeof value.level !== "number" || typeof value.progress !== "number" ||
+            !isFinite(value.level) || value.level < 0 || Math.floor(value.level) !== value.level || value.level > 9007199254740991 ||
+            !isFinite(value.progress) || value.progress < 0 || Math.floor(value.progress) !== value.progress || value.progress >= GLOBAL_CONFIG.petHomeVillage.materialsPerLevel) throw new Error("별채 성장 값 오류");
+        result[keys[i]] = { level: value.level, progress: value.progress };
+    }
+    return result;
+}
+
+// 현재 집 면적에서 각 별채가 성장할 수 있는 레벨을 계산하는 함수
+function getPetHomeVillageLevelLimit(userHome) {
+    return Math.floor(Math.max(0, Number(userHome && userHome.floor) || 0) / GLOBAL_CONFIG.petHomeVillage.areaPerLevel);
+}
+
+// 인테리어 장인을 제외한 가구·하우스 스킬의 별채 추가분을 계산하는 함수
+function getPetHomeFurnitureCharm(homeData, petSkillData, user) {
+    var home = homeData && homeData[user] ? homeData[user] : {};
+    var state = getPetHomeVillageState(home);
+    var furniture = getFurnitureExp(home); // 한 모드에 적용되는 가구 기본 매력
+    var equipped = getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
+    var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
+    var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
+    var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
+    var percent = state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+    var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
+    var oldHome = Number(home.exp || 0) + furniture;
+    var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
+    var dream = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? Math.floor((base + bonus + interior) * GLOBAL_CONFIG.petHomeVillage.dreamPercent / 100) : 0; // 현재 펫홈 최종 매력의 신규 스킬 추가분
+    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, dream: dream, bonus: bonus + dream,
+        castle: base + bonus + interior + dream, raid: base + bonus + interior + dream, total: (base + bonus + interior + dream) * 2 };
+}
+
 // 범용 포맷터
 function getHomeTotalExp(homeData, username) {
     if (!homeData || !homeData[username]) return 0;
@@ -53371,6 +53465,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         if (hasPetSkill(petSkillData, sender, "인테리어 장인")) homeExp = Math.floor(homeExp * 1.1);
         return homeExp;
     });
+    castleHomeExp += measure("캐슬-빌리지", function () { return getPetHomeFurnitureCharm(homeData, petSkillData, sender).bonus; });
     var castleIntimacyExp = measure("캐슬-친밀도", function () {
         return getIntimacyExpFromBag(bagItems);
     });
@@ -53394,6 +53489,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
         if (hasPetSkill(petSkillData, sender, "인테리어 장인")) homeExp = Math.floor(homeExp * 1.1);
         return homeExp;
     });
+    raidHomeExp += measure("레이드-빌리지", function () { return getPetHomeFurnitureCharm(homeData, petSkillData, sender).bonus; });
     var raidSkillExp = measure("레이드-펫스킬", function () {
         return calcSkillExp(homeData, "raidExp");
     });
@@ -61569,7 +61665,7 @@ function buildPointShopBuyMessage(itemName, quantity, itemPrice, taxAmount, taxR
 // 가구 정보 문자열 생성 (예: "소파(매력💕)[등급]")
 function getFurnitureDisplay(furniture) {
     if (!furniture) return "";
-    return furniture.name + "(+" + numberWithCommas(furniture.exp) + "💕)" + "[" + furniture.grade + "]";
+    return furniture.name + "(+" + numberWithCommas(furniture.exp) + "💞)" + "[" + furniture.grade + "]";
 }
 
 // 유저의 title 구조가 없으면 생성하고 안전하게 반환
