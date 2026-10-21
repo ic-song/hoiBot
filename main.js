@@ -2878,6 +2878,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             msg = stripDevCommandPrefix(msg);
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
         }
+        if (msg === "/필터리스트") {
+            if (!isAdmin(sender) && !isMaster(sender)) return;
+            var listedFilterWords = getCachedMessageFilterWords(ctx.isDev).slice();
+            var filterListLines = ["📋 필터 목록 · " + listedFilterWords.length + "개"];
+            if (listedFilterWords.length) {
+                filterListLines.push(allsee);
+                for (var filterListIndex = 0; filterListIndex < listedFilterWords.length; filterListIndex++) filterListLines.push((filterListIndex + 1) + ". " + listedFilterWords[filterListIndex]);
+            } else filterListLines.push("등록된 필터가 없습니다.");
+            replier.reply(filterListLines.join("\n"));
+            return;
+        }
         var messageFilterRequest = getMessageFilterRequest(msg);
         if (messageFilterRequest) {
             if (!isAdmin(sender) && !isMaster(sender)) return;
