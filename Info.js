@@ -4046,7 +4046,7 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user) {
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
     var oldHome = Number(home.exp || 0) + furniture;
     var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
-    var dream = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? Math.floor((base + bonus + interior) * GLOBAL_CONFIG.petHomeVillage.dreamPercent / 100) : 0; // 현재 펫홈 최종 매력의 신규 스킬 추가분
+    var dream = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? Math.floor(bonus * GLOBAL_CONFIG.petHomeVillage.dreamPercent / 100) : 0; // 별채 버프로 늘어난 매력에만 적용하는 스킬 추가분
     return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, dream: dream, bonus: bonus + dream,
         castle: base + bonus + interior + dream, raid: base + bonus + interior + dream, total: (base + bonus + interior + dream) * 2 };
 }
