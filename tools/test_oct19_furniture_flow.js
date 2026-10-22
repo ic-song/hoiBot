@@ -35,7 +35,7 @@ for (const split of [false, true]) {
         const home = fixture.get(root + "home.json")[user]; assert.strictEqual(home.furnitureBag.length, beforeItems - 1); assert.strictEqual(home.placedFurnitureSummary.count, limit);
         const snapshot = fixture.raw(root + "home.json"), placedSnapshot = fixture.raw(c.petHomePlacedFurniturePath);
         assert(run("/가구장착 1").includes("초과")); assert.strictEqual(fixture.raw(root + "home.json"), snapshot); assert.strictEqual(fixture.raw(c.petHomePlacedFurniturePath), placedSnapshot);
-        assert(run("/가구가방").includes("현재 배치된 가구 (" + limit + "/" + limit + ")"));
+        assert(run("/가구가방").includes("가구 가방🛌 [" + (beforeItems - 1) + "/100]"));
     }
     console.log("PASS FURNITURE " + (++groups) + ": " + (split ? "분리 상세" : "기존 목록") + " 평수 경계의 실제 장착·한도 차단·가방 표시 일치");
 }
@@ -47,5 +47,5 @@ console.log("PASS FURNITURE " + (++groups) + ": 번호·인수·안내 접미 �
 prepare(105, 21); const data = fixture.read(); data.member[user].premium = true; fixture.write(data);
 const skills = ["건물주", "베란다 확장", c.GLOBAL_CONFIG.petSkill.largeVerandaSkillName]; fixture.put(root + "skills.json", { [user]: skills });
 const expected = 22 + 10 + c.GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus + c.GLOBAL_CONFIG.petSkill.largeVerandaFurnitureSlotBonus + c.GLOBAL_CONFIG.supportPass.premium.furnitureSlotBonusCount;
-assert(run("/가구장착 1").includes("현재 배치: 22/" + expected)); assert(run("/가구가방").includes("현재 배치된 가구 (22/" + expected + ")"));
+assert(run("/가구장착 1").includes("현재 배치: 22/" + expected)); assert(run("/가구가방").includes("가구 가방🛌 [1/100]"));
 console.log("PASS FURNITURE " + (++groups) + ": 기존 장착·스킬·프리미엄 유지 및 실제 화면 일치");

@@ -164,8 +164,8 @@ test('실제 펫홈 방문 누적·방문 뱃지 획득 유지·댓글30개 영�
 });
 test('홈알림 이동 정보·방문 뱃지·마음5종 합계·읽음 후 누적 보존',()=>{
  const home=f.get(root+'home.json');home[other].likeCnt=5;home[other].heartExpressions={cute:1,cheer:2,cool:3,love:4};f.put(root+'home.json',home);
- const first=run('/홈알림',other);assert(first.includes('누적 방문👣 1회'));assert(first.includes('첫 방문 [V01] · 획득'));assert(first.includes('받은 마음 누적 15개'));assert(first.includes('좋아홈💌 x5'));assert(!first.includes('최근 방문자'));
- const second=run('/홈알림',other);assert(second.includes('누적 방문👣 1회'));assert(second.includes('받은 마음 누적 15개'));assert(second.includes('첫 방문 [V01] · 획득'));
+ const first=run('/홈알림',other);assert(first.includes('누적 방문👣 1회'));assert(first.includes('첫 방문 [V01] · 획득'));assert(first.includes('💝 받은 마음 15회'));assert(first.includes('[💌 5]'));assert(first.includes('👣 최근 방문자 [1/100명]'));
+ const second=run('/홈알림',other);assert(second.includes('누적 방문👣 1회'));assert(second.includes('💝 받은 마음 15회'));assert(second.includes('첫 방문 [V01] · 획득'));
 });
 test('정리 완료된 본인 펫홈은 댓글/홈 재저장 없이 가구 매력 한 번 계산',()=>{
  const before=f.raw(root+'home.json'),comments=f.raw(root+'petHomeComments.json');let count=0;const calculate=c.getPetHomeFurnitureCharm;
