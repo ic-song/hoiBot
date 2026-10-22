@@ -8,7 +8,7 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ## 2026-10-22 - 댓글핀 등록·삭제의 저장 실패 보호 보완
 
-Status: DEVELOPMENT_VALIDATED (ver_2.678 예정)
+Status: PRODUCTION_REFLECTED (2026-10-22, ver_2.678, PR #150)
 
 - 사용자 제보는 '댓글핀 안 됨'이며, 후속 요청으로 예외처리를 확인했다. 정상 등록·조회·삭제는 재현 시험에서 성공하여 실제 운영 증상의 원인은 미확정이다. 번호·중복·최대3개·회원/패스/펫 조건도 기존대로 작동한다.
 - 저장 예외 점검에서 댓글 파일이 기본 보호 JSON 목록에 없음을 확인했다. 회원 파일은 보호 저장하지만 기존 댓글핀 분기는 댓글 파일에 직접 쓰기를 사용했다. 최초 합성 시험의 모든 경로 보호 가정을 실제 분류로 바꾸자 비보호 쓰기 경로가 검출됐다.
