@@ -842,6 +842,7 @@ Status: VERIFIED
 
 - Canonical read path for sweet-home furniture bag
 - This branch normalizes home user data before output
+- `buildPetHomeFurnitureBagMessage` places registration and all equip/sell/unbind guides above the inventory. Item numbers/order remain the sorted bag order. `allsee` occurs once after item 3, or after the final divider when there are at most 3 items. House/charm summaries and repeated bottom management/growth guides are omitted.
 - 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한한다. 프리미엄 이용자는 가구를 3개 더 장착할 수 있고 종료 시 장착 가구 중 매력이 가장 낮은 초과 가구를 가방으로 회수한다.
 - `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
@@ -1000,8 +1001,8 @@ Status: VERIFIED
 
 - `/펫홈`: loads home, placed furniture, activity and comments once. Shows house, final furniture charm, village level/progress and distinct furniture TOP 3, followed by the guestbook in one reply. Other-user visits retain cumulative counts, visitor records and badge awards. Over-limit historical comment lists are saved as the latest 30 with separate pinned copies preserved; normal views skip comment serialization/saves.
 - `/댓글`: active hoi/newbie pass users write up to 30 characters and pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
-- `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
-- `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
+- `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; adds the displayed newest-first comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`. Captures comments before trimming/mutation and passes that snapshot to `saveJsonFile`, so comments use verified transactional saves even though this file is not in the default protected-path list. Failures restore both member and comments.
+- `/댓글핀삭제 [번호]`: removes the selected pinned comment and saves `petHomeCommentsFile` with a pre-mutation snapshot, without changing member points or reinserting old pinned comments into the recent list.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
@@ -1020,7 +1021,7 @@ Status: VERIFIED
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
-- `/홈알림` and `ㅎㄹ`: keep pass access, 100 activity alerts, read handling and daily completion with existing rollback. Display cumulative visits, visit-badge progress/ownership, all five received-heart totals and the current social/follow data. Recent-visitor list output is removed; visitor storage and badge progression remain.
+- `/홈알림` and `ㅎㄹ`: keep pass access, 100 activity alerts, read handling and daily completion with existing rollback. The top shows current follows/mutuals/heart allowance, the sum and compact counts of all five received-heart types, unread/stored alert counts and recent-visitor counts. Existing alerts, follow lists and restored recent visitors appear below `allsee`, followed by cumulative visits and visit-badge progress/ownership. Visitor storage and badge progression remain.
 - `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. Stored feeds are not included in `/펫홈` output.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
 - `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/팔로워순위`는 실제 팔로워에 `인플루언서📙` 1,000명과 `셀럽📙` 2,000명을 합산하고, `/마음순위`는 각 유저의 귀여워·멋져요·응원해·사랑해 받은 수를 표시한다.
@@ -2021,6 +2022,7 @@ Status: VERIFIED
 - Home summary, original equipped-item order and queried owner's equipped skills; no save or inventory sorting on this command.
 - No argument queries self; a nickname including spaces queries that owner. No Admin/Master restriction. Only self views show executable bag/registration guides.
 - Final charm/village above `allsee`; explanation and active skills precede the complete equipped list at the very bottom.
+- The final total, castle charm and raid charm each occupy a separate line.
 - Castle/raid calculators in both scripts and Main diagnostics add the same scoped extra once before existing overall buffs. `/종합순위` reflects it; `/가구순위` retains individual base values.
 - Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds floor(village bonus × 10%) per mode; zero village bonus or unequipped ownership gives no effect. Its S-grade detail hides probability using the existing flag.
 

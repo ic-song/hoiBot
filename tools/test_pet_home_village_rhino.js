@@ -7,10 +7,11 @@ const block=m=>h.block(h.main,m);
 const functions=[...new Set(h.functions.concat(['createCommandContext','getCurrentContext','enterCommandContext','exitCommandContext','getDataFileName','resolveActiveDataPath',
  'getDataSaveTransaction','beginDataSaveTransaction','endDataSaveTransaction','prepareManagedJsonTransactionEntry','rollbackDataSaveTransaction',
  'getProtectedJsonSaveLock','writeVerifiedJsonFile','loadJsonFile','saveJsonFile','parseJsonContent','parseManagedJsonContent','ensureParentFolder',
- 'isDevCommandMessage','stripDevCommandPrefix','isManualResetInput','isManualResetLegacyCommand','isAutoDailyEntryCommandMessage','isExclusiveDataMutationCommandMessage','getResponseDataFlowLock']))];
+ 'isDevCommandMessage','stripDevCommandPrefix','isManualResetInput','isManualResetLegacyCommand','isAutoDailyEntryCommandMessage','isExclusiveDataMutationCommandMessage','getResponseDataFlowLock',
+ 'isRegisteredHomeMember','isSamePetHomeComment','isPinnedPetHomeComment','getPetHomePassBenefitCost','hasPoint','addPoint']))];
 const runtime='var GLOBAL_CONFIG='+JSON.stringify(h.c.GLOBAL_CONFIG)+';\n'+h.main.match(/const PET_SKILL_LIST = \[[\s\S]*?\n\];/)[0]+'\n'+functions.map(n=>block('function '+n+'(')).join('\n')+`
 var DATA_ROOT_PATH=${JSON.stringify(root)},DEV_DATA_ROOT_PATH=DATA_ROOT_PATH+'dev/',COMMON_DATA_FILE_MAP={};
-var filePath=DATA_ROOT_PATH+'member.json',homeDataFile=DATA_ROOT_PATH+'home.json',petSkillDataPath=DATA_ROOT_PATH+'skills.json',memberPetPath=DATA_ROOT_PATH+'pets.json',petHomePlacedFurniturePath=DATA_ROOT_PATH+'placed.json';
+var filePath=DATA_ROOT_PATH+'member.json',homeDataFile=DATA_ROOT_PATH+'home.json',petSkillDataPath=DATA_ROOT_PATH+'skills.json',memberPetPath=DATA_ROOT_PATH+'pets.json',petHomePlacedFurniturePath=DATA_ROOT_PATH+'placed.json',petHomeCommentsFile=DATA_ROOT_PATH+'comments.json';
 var dataTransactionLock=new java.util.concurrent.locks.ReentrantLock(),commandDataFlowLock=new java.util.concurrent.locks.ReentrantReadWriteLock(true),commandContextThreadLocal=new java.lang.ThreadLocal(),dataSaveTransactionThreadLocal=new java.lang.ThreadLocal(),protectedJsonSaveLocks={};
 var sender='synthetic',room='test',isGroupChat=true,ctx={isDev:false},testRoom='test',petHomeVillagePending={},messages=[],errors=new java.util.concurrent.ConcurrentLinkedQueue(),saveCount=0;
 var replier={reply:function(s){messages.push(String(s));}},allsee='<ALLSEE>',isDebuggerFlag=false;
@@ -19,6 +20,7 @@ function put(p,v){java.nio.file.Files.write(java.nio.file.Paths.get(String(p)),n
 function check(v,label){if(!v)throw new Error(label);}
 function getAutoDailyBatchContext(){return null;}function getManagedJsonBackupPath(){return null;}function getManagedJsonSecondaryBackupPath(){return null;}function isProtectedManagedJsonPath(){return false;}function debuggerLog(){}
 function checkRank(d,p,g,u){return u;}function numberWithCommas(n){return String(n);}function getHoiPassPremiumHeader(){return '';}function isHoiPassPremiumActive(){return false;}
+function hasActiveHoiPassAccess(){return true;}
 function isServerRaidMutationCommand(){return false;}function getRaidSealCraftRequest(){return null;}function getStoneBoxOpenRequest(){return null;}function isSealedVaultMutationCommandMessage(){return false;}function isCarrotTradeEntryMessage(){return false;}function getCarrotTradeReply(){return null;}
 function calculateCastleItem(){return 0;}function calculateItemInfoAll(){return {castleExp:0,raidExp:0};}function getMiniPetModeCharm(){return 0;}function getIntimacyExpFromBag(){return 0;}function getEquippedTierPetSkillExp(){return 0;}function getHomeBadgeCubeActiveOptionPercent(){return 0;}function getGuildContributionCubeMemberPercent(){return 0;}function getAdventureLevelCharmPercent(){return 0;}
 function reset(){
@@ -30,6 +32,8 @@ function execute(msg){
  var flow=getResponseDataFlowLock(msg);flow.lock();dataTransactionLock.lock();var prev=enterCommandContext(createCommandContext(false,room));beginDataSaveTransaction();
  try{var data={member:{synthetic:{bag:{},point:1}}},petData={synthetic:{petname:'합성펫'}},petSkillData=loadJsonFile(petSkillDataPath),guildData={};
  ${h.registration}
+ ${block('if (msg === "/댓글핀" ||')}
+ ${block('if (msg === "/댓글핀삭제" ||')}
  }catch(e){rollbackDataSaveTransaction();throw e;}finally{endDataSaveTransaction();exitCommandContext(prev);dataTransactionLock.unlock();flow.unlock();}
 }
 function worker(ready,start){return new java.lang.Thread(new java.lang.Runnable({run:function(){org.mozilla.javascript.Context.enter();try{ready.countDown();start.await();execute('등록한다');}catch(e){errors.add(String(e));}finally{org.mozilla.javascript.Context.exit();}}}));}
@@ -49,5 +53,17 @@ var original=FileStream.read(homeDataFile),before=loadJsonFile(homeDataFile);bef
 beginDataSaveTransaction();try{saveJsonFile(before,homeDataFile,false,original);rollbackDataSaveTransaction();}finally{endDataSaveTransaction();}check(FileStream.read(homeDataFile)===original,'snapshot rollback');
 check(!dataTransactionLock.isLocked()&&dataSaveTransactionThreadLocal.get()===null&&commandContextThreadLocal.get()===null,'locks cleaned');
 print('PASS Rhino: actual one-file snapshot rollback and all locks/contexts released');
+isProtectedManagedJsonPath=function(target){return String(target)===String(filePath);};
+put(filePath,{member:{synthetic:{point:1,bag:{}}}});put(petHomeCommentsFile,{comments:{synthetic:[{from:'other',text:'실제 댓글',time:'2026-10-22'}]},pinnedComments:{}});
+execute('/댓글핀 1');check(loadJsonFile(petHomeCommentsFile).pinnedComments.synthetic[0].text==='실제 댓글','Rhino pin persisted');check(loadJsonFile(filePath).member.synthetic.point===1,'pass cost zero');
+var pinnedBefore=FileStream.read(petHomeCommentsFile);execute('/댓글핀 1');execute('/댓글핀 0');execute('/댓글핀 1 해봐');check(FileStream.read(petHomeCommentsFile)===pinnedBefore,'invalid and duplicate pins unchanged');
+execute('/댓글핀삭제 1');check(loadJsonFile(petHomeCommentsFile).pinnedComments.synthetic.length===0&&loadJsonFile(petHomeCommentsFile).comments.synthetic.length===1,'unpin preserves original');
+var memberBefore=FileStream.read(filePath),commentsBefore=FileStream.read(petHomeCommentsFile),originalWrite=writeVerifiedJsonFile;
+for(var failurePhase=0;failurePhase<2;failurePhase++){
+ writeVerifiedJsonFile=function(target,value){if(String(target)===String(petHomeCommentsFile)){writeVerifiedJsonFile=originalWrite;if(failurePhase===1)originalWrite.apply(this,arguments);throw new Error('synthetic pin save failure');}return originalWrite.apply(this,arguments);};
+ var pinFailed=false;try{execute('/댓글핀 1');}catch(e){pinFailed=true;}finally{writeVerifiedJsonFile=originalWrite;}
+ check(pinFailed&&FileStream.read(filePath)===memberBefore&&FileStream.read(petHomeCommentsFile)===commentsBefore,'pin two-file failure rollback phase '+failurePhase);
+}
+print('PASS Rhino: real pin/unpin persistence, duplicate/invalid guards, pass cost and two-file failure rollback');
 `;
 const file=path.join(dir,'test.js');fs.writeFileSync(file,script,'utf8');const result=cp.spawnSync('java',['-Xmx1024m','-Dfile.encoding=UTF-8','-cp',path.resolve(jar),'org.mozilla.javascript.tools.shell.Main','-opt','-1','-version','200','-encoding','UTF-8','-f',file],{encoding:'utf8',timeout:60000,maxBuffer:2*1024*1024});process.stdout.write(result.stdout||'');process.stderr.write(result.stderr||'');assert.equal(result.status,0);
