@@ -45,7 +45,7 @@ for(var attempt=0;attempt<20;attempt++){
  var saved=loadJsonFile(homeDataFile).synthetic;check(saved.furnitureBag.length===9&&saved.lumiereVillage.royal.level===4&&saved.lumiereVillage.royal.progress===0,'only once');check(messages.length===2,'one confirm and one completion');
 }
 print('PASS Rhino: MAIN/Info full compile; actual registration and Java UTF-8 verified saves; 20 concurrent confirmation pairs consume once');
-var home=loadJsonFile(homeDataFile),skills=loadJsonFile(petSkillDataPath),charm=getPetHomeFurnitureCharm(home,skills,'synthetic');check(charm.interior===1100&&charm.villageBonus===4000&&charm.dream===400&&charm.total===31000,'dream only adds 10 percent of annex bonus');
+var home=loadJsonFile(homeDataFile),skills=loadJsonFile(petSkillDataPath),charm=getPetHomeFurnitureCharm(home,skills,'synthetic');check(charm.interior===1100&&charm.percent===50&&charm.villageBonus===5000&&charm.total===32200,'dream adds 10 percentage points once');
 var reload=JSON.parse(FileStream.read(homeDataFile));check(getPetHomeFurnitureCharm(reload,skills,'synthetic').total===charm.total,'restart no duplicate');
 var bad=JSON.parse(JSON.stringify(reload));bad.synthetic.lumiereVillage.royal.progress=10;var threw=false;try{getPetHomeFurnitureCharm(bad,skills,'synthetic');}catch(e){threw=true;}check(threw,'invalid state fails');
 print('PASS Rhino: separate interior/village/dream arithmetic, saved-state reload, malformed state rejected');
