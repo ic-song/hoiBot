@@ -1,9 +1,9 @@
 # 글자수 전체 정리 직접 명령 유지
 
 - 작업 키: text-cleanup-direct
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 1
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 체크포인트 버전: 2
 - 마지막 갱신: 2026-10-23 Asia/Seoul
 - 사용자 승인: `/글자수전체정리`는 확인 없이 직접 실행하고 `/초기화`의 기존 메뉴 경로도 함께 유지. 개발 요청이며 이번 변경의 운영 반영 요청은 없음.
 - 작업 위치: C:/Users/user/.codex/worktrees/text-cleanup-direct/hoiBot, codex/text-cleanup-direct, 운영 기준 fd888bab/ver_2.679.
@@ -12,4 +12,5 @@
 - 변경 파일: main.js, COMMAND_INDEX.md, COMMAND_REGISTRY.md, data/hoiBotChangeLog.json, tools/test_reset_menu.js, tools/test_reset_cleanup_menu.js, tools/test_reset_cleanup_rhino.js, 이 체크포인트.
 - 검증: 변경 전 직접 명령이 메뉴로 잡히는 회귀 실패 재현. Node 정리17+초기화22=39그룹 PASS. Rhino Main/Info 전체 컴파일·기존 메뉴 동시확정20쌍·직접 실행·DEV 격리·권한/만료/재시작 시험 PASS. 현재 운영 기준으로 후속 실행 본문 동일 검증. 새 분류로 인해 Rhino 합성 시험에만 필요해진 외부 명령/필터 스텁을 추가함. 게임 스냅샷은 사용·변경하지 않음.
 - 버전: 개발2.680/노트2026-10-23 준비. 운영2.679 유지. 버전/노트 반영일은 운영 반영 시 재확인 필요.
-- 다음 행동: 마지막 테스트·문법/UTF-8/diff 확인 후 소스 푸시·검토 PR 준비. 운영 반영 시 최신 origin/feature/prod 및 다른 작업의 버전 충돌을 재확인. 런타임 업로드/컴파일 미접근.
+- 소스 저장: 18e780f6aeda39e57f76fd853073f835c42ca0f3 푸시 및 origin/codex/text-cleanup-direct 일치 확인. PR152 https://github.com/ic-song/hoiBot/pull/152 (draft OPEN, base feature/prod) 생성·채팅 첨부. 문법·UTF-8·diff·버전/노트 일치 확인 완료. 원래 작업 폴더의 미커밋 변경 보존.
+- 다음 행동: 승인된 개발·검증·소스 푸시·검토 PR 준비 완료. 운영 미반영으로 origin/feature/prod fd888bab/ver_2.679 유지. 운영 요청 시 최신 origin/feature/prod 및 다른 작업의 버전 충돌·반영일을 재확인. 런타임 업로드/컴파일 미접근. 관리 작업 공간은 후속 PR 작업을 위해 유지함.
