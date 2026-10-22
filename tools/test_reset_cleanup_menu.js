@@ -2,6 +2,7 @@ const assert = require('assert'), vm = require('vm'), cp = require('child_proces
 const { createFixture } = require('./test_server_raid_delivery.js');
 const clone = value => JSON.parse(JSON.stringify(value));
 const baseline = cp.execFileSync('git', ['show', '0d26cbd0:main.js'], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 }).replace(/\r\n/g, '\n');
+const entryBaseline = cp.execFileSync('git', ['show', 'fd888bab:main.js'], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 }).replace(/\r\n/g, '\n'); // 이번 직접 실행 변경 직전 운영 기준
 const helperNames = ['isAdmin', 'getSupportPassConfigs', 'getSupportPassDateValue', 'getTodaySupportPassDateValue', 'isSupportPassActive', 'isHoiPassPremiumActive', 'getMiniPetBagLimit', 'getFurnitureBagLimit', 'getPendantBagLimit', 'sortMiniPetBag', 'refreshMiniPetSortIndex', 'sortFurnitureList', 'initSweetHomeUser', 'getPendantGradeSortRank', 'sortPendantBagByGrade', 'countAllMiniPetBagItems', 'countAllFurnitureBagItems', 'cleanAllMiniPetBags', 'cleanAllFurnitureBags', 'cleanAllPendantBags', 'buildTextLengthCleanupMessage'];
 
 // 운영 스냅샷을 사용하지 않고 일반·프리미엄·만료 사용자와 장착/가방 데이터를 만든다.
@@ -89,10 +90,32 @@ function runTests() {
         for (const msg of ['1삭제 해봐', '1', '삭제', '확인']) f.call(msg);
         assert.deepStrictEqual(f.h.persist(), before); assert.equal(f.c.manualResetSessions['PROD:master'].stage, 'confirm');
     });
-    test('직접 명령·접미사는 안내만 출력하고 저장·정리 함수 호출 없이 종료', () => {
+    test('글자수 접미사와 다른 직접 정리 명령은 안내만 출력하고 무변경', () => {
         const f = createTextFixture(), before = f.h.persist(); f.c.cleanAllMiniPetBags = () => { throw Error('must not execute'); };
-        for (const msg of ['/글자수전체정리', '/글자수전체정리 1 해봐', '/글자수전체정리방법', '/필터데이터정리', '/필터데이터정리 1', '/필터데이터정리방법', 'dev/글자수전체정리']) assert(f.call(msg).replies[0].includes('통합되었습니다'));
+        for (const msg of ['/글자수전체정리 1 해봐', '/글자수전체정리방법', '/필터데이터정리', '/필터데이터정리 1', '/필터데이터정리방법']) assert(f.call(msg).replies[0].includes('통합되었습니다'));
         assert.deepStrictEqual(f.h.persist(), before);
+    });
+    test('정확한 별도 명령은 즉시 실행하고 메뉴 확인과 결과가 동일', () => {
+        const direct = createTextFixture(), menu = createTextFixture(direct.h.persist());
+        const output = direct.call('/글자수전체정리');assert(!direct.c.isManualResetInput('/글자수전체정리'));assert(!direct.c.manualResetSessions['PROD:master']);
+        assert(direct.c.isExclusiveDataMutationCommandMessage('/글자수전체정리'));assert(direct.c.isExclusiveDataMutationCommandMessage('dev/글자수전체정리'));
+        assert(output.replies.length && !output.replies.join('\n').includes('1삭제'));
+        menu.choose();menu.call('1삭제');assert.deepStrictEqual(direct.h.persist(),menu.h.persist());
+        const done = direct.h.persist();assert(direct.call('/글자수전체정리').replies[0].includes('초과 데이터가 없습니다'));assert.deepStrictEqual(direct.h.persist(),done);
+    });
+    test('직접 명령도 원래 MASTER·GM 관리자방 권한을 검사', () => {
+        for(const [user,room,allowed] of [['master','test',true],['admin','room90',true],['오픈채팅봇','room90',true],['admin','test',false],['오픈채팅봇','test',false],['a','room90',false]]){
+            const f=createTextFixture(),before=f.h.persist();const out=f.call('/글자수전체정리',user,room);
+            if(allowed)assert.equal(f.read('member_pet.json').a.miniPetBag.length,10);
+            else {assert(out.replies[0].includes('관리자만'));assert.deepStrictEqual(f.h.persist(),before);}
+        }
+    });
+    test('DEV 직접 정리는 운영 파일·메뉴 대기를 유지하고 기존 저장 실패도 원복', () => {
+        const f=createTextFixture();f.choose();const before=f.h.persist(),pending=clone(f.c.manualResetSessions['PROD:master']);f.call('dev/글자수전체정리');
+        for(const [path,value] of Object.entries(before.disk))if(path.startsWith(f.c.DATA_ROOT_PATH))assert.equal(f.h.persist().disk[path],value);
+        assert.equal(f.read('member_pet.json',true).a.miniPetBag.length,10);assert.deepStrictEqual(clone(f.c.manualResetSessions['PROD:master']),pending);
+        f.call('/글자수전체정리');assert.deepStrictEqual(clone(f.c.manualResetSessions['PROD:master']),pending);assert.equal(f.read('member_pet.json').a.miniPetBag.length,10);
+        for(const name of ['member_pet.json','home.json']){const fail=createTextFixture(),saved=fail.h.persist();fail.h.failWrite((_d,path)=>path===fail.c.DATA_ROOT_PATH+name);assert.throws(()=>fail.call('/글자수전체정리'));for(const path of [fail.c.memberPetPath,fail.c.homeDataFile])assert.equal(fail.h.persist().disk[path],saved.disk[path]);}
     });
     test('원래 실행 결과·정렬·일반10/프리미엄15/만료10·펜던트50·저장 파일이 동일', () => {
         const f = createTextFixture(), saved = f.h.persist(), old = createTextFixture(saved);
@@ -143,7 +166,7 @@ function runTests() {
     test('정리 계산·필터 정리·원래 실행 분기와 모든 후속 게임 본문은 운영 기준과 동일', () => {
         const f = createTextFixture(); for (const name of helperNames.filter(x => x !== 'isAdmin').concat('cleanupMessageFilterData')) assert.equal(f.h.block(f.h.main, 'function ' + name + '('), f.h.block(baseline, 'function ' + name + '('));
         for (const marker of ['if (msg === "/필터데이터정리") {', 'if (msg === "/글자수전체정리") {', 'if (msg == "/미니펫전체정리") {', 'if (msg == "/가구전체정리") {', 'if (msg === "/펜던트전체정리") {']) assert.equal(f.h.block(f.h.main, marker), f.h.block(baseline, marker));
-        const start = '// 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.', end = '///////////////////////////////////////////////////////////////////////////////////////////////'; assert.equal(f.h.main.slice(f.h.main.indexOf(start), f.h.main.indexOf(end, f.h.main.indexOf(start))), baseline.slice(baseline.indexOf(start), baseline.indexOf(end, baseline.indexOf(start))));
+        const start = '// 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.', end = '///////////////////////////////////////////////////////////////////////////////////////////////'; assert.equal(f.h.main.slice(f.h.main.indexOf(start), f.h.main.indexOf(end, f.h.main.indexOf(start))), entryBaseline.slice(entryBaseline.indexOf(start), entryBaseline.indexOf(end, entryBaseline.indexOf(start))));
     });
     console.log('PASS reset cleanup menu: ' + count + ' groups (synthetic only; original entry/cleanup/save branches)');
 }

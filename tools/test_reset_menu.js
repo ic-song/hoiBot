@@ -58,8 +58,8 @@ test('확인 직전 권한·패스·소속 길드 변경은 취소',()=>{
     const pass=fixture();pass.choose('ownFeeds','a');pass.c.hasActiveHoiPassAccess=()=>false;assert(pass.call('1삭제','a').replies[0].includes('권한이 변경'));
     const guild=fixture();guild.choose('guildBoard','master');const data=guild.h.read();data.member.master.guild.id='g2';guild.h.write(data);const state=guild.h.persist();state.disk[guild.root+'guild.json']=JSON.stringify({guilds:{g2:{master:'master'}}});const current=JSON.parse(state.disk[guild.root+'guild.json']);const originalRead=guild.c.loadJsonFile;guild.c.loadJsonFile=p=>p===guild.c.guildPath?current:originalRead(p);assert(guild.call('1삭제','master').replies[0].includes('길드가 변경'));
 });
-test('32종 원래 명령·접미사 입력은 전부 메뉴 안내만 하고 즉시 삭제 불가',()=>{
-    const f=fixture(),entries=f.c.GLOBAL_CONFIG.manualReset.entries;assert.equal(entries.length,32);for(const entry of entries){for(const msg of [entry.command,entry.command+' 1 해봐',entry.command+'방법']){const before=f.h.persist();assert(f.call(msg,'호이 남','test',{actual:true}).replies[0].includes('통합되었습니다'));assert.deepStrictEqual(f.h.persist(),before);}}
+test('글자수 정확한 입력 외 기존 직접 명령·접미사는 메뉴 안내만 유지',()=>{
+    const f=fixture(),entries=f.c.GLOBAL_CONFIG.manualReset.entries;assert.equal(entries.length,32);for(const entry of entries){for(const msg of [entry.command,entry.command+' 1 해봐',entry.command+'방법']){if(entry.id==='textCleanup'&&msg===entry.command)continue;const before=f.h.persist();assert(f.call(msg,'호이 남','test',{actual:true}).replies[0].includes('통합되었습니다'));assert.deepStrictEqual(f.h.persist(),before);}}
 });
 test('기존 28종은 번호·확인 뒤 정확한 원래 명령으로 연결',()=>{
     for(const entry of fixture().c.GLOBAL_CONFIG.manualReset.entries.filter(e=>!e.cleanup&&!['comments','feeds'].includes(e.id))){const f=fixture();const args=entry.args==='user'?'a':entry.args==='userCount'?'a 0':entry.args==='server'?'호1':'';f.choose(entry.id,'호이 남',args);const result=f.call('1삭제','호이 남').result;assert.equal(result.command,entry.command+(args?' '+args:''),entry.id);assert.equal(result.confirmed,result.command);assert.equal(f.call('1삭제','호이 남').result,undefined);}
