@@ -8,7 +8,7 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ## 2026-10-22 - 느그 집 마련의 꿈의 10% 적용 범위 정정
 
-Status: DEVELOPMENT_VALIDATED (ver_2.677)
+Status: PRODUCTION_REFLECTED (2026-10-22, ver_2.677, PR #149)
 
 - 사용자 정정: '별채만 10%'. 기존 ver_2.676은 펫홈의 기본 가구·하우스 스킬·인테리어·별채 합계를 대상으로 계산해 추가 매력이 과다했다.
 - Main/Info 모두 각 모드의 별채 증가분에만 10%를 곱하고 소수점을 버린다. 별채 증가분 4,000이면 스킬 추가분 400이며, 별채 증가분 0이면 0이다. 조회·실제 캐슬/레이드·종합순위는 기존 공통 계산을 사용한다. 보유만으로는 미발동하며 해제 시 이 추가분만 빠진다. 스킬 설명과 가구정보 표시를 함께 정정했다.
