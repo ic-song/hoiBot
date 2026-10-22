@@ -8,7 +8,7 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ## 2026-10-22 - 느그 집 마련의 꿈을 별채 비율 +10%p 합산으로 확정
 
-Status: DEVELOPMENT_VALIDATED (ver_2.679 예정)
+Status: PRODUCTION_REFLECTED (2026-10-22, ver_2.679, PR #151)
 
 - 사용자 최종 확정은 '별채 버프에 +10%p 합산'이다. 기존 ver_2.677의 별채 증가분 ×10% 해석을 대체한다. 스킬 정보의 확률 0.3%도 표시하도록 요청했다.
 - Main/Info는 로열·아르카나 레벨 버프에 장착 스킬의 10%p를 한 번 합산한 뒤, 별채 적용 대상 기본 매력에 한 번 곱하고 모드별 소수점을 버린다. 별채0%도 장착 중10%, 10%는20%, 50%는60%다. 인테리어 장인 추가분 제외 규칙은 유지한다. 해제 시 스킬10%p만 빠지고 미장착 보유는 미발동이다.
