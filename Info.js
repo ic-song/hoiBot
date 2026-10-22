@@ -4043,12 +4043,12 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user) {
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
     var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
     var percent = state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+    if (equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1) percent += GLOBAL_CONFIG.petHomeVillage.dreamPercent; // 스킬 10%p를 레벨 버프에 합산
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
     var oldHome = Number(home.exp || 0) + furniture;
     var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
-    var dream = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? Math.floor(bonus * GLOBAL_CONFIG.petHomeVillage.dreamPercent / 100) : 0; // 별채 버프로 늘어난 매력에만 적용하는 스킬 추가분
-    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, dream: dream, bonus: bonus + dream,
-        castle: base + bonus + interior + dream, raid: base + bonus + interior + dream, total: (base + bonus + interior + dream) * 2 };
+    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
+        castle: base + bonus + interior, raid: base + bonus + interior, total: (base + bonus + interior) * 2 };
 }
 
 function getHomeTotalExp(homeData, username) {

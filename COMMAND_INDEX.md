@@ -2024,7 +2024,7 @@ Status: VERIFIED
 - Final charm/village above `allsee`; explanation and active skills precede the complete equipped list at the very bottom.
 - The final total, castle charm and raid charm each occupy a separate line.
 - Castle/raid calculators in both scripts and Main diagnostics add the same scoped extra once before existing overall buffs. `/종합순위` reflects it; `/가구순위` retains individual base values.
-- Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds floor(village bonus × 10%) per mode; zero village bonus or unequipped ownership gives no effect. Its S-grade detail hides probability using the existing flag.
+- Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds 10 percentage points to the royal+arcana percent, including level-zero homes; apply that combined percent once and floor per mode. Unequipped ownership gives no effect. The S-grade detail shows its existing actual 0.3% probability. Furniture/village totals and calculation UI include the skill in the combined buff without a separate additional-charm line.
 
 ---
 

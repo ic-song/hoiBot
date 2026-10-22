@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.678"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.679"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -120,7 +120,7 @@ const PET_SKILL_LIST = [
     { name: "엘리트 박사", grade: "SS", rate: 0.2, raidExp: 1500000, castleExp: 1500000, charmCondition: "eliteMiniPet", effect: "[엘리트] 등급 미니펫 장착 시 장착 슬롯에 따라 추가 매력을 획득합니다.\n\n🐹 대표 장착 · 100% 반영\n캐슬매력 +150만 · 레이드매력 +150만\n└ 종합매력 +300만💞\n\n🛡️ 보조 장착 · 50% 반영\n캐슬매력 +75만 · 레이드매력 +75만\n└ 종합매력 +150만💞\n\n※ 대표·보조 모두 조건 충족 시 각각 합산됩니다.\n※ 위 수치는 다른 퍼센트 보너스 적용 전 기준입니다.\n※ 펫스킬 해제 또는 조건 미충족 시 해당 보너스가 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "오딘의 뿅망치", grade: "SS", rate: 0.2, raidExp: 2000000, castleExp: 2000000, effect: "오딘이 적을 응징할 때 사용하던 전설의 뿅망치입니다.\n장착 시 레이드매력 200만과 캐슬매력 200만, 총 종합매력 400만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "인테리어 장인", grade: "S", rate: 0.7, effect: "펫스윗홈에 장착된 가구가 10% 매력 효과를 추가로 얻습니다." },
-    { name: "느그 집 마련의 꿈", grade: "S", hideRateInInfo: true, effect: "장착 시 별채 버프로 증가한 캐슬매력과 레이드매력의 10%를 각각 추가합니다.\n펫스킬을 해제하면 해당 스킬로 적용된 추가 매력 버프가 제거됩니다." },
+    { name: "느그 집 마련의 꿈", grade: "S", effect: "장착 시 별채의 합산 버프가 10%p 증가합니다.\n펫스킬을 해제하면 해당 스킬로 적용된 추가 매력 버프가 제거됩니다." },
     { name: "하느님 위에 갓물주", grade: "S", rate: 0.8, effect: "/펫홈에 장착할 수 있는 가구를 15개 늘려줍니다." },
     { name: "호이행복재단 회원권", grade: "S", rate: 0.9, effect: "/이체 사용 시 수수료 50% 할인됩니다." },
     { name: "호월신의 총애", grade: "S", rate: 0.3, effect: "하루 한 번 호월신에게 특별한 기도를 올립니다.\n7% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 신성한 기도📙와 중복 장착할 수 없습니다." },
@@ -52202,7 +52202,7 @@ function buildPetHomeFurnitureSkillMessage(petSkillData, homeData, user, charm) 
     if (charm.royal) lines.push("로열 하우스📙 · 종매 +" + numberWithCommas(charm.royal * 2) + "💞\n└ 로열 가구 10개 이상 장착 시 적용");
     if (charm.arcana) lines.push("아르카나 하우스📙 · 종매 +" + numberWithCommas(charm.arcana * 2) + "💞\n└ 아르카나 가구 5개 이상 보유 시 적용");
     if (hasPetSkill(petSkillData, user, "인테리어 장인")) lines.push("인테리어 장인📙 · 기존 10% 효과 유지\n└ 추가 종매 +" + numberWithCommas(charm.interior * 2) + "💞 · 별채 버프 제외");
-    if (hasPetSkill(petSkillData, user, GLOBAL_CONFIG.petHomeVillage.dreamSkillName)) lines.push("느그 집 마련의 꿈📙 · 별채 증가분 +10%\n└ 추가 종매 +" + numberWithCommas(charm.dream * 2) + "💞 · 해제 시 추가 효과 회수");
+    if (hasPetSkill(petSkillData, user, GLOBAL_CONFIG.petHomeVillage.dreamSkillName)) lines.push("느그 집 마련의 꿈📙 · 별채 합산 버프 +10%p\n└ 빌리지 버프에 포함 · 해제 시 10%p 제거");
     if (hasPetSkill(petSkillData, user, "건물주")) lines.push("건물주📙 · 장착 +10칸");
     else if (hasPetSkill(petSkillData, user, "하느님 위에 갓물주")) lines.push("하느님 위에 갓물주📙 · 장착 +15칸");
     if (hasPetSkill(petSkillData, user, "베란다 확장")) lines.push("베란다 확장📙[한정판] · 장착 +" + GLOBAL_CONFIG.petSkill.verandaFurnitureSlotBonus + "칸\n└ 해제 시 추가 장착 칸 회수");
@@ -52219,7 +52219,6 @@ function buildPetHomeFurnitureInfoMessage(data, petData, petSkillData, guildData
     out += buildPetHomeVillageStatus(homeData, petSkillData, user, true, charm) + "\n━━━━━━ ✦ ━━━━━━\n📖 계산·스킬·장착 상세\n" + allsee + "\n📊 종매 계산\n💡 가구 매력은 캐슬·레이드에 각각 적용돼요.\n예) 가구 매력 10만\n⚔️ 캐슬 +10만 · 👾 레이드 +10만\n└ 💞 가구 종매 +20만\n\n";
     out += "🪑 장착 가구 종매 +" + numberWithCommas(charm.furniture * 2) + "💞\n📙 가구스킬 종매 +" + numberWithCommas((charm.royal + charm.arcana) * 2) + "💞\n└ 기본 합계 " + numberWithCommas(charm.base * 2) + "💞\n🏛️ 기본 합계의 " + charm.percent + "% 추가 → +" + numberWithCommas(charm.villageBonus * 2) + "💞\n";
     if (charm.interior) out += "📙 인테리어 장인 추가 +" + numberWithCommas(charm.interior * 2) + "💞 · 별채 버프 제외\n";
-    if (charm.dream) out += "📙 느그 집 마련의 꿈 추가 +" + numberWithCommas(charm.dream * 2) + "💞\n";
     out += "💞 최종 가구 종합매력 +" + numberWithCommas(charm.total) + "\n━━━━━━ ✦ ━━━━━━\n";
     out += buildPetHomeFurnitureSkillMessage(petSkillData, homeData, user, charm);
     out += "📦 별채 성장 안내\n🏰 로열 가구 10개 → Lv.+1 · 버프 +10%\n👑 아르카나 가구 10개 → Lv.+1 · 버프 +15%\n📐 집 10평당 성장 가능 레벨 +1\n\n※ 버프는 장착 가구 종매와 가구스킬 종매의 합계에 적용됩니다.\n※ 인테리어 장인 추가분은 별채 버프에서 제외됩니다.\n※ 별채 레벨·%는 유지되며, 추가 매력은 현재 가구·스킬에 따라 달라집니다.\n";
@@ -52846,12 +52845,12 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user) {
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
     var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
     var percent = state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+    if (equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1) percent += GLOBAL_CONFIG.petHomeVillage.dreamPercent; // 스킬 10%p를 레벨 버프에 합산
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
     var oldHome = Number(home.exp || 0) + furniture;
     var interior = equipped.indexOf("인테리어 장인") !== -1 ? Math.floor(oldHome * 1.1) - oldHome : 0; // 기존 집·가구 10% 효과 유지
-    var dream = equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1 ? Math.floor(bonus * GLOBAL_CONFIG.petHomeVillage.dreamPercent / 100) : 0; // 별채 버프로 늘어난 매력에만 적용하는 스킬 추가분
-    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, dream: dream, bonus: bonus + dream,
-        castle: base + bonus + interior + dream, raid: base + bonus + interior + dream, total: (base + bonus + interior + dream) * 2 };
+    return { state: state, furniture: furniture, royal: royal, arcana: arcana, interior: interior, base: base, percent: percent, villageBonus: bonus, bonus: bonus,
+        castle: base + bonus + interior, raid: base + bonus + interior, total: (base + bonus + interior) * 2 };
 }
 
 // 범용 포맷터
