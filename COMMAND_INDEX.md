@@ -22,6 +22,44 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /길드마블 · /마블판 · /마블가이드 · 길드마블 진행
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: `GLOBAL_CONFIG.guildMarble`, `getGuildMarbleRequest`, 응답 전처리의 길드마블 분기, 순수 경기/출력 함수.
+- 검증: `tools/test_guild_marble.js`, `tools/test_guild_marble_rhino.js`.
+
+## Commands and Behavior
+
+- `/길드마블`: 현재 소속 길드의 참가비·고정 상금·오늘 횟수와 모집/진행/정산 상태. `/마블판`: 현재 차례·선택과 최신 참가자/16칸 게임판. `/마블가이드`: 별도 전체보기 규칙.
+- 길드마스터만 `/마블참가비 숫자`(1~10억 포인트), `/마블시작`, `/마블모집취소`, `/마블중단`. 운영자 MASTER/부길마 권한으로 대신 실행할 수 없다. 길드마스터는 직접 `/마블준비`해야 플레이한다.
+- `/마블준비`, `/마블준비취소`: 같은 길드 4명 모집. 네 번째 준비 시 소속·잔액을 전원 재검증하고 실제 시작 때만 참가비와 길드 일일 이용 횟수 차감. 실패자는 준비 해제하며 나머지는 유지.
+- `/마블굴리기`, `/마블구매`, `/마블건설`, `/마블통과`: 본인 차례와 단계에 맞는 정확한 명령만 실행. 부족해도 구매/건설 대기는 자동 진행하지 않는다. 추가 안내 문구/인수는 실행하지 않는다.
+- 4명 순서는 시작 시 무작위, 골드는 1,000/1,020/1,030/1,040. 10라운드 홀수 정순·짝수 역순, 탈락자 예정 차례 제외. 통행료·이벤트 손실로 골드가 부족하면 잔액만 지급하고 파산하며 땅 초기화. 정확히 0골드는 생존.
+- 생존자 1명 또는 40번째 예정 차례 완료 시 종료. 생존자는 골드+지역/건설 원가 총자산순, 동점 생존자만 추첨, 탈락자는 먼저 탈락한 순서로 하위 순위. 참가비 총액의 10% 수수료를 제외한 풀을 40/30/20/10% 지급(참가비 별도 반환 없음).
+- `/마블중단확인`: 길드마스터 중단 요청 후 실제 4명(탈락자 포함)이 전원 동의해야 전액 환급. 횟수는 유지. 유효 진행만 동의 취소, 잘못된 입력·중복 동의는 미변경.
+- 길드 기준 KST 하루 3회, 개인 별도 제한 없음. 진행 방 고정, 시작 당시 계정 ID로 닉변·탈퇴/추방 후에도 진행/정산. 자정에도 경기 유지. 타이머·자동 넘김 없음.
+
+## Helpers and Data
+
+- `requireGuildMarbleStore`, `executeGuildMarbleRequest`, `startGuildMarbleGame`, `rollGuildMarbleDice`, `chooseGuildMarbleLand`, `advanceGuildMarbleTurn`.
+- `prepareGuildMarbleSettlement`: 확정 순위/금액을 한 번 저장. `settleGuildMarbleGame`: 기존 `buildServerRaidAccountIndex`의 내부 ID로 미지급만 처리. `finishGuildMarbleGame`: 상세 정리, 최소 마지막 지급 기록 유지.
+- `buildGuildMarbleMessage`, `buildGuildMarbleProgress`, `buildGuildMarbleFooter`: 최신 참가자 → 구분선 → 현재 상황 → 기존 `allsee` → 16칸. 정산 대기는 실제 지급 표시, 완료 출력은 최종 게임판 포함.
+- 소형 파일 `guildMarble.json`: 길드별 설정·KST 횟수·현재 경기·최소 마지막 거래. 지난 턴/메시지 이력 누적 없음.
+- 기존 `member.serverRaidAccount.id` 재사용. 아직 ID 없는 회원은 첫 준비에 기존 계정 형식으로 한 번 발급하며 별도 공개 식별자/콜백 인수를 요구하지 않는다.
+- `getGuildMarbleRankLabel`은 기존 채크랭크를 재사용하되 추방/삭제된 길드 참조는 표시용 사본에서만 제외해 조회 중 회원 정리·저장을 막는다.
+
+## Save Flow
+
+- 기존 7인수 `response`와 쓰기 흐름 잠금 사용. 회원/펫/길드 조회 후 순수 함수에 전달. 일반 턴은 `writeMemberSplitSlot`으로 경기 파일만 저장. 조회·잘못된 입력은 저장 없음.
+- 참가비·상금·환급(초기 계정 ID 발급 포함)은 `guildMarblePending.json`에 회원/경기 원문 보존 → 기존 `saveJsonFile` 회원 저장 → 경기 게시 → 복구 기록 해제. 다음 명령에서 중단 게시를 먼저 원문 복구. 기존 회원 분리 상세/운영 로그 슬롯 변경은 차단한다.
+- 정산 순위는 지급보다 먼저 확정하고 재시작·미처리 재시도에서 재추첨/중복 지급하지 않는다. 정산 대기 중 새 모집/환급 전환 차단. 응답 전송 실패는 확정된 저장을 되돌리지 않는다.
+- 파일은 `resolveActiveDataPath`로 PROD `/sdcard/호이랜드/`와 DEV `/sdcard/호이랜드_dev/` 분리. 존재하는 잘못된 저장소를 새 빈 경기로 대체하지 않는다.
+
+---
+
 # /초기화 · 번호 선택 · 1삭제 / 2취소
 
 Status: VERIFIED

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.681"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.682"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -999,6 +999,264 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    guildMarble: {
+        fileName: "guildMarble.json",
+        pendingName: "guildMarblePending.json",
+        schemaVersion: 1,
+        limits: { players: 4, rounds: 10, dailyGames: 3, minFee: 1, maxFee: 10, pointUnit: 100000000, maxLevel: 2 },
+        rates: { feePercent: 10, prizes: [40, 30, 20, 10] },
+        rewards: { startGold: [1000, 1020, 1030, 1040], lapGold: 200, luckGold: [100, 200, 300], chanceWin: 200, chanceLoss: 100, chanceWinRate: 0.5 },
+        colors: ["🔴", "🔵", "🟢", "🟡"],
+        medals: ["🥇", "🥈", "🥉", "🎖️"],
+        board: [
+            { name: "호월광장🏁", type: "start" },
+            { name: "미니펫 초원🐹", type: "land", price: 200, toll: 50 },
+            { name: "가호의 성소✨", type: "luck" },
+            { name: "탐험가의 숲🌲", type: "land", price: 200, toll: 50 },
+            { name: "루미에르 빌리지🏛️", type: "land", price: 300, toll: 80 },
+            { name: "보이스룸🎙️", type: "rest" },
+            { name: "당근장터🥕", type: "land", price: 200, toll: 50 },
+            { name: "펫스킬 도서관📙", type: "chance" },
+            { name: "호월킹덤🏰", type: "land", price: 400, toll: 100 },
+            { name: "자유시장🛒", type: "land", price: 300, toll: 80 },
+            { name: "인형골목🧸", type: "land", price: 300, toll: 80 },
+            { name: "만남의 광장🎁", type: "luck" },
+            { name: "호월토벌지👾", type: "land", price: 400, toll: 100 },
+            { name: "무쌍투기장⚔️", type: "land", price: 300, toll: 80 },
+            { name: "모험가의 거리📜", type: "chance" },
+            { name: "펜던트 공방📿", type: "land", price: 200, toll: 50 }
+        ],
+        guideLines: [
+            "👥 참가 방법",
+            "• 같은 길드원 4명이 함께 플레이해요.",
+            "• 길드마스터가 /마블시작으로 모집을 열어요.",
+            "• 참가하려면 /마블준비를 입력하세요.",
+            "• 4명이 준비하면 자동으로 시작해요.",
+            "• 길드마스터도 참가하려면 직접 준비해야 해요.",
+            "• 길드당 한국시간 기준 하루 3회 이용할 수 있어요.",
+            "━━━━━━━━━━━━",
+            "💰 참가비와 상금",
+            "• 참가비는 1인당 1억~10억 포인트예요.",
+            "• 길드마스터가 금액을 설정해요.",
+            "• /길드마블에서 현재 참가비를 확인하세요.",
+            "• 참가비는 실제 경기가 시작될 때 차감돼요.",
+            "• 준비한 뒤 포인트가 부족해지면 시작할 수 없어요.",
+            "",
+            "• 4명의 참가비를 모아 상금을 만들어요.",
+            "• 전체 금액에서 수수료 10%를 제외해요.",
+            "• 남은 90%를 최종 순위에 따라 나눠 받아요.",
+            "• 상금 배분은 1등 40%·2등 30%·3등 20%·4등 10%예요.",
+            "",
+            "예) 1인당 1억 포인트로 참가하면",
+            "👥 모인 참가비 · 4억 포인트",
+            "🧾 수수료 · 4,000만 포인트",
+            "🏆 나눠 받을 상금 · 3억 6,000만 포인트",
+            "",
+            "🥇 1등 · 1억 4,400만 포인트",
+            "🥈 2등 · 1억 800만 포인트",
+            "🥉 3등 · 7,200만 포인트",
+            "🎖️ 4등 · 3,600만 포인트",
+            "",
+            "• 설정된 참가비에 따른 지급액은 모집 안내에서 확인하세요.",
+            "• 지급액에는 참가비 반환분이 포함돼요.",
+            "• 참가비를 별도로 돌려드리지는 않아요.",
+            "━━━━━━━━━━━━",
+            "🪙 포인트와 골드는 달라요",
+            "• 포인트는 참가비와 상금에 사용하는 실제 계정 재화예요.",
+            "• 골드는 이번 경기 안에서만 사용하는 돈이에요.",
+            "• 땅 구매·건설·통행료는 골드로 계산해요.",
+            "• 골드가 줄어도 계정 포인트를 추가로 차감하지 않아요.",
+            "• 남은 골드를 포인트로 환전할 수는 없어요.",
+            "",
+            "경기 시작 골드",
+            "[1]🔴 1,000 골드",
+            "[2]🔵 1,020 골드",
+            "[3]🟢 1,030 골드",
+            "[4]🟡 1,040 골드",
+            "",
+            "• 처음에 늦게 움직이는 참가자에게 보정 골드를 줘요.",
+            "• 위 금액은 보정이 포함된 시작 금액이에요.",
+            "• 라운드마다 추가 지급하는 보너스는 아니에요.",
+            "━━━━━━━━━━━━",
+            "🔄 순서와 경기 길이",
+            "• 시작할 때 참가자 번호와 색을 랜덤으로 정해요.",
+            "• 번호와 색은 경기 끝까지 유지돼요.",
+            "• 번호는 현재 순위가 아니에요.",
+            "",
+            "홀수 라운드",
+            "[1] → [2] → [3] → [4]",
+            "",
+            "짝수 라운드",
+            "[4] → [3] → [2] → [1]",
+            "",
+            "• 라운드마다 행동 순서가 반대로 바뀌어요.",
+            "• 게임판에서 이동하는 방향은 바뀌지 않아요.",
+            "• 라운드가 바뀔 때 같은 사람이 연속으로 진행할 수 있어요.",
+            "• 화면에 표시된 현재 차례를 확인해 주세요.",
+            "",
+            "• 총 10라운드, 탈락이 없으면 최대 40턴이에요.",
+            "• 살아 있는 참가자는 라운드마다 한 번씩 진행해요.",
+            "• 구매·건설 선택까지 마쳐야 한 턴이 끝나요.",
+            "• 한 판은 약 10분을 예상하지만 입력 속도에 따라 달라져요.",
+            "• 제한시간이나 자동 턴 넘김은 없어요.",
+            "━━━━━━━━━━━━",
+            "🎲 내 차례에 할 일",
+            "① /마블굴리기를 입력해요.",
+            "② 주사위 1~6만큼 이동해요.",
+            "③ 도착한 칸의 안내에 따라 행동해요.",
+            "",
+            "🏠 빈 땅에 도착했다면",
+            "/마블구매 또는 /마블통과",
+            "",
+            "🏗️ 내 땅 Lv.1에 도착했다면",
+            "/마블건설 또는 /마블통과",
+            "",
+            "🏰 내 땅 Lv.2에 도착했다면",
+            "이미 최대 레벨이므로 다음 차례로 넘어가요.",
+            "",
+            "💸 다른 사람의 땅에 도착했다면",
+            "주인에게 통행료를 자동으로 지급해요.",
+            "",
+            "• 구매·건설을 선택하는 중에는 다시 굴릴 수 없어요.",
+            "• 골드가 부족하면 /마블통과를 입력하세요.",
+            "• 현재 해야 할 일이 헷갈리면 /마블판을 확인하세요.",
+            "• 진행 화면 맨 아래 전체보기에 최신 게임판이 있어요.",
+            "• 각 칸의 주인과 건물 레벨을 확인할 수 있어요.",
+            "━━━━━━━━━━━━",
+            "🏠 땅 구매와 건설",
+            "• 빈 땅을 구매하면 내 땅 Lv.1이 돼요.",
+            "• 다른 참가자가 내 땅에 도착하면 통행료를 받아요.",
+            "• 내 땅에 다시 도착하면 Lv.2로 건설할 수 있어요.",
+            "• 최대 레벨은 Lv.2예요.",
+            "• 건설 비용은 해당 땅의 구매 비용과 같아요.",
+            "• 건설하면 통행료가 3배로 올라가요.",
+            "",
+            "예) 무쌍투기장⚔️",
+            "🏷️ 구매 비용 · 300 골드",
+            "💸 Lv.1 통행료 · 80 골드",
+            "🔨 건설 비용 · 300 골드",
+            "💸 Lv.2 통행료 · 240 골드",
+            "",
+            "• 구매와 건설은 선택이에요.",
+            "• 골드를 남기고 싶다면 /마블통과를 입력하세요.",
+            "━━━━━━━━━━━━",
+            "✨ 특별한 칸",
+            "🏁 호월광장",
+            "• 통과하거나 도착하면 200 골드를 받아요.",
+            "• 한 번의 이동에서는 한 번만 받아요.",
+            "• 경기 시작 위치에 있다는 이유로 지급되지는 않아요.",
+            "",
+            "✨ 가호의 성소·🎁 만남의 광장",
+            "• 100 골드·200 골드·300 골드 중 하나를 받아요.",
+            "• 세 금액이 나올 확률은 같아요.",
+            "",
+            "📙 펫스킬 도서관·📜 모험가의 거리",
+            "• 50% 확률로 200 골드를 받아요.",
+            "• 50% 확률로 100 골드를 잃어요.",
+            "",
+            "🎙️ 보이스룸",
+            "• 골드 변동 없이 잠시 쉬어가요.",
+            "━━━━━━━━━━━━",
+            "💥 파산과 탈락",
+            "• 통행료나 이벤트 비용을 내고 골드가 0 미만이 되면 탈락해요.",
+            "• 정확히 0 골드가 되는 것만으로는 탈락하지 않아요.",
+            "• 땅이 있어도 보유 골드가 부족하면 파산해요.",
+            "• 땅을 팔아서 부족한 골드를 충당하는 기능은 없어요.",
+            "",
+            "예) 50 골드를 가지고 있는데",
+            "통행료 150 골드를 내야 한다면?",
+            "→ 골드가 부족하므로 파산해요.",
+            "→ 땅 주인에게는 남은 50 골드만 지급해요.",
+            "",
+            "• 파산자의 땅은 건물이 사라지고 빈 땅으로 돌아가요.",
+            "• 탈락한 참가자의 차례는 건너뛰어요.",
+            "• 탈락 후에는 구매·건설·주사위 입력을 할 수 없어요.",
+            "• 탈락한 참가자도 최종 순위에 따라 경기 종료 후 정산돼요.",
+            "━━━━━━━━━━━━",
+            "🏆 종료와 순위",
+            "• 한 명만 살아남으면 즉시 우승하며 경기가 끝나요.",
+            "• 여러 명이 살아 있으면 10라운드 종료 후 총자산으로 순위를 정해요.",
+            "• 생존자는 탈락자보다 높은 순위가 돼요.",
+            "• 먼저 탈락한 순서대로 4등 → 3등 → 2등이 돼요.",
+            "",
+            "총자산 계산",
+            "보유 골드 + 내 땅 구매비 + 건설에 사용한 골드",
+            "",
+            "예)",
+            "💰 보유 · 500 골드",
+            "🏠 땅 구매비 · 300 골드",
+            "🏗️ 건설비 · 300 골드",
+            "👑 총자산 · 1,100 골드",
+            "",
+            "• 땅을 샀다고 구매비가 총자산에서 사라지는 것은 아니에요.",
+            "• 생존자끼리 총자산이 같으면 추첨으로 순위를 정해요.",
+            "• 확정된 추첨 결과는 다시 뽑지 않아요.",
+            "• 상금은 경기 종료 후 계정 포인트로 지급돼요.",
+            "━━━━━━━━━━━━",
+            "⚠️ 준비 취소와 경기 중단",
+            "• 시작 전에는 /마블준비취소로 참가를 취소할 수 있어요.",
+            "• 시작 전 취소에는 참가비가 들지 않아요.",
+            "• 시작 후에는 혼자 취소하고 참가비를 돌려받을 수 없어요.",
+            "",
+            "• 길드마스터가 /마블중단으로 중단을 요청할 수 있어요.",
+            "• 참가자 4명이 각각 /마블중단확인으로 동의해야 해요.",
+            "• 모두 동의하면 참가비 전액을 돌려받아요.",
+            "• 중단된 경기는 수수료를 받지 않아요.",
+            "• 이미 사용한 길드 이용 횟수는 돌아오지 않아요.",
+            "• 중단 동의가 끝나기 전에 경기를 진행하면 중단 요청은 취소돼요.",
+            "",
+            "• 자리를 비워도 자동으로 탈락하거나 취소되지 않아요.",
+            "• 중단에 전원 동의할 수 없다면 경기와 새 모집이 계속 대기해요.",
+            "• 돌아오면 /마블판을 확인하고 이어서 진행하세요.",
+            "━━━━━━━━━━━━",
+            "⌨️ 자주 쓰는 명령어",
+            "🧭 /길드마블",
+            "└ 참가비·상금·이용 횟수·진행 상태 확인",
+            "",
+            "✅ /마블준비",
+            "└ 참가 준비",
+            "",
+            "↩️ /마블준비취소",
+            "└ 경기 시작 전 본인 준비 취소",
+            "",
+            "🎲 /마블굴리기",
+            "└ 내 차례에 주사위 굴리기",
+            "",
+            "🏠 /마블구매",
+            "└ 도착한 빈 땅 구매",
+            "",
+            "🏗️ /마블건설",
+            "└ 도착한 내 땅을 Lv.2로 건설",
+            "",
+            "➡️ /마블통과",
+            "└ 구매·건설 없이 차례 종료",
+            "",
+            "🗺️ /마블판",
+            "└ 현재 경기판과 해야 할 행동 확인",
+            "",
+            "📘 /마블가이드",
+            "└ 전체 규칙과 명령어 확인",
+            "━━━━━━━━━━━━",
+            "👑 길드마스터 명령어",
+            "/마블참가비 숫자",
+            "└ 참가비 설정: 1~10억 포인트",
+            "└ 예) /마블참가비 3 → 1인당 3억 포인트",
+            "└ 모집·경기·정산 중에는 변경할 수 없어요.",
+            "",
+            "/마블시작",
+            "└ 참가자 모집 시작",
+            "",
+            "/마블모집취소",
+            "└ 경기 시작 전 모집 취소",
+            "",
+            "/마블중단",
+            "└ 진행 중인 경기의 중단 동의 요청",
+            "━━━━━━━━━━━━",
+            "🤝 참가자 중단 동의",
+            "/마블중단확인",
+            "└ 길드마스터의 중단 요청에 동의"
+        ]
+    },
     spiritRetirement: {
         version: 1,
         ledgerKey: "spiritRetirement20261023",
@@ -3121,6 +3379,35 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 복구 완료 이후 새 명령 실패와 복구를 분리
             }
         }
+        // 중단된 두 파일 게시를 다른 회원 변경보다 먼저 원문으로 복구한다.
+        var marbleConfig = GLOBAL_CONFIG.guildMarble;
+        var marblePath = resolveActiveDataPath(DATA_ROOT_PATH + marbleConfig.fileName);
+        var marblePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + marbleConfig.pendingName);
+        var marbleRecoveryPaths = [marblePath, marblePendingPath];
+        for (var marbleRecoveryIndex = 0; marbleRecoveryIndex < marbleRecoveryPaths.length; marbleRecoveryIndex++) {
+            var marbleRecoveryFile = new java.io.File(marbleRecoveryPaths[marbleRecoveryIndex]);
+            var marbleRollbackFile = new java.io.File(marbleRecoveryPaths[marbleRecoveryIndex] + ".rollback");
+            if (!marbleRecoveryFile.exists() && marbleRollbackFile.exists()) {
+                var marbleRollbackData = JSON.parse(FileStream.read(marbleRollbackFile.getPath(), "utf-8"));
+                if (marbleRecoveryIndex === 0) requireGuildMarbleStore(marbleRollbackData);
+                else validateGuildMarblePending(marbleRollbackData);
+                if (!marbleRollbackFile.renameTo(marbleRecoveryFile)) throw new Error("길드마블 게시 중단 복구 실패");
+            }
+        }
+        if (new java.io.File(marblePendingPath).exists()) {
+            var marblePending = loadJsonFile(marblePendingPath);
+            validateGuildMarblePending(marblePending);
+            if (marblePending.pending !== null) {
+                writeVerifiedJsonFile(resolveActiveDataPath(filePath), marblePending.pending.memberText, true);
+                if (marblePending.pending.marbleText === null) {
+                    var marbleCreatedFile = new java.io.File(marblePath);
+                    if (marbleCreatedFile.exists() && !marbleCreatedFile.delete()) throw new Error("길드마블 미완료 신규 파일 복구 실패");
+                } else writeVerifiedJsonFile(marblePath, marblePending.pending.marbleText, true);
+                writeVerifiedJsonFile(marblePendingPath, JSON.stringify({ schemaVersion: marbleConfig.schemaVersion, pending: null }), true);
+                endDataSaveTransaction(); beginDataSaveTransaction();
+            }
+        }
+
         recoverAdventureRecordPending(); // 회원을 읽기 전에 중단된 기록·회원·분리 저장본을 함께 복구
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
@@ -3582,6 +3869,61 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
                 return;
             }
+        }
+
+        if (/^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(msg)) {
+            var marbleRequest = getGuildMarbleRequest(msg);
+            if (!data.member[sender]) { replyGuildMarbleSafely(replier, "먼저 /모험시작을 진행해주세요."); return; }
+            var marblePetData = loadJsonFile(memberPetPath);
+            var marbleGuildData = loadJsonFile(guildPath);
+            if (!hasAttendedToday(data, sender) && !isAttendanceFreeCommand(msg, sender)) {
+                replyGuildMarbleSafely(replier, buildAttendanceRequiredMessage(data, marblePetData, marbleGuildData, sender)); return;
+            }
+            if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(marbleGuildData) && isGuildTerritoryBlockedDuringWarCommand(msg) && !isGlobalOperatorCommandAllowed(sender, msg)) {
+                replyGuildMarbleSafely(replier, "🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다."); return;
+            }
+            var marbleOriginalText = new java.io.File(marblePath).exists() ? FileStream.read(marblePath, "utf-8") : null;
+            var marbleStore = marbleOriginalText === null ? { schemaVersion: marbleConfig.schemaVersion, guilds: {} } : requireGuildMarbleStore(JSON.parse(marbleOriginalText));
+            var marbleAccountIndex = buildServerRaidAccountIndex(data);
+            var marbleContext = { data: data, petData: marblePetData, guildData: marbleGuildData, accounts: marbleAccountIndex,
+                sender: sender, accountId: data.member[sender].serverRaidAccount ? data.member[sender].serverRaidAccount.id : null,
+                room: room, isGroupChat: isGroupChat, day: getAttendanceKstDateKey(), guild: getGuildMarbleGuild(data, marbleGuildData, sender) };
+            var marbleResult = executeGuildMarbleRequest(marbleStore, marbleContext, marbleRequest, marbleRequest.mutation ? String(java.util.UUID.randomUUID()) : "");
+            if (marbleResult.settlement && marbleRequest.mutation) {
+                // 순위·추첨을 먼저 확정해 포인트 오류나 재시작 후에도 다시 추첨하지 않는다.
+                if (marbleResult.changed) {
+                    requireGuildMarbleStore(marbleStore);
+                    writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
+                    endDataSaveTransaction(); beginDataSaveTransaction();
+                    marbleOriginalText = JSON.stringify(marbleStore);
+                    marbleResult.changed = false;
+                }
+                var marbleSettlement = settleGuildMarbleGame(marbleResult.row, marbleContext);
+                if (marbleSettlement.ok) {
+                    marbleResult.finalGame = finishGuildMarbleGame(marbleResult.row, Date.now());
+                    marbleResult.changed = true; marbleResult.memberChanged = marbleSettlement.memberChanged;
+                } else marbleResult.text = marbleSettlement.text;
+            }
+            var marbleMessage = buildGuildMarbleMessage(marbleResult, marbleContext);
+            if (marbleResult.changed) {
+                requireGuildMarbleStore(marbleStore);
+                if (marbleResult.memberChanged) {
+                    // 이 경로는 회원의 포인트와 기존 내부 계정 ID만 바꾸므로 분리 상세 슬롯은 그대로다.
+                    if (typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined") {
+                        var marbleMemberPlan = buildMemberSplitSavePlan(data);
+                        if (marbleMemberPlan && marbleMemberPlan.writes.length !== 0) throw new Error("길드마블 처리 중 관련 없는 회원 상세 변경 감지");
+                    }
+                    var marbleJournal = { schemaVersion: marbleConfig.schemaVersion, pending: { memberText: FileStream.read(resolveActiveDataPath(filePath), "utf-8"), marbleText: marbleOriginalText } };
+                    validateGuildMarblePending(marbleJournal);
+                    writeVerifiedJsonFile(marblePendingPath, JSON.stringify(marbleJournal), true);
+                    saveJsonFile(data, filePath);
+                    writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
+                    writeVerifiedJsonFile(marblePendingPath, JSON.stringify({ schemaVersion: marbleConfig.schemaVersion, pending: null }), true);
+                    endDataSaveTransaction(); beginDataSaveTransaction();
+                } else writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
+            }
+            replyGuildMarbleSafely(replier, marbleMessage);
+            return;
         }
 
         if (msg === "/정령컨텐츠보상") {
@@ -31782,7 +32124,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
     if (isDevCommandMessage(msg) && (command === "/등록한다" || command === "/등록안한다")) command = command.substring(1);
     if (isDevCommandMessage(msg) && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(command)) command = command.substring(1);
-    return isManualResetInput(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+    return /^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(command) || isManualResetInput(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
         command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
@@ -34645,6 +34987,546 @@ function buildServerRaidAccountIndex(data) {
         index[account.id] = { user: names[i], member: member, account: account };
     }
     return index;
+}
+
+// 길드마블의 실행 명령과 잘못된 인수를 구분하는 함수
+function getGuildMarbleRequest(msg) {
+    var actions = { "/길드마블": "main", "/마블판": "board", "/마블가이드": "guide", "/마블시작": "recruit", "/마블준비": "ready", "/마블준비취소": "unready", "/마블모집취소": "cancel", "/마블굴리기": "roll", "/마블구매": "buy", "/마블건설": "build", "/마블통과": "pass", "/마블중단": "stop", "/마블중단확인": "agree" };
+    if (Object.prototype.hasOwnProperty.call(actions, msg)) return { action: actions[msg], mutation: ["main", "board", "guide"].indexOf(actions[msg]) === -1 };
+    var fee = String(msg).match(/^\/마블참가비\s+(\d+)$/);
+    if (fee) return { action: "fee", mutation: true, units: Number(fee[1]) };
+    if (/^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(String(msg))) return { action: "invalid", mutation: false };
+    return null;
+}
+
+// 경기 골드와 저장 번호를 안전한 정수 범위로 검증하는 함수
+function requireGuildMarbleInteger(value, min, max) {
+    if (typeof value !== "number" || !isFinite(value) || Math.floor(value) !== value || value < min || value > max) throw new Error("길드마블 저장 수치 오류");
+    return value;
+}
+
+// 신규 저장소와 이미 존재하는 경기의 필수 구조를 엄격하게 검증하는 함수
+function requireGuildMarbleStore(store) {
+    var config = GLOBAL_CONFIG.guildMarble;
+    if (!store || store.schemaVersion !== config.schemaVersion || !store.guilds || typeof store.guilds !== "object" || Array.isArray(store.guilds)) throw new Error("길드마블 저장 형식 오류");
+    var keys = Object.keys(store.guilds);
+    for (var i = 0; i < keys.length; i++) {
+        var row = store.guilds[keys[i]];
+        if (!row || typeof row.guildId !== "string" || keys[i] !== "$" + row.guildId) throw new Error("길드마블 길드 식별 오류");
+        requireGuildMarbleInteger(row.feeUnits, config.limits.minFee, config.limits.maxFee);
+        if (!row.usage || typeof row.usage.day !== "string") throw new Error("길드마블 일일 기록 오류");
+        requireGuildMarbleInteger(row.usage.count, 0, config.limits.dailyGames);
+        var game = row.current;
+        if (game === null) continue;
+        if (!game || typeof game.id !== "string" || !game.id || game.guildId !== row.guildId || typeof game.room !== "string" || !Array.isArray(game.players)) throw new Error("길드마블 경기 식별 오류");
+        if (["RECRUITING", "PLAYING", "SETTLING"].indexOf(game.state) === -1 || game.players.length > config.limits.players) throw new Error("길드마블 진행 상태 오류");
+        var ids = {};
+        for (var j = 0; j < game.players.length; j++) {
+            var player = game.players[j];
+            if (!player || typeof player.id !== "string" || !player.id || typeof player.user !== "string" || ids["$" + player.id]) throw new Error("길드마블 참가 계정 오류");
+            ids["$" + player.id] = true;
+            if (game.state !== "RECRUITING") {
+                requireGuildMarbleInteger(player.gold, 0, 9007199254740991);
+                requireGuildMarbleInteger(player.position, 0, config.board.length - 1);
+                if (typeof player.alive !== "boolean" || typeof player.paid !== "boolean") throw new Error("길드마블 참가 상태 오류");
+                requireGuildMarbleInteger(player.eliminated, 0, config.limits.players - 1);
+            }
+        }
+        if (game.state === "RECRUITING") continue;
+        if (game.players.length !== config.limits.players || !Array.isArray(game.lands) || game.lands.length !== config.board.length || !Array.isArray(game.prizes) || game.prizes.length !== config.limits.players) throw new Error("길드마블 경기 구성 오류");
+        requireGuildMarbleInteger(game.fee, config.limits.pointUnit, config.limits.pointUnit * config.limits.maxFee);
+        requireGuildMarbleInteger(game.slot, 0, config.limits.players * config.limits.rounds);
+        if (["ROLL", "BUY", "BUILD"].indexOf(game.action) === -1) throw new Error("길드마블 행동 단계 오류");
+        for (var landIndex = 0; landIndex < game.lands.length; landIndex++) {
+            var land = game.lands[landIndex];
+            requireGuildMarbleInteger(land.owner, -1, config.limits.players - 1);
+            requireGuildMarbleInteger(land.level, 0, config.limits.maxLevel);
+            if ((land.owner === -1) !== (land.level === 0) || (land.owner !== -1 && (!game.players[land.owner].alive || config.board[landIndex].type !== "land"))) throw new Error("길드마블 토지 소유 오류");
+        }
+        var prizeSum = 0;
+        for (var prizeIndex = 0; prizeIndex < game.prizes.length; prizeIndex++) prizeSum += requireGuildMarbleInteger(game.prizes[prizeIndex], 0, 9007199254740991);
+        if (prizeSum !== game.pool || game.pool + game.commission !== game.fee * config.limits.players) throw new Error("길드마블 상금 구성 오류");
+        if (game.state === "PLAYING") {
+            if (game.slot >= config.limits.players * config.limits.rounds || !game.players[getGuildMarbleTurnIndex(game)].alive) throw new Error("길드마블 현재 차례 오류");
+            if (game.action !== "ROLL" && (!game.move || game.move.to !== game.players[getGuildMarbleTurnIndex(game)].position)) throw new Error("길드마블 선택 대기 이동 오류");
+            if (game.action !== "ROLL") {
+                var currentIndex = getGuildMarbleTurnIndex(game), currentLand = game.lands[game.players[currentIndex].position];
+                if (config.board[game.players[currentIndex].position].type !== "land" || (game.action === "BUY" ? currentLand.owner !== -1 || currentLand.level !== 0 : currentLand.owner !== currentIndex || currentLand.level !== 1)) throw new Error("길드마블 선택 대기 소유 오류");
+            }
+        }
+        if (game.stop !== null) {
+            if (!game.stop || !Array.isArray(game.stop.agreements) || game.stop.agreements.length > config.limits.players) throw new Error("길드마블 중단 동의 오류");
+            var votes = {};
+            for (var vote = 0; vote < game.stop.agreements.length; vote++) {
+                var id = game.stop.agreements[vote];
+                if (!ids["$" + id] || votes["$" + id]) throw new Error("길드마블 중복 또는 비참가 동의 오류");
+                votes["$" + id] = true;
+            }
+        }
+        if (game.state === "SETTLING") {
+            if (["PAYOUT", "REFUND"].indexOf(game.kind) === -1 || !Array.isArray(game.results) || game.results.length !== config.limits.players) throw new Error("길드마블 확정 정산 오류");
+            var ranked = {};
+            for (var rank = 0; rank < game.results.length; rank++) {
+                var result = game.results[rank];
+                requireGuildMarbleInteger(result.index, 0, config.limits.players - 1);
+                if (ranked[result.index]) throw new Error("길드마블 확정 순위 중복");
+                ranked[result.index] = true;
+                requireGuildMarbleInteger(result.assets, 0, 9007199254740991);
+                if (result.amount !== (game.kind === "REFUND" ? game.fee : game.prizes[rank])) throw new Error("길드마블 확정 지급액 오류");
+            }
+        }
+    }
+    return store;
+}
+
+// 두 파일 복구 기록의 대상과 원문을 변경 전에 검증하는 함수
+function validateGuildMarblePending(journal) {
+    if (!journal || journal.schemaVersion !== GLOBAL_CONFIG.guildMarble.schemaVersion || !Object.prototype.hasOwnProperty.call(journal, "pending")) throw new Error("길드마블 복구 기록 오류");
+    if (journal.pending === null) return;
+    var pending = journal.pending;
+    if (!pending || typeof pending.memberText !== "string" || (pending.marbleText !== null && typeof pending.marbleText !== "string")) throw new Error("길드마블 복구 원문 오류");
+    var member = JSON.parse(pending.memberText);
+    if (!member || !member.member || typeof member.member !== "object" || Array.isArray(member.member)) throw new Error("길드마블 복구 회원 오류");
+    if (pending.marbleText !== null) requireGuildMarbleStore(JSON.parse(pending.marbleText));
+}
+
+// 참가비 총액과 수수료 및 순위별 지급액을 계산하는 함수
+function getGuildMarblePrizeInfo(units) {
+    var config = GLOBAL_CONFIG.guildMarble;
+    var fee = units * config.limits.pointUnit; // 각 참가자의 실제 계정 참가비
+    var total = fee * config.limits.players;
+    var commission = total * config.rates.feePercent / 100;
+    var pool = total - commission;
+    var prizes = [];
+    for (var i = 0; i < config.rates.prizes.length; i++) prizes.push(pool * config.rates.prizes[i] / 100);
+    return { fee: fee, total: total, commission: commission, pool: pool, prizes: prizes };
+}
+
+// 한국시간 날짜가 다른 기록은 수정하지 않고 오늘 이용 횟수만 읽는 함수
+function getGuildMarbleDailyCount(row, day) {
+    return row && row.usage.day === day ? row.usage.count : 0;
+}
+
+// 기존 길드 참조와 실제 길드원 명단을 함께 확인하는 함수
+function getGuildMarbleGuild(data, guildData, user) {
+    var id = getMyGuildId(data, user);
+    var guild = id && guildData.guilds ? guildData.guilds[id] : null;
+    return guild && guild.members && Object.prototype.hasOwnProperty.call(guild.members, user) ? { id: String(id), guild: guild } : null;
+}
+
+// 닉네임 변경 후에도 기존 계정 ID로 경기 참가 번호를 찾는 함수
+function getGuildMarblePlayerIndex(game, accountId) {
+    if (!accountId) return -1;
+    for (var i = 0; i < game.players.length; i++) if (game.players[i].id === accountId) return i;
+    return -1;
+}
+
+// 진행 방의 기존 참가 경기를 우선하고 현재 소속 길드로 연결하는 함수
+function findGuildMarbleRow(store, context, action) {
+    var current = context.guild ? store.guilds["$" + context.guild.id] : null;
+    if (["fee", "recruit", "ready", "cancel"].indexOf(action) !== -1) return current || null;
+    var keys = Object.keys(store.guilds), elsewhere = null;
+    for (var i = 0; i < keys.length; i++) {
+        var row = store.guilds[keys[i]], game = row.current;
+        if (!game || getGuildMarblePlayerIndex(game, context.accountId) === -1) continue;
+        if (game.room === context.room) return row;
+        if (!elsewhere) elsewhere = row;
+    }
+    return current || elsewhere;
+}
+
+// 준비 계정의 보유 포인트와 부족분을 안내하는 함수
+function getGuildMarblePointError(member, amount) {
+    if (!member || typeof member.point !== "number" || !isSafePointValue(member.point)) return "계정 포인트를 확인할 수 없습니다. 운영자에게 문의해주세요.";
+    if (member.point < amount) return "참가비가 부족합니다.\n필요 · " + numberWithCommas(amount) + " 포인트\n보유 · " + numberWithCommas(member.point) + " 포인트\n부족 · " + numberWithCommas(roundToTwo(amount - member.point)) + " 포인트";
+    return "";
+}
+
+// 현재 라운드의 정순 또는 역순 차례 번호를 계산하는 함수
+function getGuildMarbleTurnIndex(game) {
+    var size = GLOBAL_CONFIG.guildMarble.limits.players;
+    return Math.floor(game.slot / size) % 2 === 0 ? game.slot % size : size - 1 - game.slot % size;
+}
+
+// 공정한 무작위 순서로 배열을 섞는 함수
+function shuffleGuildMarblePlayers(players) {
+    for (var i = players.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1)), value = players[i];
+        players[i] = players[j]; players[j] = value;
+    }
+}
+
+// 골드와 보유 지역의 구매·건설 원가로 총자산을 계산하는 함수
+function getGuildMarbleAssets(game, index) {
+    var total = game.players[index].gold;
+    for (var i = 0; i < game.lands.length; i++) if (game.lands[i].owner === index) total += GLOBAL_CONFIG.guildMarble.board[i].price * game.lands[i].level;
+    return total;
+}
+
+// 종료 순위를 한 번 확정해 동점 추첨과 지급액을 보존하는 함수
+function prepareGuildMarbleSettlement(game, kind) {
+    if (game.state === "SETTLING") return;
+    var alive = [], dead = [], results = [];
+    for (var i = 0; i < game.players.length; i++) (game.players[i].alive ? alive : dead).push({ index: i, assets: game.players[i].alive ? getGuildMarbleAssets(game, i) : 0 });
+    alive.sort(function (a, b) { return b.assets - a.assets; });
+    if (kind === "PAYOUT") {
+        for (var j = 0; j < alive.length;) {
+            var end = j + 1; // 총자산이 같은 생존자의 연속 범위
+            while (end < alive.length && alive[end].assets === alive[j].assets) end++;
+            var tied = alive.slice(j, end);
+            if (tied.length > 1) shuffleGuildMarblePlayers(tied);
+            for (var tie = 0; tie < tied.length; tie++) alive[j + tie] = tied[tie];
+            j = end;
+        }
+    }
+    dead.sort(function (a, b) { return game.players[b.index].eliminated - game.players[a.index].eliminated; });
+    var ordered = alive.concat(dead);
+    if (kind === "REFUND") ordered.sort(function (a, b) { return a.index - b.index; });
+    for (var k = 0; k < ordered.length; k++) results.push({ index: ordered[k].index, assets: ordered[k].assets, amount: kind === "REFUND" ? game.fee : game.prizes[k] });
+    game.state = "SETTLING"; game.kind = kind; game.results = results; game.stop = null;
+}
+
+// 생존자가 한 명이면 종료하고 예정 순서에서 다음 생존자의 차례로 진행하는 함수
+function advanceGuildMarbleTurn(game) {
+    var alive = 0, config = GLOBAL_CONFIG.guildMarble;
+    for (var i = 0; i < game.players.length; i++) if (game.players[i].alive) alive++;
+    if (alive <= 1) { game.endReason = "SURVIVOR"; prepareGuildMarbleSettlement(game, "PAYOUT"); return false; }
+    var previousRound = Math.floor(game.slot / config.limits.players);
+    game.slot++; game.action = "ROLL"; game.move = null;
+    while (game.slot < config.limits.players * config.limits.rounds && !game.players[getGuildMarbleTurnIndex(game)].alive) game.slot++;
+    if (game.slot >= config.limits.players * config.limits.rounds) { game.endReason = "ROUNDS"; prepareGuildMarbleSettlement(game, "PAYOUT"); return false; }
+    return Math.floor(game.slot / config.limits.players) !== previousRound;
+}
+
+// 의무 지출은 잔여 골드까지만 지급하고 부족하면 파산·토지 초기화하는 함수
+function payGuildMarbleGold(game, index, amount, owner) {
+    var player = game.players[index], paid = Math.min(player.gold, amount), lost = amount - paid;
+    player.gold -= paid;
+    if (owner >= 0) game.players[owner].gold += paid;
+    var cleared = 0;
+    if (lost > 0) {
+        var eliminated = 0;
+        for (var i = 0; i < game.players.length; i++) if (!game.players[i].alive) eliminated++;
+        player.alive = false; player.eliminated = eliminated + 1;
+        for (var j = 0; j < game.lands.length; j++) if (game.lands[j].owner === index) { game.lands[j] = { owner: -1, level: 0 }; cleared++; }
+    }
+    return { paid: paid, lost: lost, cleared: cleared };
+}
+
+// 유효한 현재 차례의 이동과 도착 효과를 한 번에 반영하는 함수
+function rollGuildMarbleDice(game, context) {
+    var config = GLOBAL_CONFIG.guildMarble, index = getGuildMarbleTurnIndex(game), player = game.players[index];
+    var die = Math.floor(Math.random() * 6) + 1;
+    var from = player.position, raw = from + die, to = raw % config.board.length;
+    var board = config.board[to], land = game.lands[to];
+    var lines = [getGuildMarblePlayerLabel(player, index, context) + " 님의 이동 결과", "🎲 【 " + die + " 】", "📍 " + padGuildMarblePosition(from) + " → " + padGuildMarblePosition(to) + "칸 · " + board.name];
+    game.stop = null; player.position = to; game.move = { die: die, from: from, to: to };
+    if (raw >= config.board.length) { player.gold += config.rewards.lapGold; lines.push("🏁 출발 통과·도착 · +" + numberWithCommas(config.rewards.lapGold) + " 골드"); }
+    if (board.type === "land" && land.owner === -1) { game.action = "BUY"; return lines.join("\n"); }
+    if (board.type === "land" && land.owner === index && land.level < config.limits.maxLevel) { game.action = "BUILD"; return lines.join("\n"); }
+    if (board.type === "land" && land.owner !== index) {
+        var toll = board.toll * (land.level === config.limits.maxLevel ? 3 : 1);
+        var payment = payGuildMarbleGold(game, index, toll, land.owner);
+        lines.push("🏠 주인 [" + (land.owner + 1) + "]" + config.colors[land.owner] + " · Lv." + land.level, "💸 필요한 통행료 · " + numberWithCommas(toll) + " 골드", "📤 실제 지급 · " + numberWithCommas(payment.paid) + " 골드", "[" + (index + 1) + "] → [" + (land.owner + 1) + "] 지급 완료");
+        if (payment.lost) lines.push("⚠️ 부족 금액 · " + numberWithCommas(payment.lost) + " 골드", "💥 파산 · 최종 " + (config.limits.players - player.eliminated + 1) + "등 확정", "🏠 보유 지역 " + payment.cleared + "곳이 빈 땅으로 돌아갑니다.", "💰 상금은 경기 종료 후 지급됩니다.");
+    } else if (board.type === "luck") {
+        var luck = config.rewards.luckGold[Math.floor(Math.random() * config.rewards.luckGold.length)];
+        player.gold += luck; lines.push("✨ " + board.name + "에서 축복을 받았습니다!", "💰 +" + numberWithCommas(luck) + " 골드");
+    } else if (board.type === "chance") {
+        if (Math.random() < config.rewards.chanceWinRate) { player.gold += config.rewards.chanceWin; lines.push("📙 분실된 펫스킬북을 찾아 보상을 받았습니다!", "💰 +" + numberWithCommas(config.rewards.chanceWin) + " 골드"); }
+        else {
+            var loss = payGuildMarbleGold(game, index, config.rewards.chanceLoss, -1);
+            lines.push("📜 모험 도중 장비 수리비가 발생했습니다.", "💰 필요 " + config.rewards.chanceLoss + " 골드 · 실제 차감 " + loss.paid + " 골드");
+            if (loss.lost) lines.push("⚠️ 부족 금액 · " + loss.lost + " 골드", "💥 파산 · 최종 " + (config.limits.players - player.eliminated + 1) + "등 확정", "🏠 보유 지역 " + loss.cleared + "곳이 빈 땅으로 돌아갑니다.");
+        }
+    } else if (board.type === "land") lines.push("🏰 내 땅 · Lv.2 최대 레벨입니다.");
+    else if (board.type === "rest") lines.push("🎙️ 보이스룸에서 잠시 쉬어갑니다.");
+    lines.push("💰 보유 금액 · " + numberWithCommas(player.gold) + " 골드");
+    if (advanceGuildMarbleTurn(game)) lines.push("🔄 새 라운드가 시작되어 행동 순서가 반대로 바뀌었습니다.");
+    return lines.join("\n");
+}
+
+// 구매·건설·통과를 검증하고 선택 완료 시에만 다음 차례로 진행하는 함수
+function chooseGuildMarbleLand(game, context, action) {
+    var index = getGuildMarbleTurnIndex(game), player = game.players[index], config = GLOBAL_CONFIG.guildMarble;
+    if (game.action === "ROLL") return { changed: false, text: "먼저 /마블굴리기를 입력해주세요." };
+    if (action !== "pass" && action !== (game.action === "BUY" ? "buy" : "build")) return { changed: false, text: "현재 단계의 행동 명령어를 확인해주세요." };
+    var board = config.board[player.position], land = game.lands[player.position];
+    if (board.type !== "land" || (game.action === "BUY" ? land.owner !== -1 || land.level !== 0 : land.owner !== index || land.level !== 1)) throw new Error("길드마블 선택 대상 오류");
+    if (action !== "pass" && player.gold < board.price) return { changed: false, text: "⚠️ " + numberWithCommas(board.price - player.gold) + " 골드가 부족합니다.\n👉 /마블통과" };
+    game.stop = null;
+    var text = getGuildMarblePlayerLabel(player, index, context) + " 님의 " + (action === "pass" ? "통과" : action === "buy" ? "구매" : "건설") + " 결과\n🏠 " + board.name;
+    if (action === "pass") text += " 선택을 건너뛰었습니다.\n💰 차감 없음";
+    else { player.gold -= board.price; land.owner = index; land.level++; text += " · Lv." + land.level + "\n💰 " + numberWithCommas(board.price) + " 골드 사용"; }
+    text += " · 잔액 " + numberWithCommas(player.gold) + " 골드";
+    if (advanceGuildMarbleTurn(game)) text += "\n🔄 새 라운드가 시작되어 행동 순서가 반대로 바뀌었습니다.";
+    return { changed: true, text: text };
+}
+
+// 네 명의 소속과 잔액을 재검증하고 참가비와 이용 횟수를 함께 확정하는 함수
+function startGuildMarbleGame(row, context) {
+    var game = row.current, config = GLOBAL_CONFIG.guildMarble, valid = [], errors = [];
+    var prize = getGuildMarblePrizeInfo(row.feeUnits);
+    for (var i = 0; i < game.players.length; i++) {
+        var player = game.players[i], account = context.accounts[player.id];
+        var guild = account ? getGuildMarbleGuild(context.data, context.guildData, account.user) : null;
+        var error = !guild || guild.id !== row.guildId ? "길드 소속이 바뀌어 준비를 해제했어요." : getGuildMarblePointError(account.member, prize.fee);
+        if (error) errors.push("[" + (account ? account.user : player.user) + "] " + error);
+        else valid.push(player);
+    }
+    game.players = valid;
+    if (errors.length) return { changed: true, memberChanged: false, text: errors.join("\n"), row: row };
+    if (getGuildMarbleDailyCount(row, context.day) >= config.limits.dailyGames) return { changed: false, text: "오늘 길드 이용 3회를 모두 사용했어요. 다음 한국시간 날짜에 다시 시작해주세요.", row: row };
+    shuffleGuildMarblePlayers(game.players);
+    for (var j = 0; j < game.players.length; j++) {
+        var member = context.accounts[game.players[j].id].member;
+        member.point = roundToTwo(member.point - prize.fee);
+        game.players[j].position = 0; game.players[j].gold = config.rewards.startGold[j]; game.players[j].alive = true; game.players[j].eliminated = 0; game.players[j].paid = false;
+    }
+    game.fee = prize.fee; game.commission = prize.commission; game.pool = prize.pool; game.prizes = prize.prizes;
+    game.lands = []; for (var k = 0; k < config.board.length; k++) game.lands.push({ owner: -1, level: 0 });
+    game.slot = 0; game.action = "ROLL"; game.move = null; game.stop = null; game.state = "PLAYING";
+    row.usage = { day: context.day, count: getGuildMarbleDailyCount(row, context.day) + 1 };
+    return { changed: true, memberChanged: true, row: row, text: "🎲 길드마블 시작!\n참가자 번호가 랜덤으로 배정되었습니다.\n💰 참가비 · 각 " + numberWithCommas(prize.fee) + " 포인트 차감 완료\n홀수 라운드 · [1] → [2] → [3] → [4]\n짝수 라운드 · [4] → [3] → [2] → [1]" };
+}
+
+// 유효한 명령만 모집·게임 진행·중단 상태에 적용하는 함수
+function executeGuildMarbleRequest(store, context, request, newId) {
+    var config = GLOBAL_CONFIG.guildMarble, action = request.action;
+    if (action === "guide") return { changed: false, guide: true };
+    var row = findGuildMarbleRow(store, context, action), game = row && row.current;
+    var result = { changed: false, row: row, text: "" };
+    if (game && game.room !== context.room) { result.text = "이 경기는 [" + game.room + "]에서 진행 중입니다. 원래 방에서 입력해주세요."; result.wrongRoom = true; return result; }
+    if (action === "invalid") { result.text = "명령어와 수량을 확인해주세요.\n👉 /마블가이드\n👉 /마블참가비 1~10"; return result; }
+    if (action === "main" || action === "board") {
+        if (!row && !context.guild) result.text = "길드에 가입한 뒤 이용해주세요.";
+        else if (action === "board" && !game) result.text = "진행 중인 길드마블 경기가 없습니다.\n👉 /길드마블";
+        else if (action === "main" && game && game.state !== "RECRUITING") result.text = buildGuildMarblePrizeLines({ fee: game.fee, total: game.fee * config.limits.players, commission: game.commission, pool: game.pool, prizes: game.prizes });
+        return result;
+    }
+    if (game && game.state === "SETTLING") { result.settlement = true; return result; }
+    var guild = row ? context.guildData.guilds[row.guildId] : context.guild && context.guild.guild;
+    var master = !!(guild && guild.members && guild.members[context.sender] && guild.master === context.sender);
+    if (["fee", "recruit", "cancel", "stop"].indexOf(action) !== -1 && !master) { result.text = "길드마스터만 사용할 수 있습니다."; return result; }
+    if (action === "fee") {
+        if (game) { result.text = "모집·경기·정산 중에는 참가비를 바꿀 수 없습니다."; return result; }
+        if (!isFinite(request.units) || request.units < config.limits.minFee || request.units > config.limits.maxFee) { result.text = "참가비는 1~10억 포인트로 설정해주세요.\n예) /마블참가비 3"; return result; }
+    }
+    if (action === "recruit" || action === "fee") {
+        if (!context.guild) { result.text = "길드에 가입한 뒤 이용해주세요."; return result; }
+        if (!context.isGroupChat) { result.text = "참가 모집은 길드원과 함께 있는 단체방에서 진행해주세요."; return result; }
+        if (game) { result.text = "이미 모집 또는 진행 중인 경기가 있습니다."; return result; }
+        if (!row) { row = { guildId: context.guild.id, feeUnits: config.limits.minFee, usage: { day: context.day, count: 0 }, current: null }; store.guilds["$" + row.guildId] = row; result.row = row; }
+        if (action === "fee") { if (row.feeUnits === request.units) { result.text = "이미 같은 참가비로 설정되어 있습니다."; return result; } row.feeUnits = request.units; result.changed = true; result.text = "💰 참가비를 1인당 " + numberWithCommas(request.units * config.limits.pointUnit) + " 포인트로 설정했어요."; return result; }
+        if (getGuildMarbleDailyCount(row, context.day) >= config.limits.dailyGames) { result.text = "오늘 길드 이용 3회를 모두 사용했어요. 다음 한국시간 날짜에 다시 시작해주세요."; return result; }
+        row.current = { id: newId, guildId: row.guildId, room: context.room, state: "RECRUITING", players: [] };
+        result.changed = true; return result;
+    }
+    if (!game) { result.text = "모집 또는 진행 중인 경기가 없습니다.\n👉 /길드마블"; return result; }
+    if (action === "cancel") {
+        if (game.state !== "RECRUITING") { result.text = "시작 후에는 /마블중단과 참가자 전원 동의가 필요합니다."; return result; }
+        row.current = null; result.changed = true; result.text = "모집을 취소했어요. 참가비와 이용 횟수는 차감되지 않았습니다."; return result;
+    }
+    if (action === "ready") {
+        if (game.state !== "RECRUITING") { result.text = "이미 경기가 시작됐습니다."; return result; }
+        if (!context.guild || context.guild.id !== game.guildId) { result.text = "같은 길드원만 준비할 수 있습니다."; return result; }
+        if (getGuildMarblePlayerIndex(game, context.accountId) !== -1) { result.text = "이미 준비를 완료했습니다."; return result; }
+        if (game.players.length >= config.limits.players) { result.text = "참가 인원이 가득 찼습니다."; return result; }
+        var pointError = getGuildMarblePointError(context.data.member[context.sender], row.feeUnits * config.limits.pointUnit);
+        if (pointError) { result.text = pointError; return result; }
+        if (!context.accountId) {
+            var account = { id: newId, period: 0, server: normalizeHoiServerLabel(context.data.member[context.sender].server), latest: null, total: null };
+            context.data.member[context.sender].serverRaidAccount = account;
+            context.accountId = account.id; context.accounts[account.id] = { user: context.sender, member: context.data.member[context.sender], account: account };
+            result.memberChanged = true;
+        }
+        game.players.push({ id: context.accountId, user: context.sender });
+        result.changed = true;
+        if (game.players.length === config.limits.players) { var started = startGuildMarbleGame(row, context); started.memberChanged = !!(started.memberChanged || result.memberChanged); return started; }
+        return result;
+    }
+    var own = getGuildMarblePlayerIndex(game, context.accountId);
+    if (action === "unready") {
+        if (game.state !== "RECRUITING") { result.text = "경기 시작 후에는 혼자 준비를 취소할 수 없습니다."; return result; }
+        if (own === -1) { result.text = "아직 준비하지 않았습니다."; return result; }
+        game.players.splice(own, 1); result.changed = true; result.text = "참가 준비를 취소했어요. 참가비는 차감되지 않았습니다."; return result;
+    }
+    if (game.state !== "PLAYING") { result.text = "4명이 준비하면 경기가 자동으로 시작됩니다."; return result; }
+    if (action === "stop") {
+        if (game.stop) { result.text = "이미 중단 동의를 기다리는 중입니다."; return result; }
+        game.stop = { agreements: [] }; result.changed = true; result.text = "⚠️ 길드마블 중단 요청\n참가자 4명 전원이 동의해야 중단됩니다.\n참가비 전액 반환 · 수수료 없음 · 사용한 길드 이용 횟수 유지"; return result;
+    }
+    if (own === -1) { result.text = "이번 경기의 참가자만 사용할 수 있습니다."; return result; }
+    if (action === "agree") {
+        if (!game.stop) { result.text = "길드마스터의 중단 요청이 없습니다."; return result; }
+        if (game.stop.agreements.indexOf(context.accountId) !== -1) { result.text = "이미 중단에 동의했습니다."; return result; }
+        game.stop.agreements.push(context.accountId); result.changed = true; result.text = "중단 동의 · " + game.stop.agreements.length + "/4명";
+        if (game.stop.agreements.length === config.limits.players) { prepareGuildMarbleSettlement(game, "REFUND"); result.settlement = true; }
+        return result;
+    }
+    if (!game.players[own].alive) { result.text = "파산한 참가자는 추가 행동을 할 수 없습니다."; return result; }
+    if (own !== getGuildMarbleTurnIndex(game)) { result.text = "현재 차례의 참가자만 입력할 수 있습니다."; return result; }
+    if (action === "roll") {
+        if (game.action !== "ROLL") { result.text = "⚠️ 이미 주사위를 굴렸습니다. 현재 선택을 완료해주세요."; return result; }
+        result.text = rollGuildMarbleDice(game, context); result.changed = true;
+    } else if (["buy", "build", "pass"].indexOf(action) !== -1) {
+        var choice = chooseGuildMarbleLand(game, context, action); result.changed = choice.changed; result.text = choice.text;
+    }
+    result.settlement = game.state === "SETTLING";
+    return result;
+}
+
+// 미지급 대상만 사전 검증하고 포인트와 지급 완료 상태를 함께 반영하는 함수
+function settleGuildMarbleGame(row, context) {
+    var game = row.current, payments = [];
+    if (!game || game.state !== "SETTLING") throw new Error("길드마블 정산 단계 오류");
+    for (var i = 0; i < game.results.length; i++) {
+        var result = game.results[i], player = game.players[result.index];
+        if (player.paid) continue;
+        var account = context.accounts[player.id];
+        if (!account) return { ok: false, text: "⏳ 정산 처리 중 · 참가 계정을 확인할 수 없습니다. 운영자에게 문의해주세요." };
+        var point = account.member.point;
+        if (typeof point !== "number" || !isSafePointValue(point) || !isSafePointValue(point + result.amount)) return { ok: false, text: "⏳ 정산 처리 중 · 지급 후 포인트 범위를 확인해주세요." };
+        payments.push({ account: account, player: player, next: roundToTwo(point + result.amount) });
+    }
+    for (var j = 0; j < payments.length; j++) { payments[j].account.member.point = payments[j].next; payments[j].player.paid = true; }
+    return { ok: true, memberChanged: payments.length > 0, game: game };
+}
+
+// 정산 후 경기 상세를 정리하고 마지막 최소 지급 기록만 남기는 함수
+function finishGuildMarbleGame(row, now) {
+    var game = row.current, payments = [];
+    for (var i = 0; i < game.results.length; i++) {
+        var result = game.results[i], player = game.players[result.index];
+        if (!player.paid) throw new Error("길드마블 미지급 상태 종료 차단");
+        payments.push({ id: player.id, amount: result.amount });
+    }
+    row.last = { id: game.id, kind: game.kind, fee: game.fee, completedAt: now, payments: payments };
+    row.current = null;
+    return game;
+}
+
+// 채크랭크의 길드 참조 정리가 경기 조회 원본이나 저장에 영향을 주지 않도록 표시용 사본을 만드는 함수
+function getGuildMarbleRankLabel(user, context) {
+    var view = context.data, users = [user];
+    if (view.HoiCastle && view.HoiCastle.lord) users.push(view.HoiCastle.lord);
+    for (var i = 0; i < users.length; i++) {
+        var name = users[i], member = view.member[name];
+        if (!member || !getMyGuildId(view, name) || getGuildMarbleGuild(view, context.guildData, name)) continue;
+        if (view === context.data) {
+            view = {};
+            for (var key in context.data) if (Object.prototype.hasOwnProperty.call(context.data, key)) view[key] = context.data[key];
+            view.member = {};
+            for (var account in context.data.member) if (Object.prototype.hasOwnProperty.call(context.data.member, account)) view.member[account] = context.data.member[account];
+        }
+        var copy = {};
+        for (var field in member) if (Object.prototype.hasOwnProperty.call(member, field) && field !== "guild") copy[field] = member[field];
+        view.member[name] = copy;
+    }
+    return checkRank(view, context.petData, context.guildData, user);
+}
+
+// 참가 번호·색과 현재 채크랭크를 조합하는 함수
+function getGuildMarblePlayerLabel(player, index, context) {
+    var account = context.accounts[player.id], user = account ? account.user : player.user;
+    return "[" + (index + 1) + "]" + GLOBAL_CONFIG.guildMarble.colors[index] + " [" + (account ? getGuildMarbleRankLabel(user, context) : user) + "]";
+}
+
+// 게임판 칸 번호를 두 자리로 표시하는 함수
+function padGuildMarblePosition(position) {
+    return (position + 1 < 10 ? "0" : "") + (position + 1);
+}
+
+// 참가자 현황과 최신 16칸을 동일 상태에서 생성하는 함수
+function buildGuildMarbleFooter(game, context) {
+    var config = GLOBAL_CONFIG.guildMarble, lines = ["👥 참가자 현황"], board = [];
+    for (var i = 0; i < game.players.length; i++) {
+        var player = game.players[i];
+        lines.push(getGuildMarblePlayerLabel(player, i, context) + " · " + padGuildMarblePosition(player.position) + "칸 · " + (player.alive ? "💰" + numberWithCommas(player.gold) + " 골드" : "💥 탈락"));
+    }
+    for (var j = 0; j < config.board.length; j++) {
+        if (j > 0 && j % 4 === 0) board.push("━━━━━━━━━━━━");
+        var cell = config.board[j], land = game.lands[j];
+        var status = cell.type === "land" ? land.owner === -1 ? "빈 땅" : "주인 [" + (land.owner + 1) + "]" + config.colors[land.owner] + " · Lv." + land.level : cell.type === "start" ? "출발" : cell.type === "luck" ? "행운" : cell.type === "chance" ? "기회" : "휴식";
+        board.push("[" + padGuildMarblePosition(j) + "] " + cell.name + " · " + status);
+    }
+    return lines.join("\n") + "\n━━━━━━━━━━━━\n🏠 현재 길드마블 상황\n" + allsee + board.join("\n");
+}
+
+// 현재 굴리기·구매·건설 단계에 사용할 수 있는 행동만 안내하는 함수
+function buildGuildMarbleAction(game) {
+    if (game.action === "ROLL") return "👉 /마블굴리기";
+    var player = game.players[getGuildMarbleTurnIndex(game)], cell = GLOBAL_CONFIG.guildMarble.board[player.position];
+    return player.gold < cell.price ? "👉 /마블통과" : game.action === "BUY" ? "👉 /마블구매 또는 /마블통과" : "👉 /마블건설 또는 /마블통과";
+}
+
+// 참가비와 고정 배분율로 모집 전후의 실제 금액을 표시하는 함수
+function buildGuildMarblePrizeLines(prize) {
+    var config = GLOBAL_CONFIG.guildMarble, lines = ["💰 참가비 · 1인당 " + numberWithCommas(prize.fee) + " 포인트", "👥 참가비 총액 · " + numberWithCommas(prize.total) + " 포인트", "🧾 수수료 · 10% (" + numberWithCommas(prize.commission) + " 포인트)", "🏆 총 상금 · " + numberWithCommas(prize.pool) + " 포인트", "━━━━━━━━━━━━"];
+    for (var i = 0; i < prize.prizes.length; i++) lines.push(config.medals[i] + " " + numberWithCommas(prize.prizes[i]) + " 포인트");
+    return lines.join("\n");
+}
+
+// 진행·조회·잘못된 입력에 같은 최신 참가자와 게임판을 붙이는 함수
+function buildGuildMarbleProgress(row, game, context, text, completed) {
+    var config = GLOBAL_CONFIG.guildMarble, sections = [], settling = game.state === "SETTLING";
+    if (settling) {
+        sections.push(completed ? game.kind === "REFUND" ? "🎲 길드마블 중단 완료" : "🎲 길드마블 종료!\n🏁 " + (game.endReason === "SURVIVOR" ? "한 명의 생존자가 남았습니다." : "10라운드가 모두 끝났습니다.") : "🎲 길드마블\n⏳ 정산 처리 중");
+        if (text) sections.push(text);
+        sections.push(game.kind === "REFUND" ? "💰 참가비 · 전액 반환\n🧾 수수료 · 없음\n📅 사용한 길드 이용 횟수 · 유지" : "🏆 총 상금 · " + numberWithCommas(game.pool) + " 포인트\n🧾 수수료 · " + numberWithCommas(game.commission) + " 포인트");
+        for (var rank = 0; rank < game.results.length; rank++) {
+            var result = game.results[rank], participant = game.players[result.index];
+            sections.push((game.kind === "REFUND" ? "💰" : config.medals[rank]) + " " + getGuildMarblePlayerLabel(participant, result.index, context) + (game.kind === "REFUND" ? "" : "\n" + (participant.alive ? "👑 총자산 · " + numberWithCommas(result.assets) + " 골드" : "💥 파산 탈락")) + "\n💰 " + numberWithCommas(result.amount) + " 포인트 " + (participant.paid ? game.kind === "REFUND" ? "환급 완료" : "지급 완료" : "⏳ 정산 처리 중"));
+        }
+        if (!completed) sections.push("처리 확인 후 /마블굴리기 또는 /마블시작으로 미처리 정산을 이어갈 수 있어요.");
+    } else {
+        var turn = getGuildMarbleTurnIndex(game), round = Math.floor(game.slot / config.limits.players) + 1;
+        var order = round % 2 ? "[1] → [2] → [3] → [4]" : "[4] → [3] → [2] → [1]";
+        var aliveCount = 0;
+        for (var aliveIndex = 0; aliveIndex < game.players.length; aliveIndex++) if (game.players[aliveIndex].alive) aliveCount++;
+        sections.push("🎲 길드마블 · " + (game.slot + 1) + "/40턴\n🔄 " + round + "/10라운드 · " + order + "\n👥 생존 · " + aliveCount + "/4명");
+        sections.push(getGuildMarblePlayerLabel(game.players[turn], turn, context) + " 님" + (game.action === "ROLL" ? "의 차례입니다." : game.action === "BUY" ? " · 구매 선택" : " · 건설 선택"));
+        if (text) sections.push(text);
+        else if (game.action === "ROLL") sections.push("🎲 주사위를 굴려 이동해 주세요.");
+        if (game.action !== "ROLL") {
+            var player = game.players[turn], cell = config.board[player.position];
+            if (game.move && (!text || text.indexOf("🎲 【 ") === -1)) sections.push("🎲 【 " + game.move.die + " 】\n📍 " + padGuildMarblePosition(game.move.from) + " → " + padGuildMarblePosition(game.move.to) + "칸 · " + cell.name);
+            sections.push((game.action === "BUY" ? "🏠 빈 땅\n🏷️ 구매 비용 · " : "🏗️ 내 땅 · Lv.1 → Lv.2\n🔨 건설 비용 · ") + numberWithCommas(cell.price) + " 골드\n💰 보유 금액 · " + numberWithCommas(player.gold) + " 골드\n💸 통행료 · " + numberWithCommas(cell.toll) + (game.action === "BUILD" ? " → " + numberWithCommas(cell.toll * 3) : "") + " 골드\n" + (player.gold < cell.price ? "⚠️ " + numberWithCommas(cell.price - player.gold) + " 골드가 부족합니다." : "🪙 선택 후 잔액 · " + numberWithCommas(player.gold - cell.price) + " 골드"));
+        }
+        sections.push((game.slot === config.limits.players * config.limits.rounds - 1 ? "🔥 이번 경기의 마지막 차례입니다.\n" : "") + buildGuildMarbleAction(game));
+        if (game.stop) sections.push("🤝 중단 동의 · " + game.stop.agreements.length + "/4명\n👉 참가자 /마블중단확인\n경기를 진행하면 중단 요청이 취소됩니다.");
+    }
+    sections.push("📅 오늘 길드 이용 · " + getGuildMarbleDailyCount(row, context.day) + "/3회\n📘 /마블가이드");
+    sections.push(buildGuildMarbleFooter(game, context));
+    return sections.join("\n━━━━━━━━━━━━\n");
+}
+
+// 메인·모집·진행·종료 화면을 공통 출력에 연결하는 함수
+function buildGuildMarbleMessage(result, context) {
+    var config = GLOBAL_CONFIG.guildMarble;
+    if (result.guide) return "[" + getGuildMarbleRankLabel(context.sender, context) + "] 님\n📘 길드마블 가이드\n━━━━━━━━━━━━\n길드원 4명이 땅을 사고\n통행료를 받으며 경쟁하는 게임이에요!\n━━━━━━━━━━━━\n🎲 내 차례에는 /마블굴리기\n🧭 참가비·진행 확인은 /길드마블\n━━━━━━━━━━━━\n참가 방법부터 구매·파산·상금까지\n전체보기에서 확인하세요.\n" + allsee + config.guideLines.join("\n");
+    var row = result.row, game = result.finalGame || row && row.current;
+    if (result.wrongRoom || (!row && !context.guild)) return result.text;
+    if (game && game.state !== "RECRUITING") return buildGuildMarbleProgress(row, game, context, result.text, !!result.finalGame);
+    var sections = ["[" + getGuildMarbleRankLabel(context.sender, context) + "] 님\n🎲 길드마블"], actualRow = row || { feeUnits: config.limits.minFee, usage: { day: "", count: 0 } };
+    if (result.text) sections.push(result.text);
+    sections.push(game ? "🟡 상태 · 참가 모집 중" : "🟢 상태 · 참가 모집 대기\n👥 참가 인원 · 4명\n⏱️ 예상 진행 · 약 10분");
+    sections.push(buildGuildMarblePrizeLines(getGuildMarblePrizeInfo(actualRow.feeUnits)));
+    if (game) {
+        var players = ["👥 준비 완료 · " + game.players.length + "/4명"];
+        for (var i = 0; i < game.players.length; i++) { var account = context.accounts[game.players[i].id]; players.push("✅ [" + (account ? getGuildMarbleRankLabel(account.user, context) : game.players[i].user) + "]"); }
+        sections.push(players.join("\n"));
+        sections.push("👉 /마블준비\n👉 /마블준비취소\n4명이 준비하면 자동으로 시작합니다.\n참가비는 경기 시작 시 차감됩니다.\n지급액에는 참가비 반환분이 포함됩니다.");
+    }
+    sections.push("📅 오늘 길드 이용 · " + getGuildMarbleDailyCount(actualRow, context.day) + "/3회\n📘 /마블가이드");
+    var guild = context.guildData.guilds[actualRow.guildId || (context.guild ? context.guild.id : "")];
+    if (guild && guild.master === context.sender) sections.push(game ? "👑 길드마스터\n👉 /마블모집취소" : "👑 길드마스터\n👉 /마블시작\n👉 /마블참가비 숫자");
+    return sections.join("\n━━━━━━━━━━━━\n");
+}
+
+// 저장 후 응답 실패로 확정된 경기와 포인트가 취소되지 않도록 안내하는 함수
+function replyGuildMarbleSafely(replier, text) {
+    try { replier.reply(text); } catch (error) { try { debuggerLog("길드마블 안내 실패: " + error); } catch (ignored) {} }
 }
 
 // 길드 영지전 관련 함수들
