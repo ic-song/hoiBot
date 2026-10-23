@@ -46,7 +46,7 @@ Status: VERIFIED
 
 - `requireGuildMarbleStore`, `executeGuildMarbleRequest`, `startGuildMarbleGame`, `rollGuildMarbleDice`, `chooseGuildMarbleLand`, `advanceGuildMarbleTurn`.
 - `prepareGuildMarbleSettlement`: 확정 순위/금액을 한 번 저장. `settleGuildMarbleGame`: 기존 `buildServerRaidAccountIndex`의 내부 ID로 미지급만 처리. `finishGuildMarbleGame`: 상세 정리, 최소 마지막 지급 기록 유지.
-- `buildGuildMarbleMessage`, `buildGuildMarbleProgress`, `buildGuildMarbleFooter`: 최신 참가자 → 구분선 → 현재 상황 → 기존 `allsee` → 16칸. 정산 대기는 실제 지급 표시, 완료 출력은 최종 게임판 포함.
+- `buildGuildMarbleMessage`, `buildGuildMarbleProgress`, `buildGuildMarbleFooter`: 진행 안내·참가자 현황과 게임판을 두 메시지로 분리. 첫 메시지는 참가자 현황 제목 아래부터 `allsee`, 둘째는 현재 길드마블 상황 제목 아래부터 `allsee`로 16칸 표시. `replyGuildMarbleSafely`가 각 메시지를 순서대로 전송하며 개별 실패가 확정 저장을 취소하지 않는다. 모집·가이드는 기존 한 메시지. 정산 대기는 실제 지급 표시, 완료 출력은 최종 게임판 포함.
 - 소형 파일 `guildMarble.json`: 길드별 설정·KST 횟수·현재 경기·최소 마지막 거래. 지난 턴/메시지 이력 누적 없음.
 - 기존 `member.serverRaidAccount.id` 재사용. 아직 ID 없는 회원은 첫 준비에 기존 계정 형식으로 한 번 발급하며 별도 공개 식별자/콜백 인수를 요구하지 않는다.
 - `getGuildMarbleRankLabel`은 기존 채크랭크를 재사용하되 추방/삭제된 길드 참조는 표시용 사본에서만 제외해 조회 중 회원 정리·저장을 막는다.

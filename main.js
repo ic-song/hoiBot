@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.684"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.685"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -35469,7 +35469,7 @@ function padGuildMarblePosition(position) {
 
 // 참가자 현황과 최신 16칸을 동일 상태에서 생성하는 함수
 function buildGuildMarbleFooter(game, context) {
-    var config = GLOBAL_CONFIG.guildMarble, lines = ["👥 참가자 현황"], board = [];
+    var config = GLOBAL_CONFIG.guildMarble, lines = ["👥 참가자 현황\n" + allsee], board = [];
     for (var i = 0; i < game.players.length; i++) {
         var player = game.players[i];
         lines.push(getGuildMarblePlayerLabel(player, i, context) + " · " + padGuildMarblePosition(player.position) + "칸 · " + (player.alive ? "💰" + numberWithCommas(player.gold) + " 골드" : "💥 탈락"));
@@ -35480,7 +35480,7 @@ function buildGuildMarbleFooter(game, context) {
         var status = cell.type === "land" ? land.owner === -1 ? "빈 땅" : "주인 [" + (land.owner + 1) + "]" + config.colors[land.owner] + " · Lv." + land.level : cell.type === "start" ? "출발" : cell.type === "luck" ? "행운" : cell.type === "chance" ? "기회" : "휴식";
         board.push("[" + padGuildMarblePosition(j) + "] " + cell.name + " · " + status);
     }
-    return lines.join("\n") + "\n━━━━━━━━━━━━\n🏠 현재 길드마블 상황\n" + allsee + board.join("\n");
+    return { participants: lines.join("\n"), board: "🏠 현재 길드마블 상황\n" + allsee + board.join("\n") };
 }
 
 // 현재 굴리기·구매·건설 단계에 사용할 수 있는 행동만 안내하는 함수
@@ -35497,7 +35497,7 @@ function buildGuildMarblePrizeLines(prize) {
     return lines.join("\n");
 }
 
-// 진행·조회·잘못된 입력에 같은 최신 참가자와 게임판을 붙이는 함수
+// 진행 안내·전체보기 참가자와 별도 전체보기 게임판 메시지를 만드는 함수
 function buildGuildMarbleProgress(row, game, context, text, completed) {
     var config = GLOBAL_CONFIG.guildMarble, sections = [], settling = game.state === "SETTLING";
     if (settling) {
@@ -35527,8 +35527,9 @@ function buildGuildMarbleProgress(row, game, context, text, completed) {
         if (game.stop) sections.push("🤝 중단 동의 · " + game.stop.agreements.length + "/4명\n👉 참가자 /마블중단확인\n경기를 진행하면 중단 요청이 취소됩니다.");
     }
     sections.push("📅 오늘 길드 이용 · " + getGuildMarbleDailyCount(row, context.day) + "/3회\n📘 /마블가이드");
-    sections.push(buildGuildMarbleFooter(game, context));
-    return sections.join("\n━━━━━━━━━━━━\n");
+    var footer = buildGuildMarbleFooter(game, context);
+    sections.push(footer.participants);
+    return [sections.join("\n━━━━━━━━━━━━\n"), footer.board];
 }
 
 // 메인·모집·진행·종료 화면을 공통 출력에 연결하는 함수
@@ -35556,7 +35557,10 @@ function buildGuildMarbleMessage(result, context) {
 
 // 저장 후 응답 실패로 확정된 경기와 포인트가 취소되지 않도록 안내하는 함수
 function replyGuildMarbleSafely(replier, text) {
-    try { replier.reply(text); } catch (error) { try { debuggerLog("길드마블 안내 실패: " + error); } catch (ignored) {} }
+    var messages = Array.isArray(text) ? text : [text];
+    for (var i = 0; i < messages.length; i++) {
+        try { replier.reply(messages[i]); } catch (error) { try { debuggerLog("길드마블 안내 실패: " + error); } catch (ignored) {} }
+    }
 }
 
 // 길드 영지전 관련 함수들

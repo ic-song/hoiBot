@@ -64,7 +64,13 @@ function runTests() {
     // 독립된 합성 시나리오를 실행하고 결과를 표시하는 함수
     function group(name, test) { seed(); test(); console.log('PASS MARBLE ' + (++groups) + ': ' + name); }
     const saves = () => f.traces().filter(t => t.type === 'save');
-    const footer = text => { assert(text.includes('👥 참가자 현황')); assert.equal(text.split('<ALLSEE>').length - 1, 1); assert(text.includes('[01] 호월광장🏁')); assert(text.includes('[16] 펜던트 공방📿')); assert(!text.endsWith('━━━━━━━━━━━━')); };
+    const footer = text => {
+        const messages = f.replies(); assert.equal(messages.length, 2);
+        assert(messages[0].includes('👥 참가자 현황\n<ALLSEE>\n[1]')); assert(!messages[0].includes('🏠 현재 길드마블 상황'));
+        assert(messages[1].startsWith('🏠 현재 길드마블 상황\n<ALLSEE>[01]')); assert(!messages[1].includes('👥 참가자 현황'));
+        for (const message of messages) assert.equal(message.split('<ALLSEE>').length - 1, 1);
+        assert(text.includes('[16] 펜던트 공방📿')); assert(!text.endsWith('━━━━━━━━━━━━'));
+    };
     group('MASTER 권한과 길드마스터 구분·첫 조회 무파일 생성·정확한 명령과 인수', () => {
         run('/길드마블', 'a'); assert.equal(saves().length, 0); assert.equal(f.raw(marblePath), undefined);
         for (const user of ['gm', 'sub', 'a', 'outsider']) assert(run('/마블시작', user).includes('길드마스터') || user === 'outsider');
