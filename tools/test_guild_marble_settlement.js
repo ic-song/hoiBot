@@ -59,7 +59,7 @@ group('PAYOUT/REFUND·DEV/PROD의 잘못된 수량/접미와 권한 없는 참�
 group('모집/취소/중단 권한과 행동 단계는 정산 중에도 우회 불가', () => {
     for (const kind of ['PAYOUT', 'REFUND']) {
         pending(kind);
-        for (const command of ['/마블시작', '/마블모집취소', '/마블중단']) for (const user of ['a', 'e', 'sub', 'gm']) denied(command, user);
+        for (const command of ['/마블시작', '/마블모집취소', '/마블중단']) for (const user of ['a', 'e', 'sub', 'gm']) { if (command === '/마블시작' && user === 'sub') continue; denied(command, user); }
         for (const command of ['/마블준비', '/마블준비취소', '/마블모집취소', '/마블구매', '/마블건설', '/마블통과', '/마블중단', '/마블중단확인']) denied(command, command === '/마블모집취소' || command === '/마블중단' ? 'master' : 'a');
         for (const user of ['e', 'sub', 'gm', 'master']) denied('/마블굴리기', user);
         denied('/마블굴리기', 'a', false, 'wrong-room'); denied('/마블시작', 'master', false, 'wrong-room'); denied('/마블시작', 'master', false, 'table', false);
@@ -70,12 +70,12 @@ group('진행·정산 조회와 가이드는 미처리 지급을 실행하지 �
     const before = f.files(); assert(run('/마블가이드').includes('📘 길드마블 가이드')); assert.deepEqual(f.files(), before);
 });
 group('길드마스터 재시도와 참가자/탈락자/탈퇴자 재시도는 미지급만 한 번 지급', () => {
-    for (const kind of ['PAYOUT', 'REFUND']) for (const dev of [false, true]) for (const role of ['master', 'a', 'dead', 'left']) {
+    for (const kind of ['PAYOUT', 'REFUND']) for (const dev of [false, true]) for (const role of ['master', 'sub', 'a', 'dead', 'left']) {
         const { root, game } = pending(kind, dev, { partial: true, dead: role === 'dead', left: role === 'left' });
         const before = f.get(root + 'member.json'), otherRoot = dev ? c.DATA_ROOT_PATH : c.DEV_DATA_ROOT_PATH, untouched = f.raw(otherRoot + 'member.json');
         const expected = game.results.map(result => ({ user: game.players[result.index].user, amount: game.players[result.index].paid ? 0 : result.amount }));
         c.Math.random = () => { throw Error('must not repeat settlement lottery'); };
-        const command = role === 'master' ? '/마블시작' : '/마블굴리기', user = role === 'dead' ? 'b' : role === 'left' ? 'a' : role;
+        const command = role === 'master' || role === 'sub' ? '/마블시작' : '/마블굴리기', user = role === 'dead' ? 'b' : role === 'left' ? 'a' : role;
         const text = run(command, user, dev); assert(text.includes(kind === 'REFUND' ? '환급 완료' : '지급 완료'));
         const after = f.get(root + 'member.json'), row = h.store(dev).guilds.$g;
         for (const payment of expected) assert.equal(after.member[payment.user].point, before.member[payment.user].point + payment.amount);

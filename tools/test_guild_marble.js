@@ -28,7 +28,7 @@ failPath:p=>{failWrite=(_d,t)=>t===p;},replyFail:v=>{replyFailure=v;}};`)(requir
     c.buildAttendanceRequiredMessage = () => 'attendance required';
     c.hasAttendedToday = d => !d.blockAttendance;
     vm.runInContext(`function runMarble(message,user,where){var msg=isDevCommandMessage(message)?stripDevCommandPrefix(message):message,sender=user||'a',room=where||'table',isGroupChat=true;
-var ctx=createCommandContext(isDevCommandMessage(message),room),prev=enterCommandContext(ctx);beginDataSaveTransaction();var outputReplier=replier;try{
+var ctx=createCommandContext(isDevCommandMessage(message),room),prev=enterCommandContext(ctx);beginDataSaveTransaction();var outputReplier=replier;if(ctx.isDev&&['/ㅁㅂ','/ㅁㄱ','/ㅁㅌ'].indexOf(msg)!==-1)msg=msg.substring(1);try{
 ` + recovery + `var data=loadJsonFile(filePath);` + entry + `
 }catch(e){rollbackDataSaveTransaction();throw e;}finally{endDataSaveTransaction();exitCommandContext(prev);}}
 `, c);
@@ -73,7 +73,8 @@ function runTests() {
     };
     group('MASTER 권한과 길드마스터 구분·첫 조회 무파일 생성·정확한 명령과 인수', () => {
         run('/길드마블', 'a'); assert.equal(saves().length, 0); assert.equal(f.raw(marblePath), undefined);
-        for (const user of ['gm', 'sub', 'a', 'outsider']) assert(run('/마블시작', user).includes('길드마스터') || user === 'outsider');
+        for (const user of ['gm', 'a', 'outsider']) assert(run('/마블시작', user).includes('길드마스터') || user === 'outsider');
+        seed(); run('/마블시작', 'sub'); assert.equal(game().state, 'RECRUITING');
         seed(); for (const text of ['/마블시작 설명', '/마블참가비 1 해봐', '/마블참가비 0', '/마블참가비 11', '/마블참가비 -1', '/마블참가비 1.5']) { run(text, 'master'); assert.equal(saves().length, 0); }
     });
     group('참가비 1·3·10억 총액·10% 수수료·40/30/20/10% 지급·단일 비용 차감', () => {
@@ -129,15 +130,15 @@ function runTests() {
         footer(run('/마블굴리기','d'));assert.equal(game().slot,4);assert.equal(c.getGuildMarbleTurnIndex(game()),3);
         c.Math.random=()=>0.2;footer(run('/마블굴리기','d'));assert.equal(game().slot,5);assert.equal(c.getGuildMarbleTurnIndex(game()),2);
     });
-    group('출발 통과·정확한 도착 한 번·행운 3금액·기회 양방향·휴식', () => {
+    group('출발 통과·정확한 도착 한 번·행운 고정100·기회 양방향·휴식', () => {
         for(const [from,rng,gold] of [[15,0,1200],[13,0.4,1200]]) { seed();recruit();const g=game();g.players[0].position=from;setGame(g);c.Math.random=()=>rng;run('/마블굴리기','a');assert.equal(game().players[0].gold,gold); }
-        for(const [chance,amount] of [[0,100],[0.34,200],[0.99,300]]) { seed();recruit();let calls=0;c.Math.random=()=>calls++===0?0.2:chance;run('/마블굴리기','a');assert.equal(game().players[0].gold,1000+amount); }
+        for(const chance of [0,0.34,0.99]) { seed();recruit();let calls=0;c.Math.random=()=>calls++===0?0.2:chance;run('/마블굴리기','a');assert.equal(game().players[0].gold,1100);assert.equal(calls,1); }
         for(const [chance,delta] of [[0.49,200],[0.5,-100]]) {seed();recruit();const g=game();g.players[0].position=1;setGame(g);let calls=0;c.Math.random=()=>calls++===0?0.99:chance;run('/마블굴리기','a');assert.equal(game().players[0].gold,1000+delta);}
     });
     group('통행료 정확히 0골드는 생존·부족하면 잔여만 이전·지역 초기화·탈락 차례 제외', () => {
-        for(const gold of [80,50,0]) {seed();recruit();const g=game();g.players[0].gold=gold;g.players[0].position=9;g.lands[10]={owner:1,level:1};g.lands[1]={owner:0,level:2};setGame(g);c.Math.random=()=>0;
-            const text=run('/마블굴리기','a');footer(text);const after=game();assert.equal(after.players[0].gold,0);assert.equal(after.players[1].gold,1020+gold);assert.equal(after.players[0].alive,gold===80);
-            if(gold<80){assert.equal(after.lands[1].owner,-1);assert.equal(after.players[0].eliminated,1);assert(text.includes('부족 금액'));}
+        for(const gold of [120,50,0]) {seed();recruit();const g=game();g.players[0].gold=gold;g.players[0].position=9;g.lands[10]={owner:1,level:1};g.lands[1]={owner:0,level:2};setGame(g);c.Math.random=()=>0;
+            const text=run('/마블굴리기','a');footer(text);const after=game();assert.equal(after.players[0].gold,0);assert.equal(after.players[1].gold,1020+gold);assert.equal(after.players[0].alive,gold===120);
+            if(gold<120){assert.equal(after.lands[1].owner,-1);assert.equal(after.players[0].eliminated,1);assert(text.includes('잔여 '+gold+' 골드만 지급 · 부족 '+(120-gold)));assert(!text.includes('납부 완료'));}
         }
     });
     group('전원 동의 중단·중복/비참가 동의 제외·탈락자 포함·전액 환급·횟수 유지', () => {
@@ -160,9 +161,9 @@ function runTests() {
         assert.deepEqual(store().guilds.$g.last.payments.map(p=>p.amount),[144000000,108000000,72000000,36000000]);
         assert.equal(Object.values(f.read().member).reduce((t,m)=>t+m.point,0),9*2e10-40000000);
     });
-    group('일일3회·개인 추가 제한 없음·자정 진행 보존·다음 날짜 재모집', () => {
-        for(let i=0;i<3;i++){recruit();run('/마블중단','master');for(const u of ['a','b','c','d'])run('/마블중단확인',u);}
-        assert(run('/마블시작','master').includes('3회'));assert.equal(saves().length,0);
+    group('일일5회·개인 추가 제한 없음·자정 진행 보존·다음 날짜 재모집', () => {
+        for(let i=0;i<5;i++){recruit();run('/마블중단','master');for(const u of ['a','b','c','d'])run('/마블중단확인',u);}
+        assert(run('/마블시작','master').includes('5회'));assert.equal(saves().length,0);
         c.day='20261024';run('/마블시작','master');for(const u of ['a','b','c','d'])run('/마블준비',u);assert.equal(store().guilds.$g.usage.count,1);
         const before=f.raw(marblePath);c.day='20261025';footer(run('/마블판','a'));assert.equal(f.raw(marblePath),before);assert.equal(saves().length,0);
     });
@@ -204,13 +205,13 @@ function runTests() {
     group('Lv.2 세 배 통행료·마지막 상대 파산 즉시 종료·탈락 예정 턴 건너뛰기', () => {
         recruit();const g=game();for(const i of [1,2]){g.players[i].alive=false;g.players[i].gold=0;g.players[i].eliminated=i;}
         g.players[0].gold=50;g.players[0].position=9;g.lands[10]={owner:3,level:2};setGame(g);c.Math.random=()=>0;
-        const text=run('/마블굴리기','a');footer(text);assert(text.includes('한 명의 생존자'));assert(text.includes('240 골드'));assert.equal(store().guilds.$g.current,null);
+        const text=run('/마블굴리기','a');footer(text);assert(text.includes('한 명의 생존자'));assert(text.includes('360 골드'));assert.equal(store().guilds.$g.current,null);
         assert.deepEqual(store().guilds.$g.last.payments.map(p=>p.id),['id-d','id-a','id-c','id-b']);
         seed();recruit();const skip=game();skip.players[1].alive=false;skip.players[1].gold=0;skip.players[1].eliminated=1;skip.players[0].position=4;setGame(skip);c.Math.random=()=>0;run('/마블굴리기','a');assert.equal(game().slot,2);
     });
     group('출발 통과와 행운 동시 반영·이벤트 정확히 0 생존/부족 파산', () => {
         recruit();const g=game();g.players[0].position=13;setGame(g);let calls=0;c.Math.random=()=>calls++===0?0.7:0.99;
-        const text=run('/마블굴리기','a');assert.equal(game().players[0].gold,1500);assert(text.includes('출발 통과'));assert(text.includes('+300 골드'));
+        const text=run('/마블굴리기','a');assert.equal(game().players[0].gold,1300);assert(text.includes('출발 통과'));assert(text.includes('+100 골드'));
         for(const gold of [100,99]){seed();recruit();const loss=game();loss.players[0].position=6;loss.players[0].gold=gold;setGame(loss);let n=0;c.Math.random=()=>n++===0?0:0.5;run('/마블굴리기','a');assert.equal(game().players[0].gold,0);assert.equal(game().players[0].alive,gold===100);}
     });
     group('중단 환급에 추첨 없음·원 참가자 순서로 환급만 안내', () => {
