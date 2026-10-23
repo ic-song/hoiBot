@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.685"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.686"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -999,6 +999,21 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    gmEducation: {
+        version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", rewardItem: "다이아상자💎(소)",
+        chapters: [
+            { title: "시작 안내", emoji: "🌱", intro: "내 정보를 확인하는 방법부터 배워요!", learn: ["/내정보에서 레벨·포인트·다이아를 확인해요.", "/펫정보와 /가방에서 펫·아이템을 확인해요.", "이미 시작했다면 스타터를 다시 받지 않아요."], commands: ["/내정보", "/펫정보", "/가방"], check: "내 정보·펫·가방을 직접 확인할 수 있나요?", note: "GM과 모험 시작 여부·출석·명령어 이용 방을 확인해요. /모험시작은 기존 시작 조건에 맞을 때만 사용해요." },
+            { title: "레벨·종합매력", emoji: "⭐", intro: "레벨과 매력을 확인하고 성장 방향을 알아봐요!", learn: ["경험치를 모으면 레벨이 올라가요.", "레벨과 종합매력은 서로 다른 정보예요.", "캐슬·레이드 매력의 쓰임과 호월신의 가호를 알아봐요."], commands: ["/내정보", "/레벨순위"], check: "내 레벨과 매력, 성장 상태를 찾을 수 있나요?", note: "/호여 숫자는 보유 가호와 사용 안내를 확인한 뒤 설명해요. 교육을 위해 사용하지 않아도 돼요." },
+            { title: "퀘스트", emoji: "🧭", intro: "무엇을 해야 할지 고민될 때 퀘스트를 확인해요!", learn: ["모험가 퀘스트의 현재 목표와 기록을 확인해요.", "목표 달성 후 완료·보상 확인 방법을 배워요.", "일·주간 퀘스트와 탐험은 현재 게임 안내에서 확인해요."], commands: ["/모험가퀘스트", "/퀘스트기록"], check: "현재 목표와 완료 방법을 설명할 수 있나요?", note: "완료 가능한 목표가 있을 때만 /퀘스트완료를 안내해요. 모든 퀘스트를 끝낼 필요는 없어요. 선택 안내: /인형가이드에서 조건·이용권·비용을 확인해요." },
+            { title: "펫·친밀도", emoji: "🐾", intro: "함께하는 펫을 확인하고 친밀도를 알아봐요!", learn: ["펫정보에서 펫과 친밀도를 확인해요.", "친밀도와 펫 성장의 관계를 알아봐요.", "아이템은 보유 수량과 설명을 먼저 확인해요."], commands: ["/펫정보", "/가방"], check: "친밀도와 관련 아이템을 확인할 수 있나요?", note: "/냠냠 수량의 대상 아이템과 결과는 기존 게임 안내를 따라요. 재화 사용은 필수가 아니에요." },
+            { title: "펫스킬", emoji: "📙", intro: "보유한 스킬과 장착 효과를 확인해요!", learn: ["보유 스킬과 장착 스킬을 구분해요.", "스킬마다 효과가 적용되는 조건을 확인해요.", "장착·해제 시 달라지는 효과를 알아봐요."], commands: ["/펫스킬", "/펫스킬가방", "/펫스킬정보 스킬이름"], check: "내 장착 스킬의 효과를 설명할 수 있나요?", note: "교체할 스킬이 있고 원할 때만 /펫스킬장착 스킬가방번호를 안내해요. 기존 스킬을 임의 해제하지 않아요." },
+            { title: "미니펫", emoji: "🐣", intro: "미니펫의 장착과 성장 방법을 알아봐요!", learn: ["주력·보조 장착과 보유 미니펫을 구분해요.", "강화 전 소모 재화와 안내를 먼저 확인해요."], commands: ["/미니펫정보", "/미니펫가방"], check: "장착 상태와 강화 전 확인 사항을 알고 있나요?", note: "선택 실습: /미니펫장착 가방번호, /미니펫보조장착 가방번호. /미니펫강화 0 횟수는 대표, 00 횟수는 보조, 양수는 가방 번호예요. 강화는 필수가 아니에요." },
+            { title: "펜던트", emoji: "📿", intro: "펜던트를 확인하고 강화·복원 기능을 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요."], commands: ["/펜던트가방", "/펜던트정보 0"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요." },
+            { title: "펫홈·가구", emoji: "🏡", intro: "내 펫홈과 가구 효과를 한눈에 확인해요!", learn: ["보유 가구와 장착 가구를 구분해요.", "집 면적·장착칸·가구 효과를 구분해요.", "가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.", "루미에르 빌리지와 별채의 역할을 알아봐요."], commands: ["/펫홈", "/가구정보"], check: "장착 상태와 가구 효과를 어디서 확인하나요?", note: "현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요." },
+            { title: "대전·길드", emoji: "⚔️", intro: "다른 유저와 즐기는 대전과 길드를 알아봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 조건을 구분해요.", "시간·횟수·참가 조건은 현재 안내에서 확인해요.", "미가입자는 길드목록·가입 안내, 가입자는 길드정보를 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전"], check: "참가 조건과 길드 가입 방법을 알고 있나요?", note: "선택 안내: /캐슬대전, /미니펫대전, /길드가입 길드번호. 원하고 참가 조건이 맞을 때만 실습해요. 미진행 시간에도 설명으로 교육할 수 있어요." },
+            { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /당근, /미니펫당근, /가구당근, /펫스킬당근, /펜던트당근. 실제 인자는 거래 안내를 따라요. 최종 응답은 거래한다 / 안한다예요. 수수료·소모량은 현재 화면에서 확인하고 실제 거래·판매·송금을 강요하지 않아요." }
+        ]
+    },
     guildMarble: {
         fileName: "guildMarble.json",
         pendingName: "guildMarblePending.json",
@@ -3379,6 +3394,31 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 endDataSaveTransaction(); beginDataSaveTransaction(); // 복구 완료 이후 새 명령 실패와 복구를 분리
             }
         }
+        // 교육 지급 영수증을 기준으로 중단된 챕터를 최초 담당 GM에게 확정한다.
+        var gmEducationConfig = GLOBAL_CONFIG.gmEducation;
+        var gmEducationPath = resolveActiveDataPath(DATA_ROOT_PATH + gmEducationConfig.fileName);
+        var gmEducationPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + gmEducationConfig.pendingName);
+        var gmEducationRecoveryPaths = [gmEducationPath, gmEducationPendingPath];
+        for (var gmRecoveryIndex = 0; gmRecoveryIndex < gmEducationRecoveryPaths.length; gmRecoveryIndex++) {
+            var gmRecoveryFile = new java.io.File(gmEducationRecoveryPaths[gmRecoveryIndex]);
+            var gmRollbackFile = new java.io.File(gmEducationRecoveryPaths[gmRecoveryIndex] + ".rollback");
+            if (!gmRecoveryFile.exists() && gmRollbackFile.exists()) {
+                var gmRollbackData = JSON.parse(FileStream.read(gmRollbackFile.getPath(), "utf-8"));
+                if (gmRecoveryIndex === 0) requireGmEducationStore(gmRollbackData); else requireGmEducationPending(gmRollbackData);
+                if (!gmRollbackFile.renameTo(gmRecoveryFile)) throw new Error("교육 게시 중단 복구 실패");
+            }
+        }
+        if (new java.io.File(gmEducationPendingPath).exists()) {
+            var gmRecoveryPending = requireGmEducationPending(loadJsonFile(gmEducationPendingPath));
+            var gmRecoveryMember = loadJsonFile(filePath);
+            var gmRecoveryStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
+            var gmRecovery = applyGmEducationPending(gmRecoveryMember, gmRecoveryStore, gmRecoveryPending);
+            if (gmRecovery.memberChanged) { saveJsonFile(gmRecoveryMember, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); }
+            if (gmRecovery.storeChanged) { writeMemberSplitSlot(gmEducationPath, JSON.stringify(gmRecoveryStore)); endDataSaveTransaction(); beginDataSaveTransaction(); }
+            if (!new java.io.File(gmEducationPendingPath).delete()) throw new Error("교육 복구 요청 정리 실패");
+            endDataSaveTransaction(); beginDataSaveTransaction();
+        }
+
         // 중단된 두 파일 게시를 다른 회원 변경보다 먼저 원문으로 복구한다.
         var marbleConfig = GLOBAL_CONFIG.guildMarble;
         var marblePath = resolveActiveDataPath(DATA_ROOT_PATH + marbleConfig.fileName);
@@ -3924,6 +3964,67 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             replyGuildMarbleSafely(replier, marbleMessage);
             return;
+        }
+
+        var gmEducationRequest = /^\/(?:교육|교육완료|교육실적)(?:[ \t]|$)/.test(msg) ? getGmEducationRequest(msg) : null;
+        if (gmEducationRequest) {
+            if (!isMaster(sender)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
+            var gmRequest = gmEducationRequest;
+            if (gmRequest.action === "invalid") { replier.reply("교육 완료 명령어를 확인해 주세요.\n/교육완료 아이디 숫자\n챕터 번호는 1~10까지 입력할 수 있습니다."); return; }
+            var gmStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
+            var gmPetData = loadJsonFile(memberPetPath), gmGuildData = loadJsonFile(guildPath);
+            var gmContext = { data: data, petData: gmPetData, guildData: gmGuildData };
+            if (gmRequest.action === "view" && !gmRequest.input) {
+                replier.reply("📚 호월 교육 · GM 안내\n━━━━━━━━━━━━\n교육은 1→10챕터 순서로 진행합니다.\n완료한 교육은 중복으로 받을 수 없습니다.\n━━━━━━━━━━━━\n① /교육 아이디 → 진행도 확인\n② /교육 숫자 → 매뉴얼 확인\n③ 설명·실습 → GM 확인\n④ /교육완료 아이디 숫자 → 완료 처리\n━━━━━━━━━━━━\n🎁 챕터마다 " + gmEducationConfig.rewardItem + " 1개\n📊 실적 확인: /교육실적\n숫자 계정은 /교육 @닉네임 또는 기존 계정 ID로 조회해요."); return;
+            }
+            if (gmRequest.action === "view" && /^(?:[1-9]|10)$/.test(gmRequest.input)) { replier.reply(buildGmEducationManual(Number(gmRequest.input))); return; }
+            if (gmRequest.action === "stats" && gmRequest.input === "전체") { replier.reply(buildGmEducationStats(gmStore, data, null, gmContext, true)); return; }
+            var gmTargetInput = gmRequest.input || sender;
+            var gmTarget = resolveGmEducationUser(data, gmTargetInput);
+            if (!gmTarget) { replier.reply("[" + gmTargetInput + "] 님을 찾을 수 없습니다.\n아이디를 확인해 주세요."); return; }
+            if (gmRequest.action === "stats") { replier.reply(buildGmEducationStats(gmStore, data, gmTarget, gmContext, false)); return; }
+            if (gmRequest.action === "view") { replier.reply(buildGmEducationStatus(gmStore, data, gmTarget, gmContext)); return; }
+            var gmCompleted = getGmEducationProgress(gmStore, data.member[gmTarget]);
+            var gmHeading = "[" + getGuildMarbleRankLabel(gmTarget, gmContext) + "] 님의 호월 교육\n━━━━━━━━━━━━\n";
+            if (gmRequest.chapter <= gmCompleted) { replier.reply(gmHeading + "이미 완료한 챕터입니다.\n교육·보상·실적은 중복 처리되지 않습니다."); return; }
+            if (gmRequest.chapter !== gmCompleted + 1) { replier.reply(gmHeading + (gmCompleted + 1) + "챕터를 먼저 완료해 주세요.\n▶ 다음 교육: " + (gmCompleted + 1) + "챕터 · " + gmEducationConfig.chapters[gmCompleted].title); return; }
+            if (!data.member[sender]) { replier.reply("교육을 담당할 GM 계정을 먼저 등록해 주세요."); return; }
+            var gmIdsChanged = false, gmIdentityUsers = gmTarget === sender ? [sender] : [gmTarget, sender];
+            for (var gmIdIndex = 0; gmIdIndex < gmIdentityUsers.length; gmIdIndex++) {
+                var gmIdentityMember = data.member[gmIdentityUsers[gmIdIndex]];
+                if (!gmIdentityMember.serverRaidAccount) {
+                    gmIdentityMember.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(gmIdentityMember.server), latest: null, total: null };
+                    gmIdsChanged = true;
+                }
+            }
+            var gmPending = { version: 1, accountId: data.member[gmTarget].serverRaidAccount.id, user: gmTarget, gmId: data.member[sender].serverRaidAccount.id, gmUser: sender, chapter: gmRequest.chapter, txId: String(java.util.UUID.randomUUID()), at: new Date().toISOString() };
+            requireGmEducationPending(gmPending);
+            var gmPlan = applyGmEducationPending(data, gmStore, gmPending); // 지급량·순서·가방을 저장 전에 모두 검증
+            try {
+                // 새 계정 ID만 먼저 확정한다. 보상은 영속 요청을 확보한 뒤 영수증과 함께 저장한다.
+                if (gmIdsChanged) {
+                    var gmIdentityData = loadJsonFile(filePath);
+                    for (var gmSaveId = 0; gmSaveId < gmIdentityUsers.length; gmSaveId++) gmIdentityData.member[gmIdentityUsers[gmSaveId]].serverRaidAccount = data.member[gmIdentityUsers[gmSaveId]].serverRaidAccount;
+                    saveJsonFile(gmIdentityData, filePath); endDataSaveTransaction(); beginDataSaveTransaction();
+                    data = loadJsonFile(filePath); gmContext.data = data;
+                    gmStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
+                    gmPlan = applyGmEducationPending(data, gmStore, gmPending);
+                }
+                writeVerifiedJsonFile(gmEducationPendingPath, JSON.stringify(gmPending), true);
+                endDataSaveTransaction(); beginDataSaveTransaction();
+                if (gmPlan.memberChanged) { saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); }
+                if (gmPlan.storeChanged) { writeMemberSplitSlot(gmEducationPath, JSON.stringify(gmStore)); endDataSaveTransaction(); beginDataSaveTransaction(); }
+                if (!new java.io.File(gmEducationPendingPath).delete()) throw new Error("교육 완료 요청 정리 실패");
+                endDataSaveTransaction(); beginDataSaveTransaction();
+            } catch (gmSaveError) {
+                rollbackDataSaveTransaction(); endDataSaveTransaction(); beginDataSaveTransaction();
+                debuggerLog("교육 완료 확인 필요: " + gmSaveError);
+                replier.reply(gmHeading + "교육 완료 처리를 확인 중입니다.\n현재 챕터의 처리가 끝난 후 다시 확인해 주세요."); return;
+            }
+            var gmSuccess = gmHeading + (gmRequest.chapter === 10 ? "🎓 호월 교육 수료를 축하합니다!\n📚 전체 교육 완료: 10/10" : "✅ " + gmRequest.chapter + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter - 1].title + " 완료!\n📚 교육 진행: " + gmRequest.chapter + "/10");
+            gmSuccess += "\n━━━━━━━━━━━━\n🎁 " + (gmRequest.chapter === 10 ? "10챕터 보상: " : "") + gmEducationConfig.rewardItem + " 1개 지급\n" + (gmRequest.chapter === 10 ? "📦 전체 교육 보상: 총 10개 지급 완료\n" : "") + "👤 담당 GM: [" + getGuildMarbleRankLabel(sender, gmContext) + "]";
+            gmSuccess += gmRequest.chapter === 10 ? "\n━━━━━━━━━━━━\n함께 배운 내용을 바탕으로 호이월드를 즐겨보세요!" : "\n━━━━━━━━━━━━\n▶ 다음 교육: " + (gmRequest.chapter + 1) + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter].title;
+            replier.reply(gmSuccess); return;
         }
 
         if (msg === "/정령컨텐츠보상") {
@@ -32166,6 +32267,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/펜던트승급\s+\d+$/.test(command) || command === "승급할거임" || command === "쫄아뜸" ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || getStoneBoxOpenRequest(command) !== null || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
+        /^\/교육완료(?:[ \t]|$)/.test(command) ||
         /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
@@ -35010,6 +35112,149 @@ function buildServerRaidAccountIndex(data) {
         index[account.id] = { user: names[i], member: member, account: account };
     }
     return index;
+}
+
+// 교육 명령의 조회 인자와 마지막 챕터 숫자를 정확히 해석하는 함수
+function getGmEducationRequest(msg) {
+    if (/[\r\n]/.test(String(msg))) return null;
+    var match = String(msg).match(/^\/(교육완료|교육실적|교육)(?:[ \t]+([^\r\n]+))?$/);
+    if (!match) return null;
+    var input = (match[2] || "").trim();
+    if (match[1] !== "교육완료") return { action: match[1] === "교육실적" ? "stats" : "view", input: input };
+    var completion = input.match(/^(.+)[ \t]+(10|[1-9])$/);
+    return completion ? { action: "complete", input: completion[1].trim(), chapter: Number(completion[2]) } : { action: "invalid", input: input };
+}
+
+// 확정 교육 기록의 순서·처리 키·담당자 형식을 검증하는 함수
+function requireGmEducationStore(store) {
+    if (!store || store.version !== 1 || !store.users || typeof store.users !== "object" || Array.isArray(store.users)) throw new Error("교육 저장소 형식 오류");
+    var names = Object.keys(store.users), seen = {};
+    for (var i = 0; i < names.length; i++) {
+        var row = store.users[names[i]];
+        if (names[i].charAt(0) !== "$" || !row || typeof row.user !== "string" || !Array.isArray(row.chapters) || row.chapters.length > 10) throw new Error("교육 계정 기록 오류");
+        for (var j = 0; j < row.chapters.length; j++) {
+            var chapter = row.chapters[j];
+            if (!chapter || chapter.chapter !== j + 1 || typeof chapter.txId !== "string" || !chapter.txId || typeof chapter.gmId !== "string" || !chapter.gmId || typeof chapter.gmUser !== "string" || !chapter.gmUser || typeof chapter.completedAt !== "string" || !isFinite(Date.parse(chapter.completedAt)) || seen["$" + chapter.txId]) throw new Error("교육 챕터 기록 오류");
+            seen["$" + chapter.txId] = true;
+        }
+    }
+    return store;
+}
+
+// 회원 지급 영수증과 일치하는 확정 교육 진행도만 반환하는 함수
+function getGmEducationProgress(store, member, allowPending) {
+    var id = member && member.serverRaidAccount && member.serverRaidAccount.id;
+    var row = id && store.users["$" + id], chapters = row ? row.chapters : [];
+    var receipts = member && member.gmEducationRewards;
+    if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > 10)) throw new Error("교육 지급 영수증 형식 오류");
+    receipts = receipts || [];
+    if (receipts.length > chapters.length && (!allowPending || receipts.length !== chapters.length + 1)) throw new Error("교육 완료 원본이 지급 기록보다 부족합니다.");
+    for (var i = 0; i < receipts.length; i++) if (typeof receipts[i] !== "string" || !receipts[i]) throw new Error("교육 지급 영수증 값 오류");
+    for (var j = 0; j < chapters.length; j++) if (receipts[j] !== chapters[j].txId) throw new Error("교육 완료와 지급 기록 불일치");
+    return chapters.length;
+}
+
+// 동일 계정·챕터의 재시작 복구에 사용할 영속 요청을 검증하는 함수
+function requireGmEducationPending(pending) {
+    if (!pending || pending.version !== 1 || typeof pending.accountId !== "string" || !pending.accountId || typeof pending.user !== "string" || !pending.user || typeof pending.gmId !== "string" || !pending.gmId || typeof pending.gmUser !== "string" || !pending.gmUser || typeof pending.txId !== "string" || !pending.txId || typeof pending.at !== "string" || !isFinite(Date.parse(pending.at)) || typeof pending.chapter !== "number" || Math.floor(pending.chapter) !== pending.chapter || pending.chapter < 1 || pending.chapter > 10) throw new Error("교육 복구 요청 형식 오류");
+    return pending;
+}
+
+// 현재 계정 ID와 지급 영수증을 대조해 누락된 지급·완료만 적용하는 함수
+function applyGmEducationPending(data, store, pending) {
+    requireGmEducationStore(store); requireGmEducationPending(pending);
+    var accounts = buildServerRaidAccountIndex(data), account = accounts[pending.accountId];
+    if (!account) throw new Error("교육 대상 계정을 찾을 수 없어 복구를 중단했습니다.");
+    var member = account.member, count = getGmEducationProgress(store, member, true);
+    var row = store.users["$" + pending.accountId], receipts = member.gmEducationRewards || [];
+    var alreadyComplete = count === pending.chapter && row.chapters[count - 1].txId === pending.txId;
+    if (!alreadyComplete && count !== pending.chapter - 1) throw new Error("교육 복구 순서 오류");
+    if (receipts.length !== pending.chapter - 1 && receipts.length !== pending.chapter) throw new Error("교육 지급 영수증 순서 오류");
+    var paid = receipts[pending.chapter - 1] === pending.txId;
+    if ((receipts.length === pending.chapter && !paid) || (alreadyComplete && !paid)) throw new Error("교육 복구 지급 키 불일치");
+    if (alreadyComplete) {
+        var completed = row.chapters[count - 1];
+        if (completed.gmId !== pending.gmId || completed.gmUser !== pending.gmUser || completed.completedAt !== pending.at) throw new Error("교육 복구 담당자 불일치");
+    }
+    if (!paid) {
+        var bag = member.bag;
+        if (bag !== undefined && (!bag || typeof bag !== "object" || Array.isArray(bag))) throw new Error("교육 보상 가방 형식 오류");
+        var held = bag && bag[GLOBAL_CONFIG.gmEducation.rewardItem] !== undefined ? bag[GLOBAL_CONFIG.gmEducation.rewardItem] : 0;
+        requireSpiritRetirementCount(held); requireSpiritRetirementCount(held + 1);
+        if (!bag) member.bag = bag = {};
+        addItemToBag(bag, GLOBAL_CONFIG.gmEducation.rewardItem, 1);
+        receipts.push(pending.txId); member.gmEducationRewards = receipts;
+    }
+    if (!alreadyComplete) {
+        if (!row) row = store.users["$" + pending.accountId] = { user: account.user, chapters: [] };
+        row.chapters.push({ chapter: pending.chapter, txId: pending.txId, gmId: pending.gmId, gmUser: pending.gmUser, completedAt: pending.at });
+    }
+    return { memberChanged: !paid, storeChanged: !alreadyComplete, user: account.user };
+}
+
+// 정확한 닉네임·숫자 계정용 @닉네임·기존 내부 계정 ID로 대상을 찾는 함수
+function resolveGmEducationUser(data, input) {
+    if (input.charAt(0) === "@") return Object.prototype.hasOwnProperty.call(data.member, input.substring(1)) ? input.substring(1) : null;
+    if (Object.prototype.hasOwnProperty.call(data.member, input)) return input;
+    var accounts = buildServerRaidAccountIndex(data);
+    return Object.prototype.hasOwnProperty.call(accounts, input) ? accounts[input].user : null;
+}
+
+// 교육 상태와 다음 챕터를 현재 닉네임 장식으로 표시하는 함수
+function buildGmEducationStatus(store, data, user, context) {
+    var count = getGmEducationProgress(store, data.member[user]);
+    var text = "[" + getGuildMarbleRankLabel(user, context) + "] 님의 호월 교육\n━━━━━━━━━━━━\n📚 교육 진행: " + count + "/10\n";
+    if (count === 10) return text + "🎓 호월 교육 수료 · 10/10\n전체 챕터를 완료했습니다.\n교육은 계정당 1회만 받을 수 있습니다.";
+    text += count === 0 ? "🌱 교육 시작 전" : "✅ 완료 챕터: " + (count === 1 ? "1" : "1~" + count);
+    return text + "\n━━━━━━━━━━━━\n▶ 다음 교육: " + (count + 1) + "챕터 · " + GLOBAL_CONFIG.gmEducation.chapters[count].title + "\n📖 GM 매뉴얼: /교육 " + (count + 1);
+}
+
+// 현재 게임 명령과 선택 실습 기준을 포함한 공통 매뉴얼을 표시하는 함수
+function buildGmEducationManual(chapter) {
+    var row = GLOBAL_CONFIG.gmEducation.chapters[chapter - 1];
+    return "📚 호월 교육 · " + chapter + "/10\n" + row.emoji + " " + row.title + "\n━━━━━━━━━━━━\n" + row.intro + "\n🎁 완료 보상: " + GLOBAL_CONFIG.gmEducation.rewardItem + " 1개\n" + allsee + "📖 배울 내용\n• " + row.learn.join("\n• ") + "\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n" + row.commands.join("\n") + "\n━━━━━━━━━━━━\n✅ GM 확인\n" + row.check + "\n━━━━━━━━━━━━\n" + row.note + "\n재화·장비가 없으면 설명·조회·예시로 교육해요. 구매·강화·가입·거래는 필수가 아니에요." + (chapter === 10 ? "\n🎓 이 챕터까지 완료하면 수료! 추가 수료 보상은 없어요." : "");
+}
+
+// 실제 담당 챕터로만 GM별 인원과 횟수·공동 순위를 계산하는 함수
+function buildGmEducationStats(store, data, target, context, all) {
+    var accounts = buildServerRaidAccountIndex(data), names = Object.keys(store.users), gmRows = {}, total = 0, active = 0, finished = 0;
+    for (var i = 0; i < names.length; i++) {
+        var userRow = store.users[names[i]], chapters = userRow.chapters;
+        if (accounts[names[i].substring(1)]) getGmEducationProgress(store, accounts[names[i].substring(1)].member);
+        if (!chapters.length) continue;
+        if (chapters.length === 10) finished++; else active++;
+        total += chapters.length;
+        for (var j = 0; j < chapters.length; j++) {
+            var entry = chapters[j], key = "$" + entry.gmId;
+            if (!gmRows[key]) gmRows[key] = { id: entry.gmId, name: accounts[entry.gmId] ? accounts[entry.gmId].user : entry.gmUser, count: 0, users: {} };
+            gmRows[key].count++;
+            if (!gmRows[key].users[names[i]]) gmRows[key].users[names[i]] = { name: accounts[names[i].substring(1)] ? accounts[names[i].substring(1)].user : userRow.user, chapters: [] };
+            gmRows[key].users[names[i]].chapters.push(entry.chapter);
+        }
+    }
+    if (!all) {
+        var member = data.member[target], id = member.serverRaidAccount && member.serverRaidAccount.id, gm = id && gmRows["$" + id];
+        var header = "[" + getGuildMarbleRankLabel(target, context) + "] 님의 교육 실적\n━━━━━━━━━━━━\n";
+        if (!gm) return header + "📚 완료 챕터: 0회\n👥 교육 인원: 0명\n아직 교육 실적이 없습니다.";
+        var students = Object.keys(gm.users).map(function (key) { return gm.users[key]; });
+        students.sort(function (a, b) { return a.name.localeCompare(b.name); });
+        var lines = [];
+        for (var s = 0; s < students.length; s++) lines.push((s + 1) + ". [" + (data.member[students[s].name] ? getGuildMarbleRankLabel(students[s].name, context) : students[s].name) + "] · " + students[s].chapters.join(", ") + "챕터 · " + students[s].chapters.length + "회");
+        return header + "📚 완료 챕터: " + gm.count + "회\n👥 교육 인원: " + students.length + "명\n━━━━━━━━━━━━\n유저별 담당 챕터는 전체보기에서 확인하세요.\n" + allsee + "📋 교육 기록\n━━━━━━━━━━━━\n" + lines.join("\n");
+    }
+    var rows = Object.keys(gmRows).map(function (key) { return gmRows[key]; });
+    rows.sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
+    var summary = "📊 호월 교육 전체 실적\n━━━━━━━━━━━━\n👥 전체 교육 인원: " + (active + finished) + "명\n📖 교육 진행 중: " + active + "명\n🎓 교육 수료: " + finished + "명\n📚 완료 챕터: " + total + "회\n━━━━━━━━━━━━\n";
+    if (!rows.length) return summary + "아직 교육 실적이 없습니다.";
+    var full = [], top = [], rank = 0;
+    for (var r = 0; r < rows.length; r++) {
+        if (r === 0 || rows[r].count !== rows[r - 1].count) rank = r + 1;
+        var tied = (r > 0 && rows[r].count === rows[r - 1].count) || (r + 1 < rows.length && rows[r].count === rows[r + 1].count);
+        var label = accounts[rows[r].id] ? getGuildMarbleRankLabel(accounts[rows[r].id].user, context) : rows[r].name;
+        var line = (tied ? "공동 " : "") + rank + "등 [" + label + "] · " + rows[r].count + "회 · 교육 " + Object.keys(rows[r].users).length + "명";
+        full.push(line); if (rank <= 3) top.push(line);
+    }
+    return summary + top.join("\n") + "\n" + allsee + "📋 전체 GM 교육 실적\n━━━━━━━━━━━━\n" + full.join("\n");
 }
 
 // 길드마블의 실행 명령과 잘못된 인수를 구분하는 함수

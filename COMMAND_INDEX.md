@@ -22,6 +22,32 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /교육 · /교육완료 · /교육실적
+
+Status: VERIFIED
+
+## Files and Commands
+
+- `main.js`: `GLOBAL_CONFIG.gmEducation`, 교육 요청/원본 검증·진행·보상·매뉴얼·실적 함수. `Info.js`: `/내정보` 레벨 다음 교육 상태 한 줄과 경로별 읽기 캐시.
+- 기존 `isMaster` 판정과 허용 방을 유지한다. Admin/일반 사용자에게 교육 권한을 추가하지 않는다.
+- `/교육`: GM 안내, `/교육 1`~`10`: 공통 매뉴얼, `/교육 아이디`: 진행/다음 챕터. 숫자 계정은 `/교육 @닉네임` 또는 기존 `serverRaidAccount.id`로 구분한다. 공백 닉네임도 전체 이름으로 조회한다.
+- `/교육완료 아이디 챕터번호`: 마지막 정수 1~10과 그 앞의 전체 닉네임을 분리. 다음 챕터만 허용하며 재완료·순서 건너뛰기·추가 안내 문구는 지급하지 않는다. 계정당 총 10개 챕터, 챕터당 `다이아상자💎(소)` 1개, 수료 추가 보상 없음.
+- `/교육실적`, `/교육실적 GM아이디`, `/교육실적 전체`: 확정 챕터만 집계. 담당 GM 교대·닉변에도 내부 계정 ID를 유지하며 전체 인원은 중복 제외. 횟수 내림차순·동률 공동순위·닉네임 정렬. 매뉴얼/상세 실적은 기존 `allsee`, 빈 실적에는 빈 전체보기를 붙이지 않는다.
+- 실제 게임 명령·권한·소모 조건은 그대로다. 강화·구매·가입·거래를 강제하거나 자동으로 교육 완료하지 않는다. 교육 초기화·별도 타이머 없음.
+
+## Helpers and Save Flow
+
+- `getGmEducationRequest`, `resolveGmEducationUser`, `requireGmEducationStore`, `getGmEducationProgress`, `requireGmEducationPending`, `applyGmEducationPending`, `buildGmEducationStatus`, `buildGmEducationManual`, `buildGmEducationStats`.
+- 교육 원본 `gmEducation.json`: 계정 ID별 최대 10개 확정 챕터/담당 GM/처리 키/시각. 실적은 이 기록에서 계산하며 별도 집계 파일을 중복 저장하지 않는다.
+- 가방과 동일한 `member.json` 저장에 `member.gmEducationRewards` 최대 10개 처리 키를 남겨 재시작 후 재지급을 막는다. 기존 안정 ID가 없으면 ID만 먼저 확정한다.
+- `gmEducationPending.json` 영속 요청 확보 → 가방+지급 영수증 저장 확정 → 교육 원본 저장 확정 → pending 삭제. 응답은 이후 출력한다. 중단된 요청은 다음 Main 응답 전처리에서 최초 계정/GM/처리 키로 누락 단계만 복구한다. 이미 사용한 보상을 다시 주지 않는다.
+- 두 GM의 완료 요청은 기존 쓰기 흐름 잠금으로 직렬화한다. 분리 회원의 레이드/운영 로그 슬롯은 그대로 유지한다. pending/원본의 게시 중단 `.rollback`도 기존 파일 검증 후 복구한다.
+- PROD `/sdcard/호이랜드/`, DEV `/sdcard/호이랜드_dev/`의 교육/요청/회원 파일은 분리한다. 최초 전용 파일 미생성은 미진행, 기존 잘못된 JSON/형식·영수증 불일치는 오류로 남기며 빈 데이터로 덮지 않는다.
+- 조회는 무저장. `/내정보`는 교육 파일의 수정 시각/크기별 캐시를 사용하고, 지급 영수증과 일치한 완료 수만 표시한다. 복구 대기 중에는 이전 확정 수만 노출한다.
+- 검증: `tools/test_gm_education.js`, `tools/test_gm_education_rhino.js`, `tools/gm_education_validation.md`.
+
+---
+
 # /길드마블 · /마블판 · /마블가이드 · 길드마블 진행
 
 Status: VERIFIED
@@ -1666,6 +1692,7 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `getTitle`
 - local branch helper `hasValidPet`
+- `requireGmEducationStore`, `getGmEducationProgress`: Main과 같은 교육 원본/지급 영수증 검증
 
 ## Data Usage
 
@@ -1673,6 +1700,7 @@ Status: VERIFIED
 - `petData[sender]`
 - `titleData.member[sender]`
 - `homeData[sender]`
+- `gmEducation.json`, `member.gmEducationRewards`: 확정 교육 수. 레벨 다음 한 줄 표시, 환경별 파일 수정 시각/크기 캐시, 조회 저장 없음
 
 ## Save Flow
 

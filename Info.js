@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json" },
     petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, royalPercent: 10, arcanaPercent: 15, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
     messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main과 같은 환경별 필터 메모리 공유 키
     doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
@@ -185,6 +186,7 @@ const GLOBAL_CONFIG = {
 };
 //랭크.txt 로드, 오류로그 세이브용
 var sdcard = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
+var gmEducationInfoCache = {};
 const DATA_ROOT_PATH = "/sdcard/호이랜드/";
 const DEV_DATA_ROOT_PATH = "/sdcard/호이랜드_dev/";
 var folder = new java.io.File(sdcard, "호이랜드");
@@ -854,6 +856,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (!data.member || !data.member[sender]) {
 				return;
 			}
+			var educationInfoPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.gmEducation.fileName);
+			var educationInfoFile = new java.io.File(educationInfoPath);
+			var educationInfoStamp = educationInfoFile.exists() ? String(educationInfoFile.lastModified()) + ":" + educationInfoFile.length() : "missing";
+			var educationCached = gmEducationInfoCache[educationInfoPath];
+			if (!educationCached || educationCached.stamp !== educationInfoStamp) {
+				var educationInfoStore = educationInfoFile.exists() ? requireGmEducationStore(loadJsonFile(educationInfoPath)) : { version: 1, users: {} };
+				educationCached = { stamp: educationInfoStamp, store: educationInfoStore };
+				gmEducationInfoCache[educationInfoPath] = educationCached;
+			}
+			var educationInfoPending = new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.gmEducation.pendingName)).exists();
+			var educationInfoCount = getGmEducationProgress(educationCached.store, data.member[sender], educationInfoPending);
 
 			let homeData = loadJsonFile(homeDataFile) || {};
 			homeData = initSweetHomeUser(homeData, sender);
@@ -948,6 +961,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				"\n" +
 				"• 모험가 칭호: " + getInfoAdventureLevelTitle(memberInfo.lv) + "\n" +
 				"• 레벨: " + (memberInfo.lv || 1) + "\n" +
+				"• 호월 교육: " + (educationInfoCount === 10 ? "🎓 수료 · 10/10" : "📚 " + educationInfoCount + "/10 · 다음 " + (educationInfoCount + 1) + "챕터") + "\n" +
 				"• 가입일: " +
 				formatDate(memberInfo.join) +
 				"\n" +
@@ -2056,6 +2070,35 @@ function createContextReplier(replier, ctx) {
 			return replier.reply(ctx.header(formatNicknameRankMessage(message)));
 		}
 	};
+}
+
+// Main과 동일한 교육 원본 검증 및 지급 영수증 대조 함수
+function requireGmEducationStore(store) {
+    if (!store || store.version !== 1 || !store.users || typeof store.users !== "object" || Array.isArray(store.users)) throw new Error("교육 저장소 형식 오류");
+    var names = Object.keys(store.users), seen = {};
+    for (var i = 0; i < names.length; i++) {
+        var row = store.users[names[i]];
+        if (names[i].charAt(0) !== "$" || !row || typeof row.user !== "string" || !Array.isArray(row.chapters) || row.chapters.length > 10) throw new Error("교육 계정 기록 오류");
+        for (var j = 0; j < row.chapters.length; j++) {
+            var chapter = row.chapters[j];
+            if (!chapter || chapter.chapter !== j + 1 || typeof chapter.txId !== "string" || !chapter.txId || typeof chapter.gmId !== "string" || !chapter.gmId || typeof chapter.gmUser !== "string" || !chapter.gmUser || typeof chapter.completedAt !== "string" || !isFinite(Date.parse(chapter.completedAt)) || seen["$" + chapter.txId]) throw new Error("교육 챕터 기록 오류");
+            seen["$" + chapter.txId] = true;
+        }
+    }
+    return store;
+}
+
+// 회원 지급 영수증과 일치하는 확정 교육 진행도만 반환하는 함수
+function getGmEducationProgress(store, member, allowPending) {
+    var id = member && member.serverRaidAccount && member.serverRaidAccount.id;
+    var row = id && store.users["$" + id], chapters = row ? row.chapters : [];
+    var receipts = member && member.gmEducationRewards;
+    if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > 10)) throw new Error("교육 지급 영수증 형식 오류");
+    receipts = receipts || [];
+    if (receipts.length > chapters.length && (!allowPending || receipts.length !== chapters.length + 1)) throw new Error("교육 완료 원본이 지급 기록보다 부족합니다.");
+    for (var i = 0; i < receipts.length; i++) if (typeof receipts[i] !== "string" || !receipts[i]) throw new Error("교육 지급 영수증 값 오류");
+    for (var j = 0; j < chapters.length; j++) if (receipts[j] !== chapters[j].txId) throw new Error("교육 완료와 지급 기록 불일치");
+    return chapters.length;
 }
 
 // 기존 아이디 외곽 괄호와 무쌍 접두어를 화면에서 각각 한 번만 출력하는 함수
