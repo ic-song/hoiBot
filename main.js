@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.682"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.683"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -35304,13 +35304,20 @@ function executeGuildMarbleRequest(store, context, request, newId) {
         else if (action === "main" && game && game.state !== "RECRUITING") result.text = buildGuildMarblePrizeLines({ fee: game.fee, total: game.fee * config.limits.players, commission: game.commission, pool: game.pool, prizes: game.prizes });
         return result;
     }
-    if (game && game.state === "SETTLING") { result.settlement = true; return result; }
     var guild = row ? context.guildData.guilds[row.guildId] : context.guild && context.guild.guild;
     var master = !!(guild && guild.members && guild.members[context.sender] && guild.master === context.sender);
     if (["fee", "recruit", "cancel", "stop"].indexOf(action) !== -1 && !master) { result.text = "길드마스터만 사용할 수 있습니다."; return result; }
     if (action === "fee") {
-        if (game) { result.text = "모집·경기·정산 중에는 참가비를 바꿀 수 없습니다."; return result; }
         if (!isFinite(request.units) || request.units < config.limits.minFee || request.units > config.limits.maxFee) { result.text = "참가비는 1~10억 포인트로 설정해주세요.\n예) /마블참가비 3"; return result; }
+        if (game) { result.text = "모집·경기·정산 중에는 참가비를 바꿀 수 없습니다."; return result; }
+    }
+    if (game && game.state === "SETTLING") {
+        // 정산 재시도도 원래 명령의 역할과 진행 방을 통과한 두 명령만 허용한다.
+        if (action === "roll" && getGuildMarblePlayerIndex(game, context.accountId) === -1) { result.text = "이번 경기의 참가자만 사용할 수 있습니다."; return result; }
+        if (action === "recruit" && !context.isGroupChat) { result.text = "참가 모집은 길드원과 함께 있는 단체방에서 진행해주세요."; return result; }
+        result.settlement = action === "roll" || action === "recruit";
+        if (!result.settlement) result.text = "⏳ 정산 처리 중에는 기존 참가자의 /마블굴리기 또는 길드마스터의 /마블시작으로 정산을 다시 확인해주세요.";
+        return result;
     }
     if (action === "recruit" || action === "fee") {
         if (!context.guild) { result.text = "길드에 가입한 뒤 이용해주세요."; return result; }
@@ -35478,7 +35485,7 @@ function buildGuildMarbleProgress(row, game, context, text, completed) {
             var result = game.results[rank], participant = game.players[result.index];
             sections.push((game.kind === "REFUND" ? "💰" : config.medals[rank]) + " " + getGuildMarblePlayerLabel(participant, result.index, context) + (game.kind === "REFUND" ? "" : "\n" + (participant.alive ? "👑 총자산 · " + numberWithCommas(result.assets) + " 골드" : "💥 파산 탈락")) + "\n💰 " + numberWithCommas(result.amount) + " 포인트 " + (participant.paid ? game.kind === "REFUND" ? "환급 완료" : "지급 완료" : "⏳ 정산 처리 중"));
         }
-        if (!completed) sections.push("처리 확인 후 /마블굴리기 또는 /마블시작으로 미처리 정산을 이어갈 수 있어요.");
+        if (!completed) sections.push("처리 확인 후 기존 참가자는 /마블굴리기, 길드마스터는 /마블시작으로 미처리 정산을 이어갈 수 있어요.");
     } else {
         var turn = getGuildMarbleTurnIndex(game), round = Math.floor(game.slot / config.limits.players) + 1;
         var order = round % 2 ? "[1] → [2] → [3] → [4]" : "[4] → [3] → [2] → [1]";

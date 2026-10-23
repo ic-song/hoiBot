@@ -29,7 +29,7 @@ Status: VERIFIED
 ## Files
 
 - `main.js`: `GLOBAL_CONFIG.guildMarble`, `getGuildMarbleRequest`, 응답 전처리의 길드마블 분기, 순수 경기/출력 함수.
-- 검증: `tools/test_guild_marble.js`, `tools/test_guild_marble_rhino.js`.
+- 검증: `tools/test_guild_marble.js`, `tools/test_guild_marble_settlement.js`, `tools/test_guild_marble_rhino.js`.
 
 ## Commands and Behavior
 
@@ -56,6 +56,7 @@ Status: VERIFIED
 - 기존 7인수 `response`와 쓰기 흐름 잠금 사용. 회원/펫/길드 조회 후 순수 함수에 전달. 일반 턴은 `writeMemberSplitSlot`으로 경기 파일만 저장. 조회·잘못된 입력은 저장 없음.
 - 참가비·상금·환급(초기 계정 ID 발급 포함)은 `guildMarblePending.json`에 회원/경기 원문 보존 → 기존 `saveJsonFile` 회원 저장 → 경기 게시 → 복구 기록 해제. 다음 명령에서 중단 게시를 먼저 원문 복구. 기존 회원 분리 상세/운영 로그 슬롯 변경은 차단한다.
 - 정산 순위는 지급보다 먼저 확정하고 재시작·미처리 재시도에서 재추첨/중복 지급하지 않는다. 정산 대기 중 새 모집/환급 전환 차단. 응답 전송 실패는 확정된 저장을 되돌리지 않는다.
+- 정산 재시도는 원래 방의 길드마스터 `/마블시작` 또는 기존 참가자 `/마블굴리기`만 허용한다. 탈락·탈퇴 참가자도 재시도 가능하며, 그 외 명령·잘못된 수량·권한 없는 입력은 순위·포인트·파일을 변경하지 않는다. 길드마스터 권한과 참가비 범위 검사는 정산 분기보다 먼저 적용한다.
 - 파일은 `resolveActiveDataPath`로 PROD `/sdcard/호이랜드/`와 DEV `/sdcard/호이랜드_dev/` 분리. 존재하는 잘못된 저장소를 새 빈 경기로 대체하지 않는다.
 
 ---

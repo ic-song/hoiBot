@@ -184,7 +184,9 @@ function runTests() {
     group('이미 지급한 참가자는 건너뛰고 미지급만 처리·정산 중 환급 전환 불가', () => {
         recruit();const g=game();c.prepareGuildMarbleSettlement(g,'PAYOUT');const paid=g.results[0];g.players[paid.index].paid=true;
         const d=f.read(),user=g.players[paid.index].user;d.member[user].point+=paid.amount;f.write(d);setGame(g);const before=d.member[user].point;
-        c.Math.random=()=>{throw Error('no settlement lottery');};footer(run('/마블중단','master'));assert.equal(f.read().member[user].point,before);assert.equal(store().guilds.$g.last.kind,'PAYOUT');
+        c.Math.random=()=>{throw Error('no settlement lottery');};const pending=f.raw(marblePath),points=f.raw(memberPath);
+        footer(run('/마블중단','master'));assert.equal(f.raw(marblePath),pending);assert.equal(f.raw(memberPath),points);assert.equal(saves().length,0);
+        footer(run('/마블굴리기','a'));assert.equal(f.read().member[user].point,before);assert.equal(store().guilds.$g.last.kind,'PAYOUT');
         assert.equal(Object.values(f.read().member).reduce((t,m)=>t+m.point,0),9*2e10-4e7);
     });
     group('삭제 계정과 같은 닉네임의 새 계정에 오지급하지 않고 정산 대기', () => {
