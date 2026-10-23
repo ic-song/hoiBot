@@ -5458,6 +5458,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `buildSpiritRetirementPlan`, `applySpiritRetirementPlan`
+- `countSpiritRetirementSources`, `buildSpiritRetirementCleanupPlan`, `buildServerRaidAccountIndex`
 - `getSpiritCharmOpenRequest`, `openSpiritCharmItem`
 - `getSpiritOpenedCharm`, `requireSpiritRetirementCount`
 - `calculateItemInfoAll`, `calculateItemInfo`, `isNeverSellItemWithList`
@@ -5465,7 +5466,7 @@ Status: VERIFIED
 ## Data Usage
 
 - `GLOBAL_CONFIG.spiritRetirement`: 공식 아이템명, 일회성 보상 기록·백업명, 이벤트박스 치킨 100개·야구 치킨 2개
-- `petData[사용자].elemental`: 산정 원본만 보존. 실전 매력 계산·정보창·순위·신규 지급에서 제외
+- `petData[사용자].elemental`: 보상 확정 후 기록·백업·현재 계정과 일치하는 원본만 삭제. 실전 매력 계산·정보창·순위·신규 지급에서 제외
 - `data.member[사용자].bag`: 매력 1당 해당 보상 아이템 1개. 지급 자체로 매력 증가 없음
 - `data.member[사용자].spiritCharm`: 오픈한 캐슬·레이드 매력. 기존 퍼센트 보너스 적용 전 합산
 - `data.spiritRetirement20261023`: 전체 보상 완료와 대상별 등급·강화·보상량 기록
@@ -5474,8 +5475,11 @@ Status: VERIFIED
 
 - MASTER가 정확히 `/정령컨텐츠보상` 입력: 기존 방·정지·레이드 제한 통과 후 전체 회원과 펫 원본을 `spirit_retirement_before_20261023_<UUID>.json`으로 안전 저장·재읽기 대조한다. 재시도마다 새 백업을 만들고 완료 기록에 경로를 남긴다.
 - 전체 대상의 등급·강화·안전 정수 수량을 먼저 확인하고, 가방 지급·강화확률뽑기 전량 삭제·전체 완료 기록을 한 번의 `saveJsonFile(data, filePath)`로 확정한다. 실패 시 기존 저장 트랜잭션으로 복구하며, 재시작 후 완료 기록이 있으면 재지급하지 않는다.
+- 지급 저장을 먼저 확정하고 별도 저장 단위로 정령 원본만 `saveJsonFile(spiritPets, memberPetPath)`에서 삭제한다. 삭제 실패·중단 후 재실행은 정리만 수행하며, 이미 지급된 가방·오픈 매력·완료 기록은 바꾸지 않는다. 완료 응답 실패도 확정 저장을 취소하지 않는다.
+- 기지급자는 기록의 현재 환경 백업을 재읽고 상세 지급량을 원본과 대조한다. 기존 계정 ID로 닉변을 확인하거나 ID가 없으면 동일 이름·원본 일치를 확인한 경우만 삭제한다. 계정 불일치·변경 원본·미지급 원본은 보존하고 남은 건수를 안내한다. 백업이나 기록이 잘못되면 삭제 없이 기존 오류 흐름을 따른다.
+- 전체 정리 후 반복 실행은 백업·회원·펫 무저장이며, 보상 전 백업과 재지급 방지 기록은 유지한다. 분리 회원 저장의 레이드·운영 로그 슬롯도 유지한다.
 - 두 매력 오픈 명령은 정확한 양의 정수 수량만 사용한다. 보유량 초과·0·음수·소수·문자·추가 안내 문구는 아이템을 사용하지 않는다. 소모량과 영구 매력은 같은 회원 저장 단위다.
-- 세 명령은 기존 단독 실행 잠금을 사용하며 DEV 컨텍스트의 백업·회원 저장은 DEV 경로로 분리한다.
+- 세 명령은 기존 단독 실행 잠금을 사용하며 DEV 컨텍스트의 백업·회원·펫 저장은 DEV 경로로 분리한다.
 - `/정령강화`, `/정령이름`, `/정령순위`, `/강화뽑기`, `/정령조합`, `/정령이름조합`, `/정령속성`, `/정령정보`, `/전체조합2`, `/정령패키지,` 실행 분기는 제거했다.
 - `ㅇㅇㅇ`·`/전체조합`의 정령 조각 조합만 종료하며 다른 오픈·판매 처리는 유지한다. 기존 정령상자·정령박스는 치킨을 지급한다. 복주머니의 지급 수량은 유지하고, 야구는 1개당 치킨 2개를 지급한다.
 - 이벤트박스는 현행 샵오픈·던전 입장권을 유지하면서 치킨 100개를 함께 지급한다. 호이패스·프리미엄·패키지의 강화확률뽑기 지급과 안내는 제거하며, 과거 패키지 구성에도 지급/안내 필터를 적용한다.

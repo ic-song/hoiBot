@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.683"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.684"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3929,22 +3929,45 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (msg === "/정령컨텐츠보상") {
             if (!isMaster(sender)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
             var spiritConfig = GLOBAL_CONFIG.spiritRetirement;
-            if (data[spiritConfig.ledgerKey] !== undefined) {
+            var spiritAlreadyPaid = data[spiritConfig.ledgerKey] !== undefined;
+            if (spiritAlreadyPaid) {
                 if (!data[spiritConfig.ledgerKey] || data[spiritConfig.ledgerKey].version !== spiritConfig.version || data[spiritConfig.ledgerKey].status !== "COMPLETE") throw new Error("정령 보상 완료 기록 오류");
-                replier.reply("정령 콘텐츠 보상은 이미 전체 지급 완료되었습니다.");
-                return;
             }
             var spiritPets = loadJsonFile(memberPetPath);
-            var spiritPlan = buildSpiritRetirementPlan(data, spiritPets);
-            var spiritBackupPath = resolveActiveDataPath(DATA_ROOT_PATH + spiritConfig.backupPrefix + String(java.util.UUID.randomUUID()) + ".json");
-            var spiritBackupText = JSON.stringify({ memberData: data, petData: spiritPets });
-            writeVerifiedJsonFile(spiritBackupPath, spiritBackupText, true);
-            var spiritBackup = loadJsonFile(spiritBackupPath);
-            if (JSON.stringify(spiritBackup) !== spiritBackupText) throw new Error("정령 보상 전 백업 확인 실패");
-            spiritPlan.backupPath = spiritBackupPath;
-            applySpiritRetirementPlan(data, spiritPlan);
-            saveJsonFile(data, filePath);
-            replier.reply("✅ 정령 콘텐츠 보상 완료\n대상 " + spiritPlan.users.length + "명\n캐슬매력 " + numberWithCommas(spiritPlan.castleTotal) + "개\n레이드매력 " + numberWithCommas(spiritPlan.raidTotal) + "개\n각 유저의 가방에 지급했어요. 아이템을 오픈하면 매력이 적용됩니다.");
+            if (spiritAlreadyPaid && countSpiritRetirementSources(spiritPets) === 0) {
+                replier.reply("✅ 정령 보상 지급과 원본 정리가 이미 완료되었습니다.\n보상은 다시 지급하지 않습니다.");
+                return;
+            }
+            var spiritBackup, spiritPlan = null;
+            if (!spiritAlreadyPaid) {
+                spiritPlan = buildSpiritRetirementPlan(data, spiritPets);
+                var spiritBackupPath = resolveActiveDataPath(DATA_ROOT_PATH + spiritConfig.backupPrefix + String(java.util.UUID.randomUUID()) + ".json");
+                var spiritBackupText = JSON.stringify({ memberData: data, petData: spiritPets });
+                writeVerifiedJsonFile(spiritBackupPath, spiritBackupText, true);
+                spiritBackup = loadJsonFile(spiritBackupPath);
+                if (JSON.stringify(spiritBackup) !== spiritBackupText) throw new Error("정령 보상 전 백업 확인 실패");
+                spiritPlan.backupPath = spiritBackupPath;
+                applySpiritRetirementPlan(data, spiritPlan);
+                saveJsonFile(data, filePath);
+                endDataSaveTransaction(); beginDataSaveTransaction(); // 지급 확정 후 정리 실패나 응답 오류로 지급을 되돌리지 않음
+            } else {
+                var spiritOriginalPath = data[spiritConfig.ledgerKey].backupPath;
+                if (typeof spiritOriginalPath !== "string") throw new Error("정령 보상 원본 백업 경로 오류");
+                spiritOriginalPath = resolveActiveDataPath(spiritOriginalPath);
+                var spiritExpectedPrefix = resolveActiveDataPath(DATA_ROOT_PATH + spiritConfig.backupPrefix);
+                if (spiritOriginalPath.indexOf(spiritExpectedPrefix) !== 0 || !/^[A-Za-z0-9-]+\.json$/.test(spiritOriginalPath.substring(spiritExpectedPrefix.length))) throw new Error("현재 환경의 정령 보상 백업이 아닙니다.");
+                spiritBackup = loadJsonFile(spiritOriginalPath);
+            }
+            var spiritCleanup = buildSpiritRetirementCleanupPlan(data, spiritPets, data[spiritConfig.ledgerKey], spiritBackup);
+            if (spiritCleanup.users.length > 0) {
+                for (var spiritCleanupIndex = 0; spiritCleanupIndex < spiritCleanup.users.length; spiritCleanupIndex++) delete spiritPets[spiritCleanup.users[spiritCleanupIndex]].elemental;
+                saveJsonFile(spiritPets, memberPetPath);
+                endDataSaveTransaction(); beginDataSaveTransaction(); // 정리 확정 후 응답 실패로 삭제를 취소하지 않음
+            }
+            var spiritMessage = spiritAlreadyPaid ? "✅ 정령 보상 원본 정리\n기존 보상은 다시 지급하지 않았습니다." : "✅ 정령 콘텐츠 보상 완료\n대상 " + spiritPlan.users.length + "명\n캐슬매력 " + numberWithCommas(spiritPlan.castleTotal) + "개\n레이드매력 " + numberWithCommas(spiritPlan.raidTotal) + "개\n각 유저의 가방에 지급했어요. 아이템을 오픈하면 매력이 적용됩니다.";
+            spiritMessage += "\n🧹 정령 원본 " + spiritCleanup.users.length + "명 정리 완료\n보상 아이템·오픈한 매력·재지급 방지 기록은 유지했습니다.";
+            if (spiritCleanup.remaining > 0) spiritMessage += "\n⚠️ 확인이 필요한 정령 원본 " + spiritCleanup.remaining + "건은 보존했습니다. 보상 기록·계정·백업 원본을 확인해주세요.";
+            replier.reply(spiritMessage);
             return;
         }
         var spiritCharmRequest = getSpiritCharmOpenRequest(msg);
@@ -47189,6 +47212,35 @@ function applySpiritRetirementPlan(data, plan) {
     var names = Object.keys(data.member);
     for (var j = 0; j < names.length; j++) if (data.member[names[j]].bag) delete data.member[names[j]].bag[config.removedItem];
     data[config.ledgerKey] = { version: config.version, status: "COMPLETE", completedAt: new Date().toISOString(), backupPath: plan.backupPath, users: plan.users, castleTotal: plan.castleTotal, raidTotal: plan.raidTotal };
+}
+
+// 보상 완료 후에도 남아 있는 정령 원본 필드 수를 읽는 함수
+function countSpiritRetirementSources(petData) {
+    if (!petData || typeof petData !== "object" || Array.isArray(petData)) throw new Error("정령 정리 펫 데이터 형식 오류");
+    var names = Object.keys(petData), count = 0;
+    for (var i = 0; i < names.length; i++) if (petData[names[i]] && Object.prototype.hasOwnProperty.call(petData[names[i]], "elemental")) count++;
+    return count;
+}
+
+// 지급 기록·원본 백업·현재 계정을 대조해 재지급 없이 삭제할 정령만 고르는 함수
+function buildSpiritRetirementCleanupPlan(data, petData, ledger, backup) {
+    var total = countSpiritRetirementSources(petData);
+    if (!ledger || ledger.version !== GLOBAL_CONFIG.spiritRetirement.version || ledger.status !== "COMPLETE" || !Array.isArray(ledger.users)) throw new Error("정령 보상 완료 상세 기록 오류");
+    if (!backup || !backup.memberData || !backup.petData) throw new Error("정령 보상 전 원본 백업을 확인할 수 없습니다.");
+    var expected = buildSpiritRetirementPlan(backup.memberData, backup.petData);
+    if (JSON.stringify(expected.users) !== JSON.stringify(ledger.users) || expected.castleTotal !== ledger.castleTotal || expected.raidTotal !== ledger.raidTotal) throw new Error("정령 보상 기록과 원본 백업이 일치하지 않습니다.");
+    var accounts = buildServerRaidAccountIndex(data), users = [], selected = {};
+    for (var i = 0; i < ledger.users.length; i++) {
+        var row = ledger.users[i], originalMember = backup.memberData.member[row.user];
+        var originalId = originalMember.serverRaidAccount && originalMember.serverRaidAccount.id; // 보상 당시의 변경되지 않는 계정 ID
+        var user = originalId && accounts[originalId] ? accounts[originalId].user : row.user; // ID로 닉변을 추적하고 ID가 없으면 기존 이름을 대조
+        var member = data.member[user], pet = petData[user];
+        if (!member || !pet || !Object.prototype.hasOwnProperty.call(pet, "elemental") || selected["$" + user]) continue;
+        if (originalId && (!member.serverRaidAccount || member.serverRaidAccount.id !== originalId)) continue;
+        if (JSON.stringify(pet.elemental) !== JSON.stringify(backup.petData[row.user].elemental)) continue;
+        users.push(user); selected["$" + user] = true;
+    }
+    return { users: users, remaining: total - users.length };
 }
 
 // 매력 아이템의 정확한 명령과 정수 수량만 해석하는 함수

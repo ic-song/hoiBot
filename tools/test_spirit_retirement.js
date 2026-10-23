@@ -12,7 +12,7 @@ function block(source, marker) {
 const configScope = { testRoom: 'test' }; for (let i = 1; i <= 100; i++) configScope['room' + i] = 'room' + i;
 vm.createContext(configScope); vm.runInContext(block(main, 'const GLOBAL_CONFIG = {') + ';this.config=GLOBAL_CONFIG;', configScope);
 const config = configScope.config, itemInfo = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data/itemInfo.json'), 'utf8'));
-const helpers = ['requireSpiritRetirementCount', 'buildSpiritRetirementPlan', 'applySpiritRetirementPlan', 'getSpiritCharmOpenRequest', 'openSpiritCharmItem', 'getSpiritOpenedCharm'];
+const helpers = ['requireSpiritRetirementCount', 'buildSpiritRetirementPlan', 'applySpiritRetirementPlan', 'countSpiritRetirementSources', 'buildSpiritRetirementCleanupPlan', 'getSpiritCharmOpenRequest', 'openSpiritCharmItem', 'getSpiritOpenedCharm'];
 const commandStart = main.indexOf('        if (msg === "/정령컨텐츠보상") {');
 const commandEnd = main.indexOf('        if (!isExcludedRequestMonitoring', commandStart);
 const command = main.slice(commandStart, commandEnd);
@@ -44,6 +44,10 @@ function runTests() {
         c.applySpiritRetirementPlan(data, plan);
         assert.equal(c.getSpiritOpenedCharm(data.member.synthetic).castleExp, 0);
         assert.deepEqual(JSON.parse(JSON.stringify(c.calculateItemInfo('elemental', 'synthetic', data, pets))), { battleExp: 0, raidExp: 0, castleExp: 0, message: '' });
+        const unopened = ['calculateCastleExp', 'calculateRaidExp'].map(n => c[n]('synthetic', data, pets, {}, {}, false, {}));
+        delete pets.synthetic.elemental;
+        assert.deepEqual(['calculateCastleExp', 'calculateRaidExp'].map(n => c[n]('synthetic', data, pets, {}, {}, false, {})), unopened);
+        assert.deepEqual(['calculateCastleExp', 'calculateRaidExp'].map(n => query[n]('synthetic', data, pets, {}, {}, false, {})), unopened);
         for (const [mode, item] of [['castleExp', config.spiritRetirement.castleItem], ['raidExp', config.spiritRetirement.raidItem]]) {
             const count = data.member.synthetic.bag[item];
             assert(c.openSpiritCharmItem(data, 'synthetic', { mode, count }).ok);
