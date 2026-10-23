@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.680"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.681"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -128,7 +128,7 @@ const PET_SKILL_LIST = [
     { name: "신성한 기도", grade: "A", rate: 0.4, effect: "하루 한 번 호월신에게 신성한 기도를 올립니다.\n5% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "약탈자", grade: "S", rate: 1.0, effect: "/미니펫대전 시 70% 확률로 상대의 1000만 포인트를 훔칩니다." },
     { name: "만렙헌터", grade: "S", rate: 1.1, effect: "/미니펫대전 시 15% 확률로 미니펫뽑기 1개 획득" },
-    { name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화, /정령강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
+    { name: "장인의 숨결", grade: "S", rate: 1.0, effect: "/펫강화 실패 시 7% 확률로 강화석이 소모되지 않습니다." },
     { name: "전투형 지휘관", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n길드마스터가 소드마스터가 아니어도 길드영지전에 참여할 수 있으며, 길드 전체 영지공격 가능 횟수가 5회 증가합니다." },
     { name: "기사단 증원", grade: "S", rate: 1.0, effect: "길드마스터 전용 스킬입니다.\n영지전에 참여 가능한 소드마스터 인원이 1명 추가됩니다." },
     { name: "타고난 장사꾼", grade: "S", rate: 1.0, effect: "자유시장 거래에 물품 등록 가능 건수가 +2건 늘어납니다." },
@@ -151,7 +151,7 @@ const PET_SKILL_LIST = [
     { name: "무쌍귀신", grade: "A", rate: 1.7, equipComment: "촹 촹 챙챙 슈슉 슈슉 윽! 악!", equipCommentNoColon: true, effect: "펫무쌍 대회 시작 시 개인 공격 횟수가 1회 증가합니다.\n펫무쌍 공격 보상 지급 시 포인트 1억을 추가로 획득합니다." },
     // { name: "기사도", grade: "A", rate: 1.8, effect: "전투 보조" },
     { name: "대머리 대장장이", grade: "A", rate: 1.7, effect: "/펫강화 성공 확률 5% 증가" },
-    { name: "꽃집 대장장이", grade: "A", rate: 1.7, effect: "/정령강화 성공 확률 5% 증가" },
+    { name: "꽃집 대장장이", grade: "A", rate: 1.7, effect: "정령 콘텐츠 종료로 효과가 종료되었습니다." },
 
     { name: "일일루틴", grade: "B", rate: 2.0, effect: "일일퀘스트 완료 시 100%로 포인트 1억을 획득합니다." },
     { name: "주간루틴", grade: "B", rate: 2.0, effect: "주간퀘스트 완료 시 100%로 포인트 10억을 획득합니다." },
@@ -787,7 +787,6 @@ const towerTips = [
     "특성 구원✨을 소지시 30만💕을 지원받습니다.",
     "특성 십원✨을 소지시 60만💕을 지원받습니다.",
     "펫 강화석⭐️으로 ‘/펫강화’로 펫을 성장시켜보세요!",
-    "정령 강화석🥀으로 ‘/정령강화’로 펫을 성장시켜보세요!",
     "펜던트 강화석📿은 펜던트 콘텐츠 전환을 위해 보관해주세요!",
     "조합이 번거로우신가요? '/전체조합'을 적어보세요",
     "'/정리'로 게임을 쉽게 할 수 있습니다.",
@@ -1000,6 +999,17 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    spiritRetirement: {
+        version: 1,
+        ledgerKey: "spiritRetirement20261023",
+        backupPrefix: "spirit_retirement_before_20261023_",
+        raidItem: "레이드매력👾(/레이드매력오픈 숫자)",
+        castleItem: "캐슬매력⚔️(/캐슬매력오픈 숫자)",
+        removedItem: "강화확률뽑기⚒️(/강화뽑기)",
+        replacementItem: "양념치킨🐔",
+        eventBoxCount: 100,
+        baseballCount: 2
+    },
     manualReset: {
         timeoutMs: 60000,
         entries: [
@@ -1221,7 +1231,6 @@ const GLOBAL_CONFIG = {
         hoiDailyRewards: [
             { name: "자동탐험권🌄", count: 1 },
             { name: "미니펫뽑기🐹(/미니펫오픈)", count: 2 },
-            { name: "강화확률뽑기⚒️(/강화뽑기)", count: 1 },
             { name: "럭키박스🍀(/럭키오픈)", count: 2 },
             { name: "미니펫대전리셋권🐹", count: 2 },
             { name: "펫먹이🍼", count: 100 },
@@ -1287,7 +1296,6 @@ const GLOBAL_CONFIG = {
                 { name: "잡템☠️", count: 20 },
                 { name: "양념치킨🐔", count: 10 },
                 { name: "럭키박스🍀(/럭키오픈)", count: 4 },
-                { name: "강화확률뽑기⚒️(/강화뽑기)", count: 2 },
                 { name: "캐슬대전리셋권🐶", count: 4 },
                 { name: "펫먹이특식🥡(/특식오픈)", count: 2 },
                 { name: "티어 승급티켓🎟", count: 4 },
@@ -3574,6 +3582,35 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
                 return;
             }
+        }
+
+        if (msg === "/정령컨텐츠보상") {
+            if (!isMaster(sender)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
+            var spiritConfig = GLOBAL_CONFIG.spiritRetirement;
+            if (data[spiritConfig.ledgerKey] !== undefined) {
+                if (!data[spiritConfig.ledgerKey] || data[spiritConfig.ledgerKey].version !== spiritConfig.version || data[spiritConfig.ledgerKey].status !== "COMPLETE") throw new Error("정령 보상 완료 기록 오류");
+                replier.reply("정령 콘텐츠 보상은 이미 전체 지급 완료되었습니다.");
+                return;
+            }
+            var spiritPets = loadJsonFile(memberPetPath);
+            var spiritPlan = buildSpiritRetirementPlan(data, spiritPets);
+            var spiritBackupPath = resolveActiveDataPath(DATA_ROOT_PATH + spiritConfig.backupPrefix + String(java.util.UUID.randomUUID()) + ".json");
+            var spiritBackupText = JSON.stringify({ memberData: data, petData: spiritPets });
+            writeVerifiedJsonFile(spiritBackupPath, spiritBackupText, true);
+            var spiritBackup = loadJsonFile(spiritBackupPath);
+            if (JSON.stringify(spiritBackup) !== spiritBackupText) throw new Error("정령 보상 전 백업 확인 실패");
+            spiritPlan.backupPath = spiritBackupPath;
+            applySpiritRetirementPlan(data, spiritPlan);
+            saveJsonFile(data, filePath);
+            replier.reply("✅ 정령 콘텐츠 보상 완료\n대상 " + spiritPlan.users.length + "명\n캐슬매력 " + numberWithCommas(spiritPlan.castleTotal) + "개\n레이드매력 " + numberWithCommas(spiritPlan.raidTotal) + "개\n각 유저의 가방에 지급했어요. 아이템을 오픈하면 매력이 적용됩니다.");
+            return;
+        }
+        var spiritCharmRequest = getSpiritCharmOpenRequest(msg);
+        if (spiritCharmRequest) {
+            var spiritCharmResult = openSpiritCharmItem(data, sender, spiritCharmRequest);
+            if (spiritCharmResult.ok) saveJsonFile(data, filePath);
+            replier.reply(spiritCharmResult.message);
+            return;
         }
 
         if (!isExcludedRequestMonitoring(room, msg) && isRapidUserRequest(sender)) {
@@ -9600,10 +9637,6 @@ replier.reply(
                                     count: 2
                                 },
                                 {
-                                    name: "강화확률뽑기⚒️(/강화뽑기)",
-                                    count: 1
-                                },
-                                {
                                     name: "럭키박스🍀(/럭키오픈)",
                                     count: 2
                                 },
@@ -12211,7 +12244,7 @@ replier.reply(
                                 item = "펫 강화석⭐";
                             } else if (chance < 0.160123) {
                                 // 8% 확률
-                                item = "정령 강화석🥀";
+                                item = GLOBAL_CONFIG.spiritRetirement.replacementItem;
                             } else if (chance < 0.275123) {
                                 // 11.5% 확률
                                 item = "잡템상자☠";
@@ -12687,31 +12720,6 @@ replier.reply(
                                     data.member[userId].bag["펫던전 입장권🌋"] += amount;
                                 }
                                 replier.reply(userId + "님에게 시펫던전 입장권🌋 " + amount + "개를 지급했습니다.");
-                            } else {
-                                replier.reply("유저 아이디를 확인해 주세요.");
-                            }
-                        } else {
-                            replier.reply("올바른 형식으로 입력해 주세요. 예: /시련10, 유저아이디");
-                        }
-                    }
-                }
-                if (msg.trim().startsWith("/강화,") || msg.trim().match(/^\/강화\d*,/)) {
-                    if (isMaster(sender)) {
-                        var parts = msg.match(/^\/강화(\d*)?,\s*(.+)$/); // 숫자(옵션)와 ID 추출
-                        if (parts) {
-                            var amount = parts[1] ? parseInt(parts[1], 10) : 1; // 숫자가 있으면 변환, 없으면 기본 1개
-                            var userId = parts[2].trim();
-                            if (amount <= 0) {
-                                replier.reply("지급 개수는 1개 이상이어야 합니다.");
-                                return;
-                            }
-                            if (data.member[userId] !== undefined) {
-                                if (data.member[userId].bag["강화확률뽑기⚒️(/강화뽑기)"] === undefined) {
-                                    data.member[userId].bag["강화확률뽑기⚒️(/강화뽑기)"] = amount;
-                                } else {
-                                    data.member[userId].bag["강화확률뽑기⚒️(/강화뽑기)"] += amount;
-                                }
-                                replier.reply(userId + "님에게 강화확률뽑기⚒️(/강화뽑기) " + amount + "개를 지급했습니다.");
                             } else {
                                 replier.reply("유저 아이디를 확인해 주세요.");
                             }
@@ -13436,8 +13444,7 @@ replier.reply(
                     }
                 }
                 if (
-                    (msg.startsWith("/정령패키지,") ||
-                        msg.startsWith("/탈모,") ||
+                    (msg.startsWith("/탈모,") ||
                         msg.startsWith("/탈모2,") ||
                         msg.startsWith("/크라운,") ||
                         msg.startsWith("/크라운2,") ||
@@ -13448,9 +13455,7 @@ replier.reply(
                     var userId = msg.split(",")[1].trim();
                     if (data.member[userId] !== undefined) {
                         var packageName = "";
-                        if (msg.startsWith("/정령패키지,")) {
-                            packageName = "정령패키지🥀(/정령패키지오픈)";
-                        } else if (msg.startsWith("/탈모,")) {
+                        if (msg.startsWith("/탈모,")) {
                             packageName = "탈모 패키지🧑‍🦲(/자라나라모리모리)";
                         } else if (msg.startsWith("/탈모2,")) {
                             packageName = "탈모 패키지2🧑‍🦲(/모리모리자라나라)";
@@ -13566,7 +13571,6 @@ replier.reply(
                                 "펫먹이🍼": 3000,
                                 "펫먹이특식🥡(/특식오픈)": 100,
                                 "펫먹이상자📦(/상자오픈)": 100,
-                                "정령강화확률UP🥀(50%)": 30,
                                 "미니펫뽑기🐹(/미니펫오픈)": 700,
                                 "펫스윗홈인테리어샵🖼️(/샵오픈)": 700
                             };
@@ -14078,7 +14082,7 @@ replier.reply(
                             }
                             let starterItems = {
                                 "티어 승급티켓🎟": 10,
-                                "정령 강화석🥀": 100,
+                                "양념치킨🐔": 100,
                                 "펫먹이특식🥡(/특식오픈)": 30,
                                 "펫먹이🍼": 700
                             };
@@ -14110,7 +14114,7 @@ replier.reply(
                             }
                             let starterItems = {
                                 "티어 승급티켓🎟": 10,
-                                "정령 강화석🥀": 100,
+                                "양념치킨🐔": 100,
                                 "펫먹이특식🥡(/특식오픈)": 35,
                                 "펫먹이🍼": 700
                             };
@@ -14143,7 +14147,7 @@ replier.reply(
                             let starterItems = {
                                 "티어 승급티켓🎟": 10,
                                 "펫 강화석⭐": 200,
-                                "정령 강화석🥀": 100,
+                                "양념치킨🐔": 100,
                                 "펫먹이특식🥡(/특식오픈)": 35,
                                 "펫먹이🍼": 700
                             };
@@ -14176,7 +14180,7 @@ replier.reply(
                             let starterItems = {
                                 "티어 승급티켓🎟": 10,
                                 "펫 강화석⭐": 200,
-                                "정령 강화석🥀": 200,
+                                "양념치킨🐔": 200,
                                 "펫먹이특식🥡(/특식오픈)": 35
                             };
                             for (let item in starterItems) {
@@ -14208,7 +14212,7 @@ replier.reply(
                             let starterItems = {
                                 "티어 승급티켓🎟": 10,
                                 "펫 강화석⭐": 200,
-                                "정령 강화석🥀": 200,
+                                "양념치킨🐔": 200,
                                 "펫먹이특식🥡(/특식오픈)": 35,
                                 "펫먹이🍼": 1000
                             };
@@ -14242,7 +14246,7 @@ replier.reply(
                                 "티어 승급티켓🎟": 10,
                                 "럭키박스🍀(/럭키오픈)": 30,
                                 "펫 강화석⭐": 200,
-                                "정령 강화석🥀": 200,
+                                "양념치킨🐔": 200,
                                 "펫먹이특식🥡(/특식오픈)": 35,
                                 "펫먹이🍼": 1000
                             };
@@ -14314,7 +14318,6 @@ replier.reply(
                                 "펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
                                 "경찰과 도둑🚨(/삐뽀삐뽀)": 50,
                                 "땅문서📜": 5,
-                                "강화확률뽑기⚒️(/강화뽑기)": 10
                             };
                             for (let item in starterItems) {
                                 addItemToBag(data.member[sender].bag, item, starterItems[item]);
@@ -14623,7 +14626,6 @@ replier.reply(
                                 "땅문서📜": 3,
                                 "돌멩이🪨": 3000,
                                 "🥕당근이세요?": 60,
-                                "강화확률뽑기⚒️(/강화뽑기)": 10
                             };
                             for (let item in starterItems) {
                                 addItem(data, sender, item, starterItems[item]);
@@ -14754,8 +14756,6 @@ replier.reply(
                             "펫던전 입장권🌋": 100,
                             "🥕당근이세요?": 50,
                             "펫 강화석⭐": 5000,
-                            "강화확률뽑기⚒️(/강화뽑기)": 50,
-                            "정령 강화석🥀": 7000,
                             "펫먹이🍼": 100000,
                             "전설의 돌맹이🗿": 50,
                             "다이아상자💎(/다이아상자오픈)": 500
@@ -14854,7 +14854,6 @@ replier.reply(
             "펫던전 입장권🌋": 100,
             "🥕당근이세요?": 50,
             "펫 강화석⭐": 5000,
-            "강화확률뽑기⚒️(/강화뽑기)": 50,
             "펫먹이🍼": 250000,
             "전설의 돌맹이🗿": 50,
             "다이아상자💎(/다이아상자오픈)": 1000
@@ -15192,7 +15191,7 @@ replier.reply(
 
                     var baseItems = {
                         "펫스윗홈인테리어샵🖼️(/샵오픈)": 30,
-                        "정령 강화석🥀": 10,
+                        "양념치킨🐔": GLOBAL_CONFIG.spiritRetirement.baseballCount,
                         "펫 강화석⭐": 10
                     };
 
@@ -15307,7 +15306,7 @@ replier.reply(
                     var baseMsg = "";
                     baseMsg += "📦 기본 지급 아이템 " + allsee + "\n\n";
                     baseMsg += "펫스윗홈인테리어샵🖼️(/샵오픈) " + totalBaseItems["펫스윗홈인테리어샵🖼️(/샵오픈)"] + "개\n";
-                    baseMsg += "정령 강화석🥀 " + totalBaseItems["정령 강화석🥀"] + "개\n";
+                    baseMsg += "양념치킨🐔 " + totalBaseItems["양념치킨🐔"] + "개\n";
                     baseMsg += "펫 강화석⭐ " + totalBaseItems["펫 강화석⭐"] + "개";
 
                     replier.reply(msgOut);
@@ -16059,7 +16058,7 @@ replier.reply(
                             "펫 강화석⭐": 700,
                             "전설의 돌맹이🗿": 8,
                             "펫먹이🍼": 10000,
-                            "정령 강화석🥀": 150,
+                            "양념치킨🐔": 150,
                             "주간상자🌼": 2
                         };
                         for (var item in rewardItems) {
@@ -17365,36 +17364,6 @@ replier.reply(
                     replier.reply(msgOut);
                 }
 
-                if (msg === "/정령조합" || /^\/정령조합\s+\d+$/.test(msg)) {
-                    if (castleSiegeFlag) {
-                        return;
-                    }
-                    let args = msg.split(" ");
-                    let shieldCombineCount = 1; // 기본값 1
-                    if (args.length > 1 && !isNaN(args[1])) {
-                        shieldCombineCount = parseInt(args[1]);
-                    }
-                    let requiredShields = 10 * shieldCombineCount;
-                    if (data.member[sender].bag["정령조각🥀"]) {
-                        if (data.member[sender].bag["정령조각🥀"] >= requiredShields) {
-                            data.member[sender].bag["정령조각🥀"] -= requiredShields;
-                            if (!data.member[sender].bag["정령 강화석🥀"]) {
-                                data.member[sender].bag["정령 강화석🥀"] = shieldCombineCount;
-                            } else {
-                                data.member[sender].bag["정령 강화석🥀"] += shieldCombineCount;
-                            }
-                            let msg = "" + shieldCombineCount + "개를 조합합니다\n[" + checkRank(data, petData, guildData, sender) + "] 님\n정령 강화석🥀 조합 " + shieldCombineCount + "개 완성";
-                            replier.reply(msg);
-                            if (data.member[sender].bag["정령조각🥀"] === 0) {
-                                delete data.member[sender].bag["정령조각🥀"];
-                            }
-                        } else {
-                            replier.reply("정령조각🥀 " + requiredShields + "개가 필요해요!");
-                        }
-                    } else {
-                        replier.reply("정령조각🥀 " + requiredShields + "개가 필요해요!");
-                    }
-                }
 
                 if (msg === "/고급티켓조합" || /^\/고급티켓조합\s+\d+$/.test(msg)) {
                     if (castleSiegeFlag) return;
@@ -17474,25 +17443,6 @@ replier.reply(
                 if (msg === "/반지이름조합") {
                     replier.reply("반지 이름변경권 조합은 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 /반지보상받기로 보상받을 수 있습니다.");
                     return;
-                }
-                if (msg === "/정령이름조합") {
-                    if (!castleSiegeFlag) {
-                        if (data.member[sender].bag["양념치킨🐔"] && data.member[sender].bag["양념치킨🐔"] >= 100) {
-                            data.member[sender].bag["양념치킨🐔"] -= 100;
-                            if (!data.member[sender].bag["정령 이름변경권📝(/정령이름)"]) {
-                                data.member[sender].bag["정령 이름변경권📝(/정령이름)"] = 1;
-                            } else {
-                                data.member[sender].bag["정령 이름변경권📝(/정령이름)"] += 1;
-                            }
-                            replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n정령 이름변경권📝 조합이 완료되었습니다");
-                            if (data.member[sender].bag["양념치킨🐔"] === 0) {
-                                delete data.member[sender].bag["양념치킨🐔"];
-                            }
-                            saveJsonFile(data, filePath);
-                        } else {
-                            replier.reply("양념치킨🐔 100개가 필요해요!");
-                        }
-                    }
                 }
                 if (msg === "/전체오픈" || msg === "/전체판매" || msg === "/전체조합" || msg === "/정리" || msg === "ㅇㅇㅇ") {
                     if (!castleSiegeFlag) {
@@ -18095,118 +18045,6 @@ replier.reply(
                     }
                 }
 
-                // 강화 아이템 확률 뽑기
-                function pickEnhanceItem() {
-                    var r = Math.random();
-
-                    if (r < 0.8) {
-                        return "정령강화확률UP🥀(30%)";
-                    } else if (r < 0.9) {
-                        return "펫강화확률UP🌟(20%)";
-                    } else {
-                        return "미니펫강화확률UP🐷(30%)";
-                    }
-                }
-
-                // 결과 정렬 + 출력
-                function formatResults(resultItems, rank) {
-                    var entries = [];
-
-                    for (var key in resultItems) {
-                        entries.push({
-                            name: key,
-                            count: resultItems[key]
-                        });
-                    }
-
-                    entries.sort(function (a, b) {
-                        function getGroup(name) {
-                            if (name.indexOf("펫강화확률UP") !== -1) return 1;
-                            if (name.indexOf("미니펫강화확률UP") !== -1) return 2;
-                            if (name.indexOf("정령") !== -1) return 3;
-                            return 99;
-                        }
-
-                        var gA = getGroup(a.name);
-                        var gB = getGroup(b.name);
-
-                        if (gA !== gB) return gA - gB;
-
-                        var numA = parseInt(a.name.replace(/[^0-9]/g, "")) || 0;
-                        var numB = parseInt(b.name.replace(/[^0-9]/g, "")) || 0;
-
-                        return numB - numA;
-                    });
-
-                    var msg2 = "";
-
-                    for (var i = 0; i < entries.length; i++) {
-                        msg2 += "🎁 " + entries[i].name + " x " + entries[i].count + "\n";
-                    }
-
-                    return "[" + rank + "] 님의 보상 결과:\n" + msg2.trim();
-                }
-
-                // 최근 결과 저장
-                var lastResults = {};
-
-                // /강화뽑기 명령어
-                if (msg === "/강화뽑기" || /^\/강화뽑기\s+\d+$/.test(msg)) {
-                    var args = msg.trim().split(" ");
-                    var openCount = 1;
-
-                    if (args.length >= 2) {
-                        openCount = parseInt(args[1], 10);
-
-                        if (isNaN(openCount) || openCount <= 0) {
-                            replier.reply("❌ 숫자를 올바르게 입력해주세요. 예: /강화뽑기 3");
-                            return;
-                        }
-                    }
-
-                    if (!data.member[sender].bag) data.member[sender].bag = {};
-
-                    var ticketCount = data.member[sender].bag["강화확률뽑기⚒️(/강화뽑기)"] || 0;
-
-                    if (ticketCount < openCount) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] " + sender + " 님\n" + "강화확률뽑기⚒️(/강화뽑기)가 부족합니다. (보유: " + ticketCount + "개)");
-                        return;
-                    }
-
-                    var resultItems = {};
-                    var rank = checkRank(data, petData, guildData, sender);
-
-                    for (var i = 0; i < openCount; i++) {
-                        var item = pickEnhanceItem();
-
-                        resultItems[item] = (resultItems[item] || 0) + 1;
-                    }
-
-                    // 티켓 차감
-                    removeItem(data, sender, "강화확률뽑기⚒️(/강화뽑기)", openCount);
-
-                    // 아이템 지급
-                    for (var key in resultItems) {
-                        if (!data.member[sender].bag[key]) data.member[sender].bag[key] = 0;
-
-                        data.member[sender].bag[key] += resultItems[key];
-                    }
-
-                    // 결과 저장
-                    lastResults[sender] = {
-                        rank: rank,
-                        items: resultItems
-                    };
-
-                    replier.reply("[" + rank + "] 님이 강화확률뽑기⚒️(/강화뽑기)를 " + openCount + "개 오픈합니다...");
-
-                    setTimeout(function () {
-                        var msg2 = formatResults(resultItems, rank);
-
-                        replier.reply(msg2);
-                    }, 800);
-                }
-
                 if (msg === "/캐슬오픈" || /^\/캐슬오픈\s+\d+$/.test(msg)) {
                     if (castleSiegeFlag) return;
                     var args = msg.trim().split(" ");
@@ -18382,12 +18220,12 @@ replier.reply(
                             if (data.member[sender].bag["정령상자🥀"] === 0) {
                                 delete data.member[sender].bag["정령상자🥀"];
                             }
-                            if (data.member[sender].bag["정령조각🥀"] === undefined) {
-                                data.member[sender].bag["정령조각🥀"] = totalQty;
+                            if (data.member[sender].bag["양념치킨🐔"] === undefined) {
+                                data.member[sender].bag["양념치킨🐔"] = totalQty;
                             } else {
-                                data.member[sender].bag["정령조각🥀"] += totalQty;
+                                data.member[sender].bag["양념치킨🐔"] += totalQty;
                             }
-                            let slotbagmsg = "정령상자🥀 " + openCount + "개 오픈!!\n[" + checkRank(data, petData, guildData, sender) + "] 님 정령조각🥀 " + totalQty + "개 획득";
+                            let slotbagmsg = "정령상자🥀 " + openCount + "개 오픈!!\n[" + checkRank(data, petData, guildData, sender) + "] 님 양념치킨🐔 " + totalQty + "개 획득";
                             replier.reply(slotbagmsg);
                         } else {
                             replier.reply("정령상자🥀가 필요합니다.");
@@ -18443,7 +18281,7 @@ replier.reply(
                                 delete data.member[sender].bag["랜덤박스💝"];
                             }
                             // 랜덤 아이템 목록
-                            var items2 = ["잡템상자☠", "정령상자🥀", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
+                            var items2 = ["잡템상자☠", "치킨상자🐔", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
                             let acquiredItems = {}; // 여러 아이템을 저장할 객체
                             for (let i = 0; i < openCount; i++) {
                                 // openCount만큼 반복
@@ -19529,34 +19367,6 @@ replier.reply(
                 if (msg.startsWith("/반지이름 ")) {
                     replier.reply("반지 이름변경은 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 /반지보상받기로 보상받을 수 있습니다.");
                     return;
-                }
-                if (msg.startsWith("/정령이름 ")) {
-                    if (castleSiegeFlag) {
-                        return;
-                    }
-                    if (!petData[sender].elemental) {
-                        replier.reply("정령 이름변경권📝 이(가) 없습니다.");
-                        return;
-                    }
-                    let itemName = "정령 이름변경권📝(/정령이름)";
-                    var newName = msg.substring("/정령이름 ".length);
-                    if (data.member[sender] && !data.member[sender].bag[itemName]) {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 " + itemName + "이 없습니다.");
-                        return;
-                    }
-                    if (newName.length <= 10) {
-                        petData[sender].elemental.name = newName;
-                        data.member[sender].bag[itemName] -= 1;
-                        if (data.member[sender].bag[itemName] < 1) {
-                            delete data.member[sender].bag[itemName];
-                        }
-                        saveJsonFile(petData, memberPetPath);
-                        saveJsonFile(data, filePath);
-                        replier.reply("정령이름 변경이 완료되었습니다.");
-                        return;
-                    } else {
-                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "]님 10글자까지 정령 이름 변경이 가능합니다.");
-                    }
                 }
                 if (msg.startsWith("/타이틀 ")) {
                     if (castleSiegeFlag) return;
@@ -21861,30 +21671,6 @@ replier.reply(
                     if (pendantDurabilityEditResult.ok) saveJsonFile(petData, memberPetPath);
                     return;
                 }
-                if (msg === "/정령강화" || /^\/정령강화\s+\d+$/.test(msg)) {
-                    if (castleSiegeFlag) return;
-                    if (!petData[sender]) {
-                        replier.reply("펫이 없습니다.");
-                        return;
-                    }
-                    var elementalUpgradeArgs = msg.trim().split(/\s+/);
-                    var elementalUpgradeCount = 1;
-                    if (elementalUpgradeArgs.length >= 2) {
-                        elementalUpgradeCount = parseInt(elementalUpgradeArgs[1], 10);
-                    }
-                    if (!elementalUpgradeCount || elementalUpgradeCount < 1) {
-                        replier.reply("사용법: /정령강화 [횟수]");
-                        return;
-                    }
-                    if (elementalUpgradeCount > 100) {
-                        replier.reply("정령강화는 최대 100회까지만 가능합니다. 100회로 진행합니다.");
-                        elementalUpgradeCount = 100;
-                    }
-                    replier.reply(runRepeatUpgrade("elemental", "elemental", sender, data, petData, guildData, petSkillData, elementalUpgradeCount));
-                    saveJsonFile(petData, memberPetPath);
-                    saveJsonFile(data, filePath);
-                    return;
-                }
                 if (msg === "/반지강화" || /^\/반지강화\s+\d+$/.test(msg)) {
                     replier.reply("반지강화는 펜던트 콘텐츠 전환으로 종료되었습니다.\n기존 반지 강화 매력은 /반지보상받기로 보상받을 수 있습니다.");
                     return;
@@ -22041,23 +21827,9 @@ replier.reply(
                         return;
                     }
                 }
-                if (msg.startsWith("/정령속성") && isMaster(sender)) {
-                    var regex = /^\/정령속성\s+([^\d]+?)\s+(\d+)$/;
-                    var matchFlag = msg.match(regex);
-                    if (matchFlag) {
-                        var memberName = matchFlag[1];
-                        var upgrade = parseInt(matchFlag[2]);
-                        petData[memberName].elemental.upgrade = upgrade;
-                    } else {
-                        replier.reply("올바른 명령어 형식을 사용해주세요. 예: /정령속성 [유저명] [강화수]");
-                    }
-                }
                 if (msg.startsWith("/반지속성") && isMaster(sender)) {
                     replier.reply("반지속성 수정은 펜던트 콘텐츠 전환으로 종료되었습니다.");
                     return;
-                } else if (msg == "/정령정보" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
-                    replier.reply(JSON.stringify(petData[sender].elemental));
-                    replier.reply(JSON.stringify(calculateItemInfo("elemental", sender, data, petData)));
                 } else if (msg == "/반지정보" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     replier.reply("반지정보 조회는 펜던트 콘텐츠 전환으로 종료되었습니다.");
                     return;
@@ -22278,27 +22050,6 @@ replier.reply(
                     recordDailyRewardPayout(data, "overall");
                     replier.reply(message);
                     noticeMsg(message);
-                }
-                if (msg == "/전체조합2") {
-                    var bag = data.member[sender].bag || {};
-                    var resultMsg = "🛠️ 전체 조합 결과\n";
-                    var hasResult = false;
-                    // 정령조각 → 정령강화석🥀
-                    var elementalCount = Math.floor((bag["정령조각🥀"] ? bag["정령조각🥀"] : 0) / 10);
-                    if (elementalCount > 0) {
-                        bag["정령조각🥀"] = bag["정령조각🥀"] - elementalCount * 10;
-                        if (bag["정령조각🥀"] <= 0) {
-                            delete bag["정령조각🥀"];
-                        }
-                        bag["정령 강화석🥀"] = (bag["정령 강화석🥀"] ? bag["정령 강화석🥀"] : 0) + elementalCount;
-                        resultMsg += "- 정령 강화석🥀 x " + elementalCount + "\n";
-                        hasResult = true;
-                    }
-                    if (hasResult) {
-                        replier.reply(resultMsg.trim());
-                    } else {
-                        replier.reply("❌ 조합 가능한 재료가 없습니다.");
-                    }
                 }
                 if (msg.startsWith("/시련의탑수정") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let regex = /^\/시련의탑수정\s+(.+?)\s+(\d+)$/;
@@ -31005,13 +30756,11 @@ replier.reply(
                                 "땅문서📜": 5,
                                 "미니펫뽑기🐹(/미니펫오픈)": 1000,
                                 "주간상자🌼": 1,
-                                "정령 강화석🥀": 300,
-                                "정령강화확률UP🥀(30%)": 20,
+                                "양념치킨🐔": 500,
                                 "펫스윗홈인테리어샵🖼️(/샵오픈)": 700,
                                 "펫먹이🍼": 500,
                                 "펫 강화석⭐": 300,
                                 "호이베이스볼⚾️(/투수던집니다)": 30,
-                                "양념치킨🐔": 200,
                                 "미니펫 강화석💫": 100,
                                 "길드공헌훈장🌟(/길드공헌 숫자)": 10
 
@@ -31054,7 +30803,6 @@ replier.reply(
                                 "미니펫뽑기🐹(/미니펫오픈)": 300,
                                 "1달러스토어🤑(/1일1후원)": 10,
                                 "주간상자🌼": 1,
-                                "정령강화확률UP🥀(30%)": 20,
                                 "펫스윗홈인테리어샵🖼️(/샵오픈)": 500,
                                 "확성기📢(/알림 내용 30자)": 5,
                                 "펫먹이🍼": 500,
@@ -31160,7 +30908,6 @@ replier.reply(
                         "미니펫뽑기🐹(/미니펫오픈)": 4000,
                         "펫스윗홈인테리어샵🖼️(/샵오픈)": 7000,
                         "호이베이스볼⚾️(/투수던집니다)": 200,
-                        "강화확률뽑기⚒️(/강화뽑기)": 50
 
                     };
 
@@ -32054,7 +31801,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/펜던트승급\s+\d+$/.test(command) || command === "승급할거임" || command === "쫄아뜸" ||
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || getStoneBoxOpenRequest(command) !== null || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
-        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" ||
+        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
@@ -39818,6 +39565,7 @@ function normalizePendantTransitionBagItem(bag, itemName) {
 
 // 상자 오픈과 관련된 아이템들을 사용자의 가방에 추가하는 함수
 function addItemToBag(bag, item, quantity) {
+    if (item === GLOBAL_CONFIG.spiritRetirement.removedItem) return;
     item = normalizePendantTransitionBagItem(bag, item);
     if (bag[item]) {
         bag[item] += quantity;
@@ -44666,7 +44414,7 @@ function formatPackageRewardSummary(rewards) {
     var parts = [];
     for (var i = 0; i < rewards.length; i++) {
         var reward = rewards[i]; // packageInfo.json에 등록된 보상 항목
-        if (!reward) continue;
+        if (!reward || reward.name === GLOBAL_CONFIG.spiritRetirement.removedItem) continue;
         if (reward.type === "point") {
             parts.push("포인트 x" + numberWithCommas(reward.count || 0));
         } else {
@@ -44821,6 +44569,7 @@ function formatPackageRewardLines(rewards) {
     var lines = [];
     for (var i = 0; i < rewards.length; i++) {
         var reward = rewards[i]; // 출력할 보상 항목
+        if (reward.name === GLOBAL_CONFIG.spiritRetirement.removedItem) continue;
         if (reward.type === "point") {
             lines.push("- 포인트 🅟" + numberWithCommas(reward.count));
         } else if (reward.type === "item") {
@@ -45869,6 +45618,7 @@ function applyPackageRewards(data, user, packageInfo, useCount) {
     var rewardLines = []; // 지급 결과 메시지 라인
     for (var i = 0; i < rewards.length; i++) {
         var reward = rewards[i]; // 지급할 보상 항목
+        if (reward.name === GLOBAL_CONFIG.spiritRetirement.removedItem) continue;
         var totalCount = (parseInt(reward.count, 10) || 0) * useCount; // 사용 수량을 곱한 최종 지급량
         if (reward.type === "item") {
             var packageRewardItemName = normalizeMiniPetRewardBoxItemName(reward.name); // 기존 구성품 이름도 신규 등급명으로 지급
@@ -46505,13 +46255,94 @@ function getPetModeCharmPercent(memberName, data, guildData, mode, excludeHomeBa
     return percent;
 }
 
+// 정령 보상 수량과 영구 매력을 안전한 음이 아닌 정수로 검증하는 함수
+function requireSpiritRetirementCount(value) {
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > 9007199254740991) throw new Error("정령 보상 수량 또는 매력 값 오류");
+    return value;
+}
+
+// 원본 정령 등급별 실전 매력으로 전체 보상 계획을 변경 없이 계산하는 함수
+function buildSpiritRetirementPlan(data, petData) {
+    if (!data || !data.member || !petData || typeof petData !== "object" || Array.isArray(petData)) throw new Error("정령 보상 원본 데이터 오류");
+    var config = GLOBAL_CONFIG.spiritRetirement;
+    var plan = { users: [], castleTotal: 0, raidTotal: 0 };
+    var names = Object.keys(data.member);
+    for (var i = 0; i < names.length; i++) {
+        var user = names[i], member = data.member[user];
+        if (!member || typeof member !== "object" || (member.bag !== undefined && (!member.bag || typeof member.bag !== "object" || Array.isArray(member.bag)))) throw new Error("정령 보상 가방 형식 오류");
+        var elemental = petData[user] && petData[user].elemental;
+        if (!elemental) continue;
+        var grade = itemInfoData.elemental[elemental.grade];
+        if (!grade) throw new Error("정령 보상 등급 오류: " + elemental.grade);
+        var upgrade = requireSpiritRetirementCount(elemental.upgrade);
+        var castle = requireSpiritRetirementCount(grade.castleExp + upgrade * grade.castleUpgradeExp); // 기존 캐슬 기본 매력 + 현재 등급의 강화 증가량
+        var raid = requireSpiritRetirementCount(grade.raidExp + upgrade * grade.raidUpgradeExp); // 기존 레이드 기본 매력 + 현재 등급의 강화 증가량
+        var bag = member.bag || {};
+        requireSpiritRetirementCount((bag[config.castleItem] === undefined ? 0 : bag[config.castleItem]) + castle);
+        requireSpiritRetirementCount((bag[config.raidItem] === undefined ? 0 : bag[config.raidItem]) + raid);
+        plan.castleTotal = requireSpiritRetirementCount(plan.castleTotal + castle);
+        plan.raidTotal = requireSpiritRetirementCount(plan.raidTotal + raid);
+        plan.users.push({ user: user, grade: elemental.grade, upgrade: upgrade, castle: castle, raid: raid });
+    }
+    return plan;
+}
+
+// 보상 가방과 전체 완료 기록을 같은 회원 저장 단위에 적용하는 함수
+function applySpiritRetirementPlan(data, plan) {
+    var config = GLOBAL_CONFIG.spiritRetirement;
+    if (data[config.ledgerKey] !== undefined) throw new Error("정령 보상은 한 번만 지급할 수 있습니다.");
+    for (var i = 0; i < plan.users.length; i++) {
+        var row = plan.users[i], member = data.member[row.user];
+        if (!member.bag) member.bag = {};
+        member.bag[config.castleItem] = (member.bag[config.castleItem] || 0) + row.castle;
+        member.bag[config.raidItem] = (member.bag[config.raidItem] || 0) + row.raid;
+    }
+    var names = Object.keys(data.member);
+    for (var j = 0; j < names.length; j++) if (data.member[names[j]].bag) delete data.member[names[j]].bag[config.removedItem];
+    data[config.ledgerKey] = { version: config.version, status: "COMPLETE", completedAt: new Date().toISOString(), backupPath: plan.backupPath, users: plan.users, castleTotal: plan.castleTotal, raidTotal: plan.raidTotal };
+}
+
+// 매력 아이템의 정확한 명령과 정수 수량만 해석하는 함수
+function getSpiritCharmOpenRequest(msg) {
+    var match = String(msg).match(/^\/(레이드매력오픈|캐슬매력오픈)(?:\s+(\d+))?$/);
+    if (!match) return null;
+    return { mode: match[1] === "레이드매력오픈" ? "raidExp" : "castleExp", count: match[2] === undefined ? 0 : Number(match[2]) };
+}
+
+// 가방 아이템을 1개당 해당 매력 1로 전환하고 실패 시 변경하지 않는 함수
+function openSpiritCharmItem(data, user, request) {
+    var config = GLOBAL_CONFIG.spiritRetirement, count = request.count;
+    var command = request.mode === "raidExp" ? "/레이드매력오픈" : "/캐슬매력오픈";
+    var item = request.mode === "raidExp" ? config.raidItem : config.castleItem;
+    if (!data.member[user]) return { ok: false, message: "먼저 /모험시작을 진행해주세요." };
+    if (!isFinite(count) || count < 1 || Math.floor(count) !== count || count > 9007199254740991) return { ok: false, message: "사용법: " + command + " 숫자\n1 이상의 정수 수량을 입력해주세요." };
+    var member = data.member[user], bag = member.bag || {};
+    var have = requireSpiritRetirementCount(bag[item] === undefined ? 0 : bag[item]);
+    if (have < count) return { ok: false, message: item + " 보유 수량이 부족해요.\n보유: " + numberWithCommas(have) + "개" };
+    var charm = getSpiritOpenedCharm(member);
+    var next = requireSpiritRetirementCount(charm[request.mode] + count);
+    charm[request.mode] = next;
+    bag[item] = have - count;
+    if (bag[item] === 0) delete bag[item];
+    member.spiritCharm = charm;
+    return { ok: true, message: item + " " + numberWithCommas(count) + "개를 오픈했어요.\n" + (request.mode === "raidExp" ? "레이드매력👾" : "캐슬매력⚔️") + " +" + numberWithCommas(count) };
+}
+
+// 오픈한 보상 매력만 가져오고 원본 정령 매력은 합산하지 않는 함수
+function getSpiritOpenedCharm(member) {
+    if (!member || member.spiritCharm === undefined) return { battleExp: 0, raidExp: 0, castleExp: 0 };
+    var charm = member.spiritCharm;
+    if (!charm || typeof charm !== "object" || Array.isArray(charm)) throw new Error("정령 보상 매력 형식 오류");
+    return { battleExp: 0, raidExp: requireSpiritRetirementCount(charm.raidExp), castleExp: requireSpiritRetirementCount(charm.castleExp) };
+}
+
 function calculateItemInfoAll(memberName, data, petData) {
     let returnObj = {
         battleExp: 0,
         raidExp: 0,
         castleExp: 0
     };
-    let elementalInfo = calculateItemInfo("elemental", memberName, data, petData);
+    let elementalInfo = getSpiritOpenedCharm(data.member[memberName]);
     let ringInfo = petData[memberName] && petData[memberName].ring ? calculateItemInfo("ring", memberName, data, petData) : { battleExp: 0, raidExp: 0, castleExp: 0 };
     let pendantInfo = calculatePendantItemInfo(petData[memberName] && petData[memberName].pendant ? petData[memberName].pendant : null);
     let bagInfo = calculateItemInfo("bag", memberName, data, petData);
@@ -46528,7 +46359,7 @@ function calculateItemInfo(type, memberName, data, petData) {
         castleExp: 0,
         message: ""
     };
-    if (!data || !petData) {
+    if (!data || !petData || type === "elemental") {
         return returnObject;
     }
     if (type == "bag") {
@@ -46543,7 +46374,7 @@ function calculateItemInfo(type, memberName, data, petData) {
         return returnObject;
     }
     let petObject = petData[memberName]; // 펫
-    let obj = petObject[type];
+    let obj = petObject && petObject[type];
     if (!obj) {
         return returnObject;
     }
@@ -47399,7 +47230,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
         if (bag["랜덤박스💝"]) {
             let count = bag["랜덤박스💝"];
             delete bag["랜덤박스💝"];
-            let items = ["잡템상자☠", "정령상자🥀", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
+            let items = ["잡템상자☠", "치킨상자🐔", "치킨상자🐔", "펫먹이🍼", "영지절대방어권🛡(20%)", "영지기습공격권🔥(10%)"];
             let acquired = {},
                 msg = "";
             for (let i = 0; i < count; i++) {
@@ -47413,7 +47244,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
         }
     };
     openBox("잡템상자☠", "잡템☠️", 5, 10, "개");
-    openBox("정령상자🥀", "정령조각🥀", 5, 10, "개");
+    openBox("정령상자🥀", "양념치킨🐔", 5, 10, "개");
     openBox("치킨상자🐔", "양념치킨🐔", 5, 10, "개");
     openBox("펫강화상자⭐", "펫 강화석⭐", 2, 3, "개");
     openBox("슬롯상자🧳", "슬롯코인🪙", 5, 10, "개");
@@ -47443,19 +47274,7 @@ function runOpenAll(sender, data, petData, replier, guildData) {
     return responseMessage.trim();
 }
 function runCombineAll(sender, data) {
-    let bag = data.member[sender].bag || {};
-    let resultMsg = "🛠️ 전체 조합 결과\n";
-    let hasResult = false;
-    // 정령조각🥀 → 정령 강화석🥀
-    let elementalCount = Math.floor((bag["정령조각🥀"] || 0) / 10);
-    if (elementalCount > 0) {
-        bag["정령조각🥀"] -= elementalCount * 10;
-        if (bag["정령조각🥀"] <= 0) delete bag["정령조각🥀"];
-        bag["정령 강화석🥀"] = (bag["정령 강화석🥀"] || 0) + elementalCount;
-        resultMsg += "- 정령 강화석🥀 x " + elementalCount + "\n";
-        hasResult = true;
-    }
-    return hasResult ? resultMsg.trim() : "❌ 조합 가능한 재료가 없습니다.";
+    return "❌ 조합 가능한 재료가 없습니다.";
 }
 function runSellAll(sender, data, petData, guildData) {
     var itemListData = loadJsonFile(itemListPath);
@@ -47539,6 +47358,7 @@ function removeAllItem(data, user, itemName) {
 }
 // 해당 사용자의 가방에 아이템 수량을 추가
 function addItem(data, user, itemName, count) {
+    if (itemName === GLOBAL_CONFIG.spiritRetirement.removedItem) return;
     if (itemName === GLOBAL_CONFIG.petSkill.oldTraitBookItemName) itemName = GLOBAL_CONFIG.petSkill.bookItemName;
     if (!data.member[user]) return;
     if (!data.member[user].bag) data.member[user].bag = {};
@@ -53334,7 +53154,7 @@ function getPetUpgradeCritMul(upgrade) {
 /**
  * 스타터팩 세팅
  * - 펫강화 90강, 펫매력 35,000
- * - 정령왕 피닉스 +80강, 신화 초보자 미니펫 지급
+ * - 신화 초보자 미니펫 지급
  * - 이미 더 높게 성장한 수치는 낮추지 않음
  */
 function applyStarterPet(pet, user, petSkillData) {
@@ -53342,11 +53162,6 @@ function applyStarterPet(pet, user, petSkillData) {
     pet.upgrade = Math.max(parseInt(pet.upgrade, 10) || 0, 90);
     pet.upgradeDateTime = new Date().toISOString(); // member_pet.json 예시와 동일 형태
 
-    // 정령(키 이름: elemental)
-    if (!pet.elemental || typeof pet.elemental !== "object") pet.elemental = {};
-    pet.elemental.upgrade = Math.max(parseInt(pet.elemental.upgrade, 10) || 0, 80);
-    if (!pet.elemental.name) pet.elemental.name = "피닉스🐦‍🔥";
-    if (!pet.elemental.grade) pet.elemental.grade = "정령왕";
     // 펫매력
     pet.petexp = Math.max(parseInt(pet.petexp, 10) || 0, 35000);
 
@@ -53465,7 +53280,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     var castleItemExp = measure("캐슬-공격아이템", function () {
         return calculateCastleItem(sender, data) || 0;
     });
-    var castleEquipmentExp = measure("캐슬-정령/반지/펜던트/가방", function () {
+    var castleEquipmentExp = measure("캐슬-보상매력/반지/펜던트/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { castleExp: 0 };
         return itemInfo.castleExp || 0;
     });
@@ -53489,7 +53304,7 @@ function buildTotalExpTimeCheckDetail(sender, data, petData, homeData, petSkillD
     });
     var castleBase = castleItemExp + castleEquipmentExp + castlePetExp + castleMiniPetExp + castleHomeExp + castleIntimacyExp + castleSkillExp + (petData[sender].dollCharm === undefined ? 0 : petData[sender].dollCharm / 2); // 퍼센트 적용 전 진단 합계
 
-    var raidEquipmentExp = measure("레이드-정령/반지/펜던트/가방", function () {
+    var raidEquipmentExp = measure("레이드-보상매력/반지/펜던트/가방", function () {
         var itemInfo = calculateItemInfoAll(sender, data, petData) || { raidExp: 0 };
         return itemInfo.raidExp || 0;
     });
@@ -54373,7 +54188,7 @@ function buildAdventureStarterRecoveryPreviewMessages(plan) {
     return messages;
 }
 
-// 신규 모험가의 펫·정령·미니펫·펜던트 세팅을 한 번만 적용하는 함수
+// 신규 모험가의 펫·미니펫·펜던트 세팅을 한 번만 적용하는 함수
 function applyAdventureStarterPetSettings(petData, user) {
     var pet = petData && petData[user] ? petData[user] : null;
     if (!pet || pet.starterBlessingApplied === true) return false;
@@ -58465,6 +58280,7 @@ function rollEventBox() {
     var gain = {};
     gain[GLOBAL_CONFIG.petExplore.rewards.shopOpenItemName] = GLOBAL_CONFIG.petExplore.eventDungeon.shopOpenCount;
     gain["펫던전 입장권🌋"] = GLOBAL_CONFIG.petExplore.eventDungeon.dungeonTicketCount;
+    gain[GLOBAL_CONFIG.spiritRetirement.replacementItem] = GLOBAL_CONFIG.spiritRetirement.eventBoxCount;
     return {
         gainItems: gain,
         gainTextLines: []
@@ -58477,7 +58293,7 @@ function runEventBoxOpen(sender, data, petData, guildData, msg, replier) {
 }
 function rollflowerBox() {
     return {
-        gainItems: { "정령 강화석🥀": 100 },
+        gainItems: { "양념치킨🐔": GLOBAL_CONFIG.spiritRetirement.eventBoxCount },
         gainTextLines: []
     };
 }
@@ -59227,6 +59043,7 @@ function isNeverSellItemWithList(itemListData, itemName) {
 
     // 펫 친밀도는 무조건 판매 금지
     if (base === "펫 친밀도🐾") return true;
+    if (raw === GLOBAL_CONFIG.spiritRetirement.raidItem || raw === GLOBAL_CONFIG.spiritRetirement.castleItem || raw === GLOBAL_CONFIG.spiritRetirement.removedItem) return true;
     if (raw === GLOBAL_CONFIG.sealedVault.keyItemName || base === GLOBAL_CONFIG.sealedVault.keyItemName) return true;
 
     var nonItems = itemListData && itemListData.nonItems ? itemListData.nonItems : [];

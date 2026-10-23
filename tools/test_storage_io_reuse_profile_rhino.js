@@ -26,7 +26,7 @@ const names=["createCommandContext","getCurrentContext","enterCommandContext","e
  "calculateRaidExp","getPetModeCharmPercent","getAdventurePromotionCounts","getAdventureLevelCharmPercent","applyPercentWithExactFloor","calculateEffectivePetUpgradeLevel",
  "getHomeBadgeCubeStore","normalizeHomeBadgeCubeEquippedBadgeIds","getHomeBadgeCubeRecord","getHomeBadgeCubeOptionConfig","isHomeBadgeCubeTotalBuffActive",
  "isHomeBadgeCubeOptionAppliedInSlot","getHomeBadgeCubeSlotOptionPercent","getHomeBadgeCubeActiveOptionPercent",
- "calculateItemInfoAll","calculateItemInfo","calculatePendantItemInfo","calculatePendantStats","getMiniPetModeCharm","getHomeTotalExp","hasPetSkill","normalizePetSkillName","getEquippedPetSkillNames",
+ "getSpiritOpenedCharm","requireSpiritRetirementCount","calculateItemInfoAll","calculateItemInfo","calculatePendantItemInfo","calculatePendantStats","getMiniPetModeCharm","getHomeTotalExp","hasPetSkill","normalizePetSkillName","getEquippedPetSkillNames",
  "getEquippedNonTierPetSkillExp","getEquippedTierPetSkillExp","getMyGuildId","getGuildContributionCubeOptionByKey","getGuildContributionCubeData","getGuildContributionCubeMemberPercent",
  "getCappedUpgradeForCrit","getCritChance","calculateCritChance","getCritMultiplier","calculateCriticalDamage","isPointShopSafeAmount","isPointShopSafeCount"];
 
@@ -37,7 +37,7 @@ function runtime(main,root,scenario){
  let code="var DATA_ROOT_PATH="+JSON.stringify(root)+",DEV_DATA_ROOT_PATH="+JSON.stringify(root+"dev/")+",COMMON_DATA_FILE_MAP={};\n";
  code+="var filePath=DATA_ROOT_PATH+'member.json',memberPetPath=DATA_ROOT_PATH+'member_pet.json',guildPath=DATA_ROOT_PATH+'guild.json',homeDataFile=DATA_ROOT_PATH+'home.json',petSkillDataPath=DATA_ROOT_PATH+'skills.json';\n";
  code+="var GLOBAL_CONFIG="+JSON.stringify(sample.config)+",MEMBER_STORAGE_SPLIT_CONFIG="+JSON.stringify(split)+";\n";
- for(const name of names){if(name==="stringifyMemberSplitStore"&&!main.includes("function "+name+"("))continue;code+=block("function "+name+"(")+"\n";}
+ for(const name of names){if(["stringifyMemberSplitStore","getSpiritOpenedCharm","requireSpiritRetirementCount"].indexOf(name)!==-1&&!main.includes("function "+name+"("))continue;code+=block("function "+name+"(")+"\n";}
  if(main.includes("function getPetHomeFurnitureCharm("))for(const name of ["getPetHomeVillageState","getPetHomeFurnitureCharm","getFurnitureExp","getPlacedFurnitureCountByGrade","getOwnedFurnitureCountByGrade","normalizePlacedFurnitureSummary","initPetSkillUser"])code+=block("function "+name+"(")+"\n";
  code+=main.slice(main.indexOf("function serverRaidHeader("),main.indexOf("// 길드 영지전 관련 함수들"))+"\n";
  code+="var commandContextThreadLocal=new java.lang.ThreadLocal(),dataSaveTransactionThreadLocal=new java.lang.ThreadLocal(),dataTransactionLock=new java.util.concurrent.locks.ReentrantLock(),commandDataFlowLock=new java.util.concurrent.locks.ReentrantReadWriteLock(true),protectedJsonSaveLocks={},memberSplitBackupCache={},serverRaidNoticeMemberRevisions={},serverRaidWorkTimers={},serverRaidNoticeWorkers={};\n";

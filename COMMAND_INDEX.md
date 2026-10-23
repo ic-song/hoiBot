@@ -3106,7 +3106,7 @@ Status: VERIFIED
 - 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
 - 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬끼리는 중복 불가, 일반 종합매력 무기 펫스킬과는 중복 가능하다는 안내가 함께 표시된다.
 - Check role gating when another user's skill bag is unexpectedly visible
-- `장인의 숨결` applies to `/펫강화` and `/정령강화` failure only, preserving the required enhancement stone at 7%; it does not apply to `/반지강화`.
+- `장인의 숨결` applies to `/펫강화` failure only, preserving the required enhancement stone at 7%; elemental enhancement is retired.
 
 ---
 
@@ -5406,40 +5406,41 @@ Status: VERIFIED
 
 ---
 
-# /정령순위
+# /정령컨텐츠보상 · /레이드매력오픈 숫자 · /캐슬매력오픈 숫자
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `Info.js`: `/정령순위`
-
 ## Files
 
-- `Info.js`
+- `main.js`, `Info.js`
+- `data/itemInfo.json`: 보상 산정용 기존 정령 등급별 기본 매력·강화 증가량 (보존)
+- `data/itemList.json`, `data/packageInfo.json`: 강화확률뽑기 목록·패키지 지급 제거, 보상 매력 아이템 판매 보호
 
 ## Related Helpers
 
-- `generateElementalRanking`
+- `buildSpiritRetirementPlan`, `applySpiritRetirementPlan`
+- `getSpiritCharmOpenRequest`, `openSpiritCharmItem`
+- `getSpiritOpenedCharm`, `requireSpiritRetirementCount`
+- `calculateItemInfoAll`, `calculateItemInfo`, `isNeverSellItemWithList`
 
 ## Data Usage
 
-- `petData`
-- `data.member`
+- `GLOBAL_CONFIG.spiritRetirement`: 공식 아이템명, 일회성 보상 기록·백업명, 이벤트박스 치킨 100개·야구 치킨 2개
+- `petData[사용자].elemental`: 산정 원본만 보존. 실전 매력 계산·정보창·순위·신규 지급에서 제외
+- `data.member[사용자].bag`: 매력 1당 해당 보상 아이템 1개. 지급 자체로 매력 증가 없음
+- `data.member[사용자].spiritCharm`: 오픈한 캐슬·레이드 매력. 기존 퍼센트 보너스 적용 전 합산
+- `data.spiritRetirement20261023`: 전체 보상 완료와 대상별 등급·강화·보상량 기록
 
 ## Save Flow
 
-- Read-only in the confirmed branch
-
-## Related Commands
-
-- `/펫정보`
-- `/종합순위`
-
-## AI Notes
-
-- Ranking output for elemental/spirit enhancement state
-- Investigate here before checking broader pet-summary commands
+- MASTER가 정확히 `/정령컨텐츠보상` 입력: 기존 방·정지·레이드 제한 통과 후 전체 회원과 펫 원본을 `spirit_retirement_before_20261023_<UUID>.json`으로 안전 저장·재읽기 대조한다. 재시도마다 새 백업을 만들고 완료 기록에 경로를 남긴다.
+- 전체 대상의 등급·강화·안전 정수 수량을 먼저 확인하고, 가방 지급·강화확률뽑기 전량 삭제·전체 완료 기록을 한 번의 `saveJsonFile(data, filePath)`로 확정한다. 실패 시 기존 저장 트랜잭션으로 복구하며, 재시작 후 완료 기록이 있으면 재지급하지 않는다.
+- 두 매력 오픈 명령은 정확한 양의 정수 수량만 사용한다. 보유량 초과·0·음수·소수·문자·추가 안내 문구는 아이템을 사용하지 않는다. 소모량과 영구 매력은 같은 회원 저장 단위다.
+- 세 명령은 기존 단독 실행 잠금을 사용하며 DEV 컨텍스트의 백업·회원 저장은 DEV 경로로 분리한다.
+- `/정령강화`, `/정령이름`, `/정령순위`, `/강화뽑기`, `/정령조합`, `/정령이름조합`, `/정령속성`, `/정령정보`, `/전체조합2`, `/정령패키지,` 실행 분기는 제거했다.
+- `ㅇㅇㅇ`·`/전체조합`의 정령 조각 조합만 종료하며 다른 오픈·판매 처리는 유지한다. 기존 정령상자·정령박스는 치킨을 지급한다. 복주머니의 지급 수량은 유지하고, 야구는 1개당 치킨 2개를 지급한다.
+- 이벤트박스는 현행 샵오픈·던전 입장권을 유지하면서 치킨 100개를 함께 지급한다. 호이패스·프리미엄·패키지의 강화확률뽑기 지급과 안내는 제거하며, 과거 패키지 구성에도 지급/안내 필터를 적용한다.
+- 정령조각·이름변경권·강화석의 기존 재고 판매와 보상 아이템 거래 제한은 운영자 별도 처리이며 자동 판매/포인트 지급을 추가하지 않는다.
 
 ---
 
@@ -7285,6 +7286,7 @@ Status: VERIFIED
 - 펜던트 강화석📿 3개는 기존 17종과 함께 `memberRewards` 최초 지급 영수증 및 `member.json` 저장에 포함한다. 실제 최초 지급 성공 시에만 완료 안내에 표시하며 기존 지급자에게 소급하지 않는다.
 - 신규 추가 지급은 `GLOBAL_CONFIG.adventureStarter.additionalItems`를 사용한다. 과거 퀘스트 스타터 회수는 기존 `items` 17종과 `legacyRecoveryBoosters` 1,000개 기준을 유지한다. Info의 과거 후보 조회도 1,000개이며 신규 가호 지급량과 분리한다.
 - 2026-10-20 안내 간소화: `buildAdventureStarterCompleteMessage`는 축복 한 줄 직후 구분선, 펫정보·가방·레벨·가이드 안내만 표시한다. 기본 세팅·학개론·친밀도300·가호30000·스타터와 인형 아이템의 실제 지급·조건·영수증은 변경하지 않는다. 닉네임은 실제 대상이며 펫 이름·상세 지급 목록은 안내에서 생략한다.
+- 정령 종료 이후 `applyStarterPet`은 정령 기본 지급·설정을 하지 않으며 다른 펫·미니펫·펜던트 스타터 보상은 유지한다.
 - 신규 펫의 알 상태는 `/호여!!` 완료 시 기존 외형 목록의 땅·하늘 속성과 외형으로 확정해 `member_pet.json`에 저장한다. 이미 스타터 설정을 완료했지만 알 상태로 남은 펫은 해당 사용자의 다음 `main.js` 응답에서 한 번 보정·저장하며, 이후 조회에서는 다시 뽑지 않는다.
 - `/모험가퀘스트` 최초 참여에서는 스타터팩을 지급하지 않는다. 과거 퀘스트 지급 기록이 있는 회원은 `/호여!!`에서 같은 스타터팩을 다시 지급하지 않는다.
 - 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.

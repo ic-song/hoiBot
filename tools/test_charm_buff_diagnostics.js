@@ -158,7 +158,7 @@ group("all constituent values remain visible even with zero millisecond timings"
     assert.strictEqual(detail.castleBase, 500580);
     assert(detail.rows.every(row => row.ms === 0));
     const out = report(c);
-    for (const text of ["레이드-정령/반지/펜던트/가방", "레이드-펫스킬: 13,500,000", "레이드-홈/가구: 137", "캐슬-친밀도: 200"]) {
+    for (const text of ["레이드-보상매력/반지/펜던트/가방", "레이드-펫스킬: 13,500,000", "레이드-홈/가구: 137", "캐슬-친밀도: 200"]) {
         assert(out.includes(text), out);
     }
     assert(!out.includes("[❌불일치]"));

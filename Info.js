@@ -1304,11 +1304,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			let resultMsg = "🏰 영주 수익 순위 🏰\n\n";
 			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
 			replier.reply(resultMsg);
-		} else if (msg === "/정령순위") {
-			let rankData = generateElementalRanking(petData, data.member);
-			let resultMsg = "🔯 정령 강화순위 🔯\n\n";
-			resultMsg += rankData.rankingMsg1 + allsee + rankData.rankingMsg2;
-			replier.reply(resultMsg);
 		} else if (msg === "/반지순위") {
 			replier.reply("반지순위는 펜던트 콘텐츠 전환으로 종료되었습니다.");
 		} else if (msg === "/종합순위" || msg === "ㅈㅈㅈ") {
@@ -1577,9 +1572,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				allsee;
 
 			resultMsg += "\n━━━ ✦ 장비 정보 ✦ ━━━\n";
-			if (petInfo.elemental) {
-				resultMsg += "정령🔯: " + petInfo.elemental.name + "[" + petInfo.elemental.grade + "]" + "(+" + petInfo.elemental.upgrade + ")\n";
-			}
+
 			if (petInfo.pendant) {
 				var pendantDurability = "";
 				if (petInfo.pendant.durability !== undefined && petInfo.pendant.maxDurability !== undefined) {
@@ -2200,42 +2193,6 @@ function generateEarningsRanking(data) {
 	};
 }
 
-function generateElementalRanking(petData, members) {
-	let gradeArray = Object.keys(itemInfoData.elemental);
-
-	let sortedUsrs = Object.keys(members)
-		.filter((key) => petData[key] && petData[key].elemental)
-		.sort((a, b) => {
-			return (
-				(gradeArray.indexOf(petData[b].elemental.grade) + 1) * 100 + petData[b].elemental.upgrade - ((gradeArray.indexOf(petData[a].elemental.grade) + 1) * 100 + petData[a].elemental.upgrade)
-			);
-		});
-
-	let rankingMsg1 = ""; // 상위 10명의 순위 메시지
-	let rankingMsg2 = ""; // 나머지 사용자들의 순위 메시지
-
-	// 상위 10명의 사용자 메시지
-	for (let i = 0; i < 10 && i < sortedUsrs.length; i++) {
-		let username1 = sortedUsrs[i];
-		let Rsender1 = getMemberRankEmojiForDisplay(members[username1]) + username1;
-		let rankEmoji1 = getRankEmoji(i + 1);
-		rankingMsg1 += rankEmoji1 + Rsender1 + " - 강화 레벨: " + (gradeArray.indexOf(petData[username1].elemental.grade) * 100 + petData[username1].elemental.upgrade) + "🔯\n";
-	}
-
-	// 나머지 사용자들에 대해 순위 메시지를 작성합니다.
-	for (let i = 10; i < sortedUsrs.length; i++) {
-		let username2 = sortedUsrs[i];
-		let Rsender2 = getMemberRankEmojiForDisplay(members[username2]) + username2;
-		let rankEmoji2 = getRankEmoji(i + 1);
-		rankingMsg2 += rankEmoji2 + Rsender2 + " - 강화 레벨: " + (gradeArray.indexOf(petData[username2].elemental.grade) * 100 + petData[username2].elemental.upgrade) + "🔯\n";
-	}
-
-	// 상위 10명과 나머지 사용자들의 순위 메시지를 반환합니다.
-	return {
-		rankingMsg1: rankingMsg1,
-		rankingMsg2: rankingMsg2
-	};
-}
 
 // 회원 데이터의 대표·보조 홈뱃지 슬롯을 기존 단일 필드와 호환되게 반환하는 함수
 function getInfoHomeBadgeCubeEquippedBadgeIds(store) {
@@ -3760,7 +3717,7 @@ function calculateItemInfo(type, memberName, data, petData) {
 		message: ""
 	};
 
-	if (!data || !petData) {
+	if (!data || !petData || type === "elemental") {
 		return returnObject;
 	}
 
@@ -3778,7 +3735,7 @@ function calculateItemInfo(type, memberName, data, petData) {
 
 	// 유저정보
 	let petObject = petData[memberName]; // 펫
-	let obj = petObject[type];
+	let obj = petObject && petObject[type];
 	if (!obj) {
 		return returnObject;
 	}
@@ -3837,13 +3794,27 @@ function calculatePendantItemInfoForInfo(pendant) {
 	return { battleExp: 0, raidExp: raid, castleExp: charm - raid };
 }
 
+// 정령 보상 수량과 영구 매력을 안전한 음이 아닌 정수로 검증하는 함수
+function requireSpiritRetirementCount(value) {
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > 9007199254740991) throw new Error("정령 보상 수량 또는 매력 값 오류");
+    return value;
+}
+
+// 오픈한 보상 매력만 가져오고 원본 정령 매력은 합산하지 않는 함수
+function getSpiritOpenedCharm(member) {
+    if (!member || member.spiritCharm === undefined) return { battleExp: 0, raidExp: 0, castleExp: 0 };
+    var charm = member.spiritCharm;
+    if (!charm || typeof charm !== "object" || Array.isArray(charm)) throw new Error("정령 보상 매력 형식 오류");
+    return { battleExp: 0, raidExp: requireSpiritRetirementCount(charm.raidExp), castleExp: requireSpiritRetirementCount(charm.castleExp) };
+}
+
 function calculateItemInfoAll(memberName, data, petData) {
 	let returnObj = {
 		battleExp: 0,
 		raidExp: 0,
 		castleExp: 0
 	};
-	let elementalInfo = calculateItemInfo("elemental", memberName, data, petData);
+	let elementalInfo = getSpiritOpenedCharm(data.member[memberName]);
 	let ringInfo = petData[memberName] && petData[memberName].ring ? calculateItemInfo("ring", memberName, data, petData) : { battleExp: 0, raidExp: 0, castleExp: 0 };
 	let pendantInfo = calculatePendantItemInfoForInfo(petData[memberName] && petData[memberName].pendant ? petData[memberName].pendant : null);
 	let bagInfo = calculateItemInfo("bag", memberName, data, petData);
