@@ -30,7 +30,9 @@ test('교육방의 MASTER만 전체 교육 명령 사용·일반/유사방 거�
 test('독립 명령어 안내·1월 지난달 자동 변경·12매뉴얼·조회 무저장', () => {
     const h = education('2027-01-01T00:00:00Z'), before = h.f.files(), help = h.run('/교육명령어');
     assert(help.includes('/교육실적 전체 2026-12')); assert(help.includes('/교육실적 GM아이디 2026-12')); assert(help.includes('1~12'));
-    assert.equal(help.split('<ALLSEE>').length - 1, 1); assert(!help.includes('[allsee]')); assert(!h.run('/교육').includes('/교육명령어'));
+    assert.equal(help.split('<ALLSEE>').length - 1, 1); assert(!help.includes('[allsee]'));
+    const overview=h.run('/교육');assert(!overview.includes('/교육명령어'));assert(overview.includes('11챕터 · 홈뱃지·큐브'));assert(overview.includes('12챕터 · 후원 안내'));assert.equal(overview.split('<ALLSEE>').length-1,1);
+    for(const [index,chapter] of h.c.GLOBAL_CONFIG.gmEducation.chapters.entries())assert(overview.includes((index+1)+'챕터 · '+chapter.title));
     for (const n of [11,12]) { const manual=h.run('/교육 '+n);assert(manual.includes(n+'/12'));assert.equal(manual.split('<ALLSEE>').length-1,1); }
     assert(h.run('/교육 11').includes('실제 큐브 사용은 완료 조건이 아니에요')); assert(h.run('/교육 12').includes('실제 후원·결제·후원 이력 없이'));
     assert(h.run('/교육 12').includes('https://hoiland123.tistory.com')); assert(!h.run('/교육 12').includes('/호이패스구독'));
@@ -41,7 +43,7 @@ test('기존10챕터 수료자는 10/12 유지·11/12만 두 개 지급·기지�
     for(let n=1;n<=10;n++)h.run('/교육완료 a '+n);
     const old=h.f.read();delete old.member.a.gmEducationRewardTimes;delete old.member.a.bag[reward];h.f.write(old);
     const before=h.f.files();assert(h.run('/교육 a').includes('10/12'));assert(!h.run('/교육 a').includes('🎓'));assert.deepEqual(h.f.files(),before);
-    assert(h.run('/교육완료 a 12').includes('11챕터를 먼저'));h.run('/교육완료 a 11','gm');h.run('/교육완료 a 12','master');
+    assert(h.run('/교육완료 a 12').includes('11챕터를 먼저'));h.run('/교육완료 a 11','gm');assert(h.run('/교육완료 a 12','master').includes('12챕터 · 후원 안내 완료!'));
     assert.equal(h.f.read().member.a.bag[reward],2);assert.equal(h.store().users['$id-a'].chapters.length,12);assert(h.run('/교육 a').includes('🎓'));
     const done=h.f.files();for(let n=1;n<=12;n++)h.run('/교육완료 a '+n,'gm');assert.deepEqual(h.f.files(),done);
     assert(h.f.read().member.a.gmEducationRewardTimes.slice(0,10).every(v=>v===null));

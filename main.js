@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.688"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.689"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -4143,7 +4143,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var gmPetData = loadJsonFile(memberPetPath), gmGuildData = loadJsonFile(guildPath);
             var gmContext = { data: data, petData: gmPetData, guildData: gmGuildData };
             if (gmRequest.action === "view" && !gmRequest.input) {
-                replier.reply("📚 호월 교육 · GM 안내\n━━━━━━━━━━━━\n교육은 1→" + gmChapterCount + "챕터 순서로 진행합니다.\n완료한 교육은 중복으로 받을 수 없습니다.\n━━━━━━━━━━━━\n① /교육 아이디 → 진행도 확인\n② /교육 숫자 → 매뉴얼 확인\n③ 설명·실습 → GM 확인\n④ /교육완료 아이디 숫자 → 완료 처리\n━━━━━━━━━━━━\n🎁 챕터마다 " + gmEducationConfig.rewardItem + " 1개\n📊 실적 확인: /교육실적\n숫자 계정은 /교육 @닉네임 또는 기존 계정 ID로 조회해요."); return;
+                var gmCourseLines = []; // 현재 매뉴얼과 동일한 전체 챕터 목록
+                for (var gmCourseIndex = 0; gmCourseIndex < gmChapterCount; gmCourseIndex++) gmCourseLines.push(gmEducationConfig.chapters[gmCourseIndex].emoji + " " + (gmCourseIndex + 1) + "챕터 · " + gmEducationConfig.chapters[gmCourseIndex].title);
+                replier.reply("📚 호월 교육 · GM 안내\n━━━━━━━━━━━━\n교육은 1→" + gmChapterCount + "챕터 순서로 진행합니다.\n완료한 교육은 중복으로 받을 수 없습니다.\n━━━━━━━━━━━━\n① /교육 아이디 → 진행도 확인\n② /교육 숫자 → 매뉴얼 확인\n③ 설명·실습 → GM 확인\n④ /교육완료 아이디 숫자 → 완료 처리\n━━━━━━━━━━━━\n🎁 챕터마다 " + gmEducationConfig.rewardItem + " 1개\n📊 실적 확인: /교육실적\n숫자 계정은 /교육 @닉네임 또는 기존 계정 ID로 조회해요.\n" + allsee + "📚 전체 교육 과정\n━━━━━━━━━━━━\n" + gmCourseLines.join("\n")); return;
             }
             if (gmRequest.action === "view" && /^(?:[1-9]|1[0-2])$/.test(gmRequest.input)) { replier.reply(buildGmEducationManual(Number(gmRequest.input))); return; }
             if (gmRequest.action === "stats" && gmRequest.input === "전체") { replier.reply(buildGmEducationStats(gmStore, data, null, gmContext, true, gmStatsRequest.month)); return; }
@@ -4194,7 +4196,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply(gmHeading + "교육 완료 처리를 확인 중입니다.\n현재 챕터의 처리가 끝난 후 다시 확인해 주세요."); return;
             }
             var gmFinished = gmRequest.chapter === gmChapterCount;
-            var gmSuccess = gmHeading + (gmFinished ? "🎓 호월 교육 수료를 축하합니다!\n📚 전체 교육 완료: " + gmChapterCount + "/" + gmChapterCount : "✅ " + gmRequest.chapter + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter - 1].title + " 완료!\n📚 교육 진행: " + gmRequest.chapter + "/" + gmChapterCount);
+            var gmSuccess = gmHeading + (gmFinished ? "🎓 호월 교육 수료를 축하합니다!\n✅ " + gmRequest.chapter + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter - 1].title + " 완료!\n📚 전체 교육 완료: " + gmChapterCount + "/" + gmChapterCount : "✅ " + gmRequest.chapter + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter - 1].title + " 완료!\n📚 교육 진행: " + gmRequest.chapter + "/" + gmChapterCount);
             gmSuccess += "\n━━━━━━━━━━━━\n🎁 " + gmEducationConfig.rewardItem + " 1개 지급\n" + (gmFinished ? "📦 전체 교육 보상: 총 " + gmChapterCount + "개 지급 완료\n" : "") + "👤 담당 GM: [" + getGuildMarbleRankLabel(sender, gmContext) + "]";
             gmSuccess += gmFinished ? "\n━━━━━━━━━━━━\n함께 배운 내용을 바탕으로 호이월드를 즐겨보세요!" : "\n━━━━━━━━━━━━\n▶ 다음 교육: " + (gmRequest.chapter + 1) + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter].title;
             replier.reply(gmSuccess); return;

@@ -1,6 +1,6 @@
 # 운영용 정리 2종 /초기화 통합 검증
 
-> 최신 ver_2.688 후속 변경과 검증은 [10월 25일 통합 검증](oct25_ready_validation.md)을 참조하세요. 아래는 이전 반영 이력입니다.
+> 최신 ver_2.689 후속 변경과 검증은 [10월 25일 통합 검증](oct25_ready_validation.md)을 참조하세요. 아래는 이전 반영 이력입니다.
 
 - 기준: origin/feature/prod `0d26cbd0ebe6f706e621a90eb4da8bbe1a357d53`, ver_2.673.
 - 작업 브랜치: feature/reset-cleanup-menu. 최초 개발·검증 후 운영반영 전 보고를 완료했다.
