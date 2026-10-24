@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.693"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.694"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -49861,9 +49861,19 @@ function buildPetSkillCollectionConfirmMessage(data, petData, guildData, user, s
 // 펫 스킬 이름을 기준으로 PET_SKILL_LIST에서 해당 스킬 데이터를 찾아 반환하는 함수
 function getPetSkillData(skillName) {
     skillName = normalizePetSkillName(skillName);
+    var lookup = getPetSkillData.definitionLookup;
+    if (!lookup || lookup.list !== PET_SKILL_LIST || lookup.length !== PET_SKILL_LIST.length) {
+        lookup = { list: PET_SKILL_LIST, length: PET_SKILL_LIST.length, byName: {} };
+        getPetSkillData.definitionLookup = lookup;
+    }
+    var lookupKey = "$" + skillName;
+    if (Object.prototype.hasOwnProperty.call(lookup.byName, lookupKey)) return lookup.byName[lookupKey];
     for (var i = 0; i < PET_SKILL_LIST.length; i++) {
         var skillData = PET_SKILL_LIST[i];
-        if (skillData.name === skillName || getTierPetSkillSearchName(skillData) === skillName) return skillData;
+        if (skillData.name === skillName || getTierPetSkillSearchName(skillData) === skillName) {
+            lookup.byName[lookupKey] = skillData; // 소스 정의의 첫 일치 참조만 보관하며 알 수 없는 입력·개인 데이터는 보관하지 않음
+            return skillData;
+        }
     }
     return null;
 }
@@ -50236,11 +50246,15 @@ function getPetSkillBagList(petSkillData, user) {
     var names = Object.keys(skills.bag).filter(function (name) {
         return (skills.bag[name] || 0) > 0;
     });
+    if (names.length < 2) return names;
+    var orderByName = {}; // 정렬 비교마다 반복하던 정의 조회·목록 위치 검색을 가방 이름당 한 번만 수행
+    for (var i = 0; i < names.length; i++) {
+        var skillData = getPetSkillData(names[i]);
+        orderByName["$" + names[i]] = skillData ? PET_SKILL_LIST.indexOf(skillData) : 999;
+    }
     names.sort(function (a, b) {
-        var da = getPetSkillData(a);
-        var db = getPetSkillData(b);
-        var ia = da ? PET_SKILL_LIST.indexOf(da) : 999;
-        var ib = db ? PET_SKILL_LIST.indexOf(db) : 999;
+        var ia = orderByName["$" + a];
+        var ib = orderByName["$" + b];
         if (ia !== ib) return ia - ib;
         return a.localeCompare(b, "ko");
     });

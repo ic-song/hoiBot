@@ -22,6 +22,7 @@ function context(source, isInfo) {
         calculateCastleItem: () => 0,
         calculateItemInfoAll: () => ({ castleExp: 0, raidExp: 0 }),
         getHomeTotalExp: () => 0,
+        getPetHomeFurnitureCharm: () => ({ bonus: 0 }), // 이 조건 시험의 합성 가구·별채 보너스는 0
         getIntimacyExpFromBag: () => 0,
         getOwnedFurnitureCountByGrade: home => home.arcanaCount || 0,
         getPlacedFurnitureCountByGrade: home => home.royalCount || 0,
@@ -219,6 +220,7 @@ group("actual pet info and leaderboard command branches use equipped skills", ()
         msg: "/펫정보", sender: "test", allsee: "<ALLSEE>",
         petTitleData: { member: { test: {} } }, guildData: {},
         homeDataFile: "home", petExplorePath: "explore", trialTowerPath: "tower", castleBattlePath: "castle",
+        memberPetPath: "pets", petSkillDataPath: "skills", petTitlePath: "petTitles",
         initSweetHomeUser: home => home, getHoiPassPremiumHeader: () => "",
         calculateEffectivePetUpgradeLevel: () => 0, getCritChance: () => 0, getCritMultiplier: () => 1,
         getIntimacyLvFromBag: () => "", getIntimacyUserRank: () => 0, getUserIntimacyInfo: () => ({ exp: 0 }),
@@ -228,7 +230,7 @@ group("actual pet info and leaderboard command branches use equipped skills", ()
         getWeeklyQuestRemainText: () => "", replier: { reply: message => replies.push(message) }
     });
     // 선택한 명령이 원래 로드하는 합성 파일만 허용한다.
-    c.loadJsonFile = file => { assert(["home", "explore", "tower", "castle"].includes(file)); return {}; };
+    c.loadJsonFile = file => { if(file === "pets") return c.petData; if(file === "skills") return c.petSkillData; if(file === "petTitles") return c.petTitleData; assert(["home", "explore", "tower", "castle"].includes(file)); return {}; };
     const start = sources[1].indexOf('if (msg === "/펫정보" ||');
     const end = sources[1].indexOf('if (msg === "/펫매력순위")', start);
     const rankStart = sources[1].indexOf('if (msg === "/캐슬매력순위")');

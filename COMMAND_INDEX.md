@@ -3110,6 +3110,8 @@ Status: VERIFIED
 - Best entry point for total skill count and bag listing format
 - Top guide lines should point skill lookup to `/펫스킬정보 [스킬이름]`
 - Each skill row displays the grade from `PET_SKILL_LIST` after the skill name.
+- `getPetSkillData` retains only successful normalized-name matches to the first source definition on the function object. Unknown names and personal inventory are not cached; list reference/length changes invalidate the lookup. Source definitions are static and source reload creates a new lookup.
+- `getPetSkillBagList` resolves definition positions once per positive-count bag name before the same native sort. Zero/one entry skips definition lookup as before. The existing `999` unknown position, alias ties, Korean comparison, bag numbering, initialization and save call remain unchanged. See `tools/test_pet_skill_lookup*.js` for parity/exception, Java-thread, reload and timing evidence.
 
 ---
 
