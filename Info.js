@@ -715,12 +715,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (!isGlobalInfoCommand && !isOrderLogRoomBot(sender) && data && data.member && data.member[sender] && data.member[sender].agree != true) {
 			return;
 		}
-		var petData = loadJsonFile(memberPetPath);
-		var petSkillData = loadJsonFile(petSkillDataPath) || {};
-		var titleData = loadJsonFile(memberTitlePath);
-		var petTitleData = loadJsonFile(petTitlePath);
+		var petData, petSkillData, titleData, petTitleData; // 공통 제한 검사 후 실제 사용하는 명령에서만 로드
 
 		if (msg.startsWith("/정보") && (isAdminIdentity(sender) || isMasterIdentity(sender))) {
+			petData = loadJsonFile(memberPetPath);
+			titleData = loadJsonFile(memberTitlePath);
 			var targetUser = msg.substring("/정보".length).trim();
 			if (data.member[targetUser]) {
 				let memberInfo = data.member[targetUser];
@@ -858,6 +857,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (!data.member || !data.member[sender]) {
 				return;
 			}
+			petData = loadJsonFile(memberPetPath);
+			titleData = loadJsonFile(memberTitlePath);
+			petTitleData = loadJsonFile(petTitlePath);
 			var educationInfoPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.gmEducation.fileName);
 			var educationInfoFile = new java.io.File(educationInfoPath);
 			var educationInfoStamp = educationInfoFile.exists() ? String(educationInfoFile.lastModified()) + ":" + educationInfoFile.length() : "missing";
@@ -1027,6 +1029,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/타이틀목록") {
+			titleData = loadJsonFile(memberTitlePath);
 			if (titleData.member[sender]) {
 				let memberInfo = data.member[sender];
 				if (memberInfo) {
@@ -1051,6 +1054,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				}
 			}
 		} else if (msg.startsWith("/타이틀목록 ") && (isAdmin(sender) || sender == "쌍팔 남")) {
+			titleData = loadJsonFile(memberTitlePath);
 			let regexTitleList = /\/타이틀목록\s+([^]+)/;
 			let matchTitleList = msg.match(regexTitleList);
 			if (matchTitleList) {
@@ -1083,6 +1087,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 		}
 		if (msg === "/펫타이틀목록") {
+			petTitleData = loadJsonFile(petTitlePath);
 			if (petTitleData.member[sender]) {
 				let petTitleList = petTitleData.member[sender].title.list;
 				let petTitleNum = petTitleData.member[sender].title.num;
@@ -1106,6 +1111,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("펫 타이틀 정보가 없습니다.");
 			}
 		} else if (msg.startsWith("/펫타이틀목록 ") && (isAdmin(sender) || sender == "쌍팔 남")) {
+			petTitleData = loadJsonFile(petTitlePath);
 			let regexPetTitleList = /\/펫타이틀목록\s+([^]+)/;
 			let matchPetTitleList = msg.match(regexPetTitleList);
 			if (matchPetTitleList) {
@@ -1229,6 +1235,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 		}
 		if (msg === "/미니펫대전순위") {
+			petData = loadJsonFile(memberPetPath);
 			let ranking = [];
 			for (let user in petData) {
 				if (petData[user].miniPetBattle && petData[user].miniPetBattle.win >= 50) {
@@ -1266,6 +1273,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/미니펫대전승률" || msg === "/미니펫승률순위") {
+			petData = loadJsonFile(memberPetPath);
 			let ranking = [];
 			for (let user in petData) {
 				let battle = petData[user].miniPetBattle;
@@ -1306,6 +1314,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/펫강순위") {
+			petData = loadJsonFile(memberPetPath);
 			let petUpgradeRanking = generatePetUpgradeRanking(petData, data.member);
 			let resultMsg = "🐾 펫 강화 순위 🐾\n\n";
 			resultMsg += petUpgradeRanking.rankingMsg1 + allsee + petUpgradeRanking.rankingMsg2;
@@ -1323,6 +1332,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		} else if (msg === "/반지순위") {
 			replier.reply("반지순위는 펜던트 콘텐츠 전환으로 종료되었습니다.");
 		} else if (msg === "/종합순위" || msg === "ㅈㅈㅈ") {
+			petData = loadJsonFile(memberPetPath);
+			petSkillData = loadJsonFile(petSkillDataPath) || {};
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			let rankData = generateRanking(data, petData, homeData, petSkillData, guildData);
@@ -1330,6 +1341,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(buildCombinedServerRankingMessage(serverRows, sender, data, petData, guildData));
 			replier.reply(buildWorldOverallRankingMessage(rankData.rows, sender, data, petData, guildData));
 		} else if (msg === "/서버순위") {
+			petData = loadJsonFile(memberPetPath);
+			petSkillData = loadJsonFile(petSkillDataPath) || {};
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			let rankData = generateRanking(data, petData, homeData, petSkillData, guildData);
@@ -1423,6 +1436,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/펫상태") {
+			petData = loadJsonFile(memberPetPath);
 			let petInfo = petData[sender];
 			if (petInfo.petname) {
 				if (petInfo.newimg) {
@@ -1432,6 +1446,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 		}
 		if (msg === "/미니펫통계") {
+			petData = loadJsonFile(memberPetPath);
 			var miniPetData = loadJsonFile(miniPetPath);
 			let output = getMiniPetGradeStats(petData, miniPetData.gradeTable);
 			if (!output.includes("등급")) {
@@ -1442,6 +1457,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/펫정보" || msg === "/ㅎ" || msg === "ㅁㅁㅁ") {
+			petData = loadJsonFile(memberPetPath);
+			petSkillData = loadJsonFile(petSkillDataPath) || {};
+			petTitleData = loadJsonFile(petTitlePath);
 			var homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			var petExploreData = loadJsonFile(petExplorePath);
@@ -1657,12 +1675,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/펫매력순위") {
+			petData = loadJsonFile(memberPetPath);
 			let petRanking = generatePetRanking(petData);
 			let resultMsg = "🏆 [펫]매력 순위 🏆\n\n";
 			resultMsg += petRanking.rankingMsg1 + allsee + petRanking.rankingMsg2;
 			replier.reply(resultMsg);
 		}
 		if (msg === "/캐슬매력순위") {
+			petData = loadJsonFile(memberPetPath);
+			petSkillData = loadJsonFile(petSkillDataPath) || {};
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			let castleRanking = generateCastleRanking(petData, data, homeData, guildData, petSkillData);
@@ -1673,6 +1694,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(resultMsg);
 		}
 		if (msg === "/레이드매력순위") {
+			petData = loadJsonFile(memberPetPath);
+			petSkillData = loadJsonFile(petSkillDataPath) || {};
 			let homeData = loadJsonFile(homeDataFile);
 			homeData = initSweetHomeUser(homeData, sender);
 			let raidRanking = generateRaidRanking(petData, data, homeData, guildData, petSkillData);
@@ -1681,6 +1704,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			replier.reply(resultMsg);
 		}
 		if (msg == "/시련의탑순위") {
+			petData = loadJsonFile(memberPetPath);
 			var trialTower = loadJsonFile(trialTowerPath);
 			let rank = trialTowerRanking(data, petData, guildData, trialTower);
 			let resultMsg = "😈 [펫] 시련의탑 순위 😈\n\n";
@@ -1780,6 +1804,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 
 		if (msg === "/펫주인" && ((sender == "호이 남" || isOrderLogRoomBot(sender)) || sender == "젤리 남")) {
+			petData = loadJsonFile(memberPetPath);
 			let ownermsg = "🐶펫 주인확인🐱\n\n";
 			for (let user in data.member) {
 				if (petData[user] && petData[user].petname) {
@@ -1799,6 +1824,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		
 		if (msg === "/캐슬전적") {
+			petData = loadJsonFile(memberPetPath);
 			var castleBattleData = loadJsonFile(castleBattlePath);
 
 			let senderObj = data.member[sender];

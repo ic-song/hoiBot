@@ -392,6 +392,7 @@ for (const source of [main, info]) {
         calculateCastleItem: () => 140000,
         calculateItemInfoAll: () => ({ castleExp: 0, raidExp: 150000 }),
         getHomeTotalExp: () => 0,
+        getPetHomeFurnitureCharm: () => ({ bonus: 0 }),
         hasPetSkill: () => false,
         getIntimacyExpFromBag: bag => bag.intimacy || 0,
         getEquippedNonTierPetSkillExp: () => 0,

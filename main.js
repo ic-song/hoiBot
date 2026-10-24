@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.690"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.691"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -5193,9 +5193,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             }
             return;
         }
-        commonStepStart = Date.now();
-        var currencyLogData = ensureCurrencyLogData(loadJsonFile(currencyLogPath));
-        addResponseTiming("currencyLog 로드/보정", commonStepStart);
+        var currencyLogData; // 필요한 명령은 기존 공통 위치에서 읽어 저장·오류 순서 보존
+        if (msg === "/맞짱종료" || msg === "/다이아순위" || msg === "/다이아전체초기화" || msg === "/데이터정리" ||
+            /^\/다이아상점구매\s+\d+\s+\d+$/.test(msg) || /^\/다이아(?:추가|차감)\s+.+\s+\d+$/.test(msg) ||
+            msg.indexOf("/계정잠수삭제") === 0 || msg.indexOf("/계삭진행") === 0 ||
+            msg === "/다이아상자오픈" || /^\/다이아상자오픈\s+\d+$/.test(msg) ||
+            msg === "/길드분배" || /^\/길드분배(?:\s+\d+)+$/.test(msg)) {
+            commonStepStart = Date.now();
+            currencyLogData = ensureCurrencyLogData(loadJsonFile(currencyLogPath));
+            addResponseTiming("currencyLog 로드/보정", commonStepStart);
+        }
         if (matzangField.active && matzangField.resting && matzangField.restUntil && Date.now() >= matzangField.restUntil) {
             matzangField.resting = false;
             matzangField.restUntil = 0;
