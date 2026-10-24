@@ -1846,6 +1846,8 @@ Status: VERIFIED
 - High-value aggregation command for pet, mini-pet, home, tower, castle, intimacy, and skill state
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
+- `calculateTotalExp`(Main/Info), Info `/펫정보`와 `buildNicknameWorldRanks`는 같은 회원의 캐슬·레이드 한 쌍에서만 장비 합계·미니펫 매력·인테리어 적용 전 집 매력을 재사용한다. 두 모드 helper의 선택적 8번째 인수는 지역 공유 객체이며, 기존 7개 인수 호출은 그대로 독립 계산한다. `response(...)`의 7개 인수 계약은 변경하지 않는다.
+- `/펫정보`는 레이드→캐슬, 종합매력·닉네임 순위는 캐슬→레이드 순서를 유지한다. 스킬 초기화·별채 검증·모드별 보너스와 반올림은 각각 기존 위치에서 수행하며, 펜던트 승급값 정규화 후 데이터 상태도 유지한다. 전역 사용자 캐시나 추가 파일 입출력은 없다.
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
 - `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함), 길드공헌 큐브, 모험가 레벨, 퀘스트 누적 보너스를 0.001% 단위로 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
 - 일반 종합매력 펫스킬 12종은 `Info.js`의 공통 매력표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.

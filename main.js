@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.694"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.695"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -47658,12 +47658,17 @@ function generateBagOutput(bagItems, includeDonationNotice) {
     };
 }
 
-function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
+function calculateCastleExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData, commonCalculation) {
+    var commonInputs = commonCalculation ? commonCalculation.inputs : null;
+    if (commonCalculation) commonCalculation.inputs = null; // 같은 계산 구간의 반대 모드 입력을 한 번만 사용
+    if (commonInputs && (commonInputs.mode !== "raid" || commonInputs.user !== memberName || commonInputs.data !== data || commonInputs.petData !== petData || commonInputs.homeData !== homeData)) commonInputs = null;
     let castleItem = calculateCastleItem(memberName, data) || 0;
-    let itemInfo = calculateItemInfoAll(memberName, data, petData) || { castleExp: 0 };
+    var rawItemInfo = commonInputs ? commonInputs.itemInfo : calculateItemInfoAll(memberName, data, petData);
+    let itemInfo = rawItemInfo || { castleExp: 0 };
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0;
-    let miniPetExp = getMiniPetModeCharm(memberName, petData);
-    let homeExp = getHomeTotalExp(homeData, memberName) || 0;
+    let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData);
+    let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
+    var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
     if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
     }
@@ -47686,14 +47691,21 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
     var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp + dollCharm / 2; // 큐브 적용 전 캐슬 매력 합계
     var castleCubePercent = getPetModeCharmPercent(memberName, data, guildData, "castle", excludeHomeBadgeCube);
-    return applyPercentWithExactFloor(castleTotal, castleCubePercent);
+    var castleResult = applyPercentWithExactFloor(castleTotal, castleCubePercent);
+    if (commonCalculation && !commonInputs) commonCalculation.inputs = { mode: "castle", user: memberName, data: data, petData: petData, homeData: homeData, itemInfo: rawItemInfo, miniPetExp: miniPetExp, homeExp: commonHomeExp };
+    return castleResult;
 }
 
-function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData) {
-    let itemInfo = calculateItemInfoAll(memberName, data, petData) || { raidExp: 0 }; // `null` 또는 `undefined` 방지
+function calculateRaidExp(memberName, data, petData, homeData, petSkillData, excludeHomeBadgeCube, guildData, commonCalculation) {
+    var commonInputs = commonCalculation ? commonCalculation.inputs : null;
+    if (commonCalculation) commonCalculation.inputs = null; // 같은 계산 구간의 반대 모드 입력을 한 번만 사용
+    if (commonInputs && (commonInputs.mode !== "castle" || commonInputs.user !== memberName || commonInputs.data !== data || commonInputs.petData !== petData || commonInputs.homeData !== homeData)) commonInputs = null;
+    var rawItemInfo = commonInputs ? commonInputs.itemInfo : calculateItemInfoAll(memberName, data, petData);
+    let itemInfo = rawItemInfo || { raidExp: 0 }; // `null` 또는 `undefined` 방지
     let petExp = (petData[memberName] && petData[memberName].petexp) || 0; // `petData` 값이 없을 때 `0` 반환
-    let miniPetExp = getMiniPetModeCharm(memberName, petData); // 대표·보조 미니펫 레이드 매력
-    let homeExp = getHomeTotalExp(homeData, memberName) || 0;
+    let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData); // 대표·보조 미니펫 레이드 매력
+    let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
+    var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
     if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
     }
@@ -47713,7 +47725,9 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
     var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp + dollCharm / 2; // 큐브 적용 전 레이드 매력 합계
     var raidCubePercent = getPetModeCharmPercent(memberName, data, guildData, "raid", excludeHomeBadgeCube);
-    return applyPercentWithExactFloor(raidTotal, raidCubePercent);
+    var raidResult = applyPercentWithExactFloor(raidTotal, raidCubePercent);
+    if (commonCalculation && !commonInputs) commonCalculation.inputs = { mode: "raid", user: memberName, data: data, petData: petData, homeData: homeData, itemInfo: rawItemInfo, miniPetExp: miniPetExp, homeExp: commonHomeExp };
+    return raidResult;
 }
 
 // 실전과 진단에서 같은 홈뱃지·길드·레벨·퀘스트 매력 비율을 합산하는 함수
@@ -54768,8 +54782,9 @@ function calculateTotalExp(sender, data, petData, homeData, petSkillData, guildD
     var petInfo = petData[sender];
     var homeData = homeData || loadJsonFile(homeDataFile);
 
-    var totalCastle = calculateCastleExp(sender, data, petData, homeData, petSkillData, false, guildData) || 0;
-    var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData, false, guildData) || 0;
+    var castleRaidCommon = {}; // 이번 종합매력 계산의 두 모드 사이에서만 순수 입력 재사용
+    var totalCastle = calculateCastleExp(sender, data, petData, homeData, petSkillData, false, guildData, castleRaidCommon) || 0;
+    var totalRaid = calculateRaidExp(sender, data, petData, homeData, petSkillData, false, guildData, castleRaidCommon) || 0;
 
     // 강화 매력 보너스 계산
     var upgradeBonus = calculatePetUpgradeCharm(sender, data, petData);

@@ -88,12 +88,15 @@ function checks(){
  }
  groups++;
  // 순위 최적화 함수 외 입장권·보상·저장 및 전체 목록 코드는 기준 버전과 동일하다.
- for(const marker of ['function buildNicknameWorldRanks(','function generateRanking(','function calculateTotalExp(','function calculateCastleExp(','function calculateRaidExp('])assert.equal(block(info,marker),block(oldInfo,marker));
+ assert.equal(block(info,'function generateRanking('),block(oldInfo,'function generateRanking('));
  // 후속 저장 최적화는 전용 전후 동등성 시험으로 검증하며 여기서는 순위 변경 범위만 대조한다.
- let rankingScope=main;for(const n of ['getPetSkillData','getPetSkillBagList'])rankingScope=rankingScope.replace(block(main,'function '+n+'('),block(oldMain,'function '+n+'('));
+ let rankingScope=main;for(const n of ['getPetSkillData','getPetSkillBagList','calculateCastleExp','calculateRaidExp','calculateTotalExp'])rankingScope=rankingScope.replace(block(main,'function '+n+'('),block(oldMain,'function '+n+'('));
  const normalizedMain=rankingScope.replace(block(main,'function writeVerifiedJsonFile('),block(oldMain,'function writeVerifiedJsonFile(')).replace(block(main,'function isUserInTotalRankingTop('),block(oldMain,'function isUserInTotalRankingTop(')).replace('// 앞선 인원으로 종합순위 입장 제한을 판정하고 비정상 점수는 기존 정렬로 확인하는 함수','// 유저가 종합순위 상위 제한 안에 있는지 확인하는 함수').replace(/^const HoiBotVersion = "[\d.]+";/m,oldMain.match(/^const HoiBotVersion = "[\d.]+";/m)[0]);
  assert.equal(normalizedMain,oldMain);
- const normalizedInfo=info.replace(block(info,'function getMemberRank('),block(oldInfo,'function getMemberRank('))
+ // 후속 공통 계산 변경은 전용 시험에서 검증하고, 여기서는 기존 순위 변경만 원문 대조한다.
+ let infoScope=info;for(const n of ['calculateCastleExp','calculateRaidExp','calculateTotalExp','buildNicknameWorldRanks'])infoScope=infoScope.replace(block(info,'function '+n+'('),block(oldInfo,'function '+n+'('));
+ infoScope=infoScope.replace('\t\t\tvar castleRaidCommon = {}; // 같은 조회의 레이드→캐슬 순서를 유지하며 순수 입력만 공유\n','').replaceAll(', guildData, castleRaidCommon)',', guildData)');
+ const normalizedInfo=infoScope.replace(block(info,'function getMemberRank('),block(oldInfo,'function getMemberRank('))
   .replace('// 현재 응답의 본인 매력만 재사용하고 기존 엔진 정렬 순서를 그대로 보존하는 함수\n','')
   .replace('getMemberRank(sender, data, petData, homeData, petSkillData, guildData, memberRankingTotalExp)','getMemberRank(sender, data, petData, homeData, petSkillData, guildData)')
   .replace('\t\t\tvar memberRankingTotalExp = castleExpNum + raidExpNum + calculatePetUpgradeCharm(sender, data, petData); // 순위 비교에는 반올림 전 기존 합산값 사용\n\t\t\tvar totalExpNum = parseInt(memberRankingTotalExp, 10);\n\t\t\tif (isNaN(totalExpNum)) totalExpNum = 0;','\t\t\tvar totalExpNum = calculateTotalExp(sender, data, petData, homeData, petSkillData, guildData);');
