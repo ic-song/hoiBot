@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.689"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.690"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -4965,7 +4965,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         ensureHappyFoundationData(data);
         addResponseTiming("해피재단 보정", commonStepStart);
         commonStepStart = Date.now();
-        var petSkillChanged = ensurePetSkillSystemData(data, petData, petSkillData);
+        var petSkillChanged = ensurePetSkillSystemData(data, petData, petSkillData, sender);
         addResponseTiming("펫스킬 시스템 보정", commonStepStart);
         if (petSkillChanged) {
             commonStepStart = Date.now();
@@ -50156,10 +50156,26 @@ function normalizePetSkillStoredNames(petSkillData, user) {
     return JSON.stringify(petSkillData[user] || {}) !== before;
 }
 
-// 펫 스킬 시스템 데이터 초기화 및 버전 관리
-function ensurePetSkillSystemData(data, petData, petSkillData) {
+// 최신 버전은 현재 회원만 검사하고 버전 변경·명시적 전체 호출은 전체 보정하는 함수
+function ensurePetSkillSystemData(data, petData, petSkillData, user) {
     if (!data || !data.member || !petData || !petSkillData) return false;
     if (!data.petSkillSystem) data.petSkillSystem = {};
+
+    if (data.petSkillSystem.version === PET_SKILL_SYSTEM_VERSION && typeof user === "string") {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user)) return false;
+        var storedUser = petSkillData[user];
+        var skills = storedUser && storedUser.petSkills; // 초기화 전 구조로 실제 변경 여부 확인
+        if (storedUser instanceof Array || skills instanceof Array) {
+            var userBefore = JSON.stringify(storedUser); // 비정상 배열 구조는 기존 변경 판정을 현재 회원에만 적용
+            initPetSkillUser(petSkillData, user);
+            return JSON.stringify(petSkillData[user]) !== userBefore;
+        }
+        var userChanged = !storedUser || !skills || typeof skills !== "object" ||
+            !(skills.equipped instanceof Array) || !(skills.lockedPremium instanceof Array) ||
+            !skills.bag || typeof skills.bag !== "object";
+        initPetSkillUser(petSkillData, user);
+        return userChanged;
+    }
 
     var changed = false;
     var users = Object.keys(data.member);

@@ -3111,6 +3111,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `formatPetSkillStatusMessage`
+- `ensurePetSkillSystemData`, `initPetSkillUser`, `normalizePetSkillStoredNames`
 
 ## Data Usage
 
@@ -3119,6 +3120,8 @@ Status: VERIFIED
 ## Save Flow
 
 - Calls `saveJsonFile(petSkillData, petSkillDataPath)`
+- 공통 진입의 `ensurePetSkillSystemData(data, petData, petSkillData, sender)`는 최신 시스템 버전일 때 등록된 발신자만 검사한다. 정상 구조는 JSON 변환 없이 검사하며 다른 회원의 누락 구조는 해당 회원 처리 시 보정한다. 시스템 버전이 다르거나 생략된 이전 데이터, 또는 발신자를 생략한 명시적 전체 호출은 기존 전원 초기화·이름/가방/컬렉션 정규화를 유지한다.
+- 보정으로 변경된 경우 기존 공통 흐름에서 회원 → 펫 → 펫스킬 파일을 같은 저장 트랜잭션으로 저장한다. 정상 반복 입력은 이 보정을 위한 저장을 하지 않는다. 새 캐시·경로·저장 형식은 추가하지 않으며 DEV 컨텍스트와 실패 시 원본 복구를 유지한다.
 
 ## Related Commands
 
