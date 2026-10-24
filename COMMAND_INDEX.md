@@ -3223,6 +3223,7 @@ Status: VERIFIED
 - `buildWorldOverallRankingMessage`
 - `buildCombinedServerRankingMessage`
 - `buildServerRankingRows`
+- `getMemberRank` (`/펫정보` 개인 순위), Main의 `isUserInTotalRankingTop` (미궁 9번 입장 조건)
 
 ## Data Usage
 
@@ -3234,6 +3235,8 @@ Status: VERIFIED
 ## Save Flow
 
 - Read-only in the confirmed branch
+- `/펫정보`·`/ㅎ`·`ㅁㅁㅁ`는 같은 응답에서 계산한 본인 캐슬/레이드/강화 합계를 재사용한다. 표시의 기존 `parseInt`/NaN 처리와 순위용 원합계를 구분한다. `getMemberRank`의 마지막 선택 인자는 현재 응답의 유한한 본인 원합계이며 생략하면 기존처럼 계산한다. 본인을 제외한 회원은 기존 열거 순서로 모두 계산하고, 개인 순위는 항상 기존 Rhino 정렬을 유지한다.
+- Main의 `isUserInTotalRankingTop`는 기존 순서대로 전체 점수를 계산한 다음 더 높은 점수 또는 동점 닉네임 오름차순으로 앞선 인원을 센다. 유한한 수치에서는 정렬을 생략하되 결과는 기존 상위 제한 판정과 같다. 비정상 점수는 기존 정렬로 돌아가며 파일 IO·영속 캐시·보상/입장권 변경을 추가하지 않는다. 수동/자동 탐험의 호출 위치·입장권 검사·보상·저장 코드는 그대로다.
 
 ## Related Commands
 
@@ -3244,6 +3247,7 @@ Status: VERIFIED
 
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
+- ver_2.692 성능 개선은 계산 중복과 상위권 판정의 정렬 비용에만 한정한다. 월드/서버 전체 목록, 개인 순위의 엔진별 동점 순서, 기존 Main/Info의 서로 다른 동점 기준은 변경하지 않는다. `tools/test_ranking_calculation.js`, `tools/test_ranking_calculation_rhino.js`, `tools/ranking_calculation_validation.md`에서 기준 버전과 결과를 대조한다.
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
 - `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
 - `/종합순위`와 `ㅈㅈㅈ`는 2026-10-08 사용자 롤백 요청의 기존 캡처에 맞춰 소속 서버 현황·서버 내 개인 TOP 10 통합 화면 → 월드 개인 순위 두 메시지로 출력한다. 전체 서버 목록만 있는 별도 메시지는 추가 출력하지 않는다. `/서버순위`의 현행 소속 서버 현황·개인 TOP 10·10개 서버 합산을 한 메시지로 표시하는 동작은 유지한다.

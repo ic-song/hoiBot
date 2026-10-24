@@ -132,8 +132,9 @@ console.log("3/5 10개 서버·전체 합산·TOP10·인원 조회·별칭·무�
 const rankingReplies = [];
 let rankingLoads = 0;
 Object.assign(rank, { data, petData: pets, petSkillData: {}, guildData: {}, sender: "u1", homeDataFile: "synthetic-home.json",
+    memberPetPath: "synthetic-pets.json", petSkillDataPath: "synthetic-skills.json",
     initSweetHomeUser: d => d,
-    loadJsonFile: file => { assert.strictEqual(file, "synthetic-home.json"); rankingLoads++; return {}; },
+    loadJsonFile: file => { if (file === "synthetic-pets.json") return pets; if (file === "synthetic-skills.json") return {}; assert.strictEqual(file, "synthetic-home.json"); rankingLoads++; return {}; },
     saveJsonFile: () => { throw Error("조회 중 저장 금지"); }, replier: { reply: text => rankingReplies.push(text) }
 });
 vm.runInContext("function runRankingCommand(){if(false){}" + block(info, 'else if (msg === "/종합순위" ||') +

@@ -1498,14 +1498,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			var castleExpNum = calculateCastleExp(sender, data, petData, homeData, petSkillData, false, guildData) || 0;
 
 			// 종합매력(/종합순위 공식과 동일)
-			var totalExpNum = calculateTotalExp(sender, data, petData, homeData, petSkillData, guildData);
+			var memberRankingTotalExp = castleExpNum + raidExpNum + calculatePetUpgradeCharm(sender, data, petData); // 순위 비교에는 반올림 전 기존 합산값 사용
+			var totalExpNum = parseInt(memberRankingTotalExp, 10);
+			if (isNaN(totalExpNum)) totalExpNum = 0;
 
 			// 약식 표기
 			var raidShort = formatKoreanShort(raidExpNum);
 			var castleShort = formatKoreanShort(castleExpNum);
 
 			// 랭킹/칭호
-			var memberRank = getMemberRank(sender, data, petData, homeData, petSkillData, guildData);
+			var memberRank = getMemberRank(sender, data, petData, homeData, petSkillData, guildData, memberRankingTotalExp);
 			var activePetTitle = getTitle(data.member[sender], petTitleData.member[sender]);
 
 			// 펫강화 라인
@@ -2569,17 +2571,22 @@ function buildTotalRankingGapGuide(userScores, sender, data, petData, guildData,
 	return "앗, 간발의 차이!\n" + myNick + "님의 순위는 " + (myIndex + 1) + "등!\n종합매력을 ☆ " + numberWithCommas(needGap) + "만 더 모으면\n" + prevNick + "님을 제치고 순위가 상승합니다! 🚀\n\n";
 }
 
-function getMemberRank(memberName, data, petData, homeData, petSkillData, guildData) {
+// 현재 응답의 본인 매력만 재사용하고 기존 엔진 정렬 순서를 그대로 보존하는 함수
+function getMemberRank(memberName, data, petData, homeData, petSkillData, guildData, knownMemberTotalExp) {
 	let members = data.member;
 	let userScores = [];
 
 	// 사용자별 점수 계산 후 배열에 저장
 	for (let key in members) {
 		if (petData[key]) {
-			let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData, false, guildData) || 0;
-			let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData, false, guildData) || 0;
-			let upgradeBonus = calculatePetUpgradeCharm(key, data, petData);
-			let totalExp = castleExp + raidExp + upgradeBonus;
+			var totalExp;
+			if (key === memberName && typeof knownMemberTotalExp === "number" && isFinite(knownMemberTotalExp)) totalExp = knownMemberTotalExp;
+			else {
+				let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData, false, guildData) || 0;
+				let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData, false, guildData) || 0;
+				let upgradeBonus = calculatePetUpgradeCharm(key, data, petData);
+				totalExp = castleExp + raidExp + upgradeBonus;
+			}
 
 			userScores.push({ key: key, totalExp: totalExp });
 		}

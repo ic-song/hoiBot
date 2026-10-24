@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.691"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.692"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -49023,10 +49023,10 @@ function decomposePetSkillFromBag(data, petData, guildData, petSkillData, sender
     };
 }
 
-// 유저가 종합순위 상위 제한 안에 있는지 확인하는 함수
+// 앞선 인원으로 종합순위 입장 제한을 판정하고 비정상 점수는 기존 정렬로 확인하는 함수
 function isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, limit, guildData) {
     if (!data || !data.member || !petData || !data.member[user]) return false;
-    var rows = [];
+    var rows = [], userRow = null, comparableScores = true; // 대상 행과 전체 점수의 수치 비교 가능 여부
     for (var name in data.member) {
         if (!data.member.hasOwnProperty(name)) continue;
         if (!petData[name]) continue;
@@ -49034,6 +49034,19 @@ function isUserInTotalRankingTop(data, petData, homeData, petSkillData, user, li
             user: name,
             totalExp: calculateTotalExp(name, data, petData, homeData, petSkillData, guildData)
         });
+        var row = rows[rows.length - 1];
+        if (typeof row.totalExp !== "number" || !isFinite(row.totalExp)) comparableScores = false;
+        if (name === user) userRow = row;
+    }
+    if (!userRow) return false;
+    if (comparableScores) {
+        var precedingCount = 0; // 같은 점수는 기존 닉네임 오름차순을 포함해 앞선 인원 계산
+        for (var rankIndex = 0; rankIndex < rows.length; rankIndex++) {
+            var candidate = rows[rankIndex];
+            if (candidate.totalExp > userRow.totalExp ||
+                (candidate.totalExp === userRow.totalExp && candidate.user < user)) precedingCount++;
+        }
+        return precedingCount < limit;
     }
     rows.sort(function (a, b) {
         if (b.totalExp !== a.totalExp) return b.totalExp - a.totalExp;
