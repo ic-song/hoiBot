@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.692"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.693"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -34045,6 +34045,17 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
             throw new Error("Rollback JSON file cleanup failed: " + rollbackFile.getPath());
         }
 
+        var repeatedSaveTransaction = getDataSaveTransaction();
+        var repeatedSaveEntry = repeatedSaveTransaction && !repeatedSaveTransaction.failed && !repeatedSaveTransaction.rollingBack ? repeatedSaveTransaction.entries[path] : null;
+        var canReuseVerifiedJson = repeatedSaveEntry && repeatedSaveEntry.backupPath && !/(^|[\\/])member\.json$/.test(String(path));
+        // 같은 명령에서 검증 저장한 관리 파일만 잠금 안에서 원문을 재확인하고 재쓰기를 생략한다. 회원 분리·복구 기록은 제외한다.
+        if (skipManagedBackup === true && canReuseVerifiedJson && repeatedSaveEntry.saved && repeatedSaveEntry.verifiedJsonText === jsonText && targetFile.exists()) {
+            var repeatedSaveMatches = false;
+            try { repeatedSaveMatches = String(FileStream.read(path, "utf-8")) === jsonText; }
+            catch (repeatedSaveReadError) {} // 중복 확인만 실패하면 기존 전체 쓰기를 수행한다. 아래 임시 파일 검증·저장 오류는 그대로 처리한다.
+            if (repeatedSaveMatches) return;
+        }
+
         outputStream = new java.io.FileOutputStream(tempFile, false);
         writer = new java.io.OutputStreamWriter(outputStream, "UTF-8");
         writer.write(jsonText);
@@ -34110,6 +34121,7 @@ function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMember
         if (rollbackFile.exists() && !rollbackFile.delete()) {
             try { debuggerLog("[WARN : JSON rollback cleanup] " + rollbackFile.getPath()); } catch (cleanupLogError) {} // 완료된 저장은 로그 전송 실패로 취소하지 않음
         }
+        if (canReuseVerifiedJson) repeatedSaveEntry.verifiedJsonText = jsonText;
     } catch (e) {
         if (!targetFile.exists() && rollbackFile.exists()) {
             rollbackFile.renameTo(targetFile);

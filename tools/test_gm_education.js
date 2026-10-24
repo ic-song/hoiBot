@@ -139,7 +139,8 @@ function runTests() {
         const profile = spirit.block(info, 'if (msg === "/내정보") {'); let educationReads = 0;
         const query = { GLOBAL_CONFIG: { gmEducation: c.GLOBAL_CONFIG.gmEducation }, DATA_ROOT_PATH: c.DATA_ROOT_PATH, gmEducationInfoCache: {},
             java: { io: { File: function (path) { this.exists = () => f.raw(path) !== undefined; this.lastModified = () => 1; this.length = () => (f.raw(path) || '').length; } } },
-            resolveActiveDataPath: p => p, loadJsonFile: p => { if (p === paths(false).store) educationReads++; return p === 'home' ? {} : f.get(p); },
+            resolveActiveDataPath: p => p, loadJsonFile: p => { if (p === paths(false).store) educationReads++; return ['home','profile-pets','profile-titles','profile-pet-titles'].includes(p) ? {} : f.get(p); },
+            memberPetPath: 'profile-pets', memberTitlePath: 'profile-titles', petTitlePath: 'profile-pet-titles',
             homeDataFile: 'home', initSweetHomeUser: d => d, petData: {}, titleData: {}, petTitleData: {}, guildData: {}, allsee: '<ALLSEE>',
             getHomeTotalExp: () => 0, getInfoLevelRequiredExperience: () => 1000, getMyGuildInfo: () => null, getTitle: () => '', isInfoSupportPassActive: () => false,
             formatInfoServerRaidServer: (_d, s) => s, getInfoAdventureLevelTitle: () => '모험가', checkRank: (_d, _p, _g, u) => u, formatDate: () => 'joined', numberWithCommas: String,

@@ -64,9 +64,10 @@ test("치명타·공격권·패널티·공격 반영·정산 계산 함수는 �
  const h=fixture();for(const name of ["calculateCriticalDamage","getServerRaidAttackCheck","getServerRaidAttackAvailability","getServerRaidRoundPolicy","calculateServerRaidAttackReward","applyServerRaidAttack","applyServerRaidExcessAttempt","settleServerRaidParticipant","finishServerRaidSettlement"])
  assert.equal(h.fixture.block(h.fixture.main,"function "+name+"("),h.fixture.block(baselineSource,"function "+name+"("),name);
 });
-test("검증한 운영 저장 함수는 관련 없는 명령 추가에도 그대로 유지",()=>{
+test("회원 분리·직렬화·저장 진입 함수는 검증한 운영 기준 유지",()=>{
  const h=fixture(),validated=require("child_process").execFileSync("git",["show","c12e97358731619280a4b70a7b9cbb0770c8807d:main.js"],{encoding:"utf8",maxBuffer:20*1024*1024});
- for(const name of ["readMemberSplitStore","buildMemberSplitSavePlan","preserveMemberSplitBackupStores","writeVerifiedJsonFile","saveJsonFile","stringifyMemberSplitStore"])assert.equal(h.fixture.block(h.fixture.main,"function "+name+"("),h.fixture.block(validated,"function "+name+"("),name);
+ // 공통 검증 쓰기의 후속 중복 제거는 test_command_save_reuse에서 전체 함수·예외·전후 결과를 대조한다.
+ for(const name of ["readMemberSplitStore","buildMemberSplitSavePlan","preserveMemberSplitBackupStores","saveJsonFile","stringifyMemberSplitStore"])assert.equal(h.fixture.block(h.fixture.main,"function "+name+"("),h.fixture.block(validated,"function "+name+"("),name);
 });
 test("같은 합성 공격의 최종 파일·쓰기량·fsync는 동일하고 중복 읽기만 감소",()=>{
  function run(source){const h=storageFixture(source);h.setup();const d=h.fixture.read();d.syntheticPadding="m".repeat(1000000);d.serverRaid.history=[{id:"synthetic-past",note:"r".repeat(1000000)}];h.fixture.write(d);h.migrate();h.fixture.start();const io=measure(h,f=>f.attack("a","storage-compare"));return {h,io};}

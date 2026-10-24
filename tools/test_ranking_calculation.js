@@ -89,7 +89,8 @@ function checks(){
  groups++;
  // 순위 최적화 함수 외 입장권·보상·저장 및 전체 목록 코드는 기준 버전과 동일하다.
  for(const marker of ['function buildNicknameWorldRanks(','function generateRanking(','function calculateTotalExp(','function calculateCastleExp(','function calculateRaidExp('])assert.equal(block(info,marker),block(oldInfo,marker));
- const normalizedMain=main.replace(block(main,'function isUserInTotalRankingTop('),block(oldMain,'function isUserInTotalRankingTop(')).replace('// 앞선 인원으로 종합순위 입장 제한을 판정하고 비정상 점수는 기존 정렬로 확인하는 함수','// 유저가 종합순위 상위 제한 안에 있는지 확인하는 함수').replace(/^const HoiBotVersion = "[\d.]+";/m,oldMain.match(/^const HoiBotVersion = "[\d.]+";/m)[0]);
+ // 후속 저장 최적화는 전용 전후 동등성 시험으로 검증하며 여기서는 순위 변경 범위만 대조한다.
+ const normalizedMain=main.replace(block(main,'function writeVerifiedJsonFile('),block(oldMain,'function writeVerifiedJsonFile(')).replace(block(main,'function isUserInTotalRankingTop('),block(oldMain,'function isUserInTotalRankingTop(')).replace('// 앞선 인원으로 종합순위 입장 제한을 판정하고 비정상 점수는 기존 정렬로 확인하는 함수','// 유저가 종합순위 상위 제한 안에 있는지 확인하는 함수').replace(/^const HoiBotVersion = "[\d.]+";/m,oldMain.match(/^const HoiBotVersion = "[\d.]+";/m)[0]);
  assert.equal(normalizedMain,oldMain);
  const normalizedInfo=info.replace(block(info,'function getMemberRank('),block(oldInfo,'function getMemberRank('))
   .replace('// 현재 응답의 본인 매력만 재사용하고 기존 엔진 정렬 순서를 그대로 보존하는 함수\n','')
