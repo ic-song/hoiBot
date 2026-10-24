@@ -1142,6 +1142,7 @@ Status: VERIFIED
 - Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
 - `/펫홈` and `/가구정보` use the queried owner's house, skills, charm, levels and furniture. Preview TOP 3 numbers never replace the actual equipped-item indices.
+- `getPetHomeBadgeById`는 활성 `commandContextThreadLocal`의 명령 한 번 안에서만 고정 뱃지 정의를 재사용한다. 첫 조회는 기존 선형 검색을 유지하고, 추가 문자열 ID 조회부터 첫 일치 정의의 원본 참조를 점진적으로 색인한다. 없는 ID 문자열은 보관하지 않으며 잘못된 정의는 기존 검색 순서에서 오류로 남는다. 명령 종료·DEV/PROD·중첩/동시 실행 사이에는 색인을 공유하지 않는다. `getAllPetHomeBadges`의 새 배열·고정 순서, 비문자 ID의 엄격 비교, 컨텍스트 없는 독립 조회는 기존대로 유지한다.
 - `/홈뱃지` shows both equipped badge slots and the final applied-effect summary first, inserts `allsee` immediately after that summary, then keeps command guides, cube guides, collection summary, and the owned-badge list folded.
 - Standalone full/special badge lists, badge details, pet-home feed output, and follower/heart/badge ranking output identify the requesting or target user with `[checkRank] 님`.
 - `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.

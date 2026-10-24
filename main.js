@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.695"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.696"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -52482,9 +52482,32 @@ function buildPetHomeGachaRateMessage(data, petData, guildData, user) {
 
 // 전체 펫홈 뱃지 설정을 ID로 찾는 함수
 function getPetHomeBadgeById(badgeId) {
-    var allBadges = getAllPetHomeBadges();
+    var ctx = typeof commandContextThreadLocal !== "undefined" ? commandContextThreadLocal.get() : null;
+    var lookup = null;
+    if (ctx && typeof badgeId === "string") {
+        lookup = ctx.petHomeBadgeDefinitionLookup;
+        if (lookup) {
+            var lookupKey = "$" + badgeId;
+            if (Object.prototype.hasOwnProperty.call(lookup.byId, lookupKey)) return lookup.byId[lookupKey];
+            while (lookup.next < lookup.badges.length) {
+                var badge = lookup.badges[lookup.next];
+                var currentId = badge.id; // 처음 일치하기 전의 잘못된 정의는 기존대로 오류를 발생시킴
+                if (typeof currentId === "string" && !Object.prototype.hasOwnProperty.call(lookup.byId, "$" + currentId)) lookup.byId["$" + currentId] = badge;
+                lookup.next++;
+                if (currentId === badgeId) return badge;
+            }
+            return null;
+        } else {
+            lookup = { badges: getAllPetHomeBadges(), byId: {}, next: 0 };
+            ctx.petHomeBadgeDefinitionLookup = lookup; // 고정 정의만 이번 명령 안에서 재사용하며 개인 데이터·다음 명령에는 보관하지 않음
+        }
+    }
+    var allBadges = lookup ? lookup.badges : getAllPetHomeBadges();
     for (var i = 0; i < allBadges.length; i++) {
-        if (allBadges[i].id === badgeId) return allBadges[i];
+        if (allBadges[i].id === badgeId) {
+            if (lookup) lookup.byId["$" + badgeId] = allBadges[i]; // 첫 조회는 기존 검색만 하고 추가 조회부터 인덱스를 확장
+            return allBadges[i];
+        }
     }
     return null;
 }

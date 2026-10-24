@@ -85,7 +85,7 @@ function checks(){
     for(const [source,optimized] of [[before,false],[main,true]]){const h=createFixture(source);h.c.optimized=optimized;h.run(scenarios);assert(h.locks.every(l=>l.depth===0));console.log('PASS '+(optimized?'after':'before')+' '+h.c.groups+' storage/command exception groups, all locks released');}
     const a=createFixture(before),b=createFixture(main);for(const h of [a,b])h.run("fixture();replies=[];packageCommand('/이랏싸이마쎄');");assert.deepStrictEqual(b.disk,a.disk);assert.equal(JSON.stringify(b.c.replies),JSON.stringify(a.c.replies));
     // 후속 스킬 조회·정렬과 공통 계산은 각각 test_pet_skill_lookup/test_castle_raid_common에서 검증한다.
-    let storageScope=main;for(const n of ['getPetSkillData','getPetSkillBagList','calculateCastleExp','calculateRaidExp','calculateTotalExp'])storageScope=storageScope.replace(block(main,'function '+n+'('),block(before,'function '+n+'('));
+    let storageScope=main;for(const n of ['getPetSkillData','getPetSkillBagList','calculateCastleExp','calculateRaidExp','calculateTotalExp','getPetHomeBadgeById'])storageScope=storageScope.replace(block(main,'function '+n+'('),block(before,'function '+n+'('));
     assert.equal(storageScope.replace(block(main,'function writeVerifiedJsonFile('),block(before,'function writeVerifiedJsonFile(')).replace(/^const HoiBotVersion = "[\d.]+";/m,before.match(/^const HoiBotVersion = "[\d.]+";/m)[0]),before,'all gameplay, commands, guards, formulas, rewards, load and save entry code unchanged');
     console.log('PASS complete-source scope guard; actual package UI/disk/backups byte-identical');
 }

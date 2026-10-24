@@ -62,7 +62,7 @@ function checks(){
   }assert.deepStrictEqual(fixtures[1].snapshot(),fixtures[0].snapshot(),stage);
  }console.log('PASS actual grant/equip/unequip, command suffix guard and save failure/retry: identical replies, inventory, disk and backups');
  // 후속 공통 계산 변경은 test_castle_raid_common의 전체 소스 동등성 검사로 검증한다.
- let normalized=main;for(const n of ['getPetSkillData','getPetSkillBagList','calculateCastleExp','calculateRaidExp','calculateTotalExp'])normalized=normalized.replace(block(main,'function '+n+'('),block(before,'function '+n+'('));normalized=normalized.replace(/^const HoiBotVersion = "[\d.]+";/m,before.match(/^const HoiBotVersion = "[\d.]+";/m)[0]);assert.equal(normalized,before,'complete Main source identical except separately verified helpers and version');
+ let normalized=main;for(const n of ['getPetSkillData','getPetSkillBagList','calculateCastleExp','calculateRaidExp','calculateTotalExp','getPetHomeBadgeById'])normalized=normalized.replace(block(main,'function '+n+'('),block(before,'function '+n+'('));normalized=normalized.replace(/^const HoiBotVersion = "[\d.]+";/m,before.match(/^const HoiBotVersion = "[\d.]+";/m)[0]);assert.equal(normalized,before,'complete Main source identical except separately verified helpers and version');
  console.log('PASS complete-source scope guard: commands, formulas, rewards, probabilities, save/load and UI functions unchanged');
 }
 if(require.main===module)checks();
