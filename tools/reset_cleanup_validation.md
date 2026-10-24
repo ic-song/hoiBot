@@ -1,5 +1,7 @@
 # 운영용 정리 2종 /초기화 통합 검증
 
+> 최신 ver_2.688 후속 변경과 검증은 [10월 25일 통합 검증](oct25_ready_validation.md)을 참조하세요. 아래는 이전 반영 이력입니다.
+
 - 기준: origin/feature/prod `0d26cbd0ebe6f706e621a90eb4da8bbe1a357d53`, ver_2.673.
 - 작업 브랜치: feature/reset-cleanup-menu. 최초 개발·검증 후 운영반영 전 보고를 완료했다.
 - 2026-10-22 사용자 운영반영 승인 후 ver_2.674·개발자노트를 준비하고, 핵심 메뉴/정리 Node 50그룹 및 Rhino 10시나리오(실제 Java 동시 확인 각 20쌍), 문법·UTF-8·버전을 재검증했다.

@@ -7,7 +7,7 @@ const block=m=>h.block(h.main,m);
 const functions=[...new Set(h.functions.concat(['createCommandContext','getCurrentContext','enterCommandContext','exitCommandContext','getDataFileName','resolveActiveDataPath',
  'getDataSaveTransaction','beginDataSaveTransaction','endDataSaveTransaction','prepareManagedJsonTransactionEntry','rollbackDataSaveTransaction',
  'getProtectedJsonSaveLock','writeVerifiedJsonFile','loadJsonFile','saveJsonFile','parseJsonContent','parseManagedJsonContent','ensureParentFolder',
- 'isDevCommandMessage','stripDevCommandPrefix','isManualResetInput','isManualResetLegacyCommand','isAutoDailyEntryCommandMessage','isExclusiveDataMutationCommandMessage','getResponseDataFlowLock',
+ 'isDevCommandMessage','stripDevCommandPrefix','getManualResetDirectOperation','getManualResetLegacyEntry','isManualResetInput','isManualResetLegacyCommand','isAutoDailyEntryCommandMessage','isExclusiveDataMutationCommandMessage','getResponseDataFlowLock',
  'isRegisteredHomeMember','isSamePetHomeComment','isPinnedPetHomeComment','getPetHomePassBenefitCost','hasPoint','addPoint']))];
 const runtime='var GLOBAL_CONFIG='+JSON.stringify(h.c.GLOBAL_CONFIG)+';\n'+h.main.match(/const PET_SKILL_LIST = \[[\s\S]*?\n\];/)[0]+'\n'+functions.map(n=>block('function '+n+'(')).join('\n')+`
 var DATA_ROOT_PATH=${JSON.stringify(root)},DEV_DATA_ROOT_PATH=DATA_ROOT_PATH+'dev/',COMMON_DATA_FILE_MAP={};

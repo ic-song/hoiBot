@@ -1,5 +1,7 @@
 # 호월 GM교육 개발·검증
 
+> 최신 ver_2.688 후속 변경과 검증은 [10월 25일 통합 검증](oct25_ready_validation.md)을 참조하세요. 아래는 이전 반영 이력입니다.
+
 - 기획: [호이월드_GM교육_최종기획서_20261023 (1)](https://app.notion.com/628393bdd7aa83deb950812cacbc1957). DB 상태 `🛠 READY`, 예정일 원문 `검토` 확인. 본문은 변경하지 않는다.
 - 기준: `feature/prod` `bf31fdd6` / `ver_2.685`, 소스 `feature/gm-training`, 개발 버전 `2.686`, 반영일 `2026-10-23`.
 - 레거시 `response(room, msg, sender, isGroupChat, replier, imageDB, packageName)` 유지. 운영 기기 접속·업로드·컴파일·실제 계정 보상은 수행하지 않는다.

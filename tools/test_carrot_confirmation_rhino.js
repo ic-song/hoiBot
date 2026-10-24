@@ -10,7 +10,7 @@ assert(start >= 0 && enter > start && cleanup > enter && end > cleanup);
 const probe = main.slice(start, enter).replace("function response(", "function probeResponseLock(") + "runCriticalSection(msg);\n" + main.slice(cleanup, end);
 const early = main.slice(main.indexOf("        // 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다."), main.indexOf("        // 방 제한은 복구·자동 저장·요청 과부하 기록보다 먼저 확인한다."));
 const domain = main.slice(main.indexOf("// 당근거래 5종의 입력 범위를 식별하는 함수"), main.indexOf("// 커뮤니티 제한 대상인 당근거래 네 명령어만 식별하는 함수"));
-const functions = ["isManualResetInput", "isManualResetLegacyCommand", "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "isDevCommandMessage", "stripDevCommandPrefix", "isAutoDailyEntryCommandMessage", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock", "isSearchAuthenticationCount", "parseJsonContent", "addItem", "removeItem"];
+const functions = ['getManualResetDirectOperation','getManualResetLegacyEntry','isManualResetInput', "isManualResetLegacyCommand", "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "isDevCommandMessage", "stripDevCommandPrefix", "isAutoDailyEntryCommandMessage", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock", "isSearchAuthenticationCount", "parseJsonContent", "addItem", "removeItem"];
 let script = "org.mozilla.javascript.Context.getCurrentContext().compileString(" + JSON.stringify(main) + ",'main.js',1,null);\n";
 script += "org.mozilla.javascript.Context.getCurrentContext().compileString(" + JSON.stringify(info) + ",'Info.js',1,null);\nvar GLOBAL_CONFIG=" + JSON.stringify(h.c.GLOBAL_CONFIG) + ";\n";
 script += functions.map(name => block("function " + name + "(")).join("\n") + "\n" + domain + "\n" + probe + `

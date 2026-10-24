@@ -78,10 +78,10 @@ group('기회 두칸 50%±효과 유지·부족과 정확히0·금액 아래 라
 group('최종40턴 대기 예시·이동/통행료/현재차례 순서·별도게임판소유자·allsee', () => {
     recruit();const g=game();g.slot=38;g.players[1].position=12;g.players[1].gold=320;g.players[0].gold=710;g.lands[15]={owner:0,level:1};setGame(g);c.Math.random=()=>0.4;
     const text=run('ㅁㅂ','b'),parts=f.replies();assert.equal(parts.length,2);assert.equal(game().slot,39);assert.equal(game().players[1].gold,245);assert.equal(game().players[0].gold,785);
-    assert(parts[0].startsWith('🎲 길드마블 · 40/40턴'));assert(parts[0].includes('[2]🔵 [b] 님의 이동 결과\n🎲 【 3 】주사위가 나왔습니다!!\n📍 13 → 16칸 · 펜던트 공방📿\n━━━━━━━━━━━━\n💣'));
+    assert(parts[0].startsWith('🎲 길드마블 · 40/40턴'));assert(parts[0].includes('[2]🔵 [b] 님의 이동 결과\n🎲 【 3 】주사위가 나왔습니다!!\n📍 13 → 16칸 · 펜던트 공방📿\n🏠 주인'));
     assert(parts[0].includes('🔥 이번 경기의 마지막 차례입니다.\n[1]🔴 [a] 님의 차례입니다.\n👉 /마블굴리기 or ㅁㅂ\n━━━━━━━━━━━━\n👥 참가자 현황'));
     assert(parts[1].includes('[16] 펜던트 공방📿 Lv.1 · 주인 [1]🔴 [a]'));assert(parts[1].includes('가호의 성소✨ · 행운 · +100 골드'));
-    for(const part of parts)assert.equal(part.split('<ALLSEE>').length-1,1);for(const old of ['📅 오늘 길드 이용','📘 /마블가이드','필요한 통행료','실제 지급','보낸 사람','받은 사람'])assert(!text.includes(old));
+    for(const part of parts)assert.equal(part.split('<ALLSEE>').length-1,1);for(const old of ['📅 오늘 길드 이용','📘 /마블가이드','필요한 통행료','보낸 사람','받은 사람'])assert(!text.includes(old));
     assert.equal(parts[0].split('님의 차례입니다.').length-1,1);assert(!text.includes('━━━━━━━━━━━━\n━━━━━━━━━━━━'));
 });
 group('구매·건설 대기 현재 차례 유지·명령1회·부족 시 통과만·종료 후 다음행동0', () => {

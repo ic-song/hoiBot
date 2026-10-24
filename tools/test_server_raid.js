@@ -95,7 +95,7 @@ for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createComma
     "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(block(main, "function " + name + "("), c);
 vm.runInContext(main.slice(main.indexOf("function serverRaidHeader("), main.indexOf("// 길드 영지전 관련 함수들")), c);
 const filterHelpers = ["readMessageFilterWords", "setMessageFilterCache", "getCachedMessageFilterWords", "getMessageFilterRequest", "containsMessageFilterWord", "isMessageFilterCommandInput", "changeMessageFilterWords"];
-for (const name of ["isManualResetLegacyCommand", "isManualResetInput", "isManualResetEntryAllowed", "advanceManualResetSession", "resetAllPetHomeContent"]) if (main.includes("function " + name + "(")) vm.runInContext(block(main, "function " + name + "("), c);
+for (const name of ["isManualResetRoom", "getManualResetSessionKey", "getManualResetDirectOperation", "getManualResetLegacyEntry", "isManualResetLegacyCommand", "isManualResetInput", "isManualResetEntryAllowed", "advanceManualResetSession", "resetAllPetHomeContent"]) if (main.includes("function " + name + "(")) vm.runInContext(block(main, "function " + name + "("), c);
 c.manualResetSessions = {};
 for(const name of filterHelpers) if(main.includes("function "+name+"(")) vm.runInContext(block(main,"function "+name+"("),c);
 const entryStart = main.indexOf("// 서버 레이드대전 진입:");

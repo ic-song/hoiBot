@@ -1,5 +1,7 @@
 # 길드마블 검증
 
+> 최신 ver_2.688 후속 변경과 검증은 [10월 25일 통합 검증](oct25_ready_validation.md)을 참조하세요. 아래는 이전 반영 이력입니다.
+
 ## UI·단축키 개선 — ver_2.687
 
 - 기획: [길드마블_UI_단축키_개선기획안](https://app.notion.com/774393bdd7aa83a7b72b01b65657b788). 데이터소스의 상태 🛠 READY와 예정일 `26.10.23` 확인. 기준은 최신 feature/prod `fe9542246f95b245c4a12f7ab0a13cf3805edb6f` / ver_2.686이다.

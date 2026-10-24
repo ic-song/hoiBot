@@ -7,7 +7,8 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
-    gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json" },
+    gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
+    manualReset: { commands: ["/댓글초기화","/피드초기화","/펫홈방문초기화","/좋아홈초기화","/인형전체초기화","/서버대전전체초기화","/펫무쌍전체초기화","/캐슬대전초기화","/캐슬대전횟수리셋","/캐슬초기화","/영주수익순위초기화","/펀치순위초기화","/펫탐험전체전적초기화","/시련의탑시즌초기화","/길드전체초기화","/길드영지초기화","/길드게시판초기화","/공헌구매초기화","/다이아전체초기화","/레벨초기화","/좋아리셋","/주간횟수초기화","/미니펫컬렉션초기화","/펜던트장착초기화","/미가입출첵서버초기화","/관리자순위초기화","/인증초기화","/마스터초기화@@@","/피드전체삭제","/글자수전체정리","/필터데이터정리","/데이터정리","/경매초기화","/계삭진행","/계정잠수삭제"] }, // 초기화·운영 정리는 Main에서만 처리
     petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, royalPercent: 10, arcanaPercent: 15, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
     messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main과 같은 환경별 필터 메모리 공유 키
     doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
@@ -638,6 +639,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (ctx.isDev && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(msg)) msg = msg.substring(1);
 		if (msg === "/초기화" || msg === "/댓글초기화" || msg === "/피드초기화" || msg === "1삭제" || msg === "2취소" || /^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)) return;
 		if (msg === "/필터데이터정리" || msg === "/필터리스트") return;
+		for (var infoResetIndex = 0; infoResetIndex < GLOBAL_CONFIG.manualReset.commands.length; infoResetIndex++) if (msg.indexOf(GLOBAL_CONFIG.manualReset.commands[infoResetIndex]) === 0) return;
 		if (msg === "/글자수전체정리" || msg === "등록한다" || msg === "등록안한다" || msg === "/등록한다" || msg === "/등록안한다") return;
 		if ((msg.charAt(0) === "/" || ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"].indexOf(msg) !== -1) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
 
@@ -961,7 +963,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				"\n" +
 				"• 모험가 칭호: " + getInfoAdventureLevelTitle(memberInfo.lv) + "\n" +
 				"• 레벨: " + (memberInfo.lv || 1) + "\n" +
-				"• 호월 교육: " + (educationInfoCount === 10 ? "🎓 수료 · 10/10" : "📚 " + educationInfoCount + "/10 · 다음 " + (educationInfoCount + 1) + "챕터") + "\n" +
+                "• 호월 교육: " + (educationInfoCount === getGmEducationChapterCount() ? "🎓 호월 교육 수료자 · " + educationInfoCount + "/" + getGmEducationChapterCount() : "📘 " + educationInfoCount + "/" + getGmEducationChapterCount() + "챕터 완료 · 다음 " + (educationInfoCount + 1) + "챕터") + "\n" +
 				"• 가입일: " +
 				formatDate(memberInfo.join) +
 				"\n" +
@@ -2072,16 +2074,21 @@ function createContextReplier(replier, ctx) {
 	};
 }
 
+// 현재 교육의 최대 챕터 수를 표시 설정에서 읽는 함수
+function getGmEducationChapterCount() {
+    return GLOBAL_CONFIG.gmEducation.chapters ? GLOBAL_CONFIG.gmEducation.chapters.length : GLOBAL_CONFIG.gmEducation.chapterCount;
+}
+
 // Main과 동일한 교육 원본 검증 및 지급 영수증 대조 함수
 function requireGmEducationStore(store) {
     if (!store || store.version !== 1 || !store.users || typeof store.users !== "object" || Array.isArray(store.users)) throw new Error("교육 저장소 형식 오류");
     var names = Object.keys(store.users), seen = {};
     for (var i = 0; i < names.length; i++) {
         var row = store.users[names[i]];
-        if (names[i].charAt(0) !== "$" || !row || typeof row.user !== "string" || !Array.isArray(row.chapters) || row.chapters.length > 10) throw new Error("교육 계정 기록 오류");
+        if (names[i].charAt(0) !== "$" || !row || typeof row.user !== "string" || !Array.isArray(row.chapters) || row.chapters.length > getGmEducationChapterCount()) throw new Error("교육 계정 기록 오류");
         for (var j = 0; j < row.chapters.length; j++) {
             var chapter = row.chapters[j];
-            if (!chapter || chapter.chapter !== j + 1 || typeof chapter.txId !== "string" || !chapter.txId || typeof chapter.gmId !== "string" || !chapter.gmId || typeof chapter.gmUser !== "string" || !chapter.gmUser || typeof chapter.completedAt !== "string" || !isFinite(Date.parse(chapter.completedAt)) || seen["$" + chapter.txId]) throw new Error("교육 챕터 기록 오류");
+            if (!chapter || chapter.chapter !== j + 1 || typeof chapter.txId !== "string" || !chapter.txId || typeof chapter.gmId !== "string" || !chapter.gmId || typeof chapter.gmUser !== "string" || !chapter.gmUser || (chapter.completedAt !== undefined && chapter.completedAt !== null && chapter.completedAt !== "" && (typeof chapter.completedAt !== "string" || !isFinite(Date.parse(chapter.completedAt)))) || seen["$" + chapter.txId]) throw new Error("교육 챕터 기록 오류");
             seen["$" + chapter.txId] = true;
         }
     }
@@ -2093,11 +2100,16 @@ function getGmEducationProgress(store, member, allowPending) {
     var id = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var row = id && store.users["$" + id], chapters = row ? row.chapters : [];
     var receipts = member && member.gmEducationRewards;
-    if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > 10)) throw new Error("교육 지급 영수증 형식 오류");
+    if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > getGmEducationChapterCount())) throw new Error("교육 지급 영수증 형식 오류");
     receipts = receipts || [];
     if (receipts.length > chapters.length && (!allowPending || receipts.length !== chapters.length + 1)) throw new Error("교육 완료 원본이 지급 기록보다 부족합니다.");
     for (var i = 0; i < receipts.length; i++) if (typeof receipts[i] !== "string" || !receipts[i]) throw new Error("교육 지급 영수증 값 오류");
     for (var j = 0; j < chapters.length; j++) if (receipts[j] !== chapters[j].txId) throw new Error("교육 완료와 지급 기록 불일치");
+    var times = member && member.gmEducationRewardTimes;
+    if (times !== undefined) {
+        if (!Array.isArray(times) || times.length !== receipts.length) throw new Error("교육 확정 시각 영수증 형식 오류");
+        for (var t = 0; t < times.length; t++) if (times[t] !== null && (typeof times[t] !== "string" || !isFinite(Date.parse(times[t])) || (chapters[t] && chapters[t].completedAt !== times[t]))) throw new Error("교육 확정 시각 영수증 불일치");
+    }
     return chapters.length;
 }
 

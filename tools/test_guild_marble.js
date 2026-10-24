@@ -28,7 +28,7 @@ failPath:p=>{failWrite=(_d,t)=>t===p;},replyFail:v=>{replyFailure=v;}};`)(requir
     c.buildAttendanceRequiredMessage = () => 'attendance required';
     c.hasAttendedToday = d => !d.blockAttendance;
     vm.runInContext(`function runMarble(message,user,where){var msg=isDevCommandMessage(message)?stripDevCommandPrefix(message):message,sender=user||'a',room=where||'table',isGroupChat=true;
-var ctx=createCommandContext(isDevCommandMessage(message),room),prev=enterCommandContext(ctx);beginDataSaveTransaction();var outputReplier=replier;if(ctx.isDev&&['/ㅁㅂ','/ㅁㄱ','/ㅁㅌ'].indexOf(msg)!==-1)msg=msg.substring(1);try{
+var ctx=createCommandContext(isDevCommandMessage(message),room),prev=enterCommandContext(ctx);beginDataSaveTransaction();var outputReplier=replier;if(ctx.isDev&&['/ㅁㅂ','/ㅁㄱ','/ㅁㅌ'].indexOf(msg)!==-1)msg=msg.substring(1);if(msg.trim()==='ㅁㄱ')msg='ㅁㄱ';var marbleLandShortcut=msg==='ㅁㄱ';try{
 ` + recovery + `var data=loadJsonFile(filePath);` + entry + `
 }catch(e){rollbackDataSaveTransaction();throw e;}finally{endDataSaveTransaction();exitCommandContext(prev);}}
 `, c);
@@ -138,7 +138,7 @@ function runTests() {
     group('통행료 정확히 0골드는 생존·부족하면 잔여만 이전·지역 초기화·탈락 차례 제외', () => {
         for(const gold of [120,50,0]) {seed();recruit();const g=game();g.players[0].gold=gold;g.players[0].position=9;g.lands[10]={owner:1,level:1};g.lands[1]={owner:0,level:2};setGame(g);c.Math.random=()=>0;
             const text=run('/마블굴리기','a');footer(text);const after=game();assert.equal(after.players[0].gold,0);assert.equal(after.players[1].gold,1020+gold);assert.equal(after.players[0].alive,gold===120);
-            if(gold<120){assert.equal(after.lands[1].owner,-1);assert.equal(after.players[0].eliminated,1);assert(text.includes('잔여 '+gold+' 골드만 지급 · 부족 '+(120-gold)));assert(!text.includes('납부 완료'));}
+            if(gold<120){assert.equal(after.lands[1].owner,-1);assert.equal(after.players[0].eliminated,1);assert(text.includes('실제 지급 · '+gold+' 골드'));assert(text.includes('부족 금액 · '+(120-gold)));assert(!text.includes('납부 완료'));}
         }
     });
     group('전원 동의 중단·중복/비참가 동의 제외·탈락자 포함·전액 환급·횟수 유지', () => {

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.687"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.688"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1001,6 +1001,89 @@ var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파�
 const GLOBAL_CONFIG = {
     gmEducation: {
         version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", rewardItem: "다이아상자💎(소)",
+        room: "교육방",
+        commandGuideLines: [
+            "📚 호월 교육 명령어",
+            "━━━━━━━━━━━━",
+            "👤 내 이번 달 실적",
+            "/교육실적",
+            "",
+            "📊 이번 달 전체 실적·순위",
+            "/교육실적 전체",
+            "",
+            "🗓️ 지난달 전체 실적·순위",
+            "/교육실적 전체 {previousMonth}",
+            "━━━━━━━━━━━━",
+            "💡 챕터 1개 완료 = 실적 1개",
+            "💡 매월 자동 집계 · 지난달 기록 보관",
+            "📖 교육 진행 방법과 전체 명령어는 전체보기에서 확인하세요.",
+            "",
+            "[allsee]",
+            "",
+            "🌱 교육은 이렇게 진행하세요",
+            "━━━━━━━━━━━━",
+            "① 대상 유저의 진행도를 확인해요.",
+            "/교육 채크랭크",
+            "",
+            "② 다음 챕터의 매뉴얼을 확인해요.",
+            "/교육 4",
+            "",
+            "③ 설명과 실습을 마친 뒤 완료 처리해요.",
+            "/교육완료 채크랭크 4",
+            "",
+            "※ 위 예시는 다음 교육이 4챕터인 경우예요.",
+            "※ 채크랭크는 실제 교육할 아이디로 바꿔 입력하세요.",
+            "※ 완료할 숫자는 대상의 다음 미완료 챕터예요.",
+            "━━━━━━━━━━━━",
+            "📖 교육 안내·조회",
+            "",
+            "/교육",
+            "→ 기본 교육 흐름과 사용법",
+            "",
+            "/교육 아이디",
+            "→ 해당 유저의 진행도와 다음 챕터",
+            "",
+            "/교육 숫자",
+            "→ 해당 챕터 매뉴얼",
+            "→ 숫자는 1~12을 입력하세요.",
+            "━━━━━━━━━━━━",
+            "✅ 교육 완료",
+            "",
+            "/교육완료 아이디 숫자",
+            "→ 챕터 완료·보상 지급·담당 GM 실적 반영",
+            "→ 교육 확인을 마친 뒤 입력하세요.",
+            "━━━━━━━━━━━━",
+            "📊 이번 달 실적",
+            "",
+            "/교육실적",
+            "→ 내 실적",
+            "",
+            "/교육실적 GM아이디",
+            "→ 해당 GM의 실적",
+            "",
+            "/교육실적 전체",
+            "→ 전체 실적과 GM 순위",
+            "━━━━━━━━━━━━",
+            "🗓️ 지난달·이전 달 실적",
+            "",
+            "/교육실적 {previousMonth}",
+            "→ 내 2026년 10월 실적",
+            "",
+            "/교육실적 GM아이디 {previousMonth}",
+            "→ 해당 GM의 2026년 10월 실적",
+            "",
+            "/교육실적 전체 {previousMonth}",
+            "→ 2026년 10월 전체 실적과 GM 순위",
+            "━━━━━━━━━━━━",
+            "💡 월은 연도-월 형식으로 입력하세요.",
+            "예: {previousMonth}, 2026-11",
+            "",
+            "💡 월을 생략하면 이번 달 실적을 보여줘요.",
+            "💡 다른 달을 보려면 끝의 연도-월만 바꾸세요.",
+            "💡 GM아이디는 확인할 GM의 실제 아이디로 바꾸세요.",
+            "💡 지난달 실적은 이번 달에 합산되지 않고 별도로 보관돼요.",
+            "💡 명령어 목록을 다시 보려면 /교육명령어를 입력하세요."
+        ],
         chapters: [
             { title: "시작 안내", emoji: "🌱", intro: "내 정보를 확인하는 방법부터 배워요!", learn: ["/내정보에서 레벨·포인트·다이아를 확인해요.", "/펫정보와 /가방에서 펫·아이템을 확인해요.", "이미 시작했다면 스타터를 다시 받지 않아요."], commands: ["/내정보", "/펫정보", "/가방"], check: "내 정보·펫·가방을 직접 확인할 수 있나요?", note: "GM과 모험 시작 여부·출석·명령어 이용 방을 확인해요. /모험시작은 기존 시작 조건에 맞을 때만 사용해요." },
             { title: "레벨·종합매력", emoji: "⭐", intro: "레벨과 매력을 확인하고 성장 방향을 알아봐요!", learn: ["경험치를 모으면 레벨이 올라가요.", "레벨과 종합매력은 서로 다른 정보예요.", "캐슬·레이드 매력의 쓰임과 호월신의 가호를 알아봐요."], commands: ["/내정보", "/레벨순위"], check: "내 레벨과 매력, 성장 상태를 찾을 수 있나요?", note: "/호여 숫자는 보유 가호와 사용 안내를 확인한 뒤 설명해요. 교육을 위해 사용하지 않아도 돼요." },
@@ -1011,7 +1094,9 @@ const GLOBAL_CONFIG = {
             { title: "펜던트", emoji: "📿", intro: "펜던트를 확인하고 강화·복원 기능을 알아봐요!", learn: ["가방 펜던트와 장착 펜던트를 구분해요.", "강화·복원 전 대상과 소모 재화를 확인해요."], commands: ["/펜던트가방", "/펜던트정보 0"], check: "장착 펜던트와 강화 전 확인 사항을 알고 있나요?", note: "선택 안내: /펜던트장착 가방번호, /펜던트강화 0, /펜던트복원 0. 0은 장착 펜던트이며 강화·복원은 필수가 아니에요." },
             { title: "펫홈·가구", emoji: "🏡", intro: "내 펫홈과 가구 효과를 한눈에 확인해요!", learn: ["보유 가구와 장착 가구를 구분해요.", "집 면적·장착칸·가구 효과를 구분해요.", "가구의 개별 매력과 캐슬·레이드 합산은 /가구정보에서 확인해요.", "루미에르 빌리지와 별채의 역할을 알아봐요."], commands: ["/펫홈", "/가구정보"], check: "장착 상태와 가구 효과를 어디서 확인하나요?", note: "현재 펫홈 안내에서 빌리지·별채 조건을 확인해요. 가구 구매·확장·별채 등록은 필수가 아니에요." },
             { title: "대전·길드", emoji: "⚔️", intro: "다른 유저와 즐기는 대전과 길드를 알아봐요!", learn: ["캐슬대전·미니펫대전·서버대전의 조건을 구분해요.", "시간·횟수·참가 조건은 현재 안내에서 확인해요.", "미가입자는 길드목록·가입 안내, 가입자는 길드정보를 확인해요."], commands: ["/길드목록", "/길드정보", "/서버대전"], check: "참가 조건과 길드 가입 방법을 알고 있나요?", note: "선택 안내: /캐슬대전, /미니펫대전, /길드가입 길드번호. 원하고 참가 조건이 맞을 때만 실습해요. 미진행 시간에도 설명으로 교육할 수 있어요." },
-            { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /당근, /미니펫당근, /가구당근, /펫스킬당근, /펜던트당근. 실제 인자는 거래 안내를 따라요. 최종 응답은 거래한다 / 안한다예요. 수수료·소모량은 현재 화면에서 확인하고 실제 거래·판매·송금을 강요하지 않아요." }
+            { title: "거래·이용 수칙", emoji: "🥕", intro: "거래 전 확인 사항과 이용 수칙을 배워요!", learn: ["거래 상대·아이템·수량·비용·강화 상태를 확인해요.", "가방번호가 바뀌면 최신 가방에서 다시 확인해요.", "비속어·저격·계정 이용 수칙을 확인하고 GM에게 질문해요."], commands: ["/가방"], check: "거래 전 확인 사항과 이용 수칙을 알고 있나요?", note: "선택 안내: /당근, /미니펫당근, /가구당근, /펫스킬당근, /펜던트당근. 실제 인자는 거래 안내를 따라요. 최종 응답은 거래한다 / 안한다예요. 수수료·소모량은 현재 화면에서 확인하고 실제 거래·판매·송금을 강요하지 않아요." },
+            { title: "홈뱃지·큐브", emoji: "💟", intro: "홈뱃지 옵션과 큐브 사용 전 확인 사항을 알아봐요!", learn: ["/홈뱃지에서 보유 목록과 장착 상태를, /홈뱃지정보 이름에서 옵션·효과를 확인해요.", "/홈뱃지장착 번호와 /홈뱃지해제 뱃지번호의 안내·확인 절차를 알아봐요.", "/홈뱃지큐브 안내에서 슬롯·옵션 번호·사용 횟수와 보유량·소모량·확률·보호 조건을 확인해요.", "수치와 적용 조건은 교육 시점의 실제 홈뱃지·큐브 안내를 기준으로 설명해요."], commands: ["/홈뱃지", "/홈뱃지정보 이름", "/홈뱃지큐브", "/큐브확률"], check: "내 홈뱃지 옵션과 큐브 대상·소모량·확률을 어디에서 확인하나요?", note: "선택 안내: /홈뱃지큐브 슬롯 옵션 사용횟수. 현재 화면의 슬롯·옵션 번호를 먼저 확인해요. 뱃지·큐브가 없으면 GM 예시로 배우며 실제 큐브 사용은 완료 조건이 아니에요." },
+            { title: "후원 안내", emoji: "🎁", intro: "공식 상품 안내와 후원 이용 절차를 알아봐요!", learn: ["현재 공식 후원 안내에서 상품명·가격·구성품과 문의 경로를 확인해요.", "공식 후원 안내에서 패스·프리미엄의 기간과 혜택을 비교해요.", "/패키지리스트에서 현재 상품 구성과 계정별 이용 횟수·판매 기간을 확인해요.", "공식 안내에 따라 게임 아이디와 정확한 상품명을 전달하고 입금 표기·지급 확인·누락 문의 방법을 알아봐요."], commands: ["https://hoiland123.tistory.com", "/패키지리스트", "/패키지가방"], check: "공식 후원 안내·상품 조건·지급 확인·문의 경로와 전달할 정보를 설명할 수 있나요?", note: "상품 정보·계좌·링크·문의처는 현재 공식 안내를 연결해 확인해요. 후원은 선택 사항이며 실제 후원·결제·후원 이력 없이 설명만으로 교육을 완료할 수 있어요." }
         ]
     },
     guildMarble: {
@@ -1146,7 +1231,7 @@ const GLOBAL_CONFIG = {
             "👉 /마블통과 or ㅁㅌ",
             "",
             "🏗️ 내 땅 Lv.1에 도착했다면",
-            "👉 /마블건설",
+            "👉 /마블건설 or ㅁㄱ",
             "👉 /마블통과 or ㅁㅌ",
             "",
             "🏰 내 땅 Lv.2에 도착했다면",
@@ -1158,7 +1243,7 @@ const GLOBAL_CONFIG = {
             "• 이동 중 지나가기만 한 땅에는 통행료를 내지 않아요.",
             "",
             "• 단축키는 슬래시 없이 글자만 입력하세요.",
-            "• ㅁㄱ는 구매 단축키예요. 건설할 때는 /마블건설을 입력하세요.",
+            "• ㅁㄱ는 빈 땅에서는 구매, 내 땅 Lv.1에서는 건설을 선택해요.",
             "• 구매·건설을 선택하는 중에는 다시 굴릴 수 없어요.",
             "• 골드가 부족하면 /마블통과 또는 ㅁㅌ를 입력하세요.",
             "• 현재 해야 할 일이 헷갈리면 /마블판을 확인하세요.",
@@ -1285,7 +1370,7 @@ const GLOBAL_CONFIG = {
             "🏠 /마블구매 or ㅁㄱ",
             "└ 도착한 빈 땅 구매",
             "",
-            "🏗️ /마블건설",
+            "🏗️ /마블건설 or ㅁㄱ",
             "└ 도착한 내 땅을 Lv.2로 건설",
             "",
             "➡️ /마블통과 or ㅁㅌ",
@@ -1331,6 +1416,14 @@ const GLOBAL_CONFIG = {
     },
     manualReset: {
         timeoutMs: 60000,
+        rooms: [room92, testRoom],
+        directOperations: [
+            { command: "/글자수전체정리", role: "textCleanup" },
+            { command: "/데이터정리", role: "admin" },
+            { command: "/경매초기화", role: "master" },
+            { command: "/계삭진행", role: "masterIdentity", args: true },
+            { command: "/계정잠수삭제", role: "masterIdentity", args: true }
+        ],
         entries: [
             { id: "comments", name: "전체 댓글", command: "/댓글초기화", role: "admin", scope: "전체 사용자의 일반·픽 댓글과 댓글 홈알림" },
             { id: "feeds", name: "전체 피드", command: "/피드초기화", role: "admin", scope: "전체 사용자의 피드·이전 한줄평과 피드 홈알림" },
@@ -1354,7 +1447,7 @@ const GLOBAL_CONFIG = {
             { id: "level", name: "레벨 테스트 데이터", command: "/레벨초기화", role: "operator", scope: "리뉴얼 테스트용 전체 레벨·EXP·가호 등 (포인트·아이템 유지)" },
             { id: "likes", name: "현재 좋아요", command: "/좋아리셋", role: "operator", scope: "현재 좋아요를 누적으로 옮긴 뒤 현재값 0으로 변경" },
             { id: "weekly", name: "주간 퀘스트 횟수", command: "/주간횟수초기화", role: "master", scope: "전체 사용자의 주간 퀘스트 횟수" },
-            { id: "miniPetBattle", name: "내 미니펫 전적", command: "/미니펫전적초기화", role: "member", scope: "본인의 미니펫 전적 (초기화권 1개 사용)" },
+            { id: "miniPetBattle", name: "내 미니펫 전적", command: "/미니펫전적초기화", role: "member", personal: true, scope: "본인의 미니펫 전적 (초기화권 1개 사용)" },
             { id: "collection", name: "사용자 미니펫 컬렉션", command: "/미니펫컬렉션초기화", role: "master", args: "user", scope: "지정 사용자의 컬렉션 진행 상태 (지급 보상 유지)" },
             { id: "pendant", name: "사용자 장착 펜던트", command: "/펜던트장착초기화", role: "master", args: "user", scope: "지정 사용자의 장착 펜던트 제거" },
             { id: "lightServer", name: "미가입 출첵 서버 표시", command: "/미가입출첵서버초기화", role: "admin", args: "server", scope: "지정 서버 미가입 출첵 기록의 소속 표시" },
@@ -3249,18 +3342,40 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ" || msg === "/등록한다" || msg === "/등록안한다") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
             if (/^\/(?:ㅁㅂ|ㅁㄱ|ㅁㅌ)$/.test(msg)) msg = msg.substring(1);
         }
+        if (/^[ \t]*ㅁㄱ[ \t]*$/.test(msg)) msg = "ㅁㄱ";
+        var marbleLandShortcut = msg === "ㅁㄱ";
         if (msg === "ㅁㅂ") msg = "/마블굴리기";
         else if (msg === "ㅁㄱ") msg = "/마블구매";
         else if (msg === "ㅁㅌ") msg = "/마블통과";
-        var resetProbeKey = (ctx.isDev ? "DEV:" : "PROD:") + sender;
+        var resetProbeKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var resetProbeSession = manualResetSessions[resetProbeKey];
         var resetSameScope = resetProbeSession && resetProbeSession.room === room && resetProbeSession.isGroupChat === isGroupChat;
         if (ctx.isDev && (/^\/(?:1삭제|2취소)$/.test(msg) || (resetSameScope && /^\/\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)))) msg = msg.substring(1);
+        var resetDirectEntry = getManualResetDirectOperation(msg);
+        if (resetDirectEntry) {
+            if (!isManualResetRoom(room)) return;
+            if (!isManualResetEntryAllowed(resetDirectEntry, sender, {}, {})) { replier.reply("⛔ 사용 권한이 없습니다."); return; }
+        }
         if (isManualResetInput(msg) && (!/^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg) || resetSameScope)) {
-            var resetSessionKey = (ctx.isDev ? "DEV:" : "PROD:") + sender;
+            if (!isManualResetRoom(room)) return;
+            var resetSessionKey = resetProbeKey;
             var resetSession = manualResetSessions[resetSessionKey];
-            if (isManualResetLegacyCommand(msg)) {
-                delete manualResetSessions[resetSessionKey];
+            var resetLegacyEntry = getManualResetLegacyEntry(msg);
+            if (msg !== "/초기화" && !resetLegacyEntry && !resetSameScope) return;
+            try {
+                var resetMenuMember = loadJsonFile(filePath);
+                var resetMenuGuild = loadJsonFile(guildPath);
+                var resetAuthorized = false;
+                var resetEntries = GLOBAL_CONFIG.manualReset.entries;
+                for (var resetRoleIndex = 0; resetRoleIndex < resetEntries.length; resetRoleIndex++) {
+                    var resetRoleEntry = resetEntries[resetRoleIndex];
+                    if (resetRoleEntry.personal || (resetLegacyEntry && resetRoleEntry.id !== resetLegacyEntry.id) || (!resetLegacyEntry && msg !== "/초기화" && resetSession.stage === "confirm" && resetRoleEntry.id !== resetSession.entryId)) continue;
+                    if (isManualResetEntryAllowed(resetRoleEntry, sender, resetMenuMember, resetMenuGuild)) { resetAuthorized = true; break; }
+                }
+                if (!resetAuthorized) { if (resetSameScope) delete manualResetSessions[resetSessionKey]; replier.reply("⛔ 사용 권한이 없습니다."); return; }
+            } catch (resetPermissionError) { if (resetSameScope) delete manualResetSessions[resetSessionKey]; throw resetPermissionError; }
+            if (resetLegacyEntry) {
+                if (resetSameScope) delete manualResetSessions[resetSessionKey];
                 replier.reply("초기화·운영 정리 명령이 통합되었습니다.\n/초기화 → 번호 선택 → 1삭제 또는 2취소 순서로 진행해주세요.");
                 return;
             }
@@ -3273,8 +3388,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
             }
             try {
-                var resetMenuMember = loadJsonFile(filePath);
-                var resetMenuGuild = loadJsonFile(guildPath);
                 var resetDecision = advanceManualResetSession(msg, sender, room, isGroupChat, resetSessionKey, resetMenuMember, resetMenuGuild);
             } catch (resetMenuLoadError) { delete manualResetSessions[resetSessionKey]; throw resetMenuLoadError; }
             if (resetDecision.entry && (resetDecision.entry.id === "comments" || resetDecision.entry.id === "feeds")) {
@@ -3962,7 +4075,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         }
 
         if (/^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(msg) || msg === "ㅁㅂ" || msg === "ㅁㄱ" || msg === "ㅁㅌ") {
-            var marbleRequest = getGuildMarbleRequest(msg);
+            var marbleRequest = getGuildMarbleRequest(marbleLandShortcut ? "ㅁㄱ" : msg);
             if (!data.member[sender]) { replyGuildMarbleSafely(replier, "먼저 /모험시작을 진행해주세요."); return; }
             var marblePetData = loadJsonFile(memberPetPath);
             var marbleGuildData = loadJsonFile(guildPath);
@@ -4016,23 +4129,28 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
 
-        var gmEducationRequest = /^\/(?:교육|교육완료|교육실적)(?:[ \t]|$)/.test(msg) ? getGmEducationRequest(msg) : null;
+        var gmEducationRequest = /^\/(?:교육명령어|교육|교육완료|교육실적)(?:[ \t]|$)/.test(msg) ? getGmEducationRequest(msg) : null;
         if (gmEducationRequest) {
-            if (!isMaster(sender)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
+            if (!isGmEducationOperator(sender, room)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
             var gmRequest = gmEducationRequest;
-            if (gmRequest.action === "invalid") { replier.reply("교육 완료 명령어를 확인해 주세요.\n/교육완료 아이디 숫자\n챕터 번호는 1~10까지 입력할 수 있습니다."); return; }
+            var gmChapterCount = getGmEducationChapterCount();
+            if (gmRequest.action === "invalid") { replier.reply("교육 완료 명령어를 확인해 주세요.\n/교육완료 아이디 숫자\n챕터 번호는 1~" + gmChapterCount + "까지 입력할 수 있습니다.\n전체 명령어: /교육명령어"); return; }
+            if (gmRequest.action === "commands") { replier.reply(buildGmEducationCommands()); return; }
+            var gmStatsRequest = gmRequest.action === "stats" ? getGmEducationStatsRequest(gmRequest.input) : null;
+            if (gmStatsRequest && gmStatsRequest.error) { replier.reply(gmStatsRequest.error); return; }
+            if (gmStatsRequest) gmRequest.input = gmStatsRequest.input;
             var gmStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
             var gmPetData = loadJsonFile(memberPetPath), gmGuildData = loadJsonFile(guildPath);
             var gmContext = { data: data, petData: gmPetData, guildData: gmGuildData };
             if (gmRequest.action === "view" && !gmRequest.input) {
-                replier.reply("📚 호월 교육 · GM 안내\n━━━━━━━━━━━━\n교육은 1→10챕터 순서로 진행합니다.\n완료한 교육은 중복으로 받을 수 없습니다.\n━━━━━━━━━━━━\n① /교육 아이디 → 진행도 확인\n② /교육 숫자 → 매뉴얼 확인\n③ 설명·실습 → GM 확인\n④ /교육완료 아이디 숫자 → 완료 처리\n━━━━━━━━━━━━\n🎁 챕터마다 " + gmEducationConfig.rewardItem + " 1개\n📊 실적 확인: /교육실적\n숫자 계정은 /교육 @닉네임 또는 기존 계정 ID로 조회해요."); return;
+                replier.reply("📚 호월 교육 · GM 안내\n━━━━━━━━━━━━\n교육은 1→" + gmChapterCount + "챕터 순서로 진행합니다.\n완료한 교육은 중복으로 받을 수 없습니다.\n━━━━━━━━━━━━\n① /교육 아이디 → 진행도 확인\n② /교육 숫자 → 매뉴얼 확인\n③ 설명·실습 → GM 확인\n④ /교육완료 아이디 숫자 → 완료 처리\n━━━━━━━━━━━━\n🎁 챕터마다 " + gmEducationConfig.rewardItem + " 1개\n📊 실적 확인: /교육실적\n숫자 계정은 /교육 @닉네임 또는 기존 계정 ID로 조회해요."); return;
             }
-            if (gmRequest.action === "view" && /^(?:[1-9]|10)$/.test(gmRequest.input)) { replier.reply(buildGmEducationManual(Number(gmRequest.input))); return; }
-            if (gmRequest.action === "stats" && gmRequest.input === "전체") { replier.reply(buildGmEducationStats(gmStore, data, null, gmContext, true)); return; }
+            if (gmRequest.action === "view" && /^(?:[1-9]|1[0-2])$/.test(gmRequest.input)) { replier.reply(buildGmEducationManual(Number(gmRequest.input))); return; }
+            if (gmRequest.action === "stats" && gmRequest.input === "전체") { replier.reply(buildGmEducationStats(gmStore, data, null, gmContext, true, gmStatsRequest.month)); return; }
             var gmTargetInput = gmRequest.input || sender;
             var gmTarget = resolveGmEducationUser(data, gmTargetInput);
-            if (!gmTarget) { replier.reply("[" + gmTargetInput + "] 님을 찾을 수 없습니다.\n아이디를 확인해 주세요."); return; }
-            if (gmRequest.action === "stats") { replier.reply(buildGmEducationStats(gmStore, data, gmTarget, gmContext, false)); return; }
+            if (!gmTarget) { replier.reply(gmRequest.action === "stats" ? "해당 아이디를 찾을 수 없습니다. GM 아이디를 확인해 주세요." : "[" + gmTargetInput + "] 님을 찾을 수 없습니다.\n아이디를 확인해 주세요."); return; }
+            if (gmRequest.action === "stats") { replier.reply(buildGmEducationStats(gmStore, data, gmTarget, gmContext, false, gmStatsRequest.month)); return; }
             if (gmRequest.action === "view") { replier.reply(buildGmEducationStatus(gmStore, data, gmTarget, gmContext)); return; }
             var gmCompleted = getGmEducationProgress(gmStore, data.member[gmTarget]);
             var gmHeading = "[" + getGuildMarbleRankLabel(gmTarget, gmContext) + "] 님의 호월 교육\n━━━━━━━━━━━━\n";
@@ -4047,7 +4165,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     gmIdsChanged = true;
                 }
             }
-            var gmPending = { version: 1, accountId: data.member[gmTarget].serverRaidAccount.id, user: gmTarget, gmId: data.member[sender].serverRaidAccount.id, gmUser: sender, chapter: gmRequest.chapter, txId: String(java.util.UUID.randomUUID()), at: new Date().toISOString() };
+            var gmPending = { version: 1, accountId: data.member[gmTarget].serverRaidAccount.id, user: gmTarget, gmId: data.member[sender].serverRaidAccount.id, gmUser: sender, chapter: gmRequest.chapter, txId: String(java.util.UUID.randomUUID()), at: new Date().toISOString(), completionClock: 1 };
             requireGmEducationPending(gmPending);
             var gmPlan = applyGmEducationPending(data, gmStore, gmPending); // 지급량·순서·가방을 저장 전에 모두 검증
             try {
@@ -4062,6 +4180,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 writeVerifiedJsonFile(gmEducationPendingPath, JSON.stringify(gmPending), true);
                 endDataSaveTransaction(); beginDataSaveTransaction();
+                // 요청이 영속화된 뒤 최초 보상 확정 시각을 영수증과 같은 회원 저장에 남긴다.
+                data = loadJsonFile(filePath); gmContext.data = data;
+                gmStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
+                gmPlan = applyGmEducationPending(data, gmStore, gmPending);
                 if (gmPlan.memberChanged) { saveJsonFile(data, filePath); endDataSaveTransaction(); beginDataSaveTransaction(); }
                 if (gmPlan.storeChanged) { writeMemberSplitSlot(gmEducationPath, JSON.stringify(gmStore)); endDataSaveTransaction(); beginDataSaveTransaction(); }
                 if (!new java.io.File(gmEducationPendingPath).delete()) throw new Error("교육 완료 요청 정리 실패");
@@ -4071,9 +4193,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 debuggerLog("교육 완료 확인 필요: " + gmSaveError);
                 replier.reply(gmHeading + "교육 완료 처리를 확인 중입니다.\n현재 챕터의 처리가 끝난 후 다시 확인해 주세요."); return;
             }
-            var gmSuccess = gmHeading + (gmRequest.chapter === 10 ? "🎓 호월 교육 수료를 축하합니다!\n📚 전체 교육 완료: 10/10" : "✅ " + gmRequest.chapter + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter - 1].title + " 완료!\n📚 교육 진행: " + gmRequest.chapter + "/10");
-            gmSuccess += "\n━━━━━━━━━━━━\n🎁 " + (gmRequest.chapter === 10 ? "10챕터 보상: " : "") + gmEducationConfig.rewardItem + " 1개 지급\n" + (gmRequest.chapter === 10 ? "📦 전체 교육 보상: 총 10개 지급 완료\n" : "") + "👤 담당 GM: [" + getGuildMarbleRankLabel(sender, gmContext) + "]";
-            gmSuccess += gmRequest.chapter === 10 ? "\n━━━━━━━━━━━━\n함께 배운 내용을 바탕으로 호이월드를 즐겨보세요!" : "\n━━━━━━━━━━━━\n▶ 다음 교육: " + (gmRequest.chapter + 1) + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter].title;
+            var gmFinished = gmRequest.chapter === gmChapterCount;
+            var gmSuccess = gmHeading + (gmFinished ? "🎓 호월 교육 수료를 축하합니다!\n📚 전체 교육 완료: " + gmChapterCount + "/" + gmChapterCount : "✅ " + gmRequest.chapter + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter - 1].title + " 완료!\n📚 교육 진행: " + gmRequest.chapter + "/" + gmChapterCount);
+            gmSuccess += "\n━━━━━━━━━━━━\n🎁 " + gmEducationConfig.rewardItem + " 1개 지급\n" + (gmFinished ? "📦 전체 교육 보상: 총 " + gmChapterCount + "개 지급 완료\n" : "") + "👤 담당 GM: [" + getGuildMarbleRankLabel(sender, gmContext) + "]";
+            gmSuccess += gmFinished ? "\n━━━━━━━━━━━━\n함께 배운 내용을 바탕으로 호이월드를 즐겨보세요!" : "\n━━━━━━━━━━━━\n▶ 다음 교육: " + (gmRequest.chapter + 1) + "챕터 · " + gmEducationConfig.chapters[gmRequest.chapter].title;
             replier.reply(gmSuccess); return;
         }
 
@@ -8192,7 +8315,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     data.auction = data.auction.filter((item) => item.originalIndex !== biditemNumber);
                 }
-                if (msg.startsWith("/경매초기화") && isMaster(sender)) {
+                if (msg === "/경매초기화" && isMaster(sender)) {
                     data.auction.length = 0;
                     replier.reply("호이상점이 초기화가 되었습니다");
                 }
@@ -31899,13 +32022,35 @@ function isOrderLogRoomBot(sender) {
     return sender === "오픈채팅봇" && getCurrentContext().permissionRoom === GLOBAL_CONFIG.permissions.orderLogRoom;
 }
 
-// 원래의 수동 초기화 입력을 실행하지 않고 통합 메뉴로 안내할지 확인하는 함수
-function isManualResetLegacyCommand(msg) {
-    if (typeof msg !== "string" || msg.charAt(0) !== "/") return false;
-    if (msg === "/글자수전체정리") return false; // 메뉴 항목을 유지하며 정확한 직접 입력도 즉시 실행
+// 운영 초기화가 허용된 기존 두 방인지 정확히 확인하는 함수
+function isManualResetRoom(room) {
+    return GLOBAL_CONFIG.manualReset.rooms.indexOf(room) !== -1;
+}
+
+// 환경·사용자·방·그룹 여부가 다른 초기화 대기를 구분하는 함수
+function getManualResetSessionKey(sender, room, isGroupChat, isDev) {
+    return (isDev ? "DEV:" : "PROD:") + JSON.stringify([sender, room, !!isGroupChat]);
+}
+
+// 통합 메뉴 밖에서 실행하는 운영 일괄 정리 명령을 찾는 함수
+function getManualResetDirectOperation(msg) {
+    var entries = GLOBAL_CONFIG.manualReset.directOperations;
+    for (var i = 0; i < entries.length; i++) if (msg === entries[i].command || (entries[i].args && msg.indexOf(entries[i].command) === 0 && /\s/.test(msg.charAt(entries[i].command.length)))) return entries[i];
+    return null;
+}
+
+// 개인 사용 명령을 제외한 구형 운영 초기화 항목을 찾는 함수
+function getManualResetLegacyEntry(msg) {
+    if (typeof msg !== "string" || msg.charAt(0) !== "/") return null;
+    if (msg === "/글자수전체정리") return null; // 메뉴 항목을 유지하며 정확한 직접 입력도 즉시 실행
     var entries = GLOBAL_CONFIG.manualReset.entries;
-    for (var i = 0; i < entries.length; i++) if (msg.indexOf(entries[i].command) === 0) return true;
-    return false;
+    for (var i = 0; i < entries.length; i++) if (!entries[i].personal && msg.indexOf(entries[i].command) === 0) return entries[i];
+    return null;
+}
+
+// 원래의 운영 초기화 입력을 통합 메뉴 안내로 연결할지 확인하는 함수
+function isManualResetLegacyCommand(msg) {
+    return !!getManualResetLegacyEntry(msg);
 }
 
 // 통합 메뉴·번호 선택·최종 응답만 초기화 상태 흐름으로 분류하는 함수
@@ -31915,6 +32060,7 @@ function isManualResetInput(msg) {
 
 // 기존 역할·방·패스·길드장 조건으로 메뉴 표시와 확인 시 권한을 검사하는 함수
 function isManualResetEntryAllowed(entry, sender, memberData, guildData) {
+    if (!entry.personal && !isManualResetRoom(getCurrentContext().permissionRoom)) return false;
     var role = entry.role, operator = sender === "호이 남" || isOrderLogRoomBot(sender);
     if (role === "master") return isMaster(sender);
     if (role === "masterIdentity") return isMasterIdentity(sender);
@@ -31944,6 +32090,7 @@ function advanceManualResetSession(msg, sender, room, isGroupChat, key, memberDa
         for (var oldKey in manualResetSessions) if (Object.prototype.hasOwnProperty.call(manualResetSessions, oldKey) && now >= manualResetSessions[oldKey].expiresAt) delete manualResetSessions[oldKey];
         var choices = [], lines = ["🧹 초기화 메뉴", "번호 선택 → 범위 확인 → 1삭제 / 2취소", allsee];
         for (var entryIndex = 0; entryIndex < entries.length; entryIndex++) {
+            if (entries[entryIndex].personal) continue;
             if (!isManualResetEntryAllowed(entries[entryIndex], sender, memberData, guildData)) continue;
             choices.push(entries[entryIndex].id);
             var usage = entries[entryIndex].args === "user" ? "번호 아이디" : entries[entryIndex].args === "userCount" ? "번호 아이디 횟수" : entries[entryIndex].args === "server" ? "번호 서버" : "번호";
@@ -32295,7 +32442,9 @@ function isAutoDailyEntryCommandMessage(msg) {
 // 홈뱃지 오픈처럼 회원·활동 데이터를 함께 바꾸는 명령인지 확인하는 함수
 function isExclusiveDataMutationCommandMessage(msg) {
     var command = String(msg || "");
+    if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
+    if (getManualResetDirectOperation(command)) return true;
     if (isDevCommandMessage(msg) && (command === "/등록한다" || command === "/등록안한다")) command = command.substring(1);
     if (isDevCommandMessage(msg) && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(command)) command = command.substring(1);
     if (command === "ㅁㅂ" || command === "ㅁㄱ" || command === "ㅁㅌ" || (isDevCommandMessage(msg) && /^\/(?:ㅁㅂ|ㅁㄱ|ㅁㅌ)$/.test(command))) return true;
@@ -35168,12 +35317,50 @@ function buildServerRaidAccountIndex(data) {
 // 교육 명령의 조회 인자와 마지막 챕터 숫자를 정확히 해석하는 함수
 function getGmEducationRequest(msg) {
     if (/[\r\n]/.test(String(msg))) return null;
+    if (msg === "/교육명령어") return { action: "commands", input: "" };
     var match = String(msg).match(/^\/(교육완료|교육실적|교육)(?:[ \t]+([^\r\n]+))?$/);
     if (!match) return null;
     var input = (match[2] || "").trim();
     if (match[1] !== "교육완료") return { action: match[1] === "교육실적" ? "stats" : "view", input: input };
-    var completion = input.match(/^(.+)[ \t]+(10|[1-9])$/);
+    var completion = input.match(/^(.+)[ \t]+(1[0-2]|[1-9])$/);
     return completion ? { action: "complete", input: completion[1].trim(), chapter: Number(completion[2]) } : { action: "invalid", input: input };
+}
+
+// 기존 MASTER 판정을 유지하고 교육 명령에만 정확한 교육방을 추가하는 함수
+function isGmEducationOperator(sender, room) {
+    return isMaster(sender) || (room === GLOBAL_CONFIG.gmEducation.room && Master.indexOf(sender) !== -1);
+}
+
+// Main의 매뉴얼 개수와 Info의 표시 설정에서 교육 최대 챕터를 읽는 함수
+function getGmEducationChapterCount() {
+    return GLOBAL_CONFIG.gmEducation.chapters ? GLOBAL_CONFIG.gmEducation.chapters.length : GLOBAL_CONFIG.gmEducation.chapterCount;
+}
+
+// 완료 시각을 한국시간의 연도-월로 변환하는 함수
+function getGmEducationMonthKey(at) {
+    var time = at === undefined ? Date.now() : Date.parse(at);
+    if (!isFinite(time)) throw new Error("교육 완료 시각 오류");
+    var date = new Date(time + 9 * 60 * 60 * 1000);
+    return date.getUTCFullYear() + "-" + ("0" + (date.getUTCMonth() + 1)).slice(-2);
+}
+
+// 교육 실적의 마지막 월 인자와 공백을 포함한 GM 아이디를 구분하는 함수
+function getGmEducationStatsRequest(input) {
+    var current = getGmEducationMonthKey(), previous = new Date(Date.UTC(Number(current.slice(0, 4)), Number(current.slice(5)) - 2, 1));
+    var previousMonth = getGmEducationMonthKey(previous.toISOString());
+    if (input === "초기화") return { error: "교육 실적은 매월 자동으로 구분됩니다. 지난 기록은 /교육실적 전체 " + previousMonth + "처럼 월을 입력해 확인하세요." };
+    var parts = input.match(/^(?:(.*)[ \t]+)?([^ \t]+)$/), last = parts ? parts[2] : "", target = input, month = current;
+    if (/^\d{4}[-/.]/.test(last)) {
+        if (!/^(?!0000)\d{4}-(?:0[1-9]|1[0-2])$/.test(last)) return { error: "월은 " + current + "처럼 연도-월 형식으로 입력해 주세요.\n예: /교육실적 " + (parts[1] ? parts[1] + " " : "") + current + "\n전체 명령어: /교육명령어" };
+        month = last; target = (parts[1] || "").trim();
+    } else if (/(?:^|[ \t])\d{4}[-/.]/.test(input)) return { error: "조회할 월은 명령어 맨 뒤에 연도-월 형식으로 입력해 주세요.\n예: /교육실적 전체 " + current + "\n전체 명령어: /교육명령어" };
+    return { input: target, month: month };
+}
+
+// 독립 교육 명령어 안내의 지난달 예시를 현재 한국시간에 맞추는 함수
+function buildGmEducationCommands() {
+    var current = getGmEducationMonthKey(), previous = new Date(Date.UTC(Number(current.slice(0, 4)), Number(current.slice(5)) - 2, 1));
+    return GLOBAL_CONFIG.gmEducation.commandGuideLines.join("\n").replace(/\{previousMonth\}/g, getGmEducationMonthKey(previous.toISOString())).replace("[allsee]", allsee);
 }
 
 // 확정 교육 기록의 순서·처리 키·담당자 형식을 검증하는 함수
@@ -35182,10 +35369,10 @@ function requireGmEducationStore(store) {
     var names = Object.keys(store.users), seen = {};
     for (var i = 0; i < names.length; i++) {
         var row = store.users[names[i]];
-        if (names[i].charAt(0) !== "$" || !row || typeof row.user !== "string" || !Array.isArray(row.chapters) || row.chapters.length > 10) throw new Error("교육 계정 기록 오류");
+        if (names[i].charAt(0) !== "$" || !row || typeof row.user !== "string" || !Array.isArray(row.chapters) || row.chapters.length > getGmEducationChapterCount()) throw new Error("교육 계정 기록 오류");
         for (var j = 0; j < row.chapters.length; j++) {
             var chapter = row.chapters[j];
-            if (!chapter || chapter.chapter !== j + 1 || typeof chapter.txId !== "string" || !chapter.txId || typeof chapter.gmId !== "string" || !chapter.gmId || typeof chapter.gmUser !== "string" || !chapter.gmUser || typeof chapter.completedAt !== "string" || !isFinite(Date.parse(chapter.completedAt)) || seen["$" + chapter.txId]) throw new Error("교육 챕터 기록 오류");
+            if (!chapter || chapter.chapter !== j + 1 || typeof chapter.txId !== "string" || !chapter.txId || typeof chapter.gmId !== "string" || !chapter.gmId || typeof chapter.gmUser !== "string" || !chapter.gmUser || (chapter.completedAt !== undefined && chapter.completedAt !== null && chapter.completedAt !== "" && (typeof chapter.completedAt !== "string" || !isFinite(Date.parse(chapter.completedAt)))) || seen["$" + chapter.txId]) throw new Error("교육 챕터 기록 오류");
             seen["$" + chapter.txId] = true;
         }
     }
@@ -35197,17 +35384,22 @@ function getGmEducationProgress(store, member, allowPending) {
     var id = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var row = id && store.users["$" + id], chapters = row ? row.chapters : [];
     var receipts = member && member.gmEducationRewards;
-    if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > 10)) throw new Error("교육 지급 영수증 형식 오류");
+    if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > getGmEducationChapterCount())) throw new Error("교육 지급 영수증 형식 오류");
     receipts = receipts || [];
     if (receipts.length > chapters.length && (!allowPending || receipts.length !== chapters.length + 1)) throw new Error("교육 완료 원본이 지급 기록보다 부족합니다.");
     for (var i = 0; i < receipts.length; i++) if (typeof receipts[i] !== "string" || !receipts[i]) throw new Error("교육 지급 영수증 값 오류");
     for (var j = 0; j < chapters.length; j++) if (receipts[j] !== chapters[j].txId) throw new Error("교육 완료와 지급 기록 불일치");
+    var times = member && member.gmEducationRewardTimes;
+    if (times !== undefined) {
+        if (!Array.isArray(times) || times.length !== receipts.length) throw new Error("교육 확정 시각 영수증 형식 오류");
+        for (var t = 0; t < times.length; t++) if (times[t] !== null && (typeof times[t] !== "string" || !isFinite(Date.parse(times[t])) || (chapters[t] && chapters[t].completedAt !== times[t]))) throw new Error("교육 확정 시각 영수증 불일치");
+    }
     return chapters.length;
 }
 
 // 동일 계정·챕터의 재시작 복구에 사용할 영속 요청을 검증하는 함수
 function requireGmEducationPending(pending) {
-    if (!pending || pending.version !== 1 || typeof pending.accountId !== "string" || !pending.accountId || typeof pending.user !== "string" || !pending.user || typeof pending.gmId !== "string" || !pending.gmId || typeof pending.gmUser !== "string" || !pending.gmUser || typeof pending.txId !== "string" || !pending.txId || typeof pending.at !== "string" || !isFinite(Date.parse(pending.at)) || typeof pending.chapter !== "number" || Math.floor(pending.chapter) !== pending.chapter || pending.chapter < 1 || pending.chapter > 10) throw new Error("교육 복구 요청 형식 오류");
+    if (!pending || pending.version !== 1 || typeof pending.accountId !== "string" || !pending.accountId || typeof pending.user !== "string" || !pending.user || typeof pending.gmId !== "string" || !pending.gmId || typeof pending.gmUser !== "string" || !pending.gmUser || typeof pending.txId !== "string" || !pending.txId || typeof pending.at !== "string" || !isFinite(Date.parse(pending.at)) || (pending.completionClock !== undefined && pending.completionClock !== 1) || typeof pending.chapter !== "number" || Math.floor(pending.chapter) !== pending.chapter || pending.chapter < 1 || pending.chapter > getGmEducationChapterCount()) throw new Error("교육 복구 요청 형식 오류");
     return pending;
 }
 
@@ -35222,10 +35414,12 @@ function applyGmEducationPending(data, store, pending) {
     if (!alreadyComplete && count !== pending.chapter - 1) throw new Error("교육 복구 순서 오류");
     if (receipts.length !== pending.chapter - 1 && receipts.length !== pending.chapter) throw new Error("교육 지급 영수증 순서 오류");
     var paid = receipts[pending.chapter - 1] === pending.txId;
+    var times = member.gmEducationRewardTimes, completedAt = times && times[pending.chapter - 1] || pending.at;
+    if (paid && pending.completionClock === 1 && (!times || !times[pending.chapter - 1])) throw new Error("교육 최초 확정 시각을 확인할 수 없습니다.");
     if ((receipts.length === pending.chapter && !paid) || (alreadyComplete && !paid)) throw new Error("교육 복구 지급 키 불일치");
     if (alreadyComplete) {
         var completed = row.chapters[count - 1];
-        if (completed.gmId !== pending.gmId || completed.gmUser !== pending.gmUser || completed.completedAt !== pending.at) throw new Error("교육 복구 담당자 불일치");
+        if (completed.gmId !== pending.gmId || completed.gmUser !== pending.gmUser || (completed.completedAt && completed.completedAt !== completedAt)) throw new Error("교육 복구 담당자 불일치");
     }
     if (!paid) {
         var bag = member.bag;
@@ -35234,11 +35428,14 @@ function applyGmEducationPending(data, store, pending) {
         requireSpiritRetirementCount(held); requireSpiritRetirementCount(held + 1);
         if (!bag) member.bag = bag = {};
         addItemToBag(bag, GLOBAL_CONFIG.gmEducation.rewardItem, 1);
+        if (!times) { times = []; for (var old = 0; old < receipts.length; old++) times.push(null); }
+        completedAt = pending.completionClock === 1 ? new Date().toISOString() : pending.at;
+        times.push(completedAt); member.gmEducationRewardTimes = times;
         receipts.push(pending.txId); member.gmEducationRewards = receipts;
     }
     if (!alreadyComplete) {
         if (!row) row = store.users["$" + pending.accountId] = { user: account.user, chapters: [] };
-        row.chapters.push({ chapter: pending.chapter, txId: pending.txId, gmId: pending.gmId, gmUser: pending.gmUser, completedAt: pending.at });
+        row.chapters.push({ chapter: pending.chapter, txId: pending.txId, gmId: pending.gmId, gmUser: pending.gmUser, completedAt: completedAt });
     }
     return { memberChanged: !paid, storeChanged: !alreadyComplete, user: account.user };
 }
@@ -35254,8 +35451,9 @@ function resolveGmEducationUser(data, input) {
 // 교육 상태와 다음 챕터를 현재 닉네임 장식으로 표시하는 함수
 function buildGmEducationStatus(store, data, user, context) {
     var count = getGmEducationProgress(store, data.member[user]);
-    var text = "[" + getGuildMarbleRankLabel(user, context) + "] 님의 호월 교육\n━━━━━━━━━━━━\n📚 교육 진행: " + count + "/10\n";
-    if (count === 10) return text + "🎓 호월 교육 수료 · 10/10\n전체 챕터를 완료했습니다.\n교육은 계정당 1회만 받을 수 있습니다.";
+    var max = getGmEducationChapterCount();
+    var text = "[" + getGuildMarbleRankLabel(user, context) + "] 님의 호월 교육\n━━━━━━━━━━━━\n📚 교육 진행: " + count + "/" + max + "\n";
+    if (count === max) return text + "🎓 호월 교육 수료 · " + max + "/" + max + "\n전체 챕터를 완료했습니다.\n교육은 계정당 1회만 받을 수 있습니다.";
     text += count === 0 ? "🌱 교육 시작 전" : "✅ 완료 챕터: " + (count === 1 ? "1" : "1~" + count);
     return text + "\n━━━━━━━━━━━━\n▶ 다음 교육: " + (count + 1) + "챕터 · " + GLOBAL_CONFIG.gmEducation.chapters[count].title + "\n📖 GM 매뉴얼: /교육 " + (count + 1);
 }
@@ -35263,54 +35461,75 @@ function buildGmEducationStatus(store, data, user, context) {
 // 현재 게임 명령과 선택 실습 기준을 포함한 공통 매뉴얼을 표시하는 함수
 function buildGmEducationManual(chapter) {
     var row = GLOBAL_CONFIG.gmEducation.chapters[chapter - 1];
-    return "📚 호월 교육 · " + chapter + "/10\n" + row.emoji + " " + row.title + "\n━━━━━━━━━━━━\n" + row.intro + "\n🎁 완료 보상: " + GLOBAL_CONFIG.gmEducation.rewardItem + " 1개\n" + allsee + "📖 배울 내용\n• " + row.learn.join("\n• ") + "\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n" + row.commands.join("\n") + "\n━━━━━━━━━━━━\n✅ GM 확인\n" + row.check + "\n━━━━━━━━━━━━\n" + row.note + "\n재화·장비가 없으면 설명·조회·예시로 교육해요. 구매·강화·가입·거래는 필수가 아니에요." + (chapter === 10 ? "\n🎓 이 챕터까지 완료하면 수료! 추가 수료 보상은 없어요." : "");
+    var learning = row.learn.slice();
+    if (chapter === 11) {
+        var options = GLOBAL_CONFIG.petHomeActivity.cube.options;
+        for (var i = 0; i < options.length; i++) learning.push(options[i].number + "번 " + options[i].name + " · 1회 큐브 " + options[i].cost + "개 · 최대 " + options[i].max + "%");
+        learning.push("/큐브확률에서 구간별 확률을 확인해요. 실패해도 달성한 1% 단위 보호선은 유지돼요.");
+    }
+    return "📚 호월 교육 · " + chapter + "/" + getGmEducationChapterCount() + "\n" + row.emoji + " " + row.title + "\n━━━━━━━━━━━━\n" + row.intro + "\n🎁 완료 보상: " + GLOBAL_CONFIG.gmEducation.rewardItem + " 1개\n" + allsee + "📖 배울 내용\n• " + learning.join("\n• ") + "\n━━━━━━━━━━━━\n⌨️ 함께 해보기\n" + row.commands.join("\n") + "\n━━━━━━━━━━━━\n✅ GM 확인\n" + row.check + "\n━━━━━━━━━━━━\n" + row.note + "\n재화·장비가 없으면 설명·조회·예시로 교육해요. 구매·강화·가입·거래는 필수가 아니에요." + (chapter === getGmEducationChapterCount() ? "\n🎓 이 챕터까지 완료하면 수료! 추가 수료 보상은 없어요." : "");
 }
 
-// 실제 담당 챕터로만 GM별 인원과 횟수·공동 순위를 계산하는 함수
-function buildGmEducationStats(store, data, target, context, all) {
-    var accounts = buildServerRaidAccountIndex(data), names = Object.keys(store.users), gmRows = {}, total = 0, active = 0, finished = 0;
+// 월별 확정 챕터와 날짜가 없는 기존 기록을 보존하며 GM 실적을 표시하는 함수
+function buildGmEducationStats(store, data, target, context, all, month) {
+    var current = getGmEducationMonthKey();
+    month = month || current;
+    var heading = (all ? "📊 호월 교육 실적" : "📊 [" + getGuildMarbleRankLabel(target, context) + "] 님의 교육 실적") + "\n📅 " + month.slice(0, 4) + "년 " + month.slice(5) + "월\n━━━━━━━━━━━━\n";
+    if (month > current) return heading + "아직 집계가 시작되지 않은 달입니다.";
+    var accounts = buildServerRaidAccountIndex(data), names = Object.keys(store.users), gmRows = {}, total = 0, legacy = [];
+    var targetId = !all && data.member[target].serverRaidAccount ? data.member[target].serverRaidAccount.id : null;
     for (var i = 0; i < names.length; i++) {
-        var userRow = store.users[names[i]], chapters = userRow.chapters;
-        if (accounts[names[i].substring(1)]) getGmEducationProgress(store, accounts[names[i].substring(1)].member);
-        if (!chapters.length) continue;
-        if (chapters.length === 10) finished++; else active++;
-        total += chapters.length;
+        var userRow = store.users[names[i]], chapters = userRow.chapters, student = accounts[names[i].substring(1)];
+        if (student) getGmEducationProgress(store, student.member);
+        var studentName = student ? getGuildMarbleRankLabel(student.user, context) : userRow.user;
         for (var j = 0; j < chapters.length; j++) {
-            var entry = chapters[j], key = "$" + entry.gmId;
-            if (!gmRows[key]) gmRows[key] = { id: entry.gmId, name: accounts[entry.gmId] ? accounts[entry.gmId].user : entry.gmUser, count: 0, users: {} };
+            var entry = chapters[j], key = "$" + entry.gmId, gmAccount = accounts[entry.gmId];
+            var gmName = gmAccount ? getGuildMarbleRankLabel(gmAccount.user, context) : entry.gmUser;
+            if (!all && entry.gmId !== targetId) continue;
+            if (!entry.completedAt) {
+                legacy.push("[" + gmName + "] → [" + studentName + "] · " + entry.chapter + "챕터 · 완료 날짜 없음");
+                continue;
+            }
+            if (getGmEducationMonthKey(entry.completedAt) !== month) continue;
+            if (!gmRows[key]) gmRows[key] = { id: entry.gmId, name: gmAccount ? gmAccount.user : entry.gmUser, label: gmName, count: 0, records: [] };
+            var date = new Date(Date.parse(entry.completedAt) + 9 * 60 * 60 * 1000);
+            var dateLabel = date.getUTCFullYear() + "." + ("0" + (date.getUTCMonth() + 1)).slice(-2) + "." + ("0" + date.getUTCDate()).slice(-2);
             gmRows[key].count++;
-            if (!gmRows[key].users[names[i]]) gmRows[key].users[names[i]] = { name: accounts[names[i].substring(1)] ? accounts[names[i].substring(1)].user : userRow.user, chapters: [] };
-            gmRows[key].users[names[i]].chapters.push(entry.chapter);
+            gmRows[key].records.push({ at: Date.parse(entry.completedAt), text: "[" + studentName + "] · " + entry.chapter + "챕터 · " + dateLabel });
+            total++;
         }
-    }
-    if (!all) {
-        var member = data.member[target], id = member.serverRaidAccount && member.serverRaidAccount.id, gm = id && gmRows["$" + id];
-        var header = "[" + getGuildMarbleRankLabel(target, context) + "] 님의 교육 실적\n━━━━━━━━━━━━\n";
-        if (!gm) return header + "📚 완료 챕터: 0회\n👥 교육 인원: 0명\n아직 교육 실적이 없습니다.";
-        var students = Object.keys(gm.users).map(function (key) { return gm.users[key]; });
-        students.sort(function (a, b) { return a.name.localeCompare(b.name); });
-        var lines = [];
-        for (var s = 0; s < students.length; s++) lines.push((s + 1) + ". [" + (data.member[students[s].name] ? getGuildMarbleRankLabel(students[s].name, context) : students[s].name) + "] · " + students[s].chapters.join(", ") + "챕터 · " + students[s].chapters.length + "회");
-        return header + "📚 완료 챕터: " + gm.count + "회\n👥 교육 인원: " + students.length + "명\n━━━━━━━━━━━━\n유저별 담당 챕터는 전체보기에서 확인하세요.\n" + allsee + "📋 교육 기록\n━━━━━━━━━━━━\n" + lines.join("\n");
     }
     var rows = Object.keys(gmRows).map(function (key) { return gmRows[key]; });
     rows.sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
-    var summary = "📊 호월 교육 전체 실적\n━━━━━━━━━━━━\n👥 전체 교육 인원: " + (active + finished) + "명\n📖 교육 진행 중: " + active + "명\n🎓 교육 수료: " + finished + "명\n📚 완료 챕터: " + total + "회\n━━━━━━━━━━━━\n";
-    if (!rows.length) return summary + "아직 교육 실적이 없습니다.";
+    var summary = heading + (all ? "📚 전체 완료 챕터: " : "📚 완료 챕터: ") + total + "개\n━━━━━━━━━━━━\n";
     var full = [], top = [], rank = 0;
     for (var r = 0; r < rows.length; r++) {
         if (r === 0 || rows[r].count !== rows[r - 1].count) rank = r + 1;
-        var tied = (r > 0 && rows[r].count === rows[r - 1].count) || (r + 1 < rows.length && rows[r].count === rows[r + 1].count);
-        var label = accounts[rows[r].id] ? getGuildMarbleRankLabel(accounts[rows[r].id].user, context) : rows[r].name;
-        var line = (tied ? "공동 " : "") + rank + "등 [" + label + "] · " + rows[r].count + "회 · 교육 " + Object.keys(rows[r].users).length + "명";
-        full.push(line); if (rank <= 3) top.push(line);
+        var line = rank + "등 [" + rows[r].label + "] · " + rows[r].count + "개";
+        if (all) { full.push(line); if (r < 3) top.push(line); }
+        rows[r].records.sort(function (a, b) { return b.at - a.at || a.text.localeCompare(b.text); });
     }
-    return summary + top.join("\n") + "\n" + allsee + "📋 전체 GM 교육 실적\n━━━━━━━━━━━━\n" + full.join("\n");
+    if (!rows.length) summary += "해당 월의 교육 실적이 없습니다.";
+    else if (all) summary += top.join("\n") + "\n━━━━━━━━━━━━\n📋 전체 순위와 교육 기록은 전체보기에서 확인하세요.";
+    else summary += "📋 교육 대상과 완료 날짜는 전체보기에서 확인하세요.";
+    if (rows.length) {
+        if (all) full.push("━━━━━━━━━━━━", "📋 교육 완료 기록 · " + month);
+        else full.push("📋 교육 완료 기록 · " + month, "━━━━━━━━━━━━");
+        for (var d = 0; d < rows.length; d++) {
+            if (all) full.push("[" + rows[d].label + "] · " + rows[d].count + "개");
+            for (var record = 0; record < rows[d].records.length; record++) full.push(rows[d].records[record].text);
+        }
+    }
+    if (legacy.length) {
+        full.push("━━━━━━━━━━━━", "📦 기존 누적·월 미분류 · " + legacy.length + "개", "완료 날짜가 없어 월별 실적에서 제외했어요. 원본을 보존하며 운영 확인이 필요해요.");
+        for (var old = 0; old < legacy.length; old++) full.push(legacy[old]);
+    }
+    return summary + (full.length ? "\n" + allsee + full.join("\n") : "");
 }
 
 // 길드마블의 실행 명령과 잘못된 인수를 구분하는 함수
 function getGuildMarbleRequest(msg) {
-    var actions = { "/길드마블": "main", "/마블판": "board", "/마블가이드": "guide", "/마블시작": "recruit", "/마블준비": "ready", "/마블준비취소": "unready", "/마블모집취소": "cancel", "/마블굴리기": "roll", "ㅁㅂ": "roll", "/마블구매": "buy", "ㅁㄱ": "buy", "/마블건설": "build", "/마블통과": "pass", "ㅁㅌ": "pass", "/마블중단": "stop", "/마블중단확인": "agree" };
+    var actions = { "/길드마블": "main", "/마블판": "board", "/마블가이드": "guide", "/마블시작": "recruit", "/마블준비": "ready", "/마블준비취소": "unready", "/마블모집취소": "cancel", "/마블굴리기": "roll", "ㅁㅂ": "roll", "/마블구매": "buy", "ㅁㄱ": "land", "/마블건설": "build", "/마블통과": "pass", "ㅁㅌ": "pass", "/마블중단": "stop", "/마블중단확인": "agree" };
     if (Object.prototype.hasOwnProperty.call(actions, msg)) return { action: actions[msg], mutation: ["main", "board", "guide"].indexOf(actions[msg]) === -1 };
     var fee = String(msg).match(/^\/마블참가비\s+(\d+)$/);
     if (fee) return { action: "fee", mutation: true, units: Number(fee[1]) };
@@ -35545,7 +35764,7 @@ function rollGuildMarbleDice(game, context) {
     var from = player.position, raw = from + die, to = raw % config.board.length;
     var board = config.board[to], land = game.lands[to];
     var lines = [getGuildMarblePlayerLabel(player, index, context) + " 님의 이동 결과", "🎲 【 " + die + " 】주사위가 나왔습니다!!", "📍 " + padGuildMarblePosition(from) + " → " + padGuildMarblePosition(to) + "칸 · " + board.name];
-    var amounts = [], choosing = false; // 설명 아래에 모을 실제 골드 결과와 선택 대기 여부
+    var amounts = [], choosing = false, bankruptcy = null; // 금액 결과·선택 대기와 이번 이동의 파산 처리 결과
     game.stop = null; player.position = to; game.move = { die: die, from: from, to: to };
     if (raw >= config.board.length) {
         player.gold += config.rewards.lapGold; lines.push("🏁 호월광장을 지나 출발 보너스를 받았습니다!");
@@ -35556,8 +35775,9 @@ function rollGuildMarbleDice(game, context) {
     } else if (board.type === "land" && land.owner !== index) {
         var toll = board.toll * (land.level === config.limits.maxLevel ? 3 : 1);
         var payment = payGuildMarbleGold(game, index, toll, land.owner);
-        amounts.push("💣 통행료를 내세요 ^^", "🏠 주인 " + getGuildMarblePlayerLabel(game.players[land.owner], land.owner, context) + " · Lv." + land.level, "💸 통행료 · " + numberWithCommas(toll) + " 골드");
-        if (payment.lost) amounts.push("⚠️ 잔여 " + numberWithCommas(payment.paid) + " 골드만 지급 · 부족 " + numberWithCommas(payment.lost) + " 골드", "💥 파산 · 최종 " + (config.limits.players - player.eliminated + 1) + "등 확정", "🏠 보유 지역 " + payment.cleared + "곳이 빈 땅으로 돌아갑니다.", "💰 상금은 경기 종료 후 지급됩니다.");
+        lines.push("🏠 주인 " + getGuildMarblePlayerLabel(game.players[land.owner], land.owner, context) + " · Lv." + land.level);
+        amounts.push("🧾 통행료 정산", "💸 통행료 · " + numberWithCommas(toll) + " 골드", "💰 실제 지급 · " + numberWithCommas(payment.paid) + " 골드");
+        if (payment.lost) { amounts.push("⚠️ 부족 금액 · " + numberWithCommas(payment.lost) + " 골드"); bankruptcy = payment; }
         else amounts.push("✅ 통행료 납부 완료");
     } else if (board.type === "luck") {
         player.gold += config.rewards.luckGold;
@@ -35568,11 +35788,15 @@ function rollGuildMarbleDice(game, context) {
         else {
             var loss = payGuildMarbleGold(game, index, config.rewards.chanceLoss, -1);
             lines.push("📜 모험 도중 장비 수리비가 발생했습니다."); amounts.push("💰 -" + numberWithCommas(loss.paid) + " 골드");
-            if (loss.lost) amounts.push("⚠️ 부족 금액 · " + loss.lost + " 골드", "💥 파산 · 최종 " + (config.limits.players - player.eliminated + 1) + "등 확정", "🏠 보유 지역 " + loss.cleared + "곳이 빈 땅으로 돌아갑니다.");
+            if (loss.lost) { amounts.push("⚠️ 부족 금액 · " + loss.lost + " 골드"); bankruptcy = loss; }
         }
     } else if (board.type === "land") lines.push("🏰 내 땅 · Lv.2 최대 레벨입니다.");
     else if (board.type === "rest") lines.push("🎙️ 보이스룸에서 잠시 쉬어갑니다.");
-    if (amounts.length) lines.push("━━━━━━━━━━━━", amounts.join("\n"), "💰 보유 금액 · " + numberWithCommas(player.gold) + " 골드");
+    if (bankruptcy) {
+        lines[0] = "💥 파산 · 최종 " + (config.limits.players - player.eliminated + 1) + "등 확정\n" + getGuildMarblePlayerLabel(player, index, context) + " 님\n━━━━━━━━━━━━";
+        amounts.push("━━━━━━━━━━━━", "💰 남은 골드 · " + numberWithCommas(player.gold) + " 골드", bankruptcy.cleared ? "🏚️ 보유 지역 " + bankruptcy.cleared + "곳 → 빈 땅으로 반환" : "🏚️ 반환할 보유 지역이 없습니다.", "🎁 상금은 경기 종료 후 지급됩니다.");
+    } else if (amounts.length) amounts.push("💰 보유 금액 · " + numberWithCommas(player.gold) + " 골드");
+    if (amounts.length) lines.push("━━━━━━━━━━━━", amounts.join("\n"));
     if (choosing) return lines.join("\n");
     if (advanceGuildMarbleTurn(game)) lines.push("🔄 새 라운드가 시작되어 행동 순서가 반대로 바뀌었습니다.");
     return lines.join("\n");
@@ -35627,6 +35851,7 @@ function executeGuildMarbleRequest(store, context, request, newId) {
     var config = GLOBAL_CONFIG.guildMarble, action = request.action;
     if (action === "guide") return { changed: false, guide: true };
     var row = findGuildMarbleRow(store, context, action), game = row && row.current;
+    if (action === "land") action = game && game.action === "BUILD" ? "build" : "buy";
     var result = { changed: false, row: row, text: "" };
     if (game && game.room !== context.room) { result.text = "이 경기는 [" + game.room + "]에서 진행 중입니다. 원래 방에서 입력해주세요."; result.wrongRoom = true; return result; }
     if (action === "invalid") { result.text = "명령어와 수량을 확인해주세요.\n👉 /마블가이드\n👉 /마블참가비 1~10"; return result; }
@@ -35782,7 +36007,7 @@ function buildGuildMarbleFooter(game, context) {
     var config = GLOBAL_CONFIG.guildMarble, lines = ["👥 참가자 현황\n" + allsee], board = [];
     for (var i = 0; i < game.players.length; i++) {
         var player = game.players[i];
-        lines.push(getGuildMarblePlayerLabel(player, i, context) + " · " + padGuildMarblePosition(player.position) + "칸 · " + (player.alive ? "💰" + numberWithCommas(player.gold) + " 골드" : "💥 탈락"));
+        lines.push(getGuildMarblePlayerLabel(player, i, context) + " · " + padGuildMarblePosition(player.position) + "칸 · " + (player.alive ? "💰" + numberWithCommas(player.gold) + " 골드" : "💥 탈락 · " + (config.limits.players - player.eliminated + 1) + "등 확정"));
     }
     for (var j = 0; j < config.board.length; j++) {
         if (j > 0 && j % 4 === 0) board.push("━━━━━━━━━━━━");
@@ -35797,7 +36022,7 @@ function buildGuildMarbleFooter(game, context) {
 function buildGuildMarbleAction(game) {
     if (game.action === "ROLL") return "👉 /마블굴리기 or ㅁㅂ";
     var player = game.players[getGuildMarbleTurnIndex(game)], cell = GLOBAL_CONFIG.guildMarble.board[player.position];
-    return (player.gold < cell.price ? "" : game.action === "BUY" ? "👉 /마블구매 or ㅁㄱ\n" : "👉 /마블건설\n") + "👉 /마블통과 or ㅁㅌ";
+    return (player.gold < cell.price ? "" : game.action === "BUY" ? "👉 /마블구매 or ㅁㄱ\n" : "👉 /마블건설 or ㅁㄱ\n") + "👉 /마블통과 or ㅁㅌ";
 }
 
 // 참가비와 고정 배분율로 모집 전후의 실제 금액을 표시하는 함수
