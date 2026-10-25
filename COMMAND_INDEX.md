@@ -37,6 +37,7 @@ Status: VERIFIED
 
 - 밸런스: `pickMiniGameCycle`, `createMiniGameBalance`, `summarizeMiniGameBalance`, `closeMiniGameBalance`, `buildMiniGameBalanceMessages`, `buildMiniGameBalanceStats`.
 - 전체 방 공용 하루 한 문항, KST 자정 마감. 5명 이상·동률 아님이면 다수 선택자 각각 1억 적립. 본인 `/밸런스` 또는 정상 투표에서 미수령만 합산 지급.
+- 밸런스 조회는 투표 전후 모두 `📖 밸런스 게임 하는 방법` 다음 줄에 `명령어:/밸런스 번호 선택이유`를 표시한 뒤 기존 `allsee`와 마감·보상·투표 상태 안내를 출력한다.
 - 공개 이유 목록에는 닉네임·이유만 시간/접수순으로 출력. `allsee` 뒤 분할하며 선택·진행 중 집계는 제외. MASTER 결과 조회에만 합산 현황 표시.
 - 주사위: `getMiniGameDiceLimit`, `startMiniGameDice`, `advanceMiniGameDice`, `pickMiniGameDialogue`, `buildMiniGameDiceMessage`.
 - 호이패스 프리미엄 전용 하루 총 2회. 유저1→호월이1→다음 입력 대기→유저2→호월이2→결과의 별도 5메시지. 주사위·멘트는 출력 전 고정. 승/무/패 3천만/2천만/1천만, 비용 없음. 기존 판은 날짜 변경 뒤에도 유지. 프리미엄 만료 시 다음 굴림·호월이 차례는 멈추고 갱신 후 같은 판을 이어간다. 이미 확정된 미지급은 보존·정산한다.

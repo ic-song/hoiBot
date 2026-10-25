@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.699"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.700"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -36201,7 +36201,7 @@ function closeMiniGameBalance(state, now) {
 // 닉네임·이유만 모아 선택 정보가 드러나지 않게 조회 화면을 구성하는 함수
 function buildMiniGameBalanceMessages(state, id, credit) {
     var round = state.balance.current, q = round.question, date = getVaultRobberyDate(round.day);
-    var prefix = "🎮 미니게임 목록: /미니게임\n" + (credit || "") + "⚖️ 호월이의 밸런스 게임\n━━━━━━━━━━━━\n📅 " + date + "\n\n" + q.question + "\n\n[1] " + q.option1 + "\n\n[2] " + q.option2 + "\n━━━━━━━━━━━━\n📖 밸런스 게임 하는 방법\n" + allsee;
+    var prefix = "🎮 미니게임 목록: /미니게임\n" + (credit || "") + "⚖️ 호월이의 밸런스 게임\n━━━━━━━━━━━━\n📅 " + date + "\n\n" + q.question + "\n\n[1] " + q.option1 + "\n\n[2] " + q.option2 + "\n━━━━━━━━━━━━\n📖 밸런스 게임 하는 방법\n명령어:/밸런스 번호 선택이유\n" + allsee;
     var rules = "⏰ 오늘 자정 마감\n🎁 5명 이상 참여하고 동률이 아니면 다수 선택자 각각 🅟1억 적립\n📥 다음 /밸런스 입력 시 미수령 보상 수령\n";
     if (q.category === "hoiworld" || q.category === "fantasy" || q.category === "power") rules += "※ 가상의 선택이며 실제 아이템 지급은 없습니다.\n";
     rules += round.votes["$" + id] ? "✅ 오늘 투표를 완료했어요. 선택과 이유는 바꿀 수 없어요.\n" : "👉 /밸런스 1 이유 또는 /밸런스 2 이유\n이유는 한 줄 1~80자로 적어 주세요.\n";
