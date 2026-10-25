@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.703"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.704"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -36281,7 +36281,7 @@ function buildMiniGameBalanceMessages(state, id, credit) {
     rules += round.votes["$" + id] ? "✅ 오늘 투표를 완료했어요. 선택과 이유는 바꿀 수 없어요.\n" : "👉 /밸런스 1 이유 또는 /밸런스 2 이유\n이유는 한 줄 1~80자로 적어 주세요.\n";
     rules += "\n💬 여러분의 선택 이유\n";
     var messages = [], text = prefix + rules, limit = GLOBAL_CONFIG.miniGames.messageLimit;
-    for (var i = 0; i < round.order.length; i++) {
+    for (var i = round.order.length - 1; i >= 0; i--) {
         var vote = round.votes[round.order[i]], line = "[" + vote.name + "] " + vote.reason + "\n";
         if (text.length + line.length > limit) { messages.push(text); text = "⚖️ 밸런스 · 이유 이어보기\n" + allsee; }
         text += line;
