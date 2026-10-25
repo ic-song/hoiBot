@@ -2348,24 +2348,25 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
 	let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData);
 	let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
 	var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
-	if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
+	var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
+	if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
 
 	var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
 	var intimacyExp = getIntimacyExpFromBag(bagItems);
 
-	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
+	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
 
 	// 펫 스킬
-	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
-	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+	var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp", equippedSkillNames);
+	if (equippedSkillNames.indexOf("로열 하우스") !== -1) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
 			skillExp += 150000;
 		}
 	}
-	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
+	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, equippedSkillNames);
 	var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
 	if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
 	var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp + dollCharm / 2; // 큐브 적용 전 캐슬 매력 합계
@@ -2389,21 +2390,22 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
 	let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData); // 대표·보조 미니펫 레이드 매력
 	let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
 	var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
-	if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
+	var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
+	if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
 		homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
 	}
 
-	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
+	homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
 
 	// 펫스킬
-	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
-	if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+	let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp", equippedSkillNames);
+	if (equippedSkillNames.indexOf("로열 하우스") !== -1) {
 		var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
 		if (royalLumiereCount >= 10) {
 			skillExp += 150000;
 		}
 	}
-	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName);
+	skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, equippedSkillNames);
 	var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
 	if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
 	var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp + dollCharm / 2; // 큐브 적용 전 레이드 매력 합계
@@ -2605,8 +2607,9 @@ function getMemberRank(memberName, data, petData, homeData, petSkillData, guildD
 			var totalExp;
 			if (key === memberName && typeof knownMemberTotalExp === "number" && isFinite(knownMemberTotalExp)) totalExp = knownMemberTotalExp;
 			else {
-				let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData, false, guildData) || 0;
-				let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData, false, guildData) || 0;
+				var castleRaidCommon = {}; // 다른 회원도 캐슬·레이드 한 쌍 안에서만 공통 입력 재사용
+				let castleExp = calculateCastleExp(key, data, petData, homeData, petSkillData, false, guildData, castleRaidCommon) || 0;
+				let raidExp = calculateRaidExp(key, data, petData, homeData, petSkillData, false, guildData, castleRaidCommon) || 0;
 				let upgradeBonus = calculatePetUpgradeCharm(key, data, petData);
 				totalExp = castleExp + raidExp + upgradeBonus;
 			}
@@ -2989,8 +2992,8 @@ function isInfoPetSkillCharmConditionActive(skillData, petData, homeData, user) 
 	return false;
 }
 // 장착 중인 비티어 종합매력 펫스킬의 레이드 또는 캐슬 보너스를 합산하는 함수
-function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, expType) {
-	var equipped = getEquippedPetSkillNames(petSkillData, user);
+function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, expType, equippedSkillNames) {
+	var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user);
 	var charmSkills = GLOBAL_CONFIG.petSkill.charmSkills;
 	var counted = {};
 	var totalExp = 0;
@@ -3006,8 +3009,8 @@ function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, ex
 	return totalExp;
 }
 // 장착된 티어 전용 펫스킬의 레이드·캐슬 공통 매력 보너스 합산 함수
-function getEquippedTierPetSkillExp(petSkillData, user) {
-	var equipped = getEquippedPetSkillNames(petSkillData, user);
+function getEquippedTierPetSkillExp(petSkillData, user, equippedSkillNames) {
+	var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user);
 	var totalExp = 0;
 	for (var i = 0; i < equipped.length; i++) {
 		totalExp += TIER_PET_SKILL_EXP[equipped[i]] || 0;
@@ -4117,11 +4120,11 @@ function getPetHomeVillageLevelLimit(userHome) {
 }
 
 // 인테리어 장인을 제외한 가구·하우스 스킬의 별채 추가분을 계산하는 함수
-function getPetHomeFurnitureCharm(homeData, petSkillData, user) {
+function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNames) {
     var home = homeData && homeData[user] ? homeData[user] : {};
     var state = getPetHomeVillageState(home);
     var furniture = getFurnitureExp(home); // 한 모드에 적용되는 가구 기본 매력
-    var equipped = getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
+    var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
     var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
     var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계

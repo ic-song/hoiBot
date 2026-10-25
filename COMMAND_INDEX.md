@@ -3300,6 +3300,7 @@ Status: VERIFIED
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
 - ver_2.692 성능 개선은 계산 중복과 상위권 판정의 정렬 비용에만 한정한다. 월드/서버 전체 목록, 개인 순위의 엔진별 동점 순서, 기존 Main/Info의 서로 다른 동점 기준은 변경하지 않는다. `tools/test_ranking_calculation.js`, `tools/test_ranking_calculation_rhino.js`, `tools/ranking_calculation_validation.md`에서 기준 버전과 결과를 대조한다.
+- ver_2.699: `getMemberRank`도 본인 이외 회원의 캐슬→레이드 한 쌍에 지역 `castleRaidCommon`을 전달한다. 본인 원합계 재사용·전체 열거 순서·기존 Rhino 정렬·반올림·예외는 유지한다. 모드별 스킬·별채 검증은 각각 실행한다.
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
 - `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
 - `/종합순위`와 `ㅈㅈㅈ`는 2026-10-08 사용자 롤백 요청의 기존 캡처에 맞춰 소속 서버 현황·서버 내 개인 TOP 10 통합 화면 → 월드 개인 순위 두 메시지로 출력한다. 전체 서버 목록만 있는 별도 메시지는 추가 출력하지 않는다. `/서버순위`의 현행 소속 서버 현황·개인 TOP 10·10개 서버 합산을 한 메시지로 표시하는 동작은 유지한다.
@@ -8187,6 +8188,7 @@ Status: VERIFIED
 ## Data / Save Flow
 
 - dollCatalog.json: Notion 고정 ID D0001–D1000, 9등급, 0.1cm 정수 크기. 첫 이용 때 검증·캐시하며 DEV도 공통 목록을 읽는다.
+- ver_2.699: `getDollGradeRows`는 활성 `dollCatalogCache`와 동일한 검증 목록만 등급별 원래 순서로 재사용한다. 반환 배열은 매번 복사하여 도감 정렬이 다음 추첨에 영향을 주지 않는다. 다른 목록 객체·비숫자 등급은 기존 엄격 비교 필터로 처리하고, 카탈로그 객체 교체 시 캐시를 다시 만든다. 사용자 기록·확률·난수 호출 순서·소모·보상·저장 경로는 변경하지 않는다.
 - dollRecords_0.json–dollRecords_15.json: 이름 해시로 분리한 도감·최초일·횟수·최대 크기. dollIndex.json: 순위 대표 기록. 회원 파일에 도감 원본을 넣지 않는다.
 - 뽑기 전 회원·펫·인덱스·해당 기록 원문을 dollPending.json에 보관하고, 명령 트랜잭션 안에서 기록→인덱스→펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 중단된 요청은 다음 MAIN에서 이전 원문으로 복구한다.
 - 저장 완료 뒤 전송 실패는 재추첨·재지급·소모 취소를 하지 않는다. Info는 복구 대기 상태를 표시하지 않는다. DEV 사용자 저장 경로는 분리한다.
@@ -8385,3 +8387,9 @@ Status: VERIFIED
 - ver_2.659 시장·가구 원문 스냅샷을 같은 명령의 저장 롤백에 연결한다. tools/test_oct19_market_flow.js는 거래 5종의 등록/구매/취소·모든 저장 지점 실패·DEV 격리·관리자 취소를 검증한다. tools/test_oct19_lock_rhino.js는 실제 응답 진입부 잠금과 합성 임계구역을 Java 스레드 20쌍으로 검증한다.
 
 - ver_2.659 `/가구가방`의 배치 수·장착 한도 안내를 응답에 연결했다. tools/test_oct19_furniture_flow.js는 기존 목록·분리 상세, 평수 경계, 한도 초과 차단과 스킬·프리미엄 보너스를 실제 장착/가방 분기에서 검증한다.
+
+## ver_2.699 장착 스킬 목록 계산 재사용
+
+- `main.js`·`Info.js`의 `calculateCastleExp`·`calculateRaidExp`는 기존 최초 스킬 확인 위치에서 `getEquippedPetSkillNames`를 한 번 호출한다. 모드 계산의 지역 배열을 하우스 보너스·비티어·티어 매력 함수의 마지막 선택 인자로 전달한다.
+- `getPetHomeFurnitureCharm`·`getEquippedNonTierPetSkillExp`·`getEquippedTierPetSkillExp`는 선택 인자를 생략하면 이전처럼 직접 준비한다. 독립 호출과 매력 계산 순서, 중복 장착의 기존 합산 정책, 별칭, 자료 보정과 조건 검증을 유지한다. 회원 간·명령 간 장착 목록 캐시나 파일 IO는 추가하지 않는다.
+- 검증: `tools/test_calculation_catalog_performance.js`, `tools/test_calculation_catalog_performance_rhino.js`, `tools/calculation_catalog_performance_validation.md`. 전체 소스 범위·결과/상태/예외·실제 Info 응답·인형 난수/지급·DEV·재시작·동시 정렬과 성능을 이전 운영 기준으로 비교한다.

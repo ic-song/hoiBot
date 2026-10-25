@@ -1,12 +1,13 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.698"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.699"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
 var dollCatalogCache = null; // 고정 인형 목록은 첫 이용 때 검증한 뒤 재사용
+var dollCatalogGradeCache = null; // 검증한 고정 목록의 등급별 원래 순서만 재사용
 let userRequestTracker = {}; // 유저별 요청 과부하 감지용
 let privateChatBlockedTracker = {}; // 패스 미사용 유저별 1:1톡 차단 횟수
 let requestMonitorConfig = null;
@@ -48755,24 +48756,25 @@ function calculateCastleExp(memberName, data, petData, homeData, petSkillData, e
     let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData);
     let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
     var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
-    if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
+    var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
+    if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
     }
 
     var bagItems = data && data.member && data.member[memberName] && data.member[memberName].bag ? data.member[memberName].bag : null;
     var intimacyExp = getIntimacyExpFromBag(bagItems);
 
-    homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
+    homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
 
     // 펫 스킬
-    var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp");
-    if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+    var skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "castleExp", equippedSkillNames);
+    if (equippedSkillNames.indexOf("로열 하우스") !== -1) {
         var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
         if (royalLumiereCount >= 10) {
             skillExp += 150000;
         }
     }
-    skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "castleExp");
+    skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "castleExp", equippedSkillNames);
     var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
     if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
     var castleTotal = castleItem + itemInfo.castleExp + petExp + miniPetExp + homeExp + intimacyExp + skillExp + dollCharm / 2; // 큐브 적용 전 캐슬 매력 합계
@@ -48792,21 +48794,22 @@ function calculateRaidExp(memberName, data, petData, homeData, petSkillData, exc
     let miniPetExp = commonInputs ? commonInputs.miniPetExp : getMiniPetModeCharm(memberName, petData); // 대표·보조 미니펫 레이드 매력
     let homeExp = commonInputs ? commonInputs.homeExp : (getHomeTotalExp(homeData, memberName) || 0);
     var commonHomeExp = homeExp; // 인테리어·별채를 적용하기 전의 순수 집 매력만 공유
-    if (hasPetSkill(petSkillData, memberName, "인테리어 장인")) {
+    var equippedSkillNames = getEquippedPetSkillNames(petSkillData, memberName); // 이번 모드 계산 안에서만 장착 이름 재사용
+    if (equippedSkillNames.indexOf("인테리어 장인") !== -1) {
         homeExp = Math.floor(homeExp * 1.1); // 인테리어 장인 스킬 보유 시 가구 매력 10% 추가
     }
 
-    homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName).bonus;
+    homeExp += getPetHomeFurnitureCharm(homeData, petSkillData, memberName, equippedSkillNames).bonus;
 
     // 펫스킬
-    let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp");
-    if (hasPetSkill(petSkillData, memberName, "로열 하우스")) {
+    let skillExp = getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, memberName, "raidExp", equippedSkillNames);
+    if (equippedSkillNames.indexOf("로열 하우스") !== -1) {
         var royalLumiereCount = getPlacedFurnitureCountByGrade(homeData, memberName, "로열 루미에르");
         if (royalLumiereCount >= 10) {
             skillExp += 150000;
         }
     }
-    skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "raidExp");
+    skillExp += getEquippedTierPetSkillExp(petSkillData, memberName, "raidExp", equippedSkillNames);
     var dollCharm = petData && petData[memberName] && petData[memberName].dollCharm !== undefined ? petData[memberName].dollCharm : 0; // 별도 도감의 누적 종합매력 요약
     if (typeof dollCharm !== "number" || !isFinite(dollCharm) || dollCharm < 0 || Math.floor(dollCharm) !== dollCharm || dollCharm > 9007199254740991) throw new Error("인형 매력 값 오류");
     var raidTotal = itemInfo.raidExp + petExp + miniPetExp + homeExp + skillExp + dollCharm / 2; // 큐브 적용 전 레이드 매력 합계
@@ -51570,8 +51573,8 @@ function isPetSkillCharmConditionActive(skillData, petData, homeData, user) {
 }
 
 // 장착 중인 비티어 종합매력 펫스킬의 레이드 또는 캐슬 보너스를 합산
-function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, expType) {
-    var equipped = getEquippedPetSkillNames(petSkillData, user);
+function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, expType, equippedSkillNames) {
+    var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user);
     var counted = {};
     var totalExp = 0;
     for (var i = 0; i < equipped.length; i++) {
@@ -51587,8 +51590,8 @@ function getEquippedNonTierPetSkillExp(petSkillData, petData, homeData, user, ex
 }
 
 // 장착된 티어 전용 펫스킬의 레이드 또는 캐슬 매력 보너스를 합산
-function getEquippedTierPetSkillExp(petSkillData, user, expType) {
-    var equipped = getEquippedPetSkillNames(petSkillData, user);
+function getEquippedTierPetSkillExp(petSkillData, user, expType, equippedSkillNames) {
+    var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user);
     var totalExp = 0;
     for (var i = 0; i < equipped.length; i++) {
         var skillData = getPetSkillData(equipped[i]);
@@ -55325,11 +55328,11 @@ function getPetHomeVillageLevelLimit(userHome) {
 }
 
 // 인테리어 장인을 제외한 가구·하우스 스킬의 별채 추가분을 계산하는 함수
-function getPetHomeFurnitureCharm(homeData, petSkillData, user) {
+function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNames) {
     var home = homeData && homeData[user] ? homeData[user] : {};
     var state = getPetHomeVillageState(home);
     var furniture = getFurnitureExp(home); // 한 모드에 적용되는 가구 기본 매력
-    var equipped = getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
+    var equipped = equippedSkillNames || getEquippedPetSkillNames(petSkillData, user); // 같은 계산에서 스킬 목록은 한 번만 정규화
     var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
     var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
@@ -63365,7 +63368,7 @@ function getDollBoxRequest(msg) {
 function applyDollBoxOpen(data, petData, catalog, store, index, user, id, today, request, randomValue) {
     var config = GLOBAL_CONFIG.doll.boxes, member = data.member[user], pet = petData[user];
     if (!request || request.error || !isSearchAuthenticationCount(request.grade) || request.grade >= config.grades.length || !isSearchAuthenticationCount(request.count) || request.count < 1 || request.count > config.maxOpenCount) return { ok: false, reason: "quantity" };
-    var dolls = catalog.dolls.filter(function(doll) { return doll.grade === request.grade; });
+    var dolls = getDollGradeRows(catalog, request.grade);
     if (dolls.length === 0) return { ok: false, reason: "unavailable", grade: request.grade };
     if (!member || !pet) throw new Error("인형상자 회원·펫 데이터 없음");
     var itemName = config.itemNames[request.grade], bag = member.bag || {};
@@ -63607,7 +63610,7 @@ function applyDollDraw(data,petData,catalog,store,index,user,id,today,randomValu
     if (success) {
         var roll=Math.floor(random()*1000), grade=0; // 성공 후 등급 확률을 1000 단위로 추첨
         while (grade<8 && roll>=config.weights[grade]) {roll-=config.weights[grade];grade++;}
-        var dolls=catalog.dolls.filter(function(d){return d.grade===grade;});
+        var dolls=getDollGradeRows(catalog,grade);
         var doll=dolls[Math.floor(random()*dolls.length)];
         var acquired=applyDollAcquisition(data,petData,catalog,store,index,user,record,doll,today,random);
         for (var key in acquired) if (Object.prototype.hasOwnProperty.call(acquired,key)) result[key]=acquired[key];
@@ -63680,10 +63683,26 @@ function formatDollAmount(amount) {
 function dollCommandFooter() {
     return "🧸 /인형뽑기\n📖 /인형도감\n🏆 /인형순위\n📘 /인형가이드\n└ 크기·확률·수집효과 안내";
 }
+// 검증한 고정 목록만 등급별로 재사용하고 정렬 가능한 새 배열을 반환하는 함수
+function getDollGradeRows(catalog, grade) {
+    if (typeof dollCatalogCache === "undefined" || catalog !== dollCatalogCache || typeof grade !== "number" || grade < 0 || grade >= GLOBAL_CONFIG.doll.counts.length || Math.floor(grade) !== grade) {
+        return catalog.dolls.filter(function (doll) { return doll.grade === grade; });
+    }
+    var lookup = dollCatalogGradeCache;
+    if (!lookup || lookup.catalog !== catalog) {
+        var grades = []; // 원본 목록의 순서를 보존한 등급별 배열
+        for (var g = 0; g < GLOBAL_CONFIG.doll.counts.length; g++) grades[g] = [];
+        for (var i = 0; i < catalog.dolls.length; i++) grades[catalog.dolls[i].grade].push(catalog.dolls[i]);
+        lookup = { catalog: catalog, grades: grades };
+        dollCatalogGradeCache = lookup;
+    }
+    return lookup.grades[grade].slice();
+}
+
 // 한 등급의 전체 인형을 발견·최대 크기·고정 번호 순으로 정렬하는 함수
 function getDollCollectionRows(catalog,record,grade) {
     var catches=record ? record.catches : {};
-    var rows=catalog.dolls.filter(function(d){return d.grade===grade;});
+    var rows=getDollGradeRows(catalog,grade);
     rows.sort(function(a,b){
         var ar=catches[a.id],br=catches[b.id];
         if(!!ar!==!!br)return ar ? -1 : 1;
