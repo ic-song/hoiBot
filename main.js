@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.704"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.705"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -36705,7 +36705,7 @@ function buildVaultRobberyMessage(store, accountId, premium, premiumHeader, nick
     if (!round.hints.length) out += "아직 도전 기록이 없어요.\n첫 힌트를 남겨보세요!\n";
     for (var i = round.hints.length - 1; i >= 0; i--) out += "[" + round.hints[i].name + "] " + round.hints[i].guess + " → " + (round.hints[i].direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n";
     out += "━━━━━━━━━━━━\n📝 /금고 숫자";
-    if (kind === "view") out += "\n📖 금고털이 하는 방법\n" + allsee + "\n🔐 최신순 도전 기록을 보고 1~1,000 비밀번호를 맞혀보세요!\n📝 /금고 숫자\n예시: /금고 500\n⬆️ UP: 입력한 숫자보다 커요.\n⬇️ DOWN: 입력한 숫자보다 작아요.\n\n🏆 각 금고의 최초 정답자 1명이 상금 전액 획득!\n1차 당첨 후 2차 개방 · 2차 당첨 후 당일 정규 게임 종료\n기본 상금 5억 · 미당첨이면 다음 일일 리셋에 +5억 · 최대 1,000억\n\n🎯 일반·일반 호이패스 하루 총 2회\n👑 호이패스 프리미엄 하루 총 3회\n※ 1·2차와 운영자 리게임이 개인 횟수를 공유해요.\n⏰ 일일 /리셋 때 새 회차의 1차와 개인 횟수가 초기화돼요.\n※ 모든 방에서 금고와 참여 기록을 공유해요.";
+    if (kind === "view") out += "\n📖 금고털이 하는 방법\n" + allsee + "\n🔐 최신순 도전 기록을 보고 1~1,000 비밀번호를 맞혀보세요!\n📝 /금고 숫자\n예시: /금고 500\n⬆️ UP: 입력한 숫자보다 커요.\n⬇️ DOWN: 입력한 숫자보다 작아요.\n\n🏆 각 금고의 최초 정답자 1명이 상금 전액 획득!\n1차 당첨 후 2차 개방 · 2차 당첨 후 당일 정규 게임 종료\n기본 상금 5억 · 미당첨이면 다음 일일 리셋에 +5억 · 최대 1,000억\n\n🎯 일반·일반 호이패스 하루 총 2회\n👑 호이패스 프리미엄 하루 총 3회\n※ 1·2차와 운영자 리게임이 개인 횟수를 공유해요.\n⏰ 매일 자정에 새 회차의 1차와 개인 횟수가 초기화돼요.\n※ 모든 방에서 금고와 참여 기록을 공유해요.";
     return out;
 }
 
