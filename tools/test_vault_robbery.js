@@ -2,7 +2,7 @@
 const assert=require('assert'),fs=require('fs'),path=require('path'),vm=require('vm');
 const root=path.resolve(__dirname,'..'),main=fs.readFileSync(path.join(root,'main.js'),'utf8').replace(/\r\n/g,'\n');
 const {block}=require('./test_pet_skill_preflight');
-const names=['getVaultRobberyRequest','getVaultRobberyDay','getVaultRobberyDate','requireVaultRobberyInteger','createVaultRobberyRound','requireVaultRobberyStore','getVaultRobberyNextPrize','advanceVaultRobberyDay','getVaultRobberyAttempts','applyVaultRobberyGuess','buildVaultRobberyMessage','buildVaultRobberyNotice','formatServerRaidPrize','requireServerRaidSafeInteger'];
+const names=['getVaultRobberyRequest','getVaultRobberyDay','getVaultRobberyDate','requireVaultRobberyInteger','createVaultRobberyRound','requireVaultRobberyStore','getVaultRobberyNextPrize','advanceVaultRobberyDay','getVaultRobberyAttempts','applyVaultRobberyGuess','getVaultRobberyRoundLabel','startVaultRobberyRound','buildVaultRobberyMessage','buildVaultRobberyNotice','formatServerRaidPrize','requireServerRaidSafeInteger'];
 const c={DATA_ROOT_PATH:'/synthetic/',DEV_DATA_ROOT_PATH:'/dev/',testRoom:'test',allsee:'<ALLSEE>',numberWithCommas:n=>String(n)};for(let i=0;i<200;i++)c['room'+i]='room'+i;
 vm.createContext(c);vm.runInContext(block(main,'const GLOBAL_CONFIG = {')+';this.GLOBAL_CONFIG=GLOBAL_CONFIG;\n'+names.map(n=>block(main,'function '+n+'(')).join('\n'),c);
 const config=JSON.parse(JSON.stringify(c.GLOBAL_CONFIG.vaultRobbery));

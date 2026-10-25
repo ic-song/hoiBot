@@ -22,13 +22,13 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
-# /호이월드미니게임 · /밸런스 · /밸런스결과 · /호월주사위 · /금고
+# /미니게임 · /밸런스 · /밸런스결과 · /호월주사위 · /금고 · /금고리셋 · /금고횟수리셋
 
 Status: VERIFIED
 
 ## Files and entry points
 
-- `main.js`: `getMiniGameRequest`, `runMiniGameEntry`, `scheduleMiniGameWork`, `getMiniGameWorkDelay`.
+- `main.js`: `getMiniGameRequest`, `runMiniGameEntry`, `scheduleMiniGameWork`, `getMiniGameWorkDelay`, `getMiniGameObservedVaultId`.
 - `Info.js`: 회원 읽기 전 `miniGamePending.json` 게시 대기 차단. 포인트 중간 상태 표시 방지.
 - 기본 7인수 `response(...)` 유지. 기존 등록·출석·정지·개인톡 패스·대전/영지전 제한을 통과한 뒤 진입.
 - 무인수 명령은 정확히 일치할 때만 실행. 투표는 1·2와 한 줄 1~80자 이유, 금고는 1~1000 정수 하나만 허용. 접미 안내·개행·숨김 문자 거부.
@@ -39,25 +39,32 @@ Status: VERIFIED
 - 전체 방 공용 하루 한 문항, KST 자정 마감. 5명 이상·동률 아님이면 다수 선택자 각각 1억 적립. 본인 `/밸런스` 또는 정상 투표에서 미수령만 합산 지급.
 - 공개 이유 목록에는 닉네임·이유만 시간/접수순으로 출력. `allsee` 뒤 분할하며 선택·진행 중 집계는 제외. MASTER 결과 조회에만 합산 현황 표시.
 - 주사위: `getMiniGameDiceLimit`, `startMiniGameDice`, `advanceMiniGameDice`, `pickMiniGameDialogue`, `buildMiniGameDiceMessage`.
-- 호이패스 총 1회·프리미엄 총 2회. 유저1→호월이1→다음 입력 대기→유저2→호월이2→결과의 별도 5메시지. 주사위·멘트는 출력 전 고정. 승/무/패 3천만/2천만/1천만, 비용 없음. 기존 판은 날짜/회원권 변경 뒤에도 유지.
-- 금고: `getVaultRobberyRequest`, `createVaultRobberyRound`, `advanceVaultRobberyDay`, `getVaultRobberyNextPrize`, `getVaultRobberyAttempts`, `applyVaultRobberyGuess`, `buildVaultRobberyMessage`.
-- 1~1000 균등 정답, 정답 포함 폭 600 무작위 특별 힌트, 오답 최근 3건. 일반 2회·패스 총 3회. 최초 정답자는 전액 지급 후 당일 종료. 기본 5억·미당첨 날짜당 +5억·상한 1,000억. 당첨 다음 날 기본 상금으로 전환. 자정과 겹친 숫자 입력은 미차감 후 새 힌트 안내.
+- 호이패스 프리미엄 전용 하루 총 2회. 유저1→호월이1→다음 입력 대기→유저2→호월이2→결과의 별도 5메시지. 주사위·멘트는 출력 전 고정. 승/무/패 3천만/2천만/1천만, 비용 없음. 기존 판은 날짜 변경 뒤에도 유지. 프리미엄 만료 시 다음 굴림·호월이 차례는 멈추고 갱신 후 같은 판을 이어간다. 이미 확정된 미지급은 보존·정산한다.
+- 금고: `getVaultRobberyRequest`, `createVaultRobberyRound`, `startVaultRobberyRound`, `upgradeVaultRobberyStore`, `advanceVaultRobberyDay`, `openVaultRobberySecondRound`, `resetVaultRobberyRound`, `resolveVaultRobberyUser`, `getVaultRobberyNextPrize`, `getVaultRobberyAttempts`, `applyVaultRobberyGuess`, `buildVaultRobberyMessage`.
+- 1~1000 정답, 정답 포함 폭 600 무작위 특별 힌트, 오답 최근 3건을 최신순 출력. 일반/일반 호이패스 2회·프리미엄 총 3회. 1차 최초 정답자 전액 지급 후 다른 비밀번호·기본 5억의 2차 개방. 2차 당첨 후 정규 종료. 개인 일일 횟수는 1·2차·수동 게임이 공유하며 소진 후 실제 정답도 미판정·미지급·힌트 미추가.
+- 미당첨인 현재 금고만 경과 날짜당 +5억 이월, 상한 1,000억. 두 차수 모두 당첨이면 다음 날 기본 5억. 미개방 금고 몫은 누적하지 않는다. 자정·2차 개방·수동 리셋에 겹친 이전 게임의 요청은 관찰한 게임 ID/시각으로 미차감 안내한다.
+- `/금고리셋`: 기존 MASTER만, 개인 사용 횟수·당첨/지급 기록 보존. 미당첨은 상금 유지, 당첨 완료는 기본 5억. 정규 2차 종료 후 수동 리게임만 추가하며 자동 연장 없음. 미지급 금고가 있으면 보류한다.
+- `/금고횟수리셋 아이디`: 기존 MASTER만, 해당 날짜의 한 계정 사용 횟수만 0으로 바꾼다. 기존 회원 검색 재사용, 닉네임/다른 계정 ID 충돌은 거부하고 @닉네임으로 명시 가능. 암호·힌트·상금·게임·종료·보상은 유지. 운영 기록에 실행자/대상/시각/결과/게임 ID만 남기며 비밀번호는 포함하지 않는다.
+- 구 `/호이월드미니게임`은 실행 명령에서 제거, 현재 메뉴·도움말·게임 안내는 `/미니게임`으로 통일한다.
 
 ## Data and save flow
 
-- 정적 자료: `data/balanceQuestions.json` 1,300문항/26분류, `data/howoriDiceDialogues.json` 200멘트/8분류. 활성 경로·수정 시각·크기별 캐시, 게임 처리에서 정적 파일 저장 없음.
+- 정적 원본: `data/balanceQuestions.json` 1,300문항/26분류, `data/howoriDiceDialogues.json` 200멘트/8분류. `tools/build_mini_game_catalog_bundle.js`가 Main의 구간 표시에 전체 자료를 생성하며 `--check`로 동기화를 검증한다. `getMiniGameBundledCatalog`는 누락 시에만 원본 전문을 반환한다.
+- 정적 파일 누락은 유효한 교체 이전본 또는 배포에 포함된 전체 자료로 복원한 뒤 원래 경로에서 읽는다. 기존 파일 손상은 덮어쓰지 않고 오류로 유지, 사용자에게 짧은 점검 안내와 운영 오류 기록을 남긴다. 복원/로딩 실패는 투표·게임 시작·횟수·지급 변경 전에 중단. 활성 경로·수정 시각·크기별 캐시, 정상 조회/투표/굴림에서 정적 파일 저장 없음.
 - 활성 진행·순환·투표·이용 횟수·미수령 원장: 활성 데이터 루트의 `miniGameState.json`. 완료된 날짜·지급 증거는 `miniGameArchive_YYYY-MM.json`에 보관, 임의 만료 없음.
 - 공통 고유 ID `member[*].serverRaidAccount.id` 재사용. 신규 등록 시 ID를 발급하며 첫 설치 때 기존 누락 ID만 한 번 보충한다. 설치 이관 이후 조회·투표·일반 굴림은 회원 저장 없음. 실제 지급은 기존 `addPoint`·`saveJsonFile` 경로만 사용.
 - 당첨/마감/주사위 결과를 먼저 확정하고 `payMiniGameRewards`로 정산. 원문 게시 저널 `miniGamePending.json`을 먼저 저장한 후 회원·진행·해당 월 보관을 게시한다. 게시 완료 경계 이후 저널을 비운다. 중단 시 다른 회원 변경 전에 확정 원문을 완성하므로 이후 거래를 과거 회원 백업으로 되돌리지 않는다.
+- 금고 schema1은 검증 후 schema2의 게임 ID·개방 시각·1/2차·수동 여부로 이관한다. 기존 사용 횟수와 보상 ID·지급·공지 상태를 그대로 보존, 같은 날 이미 지급된 1차는 재지급 없이 2차를 한 번만 연다. 일일 횟수와 게임별 원장·보관 키를 구분해 같은 날짜의 두 당첨이 덮어써지지 않는다.
 - `requireMiniGameState`, `requireMiniGameJournal`, `requireMiniGameArchive`, `requireMiniGameCatalog`로 손상을 오류 처리. 설치 후 누락·파싱 오류를 빈 진행으로 초기화하지 않는다. 분리 회원의 레이드/로그 슬롯 변경은 차단한다.
 - 전체 공지는 지급과 별개로 CLAIMED를 먼저 저장. 실패·전송 여부 불확실 상태는 UNCERTAIN으로 남기고 자동 재발송/재지급하지 않는다. 상태/보관 원문에서 운영 확인 가능.
-- DEV/PROD 모두 기존 `resolveActiveDataPath` 적용. 최초 운영 업로드에는 두 스크립트와 새 정적 JSON 두 파일이 필요하다. 진행/저널/보관 파일은 런타임에서 생성하며 저장소 데이터로 덮어쓰지 않는다.
+- DEV/PROD 모두 기존 `resolveActiveDataPath` 적용. 운영자는 새 Main과 개발자노트를 업로드·컴파일한다. 정적 JSON은 함께 배포할 수 있으며 빠졌을 때 Main의 전체 자료로 복원한다. 진행/저널/보관 파일은 런타임에서 생성하며 저장소 데이터로 덮어쓰지 않는다. Info의 기존 게시 차단 형식은 호환 유지.
 
 ## Validation
 
 - `tools/test_vault_robbery.js`: 정답 1~1000 전 범위·힌트·일일 한도·UI·날짜·상금 경계의 순수 모델 검증.
 - `tools/test_mini_games.js`: 실제 명령 진입·7인수 콜백·정산/저널/실패 재시도·분리 회원·Info 차단·정적 자료·자동 자정·DEV 예외 검증.
 - `tools/test_mini_games_rhino.js <rhino.jar>`: 전체 Main/Info Rhino 컴파일, 실제 Java 파일·동시 스레드·새 전역 재시작·보상 중단 복구 검증.
+- `tools/test_mini_game_revision.js`: 2.697 이관·2차/수동 개방·공유 횟수·프리미엄 전용·관리자 대상/권한·동시 게임 ID 경계·누락 복원/손상 차단·짧은 오류 안내 검증.
 
 ---
 
