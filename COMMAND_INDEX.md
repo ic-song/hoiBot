@@ -996,6 +996,7 @@ Status: VERIFIED
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 - `/샵오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.furniture.openMaxCount`에서 관리하며 현재 5,000개다.
+- `/샵오픈`은 `buildGradeRates` 뒤 `buildFurnitureGradePools`로 등급별 후보 배열을 명령당 한 번 구성하고 `getRandomFurnitureByGrade`에 전달한다. 후보는 원래 목록 순서와 객체 참조를 유지하며 중복 등급은 배열을 공유한다. 명령 간 캐시는 없고 등급 추첨·가구 추첨·ID 생성의 난수 순서와 저장 순서는 그대로다.
 
 ---
 

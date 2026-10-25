@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.706"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.707"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -25889,11 +25889,12 @@ replier.reply(
                     for (let i = 0; i < gradeRates.length; i++) {
                         gradeRateMap[gradeRates[i].grade] = gradeRates[i].rate;
                     }
+                    let gradePools = buildFurnitureGradePools(furnitureInfo, gradeRates);
                     let results = [];
                     let noticeGrade = ["로열 루미에르", "아르카나 루미에르"];
                     for (let i = 0; i < count; i++) {
                         // 2단계 추첨: 등급 → 가구
-                        let item = getRandomFurnitureByGrade(furnitureInfo, gradeRates); // {name, exp, rate, grade, display}
+                        let item = getRandomFurnitureByGrade(furnitureInfo, gradeRates, gradePools); // {name, exp, rate, grade, display}
                         let newItem = {
                             id: createCuId(),
                             name: item.name,
@@ -55520,17 +55521,37 @@ function pickGrade(gradeRates) {
     }
     return gradeRates[gradeRates.length - 1].grade;
 }
-// 등급 먼저 뽑고, 그 등급의 가구 중 하나 선택
-function getRandomFurnitureByGrade(furnitureList, gradeRates) {
+// 한 명령에서 재사용할 등급별 가구 후보를 원래 목록 순서로 구성
+function buildFurnitureGradePools(furnitureList, gradeRates) {
+    var pools = [];
+    for (var i = 0; i < gradeRates.length; i++) {
+        var candidates = null;
+        // 확률이 0인 등급의 중복 행도 기존대로 두되 후보 배열은 함께 사용한다.
+        for (var known = 0; known < i; known++) {
+            if (gradeRates[known].grade === gradeRates[i].grade) { candidates = pools[known]; break; }
+        }
+        if (!candidates) {
+            candidates = [];
+            for (var j = 0; j < furnitureList.length; j++) {
+                if (furnitureList[j].grade === gradeRates[i].grade) candidates.push(furnitureList[j]);
+            }
+        }
+        pools.push(candidates);
+    }
+    return pools;
+}
+// 등급 먼저 뽑고, 미리 구성한 해당 등급의 가구 중 하나 선택
+function getRandomFurnitureByGrade(furnitureList, gradeRates, gradePools) {
     var targetGrade = pickGrade(gradeRates);
-    var candidates = [];
-    for (var i = 0; i < furnitureList.length; i++) {
-        if (furnitureList[i].grade === targetGrade) {
-            candidates.push(furnitureList[i]);
+    var candidates = null;
+    for (var i = 0; i < gradeRates.length; i++) {
+        if (gradeRates[i].grade === targetGrade) {
+            candidates = gradePools[i];
+            break;
         }
     }
     // 해당 등급이 하나도 없으면 전체에서 랜덤
-    var pool = candidates.length > 0 ? candidates : furnitureList;
+    var pool = candidates && candidates.length > 0 ? candidates : furnitureList;
     var idx = Math.floor(Math.random() * pool.length);
     return pool[idx];
 }
