@@ -67,7 +67,10 @@ function checks(){
  });
  test('공통 권한/출석/레이드/영지/무쌍/정지/약관/개인톡 검사는 기존 위치와 동일',()=>{
   const begin=info.indexOf('function response('),cut=info.indexOf('\t\tvar petData, petSkillData');
-  const oldCut=oldInfo.indexOf('\t\tvar petData = loadJsonFile');assert.equal(info.slice(begin,cut),oldInfo.slice(oldInfo.indexOf('function response('),oldCut));
+  const oldCut=oldInfo.indexOf('\t\tvar petData = loadJsonFile');
+  const miniBegin=info.indexOf('\t\t// 미니게임 지급 원문 게시'),miniEnd=info.indexOf('\t\tlet data = loadJsonFile(filePath);',miniBegin);
+  const currentPrefix=miniBegin<0?info.slice(begin,cut):info.slice(begin,miniBegin)+info.slice(miniEnd,cut);
+  assert.equal(currentPrefix,oldInfo.slice(oldInfo.indexOf('function response('),oldCut));
  });
  test('43개 입력의 DEV 응답·명령별 의존성과 운영 파일 보존',()=>{
   for(const [msg,files,user]of commands){const before=createInfoFixture(oldInfo),after=createInfoFixture(),input='dev/'+msg.replace(/^\//,'');const a=before.run(input,user,'팻 테스트방'),b=after.run(input,user,'팻 테스트방');

@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.696"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.697"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1098,6 +1098,20 @@ const GLOBAL_CONFIG = {
             { title: "홈뱃지·큐브", emoji: "💟", intro: "홈뱃지 옵션과 큐브 사용 전 확인 사항을 알아봐요!", learn: ["/홈뱃지에서 보유 목록과 장착 상태를, /홈뱃지정보 이름에서 옵션·효과를 확인해요.", "/홈뱃지장착 번호와 /홈뱃지해제 뱃지번호의 안내·확인 절차를 알아봐요.", "/홈뱃지큐브 안내에서 슬롯·옵션 번호·사용 횟수와 보유량·소모량·확률·보호 조건을 확인해요.", "수치와 적용 조건은 교육 시점의 실제 홈뱃지·큐브 안내를 기준으로 설명해요."], commands: ["/홈뱃지", "/홈뱃지정보 이름", "/홈뱃지큐브", "/큐브확률"], check: "내 홈뱃지 옵션과 큐브 대상·소모량·확률을 어디에서 확인하나요?", note: "선택 안내: /홈뱃지큐브 슬롯 옵션 사용횟수. 현재 화면의 슬롯·옵션 번호를 먼저 확인해요. 뱃지·큐브가 없으면 GM 예시로 배우며 실제 큐브 사용은 완료 조건이 아니에요." },
             { title: "후원 안내", emoji: "🎁", intro: "공식 상품 안내와 후원 이용 절차를 알아봐요!", learn: ["현재 공식 후원 안내에서 상품명·가격·구성품과 문의 경로를 확인해요.", "공식 후원 안내에서 패스·프리미엄의 기간과 혜택을 비교해요.", "/패키지리스트에서 현재 상품 구성과 계정별 이용 횟수·판매 기간을 확인해요.", "공식 안내에 따라 게임 아이디와 정확한 상품명을 전달하고 입금 표기·지급 확인·누락 문의 방법을 알아봐요."], commands: ["https://hoiland123.tistory.com", "/패키지리스트", "/패키지가방"], check: "공식 후원 안내·상품 조건·지급 확인·문의 경로와 전달할 정보를 설명할 수 있나요?", note: "상품 정보·계좌·링크·문의처는 현재 공식 안내를 연결해 확인해요. 후원은 선택 사항이며 실제 후원·결제·후원 이력 없이 설명만으로 교육을 완료할 수 있어요." }
         ]
+    },
+    miniGames: {
+        stateName: "miniGameState.json", pendingName: "miniGamePending.json", archivePrefix: "miniGameArchive_",
+        questionFile: "balanceQuestions.json", dialogueFile: "howoriDiceDialogues.json",
+        questionCount: 1300, dialogueCount: 200, reasonLimit: 80, messageLimit: 12000,
+        balanceMinimum: 5, diceHoi: 1, dicePremium: 2, hostDelayMs: 800, retryMs: 30000,
+        rewards: { balance: 100000000, win: 30000000, draw: 20000000, loss: 10000000 },
+        dialogueSizes: { start: 20, roll: 40, host_ahead: 30, host_behind: 30, mid_tie: 20, user_win: 20, user_loss: 20, final_draw: 20 }
+    },
+    vaultRobbery: {
+        schemaVersion: 1,
+        limits: { minNumber: 1, maxNumber: 1000, hintWidth: 600, recentHints: 3, normalAttempts: 2, passAttempts: 3 },
+        rewards: { basePrize: 500000000, dailyIncrease: 500000000, prizeCap: 100000000000 }, // 누적 상금 상한 1,000억
+        dayMs: 86400000
     },
     guildMarble: {
         fileName: "guildMarble.json",
@@ -3294,6 +3308,8 @@ const miniPetData = loadJsonFile(miniPetPath);
 //메인채팅응답기능
 var manualResetSessions = {}; // 확인 대기는 컴파일 시 소멸하며 디스크에 저장하지 않음
 var messageFilterCaches = {};
+var miniGameTimers = {};
+var miniGameCatalogCaches = {};
 setMessageFilterCache(readMessageFilterWords(initData), "PROD", true);
 var messageFilterDevMemberPath = DEV_DATA_ROOT_PATH + "member.json";
 try {
@@ -3305,6 +3321,7 @@ try {
 }
 
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+    var miniGameRequestAt = Date.now(); // 잠금 대기 이전 시각으로 자정·동시 입력 경계 판정
     if (msg === "/메인방제한" || msg === "/메인방제한 ON" || msg === "/메인방제한 OFF") {
         if (containsMessageFilterWord(msg, getCachedMessageFilterWords(false))) return;
         if (room !== testRoom || !isMasterIdentity(sender)) return;
@@ -3347,6 +3364,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (msg === "ㅁㅂ") msg = "/마블굴리기";
         else if (msg === "ㅁㄱ") msg = "/마블구매";
         else if (msg === "ㅁㅌ") msg = "/마블통과";
+        if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists()) runMiniGameEntry("recover", { ctx: ctx });
         var resetProbeKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var resetProbeSession = manualResetSessions[resetProbeKey];
         var resetSameScope = resetProbeSession && resetProbeSession.room === room && resetProbeSession.isGroupChat === isGroupChat;
@@ -3465,7 +3483,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             catch (cleanupReplyError) { try { debuggerLog("[필터 정리 응답] " + cleanupReplyError); } catch (cleanupLogError) {} }
             return;
         }
-        if (!ctx.manualResetConfirmed && isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) return;
+        if (!ctx.manualResetConfirmed && isMessageFilterCommandInput(msg) && containsMessageFilterWord(msg, getCachedMessageFilterWords(ctx.isDev))) {
+            if (/^\/밸런스(?:\s|$)/.test(msg)) replier.reply("이유에 사용할 수 없는 문구가 있어요. 바꿔서 다시 입력해 주세요.");
+            return;
+        }
         // 확인 응답도 원래 명령의 출석·정지·대전·장소 검사를 통과하도록 연결한다.
         var carrotTradeAnswer = null;
         var carrotInputReply = getCarrotTradeReply(msg, ctx.isDev);
@@ -4072,6 +4093,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요");
                 return;
             }
+        }
+
+        var miniGameRequest = /^\/(?:호이월드미니게임|밸런스결과|밸런스|호월주사위|금고)(?:\s|$)/.test(msg) ? getMiniGameRequest(msg) : null;
+        if (miniGameRequest) {
+            if (!data.member[sender]) { replier.reply("먼저 /모험시작을 진행해주세요."); return; }
+            var miniGamePetData = loadJsonFile(memberPetPath), miniGameGuildData = loadJsonFile(guildPath);
+            if (!hasAttendedToday(data, sender) && !isAttendanceFreeCommand(msg, sender)) { replier.reply(buildAttendanceRequiredMessage(data, miniGamePetData, miniGameGuildData, sender)); return; }
+            if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(miniGameGuildData) && isGuildTerritoryBlockedDuringWarCommand(msg) && !isGlobalOperatorCommandAllowed(sender, msg)) { replier.reply("🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다."); return; }
+            try {
+                runMiniGameEntry("command", { ctx: ctx, data: data, request: miniGameRequest, sender: sender, nickname: checkRank(data, miniGamePetData, miniGameGuildData, sender), room: room, replier: replier, requestAt: miniGameRequestAt });
+            } finally {
+                if (!miniGameTimers[ctx.key()] && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists()) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
+            }
+            return;
         }
 
         if (/^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(msg) || msg === "ㅁㅂ" || msg === "ㅁㄱ" || msg === "ㅁㅌ") {
@@ -32457,7 +32492,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (isDevCommandMessage(msg) && (command === "/등록한다" || command === "/등록안한다")) command = command.substring(1);
     if (isDevCommandMessage(msg) && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(command)) command = command.substring(1);
     if (command === "ㅁㅂ" || command === "ㅁㄱ" || command === "ㅁㅌ" || (isDevCommandMessage(msg) && /^\/(?:ㅁㅂ|ㅁㄱ|ㅁㅌ)$/.test(command))) return true;
-    return /^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(command) || isManualResetInput(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+    return /^\/(?:호이월드미니게임|밸런스결과|밸런스|호월주사위|금고)(?:\s|$)/.test(command) || /^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(command) || isManualResetInput(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
         command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
@@ -34170,6 +34205,15 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
         var transactionEntryResult = null;
         var splitOwnTransaction = false;
         try {
+            // 다른 자동 작업도 미완료 지급을 건너뛰고 회원을 변경할 수 없도록 저장 진입점에서 차단한다.
+            if (path === resolveActiveDataPath(filePath) && typeof GLOBAL_CONFIG !== "undefined" && GLOBAL_CONFIG.miniGames && !getCurrentContext().miniGamePublishing) {
+                var miniSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName);
+                if (!new java.io.File(miniSavePendingPath).exists() && new java.io.File(miniSavePendingPath + ".rollback").exists()) throw new Error("미니게임 게시 복구 대기");
+                if (new java.io.File(miniSavePendingPath).exists()) {
+                    var miniSavePending = JSON.parse(FileStream.read(miniSavePendingPath, "utf-8"));
+                    if (!miniSavePending || miniSavePending.version !== 1 || !Object.prototype.hasOwnProperty.call(miniSavePending, "pending") || miniSavePending.pending !== null) throw new Error("미니게임 게시 복구 대기");
+                }
+            }
             ensureParentFolder(path);
             if (typeof rollbackSnapshotText === "string" && !getDataSaveTransaction()) {
                 throw new Error("Transactional JSON snapshot requires command transaction: " + path);
@@ -35546,6 +35590,824 @@ function buildGmEducationStats(store, data, target, context, all, month) {
         for (var old = 0; old < legacy.length; old++) full.push(legacy[old]);
     }
     return summary + (full.length ? "\n" + allsee + full.join("\n") : "");
+}
+
+// 미니게임 게시 저널의 허용 경로·완성 원문을 검증하는 함수
+function requireMiniGameJournal(journal) {
+    if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal, "pending")) throw new Error("미니게임 복구 기록 형식 오류");
+    if (journal.pending === null) return journal;
+    if (!Array.isArray(journal.pending) || !journal.pending.length) throw new Error("미니게임 복구 원문 오류");
+    var seen = {}, stateFound = false;
+    for (var i = 0; i < journal.pending.length; i++) {
+        var row = journal.pending[i];
+        if (!row || typeof row.name !== "string" || typeof row.text !== "string" || seen[row.name]) throw new Error("미니게임 복구 원문 중복");
+        seen[row.name] = true;
+        var value = JSON.parse(row.text);
+        if (row.name === GLOBAL_CONFIG.miniGames.stateName) { requireMiniGameState(value); stateFound = true; }
+        else if (row.name === "member.json") {
+            requireMiniGameObject(value.member, "복구 회원");
+            buildServerRaidAccountIndex(value);
+        } else if (/^miniGameArchive_\d{4}-\d{2}\.json$/.test(row.name)) requireMiniGameArchive(value);
+        else throw new Error("미니게임 복구 대상 경로 오류");
+    }
+    if (!stateFound) throw new Error("미니게임 복구 진행 원문 누락");
+    return journal;
+}
+
+// 완료 기록 보관 파일이 손상되면 덮어쓰지 않는 함수
+function requireMiniGameArchive(value) {
+    if (!value || value.version !== 1) throw new Error("미니게임 보관 버전 오류");
+    requireMiniGameObject(value.days, "날짜 보관"); requireMiniGameObject(value.rewards, "지급 보관"); requireMiniGameObject(value.games, "주사위 보관"); requireMiniGameObject(value.notices, "공지 보관");
+    return value;
+}
+
+// 명령·재시작·자동 차례의 저장 진입점에서만 파일을 읽고 확정된 원문을 게시하는 함수
+function runMiniGameEntry(mode, args) {
+    var config = GLOBAL_CONFIG.miniGames;
+    var statePath = resolveActiveDataPath(DATA_ROOT_PATH + config.stateName), pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName);
+    var paths = [pendingPath, statePath], i, restored = false;
+    // 원자 교체의 이전 정상본을 먼저 식별하고 미완료 저널을 새 회원 변경보다 먼저 완성한다.
+    for (i = 0; i < paths.length; i++) {
+        var targetFile = new java.io.File(paths[i]), rollbackFile = new java.io.File(paths[i] + ".rollback");
+        if (!targetFile.exists() && rollbackFile.exists()) {
+            var rollback = JSON.parse(FileStream.read(rollbackFile.getPath(), "utf-8"));
+            if (i === 0) requireMiniGameJournal(rollback); else requireMiniGameState(rollback);
+            if (!rollbackFile.renameTo(targetFile)) throw new Error("미니게임 게시 복구 실패");
+        }
+    }
+    var pendingExists = new java.io.File(pendingPath).exists(), stateExists = new java.io.File(statePath).exists();
+    if (pendingExists) {
+        var journal = requireMiniGameJournal(loadJsonFile(pendingPath));
+        if (journal.pending !== null) {
+            for (i = 0; i < journal.pending.length; i++) writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name), journal.pending[i].text, true);
+            writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+            endDataSaveTransaction(); beginDataSaveTransaction();
+            stateExists = true; restored = true;
+        } else if (!stateExists) throw new Error("미니게임 진행 파일 누락");
+    } else if (stateExists) throw new Error("미니게임 복구 파일 누락");
+    if (mode === "recover") return restored;
+    if (mode === "startup") {
+        if (stateExists) scheduleMiniGameWork(args.ctx, 1);
+        return;
+    }
+    var request = args.request, data = args.data;
+    if (mode === "command" && request.kind === "menu") { args.replier.reply(buildMiniGameMenu()); return; }
+    if (mode === "command" && request.kind === "invalid") { args.replier.reply(request.text); return; }
+    if (mode === "command" && request.kind === "stats" && !isMaster(args.sender)) { args.replier.reply("🔒 MASTER 전용 명령어예요. 투표 현황은 운영자만 확인할 수 있어요."); return; }
+    if (mode === "auto" && !stateExists) return;
+    if (mode === "auto") {
+        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName];
+        for (i = 0; i < foreignPendingNames.length; i++) {
+            var foreignPath = resolveActiveDataPath(DATA_ROOT_PATH + foreignPendingNames[i]);
+            if (new java.io.File(foreignPath + ".rollback").exists() && !new java.io.File(foreignPath).exists()) throw new Error("다른 콘텐츠 게시 복구 대기");
+            if (new java.io.File(foreignPath).exists()) {
+                var foreign = loadJsonFile(foreignPath);
+                if (foreignPendingNames[i] === GLOBAL_CONFIG.gmEducation.pendingName || !Object.prototype.hasOwnProperty.call(foreign, "pending") || foreign.pending !== null) throw new Error("다른 콘텐츠 게시 복구 대기");
+            }
+        }
+    }
+    var state = stateExists ? requireMiniGameState(loadJsonFile(statePath)) : createMiniGameState();
+    var now = Date.now(), day = getVaultRobberyDay(now), archives = {}, archiveOriginals = {}, stateOriginal = stateExists ? JSON.stringify(state) : null;
+    var memberChanged = false, catalogCacheKey = args.ctx.key();
+    if (!miniGameCatalogCaches[catalogCacheKey]) miniGameCatalogCaches[catalogCacheKey] = {};
+    // 캐시는 경로·수정 시각·크기가 같을 때만 정적 자료를 재사용한다.
+    function catalog(kind) {
+        var name = kind === "questions" ? config.questionFile : config.dialogueFile;
+        var path = resolveActiveDataPath(DATA_ROOT_PATH + name), file = new java.io.File(path);
+        if (!file.exists()) throw new Error("미니게임 정적 자료 누락: " + name);
+        var stamp = path + ":" + file.lastModified() + ":" + file.length(), cache = miniGameCatalogCaches[catalogCacheKey][kind];
+        if (!cache || cache.stamp !== stamp) {
+            cache = { stamp: stamp, rows: requireMiniGameCatalog(loadJsonFile(path), kind) };
+            miniGameCatalogCaches[catalogCacheKey][kind] = cache;
+        }
+        return cache.rows;
+    }
+    // 완료 기록은 해당 월 파일에만 옮기고 미수령 원장은 활성 파일에 보존한다.
+    function archive(recordDay) {
+        var name = config.archivePrefix + getVaultRobberyDate(recordDay).substring(0, 7) + ".json";
+        if (!archives[name]) {
+            var path = resolveActiveDataPath(DATA_ROOT_PATH + name), file = new java.io.File(path), rollback = new java.io.File(path + ".rollback");
+            if (!file.exists() && rollback.exists()) {
+                requireMiniGameArchive(JSON.parse(FileStream.read(rollback.getPath(), "utf-8")));
+                if (!rollback.renameTo(file)) throw new Error("미니게임 보관 게시 복구 실패");
+            }
+            if (!file.exists() && state.archives[name]) throw new Error("미니게임 보관 파일 누락: " + name);
+            archives[name] = file.exists() ? requireMiniGameArchive(loadJsonFile(path)) : { version: 1, days: {}, rewards: {}, games: {}, notices: {} };
+            archiveOriginals[name] = JSON.stringify(archives[name]);
+        }
+        return archives[name];
+    }
+    // 포인트·진행·보관 원문을 저널에 먼저 확정해 중간 종료 시 같은 결과를 완성한다.
+    function commit() {
+        requireMiniGameState(state);
+        var writes = [], memberPlan = null;
+        if (memberChanged) {
+            memberPlan = typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
+            if (memberPlan && memberPlan.writes.length) throw new Error("미니게임 처리 중 관련 없는 회원 상세 변경 감지");
+            writes.push({ name: "member.json", text: JSON.stringify(memberPlan ? memberPlan.member : data) });
+        }
+        for (var name in archives) if (Object.prototype.hasOwnProperty.call(archives, name) && JSON.stringify(archives[name]) !== archiveOriginals[name]) { writes.push({ name: name, text: JSON.stringify(archives[name]) }); state.archives[name] = true; }
+        var stateText = JSON.stringify(state);
+        if (!memberChanged && !writes.length && stateText === stateOriginal) return false;
+        writes.push({ name: config.stateName, text: stateText });
+        var journal = { version: 1, pending: writes };
+        requireMiniGameJournal(journal);
+        endDataSaveTransaction(); beginDataSaveTransaction(); // 기존 진입 처리와 미니게임 원문 게시의 확정 경계를 분리
+        writeVerifiedJsonFile(pendingPath, JSON.stringify(journal), true);
+        for (var w = 0; w < writes.length; w++) {
+            if (writes[w].name === "member.json") {
+                args.ctx.miniGamePublishing = true;
+                try { saveJsonFile(data, filePath); } finally { delete args.ctx.miniGamePublishing; }
+            }
+            else writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + writes[w].name), writes[w].text, true);
+        }
+        endDataSaveTransaction(); beginDataSaveTransaction(); // 완성된 지급 원문은 저널 정리 실패로 회원만 되돌리지 않는다.
+        writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+        endDataSaveTransaction(); beginDataSaveTransaction();
+        stateOriginal = stateText; memberChanged = false;
+        for (var a in archives) if (Object.prototype.hasOwnProperty.call(archives, a)) archiveOriginals[a] = JSON.stringify(archives[a]);
+        return true;
+    }
+    if (!stateExists) {
+        // 기존 공통 계정 ID만 한 번 보충한다. 이후 조회·투표·굴림에서는 회원 저장을 하지 않는다.
+        for (var userName in data.member) if (Object.prototype.hasOwnProperty.call(data.member, userName) && !data.member[userName].serverRaidAccount) {
+            data.member[userName].serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(data.member[userName].server), latest: null, total: null };
+            memberChanged = true;
+        }
+        buildServerRaidAccountIndex(data);
+        commit();
+    }
+    var accounts = buildServerRaidAccountIndex(data), accountId = null;
+    if (mode === "command") {
+        var account = data.member[args.sender].serverRaidAccount;
+        if (!account || typeof account.id !== "string" || !account.id) throw new Error("미니게임 공통 계정 ID 누락");
+        accountId = account.id;
+    }
+    var vaultRolled = false, balanceRolled = false;
+    if (state.vault && day !== state.vault.current.day) {
+        var oldVault = JSON.parse(JSON.stringify(state.vault.current));
+        vaultRolled = advanceVaultRobberyDay(state.vault, day);
+        state.vault.replyPending = {};
+        archive(oldVault.day).days["vault:" + oldVault.day] = oldVault;
+    }
+    if (state.balance.current && day !== state.balance.current.day) {
+        if (day < state.balance.current.day) throw new Error("미니게임 기준 날짜 역행");
+        var closed = closeMiniGameBalance(state, now);
+        archive(closed.summary.day).days["balance:" + closed.summary.day] = closed;
+        state.balance.current = createMiniGameBalance(state, day, catalog("questions")); balanceRolled = true;
+    }
+    // 완료된 과거 자료만 보관하고 진행 중 판과 미지급 보상은 그대로 둔다.
+    for (var diceKey in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, diceKey)) {
+        var oldUser = state.dice.users[diceKey], oldGame = oldUser.game;
+        if (oldGame && oldGame.phase === "DONE" && oldGame.day < day) {
+            archive(oldGame.day).games[oldGame.id] = oldGame; oldUser.game = null;
+        }
+    }
+    for (var rewardId in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, rewardId)) {
+        var oldReward = state.ledger[rewardId], ownerGame = state.dice.users["$" + oldReward.accountId];
+        if (oldReward.status === "PAID" && oldReward.day < day && !(oldReward.kind === "dice" && ownerGame && ownerGame.game && ownerGame.game.rewardId === rewardId)) {
+            archive(oldReward.day).rewards[rewardId] = oldReward; delete state.ledger[rewardId];
+        }
+    }
+    for (var noticeId in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, noticeId)) {
+        var oldNotice = state.notices[noticeId];
+        if (oldNotice.state === "CLAIMED") oldNotice.state = "UNCERTAIN";
+        if (oldNotice.day < day && oldNotice.state !== "WAITING") { archive(oldNotice.day).notices[noticeId] = oldNotice; delete state.notices[noticeId]; }
+    }
+    if (state.vault) for (var awardKey in state.vault.awards) if (Object.prototype.hasOwnProperty.call(state.vault.awards, awardKey)) {
+        var oldAward = state.vault.awards[awardKey];
+        if (oldAward.notice === "CLAIMED") oldAward.notice = "UNCERTAIN";
+        if (oldAward.day < day && oldAward.paid && oldAward.notice !== "WAITING") { archive(oldAward.day).days["vaultAward:" + oldAward.day] = oldAward; delete state.vault.awards[awardKey]; }
+    }
+    var messages = [], vaultResult = null, diceUser = null, diceReplay = false;
+    if (mode === "command") {
+        var stale = getVaultRobberyDay(args.requestAt) !== day;
+        if (request.kind === "vault") {
+            if (!state.vault) state.vault = { schemaVersion: 1, current: createVaultRobberyRound(day, GLOBAL_CONFIG.vaultRobbery.rewards.basePrize), awards: {} };
+            if (request.request.action === "guess") {
+                if (stale || vaultRolled) vaultResult = { kind: "dateChanged" };
+                else if (state.vault.replyPending && state.vault.replyPending["$" + accountId]) vaultResult = state.vault.replyPending["$" + accountId];
+                else {
+                    vaultResult = applyVaultRobberyGuess(state.vault, accountId, args.nickname, request.request.guess, isSupportPassActive(data, args.sender, "hoi") || isHoiPassPremiumActive(data, args.sender), now);
+                    if (vaultResult.changed) {
+                        if (!state.vault.replyPending) state.vault.replyPending = {};
+                        state.vault.replyPending["$" + accountId] = vaultResult;
+                    }
+                }
+            } else vaultResult = { kind: request.request.action === "view" ? "view" : "invalid" };
+            if (vaultResult.kind === "won") {
+                var winner = state.vault.awards[state.vault.current.winner], vaultRewardId = "vault:" + winner.day + ":" + winner.accountId;
+                if (!state.ledger[vaultRewardId]) state.ledger[vaultRewardId] = { id: vaultRewardId, kind: "vault", day: winner.day, accountId: winner.accountId, amount: winner.amount, at: winner.at, status: "PENDING", paidAt: null };
+            }
+        }
+        if (request.kind === "balance" || request.kind === "vote" || request.kind === "stats") {
+            if (!state.balance.current) state.balance.current = createMiniGameBalance(state, day, catalog("questions"));
+            if (request.kind === "vote") {
+                var round = state.balance.current, voteKey = "$" + accountId;
+                if (stale || balanceRolled) messages.push("날짜가 바뀌었어요. /밸런스로 새 질문을 확인한 뒤 다시 투표해 주세요.");
+                else if (round.votes[voteKey]) messages.push("✅ 오늘 투표를 이미 완료했어요. 선택과 이유는 바꿀 수 없어요.");
+                else if (containsMessageFilterWord(request.reason, getCachedMessageFilterWords(args.ctx.isDev))) messages.push("이유에 사용할 수 없는 문구가 있어요. 바꿔서 다시 입력해 주세요.");
+                else {
+                    round.votes[voteKey] = { accountId: accountId, name: args.nickname, choice: request.choice, reason: request.reason, at: now };
+                    round.order.push(voteKey); messages.push("✅ 투표와 이유가 등록됐어요!\n선택과 이유는 바꿀 수 없어요.\n⏰ 오늘 자정 마감 · 다수 선택자 각각 🅟1억 적립");
+                }
+            }
+        }
+        if (request.kind === "dice") {
+            diceUser = state.dice.users["$" + accountId];
+            var game = diceUser && diceUser.game;
+            if (game && game.phase !== "DONE") {
+                game.room = args.room;
+                if (game.phase === "WAIT_USER2" && game.outputIndex === 2 && args.requestAt > game.waitUserAt) advanceMiniGameDice(state, game, catalog("dialogues"), now, true);
+                else if (game.phase !== "RESULT") messages.push("호월이🐹가 주사위를 굴리고 있어요. 잠깐만 기다려 주세요!");
+            } else if (diceUser && args.requestAt <= diceUser.finishedAt) {
+                diceReplay = true;
+                if (game) messages.push(buildMiniGameDiceMessage(game, 4, isHoiPassPremiumActive(data, args.sender), Math.max(0, getMiniGameDiceLimit(data, args.sender) - (diceUser.day === day ? diceUser.used : 0))));
+            } else {
+                if (game) { archive(game.day).games[game.id] = game; diceUser.game = null; }
+                var start = startMiniGameDice(state, accountId, args.nickname, day, now, args.room, catalog("dialogues"), getMiniGameDiceLimit(data, args.sender));
+                diceUser = start.user || diceUser;
+                if (start.kind === "locked") messages.push("🔒 호이패스 전용 미니게임이에요. 호이패스는 하루 1회, 프리미엄은 하루 2회 이용할 수 있어요.");
+                if (start.kind === "exhausted") messages.push("오늘의 도전을 모두 사용했어요. 내일 다시 호월이🐹와 놀러 와요!");
+            }
+        }
+    } else {
+        for (var autoKey in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, autoKey)) {
+            var autoGame = state.dice.users[autoKey].game;
+            if (autoGame && (autoGame.phase === "USER1" && autoGame.outputIndex >= 1 || autoGame.phase === "USER2" && autoGame.outputIndex >= 3)) advanceMiniGameDice(state, autoGame, catalog("dialogues"), now, false);
+        }
+    }
+    commit(); // 최초 당첨·투표 마감·주사위 결과를 포인트 지급과 분리해 먼저 확정
+    var credit;
+    try { credit = payMiniGameRewards(state, data, accounts, mode === "command" ? accountId : null, mode === "command" && (request.kind === "balance" || request.kind === "vote") && !stale && !(request.kind === "vote" && (balanceRolled || messages[0] && messages[0].indexOf("사용할 수 없는") !== -1)), now); }
+    catch (paymentError) {
+        debuggerLog("[미니게임 보상 복구 대기] " + paymentError);
+        credit = { changed: false, count: 0, total: 0 };
+        if (mode === "command") messages.push("⏳ 확정된 결과와 보상을 보관했어요. 포인트 지급 확인 중이에요. 같은 보상은 중복 지급하지 않아요.");
+    }
+    memberChanged = credit.changed;
+    commit();
+    var creditText = credit.count ? "🎁 밸런스 게임 보상 도착!\n━━━━━━━━━━━━\n🎯 다수 선택 적중: " + credit.count + "회\n💰 지급 포인트: 🅟" + formatServerRaidPrize(credit.total) + "\n✅ 보유 포인트에 지급됐어요!\n\n" : "";
+    if (mode === "command") {
+        if (request.kind === "vault") messages.push(buildVaultRobberyMessage(state.vault, accountId, isSupportPassActive(data, args.sender, "hoi") || isHoiPassPremiumActive(data, args.sender), isHoiPassPremiumActive(data, args.sender), args.nickname, vaultResult));
+        if (request.kind === "balance") messages = buildMiniGameBalanceMessages(state, accountId, creditText).concat(messages);
+        if (request.kind === "vote" && creditText) messages.unshift(creditText);
+        if (request.kind === "stats") {
+            var previous = archive(day - 1).days["balance:" + (day - 1)], paidRows = Object.keys(state.ledger).map(function (id) { return state.ledger[id]; });
+            var pastRewards = archive(day - 1).rewards;
+            for (var previousKey in pastRewards) if (Object.prototype.hasOwnProperty.call(pastRewards, previousKey)) paidRows.push(pastRewards[previousKey]);
+            messages.push(buildMiniGameBalanceStats(state, previous ? previous.summary : null, paidRows));
+        }
+        for (i = 0; i < messages.length; i++) args.replier.reply(messages[i]);
+        if (request.kind === "vault" && state.vault.replyPending && state.vault.replyPending["$" + accountId]) { delete state.vault.replyPending["$" + accountId]; commit(); }
+    }
+    // 전송 재시도는 확정된 화면만 재표시하며 숫자·멘트·지급을 다시 만들지 않는다.
+    for (var outputKey in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, outputKey)) {
+        var outputUser = state.dice.users[outputKey], outputGame = outputUser.game;
+        if (!outputGame || outputGame.phase === "DONE" || mode === "command" && (request.kind !== "dice" || outputUser.accountId !== accountId || diceReplay)) continue;
+        var available = { USER1: 1, WAIT_USER2: 2, USER2: 3, RESULT: outputGame.paid ? 5 : 4 }[outputGame.phase];
+        var recipient = accounts[outputGame.accountId], premium = recipient && isHoiPassPremiumActive(data, recipient.user);
+        var remaining = recipient ? Math.max(0, getMiniGameDiceLimit(data, recipient.user) - (outputUser.day === day ? outputUser.used : 0)) : 0;
+        while (outputGame.outputIndex < available) {
+            var outputText = buildMiniGameDiceMessage(outputGame, outputGame.outputIndex, premium, remaining);
+            if (mode === "command") args.replier.reply(outputText);
+            else createContextReplier({ reply: function (text) { if (Api.replyRoom(outputGame.room, text) === false) throw new Error("주사위 메시지 전송 실패"); } }, args.ctx).reply(outputText);
+            outputGame.outputIndex++;
+            if (outputGame.outputIndex === 2) outputGame.waitUserAt = Date.now();
+            if (outputGame.outputIndex === 5) { outputGame.phase = "DONE"; outputUser.finishedAt = Date.now(); }
+            commit();
+        }
+    }
+    // 전체 공지는 지급과 독립적으로 선점 후 전송한다. 불확실한 전송은 자동 중복 발송하지 않는다.
+    var notices = [];
+    for (var balanceNoticeKey in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, balanceNoticeKey) && state.notices[balanceNoticeKey].state === "WAITING") notices.push({ record: state.notices[balanceNoticeKey], field: "state", text: state.notices[balanceNoticeKey].text });
+    if (state.vault) for (var vaultNoticeKey in state.vault.awards) if (Object.prototype.hasOwnProperty.call(state.vault.awards, vaultNoticeKey)) {
+        var award = state.vault.awards[vaultNoticeKey];
+        if (award.paid && award.notice === "WAITING") notices.push({ record: award, field: "notice", text: buildVaultRobberyNotice(award) });
+    }
+    for (i = 0; i < notices.length; i++) {
+        var notification = notices[i];
+        notification.record[notification.field] = "CLAIMED"; commit();
+        var sent = false;
+        try { sent = noticeMsg(notification.text) === true; } catch (noticeError) { debuggerLog("[미니게임 공지 확인 필요] " + noticeError); }
+        notification.record[notification.field] = sent ? "SENT" : "UNCERTAIN"; commit();
+    }
+    scheduleMiniGameWork(args.ctx, getMiniGameWorkDelay(state, Date.now()));
+}
+
+// 다음 자정·호월이 차례·미완료 지급 중 가장 가까운 작업 시각을 계산하는 함수
+function getMiniGameWorkDelay(state, now) {
+    var delay = (getVaultRobberyDay(now) + 1) * GLOBAL_CONFIG.vaultRobbery.dayMs - GLOBAL_CONFIG.attendance.kstOffsetMs - now;
+    for (var key in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, key)) {
+        var game = state.dice.users[key].game;
+        if (game && game.phase !== "DONE" && !(game.phase === "WAIT_USER2" && game.outputIndex === 2)) delay = Math.min(delay, game.phase === "USER1" && game.outputIndex >= 1 || game.phase === "USER2" && game.outputIndex >= 3 ? Math.max(1, game.dueAt - now) : GLOBAL_CONFIG.miniGames.retryMs);
+    }
+    for (var id in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, id) && state.ledger[id].status === "PENDING" && state.ledger[id].kind !== "balance") delay = Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs);
+    return Math.max(1, delay);
+}
+
+// 자동 호월이 차례와 한국 시간 자정 처리를 한 환경당 하나의 타이머로 예약하는 함수
+function scheduleMiniGameWork(ctx, delay) {
+    var key = ctx.key();
+    if (miniGameTimers[key]) {
+        if (miniGameTimers[key].at <= Date.now() + delay) return;
+        clearTimeout(miniGameTimers[key].id);
+    }
+    var timer = { at: Date.now() + delay, id: null };
+    timer.id = setTimeout(function () {
+        if (miniGameTimers[key] !== timer) return;
+        delete miniGameTimers[key];
+        var previous = enterCommandContext(ctx), entered = false;
+        try {
+            dataTransactionLock.lock(); beginDataSaveTransaction(); entered = true;
+            runMiniGameEntry("recover", { ctx: ctx });
+            var latest = loadJsonFile(filePath);
+            runMiniGameEntry("auto", { ctx: ctx, data: latest });
+        } catch (error) { debuggerLog("[미니게임 자동 처리 복구 대기] " + error); }
+        finally {
+            if (entered) { endDataSaveTransaction(); dataTransactionLock.unlock(); }
+            exitCommandContext(previous);
+            if (!miniGameTimers[key]) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
+        }
+    }, Math.max(1, delay));
+    miniGameTimers[key] = timer;
+}
+
+// 미니게임의 명령과 엄격한 투표 입력을 구분하는 함수
+function getMiniGameRequest(msg) {
+    if (/[\r\n]/.test(msg)) return /^\/(?:호이월드미니게임|밸런스결과|밸런스|호월주사위|금고)(?:\s|$)/.test(msg) ? { kind: "invalid", text: "명령어와 이유를 한 줄로 입력해 주세요." } : null;
+    if (msg === "/호이월드미니게임") return { kind: "menu" };
+    if (msg === "/밸런스") return { kind: "balance" };
+    if (msg === "/밸런스결과") return { kind: "stats" };
+    if (msg === "/호월주사위") return { kind: "dice" };
+    var vault = getVaultRobberyRequest(msg);
+    if (vault) return { kind: "vault", request: vault };
+    if (/^\/밸런스(?:\s|$)/.test(msg)) {
+        var vote = msg.match(/^\/밸런스[ \t]+([12])[ \t]+([^\r\n]+)$/);
+        var reason = vote ? vote[2].trim() : "";
+        if (vote && reason && !/[\u0000-\u001f\u007f-\u009f\u00ad\u034f\u061c\u115f\u1160\u17b4\u17b5\u180b-\u180f\u2000-\u200f\u2028-\u202f\u205f-\u206f\u3164\ufeff\uffa0]/.test(reason)) {
+            var length = reason.replace(/[\ud800-\udbff][\udc00-\udfff]/g, "_").length;
+            if (length <= GLOBAL_CONFIG.miniGames.reasonLimit) return { kind: "vote", choice: Number(vote[1]), reason: reason };
+        }
+        return { kind: "invalid", text: "선택 번호 1·2와 한 줄 이유(1~80자)를 입력해 주세요.\n예: /밸런스 1 나는 이쪽이 좋아" };
+    }
+    if (/^\/(?:호이월드미니게임|밸런스결과|호월주사위)(?:\s|$)/.test(msg)) return { kind: "invalid", text: "명령어 뒤의 추가 문구를 지워 주세요.\n/호이월드미니게임 · /밸런스 · /밸런스결과 · /호월주사위" };
+    return null;
+}
+
+// 통합 메뉴에는 게임과 실행 명령만 표시하는 함수
+function buildMiniGameMenu() {
+    return "🎮 호이월드 미니게임\n🖐️ 호이는 오늘도 밤을 샙니다.\n━━━━━━━━━━━━\n⚖️ 호월이의 밸런스 게임\n👉 /밸런스\n\n🎲 호월이를 이겨라!(호이패스 전용)\n👉 /호월주사위\n\n🔐 호월이의 금고털이(호패유저 +1회)\n👉 /금고\n━━━━━━━━━━━━";
+}
+
+// 신규 설치의 진행 파일만 생성하고 게임 자체는 아직 시작하지 않는 함수
+function createMiniGameState() {
+    return { version: 1, identityVersion: 1, vault: null, balance: { current: null, pool: { used: [], lastId: "", lastCategory: "" } }, dice: { users: {}, pools: {} }, ledger: {}, notices: {}, archives: {} };
+}
+
+// 별도 기록에서 사용하는 객체와 정수를 검증하는 함수
+function requireMiniGameObject(value, label) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("미니게임 " + label + " 형식 오류");
+    return value;
+}
+
+// 순환 기록의 잘못된 ID·중복·개수를 조용히 초기화하지 않는 함수
+function requireMiniGamePool(pool, maximum) {
+    requireMiniGameObject(pool, "자료 순환");
+    if (!Array.isArray(pool.used) || pool.used.length > maximum || typeof pool.lastId !== "string" || typeof pool.lastCategory !== "string") throw new Error("미니게임 자료 순환 오류");
+    var seen = {};
+    for (var i = 0; i < pool.used.length; i++) {
+        var id = pool.used[i];
+        if (typeof id !== "string" || !id || seen["$" + id]) throw new Error("미니게임 자료 순환 ID 오류");
+        seen["$" + id] = true;
+    }
+    return pool;
+}
+
+// 문항·멘트의 전체 개수와 고유 ID·필수 문자열을 검증하는 함수
+function requireMiniGameCatalog(value, kind) {
+    if (!value || value.schemaVersion !== 1) throw new Error("미니게임 정적 자료 버전 오류");
+    var rows = kind === "questions" ? value.questions : value.dialogues;
+    var expected = kind === "questions" ? GLOBAL_CONFIG.miniGames.questionCount : GLOBAL_CONFIG.miniGames.dialogueCount;
+    if (!Array.isArray(rows) || rows.length !== expected) throw new Error("미니게임 정적 자료 개수 오류");
+    var ids = {}, counts = {};
+    for (var i = 0; i < rows.length; i++) {
+        var row = rows[i], fields = kind === "questions" ? ["id", "category", "question", "option1", "option2"] : ["id", "category", "text"];
+        for (var j = 0; j < fields.length; j++) if (!row || typeof row[fields[j]] !== "string" || !row[fields[j]]) throw new Error("미니게임 정적 자료 필수 항목 오류");
+        if (ids["$" + row.id]) throw new Error("미니게임 정적 자료 ID 중복");
+        ids["$" + row.id] = true; counts[row.category] = (counts[row.category] || 0) + 1;
+        if (kind === "questions" && typeof row.enabled !== "boolean") throw new Error("미니게임 문항 사용 설정 오류");
+    }
+    if (kind === "dialogues") {
+        var sizes = GLOBAL_CONFIG.miniGames.dialogueSizes;
+        for (var key in sizes) if (counts[key] !== sizes[key]) throw new Error("미니게임 멘트 분류 오류: " + key);
+        if (Object.keys(counts).length !== Object.keys(sizes).length) throw new Error("미니게임 멘트 분류 개수 오류");
+    }
+    return rows;
+}
+
+// 저장된 순환 목록에서 아직 쓰지 않은 항목을 공정하게 선정하는 함수
+function pickMiniGameCycle(pool, rows, preferCategory) {
+    if (!pool || !Array.isArray(pool.used) || typeof pool.lastId !== "string") throw new Error("미니게임 출제 순환 형식 오류");
+    var unused = [], i;
+    for (i = 0; i < rows.length; i++) if (rows[i].enabled !== false && pool.used.indexOf(rows[i].id) === -1) unused.push(rows[i]);
+    if (!unused.length) {
+        pool.used = [];
+        for (i = 0; i < rows.length; i++) if (rows[i].enabled !== false) unused.push(rows[i]);
+        if (unused.length > 1) unused = unused.filter(function (row) { return row.id !== pool.lastId; });
+    }
+    if (!unused.length) throw new Error("미니게임에서 사용할 자료가 없습니다.");
+    if (preferCategory) {
+        var different = unused.filter(function (row) { return row.category !== pool.lastCategory; });
+        if (different.length) unused = different;
+    }
+    var picked = unused[Math.floor(Math.random() * unused.length)];
+    pool.used.push(picked.id); pool.lastId = picked.id; pool.lastCategory = picked.category;
+    return JSON.parse(JSON.stringify(picked));
+}
+
+// 현재 문항과 독립된 오늘의 투표 기록을 준비하는 함수
+function createMiniGameBalance(state, day, questions) {
+    return { day: day, question: pickMiniGameCycle(state.balance.pool, questions, true), votes: {}, order: [] };
+}
+
+// 득표수와 최소 참가·동률 조건을 계산하는 함수
+function summarizeMiniGameBalance(round) {
+    var counts = [0, 0];
+    for (var i = 0; i < round.order.length; i++) counts[round.votes[round.order[i]].choice - 1]++;
+    var total = counts[0] + counts[1]; // 보상 조건에 사용하는 실제 참가 수
+    var majority = total >= GLOBAL_CONFIG.miniGames.balanceMinimum && counts[0] !== counts[1] ? (counts[0] > counts[1] ? 1 : 2) : 0;
+    return { day: round.day, question: round.question, counts: counts, total: total, majority: majority, eligible: majority ? counts[majority - 1] : 0 };
+}
+
+// 마감한 하루를 한 번 정산하고 미수령 보상만 별도 원장에 적립하는 함수
+function closeMiniGameBalance(state, now) {
+    var round = state.balance.current, summary = summarizeMiniGameBalance(round);
+    for (var i = 0; i < round.order.length; i++) {
+        var key = round.order[i], vote = round.votes[key];
+        if (summary.majority && vote.choice === summary.majority) {
+            var id = "balance:" + round.day + ":" + vote.accountId;
+            if (Object.prototype.hasOwnProperty.call(state.ledger, id)) throw new Error("미니게임 마감 보상 중복 감지");
+            state.ledger[id] = { id: id, kind: "balance", day: round.day, accountId: vote.accountId, amount: GLOBAL_CONFIG.miniGames.rewards.balance, at: now, paidAt: null, status: "PENDING" };
+        }
+    }
+    var noticeId = "balance:" + round.day;
+    if (state.notices[noticeId]) throw new Error("미니게임 중복 마감 감지");
+    state.notices[noticeId] = { day: round.day, state: "WAITING", text: buildMiniGameBalanceNotice(summary) };
+    return { summary: summary, round: round };
+}
+
+// 닉네임·이유만 모아 선택 정보가 드러나지 않게 조회 화면을 구성하는 함수
+function buildMiniGameBalanceMessages(state, id, credit) {
+    var round = state.balance.current, q = round.question, date = getVaultRobberyDate(round.day);
+    var prefix = "🎮 미니게임 목록: /호이월드미니게임\n" + (credit || "") + "⚖️ 호월이의 밸런스 게임\n━━━━━━━━━━━━\n📅 " + date + "\n\n" + q.question + "\n\n[1] " + q.option1 + "\n\n[2] " + q.option2 + "\n━━━━━━━━━━━━\n📖 밸런스 게임 하는 방법\n" + allsee;
+    var rules = "⏰ 오늘 자정 마감\n🎁 5명 이상 참여하고 동률이 아니면 다수 선택자 각각 🅟1억 적립\n📥 다음 /밸런스 입력 시 미수령 보상 수령\n";
+    if (q.category === "hoiworld" || q.category === "fantasy" || q.category === "power") rules += "※ 가상의 선택이며 실제 아이템 지급은 없습니다.\n";
+    rules += round.votes["$" + id] ? "✅ 오늘 투표를 완료했어요. 선택과 이유는 바꿀 수 없어요.\n" : "👉 /밸런스 1 이유 또는 /밸런스 2 이유\n이유는 한 줄 1~80자로 적어 주세요.\n";
+    rules += "\n💬 여러분의 선택 이유\n";
+    var messages = [], text = prefix + rules, limit = GLOBAL_CONFIG.miniGames.messageLimit;
+    for (var i = 0; i < round.order.length; i++) {
+        var vote = round.votes[round.order[i]], line = "[" + vote.name + "] " + vote.reason + "\n";
+        if (text.length + line.length > limit) { messages.push(text); text = "⚖️ 밸런스 · 이유 이어보기\n" + allsee; }
+        text += line;
+    }
+    if (!round.order.length) text += "첫 번째 이유를 남겨 주세요!";
+    messages.push(text);
+    return messages;
+}
+
+// 마감 공지에 합계와 확정 사유만 표시하는 함수
+function buildMiniGameBalanceNotice(summary) {
+    var q = summary.question, out = "⚖️ 호월이의 밸런스 게임\n━━━━━━━━━━━━\n📣 " + getVaultRobberyDate(summary.day) + " 결과 발표!\n\n" + q.question + "\n\n[1] " + q.option1 + "\n└ " + summary.counts[0] + "표\n\n[2] " + q.option2 + "\n└ " + summary.counts[1] + "표\n━━━━━━━━━━━━\n";
+    if (!summary.total) out += "이번 질문은 참여 없이 종료됐어요.";
+    else if (summary.total < GLOBAL_CONFIG.miniGames.balanceMinimum) out += "👥 참여 인원이 5명 미만이라 이번 질문은 보상 없이 종료됐어요.";
+    else if (!summary.majority) out += "🤝 이번에는 동률이에요! 이번 질문은 보상 없이 종료됐어요.";
+    else out += "🏆 다수 선택: [" + summary.majority + "]\n🎁 다수 선택자 각각 🅟1억 적립!\n📥 /밸런스 입력 시 보상 수령";
+    return out + "\n📝 새로운 오늘의 질문도 확인해 보세요!";
+}
+
+// 운영 조회는 합계만 표시하고 개인 선택·당첨자 명단을 제외하는 함수
+function buildMiniGameBalanceStats(state, previous, paidRows) {
+    var summary = summarizeMiniGameBalance(state.balance.current);
+    var leader = summary.total && summary.counts[0] !== summary.counts[1] ? "[" + (summary.counts[0] > summary.counts[1] ? 1 : 2) + "]" : (summary.total ? "없음 · 동률" : "없음");
+    var text = "👑 호월이의 밸런스 게임 · 운영 현황\n━━━━━━━━━━━━\n📅 " + getVaultRobberyDate(summary.day) + " · 투표 진행 중\n오늘의 질문: " + summary.question.question + "\n[1] " + summary.question.option1 + "\n└ " + summary.counts[0] + "명\n[2] " + summary.question.option2 + "\n└ " + summary.counts[1] + "명\n👥 총 참여: " + summary.total + "명\n📊 현재 다수: " + leader + "\n⏰ 오늘 자정 마감";
+    if (previous) {
+        var paid = 0;
+        for (var i = 0; i < paidRows.length; i++) if (paidRows[i].kind === "balance" && paidRows[i].day === previous.day && paidRows[i].status === "PAID") paid++;
+        text += "\n━━━━━━━━━━━━\n📋 전날 정산 · " + getVaultRobberyDate(previous.day) + "\n[1] " + previous.counts[0] + "명 · [2] " + previous.counts[1] + "명\n🏆 다수 선택: " + (previous.majority ? "[" + previous.majority + "]" : "없음") + "\n🎁 보상 대상: " + previous.eligible + "명\n💰 총 확정 보상: 🅟" + formatServerRaidPrize(previous.eligible * GLOBAL_CONFIG.miniGames.rewards.balance) + "\n✅ 지급 완료: " + paid + "명 · 🅟" + formatServerRaidPrize(paid * GLOBAL_CONFIG.miniGames.rewards.balance) + "\n📦 미수령(복구 대기 포함): " + (previous.eligible - paid) + "명 · 🅟" + formatServerRaidPrize((previous.eligible - paid) * GLOBAL_CONFIG.miniGames.rewards.balance);
+    }
+    return text;
+}
+
+// 상황별 공용 멘트를 선정해 재표시할 ID와 본문을 함께 고정하는 함수
+function pickMiniGameDialogue(state, dialogues, category) {
+    var pool = state.dice.pools[category];
+    if (!pool) pool = state.dice.pools[category] = { used: [], lastId: "", lastCategory: "" };
+    return pickMiniGameCycle(pool, dialogues.filter(function (row) { return row.category === category; }), false);
+}
+
+// 기존 회원권 원본으로 새 주사위 시작 한도를 계산하는 함수
+function getMiniGameDiceLimit(data, user) {
+    return isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.miniGames.dicePremium : (isSupportPassActive(data, user, "hoi") ? GLOBAL_CONFIG.miniGames.diceHoi : 0);
+}
+
+// 새 판의 첫 숫자·멘트를 확정하고 시작 날짜의 횟수를 한 번 사용하는 함수
+function startMiniGameDice(state, id, name, day, now, room, dialogues, limit) {
+    var key = "$" + id, user = state.dice.users[key];
+    if (!user) user = state.dice.users[key] = { accountId: id, day: day, used: 0, game: null, finishedAt: 0 };
+    if (user.game && user.game.phase !== "DONE") return { kind: "active", user: user };
+    if (!limit) return { kind: "locked" };
+    if (user.day !== day) { user.day = day; user.used = 0; }
+    if (user.used >= limit) return { kind: "exhausted" };
+    var gameId = String(java.util.UUID.randomUUID());
+    user.used++;
+    user.game = { id: gameId, accountId: id, day: day, name: name, room: room, phase: "USER1", rolls: [1 + Math.floor(Math.random() * 6)], quotes: [pickMiniGameDialogue(state, dialogues, "start")], outputIndex: 0, dueAt: now + GLOBAL_CONFIG.miniGames.hostDelayMs, rewardId: null, paid: false };
+    return { kind: "started", user: user };
+}
+
+// 자동 호월이 차례 또는 다음 사용자 입력에 맞춰 한 단계 숫자만 확정하는 함수
+function advanceMiniGameDice(state, game, dialogues, now, userInput) {
+    if (userInput && game.phase === "WAIT_USER2") {
+        game.rolls.push(1 + Math.floor(Math.random() * 6)); game.phase = "USER2";
+        game.dueAt = now + GLOBAL_CONFIG.miniGames.hostDelayMs;
+        return true;
+    }
+    if (!userInput && now >= game.dueAt && (game.phase === "USER1" || game.phase === "USER2")) {
+        var first = game.phase === "USER1";
+        game.rolls.push(1 + Math.floor(Math.random() * 6));
+        game.quotes.push(pickMiniGameDialogue(state, dialogues, "roll"));
+        if (first) {
+            game.quotes.push(pickMiniGameDialogue(state, dialogues, game.rolls[1] > game.rolls[0] ? "host_ahead" : game.rolls[1] < game.rolls[0] ? "host_behind" : "mid_tie"));
+            game.phase = "WAIT_USER2";
+        } else {
+            var delta = game.rolls[0] + game.rolls[2] - game.rolls[1] - game.rolls[3];
+            game.result = delta > 0 ? "win" : delta < 0 ? "loss" : "draw";
+            game.quotes.push(pickMiniGameDialogue(state, dialogues, delta > 0 ? "user_win" : delta < 0 ? "user_loss" : "final_draw"));
+            game.phase = "RESULT"; game.rewardId = "dice:" + game.id + ":" + game.accountId;
+            if (state.ledger[game.rewardId]) throw new Error("미니게임 주사위 보상 중복 감지");
+            state.ledger[game.rewardId] = { id: game.rewardId, kind: "dice", day: game.day, accountId: game.accountId, amount: GLOBAL_CONFIG.miniGames.rewards[game.result], at: now, status: "PENDING", paidAt: null };
+        }
+        return true;
+    }
+    return false;
+}
+
+// 확정된 주사위 단계별 메시지를 숫자 재추첨 없이 구성하는 함수
+function buildMiniGameDiceMessage(game, part, premium, remaining) {
+    var header = premium ? "[👑호이패스 프리미엄👑]\n" : "", rolls = game.rolls;
+    if (part === 0) return header + "🎮 미니게임 목록: /호이월드미니게임\n🎲 호월이를 이겨라!\n━━━━━━━━━━━━\n호월이🐹\n“" + game.quotes[0].text + "”\n\n[" + game.name + "] 첫 번째 주사위\n뒹구르르르…\n\n🎲 【 " + rolls[0] + " 】\n\n━━━━━━━━━━━━\n이제 호월이🐹 차례!";
+    if (part === 1) return header + "호월이🐹의 첫 번째 주사위\n━━━━━━━━━━━━\n“" + game.quotes[1].text + "”\n\n🎲 【 " + rolls[1] + " 】\n\n━━━━━━━━━━━━\n호월이🐹\n“" + game.quotes[2].text + "”\n\n👉 두 번째 주사위: /호월주사위";
+    if (part === 2) return header + "🎲 [" + game.name + "] 두 번째 주사위\n━━━━━━━━━━━━\n통통 튀더니… 데굴데굴!\n\n🎲 【 " + rolls[2] + " 】\n\n━━━━━━━━━━━━\n내 합계: " + rolls[0] + " + " + rolls[2] + " = 【 " + (rolls[0] + rolls[2]) + " 】\n\n호월이🐹의 마지막 주사위가 남았어요!";
+    if (part === 3) return header + "호월이🐹의 두 번째 주사위\n━━━━━━━━━━━━\n“" + game.quotes[3].text + "”\n\n🎲 【 " + rolls[3] + " 】\n\n━━━━━━━━━━━━\n호월이 합계: " + rolls[1] + " + " + rolls[3] + " = 【 " + (rolls[1] + rolls[3]) + " 】";
+    var result = game.result, gift = result === "win" ? "승리" : result === "draw" ? "우정" : "위로";
+    return header + "🎲 호월이를 이겨라! · 결과\n━━━━━━━━━━━━\n[" + game.name + "] 【 " + (rolls[0] + rolls[2]) + " 】\n호월이🐹 【 " + (rolls[1] + rolls[3]) + " 】\n\n" + (result === "win" ? "🎉 호월이를 이겼어요!" : result === "draw" ? "🤝 사이좋게 무승부!" : "🐹 이번에는 호월이가 이겼어요!") + "\n━━━━━━━━━━━━\n호월이🐹\n“" + game.quotes[4].text + "”\n\n🎁 " + gift + " 선물 🅟" + formatServerRaidPrize(GLOBAL_CONFIG.miniGames.rewards[result]) + (game.paid ? " 지급" : " · 지급 복구 대기") + "\n📅 오늘 남은 도전: " + remaining + "회";
+}
+
+// 보상 대상 계정과 숫자 잔액을 확인한 후 기존 포인트 함수로만 지급하는 함수
+function payMiniGameRewards(state, data, accounts, ownerId, includeBalance, now) {
+    var total = 0, count = 0, changed = false, plans = [], balances = {};
+    for (var key in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, key)) {
+        var reward = state.ledger[key];
+        if (reward.status === "PAID" || ownerId && reward.accountId !== ownerId || reward.kind === "balance" && !includeBalance) continue;
+        var target = accounts[reward.accountId];
+        if (!target) continue;
+        var member = data.member[target.user], balanceKey = "$" + target.user;
+        var before = Object.prototype.hasOwnProperty.call(balances, balanceKey) ? balances[balanceKey] : member.point;
+        var next = before + reward.amount; // 같은 계정의 누적 미수령도 전부 검증한 뒤 지급
+        if (typeof before !== "number" || !isSafePointValue(before) || !isSafePointValue(next) || roundToTwo(next - before) !== reward.amount) throw new Error("미니게임 보상 잔액 검증 실패");
+        balances[balanceKey] = next; plans.push({ reward: reward, user: target.user });
+    }
+    for (var p = 0; p < plans.length; p++) {
+        var reward = plans[p].reward;
+        addPoint(data, plans[p].user, reward.amount);
+        reward.status = "PAID"; reward.paidAt = now; changed = true;
+        if (reward.kind === "balance") { total += reward.amount; count++; }
+        if (reward.kind === "vault") state.vault.awards["$" + reward.day].paid = true;
+        if (reward.kind === "dice") {
+            var diceUser = state.dice.users["$" + reward.accountId];
+            if (!diceUser || !diceUser.game || diceUser.game.rewardId !== reward.id) throw new Error("미니게임 지급 판 불일치");
+            diceUser.game.paid = true;
+        }
+    }
+    return { changed: changed, total: total, count: count };
+}
+
+// 진행·투표·난수·원장이 손상되면 초기화하지 않고 오류를 내는 함수
+function requireMiniGameState(state) {
+    if (!state || state.version !== 1 || state.identityVersion !== 1) throw new Error("미니게임 진행 버전 오류");
+    requireMiniGameObject(state.balance, "밸런스"); requireMiniGameObject(state.balance.pool, "출제");
+    requireMiniGamePool(state.balance.pool, GLOBAL_CONFIG.miniGames.questionCount);
+    requireMiniGameObject(state.dice, "주사위"); requireMiniGameObject(state.dice.users, "주사위 계정"); requireMiniGameObject(state.dice.pools, "멘트 순환");
+    requireMiniGameObject(state.ledger, "보상"); requireMiniGameObject(state.notices, "공지"); requireMiniGameObject(state.archives, "보관 목록");
+    for (var archiveName in state.archives) if (Object.prototype.hasOwnProperty.call(state.archives, archiveName) && (!/^miniGameArchive_\d{4}-\d{2}\.json$/.test(archiveName) || state.archives[archiveName] !== true)) throw new Error("미니게임 보관 목록 오류");
+    for (var poolName in state.dice.pools) if (Object.prototype.hasOwnProperty.call(state.dice.pools, poolName)) {
+        if (!Object.prototype.hasOwnProperty.call(GLOBAL_CONFIG.miniGames.dialogueSizes, poolName)) throw new Error("미니게임 멘트 분류 오류");
+        requireMiniGamePool(state.dice.pools[poolName], GLOBAL_CONFIG.miniGames.dialogueSizes[poolName]);
+    }
+    if (state.vault !== null) requireVaultRobberyStore(state.vault);
+    var round = state.balance.current;
+    if (round !== null) {
+        requireVaultRobberyInteger(round.day); requireMiniGameObject(round.question, "질문"); requireMiniGameObject(round.votes, "투표");
+        var questionFields = ["id", "category", "question", "option1", "option2"];
+        for (var q = 0; q < questionFields.length; q++) if (typeof round.question[questionFields[q]] !== "string" || !round.question[questionFields[q]]) throw new Error("미니게임 질문 스냅샷 오류");
+        if (!Array.isArray(round.order) || Object.keys(round.votes).length !== round.order.length) throw new Error("미니게임 투표 순서 오류");
+        var seen = {};
+        for (var i = 0; i < round.order.length; i++) {
+            var voteKey = round.order[i], vote = round.votes[voteKey];
+            if (seen[voteKey] || !vote || voteKey !== "$" + vote.accountId || [1, 2].indexOf(vote.choice) === -1 || typeof vote.name !== "string" || typeof vote.reason !== "string" || !vote.reason) throw new Error("미니게임 투표 기록 오류");
+            if (getMiniGameRequest("/밸런스 " + vote.choice + " " + vote.reason).kind !== "vote") throw new Error("미니게임 이유 기록 오류");
+            seen[voteKey] = true; requireVaultRobberyInteger(vote.at);
+        }
+    }
+    for (var userKey in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, userKey)) {
+        var user = state.dice.users[userKey], game = user.game;
+        if (userKey !== "$" + user.accountId || typeof user.accountId !== "string" || !user.accountId) throw new Error("미니게임 주사위 계정 오류");
+        requireVaultRobberyInteger(user.day); requireVaultRobberyInteger(user.used); requireVaultRobberyInteger(user.finishedAt);
+        if (user.used > GLOBAL_CONFIG.miniGames.dicePremium) throw new Error("미니게임 주사위 횟수 오류");
+        if (game !== null) {
+            var phases = ["USER1", "WAIT_USER2", "USER2", "RESULT", "DONE"], phase = phases.indexOf(game.phase);
+            if (phase === -1 || game.accountId !== user.accountId || typeof game.id !== "string" || !game.id || typeof game.room !== "string" || typeof game.name !== "string" || typeof game.paid !== "boolean") throw new Error("미니게임 주사위 진행 오류");
+            var count = [1, 2, 3, 4, 4][phase];
+            if (!Array.isArray(game.rolls) || game.rolls.length !== count || !Array.isArray(game.quotes) || game.quotes.length !== [1, 3, 3, 5, 5][phase]) throw new Error("미니게임 주사위 숫자 개수 오류");
+            for (var r = 0; r < count; r++) if (typeof game.rolls[r] !== "number" || Math.floor(game.rolls[r]) !== game.rolls[r] || game.rolls[r] < 1 || game.rolls[r] > 6) throw new Error("미니게임 주사위 숫자 오류");
+            for (var quoteIndex = 0; quoteIndex < game.quotes.length; quoteIndex++) if (!game.quotes[quoteIndex] || typeof game.quotes[quoteIndex].id !== "string" || typeof game.quotes[quoteIndex].text !== "string" || !game.quotes[quoteIndex].text) throw new Error("미니게임 확정 멘트 오류");
+            if (phase > 0 && game.outputIndex >= 2) requireVaultRobberyInteger(game.waitUserAt);
+            requireVaultRobberyInteger(game.day); requireVaultRobberyInteger(game.dueAt); requireVaultRobberyInteger(game.outputIndex);
+            if (game.outputIndex < [0, 1, 2, 3, 5][phase] || game.outputIndex > [1, 2, 3, 4, 5][phase] || phase < 3 && game.paid || phase === 4 && !game.paid) throw new Error("미니게임 주사위 지급 단계 오류");
+            if (phase >= 3) {
+                var delta = game.rolls[0] + game.rolls[2] - game.rolls[1] - game.rolls[3];
+                if (game.result !== (delta > 0 ? "win" : delta < 0 ? "loss" : "draw") || game.rewardId !== "dice:" + game.id + ":" + game.accountId || !state.ledger[game.rewardId]) throw new Error("미니게임 주사위 결과 오류");
+            }
+        }
+    }
+    for (var rewardKey in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, rewardKey)) {
+        var reward = state.ledger[rewardKey];
+        if (!reward || reward.id !== rewardKey || ["balance", "dice", "vault"].indexOf(reward.kind) === -1 || typeof reward.accountId !== "string" || !reward.accountId || ["PENDING", "PAID"].indexOf(reward.status) === -1) throw new Error("미니게임 보상 기록 오류");
+        requireVaultRobberyInteger(reward.day); requireVaultRobberyInteger(reward.amount); requireVaultRobberyInteger(reward.at);
+        if (!reward.amount || reward.status === "PAID" && (typeof reward.paidAt !== "number" || reward.paidAt < reward.at) || reward.status === "PENDING" && reward.paidAt !== null) throw new Error("미니게임 지급 시각 오류");
+        if (reward.kind === "balance" && (rewardKey !== "balance:" + reward.day + ":" + reward.accountId || reward.amount !== GLOBAL_CONFIG.miniGames.rewards.balance)) throw new Error("미니게임 밸런스 보상 오류");
+        if (reward.kind === "vault") {
+            var vaultAward = state.vault && state.vault.awards["$" + reward.day];
+            if (!vaultAward || rewardKey !== "vault:" + reward.day + ":" + reward.accountId || vaultAward.accountId !== reward.accountId || vaultAward.amount !== reward.amount || vaultAward.paid !== (reward.status === "PAID")) throw new Error("미니게임 금고 원장 불일치");
+        }
+        if (reward.kind === "dice") {
+            var rewardUser = state.dice.users["$" + reward.accountId], rewardGame = rewardUser && rewardUser.game;
+            if (reward.amount !== GLOBAL_CONFIG.miniGames.rewards.win && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.draw && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.loss) throw new Error("미니게임 주사위 보상 금액 오류");
+            if (rewardGame && rewardGame.rewardId === rewardKey && (reward.amount !== GLOBAL_CONFIG.miniGames.rewards[rewardGame.result] || rewardGame.paid !== (reward.status === "PAID"))) throw new Error("미니게임 주사위 원장 불일치");
+        }
+    }
+    for (var noticeKey in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, noticeKey)) {
+        var notice = state.notices[noticeKey];
+        if (!notice || ["WAITING", "CLAIMED", "SENT", "UNCERTAIN"].indexOf(notice.state) === -1 || typeof notice.text !== "string") throw new Error("미니게임 공지 오류");
+        requireVaultRobberyInteger(notice.day);
+    }
+    return state;
+}
+
+// 금고 명령의 조회·정상 숫자·잘못된 인수를 구분하는 함수
+function getVaultRobberyRequest(msg) {
+    if (/[\r\n]/.test(String(msg))) return /^\/금고(?:\s|$)/.test(String(msg)) ? { action: "invalid" } : null;
+    if (msg === "/금고") return { action: "view" };
+    if (!/^\/금고(?:\s|$)/.test(String(msg))) return null;
+    var match = String(msg).match(/^\/금고[ \t]+(\d+)$/);
+    var guess = match ? Number(match[1]) : NaN;
+    return match && guess >= GLOBAL_CONFIG.vaultRobbery.limits.minNumber && guess <= GLOBAL_CONFIG.vaultRobbery.limits.maxNumber ? { action: "guess", guess: guess } : { action: "invalid" };
+}
+
+// 시각을 한국 시간 자정 기준의 날짜 번호로 변환하는 함수
+function getVaultRobberyDay(now) {
+    return Math.floor((now + GLOBAL_CONFIG.attendance.kstOffsetMs) / GLOBAL_CONFIG.vaultRobbery.dayMs);
+}
+
+// 저장된 날짜 번호를 YYYY-MM-DD 문자열로 표시하는 함수
+function getVaultRobberyDate(day) {
+    var value = new Date(day * GLOBAL_CONFIG.vaultRobbery.dayMs);
+    var month = value.getUTCMonth() + 1, date = value.getUTCDate();
+    return value.getUTCFullYear() + "-" + (month < 10 ? "0" : "") + month + "-" + (date < 10 ? "0" : "") + date;
+}
+
+// 금고 상태에서 안전한 0 이상 정수만 허용하는 함수
+function requireVaultRobberyInteger(value) {
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > 9007199254740991) throw new Error("금고 수치 형식 오류");
+    return value;
+}
+
+// 정답을 포함하는 폭 600의 무작위 특별 힌트와 새 금고를 생성하는 함수
+function createVaultRobberyRound(day, prize) {
+    var limits = GLOBAL_CONFIG.vaultRobbery.limits;
+    var answer = Math.floor(Math.random() * (limits.maxNumber - limits.minNumber + 1)) + limits.minNumber;
+    var minLow = Math.max(limits.minNumber, answer - limits.hintWidth); // 정답을 포함하는 하한의 최소값
+    var maxLow = Math.min(answer, limits.maxNumber - limits.hintWidth); // 정답을 포함하는 하한의 최대값
+    var low = minLow + Math.floor(Math.random() * (maxLow - minLow + 1));
+    return { day: day, answer: answer, low: low, high: low + limits.hintWidth, prize: prize, usage: {}, hints: [], winner: null };
+}
+
+// 금고와 보상 기록의 손상·잘못된 힌트·지급 상태를 변경 전에 검증하는 함수
+function requireVaultRobberyStore(store) {
+    var config = GLOBAL_CONFIG.vaultRobbery, round = store && store.current;
+    if (!store || store.schemaVersion !== config.schemaVersion || !round || !store.awards || typeof store.awards !== "object" || Array.isArray(store.awards)) throw new Error("금고 저장 형식 오류");
+    requireVaultRobberyInteger(round.day); requireVaultRobberyInteger(round.answer); requireVaultRobberyInteger(round.low); requireVaultRobberyInteger(round.high); requireVaultRobberyInteger(round.prize);
+    if (round.answer < config.limits.minNumber || round.answer > config.limits.maxNumber || round.low < config.limits.minNumber || round.high > config.limits.maxNumber || round.high - round.low !== config.limits.hintWidth || round.answer < round.low || round.answer > round.high || round.prize < config.rewards.basePrize) throw new Error("금고 정답·힌트·상금 형식 오류");
+    if (!round.usage || typeof round.usage !== "object" || Array.isArray(round.usage) || !Array.isArray(round.hints) || round.hints.length > config.limits.recentHints) throw new Error("금고 참여 기록 형식 오류");
+    for (var accountKey in round.usage) if (Object.prototype.hasOwnProperty.call(round.usage, accountKey)) {
+        requireVaultRobberyInteger(round.usage[accountKey]);
+        if (accountKey.charAt(0) !== "$" || accountKey.length < 2 || round.usage[accountKey] > config.limits.passAttempts) throw new Error("금고 계정 횟수 형식 오류");
+    }
+    for (var i = 0; i < round.hints.length; i++) {
+        var hint = round.hints[i];
+        if (!hint || typeof hint.name !== "string" || typeof hint.accountId !== "string" || !hint.accountId || hint.direction !== "UP" && hint.direction !== "DOWN") throw new Error("금고 최근 힌트 형식 오류");
+        requireVaultRobberyInteger(hint.guess);
+        if (hint.guess < config.limits.minNumber || hint.guess > config.limits.maxNumber || hint.direction !== (hint.guess < round.answer ? "UP" : "DOWN") || hint.guess === round.answer) throw new Error("금고 최근 판정 오류");
+    }
+    for (var awardKey in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, awardKey)) {
+        var award = store.awards[awardKey];
+        if (!award || typeof award.accountId !== "string" || !award.accountId || typeof award.name !== "string" || typeof award.paid !== "boolean" || ["WAITING", "CLAIMED", "SENT", "UNCERTAIN"].indexOf(award.notice) === -1) throw new Error("금고 당첨 기록 형식 오류");
+        requireVaultRobberyInteger(award.day); requireVaultRobberyInteger(award.amount); requireVaultRobberyInteger(award.answer); requireVaultRobberyInteger(award.at);
+        if (awardKey !== "$" + award.day || award.amount < config.rewards.basePrize || award.answer < config.limits.minNumber || award.answer > config.limits.maxNumber || !award.paid && award.notice !== "WAITING") throw new Error("금고 보상 기록 오류");
+    }
+    if (round.winner !== null) {
+        var winner = store.awards[round.winner];
+        if (!winner || round.winner !== "$" + round.day || winner.day !== round.day || winner.amount !== round.prize || winner.answer !== round.answer) throw new Error("금고 종료 기록 오류");
+    }
+    return store;
+}
+
+// 확정된 운영 상한과 미당첨 날짜 수를 적용해 다음 상금을 계산하는 함수
+function getVaultRobberyNextPrize(previous, days) {
+    var rewards = GLOBAL_CONFIG.vaultRobbery.rewards;
+    if (rewards.prizeCap === null) throw new Error("금고 상금 누적 상한 운영 정책이 확정되지 않았습니다.");
+    requireVaultRobberyInteger(previous); requireVaultRobberyInteger(days); requireVaultRobberyInteger(rewards.prizeCap);
+    if (rewards.prizeCap > 0 && rewards.prizeCap < rewards.basePrize) throw new Error("금고 상금 상한 설정 오류");
+    if (rewards.prizeCap > 0 && days > Math.floor((rewards.prizeCap - previous) / rewards.dailyIncrease)) return rewards.prizeCap;
+    var next = previous + days * rewards.dailyIncrease;
+    return requireVaultRobberyInteger(next);
+}
+
+// 지난 날짜 상금만 이어받고 새 비밀번호·힌트·횟수로 날짜를 전환하는 함수
+function advanceVaultRobberyDay(store, day) {
+    requireVaultRobberyStore(store);
+    if (day < store.current.day) throw new Error("금고 기준 날짜가 이전 날짜로 변경되었습니다.");
+    if (day === store.current.day) return false;
+    var elapsed = day - store.current.day; // 재시작으로 건너뛴 한국 시간 날짜 수
+    var nextPrize = store.current.winner === null ? getVaultRobberyNextPrize(store.current.prize, elapsed) : getVaultRobberyNextPrize(GLOBAL_CONFIG.vaultRobbery.rewards.basePrize, elapsed - 1);
+    store.current = createVaultRobberyRound(day, nextPrize);
+    return true;
+}
+
+// 현재 회원권의 하루 한도와 이미 사용한 횟수로 잔여 횟수를 반환하는 함수
+function getVaultRobberyAttempts(store, accountId, hasHoiPass) {
+    var limit = hasHoiPass ? GLOBAL_CONFIG.vaultRobbery.limits.passAttempts : GLOBAL_CONFIG.vaultRobbery.limits.normalAttempts;
+    var key = "$" + accountId, used = accountId && Object.prototype.hasOwnProperty.call(store.current.usage, key) ? store.current.usage[key] : 0;
+    return { limit: limit, used: used, remaining: Math.max(0, limit - used) };
+}
+
+// 검증된 숫자 도전을 한 번 접수하고 오답 기록 또는 최초 당첨을 확정하는 함수
+function applyVaultRobberyGuess(store, accountId, nickname, guess, hasHoiPass, now) {
+    requireVaultRobberyStore(store);
+    var round = store.current, attempts = getVaultRobberyAttempts(store, accountId, hasHoiPass);
+    if (typeof accountId !== "string" || !accountId || typeof nickname !== "string") throw new Error("금고 참여 계정 오류");
+    if (getVaultRobberyDay(now) !== round.day) return { kind: "dateChanged", changed: false };
+    requireVaultRobberyInteger(guess);
+    if (guess < GLOBAL_CONFIG.vaultRobbery.limits.minNumber || guess > GLOBAL_CONFIG.vaultRobbery.limits.maxNumber) return { kind: "invalid", changed: false };
+    if (round.winner !== null) return { kind: "closed", changed: false };
+    if (attempts.remaining === 0) return { kind: "exhausted", changed: false };
+    round.usage["$" + accountId] = attempts.used + 1;
+    if (guess === round.answer) {
+        round.winner = "$" + round.day;
+        store.awards[round.winner] = { day: round.day, accountId: accountId, name: nickname, amount: round.prize, answer: round.answer, at: now, paid: false, notice: "WAITING" };
+        return { kind: "won", changed: true };
+    }
+    var direction = guess < round.answer ? "UP" : "DOWN";
+    round.hints.push({ accountId: accountId, name: nickname, guess: guess, direction: direction });
+    if (round.hints.length > GLOBAL_CONFIG.vaultRobbery.limits.recentHints) round.hints.shift();
+    return { kind: "wrong", changed: true, guess: guess, direction: direction };
+}
+
+// 조회·오답·당첨·횟수 소진을 실제 지급 상태와 회원권 머리말로 표시하는 함수
+function buildVaultRobberyMessage(store, accountId, hasHoiPass, premium, nickname, result) {
+    var round = store.current, kind = result && result.kind ? result.kind : "view";
+    var header = (premium ? "[👑호이패스 프리미엄👑]\n" : "") + "🔐 호월이의 금고털이\n━━━━━━━━━━━━\n";
+    if (kind === "invalid") return header + "📝 1~1,000 사이의 정수 하나를 입력해 주세요.\n사용법: /금고 숫자\n예시: /금고 500";
+    if (kind === "dateChanged") return header + "⏰ 새 날짜의 금고가 열렸어요. 횟수는 사용하지 않았어요.\n🔎 /금고 입력으로 새 힌트를 확인해 주세요.";
+    if (round.winner !== null) {
+        var award = store.awards[round.winner];
+        return header + (kind === "won" ? "🎉 철컥! 금고가 열렸어요!" : "🔓 오늘의 금고는 이미 열렸어요!") + "\n\n🏆 당첨자: [" + award.name + "]\n🔑 비밀번호: " + award.answer + "\n💰 " + (award.paid && kind === "won" ? "획득 상금" : "당첨 상금") + ": 🅟" + formatServerRaidPrize(award.amount) + "\n━━━━━━━━━━━━\n" + (award.paid ? (kind === "won" ? "✅ 보유 포인트에 지급됐어요!\n" : "") : "⏳ 당첨은 확정됐으며 상금 지급 확인 중이에요.\n") + "⏰ 다음 금고는 자정에 열려요.\n🎮 /호이월드미니게임";
+    }
+    var attempts = getVaultRobberyAttempts(store, accountId, hasHoiPass);
+    if (kind === "exhausted") return header + "🎯 남은 도전: 0/" + attempts.limit + "회\n오늘의 도전 기회를 모두 사용했어요.\n\n⏰ 자정에 도전 횟수가 초기화돼요.\n🔎 /금고 입력으로 현황을 확인할 수 있어요.";
+    var date = new Date(round.day * GLOBAL_CONFIG.vaultRobbery.dayMs);
+    var out = kind === "view" ? (premium ? "[👑호이패스 프리미엄👑]\n" : "") + "🎮 미니게임 목록: /호이월드미니게임\n🔐 호월이의 금고털이\n━━━━━━━━━━━━\n📅 " + (date.getUTCMonth() + 1) + "월 " + date.getUTCDate() + "일\n" : header + "[" + nickname + "] " + result.guess + " → " + (result.direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n\n";
+    out += "💰 오늘의 상금: 🅟" + formatServerRaidPrize(round.prize) + "\n🎯 남은 도전: " + attempts.remaining + "/" + attempts.limit + "회\n\n🔎 오늘의 특별 힌트\n비밀번호는 " + round.low + "~" + round.high + " 사이에 있어요!\n━━━━━━━━━━━━\n💡 최근 힌트 · 최근 3회\n";
+    if (!round.hints.length) out += "아직 도전 기록이 없어요.\n첫 힌트를 남겨보세요!\n";
+    for (var i = 0; i < round.hints.length; i++) out += "[" + round.hints[i].name + "] " + round.hints[i].guess + " → " + (round.hints[i].direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n";
+    out += "━━━━━━━━━━━━\n📝 /금고 숫자";
+    if (kind === "view") out += "\n📖 금고털이 하는 방법\n" + allsee + "\n🔐 특별 힌트와 도전 기록을 보고\n오늘의 비밀번호를 맞혀보세요!\n\n📝 /금고 숫자\n예시: /금고 500\n\n⬆️ UP: 입력한 숫자보다 커요.\n⬇️ DOWN: 입력한 숫자보다 작아요.\n\n🏆 최초 정답자 1명이 상금 전액 획득!\n💰 미당첨이면 다음 날 상금 +5억\n\n🎯 일반 유저 하루 2회\n🎫 호이패스·프리미엄 하루 3회\n\n⏰ 매일 자정 새 금고 시작\n비밀번호·특별 힌트가 변경되고,\n최근 도전 힌트·도전 횟수가 초기화돼요.\n\n※ 모든 방에서 금고와 참여 기록을 공유해요.";
+    return out;
+}
+
+// 금고 지급 확정 뒤 한 번만 사용할 공용 당첨 안내를 생성하는 함수
+function buildVaultRobberyNotice(award) {
+    return "🔐 호월이의 금고가 털렸습니다!\n━━━━━━━━━━━━\n🏆 [" + award.name + "] 님 당첨!\n🔑 비밀번호: " + award.answer + "\n\n💰 누적 상금 🅟" + formatServerRaidPrize(award.amount) + " 획득!\n━━━━━━━━━━━━\n⏰ 다음 금고는 자정에 열립니다.\n🎮 /호이월드미니게임";
 }
 
 // 길드마블의 실행 명령과 잘못된 인수를 구분하는 함수
@@ -39023,6 +39885,7 @@ function initializeMember(sender, data, petData) {
         petraid: 0
     };
     data.member[sender] = {
+        serverRaidAccount: { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(null), latest: null, total: null },
         join: currentDate,
         lv: 1,
         lv0: 0,
@@ -63324,6 +64187,14 @@ function buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetC
 // 컴파일 후에도 저장된 운영 회차의 준비 시각·미완료 정산·공지를 이어서 처리한다.
 // 운영 타이머가 시작되기 전에 중단된 강탈 저장을 복구한다. DEV는 다음 DEV 요청에서 복구한다.
 var startupRobberyConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
+var startupMiniContexts = [createCommandContext(false, room8), createCommandContext(true, room8)];
+for (var startupMiniIndex = 0; startupMiniIndex < startupMiniContexts.length; startupMiniIndex++) {
+    var startupMiniPrevious = enterCommandContext(startupMiniContexts[startupMiniIndex]);
+    try {
+        if (runMiniGameEntry("recover", { ctx: startupMiniContexts[startupMiniIndex] }) && !startupMiniContexts[startupMiniIndex].isDev) initData = loadJsonFile(filePath, "bootstrap");
+        runMiniGameEntry("startup", { ctx: startupMiniContexts[startupMiniIndex] });
+    } finally { exitCommandContext(startupMiniPrevious); }
+}
 var startupRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRobberyConfig.pendingName);
 if (new java.io.File(startupRobberyPendingPath).exists()) {
     var startupRobberyPending = loadJsonFile(startupRobberyPendingPath);

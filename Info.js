@@ -675,6 +675,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (!infoAdventurePending || !Object.prototype.hasOwnProperty.call(infoAdventurePending, "pending") || (infoAdventurePending.pending !== null && !Array.isArray(infoAdventurePending.pending))) throw new Error("퀘스트 기록 복구 형식 오류");
 			if (infoAdventurePending.pending !== null) return;
 		}
+		// 미니게임 지급 원문 게시가 끝나기 전에는 부분 반영된 포인트를 표시하지 않는다.
+		var infoMiniPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + "miniGamePending.json");
+		if (new java.io.File(infoMiniPendingPath + ".rollback").exists() && !new java.io.File(infoMiniPendingPath).exists()) return;
+		if (new java.io.File(infoMiniPendingPath).exists()) {
+			var infoMiniPending = loadJsonFile(infoMiniPendingPath);
+			if (!infoMiniPending || infoMiniPending.version !== 1 || !Object.prototype.hasOwnProperty.call(infoMiniPending, "pending") || infoMiniPending.pending !== null && !Array.isArray(infoMiniPending.pending)) throw new Error("미니게임 복구 기록 형식 오류");
+			if (infoMiniPending.pending !== null) return;
+		}
 		let data = loadJsonFile(filePath);
 		// 레이드 잠금은 MASTER·전역 정보 예외보다 우선하고 안내는 main.js에서만 출력한다.
 		if (isInfoServerRaidLocked(data) && !isInfoServerRaidAdditionalCommand(msg)) return;
