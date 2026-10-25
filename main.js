@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.701"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.702"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3367,7 +3367,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (msg === "ㅁㅂ") msg = "/마블굴리기";
         else if (msg === "ㅁㄱ") msg = "/마블구매";
         else if (msg === "ㅁㅌ") msg = "/마블통과";
-        if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists()) runMiniGameEntry("recover", { ctx: ctx });
+        if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists()) runMiniGameEntry("recover", { ctx: ctx, allowRecoveryReview: true });
         var resetProbeKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var resetProbeSession = manualResetSessions[resetProbeKey];
         var resetSameScope = resetProbeSession && resetProbeSession.room === room && resetProbeSession.isGroupChat === isGroupChat;
@@ -4106,8 +4106,12 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             if (!ctx.isDev && isGuildTerritoryWarCommandLockActive(miniGameGuildData) && isGuildTerritoryBlockedDuringWarCommand(msg) && !isGlobalOperatorCommandAllowed(sender, msg)) { replier.reply("🏰 길드 영지전 진행 중에는 영지전 관련 명령어만 사용할 수 있습니다."); return; }
             try {
                 runMiniGameEntry("command", { ctx: ctx, data: data, petData: miniGamePetData, guildData: miniGameGuildData, request: miniGameRequest, sender: sender, nickname: checkRank(data, miniGamePetData, miniGameGuildData, sender), room: room, replier: replier, requestAt: miniGameRequestAt, requestGameId: miniGameRequestGameId });
+            } catch (miniGameRecoveryError) {
+                if (!miniGameRecoveryError.miniGameRecoveryBlocked) throw miniGameRecoveryError;
+                replier.reply("⏸️ 미니게임 지급 기록 확인이 필요해요.\n진행·횟수·보상 기록은 보존했으며 중복 지급을 막기 위해 미니게임 처리를 잠시 보류합니다.\n운영자에게 문의해 주세요.");
+                debuggerLog("[미니게임 복구 확인 필요] " + miniGameRecoveryError);
             } finally {
-                if (!miniGameTimers[ctx.key()] && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists()) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
+                if (!ctx.miniGameRecoveryBlocked && !miniGameTimers[ctx.key()] && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists()) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
             }
             return;
         }
@@ -35609,6 +35613,9 @@ function getMiniGameObservedVaultId(isDev) {
 // 미니게임 게시 저널의 허용 경로·완성 원문을 검증하는 함수
 function requireMiniGameJournal(journal) {
     if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal, "pending")) throw new Error("미니게임 복구 기록 형식 오류");
+    if (Object.prototype.hasOwnProperty.call(journal, "recovery")) {
+        if (!journal.recovery || journal.recovery.required !== true || typeof journal.recovery.reason !== "string" || !journal.recovery.reason || journal.pending !== null) throw new Error("미니게임 복구 확인 기록 형식 오류");
+    }
     if (journal.pending === null) return journal;
     if (!Array.isArray(journal.pending) || !journal.pending.length) throw new Error("미니게임 복구 원문 오류");
     var seen = {}, stateFound = false;
@@ -35626,6 +35633,21 @@ function requireMiniGameJournal(journal) {
     }
     if (!stateFound) throw new Error("미니게임 복구 진행 원문 누락");
     return journal;
+}
+
+// 복구 원문 없이 지급을 재시도하면 중복될 수 있는 기존 보상만 확인하는 함수
+function getMiniGameMissingJournalReviewReason(state) {
+    for (var rewardId in state.ledger) {
+        if (Object.prototype.hasOwnProperty.call(state.ledger, rewardId) && state.ledger[rewardId].status === "PENDING") return "미지급 원장이 있어 실제 지급 여부 확인이 필요합니다.";
+    }
+    if (state.vault) for (var awardId in state.vault.awards) {
+        if (Object.prototype.hasOwnProperty.call(state.vault.awards, awardId) && !state.vault.awards[awardId].paid) return "금고 상금의 실제 지급 여부 확인이 필요합니다.";
+    }
+    for (var diceId in state.dice.users) {
+        var game = state.dice.users[diceId].game;
+        if (game && game.phase === "RESULT" && !game.paid) return "주사위 보상의 실제 지급 여부 확인이 필요합니다.";
+    }
+    return "";
 }
 
 // 완료 기록 보관 파일이 손상되면 덮어쓰지 않는 함수
@@ -35684,6 +35706,7 @@ function getMiniGameBundledCatalog(kind) {
 // 명령·재시작·자동 차례의 저장 진입점에서만 파일을 읽고 확정된 원문을 게시하는 함수
 function runMiniGameEntry(mode, args) {
     var config = GLOBAL_CONFIG.miniGames;
+    args.ctx.miniGameRecoveryBlocked = false;
     var statePath = resolveActiveDataPath(DATA_ROOT_PATH + config.stateName), pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName);
     var paths = [pendingPath, statePath], i, restored = false;
     // 원자 교체의 이전 정상본을 먼저 식별하고 미완료 저널을 새 회원 변경보다 먼저 완성한다.
@@ -35704,7 +35727,24 @@ function runMiniGameEntry(mode, args) {
             endDataSaveTransaction(); beginDataSaveTransaction();
             stateExists = true; restored = true;
         } else if (!stateExists) throw new Error("미니게임 진행 파일 누락");
-    } else if (stateExists) throw new Error("미니게임 복구 파일 누락");
+    } else if (stateExists) {
+        var missingJournalState = requireMiniGameState(loadJsonFile(statePath));
+        var pendingTemp = new java.io.File(pendingPath + ".tmp"), pendingEvidence = new java.io.File(pendingPath + ".missing");
+        if (pendingTemp.exists() && (pendingEvidence.exists() || !pendingTemp.renameTo(pendingEvidence))) throw new Error("미니게임 복구 임시 원문 보존 실패");
+        journal = { version: 1, pending: null };
+        var recoveryReason = getMiniGameMissingJournalReviewReason(missingJournalState);
+        if (pendingEvidence.exists() || new java.io.File(statePath + ".tmp").exists()) recoveryReason = "미완료 임시 저장 원문이 남아 있습니다.";
+        if (recoveryReason) journal.recovery = { required: true, reason: recoveryReason };
+        writeVerifiedJsonFile(pendingPath, JSON.stringify(journal), true);
+    }
+    if (journal && journal.recovery) {
+        args.ctx.miniGameRecoveryBlocked = true;
+        if (mode === "recover" && args.allowRecoveryReview) return false;
+        if (mode === "command" && args.request.kind === "menu") { args.replier.reply(buildMiniGameMenu() + "\n⏸️ 미니게임 지급 기록 확인 중 · 진행과 보상 기록은 보존되어 있어요."); return; }
+        var blockedRecovery = new Error("미니게임 복구 확인 필요: " + journal.recovery.reason);
+        blockedRecovery.miniGameRecoveryBlocked = true;
+        throw blockedRecovery;
+    }
     if (mode === "recover") return restored;
     if (mode === "startup") {
         if (stateExists) {
@@ -36054,17 +36094,17 @@ function scheduleMiniGameWork(ctx, delay) {
     timer.id = setTimeout(function () {
         if (miniGameTimers[key] !== timer) return;
         delete miniGameTimers[key];
-        var previous = enterCommandContext(ctx), entered = false;
+        var previous = enterCommandContext(ctx), entered = false, retryRecovery = true;
         try {
             dataTransactionLock.lock(); beginDataSaveTransaction(); entered = true;
             runMiniGameEntry("recover", { ctx: ctx });
             var latest = loadJsonFile(filePath);
             runMiniGameEntry("auto", { ctx: ctx, data: latest });
-        } catch (error) { debuggerLog("[미니게임 자동 처리 복구 대기] " + error); }
+        } catch (error) { if (error && error.miniGameRecoveryBlocked) retryRecovery = false; debuggerLog("[미니게임 자동 처리 복구 대기] " + error); }
         finally {
             if (entered) { endDataSaveTransaction(); dataTransactionLock.unlock(); }
             exitCommandContext(previous);
-            if (!miniGameTimers[key]) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
+            if (retryRecovery && !miniGameTimers[key]) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
         }
     }, Math.max(1, delay));
     miniGameTimers[key] = timer;
@@ -64435,6 +64475,8 @@ for (var startupMiniIndex = 0; startupMiniIndex < startupMiniContexts.length; st
     try {
         if (runMiniGameEntry("recover", { ctx: startupMiniContexts[startupMiniIndex] }) && !startupMiniContexts[startupMiniIndex].isDev) initData = loadJsonFile(filePath, "bootstrap");
         runMiniGameEntry("startup", { ctx: startupMiniContexts[startupMiniIndex] });
+    } catch (startupMiniError) {
+        debuggerLog("[미니게임 초기화 보류 · 일반 명령 유지] " + startupMiniError);
     } finally { exitCommandContext(startupMiniPrevious); }
 }
 var startupRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRobberyConfig.pendingName);

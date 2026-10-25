@@ -55,6 +55,8 @@ Status: VERIFIED
 - 활성 진행·순환·투표·이용 횟수·미수령 원장: 활성 데이터 루트의 `miniGameState.json`. 완료된 날짜·지급 증거는 `miniGameArchive_YYYY-MM.json`에 보관, 임의 만료 없음.
 - 공통 고유 ID `member[*].serverRaidAccount.id` 재사용. 신규 등록 시 ID를 발급하며 첫 설치 때 기존 누락 ID만 한 번 보충한다. 설치 이관 이후 조회·투표·일반 굴림은 회원 저장 없음. 실제 지급은 기존 `addPoint`·`saveJsonFile` 경로만 사용.
 - 당첨/마감/주사위 결과를 먼저 확정하고 `payMiniGameRewards`로 정산. 원문 게시 저널 `miniGamePending.json`을 먼저 저장한 후 회원·진행·해당 월 보관을 게시한다. 게시 완료 경계 이후 저널을 비운다. 중단 시 다른 회원 변경 전에 확정 원문을 완성하므로 이후 거래를 과거 회원 백업으로 되돌리지 않는다.
+- 진행 파일은 정상이고 저널·교체 이전본만 없으면 진행을 검증한 뒤 누락 저널만 생성한다. `getMiniGameMissingJournalReviewReason`가 PENDING 원장·미지급 금고·결과 단계 미지급 주사위를 발견하거나 임시 저장 흔적이 있으면 `recovery: {required:true,reason:...}`를 기록하고 미니게임 변경/지급을 보류한다. 남은 저널 `.tmp` 원문은 `.missing`으로 보존하며 기존 증거 충돌은 실패한다. 진행·회원·정답·횟수·기지급 기록은 초기화하지 않는다.
+- 지급 확인 대기 중에도 조기 `recover`의 `allowRecoveryReview`는 일반 명령을 통과시킨다. 실제 미완료 게시 원문은 기존대로 먼저 완성한다. `/미니게임`은 메뉴와 보류 안내, 게임 실행은 짧은 보류 안내를 출력한다. 시작 시 미니게임 예외는 로그를 남기고 다음 초기화를 계속하며, 확인 대기 자동 작업은 같은 오류를 반복 예약하지 않는다. 손상 파일은 이 예외 복구 대상이 아니다.
 - 금고 schema1은 검증 후 schema2의 게임 ID·개방 시각·1/2차·수동 여부로 이관한다. 기존 사용 횟수와 보상 ID·지급·공지 상태를 그대로 보존, 같은 날 이미 지급된 1차는 재지급 없이 2차를 한 번만 연다. 일일 횟수와 게임별 원장·보관 키를 구분해 같은 날짜의 두 당첨이 덮어써지지 않는다.
 - `requireMiniGameState`, `requireMiniGameJournal`, `requireMiniGameArchive`, `requireMiniGameCatalog`로 손상을 오류 처리. 설치 후 누락·파싱 오류를 빈 진행으로 초기화하지 않는다. 분리 회원의 레이드/로그 슬롯 변경은 차단한다.
 - 전체 공지는 지급과 별개로 CLAIMED를 먼저 저장. 실패·전송 여부 불확실 상태는 UNCERTAIN으로 남기고 자동 재발송/재지급하지 않는다. 상태/보관 원문에서 운영 확인 가능.
@@ -66,6 +68,7 @@ Status: VERIFIED
 - `tools/test_mini_games.js`: 실제 명령 진입·7인수 콜백·정산/저널/실패 재시도·분리 회원·Info 차단·정적 자료·자동 자정·DEV 예외 검증.
 - `tools/test_mini_games_rhino.js <rhino.jar>`: 전체 Main/Info Rhino 컴파일, 실제 Java 파일·동시 스레드·새 전역 재시작·보상 중단 복구 검증.
 - `tools/test_mini_game_revision.js`: 2.697 이관·2차/수동 개방·공유 횟수·프리미엄 전용·관리자 대상/권한·동시 게임 ID 경계·누락 복원/손상 차단·짧은 오류 안내 검증.
+- `tools/test_mini_game_missing_journal.js`: 누락 저널만 생성·기지급/불확실 지급 보존·임시 원문·실패/DEV·실제 일반 콜백·시작 예외·반복 타이머 중단 11그룹. Rhino 시험에도 실제 파일 누락/동시 생성/재시작/원문 보존/보류·잠금 해제를 포함한다.
 
 ---
 
