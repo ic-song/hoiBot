@@ -28,6 +28,7 @@ const heartContext = {
     getPetSkillHeartBonus: () => 5
 };
 vm.createContext(heartContext);
+vm.runInContext(extractFunction("getDailyResetCycle"), heartContext);
 vm.runInContext(extractFunction("hasUnlimitedPetHomeHeartUsage"), heartContext);
 vm.runInContext(extractFunction("getPetHomeHeartUsageStatus"), heartContext);
 

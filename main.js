@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.705"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.706"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -4133,7 +4133,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             var marbleAccountIndex = buildServerRaidAccountIndex(data);
             var marbleContext = { data: data, petData: marblePetData, guildData: marbleGuildData, accounts: marbleAccountIndex,
                 sender: sender, accountId: data.member[sender].serverRaidAccount ? data.member[sender].serverRaidAccount.id : null,
-                room: room, isGroupChat: isGroupChat, day: getAttendanceKstDateKey(), guild: getGuildMarbleGuild(data, marbleGuildData, sender) };
+                room: room, isGroupChat: isGroupChat, day: getAttendanceKstDateKey(), dailyResetCycle: getDailyResetCycle(data), guild: getGuildMarbleGuild(data, marbleGuildData, sender) };
             var marbleResult = executeGuildMarbleRequest(marbleStore, marbleContext, marbleRequest, marbleRequest.mutation ? String(java.util.UUID.randomUUID()) : "");
             if (marbleResult.settlement && marbleRequest.mutation) {
                 // 순위·추첨을 먼저 확정해 포인트 오류나 재시작 후에도 다시 추첨하지 않는다.
@@ -4920,7 +4920,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         var isPreSignupAttendanceFlow = msg === "ㅊㅊ";
         if (!data.member[sender] && isPreSignupAttendanceFlow) {
             var attendanceLightData = loadJsonFile(attendanceLightPath) || { users: {} };
-            var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room);
+            var lightResult = recordLightAttendanceOnly(attendanceLightData, sender, room, data);
             if (!lightResult.already || lightResult.serverUpdated) saveJsonFile(attendanceLightData, attendanceLightPath);
             if (lightResult.already) {
                 replier.reply("[" + sender + "] 님 이미 출첵 하셨습니다.\n\n📌 이용 안내\n• 출석 주의: 4일 연속 미출석 시 잠수 계정으로간주되어 자동 추방(계정 삭제)될 수 있습니다.\n• 모험 시작: 모두가 함께하는 '호이월드'의 모험가가 되어 펫과 함께 여행을 떠나보세요! /모험시작");
@@ -36742,6 +36742,7 @@ function requireGuildMarbleStore(store) {
         requireGuildMarbleInteger(row.feeUnits, config.limits.minFee, config.limits.maxFee);
         if (!row.usage || typeof row.usage.day !== "string") throw new Error("길드마블 일일 기록 오류");
         requireGuildMarbleInteger(row.usage.count, 0, config.limits.dailyGames);
+        getDailyResetCycle(row.usage);
         var game = row.current;
         if (game === null) continue;
         if (!game || typeof game.id !== "string" || !game.id || game.guildId !== row.guildId || typeof game.room !== "string" || !Array.isArray(game.players)) throw new Error("길드마블 경기 식별 오류");
@@ -36828,9 +36829,9 @@ function getGuildMarblePrizeInfo(units) {
     return { fee: fee, total: total, commission: commission, pool: pool, prizes: prizes };
 }
 
-// 한국시간 날짜가 다른 기록은 수정하지 않고 오늘 이용 횟수만 읽는 함수
-function getGuildMarbleDailyCount(row, day) {
-    return row && row.usage.day === day ? row.usage.count : 0;
+// 마지막 일일 리셋 회차에 사용한 길드 이용 횟수만 읽는 함수
+function getGuildMarbleDailyCount(row, cycle) {
+    return row && getDailyResetCycle(row.usage) === cycle ? row.usage.count : 0;
 }
 
 // 기존 길드 참조와 실제 길드원 명단을 함께 확인하는 함수
@@ -37020,7 +37021,7 @@ function startGuildMarbleGame(row, context) {
     }
     game.players = valid;
     if (errors.length) return { changed: true, memberChanged: false, text: errors.join("\n"), row: row };
-    if (getGuildMarbleDailyCount(row, context.day) >= config.limits.dailyGames) return { changed: false, text: "오늘 길드 이용 " + config.limits.dailyGames + "회를 모두 사용했어요. 다음 한국시간 날짜에 다시 시작해주세요.", row: row };
+    if (getGuildMarbleDailyCount(row, context.dailyResetCycle) >= config.limits.dailyGames) return { changed: false, text: "오늘 길드 이용 " + config.limits.dailyGames + "회를 모두 사용했어요. 다음 일일 초기화 후 다시 시작해주세요.", row: row };
     shuffleGuildMarblePlayers(game.players);
     for (var j = 0; j < game.players.length; j++) {
         var member = context.accounts[game.players[j].id].member;
@@ -37030,7 +37031,7 @@ function startGuildMarbleGame(row, context) {
     game.fee = prize.fee; game.commission = prize.commission; game.pool = prize.pool; game.prizes = prize.prizes;
     game.lands = []; for (var k = 0; k < config.board.length; k++) game.lands.push({ owner: -1, level: 0 });
     game.slot = 0; game.action = "ROLL"; game.move = null; game.stop = null; game.state = "PLAYING";
-    row.usage = { day: context.day, count: getGuildMarbleDailyCount(row, context.day) + 1 };
+    row.usage = { day: context.day, dailyResetCycle: context.dailyResetCycle, count: getGuildMarbleDailyCount(row, context.dailyResetCycle) + 1 };
     return { changed: true, memberChanged: true, row: row, text: "🎲 길드마블 시작!\n참가자 번호가 랜덤으로 배정되었습니다.\n💰 참가비 · 각 " + numberWithCommas(prize.fee) + " 포인트 차감 완료\n홀수 라운드 · [1] → [2] → [3] → [4]\n짝수 라운드 · [4] → [3] → [2] → [1]" };
 }
 
@@ -37071,7 +37072,7 @@ function executeGuildMarbleRequest(store, context, request, newId) {
         if (game) { result.text = "이미 모집 또는 진행 중인 경기가 있습니다."; return result; }
         if (!row) { row = { guildId: context.guild.id, feeUnits: config.limits.minFee, usage: { day: context.day, count: 0 }, current: null }; store.guilds["$" + row.guildId] = row; result.row = row; }
         if (action === "fee") { if (row.feeUnits === request.units) { result.text = "이미 같은 참가비로 설정되어 있습니다."; return result; } row.feeUnits = request.units; result.changed = true; result.text = "💰 참가비를 1인당 " + numberWithCommas(request.units * config.limits.pointUnit) + " 포인트로 설정했어요."; return result; }
-        if (getGuildMarbleDailyCount(row, context.day) >= config.limits.dailyGames) { result.text = "오늘 길드 이용 " + config.limits.dailyGames + "회를 모두 사용했어요. 다음 한국시간 날짜에 다시 시작해주세요."; return result; }
+        if (getGuildMarbleDailyCount(row, context.dailyResetCycle) >= config.limits.dailyGames) { result.text = "오늘 길드 이용 " + config.limits.dailyGames + "회를 모두 사용했어요. 다음 일일 초기화 후 다시 시작해주세요."; return result; }
         row.current = { id: newId, guildId: row.guildId, room: context.room, state: "RECRUITING", players: [] };
         result.changed = true; return result;
     }
@@ -37270,7 +37271,7 @@ function buildGuildMarbleMessage(result, context) {
         sections.push(players.join("\n"));
         sections.push("👉 /마블준비\n👉 /마블준비취소\n4명이 준비하면 자동으로 시작합니다.\n참가비는 경기 시작 시 차감됩니다.\n지급액에는 참가비 반환분이 포함됩니다.");
     }
-    sections.push("📅 오늘 길드 이용 · " + getGuildMarbleDailyCount(actualRow, context.day) + "/" + config.limits.dailyGames + "회\n📘 /마블가이드");
+    sections.push("📅 오늘 길드 이용 · " + getGuildMarbleDailyCount(actualRow, context.dailyResetCycle) + "/" + config.limits.dailyGames + "회\n📘 /마블가이드");
     var guild = context.guildData.guilds[actualRow.guildId || (context.guild ? context.guild.id : "")];
     if (isGuildMarbleRecruiter(guild, context.sender)) {
         if (!game) sections.push("👑 길드마스터·부길드마스터\n👉 /마블시작");
@@ -39746,6 +39747,14 @@ function getAttendanceKstDateKey() {
     return String(kst.getUTCFullYear()) + (month < 10 ? "0" : "") + month + (day < 10 ? "0" : "") + day;
 }
 
+// 기존 자료는 0회차로 보존하고 마지막 일일 리셋 회차를 검증해 반환하는 함수
+function getDailyResetCycle(data) {
+    if (!data || data.dailyResetCycle === undefined) return 0;
+    var cycle = data.dailyResetCycle;
+    if (typeof cycle !== "number" || !isFinite(cycle) || Math.floor(cycle) !== cycle || cycle < 0 || cycle > 9007199254740991) throw new Error("일일 리셋 회차 오류");
+    return cycle;
+}
+
 // 회원이 마지막 /리셋 이후 출석했는지 확인하는 함수
 function hasAttendedToday(data, user) {
     var member = data && data.member ? data.member[user] : null;
@@ -39906,6 +39915,8 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
 
 // 출석 /리셋 함수
 function resetAttendance(petData, data, replier) {
+    var nextDailyResetCycle = getDailyResetCycle(data) + 1;
+    data.dailyResetCycle = getDailyResetCycle({ dailyResetCycle: nextDailyResetCycle });
     for (let user in data.member) {
         data.member[user].today = 0; // /리셋마다 모든 회원의 새 출석 회차 시작
         if (petData[user]) {
@@ -39940,6 +39951,9 @@ function resetAttendance(petData, data, replier) {
         }
         if (data.member[user].diamondTycoon !== undefined) {
             delete data.member[user].diamondTycoon;
+        }
+        if (data.member[user].chatExperienceDaily !== undefined) {
+            delete data.member[user].chatExperienceDaily;
         }
         if (data.member[user].worldNewsLotteryPlayed !== undefined) {
             delete data.member[user].worldNewsLotteryPlayed;
@@ -41272,7 +41286,7 @@ function applyRebirthMushroomRecall(data) {
 function awardDailyChatExperience(data, user) {
     var member = data.member[user];
     var todayText = getAttendanceKstDateKey();
-    if (!member.chatExperienceDaily || member.chatExperienceDaily.date !== todayText) member.chatExperienceDaily = { date: todayText, experience: 0, notified: false };
+    if (!member.chatExperienceDaily) member.chatExperienceDaily = { date: todayText, experience: 0, notified: false };
     var daily = member.chatExperienceDaily;
     var limit = GLOBAL_CONFIG.attendance.chatExpDailyLimit;
     var earned = Math.max(0, Math.min(limit, Number(daily.experience) || 0)); // 오늘 이미 실제 지급한 채팅 EXP
@@ -41298,17 +41312,15 @@ function awardDailyChatExperience(data, user) {
 // 저장된 오늘의 채팅 경험치만 읽어 관리자용 조회 메시지로 만드는 함수
 function buildDailyChatExperienceStatusMessage(data, user) {
     var member = data.member[user];
-    var todayKey = getAttendanceKstDateKey();
     var limit = GLOBAL_CONFIG.attendance.chatExpDailyLimit;
     var daily = member.chatExperienceDaily;
-    var storedExperience = daily && daily.date === todayKey ? Number(daily.experience) : 0; // 오늘 채팅으로 실제 지급한 경험치
+    var storedExperience = daily ? Number(daily.experience) : 0; // 마지막 일일 리셋 이후 채팅으로 실제 지급한 경험치
     var earned = Math.max(0, Math.min(limit, isFinite(storedExperience) ? storedExperience : 0)); // 표시할 일일 획득량
     var remaining = limit - earned; // 오늘 채팅으로 더 얻을 수 있는 경험치
     var status = !hasAttendedToday(data, user) ? "출석 전" : earned >= limit ? "한도 도달" : "획득 가능";
-    var dateText = todayKey.substring(0, 4) + "." + todayKey.substring(4, 6) + "." + todayKey.substring(6, 8);
     return "📊 오늘의 채팅 경험치\n" +
         "대상: " + user + "\n" +
-        "기준: " + dateText + " (KST)\n" +
+        "기준: 일일 초기화 이후\n" +
         "획득: " + numberWithCommas(earned) + " / " + numberWithCommas(limit) + " EXP\n" +
         "남음: " + numberWithCommas(remaining) + " EXP\n" +
         "상태: " + status;
@@ -51511,18 +51523,13 @@ function getLegendaryPickpocketDailyData(data, user) {
     return dailyData;
 }
 
-// 광산에서 재벌까지 펫스킬의 일일 도전 상태를 날짜 기준으로 초기화해 반환하는 함수
+// 광산에서 재벌까지 펫스킬의 마지막 일일 리셋 이후 도전 상태를 반환하는 함수
 function getDiamondTycoonDailyData(data, user) {
     var todayText = String(getCurrentDate());
     if (!data.member[user].diamondTycoon || typeof data.member[user].diamondTycoon !== "object") {
         data.member[user].diamondTycoon = { lastUsedDate: todayText, usedCount: 0, lastResult: "" };
     }
     var dailyData = data.member[user].diamondTycoon;
-    if (String(dailyData.lastUsedDate || "") !== todayText) {
-        dailyData.lastUsedDate = todayText;
-        dailyData.usedCount = 0;
-        dailyData.lastResult = "";
-    }
     dailyData.usedCount = Math.max(0, Math.min(GLOBAL_CONFIG.diamondTycoon.dailyLimit, parseInt(dailyData.usedCount, 10) || 0));
     dailyData.lastResult = String(dailyData.lastResult || "");
     return dailyData;
@@ -53056,6 +53063,7 @@ function validatePetHomeSocialUser(social, user) {
         typeof social.heartUsage.date !== "string" || typeof social.heartUsage.count !== "number" || social.heartUsage.count < 0) {
         throw new Error("Invalid pet home heart usage: " + user);
     }
+    getDailyResetCycle(social.heartUsage);
     if (!social.badgeStats || typeof social.badgeStats !== "object" || social.badgeStats instanceof Array) {
         throw new Error("Invalid pet home badge stats: " + user);
     }
@@ -53932,10 +53940,14 @@ function hasUnlimitedPetHomeHeartUsage(user) {
 function getPetHomeHeartUsageStatus(data, petSkillData, activityData, homeData, user) {
     var social = getPetHomeSocialUser(activityData, user);
     var today = getPetHomeTodayText();
-    if (social.heartUsage.date !== today) {
+    var cycle = getDailyResetCycle(data);
+    if (getDailyResetCycle(social.heartUsage) !== cycle) {
         social.heartUsage.date = today;
         social.heartUsage.count = 0;
-        if (homeData && homeData[user] && homeData[user].lastHeartExpressionDate === today) social.heartUsage.count = 1;
+        social.heartUsage.dailyResetCycle = cycle;
+    } else if (!social.heartUsage.date) {
+        social.heartUsage.date = today;
+        if (homeData && homeData[user] && homeData[user].lastHeartExpressionDate) social.heartUsage.count = Math.max(social.heartUsage.count, 1);
     }
     var mutualBonus = getActivePetHomeMutualCount(data, activityData, user); // 활성 맞팔로 추가되는 일일 사용 횟수
     var premiumBonus = isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.supportPass.premium.heartBonus : 0;
@@ -57043,11 +57055,12 @@ function buildMissingAttendanceSignupSuccessMessage(userId, lightRemoved) {
 }
 
 // ㅊㅊ만 입력한 미가입 유저의 최소 출석 기록을 저장하는 함수
-function recordLightAttendanceOnly(attendanceLightData, sender, room) {
+function recordLightAttendanceOnly(attendanceLightData, sender, room, data) {
     if (!attendanceLightData.users || typeof attendanceLightData.users !== "object") attendanceLightData.users = {};
     var todayText = getAttendanceKstDateKey();
     var row = attendanceLightData.users[sender] || { cnt: 0, recent: "", today: 0 };
-    var already = row.recent === todayText && row.today > 0;
+    var cycle = getDailyResetCycle(data);
+    var already = getDailyResetCycle(row) === cycle && row.today > 0;
     var serverUpdated = false;
     if (!row.server && roomToServer[room]) {
         row.server = roomToServer[room];
@@ -57057,6 +57070,7 @@ function recordLightAttendanceOnly(attendanceLightData, sender, room) {
         row.cnt = (parseInt(row.cnt, 10) || 0) + 1;
         row.recent = todayText;
         row.today = 1;
+        row.dailyResetCycle = cycle;
         row.updatedAt = formatDateTime(new Date());
     }
     attendanceLightData.users[sender] = row;
@@ -57074,7 +57088,7 @@ function migrateLightAttendanceToMember(data, attendanceLightData, sender) {
     if (rowCnt > 0) member.cnt = (parseInt(member.cnt, 10) || 0) + rowCnt;
     if (row.recent) member.recent = row.recent;
     if (!member.server && row.server) member.server = row.server;
-    if (row.recent === getAttendanceKstDateKey() && row.today > 0) {
+    if (getDailyResetCycle(row) === getDailyResetCycle(data) && row.today > 0) {
         member.today = Math.max(parseInt(member.today, 10) || 0, 1);
         if (!(data.attend_list instanceof Array)) data.attend_list = [];
         if (data.attend_list instanceof Array && data.attend_list.indexOf(sender) === -1) data.attend_list.push(sender);

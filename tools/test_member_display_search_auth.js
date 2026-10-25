@@ -41,7 +41,7 @@ function pass(name, test) {
     }
     test(); console.log("PASS " + (++groups) + ": " + name);
 }
-for (const name of ["isAdmin", "isAdminIdentity", "formatDateTime", "normalizeSearchAuthenticationKeyword",
+for (const name of ["getDailyResetCycle", "isAdmin", "isAdminIdentity", "formatDateTime", "normalizeSearchAuthenticationKeyword",
     "countSearchAuthenticationCharacters", "isSearchAuthenticationTarget", "isSearchAuthenticationCount",
     "hasItem", "removeItem", "normalizePendantTransitionBagItem", "normalizePendantTransitionItemName", "normalizeUniversalCollectionKeyBagItems",
     "requireSearchAuthenticationLightData", "recordSearchAuthenticationChat", "getSearchAuthenticationTarget",
