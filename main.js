@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.705"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.706"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -35793,7 +35793,7 @@ function runMiniGameEntry(mode, args) {
         var startedDice = diceAccount && state.dice.users["$" + diceAccount.id];
         if (!startedDice || !startedDice.game || startedDice.game.phase === "DONE") { args.replier.reply("🎲 호월이를 이겨라!\n━━━━━━━━━━━━\n호이패스 프리미엄 전용 미니게임입니다.\n👉 /미니게임"); return; }
     }
-    var now = Date.now(), day = getVaultRobberyDay(now), archives = {}, archiveOriginals = {}, stateOriginal = stateExists ? JSON.stringify(state) : null;
+    var now = Date.now(), day = getVaultRobberyDay(now), archives = {}, archiveChanged = {}, stateOriginal = stateExists && mode !== "resetPlan" ? JSON.stringify(state) : null;
     if (!state.dailyReset) state.dailyReset = { day: day, cycle: 0, at: 0 }; // 기존 판·횟수는 그대로 두고 첫 /리셋을 기다린다.
     day = state.dailyReset.day; // 시각이 아닌 마지막 /리셋 회차의 날짜를 사용
     var memberChanged = false, catalogCacheKey = args.ctx.key();
@@ -35827,7 +35827,7 @@ function runMiniGameEntry(mode, args) {
         }
     }
     // 완료 기록은 해당 월 파일에만 옮기고 미수령 원장은 활성 파일에 보존한다.
-    function archive(recordDay) {
+    function archive(recordDay, changed) {
         var name = config.archivePrefix + getVaultRobberyDate(recordDay).substring(0, 7) + ".json";
         if (!archives[name]) {
             var path = resolveActiveDataPath(DATA_ROOT_PATH + name), file = new java.io.File(path), rollback = new java.io.File(path + ".rollback");
@@ -35837,22 +35837,27 @@ function runMiniGameEntry(mode, args) {
             }
             if (!file.exists() && state.archives[name]) throw new Error("미니게임 보관 파일 누락: " + name);
             archives[name] = file.exists() ? requireMiniGameArchive(loadJsonFile(path)) : { version: 1, days: {}, rewards: {}, games: {}, notices: {} };
-            archiveOriginals[name] = JSON.stringify(archives[name]);
         }
+        if (changed) archiveChanged[name] = true;
         return archives[name];
     }
     // 포인트·진행·보관 원문을 저널에 먼저 확정해 중간 종료 시 같은 결과를 완성한다.
     function commit() {
         requireMiniGameState(state);
+        var hasArchiveWrites = false;
+        for (var changedName in archives) if (Object.prototype.hasOwnProperty.call(archives, changedName) && archiveChanged[changedName]) {
+            requireMiniGameArchive(archives[changedName]); state.archives[changedName] = true; hasArchiveWrites = true;
+        }
+        var stateText = JSON.stringify(state);
+        if (!memberChanged && !hasArchiveWrites && stateText === stateOriginal) return false;
+        stateOriginal = null; // 저장 실패는 진입 흐름을 종료하므로 비교용 이전 문자열은 복구 원문 생성 전에 해제한다.
         var writes = [], memberPlan = null;
         if (memberChanged) {
             memberPlan = typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
             if (memberPlan && memberPlan.writes.length) throw new Error("미니게임 처리 중 관련 없는 회원 상세 변경 감지");
             writes.push({ name: "member.json", text: JSON.stringify(memberPlan ? memberPlan.member : data) });
         }
-        for (var name in archives) if (Object.prototype.hasOwnProperty.call(archives, name) && JSON.stringify(archives[name]) !== archiveOriginals[name]) { writes.push({ name: name, text: JSON.stringify(archives[name]) }); state.archives[name] = true; }
-        var stateText = JSON.stringify(state);
-        if (!memberChanged && !writes.length && stateText === stateOriginal) return false;
+        for (var name in archives) if (Object.prototype.hasOwnProperty.call(archives, name) && archiveChanged[name]) writes.push({ name: name, text: JSON.stringify(archives[name]) });
         writes.push({ name: config.stateName, text: stateText });
         var journal = { version: 1, pending: writes };
         requireMiniGameJournal(journal);
@@ -35869,7 +35874,7 @@ function runMiniGameEntry(mode, args) {
         writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
         endDataSaveTransaction(); beginDataSaveTransaction();
         stateOriginal = stateText; memberChanged = false;
-        for (var a in archives) if (Object.prototype.hasOwnProperty.call(archives, a)) archiveOriginals[a] = JSON.stringify(archives[a]);
+        for (var a in archives) if (Object.prototype.hasOwnProperty.call(archives, a)) archiveChanged[a] = false;
         return true;
     }
     if (mode === "resetPlan") {
@@ -35878,7 +35883,7 @@ function runMiniGameEntry(mode, args) {
         if (resetPreviousBalance) {
             var resetClosed = closeMiniGameBalance(state, now);
             var resetBalanceCycle = resetPreviousBalance.cycle || 0;
-            archive(resetPreviousBalance.day).days["balance:" + resetPreviousBalance.day + (resetBalanceCycle ? ":" + resetBalanceCycle : "")] = resetClosed;
+            archive(resetPreviousBalance.day, true).days["balance:" + resetPreviousBalance.day + (resetBalanceCycle ? ":" + resetBalanceCycle : "")] = resetClosed;
             state.balance.previous = { day: resetPreviousBalance.day, cycle: resetBalanceCycle };
         }
         state.dailyReset = { day: resetDay, cycle: state.dailyReset.cycle + 1, at: now };
@@ -35886,7 +35891,7 @@ function runMiniGameEntry(mode, args) {
         if (state.vault) {
             upgradeVaultRobberyStore(state.vault);
             var resetOldVault = state.vault.current;
-            archive(resetOldVault.day).days["vault:" + resetOldVault.id] = resetOldVault;
+            archive(resetOldVault.day, true).days["vault:" + resetOldVault.id] = resetOldVault;
             var resetPrize = resetOldVault.winner === null ? getVaultRobberyNextPrize(resetOldVault.prize, 1) : GLOBAL_CONFIG.vaultRobbery.rewards.basePrize;
             startVaultRobberyRound(state.vault, resetDay, resetPrize, 1, false, now, resetOldVault.answer, {});
             state.vault.replyPending = {};
@@ -35896,7 +35901,7 @@ function runMiniGameEntry(mode, args) {
             state.dice.users[resetDiceKey].used = 0;
         }
         var resetWrites = [];
-        for (var resetArchiveName in archives) if (Object.prototype.hasOwnProperty.call(archives, resetArchiveName) && JSON.stringify(archives[resetArchiveName]) !== archiveOriginals[resetArchiveName]) {
+        for (var resetArchiveName in archives) if (Object.prototype.hasOwnProperty.call(archives, resetArchiveName) && archiveChanged[resetArchiveName]) {
             var resetArchivePath = resolveActiveDataPath(DATA_ROOT_PATH + resetArchiveName);
             resetWrites.push({ name: resetArchiveName, text: JSON.stringify(archives[resetArchiveName]), previousText: new java.io.File(resetArchivePath).exists() ? String(FileStream.read(resetArchivePath, "utf-8")) : null }); state.archives[resetArchiveName] = true;
         }
@@ -35932,24 +35937,24 @@ function runMiniGameEntry(mode, args) {
     for (var diceKey in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, diceKey)) {
         var oldUser = state.dice.users[diceKey], oldGame = oldUser.game;
         if (oldGame && oldGame.phase === "DONE" && oldGame.day < day) {
-            archive(oldGame.day).games[oldGame.id] = oldGame; oldUser.game = null;
+            archive(oldGame.day, true).games[oldGame.id] = oldGame; oldUser.game = null;
         }
     }
     for (var rewardId in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, rewardId)) {
         var oldReward = state.ledger[rewardId], ownerGame = state.dice.users["$" + oldReward.accountId];
         if (oldReward.status === "PAID" && oldReward.day < day && !(oldReward.kind === "dice" && ownerGame && ownerGame.game && ownerGame.game.rewardId === rewardId)) {
-            archive(oldReward.day).rewards[rewardId] = oldReward; delete state.ledger[rewardId];
+            archive(oldReward.day, true).rewards[rewardId] = oldReward; delete state.ledger[rewardId];
         }
     }
     for (var noticeId in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, noticeId)) {
         var oldNotice = state.notices[noticeId];
         if (oldNotice.state === "CLAIMED") oldNotice.state = "UNCERTAIN";
-        if (oldNotice.day < day && oldNotice.state !== "WAITING") { archive(oldNotice.day).notices[noticeId] = oldNotice; delete state.notices[noticeId]; }
+        if (oldNotice.day < day && oldNotice.state !== "WAITING") { archive(oldNotice.day, true).notices[noticeId] = oldNotice; delete state.notices[noticeId]; }
     }
     if (state.vault) for (var awardKey in state.vault.awards) if (Object.prototype.hasOwnProperty.call(state.vault.awards, awardKey)) {
         var oldAward = state.vault.awards[awardKey];
         if (oldAward.notice === "CLAIMED") oldAward.notice = "UNCERTAIN";
-        if (oldAward.day < day && oldAward.paid && oldAward.notice !== "WAITING") { archive(oldAward.day).days["vaultAward:" + awardKey] = oldAward; delete state.vault.awards[awardKey]; }
+        if (oldAward.day < day && oldAward.paid && oldAward.notice !== "WAITING") { archive(oldAward.day, true).days["vaultAward:" + awardKey] = oldAward; delete state.vault.awards[awardKey]; }
     }
     var messages = [], vaultResult = null, diceUser = null, diceReplay = false, createdVaultNow = false;
     if (mode === "command") {
@@ -35984,9 +35989,9 @@ function runMiniGameEntry(mode, args) {
         if (request.kind === "vaultAdmin") {
             var operation = null, operationTarget = null;
             if (request.action === "round") {
-                var resetPrevious = JSON.parse(JSON.stringify(state.vault.current));
+                var resetPrevious = state.vault.current; // 새 금고는 별도 객체로 교체하므로 종료 회차의 전체 복사가 필요 없다.
                 operation = args.requestGameId !== undefined && args.requestGameId !== state.vault.current.id && !createdVaultNow ? { changed: false, text: "금고가 이미 새로 열렸어요. /금고로 확인해 주세요." } : resetVaultRobberyRound(state.vault, Date.now(), args.requestAt);
-                if (operation.changed) archive(day).days["vault:" + resetPrevious.id] = resetPrevious;
+                if (operation.changed) archive(day, true).days["vault:" + resetPrevious.id] = resetPrevious;
                 messages.push(operation.text);
             } else {
                 operationTarget = resolveVaultRobberyUser(data, request.target);
@@ -35999,7 +36004,7 @@ function runMiniGameEntry(mode, args) {
                 messages.push("🎯 금고 횟수 초기화 완료\n━━━━━━━━━━━━\n대상: [" + targetLabel + "]\n오늘 사용 횟수: 0회\n남은 도전: " + targetAttempts.limit + "/" + targetAttempts.limit + "회");
             }
             if (operation.changed) {
-                var operationArchive = archive(day);
+                var operationArchive = archive(day, true);
                 if (!operationArchive.operations) operationArchive.operations = {};
                 requireMiniGameObject(operationArchive.operations, "운영 기록");
                 operationArchive.operations[String(java.util.UUID.randomUUID())] = { at: now, operatorId: accountId, operatorName: args.nickname, targetId: operationTarget ? data.member[operationTarget].serverRaidAccount.id : null, targetName: operationTarget, action: request.action, result: "DONE", gameId: state.vault.current.id };
@@ -36032,7 +36037,7 @@ function runMiniGameEntry(mode, args) {
                 diceReplay = true;
                 if (game) messages.push(buildMiniGameDiceMessage(game, 4, isHoiPassPremiumActive(data, args.sender), Math.max(0, getMiniGameDiceLimit(data, args.sender) - diceUser.used)));
             } else {
-                if (game) { archive(game.day).games[game.id] = game; diceUser.game = null; }
+                if (game) { archive(game.day, true).games[game.id] = game; diceUser.game = null; }
                 var start = startMiniGameDice(state, accountId, args.nickname, day, now, args.room, catalog("dialogues"), getMiniGameDiceLimit(data, args.sender));
                 diceUser = start.user || diceUser;
                 if (start.kind === "locked") messages.push("🔒 호이패스 프리미엄 전용 미니게임이에요.\n👉 /미니게임");
@@ -36052,8 +36057,8 @@ function runMiniGameEntry(mode, args) {
     memberChanged = credit.changed;
     commit();
     if (state.vault && state.vault.current.winner !== null) {
-        var finishedVault = JSON.parse(JSON.stringify(state.vault.current));
-        if (openVaultRobberySecondRound(state.vault, Date.now())) { archive(day).days["vault:" + finishedVault.id] = finishedVault; commit(); }
+        var finishedVault = state.vault.current;
+        if (openVaultRobberySecondRound(state.vault, Date.now())) { archive(day, true).days["vault:" + finishedVault.id] = finishedVault; commit(); }
     }
     var creditText = credit.count ? "🎁 밸런스 게임 보상 도착!\n━━━━━━━━━━━━\n🎯 다수 선택 적중: " + credit.count + "회\n💰 지급 포인트: 🅟" + formatServerRaidPrize(credit.total) + "\n✅ 보유 포인트에 지급됐어요!\n\n" : "";
     if (mode === "command") {

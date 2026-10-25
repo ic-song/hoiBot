@@ -761,3 +761,13 @@ Because `var` is function-scoped, Rhino/JavaScript hoisted that local declaratio
 - Run `node --check main.js`.
 - Run `node --check Info.js`.
 - Confirm no local `var/let/const noticeMsg` declaration remains in `main.js`.
+
+## 2026-10-26 — 미니게임 저장 중 메모리 부담 후보와 중복 생성 감소
+
+- 상태: 기능 유지 최적화·개발 검증 완료. 실제 기기 오류의 정확한 원인은 미확정.
+- 제보: 실행 중 `java.lang.OutOfMemoryError: Failed to allocate a 44902440 byte allocation with 25165824 free bytes and 37MB until OOM, max allowed footprint 388782904, growth limit 402653184`.
+- 발생 명령·전체 스택은 확보되지 않아 정확한 할당 위치와 미니게임과의 인과관계는 미확정이다. 앱의 Java 힙 부족은 확인됐으며 누수로 단정하지 않는다.
+- 운영 소스 ver_2.705의 `runMiniGameEntry`에서 월별 보관 객체와 비교용 전체 문자열, 여러 번의 직렬화, 새 진행 문자열, 원문 게시 저널 문자열이 함께 생성되는 경로를 확인했다. 금고 교체 전 전체 복제도 확인했다.
+- 수정: 보관의 실제 변경을 표시해 변경된 월만 직렬화하고 비교 원문은 보관하지 않는다. 사용하지 않는 일일 리셋 비교 문자열과 금고 전체 복제를 제거하며 저장 변경 판정 후 이전 진행 비교 원문을 해제한다. 기존 저널 형식·검증·게시 순서·중복 지급 방지는 유지한다.
+- 검증: Node 기능/예외98그룹 및 Rhino 전체 컴파일·Java 파일·동시 실행·지급 중단·재시작 복구24개 출력 통과. 사용자 요청에 따라 전후 성능·힙 수치 비교는 생략했다.
+- 상세: `tools/mini_game_memory_validation.md`. 실제 Android 힙 오류 재현·운영 기기 업로드/컴파일은 수행하지 않았다.
