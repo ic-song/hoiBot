@@ -15,7 +15,7 @@ function block(source, marker) {
     }
     throw Error("unclosed " + marker);
 }
-const c = { allsee: "<ALLSEE>", getCurrentDate: () => "2026-10-06", getAttendanceKstDateKey: () => "2026-10-06", formatDateTime: () => "synthetic-time",
+const c = { java: { util: { UUID: { randomUUID: () => "synthetic-signup-id" } } }, allsee: "<ALLSEE>", getCurrentDate: () => "2026-10-06", getAttendanceKstDateKey: () => "2026-10-06", formatDateTime: () => "synthetic-time",
     getCurrentContext: () => ({ isDev: false }), isDebuggerFlag: false, data: { member: {}, shop: {} }, petData: {},
     adventureOnboardingData: { users: {} }, room: "", isGroupChat: true, sender: "합성 여", msg: "", filePath: "prod-member", memberPetPath: "prod-pet", memberTitlePath: "prod-title", attendanceLightPath: "prod-light", adventureOnboardingPath: "prod-onboarding",
     syncStoneBoxShopItems: () => false, validateSignupNickname: () => ({ ok: true }), buildAdventureStartMessage: () => "start",
@@ -24,7 +24,7 @@ const c = { allsee: "<ALLSEE>", getCurrentDate: () => "2026-10-06", getAttendanc
 vm.createContext(c);
 vm.runInContext(main.slice(main.indexOf("const room1 = "), main.indexOf("// 이미 생성된 회원의 미지정 소속")) + ";this.room15=room15;this.testRoom=testRoom;this.roomToServer=roomToServer;", c);
 vm.runInContext(block(main, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);
-for (const name of ["assignUnspecifiedMemberServer", "normalizeHoiServerLabel", "initializeMember", "recordLightAttendanceOnly", "migrateLightSearchAuthenticationToMember", "migrateLightAttendanceToMember", "getNoticeTargetRooms"])
+for (const name of ["getDailyResetCycle", "assignUnspecifiedMemberServer", "normalizeHoiServerLabel", "initializeMember", "recordLightAttendanceOnly", "migrateLightSearchAuthenticationToMember", "migrateLightAttendanceToMember", "getNoticeTargetRooms"])
     vm.runInContext(block(main, "function " + name + "("), c);
 const bootstrapStart = main.indexOf("var pointShopBootstrapChanged = ");
 const bootstrapEnd = main.indexOf("commonStepStart = Date.now();", bootstrapStart);

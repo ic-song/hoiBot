@@ -55,7 +55,7 @@ function attendanceContext() {
     const context = baseContext();
     context.today = "20260927";
     context.getAttendanceKstDateKey = () => context.today;
-    return load(context, main, ["applyAdventureExperienceBooster", "addMemberExperienceWithTierBonus", "hasAttendedToday", "getAuthorityTitleBadge", "processAttendanceForUser", "buildAttendanceCompleteMessage"]);
+    return load(context, main, ["getDailyResetCycle", "applyAdventureExperienceBooster", "addMemberExperienceWithTierBonus", "hasAttendedToday", "getAuthorityTitleBadge", "processAttendanceForUser", "buildAttendanceCompleteMessage"]);
 }
 
 function round1() {
@@ -161,7 +161,9 @@ function round3() {
     assert.strictEqual(oldLimit.member.user.chatExperienceDaily.notified, true);
     assert.strictEqual(c.awardDailyChatExperience(JSON.parse(JSON.stringify(oldLimit)), "user").total, 0, "재시작 후 추가 지급 금지");
     c.today = "20260928";
-    assert.strictEqual(c.awardDailyChatExperience(oldLimit, "user").total, 3, "다음 날 한도 재개");
+    assert.strictEqual(c.awardDailyChatExperience(oldLimit, "user").total, 0, "날짜만 바뀌면 한도 유지");
+    delete oldLimit.member.user.chatExperienceDaily; // 실제 /리셋이 지우는 기록
+    assert.strictEqual(c.awardDailyChatExperience(oldLimit, "user").total, 3, "리셋 후 한도 재개");
     assert.strictEqual(oldLimit.member.user.chatExperienceDaily.experience, 3);
     assert(c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").includes("1,000 / 1,000 EXP"));
     assert(!c.buildDailyChatExperienceLimitMessage(data, {}, {}, "user").startsWith("[👑호이패스 프리미엄👑]"));

@@ -19,7 +19,7 @@ put:(p,v)=>{disk[p]=JSON.stringify(v);},get:p=>JSON.parse(disk[p]),raw:p=>disk[p
 failPath:p=>{failWrite=(_d,t)=>t===p;},replyFail:v=>{replyFailure=v;}};`)(require, __dirname);
     const c = f.c;
     vm.runInContext(model, c);
-    for (const n of ['isSafePointValue', 'roundToTwo', 'getMyGuildId', 'createContextReplier', 'isCarrotTradeCommand', 'isAccountSuspensionBlockedMessage', 'getChatExperienceQueryTarget', 'isPassFreeHomeBadgeCommand']) vm.runInContext(f.block(main, 'function ' + n + '('), c);
+    for (const n of ['getDailyResetCycle', 'isSafePointValue', 'roundToTwo', 'getMyGuildId', 'createContextReplier', 'isCarrotTradeCommand', 'isAccountSuspensionBlockedMessage', 'getChatExperienceQueryTarget', 'isPassFreeHomeBadgeCommand']) vm.runInContext(f.block(main, 'function ' + n + '('), c);
     c.day = '20261023'; c.getAttendanceKstDateKey = () => c.day;
     c.isAttendanceFreeCommand = () => false;
     c.isGuildTerritoryWarCommandLockActive = () => false;
@@ -161,10 +161,11 @@ function runTests() {
         assert.deepEqual(store().guilds.$g.last.payments.map(p=>p.amount),[144000000,108000000,72000000,36000000]);
         assert.equal(Object.values(f.read().member).reduce((t,m)=>t+m.point,0),9*2e10-40000000);
     });
-    group('일일7회·개인 추가 제한 없음·자정 진행 보존·다음 날짜 재모집', () => {
+    group('일일7회·개인 추가 제한 없음·자정 횟수 유지·리셋 회차 재모집', () => {
         for(let i=0;i<7;i++){recruit();run('/마블중단','master');for(const u of ['a','b','c','d'])run('/마블중단확인',u);}
         assert(run('/마블시작','master').includes('7회'));assert.equal(saves().length,0);
-        c.day='20261024';run('/마블시작','master');for(const u of ['a','b','c','d'])run('/마블준비',u);assert.equal(store().guilds.$g.usage.count,1);
+        c.day='20261024';assert(run('/마블시작','master').includes('7회'));assert.equal(saves().length,0);
+        const resetData=f.read();resetData.dailyResetCycle=1;f.write(resetData);recruit();assert.equal(store().guilds.$g.usage.count,1);
         const before=f.raw(marblePath);c.day='20261025';footer(run('/마블판','a'));assert.equal(f.raw(marblePath),before);assert.equal(saves().length,0);
     });
     group('정산 범위 오류는 순위 먼저 보존·조회 무저장·재시도 재추첨/중복 없음', () => {
