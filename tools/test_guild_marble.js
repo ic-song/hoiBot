@@ -161,9 +161,9 @@ function runTests() {
         assert.deepEqual(store().guilds.$g.last.payments.map(p=>p.amount),[144000000,108000000,72000000,36000000]);
         assert.equal(Object.values(f.read().member).reduce((t,m)=>t+m.point,0),9*2e10-40000000);
     });
-    group('일일5회·개인 추가 제한 없음·자정 진행 보존·다음 날짜 재모집', () => {
-        for(let i=0;i<5;i++){recruit();run('/마블중단','master');for(const u of ['a','b','c','d'])run('/마블중단확인',u);}
-        assert(run('/마블시작','master').includes('5회'));assert.equal(saves().length,0);
+    group('일일7회·개인 추가 제한 없음·자정 진행 보존·다음 날짜 재모집', () => {
+        for(let i=0;i<7;i++){recruit();run('/마블중단','master');for(const u of ['a','b','c','d'])run('/마블중단확인',u);}
+        assert(run('/마블시작','master').includes('7회'));assert.equal(saves().length,0);
         c.day='20261024';run('/마블시작','master');for(const u of ['a','b','c','d'])run('/마블준비',u);assert.equal(store().guilds.$g.usage.count,1);
         const before=f.raw(marblePath);c.day='20261025';footer(run('/마블판','a'));assert.equal(f.raw(marblePath),before);assert.equal(saves().length,0);
     });

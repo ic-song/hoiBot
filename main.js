@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.700"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.701"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1118,7 +1118,7 @@ const GLOBAL_CONFIG = {
         fileName: "guildMarble.json",
         pendingName: "guildMarblePending.json",
         schemaVersion: 1,
-        limits: { players: 4, rounds: 10, dailyGames: 5, minFee: 1, maxFee: 10, pointUnit: 100000000, maxLevel: 2 },
+        limits: { players: 4, rounds: 10, dailyGames: 7, minFee: 1, maxFee: 10, pointUnit: 100000000, maxLevel: 2 },
         rates: { feePercent: 10, prizes: [40, 30, 20, 10] },
         rewards: { startGold: [1000, 1020, 1030, 1040], lapGold: 200, luckGold: 100, chanceWin: 200, chanceLoss: 100, chanceWinRate: 0.5 },
         colors: ["🔴", "🔵", "🟢", "🟡"],
@@ -1166,11 +1166,11 @@ const GLOBAL_CONFIG = {
             "• 보이스룸을 이용하며 함께 즐겨도 괜찮아요.",
             "━━━━━━━━━━━━",
             "🎲 길드 이용 횟수",
-            "• 길드당 한국시간 기준 하루 5회 이용할 수 있어요.",
-            "• 개인별로 따로 하루 5회가 주어지는 것은 아니에요.",
+            "• 길드당 한국시간 기준 하루 7회 이용할 수 있어요.",
+            "• 개인별로 따로 하루 7회가 주어지는 것은 아니에요.",
             "• 실제 경기가 시작될 때 이용 횟수 1회를 사용해요.",
             "• 시작 전 준비 취소·모집 취소·참가 조건 미충족에는 차감하지 않아요.",
-            "• 다음 한국시간 날짜에 5회로 다시 이용할 수 있어요.",
+            "• 다음 한국시간 날짜에 7회로 다시 이용할 수 있어요.",
             "━━━━━━━━━━━━",
             "💰 참가비와 상금",
             "• 참가비는 1인당 1억~10억 포인트예요.",

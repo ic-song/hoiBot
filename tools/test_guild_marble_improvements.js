@@ -16,11 +16,11 @@ function callback(command, user = 'a', dev = false, room) {
     c.response(room || c.testRoom, dev ? 'dev/' + command.replace(/^\//,'') : command, user, true, c.replier, null, 'com.kakao.talk');
     return f.replies().join('\n');
 }
-group('기존3회 사용 저장본은 무저장 조회 후 4·5회 가능·6회 무차감·자정 재개', () => {
-    run('/마블시작','master'); run('/마블모집취소','master'); const s = store(); s.guilds.$g.usage.count = 3; f.put(c.DATA_ROOT_PATH+c.GLOBAL_CONFIG.guildMarble.fileName,s);
-    const before = f.files(); assert(run('/길드마블','sub').includes('3/5회')); assert.deepEqual(f.files(),before);
-    for (const count of [4,5]) { recruit(); assert.equal(store().guilds.$g.usage.count,count); refund(); }
-    const used=f.files(); assert(run('/마블시작','sub').includes('5회를 모두')); assert.deepEqual(f.files(),used);
+group('기존5회 사용 저장본은 무저장 조회 후 6·7회 가능·8회 무차감·자정 재개', () => {
+    run('/마블시작','master'); run('/마블모집취소','master'); const s = store(); s.guilds.$g.usage.count = 5; f.put(c.DATA_ROOT_PATH+c.GLOBAL_CONFIG.guildMarble.fileName,s);
+    const before = f.files(); assert(run('/길드마블','sub').includes('5/7회')); assert.deepEqual(f.files(),before);
+    for (const count of [6,7]) { recruit(); assert.equal(store().guilds.$g.usage.count,count); refund(); }
+    const used=f.files(); assert(run('/마블시작','sub').includes('7회를 모두')); assert.deepEqual(f.files(),used);
     c.day='20261024'; run('/마블시작','sub'); for(const u of ['a','b','c','d'])run('/마블준비',u); assert.equal(store().guilds.$g.usage.count,1);
 });
 group('모집·준비 취소·참가 실패는 횟수0·시작만1회·시작 후 중단은 반환 없음', () => {
@@ -92,9 +92,9 @@ group('구매·건설 대기 현재 차례 유지·명령1회·부족 시 통과
 group('기존 모집/경기/정산 파일은 스키마 변경·강제 저장 없이 조회 가능', () => {
     for(const state of ['RECRUITING','PLAYING','SETTLING']){seed();if(state==='RECRUITING')run('/마블시작','sub');else recruit();const s=store();s.guilds.$g.usage.count=3;if(state==='SETTLING')c.prepareGuildMarbleSettlement(s.guilds.$g.current,'PAYOUT');f.put(c.DATA_ROOT_PATH+c.GLOBAL_CONFIG.guildMarble.fileName,s);const before=f.files();run('/마블판','a');assert.deepEqual(f.files(),before);assert.equal(saves().length,0);}
 });
-group('가이드는 하루5회·역할·단축키·새요금·행운100 전체 교체·이용권보류·아이템불변', () => {
+group('가이드는 하루7회·역할·단축키·새요금·행운100 전체 교체·이용권보류·아이템불변', () => {
     const data=f.read();data.member.master.bag['길드마블이용권🎲']=7;data.member.a.bag['길드마블이용권🎲(/길드마블사용 숫자)']=5;f.write(data);const before=f.files();const guide=run('/마블가이드','a');assert.equal(f.replies().length,1);assert.equal(guide.split('<ALLSEE>').length-1,1);
-    for(const wanted of ['보이스룸을 이용하며','하루 5회','부길드마스터','ㅁㅂ','ㅁㄱ','ㅁㅌ','75 / Lv.2 225','120 / Lv.2 360','150 / Lv.2 450','100 골드를 고정','실제 참가자 4명'])assert(guide.includes(wanted),wanted);
+    for(const wanted of ['보이스룸을 이용하며','하루 7회','부길드마스터','ㅁㅂ','ㅁㄱ','ㅁㅌ','75 / Lv.2 225','120 / Lv.2 360','150 / Lv.2 450','100 골드를 고정','실제 참가자 4명'])assert(guide.includes(wanted),wanted);
     assert(!/이용권|길드마블사용|하루 3회/.test(guide));assert.deepEqual(f.files(),before);assert(!guide.includes('👥 참가자 현황\n'));assert(!guide.includes('🏠 현재 길드마블 상황\n'));
     assert.equal(c.getGuildMarbleRequest('/길드마블사용 1'),null);recruit();refund();assert.equal(f.read().member.master.bag['길드마블이용권🎲'],7);assert.equal(f.read().member.a.bag['길드마블이용권🎲(/길드마블사용 숫자)'],5);
     const catalog=JSON.parse(fs.readFileSync(path.join(__dirname,'../data/itemList.json'),'utf8'));assert(!catalog.nonItems.includes('길드마블이용권🎲'));
