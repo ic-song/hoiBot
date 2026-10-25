@@ -92,7 +92,7 @@ function checks(){
   f.clock(f.now()+1);ok(f.run('/금고 '+second.answer));let s=f.state();assert.equal(s.vault.current.id,second.id);assert.equal(s.vault.current.number,2);assert(s.vault.current.winner);
   assert.equal(f.read().member.a.point,points+1000000000);assert.equal(Object.keys(s.vault.awards).length,2);assert.equal(Object.values(s.ledger).filter(r=>r.kind==='vault'&&r.status==='PAID').length,2);
   ok(f.run('/금고'));assert.equal(f.state().vault.current.id,second.id);
-  f.clock(f.now()+86400000);ok(f.run('/금고'));assert.equal(f.state().vault.current.number,1);assert.equal(f.state().vault.current.prize,500000000);
+  f.clock(f.now()+86400000);f.dailyReset();ok(f.run('/금고'));assert.equal(f.state().vault.current.number,1);assert.equal(f.state().vault.current.prize,500000000);
  });
  test('live reset changes password/hints only, preserving prize, daily uses, members and regular number',()=>{
   f.seed();ok(f.run('/금고'));let s=f.state();s.vault.current.answer=666;s.vault.current.low=300;s.vault.current.high=900;s.vault.current.prize=100000000000;f.putState(s);
@@ -137,7 +137,7 @@ function checks(){
  });
  test('regular first/second prize history and paid evidence both archive without overwriting',()=>{
   f.seed();ok(f.run('/금고'));const first=f.state().vault.current.id;ok(f.run('/금고 '+f.state().vault.current.answer));const second=f.state().vault.current.id;f.clock(f.now()+1);ok(f.run('/금고 '+f.state().vault.current.answer));
-  f.clock(f.now()+86400000);ok(f.run('/금고'));const archive=JSON.parse(f.disk()[base+'miniGameArchive_2026-10.json']);
+  f.clock(f.now()+86400000);f.dailyReset();ok(f.run('/금고'));const archive=JSON.parse(f.disk()[base+'miniGameArchive_2026-10.json']);
   assert(archive.days['vault:'+first]&&archive.days['vault:'+second]);assert(archive.days['vaultAward:'+first]&&archive.days['vaultAward:'+second]);assert.equal(Object.values(archive.rewards).filter(r=>r.kind==='vault').length,2);
  });
  test('failed first-to-second publication recovers same second and never reissues first prize',()=>{
@@ -149,9 +149,9 @@ function checks(){
   f.seed(true);const prod=f.disk()[base+'member.json'];delete f.disk()['/sdcard/호이랜드_dev/balanceQuestions.json'];ok(f.run('/밸런스','a',true));ok(f.run('/금고','a',true));f.clock(f.now()+1);ok(f.run('/금고리셋','master',true));
   assert(!f.disk()[base+stateName]);assert.equal(f.disk()[base+'member.json'],prod);assert(f.disk()['/sdcard/호이랜드_dev/balanceQuestions.json']);
  });
-test('all prior passwords and random endpoints produce a different valid password and width-600 hint',()=>{
+test('all prior passwords and random endpoints produce a different valid password without a generated special hint',()=>{
   const original=c.Math.random;
-  try{for(let previous=1;previous<=1000;previous++)for(const edge of [0,.999999]){c.Math.random=()=>edge;const round=c.createVaultRobberyRound(20751,500000000,previous);assert.notEqual(round.answer,previous);assert(round.answer>=1&&round.answer<=1000);assert.equal(round.high-round.low,600);assert(round.low<=round.answer&&round.answer<=round.high);}}
+  try{for(let previous=1;previous<=1000;previous++)for(const edge of [0,.999999]){c.Math.random=()=>edge;const round=c.createVaultRobberyRound(20751,500000000,previous);assert.notEqual(round.answer,previous);assert(round.answer>=1&&round.answer<=1000);assert(!('low' in round)&&!('high' in round));}}
   finally{c.Math.random=original;}
  });
  test('nickname versus another account ID ambiguity is rejected; @ forces exact nickname only',()=>{
@@ -171,13 +171,7 @@ test('all prior passwords and random endpoints produce a different valid passwor
   const text=files.replies().join('\n');assert(text.includes('자료를 불러오지 못했어요'));assert(!text.includes('balanceQuestions.json')&&!text.includes('Error:'));
   assert(log.error.includes('balanceQuestions.json'));assert.equal(log.msg,'/밸런스');assert.equal(files.raw(g.filePath),member);assert(!files.raw(base+stateName));
  });
- test('expired premium host stage remains paused without immediate retry loop or new RNG',()=>{
-  f.seed();ok(f.run('/호월주사위'));const s=f.state(),d=f.read();d.member.a.pass='hoi';f.write(d);
-  f.auto(800);assert.equal(f.state().dice.users['$'+f.id()].game.rolls.length,1);
-  const delay=c.getMiniGameWorkDelay(f.state(),f.now(),f.read(),c.buildServerRaidAccountIndex(f.read()));assert(delay>1000);
-  f.auto(30000);assert.equal(f.state().dice.users['$'+f.id()].game.rolls.length,1);
-  d.member.a.pass='premium';f.write(d);ok(f.run('/호월주사위'));f.auto(1);assert.equal(f.state().dice.users['$'+f.id()].game.rolls.length,2);
- });
+ test('waiting pair does not auto-roll; expired premium can finish but cannot start again',()=>{f.seed();ok(f.run('/호월주사위'));const first=f.state().dice.users['$'+f.id()].game,d=f.read();d.member.a.pass='hoi';f.write(d);f.auto(30000);assert.deepEqual(f.state().dice.users['$'+f.id()].game.rolls,first.rolls);const delay=c.getMiniGameWorkDelay(f.state(),f.now(),f.read(),c.buildServerRaidAccountIndex(f.read()));assert(delay>1000);ok(f.run('ㅎㅈ'));const done=f.state().dice.users['$'+f.id()].game;assert.equal(done.id,first.id);assert.equal(done.phase,'DONE');assert.deepEqual(done.rolls.slice(0,2),first.rolls);assert(ok(f.run('/호월주사위')).includes('전용'));});
  console.log('PASS mini game revision '+groups+' groups');
 }
 if(require.main===module)checks();
