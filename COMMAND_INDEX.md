@@ -102,9 +102,9 @@ Status: VERIFIED
 
 ## Files and Commands
 
-- `main.js`: `GLOBAL_CONFIG.gmEducation`, 교육 요청/원본 검증·진행·보상·매뉴얼·실적 함수. `Info.js`: `/내정보` 레벨 다음 교육 상태 한 줄과 경로별 읽기 캐시.
+- `main.js`: `GLOBAL_CONFIG.gmEducation`, 교육 요청/원본 검증·진행·보상·매뉴얼·실적 함수. `Info.js`: `/내정보`·`/정보 닉네임` 레벨 다음 교육 상태 한 줄과 경로별 읽기 캐시.
 - `isGmEducationOperator`: 기존 `isMaster` 판정과 허용 방을 유지하고 정확한 `교육방`에서는 기존 Master 명단에 든 사용자에게 교육 명령만 허용한다. 전역 `isMaster` 방 목록은 바꾸지 않는다. Admin/일반 사용자는 제외한다.
-- `/교육`: 기존 GM 흐름 안내와 전체보기 12챕터 제목 목록, `/교육 1`~`12`: 공통 매뉴얼, `/교육 아이디`: 진행/다음 챕터. 숫자 계정은 `/교육 @닉네임` 또는 기존 `serverRaidAccount.id`로 구분한다. 공백 닉네임도 전체 이름으로 조회한다. 11장은 홈뱃지·큐브, 12장은 후원 안내다. 실제 재화 사용·결제는 완료 조건이 아니다.
+- `/교육`: 기존 GM 흐름 안내와 전체보기 12챕터 제목 목록, `/교육 1`~`12`: 공통 매뉴얼, `/교육 아이디`: 진행/다음 챕터. 숫자 계정은 `/교육 @닉네임` 또는 기존 `serverRaidAccount.id`로 구분한다. 공백 닉네임도 전체 이름으로 조회한다. 11장은 홈뱃지·큐브, 12장은 `/패키지가방`에서 패키지 이름·보유 수량을 확인하는 교육이다. 실제 재화 사용·결제는 완료 조건이 아니다.
 - `/교육완료 아이디 챕터번호`: 마지막 정수 1~12와 그 앞의 전체 닉네임을 분리. 다음 챕터만 허용하며 재완료·순서 건너뛰기·추가 안내 문구는 지급하지 않는다. 계정당 총 12개 챕터, 챕터당 `다이아상자💎(소)` 1개, 수료 추가 보상 없음. 기존 10챕터 기록은 10/12로 유지하고 11·12만 추가 지급한다.
 - `/교육실적`, `/교육실적 GM아이디`, `/교육실적 전체` 뒤 선택적 `YYYY-MM`: 기본은 현재 KST 월, 지정 월은 최초 정상 완료 시각 기준의 챕터 수·날짜별 상세 기록을 집계한다. 담당 GM 교대·닉변에도 내부 계정 ID를 유지한다. 개수 내림차순·동률 1등/1등/3등·닉네임 정렬, 본문 최대 3명과 전체 순위/GM별 기록을 `allsee`로 표시한다. 인원·수료 인원·금액은 표시하지 않는다. 미래·빈 달·형식 오류·없는 계정·예약어 충돌은 각각 안내하며 `/교육실적 초기화`는 과거 월 조회를 안내한다.
 - `/교육명령어`: 독립된 전체보기 명령 안내. 상단/상세의 지난달 예시는 KST 직전 월로 자동 변경한다. `/교육`에 새 명령 목록을 붙이지 않는다. 조회는 무저장이다.
@@ -119,8 +119,8 @@ Status: VERIFIED
 - 신규 요청의 `completionClock: 1`은 요청 영속화 후 회원을 다시 읽고 보상과 같은 저장에 완료 시각을 확정한다. 미지급 요청이 다음 달 처음 확정되면 새 월, 기지급 뒤 원본 저장만 복구하면 최초 영수증의 월을 유지한다. 기존 pending은 기존 at를 보존한다. 기존 원본의 완료 날짜가 없으면 원본 그대로 `기존 누적·월 미분류` 상세로 인계하고 월별 실적에서는 제외한다. 잘못된 날짜·영수증·JSON은 계속 오류다.
 - 두 GM의 완료 요청은 기존 쓰기 흐름 잠금으로 직렬화한다. 분리 회원의 레이드/운영 로그 슬롯은 그대로 유지한다. pending/원본의 게시 중단 `.rollback`도 기존 파일 검증 후 복구한다.
 - PROD `/sdcard/호이랜드/`, DEV `/sdcard/호이랜드_dev/`의 교육/요청/회원 파일은 분리한다. 최초 전용 파일 미생성은 미진행, 기존 잘못된 JSON/형식·영수증 불일치는 오류로 남기며 빈 데이터로 덮지 않는다.
-- 조회는 무저장. `/내정보`는 교육 파일의 수정 시각/크기별 캐시를 사용하고, 지급 영수증과 일치한 완료 수만 표시한다. 복구 대기 중에는 이전 확정 수만 노출한다.
-- 검증: `tools/test_gm_education.js`, `tools/test_gm_education_rhino.js`, `tools/test_oct25_ready.js`, `tools/oct25_ready_validation.md`. 이전 이력은 `tools/gm_education_validation.md`.
+- 조회는 무저장. `/내정보`와 `/정보 닉네임`은 환경별 교육 파일의 수정 시각/크기별 캐시를 공유하고, 각 조회 대상자의 지급 영수증과 일치한 완료 수만 표시한다. 복구 대기 중에는 이전 확정 수만 노출한다. `/정보`는 레벨 다음에 `📘 n/12챕터 완료 · 다음 n+1챕터`, 12개 완료 시 `📘 12/12챕터 완료 · 전체 수료`를 표시한다.
+- 검증: `tools/test_gm_education.js`, `tools/test_gm_education_rhino.js`, `tools/test_education_territory_update.js`, `tools/test_oct25_ready.js`, `tools/oct25_ready_validation.md`. 이전 이력은 `tools/gm_education_validation.md`.
 
 ---
 
@@ -1366,6 +1366,7 @@ Status: VERIFIED
 - 자동 공격은 1~7번 중 현재 공격 길드가 점령한 영지를 제외한 후보를 균등 무작위로 선택하고 수동 공격과 같은 공통 처리 경로를 사용한다. 회차·턴 토큰·사용자 키로 자동/수동 중복 공격을 방지하며, 예약 당시 길드와 실행 시점의 실제 길드가 다르면 실행하지 않는다.
 - While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/영지온`, `/영지오프`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`. `Info.js` silently suppresses its matching response, including `/레벨`, because `main.js` owns the single user-facing restriction notice.
 - `/길드영지시작`은 기존 지정 운영자에 더해 서버관리자방의 등록된 Admin·Master가 실행할 수 있다. `/길드영지종료`의 기존 지정 운영자 권한은 유지하며, 방 권한이 진행 상태·준비 길드·펫무쌍 상호 차단 조건을 우회하지 않는다.
+- `/영지공격 숫자`의 수동 입력 제한시간은 `GLOBAL_CONFIG.guildTerritory.timers.turnTimeoutMs`의 10초다. 자동공격 유예 1초, 시간초과 3회 누적 탈락, 공격 판정·보상·자동준비는 유지한다.
 
 ---
 
@@ -1843,6 +1844,7 @@ Status: VERIFIED
 
 - Admin inspection path for another user's summary
 - Useful when debugging user-specific bag/title visibility without impersonating sender
+- 레벨 다음에 조회 대상의 호월 교육 진행도를 표시한다. `/내정보`와 교육 읽기 캐시·원본/영수증 검증을 공유하며, 완료 수 0~12와 다음 챕터/전체 수료를 조회만 한다.
 
 ---
 

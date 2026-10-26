@@ -725,7 +725,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		var petData, petSkillData, titleData, petTitleData; // 공통 제한 검사 후 실제 사용하는 명령에서만 로드
 
-		if (msg.startsWith("/정보") && (isAdminIdentity(sender) || isMasterIdentity(sender))) {
+		if ((msg === "/정보" || /^\/정보 +.+$/.test(msg)) && (isAdminIdentity(sender) || isMasterIdentity(sender))) {
 			petData = loadJsonFile(memberPetPath);
 			titleData = loadJsonFile(memberTitlePath);
 			var targetUser = msg.substring("/정보".length).trim();
@@ -733,6 +733,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				let memberInfo = data.member[targetUser];
 				let titleInfo = titleData.member[targetUser];
 				if (memberInfo) {
+					var targetEducationPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.gmEducation.fileName);
+					var targetEducationFile = new java.io.File(targetEducationPath);
+					var targetEducationStamp = targetEducationFile.exists() ? String(targetEducationFile.lastModified()) + ":" + targetEducationFile.length() : "missing";
+					var targetEducationCached = gmEducationInfoCache[targetEducationPath];
+					if (!targetEducationCached || targetEducationCached.stamp !== targetEducationStamp) {
+						var targetEducationStore = targetEducationFile.exists() ? requireGmEducationStore(loadJsonFile(targetEducationPath)) : { version: 1, users: {} };
+						targetEducationCached = { stamp: targetEducationStamp, store: targetEducationStore };
+						gmEducationInfoCache[targetEducationPath] = targetEducationCached;
+					}
+					var targetEducationPending = new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.gmEducation.pendingName)).exists();
+					var targetEducationCount = getGmEducationProgress(targetEducationCached.store, memberInfo, targetEducationPending); // 조회 대상자의 확정 교육 챕터 수
 					let currentExp = memberInfo.exp;
 					let nextLevelExp = getInfoLevelRequiredExperience(memberInfo.lv);
 					let totallike = memberInfo.like;
@@ -782,6 +793,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 						"\n" +
 						"• 모험가 칭호: " + getInfoAdventureLevelTitle(memberInfo.lv) + "\n" +
 						"• 레벨: " + memberInfo.lv + "\n" +
+						"• 호월 교육: 📘 " + targetEducationCount + "/" + getGmEducationChapterCount() + "챕터 완료 · " + (targetEducationCount === getGmEducationChapterCount() ? "전체 수료" : "다음 " + (targetEducationCount + 1) + "챕터") + "\n" +
 						"• 가입일: " +
 						formatDate(memberInfo.join) +
 						"\n" +
