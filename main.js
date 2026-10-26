@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.708"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.709"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1104,7 +1104,7 @@ const GLOBAL_CONFIG = {
         stateName: "miniGameState.json", pendingName: "miniGamePending.json", archivePrefix: "miniGameArchive_",
         questionFile: "balanceQuestions.json", dialogueFile: "howoriDiceDialogues.json",
         questionCount: 1300, dialogueCount: 200, reasonLimit: 80, messageLimit: 12000,
-        balanceMinimum: 5, dicePremium: 2, hostDelayMs: 800, retryMs: 30000,
+        balanceMinimum: 5, dicePremium: 4, hostDelayMs: 800, retryMs: 30000,
         rewards: { balance: 100000000, win: 30000000, draw: 20000000, loss: 10000000 },
         dialogueSizes: { start: 20, roll: 40, host_ahead: 30, host_behind: 30, mid_tie: 20, user_win: 20, user_loss: 20, final_draw: 20 }
     },
@@ -36386,7 +36386,7 @@ function advanceMiniGameDice(state, game, dialogues, now, userInput) {
 // 확정된 주사위 단계별 메시지를 숫자 재추첨 없이 구성하는 함수
 function buildMiniGameDiceMessage(game, part, premium, remaining) {
     var rolls = game.rolls;
-    if (part === 1) return "[👑호이패스 프리미엄👑]\n🎮 미니게임 목록: /미니게임\n🎲 호월이를 이겨라! · 첫 번째 굴림\n━━━━━━━━━━━━\n👤 [" + game.name + "]  🎲【 " + rolls[0] + " 】\n🐹 호월이       🎲【 " + rolls[1] + " 】\n\n🐹 “" + game.quotes[2].text + "”\n━━━━━━━━━━━━\n👉 /호월주사위 or ㅎㅈ\n한 번 더 굴려 승부를 결정하세요!\n📖 게임 안내\n" + allsee + "\n🎲 호월이를 이겨라! 이용 안내\n━━━━━━━━━━━━\n각자 주사위를 두 번 굴려 합계를 비교해요.\n합계가 높으면 승리, 같으면 무승부예요.\n\n👉 /호월주사위 or ㅎㅈ\n두 번 입력하면 한 판이 완료돼요.\n\n🎁 승리 🅟3,000만\n🤝 무승부 🅟2,000만\n🍀 패배 🅟1,000만\n\n👑 호이패스 프리미엄 전용\n🎟️ 계정당 하루 2판 · 일일 /리셋 시 초기화\n※ 두 번 입력해도 이용 횟수는 1회만 사용돼요.";
+    if (part === 1) return "[👑호이패스 프리미엄👑]\n🎮 미니게임 목록: /미니게임\n🎲 호월이를 이겨라! · 첫 번째 굴림\n━━━━━━━━━━━━\n👤 [" + game.name + "]  🎲【 " + rolls[0] + " 】\n🐹 호월이       🎲【 " + rolls[1] + " 】\n\n🐹 “" + game.quotes[2].text + "”\n━━━━━━━━━━━━\n👉 /호월주사위 or ㅎㅈ\n한 번 더 굴려 승부를 결정하세요!\n📖 게임 안내\n" + allsee + "\n🎲 호월이를 이겨라! 이용 안내\n━━━━━━━━━━━━\n각자 주사위를 두 번 굴려 합계를 비교해요.\n합계가 높으면 승리, 같으면 무승부예요.\n\n👉 /호월주사위 or ㅎㅈ\n두 번 입력하면 한 판이 완료돼요.\n\n🎁 승리 🅟3,000만\n🤝 무승부 🅟2,000만\n🍀 패배 🅟1,000만\n\n👑 호이패스 프리미엄 전용\n🎟️ 계정당 하루 " + GLOBAL_CONFIG.miniGames.dicePremium + "판 · 매일 자정 초기화\n※ 두 번 입력해도 이용 횟수는 1회만 사용돼요.";
     var result = game.result, label = result === "win" ? "🏆 승리!" : result === "draw" ? "🤝 무승부!" : "🍀 패배! 위로 선물";
     return "🎲 호월이를 이겨라! · 최종 결과\n━━━━━━━━━━━━\n👤 [" + game.name + "]\n🎲【 " + rolls[0] + " 】+【 " + rolls[2] + " 】= 합계 " + (rolls[0] + rolls[2]) + "\n\n🐹 호월이\n🎲【 " + rolls[1] + " 】+【 " + rolls[3] + " 】= 합계 " + (rolls[1] + rolls[3]) + "\n━━━━━━━━━━━━\n" + label + " 🅟" + formatServerRaidPrize(GLOBAL_CONFIG.miniGames.rewards[result]) + (game.paid ? " 지급" : " 지급 대기") + "\n🐹 “" + game.quotes[4].text + "”\n\n🎟️ 오늘 남은 게임: " + remaining + "회";
 }

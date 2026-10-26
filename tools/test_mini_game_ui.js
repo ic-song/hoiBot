@@ -30,7 +30,7 @@ test('two inputs yield exactly two complete screens, one count and one reward; n
  const f=fixture(),p=f.read().member.a.point;const first=ok(f.run('ㅎㅈ'));assert.equal(f.replies().length,1);assert(first.includes('첫 번째 굴림')&&first.includes('👤')&&first.includes('🐹 호월이')&&first.includes('/호월주사위 or ㅎㅈ'));
  assert(first.indexOf('<ALLSEE>')>first.indexOf('📖 게임 안내'));assert(!first.includes(' 지급'));assert.equal(first.split('“').length-1,1);
  const fixed=game(f);assert.equal(fixed.rolls.length,2);f.auto(30000);assert.equal(f.replies().length,0);assert.deepEqual(game(f).rolls,fixed.rolls);
- const final=ok(next(f,'/호월주사위'));assert.equal(f.replies().length,1);assert(final.includes('최종 결과')&&final.includes('합계')&&final.includes('오늘 남은 게임: 1회'));
+ const final=ok(next(f,'/호월주사위'));assert.equal(f.replies().length,1);assert(final.includes('최종 결과')&&final.includes('합계')&&final.includes('오늘 남은 게임: 3회'));
  assert(!final.includes('프리미엄')&&!final.includes('<ALLSEE>')&&!final.includes('/미니게임'));assert.equal(final.split('“').length-1,1);
  assert.equal(f.state().dice.users['$'+f.id()].used,1);assert.deepEqual(game(f).rolls.slice(0,2),fixed.rolls);assert.equal(f.read().member.a.point,p+f.c.GLOBAL_CONFIG.miniGames.rewards[game(f).result]);
 });
@@ -38,8 +38,8 @@ test('all three results show the correct amount and preserve fair six-face rolls
  for(const [rolls,result,amount] of [[[6,1,6,1],'win',30000000],[[1,6,1,6],'loss',10000000],[[3,3,3,3],'draw',20000000]]){const f=fixture();ok(f.run('/금고'));f.c.pickMiniGameDialogue=(s,rows,category)=>rows.find(x=>x.category===category);let i=0;f.c.Math.random=()=>((rolls[i++]-.5)/6);ok(f.run('/호월주사위'));const before=f.read().member.a.point;const out=ok(next(f));const done=game(f);assert.deepEqual(done.rolls,rolls);assert.equal(done.result,result);assert.equal(f.read().member.a.point,before+amount);assert(out.includes(' 지급'));}
  for(let face=1;face<=6;face++){const f=fixture();ok(f.run('/금고'));f.c.pickMiniGameDialogue=(s,rows,category)=>rows.find(x=>x.category===category);f.c.Math.random=()=>(face-.5)/6;ok(f.run('ㅎㅈ'));ok(next(f));assert.deepEqual(game(f).rolls,[face,face,face,face]);}
 });
-test('daily 2 games, cross-room/alias count sharing and no extra fee for second input',()=>{
- const f=fixture();for(let i=0;i<2;i++){ok(next(f,i?'ㅎㅈ':'/호월주사위'));ok(next(f,i?'/호월주사위':'ㅎㅈ'));assert.equal(f.state().dice.users['$'+f.id()].used,i+1);}assert(ok(next(f)).includes('모두 사용'));assert.equal(f.state().dice.users['$'+f.id()].used,2);
+test('daily 4 games, cross-room/alias count sharing and no extra fee for second input',()=>{
+ const f=fixture();for(let i=0;i<4;i++){ok(next(f,i?'ㅎㅈ':'/호월주사위'));ok(next(f,i?'/호월주사위':'ㅎㅈ'));assert.equal(f.state().dice.users['$'+f.id()].used,i+1);}assert(ok(next(f)).includes('모두 사용'));assert.equal(f.state().dice.users['$'+f.id()].used,4);
 });
 test('expiry and midnight preserve started game; only a new premium game is allowed',()=>{
  const f=fixture();ok(f.run('/호월주사위'));const first=game(f),d=f.read();d.member.a.pass='';f.write(d);f.clock(f.now()+86400000);const final=ok(f.run('ㅎㅈ'));assert(final.includes('오늘 남은 게임: 0회'));assert.equal(game(f).id,first.id);assert.deepEqual(game(f).rolls.slice(0,2),first.rolls);assert(ok(next(f)).includes('전용'));
