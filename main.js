@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.712"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.713"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -94,6 +94,7 @@ const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const PET_SKILL_BAG_MAX_COUNT = 100;
 const PET_SKILL_SELL_PRICE = 1000000000;
 const PET_SKILL_COMPAT_GROUPS = [
+    ["금고털이범", "경제사범"],
     ["십원", "구원"],
     ["헌터", "만렙헌터"],
     ["건물주", "하느님 위에 갓물주"],

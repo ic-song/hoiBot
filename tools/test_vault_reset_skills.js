@@ -68,4 +68,17 @@ test('skill catalogue grades, rates, info and actual equip confirmation match pl
  assert.equal(c.getPetSkillData('경제사범📙').grade,'한정판');assert.equal(c.getPetSkillActualRate(c.getPetSkillData('경제사범')),0);assert.equal(c.getPetSkillData('금고털이범').grade,'A');assert(Math.abs(c.getPetSkillActualRate(c.getPetSkillData('금고털이범'))-.4)<1e-9);assert(Math.abs(c.getPetSkillTotalRate()-100)<1e-9);
  for(const name of ['금고털이범','경제사범']){const f=x.commandFixture(h.main);f.reset();const skills=f.read(f.files.skills);skills[f.user].petSkills.bag[name]=1;f.seed(f.files.skills,skills);const index=f.c.getPetSkillBagList(f.c.loadJsonFile(f.files.skills),f.user).indexOf(name)+1;f.run('/펫스킬장착 '+index);assert(f.read(f.files.skills)[f.user].petSkills.equipped.includes(name));assert.equal(f.snapshot().replies.at(-1),h.fixture().c.GLOBAL_CONFIG.vaultRobbery.equipMessages[name]);assert(c.getPetSkillData(name).effect.includes('🔐'));}
 });
+test('mutual equip exclusion in either order preserves bag, equipped data and member file',()=>{
+ const x=require('./test_pet_skill_lookup');
+ for(const [first,second] of [['금고털이범','경제사범'],['경제사범','금고털이범']]){
+  const f=x.commandFixture(h.main);f.reset();const skills=f.read(f.files.skills);skills[f.user].petSkills.bag={[first]:1,[second]:1};f.seed(f.files.skills,skills);
+  const index=name=>f.c.getPetSkillBagList(f.c.loadJsonFile(f.files.skills),f.user).indexOf(name)+1;
+  f.run('/펫스킬장착 '+index(first));const before=f.snapshot();
+  const result=f.run('/펫스킬장착 '+index(second));assert(result.includes('함께 장착할 수 없습니다.'));assert(result.includes(first));
+  const after=f.snapshot();assert.deepEqual(after.disk,before.disk);assert.equal(after.saveCount,0);assert.deepEqual(f.read(f.files.skills)[f.user].petSkills.equipped,[first]);
+  const real=f.c.loadJsonFile(f.files.skills);real[f.user].petSkills.equipped.splice(0,99,first+'📙');assert.equal(f.c.isPetSkillCompatible(real,f.user,second+'📙').ok,false);
+  f.run('/펫스킬소멸 1');f.run('/펫스킬장착 '+index(second));assert.deepEqual(f.read(f.files.skills)[f.user].petSkills.equipped,[second]);
+ }
+ const f=x.commandFixture(h.main);f.reset();const skills=f.c.loadJsonFile(f.files.skills);skills[f.user].petSkills.equipped.push('경제사범');assert.equal(f.c.isPetSkillCompatible(skills,f.user,'쇼핑광').ok,true);assert.equal(f.c.isPetSkillCompatible(skills,f.user,'괴도루팡').ok,true);
+});
 console.log('PASS vault reset/skills '+groups+' groups (synthetic only)');
