@@ -8,7 +8,7 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ## 2026-10-26 - 영지전 진행 중 일반 명령·단축어·운영자 예외 우회
 
-Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/territory-command-lock, 운영 미반영)
+Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/territory-command-lock, ver_2.711 운영 반영 대상)
 
 - 제보: 영지전 중 `/펫정보`, `ㅊㅊ` 등이 실행되고 영지전 명령이 응답하지 않은 것으로 보임. 운영 로그·오류 줄 번호는 제공되지 않았다.
 - 확인한 원인: Main의 일반 차단은 슬래시 입력만 검사하고, 운영자 전역 예외와 공통 차단보다 먼저 실행되는 별도 진입부가 있었다. Info 역시 비슬래시 단축어·전역 `/정보`·DEV 환경 예외가 있었다. 기존 소스에서 `ㅊㅊ` 미차단과 디버깅 명령 허용을 재현했다. 공격 무응답의 직접 원인까지 입증한 것은 아니다.
