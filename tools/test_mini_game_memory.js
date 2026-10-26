@@ -11,6 +11,7 @@ test('vault replacements preserve the complete old round while later usage reset
     const before = f.state().vault.current; f.clock(f.now() + 1); ok(f.run('/금고리셋', 'master'));
     const archived = readArchive(f); assert.deepEqual(archived.days['vault:' + before.id], before);
     assert.equal(Object.keys(archived.operations).length, 1);
+    f.clock(f.now() + 1); ok(f.run('/금고 100'));
     ok(f.run('/금고횟수리셋 a', 'master'));
     assert.deepEqual(readArchive(f).days['vault:' + before.id], before);
     assert.equal(f.state().vault.current.usage['$' + f.id()], 0);

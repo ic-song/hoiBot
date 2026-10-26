@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.711"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.712"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -108,6 +108,8 @@ const PET_SKILL_FIXED_ACTUAL_RATES = {
     C: 1.5
 };
 const PET_SKILL_LIST = [
+    { name: "경제사범", grade: "한정판", limitedEdition: true, openable: false, effect: "누군가는 말합니다.\n“적당한 사기는 사기꾼이라 부르지만,\n그 규모가 조 단위가 되면 경제사범이라 부릅니다.”\n\n🔐 장착 시 금고 도전 횟수 +4회\n※ 금고털이범과 효과 중복 불가" },
+    { name: "금고털이범", grade: "A", rate: 0.4, effect: "어른들은 말씀하셨습니다.\n“바늘 도둑이 소도둑 된다.”\n그 말이 사실임이 증명되었습니다.\n\n🔐 장착 시 금고 도전 횟수 +2회\n※ 괴도루팡과 효과 중복 불가" },
 
     { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
@@ -1111,11 +1113,16 @@ const GLOBAL_CONFIG = {
     },
     vaultRobbery: {
         schemaVersion: 3,
-        limits: { minNumber: 100, maxNumber: 99999, normalAttempts: 3, passAttempts: 5, dailyGames: 10 },
+        skillBonuses: { "금고털이범": 2, "경제사범": 4 },
+        equipMessages: {
+            "금고털이범": "🔐 금고털이범📙 장착 완료!\n━━━━━━━━━━━━\n바늘 도둑이 소도둑 된다더니…\n이제는 금고까지 노리기 시작했습니다. 😏\n\n🔐 금고 도전 횟수 +2회 적용!\n※ 괴도루팡과 효과 중복 불가\n━━━━━━━━━━━━",
+            "경제사범": "💰 경제사범📙 장착 완료!\n━━━━━━━━━━━━\n푼돈에는 관심 없습니다.\n이제 목표는 조 단위입니다. 😎\n\n🔐 금고 도전 횟수 +4회 적용!\n※ 금고털이범과 효과 중복 불가\n━━━━━━━━━━━━"
+        },
+        limits: { minNumber: 100, maxNumber: 99999, normalAttempts: 3, passAttempts: 5, dailyGames: 15 },
         stages: [
             { through: 3, label: "쉬움", minNumber: 100, maxNumber: 999, prize: 200000000, recentHints: 3 },
             { through: 7, label: "보통", minNumber: 1000, maxNumber: 9999, prize: 500000000, recentHints: 5 },
-            { through: 10, label: "어려움", minNumber: 10000, maxNumber: 99999, prize: 1000000000, recentHints: 5 }
+            { through: 15, label: "어려움", minNumber: 10000, maxNumber: 99999, prize: 1000000000, recentHints: 5 }
         ],
         legacy: { minNumber: 1, maxNumber: 1000, hintWidth: 600, recentHints: 3, passAttempts: 3, minPrize: 500000000, maxPrize: 100000000000 }, // 이전 확정 보상 검증 전용
         dayMs: 86400000
@@ -6909,6 +6916,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                             "🎰 전설의 로또 광맥을 발견하면\n" +
                             "광부에서 재벌로 인생역전할 수 있습니다!";
                     }
+                    var vaultEquipMessage = GLOBAL_CONFIG.vaultRobbery.equipMessages[normalizePetSkillName(equipName)];
+                    if (vaultEquipMessage) equipMsg = vaultEquipMessage;
                     replier.reply(equipMsg);
                     return;
                 }
@@ -35818,6 +35827,8 @@ function runMiniGameEntry(mode, args) {
             }
         }
     }
+    var vaultSkillData = mode === "command" && (request.kind === "vault" || request.kind === "vaultAdmin" && request.action === "usage") ? loadJsonFile(petSkillDataPath) : null;
+    var vaultSkillBonus = vaultSkillData ? getVaultRobberySkillBonus(vaultSkillData, args.sender) : 0;
     var state = stateExists ? requireMiniGameState(loadJsonFile(statePath)) : createMiniGameState();
     if (mode === "command" && request.kind === "dice" && !isHoiPassPremiumActive(data, args.sender)) {
         var diceAccount = data.member[args.sender].serverRaidAccount;
@@ -36009,7 +36020,7 @@ function runMiniGameEntry(mode, args) {
                 else if (args.requestGameId !== undefined && args.requestGameId !== state.vault.current.id && !createdVaultNow || args.requestAt <= state.vault.current.openedAt) vaultResult = { kind: "gameChanged" };
                 else if (state.vault.replyPending && state.vault.replyPending["$" + accountId]) vaultResult = state.vault.replyPending["$" + accountId];
                 else {
-                    vaultResult = applyVaultRobberyGuess(state.vault, accountId, args.nickname, request.request.guess, isHoiPassPremiumActive(data, args.sender), now);
+                    vaultResult = applyVaultRobberyGuess(state.vault, accountId, args.nickname, request.request.guess, isHoiPassPremiumActive(data, args.sender), now, vaultSkillBonus);
                     if (vaultResult.changed) {
                         if (!state.vault.replyPending) state.vault.replyPending = {};
                         state.vault.replyPending["$" + accountId] = vaultResult;
@@ -36031,7 +36042,7 @@ function runMiniGameEntry(mode, args) {
             } else {
                 operationTarget = resolveVaultRobberyUser(data, request.target);
                 var targetId = data.member[operationTarget].serverRaidAccount.id;
-                var targetAttempts = getVaultRobberyAttempts(state.vault, targetId, isHoiPassPremiumActive(data, operationTarget));
+                var targetAttempts = getVaultRobberyAttempts(state.vault, targetId, isHoiPassPremiumActive(data, operationTarget), getVaultRobberySkillBonus(vaultSkillData, operationTarget));
                 state.vault.current.usage["$" + targetId] = 0;
                 if (state.vault.replyPending) delete state.vault.replyPending["$" + targetId];
                 operation = { changed: targetAttempts.used !== 0 };
@@ -36097,7 +36108,7 @@ function runMiniGameEntry(mode, args) {
     }
     var creditText = credit.count ? "🎁 밸런스 게임 보상 도착!\n━━━━━━━━━━━━\n🎯 다수 선택 적중: " + credit.count + "회\n💰 지급 포인트: 🅟" + formatServerRaidPrize(credit.total) + "\n✅ 보유 포인트에 지급됐어요!\n\n" : "";
     if (mode === "command") {
-        if (request.kind === "vault") messages.push(buildVaultRobberyMessage(state.vault, accountId, isHoiPassPremiumActive(data, args.sender), isHoiPassPremiumActive(data, args.sender), args.nickname, vaultResult));
+        if (request.kind === "vault") messages.push(buildVaultRobberyMessage(state.vault, accountId, isHoiPassPremiumActive(data, args.sender), isHoiPassPremiumActive(data, args.sender), args.nickname, vaultResult, vaultSkillBonus));
         if (request.kind === "balance") messages = buildMiniGameBalanceMessages(state, accountId, creditText).concat(messages);
         if (request.kind === "vote" && creditText) messages.unshift(creditText);
         if (request.kind === "stats") {
@@ -36642,7 +36653,7 @@ function requireVaultRobberyStore(store) {
     }
     for (var accountKey in round.usage) if (Object.prototype.hasOwnProperty.call(round.usage, accountKey)) {
         requireVaultRobberyInteger(round.usage[accountKey]);
-        if (accountKey.charAt(0) !== "$" || accountKey.length < 2 || round.usage[accountKey] > (store.schemaVersion < 3 ? config.legacy.passAttempts : config.limits.passAttempts)) throw new Error("금고 계정 횟수 형식 오류");
+        if (accountKey.charAt(0) !== "$" || accountKey.length < 2 || round.usage[accountKey] > (store.schemaVersion < 3 ? config.legacy.passAttempts : config.limits.passAttempts + config.skillBonuses["경제사범"])) throw new Error("금고 계정 횟수 형식 오류");
     }
     for (var i = 0; i < round.hints.length; i++) {
         var hint = round.hints[i];
@@ -36680,7 +36691,7 @@ function requireVaultRobberyStore(store) {
     return store;
 }
 
-// 지급이 확정된 금고 다음 순번을 열되 열 번째 이후에는 종료하는 함수
+// 지급이 확정된 금고 다음 순번을 열되 일일 한도에서 종료하는 함수
 function openNextVaultRobberyRound(store, now) {
     var round = store.current, award = round.winner && store.awards[round.winner];
     if (store.schemaVersion !== 3 || !award || !award.paid || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return false;
@@ -36697,28 +36708,41 @@ function resolveVaultRobberyUser(data, input) {
     return Object.prototype.hasOwnProperty.call(data.member, input) && Object.prototype.hasOwnProperty.call(accounts, input) && accounts[input].user !== user ? null : user;
 }
 
-// 미지급 금고는 보존하고 운영자 리셋에서도 당일 횟수와 정규 진행 차수를 유지하는 함수
+// 미지급 보상은 보존하고 진행·힌트·전체 개인 횟수를 함께 초기화하는 함수
 function resetVaultRobberyRound(store, now, requestAt) {
     for (var key in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, key) && !store.awards[key].paid) return { changed: false, text: "⏳ 금고 상금 지급·복구 대기 중이에요. 지급 상태를 먼저 확인해 주세요." };
     var round = store.current;
-    if (store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return { changed: false, text: "🎉 금일 금고 10개 모두 개방!\n⏰ 다음 금고는 자정 이후 시작됩니다." };
     if ((requestAt === undefined ? now : requestAt) <= round.openedAt) return { changed: false, text: "금고가 이미 새로 열렸어요. /금고로 확인해 주세요." };
     if (round.winner !== null) store.awards[round.winner].nextOpened = true;
-    startVaultRobberyRound(store, round.day, store.dailyWinners.length + 1, round.manual, now, round.answer, round.usage);
-    return { changed: true, text: "🔐 금고 리셋 완료\n━━━━━━━━━━━━\n새 비밀번호로 금고를 다시 시작했어요.\n최근 힌트를 초기화했어요.\n\n🎯 유저별 사용 횟수는 유지됩니다.\n👉 /금고" };
+    store.dailyWinners = [];
+    store.replyPending = {};
+    startVaultRobberyRound(store, round.day, 1, true, now, round.answer, {});
+    return { changed: true, text: "🔐 금고 리셋 완료\n━━━━━━━━━━━━\n새 비밀번호로 첫 금고부터 다시 시작했어요.\n오늘의 금고 진행과 최근 힌트를 초기화했어요.\n\n🎯 모든 유저의 사용 횟수를 0회로 초기화했어요.\n👉 /금고" };
 }
 
-// 현재 프리미엄 자격과 이미 사용한 횟수로 당일 잔여 횟수를 계산하는 함수
-function getVaultRobberyAttempts(store, accountId, premium) {
-    var limit = premium ? GLOBAL_CONFIG.vaultRobbery.limits.passAttempts : GLOBAL_CONFIG.vaultRobbery.limits.normalAttempts;
+// 실제 장착 스킬 중 금고 추가 횟수의 최댓값을 반환하는 함수
+function getVaultRobberySkillBonus(petSkillData, user) {
+    var skills = petSkillData && petSkillData[user] && petSkillData[user].petSkills;
+    var equipped = skills && skills.equipped || [], bonuses = GLOBAL_CONFIG.vaultRobbery.skillBonuses;
+    var bonus = 0; // 같은 스킬이나 두 신규 스킬을 중복 가산하지 않는 추가 횟수
+    for (var i = 0; i < equipped.length; i++) {
+        var name = normalizePetSkillName(equipped[i]);
+        if (Object.prototype.hasOwnProperty.call(bonuses, name)) bonus = Math.max(bonus, bonuses[name]);
+    }
+    return bonus;
+}
+
+// 현재 프리미엄·장착 효과와 이미 사용한 횟수로 당일 잔여 횟수를 계산하는 함수
+function getVaultRobberyAttempts(store, accountId, premium, skillBonus) {
+    var limit = (premium ? GLOBAL_CONFIG.vaultRobbery.limits.passAttempts : GLOBAL_CONFIG.vaultRobbery.limits.normalAttempts) + (skillBonus || 0);
     var key = "$" + accountId, used = accountId && Object.prototype.hasOwnProperty.call(store.current.usage, key) ? store.current.usage[key] : 0;
     return { limit: limit, used: used, remaining: Math.max(0, limit - used) };
 }
 
 // 검증된 도전을 일일 잔여 횟수 확인 후 한 번만 접수하는 함수
-function applyVaultRobberyGuess(store, accountId, nickname, guess, premium, now) {
+function applyVaultRobberyGuess(store, accountId, nickname, guess, premium, now, skillBonus) {
     requireVaultRobberyStore(store);
-    var round = store.current, attempts = getVaultRobberyAttempts(store, accountId, premium);
+    var round = store.current, attempts = getVaultRobberyAttempts(store, accountId, premium, skillBonus);
     if (typeof accountId !== "string" || !accountId || typeof nickname !== "string") throw new Error("금고 참여 계정 오류");
     if (round.winner !== null || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return { kind: "closed", changed: false, awardKey: round.winner };
     requireVaultRobberyInteger(guess);
@@ -36742,8 +36766,8 @@ function applyVaultRobberyGuess(store, accountId, nickname, guess, premium, now)
 }
 
 // 운영자 리게임 표시와 금고 순번을 함께 표시하는 함수
-function getVaultRobberyRoundLabel(round) {
-    return (round.manual ? "🔐 운영자 리게임\n" : "") + "🏆 오늘의 금고: " + (round.number || 1) + "/10";
+function getVaultRobberyRoundLabel(round, completedCount) {
+    return (round.manual ? "🔐 운영자 리게임\n" : "") + "🏆 오늘의 금고: " + (completedCount === undefined ? (round.number || 1) : completedCount) + "/" + GLOBAL_CONFIG.vaultRobbery.limits.dailyGames;
 }
 
 // 현재 일일 회차에서 실제 지급을 마친 금고 상금을 합산하는 함수
@@ -36765,19 +36789,19 @@ function buildVaultRobberyWinners(store) {
         var award = store.awards[keys[i]], stage = getVaultRobberyStage(Math.min(i + 1, GLOBAL_CONFIG.vaultRobbery.limits.dailyGames));
         out += "[" + (i + 1) + "번째] " + stage.label + " · 🔐" + award.answer + " · 🅟" + formatServerRaidPrize(award.amount) + (award.paid ? "" : " · 지급 확인 중") + "\n🏆 [" + award.name + "]\n\n";
     }
-    return out + "━━━━━━━━━━━━\n🎉 금일 당첨: " + keys.length + "/10회\n💰 총 지급 상금: 🅟" + formatServerRaidPrize(getVaultRobberyPaidTotal(store)) + "\n⏰ 매일 자정에 초기화돼요.";
+    return out + "━━━━━━━━━━━━\n🎉 금일 당첨: " + keys.length + "/" + GLOBAL_CONFIG.vaultRobbery.limits.dailyGames + "회\n💰 총 지급 상금: 🅟" + formatServerRaidPrize(getVaultRobberyPaidTotal(store)) + "\n⏰ 매일 자정에 초기화돼요.";
 }
 
 // 현재 난이도·힌트·횟수와 접힌 당첨자 목록을 표시하는 함수
-function buildVaultRobberyMessage(store, accountId, premium, premiumHeader, nickname, result) {
+function buildVaultRobberyMessage(store, accountId, premium, premiumHeader, nickname, result, skillBonus) {
     var round = store.current, kind = result && result.kind ? result.kind : "view";
     var stage = getVaultRobberyStage(round.number), winners = buildVaultRobberyWinners(store);
     var header = (premiumHeader ? "[👑호이패스 프리미엄👑]\n" : "") + "🔐 호월이의 금고털이 (" + stage.label + ")\n━━━━━━━━━━━━\n";
     var latest = round.winner && store.awards[round.winner];
-    if (store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames && (!latest || latest.paid)) return header + "🎉 금일 금고 10개 모두 개방!\n🏆 오늘의 당첨: " + store.dailyWinners.length + "/10회\n💰 총 지급 상금: 🅟" + formatServerRaidPrize(getVaultRobberyPaidTotal(store)) + "\n⏰ 다음 금고는 자정 이후 시작됩니다.\n━━━━━━━━━━━━" + winners;
+    if (store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames && (!latest || latest.paid)) return header + "🎉 금일 금고 " + GLOBAL_CONFIG.vaultRobbery.limits.dailyGames + "개 모두 개방!\n🏆 오늘의 당첨: " + store.dailyWinners.length + "/" + GLOBAL_CONFIG.vaultRobbery.limits.dailyGames + "회\n💰 총 지급 상금: 🅟" + formatServerRaidPrize(getVaultRobberyPaidTotal(store)) + "\n⏰ 다음 금고는 자정 이후 시작됩니다.\n━━━━━━━━━━━━" + winners;
     if (kind === "invalid") return header + "📝 " + stage.minNumber + "~" + stage.maxNumber + " 사이의 정수 하나를 입력해 주세요.\n사용법: /금고 숫자\n예시: /금고 " + Math.floor((stage.minNumber + stage.maxNumber) / 2);
     if (kind === "dateChanged" || kind === "gameChanged") return header + "⏰ 새 금고가 열렸어요. 횟수는 사용하지 않았어요.\n🔎 /금고 입력으로 현황을 확인해 주세요.";
-    var attempts = getVaultRobberyAttempts(store, accountId, premium);
+    var attempts = getVaultRobberyAttempts(store, accountId, premium, skillBonus);
     if (kind === "exhausted") return header + "🎯 남은 도전: 0/" + attempts.limit + "회\n오늘의 도전 기회를 모두 사용했어요.\n\n⏰ 매일 자정에 도전 횟수가 초기화돼요.\n🔎 /금고 입력으로 현황을 확인할 수 있어요." + winners;
     var won = kind === "won", award = result && result.awardKey ? store.awards[result.awardKey] : round.winner && store.awards[round.winner];
     var out = header;
@@ -36785,7 +36809,7 @@ function buildVaultRobberyMessage(store, accountId, premium, premiumHeader, nick
         out += (won ? "🎉 철컥! 금고가 열렸어요!" : "🔓 이 금고는 이미 열렸어요!") + "\n🏆 당첨자: [" + award.name + "]\n🔐" + award.answer + "\n💰 당첨 상금: 🅟" + formatServerRaidPrize(award.amount) + "\n" + (award.paid ? "✅ 보유 포인트에 지급됐어요!" : "⏳ 당첨은 확정됐으며 상금 지급 확인 중이에요.") + "\n━━━━━━━━━━━━\n";
     }
     if (kind === "wrong") out += "[" + nickname + "] 🔐" + result.guess + " → " + (result.direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n\n";
-    out += getVaultRobberyRoundLabel(round) + "\n💰 오늘의 상금: 🅟" + formatServerRaidPrize(round.prize) + "\n🎯 남은 도전: " + attempts.remaining + "/" + attempts.limit + "회\n🔐 비밀번호 범위: " + stage.minNumber + "~" + stage.maxNumber + "\n━━━━━━━━━━━━\n💡 최근 힌트 · " + stage.recentHints + "회\n";
+    out += getVaultRobberyRoundLabel(round, store.dailyWinners.length) + "\n💰 오늘의 상금: 🅟" + formatServerRaidPrize(round.prize) + "\n🎯 남은 도전: " + attempts.remaining + "/" + attempts.limit + "회\n🔐 비밀번호 범위: " + stage.minNumber + "~" + stage.maxNumber + "\n━━━━━━━━━━━━\n💡 최근 힌트 · " + stage.recentHints + "회\n";
     if (!round.hints.length) out += "아직 도전 기록이 없어요.\n첫 힌트를 남겨보세요!\n";
     for (var i = round.hints.length - 1; i >= 0; i--) out += "[" + round.hints[i].name + "] 🔐" + round.hints[i].guess + " → " + (round.hints[i].direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n";
     out += "━━━━━━━━━━━━\n📝 /금고 숫자" + winners;

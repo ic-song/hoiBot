@@ -1,4 +1,4 @@
-// 10단계 금고의 실제 명령·저장·이관·일일 리셋을 합성 파일로 검증한다.
+// 15개 금고의 실제 명령·저장·이관·전체 리셋을 합성 파일로 검증한다.
 const assert=require('assert'),h=require('./test_mini_games');
 const base='/sdcard/호이랜드/';let groups=0;
 function ok(r){assert(!r.error,r.error);return r.text;}
@@ -13,17 +13,18 @@ function legacy(f,won=false,paid=true,number=1){
  f.putState(s);return {key,id};
 }
 function test(name,fn){fn();console.log('PASS VAULT BALANCE '+(++groups)+' '+name);}
-test('ten ordered vaults pay 56억 exactly, repeat winners allowed, then all further inputs/admin reset are closed',()=>{
+test('fifteen ordered vaults pay 106억 exactly; closed guesses stay unchanged and MASTER can restart',()=>{
  const f=fixture(),before=Object.values(f.read().member).reduce((a,u)=>a+u.point,0),ids=[];
- for(let n=1;n<=10;n++){
+ for(let n=1;n<=15;n++){
   const s=f.state(),r=s.vault.current,stage=f.c.getVaultRobberyStage(n);ids.push(r.id);
   assert.equal(r.number,n);assert.equal(r.prize,stage.prize);assert(r.answer>=stage.minNumber&&r.answer<=stage.maxNumber);
-  const text=win(f,n<=5?'a':n<=8?'b':'c');assert(!text.includes('/리셋'));assert(!text.includes('포인트 포인트'));
-  assert.equal(f.state().vault.dailyWinners.length,n);if(n<10){assert.equal(f.state().vault.current.number,n+1);assert.equal(f.state().vault.current.hints.length,0);}
+  const text=win(f,n<=5?'a':n<=8?'b':n<=11?'c':n<=14?'admin':'master');assert(!text.includes('/리셋'));assert(!text.includes('포인트 포인트'));
+  assert.equal(f.state().vault.dailyWinners.length,n);if(n<15){assert.equal(f.state().vault.current.number,n+1);assert.equal(f.state().vault.current.hints.length,0);}
  }
- const after=Object.values(f.read().member).reduce((a,u)=>a+u.point,0);assert.equal(after-before,5600000000);assert.equal(new Set(ids).size,10);
- const s=f.state(),snapshot=JSON.stringify(s.vault);for(const msg of ['/금고','/금고 100','/금고 99999','/금고 1','/금고리셋']){const text=ok(next(f,msg,msg==='/금고리셋'?'master':'a'));assert(text.includes('10개 모두 개방'));assert.equal(JSON.stringify(f.state().vault),snapshot);}
- const text=ok(f.run('/금고'));assert(text.includes('56억'));assert(text.indexOf('[10번째]')<text.indexOf('[1번째]'));assert(text.indexOf('<ALLSEE>')<text.indexOf('[10번째]'));for(const id of ids)assert(text.includes('🔐'+s.vault.awards[id].answer));
+ const after=Object.values(f.read().member).reduce((a,u)=>a+u.point,0);assert.equal(after-before,10600000000);assert.equal(new Set(ids).size,15);
+ const s=f.state(),snapshot=JSON.stringify(s.vault);for(const msg of ['/금고','/금고 100','/금고 99999','/금고 1']){const text=ok(next(f,msg));assert(text.includes('15개 모두 개방'));assert.equal(JSON.stringify(f.state().vault),snapshot);}
+ const text=ok(f.run('/금고'));assert(text.includes('106억'));assert(text.indexOf('[15번째]')<text.indexOf('[1번째]'));assert(text.indexOf('<ALLSEE>')<text.indexOf('[15번째]'));for(const id of ids)assert(text.includes('🔐'+s.vault.awards[id].answer));
+ ok(next(f,'/금고리셋','master'));assert.equal(f.state().vault.current.number,1);assert.deepEqual(f.state().vault.dailyWinners,[]);assert.deepEqual(f.state().vault.current.usage,{});s.vault.awards[s.vault.current.winner].nextOpened=true;assert.deepEqual(f.state().vault.awards,s.vault.awards);assert.deepEqual(f.state().ledger,s.ledger);
 });
 test('normal/hoi three and premium five: exhausted correct answers do not win; upgrades/downgrades keep usage',()=>{
  for(const user of ['a','b','c']){const f=fixture(),limit=user==='a'?5:3;for(let i=0;i<limit;i++)ok(next(f,'/금고 100',user));assert.equal(f.state().vault.current.usage['$'+f.id(user)],limit);const s=JSON.stringify(f.state().vault);assert(ok(next(f,'/금고 '+f.state().vault.current.answer,user)).includes('기회를 모두'));assert.equal(JSON.stringify(f.state().vault),s);}
@@ -31,7 +32,7 @@ test('normal/hoi three and premium five: exhausted correct answers do not win; u
 });
 test('all stages reject values outside their own range without consuming or adding hints; strict command guards',()=>{
  const f=fixture();for(const msg of ['/금고 0','/금고 99','/금고 100000','/금고 -1','/금고 1.5','/금고 100 해봐','/금고 100\n','/금고\n100']){const s=JSON.stringify(f.state().vault);ok(next(f,msg));assert.equal(JSON.stringify(f.state().vault),s);}
- for(let n=1;n<=10;n++){const st=stageStore(f.c,n,f.state().vault.current.day),p=f.c.getVaultRobberyStage(n);for(const guess of [p.minNumber-1,p.maxNumber+1]){const s=JSON.stringify(st);assert.equal(f.c.applyVaultRobberyGuess(st,'x','x',guess,true,f.now()).kind,'invalid');assert.equal(JSON.stringify(st),s);}}
+ for(let n=1;n<=15;n++){const st=stageStore(f.c,n,f.state().vault.current.day),p=f.c.getVaultRobberyStage(n);for(const guess of [p.minNumber-1,p.maxNumber+1]){const s=JSON.stringify(st);assert.equal(f.c.applyVaultRobberyGuess(st,'x','x',guess,true,f.now()).kind,'invalid');assert.equal(JSON.stringify(st),s);}}
 });
 test('hint retention 3/5/5, UP/DOWN/newest-first and no password separators',()=>{
  const f=fixture();for(const n of [1,4,8]){const store=stageStore(f.c,n,20750),p=f.c.getVaultRobberyStage(n);store.current.answer=p.minNumber+10;
@@ -67,7 +68,7 @@ test('old observed game ID and pre-reset request time do not enter new vault or 
  const f=fixture(),old=f.state().vault.current;win(f);f.clock(f.now()+1);const ctx=f.c.createCommandContext(false,'test'),previous=f.c.enterCommandContext(ctx);f.c.beginDataSaveTransaction();let text='';try{f.c.runMiniGameEntry('command',{ctx,data:f.c.loadJsonFile(f.c.filePath),sender:'b',nickname:'b',room:'test',replier:{reply:t=>text+=t},request:f.c.getMiniGameRequest('/금고 '+f.state().vault.current.answer),requestAt:f.now(),requestGameId:old.id});}finally{f.c.endDataSaveTransaction();f.c.exitCommandContext(previous);}assert(text.includes('횟수는 사용하지 않았어요'));assert(!f.state().vault.current.usage['$'+f.id('b')]);const stamp=f.now();f.dailyReset();assert(ok(f.run('/금고 100','b',false,'test',stamp)).includes('횟수는 사용하지 않았어요'));
 });
 test('malformed current stage/award/winner order rejects without resetting or writing defaults',()=>{
- for(const mutate of [s=>s.vault.current.prize=500000000,s=>s.vault.current.answer=1000,s=>s.vault.current.number=11,s=>s.vault.dailyWinners=['missing']]){const f=fixture(),s=f.state();mutate(s);f.putState(s);const raw=f.disk()[base+'miniGameState.json'];assert(f.run('/금고').error);assert.equal(f.disk()[base+'miniGameState.json'],raw);}
+ for(const mutate of [s=>s.vault.current.prize=500000000,s=>s.vault.current.answer=1000,s=>s.vault.current.number=16,s=>s.vault.dailyWinners=['missing']]){const f=fixture(),s=f.state();mutate(s);f.putState(s);const raw=f.disk()[base+'miniGameState.json'];assert(f.run('/금고').error);assert.equal(f.disk()[base+'miniGameState.json'],raw);}
 });
 test('DEV changes only DEV vault and member, including winner and daily reset',()=>{
  const f=fixture(),prod={...f.disk()};f.seed(true);const p=f.disk()[base+'miniGameState.json'],member=f.disk()[base+'member.json'];ok(f.run('/금고','a',true));f.clock(f.now()+1);ok(f.run('/금고 '+f.state(true).vault.current.answer,'a',true));f.dailyReset(true);assert.equal(f.disk()[base+'miniGameState.json'],p);assert.equal(f.disk()[base+'member.json'],member);assert.equal(f.state(true).vault.current.prize,200000000);

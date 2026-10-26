@@ -109,6 +109,7 @@ const context = {
     hasEquippedCreationMiniPet: () => false
 };
 vm.createContext(context);
+vm.runInContext("GLOBAL_CONFIG.vaultRobbery = " + source.match(/vaultRobbery: (\{[\s\S]*?\n    \}),/)[1], context);
 vm.runInContext("GLOBAL_CONFIG.manualReset = " + source.match(/manualReset: (\{[\s\S]*?\n    \}),/)[1], context);
 for (const name of ["getManualResetDirectOperation", "getManualResetLegacyEntry", "isManualResetInput", "isManualResetLegacyCommand"]) vm.runInContext(extractFunction(name), context);
 // 실제 정의와 설정을 읽고, 파일 저장·외부 응답만 메모리로 대체한다.
@@ -252,7 +253,7 @@ group("4 skill grades, effects and probability-free information", () => {
 
 group("fixed rates preserved, D remainder and limited draw exclusion", () => {
     assert(Math.abs(context.getPetSkillTotalRate() - 100) < 1e-9);
-    assert(Math.abs(context.getPetSkillFixedActualRateTotal() - 58.9) < 1e-9); // S급 신규 스킬 1종은 기존 S급 고정 확률 0.3% 사용
+    assert(Math.abs(context.getPetSkillFixedActualRateTotal() - 59.3) < 1e-9); // 금고털이범은 기존 A등급 고정 확률 0.4% 사용
     for (const [name, rate] of [[names[0], 0.1], [names[1], 0], [names[2], 0.4], [names[3], 0.6]]) {
         assert(Math.abs(context.getPetSkillActualRate(context.getPetSkillData(name)) - rate) < 1e-9);
     }
@@ -261,7 +262,7 @@ group("fixed rates preserved, D remainder and limited draw exclusion", () => {
     let accumulated = 0;
     for (const skill of list) {
         const weight = context.getPetSkillRandomWeight(skill);
-        if (skill.grade === "D") assert(Math.abs(weight - 6.85) < 1e-9);
+        if (skill.grade === "D") assert(Math.abs(weight - (40.7/6)) < 1e-9);
         if (weight > 0) {
             context.drawRoll = (accumulated + weight / 2) / 100;
             vm.runInContext("Math.random = function () { return drawRoll; }", context);
