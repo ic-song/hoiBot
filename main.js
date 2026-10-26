@@ -1002,7 +1002,7 @@ var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파�
 const GLOBAL_CONFIG = {
     gmEducation: {
         version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", rewardItem: "다이아상자💎(소)",
-        room: "교육방",
+        rooms: ["교육방", "교육방2"],
         commandGuideLines: [
             "📚 호월 교육 명령어",
             "━━━━━━━━━━━━",
@@ -1064,6 +1064,7 @@ const GLOBAL_CONFIG = {
             "",
             "/교육실적 전체",
             "→ 전체 실적과 GM 순위",
+            "별칭: /교육실적전체",
             "━━━━━━━━━━━━",
             "🗓️ 지난달·이전 달 실적",
             "",
@@ -4188,7 +4189,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
 
-        var gmEducationRequest = /^\/(?:교육명령어|교육|교육완료|교육실적)(?:[ \t]|$)/.test(msg) ? getGmEducationRequest(msg) : null;
+        var gmEducationRequest = /^\/(?:교육명령어|교육|교육완료|교육실적|교육실적전체)(?:[ \t]|$)/.test(msg) ? getGmEducationRequest(msg) : null;
         if (gmEducationRequest) {
             if (!isGmEducationOperator(sender, room)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
             var gmRequest = gmEducationRequest;
@@ -35428,17 +35429,18 @@ function buildServerRaidAccountIndex(data) {
 function getGmEducationRequest(msg) {
     if (/[\r\n]/.test(String(msg))) return null;
     if (msg === "/교육명령어") return { action: "commands", input: "" };
-    var match = String(msg).match(/^\/(교육완료|교육실적|교육)(?:[ \t]+([^\r\n]+))?$/);
+    var match = String(msg).match(/^\/(교육완료|교육실적전체|교육실적|교육)(?:[ \t]+([^\r\n]+))?$/);
     if (!match) return null;
     var input = (match[2] || "").trim();
+    if (match[1] === "교육실적전체") return { action: "stats", input: "전체" + (input ? " " + input : "") };
     if (match[1] !== "교육완료") return { action: match[1] === "교육실적" ? "stats" : "view", input: input };
     var completion = input.match(/^(.+)[ \t]+(1[0-2]|[1-9])$/);
     return completion ? { action: "complete", input: completion[1].trim(), chapter: Number(completion[2]) } : { action: "invalid", input: input };
 }
 
-// 기존 MASTER 판정을 유지하고 교육 명령에만 정확한 교육방을 추가하는 함수
+// 기존 MASTER 판정과 공통 교육방 허용 목록으로 교육 명령 권한을 확인하는 함수
 function isGmEducationOperator(sender, room) {
-    return isMaster(sender) || (room === GLOBAL_CONFIG.gmEducation.room && Master.indexOf(sender) !== -1);
+    return isMaster(sender) || (GLOBAL_CONFIG.gmEducation.rooms.indexOf(room) !== -1 && Master.indexOf(sender) !== -1);
 }
 
 // Main의 매뉴얼 개수와 Info의 표시 설정에서 교육 최대 챕터를 읽는 함수
@@ -35604,8 +35606,10 @@ function buildGmEducationStats(store, data, target, context, all, month) {
             if (!gmRows[key]) gmRows[key] = { id: entry.gmId, name: gmAccount ? gmAccount.user : entry.gmUser, label: gmName, count: 0, records: [] };
             var date = new Date(Date.parse(entry.completedAt) + 9 * 60 * 60 * 1000);
             var dateLabel = date.getUTCFullYear() + "." + ("0" + (date.getUTCMonth() + 1)).slice(-2) + "." + ("0" + date.getUTCDate()).slice(-2);
+            var hasTime = /[T ]\d{2}:\d{2}/.test(entry.completedAt); // 원본에 시간이 있는 기록만 시·분·초 표시
+            var completionLabel = dateLabel + (hasTime ? " " + ("0" + date.getUTCHours()).slice(-2) + ":" + ("0" + date.getUTCMinutes()).slice(-2) + ":" + ("0" + date.getUTCSeconds()).slice(-2) : "");
             gmRows[key].count++;
-            gmRows[key].records.push({ at: Date.parse(entry.completedAt), text: "[" + studentName + "] · " + entry.chapter + "챕터 · " + dateLabel });
+            gmRows[key].records.push({ at: Date.parse(entry.completedAt), day: dateLabel, hasTime: hasTime, order: gmRows[key].records.length, text: "[" + studentName + "] · " + entry.chapter + "챕터 · " + completionLabel });
             total++;
         }
     }
@@ -35613,20 +35617,25 @@ function buildGmEducationStats(store, data, target, context, all, month) {
     rows.sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
     var summary = heading + (all ? "📚 전체 완료 챕터: " : "📚 완료 챕터: ") + total + "개\n━━━━━━━━━━━━\n";
     var full = [], top = [], rank = 0;
+    if (all && rows.length) full.push("🏆 GM 교육 실적 순위 · " + month, "━━━━━━━━━━━━");
     for (var r = 0; r < rows.length; r++) {
         if (r === 0 || rows[r].count !== rows[r - 1].count) rank = r + 1;
         var line = rank + "등 [" + rows[r].label + "] · " + rows[r].count + "개";
         if (all) { full.push(line); if (r < 3) top.push(line); }
-        rows[r].records.sort(function (a, b) { return b.at - a.at || a.text.localeCompare(b.text); });
+        rows[r].records.sort(function (a, b) {
+            if (a.day !== b.day) return b.day.localeCompare(a.day);
+            if (a.hasTime !== b.hasTime) return a.hasTime ? -1 : 1;
+            return (a.hasTime ? b.at - a.at : 0) || a.order - b.order;
+        });
     }
     if (!rows.length) summary += "해당 월의 교육 실적이 없습니다.";
     else if (all) summary += top.join("\n") + "\n━━━━━━━━━━━━\n📋 전체 순위와 교육 기록은 전체보기에서 확인하세요.";
-    else summary += "📋 교육 대상과 완료 날짜는 전체보기에서 확인하세요.";
+    else summary += "📋 교육 대상과 완료 일시는 전체보기에서 확인하세요.";
     if (rows.length) {
-        if (all) full.push("━━━━━━━━━━━━", "📋 교육 완료 기록 · " + month);
+        if (all) full.push("━━━━━━━━━━━━", "📋 GM별 교육 완료 기록 · " + month);
         else full.push("📋 교육 완료 기록 · " + month, "━━━━━━━━━━━━");
         for (var d = 0; d < rows.length; d++) {
-            if (all) full.push("[" + rows[d].label + "] · " + rows[d].count + "개");
+            if (all) full.push("━━━━━━━━━━━━", "👤 [" + rows[d].label + "] · " + rows[d].count + "개");
             for (var record = 0; record < rows[d].records.length; record++) full.push(rows[d].records[record].text);
         }
     }

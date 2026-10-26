@@ -24,7 +24,7 @@ test('교육방의 MASTER만 전체 교육 명령 사용·일반/유사방 거�
     assert(h.run('/교육 a', 'gm').includes('1/12'));
     const before = f.files();
     for (const room of ['교육방', '새 교육방', '교육방2']) for (const user of ['a', 'sub']) assert(callback(h, '/교육완료 a 2', user, room).includes('MASTER만'));
-    assert(callback(h, '/교육완료 a 2', 'master', '교육방2').includes('MASTER만')); assert.deepEqual(f.files(), before);
+    assert(callback(h, '/교육완료 a 2', 'master', '교육방3').includes('MASTER만')); assert.deepEqual(f.files(), before);
     const prev = c.enterCommandContext(c.createCommandContext(false, '교육방')); assert(!c.isMaster('master')); c.exitCommandContext(prev);
 });
 test('독립 명령어 안내·1월 지난달 자동 변경·12매뉴얼·조회 무저장', () => {
