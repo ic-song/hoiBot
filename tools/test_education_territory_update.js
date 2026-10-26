@@ -64,6 +64,32 @@ test('복구 대기는 확정 수만 표시, 손상 JSON·원본/영수증 불�
     const store = h.store(); store.users['$id-a'].chapters[0].chapter = 2; h.f.put(h.paths(false).store, store);
     q = infoHarness(h); assert.throws(() => q.run(), /교육 챕터 기록/);
 });
+test('교육 파일 미생성은 미시작, 실제 읽기 오류는 전파, 거절·없는 대상 조회는 교육 파일 무읽기', () => {
+    const h = gm.createHarness(); h.seed(); let q = infoHarness(h); const before = h.f.files();
+    assert(q.run().includes('📘 0/12챕터 완료')); assert.equal(q.reads(), 0); assert.deepEqual(h.f.files(), before);
+    h.run('/교육완료 a 1'); q = infoHarness(h);
+    const load = q.query.loadJsonFile; q.query.loadJsonFile = p => { if (p.endsWith('gmEducation.json')) throw new SyntaxError('invalid education JSON'); return load(p); };
+    const paid = h.f.files(); assert.throws(() => q.run(), /invalid education JSON/); assert.deepEqual(h.f.files(), paid);
+    q = infoHarness(h);
+    assert.equal(q.run('a', 'a'), ''); assert.equal(q.run('a', 'master', false, '/정보보기 a'), '');
+    assert(q.run('없는유저').includes('등록되지 않은 유저')); assert.equal(q.reads(), 0); assert.deepEqual(h.f.files(), paid);
+});
+test('실제 Info 7인수 콜백: 운영자 조회·개인톡·영지전 중 허용·DEV 격리·0저장', () => {
+    const loading = require('./test_command_data_loading'), f = loading.createInfoFixture();
+    const data = JSON.parse(f.disk[loading.prod + 'member.json']);
+    data.member.u.serverRaidAccount = { id: 'student' }; data.member.u.gmEducationRewards = ['tx'];
+    f.disk[loading.prod + 'member.json'] = JSON.stringify(data);
+    f.disk[loading.prod + 'gmEducation.json'] = JSON.stringify({ version: 1, users: { $student: { user: 'u', chapters: [{ chapter: 1, txId: 'tx', gmId: 'gm', gmUser: 'master' }] } } });
+    f.disk[loading.dev + 'gmEducation.json'] = JSON.stringify({ version: 1, users: {} });
+    f.disk[loading.prod + 'guildData.json'] = JSON.stringify({ guilds: {}, territoryWar: { active: true } });
+    for (const [user, room, group] of [['master', '서버관리자', true], ['admin', '개인톡', false]]) {
+        const before = { ...f.disk }, result = f.run('/정보 u', user, room, group);
+        assert.deepEqual(result.errors, []); assert(result.messages.join('\n').includes('📘 1/12챕터 완료 · 다음 2챕터'));
+        assert.deepEqual(result.writes, []); assert.deepEqual(f.disk, before);
+    }
+    const dev = f.run('dev/정보 u', 'master'); assert.deepEqual(dev.errors, []);
+    assert(dev.messages.join('\n').includes('📘 0/12챕터 완료 · 다음 1챕터')); assert.deepEqual(dev.writes, []);
+});
 // 실제 타이머 예약·만료 함수를 메모리 상태와 예약 큐에 연결한다.
 function timerHarness(auto = false) {
     const h = gm.createHarness(), war = { active: true, guildAttackCounts: {}, timeoutMissCounts: {}, eliminatedGuilds: {} };
@@ -91,5 +117,9 @@ test('수동 턴 10초 예약·만료마다 다음 턴·3회 누적 탈락·지�
 });
 test('자동공격은 1초 유예·영지 번호 예약 유지', () => {
     const h = timerHarness(true); assert.equal(h.schedule(), 2); assert.equal(h.scheduled().delay, 1000);
+});
+test('종료된 영지전 타이머는 공격 횟수·경고·다음 턴을 변경하지 않음', () => {
+    const h = timerHarness(); h.schedule(); h.war.active = false; const before = JSON.stringify(h.war);
+    h.scheduled().fn(); assert.equal(JSON.stringify(h.war), before); assert.equal(h.advances(), 0);
 });
 console.log('PASS education/territory: ' + groups + ' groups; synthetic only');
