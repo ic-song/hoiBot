@@ -14,12 +14,12 @@ function fixture(){const f=h.fixture(),seed=f.seed;f.seed=(dev=false)=>{seed(dev
   f.clock(f.now()+1);return f.replies().join('\n');
  };return f;
 }
-function seedGames(f){ok(f.run('/금고'));ok(f.run('/금고 1'));ok(f.run('ㅎㅈ'));ok(f.run('/밸런스 1 이유'));}
+function seedGames(f){ok(f.run('/금고'));ok(f.run('/금고 100'));ok(f.run('ㅎㅈ'));ok(f.run('/밸런스 1 이유'));}
 test('calendar midnight and automatic workers cannot reset any daily game without /리셋',()=>{
  const f=fixture();seedGames(f);const old=f.state();f.auto(86400000*3);for(const msg of ['/금고','/밸런스'])ok(f.run(msg));const now=f.state();assert.deepEqual(now.vault,old.vault);assert.deepEqual(now.balance,old.balance);assert.deepEqual(now.dice,old.dice);assert.equal(now.dailyReset.cycle,0);
 });
 test('actual authorized reset switches vault/question/attempts but retains the unfinished dice pair',()=>{
- const f=fixture();seedGames(f);const old=f.state(),p=f.read().member.a.point;f.clock(f.now()+86400000);f.resetCommand();const s=f.state();assert.equal(s.dailyReset.cycle,1);assert.equal(s.vault.current.prize,old.vault.current.prize+500000000);assert.notEqual(s.vault.current.answer,old.vault.current.answer);assert.deepEqual(s.vault.current.usage,{});assert.equal(s.vault.current.hints.length,0);assert.equal(s.vault.current.number,1);assert.equal(s.balance.current.order.length,0);assert.notEqual(s.balance.current.question.id,old.balance.current.question.id);assert.equal(s.dice.users['$'+f.id()].used,0);assert.deepEqual(s.dice.users['$'+f.id()].game,old.dice.users['$'+f.id()].game);assert.equal(f.read().member.a.point,p);assert.equal(f.read().member.a.today,0);
+ const f=fixture();seedGames(f);const old=f.state(),p=f.read().member.a.point;f.clock(f.now()+86400000);f.resetCommand();const s=f.state();assert.equal(s.dailyReset.cycle,1);assert.equal(s.vault.current.prize,200000000);assert.notEqual(s.vault.current.answer,old.vault.current.answer);assert.deepEqual(s.vault.current.usage,{});assert.equal(s.vault.current.hints.length,0);assert.equal(s.vault.current.number,1);assert.equal(s.balance.current.order.length,0);assert.notEqual(s.balance.current.question.id,old.balance.current.question.id);assert.equal(s.dice.users['$'+f.id()].used,0);assert.deepEqual(s.dice.users['$'+f.id()].game,old.dice.users['$'+f.id()].game);assert.equal(f.read().member.a.point,p);assert.equal(f.read().member.a.today,0);
  const d=f.read();d.member.a.today=1;f.write(d);ok(f.run('ㅎㅈ'));assert.equal(f.state().dice.users['$'+f.id()].game.phase,'DONE');assert.equal(f.state().dice.users['$'+f.id()].used,0);
 });
 test('same-date resets keep distinct balance ledgers, summaries and original paid proofs',()=>{
@@ -39,7 +39,7 @@ test('DEV reset only touches DEV data; progress and balances in PROD remain exac
  const f=fixture();f.seed(true);ok(f.run('/금고','a',true));ok(f.run('ㅎㅈ','a',true));const before=Object.fromEntries(Object.entries(f.disk()).filter(([p])=>p.startsWith(base)));f.resetCommand('/리셋','오픈채팅봇',true);assert.equal(f.state(true).dailyReset.cycle,1);assert.deepEqual(Object.fromEntries(Object.entries(f.disk()).filter(([p])=>p.startsWith(base))),before);assert(f.disk()[devBase+'miniGameState.json']);
 });
 test('pre-reset queued guesses/votes/dice are rejected without consuming new period attempts',()=>{
- const f=fixture();seedGames(f);const at=f.now();f.clock(at+1);f.resetCommand();for(const msg of ['/금고 1','/밸런스 1 이전이유','ㅎㅈ']){const out=ok(f.run(msg,'a',false,'test',at));assert(out.includes('리셋')||out.includes('새 금고')||out.includes('날짜가 바뀌'));}assert.deepEqual(f.state().vault.current.usage,{});assert.equal(f.state().balance.current.order.length,0);assert.equal(f.state().dice.users['$'+f.id()].used,0);
+ const f=fixture();seedGames(f);const at=f.now();f.clock(at+1);f.resetCommand();for(const msg of ['/금고 100','/밸런스 1 이전이유','ㅎㅈ']){const out=ok(f.run(msg,'a',false,'test',at));assert(out.includes('리셋')||out.includes('새 금고')||out.includes('날짜가 바뀌'));}assert.deepEqual(f.state().vault.current.usage,{});assert.equal(f.state().balance.current.order.length,0);assert.equal(f.state().dice.users['$'+f.id()].used,0);
 });
 test('reset command waits for data lock while normal noncritical input retains tryLock flow',()=>{
  const f=fixture(),c=f.c;const start=h.main.indexOf('        if (isServerRaidMutationCommand(msg) || msg === "/리셋"'),end=h.main.indexOf('        responseTransactionAcquired = true;',start);assert(start>0&&end>start);let locked=0,tried=0;c.dataTransactionLock={lock(){locked++;},tryLock(){tried++;return false;}};vm.runInContext('function acquireResetLock(){'+h.main.slice(start,end)+'}',c);for(const msg of ['/리셋','dev/리셋']){c.msg=msg;c.acquireResetLock();}assert.equal(locked,2);assert.equal(tried,0);c.msg='/리셋 해봐';c.acquireResetLock();assert.equal(tried,1);

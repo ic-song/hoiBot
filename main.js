@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.707"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.708"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1109,9 +1109,14 @@ const GLOBAL_CONFIG = {
         dialogueSizes: { start: 20, roll: 40, host_ahead: 30, host_behind: 30, mid_tie: 20, user_win: 20, user_loss: 20, final_draw: 20 }
     },
     vaultRobbery: {
-        schemaVersion: 2,
-        limits: { minNumber: 1, maxNumber: 1000, hintWidth: 600, recentHints: 3, normalAttempts: 2, passAttempts: 3 },
-        rewards: { basePrize: 500000000, dailyIncrease: 500000000, prizeCap: 100000000000 }, // 누적 상금 상한 1,000억
+        schemaVersion: 3,
+        limits: { minNumber: 100, maxNumber: 99999, normalAttempts: 3, passAttempts: 5, dailyGames: 10 },
+        stages: [
+            { through: 3, label: "쉬움", minNumber: 100, maxNumber: 999, prize: 200000000, recentHints: 3 },
+            { through: 7, label: "보통", minNumber: 1000, maxNumber: 9999, prize: 500000000, recentHints: 5 },
+            { through: 10, label: "어려움", minNumber: 10000, maxNumber: 99999, prize: 1000000000, recentHints: 5 }
+        ],
+        legacy: { minNumber: 1, maxNumber: 1000, hintWidth: 600, recentHints: 3, passAttempts: 3, minPrize: 500000000, maxPrize: 100000000000 }, // 이전 확정 보상 검증 전용
         dayMs: 86400000
     },
     guildMarble: {
@@ -35795,7 +35800,7 @@ function runMiniGameEntry(mode, args) {
         if (!startedDice || !startedDice.game || startedDice.game.phase === "DONE") { args.replier.reply("🎲 호월이를 이겨라!\n━━━━━━━━━━━━\n호이패스 프리미엄 전용 미니게임입니다.\n👉 /미니게임"); return; }
     }
     var now = Date.now(), day = getVaultRobberyDay(now), archives = {}, archiveChanged = {}, stateOriginal = stateExists && mode !== "resetPlan" ? JSON.stringify(state) : null;
-    if (!state.dailyReset) state.dailyReset = { day: day, cycle: 0, at: 0 }; // 기존 판·횟수는 그대로 두고 첫 /리셋을 기다린다.
+    if (!state.dailyReset) state.dailyReset = { day: state.vault ? state.vault.current.day : state.balance.current ? state.balance.current.day : day, cycle: 0, at: 0 }; // 기존 판의 날짜를 기준으로 첫 /리셋을 기다린다.
     day = state.dailyReset.day; // 시각이 아닌 마지막 /리셋 회차의 날짜를 사용
     var memberChanged = false, catalogCacheKey = args.ctx.key();
     if (!miniGameCatalogCaches[catalogCacheKey]) miniGameCatalogCaches[catalogCacheKey] = {};
@@ -35890,11 +35895,11 @@ function runMiniGameEntry(mode, args) {
         state.dailyReset = { day: resetDay, cycle: state.dailyReset.cycle + 1, at: now };
         if (resetPreviousBalance) state.balance.current = createMiniGameBalance(state, resetDay, catalog("questions"));
         if (state.vault) {
-            upgradeVaultRobberyStore(state.vault);
             var resetOldVault = state.vault.current;
             archive(resetOldVault.day, true).days["vault:" + resetOldVault.id] = resetOldVault;
-            var resetPrize = resetOldVault.winner === null ? getVaultRobberyNextPrize(resetOldVault.prize, 1) : GLOBAL_CONFIG.vaultRobbery.rewards.basePrize;
-            startVaultRobberyRound(state.vault, resetDay, resetPrize, 1, false, now, resetOldVault.answer, {});
+            upgradeVaultRobberyStore(state.vault);
+            state.vault.dailyWinners = [];
+            startVaultRobberyRound(state.vault, resetDay, 1, false, now, resetOldVault.answer, {});
             state.vault.replyPending = {};
         }
         for (var resetDiceKey in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, resetDiceKey)) {
@@ -35928,6 +35933,10 @@ function runMiniGameEntry(mode, args) {
         accountId = account.id;
     }
     if (state.vault) {
+        if (state.vault.schemaVersion < 3) {
+            var legacyVault = state.vault.current;
+            archive(legacyVault.day, true).days["vault:" + (legacyVault.id || "$" + legacyVault.day)] = legacyVault;
+        }
         upgradeVaultRobberyStore(state.vault);
         for (var legacyRewardKey in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, legacyRewardKey)) {
             var legacyReward = state.ledger[legacyRewardKey];
@@ -35962,8 +35971,8 @@ function runMiniGameEntry(mode, args) {
         var stale = args.requestAt <= state.dailyReset.at;
         if (request.kind === "vault" || request.kind === "vaultAdmin") {
             if (!state.vault) {
-                state.vault = { schemaVersion: 2, serial: 0, current: null, awards: {}, replyPending: {} };
-                startVaultRobberyRound(state.vault, day, GLOBAL_CONFIG.vaultRobbery.rewards.basePrize, 1, false, 0, undefined, {});
+                state.vault = { schemaVersion: 3, serial: 0, current: null, awards: {}, replyPending: {}, dailyWinners: [] };
+                startVaultRobberyRound(state.vault, day, 1, false, 0, undefined, {});
                 createdVaultNow = true;
                 if (typeof miniGameRoundHeads !== "undefined") miniGameRoundHeads.put(args.ctx.key(), state.vault.current.id);
             }
@@ -36059,7 +36068,7 @@ function runMiniGameEntry(mode, args) {
     commit();
     if (state.vault && state.vault.current.winner !== null) {
         var finishedVault = state.vault.current;
-        if (openVaultRobberySecondRound(state.vault, Date.now())) { archive(day, true).days["vault:" + finishedVault.id] = finishedVault; commit(); }
+        if (openNextVaultRobberyRound(state.vault, Date.now())) { archive(day, true).days["vault:" + finishedVault.id] = finishedVault; commit(); }
     }
     var creditText = credit.count ? "🎁 밸런스 게임 보상 도착!\n━━━━━━━━━━━━\n🎯 다수 선택 적중: " + credit.count + "회\n💰 지급 포인트: 🅟" + formatServerRaidPrize(credit.total) + "\n✅ 보유 포인트에 지급됐어요!\n\n" : "";
     if (mode === "command") {
@@ -36178,7 +36187,7 @@ function getMiniGameRequest(msg) {
 
 // 통합 메뉴에는 게임과 실행 명령만 표시하는 함수
 function buildMiniGameMenu() {
-    return "🎮 호이월드 미니게임\n🖐️ 호이는 오늘도 밤을 샙니다.\n━━━━━━━━━━━━\n⚖️ 호월이의 밸런스 게임\n👉 /밸런스\n\n🎲 호월이를 이겨라!(호패프 전용)\n👉 /호월주사위 or ㅎㅈ\n\n🔐 호월이의 금고털이(호패프 +1회)\n👉 /금고\n━━━━━━━━━━━━";
+    return "🎮 호이월드 미니게임\n🖐️ 호이는 오늘도 밤을 샙니다.\n━━━━━━━━━━━━\n⚖️ 호월이의 밸런스 게임\n👉 /밸런스\n\n🎲 호월이를 이겨라!(호패프 전용)\n👉 /호월주사위 or ㅎㅈ\n\n🔐 호월이의 금고털이(호패프 +2회)\n👉 /금고\n━━━━━━━━━━━━";
 }
 
 // 신규 설치의 진행 파일만 생성하고 게임 자체는 아직 시작하지 않는 함수
@@ -36521,17 +36530,26 @@ function requireVaultRobberyInteger(value) {
 }
 
 
-// 전체 입력 범위에서 정답을 뽑되 직전 정답을 피해서 새 금고를 생성하는 함수
-function createVaultRobberyRound(day, prize, previousAnswer) {
-    var limits = GLOBAL_CONFIG.vaultRobbery.limits, exclude = typeof previousAnswer === "number";
+// 금고 순번에 해당하는 고정 난이도·상금·힌트 정책을 반환하는 함수
+function getVaultRobberyStage(number) {
+    requireVaultRobberyInteger(number);
+    var config = GLOBAL_CONFIG.vaultRobbery;
+    if (number < 1 || number > config.limits.dailyGames) throw new Error("금고 순번 오류");
+    for (var i = 0; i < config.stages.length; i++) if (number <= config.stages[i].through) return config.stages[i];
+    throw new Error("금고 난이도 설정 오류");
+}
+
+// 단계 범위에서 직전 정답과 겹치지 않는 비밀번호와 고정 상금을 생성하는 함수
+function createVaultRobberyRound(day, number, previousAnswer) {
+    var limits = getVaultRobberyStage(number), exclude = typeof previousAnswer === "number" && previousAnswer >= limits.minNumber && previousAnswer <= limits.maxNumber;
     var answer = limits.minNumber + Math.floor(Math.random() * (limits.maxNumber - limits.minNumber + (exclude ? 0 : 1)));
     if (exclude && answer >= previousAnswer) answer++;
-    return { day: day, answer: answer, prize: prize, usage: {}, hints: [], winner: null };
+    return { day: day, answer: answer, prize: limits.prize, usage: {}, hints: [], winner: null };
 }
 
 // 날짜별 횟수를 이어받으며 개별 금고의 식별자와 개방 시각을 고정하는 함수
-function startVaultRobberyRound(store, day, prize, number, manual, now, previousAnswer, usage) {
-    var round = createVaultRobberyRound(day, prize, previousAnswer);
+function startVaultRobberyRound(store, day, number, manual, now, previousAnswer, usage) {
+    var round = createVaultRobberyRound(day, number, previousAnswer);
     store.serial++;
     round.id = "$" + day + ":" + store.serial; round.serial = store.serial;
     round.number = number; round.manual = manual; round.openedAt = now; round.usage = usage || {};
@@ -36540,94 +36558,109 @@ function startVaultRobberyRound(store, day, prize, number, manual, now, previous
     return round;
 }
 
-// 기존 1게임 기록의 횟수·지급 식별값을 보존해 2게임 형식으로 한 번 이관하는 함수
+// 기존 확정 보상·개인 횟수를 보존하고 미당첨 이월만 폐기해 단계형 금고로 이관하는 함수
 function upgradeVaultRobberyStore(store) {
     requireVaultRobberyStore(store);
-    if (store.schemaVersion === 2) return false;
-    store.schemaVersion = 2; store.serial = 0;
+    if (store.schemaVersion === 3) return false;
     var round = store.current;
-    round.id = "$" + round.day; round.serial = 0; round.number = 1; round.manual = false; round.openedAt = 0;
-    for (var key in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, key)) {
-        var award = store.awards[key];
-        award.gameId = key; award.number = 1; award.manual = false; award.nextOpened = false;
-        award.rewardId = "vault:" + award.day + ":" + award.accountId;
+    if (store.schemaVersion === 1) {
+        store.serial = 0;
+        round.id = "$" + round.day; round.serial = 0; round.number = 1; round.manual = false; round.openedAt = 0;
+        for (var key in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, key)) {
+            var award = store.awards[key];
+            award.gameId = key; award.number = 1; award.manual = false; award.nextOpened = false;
+            award.rewardId = "vault:" + award.day + ":" + award.accountId;
+        }
+        if (store.replyPending) for (var replyKey in store.replyPending) if (Object.prototype.hasOwnProperty.call(store.replyPending, replyKey)) {
+            store.replyPending[replyKey].gameId = round.id;
+            if (store.replyPending[replyKey].kind === "won") store.replyPending[replyKey].awardKey = round.winner;
+        }
     }
-    if (store.replyPending) for (var replyKey in store.replyPending) if (Object.prototype.hasOwnProperty.call(store.replyPending, replyKey)) {
-        store.replyPending[replyKey].gameId = round.id;
-        if (store.replyPending[replyKey].kind === "won") store.replyPending[replyKey].awardKey = round.winner;
+    var today = []; // 현재 일일 회차의 기존 당첨 기록만 순번으로 집계
+    for (var awardKey in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, awardKey)) {
+        var oldAward = store.awards[awardKey];
+        oldAward.legacy = true;
+        if (oldAward.day === round.day) today.push(awardKey);
     }
+    // 같은 시각에 기록된 당첨은 게임 일련번호 순서를 유지한다.
+    today.sort(function (a, b) { return store.awards[a].at - store.awards[b].at || Number(a.substring(a.lastIndexOf(":") + 1)) - Number(b.substring(b.lastIndexOf(":") + 1)); });
+    var first = today.length; // 같은 날짜에 여러 번 /리셋한 경우 마지막 일일 회차의 시작 위치
+    if (round.number === 1) { if (round.winner) first = today.indexOf(round.winner); }
+    else {
+        first = 0;
+        for (var i = 0; i < today.length; i++) if (!store.awards[today[i]].manual && store.awards[today[i]].number === 1) first = i;
+    }
+    store.schemaVersion = 3;
+    store.dailyWinners = today.slice(first);
+    if (round.winner !== null || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) round.legacy = true;
+    else startVaultRobberyRound(store, round.day, store.dailyWinners.length + 1, round.manual, Date.now(), round.answer, round.usage);
     return true;
 }
 
 // 금고와 보상 기록의 손상·잘못된 힌트·지급 상태를 변경 전에 검증하는 함수
 function requireVaultRobberyStore(store) {
     var config = GLOBAL_CONFIG.vaultRobbery, round = store && store.current;
-    if (!store || [1, 2].indexOf(store.schemaVersion) === -1 || !round || !store.awards || typeof store.awards !== "object" || Array.isArray(store.awards)) throw new Error("금고 저장 형식 오류");
+    if (!store || [1, 2, 3].indexOf(store.schemaVersion) === -1 || !round || !store.awards || typeof store.awards !== "object" || Array.isArray(store.awards)) throw new Error("금고 저장 형식 오류");
+    var legacy = store.schemaVersion < 3 || round.legacy === true;
+    var stage = legacy ? config.legacy : getVaultRobberyStage(round.number);
     requireVaultRobberyInteger(round.day); requireVaultRobberyInteger(round.answer); requireVaultRobberyInteger(round.prize);
-    if (round.answer < config.limits.minNumber || round.answer > config.limits.maxNumber || round.prize < config.rewards.basePrize || config.rewards.prizeCap > 0 && round.prize > config.rewards.prizeCap) throw new Error("금고 정답·상금 형식 오류");
+    if (round.answer < stage.minNumber || round.answer > stage.maxNumber || (legacy ? round.prize < stage.minPrize || round.prize > stage.maxPrize : round.prize !== stage.prize)) throw new Error("금고 정답·상금 형식 오류");
     if (Object.prototype.hasOwnProperty.call(round, "low") || Object.prototype.hasOwnProperty.call(round, "high")) {
         requireVaultRobberyInteger(round.low); requireVaultRobberyInteger(round.high);
-        if (round.low < config.limits.minNumber || round.high > config.limits.maxNumber || round.high - round.low !== config.limits.hintWidth || round.answer < round.low || round.answer > round.high) throw new Error("금고 기존 힌트 형식 오류");
+        if (!legacy || round.low < config.legacy.minNumber || round.high > config.legacy.maxNumber || round.high - round.low !== config.legacy.hintWidth || round.answer < round.low || round.answer > round.high) throw new Error("금고 기존 힌트 형식 오류");
     }
-    if (!round.usage || typeof round.usage !== "object" || Array.isArray(round.usage) || !Array.isArray(round.hints) || round.hints.length > config.limits.recentHints) throw new Error("금고 참여 기록 형식 오류");
-    if (store.schemaVersion === 2) {
+    if (!round.usage || typeof round.usage !== "object" || Array.isArray(round.usage) || !Array.isArray(round.hints) || round.hints.length > stage.recentHints) throw new Error("금고 참여 기록 형식 오류");
+    if (store.schemaVersion >= 2) {
         requireVaultRobberyInteger(store.serial); requireVaultRobberyInteger(round.serial); requireVaultRobberyInteger(round.openedAt);
-        if (round.serial !== store.serial || round.id !== "$" + round.day + (round.serial ? ":" + round.serial : "") || [1, 2].indexOf(round.number) === -1 || typeof round.manual !== "boolean" || round.manual && round.number !== 2) throw new Error("금고 게임 식별 오류");
+        requireVaultRobberyInteger(round.number);
+        if (round.serial !== store.serial || round.id !== "$" + round.day + (round.serial ? ":" + round.serial : "") || round.number < 1 || round.number > (legacy ? 2 : config.limits.dailyGames) || typeof round.manual !== "boolean" || store.schemaVersion === 2 && round.manual && round.number !== 2) throw new Error("금고 게임 식별 오류");
     }
     for (var accountKey in round.usage) if (Object.prototype.hasOwnProperty.call(round.usage, accountKey)) {
         requireVaultRobberyInteger(round.usage[accountKey]);
-        if (accountKey.charAt(0) !== "$" || accountKey.length < 2 || round.usage[accountKey] > config.limits.passAttempts) throw new Error("금고 계정 횟수 형식 오류");
+        if (accountKey.charAt(0) !== "$" || accountKey.length < 2 || round.usage[accountKey] > (store.schemaVersion < 3 ? config.legacy.passAttempts : config.limits.passAttempts)) throw new Error("금고 계정 횟수 형식 오류");
     }
     for (var i = 0; i < round.hints.length; i++) {
         var hint = round.hints[i];
         if (!hint || typeof hint.name !== "string" || typeof hint.accountId !== "string" || !hint.accountId || hint.direction !== "UP" && hint.direction !== "DOWN") throw new Error("금고 최근 힌트 형식 오류");
         requireVaultRobberyInteger(hint.guess);
-        if (hint.guess < config.limits.minNumber || hint.guess > config.limits.maxNumber || hint.direction !== (hint.guess < round.answer ? "UP" : "DOWN") || hint.guess === round.answer) throw new Error("금고 최근 판정 오류");
+        if (hint.guess < stage.minNumber || hint.guess > stage.maxNumber || hint.direction !== (hint.guess < round.answer ? "UP" : "DOWN") || hint.guess === round.answer) throw new Error("금고 최근 판정 오류");
     }
     for (var awardKey in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, awardKey)) {
         var award = store.awards[awardKey];
         if (!award || typeof award.accountId !== "string" || !award.accountId || typeof award.name !== "string" || typeof award.paid !== "boolean" || ["WAITING", "CLAIMED", "SENT", "UNCERTAIN"].indexOf(award.notice) === -1) throw new Error("금고 당첨 기록 형식 오류");
         requireVaultRobberyInteger(award.day); requireVaultRobberyInteger(award.amount); requireVaultRobberyInteger(award.answer); requireVaultRobberyInteger(award.at);
-        if (award.amount < config.rewards.basePrize || config.rewards.prizeCap > 0 && award.amount > config.rewards.prizeCap || award.answer < config.limits.minNumber || award.answer > config.limits.maxNumber || !award.paid && award.notice !== "WAITING") throw new Error("금고 보상 기록 오류");
+        var oldPolicy = store.schemaVersion < 3 || award.legacy === true;
+        if (store.schemaVersion >= 2) requireVaultRobberyInteger(award.number);
+        var awardStage = oldPolicy ? config.legacy : getVaultRobberyStage(award.number);
+        if ((oldPolicy ? award.amount < awardStage.minPrize || award.amount > awardStage.maxPrize : award.amount !== awardStage.prize) || award.answer < awardStage.minNumber || award.answer > awardStage.maxNumber || !award.paid && award.notice !== "WAITING") throw new Error("금고 보상 기록 오류");
         if (store.schemaVersion === 1 && awardKey !== "$" + award.day) throw new Error("금고 보상 날짜 오류");
-        if (store.schemaVersion === 2 && (awardKey !== award.gameId || typeof award.rewardId !== "string" || !award.rewardId || [1, 2].indexOf(award.number) === -1 || typeof award.manual !== "boolean" || typeof award.nextOpened !== "boolean")) throw new Error("금고 보상 게임 식별 오류");
+        if (store.schemaVersion >= 2 && (awardKey !== award.gameId || typeof award.rewardId !== "string" || !award.rewardId || award.number < 1 || award.number > (oldPolicy ? 2 : config.limits.dailyGames) || typeof award.manual !== "boolean" || typeof award.nextOpened !== "boolean")) throw new Error("금고 보상 게임 식별 오류");
     }
     if (round.winner !== null) {
         var winner = store.awards[round.winner];
-        if (!winner || round.winner !== (store.schemaVersion === 2 ? round.id : "$" + round.day) || winner.day !== round.day || winner.amount !== round.prize || winner.answer !== round.answer) throw new Error("금고 종료 기록 오류");
+        if (!winner || round.winner !== (store.schemaVersion >= 2 ? round.id : "$" + round.day) || winner.day !== round.day || winner.amount !== round.prize || winner.answer !== round.answer) throw new Error("금고 종료 기록 오류");
+    }
+    if (store.schemaVersion === 3) {
+        if (!Array.isArray(store.dailyWinners)) throw new Error("금고 일일 당첨 목록 오류");
+        if (round.legacy && round.winner === null && store.dailyWinners.length < config.limits.dailyGames) throw new Error("금고 이전 회차 전환 오류");
+        var seen = {};
+        for (var w = 0; w < store.dailyWinners.length; w++) {
+            var dailyKey = store.dailyWinners[w], dailyAward = store.awards[dailyKey];
+            if (typeof dailyKey !== "string" || seen[dailyKey] || !dailyAward || dailyAward.day !== round.day || !dailyAward.legacy && dailyAward.number !== w + 1) throw new Error("금고 일일 당첨 기록 오류");
+            if (w >= config.limits.dailyGames && !dailyAward.legacy) throw new Error("금고 일일 당첨 한도 오류");
+            seen[dailyKey] = true;
+        }
+        if (round.winner !== null && !seen[round.winner] || !legacy && round.number !== store.dailyWinners.length + (round.winner === null ? 1 : 0)) throw new Error("금고 진행 순번 오류");
     }
     return store;
 }
 
-// 확정된 운영 상한과 미당첨 날짜 수를 적용해 다음 상금을 계산하는 함수
-function getVaultRobberyNextPrize(previous, days) {
-    var rewards = GLOBAL_CONFIG.vaultRobbery.rewards;
-    if (rewards.prizeCap === null) throw new Error("금고 상금 누적 상한 운영 정책이 확정되지 않았습니다.");
-    requireVaultRobberyInteger(previous); requireVaultRobberyInteger(days); requireVaultRobberyInteger(rewards.prizeCap);
-    if (rewards.prizeCap > 0 && rewards.prizeCap < rewards.basePrize) throw new Error("금고 상금 상한 설정 오류");
-    if (rewards.prizeCap > 0 && days > Math.floor((rewards.prizeCap - previous) / rewards.dailyIncrease)) return rewards.prizeCap;
-    return requireVaultRobberyInteger(previous + days * rewards.dailyIncrease);
-}
-
-// 마지막 진행 금고의 상금만 이월하고 새 날짜 1차와 개인 횟수를 준비하는 함수
-function advanceVaultRobberyDay(store, day, now) {
-    requireVaultRobberyStore(store);
-    if (day < store.current.day) throw new Error("금고 기준 날짜가 이전 날짜로 변경되었습니다.");
-    if (day === store.current.day) return false;
-    var previous = store.current, elapsed = day - previous.day; // 실제 경과한 한국 시간 날짜 수
-    var prize = previous.winner === null ? getVaultRobberyNextPrize(previous.prize, elapsed) : getVaultRobberyNextPrize(GLOBAL_CONFIG.vaultRobbery.rewards.basePrize, elapsed - 1);
-    if (store.schemaVersion === 2) startVaultRobberyRound(store, day, prize, 1, false, now || 0, previous.answer, {});
-    else store.current = createVaultRobberyRound(day, prize);
-    store.replyPending = {};
-    return true;
-}
-
-// 1차 지급을 확정한 뒤에만 당일 2차를 열고 일일 횟수를 그대로 유지하는 함수
-function openVaultRobberySecondRound(store, now) {
+// 지급이 확정된 금고 다음 순번을 열되 열 번째 이후에는 종료하는 함수
+function openNextVaultRobberyRound(store, now) {
     var round = store.current, award = round.winner && store.awards[round.winner];
-    if (store.schemaVersion !== 2 || round.manual || round.number !== 1 || !award || !award.paid) return false;
+    if (store.schemaVersion !== 3 || !award || !award.paid || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return false;
     award.nextOpened = true;
-    startVaultRobberyRound(store, round.day, GLOBAL_CONFIG.vaultRobbery.rewards.basePrize, 2, false, now, round.answer, round.usage);
+    startVaultRobberyRound(store, round.day, store.dailyWinners.length + 1, false, now, round.answer, round.usage);
     return true;
 }
 
@@ -36643,13 +36676,10 @@ function resolveVaultRobberyUser(data, input) {
 function resetVaultRobberyRound(store, now, requestAt) {
     for (var key in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, key) && !store.awards[key].paid) return { changed: false, text: "⏳ 금고 상금 지급·복구 대기 중이에요. 지급 상태를 먼저 확인해 주세요." };
     var round = store.current;
+    if (store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return { changed: false, text: "🎉 금일 금고 10개 모두 개방!\n⏰ 다음 금고는 자정 이후 시작됩니다." };
     if ((requestAt === undefined ? now : requestAt) <= round.openedAt) return { changed: false, text: "금고가 이미 새로 열렸어요. /금고로 확인해 주세요." };
-    var number = round.number, manual = round.manual, prize = round.prize;
-    if (round.winner !== null) {
-        prize = GLOBAL_CONFIG.vaultRobbery.rewards.basePrize;
-        if (!manual && number === 1) { number = 2; store.awards[round.winner].nextOpened = true; } else { number = 2; manual = true; }
-    }
-    startVaultRobberyRound(store, round.day, prize, number, manual, now, round.answer, round.usage);
+    if (round.winner !== null) store.awards[round.winner].nextOpened = true;
+    startVaultRobberyRound(store, round.day, store.dailyWinners.length + 1, round.manual, now, round.answer, round.usage);
     return { changed: true, text: "🔐 금고 리셋 완료\n━━━━━━━━━━━━\n새 비밀번호로 금고를 다시 시작했어요.\n최근 힌트를 초기화했어요.\n\n🎯 유저별 사용 횟수는 유지됩니다.\n👉 /금고" };
 }
 
@@ -36665,59 +36695,82 @@ function applyVaultRobberyGuess(store, accountId, nickname, guess, premium, now)
     requireVaultRobberyStore(store);
     var round = store.current, attempts = getVaultRobberyAttempts(store, accountId, premium);
     if (typeof accountId !== "string" || !accountId || typeof nickname !== "string") throw new Error("금고 참여 계정 오류");
-    if (getVaultRobberyDay(now) !== round.day) return { kind: "dateChanged", changed: false };
+    if (round.winner !== null || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return { kind: "closed", changed: false, awardKey: round.winner };
     requireVaultRobberyInteger(guess);
-    if (guess < GLOBAL_CONFIG.vaultRobbery.limits.minNumber || guess > GLOBAL_CONFIG.vaultRobbery.limits.maxNumber) return { kind: "invalid", changed: false };
+    var stage = getVaultRobberyStage(round.number);
+    if (guess < stage.minNumber || guess > stage.maxNumber) return { kind: "invalid", changed: false };
     if (attempts.remaining === 0) return { kind: "exhausted", changed: false };
-    if (round.winner !== null) return { kind: "closed", changed: false, awardKey: round.winner };
     round.usage["$" + accountId] = attempts.used + 1;
     if (guess === round.answer) {
-        round.winner = store.schemaVersion === 2 ? round.id : "$" + round.day;
+        round.winner = round.id;
         var award = { day: round.day, accountId: accountId, name: nickname, amount: round.prize, answer: round.answer, at: now, paid: false, notice: "WAITING" };
-        if (store.schemaVersion === 2) {
-            award.gameId = round.id; award.number = round.number; award.manual = round.manual; award.nextOpened = false;
-            award.rewardId = "vault:" + round.id + ":" + accountId;
-        }
+        award.gameId = round.id; award.number = round.number; award.manual = round.manual; award.nextOpened = false;
+        award.rewardId = "vault:" + round.id + ":" + accountId;
         store.awards[round.winner] = award;
+        store.dailyWinners.push(round.winner);
         return { kind: "won", changed: true, awardKey: round.winner, gameId: round.id };
     }
     var direction = guess < round.answer ? "UP" : "DOWN";
     round.hints.push({ accountId: accountId, name: nickname, guess: guess, direction: direction });
-    if (round.hints.length > GLOBAL_CONFIG.vaultRobbery.limits.recentHints) round.hints.shift();
+    if (round.hints.length > stage.recentHints) round.hints.shift();
     return { kind: "wrong", changed: true, guess: guess, direction: direction, gameId: round.id };
 }
 
-// 현재 금고가 정규 1·2차인지 운영자 추가 리게임인지 표시하는 함수
+// 운영자 리게임 표시와 금고 순번을 함께 표시하는 함수
 function getVaultRobberyRoundLabel(round) {
-    return round.manual ? "🔐 운영자 리게임" : "🔐 오늘의 금고: " + (round.number || 1) + "/2차";
+    return (round.manual ? "🔐 운영자 리게임\n" : "") + "🏆 오늘의 금고: " + (round.number || 1) + "/10";
 }
 
-// 종료된 게임별 지급 상태와 현재 프리미엄·일일 잔여 횟수를 표시하는 함수
+// 현재 일일 회차에서 실제 지급을 마친 금고 상금을 합산하는 함수
+function getVaultRobberyPaidTotal(store) {
+    var total = 0;
+    for (var i = 0; i < store.dailyWinners.length; i++) {
+        var award = store.awards[store.dailyWinners[i]];
+        if (award.paid) total += award.amount;
+    }
+    return requireVaultRobberyInteger(total);
+}
+
+// 현재 일일 회차의 당첨자를 최신순으로 표시하고 실제 지급 완료 금액만 안내하는 함수
+function buildVaultRobberyWinners(store) {
+    var keys = store.dailyWinners;
+    var out = "\n🏆 금일 당첨자 목록\n" + allsee + "\n🏆 금일 금고털이 당첨자\n━━━━━━━━━━━━\n";
+    if (!keys.length) out += "🏆 금일 당첨자가 없습니다.\n";
+    for (var i = keys.length - 1; i >= 0; i--) {
+        var award = store.awards[keys[i]], stage = getVaultRobberyStage(Math.min(i + 1, GLOBAL_CONFIG.vaultRobbery.limits.dailyGames));
+        out += "[" + (i + 1) + "번째] " + stage.label + " · 🔐" + award.answer + " · 🅟" + formatServerRaidPrize(award.amount) + (award.paid ? "" : " · 지급 확인 중") + "\n🏆 [" + award.name + "]\n\n";
+    }
+    return out + "━━━━━━━━━━━━\n🎉 금일 당첨: " + keys.length + "/10회\n💰 총 지급 상금: 🅟" + formatServerRaidPrize(getVaultRobberyPaidTotal(store)) + "\n⏰ 매일 자정에 초기화돼요.";
+}
+
+// 현재 난이도·힌트·횟수와 접힌 당첨자 목록을 표시하는 함수
 function buildVaultRobberyMessage(store, accountId, premium, premiumHeader, nickname, result) {
     var round = store.current, kind = result && result.kind ? result.kind : "view";
-    var header = (premiumHeader ? "[👑호이패스 프리미엄👑]\n" : "") + "🔐 호월이의 금고털이\n━━━━━━━━━━━━\n";
-    if (kind === "invalid") return header + "📝 1~1,000 사이의 정수 하나를 입력해 주세요.\n사용법: /금고 숫자\n예시: /금고 500";
+    var stage = getVaultRobberyStage(round.number), winners = buildVaultRobberyWinners(store);
+    var header = (premiumHeader ? "[👑호이패스 프리미엄👑]\n" : "") + "🔐 호월이의 금고털이 (" + stage.label + ")\n━━━━━━━━━━━━\n";
+    var latest = round.winner && store.awards[round.winner];
+    if (store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames && (!latest || latest.paid)) return header + "🎉 금일 금고 10개 모두 개방!\n🏆 오늘의 당첨: " + store.dailyWinners.length + "/10회\n💰 총 지급 상금: 🅟" + formatServerRaidPrize(getVaultRobberyPaidTotal(store)) + "\n⏰ 다음 금고는 자정 이후 시작됩니다.\n━━━━━━━━━━━━" + winners;
+    if (kind === "invalid") return header + "📝 " + stage.minNumber + "~" + stage.maxNumber + " 사이의 정수 하나를 입력해 주세요.\n사용법: /금고 숫자\n예시: /금고 " + Math.floor((stage.minNumber + stage.maxNumber) / 2);
     if (kind === "dateChanged" || kind === "gameChanged") return header + "⏰ 새 금고가 열렸어요. 횟수는 사용하지 않았어요.\n🔎 /금고 입력으로 현황을 확인해 주세요.";
     var attempts = getVaultRobberyAttempts(store, accountId, premium);
-    if (kind === "exhausted") return header + "🎯 남은 도전: 0/" + attempts.limit + "회\n오늘의 도전 기회를 모두 사용했어요.\n\n⏰ 일일 리셋 때 도전 횟수가 초기화돼요.\n🔎 /금고 입력으로 현황을 확인할 수 있어요.";
+    if (kind === "exhausted") return header + "🎯 남은 도전: 0/" + attempts.limit + "회\n오늘의 도전 기회를 모두 사용했어요.\n\n⏰ 매일 자정에 도전 횟수가 초기화돼요.\n🔎 /금고 입력으로 현황을 확인할 수 있어요." + winners;
     var won = kind === "won", award = result && result.awardKey ? store.awards[result.awardKey] : round.winner && store.awards[round.winner];
+    var out = header;
     if (award) {
-        var next = award.nextOpened ? "🔓 2차 금고가 열렸어요. /금고로 현황을 확인해 주세요." : !award.manual && (award.number || 1) === 1 ? "⏳ 상금 지급 확인 후 2차 금고가 열려요." : "⏰ 오늘의 금고는 종료됐어요. 다음 금고는 일일 리셋 때에 열려요.";
-        return header + getVaultRobberyRoundLabel(award) + "\n" + (won ? "🎉 철컥! 금고가 열렸어요!" : "🔓 이 금고는 이미 열렸어요!") + "\n\n🏆 당첨자: [" + award.name + "]\n🔑 비밀번호: " + award.answer + "\n💰 당첨 상금: 🅟" + formatServerRaidPrize(award.amount) + "\n━━━━━━━━━━━━\n" + (award.paid ? (won ? "✅ 보유 포인트에 지급됐어요!\n" : "") : "⏳ 당첨은 확정됐으며 상금 지급 확인 중이에요.\n") + next + "\n🎮 /미니게임";
+        out += (won ? "🎉 철컥! 금고가 열렸어요!" : "🔓 이 금고는 이미 열렸어요!") + "\n🏆 당첨자: [" + award.name + "]\n🔐" + award.answer + "\n💰 당첨 상금: 🅟" + formatServerRaidPrize(award.amount) + "\n" + (award.paid ? "✅ 보유 포인트에 지급됐어요!" : "⏳ 당첨은 확정됐으며 상금 지급 확인 중이에요.") + "\n━━━━━━━━━━━━\n";
     }
-    var date = new Date(round.day * GLOBAL_CONFIG.vaultRobbery.dayMs);
-    var out = kind === "view" ? (premiumHeader ? "[👑호이패스 프리미엄👑]\n" : "") + "🎮 미니게임 목록: /미니게임\n🔐 호월이의 금고털이\n━━━━━━━━━━━━\n📅 " + (date.getUTCMonth() + 1) + "월 " + date.getUTCDate() + "일\n" : header + "[" + nickname + "] " + result.guess + " → " + (result.direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n\n";
-    out += getVaultRobberyRoundLabel(round) + "\n💰 오늘의 상금: 🅟" + formatServerRaidPrize(round.prize) + "\n🎯 남은 도전: " + attempts.remaining + "/" + attempts.limit + "회\n\n🔐 비밀번호 범위: 1~1,000\n━━━━━━━━━━━━\n💡 최근 힌트 · 최근 3회\n";
+    if (kind === "wrong") out += "[" + nickname + "] 🔐" + result.guess + " → " + (result.direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n\n";
+    out += getVaultRobberyRoundLabel(round) + "\n💰 오늘의 상금: 🅟" + formatServerRaidPrize(round.prize) + "\n🎯 남은 도전: " + attempts.remaining + "/" + attempts.limit + "회\n🔐 비밀번호 범위: " + stage.minNumber + "~" + stage.maxNumber + "\n━━━━━━━━━━━━\n💡 최근 힌트 · " + stage.recentHints + "회\n";
     if (!round.hints.length) out += "아직 도전 기록이 없어요.\n첫 힌트를 남겨보세요!\n";
-    for (var i = round.hints.length - 1; i >= 0; i--) out += "[" + round.hints[i].name + "] " + round.hints[i].guess + " → " + (round.hints[i].direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n";
-    out += "━━━━━━━━━━━━\n📝 /금고 숫자";
-    if (kind === "view") out += "\n📖 금고털이 하는 방법\n" + allsee + "\n🔐 최신순 도전 기록을 보고 1~1,000 비밀번호를 맞혀보세요!\n📝 /금고 숫자\n예시: /금고 500\n⬆️ UP: 입력한 숫자보다 커요.\n⬇️ DOWN: 입력한 숫자보다 작아요.\n\n🏆 각 금고의 최초 정답자 1명이 상금 전액 획득!\n1차 당첨 후 2차 개방 · 2차 당첨 후 당일 정규 게임 종료\n기본 상금 5억 · 미당첨이면 다음 일일 리셋에 +5억 · 최대 1,000억\n\n🎯 일반·일반 호이패스 하루 총 2회\n👑 호이패스 프리미엄 하루 총 3회\n※ 1·2차와 운영자 리게임이 개인 횟수를 공유해요.\n⏰ 매일 자정에 새 회차의 1차와 개인 횟수가 초기화돼요.\n※ 모든 방에서 금고와 참여 기록을 공유해요.";
+    for (var i = round.hints.length - 1; i >= 0; i--) out += "[" + round.hints[i].name + "] 🔐" + round.hints[i].guess + " → " + (round.hints[i].direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n";
+    out += "━━━━━━━━━━━━\n📝 /금고 숫자" + winners;
+    if (kind === "view") out += "\n\n📖 금고털이 하는 방법\n🔐 최근 힌트를 보고 현재 범위의 비밀번호를 맞혀보세요!\n⬆️ UP: 입력한 숫자보다 커요.\n⬇️ DOWN: 입력한 숫자보다 작아요.\n🏆 각 금고의 최초 정답자 1명이 고정 상금 전액 획득!\n🎯 일반·일반 호이패스 하루 총 3회\n👑 호이패스 프리미엄 하루 총 5회\n※ 여러 금고 당첨이 가능하며 모든 금고가 개인 횟수를 공유해요.\n⏰ 매일 자정에 금고와 개인 횟수가 초기화돼요.\n※ 모든 방에서 금고와 참여 기록을 공유해요.";
     return out;
 }
 
 // 게임별 지급 확정 뒤 한 번만 사용할 공용 당첨 안내를 생성하는 함수
 function buildVaultRobberyNotice(award) {
-    return "🔐 호월이의 금고가 털렸습니다!\n━━━━━━━━━━━━\n" + getVaultRobberyRoundLabel(award) + "\n🏆 [" + award.name + "] 님 당첨!\n🔑 비밀번호: " + award.answer + "\n\n💰 누적 상금 🅟" + formatServerRaidPrize(award.amount) + " 획득!\n━━━━━━━━━━━━\n" + (award.nextOpened ? "🔓 2차 금고가 열렸습니다. /금고" : "⏰ 오늘의 금고가 모두 열렸습니다. 다음 금고는 일일 리셋 때에 열립니다.") + "\n🎮 /미니게임";
+    return "🔐 호월이의 금고가 털렸습니다!\n━━━━━━━━━━━━\n" + getVaultRobberyRoundLabel(award) + "\n🏆 [" + award.name + "] 님 당첨!\n🔐" + award.answer + "\n\n💰 당첨 상금 🅟" + formatServerRaidPrize(award.amount) + " 획득!\n━━━━━━━━━━━━\n" + (award.nextOpened ? "🔓 다음 금고가 열렸습니다. /금고" : award.number >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames ? "⏰ 오늘의 금고가 모두 열렸습니다. 다음 금고는 자정 이후 열립니다." : "🔎 /금고로 진행 상황을 확인해 주세요.") + "\n🎮 /미니게임";
 }
 
 

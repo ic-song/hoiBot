@@ -7,7 +7,7 @@ let groups = 0;
 function test(name, fn) { fn(); console.log('PASS MINI MEMORY ' + (++groups) + ' ' + name); }
 
 test('vault replacements preserve the complete old round while later usage reset only changes the active round', () => {
-    const f = h.fixture(); f.seed(); ok(f.run('/금고')); ok(f.run('/금고 1'));
+    const f = h.fixture(); f.seed(); ok(f.run('/금고')); ok(f.run('/금고 100'));
     const before = f.state().vault.current; f.clock(f.now() + 1); ok(f.run('/금고리셋', 'master'));
     const archived = readArchive(f); assert.deepEqual(archived.days['vault:' + before.id], before);
     assert.equal(Object.keys(archived.operations).length, 1);
