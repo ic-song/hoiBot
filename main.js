@@ -3330,14 +3330,6 @@ try {
 function response(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
     var miniGameRequestAt = Date.now(); // 잠금 대기 이전 시각으로 일일 리셋·동시 입력 경계 판정
     var miniGameRequestGameId = getMiniGameObservedVaultId(isDevCommandMessage(msg));
-    if (msg === "/메인방제한" || msg === "/메인방제한 ON" || msg === "/메인방제한 OFF") {
-        if (containsMessageFilterWord(msg, getCachedMessageFilterWords(false))) return;
-        if (room !== testRoom || !isMasterIdentity(sender)) return;
-        if (msg === "/메인방제한 ON") GLOBAL_CONFIG.maintenance.testRoomOnly = true;
-        if (msg === "/메인방제한 OFF") GLOBAL_CONFIG.maintenance.testRoomOnly = false;
-        replier.reply("MAIN 방 제한: " + (GLOBAL_CONFIG.maintenance.testRoomOnly ? "ON · 팻 테스트방만 응답" : "OFF · 일반 채팅방도 응답") + "\n※ 메모리 설정이며 봇 재컴파일 시 기본값 OFF로 돌아갑니다.");
-        return;
-    }
     if (GLOBAL_CONFIG.maintenance.testRoomOnly && room !== testRoom) return;
     var responseDataLock = getResponseDataFlowLock(msg);
     var responseTransactionAcquired = false;
@@ -3373,6 +3365,25 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (msg === "ㅁㅂ") msg = "/마블굴리기";
         else if (msg === "ㅁㄱ") msg = "/마블구매";
         else if (msg === "ㅁㅌ") msg = "/마블통과";
+        var territoryEntryGuildData;
+        try {
+            territoryEntryGuildData = loadJsonFile(guildPath);
+        } catch (territoryEntryError) {
+            if (isManualResetInput(msg)) delete manualResetSessions[getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev)];
+            throw territoryEntryError;
+        }
+        if (isGuildTerritoryWarCommandLockActive(territoryEntryGuildData) && isGuildTerritoryBlockedDuringWarCommand(msg)) {
+            if (msg.charAt(0) === "/" || msg === "ㅊㅊ") replier.reply("🏰 길드 영지전 진행 중에는 영지전 관련 명령어와 /글자수전체정리만 사용할 수 있습니다.");
+            return;
+        }
+        if (msg === "/메인방제한" || msg === "/메인방제한 ON" || msg === "/메인방제한 OFF") {
+            if (containsMessageFilterWord(msg, getCachedMessageFilterWords(false))) return;
+            if (room !== testRoom || !isMasterIdentity(sender)) return;
+            if (msg === "/메인방제한 ON") GLOBAL_CONFIG.maintenance.testRoomOnly = true;
+            if (msg === "/메인방제한 OFF") GLOBAL_CONFIG.maintenance.testRoomOnly = false;
+            replier.reply("MAIN 방 제한: " + (GLOBAL_CONFIG.maintenance.testRoomOnly ? "ON · 팻 테스트방만 응답" : "OFF · 일반 채팅방도 응답") + "\n※ 메모리 설정이며 봇 재컴파일 시 기본값 OFF로 돌아갑니다.");
+            return;
+        }
         if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists()) runMiniGameEntry("recover", { ctx: ctx, allowRecoveryReview: true });
         var resetProbeKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var resetProbeSession = manualResetSessions[resetProbeKey];
@@ -32689,6 +32700,10 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
     if (typeof msg !== "string") return false;
     return (
         msg === "/글자수전체정리" ||
+        msg === "/길드영지준비" ||
+        msg === "/길드영지준비확인" ||
+        msg === "/길드영지확인" ||
+        msg === "/길드영지시작" ||
         msg === "/길드영지순서" ||
         msg === "/길드영지초기화" ||
         msg === "/길드영지종료" ||
@@ -32698,18 +32713,19 @@ function isGuildTerritoryAllowedDuringWarCommand(msg) {
         msg === "/영지보상순위" ||
         msg === "/영지온" ||
         msg === "/영지오프" ||
-        msg === "/디버깅모드" ||
-        msg === "/매력버프체크" ||
-        /^\/매력버프체크\s+\S(?:.*\S)?$/.test(msg) ||
+        msg === "/길드영지보상지급" ||
+        msg === "/영지순위보상지급" ||
+        msg === "/차원의문on" || msg === "/차원의문온" ||
+        msg === "/차원의문off" || msg === "/차원의문오프" ||
+        msg === "/날기억해줘온" || msg === "/날기억해줘오프" ||
         /^\/영지공격(?:\s+[1-9])?$/.test(msg) ||
         isGuildTerritoryRiftControlCommandMessage(msg)
     );
 }
 
-// 길드 영지전 중 차단할 일반 슬래시 명령어인지 확인하는 함수
+// 길드 영지전 중 허용 목록 밖의 명령과 단축 입력을 차단하는 함수
 function isGuildTerritoryBlockedDuringWarCommand(msg) {
     if (typeof msg !== "string") return false;
-    if (msg.indexOf("/") !== 0) return false;
     return !isGuildTerritoryAllowedDuringWarCommand(msg);
 }
 

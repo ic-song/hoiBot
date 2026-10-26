@@ -119,11 +119,11 @@ test('ㅁㄱ 구매/건설 동등·공백·중복·타인/단계/잔액 차단·
 // 기존 초기화 하네스의 정의 부분만 불러와 중복 시험 실행 없이 재사용한다.
 const fs=require('fs'),path=require('path'),Module=require('module'),file=path.resolve(__dirname,'test_reset_menu.js'),source=fs.readFileSync(file,'utf8');
 const resetFixture=new Function('require',source.slice(0,source.indexOf("test('권한별"))+'\nreturn fixture;')(Module.createRequire(file));
-test('모든 운영 메뉴/구형/직접예외 일반방 무응답·데이터/대기/읽기0', () => {
-    const r=resetFixture();r.call('/초기화');const before=r.h.persist(),pending=JSON.stringify(r.c.manualResetSessions),read=r.c.loadJsonFile;let reads=0;r.c.loadJsonFile=(...a)=>{reads++;return read(...a);};
+test('모든 운영 메뉴/구형/직접예외 일반방 무응답·데이터/대기 불변·영지전 상태만 확인', () => {
+    const r=resetFixture();r.call('/초기화');const before=r.h.persist(),pending=JSON.stringify(r.c.manualResetSessions),read=r.c.loadJsonFile;let otherReads=0;r.c.loadJsonFile=(...a)=>{if(a[0]!==r.c.guildPath)otherReads++;return read(...a);};
     const inputs=['/초기화','1삭제','2취소',...r.c.GLOBAL_CONFIG.manualReset.entries.filter(e=>!e.personal).map(e=>e.command),...r.c.GLOBAL_CONFIG.manualReset.directOperations.map(e=>e.command),'/계삭진행\ta','/계정잠수삭제 a'];
     for(const room of ['일반방','교육방','서버관리자2','팻테스트방','room90'])for(const user of ['a','admin','master','호이 남'])for(const msg of inputs)assert.equal(r.call(msg,user,room).replies.length,0,msg+'/'+room);
-    assert.equal(reads,0);assert.deepEqual(r.h.persist(),before);assert.equal(JSON.stringify(r.c.manualResetSessions),pending);
+    assert.equal(otherReads,0);assert.deepEqual(r.h.persist(),before);assert.equal(JSON.stringify(r.c.manualResetSessions),pending);
 });
 test('허용방 권한거절·두 방/사용자/DEV 대기 독립·권한상실 최종 차단', () => {
     const r=resetFixture();r.c.hasActiveHoiPassAccess=()=>false;assert.deepEqual(r.call('/초기화','a').replies,['⛔ 사용 권한이 없습니다.']);assert.deepEqual(r.call('/댓글초기화','a').replies,['⛔ 사용 권한이 없습니다.']);

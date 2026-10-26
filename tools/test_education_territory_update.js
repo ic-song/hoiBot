@@ -74,14 +74,13 @@ test('교육 파일 미생성은 미시작, 실제 읽기 오류는 전파, 거�
     assert.equal(q.run('a', 'a'), ''); assert.equal(q.run('a', 'master', false, '/정보보기 a'), '');
     assert(q.run('없는유저').includes('등록되지 않은 유저')); assert.equal(q.reads(), 0); assert.deepEqual(h.f.files(), paid);
 });
-test('실제 Info 7인수 콜백: 운영자 조회·개인톡·영지전 중 허용·DEV 격리·0저장', () => {
+test('실제 Info 7인수 콜백: 운영자 조회·개인톡·영지전 중 차단·DEV 격리·0저장', () => {
     const loading = require('./test_command_data_loading'), f = loading.createInfoFixture();
     const data = JSON.parse(f.disk[loading.prod + 'member.json']);
     data.member.u.serverRaidAccount = { id: 'student' }; data.member.u.gmEducationRewards = ['tx'];
     f.disk[loading.prod + 'member.json'] = JSON.stringify(data);
     f.disk[loading.prod + 'gmEducation.json'] = JSON.stringify({ version: 1, users: { $student: { user: 'u', chapters: [{ chapter: 1, txId: 'tx', gmId: 'gm', gmUser: 'master' }] } } });
     f.disk[loading.dev + 'gmEducation.json'] = JSON.stringify({ version: 1, users: {} });
-    f.disk[loading.prod + 'guildData.json'] = JSON.stringify({ guilds: {}, territoryWar: { active: true } });
     for (const [user, room, group] of [['master', '서버관리자', true], ['admin', '개인톡', false]]) {
         const before = { ...f.disk }, result = f.run('/정보 u', user, room, group);
         assert.deepEqual(result.errors, []); assert(result.messages.join('\n').includes('📘 1/12챕터 완료 · 다음 2챕터'));
@@ -89,6 +88,8 @@ test('실제 Info 7인수 콜백: 운영자 조회·개인톡·영지전 중 허
     }
     const dev = f.run('dev/정보 u', 'master'); assert.deepEqual(dev.errors, []);
     assert(dev.messages.join('\n').includes('📘 0/12챕터 완료 · 다음 1챕터')); assert.deepEqual(dev.writes, []);
+    f.disk[loading.prod + 'guildData.json'] = JSON.stringify({ guilds: {}, territoryWar: { active: true } });
+    const blocked = f.run('/정보 u', 'master'); assert.deepEqual(blocked.errors, []); assert.deepEqual(blocked.messages, []); assert.deepEqual(blocked.writes, []);
 });
 // 실제 타이머 예약·만료 함수를 메모리 상태와 예약 큐에 연결한다.
 function timerHarness(auto = false) {

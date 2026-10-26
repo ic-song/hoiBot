@@ -6,6 +6,18 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-10-26 - 영지전 진행 중 일반 명령·단축어·운영자 예외 우회
+
+Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/territory-command-lock, 운영 미반영)
+
+- 제보: 영지전 중 `/펫정보`, `ㅊㅊ` 등이 실행되고 영지전 명령이 응답하지 않은 것으로 보임. 운영 로그·오류 줄 번호는 제공되지 않았다.
+- 확인한 원인: Main의 일반 차단은 슬래시 입력만 검사하고, 운영자 전역 예외와 공통 차단보다 먼저 실행되는 별도 진입부가 있었다. Info 역시 비슬래시 단축어·전역 `/정보`·DEV 환경 예외가 있었다. 기존 소스에서 `ㅊㅊ` 미차단과 디버깅 명령 허용을 재현했다. 공격 무응답의 직접 원인까지 입증한 것은 아니다.
+- 변경: Main 공통 진입부에서 현재 환경의 영지전 상태를 먼저 확인한다. 영지전 관련 명령과 정확한 `/글자수전체정리`만 허용하며 역할로 우회하지 않는다. 일반 채팅은 별도 안내 없이 종료하고 슬래시 명령·출석에는 Main 안내를 한 번 출력한다. Info는 회원·펫·타이틀 로드 전에 응답을 중단한다. DEV와 PROD는 각 환경의 진행 상태를 따른다.
+- 검증: `tools/test_territory_command_lock.js` 350건, `tools/test_territory_command_lock_rhino.js` 실제 Rhino 288건 통과. 허용·차단 명령, 운영자/일반 사용자, DEV, 데이터 무변경, 종료 후 일반 흐름 복구와 잠금 해제를 확인했다. 관련 교육·레이드·마블·초기화·Info 회귀 및 전체 Main/Info Rhino 컴파일 통과.
+- 제한: 운영 기기 접근·실제 채팅 검증 없음. 기존 `feature/bugFix`의 미반영 커밋을 보존하기 위해 별도 브랜치를 사용했다. 이전 성능 점검 후보는 이번 수정에 포함하지 않았다.
+
+---
+
 ## 2026-10-26 - 미니게임 복구 파일 누락과 시작 초기화 중단
 
 Status: FIX_IMPLEMENTED_AND_VALIDATED (ver_2.702, 소스 브랜치 feature/bugFix)

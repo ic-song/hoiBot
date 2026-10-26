@@ -19,6 +19,7 @@ const script = "var GLOBAL_CONFIG=" + JSON.stringify(configContext.GLOBAL_CONFIG
 var testRoom="test", commandDataFlowLock=new java.util.concurrent.locks.ReentrantReadWriteLock(true);
 var dataTransactionLock=new java.util.concurrent.locks.ReentrantLock(), dataSaveTransactionThreadLocal=new java.lang.ThreadLocal();
 function isServerRaidMutationCommand(){return false;} function getRaidSealCraftRequest(){return null;}
+function getMiniGameObservedVaultId(){return null;}
 function getStoneBoxOpenRequest(){return null;} function isSealedVaultMutationCommandMessage(){return false;}
 var stock=new java.util.concurrent.atomic.AtomicInteger(100), paid=new java.util.concurrent.atomic.AtomicInteger(0);
 var active=new java.util.concurrent.atomic.AtomicInteger(0), maxActive=new java.util.concurrent.atomic.AtomicInteger(0), calls=new java.util.concurrent.atomic.AtomicInteger(0);

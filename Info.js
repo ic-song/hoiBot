@@ -308,13 +308,9 @@ function isGlobalInfoCommandAllowed(sender, msg) {
 	return typeof msg === "string" && (msg === "/정보" || msg.indexOf("/정보 ") === 0) && (isAdminIdentity(sender) || isMasterIdentity(sender));
 }
 
-// 영지전 중 main.js가 안내한 일반 정보 명령을 Info.js에서 다시 처리하지 않도록 확인하는 함수
+// 현재 환경의 영지전 중에는 역할·단축어·전역 예외와 무관하게 Info 응답을 차단하는 함수
 function isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, isDev, isGlobalInfoCommand) {
-	return !isDev &&
-		!!(guildData && guildData.territoryWar && guildData.territoryWar.active === true) &&
-		typeof msg === "string" &&
-		msg.indexOf("/") === 0 &&
-		!isGlobalInfoCommand;
+	return !!(guildData && guildData.territoryWar && guildData.territoryWar.active === true) && typeof msg === "string";
 }
 
 
@@ -656,6 +652,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		if (msg === "/스타터중복확인" && room !== testRoom) return;
+		var guildData = loadJsonFile(guildPath);
+		if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, false)) return;
 		// 인형 저장 복구 전에는 부분 반영된 재화·매력 정보를 표시하지 않는다.
 		if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists()) {
 			var infoDollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
@@ -703,9 +701,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			return;
 		}
 		var isGlobalInfoCommand = isGlobalInfoCommandAllowed(sender, msg);
-		var guildData = loadJsonFile(guildPath);
-		// 영지전 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 조용히 차단합니다.
-		if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, isGlobalInfoCommand)) return;
 		// 펫무쌍 제한 안내는 main.js에서 한 번 출력하고 Info 응답은 차단합니다.
 		if (data && data.petMusou && data.petMusou.active && !isGlobalInfoCommand && !(isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) return;
 		if (!isGlobalInfoCommand && !isGroupChat && !hasInfoPrivateChatPass(data, sender)) {

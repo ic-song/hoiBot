@@ -105,6 +105,7 @@ const responseStart = main.indexOf("function response(room, msg, sender, isGroup
 const responseEnd = main.indexOf("///////////////////////////////////////////////////////////////////////////////////////////////", responseStart);
 assert(responseStart >= 0 && responseEnd > responseStart);
 vm.runInContext(main.slice(responseStart, responseEnd), c);
+for (const name of ["isGuildTerritoryRiftControlCommandMessage", "isGuildTerritoryWarCommandLockActive", "isGuildTerritoryAllowedDuringWarCommand", "isGuildTerritoryBlockedDuringWarCommand"]) vm.runInContext(block(main, "function " + name + "("), c);
 for(const name of ["getDollBoxRequest","getDollRequest","isDollTestRoomCommand","buildDollTestRoomRestrictionMessage"]) vm.runInContext(block(main,"function "+name+"("),c);
 vm.runInContext(block(main, "function createContextReplier("), c);
 vm.runInContext(block(main, "function formatNicknameRankMessage("), c);
@@ -1114,7 +1115,9 @@ group("실제 7인수 콜백 일반/관리자 명령·단축 명령 차단은 �
             const begin = info.indexOf("var plainCommands ="), guardEnd = info.indexOf("if (data && data.member", begin);
             assert(begin > 0 && guardEnd > begin);
             infoContext.msg = "/미니펫정보"; infoContext.room = "room1"; infoContext.sender = "a";
-            infoContext.filePath = memberPath; infoContext.loadJsonFile = () => read();
+            infoContext.filePath = memberPath; infoContext.guildPath = c.guildPath; infoContext.ctx = { isDev: false };
+            infoContext.loadJsonFile = p => p === c.guildPath ? { guilds: {} } : read();
+            vm.runInContext(block(info, "function isInfoCommandBlockedDuringGuildTerritoryWar("), infoContext);
             vm.runInContext("function probeInfoEntry(){" + info.slice(begin, guardEnd) + "throw Error('잠금 이후 분기 실행');}", infoContext);
             vm.runInContext("probeInfoEntry()", infoContext); assert.strictEqual(disk[memberPath], before);
         }
@@ -1438,7 +1441,7 @@ group("이동 후 소속 기간·계정 ID는 기존 참가자 판별 기준 적
 group("남은 턴 조회도 JSON 로드 실패를 숨기지 않음·불필요한 매력 계산 파일 IO 없음", () => {
     start(); const traceStart = traces.length; turnCallback("ㄹㄹ");
     const loads = traces.slice(traceStart).filter(t => t.type === "load").map(t => t.path);
-    assert.deepStrictEqual(loads.sort(), [memberPath, root + "member_pet.json", root + "guild.json"].sort());
+    assert.deepStrictEqual(loads.sort(), [memberPath, root + "member_pet.json", root + "guild.json", root + "guild.json"].sort()); // 공통 진입부 영지전 상태 확인 포함
     for (const bad of [undefined, "{broken"]) {
         disk[memberPath] = bad; const before = JSON.stringify(disk); assert.throws(() => run("/레이드턴")); assert.strictEqual(JSON.stringify(disk), before);
     }
@@ -1596,10 +1599,10 @@ Object.assign(infoContext, {
 });
 vm.runInContext(block(info, "function isAccountSuspensionBlockedMessage("), infoContext);
 const infoGuardStart = info.indexOf("if (isInfoServerRaidLocked(data)");
-const infoGuardEnd = info.indexOf('if (msg.startsWith("/정보")', infoGuardStart);
+const infoGuardEnd = info.indexOf('if ((msg === "/정보"', infoGuardStart);
 const infoDevPrelude = block(info.slice(info.indexOf("function response(")), "if (ctx.isDev) {");
-vm.runInContext("function runAdditionalInfo(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
-    block(info, 'if (msg.startsWith("/정보")') + block(info, 'if (msg === "/포인트" ||') + "}", infoContext);
+vm.runInContext("function runAdditionalInfo(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath),guildData=loadJsonFile(guildPath);" + info.slice(infoGuardStart, infoGuardEnd) +
+    block(info, 'if ((msg === "/정보"') + block(info, 'if (msg === "/포인트" ||') + "}", infoContext);
 group("Info 실제 자격 검사와 포인트·정보 분기·읽기 전용·접미 차단", () => {
     additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].today = 1; write(d);
     disk[root + "titles.json"] = JSON.stringify({ member: {} }); disk[root + "petTitles.json"] = "{}"; disk[root + "activity.json"] = "{}";
