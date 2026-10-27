@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.718"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.719"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -110,7 +110,7 @@ const PET_SKILL_FIXED_ACTUAL_RATES = {
 };
 const PET_SKILL_LIST = [
     { name: "경제사범", grade: "한정판", limitedEdition: true, openable: false, effect: "누군가는 말합니다.\n“적당한 사기는 사기꾼이라 부르지만,\n그 규모가 조 단위가 되면 경제사범이라 부릅니다.”\n\n🔐 장착 시 금고 도전 횟수 +4회\n※ 금고털이범과 효과 중복 불가" },
-    { name: "금고털이범", grade: "A", rate: 0.4, effect: "어른들은 말씀하셨습니다.\n“바늘 도둑이 소도둑 된다.”\n그 말이 사실임이 증명되었습니다.\n\n🔐 장착 시 금고 도전 횟수 +2회\n※ 괴도루팡과 효과 중복 불가" },
+    { name: "금고털이범", grade: "A", rate: 0.4, effect: "어른들은 말씀하셨습니다.\n“바늘 도둑이 소도둑 된다.”\n그 말이 사실임이 증명되었습니다.\n\n🔐 장착 시 금고 도전 횟수 +2회\n※ 경제사범과 효과 중복 불가" },
 
     { name: "전설의 몽둥이", grade: "한정판", limitedEdition: true, openable: false, directGrantOnly: true, directGrantOperator: "호이 남", directGrantUsage: "/펫스킬가방추가 [이름], 전설의 몽둥이 [숫자]", raidExp: 500000, castleExp: 500000, equipComment: "오오.. 영롱하군요 너..빌런인가?", effect: "오톡 빌런을 때려잡는 전설의 몽둥이 입니다.\n장착 시 레이드매력 50만과 캐슬매력 50만, 총 종합매력 100만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※펫스킬오픈으로 획득 불가\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
     { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
@@ -1127,7 +1127,7 @@ const GLOBAL_CONFIG = {
         schemaVersion: 3,
         skillBonuses: { "금고털이범": 2, "경제사범": 4 },
         equipMessages: {
-            "금고털이범": "🔐 금고털이범📙 장착 완료!\n━━━━━━━━━━━━\n바늘 도둑이 소도둑 된다더니…\n이제는 금고까지 노리기 시작했습니다. 😏\n\n🔐 금고 도전 횟수 +2회 적용!\n※ 괴도루팡과 효과 중복 불가\n━━━━━━━━━━━━",
+            "금고털이범": "🔐 금고털이범📙 장착 완료!\n━━━━━━━━━━━━\n바늘 도둑이 소도둑 된다더니…\n이제는 금고까지 노리기 시작했습니다. 😏\n\n🔐 금고 도전 횟수 +2회 적용!\n※ 경제사범과 효과 중복 불가\n━━━━━━━━━━━━",
             "경제사범": "💰 경제사범📙 장착 완료!\n━━━━━━━━━━━━\n푼돈에는 관심 없습니다.\n이제 목표는 조 단위입니다. 😎\n\n🔐 금고 도전 횟수 +4회 적용!\n※ 금고털이범과 효과 중복 불가\n━━━━━━━━━━━━"
         },
         limits: { minNumber: 100, maxNumber: 99999, normalAttempts: 3, passAttempts: 5, dailyGames: 15 },
