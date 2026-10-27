@@ -16,7 +16,7 @@ const names = ['createCommandContext', 'getCurrentContext', 'enterCommandContext
     'restoreManagedJsonFromBackup', 'isProtectedManagedJsonPath', 'parseManagedJsonContent', 'getProtectedJsonSaveLock', 'writeVerifiedJsonFile', 'writeMemberSplitSlot',
     'isDevCommandMessage', 'stripDevCommandPrefix', 'createContextReplier', 'isExclusiveDataMutationCommandMessage', 'getResponseDataFlowLock',
     'getMyGuildId', 'isSafePointValue', 'roundToTwo', 'buildServerRaidAccountIndex', 'normalizeHoiServerLabel'];
-names.push('formatNicknameRankMessage','getManualResetDirectOperation');
+names.push('formatNicknameRankMessage','getManualResetDirectOperation','isManualResetInput','isManualResetLegacyCommand','getManualResetLegacyEntry');
 let runtime = 'var GLOBAL_CONFIG=' + JSON.stringify(config) + ';\n' + names.map(n => fixture.f.block(h.main, 'function ' + n + '(')).join('\n') + '\n' + h.model;
 runtime += `
 var DATA_ROOT_PATH=${JSON.stringify(root)},DEV_DATA_ROOT_PATH=${JSON.stringify(devRoot)},COMMON_DATA_FILE_MAP={},filePath=DATA_ROOT_PATH+'member.json',memberPetPath=DATA_ROOT_PATH+'member_pet.json',guildPath=DATA_ROOT_PATH+'guild.json';
@@ -47,6 +47,10 @@ function worker(message,user,ready,start){return new java.lang.Thread(new java.l
 function parallel(messages,users){var ready=new java.util.concurrent.CountDownLatch(users.length),start=new java.util.concurrent.CountDownLatch(1),threads=[];for(var i=0;i<users.length;i++){var t=worker(messages[i],users[i],ready,start);threads.push(t);t.start();}check(ready.await(5,java.util.concurrent.TimeUnit.SECONDS),'workers ready');start.countDown();for(var j=0;j<threads.length;j++){threads[j].join(10000);check(!threads[j].isAlive(),'worker finished');}check(errors.isEmpty(),'workers '+errors);}
 `;
 // 재시작한 독립 Rhino 전역에서 실제 파일을 이어 읽는 시나리오를 구성하는 함수
+const resetEntry=fixture.f.block(h.main,'if (msg === "/리셋" &&');
+runtime=runtime.replace(h.entry,h.entry+"\nvar petData=loadJsonFile(memberPetPath),petSkillData={},guildData=loadJsonFile(guildPath);\n"+resetEntry);
+runtime+="\nvar carrotBoardPath=DATA_ROOT_PATH+'carrotBoard.json',crashAfterClear=false;function resetAttendance(){}function stopAllIntervals(){}function runMiniGameEntry(){return [];}function runHoiPassPremiumAutoAttendance(){return {message:'reset complete'};}function scheduleMiniGameWork(){}\n";
+runtime=runtime.replace('writes.add(String(p));','writes.add(String(p));if(crashAfterClear&&String(p)===DATA_ROOT_PATH+GLOBAL_CONFIG.guildMarble.pendingName&&JSON.parse(t).pending===null){crashAfterClear=false;simulateCrash=true;throw Error("stop after reset clear");}');
 function scenario(code) { return 'run(s,' + JSON.stringify(code) + ');\n'; }
 let script = `var cx=org.mozilla.javascript.Context.getCurrentContext();cx.compileString(${JSON.stringify(h.main)},'main.js',1,null);cx.compileString(${JSON.stringify(h.info)},'Info.js',1,null);
 var runtime=${JSON.stringify(runtime)};function fresh(){var s=new org.mozilla.javascript.ImporterTopLevel(cx);cx.evaluateString(s,runtime,'runtime',1,null);return s;}function run(s,code){return cx.evaluateString(s,code,'scenario',1,null);}var s=fresh();
@@ -90,6 +94,14 @@ script += scenario("var st=read(GLOBAL_CONFIG.guildMarble.fileName),g=st.guilds.
 script += "print('PASS Rhino READY: concurrent construction shortcut/full command builds once and consumes gold once');\n";
 script += scenario("var st=read(GLOBAL_CONFIG.guildMarble.fileName),g=st.guilds.$g.current;g.slot=28;g.action='ROLL';g.move=null;g.players[3].position=4;g.players[3].gold=90;g.lands[6]={owner:1,level:2};for(var i=0;i<3;i++)g.lands[[1,3,8][i]]={owner:3,level:1};put(GLOBAL_CONFIG.guildMarble.fileName,st);messages.clear();Math.random=function(){return 0.2;};run('ㅁㅂ','d');check(current().players[3].gold===0&&!current().players[3].alive&&current().slot===29,'bankruptcy state');var text=String(messages.iterator().next());check(messages.size()===2&&text.indexOf('💥 파산')<text.indexOf('🧾 통행료 정산'),'separated bankruptcy UI');check(text.indexOf('실제 지급 · 90 골드')!==-1&&text.indexOf('부족 금액 · 135 골드')!==-1&&text.indexOf('보유 지역 3곳')!==-1,'actual amounts and clear count');");
 script += "print('PASS Rhino READY: real files show bankruptcy225/paid90/short135 and three returned lands with split UI');\n";
+script+=scenario("put('member.json',"+JSON.stringify(seed)+");put(GLOBAL_CONFIG.guildMarble.fileName,{schemaVersion:1,guilds:{}});readyThree();run('/마블준비','d');var before=read('member.json').member.a.point;parallel(['/리셋','/리셋','/리셋','/리셋'],['호이 남','호이 남','호이 남','호이 남']);check(current()===null&&read('member.json').member.a.point===before+100000000,'four resets one refund');");
+script+="print('PASS Rhino reset: four simultaneous real reset entries end one game and refund exactly once');\n";
+for(const flag of ['crashAfterMember','crashAfterMarble','crashAfterClear']){
+ script+=scenario("put('member.json',"+JSON.stringify(seed)+");put(GLOBAL_CONFIG.guildMarble.fileName,{schemaVersion:1,guilds:{}});readyThree();run('/마블준비','d');"+flag+"=true;var failed=false;try{run('/리셋','호이 남');}catch(e){failed=true;}check(failed,'reset stopped at "+flag+"');");
+ script+='s=fresh();\n';
+ script+=scenario("run('/마블굴리기','a');check(current()===null&&read('member.json').member.a.point==="+seed.member.a.point+",'reset crash blocks old play and keeps one refund');run('/리셋','호이 남');check(read('member.json').member.a.point==="+seed.member.a.point+",'reset again no extra money');");
+}
+script+="print('PASS Rhino reset: member/game/journal-clear process stops survive fresh scope without losing or doubling refunds');\n";
 const file = path.join(temp, 'test.js'); fs.writeFileSync(file, script, 'utf8');
 const result = cp.spawnSync('java', ['-Xmx1024m', '-Dfile.encoding=UTF-8', '-cp', path.resolve(jar), 'org.mozilla.javascript.tools.shell.Main', '-opt', '-1', '-version', '200', '-encoding', 'UTF-8', '-f', file], { encoding: 'utf8', timeout: 60000, maxBuffer: 1024 * 1024 });
 process.stdout.write(result.stdout || ''); process.stderr.write(result.stderr || ''); assert.equal(result.status, 0);

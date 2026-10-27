@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.713"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.714"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1110,6 +1110,17 @@ const GLOBAL_CONFIG = {
         questionCount: 1300, dialogueCount: 200, reasonLimit: 80, messageLimit: 12000,
         balanceMinimum: 5, dicePremium: 4, hostDelayMs: 800, retryMs: 30000,
         rewards: { balance: 100000000, win: 30000000, draw: 20000000, loss: 10000000 },
+        diceBonuses: { luckySix: 50000000, comeback: 20000000, streak: { "2": 10000000, "3": 30000000, "5": 100000000 } },
+        diceQuotes: {
+            win: ["또 너야?! 이 게임 이름이 호월이 괴롭히기였어?! 😫", "포인트 가져가… 아니, 그렇게 신나게 가져가진 말고! 😤", "운이 좋은 거야. 실력 아니야. 아무튼 아니야! 😠", "나 안 울어. 주사위 가루가 눈에 들어간 거야. 🥲"],
+            milestones: { "2": "두 번은 봐준 거야. 진짜로. 😤", "3": "아니, 왜 네 주사위만 말을 잘 듣는데?! 😠", "4": "웃지 마! 나 지금 진지하거든?! 😤", "5": "나 이제 안 봐줘! …아까도 안 봐주긴 했는데! 😭", "6": "너 언제 질 건데! 나도 승리 멘트 준비했단 말이야! 😫" },
+            loss: ["{streak}연승? 아~ 방금까지는 그랬지! 😏", "주사위는 돌려줄게. 연승은 못 돌려줘! 🤭", "한 번 더 이길 줄 알았지? 나도 그 표정을 기다렸어! 😎"],
+            draw: ["동점이잖아! {streak}연승은 아직 안 끊긴 거야! 😤", "이번에도 동점이네! {streak}연승은 그대로라구! 😤"],
+            firstAhead: ["또 앞서가네… 아직 한 번 더 남았거든! 😤", "이번엔 안 봐줘! 다음 주사위도 보자! 😤"],
+            firstBehind: ["이번엔 내가 이길 거라구! 😤", "아직 끝난 건 아니지만 이번엔 자신 있다! 😏"],
+            firstTie: ["똑같잖아! 다음 주사위로 결판내자!", "동점이네! 마지막 주사위가 남았거든! 😤"],
+            firstSix: ["다음에도 6이 나오면… 안 되는데!", "첫 주사위부터 6이라니! 다음엔 내가 이길 거야! 😤"]
+        },
         dialogueSizes: { start: 20, roll: 40, host_ahead: 30, host_behind: 30, mid_tie: 20, user_win: 20, user_loss: 20, final_draw: 20 }
     },
     vaultRobbery: {
@@ -1379,9 +1390,11 @@ const GLOBAL_CONFIG = {
             "• 중단 동의가 끝나기 전에 경기를 진행하면 중단 요청은 취소돼요.",
             "",
             "• 자리를 비워도 자동으로 탈락하거나 취소되지 않아요.",
-            "• 전원 동의로 중단할 수 없다면 경기와 새 모집은 계속 대기해요.",
-            "• 돌아오면 /마블판을 확인하고 이어서 진행하세요.",
-            "• 날짜가 바뀌어도 진행 중인 경기는 유지돼요.",
+            "• 전원 동의로 중단할 수 없다면 일일 /리셋 전까지 대기해요.",
+            "• 일일 /리셋 전에는 /마블판을 확인하고 이어서 진행할 수 있어요.",
+            "⚠️ 일일 /리셋 실행 시 모집과 진행 경기는 참가자 동의 없이 종료돼요.",
+            "• 진행 경기는 참가비 전액 환급·수수료 없음, 확정 정산은 그대로 처리해요.",
+            "• 종료된 경기는 이어서 진행할 수 없어요. 새로 모집해주세요.",
             "━━━━━━━━━━━━",
             "⌨️ 자주 쓰는 명령어",
             "🧭 /길드마블",
@@ -8217,7 +8230,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/리셋" && (sender == "오픈채팅봇" || sender == "호이 남")) {
+                    var resetMarbleText = new java.io.File(marblePath).exists() ? String(FileStream.read(marblePath, "utf-8")) : null;
+                    var resetMarbleStore = resetMarbleText === null ? null : requireGuildMarbleStore(JSON.parse(resetMarbleText));
+                    var resetMarbleResult = resetMarbleStore ? resetGuildMarbleGames(resetMarbleStore, { data: data, accounts: buildServerRaidAccountIndex(data) }) : null;
                     var miniGameResetWrites = ctx.miniGameRecoveryBlocked ? [] : runMiniGameEntry("resetPlan", { ctx: ctx, data: data });
+                    if (resetMarbleResult && resetMarbleResult.changed) {
+                        // 원래 포인트와 종료가 확정된 정산 대기를 보존해 중단 복구 후에도 경기를 재개하지 않는다.
+                        var resetMarbleJournal = { schemaVersion: marbleConfig.schemaVersion, pending: { memberText: String(FileStream.read(resolveActiveDataPath(filePath), "utf-8")), marbleText: resetMarbleResult.recoveryText } };
+                        validateGuildMarblePending(resetMarbleJournal);
+                        writeVerifiedJsonFile(marblePendingPath, JSON.stringify(resetMarbleJournal), true);
+                    }
                     saveJsonFile(
                         {
                             memo: []
@@ -8231,13 +8253,16 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     var resetAutoAttendanceResult = runHoiPassPremiumAutoAttendance(data, petData, petSkillData, guildData, sender);
                     saveJsonFile(petData, memberPetPath);
                     saveJsonFile(data, filePath);
+                    if (resetMarbleResult && resetMarbleResult.changed) writeMemberSplitSlot(marblePath, JSON.stringify(resetMarbleStore));
                     for (var miniResetIndex = 0; miniResetIndex < miniGameResetWrites.length; miniResetIndex++) {
                         var miniResetWrite = miniGameResetWrites[miniResetIndex], miniResetPath = resolveActiveDataPath(DATA_ROOT_PATH + miniResetWrite.name);
                         var miniResetEntry = prepareManagedJsonTransactionEntry(miniResetPath, false, miniResetWrite.previousText === null ? "" : miniResetWrite.previousText).entry;
                         if (miniResetEntry && miniResetWrite.previousText === null) miniResetEntry.created = true;
                         writeVerifiedJsonFile(miniResetPath, miniResetWrite.text);
                     }
+                    if (resetMarbleResult && resetMarbleResult.changed) writeVerifiedJsonFile(marblePendingPath, JSON.stringify({ schemaVersion: marbleConfig.schemaVersion, pending: null }), true);
                     if (miniGameResetWrites.length) scheduleMiniGameWork(ctx, 1);
+                    if (resetMarbleResult) replier.reply("🎲 길드마블 정리: 경기 " + resetMarbleResult.closed + "개 종료 · 모집 " + resetMarbleResult.cancelled + "개 취소 · 정산 대기 " + resetMarbleResult.pending + "개");
                     if (ctx.miniGameRecoveryBlocked) replier.reply("⏸️ 미니게임 지급 확인 중이라 미니게임의 일일 초기화는 보류했어요. 기존 기록은 보존했어요.");
                     if (resetAutoAttendanceResult.noticeMessage) {
                         if (ctx.isDev) replier.reply(resetAutoAttendanceResult.noticeMessage);
@@ -32538,6 +32563,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (command.trim() === "ㅎㅈ") return true;
     if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
+    if (command === "/리셋") return true; // 전체 경기 환급·미니게임 초기화를 다른 복합 저장과 직렬화
     if (isDevCommandMessage(msg) && command === "/ㅎㅈ") return true;
     if (getManualResetDirectOperation(command)) return true;
     if (isDevCommandMessage(msg) && (command === "/등록한다" || command === "/등록안한다")) command = command.substring(1);
@@ -36388,6 +36414,7 @@ function startMiniGameDice(state, id, name, day, now, room, dialogues, limit) {
     var gameId = String(java.util.UUID.randomUUID());
     user.used++;
     user.game = { id: gameId, accountId: id, day: day, name: name, room: room, phase: "USER1", rolls: [1 + Math.floor(Math.random() * 6)], quotes: [pickMiniGameDialogue(state, dialogues, "start")], outputIndex: 0, dueAt: now, rewardId: null, paid: false };
+    user.game.streakBefore = user.streak || 0;
     advanceMiniGameDice(state, user.game, dialogues, now, false);
     return { kind: "started", user: user };
 }
@@ -36406,13 +36433,28 @@ function advanceMiniGameDice(state, game, dialogues, now, userInput) {
         if (first) {
             game.quotes.push(pickMiniGameDialogue(state, dialogues, game.rolls[1] > game.rolls[0] ? "host_ahead" : game.rolls[1] < game.rolls[0] ? "host_behind" : "mid_tie"));
             game.phase = "WAIT_USER2";
+            var firstUser = state.dice.users["$" + game.accountId], firstStreak = game.streakBefore === undefined ? firstUser.streak || 0 : game.streakBefore;
+            game.streakBefore = firstStreak;
+            var quoteConfig = GLOBAL_CONFIG.miniGames.diceQuotes;
+            var firstOptions = game.rolls[0] === game.rolls[1] ? quoteConfig.firstTie : firstStreak > 0 ? game.rolls[0] > game.rolls[1] ? quoteConfig.firstAhead : quoteConfig.firstBehind : game.rolls[0] === 6 ? quoteConfig.firstSix : null;
+            if (firstOptions) game.firstQuote = pickMiniGameDiceQuote(firstUser, "lastFirstQuote", firstOptions);
         } else {
             var delta = game.rolls[0] + game.rolls[2] - game.rolls[1] - game.rolls[3];
             game.result = delta > 0 ? "win" : delta < 0 ? "loss" : "draw";
             game.quotes.push(pickMiniGameDialogue(state, dialogues, delta > 0 ? "user_win" : delta < 0 ? "user_loss" : "final_draw"));
             game.phase = "RESULT"; game.rewardId = "dice:" + game.id + ":" + game.accountId;
             if (state.ledger[game.rewardId]) throw new Error("미니게임 주사위 보상 중복 감지");
-            state.ledger[game.rewardId] = { id: game.rewardId, kind: "dice", day: game.day, accountId: game.accountId, amount: GLOBAL_CONFIG.miniGames.rewards[game.result], at: now, status: "PENDING", paidAt: null };
+            var resultUser = state.dice.users["$" + game.accountId];
+            game.streakBefore = game.streakBefore === undefined ? resultUser.streak || 0 : game.streakBefore;
+            game.bonus = calculateMiniGameDiceBonus(game.rolls, game.streakBefore);
+            resultUser.streak = game.bonus.streakAfter;
+            var finalQuotes = GLOBAL_CONFIG.miniGames.diceQuotes;
+            if (game.result === "loss" && game.streakBefore > 0) game.finalQuote = pickMiniGameDiceQuote(resultUser, "lastFinalQuote", finalQuotes.loss).replace("{streak}", game.streakBefore);
+            else if (game.result === "win" && resultUser.streak >= 2) game.finalQuote = pickMiniGameDiceQuote(resultUser, "lastFinalQuote", [finalQuotes.milestones[String(Math.min(6, resultUser.streak))]].concat(finalQuotes.win));
+            else if (game.result === "draw" && game.streakBefore > 0) game.finalQuote = pickMiniGameDiceQuote(resultUser, "lastFinalQuote", finalQuotes.draw).replace("{streak}", game.streakBefore);
+            else if (game.bonus.luckySix) game.finalQuote = "잠깐, 주사위 검사 좀 해보자!";
+            else if (game.bonus.comeback) game.finalQuote = "처음엔 내가 앞섰는데! 마지막에 뒤집다니! 😤";
+            state.ledger[game.rewardId] = { id: game.rewardId, kind: "dice", day: game.day, accountId: game.accountId, amount: game.bonus.total, bonus: game.bonus, at: now, status: "PENDING", paidAt: null };
         }
         game.outputIndex = first ? 1 : 4; // 기존 저장 단계 번호를 유지하며 합친 화면만 전송 대기로 표시
         return true;
@@ -36420,12 +36462,58 @@ function advanceMiniGameDice(state, game, dialogues, now, userInput) {
     return false;
 }
 
+// 주사위 난수와 분리하여 상황별 반응을 직전 문구 다음부터 순환하는 함수
+function pickMiniGameDiceQuote(user, key, options) {
+    var text = options[(options.indexOf(user[key]) + 1) % options.length];
+    user[key] = text;
+    return text;
+}
+
+// 확정된 네 주사위와 직전 연승으로 보너스와 새 연승을 계산하는 함수
+function calculateMiniGameDiceBonus(rolls, before) {
+    requireVaultRobberyInteger(before);
+    if (!Array.isArray(rolls) || rolls.length !== 4) throw new Error("주사위 보너스 숫자 개수 오류");
+    for (var i = 0; i < rolls.length; i++) if (typeof rolls[i] !== "number" || rolls[i] < 1 || rolls[i] > 6 || Math.floor(rolls[i]) !== rolls[i]) throw new Error("주사위 보너스 숫자 오류");
+    var delta = rolls[0] + rolls[2] - rolls[1] - rolls[3]; // 첫 굴림과 별개인 최종 합계 차이
+    var result = delta > 0 ? "win" : delta < 0 ? "loss" : "draw";
+    var after = result === "win" ? before + 1 : result === "loss" ? 0 : before;
+    requireVaultRobberyInteger(after);
+    var config = GLOBAL_CONFIG.miniGames, base = config.rewards[result];
+    var lucky = rolls[0] === 6 && rolls[2] === 6 ? config.diceBonuses.luckySix : 0;
+    var comeback = result === "win" && rolls[0] < rolls[1] ? config.diceBonuses.comeback : 0;
+    var streak = result === "win" ? config.diceBonuses.streak[String(after)] || 0 : 0;
+    return { version: 1, rolls: rolls.slice(0), before: before, streakAfter: after, result: result, base: base, luckySix: lucky, comeback: comeback, streak: streak, total: base + lucky + comeback + streak };
+}
+
+// 과거 경기의 보너스 원장도 원래 숫자·연승으로 검증하는 함수
+function requireMiniGameDiceBonus(bonus) {
+    if (!bonus || bonus.version !== 1) throw new Error("주사위 보너스 버전 오류");
+    var expected = calculateMiniGameDiceBonus(bonus.rolls, bonus.before);
+    var fields = ["streakAfter", "result", "base", "luckySix", "comeback", "streak", "total"];
+    for (var i = 0; i < fields.length; i++) if (bonus[fields[i]] !== expected[fields[i]]) throw new Error("주사위 보너스 기록 오류");
+    return bonus;
+}
+
+// 두 주사위 화면이 공유하는 전체보기 게임 안내를 생성하는 함수
+function buildMiniGameDiceGuide() {
+    return "\n📖 게임 안내\n" + allsee + "\n🎲 호월이를 이겨라! 이용 안내\n━━━━━━━━━━━━\n각자 주사위를 두 번 굴려 합계를 비교해요.\n합계가 높으면 승리, 같으면 무승부예요.\n\n👉 /호월주사위 or ㅎㅈ\n두 번 입력하면 한 판이 완료돼요.\n\n🎁 기본 보상\n승리 🅟3,000만 · 무승부 🅟2,000만 · 패배 🅟1,000만\n━━━━━━━━━━━━\n🎰 럭키 식스\n내 주사위가 6 + 6이면 🅟5,000만 추가!\n호월이도 6 + 6이라 무승부가 되어도 받아요.\n🔥 역전승\n첫 굴림은 낮고 최종 합계로 승리하면 🅟2,000만 추가!\n🏆 연승 보너스\n2연승 🅟1,000만 · 3연승 🅟3,000만 · 5연승 🅟1억\n\n승리하면 연승 +1, 무승부는 유지, 패배하면 초기화돼요.\n날짜가 바뀌어도 연승은 이어져요.\n무승부와 같은 경기 재처리로 보너스를 다시 받지 않아요.\n패배 후 새로 연승을 쌓으면 다시 받을 수 있어요.\n6연승 이상은 기록만 이어지고 추가 연승 보상은 없어요.\n동시에 달성한 보너스는 함께 받을 수 있어요.\n━━━━━━━━━━━━\n👑 호이패스 프리미엄 전용\n🎟️ 계정당 하루 " + GLOBAL_CONFIG.miniGames.dicePremium + "판 · 일일 /리셋 시 횟수 초기화\n※ 두 번 입력해도 이용 횟수는 1회만 사용돼요.";
+}
+
 // 확정된 주사위 단계별 메시지를 숫자 재추첨 없이 구성하는 함수
 function buildMiniGameDiceMessage(game, part, premium, remaining) {
-    var rolls = game.rolls;
-    if (part === 1) return "[👑호이패스 프리미엄👑]\n🎮 미니게임 목록: /미니게임\n🎲 호월이를 이겨라! · 첫 번째 굴림\n━━━━━━━━━━━━\n👤 [" + game.name + "]  🎲【 " + rolls[0] + " 】\n🐹 호월이       🎲【 " + rolls[1] + " 】\n\n🐹 “" + game.quotes[2].text + "”\n━━━━━━━━━━━━\n👉 /호월주사위 or ㅎㅈ\n한 번 더 굴려 승부를 결정하세요!\n📖 게임 안내\n" + allsee + "\n🎲 호월이를 이겨라! 이용 안내\n━━━━━━━━━━━━\n각자 주사위를 두 번 굴려 합계를 비교해요.\n합계가 높으면 승리, 같으면 무승부예요.\n\n👉 /호월주사위 or ㅎㅈ\n두 번 입력하면 한 판이 완료돼요.\n\n🎁 승리 🅟3,000만\n🤝 무승부 🅟2,000만\n🍀 패배 🅟1,000만\n\n👑 호이패스 프리미엄 전용\n🎟️ 계정당 하루 " + GLOBAL_CONFIG.miniGames.dicePremium + "판 · 매일 자정 초기화\n※ 두 번 입력해도 이용 횟수는 1회만 사용돼요.";
+    var rolls = game.rolls, bonus = game.bonus;
+    var streak = part === 1 ? game.streakBefore || 0 : bonus ? bonus.streakAfter : 0;
+    var heading = streak ? "🏆 현재 " + streak + "연승 중!\n" : "";
+    if (part === 1) return "[👑호이패스 프리미엄👑]\n🎮 미니게임 목록: /미니게임\n🎲 호월이를 이겨라! · 첫 번째 굴림\n" + heading + "━━━━━━━━━━━━\n👤 [" + game.name + "]  🎲【 " + rolls[0] + " 】\n🐹 호월이       🎲【 " + rolls[1] + " 】\n\n🐹 “" + (game.firstQuote || game.quotes[2].text) + "”\n━━━━━━━━━━━━\n👉 /호월주사위 or ㅎㅈ\n한 번 더 굴려 승부를 결정하세요!" + buildMiniGameDiceGuide();
     var result = game.result, label = result === "win" ? "🏆 승리!" : result === "draw" ? "🤝 무승부!" : "🍀 패배! 위로 선물";
-    return "🎲 호월이를 이겨라! · 최종 결과\n━━━━━━━━━━━━\n👤 [" + game.name + "]\n🎲【 " + rolls[0] + " 】+【 " + rolls[2] + " 】= 합계 " + (rolls[0] + rolls[2]) + "\n\n🐹 호월이\n🎲【 " + rolls[1] + " 】+【 " + rolls[3] + " 】= 합계 " + (rolls[1] + rolls[3]) + "\n━━━━━━━━━━━━\n" + label + " 🅟" + formatServerRaidPrize(GLOBAL_CONFIG.miniGames.rewards[result]) + (game.paid ? " 지급" : " 지급 대기") + "\n🐹 “" + game.quotes[4].text + "”\n\n🎟️ 오늘 남은 게임: " + remaining + "회";
+    var out = "🎲 호월이를 이겨라! · 최종 결과\n" + heading + "━━━━━━━━━━━━\n👤 [" + game.name + "]\n🎲【 " + rolls[0] + " 】+【 " + rolls[2] + " 】= 합계 " + (rolls[0] + rolls[2]) + "\n\n🐹 호월이\n🎲【 " + rolls[1] + " 】+【 " + rolls[3] + " 】= 합계 " + (rolls[1] + rolls[3]) + "\n━━━━━━━━━━━━\n" + label + " 🅟" + formatServerRaidPrize(GLOBAL_CONFIG.miniGames.rewards[result]) + (game.paid ? " 지급" : " 지급 대기");
+    if (bonus && (bonus.luckySix || bonus.comeback || bonus.streak)) {
+        if (bonus.luckySix) out += "\n🎰 럭키 식스 보너스: 🅟" + formatServerRaidPrize(bonus.luckySix);
+        if (bonus.comeback) out += "\n🔥 역전승 보너스: 🅟" + formatServerRaidPrize(bonus.comeback);
+        if (bonus.streak) out += "\n🏆 " + bonus.streakAfter + "연승 보너스: 🅟" + formatServerRaidPrize(bonus.streak);
+        out += "\n💰 총 지급" + (game.paid ? "" : " 예정") + ": 🅟" + formatServerRaidPrize(bonus.total);
+    }
+    return out + "\n🐹 “" + (game.finalQuote || game.quotes[4].text) + "”\n\n🎟️ 오늘 남은 게임: " + remaining + "회" + buildMiniGameDiceGuide();
 }
 
 // 보상 대상 계정과 숫자 잔액을 확인한 후 기존 포인트 함수로만 지급하는 함수
@@ -36493,6 +36581,7 @@ function requireMiniGameState(state) {
         var user = state.dice.users[userKey], game = user.game;
         if (userKey !== "$" + user.accountId || typeof user.accountId !== "string" || !user.accountId) throw new Error("미니게임 주사위 계정 오류");
         requireVaultRobberyInteger(user.day); requireVaultRobberyInteger(user.used); requireVaultRobberyInteger(user.finishedAt);
+        if (user.streak !== undefined) requireVaultRobberyInteger(user.streak);
         if (user.used > GLOBAL_CONFIG.miniGames.dicePremium) throw new Error("미니게임 주사위 횟수 오류");
         if (game !== null) {
             var phases = ["USER1", "WAIT_USER2", "USER2", "RESULT", "DONE"], phase = phases.indexOf(game.phase);
@@ -36507,6 +36596,11 @@ function requireMiniGameState(state) {
             if (phase >= 3) {
                 var delta = game.rolls[0] + game.rolls[2] - game.rolls[1] - game.rolls[3];
                 if (game.result !== (delta > 0 ? "win" : delta < 0 ? "loss" : "draw") || game.rewardId !== "dice:" + game.id + ":" + game.accountId || !state.ledger[game.rewardId]) throw new Error("미니게임 주사위 결과 오류");
+            }
+            if (game.streakBefore !== undefined) requireVaultRobberyInteger(game.streakBefore);
+            if (game.bonus) {
+                requireMiniGameDiceBonus(game.bonus);
+                if (phase < 3 || game.bonus.result !== game.result || game.bonus.before !== game.streakBefore || game.bonus.streakAfter !== user.streak || JSON.stringify(game.bonus.rolls) !== JSON.stringify(game.rolls)) throw new Error("주사위 연승 확정 오류");
             }
         }
     }
@@ -36526,8 +36620,11 @@ function requireMiniGameState(state) {
         }
         if (reward.kind === "dice") {
             var rewardUser = state.dice.users["$" + reward.accountId], rewardGame = rewardUser && rewardUser.game;
-            if (reward.amount !== GLOBAL_CONFIG.miniGames.rewards.win && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.draw && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.loss) throw new Error("미니게임 주사위 보상 금액 오류");
-            if (rewardGame && rewardGame.rewardId === rewardKey && (reward.amount !== GLOBAL_CONFIG.miniGames.rewards[rewardGame.result] || rewardGame.paid !== (reward.status === "PAID"))) throw new Error("미니게임 주사위 원장 불일치");
+            if (reward.bonus) {
+                requireMiniGameDiceBonus(reward.bonus);
+                if (reward.amount !== reward.bonus.total) throw new Error("주사위 보너스 원장 금액 오류");
+            } else if (reward.amount !== GLOBAL_CONFIG.miniGames.rewards.win && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.draw && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.loss) throw new Error("미니게임 주사위 보상 금액 오류");
+            if (rewardGame && rewardGame.rewardId === rewardKey && (reward.amount !== (rewardGame.bonus ? rewardGame.bonus.total : GLOBAL_CONFIG.miniGames.rewards[rewardGame.result]) || JSON.stringify(reward.bonus) !== JSON.stringify(rewardGame.bonus) || rewardGame.paid !== (reward.status === "PAID"))) throw new Error("미니게임 주사위 원장 불일치");
         }
     }
     for (var noticeKey in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, noticeKey)) {
@@ -37235,6 +37332,28 @@ function executeGuildMarbleRequest(store, context, request, newId) {
         var choice = chooseGuildMarbleLand(game, context, action); result.changed = choice.changed; result.text = choice.text;
     }
     result.settlement = game.state === "SETTLING";
+    return result;
+}
+
+// 모든 길드의 모집을 취소하고 진행 경기는 환급·확정 정산만 처리하는 함수
+function resetGuildMarbleGames(store, context) {
+    requireGuildMarbleStore(store);
+    var result = { changed: false, closed: 0, cancelled: 0, pending: 0 };
+    for (var key in store.guilds) if (Object.prototype.hasOwnProperty.call(store.guilds, key)) {
+        var row = store.guilds[key], game = row.current;
+        if (!game) continue;
+        if (game.state === "RECRUITING") { row.current = null; result.cancelled++; result.changed = true; continue; }
+        if (game.state === "PLAYING") { prepareGuildMarbleSettlement(game, "REFUND"); result.changed = true; }
+    }
+    result.recoveryText = JSON.stringify(store); // 지급 전 종료 의도와 기존 부분 지급 증거를 고정한 복구 원문
+    for (var settleKey in store.guilds) if (Object.prototype.hasOwnProperty.call(store.guilds, settleKey)) {
+        var row = store.guilds[settleKey];
+        if (!row.current) continue;
+        var settlement = settleGuildMarbleGame(row, context);
+        if (settlement.ok) { finishGuildMarbleGame(row, Date.now()); result.closed++; result.changed = true; }
+        else result.pending++; // 지급 증거를 지우지 않으며 SETTLING에서는 경기 행동을 재개할 수 없다.
+    }
+    requireGuildMarbleStore(store);
     return result;
 }
 
