@@ -166,6 +166,7 @@ Status: VERIFIED
 - `resetGuildMarbleGames`는 이미 로드한 전체 길드 저장소와 회원/계정 인덱스를 받아 모집 취소, 진행 경기 전액 환급(수수료 없음), 기존 확정 정산의 미지급분 처리를 구분한다. 리셋 권한과 길드 일일 횟수는 유지한다. 지급 불가 경기는 SETTLING으로 보존하고 실제 종료/취소/대기 건수를 표시한다. `/리셋`은 DEV 포함 배타 쓰기 잠금을 사용한다. 리셋 진입부에서 기존 `guildMarblePending.json` 형식으로 원래 회원 원문과 종료 의도가 확정된 정산 대기 원문을 먼저 보존한다. 회원·경기·일일 초기화 게시 사이 중단 후에도 이전 PLAYING을 복원하지 않고 미지급만 재처리한다. 호월주사위 진행과 연승은 삭제하지 않는다. `tools/minigame_updates_validation.md` 참조.
 - 참가비·상금·환급(초기 계정 ID 발급 포함)은 `guildMarblePending.json`에 회원/경기 원문 보존 → 기존 `saveJsonFile` 회원 저장 → 경기 게시 → 복구 기록 해제. 다음 명령에서 중단 게시를 먼저 원문 복구. 기존 회원 분리 상세/운영 로그 슬롯 변경은 차단한다.
 - 정산 순위는 지급보다 먼저 확정하고 재시작·미처리 재시도에서 재추첨/중복 지급하지 않는다. 정산 대기 중 새 모집/환급 전환 차단. 응답 전송 실패는 확정된 저장을 되돌리지 않는다.
+- 정산 전 순위 확정 원문은 한 번 직렬화해 경기 파일 게시와 `marbleOriginalText`에 재사용한다. 검증·게시·트랜잭션 경계와 중단 복구 순서는 유지한다.
 - 정산 재시도는 원래 방의 길드마스터·부길드마스터 `/마블시작` 또는 기존 참가자 `/마블굴리기`(별칭 포함)만 허용한다. 탈락·탈퇴 참가자도 재시도 가능하며, 그 외 명령·잘못된 수량·권한 없는 입력은 순위·포인트·파일을 변경하지 않는다. 명령별 권한과 참가비 범위 검사는 정산 분기보다 먼저 적용한다.
 - 파일은 `resolveActiveDataPath`로 PROD `/sdcard/호이랜드/`와 DEV `/sdcard/호이랜드_dev/` 분리. 존재하는 잘못된 저장소를 새 빈 경기로 대체하지 않는다.
 
@@ -2901,6 +2902,7 @@ Status: VERIFIED
 
 ## Related Helpers
 - `buildSupportPassListMessage`
+- `getExpiredHoiPassPremiumUsers`: 발신자 지정 시 해당 회원만 직접 조회하고, 전체 정리가 필요한 기존 운영 명령에서는 전체 회원을 순회한다. 만료일 당일·영구권·비활성·잘못된 날짜 판정은 유지한다.
 - `buildDailyRewardPayoutStatusLines`
 - `isDailyRewardPayoutDone`
 - `recordDailyRewardPayout`

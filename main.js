@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.715"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.716"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -4177,9 +4177,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 // 순위·추첨을 먼저 확정해 포인트 오류나 재시작 후에도 다시 추첨하지 않는다.
                 if (marbleResult.changed) {
                     requireGuildMarbleStore(marbleStore);
-                    writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
+                    var marbleSettlementText = JSON.stringify(marbleStore); // 정산 전 확정 원문을 저장과 복구에 함께 사용
+                    writeMemberSplitSlot(marblePath, marbleSettlementText);
                     endDataSaveTransaction(); beginDataSaveTransaction();
-                    marbleOriginalText = JSON.stringify(marbleStore);
+                    marbleOriginalText = marbleSettlementText;
                     marbleResult.changed = false;
                 }
                 var marbleSettlement = settleGuildMarbleGame(marbleResult.row, marbleContext);
@@ -44421,6 +44422,14 @@ function expireHoiPassPremium(data, petSkillData, activityData, user, reason, op
 function getExpiredHoiPassPremiumUsers(data, targetUser) {
     var users = [];
     if (!data || !data.member) return users;
+    if (targetUser) {
+        if (typeof targetUser !== "string" || !Object.prototype.propertyIsEnumerable.call(data.member, targetUser)) return users;
+        var targetPass = data.member[targetUser] && data.member[targetUser].pass ? data.member[targetUser].pass.premium : null;
+        if (!targetPass || targetPass.enabled !== true || targetPass.permanent === true) return users;
+        var targetExpireValue = getSupportPassDateValue(targetPass.endDate);
+        if (targetExpireValue !== null && targetExpireValue < getTodaySupportPassDateValue()) users.push(targetUser);
+        return users;
+    }
     for (var user in data.member) {
         if (!data.member.hasOwnProperty(user) || (targetUser && user !== targetUser)) continue;
         var pass = data.member[user] && data.member[user].pass ? data.member[user].pass.premium : null;
