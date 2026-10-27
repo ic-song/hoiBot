@@ -31,6 +31,7 @@ Status: VERIFIED
 - `main.js`: `getMiniGameRequest`, `runMiniGameEntry`, `scheduleMiniGameWork`, `getMiniGameWorkDelay`, `getMiniGameObservedVaultId`.
 - `Info.js`: 회원 읽기 전 `miniGamePending.json` 게시 대기 차단. 포인트 중간 상태 표시 방지.
 - 기본 7인수 `response(...)` 유지. 기존 등록·출석·정지·개인톡 패스·대전/영지전 제한을 통과한 뒤 진입.
+- 정확한 `/호월주사위`, 앞뒤 공백을 제거한 `ㅎㅈ`, 기존 DEV 정규화로 같은 명령이 되는 입력은 응답 진입의 데이터 흐름 잠금을 `tryLock()`으로 시도한다. 처리 중 겹친 요청은 대기열·파일 읽기·저장·응답 없이 반환하며, 정상적으로 잠금을 얻은 요청은 기존 검증·두 화면·지급·복구 흐름을 유지한다. 다른 명령의 잠금 방식과 입력 가드는 유지한다.
 - 무인수 명령은 정확히 일치할 때만 실행. 투표는 1·2와 한 줄 1~80자 이유, 금고는 100~99999 정수 하나만 구문으로 허용하고 현재 단계 범위는 판정 직전에 검증한다. 접미 안내·개행·숨김 문자 거부.
 
 ## Helpers and behavior

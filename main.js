@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.719"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.720"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3359,7 +3359,17 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     var commandContextEntered = false;
     var ctx = null;
     var prevCtx = null;
-    responseDataLock.lock();
+    var responseDiceCommand = isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : String(msg || "");
+    var responseDiceNoWait = responseDiceCommand === "/호월주사위" || responseDiceCommand.trim() === "ㅎㅈ" || isDevCommandMessage(msg) && responseDiceCommand === "/ㅎㅈ"; // 동시 주사위 입력의 잠금 대기 누적 방지
+    if (responseDiceNoWait) {
+        try {
+            if (!responseDataLock.tryLock(0, java.util.concurrent.TimeUnit.MILLISECONDS)) return;
+        } catch (responseDiceLockError) {
+            if (!responseDiceLockError.javaException || !(responseDiceLockError.javaException instanceof java.lang.InterruptedException)) throw responseDiceLockError;
+            java.lang.Thread.currentThread().interrupt();
+            return;
+        }
+    } else responseDataLock.lock();
     //데이터 검사
     try {
         if (isServerRaidMutationCommand(msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
