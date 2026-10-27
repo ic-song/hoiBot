@@ -3947,40 +3947,42 @@ function calculateItemInfoAll(memberName, data, petData) {
 }
 // 당근순위 랭킹을 가져오는 함수
 function getCarrotRank(username, data) {
-	var users = Object.keys(data.member).filter(function (u) {
-		return data.member[u].carrotGiven > 0;
-	});
-
-	users.sort(function (a, b) {
-		var carrotA = data.member[a].carrotGiven;
-		var carrotB = data.member[b].carrotGiven;
-
-		if (carrotB !== carrotA) {
-			return carrotB - carrotA; // 많이 준 사람 우선
-		}
-
-		// 동점이면 한글 이름 오름차순
-		return a.localeCompare(b, "ko");
-	});
-
-	var rank = users.indexOf(username);
-	return rank >= 0 ? rank + 1 + "위" : "순위 없음";
+	return getPositiveMemberMetricRank(username, data, "carrotGiven");
 }
 
+// 온도순위 랭킹을 가져오는 함수
 function getThermoRank(username, data) {
+	return getPositiveMemberMetricRank(username, data, "thermoPoints");
+}
+
+// 개인 순위는 앞선 회원 수로 계산하고 비정상 값·동등 닉네임은 기존 정렬로 판정하는 함수
+function getPositiveMemberMetricRank(username, data, metricKey) {
 	var users = Object.keys(data.member).filter(function (u) {
-		return data.member[u].thermoPoints > 0;
+		return data.member[u][metricKey] > 0;
 	});
+	var targetIndex = users.indexOf(username);
+	if (targetIndex >= 0) {
+		var targetValue = data.member[username][metricKey];
+		var rankAhead = 0; // 점수·동점 닉네임 기준으로 본인보다 앞선 회원 수
+		var canCount = typeof targetValue === "number" && isFinite(targetValue);
+		for (var i = 0; canCount && i < users.length; i++) {
+			var user = users[i], value = data.member[user][metricKey];
+			if (typeof value !== "number" || !isFinite(value)) {
+				canCount = false;
+			} else if (value > targetValue) {
+				rankAhead++;
+			} else if (value === targetValue && user !== username) {
+				var nameOrder = user.localeCompare(username, "ko");
+				if (nameOrder === 0) canCount = false; // 엔진의 동점 정렬 결과를 보존
+				else if (nameOrder < 0) rankAhead++;
+			}
+		}
+		if (canCount) return rankAhead + 1 + "위";
+	}
 
 	users.sort(function (a, b) {
-		var pointA = data.member[a].thermoPoints;
-		var pointB = data.member[b].thermoPoints;
-
-		if (pointB !== pointA) {
-			return pointB - pointA; // 점수 내림차순
-		}
-
-		// 점수 같을 경우 이름 오름차순
+		var valueA = data.member[a][metricKey], valueB = data.member[b][metricKey];
+		if (valueB !== valueA) return valueB - valueA;
 		return a.localeCompare(b, "ko");
 	});
 

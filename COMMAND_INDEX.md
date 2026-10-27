@@ -1782,6 +1782,7 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `getTitle`
 - local branch helper `hasValidPet`
+- `getCarrotRank`, `getThermoRank`, `getPositiveMemberMetricRank`: 양수 점수의 개인 순위. 유한한 숫자는 점수 내림차순·동점 닉네임 오름차순으로 앞선 회원 수만 세며, 숫자 문자열·양의 무한대 등 비정상 값이나 본인과 동등하게 비교되는 다른 닉네임이 있으면 기존 엔진 정렬로 판정한다. 대상이 순위에 없을 때도 기존 정렬 경로를 유지한다. 조회 간 캐시·저장 없음.
 - `requireGmEducationStore`, `getGmEducationProgress`: Main과 같은 교육 원본/지급 영수증 검증
 
 ## Data Usage
