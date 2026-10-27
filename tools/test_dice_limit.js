@@ -7,7 +7,7 @@ for(const dev of [false,true]){
  for(let i=0;i<2;i++){run('/호월주사위');run('ㅎㅈ');}
  const old=f.state(dev).dice.users['$'+f.id('a',dev)],points=f.read(dev).member.a.point;
  assert.equal(old.used,2);assert.equal(old.game.phase,'DONE');
- const text=run('/호월주사위');assert(text.includes('하루 4판'));assert(text.includes('매일 자정'));assert(!text.includes('/리셋'));
+ const text=run('/호월주사위');assert(text.includes('하루 4판'));assert(text.includes('일일 /리셋 시 횟수 초기화'));assert(!text.includes('매일 자정'));
  const first=f.state(dev).dice.users['$'+f.id('a',dev)].game;run('ㅎㅈ');
  assert.deepEqual(f.state(dev).dice.users['$'+f.id('a',dev)].game.rolls.slice(0,2),first.rolls);run('ㅎㅈ');run('/호월주사위');
  const s=f.state(dev);assert.equal(s.dice.users['$'+f.id('a',dev)].used,4);assert(f.read(dev).member.a.point>points);

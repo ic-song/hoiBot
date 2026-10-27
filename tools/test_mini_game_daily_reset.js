@@ -1,15 +1,16 @@
 // 실제 /리셋 분기와 저장 함수를 사용해 수동 일일 회차·실패·DEV를 검증한다.
-const assert=require('assert'),vm=require('vm'),h=require('./test_mini_games');
+const assert=require('assert'),vm=require('vm'),h=require('./test_mini_games'),marble=require('./test_guild_marble');
 const base='/sdcard/호이랜드/',devBase='/sdcard/호이랜드_dev/';let groups=0;
 function test(name,fn){fn();console.log('PASS DAILY '+(++groups)+' '+name);}
 function ok(r){assert(!r.error,r.error);return r.text;}
 function fixture(){const f=h.fixture(),seed=f.seed;f.seed=(dev=false)=>{seed(dev);const d=f.read(dev);d.attend_list=[];for(const m of Object.values(d.member)){m.battle=m.battle||{ticket:0,count:0};m.bag=m.bag||{};}f.write(d,dev);};f.seed();const c=f.c;c.carrotBoardPath=base+'carrotBoard.json';
  vm.runInContext(h.block(h.main,'function resetAttendance('),c);
  c.stopAllIntervals=()=>{};c.runHoiPassPremiumAutoAttendance=()=>({message:'synthetic auto attendance',noticeMessage:''});
- vm.runInContext('function executeDailyReset(){'+h.block(h.main,'if (msg === "/리셋" && (sender == "오픈채팅봇"')+'}',c);
+ vm.runInContext(marble.model,c);
+ vm.runInContext('function executeDailyReset(){'+marble.recovery+'var data=loadJsonFile(filePath),petData=loadJsonFile(memberPetPath),petSkillData=loadJsonFile(petSkillDataPath),guildData=loadJsonFile(guildPath),ctx=getCurrentContext();runMiniGameEntry("recover",{ctx:ctx,allowRecoveryReview:true});data=loadJsonFile(filePath);'+h.block(h.main,'if (msg === "/리셋" && (sender == "오픈채팅봇"')+'}',c);
  f.resetCommand=(msg='/리셋',sender='호이 남',isDev=false)=>{
   f.clear();const ctx=c.createCommandContext(isDev,'test'),previous=c.enterCommandContext(ctx),oldReplier=c.replier;c.beginDataSaveTransaction();
-  try{c.ctx=ctx;c.msg=msg;c.sender=sender;c.data=c.loadJsonFile(c.filePath);c.petData=c.loadJsonFile(c.memberPetPath);c.petSkillData=c.loadJsonFile(c.petSkillDataPath);c.guildData=c.loadJsonFile(c.guildPath);c.replier=c.createContextReplier(oldReplier,ctx);c.runMiniGameEntry('recover',{ctx,allowRecoveryReview:true});c.executeDailyReset();}
+  try{c.ctx=ctx;c.msg=msg;c.sender=sender;c.replier=c.createContextReplier(oldReplier,ctx);c.executeDailyReset();}
   catch(e){c.rollbackDataSaveTransaction();throw e;}finally{c.endDataSaveTransaction();c.exitCommandContext(previous);c.replier=oldReplier;}
   f.clock(f.now()+1);return f.replies().join('\n');
  };return f;
@@ -50,5 +51,21 @@ test('reset before installation creates no games; recovery-review hold preserves
 });
 test('clock rollback rejects a reset before member/pet/game changes',()=>{
  const f=fixture();seedGames(f);f.resetCommand();const before={...f.disk()};f.clock(f.now()-86400000);assert.throws(()=>f.resetCommand(),/시각 역행/);assert.deepEqual(f.disk(),before);
+});
+test('PROD/DEV: existing empty marble store joins reset; damaged store fails without changing member/game',()=>{
+ for(const dev of [false,true]){
+  const f=fixture();f.seed(dev);ok(f.run('/금고','a',dev));const root=dev?devBase:base,config=f.c.GLOBAL_CONFIG.guildMarble,path=root+config.fileName;
+  f.disk()[path]='{';const before={...f.disk()};assert.throws(()=>f.resetCommand('/리셋','오픈채팅봇',dev));assert.deepEqual(f.disk(),before);
+  f.disk()[path]=JSON.stringify({schemaVersion:config.schemaVersion,guilds:{}});const points=f.read(dev).member.a.point;
+  assert(f.resetCommand('/리셋','오픈채팅봇',dev).includes('경기 0개 종료'));assert.equal(f.state(dev).dailyReset.cycle,1);assert.equal(f.read(dev).member.a.point,points);
+ }
+});
+test('PROD/DEV: marble journal is recovered before loading reset member; confirmed balance survives',()=>{
+ for(const dev of [false,true]){
+  const f=fixture();f.seed(dev);ok(f.run('/금고','a',dev));const root=dev?devBase:base,config=f.c.GLOBAL_CONFIG.guildMarble,data=f.read(dev),points=data.member.a.point+123;
+  data.member.a.point=points;f.disk()[root+config.pendingName]=JSON.stringify({schemaVersion:config.schemaVersion,pending:{memberText:JSON.stringify(data),marbleText:JSON.stringify({schemaVersion:config.schemaVersion,guilds:{}})}});
+  f.resetCommand('/리셋','오픈채팅봇',dev);assert.equal(f.read(dev).member.a.point,points);assert.equal(f.read(dev).member.a.today,0);
+  assert.equal(JSON.parse(f.disk()[root+config.pendingName]).pending,null);assert.equal(f.state(dev).dailyReset.cycle,1);
+ }
 });
 console.log('PASS daily reset '+groups+' groups');
