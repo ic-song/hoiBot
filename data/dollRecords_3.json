@@ -1,4 +1,1 @@
-{
-  "schemaVersion": 1,
-  "users": {}
-}
+{"schemaVersion":1,"users":{"응즈 여":{"id":"14273806-bba1-4418-b3ce-284cccbc10ab","catches":{"D0555":{"count":1,"max":687,"first":"2026.10.15"},"D0591":{"count":1,"max":401,"first":"2026.10.16"},"D0792":{"count":1,"max":1050,"first":"2026.10.18"},"D0368":{"count":1,"max":482,"first":"2026.10.18"},"D0607":{"count":1,"max":196,"first":"2026.10.18"},"D0273":{"count":1,"max":974,"first":"2026.10.18"},"D0711":{"count":1,"max":536,"first":"2026.10.18"}}},"직구 남":{"id":"039c6deb-d102-4b77-bea9-e086038cdd5e","catches":{"D0981":{"count":1,"max":3054,"first":"2026.10.17"},"D0372":{"count":1,"max":562,"first":"2026.10.17"},"D0650":{"count":1,"max":854,"first":"2026.10.17"},"D0408":{"count":1,"max":487,"first":"2026.10.17"}}}}}

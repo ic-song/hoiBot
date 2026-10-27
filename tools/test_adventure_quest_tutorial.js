@@ -22,7 +22,7 @@ const inventory = {};
 const config = {
     adventureQuest: {
         tutorialMaxStage: 16,
-        battleResultGoal: 10,
+        battleResultGoal: 5,
         starterSkillBookCount: 1,
         homeBadgeCubeCount: 100,
         castlePercentPerStage: 0.005,
@@ -117,12 +117,12 @@ for (const battleStage of [
     state.currentStage = battleStage.number;
     state.progress = {};
     assert.strictEqual(context.recordAdventureQuestAction(data, user, battleStage.number + 1, battleStage.key, 1), false, "다른 단계의 전투는 미기록");
-    for (let i = 0; i < 9; i++) assert.strictEqual(context.recordAdventureQuestAction(data, user, battleStage.number, battleStage.key, 1), true);
-    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, false, "9회는 미완료");
-    assert(context.getAdventureQuestGoalLines(state, { complete: false }, false)[0].includes("9/10회"));
+    for (let i = 0; i < 4; i++) assert.strictEqual(context.recordAdventureQuestAction(data, user, battleStage.number, battleStage.key, 1), true);
+    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, false, "4회는 미완료");
+    assert(context.getAdventureQuestGoalLines(state, { complete: false }, false)[0].includes("4/5회"));
     context.recordAdventureQuestAction(data, user, battleStage.number, battleStage.key, 1);
-    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true, "10회는 완료");
-    assert(context.getAdventureQuestGoalLines(state, { complete: true }, false)[0].includes("[✅] " + battleStage.label + " 정상 결과 · 10/10회"));
+    assert.strictEqual(context.getAdventureQuestCompletionCheck(data, {}, {}, home, {}, {}, user).complete, true, "5회는 완료");
+    assert(context.getAdventureQuestGoalLines(state, { complete: true }, false)[0].includes("[✅] " + battleStage.label + " 정상 결과 · 5/5회"));
 }
 
 state.currentStage = 6;
@@ -363,7 +363,7 @@ const starterConfigStart = main.indexOf("    adventureStarter: {");
 const starterConfigEnd = main.indexOf("    adventureQuest: {", starterConfigStart);
 assert(starterConfigStart >= 0 && starterConfigEnd > starterConfigStart);
 vm.runInContext("GLOBAL_CONFIG.adventureStarter = ({" + main.slice(starterConfigStart, starterConfigEnd) + "}).adventureStarter;", starterContext);
-vm.runInContext(["applyAdventureStarterIntimacyReward", "applyAdventureStarterMemberRewards"].map(name => extractFunction(name)).join("\n"), starterContext);
+vm.runInContext(["isSearchAuthenticationCount", "applyAdventureStarterIntimacyReward", "applyAdventureStarterMemberRewards"].map(name => extractFunction(name)).join("\n"), starterContext);
 const starterFixture = { member: {
     newbie: { bag: {}, adventureOnboarding: { stage: "APPLYING", receipts: {} }, adventureQuest: { receipts: {} } },
     existing: { bag: { "펫 친밀도🐾 [Lv.100](0/1000)+110000💕": 1 }, adventureQuest: { receipts: {} } },
@@ -392,6 +392,7 @@ for (const source of [main, info]) {
         calculateCastleItem: () => 140000,
         calculateItemInfoAll: () => ({ castleExp: 0, raidExp: 150000 }),
         getHomeTotalExp: () => 0,
+        getPetHomeFurnitureCharm: () => ({ bonus: 0 }),
         hasPetSkill: () => false,
         getIntimacyExpFromBag: bag => bag.intimacy || 0,
         getEquippedNonTierPetSkillExp: () => 0,

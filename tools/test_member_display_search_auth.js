@@ -432,6 +432,8 @@ pass("실제 정보 분기에서 기존 인증 상태 보존·완료/미완료 �
         getInfoLevelRequiredExperience: () => 100, getTitle: () => "", generateBagOutput: () => ({ bagOutput: "" }), getMyGuildInfo: () => null,
         checkRank: (_d, _p, _g, u) => u, getInfoAdventureLevelTitle: () => "", formatDate: s => s, numberWithCommas: n => String(n),
         formatInfoAdventureExperience: n => String(n), formatInfoServerRaidServer: () => "", allsee: "<ALLSEE>", replier: { reply: s => output.push(s) } };
+    r.memberPetPath = "pets"; r.memberTitlePath = "titles";
+    r.loadJsonFile = p => { if (p === r.memberPetPath) return r.petData; if (p === r.memberTitlePath) return r.titleData; throw Error("unexpected fixture read " + p); };
     vm.createContext(r); vm.runInContext("function runInfo(){" + block(info, 'if (msg.startsWith("/정보") &&') + "}", r);
     r.runInfo(); assert(output.pop().includes("• 검색인증: 미완료"));
     r.data.member["신규 남"].voicecheck = 1; r.runInfo(); assert(output.pop().includes("• 검색인증: 완료"));

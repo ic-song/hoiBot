@@ -1,0 +1,23 @@
+# 서버대전 방별 공지 재시도
+
+- 작업 키: server-raid-delivery
+- 작업 상태: 작업 완료
+- 체크포인트 버전: 5
+- 마지막 갱신: 2026-10-20 (Asia/Seoul)
+- 정리 후보: 예
+- 승인 범위: 개발·재시작/예외 검증 후 사용자가 운영 반영 승인. 후속 명시 지시로 노션은 갱신하지 않고 운영 반영만 진행.
+- 파일 범위: main.js, data/hoiBotChangeLog.json, tools/test_server_raid_delivery*.js, 관련 검증 증거, COMMAND_INDEX.md, ERROR_FIX_LOG.md, 이 체크포인트.
+- 브랜치: feature/bugFix, 기준 origin/feature/prod=285aded2. 기존 미추적 폴더 보존.
+- 조사: 기존 업로드본의 완료 회차 결과 공지가 후원문의방 1곳에 미발송. 공지 실패의 전역 break가 뒤의 방·회차 공지까지 차단함. 발신자별 회차 분리는 없음.
+- 구현 판단: 기존 저장·잠금·회차·타이머 구조 유지. 작업 1회 동안 실패한 방을 기억해 그 방의 후속 공지만 보류. 저장 실패는 기존 전체 작업 중단·재예약 유지.
+- 검증 계획: 수정 전 실패 재현, false/예외·여러 방·순서·독립 복구·새 회차·새 VM 재시작(PREP/ACTIVE/SETTLING/완료)·저장/로드 실패·DEV/PROD·오래된 예약·Rhino 실행 및 기존 레이드 회귀.
+- 구현 완료: main.js 공지 순회 13줄 추가/5줄 제거. 실패 방만 보류, 방별 순서·성공 저장·정산·타이머 보존. COMMAND_INDEX/ERROR_FIX_LOG 동기화.
+- 검증: 수정 전 소스로 새 회귀 실패 확인. 신규 18개·기존 레이드130+11개·후속9개(포함22+21개) 통과. Rhino 5시나리오와 전체 MAIN/Info 컴파일 통과. 실제 Java 잠금 및 새 Node VM/Rhino 전역 스코프 재시작 검증.
+- 데이터: 운영 스냅샷 1157개 해시 변경0, JSON 오류0. UTF-8/문법/diff 통과.
+- 증거: tools/server_raid_delivery_validation.md, tools/test_server_raid_delivery_result.json.
+- 경계: 실제 Android 앱/세션은 실행하지 않음. 발송 직후 완료 저장 전 중단의 공지 중복 가능성은 기존과 같음. 발송 불가 방은 연결 복구까지 기존 간격 재시도.
+- 운영 반영 완료: PR135 https://github.com/ic-song/hoiBot/pull/135 병합. 소스 7cfaa48f3f6222e06aa930ab9e0b2d0dc4ecc9d8 → origin/feature/prod 9fdc267dfb00935f36180fc715a1d5e2df6a77d6. 원격 commit·소스 포함·MAIN/개발자노트 ver_2.662·2026-10-20 확인.
+- 최종 검증: 버전 외 런타임 코드가 검증 소스와 같음을 확인. 버전 갱신 뒤 신규18·기존130+11·Rhino5 재검증, 원격 반영 후 신규18 재통과. 증거 JSON의 releaseValidation 및 원격 MAIN 해시 일치.
+- 노션: 후속 명시 지시로 갱신하지 않음. 카카오톡: PlayMCP 나에게 보내기로 정확히 ver_2.662 1회 성공 확인. 스킬 변경 없음. 운영 기기 업로드·컴파일은 운영자 영역.
+- 다음 행동: 승인 범위 완료. 이 완료 기록을 소스 브랜치에 푸시한 뒤 prod에 반영·원격 확인하고 단기 bugFix 브랜치를 정리한다. 추가 기능 변경 없음.
+- Git 추적/원격: 코드·검증 증거·기존 체크포인트는 위 원격 prod에 포함. 완료 기록도 동일한 소스 우선 푸시 → prod 반영 절차로 저장하며, 단기 브랜치 삭제 후에도 prod에서 복구 가능.

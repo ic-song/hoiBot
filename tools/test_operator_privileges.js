@@ -57,6 +57,7 @@ const operatorContext = {
     isMaster: sender => operatorContext.Master.indexOf(sender) !== -1 && (permissionRoom === "팻 테스트방" || permissionRoom === "서버관리자")
 };
 vm.createContext(operatorContext);
+vm.runInContext(extractFunction("isOrderLogRoomBot"), operatorContext);
 vm.runInContext(extractFunction("isServerAdminRoomOperator"), operatorContext);
 vm.runInContext(extractFunction("isGuildTerritoryStartOperator"), operatorContext);
 vm.runInContext(extractFunction("isPetMusouStartOperator"), operatorContext);

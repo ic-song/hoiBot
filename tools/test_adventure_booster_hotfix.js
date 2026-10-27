@@ -179,7 +179,7 @@ function verifyBattleSummaryBlock(startText, endText, experienceVariable, detail
 
 verifyBattleSummaryBlock('result += "🏆 데일리 캐슬매력 대전', 'replier.reply(result);', 'castleExperienceMessage', '📊 데일리 캐슬대전 상세결과');
 verifyBattleSummaryBlock('let resultMsg = "🐹 미니펫 대전', 'replier.reply(resultMsg);', 'miniExperienceMessage', '📊 미니펫대전 상세결과');
-if (source.indexOf('miniPetBattleExperience: { win: 50, lose: 25 }') < 0) {
+if (source.indexOf('miniPetBattleExperience: { win: 100, lose: 25 }') < 0) {
     throw new Error("미니펫대전 승패 경험치 설정 검증 실패");
 }
 

@@ -22,6 +22,7 @@ function context(source, isInfo) {
         calculateCastleItem: () => 0,
         calculateItemInfoAll: () => ({ castleExp: 0, raidExp: 0 }),
         getHomeTotalExp: () => 0,
+        getPetHomeFurnitureCharm: () => ({ bonus: 0 }), // 이 조건 시험의 합성 가구·별채 보너스는 0
         getIntimacyExpFromBag: () => 0,
         getOwnedFurnitureCountByGrade: home => home.arcanaCount || 0,
         getPlacedFurnitureCountByGrade: home => home.royalCount || 0,
@@ -213,12 +214,13 @@ group("charm diagnostic includes tier skills and final percentage bonuses", () =
 
 group("actual pet info and leaderboard command branches use equipped skills", () => {
     const c = contexts[1], replies = [];
-    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1 };
+    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1, questTargets: { tower: 5, castle: 5, mini: 5 } };
     for (const name of ["formatPetInfo", "formatKoreanShort", "getMiniPetUpgradeDisplay"]) vm.runInContext(fn(sources[1], name), c);
     Object.assign(c, {
         msg: "/펫정보", sender: "test", allsee: "<ALLSEE>",
         petTitleData: { member: { test: {} } }, guildData: {},
         homeDataFile: "home", petExplorePath: "explore", trialTowerPath: "tower", castleBattlePath: "castle",
+        memberPetPath: "pets", petSkillDataPath: "skills", petTitlePath: "petTitles",
         initSweetHomeUser: home => home, getHoiPassPremiumHeader: () => "",
         calculateEffectivePetUpgradeLevel: () => 0, getCritChance: () => 0, getCritMultiplier: () => 1,
         getIntimacyLvFromBag: () => "", getIntimacyUserRank: () => 0, getUserIntimacyInfo: () => ({ exp: 0 }),
@@ -228,7 +230,7 @@ group("actual pet info and leaderboard command branches use equipped skills", ()
         getWeeklyQuestRemainText: () => "", replier: { reply: message => replies.push(message) }
     });
     // 선택한 명령이 원래 로드하는 합성 파일만 허용한다.
-    c.loadJsonFile = file => { assert(["home", "explore", "tower", "castle"].includes(file)); return {}; };
+    c.loadJsonFile = file => { if(file === "pets") return c.petData; if(file === "skills") return c.petSkillData; if(file === "petTitles") return c.petTitleData; assert(["home", "explore", "tower", "castle"].includes(file)); return {}; };
     const start = sources[1].indexOf('if (msg === "/펫정보" ||');
     const end = sources[1].indexOf('if (msg === "/펫매력순위")', start);
     const rankStart = sources[1].indexOf('if (msg === "/캐슬매력순위")');
@@ -278,7 +280,7 @@ group("reported elite representative and creation support display matches actual
     Object.assign(c, {
         getHoiPassPremiumHeader: () => "", getMiniPetBattleRank: () => "순위없음", allsee: "<ALLSEE>"
     });
-    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1 };
+    c.GLOBAL_CONFIG.daily = { miniPetBattleMax: 15, miniPetBattleFree: 1, questTargets: { tower: 5, castle: 5, mini: 5 } };
     const f = fixture(c, "엘리트", "창조");
     Object.assign(f.pets.test.miniPet, { name: "아르케", emoji: "🌌", battleExp: 12000000 });
     Object.assign(f.pets.test.miniPetSupport, { name: "호이빛", emoji: "💖", battleExp: 1630000, upgrade: 28 });

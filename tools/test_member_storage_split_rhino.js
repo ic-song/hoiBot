@@ -16,7 +16,7 @@ function block(marker) {
 }
 // Rhino 자체의 비열거 속성·배열·JSON·Java UTF-8 동작을 실제 분리 헬퍼로 검증한다.
 const names = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore",
-    "buildMemberSplitRaidSummary", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "getMemberSplitByteLength",
+    "buildMemberSplitRaidSummary", "buildMemberSplitPublicationRecovery", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "stringifyMemberSplitStore", "getMemberSplitByteLength",
     "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration", "createServerRaidState",
     "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
 const testSource = block("const MEMBER_STORAGE_SPLIT_CONFIG = {") + "\n" + names.map(n => block("function " + n + "(")).join("\n") + `
@@ -94,6 +94,20 @@ residualMember.petMusouAutomationLogs={length:9};
 var corruptRejected=false;
 try{prepareMemberSplitResidualLogRecovery(residualMember,foreignStore);}catch(corruptError){corruptRejected=String(corruptError).indexOf("petMusouAutomationLogs")!==-1;}
 check(corruptRejected,"corrupt residue never normalized");
+var priorMember=JSON.parse(thinText), priorRaid=JSON.parse(JSON.stringify(stores.raid));
+priorRaid.data.history=[{id:"past",state:"DONE",accounts:{synthetic:{paid:true,rankReward:123}}}];
+priorRaid.data.outbox=[{generation:priorRaid.data.generation,text:"old result",deliveries:[{room:"synthetic",sent:false}]}];
+priorMember.serverRaid=buildMemberSplitRaidSummary(priorRaid.data);
+var missingMember=JSON.parse(JSON.stringify(priorMember));missingMember.migrations[MEMBER_STORAGE_SPLIT_CONFIG.key].raidRevision=1;
+var publication=buildMemberSplitPublicationRecovery(missingMember,priorMember,priorRaid,stores.logs);
+check(publication.raid.revision===1,"publication revision completed");
+check(JSON.stringify(publication.member.member)===JSON.stringify(missingMember.member),"publication accounts preserved");
+check(JSON.stringify(publication.raid.data.history)===JSON.stringify(priorRaid.data.history),"publication paid history preserved");
+check(publication.cancelled===1&&!publication.member.serverRaid.hasPendingNotices,"publication stale notice cancelled");
+check(priorRaid.data.outbox[0].deliveries[0].cancelled===undefined,"publication input unchanged");
+missingMember.member.synthetic.point++;
+var differentRejected=false;try{buildMemberSplitPublicationRecovery(missingMember,priorMember,priorRaid,stores.logs);}catch(e){differentRejected=true;}
+check(differentRejected,"publication account difference refused");
 print("PASS: " + assertions + " Rhino member storage assertions");
 `;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hoibot-split-rhino-"));

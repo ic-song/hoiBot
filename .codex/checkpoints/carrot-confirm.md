@@ -1,0 +1,26 @@
+# 당근거래 최종확인과 UI 개발
+
+- 작업 키: carrot-confirm
+- 작업 상태: 진행 중
+- 정리 후보: 아니요
+- 체크포인트 버전: 4
+- 마지막 갱신: 2026-10-19 Asia/Seoul
+- 목표: 노션 READY 기획대로 5종 확인 흐름·UI를 구현하고 반영 전 기획 대조·개발·일반/예외 테스트 완료 보고.
+- 기획: https://www.notion.so/c93393bdd7aa8227be5c81408f37400f (상태 🛠 READY, 예정 26.10.19 재확인)
+- 승인 범위: 개발·검증 완료 후 사용자가 운영 반영과 노션 상태 갱신 승인.
+- 저장소/브랜치: C:/Users/user/Desktop/hoiBot, feature/carrot-confirm
+- 기준: origin/feature/prod 29d6578ed142d901935a2ba7fa191f721a7f3883, ver_2.660
+- 파일 범위: main.js, 관련 tools 테스트·검증 증거, COMMAND_INDEX.md, COMMAND_REGISTRY.md, data/hoiBotChangeLog.json, 이 체크포인트.
+- 요구사항: 5종 공통 유저당 대기1건, 같은 계정/방 60초, 거래한다/안한다 정확일치, 재검증, 실제 대상 보존, 개당×수량, 기존 제한·수량·이전/부수보상 유지, 저장 성공 후 완료.
+- 구현 판단: 현재 번호만 다시 실행하지 않고 대상 정보·최초 순서/번호·실제 내용으로 재검증. 개체 구분이 불명확하면 기획대로 무차감 취소. 기존 저장 트랜잭션과 타이머/잠금 재사용. 대기 상태 DEV/PROD 분리.
+- 구현 완료: 공통 확인 5종, 원래 명령 공통 정책 재검사, 대상 내용/ID/번호 보존, 60초 거래별 만료·중복 방지, 실제 비용/잔여·강화 표시, 저장 성공 후 완료. 기존 수량·장소·약관 범위·부수 보상 유지.
+- 개발 버전: 2.661. main.js와 개발자노트 일치, 명령 인덱스/목록 동기화.
+- 검증 완료: 전체 68회 통과, 새 기능 16그룹 및 Rhino 전체 컴파일·실제 명령/Java 동시확정20쌍 통과. 기획 확인 항목22개 대조 PASS. 데이터1143개 해시 변화/JSON 오류0, 문법·UTF-8·diff 검증.
+- 근거: tools/carrot_confirmation_validation.md, tools/test_carrot_confirmation_result.json. Android 단말 미검증, 강제 프로세스 종료의 신규 영속 저널 없음.
+- 보존: 사용자 미추적 .codex-remote-attachments/, 개발환경_고도화/runtime/. 다른 완료 체크포인트 변경 없음.
+- 소스 푸시: de91adeecf190e32857ccb28840290bc52054e3e. 원격 feature/carrot-confirm과 PR134 head 일치 검증.
+- 정리 후보 기준 커밋: de91adeecf190e32857ccb28840290bc52054e3e
+- 검토 PR: https://github.com/ic-song/hoiBot/pull/134 (draft, base feature/prod, OPEN).
+- 운영 경계: origin/feature/prod 29d6578e/ver_2.660 그대로. 노션 22항목 기획 본문 재확인 동일, 상태 READY/실제 반영 속성 공란 유지. 카카오 알림·스킬 변경 없음.
+- 운영 반영 시작: 검증 소스 SHA256, 68회/16그룹·기획22항목 PASS, 버전/개발자노트 2.661·반영일 확인. 원격 prod 29d6578e 유지·소스 2커밋만 포함.
+- 다음 행동: 이 체크포인트 소스 푸시 후 PR134 운영 병합·원격 검증. 이후 기존 노션의 상태/운영일/버전 갱신과 카카오 버전 알림. 본문은 보존.

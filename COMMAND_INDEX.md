@@ -22,6 +22,261 @@ Source of truth is always the current codebase, especially `main.js` and `Info.j
 
 ---
 
+# /미니게임 · /밸런스 · /밸런스결과 · /호월주사위 · /금고 · /금고리셋 · /금고횟수리셋
+
+Status: VERIFIED
+
+## Files and entry points
+
+- `main.js`: `getMiniGameRequest`, `runMiniGameEntry`, `scheduleMiniGameWork`, `getMiniGameWorkDelay`, `getMiniGameObservedVaultId`.
+- `Info.js`: 회원 읽기 전 `miniGamePending.json` 게시 대기 차단. 포인트 중간 상태 표시 방지.
+- 기본 7인수 `response(...)` 유지. 기존 등록·출석·정지·개인톡 패스·대전/영지전 제한을 통과한 뒤 진입.
+- 무인수 명령은 정확히 일치할 때만 실행. 투표는 1·2와 한 줄 1~80자 이유, 금고는 100~99999 정수 하나만 구문으로 허용하고 현재 단계 범위는 판정 직전에 검증한다. 접미 안내·개행·숨김 문자 거부.
+
+## Helpers and behavior
+
+- 밸런스: `pickMiniGameCycle`, `createMiniGameBalance`, `summarizeMiniGameBalance`, `closeMiniGameBalance`, `buildMiniGameBalanceMessages`, `buildMiniGameBalanceStats`.
+- 전체 방 공용 일일 리셋 회차당 한 문항, 권한이 확인된 `/리셋` 실행 시 마감. 5명 이상·동률 아님이면 다수 선택자 각각 1억 적립. 본인 `/밸런스` 또는 정상 투표에서 미수령만 합산 지급.
+- 밸런스 조회는 투표 전후 모두 `📖 밸런스 게임 하는 방법` 다음 줄에 `명령어:/밸런스 번호 선택이유`를 표시한 뒤 기존 `allsee`와 마감·보상·투표 상태 안내를 출력한다.
+- 공개 이유 목록에는 닉네임·이유만 최신 접수순(최근 등록이 위)으로 출력. 저장된 투표/접수 순서는 바꾸지 않고 조회할 때 역순으로 순회한다. `allsee` 뒤 분할하며 페이지가 나뉘어도 최신순을 유지하고 선택·진행 중 집계는 제외한다. MASTER 결과 조회에만 합산 현황 표시.
+- 주사위: `getMiniGameDiceLimit`, `startMiniGameDice`, `advanceMiniGameDice`, `pickMiniGameDialogue`, `buildMiniGameDiceMessage`.
+- `/호월주사위`와 앞뒤 공백을 제거한 정확한 `ㅎㅈ`는 같은 실행·횟수·배타 잠금을 사용한다. DEV도 같은 단축키를 지원하며 일반 문장·접미는 실행하지 않는다. 새 판은 호이패스 프리미엄 전용 하루 총 4회다. 첫 입력은 양쪽 1차 숫자·멘트 1줄·다음 입력·allsee 안내, 두 번째 입력은 양쪽 1·2차·합계·승부·보상·잔여 판 수를 표시해 정상 진행 총 2메시지다. 자동 추가 굴림은 없다. 승/무/패 3천만/2천만/1천만, 비용 없음. 기존 판은 날짜 변경·프리미엄 만료 후에도 끝낼 수 있다. 신규 시작 자격과 한도는 유지한다.
+- ver_2.714: `calculateMiniGameDiceBonus`는 럭키 식스 5천만·역전승 2천만·2/3/5연승 1천만/3천만/1억을 계산한다. 승리만 연승 +1·무승부 유지·패배 0, 6연승 이상 추가 보너스 없음. 두 주사위 화면에 현재 연승과 `buildMiniGameDiceGuide`의 공통 allsee 안내를 표시한다. 상황별 반응은 주사위 난수와 분리해 순환하고 확정 문구를 재사용한다. 최종 숫자·경기 전후 연승·보너스·합계와 보상 원장을 같은 기존 미니게임 게시로 확정하여 재시도/재시작 때 재가산하지 않는다. `requireMiniGameDiceBonus`는 과거 보너스도 원래 숫자로 검증한다. 구버전 완료·지급 대기 경기는 소급 보너스 없이 유지한다. 일일 `/리셋`은 개인 횟수만 0으로 바꾸고 연승·진행 중인 판은 보존한다.
+- 구 `USER1`/`WAIT_USER2`/`USER2`/`RESULT`의 확정 숫자·멘트·횟수·지급 기록을 보존해 다음 정상 입력에서 미완료 숫자만 이어간다. 기존 저장 단계 번호 1→2는 첫 통합 화면, 4→5는 최종 화면에 사용한다. 지급 실패는 최종 화면의 `지급 대기`로 표시하고 자동 정산에서 숫자·횟수를 다시 만들지 않는다. 결과 화면은 프리미엄/메뉴/규칙을 반복하지 않는다.
+- 금고: `getVaultRobberyRequest`, `createVaultRobberyRound`, `startVaultRobberyRound`, `upgradeVaultRobberyStore`, `getVaultRobberyStage`, `openNextVaultRobberyRound`, `resetVaultRobberyRound`, `resolveVaultRobberyUser`, `getVaultRobberySkillBonus`, `getVaultRobberyAttempts`, `applyVaultRobberyGuess`, `buildVaultRobberyMessage`.
+- 1~3번째 쉬움 100~999·2억·힌트 3개, 4~7번째 보통 1000~9999·5억·힌트 5개, 8~15번째 어려움 10000~99999·10억·힌트 5개. 일반/일반 호이패스 3회·프리미엄 총 5회로 금고 간 개인 횟수를 공유한다. 정상 입력만 차감하고 정답이어도 복구하지 않는다. 동일 계정의 여러 금고 당첨은 허용하지만 같은 금고는 원장으로 1회만 지급한다. 15개 당첨 후 종료하며 고정 상금 합계는 106억이다. 조회 진행은 완료 개수 0/15부터 표시한다. 현재 금고 힌트와 `buildVaultRobberyWinners`의 금일 당첨자(실제 정답·닉네임·상금)는 최신순으로 표시하고 목록은 allsee 뒤에 둔다. `getVaultRobberyPaidTotal`은 실제 지급 완료 상금만 합산한다.
+- `금고털이범📙`은 A등급·기존 등급별 확률 0.4%·추가 2회, `경제사범📙`은 한정판 등급·일반 오픈 제외·추가 4회다. 실제 장착한 신규 스킬의 최댓값만 가산하며 중복 보유·동일 스킬 중복 장착·잠금 슬롯은 추가 가산하지 않는다. 탈착·교체·패스 변경 시 이미 쓴 횟수는 유지하고 잔여 횟수만 다시 계산한다. 명령 진입에서 `petSkillDataPath`를 한 번 읽고 계산 헬퍼에는 로드된 데이터만 전달한다. 조회·스킬 계산은 스킬 파일을 저장하지 않으며 누락·잘못된 JSON은 기존 오류 흐름으로 실패한다. 개별 횟수 리셋 안내에도 대상의 현재 장착 보너스를 포함한다.
+- 금고 공개 안내의 초기화 시각은 `매일 자정`으로 표시하고 관리자 명령어는 노출하지 않는다. 실제 초기화는 기존 `/리셋` 실행 기준을 유지한다.
+- 금고털이범·경제사범은 `PET_SKILL_COMPAT_GROUPS`에 같은 그룹으로 등록되어 `/펫스킬장착` 시 양방향으로 함께 장착할 수 없다. `isPetSkillCompatible`가 아이템 소비·저장 전에 거절하며 펫스킬 중복 안내에도 같은 조합을 표시한다. 기존 동시 장착 기록은 자동 삭제하지 않고 횟수 보너스의 최댓값 보호를 유지한다.
+- 상금 이월·증가·누적 상한과 계산 함수는 제거했다. 일일 /리셋은 1번째 쉬움 2억·비밀번호·횟수·힌트·금일 목록/합계를 초기화한다. 다음 금고는 지급 확정 후 즉시 열리며 이전 범위 밖의 정답은 새 난수 범위에서 제외하지 않는다. 게임 ID/시각이 오래된 요청은 미차감 안내한다.
+- `/금고리셋`: 기존 MASTER만, 새 ID·비밀번호로 첫 금고를 열고 당일 당첨 목록·전체 개인 사용 횟수·최근 힌트·재응답 대기를 함께 초기화한다. 15개 종료 후에도 리셋 가능하다. 이미 지급한 포인트·보상/지급 원장은 보존하고 이전 회차는 보관한다. 미지급 보상이 있으면 보류하며 기존 미니게임 게시 저널로 진행과 보관을 함께 확정·복구한다. 오래된 게임 ID·요청 시각은 새 금고를 실행하지 않는다.
+- `/금고횟수리셋 아이디`: 기존 MASTER만, 해당 날짜의 한 계정 사용 횟수만 0으로 바꾼다. 기존 회원 검색 재사용, 닉네임/다른 계정 ID 충돌은 거부하고 @닉네임으로 명시 가능. 암호·힌트·상금·게임·종료·보상은 유지. 운영 기록에 실행자/대상/시각/결과/게임 ID만 남기며 비밀번호는 포함하지 않는다.
+- 구 `/호이월드미니게임`은 실행 명령에서 제거, 현재 메뉴·도움말·게임 안내는 `/미니게임`으로 통일한다.
+
+## Data and save flow
+
+- 정적 원본: `data/balanceQuestions.json` 1,300문항/26분류, `data/howoriDiceDialogues.json` 200멘트/8분류. `tools/build_mini_game_catalog_bundle.js`가 Main의 구간 표시에 전체 자료를 생성하며 `--check`로 동기화를 검증한다. `getMiniGameBundledCatalog`는 누락 시에만 원본 전문을 반환한다.
+- 정적 파일 누락은 유효한 교체 이전본 또는 배포에 포함된 전체 자료로 복원한 뒤 원래 경로에서 읽는다. 기존 파일 손상은 덮어쓰지 않고 오류로 유지, 사용자에게 짧은 점검 안내와 운영 오류 기록을 남긴다. 복원/로딩 실패는 투표·게임 시작·횟수·지급 변경 전에 중단. 활성 경로·수정 시각·크기별 캐시, 정상 조회/투표/굴림에서 정적 파일 저장 없음.
+- 활성 진행·순환·투표·이용 횟수·미수령 원장: 활성 데이터 루트의 `miniGameState.json`. 완료된 날짜·지급 증거는 `miniGameArchive_YYYY-MM.json`에 보관, 임의 만료 없음.
+- 일일 기준은 시계 자정이 아닌 실제 `/리셋` 실행이다. 운영의 자정 `/리셋`과 같은 회차를 사용하며 `dailyReset`의 날짜·연속 회차·실행 시각을 기록한다. 금고 비밀번호·15개 진행·횟수·당첨 목록/지급 합계, 밸런스 마감/새 질문, 주사위 새 판 횟수가 함께 전환된다. 기존 주사위 판과 미지급은 유지한다. 같은 날짜의 재리셋도 기존 출석 리셋처럼 새 회차를 만들며 밸런스 원장·마감 공지·보관/통계는 회차를 구분한다.
+- `runMiniGameEntry("resetPlan")`은 원본을 검증해 저장 계획만 반환한다. 기존 `/리셋` 권한 분기에서 회원·펫 저장 뒤 보관·진행을 게시하고, 원문/신규 파일을 기존 저장 트랜잭션에 등록해 실패 시 함께 복구한다. 기존 미니게임 지급 확인 대기는 기록을 유지하고 미니게임 리셋만 보류한다. `/리셋`은 잠금 경합 시 기다리므로 자동 정산 중에 명령이 버려지지 않는다. 자동 작업은 미완료 지급/공지 재처리만 하며 시각만으로 새 회차를 만들지 않는다.
+- 공통 고유 ID `member[*].serverRaidAccount.id` 재사용. 신규 등록 시 ID를 발급하며 첫 설치 때 기존 누락 ID만 한 번 보충한다. 설치 이관 이후 조회·투표·일반 굴림은 회원 저장 없음. 실제 지급은 기존 `addPoint`·`saveJsonFile` 경로만 사용.
+- 당첨/마감/주사위 결과를 먼저 확정하고 `payMiniGameRewards`로 정산. 원문 게시 저널 `miniGamePending.json`을 먼저 저장한 후 회원·진행·해당 월 보관을 게시한다. 게시 완료 경계 이후 저널을 비운다. 중단 시 다른 회원 변경 전에 확정 원문을 완성하므로 이후 거래를 과거 회원 백업으로 되돌리지 않는다.
+- `runMiniGameEntry`의 월별 보관은 `archive(day, true)`로 실제 변경을 표시하고 변경된 월만 한 번 직렬화한다. 보관 비교용 전체 문자열을 상시 유지하지 않으며 통계 조회는 변경 표시를 하지 않는다. 일일 리셋 계획은 사용하지 않는 진행 비교 문자열을 생성하지 않고, 실제 저장은 변경 판정 후 이전 비교 문자열을 해제한 다음 기존 원문 게시 저널을 만든다. 금고 교체는 새 회차 객체로 바꾸므로 이전 회차를 전체 복제하지 않는다. 기존 저널 버전·검증·저장 순서·복구 계약은 유지한다.
+- 진행 파일은 정상이고 저널·교체 이전본만 없으면 진행을 검증한 뒤 누락 저널만 생성한다. `getMiniGameMissingJournalReviewReason`가 PENDING 원장·미지급 금고·결과 단계 미지급 주사위를 발견하거나 임시 저장 흔적이 있으면 `recovery: {required:true,reason:...}`를 기록하고 미니게임 변경/지급을 보류한다. 남은 저널 `.tmp` 원문은 `.missing`으로 보존하며 기존 증거 충돌은 실패한다. 진행·회원·정답·횟수·기지급 기록은 초기화하지 않는다.
+- 지급 확인 대기 중에도 조기 `recover`의 `allowRecoveryReview`는 일반 명령을 통과시킨다. 실제 미완료 게시 원문은 기존대로 먼저 완성한다. `/미니게임`은 메뉴와 보류 안내, 게임 실행은 짧은 보류 안내를 출력한다. 시작 시 미니게임 예외는 로그를 남기고 다음 초기화를 계속하며, 확인 대기 자동 작업은 같은 오류를 반복 예약하지 않는다. 손상 파일은 이 예외 복구 대상이 아니다.
+- 금고 schema1/2는 검증 후 schema3으로 한 번 이관한다. 현재 일일 회차의 기존 당첨(같은 날짜 이전 /리셋 기록은 제외)과 개인 사용 횟수, 확정 보상의 금액·보상 ID·지급/공지 상태는 보존한다. 미당첨 이월금은 폐기하고 새 순번의 고정 상금·범위로 교체하며 원래 금고는 보관한다. 기당첨 보상은 재지급하지 않고 미지급 확정 보상은 원래 금액으로 정산한 뒤 다음 순번을 연다. 과거 형식 범위/금액 상수는 이 검증에만 사용한다.
+- `requireMiniGameState`, `requireMiniGameJournal`, `requireMiniGameArchive`, `requireMiniGameCatalog`로 손상을 오류 처리. 설치 후 누락·파싱 오류를 빈 진행으로 초기화하지 않는다. 분리 회원의 레이드/로그 슬롯 변경은 차단한다.
+- 전체 공지는 지급과 별개로 CLAIMED를 먼저 저장. 실패·전송 여부 불확실 상태는 UNCERTAIN으로 남기고 자동 재발송/재지급하지 않는다. 상태/보관 원문에서 운영 확인 가능.
+- `runMiniGameEntry`의 주사위 화면 전송은 개인 주사위 명령의 본인 계정만 후보로 선택하고, 다른 개인 명령·재표시는 후보를 만들지 않는다. 자동 처리에서는 전체 사용자를 계속 확인한다. `getMiniGameWorkDelay`는 검증된 진행에서 첫 RESULT 또는 밸런스 외 PENDING 보상 발견 시 기존과 같은 재시도 간격을 즉시 반환한다. 전체 상태 검증·보상 지급·공지 선점·저널 게시 경계는 유지한다.
+- DEV/PROD 모두 기존 `resolveActiveDataPath` 적용. 운영자는 새 Main과 개발자노트를 업로드·컴파일한다. 정적 JSON은 함께 배포할 수 있으며 빠졌을 때 Main의 전체 자료로 복원한다. 진행/저널/보관 파일은 런타임에서 생성하며 저장소 데이터로 덮어쓰지 않는다. Info의 기존 게시 차단 형식은 호환 유지.
+
+## Validation
+
+- `tools/test_vault_robbery.js`: 3·4·5자리 정답 전 범위, 난수 양끝과 직전 정답 제외, 입력·단계 오류·KST 변환 6그룹. `tools/test_vault_balance.js`: 실제 15개·106억·3/5회·힌트·최신순 UI·이월 폐기·schema1/2와 구 저널 이관·확정 지급/실패·DEV·/리셋 16그룹. `tools/test_vault_reset_skills.js`: 신규 스킬·등급/확률/장착 UI·탈착/교체·전체 리셋·재시작·중단 복구·10개 종료본 확장·손상 파일 9그룹. `tools/vault_reset_skills_validation.md` 참조.
+- `tools/test_mini_games.js`: 실제 명령 진입·7인수 콜백·정산/저널/실패 재시도·분리 회원·Info 차단·정적 자료·일일 `/리셋`·시각만 경과 시 유지·DEV 예외 검증.
+- `tools/test_mini_games_rhino.js <rhino.jar>`: 전체 Main/Info Rhino 컴파일, 실제 Java 파일·동시 스레드·새 전역 재시작·보상 중단 복구 검증.
+- `tools/test_mini_game_revision.js`: 2.697 이관·2차/수동 개방·공유 횟수·프리미엄 전용·관리자 대상/권한·동시 게임 ID 경계·누락 복원/손상 차단·짧은 오류 안내 검증.
+- `tools/test_mini_game_missing_journal.js`: 누락 저널만 생성·기지급/불확실 지급 보존·임시 원문·실패/DEV·실제 일반 콜백·시작 예외·반복 타이머 중단 11그룹. Rhino 시험에도 실제 파일 누락/동시 생성/재시작/원문 보존/보류·잠금 해제를 포함한다.
+- `tools/test_mini_game_ui.js`: 2메시지·별칭/DEV 실제 콜백·승무패/6개 눈·구 진행 8단계·기지급/중단/응답 실패·지급 대기·금고 범위/특별 힌트 제거·기존 기록 보존.
+- `tools/test_mini_game_daily_reset.js`: 실제 `/리셋` 분기11그룹. 시각만 경과 시 유지·동일 날짜 여러 회차·미수령/기지급·진행 중 주사위·권한/접미·회원/펫/보관/진행 실패 복구·DEV·이전 회차 대기 입력·잠금 대기·지급 확인 대기·시각 역행.
+- `tools/test_mini_game_memory.js`: 성능 수치 비교 없이 금고 회차 보관의 불변성·관리자 변경 기록·이중 당첨 지급·통계 무저장·큰 합성 보관과 기존 버전 저널의 게시 중단 복구를 검증한다. `tools/mini_game_memory_validation.md` 참조.
+
+---
+
+# 명령별 데이터 로드 · Info 조회 · Main 재화 기록
+
+Status: VERIFIED
+
+## Files and Save Flow
+
+- `Info.js`는 회원·길드를 기존 공통 위치에서 읽고 레이드·출석·영지·무쌍·개인톡·정지·약관 제한을 검사한다. 펫·펫스킬·회원 타이틀·펫 타이틀은 해당 명령 분기 안에서 필요한 것만 읽는다. 파일을 생략할 때 빈 객체를 대신 만들거나 새 캐시를 쓰지 않는다.
+- `/포인트`·`ㅍㅍㅍ`·`/레벨`·출석·상점·서버 통계·티어·누적 좋아요/영주 수익·캐슬대전 순위는 위 4종 선택 파일을 읽지 않는다. `checkRank`는 펫 인자를 실제로 참조하지 않으며 닉네임·길드 표시는 회원/길드로 계산한다. 이 의존성이 바뀌면 로드와 테스트를 함께 갱신해야 한다.
+- `/정보 대상`: 펫+회원 타이틀, `/내정보`: 펫+회원 타이틀+펫 타이틀, 회원/펫 타이틀 목록: 해당 타이틀만 읽는다. 기존 대상 조회 권한과 인자 처리는 유지한다.
+- 종합/서버/캐슬매력/레이드매력 순위: 펫+펫스킬, `/펫정보`·`/ㅎ`·`ㅁㅁㅁ`: 펫+펫스킬+펫 타이틀을 읽는다. 미니펫 대전/승률·펫강/펫매력/시련탑 순위·펫상태/주인·미니펫통계·캐슬전적은 펫만 읽는다. 펫홈·탐험·시련탑·캐슬 등 각 분기의 다른 기존 로드는 유지한다.
+- `main.js`의 `currencyLogPath` 로드는 기존 공통 위치를 유지하되 맞짱 종료·다이아 순위/상점 구매/지급/차감/전체 초기화/상자 개봉·길드 분배·계정 삭제/잠수 삭제·데이터 정리에서만 실행한다. 다른 명령·일반 대화는 재화 기록을 읽지 않는다. 이는 읽기 분류이며 명령 실행 가드·권한·저장 순서·트랜잭션은 바뀌지 않는다.
+- Main의 펫/스킬/길드 공통 로드는 패스 만료·스킬 보정·대전 및 자동 처리에서 실제로 사용하므로 유지한다. DEV/PROD 경로, 기존 로더의 누락/손상 처리와 복구 대기 차단도 유지한다.
+- 검증: `tools/test_command_data_loading.js`, `tools/test_command_data_loading_rhino.js`, `tools/command_data_loading_validation.md`.
+
+---
+
+# /교육 · /교육완료 · /교육실적 · /교육실적전체 · /교육명령어
+
+Status: VERIFIED
+
+## Files and Commands
+
+- `main.js`: `GLOBAL_CONFIG.gmEducation`, 교육 요청/원본 검증·진행·보상·매뉴얼·실적 함수. `Info.js`: `/내정보`·`/정보 닉네임` 레벨 다음 교육 상태 한 줄과 경로별 읽기 캐시.
+- `isGmEducationOperator`: 기존 `isMaster` 판정과 허용 방을 유지하고 `GLOBAL_CONFIG.gmEducation.rooms`의 정확한 `교육방`·`교육방2`에서는 기존 Master 명단에 든 사용자에게 교육 명령만 허용한다. 전역 `isMaster` 방 목록은 바꾸지 않는다. Admin/일반 사용자는 제외한다. 두 방은 같은 교육 원본과 보상 영수증을 사용하며 방을 바꿔도 중복 완료·보상·실적을 만들지 않는다. 진행 중 영지전의 공통 차단은 교육방 허용보다 우선한다.
+- `/교육`: 기존 GM 흐름 안내와 전체보기 12챕터 제목 목록, `/교육 1`~`12`: 공통 매뉴얼, `/교육 아이디`: 진행/다음 챕터. 숫자 계정은 `/교육 @닉네임` 또는 기존 `serverRaidAccount.id`로 구분한다. 공백 닉네임도 전체 이름으로 조회한다. 11장은 홈뱃지·큐브, 12장은 `/패키지가방`에서 패키지 이름·보유 수량을 확인하는 교육이다. 실제 재화 사용·결제는 완료 조건이 아니다.
+- `/교육완료 아이디 챕터번호`: 마지막 정수 1~12와 그 앞의 전체 닉네임을 분리. 다음 챕터만 허용하며 재완료·순서 건너뛰기·추가 안내 문구는 지급하지 않는다. 계정당 총 12개 챕터, 챕터당 `다이아상자💎(소)` 1개, 수료 추가 보상 없음. 기존 10챕터 기록은 10/12로 유지하고 11·12만 추가 지급한다.
+- `/교육실적`, `/교육실적 GM아이디`, `/교육실적 전체` 뒤 선택적 `YYYY-MM`: 기본은 현재 KST 월, 지정 월은 최초 정상 완료 시각 기준으로 집계한다. `/교육실적전체 [YYYY-MM]`은 전체 조회 별칭이다. 담당 GM 교대·닉변에도 내부 계정 ID를 유지한다. 개수 내림차순·동률 1등/1등/3등·닉네임 정렬, 본문 최대 3명과 전체 순위/`👤` GM별 기록을 `allsee`로 표시한다. 각 기록은 대상자·챕터·KST `YYYY.MM.DD HH:mm:ss`를 한 줄로 출력한다. 시각 기록은 최신순, 날짜만 있는 기록은 시각을 만들지 않고 같은 날짜 안에서 원본 순서를 유지한다. 인원·수료 인원·금액은 표시하지 않는다. 미래·빈 달·형식 오류·없는 계정·예약어 충돌은 각각 안내하며 `/교육실적 초기화`는 과거 월 조회를 안내한다.
+- `/교육명령어`: 독립된 전체보기 명령 안내. 상단/상세의 지난달 예시는 KST 직전 월로 자동 변경한다. `/교육`에 새 명령 목록을 붙이지 않는다. 조회는 무저장이다.
+- 실제 게임 명령·권한·소모 조건은 그대로다. 강화·구매·가입·거래를 강제하거나 자동으로 교육 완료하지 않는다. 교육 초기화·별도 타이머 없음.
+
+## Helpers and Save Flow
+
+- `getGmEducationRequest`, `resolveGmEducationUser`, `requireGmEducationStore`, `getGmEducationProgress`, `requireGmEducationPending`, `applyGmEducationPending`, `buildGmEducationStatus`, `buildGmEducationManual`, `buildGmEducationStats`.
+- 교육 원본 `gmEducation.json`: 계정 ID별 최대 12개 확정 챕터/담당 GM/처리 키/시각. 실적은 이 기록에서 계산하며 별도 집계 파일을 중복 저장하지 않는다. `getGmEducationChapterCount`, `getGmEducationMonthKey`, `getGmEducationStatsRequest`, `buildGmEducationCommands`가 챕터/월/안내를 일관되게 처리한다.
+- 가방과 동일한 `member.json` 저장에 `member.gmEducationRewards` 최대 12개 처리 키와 `gmEducationRewardTimes` 최초 확정 시각을 함께 남긴다. 기존 영수증에는 날짜 메타데이터가 없어도 되며 새 챕터 추가 시 기존 구간은 null로 보존한다. 기존 안정 ID가 없으면 ID만 먼저 확정한다.
+- `gmEducationPending.json` 영속 요청 확보 → 가방+지급 영수증 저장 확정 → 교육 원본 저장 확정 → pending 삭제. 응답은 이후 출력한다. 중단된 요청은 다음 Main 응답 전처리에서 최초 계정/GM/처리 키로 누락 단계만 복구한다. 이미 사용한 보상을 다시 주지 않는다.
+- 신규 요청의 `completionClock: 1`은 요청 영속화 후 회원을 다시 읽고 보상과 같은 저장에 완료 시각을 확정한다. 미지급 요청이 다음 달 처음 확정되면 새 월, 기지급 뒤 원본 저장만 복구하면 최초 영수증의 월을 유지한다. 기존 pending은 기존 at를 보존한다. 기존 원본의 완료 날짜가 없으면 원본 그대로 `기존 누적·월 미분류` 상세로 인계하고 월별 실적에서는 제외한다. 잘못된 날짜·영수증·JSON은 계속 오류다.
+- 두 GM의 완료 요청은 기존 쓰기 흐름 잠금으로 직렬화한다. 분리 회원의 레이드/운영 로그 슬롯은 그대로 유지한다. pending/원본의 게시 중단 `.rollback`도 기존 파일 검증 후 복구한다.
+- PROD `/sdcard/호이랜드/`, DEV `/sdcard/호이랜드_dev/`의 교육/요청/회원 파일은 분리한다. 최초 전용 파일 미생성은 미진행, 기존 잘못된 JSON/형식·영수증 불일치는 오류로 남기며 빈 데이터로 덮지 않는다.
+- 조회는 무저장. `/내정보`와 `/정보 닉네임`은 환경별 교육 파일의 수정 시각/크기별 캐시를 공유하고, 각 조회 대상자의 지급 영수증과 일치한 완료 수만 표시한다. 복구 대기 중에는 이전 확정 수만 노출한다. `/정보`는 레벨 다음에 `📘 n/12챕터 완료 · 다음 n+1챕터`, 12개 완료 시 `📘 12/12챕터 완료 · 전체 수료`를 표시한다.
+- 검증: `tools/test_gm_education.js`, `tools/test_gm_education_rhino.js`, `tools/test_education_followup.js`, `tools/test_education_territory_update.js`, `tools/test_oct25_ready.js`, `tools/oct25_ready_validation.md`. 이전 이력은 `tools/gm_education_validation.md`.
+
+---
+
+# /길드마블 · /마블판 · /마블가이드 · 길드마블 진행
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: `GLOBAL_CONFIG.guildMarble`, `getGuildMarbleRequest`, 응답 전처리의 길드마블 분기, 순수 경기/출력 함수.
+- 검증: `tools/test_guild_marble.js`, `tools/test_guild_marble_settlement.js`, `tools/test_guild_marble_improvements.js`, `tools/test_guild_marble_rhino.js`.
+
+## Commands and Behavior
+
+- `/길드마블`: 현재 소속 길드의 참가비·고정 상금·오늘 횟수와 모집/진행/정산 상태. `/마블판`: 현재 차례·선택과 최신 참가자/16칸 게임판. `/마블가이드`: 별도 전체보기 규칙.
+- 길드마스터·부길드마스터는 `/마블시작`으로 모집을 연다. 현재 길드원인 기존 부길마 목록의 최대 2명만 인정한다. `/마블참가비 숫자`(1~10억 포인트), `/마블모집취소`, `/마블중단`은 길드마스터만 실행한다. 운영자 MASTER는 길드 역할을 대신하지 않으며, 모집을 연 사람도 직접 `/마블준비`해야 플레이한다.
+- `/마블준비`, `/마블준비취소`: 같은 길드 4명 모집. 네 번째 준비 시 소속·잔액을 전원 재검증하고 실제 시작 때만 참가비와 길드 일일 이용 횟수 차감. 실패자는 준비 해제하며 나머지는 유지.
+- `/마블굴리기`, `/마블구매`, `/마블건설`, `/마블통과`: 본인 차례와 단계에 맞는 정확한 명령만 실행. 부족해도 구매/건설 대기는 자동 진행하지 않는다. 추가 안내 문구/인수는 실행하지 않는다.
+- 정확한 `ㅁㅂ`, `ㅁㄱ`, `ㅁㅌ`는 굴리기·구매/건설·통과 별칭이다. `ㅁㄱ`는 앞뒤 공백을 제외한 전체 일치만 허용하고 BUY/BUILD 대기에 따라 기존 구매/건설 처리로 연결한다. 필터·제재·영지전 잠금·출석 조건과 DEV 격리·쓰기 잠금을 유지한다.
+- 기본 통행료는 땅 가격 200/300/400에 각각 75/120/150골드, Lv2는 3배다. 구매·건설비는 유지한다. 행운 두 칸은 항상 +100골드이며 추가 추첨하지 않는다. 기회는 기존 50% +200/-100골드다.
+- 4명 순서는 시작 시 무작위, 골드는 1,000/1,020/1,030/1,040. 10라운드 홀수 정순·짝수 역순, 탈락자 예정 차례 제외. 통행료·이벤트 손실로 골드가 부족하면 잔액만 지급하고 파산하며 땅 초기화. 정확히 0골드는 생존.
+- 생존자 1명 또는 40번째 예정 차례 완료 시 종료. 생존자는 골드+지역/건설 원가 총자산순, 동점 생존자만 추첨, 탈락자는 먼저 탈락한 순서로 하위 순위. 참가비 총액의 10% 수수료를 제외한 풀을 40/30/20/10% 지급(참가비 별도 반환 없음).
+- `/마블중단확인`: 길드마스터 중단 요청 후 실제 4명(탈락자 포함)이 전원 동의해야 전액 환급. 횟수는 유지. 유효 진행만 동의 취소, 잘못된 입력·중복 동의는 미변경.
+- 길드 기준 KST 하루 7회, 개인 별도 제한 없음. 기존 5회 이용 기록을 유지하며 남은 2회를 추가로 사용할 수 있다. 모집·취소·시작 실패는 횟수를 쓰지 않으며 실제 경기 시작만 계산한다. 이용권 기능은 사용자 요청으로 보류했다. 진행 방 고정, 시작 당시 계정 ID로 닉변·탈퇴/추방 후에도 진행/정산. 시계 자정만으로 종료하지 않으며 실제 일일 `/리셋` 실행 시 전체 길드 세션을 종료한다. 타이머·자동 넘김 없음.
+
+## Helpers and Data
+
+- `requireGuildMarbleStore`, `isGuildMarbleRecruiter`, `executeGuildMarbleRequest`, `startGuildMarbleGame`, `rollGuildMarbleDice`, `chooseGuildMarbleLand`, `advanceGuildMarbleTurn`.
+- `prepareGuildMarbleSettlement`: 확정 순위/금액을 한 번 저장. `settleGuildMarbleGame`: 기존 `buildServerRaidAccountIndex`의 내부 ID로 미지급만 처리. `finishGuildMarbleGame`: 상세 정리, 최소 마지막 지급 기록 유지.
+- `buildGuildMarbleMessage`, `buildGuildMarbleProgress`, `buildGuildMarbleFooter`: 진행 안내·참가자 현황과 게임판을 두 메시지로 분리. 첫 메시지는 참가자 현황 제목 아래부터 `allsee`, 둘째는 현재 길드마블 상황 제목 아래부터 `allsee`로 16칸 표시. `replyGuildMarbleSafely`가 각 메시지를 순서대로 전송하며 개별 실패가 확정 저장을 취소하지 않는다. 모집·가이드는 기존 한 메시지. 정산 대기는 실제 지급 표시, 완료 출력은 최종 게임판 포함.
+- 현재 차례·가능한 행동은 진행 안내 하단에 한 번 표시한다. 선택 대기에는 이동한 사람을 유지하고 잔액 부족 시 통과만 안내한다. 진행/정산의 반복 이용횟수·가이드 안내를 제거하고 게임판 소유자도 참가자와 같은 닉네임으로 표시한다. 이동 설명과 실제 금액 결과는 구분하며 부족 통행료에는 실제 지급액·부족액·파산만 표시한다. 가이드는 전체 규칙과 7회·별칭·부길마 시작 권한을 안내한다.
+- 파산 시 확정 순위/참가자 → 이동/지역 주인 → 통행료·실제 지급·부족액 → 잔액/반환 지역/상금 시점 → 실제 라운드 전환·다음 행동 순으로 구분한다. 보유 지역 0곳은 별도 문구, 참가자 현황도 확정 순위를 표시한다. 파산 후 종료되면 기존 최종 정산을 출력하며 다음 행동 안내를 붙이지 않는다. 정확히 0골드 생존 규칙과 통행료/상금 계산은 유지한다.
+- 소형 파일 `guildMarble.json`: 길드별 설정·KST 횟수·현재 경기·최소 마지막 거래. 지난 턴/메시지 이력 누적 없음.
+- 기존 `member.serverRaidAccount.id` 재사용. 아직 ID 없는 회원은 첫 준비에 기존 계정 형식으로 한 번 발급하며 별도 공개 식별자/콜백 인수를 요구하지 않는다.
+- `getGuildMarbleRankLabel`은 기존 채크랭크를 재사용하되 추방/삭제된 길드 참조는 표시용 사본에서만 제외해 조회 중 회원 정리·저장을 막는다.
+
+## Save Flow
+
+- 기존 7인수 `response`와 쓰기 흐름 잠금 사용. 회원/펫/길드 조회 후 순수 함수에 전달. 일반 턴은 `writeMemberSplitSlot`으로 경기 파일만 저장. 조회·잘못된 입력은 저장 없음.
+- `resetGuildMarbleGames`는 이미 로드한 전체 길드 저장소와 회원/계정 인덱스를 받아 모집 취소, 진행 경기 전액 환급(수수료 없음), 기존 확정 정산의 미지급분 처리를 구분한다. 리셋 권한과 길드 일일 횟수는 유지한다. 지급 불가 경기는 SETTLING으로 보존하고 실제 종료/취소/대기 건수를 표시한다. `/리셋`은 DEV 포함 배타 쓰기 잠금을 사용한다. 리셋 진입부에서 기존 `guildMarblePending.json` 형식으로 원래 회원 원문과 종료 의도가 확정된 정산 대기 원문을 먼저 보존한다. 회원·경기·일일 초기화 게시 사이 중단 후에도 이전 PLAYING을 복원하지 않고 미지급만 재처리한다. 호월주사위 진행과 연승은 삭제하지 않는다. `tools/minigame_updates_validation.md` 참조.
+- 참가비·상금·환급(초기 계정 ID 발급 포함)은 `guildMarblePending.json`에 회원/경기 원문 보존 → 기존 `saveJsonFile` 회원 저장 → 경기 게시 → 복구 기록 해제. 다음 명령에서 중단 게시를 먼저 원문 복구. 기존 회원 분리 상세/운영 로그 슬롯 변경은 차단한다.
+- 정산 순위는 지급보다 먼저 확정하고 재시작·미처리 재시도에서 재추첨/중복 지급하지 않는다. 정산 대기 중 새 모집/환급 전환 차단. 응답 전송 실패는 확정된 저장을 되돌리지 않는다.
+- 정산 전 순위 확정 원문은 한 번 직렬화해 경기 파일 게시와 `marbleOriginalText`에 재사용한다. 검증·게시·트랜잭션 경계와 중단 복구 순서는 유지한다.
+- 정산 재시도는 원래 방의 길드마스터·부길드마스터 `/마블시작` 또는 기존 참가자 `/마블굴리기`(별칭 포함)만 허용한다. 탈락·탈퇴 참가자도 재시도 가능하며, 그 외 명령·잘못된 수량·권한 없는 입력은 순위·포인트·파일을 변경하지 않는다. 명령별 권한과 참가비 범위 검사는 정산 분기보다 먼저 적용한다.
+- 파일은 `resolveActiveDataPath`로 PROD `/sdcard/호이랜드/`와 DEV `/sdcard/호이랜드_dev/` 분리. 존재하는 잘못된 저장소를 새 빈 경기로 대체하지 않는다.
+
+---
+
+# /초기화 · 번호 선택 · 1삭제 / 2취소
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: `GLOBAL_CONFIG.manualReset.entries`의 32항목 중 개인 미니펫 전적은 직접 명령으로 분리하고 운영 초기화·정리 31종을 통합한다.
+- `Info.js`: 메뉴·번호·최종 확인 입력에서 중복 처리하지 않는다.
+
+## Behavior
+
+- `/초기화` → 현재 역할로 허용된 번호 목록 → 번호 선택 → 대상·범위 안내 → 정확히 `1삭제` 또는 `2취소`.
+- `GLOBAL_CONFIG.manualReset.rooms`의 정확한 서버관리자/기존 `testRoom` 팻 테스트방에서만 운영 초기화 31종의 메뉴·구형 안내·후속 처리를 실행한다. 그 외 방은 읽기·응답·대기 변경·삭제 전에 반환한다. 허용 방에서도 현재 역할이 없으면 `⛔ 사용 권한이 없습니다.`만 출력한다. `Info.js`는 동일 운영 명령 목록을 진입 전 반환한다.
+- 글자수 전체 정리·필터 데이터 정리는 `[정리]`로 표시하며 기존 정리 기준과 범위를 안내한다. 두 운영방 제한과 기존 항목별 역할을 모두 적용한다. GM 관리자방·주문기록방의 권한만으로 운영 초기화에 진입할 수 없다.
+- `/글자수전체정리`는 정확히 직접 입력하면 확인 메뉴 없이 기존 권한·정리 기준으로 즉시 실행한다. `/초기화`의 글자수 정리 항목과 `1삭제`·`2취소` 절차도 함께 유지한다. 이 예외는 다른 초기화·필터 정리 명령이나 접미사 입력에 적용하지 않는다.
+- 대상을 지정하는 항목은 `번호 아이디`, `번호 아이디 횟수`, `번호 서버` 형식으로 선택한다. 서버는 기존 호1~7·벨1~2·GM·서버장만 허용한다.
+- 기존 수동 초기화 명령과 두 신규 별칭 `/댓글초기화`, `/피드초기화`는 직접 입력하면 메뉴 안내만 출력한다. 원래 실행 분기는 최종 확인을 소비한 응답에서만 재사용한다. 접미사·설명 문구로 즉시 실행할 수 없다.
+- 대기는 사용자·PROD/DEV·방·그룹 여부에 묶인다. 각 선택 단계의 유효기간은 60초이며 만료 시 다음 입력에서 취소 안내한다. 재컴파일·재시작은 모든 대기를 없앤다.
+- 번호 목록은 세션별 권한에 맞춰 생성한다. 선택·확인 때 권한을 다시 검사하고 기존 실행부의 자원·출석·대전·장소 조건도 유지한다. 길드 게시판은 소속 길드가 바뀌면 취소한다.
+- 본인 `/미니펫전적초기화`는 운영 메뉴/구형 안내에서 제외하여 기존 일반방·아이템 소모 기능으로 직접 실행한다. 개인 개별 피드/댓글 삭제도 그대로다. `/피드전체삭제`와 길드 게시판 일괄 초기화는 운영방에서 기존 패스/길드 역할을 유지한다. 마스터 명단 초기화는 MASTER 전용이다.
+- 일반 숫자는 해당 사용자·방의 메뉴 대기가 있을 때만 선택으로 처리한다. 메뉴 관련 입력은 필터 자기 차단에서 제외한다.
+- `/리셋`, `/주기리셋`, notice.js 알림 운영과 개인 가방 정리·개별 미니펫/가구/펜던트 정리는 그대로다. 메뉴 외 직접 운영 `/글자수전체정리`, `/데이터정리`, `/경매초기화`, `/계삭진행`, `/계정잠수삭제`도 두 운영방·기존 역할 검사와 쓰기 잠금을 적용하며 기존 실행/확인 절차를 유지한다.
+
+## Related Helpers
+
+- `isManualResetRoom`, `getManualResetSessionKey`, `getManualResetDirectOperation`, `getManualResetLegacyEntry`, `isManualResetLegacyCommand`, `isManualResetInput`: 운영방·직접 예외·개인 제외·환경/사용자/방/그룹별 대기·입력 분류.
+- `isManualResetEntryAllowed`, `advanceManualResetSession`: 파일 IO 없는 역할 검사·메모리 선택/확인·1회 실행 연결.
+- `resetAllPetHomeContent`: 이미 로드한 댓글 또는 피드 및 같은 종류의 알림만 초기화한다. 파일 IO 없음.
+
+## Save Flow
+
+- 메뉴·선택·취소·만료는 저장하지 않는다. 실제 댓글/피드 삭제는 진입부에서 대상 파일과 활동 파일을 각각 로드하고 변경 파일만 기존 `saveJsonFile`로 저장한다. 작업 전 스냅샷·기존 백업·명령 트랜잭션으로 실패를 원복한다.
+- 전체 댓글은 일반·픽 댓글과 댓글 알림, 전체 피드는 피드·이전 한줄평과 피드 알림을 제거한다. 포인트·가구·방문 기록·좋아홈·소셜 누적 통계·기존 guestComments는 유지한다.
+- 미리보기 건수와 실제 삭제 건수는 다를 수 있다. 삭제 직전에 최신 데이터를 다시 읽는다. 완료 응답 실패는 확정 삭제를 취소하지 않으며 재실행은 남은 항목만 처리한다.
+- 신규 두 파일 작업의 앱 강제 종료 원자성은 기존 저장 방식과 같다. 재시작 시 확인은 취소되며 새 메뉴 확인으로 남은 항목을 정리할 수 있다.
+- `tools/test_reset_menu.js`, `tools/test_reset_menu_rhino.js`, `tools/reset_menu_validation.md` 참조.
+- 메뉴에서 선택한 운영 정리 2종은 최종 확인 후 원래 실행 분기로 연결하며 정리 계산·저장 본문은 유지한다. 메뉴·선택은 정리 대상 파일을 읽지 않고, 확인 시 최신 데이터·가방 한도·필터로 실행한다. 별도 `/글자수전체정리` 직접 입력도 동일한 최신 데이터 정리 분기를 사용한다. `tools/test_reset_cleanup_menu.js`, `tools/test_reset_cleanup_rhino.js`, `tools/test_filter_data_cleanup.js`, `tools/reset_cleanup_validation.md` 참조.
+
+---
+
+# /필터추가, /필터제거, /필터리스트
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: 관리 명령과 게임 명령 차단
+- `Info.js`: 조회 명령 차단
+
+## Related Helpers
+
+- `readMessageFilterWords`, `setMessageFilterCache`, `getCachedMessageFilterWords`
+- `getMessageFilterRequest`, `containsMessageFilterWord`
+- `isMessageFilterCommandInput`, `changeMessageFilterWords` (Main)
+
+## Behavior
+
+- `/필터추가 단어1,단어2`, `/필터제거 단어1,단어2`. 기존 방별 관리자·MASTER 권한으로 관리한다.
+- `/필터리스트`: 같은 관리 권한으로 현재 환경의 메모리 목록을 등록 순서·번호와 함께 표시한다. 상단은 `현재 등록: 100/300개` 형식이며 분모는 등록 상한 설정값을 사용한다. 빈 목록도 `0/300개`로 안내하고 파일 읽기·저장 없이 조회한다. Info는 중복 응답하지 않으며 목록 명령 자체는 필터 자기 차단에서 제외한다.
+- 쉼표로 나누고 앞뒤 공백·중복을 제거한다. 빈 구간이 있으면 전체 요청을 저장하지 않는다. 인자 없이 입력하면 사용법과 현재 목록을 안내한다.
+- 등록 상한은 DEV/PROD 각각 300개(`GLOBAL_CONFIG.messageFilter.maxWords`). 중복 제외 후 실제 신규 등록으로 상한을 넘으면 요청 전체를 거절하고 파일·캐시를 바꾸지 않는다. 중복 추가는 무변경이며 제거는 계속 허용한다. 기존 초과 목록을 자동 삭제하거나 로드 오류로 처리하지 않는다.
+- 문구 안의 띄어쓰기는 유지한다. 제거는 쉼표로 구분한 각 문구와 완전히 같은 등록 항목만 삭제한다.
+- 슬래시 명령과 기존 단축·확인 명령만 비교한다. 일반 대화는 목록 조회·단어 비교를 건너뛴다.
+- 등록 문자열이 명령 전체에 포함되면 응답 없이 처리 중단. 대소문자를 구분하며 정규식으로 해석하지 않는다.
+- 관리 명령은 자기 차단을 피하기 위해 필터 비교에서 제외한다. 관리 권한은 그대로 검사한다.
+
+## Data Usage / Save Flow
+
+- 환경별 `member.json.messageFilterWords` 선택 필드. 기존 데이터에 필드가 없으면 빈 목록이며 손상된 값은 오류 처리한다.
+- 컴파일 시 기존 회원 로드 결과와 DEV 초기 데이터에서 목록을 구성한다. 매 명령마다 필터 파일을 다시 읽지 않는다.
+- 실제 추가·제거 시 진입 흐름에서 회원을 읽고 기존 `saveJsonFile`로 저장한 뒤 캐시를 갱신한다. 중복 추가·미등록 제거는 저장하지 않는다.
+- Main이 Java System 환경별 공유 속성에 게시하고 Info는 변경 시에만 재해석한다. Main 변경은 Info 재컴파일 없이 반영된다.
+- DEV/PROD 목록은 분리한다. 기존 DEV 백업 완료 시 복사한 목록으로 DEV 캐시를 갱신한다.
+- 파일을 직접 편집한 경우 Main을 재컴파일해야 한다. Main과 Info 변경은 함께 배포해야 한다.
+- `/데이터정리` 및 기존 댓글 데이터 삭제는 이번 작업에 포함하지 않는다.
+
+---
+
+# /필터데이터정리
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`: `/필터데이터정리` 직접 입력은 `/초기화`를 안내한다. 메뉴에서 필터 데이터 정리를 선택하고 `1삭제` 확인 시 기존 방별 관리자·MASTER 권한으로 원래 처리 분기를 실행한다.
+- `Info.js`: 같은 명령은 데이터 읽기 전에 반환하여 중복 처리하지 않는다.
+
+## Related Helpers
+
+- `cleanupMessageFilterData`: 이미 읽은 저장소에 삭제 계획을 적용하고 종류별 개수·파일 변경 여부를 반환한다. 파일 IO 없음.
+- `getCachedMessageFilterWords`, `containsMessageFilterWord`: 현재 환경의 등록 문구를 실행 시점에 고정해 기존 문자열 포함 규칙으로 비교한다.
+
+## Data Usage / Save Flow
+
+- 일반·픽 댓글의 `text`, 홈 `feeds[*].content`와 이전 한줄평 `comment`, 일반·펫 타이틀 `title.list[*].name`, 댓글·피드 홈알림의 `commentPreview`·`feedContent`만 비교한다.
+- 전체 사용자가 대상이며 작성자·닉네임·가격·방문·소셜 통계·가구·기존 `guestComments`·포인트는 삭제 조건으로 사용하지 않는다.
+- 삭제된 타이틀을 장착 중이면 해제하며 남아 있는 장착 타이틀의 번호를 보정한다. 잘못된 기존 장착 번호는 해당 목록이 실제로 줄어들 때만 해제한다.
+- `petHomeComments.json`, `petSweetHomeData.json`, `member_title.json`, `pet_title.json`, `petHomeActivityData.json`을 진입부에서 각각 한 번 로드하고 모두 처리한 뒤 변경 파일만 기존 `saveJsonFile`로 저장한다. 실패 시 기존 명령 트랜잭션과 작업 전 스냅샷으로 원복한다.
+- 메뉴·선택 시 정리 파일을 읽지 않으며 확인 시 필터가 비어 있어도 정리 파일을 읽지 않는다. 메뉴 공통 회원·길드 검사는 유지한다. 재실행 시 이미 제거된 항목은 재삭제하지 않으며 변경 없으면 저장하지 않는다. 손상·누락·파싱 오류는 중단하며 빈 파일로 덮지 않는다.
+- 배타 쓰기 잠금을 사용하고 DEV/PROD 저장 경로와 필터 목록은 분리한다. 필터에 관리 명령 문구가 있더라도 권한 있는 관리자는 정리할 수 있다.
+- 기존 `/데이터정리` 동작과 백업 파일은 유지한다. 강제 앱 종료의 여러 파일 동시 원자성은 기존 트랜잭션과 동일하며, 중단 후 재실행은 남은 항목만 처리한다.
+
+---
+
 # 권한 타이틀뱃지
 
 Status: VERIFIED
@@ -319,7 +574,7 @@ Status: VERIFIED
 - `/캐슬대전` 미니펫 매력 계산은 `/펫정보`와 맞게 `getMiniPetModeCharm`으로 대표 100%와 보조 50%를 합산한다.
 - 양측 모두 `calculateCastleExp`로 전체 캐슬매력을 계산해 장비·미니펫·홈·친밀도·일반/티어 전용 펫스킬을 동일하게 반영한 뒤 상성·크리티컬을 적용하며, 동률이면 방어자가 승리한다.
 - 출력 상단에는 대전횟수·리셋권, 경험치, 승패와 대전 상대를 먼저 표시하고 `데일리 캐슬대전 상세결과`부터 `allsee`로 접는다. 상세 영역은 공격·방어 펫 외형, 속성, 캐슬/상성/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 CP·보상을 유지한다.
-- 캐슬대전 경험치는 승리 50 EXP, 패배 25 EXP이며 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용하고 레벨 상승을 처리하는 공통 경험치 흐름을 사용한다.
+- 캐슬대전 경험치는 승리 100 EXP, 패배 25 EXP이며 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용하고 레벨 상승을 처리하는 공통 경험치 흐름을 사용한다.
 - 수동 캐슬대전에서 레벨업·승급·대승급이 발생하면 대전 결과 다음 메시지로 안내를 별도 출력한다. 자동일퀘에서는 기존 즉시 안내만 출력해 중복을 막는다.
 - 카드 상단의 경험치 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`와 양쪽 사용자로 표시한다.
 - When a command reads home/guild/pet data, also inspect the normalization helper listed in `Related Helpers`.
@@ -362,6 +617,7 @@ Status: VERIFIED
 - `response(...)` uses a non-blocking data transaction `ReentrantLock`; when another response owns the transaction, the incoming response keeps the existing silent-drop behavior.
 - `saveJsonFile(...)` backs up only an actually saved managed JSON (`member`, pet, pet skill, or pet-home activity), keeps two fixed last-known-good generations, then uses a path-specific `ReentrantLock`, verified UTF-8 temporary file, disk sync, and rollback rename for the original/backup files.
 - A response-scoped save transaction preserves the first pre-command backup when the same managed file is saved repeatedly and automatically rolls back already-saved managed files in reverse order when command processing fails.
+- `writeVerifiedJsonFile(...)` reuses an already verified write only inside the same healthy response transaction, with backup rotation already skipped and identical serialized text rechecked against the current target under its path lock. The first save, changed/missing/different target, explicit backup rotation, and rollback still write normally. Reuse state ends with the transaction; member files, split stores, and recovery journals are excluded. `tools/test_command_save_reuse*.js` covers parity, failures, restart, DEV/PROD, Java threads, and actual-file timing.
 - `loadJsonFile(...)` strictly validates managed JSON and restores only the damaged original from the newest valid first- or second-generation backup; recovery success or failure is reported to the GM admin room, and if both backups are invalid the existing error flow remains visible.
 - `/데이터상태` reads the original and both backup generations for all four managed JSON files without modifying them; `/데이터복구 [파일] [1|2]` restores only the selected file from the explicitly selected validated backup generation.
 - Account-suspension checks reuse the already loaded member object in the common response flow instead of loading `member.json` twice.
@@ -740,11 +996,13 @@ Status: VERIFIED
 
 - Canonical read path for sweet-home furniture bag
 - This branch normalizes home user data before output
+- `buildPetHomeFurnitureBagMessage` places registration and all equip/sell/unbind guides above the inventory. Item numbers/order remain the sorted bag order. `allsee` occurs once after item 3, or after the final divider when there are at most 3 items. House/charm summaries and repeated bottom management/growth guides are omitted.
 - 일반 이용자는 10칸, 호이패스 프리미엄 이용자는 15칸으로 표시·획득 제한한다. 프리미엄 이용자는 가구를 3개 더 장착할 수 있고 종료 시 장착 가구 중 매력이 가장 낮은 초과 가구를 가방으로 회수한다.
 - `/가구장착`은 로열 하우스 조건 충족 시 기존 멘트를 유지하고, 아르카나 하우스와 아르카나 루미에르 5개 보유 조건을 충족하면 전용 멘트를 추가한다.
 - Pet-home command entry must not create/save sweet-home defaults for users missing from `data.member`
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 - `/샵오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.furniture.openMaxCount`에서 관리하며 현재 5,000개다.
+- `/샵오픈`은 `buildGradeRates` 뒤 `buildFurnitureGradePools`로 등급별 후보 배열을 명령당 한 번 구성하고 `getRandomFurnitureByGrade`에 전달한다. 후보는 원래 목록 순서와 객체 참조를 유지하며 중복 등급은 배열을 공유한다. 명령 간 캐시는 없고 등급 추첨·가구 추첨·ID 생성의 난수 순서와 저장 순서는 그대로다.
 
 ---
 
@@ -896,10 +1154,10 @@ Status: VERIFIED
 
 ## Save Flow
 
-- `/펫홈`: loads `homeDataFile` and, after data separation, `petHomePlacedFurniturePath`; shows one placed furniture item before the `allsee` fold, migrates a legacy one-line review into feed storage when needed, then replies with the home body and guestbook comments without showing the latest feed. For another user's home, saves the visit count to `homeDataFile` and the unique latest visitor record to `petHomeActivityFile`.
+- `/펫홈`: loads home, placed furniture, activity and comments once. Shows house, final furniture charm, village level/progress and distinct furniture TOP 3, followed by the guestbook in one reply. Other-user visits retain cumulative counts, visitor records and badge awards. Over-limit historical comment lists are saved as the latest 30 with separate pinned copies preserved; normal views skip comment serialization/saves.
 - `/댓글`: active hoi/newbie pass users write up to 30 characters and pay zero cost; mutates `data.member[sender].point` only when a cost applies, appends to `petHomeCommentsData.comments[target]`, adds an activity alert, then saves `filePath`, `petHomeCommentsFile`, and `petHomeActivityFile` with rollback handling.
-- `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; otherwise deducts `GLOBAL_CONFIG.petHomeComments.pinCost` from the home owner, adds the selected comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`.
-- `/댓글핀삭제 [번호]`: removes the selected pinned comment from `pinnedComments[sender]` and saves `petHomeCommentsFile` without changing member points.
+- `/댓글핀 [번호]`: active hoi/newbie pass users pay zero cost; adds the displayed newest-first comment to `pinnedComments[sender]`, then saves `filePath` and `petHomeCommentsFile`. Captures comments before trimming/mutation and passes that snapshot to `saveJsonFile`, so comments use verified transactional saves even though this file is not in the default protected-path list. Failures restore both member and comments.
+- `/댓글핀삭제 [번호]`: removes the selected pinned comment and saves `petHomeCommentsFile` with a pre-mutation snapshot, without changing member points or reinserting old pinned comments into the recent list.
 - `/댓글확인`: reads `petHomeCommentsData.comments[target]` and replies the comment-only message.
 - `/댓글삭제`: mutates `petHomeCommentsData.comments[sender]`, then saves `petHomeCommentsFile`.
 - `/펫홈댓글파일생성`: Admin/Master-only; creates `petHomeCommentsFile` with `{ comments: {}, pinnedComments: {} }` only when the file does not exist.
@@ -918,7 +1176,7 @@ Status: VERIFIED
 - `/특별뱃지지급` and `/특별뱃지회수` are Admin/Master-only, accept an optional comma after the target plus `S01`, `[S01]`, the exact name, or the `[ID] emoji name` list label, save an audit log and activity alert, and automatically unequip a revoked representative badge.
 - `/펫홈소셜뱃지마이그레이션` is Admin/Master-only and one-time; it validates or creates an activity-file backup, initializes existing comment/like/reaction/visit totals without mass alerts, saves, and reload-verifies the migration marker.
 - `/펫홈피드마이그레이션` is Admin/Master-only and one-time; it validates or creates a home-data backup, converts all legacy one-line reviews to the first feed, saves `homeDataFile`, and reload-verifies every user migration marker.
-- `/홈알림` and `ㅎㄹ`: run under the response data write lock, read up to 100 stored activity alerts and 100 unique recent visitors from `petHomeActivityFile`, show feed alerts with a leading `📰` marker, mark alerts read, and complete the pass `홈알림 열기` daily condition only after activity/member saves succeed; both files roll back together on failure.
+- `/홈알림` and `ㅎㄹ`: keep pass access, 100 activity alerts, read handling and daily completion with existing rollback. The top shows current follows/mutuals/heart allowance, the sum and compact counts of all five received-heart types, unread/stored alert counts and recent-visitor counts. Existing alerts, follow lists and restored recent visitors appear below `allsee`, followed by cumulative visits and visit-badge progress/ownership. Visitor storage and badge progression remain.
 - `/피드 [내용]`: runs under the response data write lock; active hoi/newbie pass users write a free feed of up to 100 characters, keep the latest 10 entries in `homeDataFile`, add the same feed alert to the writer and each valid follower, record one KST feed activity date per day, award feed activity badges, and complete the pass `피드 글 작성` daily condition only after home/activity/member saves succeed; all three files use rollback handling. Stored feeds are not included in `/펫홈` output.
 - `/피드삭제 [번호]` and `/피드전체삭제`: active hoi/newbie pass users remove their own stored feeds and save `homeDataFile`.
 - `/팔로워순위`, `/마음순위`, and `/뱃지순위`: read current member, home, and social data without saving, exclude zero scores, sort by score then original user ID, and show up to 100 users; `/팔로워순위`는 실제 팔로워에 `인플루언서📙` 1,000명과 `셀럽📙` 2,000명을 합산하고, `/마음순위`는 각 유저의 귀여워·멋져요·응원해·사랑해 받은 수를 표시한다.
@@ -945,16 +1203,17 @@ Status: VERIFIED
 
 ## AI Notes
 
-- `/펫홈` output is split into two replies: home body first and comments second. Feed creation, deletion, alerts, and stored data remain available, but the latest feed is no longer shown by `/펫홈`.
+- `/펫홈` combines the new home/village/TOP 3 body and guestbook. Feed commands/storage remain available; the latest feed is not shown here.
 - Feed write/delete commands are pass-only and free, and the removed `/한줄평` data is lazily migrated once without point deductions.
 - `/홈알림` shows the current representative badge above comment, like, follow, unfollow, heart, and feed alerts; system badge award/revoke alerts do not receive an actor badge line.
-- `/펫홈` prefixes the house information line with `[🏡]` unless the stored house name already contains that prefix.
+- `/펫홈` and `/가구정보` use the queried owner's house, skills, charm, levels and furniture. Preview TOP 3 numbers never replace the actual equipped-item indices.
+- `getPetHomeBadgeById`는 활성 `commandContextThreadLocal`의 명령 한 번 안에서만 고정 뱃지 정의를 재사용한다. 첫 조회는 기존 선형 검색을 유지하고, 추가 문자열 ID 조회부터 첫 일치 정의의 원본 참조를 점진적으로 색인한다. 없는 ID 문자열은 보관하지 않으며 잘못된 정의는 기존 검색 순서에서 오류로 남는다. 명령 종료·DEV/PROD·중첩/동시 실행 사이에는 색인을 공유하지 않는다. `getAllPetHomeBadges`의 새 배열·고정 순서, 비문자 ID의 엄격 비교, 컨텍스트 없는 독립 조회는 기존대로 유지한다.
 - `/홈뱃지` shows both equipped badge slots and the final applied-effect summary first, inserts `allsee` immediately after that summary, then keeps command guides, cube guides, collection summary, and the owned-badge list folded.
 - Standalone full/special badge lists, badge details, pet-home feed output, and follower/heart/badge ranking output identify the requesting or target user with `[checkRank] 님`.
 - `/홈뱃지정보` accepts badge IDs both as `S01` and as the bracketed `[S01]` text shown by `/특별뱃지목록`.
 - `/특별뱃지목록 [코드]` shows one special badge by `S01` or `[S01]`, while the no-argument command keeps showing all S01–S10 badges.
-- Furniture list inserts `allsee` from the second placed furniture.
-- Comment message uses the guestbook header, inserts `allsee` after the first pinned comment (or after the empty-pin guide), and shows the latest 50 comments while storing up to 50 comments.
+- `/펫홈` shows at most three distinct furniture names before the guestbook; the complete equipped list is at the bottom of `/가구정보`, after its single `allsee` marker.
+- Recent comment storage keeps exactly the latest 30; separate pinned copies survive pruning. Guestbook `allsee` follows the first pin or the header when no pin exists. A completely empty guestbook omits empty numbers/sections.
 - Up to `GLOBAL_CONFIG.petHomeComments.maxPinned` comments can be pinned; pinned comments cannot be deleted through `/댓글삭제` until `/댓글핀삭제` removes the pin.
 - Duplicate pet-home comments by the same writer are allowed.
 - `/댓글`, `/댓글핀`, `/좋아홈` 성공 메시지는 포인트 차감·소모 문구를 표시하지 않는다.
@@ -962,7 +1221,7 @@ Status: VERIFIED
 - `/좋아홈` also uses an exact/full-pattern guard so `/좋아홈순위` and `/좋아홈초기화` do not enter the mutation branch.
 - `petHomeActivityData.json` is intentionally initialized by `/펫홈활동파일생성`; missing or invalid files follow the existing load/error flow and are not silently replaced.
 - Legacy valid activity files gain empty `petHomeSocial` and `migrations` containers, while invalid existing social structures still fail validation.
-- `/펫홈` displays stored follower/following counts and the representative badge even after pass expiry; social/badge commands and mutual-heart benefits remain locked until pass activation.
+- Social counts and representative badge are displayed through `/홈알림`; its existing active-pass access remains. `/펫홈` no longer displays social, visitor, pet or doll details.
 
 ---
 
@@ -1111,8 +1370,9 @@ Status: VERIFIED
 - 영지전 종료 시 참가 길드의 현재 길드마스터·부길드마스터 중 `길드영지자동준비권` 또는 유효한 영지기습패스 보유자를 다시 확인해 다음 회차 준비를 길드당 1회 생성한다.
 - `/영지온`은 유효한 영지기습패스와 현재 소드마스터 또는 `전투형 지휘관📙` 길드마스터 자격을 모두 요구한다. 미구독 상태에서 활성화에 실패하면 체크랭크와 영지기습패스 미구독 안내를 함께 표시한다. 실제 턴에도 패스와 자격을 재검증하며 실패하면 OFF 처리한다. `/영지오프`는 기존 설정·로그·저장을 유지하고 미구독 상태일 때 응답 문구만 구독 안내로 변경한다.
 - 자동 공격은 1~7번 중 현재 공격 길드가 점령한 영지를 제외한 후보를 균등 무작위로 선택하고 수동 공격과 같은 공통 처리 경로를 사용한다. 회차·턴 토큰·사용자 키로 자동/수동 중복 공격을 방지하며, 예약 당시 길드와 실행 시점의 실제 길드가 다르면 실행하지 않는다.
-- While `guildData.territoryWar.active === true`, non-DEV slash commands are blocked unless they are `/영지공격`, `/영지온`, `/영지오프`, `/길드영지순서`, `/길드영지순위`, `/영지순위보상`, `/영지보상순위`, `/안정`, `/불안정`, `/균열`, `/대균열`, `/길드영지초기화`, `/길드영지종료`, or `/길드영지`. `Info.js` silently suppresses its matching response, including `/레벨`, because `main.js` owns the single user-facing restriction notice.
+- `guildData.territoryWar.active === true`인 환경에서는 Main 공통 진입부가 `isGuildTerritoryAllowedDuringWarCommand`의 영지전 관련 명령과 정확한 `/글자수전체정리`만 허용한다. 준비·시작·종료·상태·순서·순위·순위보상·자동공격·이벤트 온오프·균열 조정·1~9번 공격을 포함하며 각 명령의 기존 권한·인자 검사는 유지한다. `/펫정보`·`ㅊㅊ`·운영자 `/정보`·디버깅·일반 메뉴와 확인 입력도 우회하지 않는다. PROD/DEV는 각 환경의 진행 상태를 따른다. Info는 회원·펫·타이틀 로드 전에 조용히 반환하며, Main만 제한 안내를 출력한다. 일반 채팅은 안내 없이 반환한다. 검증: `tools/test_territory_command_lock.js`, `tools/test_territory_command_lock_rhino.js`.
 - `/길드영지시작`은 기존 지정 운영자에 더해 서버관리자방의 등록된 Admin·Master가 실행할 수 있다. `/길드영지종료`의 기존 지정 운영자 권한은 유지하며, 방 권한이 진행 상태·준비 길드·펫무쌍 상호 차단 조건을 우회하지 않는다.
+- `/영지공격 숫자`의 수동 입력 제한시간은 `GLOBAL_CONFIG.guildTerritory.timers.turnTimeoutMs`의 10초다. 자동공격 유예 1초, 시간초과 3회 누적 탈락, 공격 판정·보상·자동준비는 유지한다.
 
 ---
 
@@ -1523,6 +1783,8 @@ Status: VERIFIED
 - `initSweetHomeUser`
 - `getTitle`
 - local branch helper `hasValidPet`
+- `getCarrotRank`, `getThermoRank`, `getPositiveMemberMetricRank`: 양수 점수의 개인 순위. 유한한 숫자는 점수 내림차순·동점 닉네임 오름차순으로 앞선 회원 수만 세며, 숫자 문자열·양의 무한대 등 비정상 값이나 본인과 동등하게 비교되는 다른 닉네임이 있으면 기존 엔진 정렬로 판정한다. 대상이 순위에 없을 때도 기존 정렬 경로를 유지한다. 조회 간 캐시·저장 없음.
+- `requireGmEducationStore`, `getGmEducationProgress`: Main과 같은 교육 원본/지급 영수증 검증
 
 ## Data Usage
 
@@ -1530,6 +1792,7 @@ Status: VERIFIED
 - `petData[sender]`
 - `titleData.member[sender]`
 - `homeData[sender]`
+- `gmEducation.json`, `member.gmEducationRewards`: 확정 교육 수. 레벨 다음 한 줄 표시, 환경별 파일 수정 시각/크기 캐시, 조회 저장 없음
 
 ## Save Flow
 
@@ -1588,6 +1851,7 @@ Status: VERIFIED
 
 - Admin inspection path for another user's summary
 - Useful when debugging user-specific bag/title visibility without impersonating sender
+- 레벨 다음에 조회 대상의 호월 교육 진행도를 표시한다. `/내정보`와 교육 읽기 캐시·원본/영수증 검증을 공유하며, 완료 수 0~12와 다음 챕터/전체 수료를 조회만 한다.
 
 ---
 
@@ -1651,6 +1915,8 @@ Status: VERIFIED
 - High-value aggregation command for pet, mini-pet, home, tower, castle, intimacy, and skill state
 - Best anchor for bugs involving displayed total charm or mismatch between ranking and profile output
 - `calculateTotalExp` here is the canonical clue for rank formula investigations
+- `calculateTotalExp`(Main/Info), Info `/펫정보`와 `buildNicknameWorldRanks`는 같은 회원의 캐슬·레이드 한 쌍에서만 장비 합계·미니펫 매력·인테리어 적용 전 집 매력을 재사용한다. 두 모드 helper의 선택적 8번째 인수는 지역 공유 객체이며, 기존 7개 인수 호출은 그대로 독립 계산한다. `response(...)`의 7개 인수 계약은 변경하지 않는다.
+- `/펫정보`는 레이드→캐슬, 종합매력·닉네임 순위는 캐슬→레이드 순서를 유지한다. 스킬 초기화·별채 검증·모드별 보너스와 반올림은 각각 기존 위치에서 수행하며, 펜던트 승급값 정규화 후 데이터 상태도 유지한다. 전역 사용자 캐시나 추가 파일 입출력은 없다.
 - `/펫정보`의 펫강화 줄은 대표 홈뱃지 큐브를 반영한 최종 유효 강화수치만 표시한다. 치명타는 유효 강화수치를 사용하지만 강화 성공확률은 변경하지 않는다.
 - `/펫정보`의 캐슬·레이드 매력은 장착 홈뱃지 옵션(프리미엄 +3%p 포함), 길드공헌 큐브, 모험가 레벨, 퀘스트 누적 보너스를 0.001% 단위로 합산한 현재값이며, 종합매력은 이 두 값과 홈뱃지 옵션 3을 반영한 펫강화 매력을 더한다.
 - 일반 종합매력 펫스킬 12종은 `Info.js`의 공통 매력표로 레이드·캐슬 매력을 합산해 `/펫정보`와 `/종합순위`에 동일하게 반영한다. `전설의 몽둥이📙[한정판]`는 장착 중에만 레이드·캐슬 매력 50만씩을 더한다.
@@ -1905,40 +2171,43 @@ Status: VERIFIED
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `main.js`: `/가구정보`
-
 ## Files
 
-- `main.js`
+- `main.js`, `Info.js` (shared combat arithmetic)
 
 ## Related Helpers
 
-- `initSweetHomeUser`
-- `sortFurnitureList`
-- `normalizePlacedFurnitureSummary`
-- `getFurnitureExp`
-- `checkRank`
+- `getPetHomeFurnitureCharm`, `getPetHomeVillageState`, `getPetHomeVillageLevelLimit`
+- `buildPetHomeFurnitureInfoMessage`, `buildPetHomeFurnitureSkillMessage`, `getPlacedFurnitureList`
 
-## Data Usage
+## Data Usage and Save Flow
 
-- `homeData[targetUser].furnitureBag`
-- `homeData[targetUser].placedFurnitureSummary`
+- Home summary, original equipped-item order and queried owner's equipped skills; no save or inventory sorting on this command.
+- No argument queries self; a nickname including spaces queries that owner. No Admin/Master restriction. Only self views show executable bag/registration guides.
+- Final charm/village above `allsee`; explanation and active skills precede the complete equipped list at the very bottom.
+- The final total, castle charm and raid charm each occupy a separate line.
+- Castle/raid calculators in both scripts and Main diagnostics add the same scoped extra once before existing overall buffs. `/종합순위` reflects it; `/가구순위` retains individual base values.
+- Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds 10 percentage points to the royal+arcana percent, including level-zero homes; apply that combined percent once and floor per mode. Unequipped ownership gives no effect. The S-grade detail shows its existing actual 0.3% probability. Furniture/village totals and calculation UI include the skill in the combined buff without a separate additional-charm line.
 
-## Save Flow
+---
 
-- Saves `homeDataFile` after user initialization, furniture-bag sorting, and legacy summary normalization.
+# /별채등록 [가구가방번호] …
 
-## Related Commands
+Status: VERIFIED
 
-- `/가구가방`
-- `/가구순위`
+## Files / Helpers
 
-## AI Notes
+- `main.js`: `preparePetHomeVillageRegistration`, `buildPetHomeVillageRegistrationMessage`, `getPetHomeFurnitureCharm`
 
-- Admin/master inspection path for another user's furniture state
-- Best anchor when home data exists but output for a target user looks wrong
+## Input and Mutation
+
+- Exact command or full numeric-argument pattern; 1–10 distinct bag numbers across royal/arcana grades. Extra guide text does not execute.
+- `등록한다` / `등록안한다`: same account, room, group-chat mode and DEV/PROD context, 60-second pending state. Confirmation state is memory-only and expires/restarts without consuming items.
+- Sort with the existing bag-number convention. Revalidate full bag fingerprint, individual ownership/equipment, grade capacities, skills and predicted effect. Changed bag cancels all; changed effects require another confirmation.
+- State: `homeData[user].lumiereVillage.{royal,arcana}.{level,progress}`. Missing state reads as zero without creating/saving it. Each 10 same-grade pieces gives one level; each 10 actual house-area units permits one level per annex. At-cap overflow cancels the entire mixed request.
+- On confirmation remove pending first, consume only selected unequipped pieces, persist the new home once with the existing command transaction and pre-mutation snapshot. No skill/member-file rewrite or permanent per-registration history.
+- Royal uses 10 equipped pieces; arcana uses 5 owned pieces (bag plus equipped). Losing arcana eligibility updates its base and village contribution and may lower final charm.
+- Active state adds roughly 90 bytes per registering user; calculation helpers perform no file IO.
 
 ---
 
@@ -2147,7 +2416,7 @@ Status: VERIFIED
 - 양측 기본 미니펫 매력에 크리티컬을 각각 한 번 적용한 뒤 최종 매력을 직접 비교하며, 동률이면 방어자가 승리한다.
 - 기본 매력은 `(대표 원본 + 보조 원본의 50% 버림) × 2`이며 기존 가방 최소 5마리 입장 조건은 유지한다.
 - 출력 상단에는 대전횟수·리셋권, 경험치, 승패와 대전 상대를 먼저 표시하고 `미니펫대전 상세결과`부터 `allsee`로 접는다. 상세 영역은 공격·방어 미니펫 외형과 강화 수치, 등급, 장착/미니펫/최종 매력, 크리티컬, 비교식, 매력 차이와 기존 보상을 유지한다.
-- 미니펫대전 경험치는 승리 50 EXP, 패배 25 EXP이며 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용하고 레벨 상승을 처리하는 공통 경험치 흐름을 사용한다.
+- 미니펫대전 경험치는 승리 100 EXP, 패배 25 EXP이며 기본 EXP에 현재 티어의 고정 EXP를 더한 뒤 호월신의 가호를 적용하고 레벨 상승을 처리하는 공통 경험치 흐름을 사용한다.
 - 수동 미니펫대전에서 레벨업·승급·대승급이 발생하면 대전 결과 다음 메시지로 안내를 별도 출력한다. 자동일퀘에서는 기존 즉시 안내만 출력해 중복을 막는다.
 - 카드 상단의 경험치 아래에 현재 공격 결과를 `✅ 승리` 또는 `❌ 패배`와 양쪽 사용자로 표시한다.
 - 기본 아이템 보상은 봉인금고를 제외한 기존 6종 중 1종을 같은 비율로 추첨한다. 봉인금고는 일일퀘스트 완료 보상으로 하루 1개 지급한다.
@@ -2327,14 +2596,14 @@ Status: VERIFIED
 - 캐슬대전·미니펫대전·수동/자동 퀘스트에서 가호가 0개가 되면 공통 소진 안내를 결과 본문에 합치지 않고 별도 메시지로 출력한다.
 - 자동일퀘 내부에서도 경험치가 필요량을 넘는 즉시 레벨과 레벨당 포인트 보상을 처리하고, 해당 레벨업·승급·대승급 안내를 바로 출력한다. 최종 결과까지 문구를 모아두거나 다음 채팅을 기다리지 않는다.
 - 자동일퀘 결과의 접히지 않는 영역에 이번 실행에서 실제 지급한 레벨업 포인트와 레벨업 횟수를 별도로 표시한다. 총 포인트 변동은 모든 획득·사용을 합산한 순변동이며, 레벨업 포인트가 있으면 총액에 포함되었음을 바로 아래에 안내한다.
-- Daily quest target counts are 시탑 15, 캐대전 15, 미대전 15, 펫탐험 10
-- 활성 호이패스·초보패스 유저에게 펫홈 댓글·피드 글 작성·홈알림 열기 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 좋아홈·유저 좋아요는 이 일퀘에 반영하지 않으며 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
-- `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호패,초패🐥`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
+- Daily quest target counts are 시탑 5, 캐대전 5, 미대전 5, 펫탐험 10
+- 활성 호이패스·초보패스 유저에게 마음 주기·인형뽑기·홈알림 열기 각각 1회의 별도 일퀘가 적용되며, 완료 시 `1억포인트상자🪙(/포인트상자오픈)` 2개를 독립 지급한다. 기존 좋아홈·유저 좋아요는 이 일퀘에 반영하지 않으며 기존 4종 일퀘 완료 판정과 주간 누적에는 영향을 주지 않는다.
+- `/퀘스트`와 `/ㅋ`에서는 제목을 `📜 일일 · 주간 · 🐶호이패스`로 표시하고, 패스 전용 일퀘 조건·보상을 일반 일일 퀘스트 조건보다 먼저 보여준다.
 - `/퀘스트`, `/ㅋ`, `ㄹㄹㄹ` 안내 화면은 첫 줄에 요청 유저의 `[checkRank] 님`을 표시한다.
 - `/퀘스트` 안내에는 일일 100 EXP, 주간 500 EXP, 프리미엄 전용 일퀘 50 EXP를 각 보상 영역에 표시한다. 완료 시 기본 EXP에 현재 티어의 고정 EXP를 먼저 더하고 보유 가호 범위에서 최대 3배까지 적용하며, 실제 총 지급량과 기본·티어·가호 추가분·사용량을 표시한다. 가호 소진과 레벨업도 기존 공통 흐름으로 처리한다.
 - 패스가 없는 사용자도 `/퀘스트`와 `/ㅋ`에서 패스 전용 일퀘 영역을 볼 수 있으며, 제목 다음 빈 줄에 세 조건을 `[호패,초패 회원전용]`으로 표시하고 마지막 조건 바로 아래에 구분선을 둔다.
 - `/일퀘완료`와 `/ㅇ`의 미완료 안내에서는 일반 일퀘 진행도와 패스 전용 일퀘 사이에 구분선을 표시하고, 전용 보상 제목 앞에 빈 줄을 둔다.
-- 펫홈 댓글은 성공한 `/댓글`에서 `petHomeCommentCnt`, 피드 글 작성은 저장에 성공한 `/피드`에서 `feedPostCnt`, 홈알림 열기는 정상 저장된 `/홈알림`에서 `homeAlertOpenCnt`를 증가시킨다. 세 진행 카운터와 전용 보상 수령 횟수는 `/리셋`에서 초기화된다.
+- 패스 전용 조건은 정상 `/마음` 및 `/귀여워`·`/응원해`·`/멋져요`·`/사랑해`의 공유 `passHeartGiveCnt`, 실제 이용권을 소모한 `/인형뽑기`의 `passDollDrawCnt`, 정상 `/홈알림`의 `homeAlertOpenCnt`로 판정한다. 마음의 수량 생략/명시 모두 인정하며 기존 UI는 유지한다. 인형 실패도 인정한다. 옛 댓글/피드 카운터는 해당 기능에서 유지되지만 패스 일퀘 판정에는 사용하지 않는다. 새 진행도와 전용 수령 횟수는 기존 `/리셋` 주기에 초기화된다.
 - Daily quest, battle, command-use, display, happy-foundation, title-gift, punch-machine, and guild-territory settings are grouped directly in `GLOBAL_CONFIG` in `main.js`; large domains such as guild territory use nested `limits`/`timers`/`rates`/`rewards`/`items`, and mirrored display logic in `Info.js` uses the needed subset of the same object shape
 - 캐슬대전 and 미니펫대전 each allow 1 free run before requiring reset tickets
 
@@ -2592,16 +2861,16 @@ Status: VERIFIED
 - 정상 공격 결과 제목에는 깃발 발견·점령·전투 승리 여부에 따라 `[성공✅]` 또는 `[실패❌]`를 표시하며, 미공격 탈락은 기존 `[시간 초과⚠️]`를 유지한다.
 - 시간초과 탈락은 벼락 판정을 실행하지 않지만 누적 벼락 발생확률을 `0.5%p` 올린다. 탈락자의 포인트를 최대 1억 차감해 0 미만으로 내리지 않고, `/무쌍온` 설정을 OFF 처리한다. 결과 UI는 `시간초과 패널티💸: -🅟1억`과 실제 남은 포인트를 다음 줄에 분리해 표시한다.
 - 정상 공격에서 벼락이 발생하지 않으면 다음 벼락 판정 확률이 `2%p`씩 누적되며, 벼락 발생 후에는 기본 `1%`로 초기화한다.
-- 개인 기본 공격 횟수는 4회이며 공격 1회당 기본 획득 포인트는 2억이다. 최종 우승 상금은 기존 값을 유지한다.
-- 티켓 이벤트 활성 중 공격권이 정상 차감된 공격에는 10% 70%, 20% 15%, 30% 7%, 40% 5%, 50% 3% 확률로 할인쿠폰 1장을 지급하고 공격 보상 바로 아래에 표시한다.
+- 개인 기본 공격 횟수는 4회이며 공격 1회당 기본 획득 포인트는 1억 5천만이다. 최종 우승 상금은 15억이다.
+- 티켓 이벤트 활성 중 공격권이 정상 차감된 공격에는 10%·20%·30% 쿠폰 중 1장을 기존 가중치 70:15:7로 추첨해 지급하고 공격 보상 바로 아래에 표시한다. 40%·50% 쿠폰은 신규 드랍에서 제외하지만 기존 보유분의 구매 할인 적용과 `/티켓전체회수` 대상은 유지한다.
 - 진짜 깃발 발견 전 처음 찾은 가짜 깃발은 공격권만 1회 차감하고 생존하며, 결과 제목 바로 아래에 차감 후 남은 공격 횟수를 `[현재/최대⚔]` 형식으로 표시한다. 이미 공개된 가짜를 다시 공격하거나 진짜 깃발 발견 후 가짜를 공격하면 즉시 탈락한다.
 - 벼락이 실제 발생하면 벼락 결과만 별도 `castleMsg`로 전송하고 공격 결과·공격 상세에는 합치지 않는다. 미발생 문구는 기존처럼 공격 결과에 포함한다.
 - 진짜 깃발 최초 발견 시 기본 공격 보상과 별도로 2억을 한 번 지급하며 `realFlagDiscoveryBonusPaid`와 발견 기록으로 중복 지급을 막는다.
 - 벼락 대상자가 `피뢰침⚡(자동 벼락 방지)`을 보유하면 80% 확률로 1개를 소모하고 생존한다. 벼락 결과 UI는 `피뢰침⚡(80%) 발동` 또는 `피뢰침⚡(80%) 미발동`으로 판정 결과를 구분한다. 실패 시 미소모로 탈락하며, 현재 진짜 깃발 점령자는 피뢰침을 적용·소모하지 않고 탈락한다.
 - 턴 마감시각과 토큰을 저장하고, 봇 재시작 뒤 첫 수신 메시지에서 만료 턴 처리 또는 남은 타이머를 복구한다.
 - 회차별 `roundId`와 `processedRounds`로 우승 상금과 누적 무쌍 횟수의 중복 처리를 막는다.
-- 보상 대상 공격 1회당 기본 2억, 최종 점령자 우승 상금 30억을 지급한다. 우승 확정 메시지는 `NoticeMsg`로 방송하지 않고 공격·시간 초과·재시작 복구로 종료된 펫무쌍 방에 `castleMsg`로 출력한다. `/펫무쌍종료`는 명령 실행 방에 전체 종료 결과를 회신한다.
-- `무쌍신화📙[B]`와 `무쌍귀신📙[A]` 장착 여부는 대회 시작 시 각각 스냅샷으로 확정하며, 스킬마다 개인 공격권이 1회 증가한다. 두 스킬을 함께 장착하면 공격권은 4회에서 6회로 증가하고, `무쌍귀신📙[A]` 장착 참가자는 보상 대상 공격마다 1억을 추가로 받아 총 3억을 획득한다. 상태 UI는 개인별 장착 스킬과 `maxAttacks`를 표시한다.
+- 보상 대상 공격 1회당 기본 1억 5천만, 최종 점령자 우승 상금 15억을 지급한다. 우승 확정 메시지는 `NoticeMsg`로 방송하지 않고 공격·시간 초과·재시작 복구로 종료된 펫무쌍 방에 `castleMsg`로 출력한다. `/펫무쌍종료`는 명령 실행 방에 전체 종료 결과를 회신한다.
+- `무쌍신화📙[B]`와 `무쌍귀신📙[A]` 장착 여부는 대회 시작 시 각각 스냅샷으로 확정하며, 스킬마다 개인 공격권이 1회 증가한다. 두 스킬을 함께 장착하면 공격권은 4회에서 6회로 증가하고, `무쌍귀신📙[A]` 장착 참가자는 보상 대상 공격마다 1억을 추가로 받아 총 2억 5천만을 획득한다. 상태 UI는 개인별 장착 스킬과 `maxAttacks`를 표시한다.
 - 상태 UI는 공개된 가짜 깃발을 `가짜(✖️)`로 표시하고, 하단에도 현재 공격자를 다시 표시한다. 바로 아래 생존 참가자 명단 제목부터 `allsee`로 접어 표시하며 공격·벼락·시간초과 탈락자는 다음 상태 출력에서 즉시 제외한다. 이미 탈락한 참가자의 공격 시도는 탈락 상태만 별도 안내하며, 생존 상태에서 공격권만 모두 사용한 참가자는 `남은 펫무쌍 공격권이 없습니다`로 구분한다.
 - 전투는 영지절대방어권→영지기습공격권→종합매력 순서이며, 아이템은 기존 영지전과 동일하게 발동 성공 시 1개 소모한다.
 - 현재 데이터 키가 닉네임 문자열이므로 대회 진행 중 닉네임 변경 및 변경 후 기록 연결은 지원하지 않는다.
@@ -2635,6 +2904,7 @@ Status: VERIFIED
 
 ## Related Helpers
 - `buildSupportPassListMessage`
+- `getExpiredHoiPassPremiumUsers`: 발신자 지정 시 해당 회원만 직접 조회하고, 전체 정리가 필요한 기존 운영 명령에서는 전체 회원을 순회한다. 만료일 당일·영구권·비활성·잘못된 날짜 판정은 유지한다.
 - `buildDailyRewardPayoutStatusLines`
 - `isDailyRewardPayoutDone`
 - `recordDailyRewardPayout`
@@ -2749,6 +3019,7 @@ Status: VERIFIED
 - 등록 회원의 출석 여부는 마지막 `/리셋` 이후의 `member.today`로 확인한다. 자정이 지나도 출석 목록·순서·완료 상태를 유지하고, `/리셋`은 목록 누락 회원을 포함한 모든 회원의 출석 상태와 기존 일일 횟수를 함께 초기화한다. 같은 날짜의 새 리셋 회차에도 출석할 수 있으며 `member.recent`는 실제 출석 날짜 기록으로 유지한다. 경량 출석에서 회원으로 전환할 때 기존 회원 출석 목록을 날짜 기준으로 지우지 않는다. 미출석 게임 명령은 실행 전 안내하며, 관리자도 게임 명령은 출석해야 이용할 수 있다. `오픈채팅봇`과 권한이 확인된 관리 명령은 예외다. 일반 채팅의 경험치·가호 지급은 출석 전까지 건너뛴다. `Info.js`의 별도 정보 명령도 같은 리셋 기준을 사용한다.
 - 미출석 회원의 `/소식`은 공지 열람만 허용하고 소식복권 추첨·포인트 지급·참여 표시는 출석 후로 미룬다.
 - 프리미엄 혜택은 펫탐험 +7%p, 하루 마음 +15회, 이체수수료 5%p 감면, 펫스킬 슬롯 +7칸, 가구·미니펫 가방 각 +5칸, 가구 장착 +3칸, 장착 홈뱃지 큐브 옵션별 +3%p, `/알림` 하루 3회 무료다. 만료 정리는 프리미엄을 비활성화하고 홈뱃지를 회수하며, 초과 장착 스킬은 효과 없는 잠금 상태로 보존하고 장착 가구 중 매력이 가장 낮은 초과 가구는 가구가방으로 회수한다. 재가입 시 빈 슬롯만큼 잠금 스킬을 다시 활성화하며, 프리미엄 종료 후에도 `/냠냠`으로 친밀도 레벨이 올라 기본 슬롯이 늘어나면 확보된 빈 슬롯 수만큼 순서대로 잠금을 해제한다. 이미 공간이 늘어난 기존 잠금 데이터는 해당 유저의 다음 정상 명령 처리 시 같은 기준으로 복구한다.
+- ver_2.715: 세 진입점이 공유하는 `restoreHoiPassPremiumLockedSkills`도 `isPetSkillCompatible`로 일반 장착과 같은 동일 스킬·충돌 그룹·폐지 여부를 검사한다. 충돌 스킬은 잠금 목록의 원래 위치에 보존하고 뒤의 호환 스킬부터 빈 슬롯에 복구한다. 같은 스킬 중복도 다시 활성화하지 않는다. 계산 헬퍼의 추가 파일 IO 없이 기존 호출부의 저장 흐름을 유지하며, 일반 명령의 복구는 실제 복구 수가 있을 때만 스킬 데이터를 저장한다. 기존 활성 장착을 자동 제거하거나 가방으로 이동시키지 않는다. `tools/test_premium_skill_restore.js`와 `tools/vault_reset_skills_validation.md` 참조.
 - 프리미엄 종료 후 기본 호이·초보패스가 없을 때만 자동탐험권을 회수하며, 프리미엄이 활성 상태인 동안 기본 패스 만료·삭제로 자동탐험권을 회수하지 않는다.
 - DEV 명령에서는 기존 `resolveActiveDataPath` 흐름을 그대로 사용한다.
 
@@ -2912,6 +3183,8 @@ Status: VERIFIED
 - Best entry point for total skill count and bag listing format
 - Top guide lines should point skill lookup to `/펫스킬정보 [스킬이름]`
 - Each skill row displays the grade from `PET_SKILL_LIST` after the skill name.
+- `getPetSkillData` retains only successful normalized-name matches to the first source definition on the function object. Unknown names and personal inventory are not cached; list reference/length changes invalidate the lookup. Source definitions are static and source reload creates a new lookup.
+- `getPetSkillBagList` resolves definition positions once per positive-count bag name before the same native sort. Zero/one entry skips definition lookup as before. The existing `999` unknown position, alias ties, Korean comparison, bag numbering, initialization and save call remain unchanged. See `tools/test_pet_skill_lookup*.js` for parity/exception, Java-thread, reload and timing evidence.
 
 ---
 
@@ -2930,6 +3203,7 @@ Status: VERIFIED
 ## Related Helpers
 
 - `formatPetSkillStatusMessage`
+- `ensurePetSkillSystemData`, `initPetSkillUser`, `normalizePetSkillStoredNames`
 
 ## Data Usage
 
@@ -2938,6 +3212,8 @@ Status: VERIFIED
 ## Save Flow
 
 - Calls `saveJsonFile(petSkillData, petSkillDataPath)`
+- 공통 진입의 `ensurePetSkillSystemData(data, petData, petSkillData, sender)`는 최신 시스템 버전일 때 등록된 발신자만 검사한다. 정상 구조는 JSON 변환 없이 검사하며 다른 회원의 누락 구조는 해당 회원 처리 시 보정한다. 시스템 버전이 다르거나 생략된 이전 데이터, 또는 발신자를 생략한 명시적 전체 호출은 기존 전원 초기화·이름/가방/컬렉션 정규화를 유지한다.
+- 보정으로 변경된 경우 기존 공통 흐름에서 회원 → 펫 → 펫스킬 파일을 같은 저장 트랜잭션으로 저장한다. 정상 반복 입력은 이 보정을 위한 저장을 하지 않는다. 새 캐시·경로·저장 형식은 추가하지 않으며 DEV 컨텍스트와 실패 시 원본 복구를 유지한다.
 
 ## Related Commands
 
@@ -2999,7 +3275,7 @@ Status: VERIFIED
 - 티어 전용 펫스킬은 선행 이모지를 입력하지 않아도 이름만으로 조회할 수 있다.
 - 티어 전용 펫스킬 조회 결과에는 종합매력과 티어 스킬끼리는 중복 불가, 일반 종합매력 무기 펫스킬과는 중복 가능하다는 안내가 함께 표시된다.
 - Check role gating when another user's skill bag is unexpectedly visible
-- `장인의 숨결` applies to `/펫강화` and `/정령강화` failure only, preserving the required enhancement stone at 7%; it does not apply to `/반지강화`.
+- `장인의 숨결` applies to `/펫강화` failure only, preserving the required enhancement stone at 7%; elemental enhancement is retired.
 
 ---
 
@@ -3023,6 +3299,7 @@ Status: VERIFIED
 - `buildWorldOverallRankingMessage`
 - `buildCombinedServerRankingMessage`
 - `buildServerRankingRows`
+- `getMemberRank` (`/펫정보` 개인 순위), Main의 `isUserInTotalRankingTop` (미궁 9번 입장 조건)
 
 ## Data Usage
 
@@ -3034,6 +3311,8 @@ Status: VERIFIED
 ## Save Flow
 
 - Read-only in the confirmed branch
+- `/펫정보`·`/ㅎ`·`ㅁㅁㅁ`는 같은 응답에서 계산한 본인 캐슬/레이드/강화 합계를 재사용한다. 표시의 기존 `parseInt`/NaN 처리와 순위용 원합계를 구분한다. `getMemberRank`의 마지막 선택 인자는 현재 응답의 유한한 본인 원합계이며 생략하면 기존처럼 계산한다. 본인을 제외한 회원은 기존 열거 순서로 모두 계산하고, 개인 순위는 항상 기존 Rhino 정렬을 유지한다.
+- Main의 `isUserInTotalRankingTop`는 기존 순서대로 전체 점수를 계산한 다음 더 높은 점수 또는 동점 닉네임 오름차순으로 앞선 인원을 센다. 유한한 수치에서는 정렬을 생략하되 결과는 기존 상위 제한 판정과 같다. 비정상 점수는 기존 정렬로 돌아가며 파일 IO·영속 캐시·보상/입장권 변경을 추가하지 않는다. 수동/자동 탐험의 호출 위치·입장권 검사·보상·저장 코드는 그대로다.
 
 ## Related Commands
 
@@ -3044,6 +3323,8 @@ Status: VERIFIED
 
 - Top-level overall ranking view
 - Ranking formula is conceptually tied to `/펫정보` total charm output
+- ver_2.692 성능 개선은 계산 중복과 상위권 판정의 정렬 비용에만 한정한다. 월드/서버 전체 목록, 개인 순위의 엔진별 동점 순서, 기존 Main/Info의 서로 다른 동점 기준은 변경하지 않는다. `tools/test_ranking_calculation.js`, `tools/test_ranking_calculation_rhino.js`, `tools/ranking_calculation_validation.md`에서 기준 버전과 결과를 대조한다.
+- ver_2.699: `getMemberRank`도 본인 이외 회원의 캐슬→레이드 한 쌍에 지역 `castleRaidCommon`을 전달한다. 본인 원합계 재사용·전체 열거 순서·기존 Rhino 정렬·반올림·예외는 유지한다. 모드별 스킬·별채 검증은 각각 실행한다.
 - Pet upgrade contribution uses the rounded effective upgrade level after representative home badge option 3; `GLOBAL_CONFIG.pet.totalCharmPerUpgrade` is currently 1,000 total charm per effective level.
 - `/종합순위`는 `/펫정보`와 같은 현재 캐슬·레이드·유효 펫강화 계산을 사용한다. 홈뱃지는 캐슬·레이드에 대표+보조 슬롯, 펫강화에 대표 슬롯만 반영하고 슬롯마다 프리미엄 +3%p를 적용하며, 길드공헌 큐브도 동일하게 합산한다.
 - `/종합순위`와 `ㅈㅈㅈ`는 2026-10-08 사용자 롤백 요청의 기존 캡처에 맞춰 소속 서버 현황·서버 내 개인 TOP 10 통합 화면 → 월드 개인 순위 두 메시지로 출력한다. 전체 서버 목록만 있는 별도 메시지는 추가 출력하지 않는다. `/서버순위`의 현행 소속 서버 현황·개인 TOP 10·10개 서버 합산을 한 메시지로 표시하는 동작은 유지한다.
@@ -3707,13 +3988,20 @@ Status: VERIFIED
 - `generateBagOutput`
 - `isTradableItem`
 - `isMemberTierKing`
+- `getCarrotTradeRequest`, `getCarrotTradeRows`, `validateCarrotTrade`, `findCarrotTradeConfirmedRow`
+- `applyConfirmedCarrotTrade`, `buildCarrotTradeMessage`, `buildCarrotTradeNotice`, `startCarrotTradeExpiry`
 ## Data Usage
 - `data.member[sender].bag`
 - `data.member[receiver].bag`
 ## Save Flow
-- Trades bag items between users and saves member data
+- 최초 요청은 검증과 확인창만 출력하며 거래 파일을 저장하지 않는다. 같은 계정·단체방 여부·방의 정확한 확인 응답만 처리한다.
+- `거래한다`는 원래 명령으로 출석·계정정지·대전·장소 공통 검사를 거친 뒤 최신 대상으로 재검증한다. 기존 약관 범위와 펜던트의 부수 보상 차이도 유지한다.
+- `carrotTradePending`은 DEV/PROD 계정별 1건이며 60초 자동 만료한다. `안한다`·만료·재검증/저장 실패는 대기를 끝내고 전송하지 않는다. 새 요청은 기존 대상·시간을 덮어쓰지 않는다.
+- 실제 아이템 내용과 ID(있는 경우), 최초 순서/번호를 보존한다. 번호가 바뀌어도 대상을 식별하면 진행하며 식별 불가 시 취소한다.
+- 확정 시 회원 저장 후 해당 pet/skill/home 파일을 기존 명령 트랜잭션으로 저장한다. 가구 원문은 변경 전 진입부에서 읽어 롤백 인수로 전달한다.
+- 완료 응답은 모든 저장 뒤 전송하며 응답 실패가 완료된 이전을 되돌리지 않는다. 메모리 대기는 재컴파일 후 재실행되지 않으며, 새 영속 저널은 추가하지 않는다.
 - 일반 아이템·미니펫·펫스킬·가구 거래 완료 안내는 관련 파일 저장이 모두 성공한 뒤 출력한다.
-- 가구 거래는 로드 직후 원본 스냅샷을 만들고 `saveJsonFile(homeData, homeDataFile, false, snapshot)`으로 검증 저장 및 명령 트랜잭션 롤백에 포함한다.
+- 가구 거래는 진입부에서 읽은 원문 스냅샷을 사용하고 `saveJsonFile(homeData, homeDataFile, false, snapshot)`으로 검증 저장 및 명령 트랜잭션 롤백에 포함한다.
 ## Related Commands
 - `/당근게시판`
 - `/당근완료`
@@ -3728,11 +4016,18 @@ Status: VERIFIED
 - `GLOBAL_CONFIG.carrotTrade.communityRoom`은 기존 `room5`의 `호이월드 커뮤니티[티어 킹 이상 입장가능]`이다. 회원의 소속 서버와 DEV 여부는 거래 장소 예외가 아니다.
 - response의 패스·출석 검사 및 게임 데이터 변경 전에 차단한다. 패스 미보유 일대일톡에도 `buildCarrotTradeBlockedMessage`의 체크랭크·입장 링크·미소모 안내를 한 번 출력하고 종료한다.
 - 차단 시 `member.json`, `member_pet.json`, 가구·펫스킬 데이터, 당근온도기 및 거래 횟수는 변경·저장하지 않는다. 안내용 member·pet·guild 로드는 command entry에서 수행한다.
-- 기존 수수료는 일반 아이템 수량당 1개, 미니펫 20개, 가구 10개, 펫스킬 수량당 50개이다. 기획 표의 가구 5개와 다르지만 기존 거래 조건 유지 요구를 따른다.
+- 개당 당근 기준은 일반 1개, 미니펫·가구 100개, 펫스킬·펜던트 300개이다. 일반/스킬은 기존 수량을 곱하고 미니펫·가구·펜던트는 기존 단건 전송이다.
 - 실행 분기는 닉네임과 마지막 정수 인수를 전체 패턴으로 확인한다. 접미 안내 문구·음수·소수는 거래를 실행하지 않는다. 가구 번호 상한을 검사한다.
 - `/당근게시판`, `/당근등록`, `/당근완료`, `/당근게시판삭제`, `/펜던트당근`, 자유시장은 이번 커뮤니티 전용 제한 대상이 아니다.
 
 ---
+
+
+## Confirmation UI and Validation
+- `buildCarrotTradeMessage`는 자유시장 miniPet/furniture 상세·펜던트 형식을 재사용하며 체크랭크 닉네임, 쉼표, 총 당근·잔여량을 표시한다.
+- `haveCarrotTradeNumbersChanged`는 확인 이후·전송 이후 번호 변경이 실제로 확인된 경우에만 다음 가방 확인 안내를 추가한다.
+- 만료 콜백은 응답과 같은 잠금 순서를 사용하고 거래 고유 ID가 일치하는 대기만 취소한다. 이전 거래 타이머는 새 거래/완료 거래를 건드리지 않는다.
+- tools/test_carrot_confirmation.js: 실제 진입·검증·이전·저장·타이머·UI 16그룹. tools/test_carrot_confirmation_rhino.js: 전체 컴파일·실제 명령과 Java 잠금 20쌍(합성 파일 저장).
 
 # /당근완료
 Status: VERIFIED
@@ -4278,7 +4573,7 @@ Status: VERIFIED
 - `/당근`
 
 ## AI Notes
-- 공통 커뮤니티 제한과 정확한 인수 검사는 `/당근` 항목을 참고한다. 수량당 당근 50개와 기존 양쪽 킹 이상·스킬가방 한도 조건을 유지한다.
+- 공통 커뮤니티 제한과 정확한 인수 검사는 `/당근` 항목을 참고한다. 수량당 당근 300개와 기존 양쪽 킹 이상·스킬가방 한도 조건을 유지한다.
 
 ---
 
@@ -4421,7 +4716,8 @@ Status: VERIFIED
 - Payout commands no longer keep separate hardcoded recipient arrays
 - `isAdmin` requires both `data.admin` membership and execution in `호이월드 GM 관리자방`, `원탁의 호월`, `팻 테스트방`, `통합스텝`, or `서버관리자`
 - `isMaster` requires both `data.master` membership and execution in `팻 테스트방`, `서버관리자`, `원탁의 호월`, or `호이월드 GM 관리자방`
-- `GLOBAL_CONFIG.permissions.additionalServerAdminRooms`는 추가 운영방 두 곳을 관리한다. Main·Info에 동일하게 적용하고, Main의 `isServerAdminRoomOperator`를 사용하는 길드영지·펫무쌍 시작 권한도 서버관리자방과 동일하게 허용한다. 일반 유저는 방에 들어가도 관리자·MASTER 권한을 얻지 않는다.
+- `GLOBAL_CONFIG.permissions.additionalServerAdminRooms`는 원탁의 호월·호이월드 GM 관리자방·주문기록방을 관리한다. Main·Info에 동일하게 적용하고, Main의 `isServerAdminRoomOperator`를 사용하는 길드영지·펫무쌍 시작 권한도 서버관리자방과 동일하게 허용한다. 일반 유저는 방에 들어가도 관리자·MASTER 권한을 얻지 않는다.
+- 2026-10-20 주문기록방: `isOrderLogRoomBot`는 정확한 방명과 기존 `오픈채팅봇` 이름으로만 판별한다. 해당 방의 봇에는 Admin/Master 및 신원 권한을 허용하며, 기존 운영자 닉네임 직접 검사 관리 조건 133곳과 경매마감·후원지급 목록 검사도 이 예외를 연결한다. 원래 발신자·회원 키를 바꾸거나 명단에 영구 등록하지 않는다. 다른 방의 봇·일반 사용자와 게임 횟수 특례·전역 이벤트 명령 제한은 유지한다. 이후 관리 명령은 공통 역할 함수와 추가 운영방 목록을 사용한다.
 - `/주기리셋` and `/자동탐험시작` additionally allow an Admin or `오픈채팅봇` in `호이월드 GM 관리자방`; their existing Master access remains available in Master-authorized rooms
 - `/관리자일당` authorization remains `호이 남` and `오픈채팅봇`
 - `/부방상여` authorization remains `호이 남`
@@ -4502,15 +4798,21 @@ Status: PARTIAL
 - 공격마다 R(레이드매력), D(치명타 포함 최종 데미지), P(버림 처리한 R의 3%)를 구분해 저장한다. `calculateServerRaidAttackReward`는 몫·나머지 계산으로 큰 안전 정수에서도 정확히 버린다. 새 공격은 `rewardBasis: "raidCharm"`, `rewardPercent: 3`을 저장하고 `getServerRaidAttackPercent`는 이전 비율 미기록 공격을 당시 1%로 읽는다. 이전 `damage`·R1% 공격과 혼합 기록은 당시 지급액·기준·비율을 유지하며 재전송 시 재계산·추가 지급하지 않는다. 실제 치명타 판정은 기존 `calculateCriticalDamage`의 선택 결과 인수로 함께 받아 0매력에서도 유지한다. 기존 호출의 숫자 반환값은 유지한다. D 합계는 십진 정수 문자열로 정확히 계산한다. 개별 R·D·포인트는 기존 Number 안전 정수 범위를 검사하며 초과 시 차감·지급하지 않는다.
 - R은 기존 `calculateRaidExp`로 계산하며 가방의 레이드타격대인장(개당 +600)과 홈뱃지·길드 큐브·레벨·퀘스트 보너스를 포함한다. 종합매력을 사용하지 않으며 포함된 보너스를 중복 가산하지 않는다.
 - 공격·종료·초기화는 명령 쓰기 잠금과 기존 데이터 트랜잭션 잠금으로 직렬화한다. 공격 횟수·포인트·데미지·이벤트 완료 상태를 `member.json`에 한 번에 저장한다.
+- 공격 안내는 `buildServerRaidResults(round, false, true)`로 서버 순위 집계 뒤 개인 순위 정렬을 생략한다. 조회/종료 정산은 기존 정렬을 유지하며 `freeze === true`는 생략 인수와 무관하게 개인 결과를 확정한다. `tools/test_raid_ranking.js`와 `tools/test_raid_ranking_rhino.js`에서 서버/개인 정산·메시지 일치를 대조한다.
+- 분리 저장은 `stringifyMemberSplitStore`로 비교용 JSON 본문을 재사용한다. `readMemberSplitStore`의 비열거 `__memberSplitSourceText`는 방금 검증한 분리 원문을 해당 백업 호출에서 재사용하며 파일 형식에는 추가하지 않는다. `saveJsonFile`은 같은 저장 잠금에서 읽고 검사한 회원 원문/파싱 결과를 `writeVerifiedJsonFile`/`preserveMemberSplitBackupStores`에 전달한다. 명령 간 캐시·백업/fsync 생략 없이 중복 작업만 줄인다. 검증 근거는 `tools/storage_io_reuse_validation.md`를 따른다.
 - 추가 허용 명령은 기존 공통 전처리·권한 검사·파일 로드·저장·복구 흐름을 사용하며 레이드 공격/보상 기록과 마감을 직접 수정하지 않는다. 패키지 지급·사용은 기존 회원 파일과 패키지 로그 저장 트랜잭션을 유지한다. 수동 탐험의 `stopAllIntervals`는 탐험 `intervalIDs`만 정리하며 별도 `serverRaidWorkTimers`의 자동 종료 예약은 보존한다.
 - 대전 중 차단된 `/펫탐험자동정산`은 `exploreInterval` 실행 표시를 해제한다. 이전 자동 탐험 예약이 다음 허용 명령에서 의도치 않게 실행되지 않도록 하며, 대전 종료 후 자동 정산과 수동 `/펫탐험정산`의 기존 흐름은 유지한다.
 - 초과 시도는 참가자의 `excessAttempts`, `excessEvents`에 횟수·실제 차감액·부족 여부·당시 비용을 기록하고 `eventReceipts`에 회차·계정·초과 구분을 함께 저장한다. 회원 포인트와 같은 저장 단위로 확정한 뒤 안내한다. 저장 실패는 모두 복구하며 응답 실패 후 같은 원본 ID를 재전송해도 재차감하지 않는다. 부족 결과 재전송은 이후 입금돼도 다시 차감하지 않는다. 이전 참가자의 새 필드가 없으면 첫 초과부터 기록하며 다음 회차 참가자는 초과 0회로 생성한다. 정상 공격 목록·데미지·공격 보상은 변경하지 않는다.
 - 정산은 미지급 참가자의 포인트와 완료 상태를 묶어 한 번 저장한 뒤 우승·완료 횟수·확정 결과를 저장한다. 이미 지급된 계정은 재시도 시 건너뛴다. 조회용 기록은 서버와 소속 기간이 모두 일치할 때만 작성한다.
 - 누적 조회는 미지급 진행 참가자의 정상 공격·참가 1회를 추가하고, 지급 완료된 참가자는 이미 기록된 누적만 사용해 부분 정산·재시작에서도 중복되지 않는다. 개인 화면의 `🎯 누적 공격: N회`는 정상 공격만 세 자리 쉼표로 표시하며 서버 화면의 기존 요약은 유지한다. 최근 회차가 진행·정산 중이면 확정 보상 합계·지급 완료 문구를 표시하지 않는다. 기록 없는 화면에는 ALLSEE를 생략하고 0 데미지 기여도는 0.00%로 표시한다. 현재 소속 기간의 이동·초기화 정책은 유지한다.
-- `scheduleServerRaidWork`는 예약 작업의 진입점이며 로드·저장·발송을 담당한다. 일반 계산·변경 헬퍼에는 파일 IO가 없다. 준비 마감, 초기화 세대, 회차 번호, 타이머 식별값을 재검사한다.
+- `scheduleServerRaidWork`는 준비·마감·정산의 예약 진입점이다. 준비 마감, 초기화 세대, 회차 번호, 타이머 식별값을 재검사하고 공지는 `scheduleServerRaidNoticeWork`/`runServerRaidNotices`에 맡긴다. 일반 계산·변경 헬퍼에는 파일 IO가 없다.
 - 일반 명령은 회원 파일을 읽은 뒤 미완료 작업을 재예약하며 레이드 운영 명령은 권한 검사 뒤 재예약한다. 권한 없는 시작·종료·초기화는 상태·타이머를 바꾸지 않는다. 재시작 후 허용된 명령이 잠금·중복 종료 안내로 조기 반환돼도 DEV/PROD 준비·자동 종료·정산·공지를 재개한다. 이미 예약된 환경에는 타이머를 추가하지 않는다.
 - 종료 시각 이후 공격은 타이머 실행 여부와 관계없이 거부한다. 수동·자동 종료는 동일한 정산 절차와 회차·세대·타이머 식별값 검사로 중복 지급을 막는다. 종료 때 미발송 준비·시작 안내에는 `cancelled`를 기록해 오래된 공지를 생략하되 실제 발송 상태는 보존한다.
 - 공지는 기존 `noticeMsg` 대상 목록을 재사용하고 입력방을 중복 제외한다. 저장된 완료 방은 재발송하지 않는다. API 발송 성공과 완료 상태 저장 사이의 종료·저장 실패에는 실제 전달 여부가 불명확하여 공지 중복 가능성이 남는다. 공지 재시도로 보상을 다시 지급하지 않는다.
+- 2026-10-20 공지 격리·저장 개선: 전투 예약과 환경별 단일 공지 작업을 분리한다. 공지 API는 전용 Java 스레드에서 데이터 잠금 밖으로 호출하며, 실패 방의 후속 공지만 보류한다. 전송이 대기해도 공격·자동 종료·지급은 진행한다. 같은 방의 종료→결과 순서는 유지하되 보상 지급은 전송 완료를 기다리지 않는다.
+- 발송 성공은 보호 JSON `serverRaidNoticeReceipts.json`에 `{version:1,generation,sent}`로 즉시 검증 저장한다. 키는 `[공지 ID,방명]`의 JSON 문자열이며 재시작 때 성공한 방을 생략한다. 처음 설치할 때만 파일 생성과 레이드의 `noticeReceiptsVersion:1`을 같은 트랜잭션으로 저장한다. 설치 후 누락·손상·버전·세대 불일치는 초기화로 숨기지 않는다. 전체 초기화는 실행 작업을 취소 표시하고 새 세대의 첫 전송에서 설치한다. 이미 실행 중인 API 한 건은 반환할 때까지 남을 수 있다.
+- 완료 상태는 묶어서 최신 회원·레이드에 저장한다. 묶음 중 회원 게시 번호가 바뀌면 다시 로드하고 영수증을 합쳐 공격·정산을 덮어쓰지 않는다. 게시 번호는 회원 파일의 검증 교체·롤백 때 갱신되는 메모리 값이며 디스크 데이터의 대체가 아니다. 변경 없는 운영 로그의 동일 버전 백업은 반복 복사하지 않고, 정기 2차 회전의 원본 검증 및 명시적 백업 재구성은 유지한다.
+- `tools/test_server_raid_delivery.js`는 새 VM·합성 디스크 재시작, `tools/test_server_raid_io.js`는 전송 중 변경·영수증 오류·대용량 논리 I/O, `tools/test_server_raid_delivery_rhino.js`는 실제 Java 스레드·잠금에서 API 정지 중 공격/조회/자동 정산의 완료를 검증한다. 실제 Android 앱의 세션 재획득·기기 속도는 운영자 확인 영역이다. API 성공 뒤 영수증 저장 전 강제 종료는 기존과 같이 공지가 중복될 수 있다.
 - 전체 초기화는 이미 지급한 포인트·일반 가방을 유지한다. 서버이동은 확정 결과·우승·기존 지급 상태를 유지한다. DEV 저장과 공지는 기존 컨텍스트로 분리한다.
 
 ## Legacy Callback / Operator Scope
@@ -5278,40 +5580,45 @@ Status: VERIFIED
 
 ---
 
-# /정령순위
+# /정령컨텐츠보상 · /레이드매력오픈 숫자 · /캐슬매력오픈 숫자
 
 Status: VERIFIED
 
-## Command Anchors
-
-- Search in `Info.js`: `/정령순위`
-
 ## Files
 
-- `Info.js`
+- `main.js`, `Info.js`
+- `data/itemInfo.json`: 보상 산정용 기존 정령 등급별 기본 매력·강화 증가량 (보존)
+- `data/itemList.json`, `data/packageInfo.json`: 강화확률뽑기 목록·패키지 지급 제거, 보상 매력 아이템 판매 보호
 
 ## Related Helpers
 
-- `generateElementalRanking`
+- `buildSpiritRetirementPlan`, `applySpiritRetirementPlan`
+- `countSpiritRetirementSources`, `buildSpiritRetirementCleanupPlan`, `buildServerRaidAccountIndex`
+- `getSpiritCharmOpenRequest`, `openSpiritCharmItem`
+- `getSpiritOpenedCharm`, `requireSpiritRetirementCount`
+- `calculateItemInfoAll`, `calculateItemInfo`, `isNeverSellItemWithList`
 
 ## Data Usage
 
-- `petData`
-- `data.member`
+- `GLOBAL_CONFIG.spiritRetirement`: 공식 아이템명, 일회성 보상 기록·백업명, 이벤트박스 치킨 100개·야구 치킨 2개
+- `petData[사용자].elemental`: 보상 확정 후 기록·백업·현재 계정과 일치하는 원본만 삭제. 실전 매력 계산·정보창·순위·신규 지급에서 제외
+- `data.member[사용자].bag`: 매력 1당 해당 보상 아이템 1개. 지급 자체로 매력 증가 없음
+- `data.member[사용자].spiritCharm`: 오픈한 캐슬·레이드 매력. 기존 퍼센트 보너스 적용 전 합산
+- `data.spiritRetirement20261023`: 전체 보상 완료와 대상별 등급·강화·보상량 기록
 
 ## Save Flow
 
-- Read-only in the confirmed branch
-
-## Related Commands
-
-- `/펫정보`
-- `/종합순위`
-
-## AI Notes
-
-- Ranking output for elemental/spirit enhancement state
-- Investigate here before checking broader pet-summary commands
+- MASTER가 정확히 `/정령컨텐츠보상` 입력: 기존 방·정지·레이드 제한 통과 후 전체 회원과 펫 원본을 `spirit_retirement_before_20261023_<UUID>.json`으로 안전 저장·재읽기 대조한다. 재시도마다 새 백업을 만들고 완료 기록에 경로를 남긴다.
+- 전체 대상의 등급·강화·안전 정수 수량을 먼저 확인하고, 가방 지급·강화확률뽑기 전량 삭제·전체 완료 기록을 한 번의 `saveJsonFile(data, filePath)`로 확정한다. 실패 시 기존 저장 트랜잭션으로 복구하며, 재시작 후 완료 기록이 있으면 재지급하지 않는다.
+- 지급 저장을 먼저 확정하고 별도 저장 단위로 정령 원본만 `saveJsonFile(spiritPets, memberPetPath)`에서 삭제한다. 삭제 실패·중단 후 재실행은 정리만 수행하며, 이미 지급된 가방·오픈 매력·완료 기록은 바꾸지 않는다. 완료 응답 실패도 확정 저장을 취소하지 않는다.
+- 기지급자는 기록의 현재 환경 백업을 재읽고 상세 지급량을 원본과 대조한다. 기존 계정 ID로 닉변을 확인하거나 ID가 없으면 동일 이름·원본 일치를 확인한 경우만 삭제한다. 계정 불일치·변경 원본·미지급 원본은 보존하고 남은 건수를 안내한다. 백업이나 기록이 잘못되면 삭제 없이 기존 오류 흐름을 따른다.
+- 전체 정리 후 반복 실행은 백업·회원·펫 무저장이며, 보상 전 백업과 재지급 방지 기록은 유지한다. 분리 회원 저장의 레이드·운영 로그 슬롯도 유지한다.
+- 두 매력 오픈 명령은 정확한 양의 정수 수량만 사용한다. 보유량 초과·0·음수·소수·문자·추가 안내 문구는 아이템을 사용하지 않는다. 소모량과 영구 매력은 같은 회원 저장 단위다.
+- 세 명령은 기존 단독 실행 잠금을 사용하며 DEV 컨텍스트의 백업·회원·펫 저장은 DEV 경로로 분리한다.
+- `/정령강화`, `/정령이름`, `/정령순위`, `/강화뽑기`, `/정령조합`, `/정령이름조합`, `/정령속성`, `/정령정보`, `/전체조합2`, `/정령패키지,` 실행 분기는 제거했다.
+- `ㅇㅇㅇ`·`/전체조합`의 정령 조각 조합만 종료하며 다른 오픈·판매 처리는 유지한다. 기존 정령상자·정령박스는 치킨을 지급한다. 복주머니의 지급 수량은 유지하고, 야구는 1개당 치킨 2개를 지급한다.
+- 이벤트박스는 현행 샵오픈·던전 입장권을 유지하면서 치킨 100개를 함께 지급한다. 호이패스·프리미엄·패키지의 강화확률뽑기 지급과 안내는 제거하며, 과거 패키지 구성에도 지급/안내 필터를 적용한다.
+- 정령조각·이름변경권·강화석의 기존 재고 판매와 보상 아이템 거래 제한은 운영자 별도 처리이며 자동 판매/포인트 지급을 추가하지 않는다.
 
 ---
 
@@ -5906,7 +6213,7 @@ Status: VERIFIED
 - `refreshMiniPetSortIndex`
 - `initSweetHomeUser`
 - `initPetSkillUser`
-- `addHappyFoundationFee`
+- `addHappyFoundationLedgerAmount`
 - `isMemberTierKing`
 
 ## Data Usage
@@ -5926,6 +6233,7 @@ Status: VERIFIED
 - Registration saves `freeMarketPath` and the mutated owner storage file
 - Purchase saves `freeMarketPath`, `filePath`, and the purchased item storage file
 - Cancel/force-cancel saves `freeMarketPath`, `filePath`, and the restored item storage file
+- ver_2.659 captures the market JSON text at command entry and passes it to `saveJsonFile` as the rollback snapshot. Furniture registration/purchase/cancellation also captures the home JSON before mutation, so later save errors roll back both ownership and the listing. Missing/invalid JSON still fails naturally. Pendant registration sends success only after all saves pass.
 - Account deletion removes related free-market listings/logs and saves `freeMarketPath`
 
 ## Related Commands
@@ -5935,8 +6243,8 @@ Status: VERIFIED
 - `/가구거래등록 [가구가방번호] [갯수] [판매금액]`
 - `/스킬거래등록 [스킬가방번호] [갯수] [판매금액]`
 - `/펜던트거래등록 [펜던트가방번호] [판매금액]`
-- `/자유시장확인`
-- `/자유시장확인취소`
+- `자유시장거래`
+- `자유시장거래취소`
 - `/자유시장구매 [번호]`
 - `/자유시장취소 [번호]`
 - `/거래소강제취소 [번호]`
@@ -5950,13 +6258,13 @@ Status: VERIFIED
 
 - Free-market storage is isolated in `freeMarket.json`; item ownership still mutates the original owner/buyer storage files
 - Active listing numbers are display-order numbers from recent-first `/자유시장`; purchase confirmation stores the immutable listing id to avoid buying a shifted listing
-- Registration and purchase commands show a confirmation UI first; `/자유시장확인` re-runs validation before mutation, and `/자유시장확인취소` clears the pending request
+- Registration and purchase commands show a confirmation UI first; `자유시장거래` re-runs validation before mutation, and `자유시장거래취소` clears the pending request
 - Mini-pet same-item matching includes name, emoji, grade, upgrade, battleExp, castleExp, and raidExp
 - Completed logs keep only sold trades, newest first, capped at 100 entries
 - Registration fees consume `🥕당근이세요?` immediately; cancel/force-cancel refunds the stored `carrotFee` only when the seller currently holds `자유시장회원권🏪`
-- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 10%, and sellers holding `자유시장회원권🏪` use 7%
+- Sale fee is paid by the seller from proceeds and recorded to the foundation ledger without paying the foundation captain account; base fee is 17%, and sellers holding `자유시장회원권🏪` use 10%
 - `/자유시장거래현황` displays the original completed trade price (`price`), while settlement still uses `sellerReceive`
-- `/자유시장거래현황` appends `자회원🏪(수수료 7%)` to completed trade rows only when the completed log recorded `memberFeeApplied: true`
+- `/자유시장거래현황` appends the logged member fee rate only when `memberFeeApplied: true`; old 5%/7% rows keep their recorded rate.
 - `/자유시장` and `/자유시장거래현황` display listing prices as full comma-formatted point amounts with an `억` helper for 1억 or more, e.g. `🅟350,000,000(3.5억)`, not Korean short units such as `35,000만(3억)`
 - `/자유시장` and `/자유시장거래현황` append `[개당 ...]` to item text only when quantity is 2 or more, using `Math.floor(price / quantity)` and `formatKoreanShort`
 - `/자유시장` displays active listing registration time from `createdAt/createdAtMs` as `MM/DD HH:mm`; `/자유시장거래현황` displays completed sale time from `completedAt/completedAtMs` as `MM/DD HH:mm`
@@ -6917,6 +7225,15 @@ Status: VERIFIED
 
 Status: VERIFIED
 
+- ver_2.646: 기존 `member_pet[*].miniPetRobberyHistory` 전체를 `miniPetRobberyHistory.json`으로 옮기고 회원 `migrations.miniPetRobberySplit20261014 = true`를 게시한다. 최초 기록 사본 `miniPetRobberyHistory_legacy.json`을 보존한다. 원래 중복 행 개수와 같은 ID의 다른 내용도 보존하며, 재이전 시 이미 옮긴 동일 행을 개수별로 대조해 중복 추가하지 않는다. 완료 후 기존 펫 배열을 제거한다. 누락·손상·초기 경로 충돌은 오류로 중단한다.
+- `requireMiniPetRobberyStore`, `getMiniPetRobberyRows`, `validateMiniPetRobberyPending`, `buildMiniPetRobberyMigration`은 이미 로드한 데이터를 검증·조회·계획하며 파일 IO를 하지 않는다. 복구·이전·강탈·조회 진입부에서 IO를 수행한다.
+- `miniPetRobberyPending.json`은 회원·펫·이력 세 파일의 작업 전 원문을 보관한다. 명령 저장 트랜잭션으로 파일 실패를 원복하고, 중단 시 MAIN 진입과 운영 재컴파일의 타이머 시작 전 원문을 복구한다. 초기 이전의 없던 이력 파일만 삭제 복구를 허용한다. 복구 원문 전체를 검증하기 전에는 쓰지 않는다. DEV 복구는 다음 DEV 요청에서 수행한다.
+- 분리 후 약탈자가 실행하는 미니펫대전과 약탈자 이력 조회만 이력을 로드한다. 강탈 성공 때 포인트·대전 횟수·별도 이력을 함께 저장하며, 자동일퀘는 최초 원문을 유지하다 일괄 저장 성공 후 복구 표시를 비운다. MAIN의 본인·다른 유저 미니펫정보는 별도 이력에서 최근 50건을 출력한다. Info는 복구 대기 중 부분 정보를 출력하지 않는다.
+- tools/test_robbery_history_split.js: 실제 정리·약탈 저장·복구·자동일퀘 일괄 저장·재컴파일·Info 차단·DEV·일반 명령 미로드 등 정상/예외 12개 그룹. tools/test_doll_rhino.js는 실제 Rhino에서 이전·재이전·특수 이름 보존을 추가 검증한다.
+
+- ver_2.645: 기존 가방 명칭 정리 시 원본 수량이 숫자 `0`인 항목은 제외하고 회원 파일에 저장한다. 완료 안내에 제거한 항목 수·회원 수를 표시한다. 기존 권한·DEV/PROD·저장 트랜잭션·양수 보유량·구독 기록은 유지한다. 분리 완료 파일의 잔류 로그 복구 전용 경로는 기존대로 복구만 수행하므로 일반 정리는 재실행 때 적용된다.
+- tools/test_member_storage_split.js: 실제 정리 본문으로 숫자 0 삭제·양수/소수/안전 정수 상한·구독 보존·명칭 통합·재실행·DEV 격리·이후 저장 실패 원복을 포함한 55개 그룹을 검증한다.
+
 ## Files
 
 - `main.js`
@@ -6932,6 +7249,8 @@ Status: VERIFIED
 ## Data Usage
 
 - `data.migrations.memberStorageSplit20261012`: split phase, immutable original backup path, published raid/log revisions
+- Startup `recoverMemberSplitPublication` strictly compares the full member body against the prior primary backup via `buildMemberSplitPublicationRecovery`. Only one missing raid publication with identical member/log records, matching raid summary, no current round, and fully paid history is eligible. It archives raw inputs, publishes the existing referenced raid slot, preserves all payouts, and cancels historical unsent deliveries. Missing/corrupt/foreign stores and changed records still fail; ordinary loads do not silently select a different revision.
+- `writeVerifiedJsonFile` records a transaction entry as saved immediately after replacement; cleanup/transport logging failure cannot leave a published member outside rollback tracking.
 - `serverRaidData.json` / `serverRaidData_next.json`: full `serverRaid`; member retains only current locking state, generation/sequence, wins and pending-notice summary
 - `memberOperationLogs.json` / `memberOperationLogs_next.json`: `supportPassPayoutLogs`, `guildTerritoryAutomationLogs`, `territoryPassAuditLogs`, `petMusouAutomationLogs`
 - `homeData[*].furnitureBag`
@@ -6993,12 +7312,10 @@ Status: VERIFIED
 - Migration preserves members, currencies, inventory, quest data, raid history/receipts/outbox and logs. Existing cleanup steps below still run and retain their previous deletion policies.
 - Completed migration requires the new main code. Code rollback requires restoring the matching pre-migration full member backup; do not pair a thin member snapshot with legacy code or omit companion files from backups.
 - Does not delete legacy `homeData[*].guestComments`.
-- Step 4 floors every numeric `data.member[*].point` value to remove decimal point balances.
-- Step 5 deletes legacy pass-list arrays after pass commands moved to `data.member[user].pass`.
-- Step 6 deletes legacy user ring data: `petData[*].ring` and `petData[*].ringRewardMigration`.
-- Step 7 deletes legacy `guildData.guilds[*].warehouse.ring`; it does not move those quantities to `warehouse.pendant`.
-- Step 8 removes every mistakenly issued `영지자동공격권⚔️` from member bags and deletes the obsolete first-grant/permanent-entitlement flags. Re-running the cleanup is idempotent and does not disable a valid `영지기습패스` user's current auto-attack setting.
-- Step 9 detects identifiers absent from `data.member` only from current account-owned data and removes their account data and cross-user references. Historical-only references such as comment authors, social actors/visitors, completed market logs, board records, automation/audit logs, and package logs do not independently make an identifier a cleanup target. `attendanceLightData` is not used as an orphan source because it intentionally stores pre-signup attendance, but a confirmed deleted account discovered in another store is removed from it too. The result count is shown as `잔여 식별자` rather than an actual deleted-account count.
+- Recurring steps now cover pet-home garbage, strictly numeric zero bag entries, decimal points and orphan-account references. Positive/negative/fractional/string quantities and current subscription data are not changed by zero-item cleanup.
+- Completed one-time item renames, pet-skill relocation, legacy pass-list deletion, old user/guild rings and mistakenly granted independent auto-attack items/flags were removed at the user's request. Restoring an old snapshot does not re-enable those retired transformations.
+- First `/데이터정리` after this version migrates quest history/title arrays and returns before general cleanup. Re-running skips this completed migration; current member-split and robbery storage checks remain.
+- Orphan cleanup detects identifiers absent from `data.member` only from current account-owned data and removes their account data and cross-user references. Historical-only references such as comment authors, social actors/visitors, completed market logs, board records, automation/audit logs, and package logs do not independently make an identifier a cleanup target. `attendanceLightData` is not used as an orphan source because it intentionally stores pre-signup attendance, but a confirmed deleted account discovered in another store is removed from it too. The result count is shown as `잔여 식별자` rather than an actual deleted-account count.
 - Castle battle `history` cleanup is no longer performed by this command.
 
 ---
@@ -7070,15 +7387,19 @@ Status: VERIFIED
 
 ## Data Usage
 
-- `data.member[사용자].adventureQuest`: 현재 단계, 단계별 행동, 지급 영수증, 완료 기록·타이틀, 누적 보상
+- `data.member[사용자].adventureQuest`: 현재 단계, 단계별 행동, 지급 영수증, 완료 단계, 장착 타이틀 번호/표시 이름, 누적 보상
+- `adventureQuestHistory.json`: 사용자별 기존 완료 기록/획득 타이틀의 전체 배열과 순서. `adventureQuestHistory_legacy.json`은 최초 이전 원본 기록 보관용이다.
+- `data.migrations.adventureQuestHistorySplit20261014`: 완료 표시; `/데이터정리` 재실행은 다시 이전하지 않는다.
+- `adventureQuestHistoryPending.json`: 회원 본문·기록·회원 백업·raid/log 저장 슬롯/백업 원문. 저장 중단 시 MAIN 진입/시작에서 전체 검증 후 복구하며 Info는 복구 대기 중 부분 정보를 표시하지 않는다.
 - `memberPet.json`, `petSkillData`, 펫홈·탐험·홈뱃지 자료: 완료 시 실제 적용 상태 확인
 
 ## Save Flow
 
 - `/퀘스트완료`는 다른 퀘스트 조회·타이틀 명령과 같이 채팅방 제한 없이 실행한다. 완료 조건과 보상·저장 흐름은 기존 규칙을 따른다.
+- 분리 후 퀘스트 명령 진입에서 기록을 한 번 로드해 `attachAdventureRecordStore`로 배열을 비열거 연결한다. 일반 행동/정보/보상 계산은 과거 배열을 다시 생성하거나 로드하지 않는다. `saveJsonFile`은 실제 기록 변경 시 복구 원문을 먼저 저장하고 기록·회원/보상을 함께 저장한 뒤 완료 표시를 지운다. 실패 시 트랜잭션 롤백, 중단 시 원문 복구를 사용한다. 이전 회원 백업보다 새 기록이 있거나 완료 단계와 기록이 다르면 완료/재지급을 차단한다. 명시적 계정 삭제는 해당 계정의 별도 기록도 삭제한다.
 - 스타터 회원 보상은 `/호여!!`에서 지급한다. 7·8·14단계 최초 1회 지급 재료는 단계 최초 진입 시 영수증을 기록하고 `member.json`에 함께 저장한다. 화면에는 실제 아이템명과 `최초 1회 지급`을 표시한다.
 - 대부분의 행동 기록은 실제 기능 성공 흐름에서 기록한다. 2단계는 티어 승급티켓🎟 1개 이상을 보유한 상태의 `/티어적용` 입력만 인정하며 상점 조회·구매·티어 조회와 실제 승급 성공은 요구하지 않는다. 6단계는 `/지도` 조회, 실제 `/탐 [번호]` 지정, 해당 탐험지의 정산 결과 수령 순서로 완료한다. 7단계는 `/냠냠 [수량]`으로 펫먹이 100,000개 이상을 한 번에 정상 사용하면 완료한다. 13단계는 다이아상점 조회 후 상품명이 `홈뱃지뽑기🛡️`로 시작하는 상품 구매만 인정하고, 그런 상품이 없을 때만 다른 상품 구매를 인정한다. 묶음 내용물이 아닌 구매 명령의 수량을 합산하며 구매 시점에만 기록하므로 과거 구매는 자동 소급하지 않는다.
-- 3~5단계는 해당 단계가 진행 중일 때 미니펫대전·캐슬대전·시련의탑의 정상 결과를 각각 1회씩 기록하며, 10회부터 완료할 수 있다. 일일 콘텐츠 입장 상한 15회와는 별개다.
+- 3~5단계는 해당 단계가 진행 중일 때 미니펫대전·캐슬대전·시련의탑의 정상 결과를 각각 1회씩 기록하며, 5회부터 완료할 수 있다. 일일 콘텐츠 입장 상한도 5회이며 자동일퀘 추가 보상 5회는 별도다.
 - `/퀘스트완료`는 현재 단계 조건을 재확인하고 보상·기록·타이틀·다음 단계 준비물을 한 번에 저장한다. 9단계 최대 평수 자동 완료도 같은 흐름을 사용한다.
 - 14단계는 큐브를 실제 사용한 홈뱃지가 현재 장착·적용 중일 때 완료한다. 16단계 이후 `/퀘스트완료`는 본편 대기 안내만 표시하며 보상을 다시 지급하지 않는다.
 - 기존 `/퀘스트완료` 일일 보상 명령은 `/일퀘완료`로 변경했고 `/ㅇ`, `/ㅇㅇㅇ`, `ㅎㅎㅎ` 별칭은 유지한다.
@@ -7138,9 +7459,12 @@ Status: VERIFIED
 - 새 가입자는 펫 이름 확정 후 추천인 입력 대기로 이동한다. 기존 펫 생성 안내 뒤 추천인 등록 안내를 출력하고, 등록 또는 `없음` 선택 후 기존 축복 안내를 출력한다. 기존 `WAIT_BLESSING` 계정은 진행 중인 단계를 유지한다.
 - 추천 등록은 기존 닉네임과 본인 추천 여부, 포인트·횟수 범위를 먼저 확인한 뒤 신규 유저 1억·추천인 5억 포인트, 추천 횟수 +1, 가입 영수증을 같은 `member.json` 저장에 반영한다. 재입력에서는 중복 지급하지 않는다.
 - `/추천인순위`는 본인의 누적 추천 인원·보상을 조회하고 추천 인원 내림차순으로 표시한다. 11위부터 `allsee` 아래에 출력하며 저장하지 않는다.
-- `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 신규 회원의 친밀도 Lv.300(+330,000💕)와 스타터 아이템 18종·300억 포인트·가호 30,000개를 각각 1회 지원한다. 기존 지급 완료·과거 퀘스트 지급자는 재지급하지 않는다.
+- `/호여!!`은 펫·펫스킬·펫홈별 완료 표시를 사용해 중단 후 재실행에도 완료 항목을 다시 지급하지 않는다. 신규 회원의 친밀도 Lv.300(+330,000💕)와 스타터 아이템 22종·300억 포인트·가호 30,000개를 각각 1회 지원한다. 기존 지급 완료·과거 퀘스트 지급자는 재지급하지 않는다.
+- ver_2.653 `GLOBAL_CONFIG.adventureStarter.dollItems`의 이용권 20개·확률UP 50/40/30% 각 5개도 같은 최초 지급 영수증과 저장을 공유한다. 기존 지급자는 소급하지 않으며 실제 지급 시에만 별도 안내한다. 과거 스타터 회수 대상 17종은 유지한다.
 - 펜던트 강화석📿 3개는 기존 17종과 함께 `memberRewards` 최초 지급 영수증 및 `member.json` 저장에 포함한다. 실제 최초 지급 성공 시에만 완료 안내에 표시하며 기존 지급자에게 소급하지 않는다.
 - 신규 추가 지급은 `GLOBAL_CONFIG.adventureStarter.additionalItems`를 사용한다. 과거 퀘스트 스타터 회수는 기존 `items` 17종과 `legacyRecoveryBoosters` 1,000개 기준을 유지한다. Info의 과거 후보 조회도 1,000개이며 신규 가호 지급량과 분리한다.
+- 2026-10-20 안내 간소화: `buildAdventureStarterCompleteMessage`는 축복 한 줄 직후 구분선, 펫정보·가방·레벨·가이드 안내만 표시한다. 기본 세팅·학개론·친밀도300·가호30000·스타터와 인형 아이템의 실제 지급·조건·영수증은 변경하지 않는다. 닉네임은 실제 대상이며 펫 이름·상세 지급 목록은 안내에서 생략한다.
+- 정령 종료 이후 `applyStarterPet`은 정령 기본 지급·설정을 하지 않으며 다른 펫·미니펫·펜던트 스타터 보상은 유지한다.
 - 신규 펫의 알 상태는 `/호여!!` 완료 시 기존 외형 목록의 땅·하늘 속성과 외형으로 확정해 `member_pet.json`에 저장한다. 이미 스타터 설정을 완료했지만 알 상태로 남은 펫은 해당 사용자의 다음 `main.js` 응답에서 한 번 보정·저장하며, 이후 조회에서는 다시 뽑지 않는다.
 - `/모험가퀘스트` 최초 참여에서는 스타터팩을 지급하지 않는다. 과거 퀘스트 지급 기록이 있는 회원은 `/호여!!`에서 같은 스타터팩을 다시 지급하지 않는다.
 - 기존 `/가입`은 `/모험시작` 변경 안내만 출력하며, `/펫생성`은 더 이상 스타터 세팅을 지급하지 않는다.
@@ -7335,8 +7659,10 @@ Status: VERIFIED
 ## Save Flow
 
 - Master 또는 `호이월드 GM 관리자방`의 Admin·`오픈채팅봇`이 실행하는 통합 정리 명령이다.
+- 정확한 `/글자수전체정리` 직접 입력은 확인 메뉴 없이 즉시 실행한다. 권한별 `/초기화` 메뉴의 `[정리] 글자수 전체 정리` 선택 → 범위 확인 → `1삭제` 경로도 같은 실행 분기로 연결한다. 메뉴의 `2취소`·만료·권한 상실 시 정리하지 않는다. 안내 문구가 붙은 접미사 입력은 즉시 실행하지 않는다.
 - 미니펫·가구 가방은 일반 10개, 호이패스 프리미엄 15개 한도만 남기고 초과분을 삭제한다.
-- 미니펫 또는 펜던트 정리 결과가 있으면 `member_pet.json`을, 가구 정리 결과가 있으면 `homeData.json`을 저장한다.
+- 펜던트는 기존 등급·이름 정렬 후 50개를 남기며, 모든 정리는 장착 데이터와 재화를 보존한다.
+- 미니펫 또는 펜던트 정리 결과가 있으면 `member_pet.json`을, 가구 정리 결과가 있으면 `petSweetHomeData.json`을 저장한다.
 
 ## Related Commands
 
@@ -7391,7 +7717,7 @@ Status: VERIFIED
 - 기본 매력은 보너스가 붙은 최종값을 역산하지 않고 `buildTotalExpTimeCheckDetail`의 퍼센트 적용 전 구성 합계를 사용한다. 정령·반지·펜던트·가방, 펫, 대표·보조 미니펫, 가구, 펫스킬, 캐슬 친밀도 등을 계산 시간과 무관하게 표시한다.
 - 레벨은 0.01%, 퀘스트와 합산 비율은 0.001% 단위까지 표시하며 `내림(기본 × (1 + 합산 비율 / 100))`을 공용 계산값과 비교한다. 실제 매력 계산·재화·장착·보상 정책은 바꾸지 않는다.
 - `/펫정보`, `/종합순위`, `/캐슬대전`, `/시련의탑`은 현재 공용 계산값을 사용한다. 맞짱필드는 참여 시점 종합매력 스냅샷과 전투 시점의 현재 유효 펫강화 치명타를 함께 사용하고, 길드영지전은 시작 시점 캐슬매력·치명타 스냅샷을 사용하므로 현재값과 차이가 날 수 있다.
-- 맞짱필드 또는 길드영지전 진행 중에도 권한이 있는 운영자가 진단할 수 있다.
+- 맞짱필드 진행 중에는 권한이 있는 운영자가 진단할 수 있다. 길드영지전 중에는 진단 명령도 공통 허용 목록에 따라 차단한다.
 
 ---
 
@@ -7785,10 +8111,13 @@ Status: VERIFIED
 ## AI Notes
 
 - `/인증필요`는 기존 Admin 권한을 유지하며 채팅방과 길드 영지전·펫무쌍·맞짱필드 진행 여부에 관계없이 사용할 수 있다.
-- `/미정 [이름]`과 `/정보 [유저명]`은 기존 Admin/Master 권한을 유지하며 모든 방에서 사용할 수 있다.
+- `/미정 [이름]`과 `/정보 [유저명]`은 기존 Admin/Master 권한을 유지하며 모든 방에서 사용할 수 있다. 길드영지전 진행 중에는 역할과 무관하게 공통 진입부에서 차단한다.
 - `/정보`는 권한이 확인된 경우 1:1톡 패스·이벤트 제한을 통과하며, 일반 사용자의 기존 제한은 유지한다.
-- `/기록 [내용]`과 `/기록실`은 기존 Admin/Master 권한을 유지하며 모든 방과 이벤트 진행 중에 사용할 수 있다.
+- `/기록 [내용]`과 `/기록실`은 기존 Admin/Master 권한을 유지하며 모든 방과 이벤트 진행 중에 사용할 수 있다. 길드영지전 진행 중에는 공통 허용 목록이 우선한다.
 - `/기록` 등록은 정확한 명령 형식만 허용해 `/기록삭제` 등 다른 기록 관리 명령과 충돌하지 않는다.
+- 2026-10-20 기록실 이관: 부팅 시 기존 `board.record` 전체를 같은 JSON의 `recordArchive1.records`에 깊은 복사하고 현재 기록을 비운다. `prepareRecordRoomArchive`는 순수 변경·검증 함수이며 기존 보관소가 있으면 새 기록을 다시 초기화하지 않는다. `board.json`·`board_back.json`·`board_back2.json`은 기존 검증 저장·백업·명령 롤백 대상이다. 파일 교체 사이 중단으로 원본이 없고 `.rollback`이 있을 때만 부팅/첫 DEV 기록 요청에서 원문 검증 후 이름을 복구한다. 누락·손상 원본을 빈 데이터로 바꾸지 않는다.
+- `/기록보관소1 [페이지]`는 Admin/Master 신원 권한으로 모든 방에서 기존 기록실과 같은 이벤트 예외로 조회한다. 생략은1, 페이지당20건이며 원래 순번·내용·날짜·중요 표시를 보존한다. `/기록실`·`/기록`·`/기록삭제 [번호]`·`/빌런 [번호]`은 현재 기록만 조회/변경한다. 숫자 뒤 설명 문구는 실행하지 않는다. 일반 계산 헬퍼에는 파일 IO가 없으며 명령 진입에서 한 번 로드한다.
+- 검증: `tools/test_oct20_ready.js`의 전체 페이지·이관/반복/저장 실패/복구/DEV·권한 조건 비교와 `tools/test_oct20_rhino.js`의 실제 Java 파일 저장·백업·새 전역 스코프 복원. 원본 데이터 스냅샷은 테스트에서 수정하지 않는다.
 
 ---
 
@@ -7861,21 +8190,29 @@ Status: VERIFIED
 
 ## Files / Helpers
 
-- main.js: getDollRequest, applyDollDraw, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
+- main.js: getDollRequest, applyDollDraw, applyDollAcquisition, getDollBoxRequest, applyDollBoxOpen, getDollCollectionRows, buildDollRepresentative, buildDollCollectionMessage, buildDollRankingMessage, buildDollGuideMessage.
 - MAIN·Info의 캐슬·레이드 기본 매력에 `member_pet.json`의 `dollCharm / 2`를 합산한 뒤 기존 퍼센트를 적용한다. 종합매력·진단도 같은 기본값을 사용한다. 원본 종합매력은 정수로 누적하므로 각 모드 +12.5도 누적 과정에서 보존한다.
 
 ## Commands / Policy
 
-- `/인형뽑기`: 정확한 무인수 입력 1회. 이용권 1개 우선, 없으면 3억. 정상 실패도 비용을 사용한다. 신규·중복 모두 기존 티어·가호·레벨업 경험치를 적용하며 최대 기록 갱신 자체에는 별도 보상이 없다. 전설 이상은 전체 알림이다.
+- `/인형뽑기`: 정확한 무인수 입력 1회. 이용권 1개 전용이며 부족 시 무소모. 정상 실패도 이용권을 사용한다. 신규·중복 모두 기존 티어·가호·레벨업 경험치를 적용하며 최대 기록 갱신 자체에는 별도 보상이 없다. 초월·창세·창조만 전체 알림이며 알림에서 공통 명령어·가이드를 제외한다. 사용액·잔액 표시는 제거하고 티어·성공률을 머리말에 표시한다.
+- 이용권 부족 화면도 보유 포인트를 표시하지 않는다. 구분선 앞뒤 빈 줄과 `📖 상세·명령어` 뒤 allsee 위치는 READY 최종 예시에 맞추며 이용권/확률UP 소모와 추첨 계산은 변경하지 않는다.
+- ver_2.644 확률UP: 가방의 `인형뽑기확률UP🧸(50%/40%/30%/20%/10%)` 중 높은 수치 한 종류 1개를 자동 사용한다. 기존 티어 성공률에 %p로 합산하고 100%로 제한하며 등급·크기·보상 추첨은 유지한다. 정상 성공·실패 모두 이용권과 확률UP을 각 1개 소모하고, 차단/부족 입력은 무소모다. 머리말에 실제 최종 확률·합산 내역, 이용권 아래에 선택 아이템·소모 후 잔여 수량을 표시한다. 확률UP이 없으면 기존 UI를 유지한다.
+- ver_2.652 MAIN/Info 가방 목록은 확률UP 5종의 이름·수량만 표시하며 아이템 아래 설명 줄은 제거한다. 정렬·번호·가이드 및 실제 적용/소모는 유지한다.
+- ver_2.653 MAIN·Info `generateBagOutput`은 고급 티어 승급티켓 다음에 이용권·확률UP 50/40/30/20/10%를 모아 표시한다. 미보유 항목은 건너뛰고 번호를 연속 부여하며 이름·수량만 출력한다. `/인형가이드`의 지급·소모 정책은 유지한다.
+- `buildDollDrawDebugMessage`는 실제 판정 난수와 확률·티어·상한·소모 전후 수량을 안내한다. 기존 `/디버깅모드` 권한과 `debuggerLog` 테스트방 출력을 유지하며 저장 완료 후 출력한다. 추가 난수를 생성하지 않고 로그 전송 실패는 완료된 지급·소모를 되돌리지 않는다.
 - `/인형도감`: 전체 현황. 일반·고급·희귀는 등급명만 입력하면 목록 선택이며 1/2 상세는 등급 전체 정렬 후 150/110/85종씩 나눈다. 영웅~창조는 전체 목록이다.
 - `/인형순위`: 대표 인형의 등급·최대 크기·획득 횟수·고정 계정 ID순. 공개 10등, 본인 100등까지 표시한다.
 - `/인형가이드`: 별도 이용 방법·확률·경험치·판매·도감·순위·크기·수집효과 안내다.
+- ver_2.643부터 사용자 결정으로 `GLOBAL_CONFIG.doll.allowedRoom = null`을 적용해 인형 관련 명령의 전용 방 제한을 해제한다. 기존 가입·출석·정지·개인톡 조건과 관리자 권한은 유지한다. 방 설정을 다시 지정한 경우에만 기존 `isDollTestRoomCommand`와 읽기전용 `buildDollTestRoomRestrictionMessage`가 DEV 정규화 후 복구·자동 저장·요청 기록 전에 차단한다.
+- `/인형전체초기화`는 기존 MASTER만 실행한다. 인덱스·16개 도감·펫의 dollCharm만 제거하며 카탈로그·패스·이용권·포인트·경험치는 보존한다. 18개 파일 원문을 기존 복구 기록에 저장하고 모두 저장된 뒤 복구 표시를 비운다. 대전 중에는 초기화하지 않는다. 인형 전용 2초 대기는 사용자 확정으로 스펙아웃이며 기존 공통 요청 과부하 규칙을 유지한다.
 - 펫무쌍·길드영지·서버대전 진행 중 네 명령을 차단한다. 기존 가입·출석·정지·개인톡 제한은 유지하며 프리미엄·티어 자격 제한을 추가하지 않는다.
 - 프리미엄 기존 날짜별 구독 지급에 이용권 1개를 추가한다. 같은 날짜 재지급과 `/리셋`에 따른 추가 지급은 하지 않는다.
 
 ## Data / Save Flow
 
 - dollCatalog.json: Notion 고정 ID D0001–D1000, 9등급, 0.1cm 정수 크기. 첫 이용 때 검증·캐시하며 DEV도 공통 목록을 읽는다.
+- ver_2.699: `getDollGradeRows`는 활성 `dollCatalogCache`와 동일한 검증 목록만 등급별 원래 순서로 재사용한다. 반환 배열은 매번 복사하여 도감 정렬이 다음 추첨에 영향을 주지 않는다. 다른 목록 객체·비숫자 등급은 기존 엄격 비교 필터로 처리하고, 카탈로그 객체 교체 시 캐시를 다시 만든다. 사용자 기록·확률·난수 호출 순서·소모·보상·저장 경로는 변경하지 않는다.
 - dollRecords_0.json–dollRecords_15.json: 이름 해시로 분리한 도감·최초일·횟수·최대 크기. dollIndex.json: 순위 대표 기록. 회원 파일에 도감 원본을 넣지 않는다.
 - 뽑기 전 회원·펫·인덱스·해당 기록 원문을 dollPending.json에 보관하고, 명령 트랜잭션 안에서 기록→인덱스→펫→회원 순으로 저장한 뒤 복구 표시를 비운다. 중단된 요청은 다음 MAIN에서 이전 원문으로 복구한다.
 - 저장 완료 뒤 전송 실패는 재추첨·재지급·소모 취소를 하지 않는다. Info는 복구 대기 상태를 표시하지 않는다. DEV 사용자 저장 경로는 분리한다.
@@ -7885,8 +8222,12 @@ Status: VERIFIED
 ## Validation
 
 - tools/test_doll_catalog.js: 1,000종 ID·종수·구간·최초 종매 1억.
-- tools/test_doll_content.js: 규칙·도감·순위·UI·실제 저장/롤백·재시작·전송 실패·DEV·프리미엄·삭제·Info 복구 대기·특수 이름 18개 그룹.
+- tools/test_doll_content.js: 규칙·도감·순위·UI·실제 저장/롤백·재시작·전송 실패·DEV·프리미엄·삭제·Info 복구 대기·특수 이름·설치 누락 22개 그룹.
+- tools/test_oct14_ready.js: 초기화 권한·18개 파일 저장 실패·DEV·패스 등록/삭제/지급·중복 지급·기간·일반 5/자동 10회·승리 100/패배 25·알림·통계·포인트 경계·파일 누락/손상·KST 자정·18개 원문 복구·응답/디버그 전송 실패 20개 그룹.
+- tools/test_doll_test_room.js: 실제 MAIN 진입부의 선택적 방 제한과 정식 공개 설정·사용자 역할·DEV·무저장·파일 누락·길드 불일치·다른 명령 9개 그룹.
 - tools/test_doll_rhino.js: UTF-8 Rhino 1.7.15 MAIN/Info 전체 컴파일 및 핵심 규칙 실행.
+- tools/test_oct16_ready.js: 신규 스타터 4종·기존 영수증·중복/손상/저장 실패/DEV·MAIN/Info 정렬·디버그 확률 경계/실제 난수/소모/권한/전송 실패 10개 그룹.
+- tools/test_doll_probability_up.js: 확률·우선순위·UI·소모·저장 단계 실패·중단 복구·DEV·대전 차단·패스 지급/중복/만료/정수 경계·MAIN/Info 가방 설명 10개 그룹. Rhino 테스트도 확률UP 상한·우선순위·소모를 실제 엔진에서 실행한다.
 
 # /인증 · 검색인증 조회 및 초기화
 
@@ -7896,7 +8237,7 @@ Status: VERIFIED
 
 - main.js: /인증 아이디 사유, /검색인증, /인증순위, /관리자순위, /관리자순위초기화, /인증초기화.
 - 기획: 검색인증_수정요청서 및 해당 명령어 권한 수정 (166393bdd7aa832ab86f01a9a57fb0d8), ver_2.624.
-- 등록·미인증 목록은 Admin 신원 권한, 검색어/관리자 순위는 Admin 또는 MASTER 신원 권한, 초기화 2종은 MASTER 신원 권한이다. 모든 방 및 펫무쌍·서버대전·길드영지전 중 허용하며 다른 명령의 방 권한을 확대하지 않는다. 기존 가입·계정정지·일대일 패스 흐름은 유지한다.
+- 등록·미인증 목록은 Admin 신원 권한, 검색어/관리자 순위는 Admin 또는 MASTER 신원 권한, 초기화 2종은 MASTER 신원 권한이다. 모든 방 및 펫무쌍·서버대전 중 허용하며 다른 명령의 방 권한을 확대하지 않는다. 길드영지전 중에는 공통 허용 목록이 우선한다. 기존 가입·계정정지·일대일 패스 흐름은 유지한다.
 - /검색인증은 목록, /인증순위는 검색어 순위로 변경됐다. 이전 관리/순위 명령과 /검색인증 인자 형식은 안내만 출력한다. /가입인증·/가입인증 목록·/인증필요는 기존 목록 별칭·권한을 유지한다.
 
 ## Related Helpers
@@ -7963,3 +8304,116 @@ Status: VERIFIED
 - `/기록삭제`, 조회 명령 뒤 추가 인수, 호츈쿠키 개봉은 새 예외가 아니다. 기존 허용 명령과 별칭을 유지한다.
 - 신규 저장 경로 없이 기록의 `board.json`, 검색인증의 `member.json` 저장·중복 방지와 기존 잠금을 그대로 사용한다.
 - 검증: `tools/test_fortune_cookie.js`의 실제 레이드 진입 및 기존 인증 권한 시나리오, `tools/test_server_raid.js`, `tools/test_member_display_search_auth.js`.
+
+# /인형패스추가 · /인형패스삭제 및 일일 횟수 조정
+
+Status: VERIFIED
+
+- MAIN의 기존 일반 패스 관리자 `호이 남`이 `/인형패스추가, 아이디 YY.MM.DD|영구권`, `/인형패스삭제, 아이디`를 처리한다. ver_2.643부터 인형 전용 방 제한은 해제하며 기존 관리자 권한은 유지한다.
+- ver_2.644 `grantDollPassDailyRewards`는 지급 대상 전체의 이용권·확률UP(20%) 수량과 합산 안전 정수를 먼저 확인한 뒤 기존 일일 지급 경로로 각각 3개를 지급한다. 기존 당일 지급 기록은 재지급하지 않으며 다음 지급일부터 두 보상을 받는다. 두 보상과 지급 날짜는 기존 회원 저장·롤백에 함께 포함한다.
+- `getSupportPassConfigs`의 doll 항목을 통해 패스목록·패키지가방·만료·조회에 연결한다. `grantDollPassDailyRewards`는 유효한 패스에 이용권 3개를 KST 날짜별 1회 지급하며 연장·삭제/재추가 시 지급일을 보존한다. `/자동출첵` 및 기존 `/구독패스지급`이 공통 지급 함수를 사용하고 프리미엄 1개 지급과 별도로 적용한다. 기존 일반 패스의 권한은 확대하지 않는다.
+- `GLOBAL_CONFIG.daily`의 시탑·캐슬·미니펫 콘텐츠 최대와 일퀘 목표는 각각 5회, `autoDailyBonusRuns`는 기존 5회 유지로 자동 진행·완료 판정은 10회다. 승리 EXP 100·패배 EXP 25이며 무료 횟수와 추가 보상 규칙은 유지한다. 기존 진행 카운트는 초기화하거나 낮추지 않는다.
+- 개발 준비 버전: 2.637. 운영 반영 전 노션 완료 속성을 변경하지 않는다.
+
+## 2026-10-14 통합 수정요청서 후속 (ver_2.638)
+
+- 일반 일퀘는 `GLOBAL_CONFIG.daily.questTargets`의 시탑·캐슬·미니펫 5회와 기존 탐험 10회로 판정한다. 콘텐츠 최대 `*Max`는 사용자 정정에 따라 5회이며 자동 추가 5회(총 10회)를 적용한다. Main의 안내·미완료 응답·자동 결과 및 Info의 일퀘·펫정보 표시도 목표 5회 기준이다.
+- `claimQuestReward`는 기존 일반 보상 뒤에 인형 이용권 1개를 추가한다. `dailyQuestCnt`가 이미 완료라면 재지급하지 않으며 기존 회원 저장 흐름을 사용한다.
+- `/인형뽑기`는 이용권 1개로만 실행하며 포인트만으로는 추첨·변경·저장하지 않는다. 중복 판매와 레벨업 포인트는 기존대로 지급한다. 구독 정책은 유지하며 인형 전용 방 제한은 ver_2.643에서 해제한다.
+- `buildTierPromotionSuccessMessage` 일반 응답에서 현재 최종 인형 성공확률·혜택·다음 목표를 구분선으로 안내하며 다음 확률 변화 문구는 제외한다.
+- Main·Info의 `PET_SKILL_MAX_EQUIP_SLOT`은 사용자 롤백 요청에 따라 30, 학개론 최대는 33이다. 친밀도에 따른 슬롯 증가와 프리미엄 +7은 유지한다. 설명은 30/33으로 동기화한다.
+- 레이드 준비 공지·조회에는 준비 마감+30분의 예정 시각을 표시한다. 실제 활성화 시 기존대로 시작+30분을 확정한다. 공지/작업 예외의 로그까지 실패해도 다음 타이머를 예약한다. 이전 회차의 확정 마감·정산·공지 대상은 유지한다.
+- 검증: `tools/test_oct14_followup.js`의 9개 신규 그룹은 4/5회 경계·실제 보상/중복 방지·Info UI·30/33 슬롯·현재 확률·이용권 전용·준비/확정 마감·30분 자동 종료·공지+로그 동시 실패·DEV 분리를 검증한다. 전체 55회 테스트와 Rhino 1.7.15 구문/실행 검증, UTF-8·버전·개발자노트 검증이 통과했다. 기기 업로드·컴파일은 운영자가 수행한다.
+
+## 2026-10-14 하루 진행 한도 정정 (ver_2.639)
+
+- 사용자 확인: 일퀘 완료 조건만이 아니라 시련탑·캐슬대전·미니펫대전의 실제 하루 최대 한도를 10회에서 5회로 줄인다. 이전 노션의 콘텐츠 횟수 유지 문구보다 이번 사용자 확정이 우선한다.
+- Main·Info의 `GLOBAL_CONFIG.daily.trialTowerMax/castleBattleMax/miniPetBattleMax`는 모두 5이며 자동일퀘 추가 5회로 최대 10회까지 진행한다. 일반 5회 이후와 자동 10회 이후에는 기존 제한 흐름으로 차단한다.
+- 기존 진행 카운트가 이미 5/10회를 초과해도 초기화·하향 보정·보상 회수하지 않는다. 시련탑의 기존 운영자 한도 예외, 무료 1회, 리셋권 소모 및 펫탐험 목표 10회는 유지한다.
+- 검증: 실제 콘텐츠 분기의 한도 계산/초과 차단과 무료/리셋권 소모 순서, 4/5·9/10·기존 초과 카운트, 자동 반복 중단, Main·Info 표시를 검증했다. 전체 테스트 55회와 Rhino 1.7.15·문법·UTF-8·버전 검증 통과.
+
+## 2026-10-14 펫스킬 슬롯 기존 정책 복원 (ver_2.640)
+
+- 사용자 요청에 따라 Main·Info 기본 최대 30칸, 학개론 +3칸, 프리미엄 +7칸으로 복원한다. 기본/학개론/프리미엄/둘 다의 최대치는 30/33/37/40칸이며 친밀도 증가 규칙은 유지한다.
+- 기존 장착 데이터는 자동 삭제하지 않는다. 줄어든 한도 이상 장착 상태에서는 기존 장착 제한 흐름으로 추가 장착을 차단한다. 슬롯 설명도 30/33으로 복원한다. 일퀘·콘텐츠 기본 5회와 자동 10회 등 다른 변경은 유지한다.
+- 검증: 슬롯 조합·친밀도/상한·해제·프리미엄, 펫스킬·미니펫·베란다·레이드 관련 6회 테스트 및 Rhino 1.7.15 검증 통과. Main·Info 문법·UTF-8·버전 동기화 확인.
+
+## 2026-10-14 인형 UI 및 가호 안내 (ver_2.641)
+
+- `buildDollDrawMessage` 성공/실패는 닉네임 다음·첫 구분선 전에 티어/성공률을 한 번 표시한다. 결과 위아래 빈 줄, 이용권 차감 후 잔여 수량, 기존 allsee와 명령어 안내는 유지하며 사용액·잔여 포인트 줄은 제거한다. 부족 안내는 기존 출력 그대로 유지한다. 중복 자동 판매 안내·보상은 유지한다.
+- 기본·상세 경험치는 같은 실제 total을 `📊 총 획득 경험치: +Nexp`로 표시하고 기본/티어/가호 항목에 대전과 같은 이모지·콜론·exp를 사용한다. 부분 가호도 실제 추가량/사용량으로 안내하며 계산·저장 흐름은 유지한다.
+- `/호여 숫자` 안내는 현재 승리 EXP 설정(캐슬/미니펫 100)을 참조하며 인형별 기본 EXP·티어 선합산·가호 적용 문구를 추가한다. 실제 아이템 차감/활성 가호 전환과 원래 allsee 위치를 유지한다.
+- 검증: `tools/test_doll_ui_blessing.js` 신규 8개 그룹과 전체 56회 회귀, Rhino 1.7.15·문법·UTF-8·JSON·버전 동기화 및 추첨/EXP/가호 계산 불변 검증 통과.
+
+## 2026-10-14 패스 일퀘/모험가 목표 (ver_2.642)
+
+- Main·Info 일퀘 상태는 마음 주기/정상 인형뽑기/홈알림 1회로 동일하게 조회·판정하고 0/1·1/1로 표시한다. 기존 호이/초보/프리미엄 자격과 일반·주간·프리미엄 보상은 유지한다. 제목·미이용자 안내는 호이패스로 표기한다.
+- `/마음`의 수량 생략/명시 및 직접 마음표현 4종 성공 때 공유 회원 진행도를 홈/활동 저장과 함께 저장한다. 세 저장 단계 실패는 기존 롤백 흐름과 진행도 원복을 사용한다. 본인 대상·오류·자격/한도 차단은 인정하지 않는다. `/퀘스트`와 `/ㅋ`는 같은 조회 분기/판정/UI를 사용하며 별도 안내를 추가하지 않는다. `/인형뽑기`는 성공/실패 모두 실제 이용권 사용 시에만 회원 진행도를 기록하고 기존 복구 사본/회원 저장에 함께 포함한다.
+- 기존 `/일퀘완료`, `ㅎㅎㅎ`, `/ㅇ`, `/ㅇㅇㅇ`, 정리·자동일퀘 등의 `claimQuestReward` 호출 경로는 동일한 새 조건과 수령 표시로 중복 지급을 막는다. 조회/미완료 출력은 보상·주간 누적을 만들지 않는다.
+- 모험가 단계 3·4·5의 공통 `battleResultGoal`은 5이며 목표·NPC 안내·신규 완료 기록도 5판 기준이다. 누적 진행은 보존하고 표시만 5/5로 제한한다. 완료 단계·보상·순서와 콘텐츠 하루 한도 5/자동 10은 유지한다.
+- 검증: `tools/test_quest_conditions_oct14.js` 13개 그룹은 실제 상태·보상·Main/Info 화면, 정상/제한/실패·DEV·반복·저장 실패/복구·리셋, 4/5·초과 진행도와 모험가 실제 완료 명령의 단일 지급을 검증한다.
+- 마음 지급 저장 완료 뒤 응답·디버그 로그가 함께 실패해도 지급/일퀘 진행도를 유지한다. 실제 로드/저장 오류는 기존 원복 경로로 실패하며 숨기지 않는다.
+- 첫 호이패스 문서의 `/퀘스트완료` 언급은 현재 명령 역할 및 명령/별칭 변경 제외 조항을 근거로 `/일퀘완료`의 오기로 해석한다. `/퀘스트완료`는 모험가 전용이며 이름/라우팅을 변경하거나 일일 보상을 함께 지급하지 않는다.
+- 최종 검증: 신규 13개 그룹·전체 57회 테스트와 Rhino 1.7.15, Main/Info 문법·UTF-8·JSON·버전 일치 검사 통과.
+
+
+---
+
+# /인형상자오픈
+
+Status: VERIFIED
+
+## Files
+
+- main.js: GLOBAL_CONFIG.doll.boxes, getDollBoxRequest, applyDollBoxOpen, applyDollAcquisition, buildDollBoxErrorMessage, buildDollBoxMessages.
+- Info.js: generateBagOutput의 동일한 10종 상자 표시.
+
+## Commands and Behavior
+
+- `/인형상자오픈등급 [수량]` (예: `/인형상자오픈고급 10`): 수량 생략 1개, 1회 1~100개, 일일 제한 없음. 등급은 일반·고급·희귀·영웅·전설·신화·초월·창세·창조·엘리트.
+- 기존 공백 명령도 호환한다. MAIN/Info 가방과 결과의 사용법은 붙여 쓴 표기를 사용하며, 기존 저장 키·가방 번호는 보존한다. 기존/새 이름의 재고는 합산하고 기존 이름부터 차감한다.
+- 실행 입력 전체를 검증한다. 0·음수·소수·101개 이상·추가 문구는 개봉하지 않는다. 재고 부족은 일부만 처리하지 않는다.
+- 실제 카탈로그의 같은 등급 안에서 동일 확률로 추첨한다. 상자용 목록을 복사하지 않는다. 엘리트 등급의 실제 데이터가 없으면 상자·가호·포인트·도감 무변경 안내.
+- 일반 뽑기의 성공률·등급 추첨·이용권·확률UP 소모·패스 일퀘 집계를 실행하지 않는다. 가입 등 기존 공통 조건과 대전 차단·명령 잠금은 유지한다.
+- applyDollAcquisition을 일반 뽑기와 공유하여 크기·도감 신규/중복·경험치·티어·가호·레벨업·매력·순위·판매를 동일하게 처리한다. 획득을 순서대로 반영하므로 같은 인형도 첫 신규 이후 중복으로 계산한다.
+- 1개는 기존 획득 화면을 사용하고 비용·잔여를 상자로 표시한다. 다중 개봉은 실제 합계와 전체 획득 목록을 allsee 아래에 표시하며 3,500자 기준으로 누락 없이 분할한다.
+- 기존 초월·창세·창조 전체알림 기준을 유지한다. 기존 1,000종 카탈로그·9등급·일반 뽑기 확률은 그대로다.
+
+## Save Flow
+
+- 별도 저장 파일은 추가하지 않는다. 회원 가방, member_pet.json의 매력, dollIndex.json, 해당 dollRecords_N.json을 기존 인형 저장 트랜잭션에 함께 반영한다.
+- 진입 흐름에서 원문을 읽고 dollPending.json에 복구 기록을 먼저 저장한다. 도감→인덱스→펫→회원→복구 표시 해제 후 결과를 전송한다.
+- 저장 오류는 기존 롤백, 강제 중단은 다음 MAIN 복구 경로를 사용한다. 전송 실패는 이미 완료된 지급·상자 소모를 되돌리지 않는다. DEV는 기존 경로 분리를 유지한다.
+
+## Validation
+
+- tools/test_doll_boxes.js: 전체 입력, 9등급 추첨/보상 동등성, 연속 중복, 크기별 판매, 가호 소진, 100개 결과 분할, 실제 저장/복구/재시도, 엘리트 무차감, 대전 차단, 알림, MAIN/Info 가방.
+- tools/test_doll_rhino.js: 전체 MAIN/Info 컴파일과 기존 뽑기·100개 상자·엘리트 무차감·명령 경계 실행.
+
+---
+
+# 2026-10-19 길드 보상 · 퀘스트14 · 가구 슬롯 · 당근 비용
+
+Status: VERIFIED
+
+## Files and Helpers
+
+- main.js: guildLevelTable, checkGuildLevelUp, buildAdventureQuestMessage, buildAdventureQuestIncompleteMessage, getFurnitureMaxSlots, getFreeMarketCarrotFee, getFreeMarketTradeFeeRate, tradePendantByCarrot, registerPendantFreeMarket.
+
+## Behavior and Save Flow
+
+- 도달 길드 레벨 13·19는 miniPet 창고 30,000·70,000개, 14·20은 petSkillBook 창고 700·1,500개. 보상표 키는 출발 레벨 12·18·13·19다. 기존 길드 저장과 레벨업 지급을 재사용하며 과거 달성 보상을 다시 지급하지 않는다.
+- 모험가 퀘스트14 기본/미완료 안내에 `/홈뱃지큐브 [슬롯] [옵션] [사용횟수]`를 표시한다. 완료 조건·큐브 실행·보상은 유지한다.
+- getFurnitureMaxSlots는 100평까지 기존 규칙, 초과분은 floor((평수-100)/5). 보너스 전 100·104평 21개, 105·109평 22개, 110평 23개, 200평 41개다. 기존 건물주·베란다·프리미엄을 합산하고 현재 평수에서 매번 산출하므로 별도 이전/중복 증가가 없다.
+- GLOBAL_CONFIG.carrotTrade.costs: 일반 1, 미니펫/가구 100, 스킬/펜던트 300. 개인 스킬 거래와 시장 묶음 등록의 수량 배수는 유지한다. 개인 펜던트 마지막 인수는 기존 가방번호다.
+- 자유시장 판매자 수수료 일반 17%·회원권 10%, 목록/현황/안내 동기화. 과거 완료 로그의 실제 수수료율과 등록 취소의 기존 carrotFee 반환액은 보존한다. 기존 회원/펫/가구/스킬/시장 저장 흐름을 사용한다.
+- tools/test_oct19_ready.js와 tools/test_carrot_community_trade.js는 합성 데이터에서 경계·보너스·수수료·이력·취소·거래 저장 실패를 확인한다.
+- ver_2.659 시장·가구 원문 스냅샷을 같은 명령의 저장 롤백에 연결한다. tools/test_oct19_market_flow.js는 거래 5종의 등록/구매/취소·모든 저장 지점 실패·DEV 격리·관리자 취소를 검증한다. tools/test_oct19_lock_rhino.js는 실제 응답 진입부 잠금과 합성 임계구역을 Java 스레드 20쌍으로 검증한다.
+
+- ver_2.659 `/가구가방`의 배치 수·장착 한도 안내를 응답에 연결했다. tools/test_oct19_furniture_flow.js는 기존 목록·분리 상세, 평수 경계, 한도 초과 차단과 스킬·프리미엄 보너스를 실제 장착/가방 분기에서 검증한다.
+
+## ver_2.699 장착 스킬 목록 계산 재사용
+
+- `main.js`·`Info.js`의 `calculateCastleExp`·`calculateRaidExp`는 기존 최초 스킬 확인 위치에서 `getEquippedPetSkillNames`를 한 번 호출한다. 모드 계산의 지역 배열을 하우스 보너스·비티어·티어 매력 함수의 마지막 선택 인자로 전달한다.
+- `getPetHomeFurnitureCharm`·`getEquippedNonTierPetSkillExp`·`getEquippedTierPetSkillExp`는 선택 인자를 생략하면 이전처럼 직접 준비한다. 독립 호출과 매력 계산 순서, 중복 장착의 기존 합산 정책, 별칭, 자료 보정과 조건 검증을 유지한다. 회원 간·명령 간 장착 목록 캐시나 파일 IO는 추가하지 않는다.
+- 검증: `tools/test_calculation_catalog_performance.js`, `tools/test_calculation_catalog_performance_rhino.js`, `tools/calculation_catalog_performance_validation.md`. 전체 소스 범위·결과/상태/예외·실제 Info 응답·인형 난수/지급·DEV·재시작·동시 정렬과 성능을 이전 운영 기준으로 비교한다.

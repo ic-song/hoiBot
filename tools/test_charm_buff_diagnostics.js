@@ -22,10 +22,11 @@ function calculator(filename) {
     const text = fs.readFileSync(path.join(__dirname, "..", filename), "utf8").replace(/\r\n/g, "\n");
     const info = filename === "Info.js";
     const c = {
-        GLOBAL_CONFIG: { petSkill: { miniPetSupportCharmRate: 0.5 } },
+        GLOBAL_CONFIG: { petSkill: { miniPetSupportCharmRate: 0.5 }, petHomeVillage: {materialsPerLevel:10,areaPerLevel:10,royalPercent:10,arcanaPercent:15,dreamSkillName:'느그 집 마련의 꿈',dreamPercent:10} },
         calculateCastleItem: () => 0,
         calculateItemInfoAll: () => ({ raidExp: 0, castleExp: 0 }),
         getHomeTotalExp: () => 0,
+        getFurnitureExp: () => 0,
         getIntimacyExpFromBag: () => 0,
         calculatePetUpgradeCharm: () => 0,
         getPlacedFurnitureCountByGrade: () => 0,
@@ -44,7 +45,7 @@ function calculator(filename) {
     } else {
         vm.runInContext(source.match(/const PET_SKILL_LIST = \[[\s\S]*?\n\];/)[0], c);
     }
-    const names = ["normalizePetSkillName", "initPetSkillUser", "getEquippedPetSkillNames", "hasPetSkill",
+    const names = ["getPetHomeVillageState", "getPetHomeFurnitureCharm", "normalizePetSkillName", "initPetSkillUser", "getEquippedPetSkillNames", "hasPetSkill",
         "getEquippedNonTierPetSkillExp", "getEquippedTierPetSkillExp", "getMiniPetModeCharm",
         "calculateCastleExp", "calculateRaidExp", "calculateTotalExp",
         info ? "isInfoPetSkillCharmConditionActive" : "isPetSkillCharmConditionActive",
@@ -157,7 +158,7 @@ group("all constituent values remain visible even with zero millisecond timings"
     assert.strictEqual(detail.castleBase, 500580);
     assert(detail.rows.every(row => row.ms === 0));
     const out = report(c);
-    for (const text of ["레이드-정령/반지/펜던트/가방", "레이드-펫스킬: 13,500,000", "레이드-홈/가구: 137", "캐슬-친밀도: 200"]) {
+    for (const text of ["레이드-보상매력/반지/펜던트/가방", "레이드-펫스킬: 13,500,000", "레이드-홈/가구: 137", "캐슬-친밀도: 200"]) {
         assert(out.includes(text), out);
     }
     assert(!out.includes("[❌불일치]"));

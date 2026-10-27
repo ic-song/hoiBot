@@ -27,6 +27,6 @@ for(const failure of [false,true]){const out=c.buildTierProgressMessage(max,fail
 for(const field of["canPromote","craftReady"]){const p=plan();p[field]=true;const out=c.buildTierProgressMessage(p,false);assert(out.includes(field==="canPromote"?"승급 준비 완료":"재료 준비 완료"));}
 const missing=plan();missing.quote={available:false};assert(c.buildTierProgressMessage(missing,false).includes("현재 확인할 수 없어요"));assert(!c.buildTierProgressMessage(missing,false).includes("세금 포함"));
 const bonus=plan();bonus.tierTicketPurchaseBonus=100;assert(c.buildTierProgressMessage(bonus,false).includes("→ 총 49,326장 획득"));
-const promoted=c.buildTierPromotionSuccessMessage({}, "합성 남", {newTierName:"보라하트",bonus:10000});assert(promoted.includes("21% 적용"));assert(promoted.includes("21% → 22%"));
+const promoted=c.buildTierPromotionSuccessMessage({}, "합성 남", {newTierName:"보라하트",bonus:10000});assert(promoted.includes("21% 적용"));assert(!promoted.includes("21% → 22%"));assert(promoted.includes("🎯 다음 목표"));
 assert(!c.buildTierPromotionSuccessMessage({}, "합성 남", {newTierName:"호월신",bonus:0}).includes("인형 성공확률 보너스 55% →"));
 console.log("PASS highest, ready/craft, missing quote, bonus tickets, promotion success, shared doll probability");

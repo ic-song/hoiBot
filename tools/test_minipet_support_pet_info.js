@@ -25,6 +25,7 @@ function makeContext(source, isInfo) {
         calculateCastleItem: () => 0,
         calculateItemInfoAll: () => ({ castleExp: 0, raidExp: 0 }),
         getHomeTotalExp: () => 0,
+        getPetHomeFurnitureCharm: () => ({ bonus: 0 }),
         hasPetSkill: () => false,
         getIntimacyExpFromBag: () => 0,
         getEquippedNonTierPetSkillExp: () => 0,
@@ -39,7 +40,7 @@ function makeContext(source, isInfo) {
         checkRank: (_data, _pets, _guild, user) => user,
         getHoiPassPremiumHeader: () => "",
         getMiniPetBattleRank: () => "순위없음",
-        GLOBAL_CONFIG: { daily: { miniPetBattleMax: 15, miniPetBattleFree: 1 } },
+        GLOBAL_CONFIG: { daily: { miniPetBattleMax: 15, miniPetBattleFree: 1, questTargets: { tower: 5, castle: 5, mini: 5 } } },
         allsee: "<ALLSEE>"
     };
     vm.createContext(c);
@@ -94,7 +95,8 @@ Object.assign(c, {
     msg: "/펫정보", sender: "test", data, petData: pets, petSkillData: {}, guildData: {},
     petTitleData: { member: { test: {} } },
     homeDataFile: "home", petExplorePath: "explore", trialTowerPath: "tower", castleBattlePath: "castle",
-    loadJsonFile: () => ({}), initSweetHomeUser: home => home,
+    memberPetPath: "pets", petSkillDataPath: "skills", petTitlePath: "petTitles",
+    loadJsonFile: p => p === "pets" ? pets : p === "petTitles" ? c.petTitleData : ({}), initSweetHomeUser: home => home,
     calculateEffectivePetUpgradeLevel: () => 0, getCritChance: () => 0, getCritMultiplier: () => 1,
     getIntimacyLvFromBag: () => "", getIntimacyUserRank: () => 0, getUserIntimacyInfo: () => ({ exp: 0 }),
     getMemberRank: () => 1, getTitle: () => "", initPetSkillUser: () => ({ equipped: [] }),

@@ -1,0 +1,116 @@
+{
+  "dateKst": "2026-10-22",
+  "branch": "feature/pet-home-village",
+  "base": "6bed097fe1dfdc94c43395b0471217089f63ff71",
+  "developmentVersion": "2.676",
+  "productionReflected": false,
+  "notionItems": [
+    "626393bd-d7aa-83d7-b11f-8169e8dfd05e",
+    "1ca393bd-d7aa-825a-962e-81920d4eaaac"
+  ],
+  "results": [
+    {
+      "file": "tools/test_pet_home_village.js",
+      "exitCode": 0,
+      "passLines": 18
+    },
+    {
+      "file": "tools/test_oct19_furniture_flow.js",
+      "exitCode": 0,
+      "passLines": 4
+    },
+    {
+      "file": "tools/test_charm_buff_diagnostics.js",
+      "exitCode": 0,
+      "passLines": 7
+    },
+    {
+      "file": "tools/test_raid_pet_skills.js",
+      "exitCode": 0,
+      "passLines": 16
+    },
+    {
+      "file": "tools/test_server_raid.js",
+      "exitCode": 0,
+      "passLines": 130
+    },
+    {
+      "file": "tools/test_pet_skill_retirement.js",
+      "exitCode": 0,
+      "passLines": 1
+    },
+    {
+      "file": "tools/test_veranda_command_flow.js",
+      "exitCode": 0,
+      "passLines": 1
+    },
+    {
+      "file": "tools/test_veranda_large_expansion.js",
+      "exitCode": 0,
+      "passLines": 0
+    },
+    {
+      "file": "tools/test_home_badge_cube_edit.js",
+      "exitCode": 0,
+      "passLines": 1
+    },
+    {
+      "file": "tools/test_carrot_confirmation.js",
+      "exitCode": 0,
+      "passLines": 16
+    },
+    {
+      "file": "tools/test_storage_io_reuse.js",
+      "exitCode": 0,
+      "passLines": 22
+    },
+    {
+      "file": "tools/test_filter_data_cleanup.js",
+      "exitCode": 0,
+      "passLines": 15
+    },
+    {
+      "file": "tools/test_reset_menu.js",
+      "exitCode": 0,
+      "passLines": 23
+    },
+    {
+      "file": "tools/test_pet_home_village_rhino.js",
+      "exitCode": 0,
+      "passLines": 3,
+      "javaThreadPairs": 20
+    }
+  ],
+  "syntaxUtf8AndDiff": "PASS",
+  "dataChanges": [
+    "data/hoiBotChangeLog.json"
+  ],
+  "hashes": {
+    "main.js": "e12153ebeb824abf632c2227a1837b82c56c35724543e4e2d3de4f6daca52702",
+    "Info.js": "a879b63969f2a60e9fdc04b19975f09ac4fe459045e07727e796c1f44bc29844",
+    "COMMAND_INDEX.md": "6a2eae8051dd3e67904dfa24362a907b6fdb95acafa3464e8db1a669f438443c",
+    "COMMAND_REGISTRY.md": "963cbfd74fc844e2f8f6f2cb883fa22979c35309d9deb503596200257a0a2090",
+    "tools/test_pet_home_village.js": "a43c574070c6831ae88e5d85df84f107cabc84034d02e0ad2832af092249a9f1",
+    "tools/test_pet_home_village_rhino.js": "ee04730ceccc95d880bc5f29cb0a82a98c9b95d21393d141234753ba45c6b863",
+    "data/hoiBotChangeLog.json": "08c1a0792aedfabbf5a678fabc6d77e3d0eacdfdea034b42e819d1ae4ec07ca5"
+  },
+  "performance": {
+    "environment": "local Rhino 1.7.15 interpreter + actual Java files/fsync, synthetic input; not Android timing",
+    "baseline": "91fc5ba09123a1dd4a7b30097ec502e540f00be1",
+    "beforeCalculationMedianMs": 0.24500000476837158,
+    "afterCalculationMedianMs": 0.25189998745918274,
+    "syntheticAttackResultsEqual": true,
+    "approxAnnexBytesPerRegisteredUser": 91,
+    "normalSelfViewCommentSaves": 0,
+    "normalSelfViewCharmCalculations": 1,
+    "helperFileIo": 0,
+    "warmup": 5,
+    "samples": 10
+  },
+  "limits": [
+    "Android MessengerBot and actual KakaoTalk UI not accessed/tested",
+    "S skill interpreted per user instruction as +10% of final pet-home furniture/skill/village charm, before overall buffs",
+    "No production reflection, no Notion status/date/version changes, no KakaoTalk notification"
+  ],
+  "hashEncoding": "UTF-8 with LF line endings"
+}

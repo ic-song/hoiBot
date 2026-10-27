@@ -42,8 +42,10 @@ let saveCount = 0;
 const replies = [];
 const threadLocal = { value: null, get() { return this.value; }, set(value) { this.value = value; }, remove() { this.value = null; } };
 const context = {
+    room92: "server-admin", testRoom: "test",
     sender: user,
     GLOBAL_CONFIG: {
+        sweetHome: { furniture: { baseFloor: 100, initialFloorStep: 5, additionalFloorStep: 5 } },
         petSkill: { raidSubjugation: {}, largeVerandaItemName: itemName, largeVerandaSkillName: "베란다 대확장", largeVerandaFurnitureSlotBonus: 6, verandaFurnitureSlotBonus: 3, unbindItemName: unbindName },
         supportPass: { premium: { furnitureSlotBonusCount: 0, furnitureBagBaseCount: 100, furnitureBagBonusCount: 0, skillSlotBonus: 0 } },
         diamondTycoon: { skillName: "광산에서 재벌까지" }
@@ -107,6 +109,9 @@ const context = {
     hasEquippedCreationMiniPet: () => false
 };
 vm.createContext(context);
+vm.runInContext("GLOBAL_CONFIG.vaultRobbery = " + source.match(/vaultRobbery: (\{[\s\S]*?\n    \}),/)[1], context);
+vm.runInContext("GLOBAL_CONFIG.manualReset = " + source.match(/manualReset: (\{[\s\S]*?\n    \}),/)[1], context);
+for (const name of ["getManualResetDirectOperation", "getManualResetLegacyEntry", "isManualResetInput", "isManualResetLegacyCommand"]) vm.runInContext(extractFunction(name), context);
 // 실제 정의와 설정을 읽고, 파일 저장·외부 응답만 메모리로 대체한다.
 vm.runInContext("PET_SKILL_LIST = " + source.match(/const PET_SKILL_LIST = (\[[\s\S]*?\n\]);/)[1], context);
 vm.runInContext("PET_SKILL_COMPAT_GROUPS = " + source.match(/const PET_SKILL_COMPAT_GROUPS = (\[[\s\S]*?\n\]);/)[1], context);
@@ -129,7 +134,7 @@ vm.runInContext("GLOBAL_CONFIG.petSkillCollection = " + source.match(/petSkillCo
     "getOpenablePetSkillCountByGrade", "getPetSkillFixedActualRateTotal", "getPetSkillActualRate",
     "formatPetSkillRate", "buildTierPetSkillInfoLine", "buildPetSkillInfoMessage", "pickRandomPetSkill",
     "isPetSkillCharmConditionActive", "getEquippedNonTierPetSkillExp", "getPetSkillCollectionTargetList",
-    "getPetSkillCollectionCount", "normalizePetSkillStoredNames", "isExclusiveDataMutationCommandMessage"
+    "getPetSkillCollectionCount", "normalizePetSkillStoredNames", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage"
 ].forEach(name => vm.runInContext(extractFunction(name), context));
 
 function reset() {
@@ -177,10 +182,11 @@ function calculator(filename) {
     const text = fs.readFileSync(path.join(__dirname, "..", filename), "utf8").replace(/\r\n/g, "\n");
     const info = filename === "Info.js";
     const c = {
-        GLOBAL_CONFIG: { petSkill: { miniPetSupportCharmRate: 0.5 } },
+        GLOBAL_CONFIG: { petSkill: { miniPetSupportCharmRate: 0.5 }, petHomeVillage: {materialsPerLevel:10,areaPerLevel:10,royalPercent:10,arcanaPercent:15,dreamSkillName:'느그 집 마련의 꿈',dreamPercent:10} },
         calculateCastleItem: () => 0,
         calculateItemInfoAll: () => ({ raidExp: 0, castleExp: 0 }),
         getHomeTotalExp: () => 0,
+        getFurnitureExp: () => 0,
         getIntimacyExpFromBag: () => 0,
         calculatePetUpgradeCharm: () => 0,
         getPlacedFurnitureCountByGrade: () => 0,
@@ -199,7 +205,7 @@ function calculator(filename) {
     } else {
         vm.runInContext(source.match(/const PET_SKILL_LIST = \[[\s\S]*?\n\];/)[0], c);
     }
-    const names = ["normalizePetSkillName", "initPetSkillUser", "getEquippedPetSkillNames", "hasPetSkill",
+    const names = ["getPetHomeVillageState", "getPetHomeFurnitureCharm", "normalizePetSkillName", "initPetSkillUser", "getEquippedPetSkillNames", "hasPetSkill",
         "getEquippedNonTierPetSkillExp", "getEquippedTierPetSkillExp", "getMiniPetModeCharm",
         "calculateCastleExp", "calculateRaidExp", "calculateTotalExp",
         info ? "isInfoPetSkillCharmConditionActive" : "isPetSkillCharmConditionActive",
@@ -247,7 +253,7 @@ group("4 skill grades, effects and probability-free information", () => {
 
 group("fixed rates preserved, D remainder and limited draw exclusion", () => {
     assert(Math.abs(context.getPetSkillTotalRate() - 100) < 1e-9);
-    assert(Math.abs(context.getPetSkillFixedActualRateTotal() - 58.6) < 1e-9);
+    assert(Math.abs(context.getPetSkillFixedActualRateTotal() - 59.3) < 1e-9); // 금고털이범은 기존 A등급 고정 확률 0.4% 사용
     for (const [name, rate] of [[names[0], 0.1], [names[1], 0], [names[2], 0.4], [names[3], 0.6]]) {
         assert(Math.abs(context.getPetSkillActualRate(context.getPetSkillData(name)) - rate) < 1e-9);
     }
@@ -256,7 +262,7 @@ group("fixed rates preserved, D remainder and limited draw exclusion", () => {
     let accumulated = 0;
     for (const skill of list) {
         const weight = context.getPetSkillRandomWeight(skill);
-        if (skill.grade === "D") assert(Math.abs(weight - 6.9) < 1e-9);
+        if (skill.grade === "D") assert(Math.abs(weight - (40.7/6)) < 1e-9);
         if (weight > 0) {
             context.drawRoll = (accumulated + weight / 2) / 100;
             vm.runInContext("Math.random = function () { return drawRoll; }", context);

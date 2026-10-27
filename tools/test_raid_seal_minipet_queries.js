@@ -71,9 +71,11 @@ const c = {
     GLOBAL_CONFIG: { pointShop: { limits: { maxSafeNumber: 9007199254740991 } }, permissions: { additionalServerAdminRooms: ["extra"] } }
 };
 vm.createContext(c);
+vm.runInContext("GLOBAL_CONFIG.manualReset = " + source.match(/manualReset: (\{[\s\S]*?\n    \}),/)[1], c);
+for (const name of ["isManualResetInput", "isManualResetLegacyCommand"]) vm.runInContext(fn(name), c);
 vm.runInContext("GLOBAL_CONFIG.raidSealCraft = " + source.match(/raidSealCraft: (\{[\s\S]*?\n    \}),\n    stoneBox/)[1], c);
 for (const name of ["getRaidSealCraftRequest", "craftRaidSealItems", "isPointShopSafeCount", "isPointShopSafeAmount",
-    "getStoneBoxOpenRequest", "isServerRaidMutationCommand", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
+    "getStoneBoxOpenRequest", "isServerRaidMutationCommand", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
     "isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile",
     "isMaster", "sortMiniPetBag", "refreshMiniPetSortIndex", "buildMiniPetBagRenewedMessage", "getMiniPetCollectionData", "getMiniPetCollectionRanking"]) vm.runInContext(fn(name), c);

@@ -68,16 +68,18 @@ const c = {
     GLOBAL_CONFIG: { pointShop: {}, petMusou: {}, petSkill: {}, items: { carrotName: "🥕당근이세요?" }, pet: { evolutionRequiredExp: 600 }, happyFoundation: { transferFeeMin: 0, transferFeeMax: 100 } }
 };
 vm.createContext(c);
+vm.runInContext("GLOBAL_CONFIG.manualReset = " + source.match(/manualReset: (\{[\s\S]*?\n    \}),/)[1], c);
+for (const name of ["isManualResetInput", "isManualResetLegacyCommand"]) vm.runInContext(fn(name), c);
 vm.runInContext("GLOBAL_CONFIG.pointShop = " + source.match(/pointShop: (\{[\s\S]*?\n    \}),\n    guaranteedPackage/)[1], c);
 vm.runInContext("GLOBAL_CONFIG.petSkill.shopDiscounts = " + source.match(/shopDiscounts: (\{[\s\S]*?\n        \})/)[1], c);
-vm.runInContext("GLOBAL_CONFIG.petMusou.ticketEvent = { coupons: " + source.match(/ticketEvent: \{\s*coupons: (\[[\s\S]*?\n            \])/)[1] + " };", c);
+vm.runInContext("GLOBAL_CONFIG.petMusou.ticketEvent = " + source.match(/ticketEvent: (\{\s*coupons: [\s\S]*?\n        \})/)[1] + ";", c);
 for (const name of ["isPointShopSafeAmount", "isPointShopSafeCount", "isPointShopTaxSettlementSafe", "buildTicketEventCouponPurchasePlan", "buildPointShopPurchaseQuote",
     "getPointShopTierTicketBonusCount", "getPointShopTierTicketPurchaseQuantity", "consumeTicketEventCouponPlan", "buildTicketEventCouponUsageMessage", "buildPointShopBuyMessage",
     "hasPoint", "addPoint", "addItem", "applyTax", "ensureHappyFoundationData", "addHappyFoundationLedgerAmount",
     "isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
     "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile"])
     vm.runInContext(fn(name), c);
-const coupons = Array.from(c.GLOBAL_CONFIG.petMusou.ticketEvent.coupons);
+const coupons = Array.from(c.GLOBAL_CONFIG.petMusou.ticketEvent.coupons.concat(c.GLOBAL_CONFIG.petMusou.ticketEvent.legacyCoupons));
 const coupon50 = coupons.find(x => x.rate === 50).name, coupon10 = coupons.find(x => x.rate === 10).name;
 
 // 저장을 포함한 정상·실패 시나리오를 같은 합성 회원에서 시작한다.
@@ -224,7 +226,7 @@ console.log("PASS 10: 티어 최소 구매 견적·구매 안내 삭제·Main/In
 
 // 돌멩이 상자의 실제 등록·구매·오픈 흐름도 동일한 저장 검증 환경에서 실행한다.
 vm.runInContext("GLOBAL_CONFIG.stoneBox = " + source.match(/stoneBox: (\{[\s\S]*?\n    \}),\n    pointShop/)[1], c);
-for (const name of ["syncStoneBoxShopItems", "getStoneBoxOpenRequest", "openStoneBoxItems", "getRaidSealCraftRequest", "isServerRaidMutationCommand", "isExclusiveDataMutationCommandMessage"]) vm.runInContext(fn(name), c);
+for (const name of ["syncStoneBoxShopItems", "getStoneBoxOpenRequest", "openStoneBoxItems", "getRaidSealCraftRequest", "isServerRaidMutationCommand", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage"]) vm.runInContext(fn(name), c);
 c.isSealedVaultMutationCommandMessage = () => false;
 const stone = c.GLOBAL_CONFIG.stoneBox.stoneItemName;
 const smallBox = c.GLOBAL_CONFIG.stoneBox.boxes["1만"].itemName;

@@ -1,0 +1,102 @@
+const assert=require("assert"),fs=require("fs"),path=require("path"),vm=require("vm");
+const main=fs.readFileSync(path.join(__dirname,"..","main.js"),"utf8"),info=fs.readFileSync(path.join(__dirname,"..","Info.js"),"utf8");
+const base=fs.readFileSync(path.join(__dirname,"test_oct14_followup.js"),"utf8").replaceAll("{c,fixture,block,input,draw,cat}","{c,fixture,block,input,draw,cat,install,run}");
+const {c,fixture,block,input,draw,cat,install,run}=new Function("require","__dirname",base+"\nreturn {c,fixture,block,input,draw,cat,install,run};")(require,__dirname);
+let groups=0;function test(name,fn){fixture.reset();fn();console.log("PASS QUEST CONDITIONS "+(++groups)+": "+name);}
+for(const n of ["getDailyQuestStatus","claimQuestReward","buildDailyQuestInfoMessage","getAdventureQuestState","getAdventureQuestStageConfig","getAdventureQuestCompletionCheck","getAdventureQuestGoalLines","completeAdventureQuestStage"])vm.runInContext(block(main,"function "+n+"("),c);
+const realLoad=c.loadJsonFile;c.hasPetSkill=()=>false;c.getAutoDailyBatchContext=()=>null;c.formatDateTime=()=>"2026-10-14 03:00:00";
+function statusSetup(){c.loadJsonFile=()=>({record:{}});c.initPetExploreData=d=>d;c.cleanupInvalidPetExploreUsers=()=>{};c.savePetExploreMigrationIfNeeded=()=>{};c.getPetExploreRank=()=>null;c.hasActiveHoiOrNewbiePass=d=>!!d.base;c.isHoiPassPremiumActive=d=>!!d.premium;}
+function prep(h=0,doll=0,alert=0){const x=input(0,0,0);Object.assign(x.d.member.u,{towerCnt:5,battle:{count:5},exploreCnt:10,passHeartGiveCnt:h,passDollDrawCnt:doll,homeAlertOpenCnt:alert});x.p.u.miniPetBattle={count:5};return x;}
+test("3종 조건 0/1·옛 댓글/피드 미인정·base/premium/미이용 자격 유지",()=>{
+ statusSetup();try{for(const base of [false,true])for(const premium of [false,true])for(const flags of [[0,0,0],[1,0,1],[0,1,1],[1,1,0],[1,1,1],[99,99,99]]){const x=prep(...flags);x.d.base=base;x.d.premium=premium;x.d.member.u.petHomeCommentCnt=99;x.d.member.u.feedPostCnt=99;const before=JSON.stringify(x),s=c.getDailyQuestStatus(x.d,x.p,{},"u");assert.strictEqual(s.passDailyComplete,base&&flags.every(v=>v>=1));assert.strictEqual(s.premiumDailyComplete,premium&&flags.every(v=>v>=1));assert.strictEqual(JSON.stringify(x),before);assert(s.passHeartGiveUsed<=1&&s.passDollDrawUsed<=1&&s.homeAlertOpenUsed<=1);const out=c.buildDailyQuestInfoMessage(x.d,x.p,{},"u");assert(out.includes("【 🐶호이패스 전용 일퀘 조건 】"));assert(!out.includes("펫홈 댓글 달성")&&!out.includes("피드 글 작성"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);}}finally{c.loadJsonFile=realLoad;}
+});
+test("실제 패스 보상·일반/주간과 독립·중복 지급 방지·새 조건만 적용",()=>{
+ statusSetup();try{for(const paid of ["base","premium"]){const x=prep(1,1,1);x.d[paid]=true;x.d.member.u.dailyQuestCnt=1;const r=c.claimQuestReward(x.d,x.p,{}, {},"u");assert(r.claimed);assert.strictEqual(r.passDailyClaimed,paid==="base");assert.strictEqual(r.premiumDailyClaimed,paid==="premium");const before=JSON.stringify(x);assert(!c.claimQuestReward(x.d,x.p,{}, {},"u").claimed);assert.strictEqual(JSON.stringify(x),before);assert(!x.d.member.u.weeklyQuestCnt);}
+ const x=prep(0,0,1);x.d.base=true;Object.assign(x.d.member.u,{dailyQuestCnt:1,petHomeCommentCnt:1,feedPostCnt:1});assert(!c.claimQuestReward(x.d,x.p,{}, {},"u").claimed);
+ }finally{c.loadJsonFile=realLoad;}
+});
+test("Main/Info 조회의 진행도·이용 자격·표시 일치 및 읽기 전용",()=>{
+ statusSetup();const ic={};for(let i=1;i<=100;i++)ic["room"+i]="room"+i;vm.createContext(ic);vm.runInContext(block(info,"const GLOBAL_CONFIG = {").replace("const ","var "),ic);Object.assign(ic,{loadJsonFile:()=>({record:{}}),petExplorePath:"x",initPetExploreData:d=>d,getPetExploreRank:()=>null,hasInfoBasePass:d=>!!d.base,isInfoSupportPassActive:d=>!!d.premium,checkRank:()=>"u",getC:c.getC,allsee:"<ALLSEE>"});for(const n of ["getDailyQuestStatus","buildDailyQuestInfoMessage"])vm.runInContext(block(info,"function "+n+"("),ic);
+ try{for(const member of [false,true]){const x=prep(1,0,1);x.d.base=member;const before=JSON.stringify(x),a=c.getDailyQuestStatus(x.d,x.p,{},"u"),b=ic.getDailyQuestStatus(x.d,x.p,{},"u");for(const f of ["passHeartGiveUsed","passDollDrawUsed","homeAlertOpenUsed","passDailyComplete","premiumDailyComplete"])assert.strictEqual(a[f],b[f]);for(const ctx of [c,ic]){const text=ctx.buildDailyQuestInfoMessage(x.d,x.p,{},"u");assert(text.includes(member?"마음 주기💗(/마음 닉네임)[1/1][✅]":"마음 주기💗(/마음 닉네임)[호이패스 회원전용]"));assert(text.includes(member?"인형뽑기🧸(/인형뽑기)[0/1][❌]":"인형뽑기🧸(/인형뽑기)[호이패스 회원전용]"));}assert.strictEqual(JSON.stringify(x),before);}}finally{c.loadJsonFile=realLoad;}
+});
+test("인형 성공/실패/중복 정상 진행만 기록·이용권 부족/잘못된 입력 무인정",()=>{
+ c.hasActiveHoiOrNewbiePass=()=>false;c.isHoiPassPremiumActive=()=>false;
+ for(const roll of [0,0.999]){install();const rnd=c.Math.random;c.Math.random=()=>roll;try{run();assert.strictEqual(fixture.read().member.u.passDollDrawCnt,1);run();assert.strictEqual(fixture.read().member.u.passDollDrawCnt,1);}finally{c.Math.random=rnd;}}
+ install();const d=fixture.read();d.member.u.bag[c.GLOBAL_CONFIG.doll.ticketName]=0;fixture.write(d);run();assert.strictEqual(fixture.read().member.u.passDollDrawCnt,undefined);run("/인형뽑기 해봐");assert.strictEqual(fixture.read().member.u.passDollDrawCnt,undefined);
+ const x=input(2);draw(x);draw(x);assert.strictEqual(x.d.member.u.passDollDrawCnt,1);
+});
+test("인형 각 저장 실패·DEV·재시도·전송 실패 진행도 보존",()=>{
+ const root="/sdcard/호이랜드/";for(const n of ["dollIndex.json","member_pet.json","member.json","dollRecords_"+c.getDollShard("u")+".json"]){install();fixture.failPath(root+n);assert.throws(()=>run());assert.strictEqual(fixture.read().member.u.passDollDrawCnt,undefined);fixture.failPath("none");run();assert.strictEqual(fixture.read().member.u.passDollDrawCnt,1);}
+ install();install(true);const before=fixture.read();run("/인형뽑기",true);assert.strictEqual(fixture.read(true).member.u.passDollDrawCnt,1);assert.deepStrictEqual(fixture.read(),before);
+ install();fixture.replyFail(true);try{run();}finally{fixture.replyFail(false);}assert.strictEqual(fixture.read().member.u.passDollDrawCnt,1);
+});
+// 실제 마음 명령 분기와 기존 JSON 트랜잭션을 사용하되 외부 도메인 계산은 합성한다.
+const heartAt=main.indexOf('var heartCommandMatch = msg.match('),heartEnd=main.indexOf('                if ',main.indexOf('                    return;',main.indexOf('buildPetHomeHeartAllocationText(heartAllocations)',heartAt)));
+assert(heartAt>0&&heartEnd>heartAt);vm.runInContext("function heartBranch(){"+main.slice(heartAt,heartEnd)+"}",c);
+c.homeDataFile="/sdcard/호이랜드/petSweetHomeData.json";c.petHomeActivityFile="/sdcard/호이랜드/petHomeActivityData.json";
+function heartSetup(){install();const d=fixture.read();d.member.v=JSON.parse(JSON.stringify(d.member.u));fixture.write(d);fixture.put(c.homeDataFile,{u:{},v:{}});fixture.put(c.petHomeActivityFile,{users:{u:{heartUsage:{count:0}},v:{heartUsage:{count:0}}},alerts:{}});Object.assign(c,{hasActiveHoiPassAccess:()=>true,findTargetAtStart:(text,m)=>{const n=Object.keys(m).find(n=>text===n||text.startsWith(n+" "));return{target:n,rest:n?text.slice(n.length).trim():text};},initSweetHomeUser:d=>d,requirePetHomeActivityData:d=>d,getPetHomeTodayText:()=>"20261014",snapshotPetHomeSocialUser:(d,u)=>JSON.parse(JSON.stringify(d.users[u])),restorePetHomeSocialUser:(d,u,s)=>d.users[u]=s,getPetHomeHeartUsageStatus:()=>({remaining:10,limit:10}),getPetHomeAlertList:(d,u)=>d.alerts[u]||[],getPetHomeSocialUser:(d,u)=>d.users[u],applyPetHomeHeartExpressions:(h,n,q)=>{h.heartExpressions={count:q};return[];},addPetHomeBadgeStat:()=>{},addPetHomeHeartAllocationAlerts:()=>{},awardPetHomeAchievementBadges:()=>[],addPetHomeBadgeAwardAlerts:()=>{},buildPetHomeHeartAllocationText:()=>"마음"});}
+function heartRun(msg){const ctx=c.createCommandContext(false,"test"),prev=c.enterCommandContext(ctx);c.beginDataSaveTransaction();c.msg=msg;c.sender="u";c.data=c.loadJsonFile(c.filePath);c.petData=c.loadJsonFile(c.memberPetPath);c.petSkillData={};c.guildData={};try{c.heartBranch();}catch(e){c.rollbackDataSaveTransaction();throw e;}finally{c.endDataSaveTransaction();c.exitCommandContext(prev);}}
+test("정상 마음표현 5종 인정·본인/수량오류/자격/한도 거절",()=>{
+ heartSetup();heartRun("/마음 v");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);
+ for(const name of ["마음","사랑해","귀여워","응원해","멋져요"]){heartSetup();heartRun("/"+name+" v 2");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);}
+ for(const msg of ["/마음","/마음 unknown","/마음 u","/마음 v 0","/마음 v 1 해봐"]){heartSetup();heartRun(msg);assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,undefined);}
+ heartSetup();c.hasActiveHoiPassAccess=()=>false;heartRun("/마음 v");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,undefined);
+ heartSetup();c.getPetHomeHeartUsageStatus=()=>({remaining:0,limit:1});heartRun("/마음 v");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,undefined);
+});
+test("마음 홈/활동/회원 저장 실패 원복·재시도 진행도 1회",()=>{
+ for(const p of [c.homeDataFile,c.petHomeActivityFile,c.filePath]){heartSetup();const before=fixture.read(),write=c.FileStream.write;let fail=true;fixture.failPath(p);c.FileStream.write=(target,text)=>{if(target===p&&fail){fail=false;throw Error("write failure");}return write(target,text);};try{assert.throws(()=>heartRun("/마음 v"),p);}finally{c.FileStream.write=write;}assert.deepStrictEqual(fixture.read(),before);assert.strictEqual(fixture.get(c.homeDataFile).v.heartExpressions,undefined);fixture.failPath("none");heartRun("/마음 v");assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);}
+});
+test("기존 /리셋 구간에서 새 진행도만 초기화·카운트 유지 정책",()=>{
+ const start=main.indexOf('        data.member[user].homeLikeCnt = 0;',main.indexOf('function resetAttendance(')),end=main.indexOf('        data.member[user].towerCnt = 0;',start);vm.runInContext('function resetQuestCounters(data,user){'+main.slice(start,end)+'}',c);const x=prep(1,1,1);x.d.member.u.passDailyQuestCnt=1;c.resetQuestCounters(x.d,"u");assert.strictEqual(x.d.member.u.passHeartGiveCnt,0);assert.strictEqual(x.d.member.u.passDollDrawCnt,0);assert.strictEqual(x.d.member.u.homeAlertOpenCnt,0);
+});
+test("모험가 3~5단계 4/5/초과 경계·진행도5/5·누적/완료 보존",()=>{
+ assert.strictEqual(c.GLOBAL_CONFIG.adventureQuest.battleResultGoal,5);for(const [stage,key] of [[3,"miniBattle"],[4,"castleBattle"],[5,"trialTower"]])for(const count of [0,4,5,9,10,20]){const x=input();const state=c.getAdventureQuestState(x.d,"u",true);state.currentStage=stage;state.progress[key]=count;state.completedStages.push(1,2);const before=JSON.stringify(x),check=c.getAdventureQuestCompletionCheck(x.d,x.p,{}, {},{}, {},"u");assert.strictEqual(check.complete,count>=5);assert(c.getAdventureQuestGoalLines(state,check,false)[0].includes(Math.min(count,5)+"/5회"));assert.strictEqual(state.progress[key],count);assert.strictEqual(JSON.stringify(x),before);const cfg=c.getAdventureQuestStageConfig(stage);assert(cfg.objective.includes("5회"));assert(!cfg.npcStart.includes("10판"));}
+});
+test("실제 일퀘 완료 별칭·미완료 UI·저장 실패 원복·재청구 무지급",()=>{
+ vm.runInContext('function dailyBranch(){'+block(main,'if (msg === "/일퀘완료" || msg === "ㅎㅎㅎ"')+'}',c);c.castleSiegeFlag=false;
+ function seed(done=true){install();const d=fixture.read();d.base=true;Object.assign(d.member.u,{passHeartGiveCnt:done?1:0,passDollDrawCnt:done?1:0,homeAlertOpenCnt:1,dailyQuestCnt:1,towerCnt:5,battle:{count:5},exploreCnt:10});fixture.write(d);const p=fixture.get(c.memberPetPath);p.u.miniPetBattle={count:5};fixture.put(c.memberPetPath,p);c.petExplorePath="/sdcard/호이랜드/petExploreData.json";fixture.put(c.petExplorePath,{record:{}});c.hasActiveHoiOrNewbiePass=d=>!!d.base;c.isHoiPassPremiumActive=()=>false;}
+ function exec(msg){const prev=c.enterCommandContext(c.createCommandContext(false,"test"));c.beginDataSaveTransaction();c.msg=msg;c.sender="u";c.data=c.loadJsonFile(c.filePath);c.petData=c.loadJsonFile(c.memberPetPath);c.guildData={};c.petSkillData={};try{c.dailyBranch();}catch(e){c.rollbackDataSaveTransaction();throw e;}finally{c.endDataSaveTransaction();c.exitCommandContext(prev);}}
+ for(const msg of ["/일퀘완료","ㅎㅎㅎ","/ㅇ","/ㅇㅇㅇ"]){seed();exec(msg);assert.strictEqual(fixture.read().member.u.passDailyQuestCnt,1);const before=fixture.read();exec(msg);assert.deepStrictEqual(fixture.read(),before);}
+ seed(false);const before=fixture.read();fixture.clear();exec("/일퀘완료");assert.deepStrictEqual(fixture.read(),before);const text=fixture.replies().join("\n");assert(text.includes("마음 주기💗(/마음 닉네임)[0/1][❌]"));assert(!text.includes("펫홈 댓글 달성"));
+ seed();const original=fixture.read();fixture.failPath(c.filePath);assert.throws(()=>exec("/일퀘완료"));assert.deepStrictEqual(fixture.read(),original);fixture.failPath("none");exec("/일퀘완료");assert.strictEqual(fixture.read().member.u.passDailyQuestCnt,1);
+});
+test("실제 Info /펫정보 요약/상세 조건·명령어·미이용자 표기",()=>{
+ const source=fs.readFileSync(path.join(__dirname,"test_minipet_support_pet_info.js"),"utf8");const f=new Function("require","__dirname",source+'\nreturn {c,replies,data,pets};')(require,__dirname),ic=f.c;ic.GLOBAL_CONFIG.daily=JSON.parse(JSON.stringify(c.GLOBAL_CONFIG.daily));ic.getC=x=>x?"✅":"❌";
+ for(const paid of [false,true]){ic.hasInfoPrivateChatPass=()=>paid;Object.assign(f.data.member.test,{passHeartGiveCnt:1,passDollDrawCnt:0,homeAlertOpenCnt:1});const before=JSON.stringify(f.data.member.test);f.replies.length=0;ic.runPetInfo();const text=f.replies.join("\n");assert(text.includes(paid?"마음 주기💗(/마음 닉네임)[1/1][✅]":"마음 주기💗(/마음 닉네임)[호이패스 회원전용]"));assert(text.includes(paid?"인형뽑기🧸(/인형뽑기)[0/1][❌]":"인형뽑기🧸(/인형뽑기)[호이패스 회원전용]"));assert(!text.includes("피드 글 작성")&&!text.includes("(/홈알림)(/홈알림)"));assert.strictEqual(JSON.stringify(f.data.member.test),before);}
+});
+test("모험가 실제 완료 명령 5회 수령·다음 단계 재청구 차단·저장 실패 복구",()=>{
+ vm.runInContext(block(main,"function prepareAdventureQuestStage("),c);vm.runInContext('function adventureCompleteBranch(){'+block(main,'if (msg === "/퀘스트완료")')+'}',c);c.buildAdventureQuestCompleteMessage=()=>"완료";c.buildAdventureQuestIncompleteMessage=(_d,_p,_g,_u,check)=>check.remaining;
+ for(const [stage,key] of [[3,"miniBattle"],[4,"castleBattle"],[5,"trialTower"]]){install();let d=c.loadJsonFile(c.filePath);const state=c.getAdventureQuestState(d,"u",true);state.currentStage=stage;state.progress[key]=5;fixture.write(JSON.parse(JSON.stringify(d)));const before=fixture.read();
+  function complete(){const prev=c.enterCommandContext(c.createCommandContext(false,"test"));c.beginDataSaveTransaction();c.msg="/퀘스트완료";c.sender="u";c.data=c.loadJsonFile(c.filePath);c.petData=c.loadJsonFile(c.memberPetPath);c.petSkillData={};c.guildData={};c.adventureQuestState=c.getAdventureQuestState(c.data,"u",false);c.adventureQuestMemberSnapshot=vm.runInContext('JSON.parse(JSON.stringify(data.member.u))',c);c.adventureQuestChanged=false;c.adventureQuestHomeData={};c.adventureQuestHomeInfo={};c.adventureQuestExploreData={};c.adventureQuestActivityData={};try{c.adventureCompleteBranch();}catch(e){c.rollbackDataSaveTransaction();throw e;}finally{c.endDataSaveTransaction();c.exitCommandContext(prev);}}
+  fixture.failPath(c.filePath);assert.throws(complete);assert.deepStrictEqual(fixture.read(),before);fixture.failPath("none");complete();const after=fixture.read();assert.strictEqual(after.member.u.adventureQuest.currentStage,stage+1);assert.strictEqual(after.member.u.bag[c.GLOBAL_CONFIG.items.diamondBoxName],stage*5);complete();assert.deepStrictEqual(fixture.read(),after);
+ }
+});
+test("마음 저장 완료 후 응답/디버그 로그 모두 실패해도 진행도 보존",()=>{
+ heartSetup();const log=c.debuggerLog;c.debuggerLog=()=>{throw Error("log transport");};fixture.replyFail(true);try{heartRun("/마음 v");}finally{fixture.replyFail(false);c.debuggerLog=log;}assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.homeDataFile).v.heartExpressions.count,1);
+});
+test("마음 두 입력과 감정표현 4종은 같은 완료 조건·조회 별칭·기존 UI 공유",()=>{
+ vm.runInContext('function questQuery(){'+block(main,'if (msg === "/퀘스트" || msg === "ㄹㄹㄹ" || msg === "/ㅋ")')+'}',c);
+ for(const command of ["/마음 v","/마음 v 2","/귀여워 v 2","/응원해 v 2","/멋져요 v 2","/사랑해 v 2"]){
+  heartSetup();heartRun(command);assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.petHomeActivityFile).users.u.heartUsage.count,command.endsWith(' 2')?2:1);
+  c.data=c.loadJsonFile(c.filePath);c.data.base=true;c.petData=c.loadJsonFile(c.memberPetPath);const before=JSON.stringify(c.data);const texts=[],replier=c.replier;c.replier={reply:s=>texts.push(s)};c.castleSiegeFlag=false;statusSetup();
+  try{for(const alias of ["/퀘스트","/ㅋ"]){c.msg=alias;c.questQuery();}assert.strictEqual(texts[0],texts[1]);assert(texts[0].includes("마음 주기💗(/마음 닉네임)[1/1][✅]"));assert(!texts[0].includes("/귀여워"));assert.strictEqual(JSON.stringify(c.data),before);}finally{c.replier=replier;c.loadJsonFile=realLoad;}
+ }
+});
+test("5종 모두 잘못된 입력·본인·상대 미이용·발신 미이용·잔여 부족은 무변경",()=>{
+ for(const name of ["마음","귀여워","응원해","멋져요","사랑해"]){
+  for(const tail of [""," unknown 1"," u 1"," v 0"," v -1"," v 1.5"," v abc"," v 1 해봐"]){heartSetup();const before=fixture.read(),home=fixture.get(c.homeDataFile);heartRun('/'+name+tail);assert.deepStrictEqual(fixture.read(),before);assert.deepStrictEqual(fixture.get(c.homeDataFile),home);}
+  for(const reject of ['sender','target','quantity']){heartSetup();const before=fixture.read();if(reject==='quantity')c.getPetHomeHeartUsageStatus=()=>({remaining:1,limit:1});else c.hasActiveHoiPassAccess=(_d,u)=>u!==(reject==='sender'?'u':'v');heartRun('/'+name+' v 2');assert.deepStrictEqual(fixture.read(),before);}
+ }
+});
+test("추가 4종의 각 저장 실패는 홈·활동·회원 진행도 원복하고 재시도 1회 인정",()=>{
+ for(const name of ["귀여워","응원해","멋져요","사랑해"])for(const p of [c.homeDataFile,c.petHomeActivityFile,c.filePath]){
+  heartSetup();const before=fixture.read(),home=fixture.get(c.homeDataFile),activity=fixture.get(c.petHomeActivityFile),write=c.FileStream.write;let fail=true;fixture.failPath(p);c.FileStream.write=(target,text)=>{if(target===p&&fail){fail=false;throw Error('write failure');}return write(target,text);};
+  try{assert.throws(()=>heartRun('/'+name+' v 2'));}finally{c.FileStream.write=write;}assert.deepStrictEqual(fixture.read(),before);assert.deepStrictEqual(fixture.get(c.homeDataFile),home);assert.deepStrictEqual(fixture.get(c.petHomeActivityFile),activity);fixture.failPath('none');heartRun('/'+name+' v 2');assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.petHomeActivityFile).users.u.heartUsage.count,2);
+ }
+});
+test("새 인정 명령 반복·응답 실패에서도 완료는 1회로 유지하고 자동 보상은 없음",()=>{
+ for(const name of ["귀여워","응원해","멋져요","사랑해"]){heartSetup();heartRun('/'+name+' v 1');heartRun('/'+name+' v 1');assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.read().member.u.passDailyQuestCnt,undefined);
+  const logger=c.debuggerLog;c.debuggerLog=()=>{throw Error('log transport');};fixture.replyFail(true);try{heartRun('/'+name+' v 1');}finally{fixture.replyFail(false);c.debuggerLog=logger;}assert.strictEqual(fixture.read().member.u.passHeartGiveCnt,1);assert.strictEqual(fixture.get(c.petHomeActivityFile).users.u.heartUsage.count,3);
+ }
+});
+console.log("Quest conditions "+groups+" groups passed");

@@ -1,0 +1,79 @@
+{
+  "baseline": "48826682e165787c2c1d36b962c2685902c049ef",
+  "environment": "local Rhino 1.7.15 interpreter + real Java UTF-8 reads, synthetic padded files; Info full response excludes external transport/Main callback, not Android timing",
+  "warmup": 5,
+  "samples": 31,
+  "alternatingOrder": true,
+  "rows": [
+    {
+      "scope": "Info full response",
+      "command": "/포인트",
+      "beforeMedianMs": 17.5972,
+      "afterMedianMs": 7.4149,
+      "beforeReads": 7,
+      "afterReads": 3,
+      "beforeReadBytes": 3439867,
+      "afterReadBytes": 1405222
+    },
+    {
+      "scope": "Info full response",
+      "command": "/레벨",
+      "beforeMedianMs": 22.4576,
+      "afterMedianMs": 9.3939,
+      "beforeReads": 6,
+      "afterReads": 2,
+      "beforeReadBytes": 3439854,
+      "afterReadBytes": 1405209
+    },
+    {
+      "scope": "Info full response",
+      "command": "/타이틀목록",
+      "beforeMedianMs": 9.2393,
+      "afterMedianMs": 5.0398,
+      "beforeReads": 6,
+      "afterReads": 3,
+      "beforeReadBytes": 3439854,
+      "afterReadBytes": 1906758
+    },
+    {
+      "scope": "Info full response",
+      "command": "/펫정보",
+      "beforeMedianMs": 11.8413,
+      "afterMedianMs": 10.541,
+      "beforeReads": 10,
+      "afterReads": 9,
+      "beforeReadBytes": 3441089,
+      "afterReadBytes": 2939540
+    },
+    {
+      "scope": "Info full response",
+      "command": "/종합순위",
+      "beforeMedianMs": 12.3303,
+      "afterMedianMs": 8.9196,
+      "beforeReads": 7,
+      "afterReads": 5,
+      "beforeReadBytes": 3441006,
+      "afterReadBytes": 2437992
+    },
+    {
+      "scope": "Main currency load stage only",
+      "command": "/포인트",
+      "beforeMedianMs": 2.6238,
+      "afterMedianMs": 0.0065,
+      "beforeReads": 1,
+      "afterReads": 0,
+      "beforeReadBytes": 500050,
+      "afterReadBytes": 0
+    },
+    {
+      "scope": "Main currency load stage only",
+      "command": "/다이아순위",
+      "beforeMedianMs": 2.1561,
+      "afterMedianMs": 1.8811,
+      "beforeReads": 1,
+      "afterReads": 1,
+      "beforeReadBytes": 500050,
+      "afterReadBytes": 500050
+    }
+  ]
+}

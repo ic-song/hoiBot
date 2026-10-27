@@ -14,6 +14,8 @@ assert(guard.includes("room !== testRoom"));
 assert(guard.includes('msg === "/메인방제한 ON"'));
 assert(guard.includes("isMasterIdentity(sender)"));
 const context = { testRoom: "팻 테스트방", room8: "공성전" };
+context.getCachedMessageFilterWords = () => [];
+context.containsMessageFilterWord = () => false;
 vm.createContext(context);
 vm.runInContext("this.maintenance = ({" + main.slice(configStart, configEnd) + "}).maintenance;", context);
 assert.strictEqual(context.maintenance.testRoomOnly, false);

@@ -3,10 +3,11 @@ const main=fs.readFileSync(path.join(__dirname,"..","main.js"),"utf8");
 const info=fs.readFileSync(path.join(__dirname,"..","Info.js"),"utf8");
 const harness=fs.readFileSync(path.join(__dirname,"test_member_display_search_auth.js"),"utf8");
 const {c,fixture,seed,block}=new Function("require","__dirname",harness.slice(0,harness.indexOf('\npass("'))+"\nreturn {c,fixture,seed,block};")(require,__dirname);
+c.dollCatalogGradeCache=null;
 c.Math=vm.runInContext("Math",c);
 c.COMMON_DATA_FILE_MAP["dollCatalog.json"]=true;
 vm.runInContext(block(main,"const ticketTierData ="),c);
-for(const name of ["getDollRequest","getDollShard","validateDollCatalog","requireDollStore","getDollSuccessPercent","getDollSize","getDollRecordCharm","buildDollRepresentative","compareDollRows","applyDollDraw","dollTitle","buildDollDrawMessage","formatDollAmount","dollCommandFooter","getDollCollectionRows","getDollCollectionCommand","buildDollCollectionMessage","buildDollRankingMessage","buildDollGuideMessage","getDollEmoji","pruneDollDeletedAccounts","roundToTwo","getTierExperienceBonus","normalizeTicketTierName","getTicketTierStage","getLevelRequiredExperience","getAdventureLevelTitle","processAdventureLevelUps","applyAdventureExperienceBooster","addMemberExperienceWithTierBonus","removeItem","formatAdventureExperience"])vm.runInContext(block(main,"function "+name+"("),c);
+for(const name of ["getDollGradeRows","getDollRequest","getDollShard","validateDollCatalog","requireDollStore","getDollSuccessPercent","getDollSize","getDollRecordCharm","buildDollRepresentative","compareDollRows","getDollBoxRequest","applyDollAcquisition","applyDollDraw","dollTitle","buildDollDrawMessage","formatDollAmount","dollCommandFooter","getDollCollectionRows","getDollCollectionCommand","buildDollCollectionMessage","buildDollRankingMessage","buildDollGuideMessage","getDollEmoji","pruneDollDeletedAccounts","resetAllDollRecords","roundToTwo","getTierExperienceBonus","normalizeTicketTierName","getTicketTierStage","getLevelRequiredExperience","getAdventureLevelTitle","processAdventureLevelUps","applyAdventureExperienceBooster","addMemberExperienceWithTierBonus","removeItem","formatAdventureExperience"])vm.runInContext(block(main,"function "+name+"("),c);
 c.getAutoDailyBatchContext=()=>null;c.replyAutoDailyAdventureLevelUps=()=>{};
 c.checkRank=(_d,_p,_g,u)=>u;c.isHoiPassPremiumActive=()=>false;
 const root="/sdcard/호이랜드/",devRoot="/sdcard/호이랜드_dev/";
@@ -34,10 +35,10 @@ test("신규·중복 경험치와 가호·매력·크기 갱신·판매",()=>{
  const message=c.buildDollDrawMessage(x.d,x.p,{},cat,"u",r);assert(message.includes("개인 최고 기록 갱신"));
  x.d.member.u.bag[c.GLOBAL_CONFIG.doll.ticketName]=1;r=draw(x);assert(r.oldMax===1000&&r.length===150);assert.strictEqual(x.s.users.u.catches.D0001.max,1000);assert(!c.buildDollDrawMessage(x.d,x.p,{},cat,"u",r).includes("개인 최고 기록 갱신"));
 });
-test("마지막 이용권·포인트 우선순위·실패·시작 전 부족 무차감",()=>{
+test("마지막 이용권·이용권 전용·실패·시작 전 부족 무차감",()=>{
  const x=input(1,0);let r=draw(x,[0.999]);assert(!r.success&&r.ticket);assert.strictEqual(x.d.member.u.point,0);assert.strictEqual(x.d.member.u.boostercnt,9999);assert(!x.s.users.u);assert(c.buildDollDrawMessage(x.d,x.p,{},cat,"u",r).includes("다음 뽑기부터"));
  const before=JSON.stringify(x);r=draw(x);assert(!r.ok);assert.strictEqual(JSON.stringify(x),before);
- const y=input(0,300000000);r=draw(y,[0.999]);assert(!r.success);assert.strictEqual(y.d.member.u.point,0);
+ const y=input(0,1000000000);r=draw(y,[0.999]);assert(!r.ok);assert.strictEqual(y.d.member.u.point,1000000000);
 });
 test("9등급 경계와 크기 85/14/1·같은 기록 유지",()=>{
  let start=0;
@@ -62,7 +63,7 @@ test("대표 인형·고정ID 동률·공개10등·내100등·미참여",()=>{
  const r=inRealm({id:"id",catches:{D0999:{count:2,max:4800,first:"date"},D1000:{count:1,max:5200,first:"date"}}});assert.strictEqual(c.buildDollRepresentative(cat,r,"u").dollId,"D1000");
 });
 test("가호 부족·레벨업 잔여 포인트·데이터 오류 사전 차단",()=>{
- const x=input(0,1000000000,1);x.d.member.u.exp=c.GLOBAL_CONFIG.level.expBase-1;const r=draw(x);assert.strictEqual(r.experience.boosterResult.usedBooster,1);assert(r.experience.levelUps.length>0);assert.strictEqual(r.remainingPoint,700000000+c.GLOBAL_CONFIG.level.bonusPoint);
+ const x=input(1,0,1);x.d.member.u.exp=c.GLOBAL_CONFIG.level.expBase-1;const r=draw(x);assert.strictEqual(r.experience.boosterResult.usedBooster,1);assert(r.experience.levelUps.length>0);assert.strictEqual(r.remainingPoint,0+c.GLOBAL_CONFIG.level.bonusPoint);
  for(const invalid of[-1,"300000000",NaN]){const y=input();y.d.member.u.point=invalid;assert.throws(()=>draw(y));}
  const corrupt=input();corrupt.p.u.dollCharm="1";assert.throws(()=>draw(corrupt));
 });
@@ -72,9 +73,9 @@ test("계정 삭제 전용 기록 제거·살아 있는 계정 유지·재가입
  const y=input();let r=draw(y);assert.strictEqual(r.record.catches.D0001.count,1);
 });
 test("가이드 확률·비용·경험치·순위·매력와 이모지",()=>{
- const out=c.buildDollGuideMessage();assert(out.includes("3억 자동 사용")&&out.includes("순위")&&out.includes("퍼센트"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);assert.strictEqual(c.getDollEmoji("별빛 기사 호월이⚔️"),"⚔️");assert.strictEqual(c.getDollEmoji("갈색 곰🧸"),"🧸");
+ const out=c.buildDollGuideMessage();assert(out.includes("이용권 1개 사용")&&!out.includes("포인트 사용")&&out.includes("순위")&&out.includes("퍼센트"));assert.strictEqual((out.match(/<ALLSEE>/g)||[]).length,1);assert.strictEqual(c.getDollEmoji("별빛 기사 호월이⚔️"),"⚔️");assert.strictEqual(c.getDollEmoji("갈색 곰🧸"),"🧸");
 });
-const branchStart=main.indexOf("        var dollRequest = getDollRequest(msg);"),branchEnd=main.indexOf('        if (msg === "/펫무쌍준비")',branchStart);
+const branchStart=main.indexOf('        if (msg === "/인형전체초기화")'),branchEnd=main.indexOf('        if (msg === "/펫무쌍준비")',branchStart);
 vm.runInContext("var dollCatalogCache=null;function runDollBranch(){"+main.slice(branchStart,branchEnd)+"}",c);
 vm.runInContext("function recoverDollBranch(){"+block(main,'if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists())')+"}",c);
 vm.runInContext(block(main,"function parseJsonContent("),c);
@@ -88,9 +89,9 @@ function install(dev=false){
  fixture.put(base+"dollCatalog.json",catalog);fixture.put(base+"dollIndex.json",{schemaVersion:1,users:{}});fixture.put(base+"dollPending.json",{pending:null});
  for(let i=0;i<16;i++)fixture.put(base+"dollRecords_"+i+".json",{schemaVersion:1,users:{}});
 }
-function run(command="/인형뽑기",dev=false){
+function run(command="/인형뽑기",dev=false,user="u"){
  fixture.clear();const ctx=c.createCommandContext(dev,"test"),prev=c.enterCommandContext(ctx),original=c.replier;
- c.beginDataSaveTransaction();c.ctx=ctx;c.msg=command;c.sender="u";c.petMusou={active:false};c.territoryLocked=false;c.dollCatalogCache=null;
+ c.beginDataSaveTransaction();c.ctx=ctx;c.msg=command;c.sender=user;c.petMusou={active:false};c.territoryLocked=false;c.dollCatalogCache=null;
  c.replier=c.createContextReplier(original,ctx);
  try{c.recoverDollBranch();c.data=c.loadJsonFile(c.filePath);c.petData=c.loadJsonFile(c.memberPetPath);c.guildData={};c.runDollBranch();}
  catch(e){c.rollbackDataSaveTransaction();throw e;}
@@ -197,5 +198,15 @@ test("복구 목록 전체 검사 후 쓰기·잘못된 경로/JSON 차단",()=>
   install();const before=fixture.read();fixture.put(root+"dollPending.json",{pending:[{name:"member.json",text:JSON.stringify({member:{}})},bad]});
   assert.throws(()=>run("/인형도감"));assert.deepStrictEqual(fixture.read(),before);assert(!fixture.traces().some(t=>t.type==="save"));
  }
+});
+test("운영 백업과 동일한 초기 파일 19개 누락·무저장·설치 후 실행",()=>{
+ vm.runInContext(block(main,"function loadJsonFile(").replace("function loadJsonFile(","function loadDollCatalogActual("),c);
+ const original=c.loadJsonFile;c.loadJsonFile=p=>p===root+"dollCatalog.json"?c.loadDollCatalogActual(p):original(p);
+ try{
+ install();for(const name of ["dollCatalog.json","dollIndex.json","dollPending.json",...Array.from({length:16},(_,i)=>"dollRecords_"+i+".json")])fixture.remove(root+name);
+ const before=fixture.read();for(const msg of ["/인형뽑기","/인형도감"]){assert.throws(()=>run(msg),/인형 고정 목록 파일 누락.*19개/);assert.deepStrictEqual(fixture.read(),before);assert(!fixture.traces().some(t=>t.type==="save"));}
+ install();assert(run("/인형도감").includes("인형도감"));const random=c.Math.random;c.Math.random=()=>0;
+ try{assert(run().includes("신규 등록"));}finally{c.Math.random=random;}
+ }finally{c.loadJsonFile=original;}
 });
 console.log("인형 규칙·UI·실제 저장 "+groups+"개 그룹 통과");

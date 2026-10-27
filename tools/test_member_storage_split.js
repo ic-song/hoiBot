@@ -18,7 +18,7 @@ const reads = [];
 let recoveries = 0, groups = 0;
 c.java.io.File.prototype.getName = function () { return this.path.split("/").pop(); };
 c.java.io.File.prototype.lastModified = () => fixture.now();
-c.java.lang = { String: function (v) { this.getBytes = () => Buffer.from(String(v), "utf8"); } };
+c.java.lang.String = function (v) { this.getBytes = () => Buffer.from(String(v), "utf8"); };
 c.formatDateTime = d => d.toISOString();
 c.MANAGED_BACKUP_SECONDARY_ROTATION_MS = 60000;
 c.parseJsonContent = text => vm.runInContext("JSON.parse(" + JSON.stringify(text) + ")", c);
@@ -29,10 +29,13 @@ c.FileStream.read = p => { reads.push(p); return fixture.disk()[p]; };
 c.FileStream.write = (p, text) => { fixture.disk()[p] = text; };
 vm.runInContext(block(main, "const MEMBER_STORAGE_SPLIT_CONFIG = {") + ";this.MEMBER_STORAGE_SPLIT_CONFIG=MEMBER_STORAGE_SPLIT_CONFIG;var memberSplitBackupCache={};", c);
 const helpers = ["getMemberSplitMarker", "getMemberSplitStorePath", "getMemberSplitBackupPath", "requireMemberSplitStore", "readMemberSplitStore",
-    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "writeMemberSplitSlot",
+    "readPublishedMemberSplitStore", "buildMemberSplitRaidSummary", "buildMemberSplitPublicationRecovery", "recoverMemberSplitPublication", "attachMemberSplitStores", "prepareMemberSplitResidualLogRecovery", "buildMemberSplitSavePlan", "stringifyMemberSplitStore", "writeMemberSplitSlot",
     "preserveMemberSplitBackupStores", "getMemberSplitByteLength", "createMemberSplitMigrationStores", "verifyMemberSplitMigrationSource", "completeMemberSplitMigration",
     "isProtectedManagedJsonPath", "parseManagedJsonContent", "loadJsonFile", "appendPetMusouAutomationLog", "appendGuildTerritoryAutomationDataLog", "appendTerritoryPassAuditLog", "appendTerritoryPassPayoutLogs"];
-for (const name of helpers) vm.runInContext(block(main, "function " + name + "("), c);
+for (const name of helpers) { // 구 기준 소스를 주입하는 I/O 비교도 같은 하니스를 사용한다.
+    if (name === "stringifyMemberSplitStore" && !main.includes("function " + name + "(")) continue;
+    vm.runInContext(block(main, "function " + name + "("), c);
+}
 const key = c.MEMBER_STORAGE_SPLIT_CONFIG.key;
 const raw = (dev = false) => fixture.read(dev);
 const load = (mode, dev = false) => {
@@ -374,24 +377,25 @@ group("분리 백업 회전 실패도 저장 중단·원본과 백업 세트 복
 // 기존 긴 정리 명령도 실제 분기로 실행하여 비열거 로그·얇은 회원 저장과의 호환을 확인한다.
 function prepareCleanupBody() {
     const cleanupBlock = block(main, 'if (msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender)))');
-    for (const name of ["collectDeletedAccountNames", "cleanupDeletedAccountResiduals", "removeDeletedAccountBoardRows", "initPetHomeCommentsData", "requirePetHomeActivityData", "ensureFreeMarketData", "ensurePunchRankData"])
+    for (const name of ["collectDeletedAccountNames", "cleanupDeletedAccountResiduals", "removeDeletedAccountBoardRows", "initPetHomeCommentsData", "requirePetHomeActivityData", "ensureFreeMarketData", "ensurePunchRankData", "requireMiniPetRobberyStore", "getMiniPetRobberyRows", "validateMiniPetRobberyPending", "buildMiniPetRobberyMigration", "isSearchAuthenticationCount"])
         vm.runInContext(block(main, "function " + name + "("), c);
     for (const match of cleanupBlock.matchAll(/(?:loadJsonFile\(|saveJsonFile\(\w+,\s*)(\w+)\)/g)) {
         if (!c[match[1]]) c[match[1]] = root + match[1] + ".json";
         if (!Object.hasOwn(fixture.disk(), c[match[1]])) fixture.disk()[c[match[1]]] = JSON.stringify({ member: {}, user: {}, users: {}, alerts: {}, recentVisitors: {}, petHomeSocial: {} });
     }
     c.petHomePlacedFurniturePath = root + "not-separated-furniture.json";
+    delete fixture.disk()[c.petHomePlacedFurniturePath];
     c.formatPointValue = String;
-    vm.runInContext("function runCleanupBody(data,petData,petSkillData,guildData,currencyLogData,memberStorageMigrationResult){" + cleanupBlock + "}", c);
+    vm.runInContext("function runCleanupBody(data,petData,petSkillData,guildData,currencyLogData,memberStorageMigrationResult){beginDataSaveTransaction();try{" + cleanupBlock + "}catch(error){rollbackDataSaveTransaction();throw error;}finally{endDataSaveTransaction();}}", c);
 }
 group("실제 기존 정리 본문과 완료 UI도 분리 회원·로그를 정상 저장", () => {
     migrate(); prepareCleanupBody(); const d = load(); d.member.a.point = 12.7; d.member.a.bag["영지자동공격권⚔️"] = 3;
     c.sender = "admin"; c.msg = "/데이터정리";
     c.runCleanupBody(d, loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }));
-    assert.equal(raw().member.a.point, 12); assert(!raw().member.a.bag["영지자동공격권⚔️"]); assert(raw().serverRaid.storageSummary);
+    assert.equal(raw().member.a.point, 12); assert.equal(raw().member.a.bag["영지자동공격권⚔️"], 3); assert(raw().serverRaid.storageSummary);
     assert.equal(store("logs").data.petMusouAutomationLogs.length, 1);
     const output = fixture.traces().filter(t => t.type === "reply").at(-1).text;
-    assert(output.includes("회원 파일 분리")); assert(output.includes("[9] 회원 목록 외 잔여 데이터 정리"));
+    assert(output.includes("회원 파일 분리")); assert(output.includes("[4] 회원 목록 외 잔여 데이터 정리")); assert(!output.includes("잘못 지급된 영지자동공격"));
 });
 function loadFile(p) { return c.loadJsonFile(p); }
 group("이후 기존 정리 저장 실패로 완료된 마이그레이션이 취소되지 않음", () => {
@@ -400,5 +404,41 @@ group("이후 기존 정리 저장 실패로 완료된 마이그레이션이 취
     try { assert.throws(() => c.runCleanupBody(d, loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }))); }
     finally { c.endDataSaveTransaction(); }
     assert.deepStrictEqual(raw(), before); assert.equal(load("raid").serverRaid.history.length, 1); assert.equal(raw().migrations[key].phase, "COMPLETE");
+});
+group("가방 숫자 0만 제거·보유 재화/구독 보존·재실행 0건", () => {
+    migrate(); prepareCleanupBody(); const d = load();
+    d.member.a.bag = native({ "빈이용권": 0, "빈확률UP": 0, "보유이용권": 3, "캐슬공격권⚔": 0, "영지공격권⚔": 2 });
+    d.member.admin.bag = native({ "빈가방항목": 0, "정수상한": 9007199254740991, "소수": 0.5 });
+    d.member.a.pass = native({ doll: { enabled: true, permanent: true, dailyRewardLastDate: "20261014" } });
+    const passBefore = clone(d.member.a.pass);
+    c.sender = "admin"; c.msg = "/데이터정리";
+    const execute = data => c.runCleanupBody(data, loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }));
+    execute(d);
+    assert.deepStrictEqual(raw().member.a.bag, { "보유이용권": 3, "영지공격권⚔": 2 });
+    assert.deepStrictEqual(raw().member.admin.bag, { "정수상한": 9007199254740991, "소수": 0.5 });
+    assert.deepStrictEqual(raw().member.a.pass, passBefore);
+    assert(fixture.traces().filter(t => t.type === "reply").at(-1).text.includes("가방 수량 0 항목 삭제 : 4개 / 2명"));
+    execute(load());
+    assert(fixture.traces().filter(t => t.type === "reply").at(-1).text.includes("가방 수량 0 항목 삭제 : 0개 / 0명"));
+});
+group("가방 0 항목 정리는 DEV만 저장·이후 저장 실패 시 원상복구", () => {
+    migrate(); prepareCleanupBody(); const d = load(); d.member.a.bag.zero = 0; save(d);
+    const before = clone(raw()); c.sender = "admin"; c.msg = "/데이터정리";
+    c.beginDataSaveTransaction(); fixture.fail((_d, p) => p === c.memberPetPath);
+    try { assert.throws(() => c.runCleanupBody(load(), loadFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }))); }
+    finally { c.endDataSaveTransaction(); fixture.fail(() => false); }
+    assert.deepStrictEqual(raw(), before);
+    migrate(true);
+    for (const [p, text] of Object.entries(fixture.disk())) {
+        if (p.startsWith(root) && !Object.hasOwn(fixture.disk(), devRoot + p.slice(root.length))) fixture.disk()[devRoot + p.slice(root.length)] = text;
+    }
+    const prev = c.enterCommandContext(c.createCommandContext(true, "test"));
+    try {
+        const dev = c.loadJsonFile(memberPath); dev.member.a.bag.zero = 0;
+        c.saveJsonFile(dev, memberPath);
+        c.runCleanupBody(c.loadJsonFile(memberPath), c.loadJsonFile(c.memberPetPath), native({}), native({}), native({}), native({ changed: false }));
+        assert(!Object.hasOwn(raw(true).member.a.bag, "zero"));
+        assert.deepStrictEqual(raw(), before);
+    } finally { c.exitCommandContext(prev); }
 });
 console.log("PASS: " + groups + " member storage split groups (synthetic data only)");

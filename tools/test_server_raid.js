@@ -73,9 +73,15 @@ const c = {
     } },
     loadJsonFile(p) { traces.push({ type: "load", path: p }); return vm.runInContext("JSON.parse(" + JSON.stringify(disk[c.resolveActiveDataPath(p)]) + ")", c); },
     serverRaidWorkTimers: {},
+    serverRaidNoticeWorkers: {},
+    serverRaidNoticeMemberRevisions: {},
     setTimeout(fn, delay) { const id = ++nextTimer; timers.set(id, { fn, at: now + delay }); return id; },
     clearTimeout(id) { timers.delete(id); }
 };
+c.java.lang = { Runnable: function (r) { return r; }, Thread: function (r) { this.setDaemon = () => {}; this.start = () => r.run(); } };
+const filterSharedProperties = new Map();
+c.java.lang.System = { getProperty: k => filterSharedProperties.has(k) ? filterSharedProperties.get(k) : null, setProperty(k,v) { filterSharedProperties.set(k,String(v)); } };
+c.messageFilterCaches = { PROD: { words: [], text: "[]" }, DEV: { words: [], text: "[]" } };
 for (let i = 1; i <= 100; i++) c["room" + i] = "room" + i;
 c.testRoom = "test";
 vm.createContext(c);
@@ -83,10 +89,15 @@ vm.runInContext(main.match(/^const HoiBotVersion = "[^"]+";/m)[0] + ";this.HoiBo
 vm.runInContext(block(main, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", c);
 const ticketConfig = clone(c.GLOBAL_CONFIG.serverRaid); // 신규 기준 검증과 기존 108개 회귀 기준을 분리
 for (const name of ["isDevCommandMessage", "stripDevCommandPrefix", "createCommandContext", "getCurrentContext", "enterCommandContext", "exitCommandContext", "getDataFileName", "resolveActiveDataPath",
-    "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile",
-    "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
+    "getDataSaveTransaction", "beginDataSaveTransaction", "endDataSaveTransaction", "prepareManagedJsonTransactionEntry", "rollbackDataSaveTransaction", "writeVerifiedJsonFile", "saveJsonFile", "writeMemberSplitSlot", "parseJsonContent",
+    "requireAdventureRecordStore", "buildAdventureRecordMigration", "attachAdventureRecordStore", "getAdventureRecordRecoveryNames", "validateAdventureRecordPending", "recoverAdventureRecordPending",
+    "isOrderLogRoomBot", "isMaster", "isMasterIdentity", "isAttendanceGameCommand", "isAdventurePetNameInputCandidate", "isAdventureReferralInputCandidate", "getWorldNewsDraftKey", "normalizeHoiServerLabel", "noticeMsg", "isAutoDailyEntryCommandMessage", "isCarrotTradeEntryMessage", "getCarrotTradeReply", "isExclusiveDataMutationCommandMessage", "getResponseDataFlowLock",
     "getCappedUpgradeForCrit", "getCritChance", "calculateCritChance", "getCritMultiplier", "calculateCriticalDamage", "isPointShopSafeAmount", "isPointShopSafeCount"]) vm.runInContext(block(main, "function " + name + "("), c);
 vm.runInContext(main.slice(main.indexOf("function serverRaidHeader("), main.indexOf("// 길드 영지전 관련 함수들")), c);
+const filterHelpers = ["readMessageFilterWords", "setMessageFilterCache", "getCachedMessageFilterWords", "getMessageFilterRequest", "containsMessageFilterWord", "isMessageFilterCommandInput", "changeMessageFilterWords"];
+for (const name of ["isManualResetRoom", "getManualResetSessionKey", "getManualResetDirectOperation", "getManualResetLegacyEntry", "isManualResetLegacyCommand", "isManualResetInput", "isManualResetEntryAllowed", "advanceManualResetSession", "resetAllPetHomeContent"]) if (main.includes("function " + name + "(")) vm.runInContext(block(main, "function " + name + "("), c);
+c.manualResetSessions = {};
+for(const name of filterHelpers) if(main.includes("function "+name+"(")) vm.runInContext(block(main,"function "+name+"("),c);
 const entryStart = main.indexOf("// 서버 레이드대전 진입:");
 const entryEnd = main.indexOf('if (ctx.isDev && msg === "/데이터백업")', entryStart);
 vm.runInContext("function runEntry(){" + main.slice(entryStart, entryEnd) + "}", c);
@@ -94,6 +105,8 @@ const responseStart = main.indexOf("function response(room, msg, sender, isGroup
 const responseEnd = main.indexOf("///////////////////////////////////////////////////////////////////////////////////////////////", responseStart);
 assert(responseStart >= 0 && responseEnd > responseStart);
 vm.runInContext(main.slice(responseStart, responseEnd), c);
+for (const name of ["isGuildTerritoryRiftControlCommandMessage", "isGuildTerritoryWarCommandLockActive", "isGuildTerritoryAllowedDuringWarCommand", "isGuildTerritoryBlockedDuringWarCommand"]) vm.runInContext(block(main, "function " + name + "("), c);
+for(const name of ["getDollBoxRequest","getDollRequest","isDollTestRoomCommand","buildDollTestRoomRestrictionMessage"]) vm.runInContext(block(main,"function "+name+"("),c);
 vm.runInContext(block(main, "function createContextReplier("), c);
 vm.runInContext(block(main, "function formatNicknameRankMessage("), c);
 vm.runInContext("function runTicketMove(){" + block(main, 'if (msg === "/서버변경" ||') + "}", c);
@@ -101,16 +114,21 @@ vm.runInContext("function runAdminMove(){" + block(main, "if (/^\\/서버이동\
 const infoContext = { allsee: "<ALLSEE>", numberWithCommas: c.numberWithCommas, checkRank: c.checkRank, java: c.java, DATA_ROOT_PATH: root, resolveActiveDataPath: p => c.resolveActiveDataPath(p) };
 vm.createContext(infoContext);
 vm.runInContext(block(info, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", infoContext);
+infoContext.messageFilterCaches = { PROD: { words: [], text: "[]" }, DEV: { words: [], text: "[]" } };
+for(const name of filterHelpers.slice(0,5)) if(info.includes("function "+name+"(")) vm.runInContext(block(info,"function "+name+"("),infoContext);
 for (const name of ["normalizeInfoServerLabel", "normalizeRankServerName", "isInfoServerRaidLocked", "isInfoServerRaidAdditionalCommand", "formatInfoServerRaidServer", "buildServerRankingRows", "formatOverallRankPosition", "formatRankNickname", "formatOverallUserRow", "formatOverallServerRow", "buildCombinedServerRankingMessage", "buildStandaloneServerRankingMessage"])
     vm.runInContext(block(info, "function " + name + "("), infoContext);
 
 function reset() {
+    c.manualResetSessions = {};
+    filterSharedProperties.clear();
+    c.messageFilterCaches = { PROD: { words: [], text: "[]" }, DEV: { words: [], text: "[]" } };
     c.GLOBAL_CONFIG.serverRaid.limits.ticketAttacks = ticketMode ? 5 : 0; // 저장된 이전 회차의 추가 공격 5회 정책을 회귀 검증
     c.GLOBAL_CONFIG.serverRaid.penalties = clone(ticketMode ? ticketConfig.penalties : { chargeFromAttempt: 2, pointCost: 50000000 });
     c.GLOBAL_CONFIG.serverRaid.rewards.handicapRanks = clone(ticketMode ? ticketConfig.rewards.handicapRanks : []);
     now = Date.parse("2026-10-05T12:00:00Z"); timers = new Map(); nextTimer = 0; uuid = 0;
     disk = {}; traces = []; replies = []; failWrite = null; failNotice = null; replyFailure = false;
-    c.serverRaidWorkTimers = {}; c.dataSaveTransactionThreadLocal.remove(); c.commandContextThreadLocal.remove();
+    c.serverRaidWorkTimers = {}; c.serverRaidNoticeWorkers = {}; c.dataSaveTransactionThreadLocal.remove(); c.commandContextThreadLocal.remove();
     c.worldNewsDraftState = {};
     c.exploreInterval = false;
     const member = {}, pets = {};
@@ -361,7 +379,9 @@ group("공지 일부 실패는 완료 방 재발송 없이 미완료만 재시�
     const sent = traces.filter(t => t.type === "notice" && t.room === "room1" && t.text.includes("이번 대전 우승")).length; assert.strictEqual(sent, 1);
     failNotice = null; tick(2000); assert.strictEqual(traces.filter(t => t.type === "notice" && t.room === "room1" && t.text.includes("이번 대전 우승")).length, 1);
     assert.strictEqual(read().member.a.point, d.member.a.point); assert.deepStrictEqual(read().serverRaid.wins, d.serverRaid.wins);
-    const end1 = traces.findIndex(t => t.type === "notice" && t.text.includes("항복이다")); const firstPay = traces.findIndex(t => t.type === "save" && t.data.member.a.point === 1300003000); assert(end1 < firstPay);
+    const end1 = traces.findIndex(t => t.type === "notice" && t.room === "room1" && t.text.includes("항복이다"));
+    const result1 = traces.findIndex(t => t.type === "notice" && t.room === "room1" && t.text.includes("이번 대전 우승"));
+    assert(end1 >= 0 && end1 < result1); // 정산은 전송과 독립적으로 완료하되 방별 종료→결과 순서는 보존
 });
 group("전체 초기화 권한·옛 작업 세대 차단·일반 재화와 가방 보존", () => {
     start(); attack(); run("/서버대전종료", "master"); const stale = [...timers.values()][0].fn; const before = disk[memberPath];
@@ -431,7 +451,7 @@ group("참가자 1,000명 정산 저장은 인원수만큼 반복하지 않음",
     }
     write(d); run("/서버대전종료", "master"); traces = []; tick();
     const saves = traces.filter(t => t.type === "save" && t.path === memberPath);
-    assert.strictEqual(saves.length, 28); // 지급 1 + 완료 1 + 신규 일반방을 포함한 공지 13방에 공지 2회
+    assert.strictEqual(saves.length, 3); // 지급 1 + 완료 1 + 13방 종료·결과 공지 상태를 묶어서 확정 1
     assert.strictEqual(read().member["synthetic-999"].point, 300000000); assert.strictEqual(read().serverRaid.completed, 1);
     assert.strictEqual(read().member["synthetic-999"].serverRaidAccount.total.participations, 1);
 });
@@ -582,21 +602,21 @@ group("실제 7인수 response 전체 콜백·DEV 헤더·잠금/컨텍스트 �
 });
 
 group("실제 레이드 계산·인장·홈/길드 큐브·레벨·퀘스트 합산과 Info 일치·종합매력 미사용", () => {
-    const names = ["calculateRaidExp", "getPetModeCharmPercent", "getAdventurePromotionCounts", "getAdventureLevelCharmPercent", "applyPercentWithExactFloor",
+    const names = ["getPetHomeVillageState", "getPetHomeFurnitureCharm", "calculateRaidExp", "getPetModeCharmPercent", "getAdventurePromotionCounts", "getAdventureLevelCharmPercent", "applyPercentWithExactFloor",
         "getHomeBadgeCubeStore", "normalizeHomeBadgeCubeEquippedBadgeIds", "getHomeBadgeCubeRecord", "getHomeBadgeCubeOptionConfig",
         "isHomeBadgeCubeTotalBuffActive", "isHomeBadgeCubeOptionAppliedInSlot", "getHomeBadgeCubeSlotOptionPercent", "getHomeBadgeCubeActiveOptionPercent", "calculateEffectivePetUpgradeLevel",
-        "calculateItemInfoAll", "calculateItemInfo", "getMyGuildId", "getGuildContributionCubeOptionByKey", "getGuildContributionCubeData", "getGuildContributionCubeMemberPercent"];
+        "getSpiritOpenedCharm", "requireSpiritRetirementCount", "calculateItemInfoAll", "calculateItemInfo", "getMyGuildId", "getGuildContributionCubeOptionByKey", "getGuildContributionCubeData", "getGuildContributionCubeMemberPercent"];
     const itemConfig = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "data", "itemInfo.json"), "utf8"));
     const stubs = { raidSpecialItem: itemConfig.raidSpecialItem, calculatePendantItemInfo: () => ({ battleExp: 0, castleExp: 0, raidExp: 0 }), getMiniPetModeCharm: () => 0, getHomeTotalExp: () => 0,
-        getEquippedNonTierPetSkillExp: () => 0, getEquippedTierPetSkillExp: () => 0, hasPetSkill: () => false,
+        getEquippedNonTierPetSkillExp: () => 0, getEquippedTierPetSkillExp: () => 0, hasPetSkill: () => false, getEquippedPetSkillNames: () => [], getFurnitureExp: () => 0,
         isHoiPassPremiumActive: () => false,
         calculateTotalExp: () => { throw Error("종합매력을 공격에 사용하면 안 됨"); } };
     const originals = new Map([...names, ...Object.keys(stubs)].map(name => [name, c[name]]));
     const comparison = { ...stubs, calculatePendantItemInfoForInfo: stubs.calculatePendantItemInfo, numberWithCommas: c.numberWithCommas, isInfoSupportPassActive: () => false };
     vm.createContext(comparison);
     vm.runInContext(block(info, "const GLOBAL_CONFIG = {") + ";this.GLOBAL_CONFIG=GLOBAL_CONFIG;", comparison);
-    for (const name of ["calculateRaidExp", "getInfoAdventureLevelSummary", "applyInfoPercentWithExactFloor", "getInfoHomeBadgeCubeEquippedBadgeIds", "getInfoHomeBadgeCubeSlotOptionPercent", "getHomeBadgeCubeActiveOptionPercent",
-        "calculateItemInfoAll", "calculateItemInfo", "getMyGuildId", "getGuildContributionCubeMemberPercent"])
+    for (const name of ["getPetHomeVillageState", "getPetHomeFurnitureCharm", "calculateRaidExp", "getInfoAdventureLevelSummary", "applyInfoPercentWithExactFloor", "getInfoHomeBadgeCubeEquippedBadgeIds", "getInfoHomeBadgeCubeSlotOptionPercent", "getHomeBadgeCubeActiveOptionPercent",
+        "getSpiritOpenedCharm", "requireSpiritRetirementCount", "calculateItemInfoAll", "calculateItemInfo", "getMyGuildId", "getGuildContributionCubeMemberPercent"])
         vm.runInContext(block(info, "function " + name + "("), comparison);
     try {
         Object.assign(c, stubs);
@@ -1095,7 +1115,9 @@ group("실제 7인수 콜백 일반/관리자 명령·단축 명령 차단은 �
             const begin = info.indexOf("var plainCommands ="), guardEnd = info.indexOf("if (data && data.member", begin);
             assert(begin > 0 && guardEnd > begin);
             infoContext.msg = "/미니펫정보"; infoContext.room = "room1"; infoContext.sender = "a";
-            infoContext.filePath = memberPath; infoContext.loadJsonFile = () => read();
+            infoContext.filePath = memberPath; infoContext.guildPath = c.guildPath; infoContext.ctx = { isDev: false };
+            infoContext.loadJsonFile = p => p === c.guildPath ? { guilds: {} } : read();
+            vm.runInContext(block(info, "function isInfoCommandBlockedDuringGuildTerritoryWar("), infoContext);
             vm.runInContext("function probeInfoEntry(){" + info.slice(begin, guardEnd) + "throw Error('잠금 이후 분기 실행');}", infoContext);
             vm.runInContext("probeInfoEntry()", infoContext); assert.strictEqual(disk[memberPath], before);
         }
@@ -1419,7 +1441,7 @@ group("이동 후 소속 기간·계정 ID는 기존 참가자 판별 기준 적
 group("남은 턴 조회도 JSON 로드 실패를 숨기지 않음·불필요한 매력 계산 파일 IO 없음", () => {
     start(); const traceStart = traces.length; turnCallback("ㄹㄹ");
     const loads = traces.slice(traceStart).filter(t => t.type === "load").map(t => t.path);
-    assert.deepStrictEqual(loads.sort(), [memberPath, root + "member_pet.json", root + "guild.json"].sort());
+    assert.deepStrictEqual(loads.sort(), [memberPath, root + "member_pet.json", root + "guild.json", root + "guild.json"].sort()); // 공통 진입부 영지전 상태 확인 포함
     for (const bad of [undefined, "{broken"]) {
         disk[memberPath] = bad; const before = JSON.stringify(disk); assert.throws(() => run("/레이드턴")); assert.strictEqual(JSON.stringify(disk), before);
     }
@@ -1561,7 +1583,7 @@ group("기존 미정·가방·패키지가방 분기로 조회·타인 조회 �
     assert(ordinary("/가방").includes("합성 패키지")); assert.strictEqual(JSON.stringify(disk), before);
 });
 
-for (const name of ["isGlobalInfoCommandAllowed", "isInfoAttendanceFreeCommand", "isInfoCommandBlockedDuringGuildTerritoryWar", "isMatzangInfoOperatorCommandMessage"])
+for (const name of ["isOrderLogRoomBot", "isGlobalInfoCommandAllowed", "isInfoAttendanceFreeCommand", "isInfoCommandBlockedDuringGuildTerritoryWar", "isMatzangInfoOperatorCommandMessage"])
     vm.runInContext(block(info, "function " + name + "("), infoContext);
 Object.assign(infoContext, {
     filePath: memberPath, guildPath: c.guildPath, memberPetPath: c.memberPetPath, petSkillDataPath: c.petSkillDataPath,
@@ -1569,6 +1591,7 @@ Object.assign(infoContext, {
     petHomeActivityFile: root + "activity.json", replier: c.replier, Api: c.Api, room91: c.room91,
     loadJsonFile: p => vm.runInContext("JSON.parse(" + JSON.stringify(disk[infoContext.ctx.isDev ? p.replace(root, devRoot) : p]) + ")", infoContext),
     isAdminIdentity: user => user === "admin", isMasterIdentity: user => user === "master", isAdmin: user => user === "admin", isMaster: user => user === "master",
+    getCurrentContext: () => infoContext.ctx,
     hasInfoPrivateChatPass: (_d, user) => user !== "noPass", ACCOUNT_SUSPENSION_BLOCKED_PLAIN_MESSAGES: ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"],
     stripDevCommandPrefix: c.stripDevCommandPrefix, createContextReplier: c.createContextReplier,
     isAccountSuspended: c.isAccountSuspended, getInfoAttendanceKstDateKey: () => "2026-10-05", getInfoHoiPassPremiumHeader: () => "",
@@ -1576,10 +1599,10 @@ Object.assign(infoContext, {
 });
 vm.runInContext(block(info, "function isAccountSuspensionBlockedMessage("), infoContext);
 const infoGuardStart = info.indexOf("if (isInfoServerRaidLocked(data)");
-const infoGuardEnd = info.indexOf('if (msg.startsWith("/정보")', infoGuardStart);
+const infoGuardEnd = info.indexOf('if ((msg === "/정보"', infoGuardStart);
 const infoDevPrelude = block(info.slice(info.indexOf("function response(")), "if (ctx.isDev) {");
-vm.runInContext("function runAdditionalInfo(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath);" + info.slice(infoGuardStart, infoGuardEnd) +
-    block(info, 'if (msg.startsWith("/정보")') + block(info, 'if (msg === "/포인트" ||') + "}", infoContext);
+vm.runInContext("function runAdditionalInfo(){msg=String(msg || '').trim();" + infoDevPrelude + "var data=loadJsonFile(filePath),guildData=loadJsonFile(guildPath);" + info.slice(infoGuardStart, infoGuardEnd) +
+    block(info, 'if ((msg === "/정보"') + block(info, 'if (msg === "/포인트" ||') + "}", infoContext);
 group("Info 실제 자격 검사와 포인트·정보 분기·읽기 전용·접미 차단", () => {
     additionalFixture(); start(); const d = read(); for (const user of Object.keys(d.member)) if (user !== "absent") d.member[user].today = 1; write(d);
     disk[root + "titles.json"] = JSON.stringify({ member: {} }); disk[root + "petTitles.json"] = "{}"; disk[root + "activity.json"] = "{}";

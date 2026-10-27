@@ -33,17 +33,17 @@ if (!context.isInfoCommandBlockedDuringGuildTerritoryWar(activeGuildData, "/레�
 if (context.isInfoCommandBlockedDuringGuildTerritoryWar(inactiveGuildData, "/레벨", false, false)) {
     throw new Error("영지전 종료 후 /레벨이 차단됨");
 }
-if (context.isInfoCommandBlockedDuringGuildTerritoryWar(activeGuildData, "/레벨", true, false)) {
-    throw new Error("DEV /레벨이 운영 영지전 상태로 차단됨");
+if (!context.isInfoCommandBlockedDuringGuildTerritoryWar(activeGuildData, "/레벨", true, false)) {
+    throw new Error("DEV 환경의 진행 중 영지전에서도 /레벨을 차단해야 함");
 }
-if (context.isInfoCommandBlockedDuringGuildTerritoryWar(activeGuildData, "/정보 대상", false, true)) {
-    throw new Error("전역 허용 /정보 명령이 차단됨");
+if (!context.isInfoCommandBlockedDuringGuildTerritoryWar(activeGuildData, "/정보 대상", false, true)) {
+    throw new Error("운영자 전역 /정보 예외로 영지전 차단을 우회함");
 }
-if (context.isInfoCommandBlockedDuringGuildTerritoryWar(activeGuildData, "ㅍㅍㅍ", false, false)) {
-    throw new Error("슬래시가 아닌 기존 단축 명령까지 차단됨");
+if (!context.isInfoCommandBlockedDuringGuildTerritoryWar(activeGuildData, "ㅍㅍㅍ", false, false)) {
+    throw new Error("슬래시 없는 단축 명령이 영지전 차단을 우회함");
 }
 
-const guardCall = "if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, isGlobalInfoCommand)) return;";
+const guardCall = "if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, false)) return;";
 const guardIndex = source.indexOf(guardCall);
 const levelIndex = source.indexOf('if (msg === "/레벨")');
 if (guardIndex < 0 || levelIndex < 0 || guardIndex >= levelIndex) {

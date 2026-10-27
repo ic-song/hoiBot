@@ -110,7 +110,7 @@ vm.createContext(starter);
 const starterStart = main.indexOf("    adventureStarter: {");
 const starterEnd = main.indexOf("    adventureQuest: {", starterStart);
 vm.runInContext("this.GLOBAL_CONFIG = ({" + main.slice(starterStart, starterEnd) + "});", starter);
-for (const name of ["applyAdventureStarterMemberRewards", "buildAdventureStarterCompleteMessage"]) {
+for (const name of ["isSearchAuthenticationCount", "applyAdventureStarterMemberRewards", "buildAdventureStarterCompleteMessage"]) {
     vm.runInContext(extractBlock(main, "function " + name + "("), starter);
 }
 function newMember(stage = "WAIT_BLESSING") {
@@ -122,8 +122,8 @@ assert.strictEqual(starter.data.member["신규"].bag[stone], 7);
 assert.strictEqual(starter.data.member["신규"].point, 30000000005);
 assert.strictEqual(starter.data.member["신규"].boostercnt, 30000);
 assert.strictEqual(starter.data.member["신규"].bag["펫 강화석⭐"], 3000);
-assert(starter.buildAdventureStarterCompleteMessage("신규", "친구", false, true).includes(stone + " 3개"));
-assert(starter.buildAdventureStarterCompleteMessage("신규", "친구", false, true).includes("호월신의 가호: 30,000개 지급!"));
+assert(!starter.buildAdventureStarterCompleteMessage("신규", "친구", false, true).includes(stone + " 3개"));
+assert(!starter.buildAdventureStarterCompleteMessage("신규", "친구", false, true).includes("호월신의 가호: 30,000개 지급!"));
 assert(!starter.buildAdventureStarterCompleteMessage("신규", "친구", false, false).includes("30,000개 지급!"));
 assert(!starter.buildAdventureStarterCompleteMessage("신규", "친구", false, false).includes(stone));
 console.log("3/5 스타터 기존 구성 유지·강화석 +3·실제 지급 안내 PASS");
@@ -154,7 +154,7 @@ assert.strictEqual(starter.data.member["신규"].bag[stone], 7);
 assert.strictEqual(starter.data.member["신규"].boostercnt, 30000);
 assert.strictEqual(starter.data.member["신규"].adventureOnboarding.stage, "COMPLETE");
 assert.strictEqual(saves.at(-1), "dev-member.json");
-assert(starterReplies.at(-1).includes(stone + " 3개"));
+assert(!starterReplies.at(-1).includes(stone + " 3개"));
 starter.runBlessing();
 assert.strictEqual(starter.data.member["신규"].bag[stone], 7);
 assert.strictEqual(starterReplies.at(-1), "이미 지급 완료");
