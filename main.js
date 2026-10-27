@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.714"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.715"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -44385,13 +44385,15 @@ function lockHoiPassPremiumExtraSkills(data, petSkillData, user) {
     return lockedCount;
 }
 
-// 현재 빈 장착 슬롯만큼 프리미엄 잠금 펫스킬을 다시 활성화하는 함수
+// 중복 장착 검사 후 빈 슬롯만큼 프리미엄 잠금 펫스킬을 다시 활성화하는 함수
 function restoreHoiPassPremiumLockedSkills(data, petSkillData, user) {
     var skills = initPetSkillUser(petSkillData, user);
-    var restoredCount = 0;
-    while (skills.lockedPremium.length > 0 && skills.equipped.length < getPetSkillSlotCount(data, petSkillData, user)) {
-        var skillName = normalizePetSkillName(skills.lockedPremium.shift());
-        if (!skillName) continue;
+    var restoredCount = 0, lockedIndex = 0; // 충돌한 잠금은 보존하고 뒤의 복구 가능한 스킬도 검사
+    while (lockedIndex < skills.lockedPremium.length && skills.equipped.length < getPetSkillSlotCount(data, petSkillData, user)) {
+        var skillName = normalizePetSkillName(skills.lockedPremium[lockedIndex]);
+        if (!skillName) { skills.lockedPremium.splice(lockedIndex, 1); continue; }
+        if (!isPetSkillCompatible(petSkillData, user, skillName).ok) { lockedIndex++; continue; }
+        skills.lockedPremium.splice(lockedIndex, 1);
         skills.equipped.push(skillName);
         restoredCount++;
     }

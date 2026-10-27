@@ -43,3 +43,12 @@
 - Rhino 1.7.15에서 Main 전체 컴파일과 실제 카탈로그·중복 그룹·`isPetSkillCompatible` 함수의 양방향 거절·정규화·허용 조합을 확인했다. `node --check main.js`, `node --check Info.js`, `git diff --check` 통과.
 - 이미 동시 장착된 데이터는 자동 회수·삭제하지 않는다. 기존 보너스 최댓값 제한을 유지하며 운영 스냅샷은 변경하지 않았다.
 - 기존 `feature/bugFix`의 별도 미반영 커밋은 보존하고, 원래 기능 브랜치 `feature/vault-reset-skills`에서 후속 수정한다.
+
+## ver_2.715 후속 수정 — 프리미엄 잠금 자동 복구 검사
+
+- 원인: 일반 장착은 공통 중복 검사로 차단하지만 `restoreHoiPassPremiumLockedSkills`가 잠금 목록에서 꺼낸 스킬을 검사 없이 활성 목록에 추가했다.
+- 수정: 일반 장착과 동일한 `isPetSkillCompatible` 검사. 충돌 항목은 원래 순서의 잠금 목록에 남기고 다음 호환 스킬을 복구한다. 충돌을 반복 방문하는 무한 루프와 스킬 소실을 막는다. 프리미엄 등록·친밀도 증가·일반 명령의 기존 호출부와 저장 조건은 유지한다. 헬퍼의 파일 IO는 추가하지 않았다.
+- `node tools/test_premium_skill_restore.js <Rhino 1.7.15 jar>`: Node/Rhino 각 9그룹 통과. 양방향 금고 스킬·이름 정규화·중복 스킬·기존 모든 공통 그룹·두 잠금 충돌·뒤의 호환 스킬·슬롯 0/부족·원래 순서·반복 실행·재가입/친밀도 슬롯 증가·기존 장착 제거 후 복구·빈 항목·기존 잘못된 활성 장착 보존·반복 만료/복구를 확인했다. 실제 `getPetSkillSlotCount`를 사용하고 친밀도 레벨/프리미엄 자격 입력만 합성했다.
+- 같은 테스트의 실제 일반 명령 복구 진입부: 전부 충돌하면 저장 0회, 복구 성공 시 스킬 저장 1회·회원 파일 유지, 저장 실패 시 원문 롤백·스킬 보존을 확인했다. Rhino는 Main/Info 전체 컴파일도 통과했다.
+- `node tools/test_vault_reset_skills.js` 10그룹, `node tools/test_raid_pet_skills.js` 15그룹 회귀 통과. Main/Info Node 구문 검사, UTF-8, 개발자노트 JSON·버전 일치, diff 검사 통과.
+- 기존 활성 스킬은 자동 제거하지 않는다. 운영 기기·운영 스냅샷·스킬 정책 파일은 변경하지 않는다.
