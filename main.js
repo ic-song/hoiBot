@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.717"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.718"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -36150,8 +36150,13 @@ function runMiniGameEntry(mode, args) {
         if (request.kind === "vault" && state.vault.replyPending && state.vault.replyPending["$" + accountId]) { delete state.vault.replyPending["$" + accountId]; commit(); }
     }
     // 전송 재시도는 확정된 화면만 재표시하며 숫자·멘트·지급을 다시 만들지 않는다.
-    for (var outputKey in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, outputKey)) {
-        var outputUser = state.dice.users[outputKey], outputGame = outputUser.game;
+    var diceOutputUsers = state.dice.users; // 자동 처리는 전체, 개인 명령은 본인 화면만 확인
+    if (mode === "command") {
+        diceOutputUsers = {};
+        if (request.kind === "dice" && !diceReplay && Object.prototype.hasOwnProperty.call(state.dice.users, "$" + accountId)) diceOutputUsers["$" + accountId] = state.dice.users["$" + accountId];
+    }
+    for (var outputKey in diceOutputUsers) if (Object.prototype.hasOwnProperty.call(diceOutputUsers, outputKey)) {
+        var outputUser = diceOutputUsers[outputKey], outputGame = outputUser.game;
         if (!outputGame || outputGame.phase === "DONE" || mode === "command" && (request.kind !== "dice" || outputUser.accountId !== accountId || diceReplay)) continue;
         var recipient = accounts[outputGame.accountId], premium = recipient && isHoiPassPremiumActive(data, recipient.user);
         var firstScreen = outputGame.phase === "WAIT_USER2" && outputGame.outputIndex < 2;
@@ -36189,9 +36194,9 @@ function getMiniGameWorkDelay(state, now, data, accounts) {
     var delay = GLOBAL_CONFIG.vaultRobbery.dayMs; // 날짜 전환은 자동 시각이 아닌 /리셋에서만 수행
     for (var key in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, key)) {
         var game = state.dice.users[key].game;
-        if (game && game.phase === "RESULT") delay = Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs);
+        if (game && game.phase === "RESULT") return Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs)); // 검증된 진행은 재시도 대상 하나만 있어도 간격 확정
     }
-    for (var id in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, id) && state.ledger[id].status === "PENDING" && state.ledger[id].kind !== "balance") delay = Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs);
+    for (var id in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, id) && state.ledger[id].status === "PENDING" && state.ledger[id].kind !== "balance") return Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs));
     return Math.max(1, delay);
 }
 
