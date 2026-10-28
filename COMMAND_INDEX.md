@@ -4979,6 +4979,28 @@ Status: VERIFIED
 
 ---
 
+# /미니펫수집도감
+
+Status: VERIFIED
+
+## Files / Helpers
+
+- `main.js`: `runMiniPetBookEntry`, `getMiniPetBookKey`, `buildMiniPetBookCatalog`, `getMiniPetBookFileName`, `requireMiniPetBookStore`, `applyMiniPetBookDraws`, `validateMiniPetBookPending`, `buildMiniPetBookMessage`.
+- `Info.js`는 해당 조회를 MAIN으로 넘기고 미완료 도감 저장이 있으면 부분 반영된 회원·가방 조회를 차단한다.
+
+## Commands / Policy
+
+- `/미니펫오픈 [수량]`의 기존 추첨 결과를 사용해 최대 3,000개를 자동 기록한다. 추가 추첨·재화·보상·컬렉션 소모는 없다. 같은 등급·이름·모양을 한 종류로 묶고 횟수·최고 `battleExp`를 보존한다.
+- 적용 후 오픈한 결과부터 기록하며 기존 가방·장착·판매·컬렉션 기록을 소급 집계하지 않는다. 가방에서 없어져도 도감 기록은 유지한다.
+- `/미니펫수집도감`: 뽑기 가능한 종류의 전체·등급별 발견 현황과 획득 수. `/미니펫수집도감 등급 [페이지]`: 페이지당 30종, 발견 종류와 최고 매력 순으로 표시하고 이전/다음 입력을 안내한다. `전설+` 등 실제 등급명을 그대로 사용한다. 잘못된 등급·페이지·접미·개행은 사용법 안내만 반환한다.
+
+## Data and save flow
+
+- `GLOBAL_CONFIG.miniPet.collectionBook` 설정. 실제 뽑기 허용 등급과 카탈로그를 사용하며 장기 도감 캐시를 만들지 않는다.
+- 고정 `serverRaidAccount.id`로 선택한 활성 루트의 `miniPetBook_0.json`~`miniPetBook_15.json`에 계정별 기록을 저장한다. `member.miniPetBookVersion`이 있는 계정의 파일·기록 누락은 오류로 남기며 빈 도감으로 덮어쓰지 않는다. 최초 조회는 파일이나 계정 ID를 만들지 않는다.
+- `miniPetBookPending.json`에 회원·펫·해당 도감 파일의 이전 원문을 보관한 뒤 도감→펫→회원 순으로 저장하고 복구 표시를 비운다. 한 번의 오픈 결과를 모아서 저장하며 결과 전송 실패가 완료된 기록·소모를 되돌리지 않는다.
+- MAIN의 회원 로드 이전과 초기화 진입에서 미완료 원문을 검증해 복구한다. 처음 만든 도감 파일은 이전 원문이 없으면 제거한다. 회원/펫 저장 진입점과 미니게임 자동 작업은 복구 전 덮어쓰기를 차단한다. 일반 저장 실패는 기존 트랜잭션과 원문 복구를 사용한다. DEV/PROD는 기존 활성 경로로 분리한다.
+
 # /미니펫컬렉션전체등록
 
 Status: VERIFIED
