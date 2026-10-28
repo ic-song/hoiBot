@@ -27,6 +27,11 @@ documentation, workflow, branch strategy, tools, or Codex skill changes unless
 the user explicitly confirms `feature/prod` reflection for that specific
 workflow change.
 
+Completion or integration on a development or feature branch does not authorize
+production reflection. Reflect into `feature/prod` only when the user explicitly
+requests or approves it, while preserving any stronger project-specific approval
+policy.
+
 User-authored skill source changes belong in `AGENT-HUB`. The hoiBot
 `.codex/skills/` tree is a generated deployment mirror and should reach
 `feature/workflow` only after the canonical change is validated and pushed.

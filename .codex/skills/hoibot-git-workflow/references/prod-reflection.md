@@ -8,9 +8,11 @@ Update `feature/prod` only by reflecting validated task-branch work through
 merge, cherry-pick, or an approved PR-style merge flow.
 Documentation, workflow, branch strategy, tools, and Codex skill changes belong
 on `feature/workflow` unless the user explicitly confirms direct `feature/prod`
-reflection for that workflow change. After validated workflow changes are
-committed and pushed on `feature/workflow`, reflect those commits into
-`feature/prod` by default unless the user explicitly says not to.
+reflection for that workflow change. Completing or integrating work on a
+development or feature branch does not authorize production reflection. Keep
+validated work on its development or feature branch until the user explicitly
+requests or approves reflection into `feature/prod`. Preserve any stronger
+project-specific approval policy.
 
 A production-reflection keyword means the user expects `feature/prod` to be
 updated. Branch classification decides the source branch and reflection method;

@@ -11,21 +11,13 @@ Use this checklist when exploring or changing hoiBot commands.
    - output phrases
    - helper names
    - item names
-3. Confirm the actual branch condition in `main.js` or `Info.js`.
-4. Trace helper calls, data fields, and persistence calls.
+3. Confirm the actual handler/branch in the current source (`main.js`/`Info.js` in legacy hoiBot).
+4. Trace aliases, helpers and handler calls. Note persistence entrypoints without repeating a separate save-flow audit.
 5. Record uncertain areas instead of declaring nonexistence.
 
-## Required Findings
+## Findings
 
-Exploration results should include:
-
-- searched keywords
-- discovered files/functions
-- related helpers
-- data usage
-- save flow
-- uncertain areas
-- possible duplicate logic
+Return only the paths, handlers/helpers, relevant persistence entrypoints, possible duplicate behavior and uncertainties needed for the request. Reuse findings already supplied instead of generating another full checklist.
 
 ## Documentation Sync
 
