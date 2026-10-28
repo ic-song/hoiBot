@@ -5,6 +5,8 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+과거 검증 설명에 남아 있는 `tools/test_*`, 검증 보고서·결과 파일 경로는 Git 이력에 보관된 당시 자료를 가리킨다. 해당 파일은 검증 자료 정리 정책에 따라 제거되었으며 현재 실행 가능한 테스트나 최신 검증 보장을 뜻하지 않는다. 새 작업의 검증은 저장소 밖 임시 폴더에서 수행하고 완료 후 삭제한다.
+
 ## How To Read This File
 
 - `VERIFIED`: confirmed against current code in this repository
