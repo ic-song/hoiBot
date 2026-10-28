@@ -6,6 +6,8 @@
 이 문서는 사람 운영자/개발자가 프로젝트 구조와 실행 환경을 빠르게 파악하기 위한 안내입니다.
 AI 에이전트 작업 규칙은 `AGENTS.md`에서 관리합니다.
 
+이 저장소는 기존 Android MessengerBot/Rhino 봇만 관리합니다. 고도화 서버·웹·Iris/redroid 개발과 RDB 설계는 별도 [hoi_world 저장소](https://github.com/ic-song/hoi_world)에서 진행합니다. 이전 파일과 원본 커밋 대응 근거는 [이관 기록](https://github.com/ic-song/hoi_world/blob/main/docs/repository-migration/INTEGRATION.md)에 보존합니다.
+
 ## AI 서브에이전트 역할 요약
 
 상세한 작업 규칙과 제한사항은 `AGENTS.md`를 기준으로 합니다.
@@ -234,5 +236,3 @@ feature/<content-name>
 Supplementary review and design documents are managed under `docs/`.
 
 - `docs/deletion-review/DELETION_REVIEW_COMMANDS.md`: command deletion review notes
-- `docs/database/rdb_erd.md`: database/ERD notes
-- `docs/database/rdb_erd_diagram.md`: database/ERD diagram notes

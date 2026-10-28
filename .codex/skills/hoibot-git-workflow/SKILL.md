@@ -22,7 +22,8 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 - `feature/prod` is the operational branch.
 - Local `feature/prod` is the active operational baseline for production-facing and bug-fix work.
 - Documentation, workflow, branch strategy, and tools changes belong on `feature/workflow`.
-- Validated `feature/workflow` changes should be reflected into `feature/prod` by default after `feature/workflow` is pushed, unless the user explicitly says not to reflect them.
+- Completing or integrating work on a development or feature branch does not authorize production reflection.
+- Reflect work into `feature/prod` only when the user explicitly requests or approves that production reflection. Continue to honor any stronger project-specific approval policy.
 - `AGENT-HUB` is the canonical source for user-authored hoiBot skills. Do not edit `.codex/skills/` or installed personal skill folders as the first or only source change.
 - For skill changes, update and validate `AGENT-HUB`, push its `main`, then run its `sync-skills.ps1 -ProjectPath <hoiBot-path> -Force` so `.codex/skills/` is a generated deployment mirror.
 - Installed personal skill folders should be junctions to `AGENT-HUB`; verify the junction target after central skill changes instead of manually copying files.
@@ -62,12 +63,12 @@ Use this skill for git branch, commit, push, and production reflection tasks in 
 
 ## Production Reflection
 
-When the user says "prod까지 올려줘" or "운영반영해줘", or when validated workflow/documentation changes have been committed and pushed on `feature/workflow`:
+When the user explicitly requests or approves production reflection, including phrases such as "prod까지 올려줘" or "운영반영해줘":
 
 1. Classify the changed files before touching `feature/prod`.
 2. Treat the user's production-reflection keyword as a request for the work to end up on `feature/prod`; do not stop after pushing only the source task branch unless you explicitly tell the user `feature/prod` was not updated.
-3. If the change is documentation, workflow, branch strategy, or tools work, commit and push it on `feature/workflow` first. For Codex skill work, update, validate, commit, and push `AGENT-HUB` first, then synchronize the generated `.codex/skills/` mirror and commit that mirror on `feature/workflow`.
-4. After the workflow branch is pushed, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or approved PR-style merge flow unless the user explicitly says not to.
+3. If the change is documentation, workflow, branch strategy, or tools work, commit and push it on `feature/workflow` first. For Codex skill work, update, validate, commit, and push `AGENT-HUB` first, then synchronize the generated `.codex/skills/` mirror and commit that mirror on `feature/workflow`. Stop there unless production reflection was explicitly requested or approved.
+4. When production reflection is explicitly authorized, reflect only the validated workflow commit(s) into `feature/prod` by cherry-pick, merge, or an approved PR-style merge flow.
 5. For production-facing code/data work, commit and push the current task branch first.
 6. For production-facing code/data/bug-fix work, verify `data/hoiBotChangeLog.json` has a new top entry before reflection: latest version + `0.001`, reflection date, and a concise user-visible `changes` summary for `/개발자노트`.
    - Before switching to `feature/prod`, inspect the source-branch diff/commit list and confirm both `data/hoiBotChangeLog.json` and `main.js` are included.
