@@ -4974,6 +4974,23 @@ Status: VERIFIED
 
 ---
 
+# /미니펫컬렉션전체등록
+
+Status: VERIFIED
+
+## Files / Helpers
+
+- `main.js`: `selectMiniPetCollectionLowest`, `miniPetCollectionAllPending`, `GLOBAL_CONFIG.miniPetCollection.confirmationTimeoutMs`.
+- 정확히 일치하는 무인수 명령만 실행한다. 본인의 가방을 한 번 순회해 현재 단계 미등록 등급마다 최저 `battleExp` 1마리를 고른다. 동률은 저장된 가방 순서이며 장착·보조 슬롯과 비허용 등급은 대상이 아니다. 전체 미니펫 출력이나 번호 입력 없이 최대 8마리를 선택한다.
+- 최초 확인은 파일을 저장하지 않는다. DEV/PROD·계정별 60초 확인이며 같은 방·채팅 유형에서 `등록`/`ㄴㄴ`로 응답한다. DEV 정규화된 `/등록`·`/ㄴㄴ`도 이 대기 상태에만 연결한다. 가방 전체 또는 본인 컬렉션이 바뀌면 소모 없이 취소·재선택을 안내한다.
+- 가방 스냅샷·컬렉션 스냅샷과 선택을 검증하고 확인 대기를 먼저 삭제한다. 기존 `등록` 처리에 선택을 넘겨 자동 강화·실제 등급 보상·단계 보상·타이틀을 재사용하며 `currentStageOnly`로 다음 단계 소비를 차단한다. 기존 시즌1 +80 상한을 유지한다.
+- 새 선택은 이전 미니펫/펫스킬의 공통 `등록` 확인을 교체한다. 다른 수동/만능 컬렉션 등록 명령을 새로 선택하면 전체등록 대기는 해제한다. 조회 명령은 대기를 소비하지 않는다.
+- 기존 자동 강화의 포인트·강화석·확률UP 아이템·성공 확률을 유지한다. 일부 등록 성공 후 다른 후보의 강화가 실패해도 실제 소비분을 결과 합계에 포함한다. 재화 부족 시 더 높은 매력 개체로 임의 대체하지 않는다.
+- 저장: `miniPet_collection.json` → `miniPet_title.json` → `member.json` → `member_pet.json`. 전체등록은 앞 두 파일 원문을 기존 저장 트랜잭션의 명시적 스냅샷으로 전달하고 회원/펫의 기존 보호 저장을 사용한다. 예외 시 네 원본을 롤백하며 실패·중복 확인은 새 선택 없이 재소비하지 않는다. 수동/만능 등록의 기존 처리 방식은 유지한다.
+- 검증: `tools/test_mini_pet_collection_all.js`, `tools/test_mini_pet_collection_all_rhino.js`, `tools/mini_pet_collection_all_validation.md`.
+
+---
+
 # /미니펫컬렉션등록 [번호...]
 Status: VERIFIED
 ## Command Anchors

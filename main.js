@@ -1,9 +1,10 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.721"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.722"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
+var miniPetCollectionAllPending = {}; // DEV/PROD 계정별 미니펫 컬렉션 전체등록 확인 대기
 var carrotTradePending = {}; // DEV/PROD 계정별 당근거래 확인 대기
 var worldNewsDraftState = {}; // 관리자·채팅방별 소식 작성/수정 임시 상태
 var dollCatalogCache = null; // 고정 인형 목록은 첫 이용 때 검증한 뒤 재사용
@@ -1572,6 +1573,7 @@ const GLOBAL_CONFIG = {
     },
     miniPetCollection: { // 미니펫 컬렉션 시즌 운영 설정
         seasonOneMaxStage: 80,
+        confirmationTimeoutMs: 60000,
         seasonOneEndMessage: "🏁 미니펫 컬렉션 시즌1 종료!\n시즌2에서 뵐게요."
     },
     attendance: { // 출석 보상 설정
@@ -30503,6 +30505,9 @@ replier.reply(
                     return;
                 }
 
+                var miniPetAllKey = (ctx.isDev ? "DEV:" : "PROD:") + sender;
+                var miniPetAllConfirmed = false, miniPetAllCollectionData, miniPetAllCollectionSnapshot;
+                if (/^\/(?:미니펫컬렉션등록|미니펫컬렉션만능|펫스킬컬렉션등록|펫스킬컬렉션만능)(?:\s|$)/.test(msg)) delete miniPetCollectionAllPending[miniPetAllKey];
                 if (msg === "/펫스킬컬렉션") {
                     if (castleSiegeFlag) return;
                     var petSkillCollection = ensurePetSkillCollection(petSkillData, sender);
@@ -30639,7 +30644,54 @@ replier.reply(
                     return;
                 }
 
-                if (msg === "등록" && userState[sender] && userState[sender].petSkillCollection) {
+                if (msg === "/미니펫컬렉션전체등록") {
+                    delete miniPetCollectionAllPending[miniPetAllKey];
+                    // 공통 '등록' 응답이 이전 컬렉션 확인을 실행하지 않도록 새 선택으로 교체한다.
+                    if (userState[sender]) { delete userState[sender].miniPetCollection; delete userState[sender].petSkillCollection; }
+                    var miniPetAllNow = Date.now();
+                    for (var miniPetAllExpired in miniPetCollectionAllPending) {
+                        if (Object.prototype.hasOwnProperty.call(miniPetCollectionAllPending, miniPetAllExpired) && miniPetAllNow >= miniPetCollectionAllPending[miniPetAllExpired].expiresAt) delete miniPetCollectionAllPending[miniPetAllExpired];
+                    }
+                    var miniPetAllData = loadJsonFile(miniPetCollectionPath);
+                    sanitizeMiniPetCollectionData(miniPetAllData);
+                    var miniPetAllCollection = ensureMiniPetCollection(miniPetAllData, sender);
+                    if (isMiniPetCollectionSeasonOneComplete(miniPetAllCollection)) { replier.reply(getMiniPetCollectionSeasonOneEndMessage()); return; }
+                    var miniPetAllBag = petData[sender] && petData[sender].miniPetBag || [];
+                    var miniPetAllSelected = selectMiniPetCollectionLowest(miniPetAllBag, miniPetAllCollection);
+                    if (!miniPetAllSelected.length) { replier.reply("🐹 현재 단계의 빈 컬렉션에 등록할 수 있는 미니펫이 없습니다."); return; }
+                    miniPetCollectionAllPending[miniPetAllKey] = { selectedList: miniPetAllSelected, stage: miniPetAllCollection.stage,
+                        bagFingerprint: JSON.stringify(miniPetAllBag), collectionFingerprint: JSON.stringify(miniPetAllCollection),
+                        room: room, isGroupChat: isGroupChat, expiresAt: miniPetAllNow + GLOBAL_CONFIG.miniPetCollection.confirmationTimeoutMs };
+                    var miniPetAllLines = ["🐹 [" + checkRank(data, petData, guildData, sender) + "] 님의 미니펫 컬렉션 전체등록", "━━━━━━━━━━━━━━━",
+                        "현재 +" + miniPetAllCollection.stage + "💫 단계 · 자동 선택 " + miniPetAllSelected.length + "마리", "※ 빈 등급마다 매력이 가장 낮은 미니펫을 선택했어요."];
+                    for (var miniPetAllIndex = 0; miniPetAllIndex < miniPetAllSelected.length; miniPetAllIndex++) {
+                        var miniPetAllPicked = miniPetAllSelected[miniPetAllIndex];
+                        miniPetAllLines.push("- [" + miniPetAllPicked.index + "번] " + miniPetAllPicked.name + "[" + miniPetAllPicked.grade + "] (+" + miniPetAllPicked.upgrade + "💫) · 매력 " + numberWithCommas(miniPetAllPicked.battleExp));
+                    }
+                    miniPetAllLines.push("━━━━━━━━━━━━━━━", "※ 선택한 미니펫은 등록 시 소모돼요.", "※ 강화가 부족하면 기존 규칙으로 자동 강화해요.",
+                        "※ 포인트·미니펫 강화석·강화 보조 아이템이 소모될 수 있으며, 실패 횟수에 따라 비용이 달라져요.", "※ 현재 단계까지만 등록하며, 다음 단계 재료는 소모하지 않아요.", "👉 등록 / ㄴㄴ (60초 안에 입력)");
+                    replier.reply(miniPetAllLines.join("\n")); return;
+                }
+                var miniPetAllReply = msg === "등록" || msg === "ㄴㄴ" || ctx.isDev && (msg === "/등록" || msg === "/ㄴㄴ");
+                var miniPetAllState = miniPetCollectionAllPending[miniPetAllKey];
+                if (miniPetAllReply && miniPetAllState) {
+                    if (miniPetAllState.room !== room || miniPetAllState.isGroupChat !== isGroupChat) return;
+                    delete miniPetCollectionAllPending[miniPetAllKey]; // 중복 확인이나 저장 실패가 같은 선택을 다시 소모하지 않음
+                    if (Date.now() >= miniPetAllState.expiresAt) { replier.reply("⌛ 전체등록 확인 시간이 지났어요. /미니펫컬렉션전체등록으로 다시 선택해 주세요."); return; }
+                    if (msg === "ㄴㄴ" || msg === "/ㄴㄴ") { replier.reply("🐹 미니펫 컬렉션 전체등록을 취소했어요. 미니펫과 재화는 소모되지 않았어요."); return; }
+                    miniPetAllCollectionSnapshot = String(FileStream.read(resolveActiveDataPath(miniPetCollectionPath), "utf-8"));
+                    miniPetAllCollectionData = parseJsonContent(miniPetAllCollectionSnapshot, miniPetCollectionPath);
+                    sanitizeMiniPetCollectionData(miniPetAllCollectionData);
+                    var miniPetAllCurrent = ensureMiniPetCollection(miniPetAllCollectionData, sender);
+                    if (JSON.stringify(petData[sender] && petData[sender].miniPetBag || []) !== miniPetAllState.bagFingerprint || JSON.stringify(miniPetAllCurrent) !== miniPetAllState.collectionFingerprint) {
+                        replier.reply("⚠️ 가방 또는 컬렉션이 변경되어 전체등록을 취소했어요.\n미니펫과 재화는 소모되지 않았어요.\n/미니펫컬렉션전체등록으로 다시 선택해 주세요."); return;
+                    }
+                    if (!userState[sender]) userState[sender] = {};
+                    userState[sender].miniPetCollection = { selectedList: miniPetAllState.selectedList, currentStageOnly: miniPetAllState.stage };
+                    miniPetAllConfirmed = true; msg = "등록";
+                }
+
+                if (msg === "등록" && !miniPetAllConfirmed && userState[sender] && userState[sender].petSkillCollection) {
                     var petSkillCollectionState = userState[sender].petSkillCollection;
                     var petSkillCollectionSelectedList = petSkillCollectionState.selectedList || [];
                     var petSkillCollectionSave = ensurePetSkillCollection(petSkillData, sender);
@@ -30836,6 +30888,7 @@ replier.reply(
                     }
 
                     var state = userState[sender].miniPetCollection;
+                    if (miniPetAllConfirmed) delete userState[sender].miniPetCollection; // 전체등록은 실패 후에도 새 선택으로만 재시도
 
                     var bag = petData[sender].miniPetBag || [];
                     var selectedList = state.selectedList || [];
@@ -30846,11 +30899,12 @@ replier.reply(
                         return;
                     }
 
-                    var miniPetCollectionData = loadJsonFile(miniPetCollectionPath);
+                    var miniPetCollectionData = miniPetAllConfirmed ? miniPetAllCollectionData : loadJsonFile(miniPetCollectionPath);
                     if (sanitizeMiniPetCollectionData(miniPetCollectionData)) {
                         saveJsonFile(miniPetCollectionData, miniPetCollectionPath);
                     }
-                    var miniPetTitleData = loadJsonFile(miniPetTitlePath);
+                    var miniPetAllTitleSnapshot = miniPetAllConfirmed ? String(FileStream.read(resolveActiveDataPath(miniPetTitlePath), "utf-8")) : undefined;
+                    var miniPetTitleData = miniPetAllConfirmed ? parseJsonContent(miniPetAllTitleSnapshot, miniPetTitlePath) : loadJsonFile(miniPetTitlePath);
                     var collection = ensureMiniPetCollection(miniPetCollectionData, sender);
                     if (isMiniPetCollectionSeasonOneComplete(collection)) {
                         delete userState[sender].miniPetCollection;
@@ -30870,6 +30924,7 @@ replier.reply(
                     var totalAutoUpgradeBoostUsage = {};
 
                     for (var i = 0; i < selectedList.length; i++) {
+                        if (state.currentStageOnly !== undefined && collection.stage !== state.currentStageOnly) break;
                         var picked = selectedList[i];
                         var useMiniPetUniversalKey = picked.useUniversalKey === true;
                         var selectedNow = useMiniPetUniversalKey ? { name: GLOBAL_CONFIG.universalBox.miniPetKeyItemName, grade: picked.grade, upgrade: collection.stage } : bag[picked.index - 1];
@@ -30904,6 +30959,15 @@ replier.reply(
 
                             autoUpgradeResult = tryAutoUpgradeMiniPetForCollection(data, petData, petSkillData, sender, selectedNow, currentStage);
                             if (!autoUpgradeResult.success) {
+                                if (miniPetAllConfirmed && (autoUpgradeResult.spentPoint || autoUpgradeResult.spentStone)) {
+                                    autoUpgradeCount++;
+                                    totalAutoUpgradePoint += autoUpgradeResult.spentPoint;
+                                    totalAutoUpgradeStone += autoUpgradeResult.spentStone;
+                                    autoUpgradeLines.push("[" + picked.index + "번] " + selectedNow.name + "[" + currentGrade + "] : +" + autoUpgradeResult.startUpgrade + "💫 → +" + autoUpgradeResult.endUpgrade + "💫 (등록 실패)");
+                                    for (var failedBoostName in autoUpgradeResult.boostUsage) {
+                                        if (Object.prototype.hasOwnProperty.call(autoUpgradeResult.boostUsage, failedBoostName)) totalAutoUpgradeBoostUsage[failedBoostName] = (totalAutoUpgradeBoostUsage[failedBoostName] || 0) + autoUpgradeResult.boostUsage[failedBoostName];
+                                    }
+                                }
                                 skippedLines.push("[" + picked.index + "번] " + selectedNow.name + "[" + currentGrade + "] : " + autoUpgradeResult.failReason);
                                 continue;
                             }
@@ -31036,8 +31100,8 @@ replier.reply(
                         multiReply += "등록 제외❌ [" + skippedLines.length + "개]\n" + skippedLines.join("\n");
                     }
 
-                    saveJsonFile(miniPetCollectionData, miniPetCollectionPath);
-                    saveJsonFile(miniPetTitleData, miniPetTitlePath);
+                    saveJsonFile(miniPetCollectionData, miniPetCollectionPath, false, miniPetAllCollectionSnapshot);
+                    saveJsonFile(miniPetTitleData, miniPetTitlePath, false, miniPetAllTitleSnapshot);
                     saveJsonFile(data, filePath);
                     saveJsonFile(petData, memberPetPath);
 
@@ -31292,6 +31356,7 @@ replier.reply(
                     out += "※ 한 번에 최대 10개\n\n";
                     out += "🐹 미니펫 등급 등록\n";
                     out += "/미니펫컬렉션등록 [미니펫가방번호] ...\n\n";
+                    out += "🔎 빈 등급 자동 선택: /미니펫컬렉션전체등록\n※ 매력 낮은 순 · 현재 단계만 등록\n\n";
                     out += "※ [등급]+미니펫강화+" + stage + "💫 를 등록해주세요.\n";
                     out += "📊등록/미등록 컬렉션 보러가기📊";
                     if (typeof allsee !== "undefined") {
@@ -32609,6 +32674,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/만능상자오픈\s+\d+$/.test(command) || getStoneBoxOpenRequest(command) !== null || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/교육완료(?:[ \t]|$)/.test(command) ||
         /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
+        command === "/미니펫컬렉션전체등록" || command === "등록" || command === "ㄴㄴ" || command === "/등록" || command === "/ㄴㄴ" ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/슈킹\s+\S(?:[\s\S]*\S)?$/.test(command) ||
@@ -64611,6 +64677,26 @@ function addTitle(titleData, userName, titleName, price) {
     }
 
     return true;
+}
+
+// 현재 단계의 빈 등급마다 가방 순서를 유지하며 최저 매력 미니펫을 선택하는 함수
+function selectMiniPetCollectionLowest(bag, collection) {
+    var candidates = {}, allowed = {};
+    for (var g = 0; g < MINI_PET_COLLECTION_ALLOWED_GRADES.length; g++) allowed[MINI_PET_COLLECTION_ALLOWED_GRADES[g]] = true;
+    for (var i = 0; i < bag.length; i++) {
+        var mini = bag[i];
+        if (!mini || allowed[mini.grade] !== true || collection.registered[mini.grade]) continue;
+        var charm = Number(mini.battleExp || 0); // 후보 비교에 사용하는 현재 미니펫 매력
+        if (!isFinite(charm) || charm < 0) throw new Error("미니펫 매력 수치 오류");
+        if (!candidates[mini.grade] || charm < candidates[mini.grade].battleExp) {
+            candidates[mini.grade] = { index: i + 1, name: mini.name, grade: mini.grade, upgrade: parseInt(mini.upgrade || 0, 10), battleExp: charm };
+        }
+    }
+    var selected = [];
+    for (var j = 0; j < MINI_PET_COLLECTION_ALLOWED_GRADES.length; j++) {
+        if (candidates[MINI_PET_COLLECTION_ALLOWED_GRADES[j]]) selected.push(candidates[MINI_PET_COLLECTION_ALLOWED_GRADES[j]]);
+    }
+    return selected;
 }
 
 // 미니펫 컬렉션 등록 가능한 등급인지 확인하는 함수
