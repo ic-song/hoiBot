@@ -1,7 +1,0 @@
-interface:
-  display_name: "hoiBot 작업반장"
-  short_description: "자원 충돌만 직렬화하는 봇·웹 고도화 운영"
-  default_prompt: "Use $hoibot-modernization-foreman to coordinate bot migration, web portal work, and shared integration with incremental catalog deltas and resource-scoped leases."
-
-policy:
-  allow_implicit_invocation: true

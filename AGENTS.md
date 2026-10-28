@@ -27,7 +27,8 @@ Project explanations for human operators/developers are managed in `README.md`.
 
 - This `hoiBot` project handles only the legacy Android MessengerBot/Rhino bot. The default runtime contract is the existing seven-argument `response(...)` callback below.
 - If the user requests non-legacy work here, decline that work in this project and explain that it belongs in a separate project. Do not start web portal, Iris/redroid runtime, API2 migration, or modernization implementation/UAT from this chat.
-- These scope rules take precedence over the modernization workflow sections below. Existing modernization references do not authorize non-legacy work in this project.
+- Modernization, Iris/redroid, web portal, migration WBS and coordination work belong to the separate `https://github.com/ic-song/hoi_world` repository. Do not resume those procedures from historical hoiBot branches or checkpoints.
+- Shared command-navigation or persistence skills may describe DB/migration work for other registered repositories. Apply only their legacy command/save-flow guidance here; this repository does not use modernization slices, Gates or Leases.
 - Verify the current legacy callback and APIs before changing behavior. Optional extended arguments must not become mandatory unless the operating MessengerBot environment is verified to provide them and the user explicitly requires them.
 
 ## Runtime
@@ -158,42 +159,6 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - During production reflection, never create a new Notion page, knowledge entry, implementation record, or placeholder solely to document the reflected change unless the user explicitly requests that separate documentation work.
 - If no matching Notion page exists, skip Notion synchronization. Do not create or save a `대응 문서 없음` record or any equivalent absence marker.
 - Documentation-only, workflow-only, test-only, and internal agent-rule changes do not require a new Notion planning record unless the user explicitly requests one.
-
-## Modernization WBS Short Commands
-
-- For `고도화진행`, `고도화 이어서 진행`, `너는 <이름>이야 고도화진행`, `고도화 <도메인> 이어서 진행`, `고도화 통합 진행`, `고도화 인계 <실행 ID>`, `고도화 복구 <슬라이스 ID>`, or `고도화 현황 갱신`, MUST use the `hoibot-modernization-wbs-runner` skill.
-- The skill owns worker-name assignment, fixed Drive links, interrupted-work recovery, slice claims and state flow, eight-gate migration validation, data safety, and percentage-dashboard synchronization.
-- Use a slice as the durable unit that combines commands, shared logic, JSON-to-DB mapping, synthetic fixtures, and verification scenarios. Every active command and final data set must eventually be mapped to a slice.
-- Require full-command classification only for the first catalog bootstrap. After a frozen `SC-*` catalog exists, classify only the changed command, mapping, or shared contract in an `SCD-*` delta and let unaffected work continue.
-- Separate modernization into `BOT_MIGRATION`, `WEB_PORTAL`, and `SHARED_INTEGRATION` workstreams. The website follows `기획서 → 기능 정의서 → 기존 고도화 대조 → 설계 → WBS 동결`; only shared API, authentication, DB, runtime, route, ledger, or receipt resources bind it to bot-migration ordering.
-- Treat a Lease as a resource-scoped write claim, not a global project lock. Normalize repository-qualified file, DB, migration, route, provider, ledger, receipt, and WBS keys; allow R/R overlap and serialize any overlap containing W.
-- Keep one responsible owner per function or slice. Specialists may work under narrower non-overlapping sub-claims, and Gate 7 must be reviewed by an agent who did not own or author the implementation or evidence under review.
-- Keep `catalog_version`, `delta_id`, and `evidence_schema_version` separate. Never relabel existing exact-schema evidence to a newer catalog; use a compatible delta bundle or a new schema and validator as required.
-- Preserve the eight Gate columns and `COUNTIF(G:N,TRUE)/8` meaning. Use execution profiles to define required evidence and T0-T3 tiers to control verification cost; do not skip or reweight Gate columns.
-- Before appending a claim or report, inspect sheet capacity and keep at least 100 blank rows. Only the foreman may expand the sheet; if expansion fails, stop the Lease and record the capacity block through the available report or emergency checkpoint path.
-- Resolve CONTROL authority through the latest non-superseded control chain. Historical rows that still contain `ACTIVE` are not current controls when a later row supersedes them.
-- Calculate modernization percentages from current `SL-*` rows and G:N evidence. Exclude catalog/delta staging from the Gate denominator, and treat mixed formula, numeric, or string values in the progress column as a schema-migration issue rather than dashboard truth.
-- Never reset verified development. Carry forward only the gates supported by current Git, DB, and test evidence; leave unverified integration, Shadow, and operational-readiness gates incomplete.
-- Treat the new `슬라이스_*` tabs as the active WBS source of truth. Preserve the copied legacy tabs as history and as the unclassified-command backlog.
-- In `명령어_이관`, treat `사용` as active migration scope, `미사용 검토` as a paused decision backlog that remains in progress denominators, and `미사용` as confirmed exclusion from migration scope and progress calculations.
-- When a command becomes `미사용`, preserve its current Rhino source behavior and do not migrate it. If migration artifacts already exist, remove only the new-system implementation, command-specific DB mapping/schema, fixtures, and validation links after dependency checks; preserve shared objects still used by active slices and retain WBS history/evidence.
-- A later return from `미사용` to `사용` requires current-source re-verification and fresh slice mapping before work resumes.
-- Keep Notion limited to the current WBS link and percentages. Keep detailed work, counts, ownership, and evidence in Google Sheets.
-- When a human role must be named, use only `사용자`, `운영자`, `총괄 운영자`, or `개발자`.
-- The user does not need to repeat repository paths, shared links, or the detailed migration procedure.
-
-## Modernization Foreman Skill Improvement Authority
-
-- The modernization foreman monitors worker reports, blocked reasons, correction runs, handoffs, and repeated manual procedures to identify reusable prevention or automation candidates.
-- Classify every report by event type and requested action before interpreting command names or implementation terms. A report about missing predecessor assets, Lease conflicts, evidence mismatch, or row correction is not a new implementation request unless it explicitly asks for implementation.
-- Frequently recurring issues belong to the foreman. When the same or materially similar issue appears across workers or slices, the foreman may create a prevention skill or improve the existing foreman skill.
-- Repetitive execution work belongs to the worker closest to the procedure. A worker who repeatedly performs the same discovery, reconciliation, validation, or reporting sequence may prepare a reusable skill draft.
-- Worker-created skill content remains a draft. Workers MUST NOT register, activate, synchronize, or distribute it as a canonical skill without foreman review.
-- The foreman is the final approval gate for skill scope, trigger description, overlap with existing skills, authoritative sources, validation steps, stop conditions, and ownership.
-- Prefer updating an existing skill when it can cover the pattern clearly. Create a new skill only when the workflow has a distinct trigger, reusable procedure, and independent responsibility.
-- Do not turn a single ordinary mistake into a skill. First improve the task capsule or existing rule; promote it to a skill after recurrence, cross-worker impact, or a high-cost/high-risk deterministic procedure is confirmed.
-- Skills must encode the decision procedure, required inputs, evidence checks, stop conditions, and report format. They must not hard-code one execution's row numbers, task IDs, worker names, commits, or results.
-- All hoiBot skill drafts and approved changes follow the Central Codex Skill Registry workflow. The canonical change is made under `AGENT-HUB/skills/projects/hoibot/`, validated and approved by the foreman, then synchronized to mirrors.
 
 ## Central Codex Skill Registry
 
