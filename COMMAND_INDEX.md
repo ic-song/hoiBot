@@ -32,7 +32,7 @@ Status: VERIFIED
 - `Info.js`: 회원 읽기 전 `miniGamePending.json` 게시 대기 차단. 포인트 중간 상태 표시 방지.
 - 기본 7인수 `response(...)` 유지. 기존 등록·출석·정지·개인톡 패스·대전/영지전 제한을 통과한 뒤 진입.
 - 정확한 `/호월주사위`, 앞뒤 공백을 제거한 `ㅎㅈ`, 기존 DEV 정규화로 같은 명령이 되는 입력은 응답 진입의 데이터 흐름 잠금을 `tryLock()`으로 시도한다. 처리 중 겹친 요청은 대기열·파일 읽기·저장·응답 없이 반환하며, 정상적으로 잠금을 얻은 요청은 기존 검증·두 화면·지급·복구 흐름을 유지한다. 다른 명령의 잠금 방식과 입력 가드는 유지한다.
-- 무인수 명령은 정확히 일치할 때만 실행. 투표는 1·2와 한 줄 1~80자 이유, 금고는 100~99999 정수 하나만 구문으로 허용하고 현재 단계 범위는 판정 직전에 검증한다. 접미 안내·개행·숨김 문자 거부.
+- 무인수 명령은 정확히 일치할 때만 실행. 투표는 1·2와 한 줄 1~80자 이유, 금고는 100~999999 정수 하나만 구문으로 허용하고 현재 단계 범위는 판정 직전에 검증한다. 접미 안내·개행·숨김 문자 거부.
 
 ## Helpers and behavior
 
@@ -45,12 +45,12 @@ Status: VERIFIED
 - ver_2.714: `calculateMiniGameDiceBonus`는 럭키 식스 5천만·역전승 2천만·2/3/5연승 1천만/3천만/1억을 계산한다. 승리만 연승 +1·무승부 유지·패배 0, 6연승 이상 추가 보너스 없음. 두 주사위 화면에 현재 연승과 `buildMiniGameDiceGuide`의 공통 allsee 안내를 표시한다. 상황별 반응은 주사위 난수와 분리해 순환하고 확정 문구를 재사용한다. 최종 숫자·경기 전후 연승·보너스·합계와 보상 원장을 같은 기존 미니게임 게시로 확정하여 재시도/재시작 때 재가산하지 않는다. `requireMiniGameDiceBonus`는 과거 보너스도 원래 숫자로 검증한다. 구버전 완료·지급 대기 경기는 소급 보너스 없이 유지한다. 일일 `/리셋`은 개인 횟수만 0으로 바꾸고 연승·진행 중인 판은 보존한다.
 - 구 `USER1`/`WAIT_USER2`/`USER2`/`RESULT`의 확정 숫자·멘트·횟수·지급 기록을 보존해 다음 정상 입력에서 미완료 숫자만 이어간다. 기존 저장 단계 번호 1→2는 첫 통합 화면, 4→5는 최종 화면에 사용한다. 지급 실패는 최종 화면의 `지급 대기`로 표시하고 자동 정산에서 숫자·횟수를 다시 만들지 않는다. 결과 화면은 프리미엄/메뉴/규칙을 반복하지 않는다.
 - 금고: `getVaultRobberyRequest`, `createVaultRobberyRound`, `startVaultRobberyRound`, `upgradeVaultRobberyStore`, `getVaultRobberyStage`, `openNextVaultRobberyRound`, `resetVaultRobberyRound`, `resolveVaultRobberyUser`, `getVaultRobberySkillBonus`, `getVaultRobberyAttempts`, `applyVaultRobberyGuess`, `buildVaultRobberyMessage`.
-- 1~3번째 쉬움 100~999·2억·힌트 3개, 4~7번째 보통 1000~9999·5억·힌트 5개, 8~15번째 어려움 10000~99999·10억·힌트 5개. 일반/일반 호이패스 3회·프리미엄 총 5회로 금고 간 개인 횟수를 공유한다. 정상 입력만 차감하고 정답이어도 복구하지 않는다. 동일 계정의 여러 금고 당첨은 허용하지만 같은 금고는 원장으로 1회만 지급한다. 15개 당첨 후 종료하며 고정 상금 합계는 106억이다. 조회 진행은 완료 개수 0/15부터 표시한다. 현재 금고 힌트와 `buildVaultRobberyWinners`의 금일 당첨자(실제 정답·닉네임·상금)는 최신순으로 표시하고 목록은 allsee 뒤에 둔다. `getVaultRobberyPaidTotal`은 실제 지급 완료 상금만 합산한다.
+- 비밀번호는 1번째 100~999, 2~8번째 1000~9999, 9~15번째 10000~99999, 16~20번째 100000~999999다. 기존 상금·힌트는 순번별로 유지한다(1~3번째 쉬움 2억·힌트 3개, 4~7번째 보통 5억·힌트 5개, 8~20번째 어려움 10억·힌트 5개). 일반/일반 호이패스 3회·프리미엄 총 5회로 금고 간 개인 횟수를 공유한다. 정상 입력만 차감하고 정답이어도 복구하지 않는다. 동일 계정의 여러 금고 당첨은 허용하지만 같은 금고는 원장으로 1회만 지급한다. 20개 당첨 후 종료하며 고정 상금 합계는 156억이다. 조회 진행은 완료 개수 0/20부터 표시한다. 현재 금고 힌트와 `buildVaultRobberyWinners`의 금일 당첨자(실제 정답·닉네임·상금)는 최신순으로 표시하고 목록은 allsee 뒤에 둔다. `getVaultRobberyPaidTotal`은 실제 지급 완료 상금만 합산한다.
 - `금고털이범📙`은 A등급·기존 등급별 확률 0.4%·추가 2회, `경제사범📙`은 한정판 등급·일반 오픈 제외·추가 4회다. 실제 장착한 신규 스킬의 최댓값만 가산하며 중복 보유·동일 스킬 중복 장착·잠금 슬롯은 추가 가산하지 않는다. 탈착·교체·패스 변경 시 이미 쓴 횟수는 유지하고 잔여 횟수만 다시 계산한다. 명령 진입에서 `petSkillDataPath`를 한 번 읽고 계산 헬퍼에는 로드된 데이터만 전달한다. 조회·스킬 계산은 스킬 파일을 저장하지 않으며 누락·잘못된 JSON은 기존 오류 흐름으로 실패한다. 개별 횟수 리셋 안내에도 대상의 현재 장착 보너스를 포함한다.
 - 금고 공개 안내의 초기화 시각은 `매일 자정`으로 표시하고 관리자 명령어는 노출하지 않는다. 실제 초기화는 기존 `/리셋` 실행 기준을 유지한다.
 - 금고털이범·경제사범은 `PET_SKILL_COMPAT_GROUPS`에 같은 그룹으로 등록되어 `/펫스킬장착` 시 양방향으로 함께 장착할 수 없다. `isPetSkillCompatible`가 아이템 소비·저장 전에 거절하며 펫스킬 중복 안내에도 같은 조합을 표시한다. 기존 동시 장착 기록은 자동 삭제하지 않고 횟수 보너스의 최댓값 보호를 유지한다.
 - 상금 이월·증가·누적 상한과 계산 함수는 제거했다. 일일 /리셋은 1번째 쉬움 2억·비밀번호·횟수·힌트·금일 목록/합계를 초기화한다. 다음 금고는 지급 확정 후 즉시 열리며 이전 범위 밖의 정답은 새 난수 범위에서 제외하지 않는다. 게임 ID/시각이 오래된 요청은 미차감 안내한다.
-- `/금고리셋`: 기존 MASTER만, 새 ID·비밀번호로 첫 금고를 열고 당일 당첨 목록·전체 개인 사용 횟수·최근 힌트·재응답 대기를 함께 초기화한다. 15개 종료 후에도 리셋 가능하다. 이미 지급한 포인트·보상/지급 원장은 보존하고 이전 회차는 보관한다. 미지급 보상이 있으면 보류하며 기존 미니게임 게시 저널로 진행과 보관을 함께 확정·복구한다. 오래된 게임 ID·요청 시각은 새 금고를 실행하지 않는다.
+- `/금고리셋`: 기존 MASTER만, 새 ID·비밀번호로 첫 금고를 열고 당일 당첨 목록·전체 개인 사용 횟수·최근 힌트·재응답 대기를 함께 초기화한다. 20개 종료 후에도 리셋 가능하다. 이미 지급한 포인트·보상/지급 원장은 보존하고 이전 회차는 보관한다. 미지급 보상이 있으면 보류하며 기존 미니게임 게시 저널로 진행과 보관을 함께 확정·복구한다. 오래된 게임 ID·요청 시각은 새 금고를 실행하지 않는다.
 - `/금고횟수리셋 아이디`: 기존 MASTER만, 해당 날짜의 한 계정 사용 횟수만 0으로 바꾼다. 기존 회원 검색 재사용, 닉네임/다른 계정 ID 충돌은 거부하고 @닉네임으로 명시 가능. 암호·힌트·상금·게임·종료·보상은 유지. 운영 기록에 실행자/대상/시각/결과/게임 ID만 남기며 비밀번호는 포함하지 않는다.
 - 구 `/호이월드미니게임`은 실행 명령에서 제거, 현재 메뉴·도움말·게임 안내는 `/미니게임`으로 통일한다.
 
@@ -59,14 +59,15 @@ Status: VERIFIED
 - 정적 원본: `data/balanceQuestions.json` 1,300문항/26분류, `data/howoriDiceDialogues.json` 200멘트/8분류. `tools/build_mini_game_catalog_bundle.js`가 Main의 구간 표시에 전체 자료를 생성하며 `--check`로 동기화를 검증한다. `getMiniGameBundledCatalog`는 누락 시에만 원본 전문을 반환한다.
 - 정적 파일 누락은 유효한 교체 이전본 또는 배포에 포함된 전체 자료로 복원한 뒤 원래 경로에서 읽는다. 기존 파일 손상은 덮어쓰지 않고 오류로 유지, 사용자에게 짧은 점검 안내와 운영 오류 기록을 남긴다. 복원/로딩 실패는 투표·게임 시작·횟수·지급 변경 전에 중단. 활성 경로·수정 시각·크기별 캐시, 정상 조회/투표/굴림에서 정적 파일 저장 없음.
 - 활성 진행·순환·투표·이용 횟수·미수령 원장: 활성 데이터 루트의 `miniGameState.json`. 완료된 날짜·지급 증거는 `miniGameArchive_YYYY-MM.json`에 보관, 임의 만료 없음.
-- 일일 기준은 시계 자정이 아닌 실제 `/리셋` 실행이다. 운영의 자정 `/리셋`과 같은 회차를 사용하며 `dailyReset`의 날짜·연속 회차·실행 시각을 기록한다. 금고 비밀번호·15개 진행·횟수·당첨 목록/지급 합계, 밸런스 마감/새 질문, 주사위 새 판 횟수가 함께 전환된다. 기존 주사위 판과 미지급은 유지한다. 같은 날짜의 재리셋도 기존 출석 리셋처럼 새 회차를 만들며 밸런스 원장·마감 공지·보관/통계는 회차를 구분한다.
+- 일일 기준은 시계 자정이 아닌 실제 `/리셋` 실행이다. 운영의 자정 `/리셋`과 같은 회차를 사용하며 `dailyReset`의 날짜·연속 회차·실행 시각을 기록한다. 금고 비밀번호·20개 진행·횟수·당첨 목록/지급 합계, 밸런스 마감/새 질문, 주사위 새 판 횟수가 함께 전환된다. 기존 주사위 판과 미지급은 유지한다. 같은 날짜의 재리셋도 기존 출석 리셋처럼 새 회차를 만들며 밸런스 원장·마감 공지·보관/통계는 회차를 구분한다.
 - `runMiniGameEntry("resetPlan")`은 원본을 검증해 저장 계획만 반환한다. 기존 `/리셋` 권한 분기에서 회원·펫 저장 뒤 보관·진행을 게시하고, 원문/신규 파일을 기존 저장 트랜잭션에 등록해 실패 시 함께 복구한다. 기존 미니게임 지급 확인 대기는 기록을 유지하고 미니게임 리셋만 보류한다. `/리셋`은 잠금 경합 시 기다리므로 자동 정산 중에 명령이 버려지지 않는다. 자동 작업은 미완료 지급/공지 재처리만 하며 시각만으로 새 회차를 만들지 않는다.
 - 공통 고유 ID `member[*].serverRaidAccount.id` 재사용. 신규 등록 시 ID를 발급하며 첫 설치 때 기존 누락 ID만 한 번 보충한다. 설치 이관 이후 조회·투표·일반 굴림은 회원 저장 없음. 실제 지급은 기존 `addPoint`·`saveJsonFile` 경로만 사용.
 - 당첨/마감/주사위 결과를 먼저 확정하고 `payMiniGameRewards`로 정산. 원문 게시 저널 `miniGamePending.json`을 먼저 저장한 후 회원·진행·해당 월 보관을 게시한다. 게시 완료 경계 이후 저널을 비운다. 중단 시 다른 회원 변경 전에 확정 원문을 완성하므로 이후 거래를 과거 회원 백업으로 되돌리지 않는다.
 - `runMiniGameEntry`의 월별 보관은 `archive(day, true)`로 실제 변경을 표시하고 변경된 월만 한 번 직렬화한다. 보관 비교용 전체 문자열을 상시 유지하지 않으며 통계 조회는 변경 표시를 하지 않는다. 일일 리셋 계획은 사용하지 않는 진행 비교 문자열을 생성하지 않고, 실제 저장은 변경 판정 후 이전 비교 문자열을 해제한 다음 기존 원문 게시 저널을 만든다. 금고 교체는 새 회차 객체로 바꾸므로 이전 회차를 전체 복제하지 않는다. 기존 저널 버전·검증·저장 순서·복구 계약은 유지한다.
 - 진행 파일은 정상이고 저널·교체 이전본만 없으면 진행을 검증한 뒤 누락 저널만 생성한다. `getMiniGameMissingJournalReviewReason`가 PENDING 원장·미지급 금고·결과 단계 미지급 주사위를 발견하거나 임시 저장 흔적이 있으면 `recovery: {required:true,reason:...}`를 기록하고 미니게임 변경/지급을 보류한다. 남은 저널 `.tmp` 원문은 `.missing`으로 보존하며 기존 증거 충돌은 실패한다. 진행·회원·정답·횟수·기지급 기록은 초기화하지 않는다.
 - 지급 확인 대기 중에도 조기 `recover`의 `allowRecoveryReview`는 일반 명령을 통과시킨다. 실제 미완료 게시 원문은 기존대로 먼저 완성한다. `/미니게임`은 메뉴와 보류 안내, 게임 실행은 짧은 보류 안내를 출력한다. 시작 시 미니게임 예외는 로그를 남기고 다음 초기화를 계속하며, 확인 대기 자동 작업은 같은 오류를 반복 예약하지 않는다. 손상 파일은 이 예외 복구 대상이 아니다.
-- 금고 schema1/2는 검증 후 schema3으로 한 번 이관한다. 현재 일일 회차의 기존 당첨(같은 날짜 이전 /리셋 기록은 제외)과 개인 사용 횟수, 확정 보상의 금액·보상 ID·지급/공지 상태는 보존한다. 미당첨 이월금은 폐기하고 새 순번의 고정 상금·범위로 교체하며 원래 금고는 보관한다. 기당첨 보상은 재지급하지 않고 미지급 확정 보상은 원래 금액으로 정산한 뒤 다음 순번을 연다. 과거 형식 범위/금액 상수는 이 검증에만 사용한다.
+- 금고 schema1/2는 검증 후 schema4로 한 번 이관한다. 현재 일일 회차의 기존 당첨(같은 날짜 이전 /리셋 기록은 제외)과 개인 사용 횟수, 확정 보상의 금액·보상 ID·지급/공지 상태는 보존한다. 미당첨 이월금은 폐기하고 새 순번의 고정 상금·범위로 교체하며 원래 금고는 보관한다. 기당첨 보상은 재지급하지 않고 미지급 확정 보상은 원래 금액으로 정산한 뒤 다음 순번을 연다. 과거 형식 범위/금액 상수는 이 검증에만 사용한다.
+- schema3은 `previousStages`로 기존 15개 범위를 검증한 뒤 schema4로 한 번 전환한다. 확정 보상에는 `previousPolicy`를 표시해 과거 정답·보상·지급 ID를 보존한다. 범위가 바뀐 2·3·8번째 미당첨 판만 새 ID·정답으로 바꾸며 개인 사용 횟수와 기존 상금을 유지하고 원래 판은 보관한다. 나머지 미당첨 판은 정답·힌트·ID를 유지한다. 기존 15개 종료본은 지급 후 16번째를 열며, 이전 미지급은 원금으로 1회 정산한다. `tools/test_vault_password_update.js`의 6그룹과 Rhino 동시 전환·새 전역 재시작으로 검증한다.
 - `requireMiniGameState`, `requireMiniGameJournal`, `requireMiniGameArchive`, `requireMiniGameCatalog`로 손상을 오류 처리. 설치 후 누락·파싱 오류를 빈 진행으로 초기화하지 않는다. 분리 회원의 레이드/로그 슬롯 변경은 차단한다.
 - 전체 공지는 지급과 별개로 CLAIMED를 먼저 저장. 실패·전송 여부 불확실 상태는 UNCERTAIN으로 남기고 자동 재발송/재지급하지 않는다. 상태/보관 원문에서 운영 확인 가능.
 - `runMiniGameEntry`의 주사위 화면 전송은 개인 주사위 명령의 본인 계정만 후보로 선택하고, 다른 개인 명령·재표시는 후보를 만들지 않는다. 자동 처리에서는 전체 사용자를 계속 확인한다. `getMiniGameWorkDelay`는 검증된 진행에서 첫 RESULT 또는 밸런스 외 PENDING 보상 발견 시 기존과 같은 재시도 간격을 즉시 반환한다. 전체 상태 검증·보상 지급·공지 선점·저널 게시 경계는 유지한다.
@@ -74,7 +75,7 @@ Status: VERIFIED
 
 ## Validation
 
-- `tools/test_vault_robbery.js`: 3·4·5자리 정답 전 범위, 난수 양끝과 직전 정답 제외, 입력·단계 오류·KST 변환 6그룹. `tools/test_vault_balance.js`: 실제 15개·106억·3/5회·힌트·최신순 UI·이월 폐기·schema1/2와 구 저널 이관·확정 지급/실패·DEV·/리셋 16그룹. `tools/test_vault_reset_skills.js`: 신규 스킬·등급/확률/장착 UI·탈착/교체·전체 리셋·재시작·중단 복구·10개 종료본 확장·손상 파일 9그룹. `tools/vault_reset_skills_validation.md` 참조.
+- `tools/test_vault_robbery.js`: 3·4·5자리 정답 전 범위와 6자리 난수 표본·각 구간 양끝, 난수 양끝과 직전 정답 제외, 입력·단계 오류·KST 변환 6그룹. `tools/test_vault_balance.js`: 실제 20개·156억·3/5회·힌트·최신순 UI·이월 폐기·schema1/2와 구 저널 이관·확정 지급/실패·DEV·/리셋 16그룹. `tools/test_vault_reset_skills.js`: 신규 스킬·등급/확률/장착 UI·탈착/교체·전체 리셋·재시작·중단 복구·10개 종료본 확장·손상 파일 9그룹. `tools/vault_reset_skills_validation.md` 참조.
 - `tools/test_mini_games.js`: 실제 명령 진입·7인수 콜백·정산/저널/실패 재시도·분리 회원·Info 차단·정적 자료·일일 `/리셋`·시각만 경과 시 유지·DEV 예외 검증.
 - `tools/test_mini_games_rhino.js <rhino.jar>`: 전체 Main/Info Rhino 컴파일, 실제 Java 파일·동시 스레드·새 전역 재시작·보상 중단 복구 검증.
 - `tools/test_mini_game_revision.js`: 2.697 이관·2차/수동 개방·공유 횟수·프리미엄 전용·관리자 대상/권한·동시 게임 ID 경계·누락 복원/손상 차단·짧은 오류 안내 검증.
@@ -108,7 +109,7 @@ Status: VERIFIED
 ## Files and Commands
 
 - `main.js`: `GLOBAL_CONFIG.gmEducation`, 교육 요청/원본 검증·진행·보상·매뉴얼·실적 함수. `Info.js`: `/내정보`·`/정보 닉네임` 레벨 다음 교육 상태 한 줄과 경로별 읽기 캐시.
-- `isGmEducationOperator`: 기존 `isMaster` 판정과 허용 방을 유지하고 `GLOBAL_CONFIG.gmEducation.rooms`의 정확한 `교육방`·`교육방2`에서는 기존 Master 명단에 든 사용자에게 교육 명령만 허용한다. 전역 `isMaster` 방 목록은 바꾸지 않는다. Admin/일반 사용자는 제외한다. 두 방은 같은 교육 원본과 보상 영수증을 사용하며 방을 바꿔도 중복 완료·보상·실적을 만들지 않는다. 진행 중 영지전의 공통 차단은 교육방 허용보다 우선한다.
+- `isGmEducationOperator`: 기존 `isMaster` 판정과 허용 방을 유지하고 `GLOBAL_CONFIG.gmEducation.rooms`의 정확한 `교육방`·`교육방2`·`교육방3`에서는 기존 Master 명단에 든 사용자에게 교육 명령만 허용한다. 전역 `isMaster` 방 목록은 바꾸지 않는다. Admin/일반 사용자는 제외한다. 세 방은 같은 교육 원본과 보상 영수증을 사용하며 방을 바꿔도 중복 완료·보상·실적을 만들지 않는다. 진행 중 영지전의 공통 차단은 교육방 허용보다 우선한다.
 - `/교육`: 기존 GM 흐름 안내와 전체보기 12챕터 제목 목록, `/교육 1`~`12`: 공통 매뉴얼, `/교육 아이디`: 진행/다음 챕터. 숫자 계정은 `/교육 @닉네임` 또는 기존 `serverRaidAccount.id`로 구분한다. 공백 닉네임도 전체 이름으로 조회한다. 11장은 홈뱃지·큐브, 12장은 `/패키지가방`에서 패키지 이름·보유 수량을 확인하는 교육이다. 실제 재화 사용·결제는 완료 조건이 아니다.
 - `/교육완료 아이디 챕터번호`: 마지막 정수 1~12와 그 앞의 전체 닉네임을 분리. 다음 챕터만 허용하며 재완료·순서 건너뛰기·추가 안내 문구는 지급하지 않는다. 계정당 총 12개 챕터, 챕터당 `다이아상자💎(소)` 1개, 수료 추가 보상 없음. 기존 10챕터 기록은 10/12로 유지하고 11·12만 추가 지급한다.
 - `/교육실적`, `/교육실적 GM아이디`, `/교육실적 전체` 뒤 선택적 `YYYY-MM`: 기본은 현재 KST 월, 지정 월은 최초 정상 완료 시각 기준으로 집계한다. `/교육실적전체 [YYYY-MM]`은 전체 조회 별칭이다. 담당 GM 교대·닉변에도 내부 계정 ID를 유지한다. 개수 내림차순·동률 1등/1등/3등·닉네임 정렬, 본문 최대 3명과 전체 순위/`👤` GM별 기록을 `allsee`로 표시한다. 각 기록은 대상자·챕터·KST `YYYY.MM.DD HH:mm:ss`를 한 줄로 출력한다. 시각 기록은 최신순, 날짜만 있는 기록은 시각을 만들지 않고 같은 날짜 안에서 원본 순서를 유지한다. 인원·수료 인원·금액은 표시하지 않는다. 미래·빈 달·형식 오류·없는 계정·예약어 충돌은 각각 안내하며 `/교육실적 초기화`는 과거 월 조회를 안내한다.
@@ -2188,7 +2189,7 @@ Status: VERIFIED
 - Final charm/village above `allsee`; explanation and active skills precede the complete equipped list at the very bottom.
 - The final total, castle charm and raid charm each occupy a separate line.
 - Castle/raid calculators in both scripts and Main diagnostics add the same scoped extra once before existing overall buffs. `/종합순위` reflects it; `/가구순위` retains individual base values.
-- Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds 10 percentage points to the royal+arcana percent, including level-zero homes; apply that combined percent once and floor per mode. Unequipped ownership gives no effect. The S-grade detail shows its existing actual 0.3% probability. Furniture/village totals and calculation UI include the skill in the combined buff without a separate additional-charm line.
+- Village percent applies to furniture plus active royal/arcana-house charm. Interior master's existing 10% remains outside that base. Equipped `느그 집 마련의 꿈` adds 10 percentage points to the grand+royal+arcana percent (10/20/30 percentage points per level), including level-zero homes; apply that combined percent once and floor per mode. Unequipped ownership gives no effect. The S-grade detail shows its existing actual 0.3% probability. Furniture/village totals and calculation UI include the skill in the combined buff without a separate additional-charm line.
 
 ---
 
@@ -2202,13 +2203,13 @@ Status: VERIFIED
 
 ## Input and Mutation
 
-- Exact command or full numeric-argument pattern; 1–10 distinct bag numbers across royal/arcana grades. Extra guide text does not execute.
+- Exact command or full numeric-argument pattern; 1–10 distinct bag numbers across grand/royal/arcana grades. Extra guide text does not execute.
 - `등록한다` / `등록안한다`: same account, room, group-chat mode and DEV/PROD context, 60-second pending state. Confirmation state is memory-only and expires/restarts without consuming items.
 - Sort with the existing bag-number convention. Revalidate full bag fingerprint, individual ownership/equipment, grade capacities, skills and predicted effect. Changed bag cancels all; changed effects require another confirmation.
-- State: `homeData[user].lumiereVillage.{royal,arcana}.{level,progress}`. Missing state reads as zero without creating/saving it. Each 10 same-grade pieces gives one level; each 10 actual house-area units permits one level per annex. At-cap overflow cancels the entire mixed request.
+- State: `homeData[user].lumiereVillage.{grand,royal,arcana}.{level,progress}`. Missing whole state reads as zero without creating/saving it; old royal/arcana records remain intact and only absent grand reads as zero. Malformed stored values still fail. Each 10 same-grade pieces gives one level; each 10 actual house-area units permits one level per annex. At-cap overflow cancels the entire mixed request.
 - On confirmation remove pending first, consume only selected unequipped pieces, persist the new home once with the existing command transaction and pre-mutation snapshot. No skill/member-file rewrite or permanent per-registration history.
 - Royal uses 10 equipped pieces; arcana uses 5 owned pieces (bag plus equipped). Losing arcana eligibility updates its base and village contribution and may lower final charm.
-- Active state adds roughly 90 bytes per registering user; calculation helpers perform no file IO.
+- Three-annex state is persisted only through registration; calculation helpers perform no file IO.
 
 ---
 

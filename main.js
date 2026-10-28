@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.720"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.721"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1005,7 +1005,7 @@ var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파�
 const GLOBAL_CONFIG = {
     gmEducation: {
         version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", rewardItem: "다이아상자💎(소)",
-        rooms: ["교육방", "교육방2"],
+        rooms: ["교육방", "교육방2", "교육방3"],
         commandGuideLines: [
             "📚 호월 교육 명령어",
             "━━━━━━━━━━━━",
@@ -1124,14 +1124,22 @@ const GLOBAL_CONFIG = {
         dialogueSizes: { start: 20, roll: 40, host_ahead: 30, host_behind: 30, mid_tie: 20, user_win: 20, user_loss: 20, final_draw: 20 }
     },
     vaultRobbery: {
-        schemaVersion: 3,
+        schemaVersion: 4,
         skillBonuses: { "금고털이범": 2, "경제사범": 4 },
         equipMessages: {
             "금고털이범": "🔐 금고털이범📙 장착 완료!\n━━━━━━━━━━━━\n바늘 도둑이 소도둑 된다더니…\n이제는 금고까지 노리기 시작했습니다. 😏\n\n🔐 금고 도전 횟수 +2회 적용!\n※ 경제사범과 효과 중복 불가\n━━━━━━━━━━━━",
             "경제사범": "💰 경제사범📙 장착 완료!\n━━━━━━━━━━━━\n푼돈에는 관심 없습니다.\n이제 목표는 조 단위입니다. 😎\n\n🔐 금고 도전 횟수 +4회 적용!\n※ 금고털이범과 효과 중복 불가\n━━━━━━━━━━━━"
         },
-        limits: { minNumber: 100, maxNumber: 99999, normalAttempts: 3, passAttempts: 5, dailyGames: 15 },
+        limits: { minNumber: 100, maxNumber: 999999, normalAttempts: 3, passAttempts: 5, dailyGames: 20 },
         stages: [
+            { through: 1, label: "쉬움", minNumber: 100, maxNumber: 999, prize: 200000000, recentHints: 3 },
+            { through: 3, label: "쉬움", minNumber: 1000, maxNumber: 9999, prize: 200000000, recentHints: 3 },
+            { through: 7, label: "보통", minNumber: 1000, maxNumber: 9999, prize: 500000000, recentHints: 5 },
+            { through: 8, label: "어려움", minNumber: 1000, maxNumber: 9999, prize: 1000000000, recentHints: 5 },
+            { through: 15, label: "어려움", minNumber: 10000, maxNumber: 99999, prize: 1000000000, recentHints: 5 },
+            { through: 20, label: "어려움", minNumber: 100000, maxNumber: 999999, prize: 1000000000, recentHints: 5 }
+        ],
+        previousStages: [ // 기존 15개 금고의 정답·보상 검증 전용
             { through: 3, label: "쉬움", minNumber: 100, maxNumber: 999, prize: 200000000, recentHints: 3 },
             { through: 7, label: "보통", minNumber: 1000, maxNumber: 9999, prize: 500000000, recentHints: 5 },
             { through: 15, label: "어려움", minNumber: 10000, maxNumber: 99999, prize: 1000000000, recentHints: 5 }
@@ -1911,7 +1919,7 @@ const GLOBAL_CONFIG = {
         notifyEvery: 3, // 패스 미사용 1:1톡 운영 알림 주기
         messagePreviewMaxLength: 100 // 운영 알림에 표시할 최근 메시지 최대 길이
     },
-    petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, royalPercent: 10, arcanaPercent: 15, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
+    petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, grandPercent: 10, royalPercent: 20, arcanaPercent: 30, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
     petHomeComments: { // 펫홈 방명록 댓글 설정
         maxStored: 30, // 최근 댓글 보관 개수
         maxLength: 30, // 댓글 최대 글자 수
@@ -26160,7 +26168,7 @@ replier.reply(
                         return;
                     }
                     if (msg === "/별채등록") {
-                        replier.reply(villageHeader + "\n📥 /별채등록 [가구가방번호] …\n한 번에 미장착 로열·아르카나 가구를 합계 1~10개 등록할 수 있어요.");
+                        replier.reply(villageHeader + "\n📥 /별채등록 [가구가방번호] …\n한 번에 미장착 그랑·로열·아르카나 가구를 합계 1~10개 등록할 수 있어요.");
                         return;
                     }
                     var villageNumbers = villageAnswer ? villagePending.numbers : msg.trim().split(/\s+/).slice(1).map(function (value) { return Number(value); });
@@ -36007,7 +36015,7 @@ function runMiniGameEntry(mode, args) {
         accountId = account.id;
     }
     if (state.vault) {
-        if (state.vault.schemaVersion < 3) {
+        if (state.vault.schemaVersion < GLOBAL_CONFIG.vaultRobbery.schemaVersion) {
             var legacyVault = state.vault.current;
             archive(legacyVault.day, true).days["vault:" + (legacyVault.id || "$" + legacyVault.day)] = legacyVault;
         }
@@ -36045,7 +36053,7 @@ function runMiniGameEntry(mode, args) {
         var stale = args.requestAt <= state.dailyReset.at;
         if (request.kind === "vault" || request.kind === "vaultAdmin") {
             if (!state.vault) {
-                state.vault = { schemaVersion: 3, serial: 0, current: null, awards: {}, replyPending: {}, dailyWinners: [] };
+                state.vault = { schemaVersion: GLOBAL_CONFIG.vaultRobbery.schemaVersion, serial: 0, current: null, awards: {}, replyPending: {}, dailyWinners: [] };
                 startVaultRobberyRound(state.vault, day, 1, false, 0, undefined, {});
                 createdVaultNow = true;
                 if (typeof miniGameRoundHeads !== "undefined") miniGameRoundHeads.put(args.ctx.key(), state.vault.current.id);
@@ -36681,11 +36689,11 @@ function requireVaultRobberyInteger(value) {
 
 
 // 금고 순번에 해당하는 고정 난이도·상금·힌트 정책을 반환하는 함수
-function getVaultRobberyStage(number) {
+function getVaultRobberyStage(number, previousPolicy) {
     requireVaultRobberyInteger(number);
-    var config = GLOBAL_CONFIG.vaultRobbery;
-    if (number < 1 || number > config.limits.dailyGames) throw new Error("금고 순번 오류");
-    for (var i = 0; i < config.stages.length; i++) if (number <= config.stages[i].through) return config.stages[i];
+    var config = GLOBAL_CONFIG.vaultRobbery, stages = previousPolicy ? config.previousStages : config.stages;
+    if (number < 1 || number > stages[stages.length - 1].through) throw new Error("금고 순번 오류");
+    for (var i = 0; i < stages.length; i++) if (number <= stages[i].through) return stages[i];
     throw new Error("금고 난이도 설정 오류");
 }
 
@@ -36708,11 +36716,24 @@ function startVaultRobberyRound(store, day, number, manual, now, previousAnswer,
     return round;
 }
 
-// 기존 확정 보상·개인 횟수를 보존하고 미당첨 이월만 폐기해 단계형 금고로 이관하는 함수
+// 확정 보상·개인 횟수를 보존하고 이전 금고 정책을 현재 범위로 이관하는 함수
 function upgradeVaultRobberyStore(store) {
     requireVaultRobberyStore(store);
-    if (store.schemaVersion === 3) return false;
+    if (store.schemaVersion === GLOBAL_CONFIG.vaultRobbery.schemaVersion) return false;
     var round = store.current;
+    if (store.schemaVersion === 3) {
+        for (var previousKey in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, previousKey) && !store.awards[previousKey].legacy) store.awards[previousKey].previousPolicy = true;
+        store.schemaVersion = GLOBAL_CONFIG.vaultRobbery.schemaVersion;
+        if (round.legacy && round.winner === null && store.dailyWinners.length < GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) startVaultRobberyRound(store, round.day, store.dailyWinners.length + 1, round.manual, Date.now(), round.answer, round.usage);
+        else if (!round.legacy) {
+            if (round.winner !== null) round.previousPolicy = true;
+            else {
+                var previousStage = getVaultRobberyStage(round.number, true), currentStage = getVaultRobberyStage(round.number);
+                if (previousStage.minNumber !== currentStage.minNumber || previousStage.maxNumber !== currentStage.maxNumber) startVaultRobberyRound(store, round.day, round.number, round.manual, Date.now(), round.answer, round.usage);
+            }
+        }
+        return true;
+    }
     if (store.schemaVersion === 1) {
         store.serial = 0;
         round.id = "$" + round.day; round.serial = 0; round.number = 1; round.manual = false; round.openedAt = 0;
@@ -36740,7 +36761,7 @@ function upgradeVaultRobberyStore(store) {
         first = 0;
         for (var i = 0; i < today.length; i++) if (!store.awards[today[i]].manual && store.awards[today[i]].number === 1) first = i;
     }
-    store.schemaVersion = 3;
+    store.schemaVersion = GLOBAL_CONFIG.vaultRobbery.schemaVersion;
     store.dailyWinners = today.slice(first);
     if (round.winner !== null || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) round.legacy = true;
     else startVaultRobberyRound(store, round.day, store.dailyWinners.length + 1, round.manual, Date.now(), round.answer, round.usage);
@@ -36750,9 +36771,11 @@ function upgradeVaultRobberyStore(store) {
 // 금고와 보상 기록의 손상·잘못된 힌트·지급 상태를 변경 전에 검증하는 함수
 function requireVaultRobberyStore(store) {
     var config = GLOBAL_CONFIG.vaultRobbery, round = store && store.current;
-    if (!store || [1, 2, 3].indexOf(store.schemaVersion) === -1 || !round || !store.awards || typeof store.awards !== "object" || Array.isArray(store.awards)) throw new Error("금고 저장 형식 오류");
+    if (!store || [1, 2, 3, 4].indexOf(store.schemaVersion) === -1 || !round || !store.awards || typeof store.awards !== "object" || Array.isArray(store.awards)) throw new Error("금고 저장 형식 오류");
     var legacy = store.schemaVersion < 3 || round.legacy === true;
-    var stage = legacy ? config.legacy : getVaultRobberyStage(round.number);
+    if ((round.previousPolicy !== undefined && round.previousPolicy !== true) || (store.schemaVersion >= 4 && round.previousPolicy && round.winner === null)) throw new Error("금고 이전 정책 형식 오류");
+    var dailyLimit = store.schemaVersion === 3 ? config.previousStages[config.previousStages.length - 1].through : config.limits.dailyGames; // 저장된 정책의 일일 상한으로 검증
+    var stage = legacy ? config.legacy : getVaultRobberyStage(round.number, store.schemaVersion === 3 || round.previousPolicy === true);
     requireVaultRobberyInteger(round.day); requireVaultRobberyInteger(round.answer); requireVaultRobberyInteger(round.prize);
     if (round.answer < stage.minNumber || round.answer > stage.maxNumber || (legacy ? round.prize < stage.minPrize || round.prize > stage.maxPrize : round.prize !== stage.prize)) throw new Error("금고 정답·상금 형식 오류");
     if (Object.prototype.hasOwnProperty.call(round, "low") || Object.prototype.hasOwnProperty.call(round, "high")) {
@@ -36781,7 +36804,8 @@ function requireVaultRobberyStore(store) {
         requireVaultRobberyInteger(award.day); requireVaultRobberyInteger(award.amount); requireVaultRobberyInteger(award.answer); requireVaultRobberyInteger(award.at);
         var oldPolicy = store.schemaVersion < 3 || award.legacy === true;
         if (store.schemaVersion >= 2) requireVaultRobberyInteger(award.number);
-        var awardStage = oldPolicy ? config.legacy : getVaultRobberyStage(award.number);
+        if (award.previousPolicy !== undefined && award.previousPolicy !== true) throw new Error("금고 보상 이전 정책 형식 오류");
+        var awardStage = oldPolicy ? config.legacy : getVaultRobberyStage(award.number, store.schemaVersion === 3 || award.previousPolicy === true);
         if ((oldPolicy ? award.amount < awardStage.minPrize || award.amount > awardStage.maxPrize : award.amount !== awardStage.prize) || award.answer < awardStage.minNumber || award.answer > awardStage.maxNumber || !award.paid && award.notice !== "WAITING") throw new Error("금고 보상 기록 오류");
         if (store.schemaVersion === 1 && awardKey !== "$" + award.day) throw new Error("금고 보상 날짜 오류");
         if (store.schemaVersion >= 2 && (awardKey !== award.gameId || typeof award.rewardId !== "string" || !award.rewardId || award.number < 1 || award.number > (oldPolicy ? 2 : config.limits.dailyGames) || typeof award.manual !== "boolean" || typeof award.nextOpened !== "boolean")) throw new Error("금고 보상 게임 식별 오류");
@@ -36790,14 +36814,14 @@ function requireVaultRobberyStore(store) {
         var winner = store.awards[round.winner];
         if (!winner || round.winner !== (store.schemaVersion >= 2 ? round.id : "$" + round.day) || winner.day !== round.day || winner.amount !== round.prize || winner.answer !== round.answer) throw new Error("금고 종료 기록 오류");
     }
-    if (store.schemaVersion === 3) {
+    if (store.schemaVersion >= 3) {
         if (!Array.isArray(store.dailyWinners)) throw new Error("금고 일일 당첨 목록 오류");
-        if (round.legacy && round.winner === null && store.dailyWinners.length < config.limits.dailyGames) throw new Error("금고 이전 회차 전환 오류");
+        if (round.legacy && round.winner === null && store.dailyWinners.length < dailyLimit) throw new Error("금고 이전 회차 전환 오류");
         var seen = {};
         for (var w = 0; w < store.dailyWinners.length; w++) {
             var dailyKey = store.dailyWinners[w], dailyAward = store.awards[dailyKey];
             if (typeof dailyKey !== "string" || seen[dailyKey] || !dailyAward || dailyAward.day !== round.day || !dailyAward.legacy && dailyAward.number !== w + 1) throw new Error("금고 일일 당첨 기록 오류");
-            if (w >= config.limits.dailyGames && !dailyAward.legacy) throw new Error("금고 일일 당첨 한도 오류");
+            if (w >= dailyLimit && !dailyAward.legacy) throw new Error("금고 일일 당첨 한도 오류");
             seen[dailyKey] = true;
         }
         if (round.winner !== null && !seen[round.winner] || !legacy && round.number !== store.dailyWinners.length + (round.winner === null ? 1 : 0)) throw new Error("금고 진행 순번 오류");
@@ -36808,7 +36832,7 @@ function requireVaultRobberyStore(store) {
 // 지급이 확정된 금고 다음 순번을 열되 일일 한도에서 종료하는 함수
 function openNextVaultRobberyRound(store, now) {
     var round = store.current, award = round.winner && store.awards[round.winner];
-    if (store.schemaVersion !== 3 || !award || !award.paid || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return false;
+    if (store.schemaVersion !== GLOBAL_CONFIG.vaultRobbery.schemaVersion || !award || !award.paid || store.dailyWinners.length >= GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return false;
     award.nextOpened = true;
     startVaultRobberyRound(store, round.day, store.dailyWinners.length + 1, false, now, round.answer, round.usage);
     return true;
@@ -54993,10 +55017,11 @@ function buildPetHomeVillageStatus(homeData, petSkillData, user, detail, charm) 
     if (!charm) charm = getPetHomeFurnitureCharm(homeData, petSkillData, user);
     var limit = getPetHomeVillageLevelLimit(home), config = GLOBAL_CONFIG.petHomeVillage;
     var out = "🏛️ 루미에르 빌리지\n📐 " + (Number(home.floor) || 0) + "평 · 각 별채 Lv." + limit + "까지\n💞 빌리지 종매 버프 +" + charm.percent + "% 적용 중\n";
-    var keys = ["royal", "arcana"], labels = ["🏰 로열 별채", "👑 아르카나 별채"];
+    var keys = ["grand", "royal", "arcana"], labels = ["🏠 그랑 별채", "🏰 로열 별채", "👑 아르카나 별채"];
     for (var i = 0; i < keys.length; i++) {
         var state = charm.state[keys[i]], locked = state.level >= limit;
-        out += labels[i] + " · Lv." + state.level + " · " + (locked ? "🔒 집 확장 필요" : "[📦" + state.progress + "/" + config.materialsPerLevel + "]") + "\n";
+        out += labels[i] + " · Lv." + state.level + " · [📦" + state.progress + "/" + config.materialsPerLevel + "]" + (locked ? " · 🔒 집 확장 필요" : "") + "\n";
+        if (detail) out += "└ 레벨당 +" + config[keys[i] + "Percent"] + "%p · 현재 +" + state.level * config[keys[i] + "Percent"] + "%\n";
         if (locked && detail) out += "└ 집 " + ((state.level + 1) * config.areaPerLevel) + "평부터 Lv." + (state.level + 1) + " 성장 가능\n";
     }
     return out.trim();
@@ -55048,8 +55073,9 @@ function buildPetHomeFurnitureInfoMessage(data, petData, petSkillData, guildData
     if (charm.interior) out += "📙 인테리어 장인 추가 +" + numberWithCommas(charm.interior * 2) + "💞 · 별채 버프 제외\n";
     out += "💞 최종 가구 종합매력 +" + numberWithCommas(charm.total) + "\n━━━━━━ ✦ ━━━━━━\n";
     out += buildPetHomeFurnitureSkillMessage(petSkillData, homeData, user, charm);
-    out += "📦 별채 성장 안내\n🏰 로열 가구 10개 → Lv.+1 · 버프 +10%\n👑 아르카나 가구 10개 → Lv.+1 · 버프 +15%\n📐 집 10평당 성장 가능 레벨 +1\n\n※ 버프는 장착 가구 종매와 가구스킬 종매의 합계에 적용됩니다.\n※ 인테리어 장인 추가분은 별채 버프에서 제외됩니다.\n※ 별채 레벨·%는 유지되며, 추가 매력은 현재 가구·스킬에 따라 달라집니다.\n";
-    if (viewer === user) out += "────── ✧ ──────\n🎒 가구 확인: /가구가방\n📥 /별채등록 [가구가방번호] …\n미장착 로열·아르카나 가구 최대 10개\n";
+    var villageConfig = GLOBAL_CONFIG.petHomeVillage;
+    out += "📦 별채 성장 안내\n🏠 그랑 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.grandPercent + "%p\n🏰 로열 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.royalPercent + "%p\n👑 아르카나 가구 " + villageConfig.materialsPerLevel + "개 → Lv.+1 · 버프 +" + villageConfig.arcanaPercent + "%p\n📐 집 " + villageConfig.areaPerLevel + "평당 성장 가능 레벨 +1\n\n※ 버프는 장착 가구 종매와 가구스킬 종매의 합계에 적용됩니다.\n※ 인테리어 장인 추가분은 별채 버프에서 제외됩니다.\n※ 별채 레벨·%는 유지되며, 추가 매력은 현재 가구·스킬에 따라 달라집니다.\n";
+    if (viewer === user) out += "────── ✧ ──────\n🎒 가구 확인: /가구가방\n📥 /별채등록 [가구가방번호] …\n미장착 그랑·로열·아르카나 가구 최대 10개\n";
     out += "━━━━━━ ✦ ━━━━━━\n🪑 전체 장착 가구 (" + placed.length + "/" + limit + ")\n💞 기본 수치 · 캐슬·레이드에 각각 적용\n※ 빌리지 버프 적용 전 가구 자체 수치입니다.\n────── ✧ ──────\n";
     if (placed.length === 0) out += "🪑 아직 장착한 가구가 없어요.\n";
     for (var i = 0; i < placed.length; i++) out += (i + 1) + ". " + formatPetHomeFurniture(placed[i], true) + "\n";
@@ -55060,7 +55086,7 @@ function buildPetHomeFurnitureInfoMessage(data, petData, petSkillData, guildData
 function buildPetHomeFurnitureBagMessage(data, petData, petSkillData, guildData, homeData, user) {
     var home = homeData[user], bag = home.furnitureBag;
     var out = getHoiPassPremiumHeader(data, user) + "[" + checkRank(data, petData, guildData, user) + "] 가구 가방🛌 [" + bag.length + "/" + getFurnitureBagLimit(data, user) + "]\n";
-    out += "📥 /별채등록 [가구가방번호] …\n미장착 로열·아르카나 가구 최대 10개\n━━━━━━ ✦ ━━━━━━\n※ 가구 장착: /가구장착 [번호]\n※ 1번 장착 예시: /가구장착 1\n※ 적용 매력 확인: /가구정보\n※ 가구 판매: /가구판매 [번호]\n※ 장착 가구판매: /집청소 [번호]\n※ 장착 귀속해제: /가구해제 [번호]\n━━━━━━ ✦ ━━━━━━\n✧━인벤토리 가구 목록🪑━✧\n";
+    out += "📥 /별채등록 [가구가방번호] …\n미장착 그랑·로열·아르카나 가구 최대 10개\n━━━━━━ ✦ ━━━━━━\n※ 가구 장착: /가구장착 [번호]\n※ 1번 장착 예시: /가구장착 1\n※ 적용 매력 확인: /가구정보\n※ 가구 판매: /가구판매 [번호]\n※ 장착 가구판매: /집청소 [번호]\n※ 장착 귀속해제: /가구해제 [번호]\n━━━━━━ ✦ ━━━━━━\n✧━인벤토리 가구 목록🪑━✧\n";
     if (bag.length === 0) out += "[가방에 보유 중인 가구 없음]\n";
     for (var i = 0; i < bag.length; i++) {
         if (i === 3) out += allsee + "\n";
@@ -55083,21 +55109,21 @@ function buildPetHomeVisitBadgeMessage(activityData, user) {
 
 // 확인 요청의 가방 개체와 예상 효과를 재검증하고 등록 후 상태를 계산하는 함수
 function preparePetHomeVillageRegistration(homeData, petSkillData, user, numbers, placed) {
-    var config = GLOBAL_CONFIG.petHomeVillage, home = homeData[user], selected = [], counts = { royal: 0, arcana: 0 }, used = {};
+    var config = GLOBAL_CONFIG.petHomeVillage, home = homeData[user], selected = [], counts = { grand: 0, royal: 0, arcana: 0 }, used = {};
     if (numbers.length < 1 || numbers.length > config.maxRegister) return { error: "한 번에 가구가방 번호를 1~" + config.maxRegister + "개 입력해주세요." };
     var bag = home.furnitureBag, state = getPetHomeVillageState(home), limit = getPetHomeVillageLevelLimit(home);
     for (var i = 0; i < numbers.length; i++) {
         var number = numbers[i], item = bag[number - 1];
-        if (!isFinite(number) || number < 1 || Math.floor(number) !== number || !item) return { error: "가방 " + number + "번을 확인해주세요. 미장착 로열·아르카나만 등록할 수 있어요." };
+        if (!isFinite(number) || number < 1 || Math.floor(number) !== number || !item) return { error: "가방 " + number + "번을 확인해주세요. 미장착 그랑·로열·아르카나만 등록할 수 있어요." };
         if (used[number]) return { error: "같은 가구가방 번호를 중복 입력했어요." };
         used[number] = true;
-        var key = item.grade === "로열 루미에르" ? "royal" : item.grade === "아르카나 루미에르" ? "arcana" : null;
-        if (!key || item.placedAt !== undefined) return { error: "가방 " + number + "번은 등록할 수 없어요. 미장착 로열·아르카나만 가능해요." };
+        var key = item.grade === "그랑 루미에르" ? "grand" : item.grade === "로열 루미에르" ? "royal" : item.grade === "아르카나 루미에르" ? "arcana" : null;
+        if (!key || item.placedAt !== undefined) return { error: "가방 " + number + "번은 등록할 수 없어요. 미장착 그랑·로열·아르카나만 가능해요." };
         for (var p = 0; p < placed.length; p++) if (item.id !== undefined && String(item.id) === String(placed[p].id)) return { error: "가방 " + number + "번의 장착 상태를 확인해주세요." };
         counts[key]++;
         selected.push({ number: number, key: key, item: item });
     }
-    var keys = ["royal", "arcana"], labels = ["로열", "아르카나"];
+    var keys = ["grand", "royal", "arcana"], labels = ["그랑", "로열", "아르카나"];
     for (var j = 0; j < keys.length; j++) {
         var key = keys[j], remaining = Math.max(0, (limit - state[key].level) * config.materialsPerLevel - state[key].progress);
         if (counts[key] > remaining) return { error: labels[j] + " 가구는 현재 " + remaining + "개까지 추가 등록할 수 있어요. 집을 확장하면 더 성장할 수 있어요.\n모든 가구는 소모되지 않았어요." };
@@ -55131,16 +55157,16 @@ function buildPetHomeVillageRegistrationMessage(header, result, completed) {
     if (!completed) {
         for (var i = 0; i < result.selected.length; i++) {
             var row = result.selected[i];
-            out += (row.key === "royal" ? "🏰" : "👑") + " 가방 " + row.number + "번 · " + formatPetHomeFurniture(row.item, false) + "\n";
+            out += (row.key === "grand" ? "🏠" : row.key === "royal" ? "🏰" : "👑") + " 가방 " + row.number + "번 · " + formatPetHomeFurniture(row.item, false) + "\n";
         }
     } else {
-        var keys = ["royal", "arcana"], labels = ["🏰 로열 별채", "👑 아르카나 별채"];
+        var keys = ["grand", "royal", "arcana"], labels = ["🏠 그랑 별채", "🏰 로열 별채", "👑 아르카나 별채"];
         for (var j = 0; j < keys.length; j++) {
             var key = keys[j];
             if (!result.counts[key]) continue;
             var before = result.before.state[key], after = result.after.state[key];
             out += labels[j] + " · Lv." + after.level + " · " + (after.level >= getPetHomeVillageLevelLimit(result.home) ? "🔒 집 확장 필요" : "[📦" + after.progress + "/10]") + "\n";
-            var rate = key === "royal" ? GLOBAL_CONFIG.petHomeVillage.royalPercent : GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+            var rate = GLOBAL_CONFIG.petHomeVillage[key + "Percent"];
             if (after.level > before.level) out += "🎉 레벨업! 누적 +" + before.level * rate + "% → +" + after.level * rate + "%\n";
         }
     }
@@ -55643,12 +55669,12 @@ function findTargetAtStart(content, memberMap, allowCommaDelimiter) {
 // 기존 유저는 0부터 시작하고 저장된 별채 성장 값의 형식을 검증하는 함수
 function getPetHomeVillageState(userHome) {
     var stored = userHome && userHome.lumiereVillage;
-    if (stored === undefined) return { royal: { level: 0, progress: 0 }, arcana: { level: 0, progress: 0 } };
+    if (stored === undefined) return { grand: { level: 0, progress: 0 }, royal: { level: 0, progress: 0 }, arcana: { level: 0, progress: 0 } };
     if (!stored || typeof stored !== "object" || Array.isArray(stored)) throw new Error("별채 데이터 형식 오류");
     var result = {};
-    var keys = ["royal", "arcana"];
+    var keys = ["grand", "royal", "arcana"];
     for (var i = 0; i < keys.length; i++) {
-        var value = stored[keys[i]];
+        var value = keys[i] === "grand" && stored.grand === undefined ? { level: 0, progress: 0 } : stored[keys[i]];
         if (!value || typeof value.level !== "number" || typeof value.progress !== "number" ||
             !isFinite(value.level) || value.level < 0 || Math.floor(value.level) !== value.level || value.level > 9007199254740991 ||
             !isFinite(value.progress) || value.progress < 0 || Math.floor(value.progress) !== value.progress || value.progress >= GLOBAL_CONFIG.petHomeVillage.materialsPerLevel) throw new Error("별채 성장 값 오류");
@@ -55671,7 +55697,7 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNam
     var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
     var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
-    var percent = state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+    var percent = state.grand.level * GLOBAL_CONFIG.petHomeVillage.grandPercent + state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
     if (equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1) percent += GLOBAL_CONFIG.petHomeVillage.dreamPercent; // 스킬 10%p를 레벨 버프에 합산
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
     var oldHome = Number(home.exp || 0) + furniture;

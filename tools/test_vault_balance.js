@@ -5,7 +5,7 @@ function ok(r){assert(!r.error,r.error);return r.text;}
 function fixture(){const f=h.fixture();f.seed();ok(f.run('/금고'));return f;}
 function next(f,msg,user='a'){f.clock(f.now()+1);return f.run(msg,user);}
 function win(f,user='a'){return ok(next(f,'/금고 '+f.state().vault.current.answer,user));}
-function stageStore(c,n,day){const s={schemaVersion:3,serial:0,current:null,awards:{},replyPending:{},dailyWinners:[]};for(let i=1;i<=n;i++){c.startVaultRobberyRound(s,day,i,false,0,undefined,{});if(i<n){const r=c.applyVaultRobberyGuess(s,'old'+i,'old'+i,s.current.answer,true,1);s.awards[r.awardKey].paid=true;s.awards[r.awardKey].nextOpened=true;}}return s;}
+function stageStore(c,n,day){const s={schemaVersion:4,serial:0,current:null,awards:{},replyPending:{},dailyWinners:[]};for(let i=1;i<=n;i++){c.startVaultRobberyRound(s,day,i,false,0,undefined,{});if(i<n){const r=c.applyVaultRobberyGuess(s,'old'+i,'old'+i,s.current.answer,true,1);s.awards[r.awardKey].paid=true;s.awards[r.awardKey].nextOpened=true;}}return s;}
 function legacy(f,won=false,paid=true,number=1){
  const s=f.state(),day=s.vault.current.day,id=f.id(),key='$'+day+':1';
  s.vault={schemaVersion:2,serial:1,current:{id:key,serial:1,number,manual:false,openedAt:0,day,answer:666,prize:100000000000,usage:{['$'+id]:2},hints:[],winner:won?key:null},awards:{},replyPending:{}};
@@ -13,17 +13,17 @@ function legacy(f,won=false,paid=true,number=1){
  f.putState(s);return {key,id};
 }
 function test(name,fn){fn();console.log('PASS VAULT BALANCE '+(++groups)+' '+name);}
-test('fifteen ordered vaults pay 106억 exactly; closed guesses stay unchanged and MASTER can restart',()=>{
+test('twenty ordered vaults pay 156억 exactly; closed guesses stay unchanged and MASTER can restart',()=>{
  const f=fixture(),before=Object.values(f.read().member).reduce((a,u)=>a+u.point,0),ids=[];
- for(let n=1;n<=15;n++){
+ for(let n=1;n<=20;n++){
   const s=f.state(),r=s.vault.current,stage=f.c.getVaultRobberyStage(n);ids.push(r.id);
   assert.equal(r.number,n);assert.equal(r.prize,stage.prize);assert(r.answer>=stage.minNumber&&r.answer<=stage.maxNumber);
-  const text=win(f,n<=5?'a':n<=8?'b':n<=11?'c':n<=14?'admin':'master');assert(!text.includes('/리셋'));assert(!text.includes('포인트 포인트'));
-  assert.equal(f.state().vault.dailyWinners.length,n);if(n<15){assert.equal(f.state().vault.current.number,n+1);assert.equal(f.state().vault.current.hints.length,0);}
+  const text=win(f,n<=5?'a':n<=8?'b':n<=11?'c':n<=14?'admin':n<=17?'master':'noPass');assert(!text.includes('/리셋'));assert(!text.includes('포인트 포인트'));
+  assert.equal(f.state().vault.dailyWinners.length,n);if(n<20){assert.equal(f.state().vault.current.number,n+1);assert.equal(f.state().vault.current.hints.length,0);}
  }
- const after=Object.values(f.read().member).reduce((a,u)=>a+u.point,0);assert.equal(after-before,10600000000);assert.equal(new Set(ids).size,15);
- const s=f.state(),snapshot=JSON.stringify(s.vault);for(const msg of ['/금고','/금고 100','/금고 99999','/금고 1']){const text=ok(next(f,msg));assert(text.includes('15개 모두 개방'));assert.equal(JSON.stringify(f.state().vault),snapshot);}
- const text=ok(f.run('/금고'));assert(text.includes('106억'));assert(text.indexOf('[15번째]')<text.indexOf('[1번째]'));assert(text.indexOf('<ALLSEE>')<text.indexOf('[15번째]'));for(const id of ids)assert(text.includes('🔐'+s.vault.awards[id].answer));
+ const after=Object.values(f.read().member).reduce((a,u)=>a+u.point,0);assert.equal(after-before,15600000000);assert.equal(new Set(ids).size,20);
+ const s=f.state(),snapshot=JSON.stringify(s.vault);for(const msg of ['/금고','/금고 100','/금고 999999','/금고 1']){const text=ok(next(f,msg));assert(text.includes('20개 모두 개방'));assert.equal(JSON.stringify(f.state().vault),snapshot);}
+ const text=ok(f.run('/금고'));assert(text.includes('156억'));assert(text.indexOf('[20번째]')<text.indexOf('[1번째]'));assert(text.indexOf('<ALLSEE>')<text.indexOf('[20번째]'));for(const id of ids)assert(text.includes('🔐'+s.vault.awards[id].answer));
  ok(next(f,'/금고리셋','master'));assert.equal(f.state().vault.current.number,1);assert.deepEqual(f.state().vault.dailyWinners,[]);assert.deepEqual(f.state().vault.current.usage,{});s.vault.awards[s.vault.current.winner].nextOpened=true;assert.deepEqual(f.state().vault.awards,s.vault.awards);assert.deepEqual(f.state().ledger,s.ledger);
 });
 test('normal/hoi three and premium five: exhausted correct answers do not win; upgrades/downgrades keep usage',()=>{
@@ -32,7 +32,7 @@ test('normal/hoi three and premium five: exhausted correct answers do not win; u
 });
 test('all stages reject values outside their own range without consuming or adding hints; strict command guards',()=>{
  const f=fixture();for(const msg of ['/금고 0','/금고 99','/금고 100000','/금고 -1','/금고 1.5','/금고 100 해봐','/금고 100\n','/금고\n100']){const s=JSON.stringify(f.state().vault);ok(next(f,msg));assert.equal(JSON.stringify(f.state().vault),s);}
- for(let n=1;n<=15;n++){const st=stageStore(f.c,n,f.state().vault.current.day),p=f.c.getVaultRobberyStage(n);for(const guess of [p.minNumber-1,p.maxNumber+1]){const s=JSON.stringify(st);assert.equal(f.c.applyVaultRobberyGuess(st,'x','x',guess,true,f.now()).kind,'invalid');assert.equal(JSON.stringify(st),s);}}
+ for(let n=1;n<=20;n++){const st=stageStore(f.c,n,f.state().vault.current.day),p=f.c.getVaultRobberyStage(n);for(const guess of [p.minNumber-1,p.maxNumber+1]){const s=JSON.stringify(st);assert.equal(f.c.applyVaultRobberyGuess(st,'x','x',guess,true,f.now()).kind,'invalid');assert.equal(JSON.stringify(st),s);}}
 });
 test('hint retention 3/5/5, UP/DOWN/newest-first and no password separators',()=>{
  const f=fixture();for(const n of [1,4,8]){const store=stageStore(f.c,n,20750),p=f.c.getVaultRobberyStage(n);store.current.answer=p.minNumber+10;
@@ -40,10 +40,10 @@ test('hint retention 3/5/5, UP/DOWN/newest-first and no password separators',()=
   const out=f.c.buildVaultRobberyMessage(store,'id0',false,false,'name',{kind:'view'});assert(out.includes('('+p.label+')'));assert(out.indexOf('[name6]')<out.indexOf('[name5]'));assert(out.includes('🔐'+p.minNumber+' → UP⬆️'));assert(out.includes('🔐'+p.maxNumber+' → DOWN⬇️'));assert(!out.includes('/리셋'));assert(!out.includes('1,000'));}
 });
 test('wall clock midnight never resets and valid guesses remain possible; /리셋 alone clears round/winners/hints/counts to fixed 2억',()=>{
- const f=fixture();win(f);const old=f.state().vault;f.auto(3*86400000);ok(f.run('/금고'));assert.deepEqual(f.state().vault,old);ok(next(f,'/금고 100','b'));assert.equal(f.state().vault.current.usage['$'+f.id('b')],1);const paid=f.read().member.a.point;f.dailyReset();const s=f.state().vault;assert.equal(s.current.number,1);assert.equal(s.current.prize,200000000);assert.deepEqual(s.current.usage,{});assert.deepEqual(s.dailyWinners,[]);assert.deepEqual(s.current.hints,[]);assert.equal(f.read().member.a.point,paid);f.dailyReset();assert.equal(f.state().vault.current.prize,200000000);
+ const f=fixture();win(f);const old=f.state().vault;f.auto(3*86400000);ok(f.run('/금고'));assert.deepEqual(f.state().vault,old);ok(next(f,'/금고 1000','b'));assert.equal(f.state().vault.current.usage['$'+f.id('b')],1);const paid=f.read().member.a.point;f.dailyReset();const s=f.state().vault;assert.equal(s.current.number,1);assert.equal(s.current.prize,200000000);assert.deepEqual(s.current.usage,{});assert.deepEqual(s.dailyWinners,[]);assert.deepEqual(s.current.hints,[]);assert.equal(f.read().member.a.point,paid);f.dailyReset();assert.equal(f.state().vault.current.prize,200000000);
 });
 test('legacy carry is discarded once; used attempts and unrelated balance/dice/paid proof stay intact',()=>{
- const f=fixture();ok(f.run('/밸런스 1 보존'));const {id}=legacy(f),before=f.state(),points=f.read().member.a.point;ok(f.run('/금고'));const s=f.state();assert.equal(s.vault.schemaVersion,3);assert.equal(s.vault.current.prize,200000000);assert.equal(s.vault.current.usage['$'+id],2);assert.deepEqual(s.balance,before.balance);assert.deepEqual(s.dice,before.dice);assert.equal(f.read().member.a.point,points);const stable=JSON.stringify(s);ok(f.run('/금고'));assert.equal(JSON.stringify(f.state()),stable);assert(!ok(f.run('/금고')).includes('1,000억'));
+ const f=fixture();ok(f.run('/밸런스 1 보존'));const {id}=legacy(f),before=f.state(),points=f.read().member.a.point;ok(f.run('/금고'));const s=f.state();assert.equal(s.vault.schemaVersion,4);assert.equal(s.vault.current.prize,200000000);assert.equal(s.vault.current.usage['$'+id],2);assert.deepEqual(s.balance,before.balance);assert.deepEqual(s.dice,before.dice);assert.equal(f.read().member.a.point,points);const stable=JSON.stringify(s);ok(f.run('/금고'));assert.equal(JSON.stringify(f.state()),stable);assert(!ok(f.run('/금고')).includes('1,000억'));
 });
 test('legacy paid or pending winner retains amount/reward ID; no duplicate; next round is fixed 2억',()=>{
  for(const paid of [true,false]){const f=fixture(),{key,id}=legacy(f,true,paid),points=f.read().member.a.point;ok(f.run('/금고'));const s=f.state();assert.equal(s.vault.current.number,2);assert.equal(s.vault.current.prize,200000000);assert.deepEqual(s.vault.dailyWinners,[key]);assert.equal(s.vault.awards[key].rewardId,'vault:'+key+':'+id);assert.equal(s.vault.awards[key].amount,1500000000);assert.equal(f.read().member.a.point,points+(paid?0:1500000000));ok(f.run('/금고'));assert.equal(f.read().member.a.point,points+(paid?0:1500000000));}

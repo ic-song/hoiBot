@@ -31,8 +31,8 @@ test('full reset clears all users, winner UI and hints, persists restart, retain
   ok(next(f,'/금고리셋','master',dev));const after=f.state(dev);
   assert.deepEqual(after.vault.current.usage,{});assert.deepEqual(after.vault.current.hints,[]);assert.deepEqual(after.vault.dailyWinners,[]);assert.deepEqual(after.vault.replyPending,{});assert.notEqual(after.vault.current.id,oldId);
   assert.deepEqual(after.vault.awards,before.vault.awards);assert.deepEqual(after.ledger,before.ledger);assert.deepEqual(after.balance,before.balance);assert.deepEqual(after.dice,before.dice);assert.deepEqual(f.read(dev),member);
-  assert(ok(f.run('/금고','a',dev)).includes('오늘의 금고: 0/15'));assert(ok(f.run('/금고','a',dev)).includes('9/9회'));
-  const restarted=h.fixture();restarted.seed();Object.assign(restarted.disk(),f.disk());restarted.clock(f.now()+1);assert(ok(restarted.run('/금고','a',dev)).includes('0/15'));assert.deepEqual(restarted.state(dev).vault.current.usage,{});
+  assert(ok(f.run('/금고','a',dev)).includes('오늘의 금고: 0/20'));assert(ok(f.run('/금고','a',dev)).includes('9/9회'));
+  const restarted=h.fixture();restarted.seed();Object.assign(restarted.disk(),f.disk());restarted.clock(f.now()+1);assert(ok(restarted.run('/금고','a',dev)).includes('0/20'));assert.deepEqual(restarted.state(dev).vault.current.usage,{});
   ok(next(restarted,'/금고 '+restarted.state(dev).vault.current.answer,'b',dev));assert.equal(restarted.read(dev).member.b.point,member.member.b.point+200000000);
  }
 });

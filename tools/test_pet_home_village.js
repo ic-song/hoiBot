@@ -37,11 +37,11 @@ vm.runInContext('function runVillage(){'+registration+infoBranch+'}',c);
 const clone = x => JSON.parse(JSON.stringify(x));
 const skillData = skills => ({petSkills:{equipped:skills,lockedPremium:[],bag:{}}});
 function furniture(id, grade='로열 루미에르', exp=100) { return {id,name:'가구'+id,grade,exp}; }
-function seed({floor=100,royal=0,royalProgress=0,arcana=0,arcanaProgress=0,bag,placed=[],skills=[],state=true,dev=false}={}) {
+function seed({floor=100,grand=0,grandProgress=0,royal=0,royalProgress=0,arcana=0,arcanaProgress=0,bag,placed=[],skills=[],state=true,dev=false}={}) {
  f.reset(); c.petHomeVillagePending={}; const r=dev?'/sdcard/호이랜드_dev/':root;
  const data=f.read(dev); data.member[user]={point:1,bag:{}};data.member[other]={point:1,bag:{}};f.write(data,dev);
  const home={floor,houseName:'합성집',exp:1000,furnitureBag:bag||Array.from({length:10},(_,i)=>furniture('R'+i)),placedFurnitureSummary:clone(c.buildPlacedFurnitureSummary(placed))};
- if(state)home.lumiereVillage={royal:{level:royal,progress:royalProgress},arcana:{level:arcana,progress:arcanaProgress}};
+ if(state)home.lumiereVillage={grand:{level:grand,progress:grandProgress},royal:{level:royal,progress:royalProgress},arcana:{level:arcana,progress:arcanaProgress}};
  f.put(r+'home.json',{[user]:home,[other]:{...clone(home),furnitureBag:[]}});
  f.put(r+'petHomePlacedFurniture.json',{[user]:placed,[other]:[]});
  f.put(r+'skills.json',{[user]:skillData(skills),[other]:skillData([])});
@@ -65,12 +65,12 @@ test('기획 계산·동일 등급 합산·집 면적 경계',()=>{
  const placed=[148500,90350,78800,29850,29850,29800,29750,29500,26650].map((e,i)=>furniture('P'+i,'일반',e));
  seed({royal:4,arcana:6,placed,bag:Array.from({length:5},(_,i)=>furniture('A'+i,'아르카나 루미에르')),skills:['아르카나 하우스']});
  run('/가구정보');const v=c.getPetHomeFurnitureCharm(c.loadJsonFile(c.homeDataFile),c.petSkillData,user);
- assert.equal(v.total,4568030);assert.equal(v.castle,2284015);assert.equal(v.percent,130);assert.equal(v.bonus*2,2581930);
+ assert.equal(v.total,7149960);assert.equal(v.castle,3574980);assert.equal(v.percent,260);assert.equal(v.bonus*2,5163860);
  for(const [area,limit] of [[9,0],[99,9],[100,10],[109,10],[110,11],[300,30],[310,31]])assert.equal(c.getPetHomeVillageLevelLimit({floor:area}),limit);
 });
 test('실제 캐슬·레이드 계산의 별채 추가분과 Main/Info 일치',()=>{
- seed({royal:2,arcana:1,placed:[furniture('P','일반',12345)],skills:['인테리어 장인','느그 집 마련의 꿈']});run('/가구정보');
- const home=c.loadJsonFile(c.homeDataFile), before=clone(home);before[user].lumiereVillage.royal.level=0;before[user].lumiereVillage.arcana.level=0;
+ seed({grand:3,royal:2,arcana:1,placed:[furniture('P','일반',12345)],skills:['인테리어 장인','느그 집 마련의 꿈']});run('/가구정보');
+ const home=c.loadJsonFile(c.homeDataFile), before=clone(home);for(const key of ['grand','royal','arcana'])before[user].lumiereVillage[key].level=0;
  const delta=c.getPetHomeFurnitureCharm(home,c.petSkillData,user).bonus-c.getPetHomeFurnitureCharm(before,c.petSkillData,user).bonus;
  for(const mode of ['Castle','Raid'])assert.equal(c['calculate'+mode+'Exp'](user,c.data,c.petData,home,c.petSkillData,false,{})-c['calculate'+mode+'Exp'](user,c.data,c.petData,before,c.petSkillData,false,{}),delta);
  const i=vm.createContext({GLOBAL_CONFIG:clone(c.GLOBAL_CONFIG),hasPetSkill:c.hasPetSkill,getEquippedPetSkillNames:c.getEquippedPetSkillNames});
@@ -84,11 +84,11 @@ test('실제 캐슬·레이드 계산의 별채 추가분과 Main/Info 일치',(
 test('인테리어10% 별채대상 제외·꿈은 별채 비율에10%p 합산·해제/중복누적 없음',()=>{
  seed({royal:4,placed:[furniture('P','일반',10000)],skills:['인테리어 장인']});run('/가구정보');
  const home=c.loadJsonFile(c.homeDataFile), first=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);
- assert.equal(first.villageBonus,4000);assert.equal(first.interior,1100);
+ assert.equal(first.villageBonus,8000);assert.equal(first.interior,1100);
  c.petSkillData[user]=vm.runInContext('('+JSON.stringify(skillData(['인테리어 장인','느그 집 마련의 꿈']))+')',c);const dream=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);
- assert.equal(dream.percent,50);assert.equal(dream.villageBonus,5000);assert.equal(dream.total,first.total+2000);
+ assert.equal(dream.percent,90);assert.equal(dream.villageBonus,9000);assert.equal(dream.total,first.total+2000);
  const detail=c.buildPetHomeFurnitureInfoMessage(c.data,c.petData,c.petSkillData,{},home,user,user,f.get(root+'petHomePlacedFurniture.json')[user]);
- assert(detail.includes('별채 합산 버프 +10%p'));assert(!detail.includes('느그 집 마련의 꿈 추가 +'));assert(detail.includes('기본 합계의 50% 추가 → +10,000💞'));
+ assert(detail.includes('별채 합산 버프 +10%p'));assert(!detail.includes('느그 집 마련의 꿈 추가 +'));assert(detail.includes('기본 합계의 90% 추가 → +18,000💞'));
  assert.equal(c.getPetHomeFurnitureCharm(home,c.petSkillData,user).total,dream.total);
  c.petSkillData[user]=vm.runInContext('('+JSON.stringify(skillData(['인테리어 장인']))+')',c);assert.equal(c.getPetHomeFurnitureCharm(home,c.petSkillData,user).total,first.total);
 });
@@ -97,25 +97,25 @@ test('꿈 스킬은 별채0%에도10%p·보유만으로 미발동·비율 합산
  const home=c.loadJsonFile(c.homeDataFile),before=JSON.stringify(home);
  const zero=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);assert.equal(zero.percent,10);assert.equal(zero.bonus,1234);
  home[user].lumiereVillage.arcana.level=1;
- const active=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);assert.equal(active.percent,25);assert.equal(active.villageBonus,3086);
+ const active=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);assert.equal(active.percent,40);assert.equal(active.villageBonus,4938);
  const owned=skillData(['인테리어 장인']);owned.petSkills.bag['느그 집 마련의 꿈']=1;
  c.petSkillData[user]=vm.runInContext('('+JSON.stringify(owned)+')',c);
- const inactive=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);assert.equal(inactive.percent,15);assert.equal(inactive.villageBonus,1851);
+ const inactive=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);assert.equal(inactive.percent,30);assert.equal(inactive.villageBonus,3703);
  assert.equal(JSON.stringify(c.loadJsonFile(c.homeDataFile)),before);
 });
-test('꿈10%p 확정 예시·50%에서60%·한 번의 버림·기본매력0',()=>{
- for(const [exp,royal,arcana,percent,bonus,total] of [[493050,1,0,20,98610,1183320],[10000,5,0,60,6000,32000],[19,0,1,25,4,46],[0,0,0,10,0,0]]){
+test('꿈10%p 합산·100%에서110%·한 번의 버림·기본매력0',()=>{
+ for(const [exp,royal,arcana,percent,bonus,total] of [[493050,1,0,30,147915,1281930],[10000,5,0,110,11000,42000],[19,0,1,40,7,52],[0,0,0,10,0,0]]){
   seed({royal,arcana,placed:[furniture('P','일반',exp)],skills:['느그 집 마련의 꿈','느그 집 마련의 꿈']});run('/가구정보');
   const home=c.loadJsonFile(c.homeDataFile),saved=JSON.stringify(home),value=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);
   assert.equal(value.percent,percent);assert.equal(value.bonus,bonus);assert.equal(value.total,total);
   assert.equal(c.getPetHomeFurnitureCharm(home,c.petSkillData,user).total,total);assert.equal(JSON.stringify(home),saved);
-  if(exp===493050){const detail=run('/가구정보');assert(detail.includes('빌리지 종매 버프 +20% 적용 중'));assert(detail.includes('기본 합계의 20% 추가 → +197,220💞'));assert(detail.includes('최종 가구 종합매력 +1,183,320'));assert(!detail.includes('느그 집 마련의 꿈 추가 +'));}
+  if(exp===493050){const detail=run('/가구정보');assert(detail.includes('빌리지 종매 버프 +30% 적용 중'));assert(detail.includes('기본 합계의 30% 추가 → +295,830💞'));assert(detail.includes('최종 가구 종합매력 +1,281,930'));assert(!detail.includes('느그 집 마련의 꿈 추가 +'));}
  }
 });
 test('혼합10개 확정 성장·한 파일 저장·중복확정 무변경·재시작 유지',()=>{
  seed({royal:3,royalProgress:9,arcana:5,arcanaProgress:3,bag:[...Array.from({length:2},(_,i)=>furniture('R'+i)),...Array.from({length:8},(_,i)=>furniture('A'+i,'아르카나 루미에르'))]});
  const before=f.raw(root+'home.json');assert(run('/별채등록 1 2 3 4 5 6 7 8 9 10').includes('별채 등록 확인'));assert.equal(f.raw(root+'home.json'),before);
- assert(run('등록한다').includes('등록 완료'));const after=f.get(root+'home.json')[user];assert.deepEqual(after.lumiereVillage,{royal:{level:4,progress:1},arcana:{level:6,progress:1}});assert.equal(after.furnitureBag.length,0);
+ assert(run('등록한다').includes('등록 완료'));const after=f.get(root+'home.json')[user];assert.deepEqual(after.lumiereVillage,{grand:{level:0,progress:0},royal:{level:4,progress:1},arcana:{level:6,progress:1}});assert.equal(after.furnitureBag.length,0);
  assert.equal(f.traces().filter(t=>t.type==='save'&&t.path===root+'home.json').length,1);const raw=f.raw(root+'home.json');assert.equal(run('등록한다'),'');assert.equal(f.raw(root+'home.json'),raw);
  c.petHomeVillagePending={};assert(run('/가구정보').includes('Lv.4'));
 });
@@ -187,4 +187,40 @@ test('꿈 스킬의 확률0.3%·합산10%p 설명·S급 오픈/도감 대상 유
  const skill=c.getPetSkillData('느그 집 마련의 꿈');assert.equal(skill.grade,'S');assert.equal(skill.openable,undefined);
  const text=c.buildPetSkillInfoMessage(skill);assert(text.includes('등급: S'));assert(text.includes('확률: 0.3%'));assert(text.includes('별채의 합산 버프가 10%p 증가'));assert(Math.abs(c.getPetSkillActualRate(skill)-0.3)<1e-9);
 });
+test('세 별채 40평·100평 기획 수치와 Main/Info 설정 일치',()=>{
+ const infoConfig=vm.runInNewContext('('+info.match(/petHomeVillage: (\{[^\n]+?\}),/)[1]+')');
+ assert.equal(JSON.stringify(infoConfig),JSON.stringify(c.GLOBAL_CONFIG.petHomeVillage));
+ for(const [floor,level,percent,multiplier] of [[40,4,240,3.4],[100,10,600,7]]){
+  seed({floor,grand:level,royal:level,arcana:level,placed:[furniture('P','일반',10000)]});
+  const detail=run('/가구정보'),home=c.loadJsonFile(c.homeDataFile),charm=c.getPetHomeFurnitureCharm(home,c.petSkillData,user);
+  assert.equal(charm.percent,percent);assert.equal(charm.total,20000*multiplier);
+  assert(detail.includes('🏠 그랑 별채 · Lv.'+level+' · [📦0/10] · 🔒 집 확장 필요'));
+  for(const [rate,value] of [[10,level*10],[20,level*20],[30,level*30]])assert(detail.includes('레벨당 +'+rate+'%p · 현재 +'+value+'%'));
+ }
+ seed({floor:40,royal:1,arcanaProgress:1,placed:[furniture('P','일반',493050)]});
+ const detail=run('/가구정보');assert(detail.includes('빌리지 종매 버프 +20% 적용 중'));assert(detail.includes('최종 가구 종합매력 +1,183,320'));
+});
+
+test('세 등급 혼합 합계10개·각 등급 이월·기존 확인 절차·1회 저장',()=>{
+ seed({floor:40,grandProgress:9,royalProgress:9,arcanaProgress:8,bag:[...Array.from({length:2},(_,i)=>furniture('G'+i,'그랑 루미에르')),...Array.from({length:3},(_,i)=>furniture('R'+i)),...Array.from({length:5},(_,i)=>furniture('A'+i,'아르카나 루미에르'))]});
+ const before=f.raw(root+'home.json');assert(run('/별채등록 1 2 3 4 5 6 7 8 9 10').includes('등록한다 / 등록안한다'));assert.equal(f.raw(root+'home.json'),before);
+ const done=run('등록한다'),home=f.get(root+'home.json')[user];
+ assert.deepEqual(home.lumiereVillage,{grand:{level:1,progress:1},royal:{level:1,progress:2},arcana:{level:1,progress:3}});assert.equal(home.furnitureBag.length,0);
+ assert(done.includes('그랑 별채')&&done.includes('로열 별채')&&done.includes('아르카나 별채'));assert.equal(f.traces().filter(t=>t.type==='save'&&t.path===root+'home.json').length,1);
+ const saved=f.raw(root+'home.json');run('등록한다');assert.equal(f.raw(root+'home.json'),saved);
+});
+
+test('기존 두 별채 기록 보존·그랑만0·조회 무저장·잘못된 값은 오류',()=>{
+ seed({royal:2,royalProgress:3,arcana:1,arcanaProgress:4});const home=f.get(root+'home.json');delete home[user].lumiereVillage.grand;f.put(root+'home.json',home);
+ const before=f.raw(root+'home.json');run('/가구정보');assert.equal(f.raw(root+'home.json'),before);
+ assert.deepEqual(clone(c.getPetHomeVillageState(home[user])),{grand:{level:0,progress:0},royal:{level:2,progress:3},arcana:{level:1,progress:4}});
+ for(const bad of [null,{level:0,progress:10},{level:-1,progress:0}]){const wrong=clone(home);wrong[user].lumiereVillage.grand=bad;assert.throws(()=>c.getPetHomeVillageState(wrong[user]));}
+ const wrong=clone(home);delete wrong[user].lumiereVillage.royal;assert.throws(()=>c.getPetHomeVillageState(wrong[user]));
+});
+
+test('그랑 한도 초과 혼합은 전체 무소모·실제 grade만 판정',()=>{
+ seed({floor:40,grand:4,bag:[furniture('G','그랑 루미에르'),furniture('R')]});let before=f.raw(root+'home.json');assert(run('/별채등록 1 2').includes('0개까지'));assert.equal(f.raw(root+'home.json'),before);
+ const home=f.get(root+'home.json');home[user].furnitureBag=[{...furniture('fake','일반',999999),name:'그랑 루미에르'}];f.put(root+'home.json',home);before=f.raw(root+'home.json');assert(run('/별채등록 1').includes('등록할 수 없어요'));assert.equal(f.raw(root+'home.json'),before);
+});
+
 console.log('PASS '+groups+' village groups');

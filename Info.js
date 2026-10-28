@@ -9,7 +9,7 @@ const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
     gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
     manualReset: { commands: ["/댓글초기화","/피드초기화","/펫홈방문초기화","/좋아홈초기화","/인형전체초기화","/서버대전전체초기화","/펫무쌍전체초기화","/캐슬대전초기화","/캐슬대전횟수리셋","/캐슬초기화","/영주수익순위초기화","/펀치순위초기화","/펫탐험전체전적초기화","/시련의탑시즌초기화","/길드전체초기화","/길드영지초기화","/길드게시판초기화","/공헌구매초기화","/다이아전체초기화","/레벨초기화","/좋아리셋","/주간횟수초기화","/미니펫컬렉션초기화","/펜던트장착초기화","/미가입출첵서버초기화","/관리자순위초기화","/인증초기화","/마스터초기화@@@","/피드전체삭제","/글자수전체정리","/필터데이터정리","/데이터정리","/경매초기화","/계삭진행","/계정잠수삭제"] }, // 초기화·운영 정리는 Main에서만 처리
-    petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, royalPercent: 10, arcanaPercent: 15, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
+    petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, grandPercent: 10, royalPercent: 20, arcanaPercent: 30, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
     messageFilter: { sharedPrefix: "hoibot.messageFilter." }, // Main과 같은 환경별 필터 메모리 공유 키
     doll: { boxes: { itemNames: ["일반인형상자⚪(/인형상자오픈일반 숫자)", "고급인형상자🟢(/인형상자오픈고급 숫자)", "희귀인형상자🔵(/인형상자오픈희귀 숫자)", "영웅인형상자🟣(/인형상자오픈영웅 숫자)", "전설인형상자🟡(/인형상자오픈전설 숫자)", "신화인형상자🔴(/인형상자오픈신화 숫자)", "초월인형상자🌌(/인형상자오픈초월 숫자)", "창세인형상자🌠(/인형상자오픈창세 숫자)", "창조인형상자👑(/인형상자오픈창조 숫자)", "엘리트인형상자💠(/인형상자오픈엘리트 숫자)"] } }, // MAIN과 동일한 인형상자 아이템명·사용법
     adventureQuest: { historyPendingName: "adventureQuestHistoryPending.json" },
@@ -4109,12 +4109,12 @@ function getFurnitureExp(userData) {
 // 기존 유저는 0부터 시작하고 저장된 별채 성장 값의 형식을 검증하는 함수
 function getPetHomeVillageState(userHome) {
     var stored = userHome && userHome.lumiereVillage;
-    if (stored === undefined) return { royal: { level: 0, progress: 0 }, arcana: { level: 0, progress: 0 } };
+    if (stored === undefined) return { grand: { level: 0, progress: 0 }, royal: { level: 0, progress: 0 }, arcana: { level: 0, progress: 0 } };
     if (!stored || typeof stored !== "object" || Array.isArray(stored)) throw new Error("별채 데이터 형식 오류");
     var result = {};
-    var keys = ["royal", "arcana"];
+    var keys = ["grand", "royal", "arcana"];
     for (var i = 0; i < keys.length; i++) {
-        var value = stored[keys[i]];
+        var value = keys[i] === "grand" && stored.grand === undefined ? { level: 0, progress: 0 } : stored[keys[i]];
         if (!value || typeof value.level !== "number" || typeof value.progress !== "number" ||
             !isFinite(value.level) || value.level < 0 || Math.floor(value.level) !== value.level || value.level > 9007199254740991 ||
             !isFinite(value.progress) || value.progress < 0 || Math.floor(value.progress) !== value.progress || value.progress >= GLOBAL_CONFIG.petHomeVillage.materialsPerLevel) throw new Error("별채 성장 값 오류");
@@ -4137,7 +4137,7 @@ function getPetHomeFurnitureCharm(homeData, petSkillData, user, equippedSkillNam
     var royal = equipped.indexOf("로열 하우스") !== -1 && getPlacedFurnitureCountByGrade(homeData, user, "로열 루미에르") >= 10 ? GLOBAL_CONFIG.petHomeVillage.royalSkillPerMode : 0;
     var arcana = equipped.indexOf("아르카나 하우스") !== -1 && getOwnedFurnitureCountByGrade(homeData, user, "아르카나 루미에르") >= 5 ? GLOBAL_CONFIG.petHomeVillage.arcanaSkillPerMode : 0;
     var base = furniture + royal + arcana; // 별채 버프 대상인 한 모드의 기본 합계
-    var percent = state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
+    var percent = state.grand.level * GLOBAL_CONFIG.petHomeVillage.grandPercent + state.royal.level * GLOBAL_CONFIG.petHomeVillage.royalPercent + state.arcana.level * GLOBAL_CONFIG.petHomeVillage.arcanaPercent;
     if (equipped.indexOf(GLOBAL_CONFIG.petHomeVillage.dreamSkillName) !== -1) percent += GLOBAL_CONFIG.petHomeVillage.dreamPercent; // 스킬 10%p를 레벨 버프에 합산
     var bonus = Math.floor(base * percent / 100); // 캐슬·레이드에 각각 한 번 적용할 추가 매력
     var oldHome = Number(home.exp || 0) + furniture;

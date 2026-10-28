@@ -16,27 +16,31 @@ function callback(h, text, room, user = 'master') {
     h.c.FileStream.write = (_p, t) => { throw Error(t); }; h.f.clear();
     h.c.response(room, text, user, true, h.c.replier, null, 'test'); return h.f.replies().join('\n');
 }
-test('교육방·교육방2 실제 콜백의 동일 UI·공통 진도·두 방 재완료 무보상', () => {
+test('세 교육방 실제 콜백의 동일 UI·공통 진도·다른 방 재완료 무보상', () => {
     const h = fixture(), reward = h.c.GLOBAL_CONFIG.gmEducation.rewardItem;
-    for (const text of ['/교육', '/교육 12', '/교육명령어', '/교육실적', '/교육실적전체']) assert.equal(callback(h, text, '교육방'), callback(h, text, '교육방2'));
+    for (const text of ['/교육', '/교육 12', '/교육명령어', '/교육실적', '/교육실적전체', '/교육실적 전체', '/교육실적 초기화']) for (const room of ['교육방2', '교육방3']) assert.equal(callback(h, text, '교육방'), callback(h, text, room));
     assert(callback(h, '/교육완료 a 1', '교육방').includes('1/12'));
     const first = h.f.files(); callback(h, '/교육완료 a 1', '교육방2'); assert.deepEqual(h.f.files(), first);
     assert(callback(h, '/교육완료 a 2', '교육방2').includes('2/12')); assert(callback(h, '/교육 a', '교육방').includes('2/12'));
     assert.equal(h.f.read().member.a.bag[reward], 2); assert.equal(h.store().users['$id-a'].chapters.length, 2);
-    for (const room of ['교육방', '교육방2']) {
+    const second = h.f.files(); callback(h, '/교육완료 a 2', '교육방3'); assert.deepEqual(h.f.files(), second);
+    assert(callback(h, '/교육완료 a 3', '교육방3').includes('3/12'));
+    assert(callback(h, '/교육 a', '교육방2').includes('3/12')); assert.equal(h.f.read().member.a.bag[reward], 3);
+    assert.equal(h.store().users['$id-a'].chapters.length, 3);
+    for (const room of ['교육방', '교육방2', '교육방3']) {
         const prev = h.c.enterCommandContext(h.c.createCommandContext(false, room)); assert(!h.c.isMaster('master')); h.c.exitCommandContext(prev);
     }
 });
-test('두 방 일반/Admin 거절·유사 방 거절·영지전이 교육 허용보다 우선', () => {
+test('세 방 일반/Admin 거절·유사 방 거절·영지전이 교육 허용보다 우선', () => {
     const h = fixture(), before = h.f.files();
-    for (const room of ['교육방', '교육방2']) for (const user of ['a', 'sub', 'admin']) for (const text of ['/교육', '/교육실적전체', '/교육완료 a 1']) assert(callback(h, text, room, user).includes('MASTER만'));
-    for (const room of ['교육방3', '새 교육방2', '교육방2 ']) assert(callback(h, '/교육완료 a 1', room).includes('MASTER만'));
+    for (const room of ['교육방', '교육방2', '교육방3']) for (const user of ['a', 'sub', 'admin']) for (const text of ['/교육', '/교육실적전체', '/교육완료 a 1']) assert(callback(h, text, room, user).includes('MASTER만'));
+    for (const room of ['교육방4', '새 교육방3', '교육방3 ']) assert(callback(h, '/교육완료 a 1', room).includes('MASTER만'));
     assert.deepEqual(h.f.files(), before);
     h.f.put(h.c.guildPath, { guilds: {}, territoryWar: { active: true } }); const active = h.f.files();
     // 기본 교육 하네스의 영지전 대체 함수를 실제 판별 함수로 복원한다.
     const vm = require('vm'), spirit = require('./test_spirit_retirement');
     for (const n of ['isGuildTerritoryWarCommandLockActive', 'isGuildTerritoryBlockedDuringWarCommand', 'isGuildTerritoryAllowedDuringWarCommand', 'isGuildTerritoryRiftControlCommandMessage']) vm.runInContext(spirit.block(gm.main, 'function ' + n + '('), h.c);
-    assert(callback(h, '/교육완료 a 1', '교육방2').includes('영지전 진행 중')); assert.deepEqual(h.f.files(), active);
+    for (const room of ['교육방', '교육방2', '교육방3']) assert(callback(h, '/교육완료 a 1', room).includes('영지전 진행 중')); assert.deepEqual(h.f.files(), active);
 });
 test('신규 완료 원본·지급 영수증 시각 일치, KST 초 단위 표시·조회 무저장', () => {
     const h = fixture(); h.run('/교육완료 a 1');
