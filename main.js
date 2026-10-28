@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.722"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.723"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -36970,8 +36970,8 @@ function applyVaultRobberyGuess(store, accountId, nickname, guess, premium, now,
 }
 
 // 운영자 리게임 표시와 금고 순번을 함께 표시하는 함수
-function getVaultRobberyRoundLabel(round, completedCount) {
-    return (round.manual ? "🔐 운영자 리게임\n" : "") + "🏆 오늘의 금고: " + (completedCount === undefined ? (round.number || 1) : completedCount) + "/" + GLOBAL_CONFIG.vaultRobbery.limits.dailyGames;
+function getVaultRobberyRoundLabel(round) {
+    return (round.manual ? "🔐 운영자 리게임\n" : "") + "🏆 오늘의 금고: " + (round.number || 1) + "/" + GLOBAL_CONFIG.vaultRobbery.limits.dailyGames;
 }
 
 // 현재 일일 회차에서 실제 지급을 마친 금고 상금을 합산하는 함수
@@ -37013,7 +37013,7 @@ function buildVaultRobberyMessage(store, accountId, premium, premiumHeader, nick
         out += (won ? "🎉 철컥! 금고가 열렸어요!" : "🔓 이 금고는 이미 열렸어요!") + "\n🏆 당첨자: [" + award.name + "]\n🔐" + award.answer + "\n💰 당첨 상금: 🅟" + formatServerRaidPrize(award.amount) + "\n" + (award.paid ? "✅ 보유 포인트에 지급됐어요!" : "⏳ 당첨은 확정됐으며 상금 지급 확인 중이에요.") + "\n━━━━━━━━━━━━\n";
     }
     if (kind === "wrong") out += "[" + nickname + "] 🔐" + result.guess + " → " + (result.direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n\n";
-    out += getVaultRobberyRoundLabel(round, store.dailyWinners.length) + "\n💰 오늘의 상금: 🅟" + formatServerRaidPrize(round.prize) + "\n🎯 남은 도전: " + attempts.remaining + "/" + attempts.limit + "회\n🔐 비밀번호 범위: " + stage.minNumber + "~" + stage.maxNumber + "\n━━━━━━━━━━━━\n💡 최근 힌트 · " + stage.recentHints + "회\n";
+    out += getVaultRobberyRoundLabel(round) + "\n💰 오늘의 상금: 🅟" + formatServerRaidPrize(round.prize) + "\n🎯 남은 도전: " + attempts.remaining + "/" + attempts.limit + "회\n🔐 비밀번호 범위: " + stage.minNumber + "~" + stage.maxNumber + "\n━━━━━━━━━━━━\n💡 최근 힌트 · " + stage.recentHints + "회\n";
     if (!round.hints.length) out += "아직 도전 기록이 없어요.\n첫 힌트를 남겨보세요!\n";
     for (var i = round.hints.length - 1; i >= 0; i--) out += "[" + round.hints[i].name + "] 🔐" + round.hints[i].guess + " → " + (round.hints[i].direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n";
     out += "━━━━━━━━━━━━\n📝 /금고 숫자" + winners;
