@@ -45,7 +45,7 @@ const c = {
     parseManagedJsonContent: text => JSON.parse(text),
     restoreManagedJsonFromBackup(p) { disk[p] = disk[p + ".bak"]; return { data: JSON.parse(disk[p]) }; },
     FileStream: { read: p => disk[p], write() { throw Error("unexpected unprotected write"); } },
-    java: { util: { UUID: { randomUUID: () => "uuid-" + (++uuid) } }, io: {
+    java: { util: { UUID: { randomUUID: () => "uuid-" + (++uuid) }, concurrent: { TimeUnit: { MILLISECONDS: "MILLISECONDS" } } }, io: {
         File: FakeFile,
         FileOutputStream: function (f) { this.path = f.path; disk[f.path] = ""; this.getFD = () => ({ sync() {} }); this.close = () => {}; },
         OutputStreamWriter: function (s) { this.write = text => { disk[s.path] = text; }; this.flush = () => {}; this.close = () => {}; }

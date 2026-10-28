@@ -45,10 +45,17 @@ for(var attempt=0;attempt<20;attempt++){
  var saved=loadJsonFile(homeDataFile).synthetic;check(saved.furnitureBag.length===9&&saved.lumiereVillage.royal.level===4&&saved.lumiereVillage.royal.progress===0,'only once');check(messages.length===2,'one confirm and one completion');
 }
 print('PASS Rhino: MAIN/Info full compile; actual registration and Java UTF-8 verified saves; 20 concurrent confirmation pairs consume once');
-var home=loadJsonFile(homeDataFile),skills=loadJsonFile(petSkillDataPath),charm=getPetHomeFurnitureCharm(home,skills,'synthetic');check(charm.interior===1100&&charm.percent===50&&charm.villageBonus===5000&&charm.total===32200,'dream adds 10 percentage points once');
+var home=loadJsonFile(homeDataFile),skills=loadJsonFile(petSkillDataPath),charm=getPetHomeFurnitureCharm(home,skills,'synthetic');check(charm.interior===1100&&charm.percent===90&&charm.villageBonus===9000&&charm.total===40200,'dream adds 10 percentage points once');
 var reload=JSON.parse(FileStream.read(homeDataFile));check(getPetHomeFurnitureCharm(reload,skills,'synthetic').total===charm.total,'restart no duplicate');
 var bad=JSON.parse(JSON.stringify(reload));bad.synthetic.lumiereVillage.royal.progress=10;var threw=false;try{getPetHomeFurnitureCharm(bad,skills,'synthetic');}catch(e){threw=true;}check(threw,'invalid state fails');
 print('PASS Rhino: separate interior/village/dream arithmetic, saved-state reload, malformed state rejected');
+var mixed=JSON.parse(JSON.stringify(reload)),mixedBag=[];
+for(var gradeIndex=0;gradeIndex<3;gradeIndex++)for(var piece=0;piece<(gradeIndex===0?2:gradeIndex===1?3:5);piece++)mixedBag.push({id:'mixed'+gradeIndex+'-'+piece,name:'합성가구',grade:['그랑 루미에르','로열 루미에르','아르카나 루미에르'][gradeIndex],exp:100});
+mixed.synthetic.furnitureBag=mixedBag;mixed.synthetic.lumiereVillage={grand:{level:0,progress:9},royal:{level:0,progress:9},arcana:{level:0,progress:8}};put(homeDataFile,mixed);petHomeVillagePending={};
+execute('/별채등록 1 2 3 4 5 6 7 8 9 10');var mixedOriginal=FileStream.read(homeDataFile),savedMixed=loadJsonFile(homeDataFile).synthetic;check(savedMixed.furnitureBag.length===10,'confirm keeps all three grades');execute('등록한다');savedMixed=loadJsonFile(homeDataFile).synthetic;
+check(savedMixed.furnitureBag.length===0&&savedMixed.lumiereVillage.grand.level===1&&savedMixed.lumiereVillage.grand.progress===1&&savedMixed.lumiereVillage.royal.progress===2&&savedMixed.lumiereVillage.arcana.progress===3,'three independent remainders');
+var mixedSaved=FileStream.read(homeDataFile);execute('등록한다');check(FileStream.read(homeDataFile)===mixedSaved,'mixed duplicate no consume');put(homeDataFile,reload);
+print('PASS Rhino: three-grade mixed confirmation uses actual grade, independent growth/remainders and one persisted consumption');
 var original=FileStream.read(homeDataFile),before=loadJsonFile(homeDataFile);before.synthetic.lumiereVillage.royal.progress=7;
 beginDataSaveTransaction();try{saveJsonFile(before,homeDataFile,false,original);rollbackDataSaveTransaction();}finally{endDataSaveTransaction();}check(FileStream.read(homeDataFile)===original,'snapshot rollback');
 check(!dataTransactionLock.isLocked()&&dataSaveTransactionThreadLocal.get()===null&&commandContextThreadLocal.get()===null,'locks cleaned');
