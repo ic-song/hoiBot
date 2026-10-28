@@ -1,9 +1,9 @@
 # 즉시 반영 READY 3건
 
 - 작업 키: ready-planning
-- 작업 상태: 검증 완료
-- 정리 후보: 아니요
-- 체크포인트 버전: 2
+- 작업 상태: 작업 완료
+- 정리 후보: 예
+- 체크포인트 버전: 3
 - 마지막 갱신: 2026-10-28 Asia/Seoul
 - 목표/승인: 노션 교육방3·금고 자릿수·루미에르 빌리지 3건 개발, 검증, 소스 푸시와 feature/prod 원격 반영, 노션 완료 속성 및 버전 알림.
 - 브랜치/기준: feature/ready-planning, feature/prod 8f8ec7fb8554dffecde438271493c388f6f5d185 (ver_2.720). feature/hoi는 무관한 미반영 이력으로 보존.
@@ -14,5 +14,8 @@
 - 기존 상태: tracked 변경 없음. 무관한 미추적 파일과 오래된 체크포인트 보존. oct19-ready 소스가 prod에 포함됨을 확인, pet-home-village 체크포인트에서 carrot-confirm/oct19-ready PR 병합 증거 확인.
 - 구현: 교육방3, 금고 schema4·3~6자리·20개/기존 정책 보존 전환, 그랑 별채·10/20/30%p·3등급 등록·표시 완료. Main/Info와 버전/개발자노트 2.721, 명령 인덱스 동기화. 명령 목록/별칭은 그대로여서 REGISTRY 수정 불필요.
 - 검증: Node16종 219그룹 및 로컬 Rhino3종 통과. 전체 컴파일·실제 Java 파일·동시 처리·게시 중단/새 전역·1회 지급/소비·기존 기록 보존·DEV 포함. tools/ready_planning_validation.md 참조. 과거 성능 기준 전체 동일성 검사는 이번 변경 대상이므로 최신 배포 기준/동일 새 정책 비교28그룹으로 검증.
-- 다음 작업: 최종 diff/UTF-8/JSON 확인 후 소스 커밋·푸시·PR, feature/prod 원격 반영·검증, 노션3속성/버전 알림.
-- 원격/노션/알림: 아직 미반영. 운영 런타임 접근 없음.
+- 소스/운영 반영: e2c2a637a50caa4bf137c85a3e19fbeabe34ae4d가 소스 feature/ready-planning에 푸시된 뒤 feature/prod로 fast-forward·푸시됨. 원격 HEAD·origin/feature/prod와 코드·개발자노트 2.721 검증 완료. PR https://github.com/ic-song/hoiBot/pull/186 MERGED 확인.
+- 노션: 3개 문서 모두 상태 🧪 DEV, 운영반영일 2026-10-28, 운영반영버전 ver_2.721을 DB 원본 속성으로 재검증. 예정일 공란과 각 본문 원문 보존 확인.
+- 알림: PlayMCP 나에게 보내기로 정확히 ver_2.721 한 번 전송 성공 확인. 스킬 변경 없음. 운영 런타임 접근·업로드·컴파일 없음.
+- 완료 기록: 이 체크포인트는 Git 추적 중이며 기능 소스 커밋에 포함되어 원격에 보존됨. 완료 속성 기록도 같은 소스 브랜치에 푸시하고 feature/prod로 반영한다.
+- 다음 작업: 없음. 운영 기기 업로드·컴파일은 운영자 범위.
