@@ -654,6 +654,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		if (msg === "/스타터중복확인" && room !== testRoom) return;
 		var guildData = loadJsonFile(guildPath);
 		if (isInfoCommandBlockedDuringGuildTerritoryWar(guildData, msg, ctx.isDev, false)) return;
+		if (/^\/미니펫수집도감(?:\s|$)/.test(msg)) return;
+		var infoMiniPetBookPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + "miniPetBookPending.json");
+		if (!new java.io.File(infoMiniPetBookPendingPath).exists() && new java.io.File(infoMiniPetBookPendingPath + ".rollback").exists()) return;
+		if (new java.io.File(infoMiniPetBookPendingPath).exists()) {
+			var infoMiniPetBookPending = loadJsonFile(infoMiniPetBookPendingPath);
+			if (!infoMiniPetBookPending || infoMiniPetBookPending.version !== 1 || !Object.prototype.hasOwnProperty.call(infoMiniPetBookPending, "pending") || infoMiniPetBookPending.pending !== null && !Array.isArray(infoMiniPetBookPending.pending)) throw new Error("미니펫 수집도감 복구 기록 형식 오류");
+			if (infoMiniPetBookPending.pending !== null) return;
+		}
 		// 인형 저장 복구 전에는 부분 반영된 재화·매력 정보를 표시하지 않는다.
 		if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + "dollIndex.json")).exists()) {
 			var infoDollPending = loadJsonFile(DATA_ROOT_PATH + "dollPending.json");
