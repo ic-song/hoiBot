@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.723"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.724"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1125,7 +1125,8 @@ const GLOBAL_CONFIG = {
         dialogueSizes: { start: 20, roll: 40, host_ahead: 30, host_behind: 30, mid_tie: 20, user_win: 20, user_loss: 20, final_draw: 20 }
     },
     vaultRobbery: {
-        schemaVersion: 4,
+        schemaVersion: 5,
+        previousFinalPrize: 1000000000, // 이전 16~20번째 금고의 확정 상금 검증용
         skillBonuses: { "금고털이범": 2, "경제사범": 4 },
         equipMessages: {
             "금고털이범": "🔐 금고털이범📙 장착 완료!\n━━━━━━━━━━━━\n바늘 도둑이 소도둑 된다더니…\n이제는 금고까지 노리기 시작했습니다. 😏\n\n🔐 금고 도전 횟수 +2회 적용!\n※ 경제사범과 효과 중복 불가\n━━━━━━━━━━━━",
@@ -1138,7 +1139,7 @@ const GLOBAL_CONFIG = {
             { through: 7, label: "보통", minNumber: 1000, maxNumber: 9999, prize: 500000000, recentHints: 5 },
             { through: 8, label: "어려움", minNumber: 1000, maxNumber: 9999, prize: 1000000000, recentHints: 5 },
             { through: 15, label: "어려움", minNumber: 10000, maxNumber: 99999, prize: 1000000000, recentHints: 5 },
-            { through: 20, label: "어려움", minNumber: 100000, maxNumber: 999999, prize: 1000000000, recentHints: 5 }
+            { through: 20, label: "어려움", minNumber: 100000, maxNumber: 999999, prize: 2000000000, recentHints: 5 }
         ],
         previousStages: [ // 기존 15개 금고의 정답·보상 검증 전용
             { through: 3, label: "쉬움", minNumber: 100, maxNumber: 999, prize: 200000000, recentHints: 3 },
@@ -25904,6 +25905,7 @@ replier.reply(
                         return;
                     }
                     var removed = placedFurnitureList.splice(idx - 1, 1)[0];
+                    if (removed.placedAt !== undefined) delete removed.placedAt;
                     userHome.furnitureBag.push(removed);
                     userHome.furnitureBag = sortFurnitureList(userHome.furnitureBag);
                     sortFurnitureList(placedFurnitureList);
@@ -35914,7 +35916,9 @@ function runMiniGameEntry(mode, args) {
         if (stateExists) {
             var startupStore = requireMiniGameState(loadJsonFile(statePath));
             if (startupStore.vault && typeof miniGameRoundHeads !== "undefined") miniGameRoundHeads.put(args.ctx.key(), startupStore.vault.current.id || "$" + startupStore.vault.current.day);
-            scheduleMiniGameWork(args.ctx, 1);
+            var startupHasWork = hasMiniGameAutomaticWork(startupStore);
+            if (startupHasWork && !args.deferWork) scheduleMiniGameWork(args.ctx, 1);
+            return startupHasWork;
         }
         return;
     }
@@ -35942,6 +35946,10 @@ function runMiniGameEntry(mode, args) {
     var vaultSkillData = mode === "command" && (request.kind === "vault" || request.kind === "vaultAdmin" && request.action === "usage") ? loadJsonFile(petSkillDataPath) : null;
     var vaultSkillBonus = vaultSkillData ? getVaultRobberySkillBonus(vaultSkillData, args.sender) : 0;
     var state = stateExists ? requireMiniGameState(loadJsonFile(statePath)) : createMiniGameState();
+    if (mode === "auto") {
+        if (!hasMiniGameAutomaticWork(state)) return;
+        if (!data) data = loadJsonFile(filePath);
+    }
     if (mode === "command" && request.kind === "dice" && !isHoiPassPremiumActive(data, args.sender)) {
         var diceAccount = data.member[args.sender].serverRaidAccount;
         var startedDice = diceAccount && state.dice.users["$" + diceAccount.id];
@@ -36270,10 +36278,29 @@ function runMiniGameEntry(mode, args) {
         notification.record[notification.field] = sent ? "SENT" : "UNCERTAIN"; commit();
     }
     if (state.vault && typeof miniGameRoundHeads !== "undefined") miniGameRoundHeads.put(args.ctx.key(), state.vault.current.id);
-    scheduleMiniGameWork(args.ctx, getMiniGameWorkDelay(state, Date.now(), data, accounts));
+    if (hasMiniGameAutomaticWork(state)) scheduleMiniGameWork(args.ctx, getMiniGameWorkDelay(state, Date.now(), data, accounts));
 }
 
-// 일일 회차를 바꾸지 않고 미완료 지급의 다음 확인 시각을 계산하는 함수
+// 미완료 정산·공지·정책 전환이 있을 때만 자동 작업을 실행하는 함수
+function hasMiniGameAutomaticWork(state) {
+    if (state.vault) {
+        if (state.vault.schemaVersion < GLOBAL_CONFIG.vaultRobbery.schemaVersion) return true;
+        if (state.vault.current.winner !== null && state.vault.dailyWinners.length < GLOBAL_CONFIG.vaultRobbery.limits.dailyGames) return true;
+        for (var awardId in state.vault.awards) if (Object.prototype.hasOwnProperty.call(state.vault.awards, awardId)) {
+            var award = state.vault.awards[awardId];
+            if (!award.paid || award.notice === "WAITING" || award.notice === "CLAIMED") return true;
+        }
+    }
+    for (var diceId in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, diceId)) {
+        var game = state.dice.users[diceId].game;
+        if (game && game.phase === "RESULT") return true;
+    }
+    for (var rewardId in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, rewardId) && state.ledger[rewardId].status === "PENDING" && state.ledger[rewardId].kind !== "balance") return true;
+    for (var noticeId in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, noticeId) && (state.notices[noticeId].state === "WAITING" || state.notices[noticeId].state === "CLAIMED")) return true;
+    return false;
+}
+
+// 미완료 정산·공지·정책 전환에 필요한 재시도 간격을 반환하는 함수
 function getMiniGameWorkDelay(state, now, data, accounts) {
     var delay = GLOBAL_CONFIG.vaultRobbery.dayMs; // 날짜 전환은 자동 시각이 아닌 /리셋에서만 수행
     for (var key in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, key)) {
@@ -36281,7 +36308,7 @@ function getMiniGameWorkDelay(state, now, data, accounts) {
         if (game && game.phase === "RESULT") return Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs)); // 검증된 진행은 재시도 대상 하나만 있어도 간격 확정
     }
     for (var id in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, id) && state.ledger[id].status === "PENDING" && state.ledger[id].kind !== "balance") return Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs));
-    return Math.max(1, delay);
+    return hasMiniGameAutomaticWork(state) ? Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs)) : Math.max(1, delay);
 }
 
 // 미완료 지급 처리를 한 환경당 하나의 타이머로 예약하는 함수
@@ -36295,13 +36322,12 @@ function scheduleMiniGameWork(ctx, delay) {
     timer.id = setTimeout(function () {
         if (miniGameTimers[key] !== timer) return;
         delete miniGameTimers[key];
-        var previous = enterCommandContext(ctx), entered = false, retryRecovery = true;
+        var previous = enterCommandContext(ctx), entered = false, retryRecovery = false;
         try {
             dataTransactionLock.lock(); beginDataSaveTransaction(); entered = true;
             runMiniGameEntry("recover", { ctx: ctx });
-            var latest = loadJsonFile(filePath);
-            runMiniGameEntry("auto", { ctx: ctx, data: latest });
-        } catch (error) { if (error && error.miniGameRecoveryBlocked) retryRecovery = false; debuggerLog("[미니게임 자동 처리 복구 대기] " + error); }
+            runMiniGameEntry("auto", { ctx: ctx });
+        } catch (error) { retryRecovery = !(error && error.miniGameRecoveryBlocked); debuggerLog("[미니게임 자동 처리 복구 대기] " + error); }
         finally {
             if (entered) { endDataSaveTransaction(); dataTransactionLock.unlock(); }
             exitCommandContext(previous);
@@ -36755,11 +36781,15 @@ function requireVaultRobberyInteger(value) {
 
 
 // 금고 순번에 해당하는 고정 난이도·상금·힌트 정책을 반환하는 함수
-function getVaultRobberyStage(number, previousPolicy) {
+function getVaultRobberyStage(number, previousPolicy, previousFinalPrize) {
     requireVaultRobberyInteger(number);
     var config = GLOBAL_CONFIG.vaultRobbery, stages = previousPolicy ? config.previousStages : config.stages;
     if (number < 1 || number > stages[stages.length - 1].through) throw new Error("금고 순번 오류");
-    for (var i = 0; i < stages.length; i++) if (number <= stages[i].through) return stages[i];
+    for (var i = 0; i < stages.length; i++) if (number <= stages[i].through) {
+        var stage = stages[i];
+        if (previousFinalPrize && number > config.previousStages[config.previousStages.length - 1].through) return { through: stage.through, label: stage.label, minNumber: stage.minNumber, maxNumber: stage.maxNumber, prize: config.previousFinalPrize, recentHints: stage.recentHints };
+        return stage;
+    }
     throw new Error("금고 난이도 설정 오류");
 }
 
@@ -36787,6 +36817,20 @@ function upgradeVaultRobberyStore(store) {
     requireVaultRobberyStore(store);
     if (store.schemaVersion === GLOBAL_CONFIG.vaultRobbery.schemaVersion) return false;
     var round = store.current;
+    if (store.schemaVersion === 4) {
+        var previousFinalStart = GLOBAL_CONFIG.vaultRobbery.previousStages[GLOBAL_CONFIG.vaultRobbery.previousStages.length - 1].through;
+        for (var finalAwardKey in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, finalAwardKey)) {
+            var finalAward = store.awards[finalAwardKey];
+            if (!finalAward.legacy && !finalAward.previousPolicy && finalAward.number > previousFinalStart) finalAward.previousFinalPrize = true;
+        }
+        store.current = JSON.parse(JSON.stringify(round)); // 보관할 이전 금고와 진행 상태를 분리
+        if (!round.legacy && !round.previousPolicy && round.number > previousFinalStart) {
+            if (round.winner !== null) store.current.previousFinalPrize = true;
+            else store.current.prize = getVaultRobberyStage(round.number).prize;
+        }
+        store.schemaVersion = GLOBAL_CONFIG.vaultRobbery.schemaVersion;
+        return true;
+    }
     if (store.schemaVersion === 3) {
         for (var previousKey in store.awards) if (Object.prototype.hasOwnProperty.call(store.awards, previousKey) && !store.awards[previousKey].legacy) store.awards[previousKey].previousPolicy = true;
         store.schemaVersion = GLOBAL_CONFIG.vaultRobbery.schemaVersion;
@@ -36837,11 +36881,12 @@ function upgradeVaultRobberyStore(store) {
 // 금고와 보상 기록의 손상·잘못된 힌트·지급 상태를 변경 전에 검증하는 함수
 function requireVaultRobberyStore(store) {
     var config = GLOBAL_CONFIG.vaultRobbery, round = store && store.current;
-    if (!store || [1, 2, 3, 4].indexOf(store.schemaVersion) === -1 || !round || !store.awards || typeof store.awards !== "object" || Array.isArray(store.awards)) throw new Error("금고 저장 형식 오류");
+    if (!store || [1, 2, 3, 4, 5].indexOf(store.schemaVersion) === -1 || !round || !store.awards || typeof store.awards !== "object" || Array.isArray(store.awards)) throw new Error("금고 저장 형식 오류");
     var legacy = store.schemaVersion < 3 || round.legacy === true;
     if ((round.previousPolicy !== undefined && round.previousPolicy !== true) || (store.schemaVersion >= 4 && round.previousPolicy && round.winner === null)) throw new Error("금고 이전 정책 형식 오류");
+    if (round.previousFinalPrize !== undefined && (round.previousFinalPrize !== true || round.number <= config.previousStages[config.previousStages.length - 1].through || round.winner === null)) throw new Error("금고 이전 상금 형식 오류");
     var dailyLimit = store.schemaVersion === 3 ? config.previousStages[config.previousStages.length - 1].through : config.limits.dailyGames; // 저장된 정책의 일일 상한으로 검증
-    var stage = legacy ? config.legacy : getVaultRobberyStage(round.number, store.schemaVersion === 3 || round.previousPolicy === true);
+    var stage = legacy ? config.legacy : getVaultRobberyStage(round.number, store.schemaVersion === 3 || round.previousPolicy === true, store.schemaVersion === 4 || round.previousFinalPrize === true);
     requireVaultRobberyInteger(round.day); requireVaultRobberyInteger(round.answer); requireVaultRobberyInteger(round.prize);
     if (round.answer < stage.minNumber || round.answer > stage.maxNumber || (legacy ? round.prize < stage.minPrize || round.prize > stage.maxPrize : round.prize !== stage.prize)) throw new Error("금고 정답·상금 형식 오류");
     if (Object.prototype.hasOwnProperty.call(round, "low") || Object.prototype.hasOwnProperty.call(round, "high")) {
@@ -36871,7 +36916,8 @@ function requireVaultRobberyStore(store) {
         var oldPolicy = store.schemaVersion < 3 || award.legacy === true;
         if (store.schemaVersion >= 2) requireVaultRobberyInteger(award.number);
         if (award.previousPolicy !== undefined && award.previousPolicy !== true) throw new Error("금고 보상 이전 정책 형식 오류");
-        var awardStage = oldPolicy ? config.legacy : getVaultRobberyStage(award.number, store.schemaVersion === 3 || award.previousPolicy === true);
+        if (award.previousFinalPrize !== undefined && (award.previousFinalPrize !== true || award.number <= config.previousStages[config.previousStages.length - 1].through)) throw new Error("금고 보상 이전 상금 형식 오류");
+        var awardStage = oldPolicy ? config.legacy : getVaultRobberyStage(award.number, store.schemaVersion === 3 || award.previousPolicy === true, store.schemaVersion === 4 || award.previousFinalPrize === true);
         if ((oldPolicy ? award.amount < awardStage.minPrize || award.amount > awardStage.maxPrize : award.amount !== awardStage.prize) || award.answer < awardStage.minNumber || award.answer > awardStage.maxNumber || !award.paid && award.notice !== "WAITING") throw new Error("금고 보상 기록 오류");
         if (store.schemaVersion === 1 && awardKey !== "$" + award.day) throw new Error("금고 보상 날짜 오류");
         if (store.schemaVersion >= 2 && (awardKey !== award.gameId || typeof award.rewardId !== "string" || !award.rewardId || award.number < 1 || award.number > (oldPolicy ? 2 : config.limits.dailyGames) || typeof award.manual !== "boolean" || typeof award.nextOpened !== "boolean")) throw new Error("금고 보상 게임 식별 오류");
@@ -55184,7 +55230,7 @@ function preparePetHomeVillageRegistration(homeData, petSkillData, user, numbers
         if (used[number]) return { error: "같은 가구가방 번호를 중복 입력했어요." };
         used[number] = true;
         var key = item.grade === "그랑 루미에르" ? "grand" : item.grade === "로열 루미에르" ? "royal" : item.grade === "아르카나 루미에르" ? "arcana" : null;
-        if (!key || item.placedAt !== undefined) return { error: "가방 " + number + "번은 등록할 수 없어요. 미장착 그랑·로열·아르카나만 가능해요." };
+        if (!key) return { error: "가방 " + number + "번은 등록할 수 없어요. 미장착 그랑·로열·아르카나만 가능해요." };
         for (var p = 0; p < placed.length; p++) if (item.id !== undefined && String(item.id) === String(placed[p].id)) return { error: "가방 " + number + "번의 장착 상태를 확인해주세요." };
         counts[key]++;
         selected.push({ number: number, key: key, item: item });
@@ -64895,47 +64941,55 @@ function buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetC
 
 // 컴파일 후에도 저장된 운영 회차의 준비 시각·미완료 정산·공지를 이어서 처리한다.
 // 운영 타이머가 시작되기 전에 중단된 강탈 저장을 복구한다. DEV는 다음 DEV 요청에서 복구한다.
-var startupRobberyConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
-var startupMiniContexts = [createCommandContext(false, room8), createCommandContext(true, room8)];
-for (var startupMiniIndex = 0; startupMiniIndex < startupMiniContexts.length; startupMiniIndex++) {
-    var startupMiniPrevious = enterCommandContext(startupMiniContexts[startupMiniIndex]);
-    try {
-        if (runMiniGameEntry("recover", { ctx: startupMiniContexts[startupMiniIndex] }) && !startupMiniContexts[startupMiniIndex].isDev) initData = loadJsonFile(filePath, "bootstrap");
-        runMiniGameEntry("startup", { ctx: startupMiniContexts[startupMiniIndex] });
-    } catch (startupMiniError) {
-        debuggerLog("[미니게임 초기화 보류 · 일반 명령 유지] " + startupMiniError);
-    } finally { exitCommandContext(startupMiniPrevious); }
-}
-var startupRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRobberyConfig.pendingName);
-if (new java.io.File(startupRobberyPendingPath).exists()) {
-    var startupRobberyPending = loadJsonFile(startupRobberyPendingPath);
-    validateMiniPetRobberyPending(startupRobberyPending);
-    if (startupRobberyPending.pending !== null) {
-        for (var startupRowIndex = 0; startupRowIndex < startupRobberyPending.pending.length; startupRowIndex++) {
-            var startupRow = startupRobberyPending.pending[startupRowIndex];
-            var startupPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRow.name);
-            if (startupRow.text === null) {
-                var startupHistoryFile = new java.io.File(startupPath);
-                if (startupHistoryFile.exists() && !startupHistoryFile.delete()) throw new Error("강탈 기록 초기 이전 복구 실패");
-            } else writeVerifiedJsonFile(startupPath, startupRow.text, true);
-        }
-        writeMemberSplitSlot(startupRobberyPendingPath, JSON.stringify({ pending: null }));
-        initData = loadJsonFile(filePath, "bootstrap");
+// 복구용 데이터를 초기화 범위에만 보관하고 운영 타이머를 재개하는 함수
+function initializeLegacyStartup(startupData) {
+    var startupRobberyConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
+    var startupMiniContexts = [createCommandContext(false, room8), createCommandContext(true, room8)];
+    var startupMiniWork = []; // 복구용 회원·기록 객체를 해제한 뒤 예약할 환경만 보관
+    for (var startupMiniIndex = 0; startupMiniIndex < startupMiniContexts.length; startupMiniIndex++) {
+        var startupMiniPrevious = enterCommandContext(startupMiniContexts[startupMiniIndex]);
+        try {
+            if (runMiniGameEntry("recover", { ctx: startupMiniContexts[startupMiniIndex] }) && !startupMiniContexts[startupMiniIndex].isDev) startupData = loadJsonFile(filePath, "bootstrap");
+            if (runMiniGameEntry("startup", { ctx: startupMiniContexts[startupMiniIndex], deferWork: true })) startupMiniWork.push(startupMiniContexts[startupMiniIndex]);
+        } catch (startupMiniError) {
+            debuggerLog("[미니게임 초기화 보류 · 일반 명령 유지] " + startupMiniError);
+        } finally { exitCommandContext(startupMiniPrevious); }
     }
+    var startupRobberyPendingPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRobberyConfig.pendingName);
+    if (new java.io.File(startupRobberyPendingPath).exists()) {
+        var startupRobberyPending = loadJsonFile(startupRobberyPendingPath);
+        validateMiniPetRobberyPending(startupRobberyPending);
+        if (startupRobberyPending.pending !== null) {
+            for (var startupRowIndex = 0; startupRowIndex < startupRobberyPending.pending.length; startupRowIndex++) {
+                var startupRow = startupRobberyPending.pending[startupRowIndex];
+                var startupPath = resolveActiveDataPath(DATA_ROOT_PATH + startupRow.name);
+                if (startupRow.text === null) {
+                    var startupHistoryFile = new java.io.File(startupPath);
+                    if (startupHistoryFile.exists() && !startupHistoryFile.delete()) throw new Error("강탈 기록 초기 이전 복구 실패");
+                } else writeVerifiedJsonFile(startupPath, startupRow.text, true);
+            }
+            writeMemberSplitSlot(startupRobberyPendingPath, JSON.stringify({ pending: null }));
+            startupData = loadJsonFile(filePath, "bootstrap");
+        }
+    }
+    if (recoverAdventureRecordPending()) startupData = loadJsonFile(filePath, "bootstrap");
+    if (recoverMemberSplitPublication()) startupData = loadJsonFile(filePath, "bootstrap");
+    // 재컴파일 시에도 이미 보관한 기록과 새 기록을 유지한다.
+    var startupRecordCurrentFile = new java.io.File(resolveActiveDataPath(boardPath));
+    var startupRecordRollbackFile = new java.io.File(resolveActiveDataPath(boardPath) + ".rollback");
+    if (!startupRecordCurrentFile.exists() && startupRecordRollbackFile.exists()) {
+        var startupRecordRecoveryBoard = loadJsonFile(String(startupRecordRollbackFile.getPath()));
+        if (!startupRecordRecoveryBoard || !Array.isArray(startupRecordRecoveryBoard.record)) throw new Error("기록실 교체 복구 형식 오류");
+        prepareRecordRoomArchive(startupRecordRecoveryBoard);
+        if (!startupRecordRollbackFile.renameTo(startupRecordCurrentFile)) throw new Error("기록실 교체 복구 실패");
+    }
+    var startupRecordBoard = loadJsonFile(boardPath);
+    if (prepareRecordRoomArchive(startupRecordBoard)) saveJsonFile(startupRecordBoard, boardPath);
+    return { miniContexts: startupMiniWork, raid: startupData.serverRaid && serverRaidHasWork(startupData.serverRaid) ? { generation: startupData.serverRaid.generation, sequence: startupData.serverRaid.sequence } : null };
 }
-if (recoverAdventureRecordPending()) initData = loadJsonFile(filePath, "bootstrap");
-if (recoverMemberSplitPublication()) initData = loadJsonFile(filePath, "bootstrap");
-// 재컴파일 시에도 이미 보관한 기록과 새 기록을 유지한다.
-var startupRecordCurrentFile = new java.io.File(resolveActiveDataPath(boardPath));
-var startupRecordRollbackFile = new java.io.File(resolveActiveDataPath(boardPath) + ".rollback");
-if (!startupRecordCurrentFile.exists() && startupRecordRollbackFile.exists()) {
-    var startupRecordRecoveryBoard = loadJsonFile(String(startupRecordRollbackFile.getPath()));
-    if (!startupRecordRecoveryBoard || !Array.isArray(startupRecordRecoveryBoard.record)) throw new Error("기록실 교체 복구 형식 오류");
-    prepareRecordRoomArchive(startupRecordRecoveryBoard);
-    if (!startupRecordRollbackFile.renameTo(startupRecordCurrentFile)) throw new Error("기록실 교체 복구 실패");
-}
-var startupRecordBoard = loadJsonFile(boardPath);
-if (prepareRecordRoomArchive(startupRecordBoard)) saveJsonFile(startupRecordBoard, boardPath);
-if (initData.serverRaid && serverRaidHasWork(initData.serverRaid)) {
-    scheduleServerRaidWork(createCommandContext(false, room8), initData.serverRaid.generation, 1, initData.serverRaid.sequence);
-}
+var startupWork = null;
+try { startupWork = initializeLegacyStartup(initData); }
+finally { initData = null; }
+for (var startupWorkIndex = 0; startupWorkIndex < startupWork.miniContexts.length; startupWorkIndex++) scheduleMiniGameWork(startupWork.miniContexts[startupWorkIndex], 1);
+if (startupWork.raid) scheduleServerRaidWork(createCommandContext(false, room8), startupWork.raid.generation, 1, startupWork.raid.sequence);
+startupWork = null;
