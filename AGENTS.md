@@ -118,6 +118,15 @@ response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 - When adding a new helper/function, add a brief one-line purpose comment directly above it, for example `// 현재 날짜 문자열 반환 함수`.
 - When a function declares several derived or summary variables, add short inline comments beside the non-obvious variables explaining what each value calculates, for example `var towerAttempts = ...; // 시련탑 도전 횟수 계산`.
 
+## Temporary Verification Artifacts
+
+- Keep required testing and validation; cleaning artifacts does not replace verification.
+- Create task-specific test scripts, synthetic fixtures, benchmark results, and validation reports in a task-owned temporary directory outside the repository, such as `%TEMP%/hoiBot/<task-key>/`.
+- After verification is complete, delete the task's temporary verification artifacts before committing or reporting completion. Do not accumulate or commit them in `tools/` or elsewhere in the repository.
+- Keep only a concise summary of the verification commands, results, and limitations in the task report or necessary recovery checkpoint. Historical validation references in documentation are not evidence that the current source passes.
+- If work is interrupted or validation fails, retain only the temporary artifacts needed to resume that task and delete them when the task is completed. Never delete another task's files or user-owned data.
+- Retain permanent test code or generated validation files only when the user explicitly requests it. Preserve reusable operational tools and their built-in checks.
+
 ## Notion READY/HOTFIX Development Workflow
 
 - Treat a Notion planning document as the source of product intent, user-visible behavior, and operational policy, not as implementation authority.
