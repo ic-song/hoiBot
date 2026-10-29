@@ -6382,6 +6382,7 @@ Status: VERIFIED
 ## AI Notes
 - `calcExploreSuccessPercent` is used for the reservation/status display and the actual settlement success roll
 - `/탐 [숫자]` 예약 안내와 `/지도`의 상단 성공확률·상세 수식 최종값은 `formatPercent1`로 소수점 둘째 자리에서 반올림해 소수점 한 자리까지 표시한다.
+- 일반·이벤트 탐험 예약 안내와 지도 상세의 펜던트 보너스는 `formatPendantPercent`로 표시해 소수점 계산 오차가 긴 숫자로 노출되지 않도록 한다. 공용 성공률 계산과 실제 정산 판정에는 표시용 반올림을 적용하지 않는다.
 - `doPetExploreInterval` uses the shared success-rate calculation immediately before consuming the selected probability-UP item and rolling the result, so premium, pendant, home-badge, and penalty values match the displayed formula and the final rate remains capped at 100%
 - 일반 광산 1~3에서 이벤트 던전 `E` 보상으로 전환되어도 성공률은 입장권 재확인까지 끝난 원래 광산 기준으로 계산하므로 `광산탐험가📙` 효과가 사라지지 않는다.
 - `moveEventMineBetsToRandomMine` moves existing `/탐 0` participants to random regular mines 1~3 when `/펫탐험이벤트비활성화` runs
