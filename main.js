@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.727"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.728"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -15130,9 +15130,6 @@ replier.reply(
                     n = Math.floor(n);
                     return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                 }
-                function toPercentSimple(p) {
-                    return Math.floor(p * 100) + "%";
-                }
 
                 // (옵션) data 저장 함수
                 function saveMemberDataIfPossible() {
@@ -15302,8 +15299,8 @@ replier.reply(
                             "\n" +
                             "[" +
                             picked.item +
-                            "] 가 나왔습니다! (확률 " +
-                            toPercentSimple(picked.prob) +
+                            "] 가 나왔습니다! (낚시 성공 후 획득 확률 " +
+                            formatGachaProbability(picked.prob) +
                             ")\n" +
                             wave +
                             "\n\n" +
@@ -25961,8 +25958,10 @@ replier.reply(
                     }
                     let gradeRates = buildGradeRates(furnitureInfo);
                     let gradeRateMap = {};
+                    let gradeRateTotal = 0; // 실제 등급 추첨에 사용되는 가중치 합계
                     for (let i = 0; i < gradeRates.length; i++) {
                         gradeRateMap[gradeRates[i].grade] = gradeRates[i].rate;
+                        gradeRateTotal += Number(gradeRates[i].rate);
                     }
                     let gradePools = buildFurnitureGradePools(furnitureInfo, gradeRates);
                     let results = [];
@@ -25986,9 +25985,9 @@ replier.reply(
                                 nickName +
                                 "]님이 " +
                                 getFurnitureDisplay(item) +
-                                "(을)를 뽑았습니다!\n(확률:" +
-                                (gradeRate > 1 ? (gradeRate * 100).toFixed(2) : gradeRate) +
-                                "%)"
+                                "(을)를 뽑았습니다!\n(등급 확률:" +
+                                formatGachaProbability(gradeRateTotal > 0 ? gradeRate / gradeRateTotal : 0) +
+                                ")"
                             );
                         }
                         userHome.furnitureBag.push(newItem);
@@ -26005,7 +26004,7 @@ replier.reply(
                         let grade = r.grade || "";
                         let gradeRate = gradeRateMap[grade] || Number(r.rate) || 0;
                         let gtxt = (i == 5 ? allsee : "") + (grade ? "[" + grade + "] " : "");
-                        lines.push(gtxt + getFurnitureDisplay(r) + " (확률:" + (gradeRate > 1 ? (gradeRate * 100).toFixed(2) : gradeRate) + "%)");
+                        lines.push(gtxt + getFurnitureDisplay(r) + " (등급 확률:" + formatGachaProbability(gradeRateTotal > 0 ? gradeRate / gradeRateTotal : 0) + ")");
                     }
                     let leftTicketAfter = data.member[sender] && data.member[sender].bag && data.member[sender].bag[ticketName] ? data.member[sender].bag[ticketName] : 0;
                     let msgOut =
@@ -55875,6 +55874,11 @@ function getOwnedFurnitureCountByGrade(homeData, username, furnitureGrade) {
     return count;
 }
 //샵오픈 관련
+// 0~1 비율을 소수점 최대 여섯 자리의 백분율로 표시하는 함수
+function formatGachaProbability(probability) {
+    return (probability * 100).toFixed(6).replace(/\.?0+$/, "") + "%";
+}
+
 // 등급별 확률 테이블 만들기 (grade, rate)
 function buildGradeRates(furnitureList) {
     var map = {};
