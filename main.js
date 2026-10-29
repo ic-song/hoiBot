@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.725"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.726"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -2275,7 +2275,6 @@ const GLOBAL_CONFIG = {
         batchUseMax: 10 // 티켓/횟수형 명령어 1회 최대 사용 횟수
     },
     miniPet: { // 미니펫 시스템 설정
-        collectionBook: { schemaVersion: 1, shardCount: 16, filePrefix: "miniPetBook_", pendingName: "miniPetBookPending.json", pageSize: 30 },
         robberyHistory: { fileName: "miniPetRobberyHistory.json", pendingName: "miniPetRobberyPending.json", backupName: "miniPetRobberyHistory_legacy.json", markerKey: "miniPetRobberySplit20261014", schemaVersion: 1 },
         openMaxCount: 3000, // 미니펫오픈 1회 최대 수량
         battleBagMin: 5, // 미니펫대전 최소 가방 보유 수
@@ -3428,7 +3427,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("MAIN 방 제한: " + (GLOBAL_CONFIG.maintenance.testRoomOnly ? "ON · 팻 테스트방만 응답" : "OFF · 일반 채팅방도 응답") + "\n※ 메모리 설정이며 봇 재컴파일 시 기본값 OFF로 돌아갑니다.");
             return;
         }
-        runMiniPetBookEntry("recover", { ctx: ctx });
         if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists()) runMiniGameEntry("recover", { ctx: ctx, allowRecoveryReview: true });
         var resetProbeKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var resetProbeSession = manualResetSessions[resetProbeKey];
@@ -23381,13 +23379,9 @@ replier.reply(
                     message += "\n총 확률: " + adjustedTotal.toFixed(4);
                     replier.reply(message);
                 }
-                if (/^\/미니펫수집도감(?:\s|$)/.test(msg)) {
-                    replier.reply(runMiniPetBookEntry("view", { ctx: ctx, msg: msg, user: sender, data: data, petData: petData, guildData: guildData, catalogData: miniPetData }));
-                    return;
-                }
                 if (msg === "/미니펫오픈" || /^\/미니펫오픈\s+\d+$/.test(msg)) {
                     if (castleSiegeFlag) return;
-                    let args = msg.trim().split(/\s+/);
+                    let args = msg.split(" ");
                     let count = 1;
                     if (args.length > 1) {
                         count = parseInt(args[1], 10);
@@ -23439,7 +23433,6 @@ replier.reply(
 
                     refreshMiniPetSortIndex(petData, sender, miniPetData.gradeTable);
                     openedPets = sortMiniPetBag(openedPets, miniPetData.gradeTable);
-                    var miniPetBookResult = runMiniPetBookEntry("record", { ctx: ctx, user: sender, data: data, petData: petData, openedPets: openedPets, catalogData: miniPetData });
                     // 출력 메시지
                     let message =
                         "🐹[" + nickName + "] 님이 미니펫을 오픈합니다!\n" +
@@ -23448,7 +23441,6 @@ replier.reply(
                         "✅️ 사용: " + numberWithCommas(openedPets.length) + "개\n" +
                         "🐹 남은 미뽑기권: " + numberWithCommas(remainTicket) + "개\n" +
                         "🎒 미니펫 가방: " + bagCount + "/" + bagMax + "\n" +
-                        "📖 수집도감: " + numberWithCommas(openedPets.length) + "회 기록 · 신규 " + miniPetBookResult.newTypes + "종\n👉 /미니펫수집도감\n" +
                         "━━━━━━━━━━━━━━━\n";
                     for (let i = 0; i < openedPets.length; i++) {
                         if (i === 5 && typeof allsee !== "undefined") {
@@ -23457,11 +23449,11 @@ replier.reply(
                         message += formatPetInfo(openedPets[i]) + "\n";
                     }
                     message += "\n응애 응애 이곳이 호이월드 입니까?";
-                    try {
-                        replier.reply(message);
-                        for (let p of alerts) noticeMsg("🐹[전체알림]🎉\n\n[" + nickName + "] 님이 " + p.grade + " 등급 미니펫 [" + p.name + p.emoji + "] 을(를) 뽑았습니다!\n(매력도: " + (p.battleExp || 0) + "💕)");
-                    } catch (miniPetBookReplyError) { debuggerLog("[미니펫 수집도감 저장 후 전송 실패] " + miniPetBookReplyError); }
-                    return;
+                    replier.reply(message);
+                    // 전체 알림
+                    for (let p of alerts) {
+                        noticeMsg("🐹[전체알림]🎉\n\n[" + nickName + "] 님이 " + p.grade + " 등급 미니펫 [" + p.name + p.emoji + "] 을(를) 뽑았습니다!\n(매력도: " + (p.battleExp || 0) + "💕)");
+                    }
                 }
                 if (/^\/미니펫장착\s+\d+$/.test(msg)) {
                     var index = parseInt(msg.split(" ")[1], 10); // sortIndex
@@ -34077,7 +34069,7 @@ function isProtectedManagedJsonPath(path) {
     if (String(new java.io.File(path).getName()) === "serverRaidNoticeReceipts.json") return true;
     if (/^adventureQuestHistory(?:_legacy|Pending)?\.json$/.test(String(new java.io.File(path).getName()))) return true;
     var fileName = String(new java.io.File(path).getName());
-    return /^miniPetBook(?:_(?:[0-9]|1[0-5])|Pending)\.json$/.test(fileName) || /^miniPetRobbery(?:History(?:_legacy)?|Pending)\.json$/.test(fileName) || /^(dollIndex|dollPending|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(fileName) || fileName === "member.json" || fileName === "member_back.json" ||
+    return /^miniPetRobbery(?:History(?:_legacy)?|Pending)\.json$/.test(fileName) || /^(dollIndex|dollPending|dollRecords_(?:[0-9]|1[0-5]))\.json$/.test(fileName) || fileName === "member.json" || fileName === "member_back.json" ||
         /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(fileName) ||
         fileName === "member_pet.json" || fileName === "member_pet_back.json" ||
         fileName === "member_back2.json" || fileName === "member_pet_back2.json" ||
@@ -34090,8 +34082,6 @@ function isProtectedManagedJsonPath(path) {
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
     var splitFileName = String(new java.io.File(path).getName());
-    if (/^miniPetBook_(?:[0-9]|1[0-5])\.json$/.test(splitFileName)) return requireMiniPetBookStore(parsedData);
-    if (splitFileName === "miniPetBookPending.json") { validateMiniPetBookPending(parsedData); return parsedData; }
     if (splitFileName === "serverRaidNoticeReceipts.json") return requireServerRaidNoticeReceipts(parsedData);
     if (/^adventureQuestHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireAdventureRecordStore(parsedData);
     if (splitFileName === "adventureQuestHistoryPending.json") { validateAdventureRecordPending(parsedData); return parsedData; }
@@ -34242,15 +34232,6 @@ function getProtectedJsonSaveLock(path) {
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
 function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup) {
-    var bookWriteTransaction = getDataSaveTransaction();
-    if (typeof GLOBAL_CONFIG !== "undefined" && GLOBAL_CONFIG.miniPet && GLOBAL_CONFIG.miniPet.collectionBook && !getCurrentContext().miniPetBookPublishing && !(bookWriteTransaction && bookWriteTransaction.rollingBack) && (path === resolveActiveDataPath(filePath) || path === resolveActiveDataPath(memberPetPath))) {
-        var bookWritePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.collectionBook.pendingName);
-        if (!new java.io.File(bookWritePendingPath).exists() && new java.io.File(bookWritePendingPath + ".rollback").exists()) throw new Error("미니펫 도감 저장 복구 대기");
-        if (new java.io.File(bookWritePendingPath).exists()) {
-            var bookWritePending = JSON.parse(FileStream.read(bookWritePendingPath, "utf-8"));
-            if (!bookWritePending || bookWritePending.version !== 1 || !Object.prototype.hasOwnProperty.call(bookWritePending, "pending") || bookWritePending.pending !== null) throw new Error("미니펫 도감 저장 복구 대기");
-        }
-    }
     var lock = getProtectedJsonSaveLock(path);
     var targetFile = new java.io.File(path);
     var tempFile = new java.io.File(path + ".tmp");
@@ -34375,14 +34356,6 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
             autoDailyBatch.files[path] = data;
             autoDailyBatch.dirtyPaths[path] = true;
             return;
-        }
-        if (typeof GLOBAL_CONFIG !== "undefined" && GLOBAL_CONFIG.miniPet && GLOBAL_CONFIG.miniPet.collectionBook && !getCurrentContext().miniPetBookPublishing && (path === resolveActiveDataPath(filePath) || path === resolveActiveDataPath(memberPetPath))) {
-            var bookSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniPet.collectionBook.pendingName);
-            if (!new java.io.File(bookSavePendingPath).exists() && new java.io.File(bookSavePendingPath + ".rollback").exists()) throw new Error("미니펫 도감 저장 복구 대기");
-            if (new java.io.File(bookSavePendingPath).exists()) {
-                var bookSavePending = JSON.parse(FileStream.read(bookSavePendingPath, "utf-8"));
-                if (!bookSavePending || bookSavePending.version !== 1 || !Object.prototype.hasOwnProperty.call(bookSavePending, "pending") || bookSavePending.pending !== null) throw new Error("미니펫 도감 저장 복구 대기");
-            }
         }
         var dollDeletionState = getCurrentContext().dollDeletion;
         if (path === resolveActiveDataPath(filePath) && dollDeletionState && dollDeletionState.dirty) {
@@ -35960,7 +35933,7 @@ function runMiniGameEntry(mode, args) {
     }
     if ((mode === "auto" || mode === "resetPlan") && !stateExists) return mode === "resetPlan" ? [] : undefined;
     if (mode === "auto") {
-        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.collectionBook.pendingName, GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName];
+        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName];
         for (i = 0; i < foreignPendingNames.length; i++) {
             var foreignPath = resolveActiveDataPath(DATA_ROOT_PATH + foreignPendingNames[i]);
             if (new java.io.File(foreignPath + ".rollback").exists() && !new java.io.File(foreignPath).exists()) throw new Error("다른 콘텐츠 게시 복구 대기");
@@ -64966,202 +64939,6 @@ function buildMiniPetCollectionRankingMessage(data, petData, guildData, miniPetC
     return lines.join("\n");
 }
 
-// 등급·이름·모양이 같은 미니펫을 한 종류로 식별하는 함수
-function getMiniPetBookKey(pet) {
-    if (!pet || typeof pet.grade !== "string" || !pet.grade || typeof pet.name !== "string" || !pet.name || typeof pet.emoji !== "string" || !pet.emoji) throw new Error("미니펫 도감 종류 형식 오류");
-    return JSON.stringify([pet.grade, pet.name, pet.emoji]);
-}
-
-// 현재 뽑기 가능한 종류만 중복 없이 묶는 함수
-function buildMiniPetBookCatalog(catalogData) {
-    if (!catalogData || !Array.isArray(catalogData.gradeTable) || !Array.isArray(catalogData.miniPet)) throw new Error("미니펫 도감 목록 형식 오류");
-    var catalog = { grades: [], rows: [], byKey: {} };
-    for (var g = 0; g < catalogData.gradeTable.length; g++) {
-        var grade = catalogData.gradeTable[g];
-        if (!grade || typeof grade.grade !== "string" || !grade.grade || typeof grade.probability !== "number" || !isFinite(grade.probability) || grade.probability < 0 || catalog.grades.indexOf(grade.grade) !== -1) throw new Error("미니펫 도감 등급 형식 오류");
-        if (grade.probability > 0 && (!GLOBAL_CONFIG.miniPet.allowedGrades || GLOBAL_CONFIG.miniPet.allowedGrades.indexOf(grade.grade) !== -1)) catalog.grades.push(grade.grade);
-    }
-    for (var i = 0; i < catalogData.miniPet.length; i++) {
-        var pet = catalogData.miniPet[i];
-        if (!pet || catalog.grades.indexOf(pet.grade) === -1) continue;
-        var key = getMiniPetBookKey(pet);
-        if (!Object.prototype.hasOwnProperty.call(catalog.byKey, key)) { catalog.byKey[key] = pet; catalog.rows.push(pet); }
-    }
-    if (!catalog.rows.length) throw new Error("미니펫 도감 목록이 비어 있습니다.");
-    return catalog;
-}
-
-// 도감 횟수·시각에 안전한 정수만 허용하는 함수
-function requireMiniPetBookCount(value) {
-    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > 9007199254740991) throw new Error("미니펫 도감 수치 형식 오류");
-    return value;
-}
-
-// 계정별 누적 기록의 형식을 검증하는 함수
-function requireMiniPetBookStore(store) {
-    if (!store || store.version !== 1 || !store.users || typeof store.users !== "object" || Array.isArray(store.users)) throw new Error("미니펫 도감 저장 형식 오류");
-    for (var userId in store.users) if (Object.prototype.hasOwnProperty.call(store.users, userId)) {
-        var record = store.users[userId], total = 0; // 계정별 획득 합계의 정수 범위도 검증
-        if (userId.charAt(0) !== "$" || userId.length < 2 || !record || !record.catches || typeof record.catches !== "object" || Array.isArray(record.catches)) throw new Error("미니펫 도감 계정 형식 오류");
-        for (var key in record.catches) if (Object.prototype.hasOwnProperty.call(record.catches, key)) {
-            var identity = JSON.parse(key), row = record.catches[key];
-            if (!Array.isArray(identity) || identity.length !== 3 || key !== getMiniPetBookKey({ grade: identity[0], name: identity[1], emoji: identity[2] }) || !row) throw new Error("미니펫 도감 기록 형식 오류");
-            requireMiniPetBookCount(row.count);
-            if (row.count < 1 || typeof row.maxCharm !== "number" || !isFinite(row.maxCharm) || row.maxCharm < 0 || row.maxCharm > 9007199254740991) throw new Error("미니펫 도감 획득 기록 오류");
-            total += row.count; requireMiniPetBookCount(total);
-        }
-    }
-    return store;
-}
-
-// 고정 계정 ID를 기준으로 도감 파일을 선택하는 함수
-function getMiniPetBookFileName(accountId) {
-    var config = GLOBAL_CONFIG.miniPet.collectionBook, hash = 0;
-    if (typeof accountId !== "string" || !accountId) throw new Error("미니펫 도감 계정 ID 오류");
-    for (var i = 0; i < accountId.length; i++) hash = (hash * 31 + accountId.charCodeAt(i)) % config.shardCount;
-    return config.filePrefix + hash + ".json";
-}
-
-// 이미 추첨한 결과를 재추첨 없이 종류별 누적 기록에 반영하는 함수
-function applyMiniPetBookDraws(store, accountId, openedPets, catalog) {
-    requireMiniPetBookStore(store);
-    if (!Array.isArray(openedPets) || openedPets.length < 1 || openedPets.length > GLOBAL_CONFIG.miniPet.openMaxCount) throw new Error("미니펫 도감 등록 수량 오류");
-    var userKey = "$" + accountId, record = store.users[userKey] || { catches: {} }, fresh = 0;
-    for (var i = 0; i < openedPets.length; i++) {
-        var pet = openedPets[i], key = getMiniPetBookKey(pet), charm = pet.battleExp;
-        if (!Object.prototype.hasOwnProperty.call(catalog.byKey, key) || typeof charm !== "number" || !isFinite(charm) || charm < 0 || charm > 9007199254740991) throw new Error("미니펫 도감 획득 대상 오류");
-        var row = record.catches[key];
-        if (!row) { row = { count: 0, maxCharm: charm }; fresh++; record.catches[key] = row; }
-        requireMiniPetBookCount(row.count + 1);
-        row.count++; row.maxCharm = Math.max(row.maxCharm, charm);
-    }
-    store.users[userKey] = record;
-    requireMiniPetBookStore(store);
-    return { newTypes: fresh };
-}
-
-// 복구할 세 파일의 경로와 원문을 쓰기 전에 검증하는 함수
-function validateMiniPetBookPending(journal) {
-    if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal, "pending")) throw new Error("미니펫 도감 복구 형식 오류");
-    if (journal.pending === null) return;
-    if (!Array.isArray(journal.pending) || journal.pending.length !== 3) throw new Error("미니펫 도감 복구 목록 오류");
-    for (var i = 0; i < journal.pending.length; i++) {
-        var row = journal.pending[i];
-        if (!row || (i === 0 ? row.name !== "member.json" : i === 1 ? row.name !== "member_pet.json" : !/^miniPetBook_(?:[0-9]|1[0-5])\.json$/.test(row.name)) || typeof row.text !== "string" && !(i === 2 && row.text === null)) throw new Error("미니펫 도감 복구 대상 오류");
-        if (row.text !== null) {
-            var parsed = JSON.parse(row.text);
-            if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || i === 0 && (!parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("미니펫 도감 복구 원문 오류");
-            if (i === 2) requireMiniPetBookStore(parsed);
-        }
-    }
-}
-
-// 종류별 발견·획득 횟수·최고 매력과 페이지 안내를 표시하는 함수
-function buildMiniPetBookMessage(catalog, record, request, nickname) {
-    var catches = record ? record.catches : {}, counts = {}, totals = {}, found = 0, total = 0;
-    for (var g = 0; g < catalog.grades.length; g++) { counts[catalog.grades[g]] = 0; totals[catalog.grades[g]] = 0; }
-    for (var k in catches) if (Object.prototype.hasOwnProperty.call(catches, k)) { total += catches[k].count; requireMiniPetBookCount(total); }
-    for (var i = 0; i < catalog.rows.length; i++) {
-        var pet = catalog.rows[i], row = catches[getMiniPetBookKey(pet)];
-        if (row) { counts[pet.grade]++; totals[pet.grade] += row.count; found++; }
-    }
-    var header = "🐹 [" + nickname + "] 님의 미니펫 수집도감\n━━━━━━━━━━━━━━━\n";
-    if (!request.grade) {
-        var lines = [header + "📚 발견: " + found + "/" + catalog.rows.length + "종 · " + (found * 100 / catalog.rows.length).toFixed(1) + "%", "🐹 누적 획득: " + numberWithCommas(total) + "회", "※ 적용 후 /미니펫오픈 결과부터 자동 기록해요.", "📖 등급별 목록" + allsee];
-        for (var j = 0; j < catalog.grades.length; j++) {
-            var name = catalog.grades[j], kinds = 0;
-            for (var r = 0; r < catalog.rows.length; r++) if (catalog.rows[r].grade === name) kinds++;
-            lines.push(name + " · " + counts[name] + "/" + kinds + "종 · 획득 " + numberWithCommas(totals[name]) + "회", "👉 /미니펫수집도감 " + name);
-        }
-        return lines.join("\n");
-    }
-    var rows = catalog.rows.filter(function (pet) { return pet.grade === request.grade; });
-    rows.sort(function (a, b) {
-        var ak = getMiniPetBookKey(a), bk = getMiniPetBookKey(b), ar = catches[ak], br = catches[bk];
-        if (!!ar !== !!br) return ar ? -1 : 1;
-        if (ar && br && ar.maxCharm !== br.maxCharm) return br.maxCharm - ar.maxCharm;
-        return ak < bk ? -1 : ak > bk ? 1 : 0;
-    });
-    var pageSize = GLOBAL_CONFIG.miniPet.collectionBook.pageSize, pages = Math.max(1, Math.ceil(rows.length / pageSize)), page = request.page;
-    if (page > pages) return header + "📖 " + request.grade + " 도감은 1~" + pages + "페이지까지 있어요.\n👉 /미니펫수집도감 " + request.grade + " 1";
-    var output = [header + "📚 " + request.grade + ": " + counts[request.grade] + "/" + rows.length + "종", "🐹 획득 " + numberWithCommas(totals[request.grade]) + "회 · " + page + "/" + pages + "페이지", allsee];
-    for (var p = (page - 1) * pageSize; p < Math.min(rows.length, page * pageSize); p++) {
-        var item = rows[p], saved = catches[getMiniPetBookKey(item)];
-        output.push((saved ? "✅ " : "▫️ ") + item.name + item.emoji + (saved ? "\n└ 획득 " + numberWithCommas(saved.count) + "회 · 최고 " + numberWithCommas(saved.maxCharm) + "💕" : " · 미발견"));
-    }
-    if (page > 1) output.push("◀️ /미니펫수집도감 " + request.grade + " " + (page - 1));
-    if (page < pages) output.push("▶️ /미니펫수집도감 " + request.grade + " " + (page + 1));
-    output.push("📖 전체: /미니펫수집도감");
-    return output.join("\n");
-}
-
-// 도감 명령과 미니펫 오픈의 저장·복구를 담당하는 진입 함수
-function runMiniPetBookEntry(mode, args) {
-    var config = GLOBAL_CONFIG.miniPet.collectionBook, ctx = args.ctx || getCurrentContext();
-    var pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName);
-    if (mode === "recover") {
-        var pendingFile = new java.io.File(pendingPath), rollbackFile = new java.io.File(pendingPath + ".rollback");
-        if (!pendingFile.exists() && rollbackFile.exists()) {
-            var rollbackJournal = loadJsonFile(rollbackFile.getPath()); validateMiniPetBookPending(rollbackJournal);
-            if (!rollbackFile.renameTo(pendingFile)) throw new Error("미니펫 도감 복구 파일 교체 실패");
-        }
-        if (!pendingFile.exists()) return false;
-        var journal = loadJsonFile(pendingPath); validateMiniPetBookPending(journal);
-        if (journal.pending === null) return false;
-        ctx.miniPetBookPublishing = true;
-        try {
-            for (var r = 0; r < journal.pending.length; r++) {
-                var recovery = journal.pending[r], target = resolveActiveDataPath(DATA_ROOT_PATH + recovery.name);
-                if (recovery.text === null) {
-                    var createdFile = new java.io.File(target);
-                    if (createdFile.exists() && !createdFile.delete()) throw new Error("미니펫 도감 첫 저장 복구 실패");
-                } else writeVerifiedJsonFile(target, recovery.text, true);
-            }
-            saveJsonFile({ version: 1, pending: null }, pendingPath);
-            if (getDataSaveTransaction()) { endDataSaveTransaction(); beginDataSaveTransaction(); }
-        } finally { ctx.miniPetBookPublishing = false; }
-        return true;
-    }
-    var catalog = buildMiniPetBookCatalog(args.catalogData), request = null;
-    if (mode === "view") {
-        var match = /[\r\n]/.test(args.msg) ? null : String(args.msg).match(/^\/미니펫수집도감(?:[ \t]+([^ \t\r\n]+)(?:[ \t]+([1-9]\d*))?)?$/);
-        if (!match || match[1] && catalog.grades.indexOf(match[1]) === -1 || match[2] && Number(match[2]) > 9007199254740991) return "📖 /미니펫수집도감\n📖 /미니펫수집도감 [등급] [페이지]\n예시: /미니펫수집도감 전설+ 1";
-        request = { grade: match[1] || null, page: match[2] ? Number(match[2]) : 1 };
-    }
-    var member = args.data.member[args.user], marker = member.miniPetBookVersion, account = member.serverRaidAccount;
-    if (marker !== undefined && marker !== config.schemaVersion) throw new Error("미니펫 도감 등록 표시 오류");
-    if (mode === "record" && !account) {
-        account = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
-        member.serverRaidAccount = account;
-    }
-    if (marker !== undefined && !account) throw new Error("미니펫 도감 계정 ID 누락");
-    var accountId = account ? account.id : null, fileName = accountId ? getMiniPetBookFileName(accountId) : null;
-    var storePath = fileName ? resolveActiveDataPath(DATA_ROOT_PATH + fileName) : null, exists = storePath && new java.io.File(storePath).exists();
-    if (marker !== undefined && !exists) throw new Error("미니펫 도감 기록 파일 누락");
-    var store = exists ? requireMiniPetBookStore(loadJsonFile(storePath)) : { version: 1, users: {} }, record = accountId ? store.users["$" + accountId] : null;
-    if (marker !== undefined && !record) throw new Error("미니펫 도감 계정 기록 누락");
-    if (mode === "view") return buildMiniPetBookMessage(catalog, record, request, checkRank(args.data, args.petData, args.guildData, args.user));
-    if (mode !== "record") throw new Error("미니펫 도감 작업 오류");
-    var snapshots = [
-        { name: "member.json", text: String(FileStream.read(resolveActiveDataPath(filePath), "utf-8")) },
-        { name: "member_pet.json", text: String(FileStream.read(resolveActiveDataPath(memberPetPath), "utf-8")) },
-        { name: fileName, text: exists ? String(FileStream.read(storePath, "utf-8")) : null }
-    ];
-    validateMiniPetBookPending({ version: 1, pending: snapshots });
-    var result = applyMiniPetBookDraws(store, accountId, args.openedPets, catalog);
-    member.miniPetBookVersion = config.schemaVersion;
-    ctx.miniPetBookPublishing = true;
-    try {
-        saveJsonFile({ version: 1, pending: snapshots }, pendingPath);
-        saveJsonFile(store, storePath, false, snapshots[2].text);
-        saveJsonFile(args.petData, memberPetPath);
-        saveJsonFile(args.data, filePath);
-        saveJsonFile({ version: 1, pending: null }, pendingPath);
-        endDataSaveTransaction(); beginDataSaveTransaction();
-    } finally { ctx.miniPetBookPublishing = false; }
-    return result;
-}
-
 // 컴파일 후에도 저장된 운영 회차의 준비 시각·미완료 정산·공지를 이어서 처리한다.
 // 운영 타이머가 시작되기 전에 중단된 강탈 저장을 복구한다. DEV는 다음 DEV 요청에서 복구한다.
 // 복구용 데이터를 초기화 범위에만 보관하고 운영 타이머를 재개하는 함수
@@ -65172,7 +64949,6 @@ function initializeLegacyStartup(startupData) {
     for (var startupMiniIndex = 0; startupMiniIndex < startupMiniContexts.length; startupMiniIndex++) {
         var startupMiniPrevious = enterCommandContext(startupMiniContexts[startupMiniIndex]);
         try {
-            if (runMiniPetBookEntry("recover", { ctx: startupMiniContexts[startupMiniIndex] }) && !startupMiniContexts[startupMiniIndex].isDev) startupData = loadJsonFile(filePath, "bootstrap");
             if (runMiniGameEntry("recover", { ctx: startupMiniContexts[startupMiniIndex] }) && !startupMiniContexts[startupMiniIndex].isDev) startupData = loadJsonFile(filePath, "bootstrap");
             if (runMiniGameEntry("startup", { ctx: startupMiniContexts[startupMiniIndex], deferWork: true })) startupMiniWork.push(startupMiniContexts[startupMiniIndex]);
         } catch (startupMiniError) {
