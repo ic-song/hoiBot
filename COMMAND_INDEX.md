@@ -1009,6 +1009,27 @@ Status: VERIFIED
 - If investigating furniture slot counts, inspect `getFurnitureMaxSlots`
 - `/샵오픈`의 1회 최대 수량은 `GLOBAL_CONFIG.furniture.openMaxCount`에서 관리하며 현재 5,000개다.
 - `/샵오픈`은 `buildGradeRates` 뒤 `buildFurnitureGradePools`로 등급별 후보 배열을 명령당 한 번 구성하고 `getRandomFurnitureByGrade`에 전달한다. 후보는 원래 목록 순서와 객체 참조를 유지하며 중복 등급은 배열을 공유한다. 명령 간 캐시는 없고 등급 추첨·가구 추첨·ID 생성의 난수 순서와 저장 순서는 그대로다.
+- `/샵오픈` 결과와 전체알림은 등급 가중치를 실제 추첨 가중치 합계로 나눈 뒤 `formatGachaProbability`로 소수점 최대 6자리의 `등급 확률`을 표시한다. 같은 등급 내 개별 가구의 확률과 구분하며, 추첨 테이블과 보상은 변경하지 않는다.
+
+---
+
+# /낚시오픈
+
+Status: VERIFIED
+
+## Files
+
+- `main.js`
+
+## Related Helpers
+
+- `formatGachaProbability`
+- `pickByProbability` (명령 내부)
+
+## AI Notes
+
+- 낚시대 파손은 기존 독립 30% 판정을 유지한다. 성공 시 정규화한 `fishTable`에서 생선을 추첨하고, 결과의 `낚시 성공 후 획득 확률`은 정규화된 생선 비율을 소수점 최대 6자리 백분율로 표시한다. 황금잉어 확률을 정수 절삭해 0%로 표시하지 않는다.
+- 패키지 소모, 생선·포인트·칭호 지급과 기존 저장 흐름은 유지한다.
 
 ---
 
