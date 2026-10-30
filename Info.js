@@ -3082,6 +3082,7 @@ function requireHalloweenInteger(value) {
 function requireHalloweenState(state) {
     if (!state || state.version !== 1 || typeof state.active !== "boolean" || typeof state.lastResetDay !== "string" || !Array.isArray(state.logs)) throw new Error("할로윈 이벤트 원본 형식 오류");
     requireHalloweenInteger(state.epoch);
+    if (state.resetCycle !== undefined) requireHalloweenInteger(state.resetCycle);
     return state;
 }
 // Main과 같은 이벤트 계정 원본을 검증하는 함수
@@ -3090,6 +3091,7 @@ function requireHalloweenAccount(account, id) {
         !Array.isArray(account.titles) || !Array.isArray(account.history) || !Array.isArray(account.orders) || !account.requests || typeof account.requests !== "object" || Array.isArray(account.requests)) throw new Error("할로윈 계정 원본 형식 오류");
     var values = [account.epoch, account.free, account.paid, account.used, account.extra];
     for (var i = 0; i < values.length; i++) requireHalloweenInteger(values[i]);
+    if (account.resetCycle !== undefined) requireHalloweenInteger(account.resetCycle);
     for (var p = 0; p < account.purchases.length; p++) requireHalloweenInteger(account.purchases[p]);
     for (var t = 0; t < account.titles.length; t++) if (typeof account.titles[t] !== "number" || account.titles[t] < 0 || account.titles[t] >= 5 || Math.floor(account.titles[t]) !== account.titles[t] || account.titles.indexOf(account.titles[t]) !== t) throw new Error("할로윈 칭호 기록 오류");
     if (account.run !== null) {
