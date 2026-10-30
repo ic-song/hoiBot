@@ -3083,14 +3083,25 @@ function requireHalloweenState(state) {
     if (!state || state.version !== 1 || typeof state.active !== "boolean" || typeof state.lastResetDay !== "string" || !Array.isArray(state.logs)) throw new Error("할로윈 이벤트 원본 형식 오류");
     requireHalloweenInteger(state.epoch);
     if (state.resetCycle !== undefined) requireHalloweenInteger(state.resetCycle);
+    if (state.candyClearEpoch !== undefined) {
+        requireHalloweenInteger(state.candyClearEpoch);
+        if (state.candyClearEpoch > state.epoch) throw new Error("할로윈 사탕 종료 세대 오류");
+    }
     return state;
 }
 // Main과 같은 이벤트 계정 원본을 검증하는 함수
 function requireHalloweenAccount(account, id) {
     if (!account || account.version !== 1 || account.id !== id || typeof account.day !== "string" || !Array.isArray(account.purchases) || account.purchases.length !== 6 ||
         !Array.isArray(account.titles) || !Array.isArray(account.history) || !Array.isArray(account.orders) || !account.requests || typeof account.requests !== "object" || Array.isArray(account.requests)) throw new Error("할로윈 계정 원본 형식 오류");
-    var values = [account.epoch, account.free, account.paid, account.used, account.extra];
+    var values = [account.epoch, account.used, account.extra];
     for (var i = 0; i < values.length; i++) requireHalloweenInteger(values[i]);
+    if (account.candy !== undefined) {
+        if (account.free !== undefined || account.paid !== undefined) throw new Error("할로윈 사탕 잔액 형식 혼합");
+        requireHalloweenInteger(account.candy);
+    } else {
+        requireHalloweenInteger(account.free); requireHalloweenInteger(account.paid);
+        requireHalloweenInteger(account.free + account.paid);
+    }
     if (account.resetCycle !== undefined) requireHalloweenInteger(account.resetCycle);
     for (var p = 0; p < account.purchases.length; p++) requireHalloweenInteger(account.purchases[p]);
     for (var t = 0; t < account.titles.length; t++) if (typeof account.titles[t] !== "number" || account.titles[t] < 0 || account.titles[t] >= 5 || Math.floor(account.titles[t]) !== account.titles[t] || account.titles.indexOf(account.titles[t]) !== t) throw new Error("할로윈 칭호 기록 오류");
@@ -3103,8 +3114,15 @@ function requireHalloweenAccount(account, id) {
         var placeCount = run.rooms.length === config.legacyRoomCount ? config.legacyPlaceCount : config.placeCount; // Main과 같은 신·구 탐험 장소 수 검증
         for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= placeCount || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
     }
-    requireHalloweenInteger(account.free + account.paid);
     return account;
+}
+
+// 구 잔액과 단일 사탕 잔액에 같은 종료 소멸 기준을 적용하는 함수
+function getHalloweenBalance(state, account) {
+    if (!account) return 0;
+    if (account.candy !== undefined) return account.epoch === state.epoch ? requireHalloweenInteger(account.candy) : 0;
+    var legacyPaid = state.candyClearEpoch === undefined || account.epoch >= state.candyClearEpoch ? account.paid : 0;
+    return requireHalloweenInteger(legacyPaid + (account.epoch === state.epoch ? account.free : 0));
 }
 
 // Info 명령 진입점에서 복구 대기와 이벤트 표시용 원본만 읽는 함수
@@ -3127,7 +3145,7 @@ function runHalloweenInfoEntry(mode, ctx, data, user) {
         var path = ctx.rootPath + getHalloweenAccountName(id);
         if (new java.io.File(path).exists()) {
             var account = requireHalloweenAccount(loadJsonFile(path), id);
-            ctx.halloweenBalance = requireHalloweenInteger(account.paid + (account.epoch === ctx.halloweenState.epoch ? account.free : 0));
+            ctx.halloweenBalance = getHalloweenBalance(ctx.halloweenState, account);
         }
     }
     return true;

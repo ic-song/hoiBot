@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.737"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.738"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -48927,10 +48927,8 @@ function applyPackageRewards(data, user, packageInfo, useCount, halloween) {
         if (reward.type === "item" && reward.name === GLOBAL_CONFIG.halloween.currencyName) {
             if (!halloween || !halloween.state.active) throw new Error("할로윈 사탕 지급 컨텍스트 없음");
             requireHalloweenInteger(totalCount);
-            var candyField = reward.halloweenSource === "free" ? "free" : "paid";
-            halloween.account[candyField] = requireHalloweenInteger(halloween.account[candyField] + totalCount);
-            requireHalloweenInteger(halloween.account.free + halloween.account.paid);
-            halloween.account.history.push({ kind: "packageCandy", source: candyField, candy: totalCount, packageName: packageInfo.name, at: halloween.at, txId: halloween.txId });
+            halloween.account.candy = requireHalloweenInteger(halloween.account.candy + totalCount);
+            halloween.account.history.push({ kind: "packageCandy", candy: totalCount, packageName: packageInfo.name, at: halloween.at, txId: halloween.txId });
             rewardLines.push(GLOBAL_CONFIG.halloween.currencyName + " x" + numberWithCommas(totalCount));
         } else if (reward.type === "item") {
             var packageRewardItemName = normalizeMiniPetRewardBoxItemName(reward.name); // 기존 구성품 이름도 신규 등급명으로 지급
@@ -65350,7 +65348,7 @@ function requireHalloweenInteger(value) {
 
 // 처음 시작하는 이벤트의 비활성 상태를 만드는 함수
 function createHalloweenState() {
-    return { version: 1, active: false, epoch: 0, lastResetDay: "", resetCycle: 0, logs: [] };
+    return { version: 1, active: false, epoch: 0, candyClearEpoch: 0, lastResetDay: "", resetCycle: 0, logs: [] };
 }
 
 // 저장된 이벤트 활성·종료 원본을 검증하는 함수
@@ -65358,20 +65356,31 @@ function requireHalloweenState(state) {
     if (!state || state.version !== 1 || typeof state.active !== "boolean" || typeof state.lastResetDay !== "string" || !Array.isArray(state.logs)) throw new Error("할로윈 이벤트 원본 형식 오류");
     requireHalloweenInteger(state.epoch);
     if (state.resetCycle !== undefined) requireHalloweenInteger(state.resetCycle);
+    if (state.candyClearEpoch !== undefined) {
+        requireHalloweenInteger(state.candyClearEpoch);
+        if (state.candyClearEpoch > state.epoch) throw new Error("할로윈 사탕 종료 세대 오류");
+    }
     return state;
 }
 
 // 공통 계정 ID로 독립 보관할 할로윈 계정을 만드는 함수
 function createHalloweenAccount(id, epoch) {
-    return { version: 1, id: id, epoch: epoch, free: 0, paid: 0, day: "", used: 0, extra: 0, run: null, purchases: [0,0,0,0,0,0], titles: [], history: [], orders: [], requests: {}, lastRequest: null };
+    return { version: 1, id: id, epoch: epoch, candy: 0, day: "", used: 0, extra: 0, run: null, purchases: [0,0,0,0,0,0], titles: [], history: [], orders: [], requests: {}, lastRequest: null };
 }
 
 // 계정별 이벤트 원본과 진행 중 탐험의 형식을 검증하는 함수
 function requireHalloweenAccount(account, id) {
     if (!account || account.version !== 1 || account.id !== id || typeof account.day !== "string" || !Array.isArray(account.purchases) || account.purchases.length !== 6 ||
         !Array.isArray(account.titles) || !Array.isArray(account.history) || !Array.isArray(account.orders) || !account.requests || typeof account.requests !== "object" || Array.isArray(account.requests)) throw new Error("할로윈 계정 원본 형식 오류");
-    var values = [account.epoch, account.free, account.paid, account.used, account.extra];
+    var values = [account.epoch, account.used, account.extra];
     for (var i = 0; i < values.length; i++) requireHalloweenInteger(values[i]);
+    if (account.candy !== undefined) {
+        if (account.free !== undefined || account.paid !== undefined) throw new Error("할로윈 사탕 잔액 형식 혼합");
+        requireHalloweenInteger(account.candy);
+    } else {
+        requireHalloweenInteger(account.free); requireHalloweenInteger(account.paid);
+        requireHalloweenInteger(account.free + account.paid);
+    }
     if (account.resetCycle !== undefined) requireHalloweenInteger(account.resetCycle);
     for (var p = 0; p < account.purchases.length; p++) requireHalloweenInteger(account.purchases[p]);
     for (var t = 0; t < account.titles.length; t++) if (typeof account.titles[t] !== "number" || account.titles[t] < 0 || account.titles[t] >= 5 || Math.floor(account.titles[t]) !== account.titles[t] || account.titles.indexOf(account.titles[t]) !== t) throw new Error("할로윈 칭호 기록 오류");
@@ -65384,21 +65393,28 @@ function requireHalloweenAccount(account, id) {
         var placeCount = run.rooms.length === config.legacyRoomCount ? config.legacyPlaceCount : config.rooms.length; // 구 탐험에는 기존 12곳만 허용
         for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= placeCount || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
     }
-    requireHalloweenInteger(account.free + account.paid);
     return account;
 }
 
 // 종료 정리 세대를 반영한 실제 사용 가능 사탕 잔액을 반환하는 함수
 function getHalloweenBalance(state, account) {
-    return account ? requireHalloweenInteger(account.paid + (account.epoch === state.epoch ? account.free : 0)) : 0;
+    if (!account) return 0;
+    if (account.candy !== undefined) return account.epoch === state.epoch ? requireHalloweenInteger(account.candy) : 0;
+    var legacyPaid = state.candyClearEpoch === undefined || account.epoch >= state.candyClearEpoch ? account.paid : 0; // 구 보존 잔액도 새 정책으로 종료한 뒤에는 복원하지 않는다.
+    return requireHalloweenInteger(legacyPaid + (account.epoch === state.epoch ? account.free : 0));
 }
 
-// 날짜 변경·이벤트 종료로 만료된 무료 잔액과 탐험만 정리하는 함수
+// 구 잔액을 단일 사탕으로 전환하고 날짜·리셋·종료로 만료된 진행 상태를 정리하는 함수
 function refreshHalloweenAccount(state, account, now) {
     var changed = false, day = getHalloweenDay(now);
-    if (account.epoch !== state.epoch) {
-        account.history.push({ kind: "close", at: now, freeRemoved: account.free, epoch: state.epoch });
-        account.free = 0; account.epoch = state.epoch; account.run = null; changed = true;
+    if (account.candy === undefined) {
+        account.candy = getHalloweenBalance(state, account);
+        delete account.free; delete account.paid;
+        if (account.epoch !== state.epoch) account.run = null;
+        account.epoch = state.epoch; changed = true;
+    } else if (account.epoch !== state.epoch) {
+        account.history.push({ kind: "close", at: now, candyRemoved: account.candy, epoch: state.epoch });
+        account.candy = 0; account.epoch = state.epoch; account.run = null; changed = true;
     }
     if (account.day !== day || (account.resetCycle || 0) !== (state.resetCycle || 0)) {
         if (account.run) account.history.push({ kind: "unfinished", at: now, run: account.run });
@@ -65430,9 +65446,9 @@ function pickHalloweenOutcome(rows) {
     throw new Error("할로윈 확률 표 오류");
 }
 
-// 무료 사탕의 지급량과 감사 이력을 함께 반영하는 함수
-function creditHalloweenFree(account, amount, detail) {
-    account.free = requireHalloweenInteger(account.free + amount);
+// 단일 사탕 잔액의 지급량과 감사 이력을 함께 반영하는 함수
+function creditHalloweenCandy(account, amount, detail) {
+    account.candy = requireHalloweenInteger(account.candy + amount);
     account.history.push(detail);
 }
 
@@ -65486,23 +65502,19 @@ function buildHalloweenCompletionMessage(context, secretIndex, newTitle) {
     return out;
 }
 
-// 이미 읽은 가방을 정리하고 판매 패키지의 구 사탕은 유료 잔액 이관 대상으로 반환하는 함수
+// 이미 읽은 가방에서 종료 대상 할로윈 사탕·입장권만 제거하고 정리 인원을 반환하는 함수
 function clearHalloweenBagItems(data) {
-    var config = GLOBAL_CONFIG.halloween, result = { users: 0, legacyCandy: [] };
+    var config = GLOBAL_CONFIG.halloween, clearedUsers = 0;
     for (var user in data.member) {
         if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
         var bag = data.member[user].bag;
         if (!bag) continue;
         var cleared = false;
-        if (Object.prototype.hasOwnProperty.call(bag, config.currencyName)) {
-            var candy = requireHalloweenInteger(Number(bag[config.currencyName]));
-            if (candy > 0) result.legacyCandy.push({ user: user, candy: candy });
-            delete bag[config.currencyName]; cleared = true;
-        }
+        if (Object.prototype.hasOwnProperty.call(bag, config.currencyName)) { delete bag[config.currencyName]; cleared = true; }
         if (Object.prototype.hasOwnProperty.call(bag, config.ticketName)) { delete bag[config.ticketName]; cleared = true; }
-        if (cleared) result.users++;
+        if (cleared) clearedUsers++;
     }
-    return result;
+    return clearedUsers;
 }
 
 // 읽어 둔 이벤트·회원 데이터에 한 명령을 적용하고 저장 필요 여부를 반환하는 함수
@@ -65530,14 +65542,15 @@ function applyHalloweenCommand(request, context) {
             return reply("🎃 할로윈 이벤트를 시작했습니다!\n" + config.name + "\n※ /귀신의집 · /할로윈상점");
         }
         if (request.action === "end") {
-            var bagCleanup = clearHalloweenBagItems(context.data);
-            result.legacyCandy = bagCleanup.legacyCandy;
-            if (bagCleanup.users > 0) { result.changed = true; result.memberChanged = true; }
-            if (!state.active) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다." + (bagCleanup.users > 0 ? "\n🧹 가방의 할로윈 사탕·입장권을 정리했습니다. (" + bagCleanup.users + "명)\n유료 사탕은 이벤트 잔액에 보존했습니다." : ""));
-            state.active = false; state.epoch++; state.logs.push({ action: "end", actor: context.sender, at: context.now, epoch: state.epoch });
+            var clearedUsers = clearHalloweenBagItems(context.data), wasActive = state.active;
+            if (clearedUsers > 0) { result.changed = true; result.memberChanged = true; }
+            if (!wasActive && state.candyClearEpoch > 0) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다." + (clearedUsers > 0 ? "\n🧹 가방의 할로윈 사탕·입장권을 정리했습니다. (" + clearedUsers + "명)" : ""));
+            state.active = false; state.epoch = requireHalloweenInteger(state.epoch + 1); state.candyClearEpoch = state.epoch;
+            state.logs.push({ action: wasActive ? "end" : "endCleanup", actor: context.sender, at: context.now, epoch: state.epoch });
             result.stateChanged = true;
-            result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎃 할로윈 이벤트가 종료되었습니다.\n" + config.name + "\n\n귀신의 집 탐험과 할로윈 상점 이용이 종료되었습니다.\n교환한 보상 아이템과 획득한 칭호는 유지됩니다.\n참여해 주셔서 감사합니다!";
-            return reply("🎃 할로윈 이벤트를 종료했습니다.\n가방의 할로윈 사탕·입장권과 무료 사탕을 정리했습니다.\n유료 사탕·주문 기록과 획득 칭호는 보존했습니다.");
+            if (!wasActive) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.\n🧹 남은 사탕 잔액과 가방의 할로윈 사탕·입장권을 정리했습니다.");
+            result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎃 할로윈 이벤트가 종료되었습니다.\n" + config.name + "\n\n귀신의 집 탐험과 할로윈 상점 이용이 종료되었습니다.\n남은 사탕과 가방의 할로윈 입장권은 소멸했습니다.\n교환한 보상 아이템과 획득한 칭호는 유지됩니다.\n참여해 주셔서 감사합니다!";
+            return reply("🎃 할로윈 이벤트를 종료했습니다.\n남은 사탕 잔액과 가방의 할로윈 사탕·입장권을 모두 정리했습니다.\n주문 기록과 획득 칭호는 보존했습니다.");
         }
     }
     if (request.action === "titles") {
@@ -65578,10 +65591,9 @@ function applyHalloweenCommand(request, context) {
         if (cost > getHalloweenBalance(state, account)) return reply("❌ 할로윈 사탕이 부족합니다. (보유 " + numberWithCommas(getHalloweenBalance(state, account)) + "개)");
         var bag = context.data.member[context.sender].bag;
         requireHalloweenInteger(Number(bag[product.name] || 0) + rewardCount);
-        var paidUsed = Math.min(account.paid, cost); // 사용자 확정: 유료 사탕부터 차감
-        account.paid -= paidUsed; account.free -= cost - paidUsed; account.purchases[index] += quantity;
+        account.candy -= cost; account.purchases[index] += quantity;
         addItem(context.data, context.sender, product.name, rewardCount);
-        account.history.push({ kind: "purchase", product: index + 1, quantity: quantity, paid: paidUsed, free: cost - paidUsed, at: context.now, txId: context.txId });
+        account.history.push({ kind: "purchase", product: index + 1, quantity: quantity, candy: cost, at: context.now, txId: context.txId });
         result.changed = true; result.memberChanged = true;
         return reply("🎃 할로윈 상점 구매 완료!\n🎁 " + product.name + " ×" + numberWithCommas(rewardCount) + "\n🍬 사용 사탕: " + numberWithCommas(cost) + "개\n🍬 남은 사탕: " + numberWithCommas(getHalloweenBalance(state, account)) + "개" + (product.limit ? "\n📦 누적 구매: " + account.purchases[index] + "/" + product.limit + "회" : "") + "\n※ 구매 한도는 이벤트 전체 계정 기준입니다.");
     }
@@ -65612,14 +65624,14 @@ function applyHalloweenCommand(request, context) {
         var candy = getHalloweenRoomCandy(run, action, outcomeIndex); // 시작 당시 경로에 맞는 신·구 보상표 선택
         run.results.push({ number: request.number, outcome: outcomeIndex, candy: candy });
         run.total += candy; run.resolved = true;
-        creditHalloweenFree(account, candy, { kind: "room", runId: run.id, room: run.rooms[run.step], number: request.number, outcome: outcomeIndex, candy: candy, at: context.now, txId: context.txId });
+        creditHalloweenCandy(account, candy, { kind: "room", runId: run.id, room: run.rooms[run.step], number: request.number, outcome: outcomeIndex, candy: candy, at: context.now, txId: context.txId });
         result.changed = true;
         var selectionMessage = prefix + outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n";
         if (run.step < run.rooms.length - 1) return reply(outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n🚪 다음 탐험: " + (run.step + 2) + "/" + run.rooms.length + "\n※ 다음 방 확인: /귀신의집");
         var secretIndex = Math.random() * 100 < config.secretRate ? pickHalloweenOutcome(config.secret) : -1;
         var titleIndex = pickHalloweenOutcome(config.titles), newTitle = account.titles.indexOf(titleIndex) === -1 ? titleIndex : -1;
         var completion = config.completionCandy + (secretIndex >= 0 ? config.secret[secretIndex].candy : 0);
-        creditHalloweenFree(account, completion, { kind: "complete", runId: run.id, rooms: run.rooms.slice(), results: run.results.slice(), bonus: config.completionCandy, secret: secretIndex, title: titleIndex, at: context.now, txId: context.txId });
+        creditHalloweenCandy(account, completion, { kind: "complete", runId: run.id, rooms: run.rooms.slice(), results: run.results.slice(), bonus: config.completionCandy, secret: secretIndex, title: titleIndex, at: context.now, txId: context.txId });
         if (newTitle >= 0) account.titles.push(newTitle);
         result.message = selectionMessage + "\n" + buildHalloweenCompletionMessage(context, secretIndex, newTitle);
         if (newTitle === config.titles.length - 1) result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎉 할로윈 전설 칭호 등장!\n\n" + context.actor + "님이\n" + config.titles[newTitle].name + "\n칭호를 획득했습니다!\n━━━━━━━━━━━━\n👻유령 호월이:\n\"으아앙! 그 왕관 내가 쓰려고 했는데!\"\n━━━━━━━━━━━━\n🎃 2026 할로윈 한정 칭호";
@@ -65765,21 +65777,6 @@ function runHalloweenEntry(mode, args) {
         result.message = actor + "님\n" + result.message;
         if (result.ok) account.orders.push({ kind: mode, operator: sender, target: target, at: now, txId: context.txId, command: args.message, log: result.packageLogData.logs[result.packageLogData.logs.length - 1] });
     } else result = applyHalloweenCommand(request, context);
-    var legacyCandyWrites = [], legacyCandyIds = {}; // 구 가방 사탕이 있는 계정만 읽어 유료 잔액에 이관한다.
-    for (var lc = 0; lc < (result.legacyCandy || []).length; lc++) {
-        var legacyCandy = result.legacyCandy[lc], legacyMember = data.member[legacyCandy.user];
-        var legacyId = legacyMember.serverRaidAccount && legacyMember.serverRaidAccount.id;
-        if (Object.prototype.hasOwnProperty.call(legacyCandyIds, "$" + legacyId)) throw new Error("할로윈 사탕 이관 계정 ID 중복");
-        legacyCandyIds["$" + legacyId] = true;
-        var legacyName = getHalloweenAccountName(legacyId), legacyPath = root + legacyName;
-        var legacyText = new java.io.File(legacyPath).exists() ? String(FileStream.read(legacyPath, "utf-8")) : null;
-        var legacyAccount = legacyText === null ? createHalloweenAccount(legacyId, state.epoch) : requireHalloweenAccount(JSON.parse(legacyText), legacyId);
-        refreshHalloweenAccount(state, legacyAccount, now);
-        legacyAccount.paid = requireHalloweenInteger(legacyAccount.paid + legacyCandy.candy);
-        legacyAccount.history.push({ kind: "legacyBagCandy", candy: legacyCandy.candy, at: now, txId: context.txId });
-        requireHalloweenAccount(legacyAccount, legacyId);
-        legacyCandyWrites.push({ name: legacyName, text: legacyText, account: legacyAccount });
-    }
     if (result.changed && replayGuard) {
         var receipt = { message: args.message, room: args.room, at: now, reply: result.message, txId: context.txId };
         account.lastRequest = receipt;
@@ -65794,7 +65791,6 @@ function runHalloweenEntry(mode, args) {
         snapshots.push({ name: "member.json", text: String(FileStream.read(resolveActiveDataPath(filePath), "utf-8")) });
     }
     if (accountChanged) { requireHalloweenAccount(account, account.id); snapshots.push({ name: accountName, text: accountText }); }
-    for (var ls = 0; ls < legacyCandyWrites.length; ls++) snapshots.push({ name: legacyCandyWrites[ls].name, text: legacyCandyWrites[ls].text });
     if (result.stateChanged) { requireHalloweenState(state); snapshots.push({ name: config.stateName, text: stateExists ? String(FileStream.read(statePath, "utf-8")) : null }); }
     if (result.packageLogData && result.ok) snapshots.push({ name: "packageLog.json", text: String(FileStream.read(resolveActiveDataPath(packageLogPath), "utf-8")) });
     writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: snapshots }), true);
@@ -65804,7 +65800,6 @@ function runHalloweenEntry(mode, args) {
             try { saveJsonFile(data, filePath); } finally { delete ctx.halloweenPublishing; }
         }
         if (accountChanged) writeMemberSplitSlot(root + accountName, JSON.stringify(account));
-        for (var lw = 0; lw < legacyCandyWrites.length; lw++) writeMemberSplitSlot(root + legacyCandyWrites[lw].name, JSON.stringify(legacyCandyWrites[lw].account));
         if (result.stateChanged) writeMemberSplitSlot(statePath, JSON.stringify(state));
         if (result.packageLogData && result.ok) writeMemberSplitSlot(resolveActiveDataPath(packageLogPath), JSON.stringify(result.packageLogData));
         writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
