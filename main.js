@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.740"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.741"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -32524,7 +32524,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "• 회원 목록 외 인형 기록: " + dollResidualNames.length + "명\n" +
         "• 기록 보존·이전: 회원 " + (memberMigration ? "필요" : "완료") + " / 퀘스트 " + (adventureMigration ? "필요" : "완료") + " / 강탈 " + (robberyMigration ? "필요" : "완료") + "\n\n" +
         "지급된 보상·적용 매력·교육 실적은 유지합니다.\n이전 단계가 필요하면 먼저 처리한 뒤 나머지 정리를 다시 안내합니다.\n" +
-        "━━━━━━━━━━━━\n확인 또는 1: 정리 실행\n취소 또는 2: 취소\n" + (GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs / 1000) + "초 안에 선택해주세요.";
+        "━━━━━━━━━━━━\n'확인' or '1': 정리 실행\n'취소' or '2': 취소\n" + (GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs / 1000) + "초 안에 선택해주세요.";
     if (residualNames.length) text += allsee + "\n[회원 목록 외 잔여 식별자]\n" + residualNames.join("\n") + "\n※ 과거 기록에만 등장한 이름은 자동 삭제 대상으로 보지 않습니다.";
     return { signature: getDataCleanupSignature(targets), text: text };
 }
@@ -32615,7 +32615,7 @@ function advanceManualResetSession(msg, sender, room, isGroupChat, key, memberDa
         }
         if (!choices.length) { delete manualResetSessions[key]; return { reply: "사용할 수 있는 초기화 항목이 없습니다." }; }
         manualResetSessions[key] = { stage: "menu", choices: choices, room: room, isGroupChat: isGroupChat, expiresAt: now + GLOBAL_CONFIG.manualReset.timeoutMs };
-        lines.push("\n60초 안에 번호를 입력해주세요. 취소: 2취소\n정기 리셋·개인 가방 정리·일회성 이전 명령은 기존 방식으로 유지됩니다.\n/데이터정리는 대상 안내 후 확인/1 또는 취소/2로 진행합니다.");
+        lines.push("\n60초 안에 번호를 입력해주세요. 취소: 2취소\n정기 리셋·개인 가방 정리·일회성 이전 명령은 기존 방식으로 유지됩니다.\n/데이터정리: '확인' or '1' / '취소' or '2'");
         return { reply: lines.join("\n") };
     }
     if (!session || session.room !== room || session.isGroupChat !== isGroupChat || now >= session.expiresAt) return {};
