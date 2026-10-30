@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.735"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.736"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1023,7 +1023,10 @@ const GLOBAL_CONFIG = {
         plannedEnd: "2026년 11월 10일",
         normalEntries: 1,
         premiumEntries: 2,
-        roomCount: 5,
+        roomCount: 3,
+        legacyRoomCount: 5, // 배포 전 진행 중 탐험의 경로와 기존 결과별 사탕을 보존
+        legacyPlaceCount: 12,
+        roomRewards: { "안전형": [14, 0], "탐색형": [33, 9, 0], "도박형": [100, 20, 0] }, // 방당 보상을 높여 3곳의 총평균을 기존 5곳 수준으로 유지
         completionCandy: 20,
         secretRate: 10,
         legacyDuplicateMs: 2000,
@@ -1090,6 +1093,121 @@ const GLOBAL_CONFIG = {
                 {"text":"🔐 금고를 턴다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"쿠션 밑 작은 금고에서 커다란 사탕 꾸러미를 찾았습니다!","line":"쿠션까지 들어보는 건 너무한 거 아니야?!"},{"label":"소득","rate":50,"candy":12,"story":"금고 앞에 둔 작은 사탕 묶음을 챙겼습니다.","line":"그거 줄 테니까 안쪽은 보지 마… 부탁이야!"},{"label":"실패","rate":30,"candy":0,"story":"금고를 열었지만 ‘이미 먹었지롱’ 쪽지만 남아 있었습니다.","line":"보안보다 빠른 건 내 식욕이지!"}]},
                 {"text":"🎁 선물을 찾는다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"손님용 선물 봉투에서 사탕 몇 알을 찾았습니다.","line":"손님용 맞아… 표정은 왜 그렇게 신났어!"},{"label":"실패","rate":20,"candy":0,"story":"선물 상자는 예쁜 리본만 든 빈 상자였습니다.","line":"포장이 선물의 절반이랬어! 나머지 절반은 마음!"}]},
                 {"text":"🫣 👻유령 호월이를 속인다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"‘사탕 배달 왔어요!’라는 말에 비밀 서랍이 열렸습니다.","line":"배달이 아니라 수거였잖아! 너무해!"},{"label":"소득","rate":35,"candy":5,"story":"재미있는 농담에 웃다가 놓친 사탕을 챙겼습니다.","line":"웃긴 건 인정하지만 사탕까지 챙길 줄은!"},{"label":"실패","rate":10,"candy":0,"story":"장난을 눈치챈 유령이 사탕 주머니를 꼭 안았습니다.","line":"나도 장난 전문가거든! 오늘은 안 속아!"}]}
+            ] },
+            { name: "🌙 달빛 시계탑", intro: "🌙 달빛 시계탑\n\n멈춰 있던 대형 시계가 달빛을 받자 혼자 움직이기 시작합니다. 계단 틈마다 사탕 포장지가 반짝입니다.\n\n👻유령 호월이: \"시간을 되돌리면 내가 어제 먹은 사탕도 돌아올까? 어, 그건 돌려주기 싫은데!\"", actions: [
+                {"text":"🕰️ 시곗바늘을 거꾸로 돌린다","type":"도박형","results":[{"label":"대박","rate":20,"story":"시계가 열두 번 울리더니 과거의 사탕 비축분이 폭포처럼 쏟아집니다.","line":"어제 숨긴 걸 오늘 찾아내다니! 시간 여행 금지야!"},{"label":"소득","rate":50,"story":"종소리에 흔들린 시계추에서 사탕 꾸러미가 떨어집니다.","line":"그건 정각 간식인데 지금이 몇 시지?"},{"label":"실패","rate":30,"story":"시계가 거꾸로 돌며 방금 들어온 입구로 되돌아왔습니다. 사탕은 없습니다.","line":"과거로 갔지만 네 사탕은 미래에도 없네!"}]},
+                {"text":"🔎 톱니바퀴 사이를 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"태엽 뒤 비밀 칸에 숨긴 사탕 주머니를 찾아냅니다.","line":"거긴 기계실이 아니라 내 간식실이야!"},{"label":"소득","rate":35,"story":"바닥에 흩어진 사탕 몇 알을 주워 담습니다.","line":"시간은 금인데 사탕도 금이네… 내 금!"},{"label":"실패","rate":10,"story":"먼지투성이 태엽만 발견하고 손이 새까매집니다.","line":"손은 검어졌는데 성과는 투명하네!"}]},
+                {"text":"🪜 난간을 잡고 계단을 오른다","type":"안전형","results":[{"label":"성공","rate":80,"story":"난간 끝 작은 사탕 접시를 무사히 챙깁니다.","line":"안전하게 올라가더니 간식까지 챙기네!"},{"label":"실패","rate":20,"story":"삐걱대는 계단이 울려 사탕 접시가 벽 안으로 숨습니다.","line":"계단이 오늘은 내 편을 들어줬어!"}]}
+            ] },
+            { name: "🪆 움직이는 인형방", intro: "🪆 움직이는 인형방\n\n진열장 속 인형들의 눈이 동시에 방문자를 따라 움직입니다. 가장 큰 곰 인형의 주머니가 불룩합니다.\n\n👻유령 호월이: \"얘들아, 움직이지 마! 들키면 내 사탕까지 들키잖아!\"", actions: [
+                {"text":"🧸 작은 인형에게 인사한다","type":"안전형","results":[{"label":"성공","rate":80,"story":"인형이 고개를 끄덕이며 사탕 봉투를 살며시 건넵니다.","line":"나한테는 인사해도 안 주더니? 서운해!"},{"label":"실패","rate":20,"story":"인형이 손을 흔드는 대신 먼지만 툭 털어냅니다.","line":"인사비로 먼지를 받았네! 하하!"}]},
+                {"text":"🎁 커다란 곰 인형의 지퍼를 연다","type":"도박형","results":[{"label":"대박","rate":20,"story":"곰 인형의 배에서 사탕 수백 알이 와르르 터져 나옵니다.","line":"내 비상용 배낭을 왜 열어! 곰도 당황했잖아!"},{"label":"소득","rate":50,"story":"솜 사이에 낀 사탕 꾸러미를 끄집어냅니다.","line":"곰 인형 다이어트 시켰으니 그 정도는 가져가!"},{"label":"실패","rate":30,"story":"지퍼 안에서 튀어나온 장난감 손이 코를 톡 치고 사라집니다.","line":"인형한테 코 맞은 사람은 처음 봐!"}]},
+                {"text":"🔎 인형들의 이름표를 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"뒤집힌 이름표 밑에 숨겨진 사탕 열쇠 꾸러미를 발견합니다.","line":"그 이름표는 뒤집지 말라고 붙인 건데!"},{"label":"소득","rate":35,"story":"작은 인형이 떨어뜨린 사탕을 주워 담습니다.","line":"저 애는 나보다 간식을 더 잘 흘려!"},{"label":"실패","rate":10,"story":"모든 이름표에 ’호월이 최고’만 적혀 있습니다.","line":"내 자존심만 찾았네! 그건 꽤 귀하지!"}]}
+            ] },
+            { name: "🎪 버려진 서커스장", intro: "🎪 버려진 서커스장\n\n낡은 천막 안에서 혼자 박수 소리가 울립니다. 중앙 무대에는 사탕으로 만든 왕관이 놓여 있습니다.\n\n👻유령 호월이: \"오늘의 특별 공연은 사탕이 사라지는 마술! 사라질 곳은 내 입이야!\"", actions: [
+                {"text":"🔦 객석 아래를 뒤진다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"맨 앞줄 의자 아래 관객용 사탕 꾸러미를 발견합니다.","line":"거긴 VIP 간식석인데 네가 VIP였어?!"},{"label":"소득","rate":35,"story":"좌석 틈에 굴러간 사탕 몇 알을 챙깁니다.","line":"팝콘은 없고 사탕만 있는 극장이야!"},{"label":"실패","rate":10,"story":"오래된 입장권과 빈 봉지만 발견합니다.","line":"입장권은 무료, 사탕은 품절! 박수!"}]},
+                {"text":"🎟️ 안내석에 정중히 앉는다","type":"안전형","results":[{"label":"성공","rate":80,"story":"유령 안내원이 환영 사탕을 작은 접시에 담아 줍니다.","line":"안내원까지 네 편이면 나만 관객이잖아!"},{"label":"실패","rate":20,"story":"박수만 터지고 안내원은 안개처럼 사라집니다.","line":"환영은 뜨거웠지만 간식은 차갑네!"}]},
+                {"text":"🎩 마술사의 모자를 뒤집는다","type":"도박형","results":[{"label":"대박","rate":20,"story":"마술 모자가 거대해지며 사탕 폭죽을 하늘로 뿜어냅니다.","line":"진짜 마술이잖아! 나도 알려줘, 제발!"},{"label":"소득","rate":50,"story":"모자 안의 비밀 주머니에서 사탕 한 묶음이 나옵니다.","line":"마술은 소박했지만 맛은 확실해!"},{"label":"실패","rate":30,"story":"모자에서 토끼 모양 연기만 뿜어져 나옵니다.","line":"토끼가 사탕을 먼저 먹고 갔나 봐!"}]}
+            ] },
+            { name: "🌹 망자의 온실", intro: "🌹 망자의 온실\n\n깨진 유리천장 아래 검은 장미가 은은하게 빛납니다. 화분마다 사탕처럼 생긴 열매가 매달려 있습니다.\n\n👻유령 호월이: \"꽃은 관상용! 열매는… 어라, 내 간식용이었는데!\"", actions: [
+                {"text":"🌺 검은 장미의 꽃봉오리를 연다","type":"도박형","results":[{"label":"대박","rate":20,"story":"꽃잎이 펼쳐지자 사탕을 가득 품은 황금빛 꽃술이 나타납니다.","line":"어떻게 피운 거야?! 나는 물만 줬는데!"},{"label":"소득","rate":50,"story":"꽃잎 속에 숨은 사탕 꾸러미가 손바닥에 떨어집니다.","line":"가끔 피는 간식꽃인데 오늘 네 차례네!"},{"label":"실패","rate":30,"story":"꽃봉오리에서 재채기 꽃가루만 팡 퍼집니다.","line":"에취! 사탕 대신 향기를 가져가!"}]},
+                {"text":"🪴 화분 밑의 배수구를 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"낡은 받침 밑에서 사탕 보관용 작은 상자를 발견합니다.","line":"그건 흙도 아니고 사탕도 아니고… 사탕 맞아!"},{"label":"소득","rate":35,"story":"화분 테두리에 붙은 사탕 몇 알을 발견합니다.","line":"물 주다가 붙여둔 건데 그걸 보네!"},{"label":"실패","rate":10,"story":"배수구에서는 물소리만 들리고 아무것도 나오지 않습니다.","line":"꽃은 자라도 사탕은 안 자랐네!"}]},
+                {"text":"💧 꽃에 물을 조금 준다","type":"안전형","results":[{"label":"성공","rate":80,"story":"고개를 숙인 꽃이 감사 표시로 사탕 봉투를 건넵니다.","line":"나보다 꽃이 더 친절하다니 인정 못 해!"},{"label":"실패","rate":20,"story":"꽃이 물을 털자 얼굴에 물방울만 튑니다.","line":"세수는 무료야! 달콤함은 다음에!"}]}
+            ] },
+            { name: "🚂 유령 종착역", intro: "🚂 유령 종착역\n\n승객 없는 열차가 플랫폼에 조용히 멈춰 있습니다. 전광판에는 '사탕행 막차'가 깜빡입니다.\n\n👻유령 호월이: \"표는 내고 타야 해! 사탕으로 내는 건 안 돼, 내 사탕이니까!\"", actions: [
+                {"text":"🚉 매표소에 길을 묻는다","type":"안전형","results":[{"label":"성공","rate":80,"story":"유령 역무원이 길 안내와 함께 사탕 기념품을 건넵니다.","line":"길 하나 물었는데 기념품까지 받다니!"},{"label":"실패","rate":20,"story":"매표소 창구가 닫히고 종이 승차권만 바람에 날립니다.","line":"다음 차는 사탕 없이 정시 출발입니다!"}]},
+                {"text":"🧳 잊힌 여행 가방을 확인한다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"주인을 찾지 못한 사탕 기념품 꾸러미를 발견합니다.","line":"그 가방 주인이 나라는 걸 지금 말하면 늦었지?"},{"label":"소득","rate":35,"story":"가방 외부 주머니에서 사탕 몇 알을 챙깁니다.","line":"주머니 단속을 깜빡한 유령이 있었네!"},{"label":"실패","rate":10,"story":"가방 안에는 양말 한 짝만 가지런히 놓여 있습니다.","line":"오늘의 유실물은 양말과 기대감!"}]},
+                {"text":"🚂 기관차의 비상 레버를 당긴다","type":"도박형","results":[{"label":"대박","rate":20,"story":"객차가 달칵 열리며 사탕 운송 상자가 한꺼번에 나타납니다.","line":"비상 레버가 아니라 내 간식 레버였는데!"},{"label":"소득","rate":50,"story":"문틈에서 굴러온 사탕 보따리를 집어 듭니다.","line":"열차가 소심하게 보상을 줬구나!"},{"label":"실패","rate":30,"story":"경적만 크게 울리고 객차 문은 그대로 잠겨 있습니다.","line":"빵빵! 당첨은 아니고 출발 신호야!"}]}
+            ] },
+            { name: "🛎️ 잠들지 않는 호텔", intro: "🛎️ 잠들지 않는 호텔\n\n투숙객이 없는 호텔 로비에 체크인 벨만 울립니다. 객실 열쇠 대신 사탕 모양 장식이 걸려 있습니다.\n\n👻유령 호월이: \"체크인은 공짜야! 근데 야식은 아무나 못 먹지롱!\"", actions: [
+                {"text":"🧾 투숙객 장부를 뒤진다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"장부 사이에 끼워둔 환영 사탕 꾸러미를 찾습니다.","line":"그건 100년 묵은 웰컴 간식인데!"},{"label":"소득","rate":35,"story":"페이지 사이에서 사탕 몇 알이 굴러 나옵니다.","line":"호텔 숙박비보다 사탕이 더 귀해!"},{"label":"실패","rate":10,"story":"장부에는 ’호월이 낮잠 중’만 반복해서 적혀 있습니다.","line":"개인정보 보호! 내 낮잠 기록은 보지 마!"}]},
+                {"text":"🛎️ 프런트 벨을 세 번 누른다","type":"도박형","results":[{"label":"대박","rate":20,"story":"숨겨진 간식 엘리베이터가 열리며 사탕 카트가 도착합니다.","line":"벨 세 번이 비밀번호인 건 어떻게 알았어?!"},{"label":"소득","rate":50,"story":"벨 소리에 프런트 아래 사탕 봉투가 떨어집니다.","line":"한 번만 눌렀으면 몰랐을 텐데!"},{"label":"실패","rate":30,"story":"벨을 누르자 유령 직원이 방울방울 웃기만 합니다.","line":"고객 만족도는 최고, 사탕 만족도는 최저!"}]},
+                {"text":"🛋️ 로비 소파에서 기다린다","type":"안전형","results":[{"label":"성공","rate":80,"story":"소파 옆 손님용 사탕 접시를 발견합니다.","line":"그 접시는 손님용 맞아. 그래도 아깝다!"},{"label":"실패","rate":20,"story":"소파가 푹 꺼져 먼지구름만 올라옵니다.","line":"숙면 서비스는 제공했어! 사탕은 별도!"}]}
+            ] },
+            { name: "🌊 검은 호수 선착장", intro: "🌊 검은 호수 선착장\n\n안개 낀 호수에 노 없는 작은 배가 둥둥 떠 있습니다. 물결마다 사탕빛 반짝임이 일렁입니다.\n\n👻유령 호월이: \"물에 빠뜨린 사탕을 찾으러 왔어? 물고기들한테 물어봐!\"", actions: [
+                {"text":"🛶 유령 배의 닻을 올린다","type":"도박형","results":[{"label":"대박","rate":20,"story":"닻 끝에 사탕이 가득 든 방수 자루가 매달려 올라옵니다.","line":"닻보다 무거운 내 비상 간식이라니!"},{"label":"소득","rate":50,"story":"작은 사탕 주머니가 닻줄에 엮여 올라옵니다.","line":"물고기 간식은 아니었나 보네!"},{"label":"실패","rate":30,"story":"닻이 갑자기 물보라만 크게 일으키고 가라앉습니다.","line":"물놀이 재밌지? 무료야!"}]},
+                {"text":"🏮 등불을 밝혀 길을 찾는다","type":"안전형","results":[{"label":"성공","rate":80,"story":"등불 아래 놓인 사탕 바구니가 모습을 드러냅니다.","line":"밝히지 말고 분위기를 즐기라니까!"},{"label":"실패","rate":20,"story":"안개가 더 짙어져 바구니가 보이지 않습니다.","line":"안개도 내 사탕을 지켜주는 중이야!"}]},
+                {"text":"🔍 선착장 나무판 아래를 본다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"널빤지 틈에 숨긴 방수 사탕 통을 발견합니다.","line":"그걸 찾으라고 판자를 깐 게 아닌데!"},{"label":"소득","rate":35,"story":"물에 젖지 않은 사탕 몇 알을 꺼냅니다.","line":"사탕 포장이 방수라 다행이네… 내 건데!"},{"label":"실패","rate":10,"story":"낡은 낚싯줄과 빈 통만 발견합니다.","line":"낚시대회 결과, 빈손 우승!"}]}
+            ] },
+            { name: "🎹 악몽의 음악실", intro: "🎹 악몽의 음악실\n\n피아노 건반이 저절로 눌리며 삐걱대는 자장가가 흐릅니다. 악보 끝에는 '사탕 협주곡'이라고 적혀 있습니다.\n\n👻유령 호월이: \"나 음악 천재야! 사탕을 먹을 때만 박자가 정확하거든!\"", actions: [
+                {"text":"🎼 악보를 차분히 넘긴다","type":"안전형","results":[{"label":"성공","rate":80,"story":"악보 아래 숨은 연주자용 사탕 봉투를 찾아냅니다.","line":"연습은 안 하고 간식부터 찾았네!"},{"label":"실패","rate":20,"story":"악보가 바람에 날려 허공에 음표만 흩어집니다.","line":"오늘 공연은 무음 처리! 사탕도 무음!"}]},
+                {"text":"🎹 금지된 마지막 건반을 누른다","type":"도박형","results":[{"label":"대박","rate":20,"story":"피아노 뚜껑이 열리며 사탕 음표들이 쏟아집니다.","line":"그 건반은 내가 아껴둔 앙코르인데!"},{"label":"소득","rate":50,"story":"건반 사이에서 사탕 꾸러미가 딸랑 튀어나옵니다.","line":"음악의 힘이 아니라 간식의 힘이야!"},{"label":"실패","rate":30,"story":"방 전체에서 엉뚱한 불협화음이 울리고 사탕은 없습니다.","line":"연주는 실패! 관객은 나 혼자라 다행!"}]},
+                {"text":"🎻 악기 케이스를 검사한다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"바이올린 케이스 안에 포장된 사탕 세트를 발견합니다.","line":"케이스를 열었으면 연주라도 해줘!"},{"label":"소득","rate":35,"story":"첼로 받침에 걸린 사탕 몇 알을 챙깁니다.","line":"박자 대신 사탕만 세고 있네!"},{"label":"실패","rate":10,"story":"케이스 안에는 삐걱대는 활만 들어 있습니다.","line":"이건 먹는 활 아니야! 치아 조심!"}]}
+            ] },
+            { name: "🍬 사탕 제조실", intro: "🍬 사탕 제조실\n\n낡은 컨베이어 벨트 위로 알록달록한 포장지가 굴러갑니다. 기계 안에서는 달콤한 종소리가 납니다.\n\n👻유령 호월이: \"이 공장은 내 비상 간식 공장이야! 오늘은 견학만 해!\"", actions: [
+                {"text":"🕹️ 비밀 생산 버튼을 누른다","type":"도박형","results":[{"label":"대박","rate":20,"story":"기계가 폭주하듯 돌아가며 대형 사탕 박스를 배출합니다.","line":"그 버튼은 절대 안 누르기로 했는데! 왜 잘 돼?!"},{"label":"소득","rate":50,"story":"시험 가동한 기계가 사탕 꾸러미를 내놓습니다.","line":"불량품 아니야. 그냥 내 몫이야!"},{"label":"실패","rate":30,"story":"기계가 뿜은 것은 반짝이는 빈 포장지뿐입니다.","line":"포장지만 예쁘면 반쯤 성공이지! 아마도!"}]},
+                {"text":"📦 창고 상자를 하나씩 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"기계 뒤 숨겨둔 완제품 사탕 상자를 찾아냅니다.","line":"검수 전 제품인데 시식까지 해버렸네!"},{"label":"소득","rate":35,"story":"포장대 밑에 남은 사탕 몇 알을 챙깁니다.","line":"그건 청소하면서 내가 모아둘 건데!"},{"label":"실패","rate":10,"story":"상자를 열자 빈 포장지만 팔랑팔랑 날립니다.","line":"상자깡 실패! 다음엔 무게부터 확인해!"}]},
+                {"text":"🧤 작업대의 안내문을 읽는다","type":"안전형","results":[{"label":"성공","rate":80,"story":"안내문 뒤에 붙인 견학객 사탕을 받습니다.","line":"규칙을 지켰는데 보상까지 챙기다니!"},{"label":"실패","rate":20,"story":"안내문이 너무 오래돼 글자가 희미합니다.","line":"안전제일! 사탕은 다음 기회!"}]}
+            ] },
+            { name: "🧵 저주받은 재봉실", intro: "🧵 저주받은 재봉실\n\n공중의 바늘들이 혼자 춤추고 낡은 옷감이 걸어 다닙니다. 천 조각 사이로 사탕 장식이 보입니다.\n\n👻유령 호월이: \"옷은 수선해도 내 사탕 주머니는 뜯지 마!\"", actions: [
+                {"text":"🧥 코트 안주머니를 확인한다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"가짜 단추 뒤에 숨긴 사탕 봉투를 찾아냅니다.","line":"내 비밀 주머니를 찾은 재봉 천재가 여기 있네!"},{"label":"소득","rate":35,"story":"옷자락에 매달린 사탕 몇 알을 챙깁니다.","line":"그건 단추가 아니라 간식 단추였는데!"},{"label":"실패","rate":10,"story":"주머니에서 실타래만 끝없이 나옵니다.","line":"뜨개질 배우면 오늘은 소득 있는 거야!"}]},
+                {"text":"🪡 바늘통을 조심히 정리한다","type":"안전형","results":[{"label":"성공","rate":80,"story":"바늘통 바닥에 붙은 사탕 봉투를 발견합니다.","line":"정리도 해주고 간식도 가져가네!"},{"label":"실패","rate":20,"story":"바늘들이 스스로 원래 자리로 돌아가 버립니다.","line":"청소가 필요 없어서 사탕도 필요 없지!"}]},
+                {"text":"🎭 저주받은 망토를 펼친다","type":"도박형","results":[{"label":"대박","rate":20,"story":"망토 안감이 넓어지며 사탕 소나기가 쏟아집니다.","line":"그 망토는 내 비상 창고였다고!"},{"label":"소득","rate":50,"story":"망토 주름에서 사탕 꾸러미가 툭 떨어집니다.","line":"망토가 배신했어! 실밥으로 고소할 거야!"},{"label":"실패","rate":30,"story":"망토가 스스로 몸을 감싸 유령처럼 춤추고 끝납니다.","line":"패션쇼는 성공, 간식쇼는 취소!"}]}
+            ] },
+            { name: "📻 혼령 방송국", intro: "📻 혼령 방송국\n\n꺼진 라디오에서 '오늘의 사탕 속보'가 흘러나옵니다. 유리벽 너머에 아무도 없는 스튜디오가 보입니다.\n\n👻유령 호월이: \"속보! 내 사탕을 훔쳐 갈 용의자가 지금 들어왔습니다!\"", actions: [
+                {"text":"🎙️ 생방송 마이크를 켠다","type":"도박형","results":[{"label":"대박","rate":20,"story":"전국의 유령이 보내온 사탕 선물상자가 쏟아집니다.","line":"방송 한 번에 팬이 이렇게 많다니! 부러워!"},{"label":"소득","rate":50,"story":"청취자 선물로 작은 사탕 묶음이 도착합니다.","line":"내 방송은 청취자가 없는데 네 방송은 왜?!"},{"label":"실패","rate":30,"story":"마이크에서 삐익 하는 하울링만 울립니다.","line":"오늘의 속보! 사탕 없이 귀만 아파요!"}]},
+                {"text":"🎧 헤드폰을 조용히 쓴다","type":"안전형","results":[{"label":"성공","rate":80,"story":"헤드폰 옆 사탕 받침에서 작은 봉투를 찾습니다.","line":"소리 듣고 사탕 찾는 건 반칙이지!"},{"label":"실패","rate":20,"story":"헤드폰에서는 호월이의 코골이만 들립니다.","line":"그건 지난밤 명곡이야! 코골이 1집!"}]},
+                {"text":"📼 방송 자료함을 뒤진다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"오래된 경품 행사 상자에서 사탕을 발견합니다.","line":"경품 지급 마감일이 99년 전인데!"},{"label":"소득","rate":35,"story":"녹음테이프 뒤 사탕 몇 알을 집어 냅니다.","line":"청취자 사연 대신 간식을 읽었네!"},{"label":"실패","rate":10,"story":"자료함에는 광고 대본만 잔뜩 쌓여 있습니다.","line":"광고 문구는 ’사탕은 호월이 것’이야!"}]}
+            ] },
+            { name: "❄️ 얼어붙은 식량창고", intro: "❄️ 얼어붙은 식량창고\n\n서리 낀 창고 문 안에서 사탕이 얼음 조각처럼 반짝입니다. 벽에 매달린 온도계가 혼자 떨립니다.\n\n👻유령 호월이: \"꽁꽁 얼려두면 아무도 못 먹겠지? 어, 너는 왜 왔어!\"", actions: [
+                {"text":"🧣 따뜻한 랜턴을 켠다","type":"안전형","results":[{"label":"성공","rate":80,"story":"랜턴 빛에 녹은 서리 아래에서 사탕 봉투를 발견합니다.","line":"사탕은 녹이면 달아진다니까! 내 거지만!"},{"label":"실패","rate":20,"story":"랜턴이 꺼져 서리만 더 두껍게 앉습니다.","line":"차가운 환영을 받아서 기쁘지? 아니야?"}]},
+                {"text":"🧊 얼음 상자를 차례로 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"투명한 얼음함 안에서 밀봉 사탕 꾸러미를 찾아냅니다.","line":"얼음함 번호를 내가 바꿔놨는데 어떻게 알았지?!"},{"label":"소득","rate":35,"story":"서랍 모서리에 얼지 않은 사탕 몇 알이 있습니다.","line":"먹기 전에 손부터 녹여! 내가 걱정하잖아!"},{"label":"실패","rate":10,"story":"상자를 열자 얼음 조각만 와르르 쏟아집니다.","line":"오늘의 수확은 얼음! 음료에 넣어!"}]},
+                {"text":"🔥 비상 해동 장치를 가동한다","type":"도박형","results":[{"label":"대박","rate":20,"story":"얼음벽이 녹으며 숨겨진 사탕 저장고가 드러납니다.","line":"내 냉동 비상식량이 전부 해동됐잖아!"},{"label":"소득","rate":50,"story":"녹은 틈 사이로 사탕 꾸러미가 흘러 나옵니다.","line":"조금만 가져가! 나 다시 얼려야 해!"},{"label":"실패","rate":30,"story":"장치가 눈송이 폭죽만 터뜨리고 멈춥니다.","line":"짜잔! 냉동 공연이었습니다! 사탕은 없어!"}]}
+            ] },
+            { name: "🔭 별빛 천문대", intro: "🔭 별빛 천문대\n\n거대한 망원경이 스스로 달을 따라 움직입니다. 별자리 지도에는 별 대신 사탕 모양 점들이 찍혀 있습니다.\n\n👻유령 호월이: \"오늘 밤 별자리는 '호월이의 간식자리'야. 관측료는 사탕 한 알!\"", actions: [
+                {"text":"🌠 별똥별 소원 장치를 누른다","type":"도박형","results":[{"label":"대박","rate":20,"story":"별똥별 같은 빛이 떨어지며 사탕 보관함이 활짝 열립니다.","line":"소원을 말하기도 전에 이루어졌잖아! 내 소원은?!"},{"label":"소득","rate":50,"story":"빛나는 별가루 사이로 사탕 꾸러미가 내려옵니다.","line":"별이 보내준 택배면 배송비는 누가 내?"},{"label":"실패","rate":30,"story":"유성 대신 반짝이는 종이별만 우수수 떨어집니다.","line":"소원은 접수됐어! 처리 기간은 백 년!"}]},
+                {"text":"🗺️ 별자리 지도의 비밀 점을 찾는다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"지도 뒷면에 붙은 사탕 숨김 상자를 찾아냅니다.","line":"’호월이자리’를 클릭하면 안 되는 거였어!"},{"label":"소득","rate":35,"story":"별 그림 스티커 사이에서 사탕 몇 알을 건집니다.","line":"별도 아닌데 그렇게 반짝이면 반칙이지!"},{"label":"실패","rate":10,"story":"지도에는 사탕 모양 그림만 가득합니다.","line":"그건 먹는 사탕이 아니라 보는 사탕이야!"}]},
+                {"text":"🔭 망원경을 천천히 들여다본다","type":"안전형","results":[{"label":"성공","rate":80,"story":"접안렌즈 옆 관측객용 사탕 봉투를 발견합니다.","line":"별 대신 간식을 관측하다니! 정확해!"},{"label":"실패","rate":20,"story":"렌즈에는 자기 눈만 크게 비칩니다.","line":"오늘 발견한 행성은 네 눈동자 행성이야!"}]}
+            ] },
+            { name: "🖼️ 살아있는 미술관", intro: "🖼️ 살아있는 미술관\n\n액자 속 인물들이 관람객이 오자 자세를 고쳐 잡습니다. 한 그림에서는 사탕 냄새가 납니다.\n\n👻유령 호월이: \"그림은 눈으로만 감상해! 특히 내 간식 그림은 손대지 마!\"", actions: [
+                {"text":"🖌️ 오래된 그림의 뒷면을 확인한다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"액자 뒤에 숨겨둔 진짜 사탕 봉투를 찾아냅니다.","line":"그건 그림 제목이 아니라 내 비상 간식인데!"},{"label":"소득","rate":35,"story":"붓통 바닥에서 사탕 몇 알을 챙깁니다.","line":"예술혼보다 식욕이 더 강한 관람객이네!"},{"label":"실패","rate":10,"story":"그림 뒤에는 ’뒷면도 작품’이라는 글씨만 있습니다.","line":"어때, 현대미술 같지? 사탕은 안 줘!"}]},
+                {"text":"🚪 캔버스 속 문을 열어 본다","type":"도박형","results":[{"label":"대박","rate":20,"story":"그림 속 사탕 폭포가 현실로 흘러나옵니다.","line":"그 문은 전시 종료 후에만 열리는 건데!"},{"label":"소득","rate":50,"story":"그림 속 인물이 사탕 꾸러미를 밖으로 건넵니다.","line":"초상화가 나보다 인심이 좋네!"},{"label":"실패","rate":30,"story":"문이 열리자 초상화 속 호월이가 혀만 내밉니다.","line":"으헤헤! 작품 제목은 ’메롱’이야!"}]},
+                {"text":"🖼️ 안내선을 따라 작품을 구경한다","type":"안전형","results":[{"label":"성공","rate":80,"story":"안내선 끝에서 관람객용 사탕 기념품을 받습니다.","line":"예절 바른 관람객이라 주는 거야!"},{"label":"실패","rate":20,"story":"그림들이 고개만 끄덕이고 아무것도 주지 않습니다.","line":"박수는 마음으로! 사탕은 내 마음대로!"}]}
+            ] },
+            { name: "🌳 속삭이는 숲길", intro: "🌳 속삭이는 숲길\n\n나무마다 작은 입이 생겨 서로 소곤거립니다. 낙엽 사이에 색색의 사탕 포장지가 섞여 있습니다.\n\n👻유령 호월이: \"숲이 비밀을 말해도 믿지 마! 내 사탕 위치는 특히!\"", actions: [
+                {"text":"🪵 표지판을 따라 천천히 걷는다","type":"안전형","results":[{"label":"성공","rate":80,"story":"길모퉁이 안내판 아래에서 사탕 작은 봉투를 찾습니다.","line":"정직하게 걸었는데 왜 내 간식을 발견해?!"},{"label":"실패","rate":20,"story":"표지판이 빙글 돌아 제자리로 안내합니다.","line":"산책은 충분히 했네! 간식은 다음 코스!"}]},
+                {"text":"🍂 낙엽 더미 속을 뒤진다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"속이 빈 나무 구멍에서 사탕 꾸러미를 찾아냅니다.","line":"다람쥐한테 맡긴 거였는데! 다람쥐야!"},{"label":"소득","rate":35,"story":"낙엽 사이 사탕 몇 알을 챙깁니다.","line":"나뭇잎보다 사탕을 잘 찾는 눈이네!"},{"label":"실패","rate":10,"story":"낙엽을 치우자 작은 버섯만 줄지어 있습니다.","line":"버섯은 먹지 마! 사탕도 없지만!"}]},
+                {"text":"🌲 말하는 고목의 수수께끼에 답한다","type":"도박형","results":[{"label":"대박","rate":20,"story":"정답을 맞히자 나무껍질이 열리고 사탕 창고가 나타납니다.","line":"그 문제는 내가 낸 건데 내가 틀렸어!"},{"label":"소득","rate":50,"story":"고목이 웃으며 사탕 꾸러미를 툭 떨어뜨립니다.","line":"오, 나무가 너를 마음에 들어 하나 봐!"},{"label":"실패","rate":30,"story":"고목이 낄낄 웃으며 엉뚱한 퀴즈를 하나 더 냅니다.","line":"정답은 ‘오늘은 꽝’! 나도 모르는 문제야!"}]}
+            ] },
+            { name: "🎠 녹슨 회전목마", intro: "🎠 녹슨 회전목마\n\n멈춘 회전목마가 아무도 없는데 느리게 돌아갑니다. 말들의 갈기에는 사탕 리본이 묶여 있습니다.\n\n👻유령 호월이: \"말을 골라 타도 돼! 단, 사탕 배달마는 내 전용이야!\"", actions: [
+                {"text":"🐴 금빛 목마에 올라탄다","type":"도박형","results":[{"label":"대박","rate":20,"story":"목마가 높이 솟구치며 사탕 비밀함을 열어젖힙니다.","line":"그 목마는 나도 못 탔는데! 높이가 무서워서!"},{"label":"소득","rate":50,"story":"목마 꼬리에 달린 사탕 묶음이 손에 들어옵니다.","line":"말이 내 간식을 너한테 배달해 버렸네!"},{"label":"실패","rate":30,"story":"목마가 빠르게 한 바퀴 돌아 제자리로 내려놓습니다.","line":"무임승차 성공! 사탕은 안 실었지롱!"}]},
+                {"text":"🎟️ 매표소 옆에서 순서를 기다린다","type":"안전형","results":[{"label":"성공","rate":80,"story":"빈 매표함에서 탑승객용 사탕 봉투를 받습니다.","line":"기다리면 복이 온다더니 내 간식도 가네!"},{"label":"실패","rate":20,"story":"안내 방송만 흘러나오고 차례가 오지 않습니다.","line":"다음 탑승은 천 년 뒤! 농담이야, 아마!"}]},
+                {"text":"🔎 회전목마 받침을 조사한다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"바닥 덮개 안에서 사탕 비상 상자를 발견합니다.","line":"회전목마 밑까지 보는 관광객은 처음이야!"},{"label":"소득","rate":35,"story":"말 안장 사이에서 사탕 몇 알을 줍습니다.","line":"그 말은 사탕을 꽤 흘리고 다니네!"},{"label":"실패","rate":10,"story":"오래된 표와 녹슨 나사만 발견합니다.","line":"기념품은 낡은 영수증! 나사 건들진 마!"}]}
+            ] },
+            { name: "🕯️ 꺼지지 않는 예배당", intro: "🕯️ 꺼지지 않는 예배당\n\n촛불이 바람 없이 일제히 흔들리고 작은 종이 울립니다. 오래된 기도서 위에 사탕 모양 밀랍 장식이 놓여 있습니다.\n\n👻유령 호월이: \"조용한 곳이니까 발소리 줄여! 사탕 봉지 소리도 금지!\"", actions: [
+                {"text":"📜 강단 아래 서랍을 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"잠긴 줄 알았던 서랍에서 오래된 사탕 봉투를 찾습니다.","line":"왜 하필 그 서랍이 열린 거야?!"},{"label":"소득","rate":35,"story":"기도서 사이에서 사탕 몇 알을 건집니다.","line":"기도보다 간식 찾는 집중력이 높네!"},{"label":"실패","rate":10,"story":"서랍 안에는 빈 초꽂이만 있습니다.","line":"오늘은 조용히 명상할 시간인가 봐!"}]},
+                {"text":"🕯️ 떨어진 촛대를 바로 세운다","type":"안전형","results":[{"label":"성공","rate":80,"story":"촛대 밑에서 숨은 사탕 봉투가 모습을 드러냅니다.","line":"정리까지 해주니 뭐라 할 수도 없네!"},{"label":"실패","rate":20,"story":"촛불 그림자만 길어지고 사탕은 보이지 않습니다.","line":"선행은 했으니 마음의 사탕을 받아!"}]},
+                {"text":"🔔 오래된 종을 크게 울린다","type":"도박형","results":[{"label":"대박","rate":20,"story":"종소리에 천장 장식이 열리며 사탕이 비처럼 내립니다.","line":"그 종은 하루 한 번만 울리랬는데! 대박이네!"},{"label":"소득","rate":50,"story":"제단 뒤 작은 사탕 보관함이 열립니다.","line":"큰 소리 냈으니 소박한 간식만 줄게!"},{"label":"실패","rate":30,"story":"종이 울리자 유령 합창단이 나타나 노래만 부릅니다.","line":"앙코르는 무료! 사탕은 합창단도 없어!"}]}
+            ] },
+            { name: "📮 저승 우체국", intro: "📮 저승 우체국\n\n주인 없는 편지들이 공중을 날아다닙니다. 창구에는 '달콤한 소포는 이쪽'이라는 팻말이 붙어 있습니다.\n\n👻유령 호월이: \"내 앞으로 온 사탕 택배는 절대 대신 수령하지 마!\"", actions: [
+                {"text":"✉️ 반송 편지를 분류한다","type":"안전형","results":[{"label":"성공","rate":80,"story":"착한 분류원에게 유령 우체부가 사탕을 건넵니다.","line":"우체부 아저씨, 제 건 왜 안 줘요?!"},{"label":"실패","rate":20,"story":"반송 사유가 적힌 편지만 차곡차곡 쌓입니다.","line":"사탕 대신 정리정돈 실력이 올랐네!"}]},
+                {"text":"📦 ‘수취인 미상’ 소포를 연다","type":"도박형","results":[{"label":"대박","rate":20,"story":"거대한 상자가 열리며 사탕 소포가 줄줄이 연결돼 나옵니다.","line":"저건 ’호월이에게’라고 써놨는데 글씨가 지워졌나?!"},{"label":"소득","rate":50,"story":"소포 바닥에서 작은 사탕 묶음을 찾습니다.","line":"포장지 부피가 내용물보다 크네! 억울해!"},{"label":"실패","rate":30,"story":"상자에서는 종이 완충재만 끝없이 솟아납니다.","line":"환경을 생각한 빈 상자였나 봐! 하하!"}]},
+                {"text":"🔍 분실 우편물 선반을 뒤진다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"배송 실패한 사탕 봉투를 찾아냅니다.","line":"배송비까지 내가 냈는데 네가 수령해?!"},{"label":"소득","rate":35,"story":"편지봉투 사이에 낀 사탕 몇 알을 챙깁니다.","line":"우체국 간식이 생각보다 잘 숨겨졌네!"},{"label":"실패","rate":10,"story":"선반에는 ’받는 이: 바람’이라고 쓴 편지만 있습니다.","line":"그 편지는 네 마음속으로 배달됐어!"}]}
+            ] },
+            { name: "🐦‍⬛ 까마귀 전망대", intro: "🐦‍⬛ 까마귀 전망대\n\n검은 새들이 난간 위에 줄지어 앉아 있습니다. 먼 하늘에서는 반짝이는 사탕 장식이 흔들립니다.\n\n👻유령 호월이: \"까마귀들아, 반짝인다고 내 사탕 가져오면 안 돼! …아니, 가져와!\"", actions: [
+                {"text":"🪶 까마귀 왕의 깃털을 건드린다","type":"도박형","results":[{"label":"대박","rate":20,"story":"까마귀 왕이 둥지를 열어 사탕 보물을 쏟아냅니다.","line":"왕님! 저도 부하인데 저는 왜 안 줘요?!"},{"label":"소득","rate":50,"story":"까마귀가 가져온 사탕 꾸러미를 발밑에 내려놓습니다.","line":"아니, 그건 내 심부름 사탕인데!"},{"label":"실패","rate":30,"story":"까마귀 떼가 일제히 날아올라 깃털만 비처럼 떨어집니다.","line":"새털보다 달콤한 건 없다고 해줘… 아니구나!"}]},
+                {"text":"🔎 난간 옆 반짝이는 둥지를 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"둥지 안에 모아둔 포장 사탕을 발견합니다.","line":"반짝이는 건 다 주워 오라 했는데 내 사탕까지!"},{"label":"소득","rate":35,"story":"난간 틈에 놓인 사탕 몇 알을 줍습니다.","line":"까마귀한테 찾아준 값은 네가 가져가네!"},{"label":"실패","rate":10,"story":"둥지에는 유리구슬과 단추만 가득합니다.","line":"구슬은 먹지 마! 치과비가 더 비싸!"}]},
+                {"text":"🥜 까마귀에게 정중히 인사한다","type":"안전형","results":[{"label":"성공","rate":80,"story":"친해진 까마귀가 사탕 봉투를 한 개 물어옵니다.","line":"새랑 친구 먹으면 간식도 배달되는 거야?!"},{"label":"실패","rate":20,"story":"까마귀가 ‘까악!’ 한 번 울고 뒤돌아섭니다.","line":"인사는 받았어. 배송료가 부족했나 봐!"}]}
+            ] },
+            { name: "🫧 유령 목욕탕", intro: "🫧 유령 목욕탕\n\n물 없는 탕에서 비눗방울만 보글보글 솟아오릅니다. 목욕 바구니마다 알록달록한 사탕 포장이 보입니다.\n\n👻유령 호월이: \"여긴 씻는 곳이야! 사탕은 물에 녹으니까 잘 감춰뒀지!\"", actions: [
+                {"text":"🧼 수건을 가지런히 접는다","type":"안전형","results":[{"label":"성공","rate":80,"story":"수건함 아래 작은 사탕 봉투를 찾습니다.","line":"깨끗한 손으로 내 사탕을 챙겨 가네!"},{"label":"실패","rate":20,"story":"수건에서 비눗방울만 퐁퐁 튀어나옵니다.","line":"사탕은 없지만 향기는 무료 제공!"}]},
+                {"text":"🧺 목욕 바구니를 확인한다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"빈 바구니 바닥을 들자 사탕 숨김 칸이 열립니다.","line":"바구니도 이중 바닥인 걸 들켰어!"},{"label":"소득","rate":35,"story":"비눗방울에 걸린 사탕 몇 알을 모읍니다.","line":"목욕탕에서 사탕 낚시를 하다니!"},{"label":"실패","rate":10,"story":"바구니에는 깨끗한 비누만 들어 있습니다.","line":"그건 먹으면 안 돼! 포장지도 없잖아!"}]},
+                {"text":"🫧 거대한 비눗방울을 터뜨린다","type":"도박형","results":[{"label":"대박","rate":20,"story":"방울 안에 숨겨진 사탕 보따리가 폭발하듯 떨어집니다.","line":"으악! 내 사탕 보관 방울이 터졌잖아!"},{"label":"소득","rate":50,"story":"작은 비눗방울들이 터지며 사탕 꾸러미를 남깁니다.","line":"씻어야 할 건 사탕이 아니라 내 눈물이야!"},{"label":"실패","rate":30,"story":"방울이 터지자 물방울만 얼굴에 쏟아집니다.","line":"목욕은 공짜! 간식은 불발! 꺄르르!"}]}
+            ] },
+            { name: "🗺️ 뒤집힌 미로", intro: "🗺️ 뒤집힌 미로\n\n바닥이 천장처럼 보이고 문마다 다른 방향의 화살표가 떠 있습니다. 멀리서 사탕 통이 흔들리는 소리가 납니다.\n\n👻유령 호월이: \"출구를 찾으면 사탕을 줄게! 아니, 사탕을 찾으면 출구를 줄게!\"", actions: [
+                {"text":"🧩 벽의 숨은 문양을 맞춘다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"문양이 맞춰지자 사탕이 가득한 작은 방이 열립니다.","line":"그 퍼즐은 내가 만든 건데 나도 답을 몰랐어!"},{"label":"소득","rate":35,"story":"문양 한 칸이 움직이며 사탕 몇 알이 나옵니다.","line":"반쯤 맞힌 것도 실력이라고 쳐줄게!"},{"label":"실패","rate":10,"story":"벽이 빙글 회전하며 원래 입구만 보여줍니다.","line":"미로의 정답은 제자리였나 봐! 히히!"}]},
+                {"text":"🌀 거꾸로 보이는 문으로 뛰어든다","type":"도박형","results":[{"label":"대박","rate":20,"story":"뒤집힌 보물창고 한가운데 사탕 더미 위로 착지합니다.","line":"그 문은 직원 전용이야! 직원은 나 혼자고!"},{"label":"소득","rate":50,"story":"착지한 발밑에서 사탕 꾸러미가 나옵니다.","line":"넘어지지 않은 것만 해도 대단한데!"},{"label":"실패","rate":30,"story":"문 너머에는 반사된 자기 모습만 서 있습니다.","line":"자기 자신을 찾았네! 상품은 박수!"}]},
+                {"text":"🧭 나침반을 따라 한 걸음씩 간다","type":"안전형","results":[{"label":"성공","rate":80,"story":"복도 모서리 사탕 안내함을 발견합니다.","line":"안내문을 제대로 읽는 사람은 처음이야!"},{"label":"실패","rate":20,"story":"나침반 바늘이 계속 빙빙 돌아 멈춥니다.","line":"여기선 북쪽도 휴가 갔나 봐!"}]}
+            ] },
+            { name: "🔥 호박 증기기관실", intro: "🔥 호박 증기기관실\n\n거대한 호박 모양 보일러가 주황빛 김을 뿜습니다. 파이프 속에서는 사탕 구르는 소리가 들립니다.\n\n👻유령 호월이: \"온도를 올리면 사탕이 더 달아져! 아마 보일러가 먼저 터지겠지만!\"", actions: [
+                {"text":"🎛️ 빨간 압력 밸브를 연다","type":"도박형","results":[{"label":"대박","rate":20,"story":"증기 대신 사탕 폭풍이 터져 커다란 보관함이 쏟아집니다.","line":"압력 게이지가 ’대박’까지 올라갔어?!"},{"label":"소득","rate":50,"story":"증기 배출구에서 사탕 꾸러미가 톡 튀어나옵니다.","line":"연료보다 간식이 더 많이 나오는 기계야!"},{"label":"실패","rate":30,"story":"뜨거운 바람과 호박 향만 뿜어져 나옵니다.","line":"간식 대신 향기 발전 성공! 으헤헤!"}]},
+                {"text":"🧯 안전 점검표를 살핀다","type":"안전형","results":[{"label":"성공","rate":80,"story":"점검표 밑에 붙어 있던 사탕 비상식을 발견합니다.","line":"안전 점검 잘했으니… 그래도 그건 내 건데!"},{"label":"실패","rate":20,"story":"기계 소음만 커지고 점검표가 바람에 날립니다.","line":"안전 이상 없음! 사탕 보관함도 이상 없음!"}]},
+                {"text":"🔧 파이프 연결부를 조사한다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"숨은 관 안에 넣어 둔 사탕 통을 찾아냅니다.","line":"거긴 점검용 관이라고! 아니, 간식용 관!"},{"label":"소득","rate":35,"story":"작은 배수구에서 사탕 몇 알을 건져냅니다.","line":"사탕이 새는 줄도 몰랐네, 수리해줘!"},{"label":"실패","rate":10,"story":"연결부에는 반짝이는 나사만 꽉 박혀 있습니다.","line":"나사야, 끝까지 내 비밀을 지켜줘!"}]}
+            ] },
+            { name: "🧺 도깨비 야시장", intro: "🧺 도깨비 야시장\n\n불 꺼진 골목이 갑자기 등불과 노점으로 가득 찹니다. 도깨비 상인들이 '사탕 세일!'을 외칩니다.\n\n👻유령 호월이: \"오늘 장사는 내가 대장이야! 근데 돈은 없으니 시식만 할래!\"", actions: [
+                {"text":"🛍️ 닫힌 노점의 상자를 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"상인들이 숨겨둔 시식용 사탕 꾸러미를 찾아냅니다.","line":"시식은 한 알인데 왜 주머니째 가져가?!"},{"label":"소득","rate":35,"story":"탁자 아래 떨어진 사탕 몇 알을 줍습니다.","line":"바닥 시식까지 즐기는 손님이네!"},{"label":"실패","rate":10,"story":"노점에는 가격표만 가득하고 상품은 없습니다.","line":"가격표 보는 건 공짜야! 덕분에 구경 끝!"}]},
+                {"text":"🎐 도깨비 상인에게 예의 바르게 인사한다","type":"안전형","results":[{"label":"성공","rate":80,"story":"상인이 환영 사탕 봉투를 선물합니다.","line":"나도 매일 인사하는데 왜 난 못 받아?!"},{"label":"실패","rate":20,"story":"상인은 깔깔 웃고 장난감 영수증만 건넵니다.","line":"영수증에는 ’꽝’이라고 쓰여 있네! 하하!"}]},
+                {"text":"🎲 도깨비의 비밀 복주머니를 고른다","type":"도박형","results":[{"label":"대박","rate":20,"story":"복주머니가 터지며 황금빛 사탕 꾸러미가 한가득 나타납니다.","line":"그게 1등 복주머니야?! 내 운을 돌려줘!"},{"label":"소득","rate":50,"story":"주머니 속 작은 사탕 묶음을 건집니다.","line":"본전은 챙겼네! 도깨비가 좀 아쉽겠다!"},{"label":"실패","rate":30,"story":"복주머니에서 종이 꽃가루만 팡 터져 나옵니다.","line":"오늘의 당첨 상품은 축하 박수 세 번!"}]}
             ] }
         ]
     },
@@ -65257,10 +65375,12 @@ function requireHalloweenAccount(account, id) {
     for (var t = 0; t < account.titles.length; t++) if (typeof account.titles[t] !== "number" || account.titles[t] < 0 || account.titles[t] >= 5 || Math.floor(account.titles[t]) !== account.titles[t] || account.titles.indexOf(account.titles[t]) !== t) throw new Error("할로윈 칭호 기록 오류");
     if (account.run !== null) {
         var run = account.run;
-        if (!run || typeof run.id !== "string" || typeof run.day !== "string" || !Array.isArray(run.rooms) || run.rooms.length !== 5 || !Array.isArray(run.results) || typeof run.resolved !== "boolean") throw new Error("할로윈 탐험 원본 오류");
+        var config = GLOBAL_CONFIG.halloween;
+        if (!run || typeof run.id !== "string" || typeof run.day !== "string" || !Array.isArray(run.rooms) || (run.rooms.length !== config.roomCount && run.rooms.length !== config.legacyRoomCount) || !Array.isArray(run.results) || typeof run.resolved !== "boolean") throw new Error("할로윈 탐험 원본 오류");
         requireHalloweenInteger(run.epoch); requireHalloweenInteger(run.step); requireHalloweenInteger(run.total);
-        if (run.step >= 5 || run.results.length !== run.step + (run.resolved ? 1 : 0)) throw new Error("할로윈 탐험 진행 오류");
-        for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= 12 || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
+        if (run.step >= run.rooms.length || run.results.length !== run.step + (run.resolved ? 1 : 0)) throw new Error("할로윈 탐험 진행 오류");
+        var placeCount = run.rooms.length === config.legacyRoomCount ? config.legacyPlaceCount : config.rooms.length; // 구 탐험에는 기존 12곳만 허용
+        for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= placeCount || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
     }
     requireHalloweenInteger(account.free + account.paid);
     return account;
@@ -65325,10 +65445,15 @@ function buildHalloweenRoomMessage(context) {
     var account = context.account, run = account.run, config = GLOBAL_CONFIG.halloween;
     var room = config.rooms[run.rooms[run.step]];
     var out = (context.premium ? "[👑호이패스 프리미엄👑]\n" : "") + config.name + "\n" + context.actor + "님의 할로윈 탐험\n━━━━━━━━━━━━\n";
-    out += "🚪 탐험 진행: " + (run.step + 1) + "/5\n" + getHalloweenEntryLines(account, context.premium) + "\n🍬 이번 탐험 획득: " + numberWithCommas(run.total) + "개\n━━━━━━━━━━━━\n";
+    out += "🚪 탐험 진행: " + (run.step + 1) + "/" + run.rooms.length + "\n" + getHalloweenEntryLines(account, context.premium) + "\n🍬 이번 탐험 획득: " + numberWithCommas(run.total) + "개\n━━━━━━━━━━━━\n";
     out += room.intro + "\n━━━━━━━━━━━━\n";
     for (var i = 0; i < room.actions.length; i++) out += (i + 1) + ". " + room.actions[i].text + "\n";
     return out + "━━━━━━━━━━━━\n※ 행동 선택: /귀신의집선택 번호";
+}
+
+// 시작 당시 경로 길이에 따라 기존 5곳 또는 신규 3곳의 사탕 지급표를 선택하는 함수
+function getHalloweenRoomCandy(run, action, outcomeIndex) {
+    return requireHalloweenInteger(run.rooms.length === GLOBAL_CONFIG.halloween.legacyRoomCount ? action.results[outcomeIndex].candy : GLOBAL_CONFIG.halloween.roomRewards[action.type][outcomeIndex]);
 }
 
 // 현재 계정의 실제 잔액과 상품별 이벤트 누적 한도를 표시하는 함수
@@ -65345,7 +65470,7 @@ function buildHalloweenShopMessage(context) {
 // 최종 선택 결과와 이미 지급한 보상 합계만 안내하는 함수
 function buildHalloweenCompletionMessage(context, secretIndex, newTitle) {
     var run = context.account.run, config = GLOBAL_CONFIG.halloween;
-    var out = "🎉 귀신의 집 탐험 완료!\n" + context.actor + "님\n━━━━━━━━━━━━\n";
+    var out = "🎉 귀신의 집 탐험 완료!\n" + context.actor + "님\n━━━━━━━━━━━━\n🏚️ 오늘의 탐험: " + run.rooms.length + "/" + run.rooms.length + "곳 완료\n";
     for (var i = 0; i < run.results.length; i++) out += config.rooms[run.rooms[i]].name + ": 🍬 +" + run.results[i].candy + "개\n";
     var secretCandy = secretIndex >= 0 ? config.secret[secretIndex].candy : 0;
     out += "━━━━━━━━━━━━\n🍬 방 탐험 보상: " + run.total + "개\n🎁 완주 보너스: +" + config.completionCandy + "개\n";
@@ -65355,7 +65480,7 @@ function buildHalloweenCompletionMessage(context, secretIndex, newTitle) {
     }
     out += "🏆 이번 탐험 총 획득: " + (run.total + config.completionCandy + secretCandy) + "개\n";
     if (newTitle >= 0) out += "🏅 새 칭호: " + config.titles[newTitle].name + "\n";
-    out += "━━━━━━━━━━━━\n" + getHalloweenEntryLines(context.account, context.premium) + "\n\n👻유령 호월이:\n\"" + (run.total === 0 ? "으으… 빈손은 좀 그렇지. 끝까지 온 선물은 챙겨가!" : "내 사탕… 다음에는 꼭꼭 숨겨둘 거야!") + "\"\n━━━━━━━━━━━━\n※ 다시 탐험: /귀신의집\n※ 사탕 사용: /할로윈상점";
+    out += "━━━━━━━━━━━━\n" + getHalloweenEntryLines(context.account, context.premium) + "\n\n👻유령 호월이:\n\"" + (run.total === 0 ? "으으… 빈손은 좀 그렇지. 끝까지 온 선물은 챙겨가!" : run.rooms.length === config.roomCount ? "벌써 세 곳을 털었어?! 내 사탕 창고가 위험해!" : "내 사탕… 다음에는 꼭꼭 숨겨둘 거야!") + "\"\n━━━━━━━━━━━━\n※ 다시 탐험: /귀신의집\n※ 사탕 사용: /할로윈상점";
     return out;
 }
 
@@ -65397,7 +65522,7 @@ function applyHalloweenCommand(request, context) {
         return reply("🏅 할로윈 한정 칭호\n" + (titleLines.length ? titleLines.join("\n") : "아직 획득한 칭호가 없습니다."));
     }
     if (!state.active) return reply(config.name + "\n현재 할로윈 이벤트가 진행 중이 아닙니다.\n\n👻유령 호월이:\n\"지금은 문이 닫혀 있어! 이벤트 안내를 확인해줘!\"");
-    if (request.action === "guide") return reply(config.name + "\n일반 하루 1회 / 프리미엄 총 2회\n기본 입장 → 입장권 추가 입장 순으로 사용해요.\n서로 다른 5곳에서 /귀신의집선택 1~3으로 행동을 골라요.\n다음 방 확인: /귀신의집\n\n안전형: 80% 8개 / 20% 0개\n탐색형: 55% 20개 / 35% 5개 / 10% 0개\n도박형: 20% 60개 / 50% 12개 / 30% 0개\n완주: 20개 추가 + 칭호 무료 추첨 1회\n비밀방 등장 10% → 60% 20개 / 30% 50개 / 9% 150개 / 1% 300개\n\n추가 입장 충전: /할로윈입장 숫자\n사탕 사용: /할로윈상점");
+    if (request.action === "guide") return reply(config.name + "\n일반 하루 1회 / 프리미엄 총 2회\n기본 입장 → 입장권 추가 입장 순으로 사용해요.\n전체 " + config.rooms.length + "곳 중 서로 다른 " + config.roomCount + "곳에서 /귀신의집선택 1~3으로 행동을 골라요.\n다음 방 확인: /귀신의집\n\n안전형: 80% " + config.roomRewards["안전형"][0] + "개 / 20% 0개\n탐색형: 55% " + config.roomRewards["탐색형"][0] + "개 / 35% " + config.roomRewards["탐색형"][1] + "개 / 10% 0개\n도박형: 20% " + config.roomRewards["도박형"][0] + "개 / 50% " + config.roomRewards["도박형"][1] + "개 / 30% 0개\n완주: " + config.completionCandy + "개 추가 + 칭호 무료 추첨 1회\n비밀방 등장 10% → 60% 20개 / 30% 50개 / 9% 150개 / 1% 300개\n\n※ 방당 사탕은 늘었지만 탐험 1회 총평균은 기존 " + config.legacyRoomCount + "곳 수준을 유지해요.\n※ 진행 중이던 탐험은 시작 당시 경로와 보상으로 마무리해요.\n추가 입장 충전: /할로윈입장 숫자\n사탕 사용: /할로윈상점");
     if (!account) return reply("❌ 등록된 계정을 확인할 수 없습니다.");
     result.changed = refreshHalloweenAccount(state, account, context.now);
     if (request.action === "resetUser") {
@@ -65460,12 +65585,13 @@ function applyHalloweenCommand(request, context) {
         if (!run) return reply("진행 중인 탐험이 없습니다.\n※ 새 탐험: /귀신의집");
         if (run.resolved) return reply("이미 선택을 완료한 방입니다.\n※ 다음 방 확인: /귀신의집");
         var action = config.rooms[run.rooms[run.step]].actions[request.number - 1], outcomeIndex = pickHalloweenOutcome(action.results), outcome = action.results[outcomeIndex];
-        run.results.push({ number: request.number, outcome: outcomeIndex, candy: outcome.candy });
-        run.total += outcome.candy; run.resolved = true;
-        creditHalloweenFree(account, outcome.candy, { kind: "room", runId: run.id, room: run.rooms[run.step], number: request.number, outcome: outcomeIndex, candy: outcome.candy, at: context.now, txId: context.txId });
+        var candy = getHalloweenRoomCandy(run, action, outcomeIndex); // 시작 당시 경로에 맞는 신·구 보상표 선택
+        run.results.push({ number: request.number, outcome: outcomeIndex, candy: candy });
+        run.total += candy; run.resolved = true;
+        creditHalloweenFree(account, candy, { kind: "room", runId: run.id, room: run.rooms[run.step], number: request.number, outcome: outcomeIndex, candy: candy, at: context.now, txId: context.txId });
         result.changed = true;
-        var selectionMessage = prefix + outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + outcome.candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n";
-        if (run.step < config.roomCount - 1) return reply(outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + outcome.candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n🚪 다음 탐험: " + (run.step + 2) + "/5\n※ 다음 방 확인: /귀신의집");
+        var selectionMessage = prefix + outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n";
+        if (run.step < run.rooms.length - 1) return reply(outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n🚪 다음 탐험: " + (run.step + 2) + "/" + run.rooms.length + "\n※ 다음 방 확인: /귀신의집");
         var secretIndex = Math.random() * 100 < config.secretRate ? pickHalloweenOutcome(config.secret) : -1;
         var titleIndex = pickHalloweenOutcome(config.titles), newTitle = account.titles.indexOf(titleIndex) === -1 ? titleIndex : -1;
         var completion = config.completionCandy + (secretIndex >= 0 ? config.secret[secretIndex].candy : 0);
