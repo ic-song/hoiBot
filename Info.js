@@ -2151,6 +2151,15 @@ function requireGmEducationStore(store) {
 function getGmEducationProgress(store, member, allowPending) {
     var id = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var row = id && store.users["$" + id], chapters = row ? row.chapters : [];
+    var compact = member && member.gmEducationReceipt;
+    if (compact !== undefined) {
+        if (!compact || typeof compact !== "object" || Array.isArray(compact) || typeof compact.chapter !== "number" || Math.floor(compact.chapter) !== compact.chapter || compact.chapter < 1 || compact.chapter > getGmEducationChapterCount() || typeof compact.txId !== "string" || !compact.txId || (compact.completedAt !== null && (typeof compact.completedAt !== "string" || !isFinite(Date.parse(compact.completedAt))))) throw new Error("교육 요약 영수증 형식 오류");
+        if (member.gmEducationRewards !== undefined || member.gmEducationRewardTimes !== undefined) throw new Error("교육 영수증 형식이 혼재되어 있습니다.");
+        if (compact.chapter < chapters.length || compact.chapter > chapters.length + (allowPending ? 1 : 0)) throw new Error("교육 완료와 요약 지급 기록 불일치");
+        var lastChapter = chapters[compact.chapter - 1];
+        if (lastChapter && (lastChapter.txId !== compact.txId || (compact.completedAt !== null && lastChapter.completedAt !== compact.completedAt))) throw new Error("교육 요약 영수증 불일치");
+        return chapters.length;
+    }
     var receipts = member && member.gmEducationRewards;
     if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > getGmEducationChapterCount())) throw new Error("교육 지급 영수증 형식 오류");
     receipts = receipts || [];

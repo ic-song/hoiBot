@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.739"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.740"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -90,7 +90,6 @@ var guildLevelTable = {
 
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_SYSTEM_VERSION = 2;
-const PET_SKILL_RETIREMENT_COMPENSATION_VERSION = "2026-09-17-v2-collection";
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const PET_SKILL_BAG_MAX_COUNT = 100;
 const PET_SKILL_SELL_PRICE = 1000000000;
@@ -1672,6 +1671,9 @@ const GLOBAL_CONFIG = {
         replacementItem: "양념치킨🐔",
         eventBoxCount: 100,
         baseballCount: 2
+    },
+    rewardRecordCleanup: {
+        petSkillLedgerKey: "petSkillRetirementCompensation"
     },
     manualReset: {
         timeoutMs: 60000,
@@ -4514,48 +4516,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply(gmSuccess); return;
         }
 
+        if (msg === "/보상기록정리") {
+            if (!(isAdmin(sender) || isMaster(sender))) { replier.reply("❌ 관리자만 사용할 수 있습니다."); return; }
+            var cleanupEducationStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
+            var cleanupPets = loadJsonFile(memberPetPath), cleanupPetSkills = loadJsonFile(petSkillDataPath);
+            var rewardCleanup;
+            try { rewardCleanup = cleanupCompletedRewardRecords(data, cleanupPets, cleanupPetSkills, cleanupEducationStore); }
+            catch (rewardCleanupError) { replier.reply("❌ 보상 기록을 정리하지 않았습니다.\n" + rewardCleanupError.message); return; }
+            if (rewardCleanup.changed) saveJsonFile(data, filePath);
+            replier.reply("🧹 보상 기록 정리 완료\n정령 보상 원장: " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + "\n폐지 펫스킬 보상 원장: " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n교육 기록 축소: " + rewardCleanup.educationUsers + "명\n회원 기록 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n지급된 보상과 교육 실적은 유지됩니다.");
+            return;
+        }
         if (msg === "/정령컨텐츠보상") {
             if (!isMaster(sender)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
-            var spiritConfig = GLOBAL_CONFIG.spiritRetirement;
-            var spiritAlreadyPaid = data[spiritConfig.ledgerKey] !== undefined;
-            if (spiritAlreadyPaid) {
-                if (!data[spiritConfig.ledgerKey] || data[spiritConfig.ledgerKey].version !== spiritConfig.version || data[spiritConfig.ledgerKey].status !== "COMPLETE") throw new Error("정령 보상 완료 기록 오류");
-            }
-            var spiritPets = loadJsonFile(memberPetPath);
-            if (spiritAlreadyPaid && countSpiritRetirementSources(spiritPets) === 0) {
-                replier.reply("✅ 정령 보상 지급과 원본 정리가 이미 완료되었습니다.\n보상은 다시 지급하지 않습니다.");
-                return;
-            }
-            var spiritBackup, spiritPlan = null;
-            if (!spiritAlreadyPaid) {
-                spiritPlan = buildSpiritRetirementPlan(data, spiritPets);
-                var spiritBackupPath = resolveActiveDataPath(DATA_ROOT_PATH + spiritConfig.backupPrefix + String(java.util.UUID.randomUUID()) + ".json");
-                var spiritBackupText = JSON.stringify({ memberData: data, petData: spiritPets });
-                writeVerifiedJsonFile(spiritBackupPath, spiritBackupText, true);
-                spiritBackup = loadJsonFile(spiritBackupPath);
-                if (JSON.stringify(spiritBackup) !== spiritBackupText) throw new Error("정령 보상 전 백업 확인 실패");
-                spiritPlan.backupPath = spiritBackupPath;
-                applySpiritRetirementPlan(data, spiritPlan);
-                saveJsonFile(data, filePath);
-                endDataSaveTransaction(); beginDataSaveTransaction(); // 지급 확정 후 정리 실패나 응답 오류로 지급을 되돌리지 않음
-            } else {
-                var spiritOriginalPath = data[spiritConfig.ledgerKey].backupPath;
-                if (typeof spiritOriginalPath !== "string") throw new Error("정령 보상 원본 백업 경로 오류");
-                spiritOriginalPath = resolveActiveDataPath(spiritOriginalPath);
-                var spiritExpectedPrefix = resolveActiveDataPath(DATA_ROOT_PATH + spiritConfig.backupPrefix);
-                if (spiritOriginalPath.indexOf(spiritExpectedPrefix) !== 0 || !/^[A-Za-z0-9-]+\.json$/.test(spiritOriginalPath.substring(spiritExpectedPrefix.length))) throw new Error("현재 환경의 정령 보상 백업이 아닙니다.");
-                spiritBackup = loadJsonFile(spiritOriginalPath);
-            }
-            var spiritCleanup = buildSpiritRetirementCleanupPlan(data, spiritPets, data[spiritConfig.ledgerKey], spiritBackup);
-            if (spiritCleanup.users.length > 0) {
-                for (var spiritCleanupIndex = 0; spiritCleanupIndex < spiritCleanup.users.length; spiritCleanupIndex++) delete spiritPets[spiritCleanup.users[spiritCleanupIndex]].elemental;
-                saveJsonFile(spiritPets, memberPetPath);
-                endDataSaveTransaction(); beginDataSaveTransaction(); // 정리 확정 후 응답 실패로 삭제를 취소하지 않음
-            }
-            var spiritMessage = spiritAlreadyPaid ? "✅ 정령 보상 원본 정리\n기존 보상은 다시 지급하지 않았습니다." : "✅ 정령 콘텐츠 보상 완료\n대상 " + spiritPlan.users.length + "명\n캐슬매력 " + numberWithCommas(spiritPlan.castleTotal) + "개\n레이드매력 " + numberWithCommas(spiritPlan.raidTotal) + "개\n각 유저의 가방에 지급했어요. 아이템을 오픈하면 매력이 적용됩니다.";
-            spiritMessage += "\n🧹 정령 원본 " + spiritCleanup.users.length + "명 정리 완료\n보상 아이템·오픈한 매력·재지급 방지 기록은 유지했습니다.";
-            if (spiritCleanup.remaining > 0) spiritMessage += "\n⚠️ 확인이 필요한 정령 원본 " + spiritCleanup.remaining + "건은 보존했습니다. 보상 기록·계정·백업 원본을 확인해주세요.";
-            replier.reply(spiritMessage);
+            replier.reply("종료된 일회성 보상입니다. 보상은 다시 지급하지 않습니다.");
             return;
         }
         var spiritCharmRequest = getSpiritCharmOpenRequest(msg);
@@ -5310,99 +5284,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             return;
         }
         if (msg === "/펫스킬북보상") {
-            if (!(isAdmin(sender) || isMaster(sender))) {
-                replier.reply("❌ 관리자만 사용할 수 있습니다.");
-                return;
-            }
-            var retirementLedger = ensurePetSkillRetirementCompensationLedger(data);
-            var retirementSummary = { rewardedUsers: 0, noTargetUsers: 0, skippedUsers: 0, failedUsers: 0, transcendenceCount: 0, soloLevelingCount: 0, collectionCount: 0, rewardCount: 0 };
-            var retirementUsers = Object.keys(data.member);
-            for (var retirementUserIndex = 0; retirementUserIndex < retirementUsers.length; retirementUserIndex++) {
-                var retirementUser = retirementUsers[retirementUserIndex];
-                var retirementRecord = retirementLedger.users[retirementUser];
-                var retirementCollectionRecord = retirementLedger.collectionUsers[retirementUser];
-                if (retirementRecord && retirementRecord.status === "COMPLETE" && retirementCollectionRecord && retirementCollectionRecord.status === "COMPLETE") {
-                    retirementSummary.skippedUsers++;
-                    continue;
-                }
-                var retirementMemberBagBefore = JSON.stringify(data.member[retirementUser].bag || {});
-                var retirementSkillBefore = petSkillData.hasOwnProperty(retirementUser) ? JSON.stringify(petSkillData[retirementUser]) : null;
-                var retirementRecordBefore = retirementLedger.users.hasOwnProperty(retirementUser) ? JSON.stringify(retirementLedger.users[retirementUser]) : null;
-                var retirementCollectionRecordBefore = retirementLedger.collectionUsers.hasOwnProperty(retirementUser) ? JSON.stringify(retirementLedger.collectionUsers[retirementUser]) : null;
-                try {
-                    var retirementPendingRecords = [];
-                    var retirementUserRewardCount = 0;
-                    var retirementUserTranscendenceCount = 0;
-                    var retirementUserSoloLevelingCount = 0;
-                    var retirementUserCollectionCount = 0;
-                    if (!retirementRecord || retirementRecord.status !== "COMPLETE") {
-                        if (!retirementRecord || retirementRecord.status === "FAILED") {
-                            retirementRecord = createPetSkillRetirementCompensationRecord(countRetiredPetSkillHoldings(petSkillData, retirementUser));
-                            retirementLedger.users[retirementUser] = retirementRecord;
-                        }
-                        if (retirementRecord.status === "PENDING") {
-                            removeRetiredPetSkillHoldings(petSkillData, retirementUser);
-                            retirementRecord.status = "SKILLS_REMOVED";
-                            retirementRecord.skillsRemovedAt = formatDateTime(new Date());
-                        }
-                        if (retirementRecord.status === "SKILLS_REMOVED") {
-                            retirementPendingRecords.push(retirementRecord);
-                            retirementUserRewardCount += retirementRecord.rewardCount;
-                            retirementUserTranscendenceCount += retirementRecord.counts.transcendence;
-                            retirementUserSoloLevelingCount += retirementRecord.counts.soloLeveling;
-                        }
-                    }
-                    if (!retirementCollectionRecord || retirementCollectionRecord.status !== "COMPLETE") {
-                        if (!retirementCollectionRecord || retirementCollectionRecord.status === "FAILED") {
-                            retirementCollectionRecord = createPetSkillRetirementCompensationRecord(countRetiredPetSkillCollectionHoldings(petSkillData, retirementUser));
-                            retirementLedger.collectionUsers[retirementUser] = retirementCollectionRecord;
-                        }
-                        if (retirementCollectionRecord.status === "PENDING" || retirementCollectionRecord.status === "SKILLS_REMOVED") {
-                            retirementPendingRecords.push(retirementCollectionRecord);
-                            retirementUserRewardCount += retirementCollectionRecord.rewardCount;
-                            retirementUserTranscendenceCount += retirementCollectionRecord.counts.transcendence;
-                            retirementUserSoloLevelingCount += retirementCollectionRecord.counts.soloLeveling;
-                            retirementUserCollectionCount += retirementCollectionRecord.rewardCount;
-                        }
-                    }
-                    if (retirementUserRewardCount > 0) addItem(data, retirementUser, GLOBAL_CONFIG.petSkill.bookItemName, retirementUserRewardCount);
-                    for (var retirementPendingIndex = 0; retirementPendingIndex < retirementPendingRecords.length; retirementPendingIndex++) {
-                        retirementPendingRecords[retirementPendingIndex].status = "COMPLETE";
-                        retirementPendingRecords[retirementPendingIndex].completedAt = formatDateTime(new Date());
-                        retirementPendingRecords[retirementPendingIndex].lastError = "";
-                    }
-                    if (retirementUserRewardCount > 0) {
-                        retirementSummary.rewardedUsers++;
-                        retirementSummary.transcendenceCount += retirementUserTranscendenceCount;
-                        retirementSummary.soloLevelingCount += retirementUserSoloLevelingCount;
-                        retirementSummary.collectionCount += retirementUserCollectionCount;
-                        retirementSummary.rewardCount += retirementUserRewardCount;
-                    } else {
-                        retirementSummary.noTargetUsers++;
-                    }
-                } catch (retirementError) {
-                    retirementSummary.failedUsers++;
-                    data.member[retirementUser].bag = JSON.parse(retirementMemberBagBefore);
-                    if (retirementSkillBefore === null) delete petSkillData[retirementUser];
-                    else petSkillData[retirementUser] = JSON.parse(retirementSkillBefore);
-                    if (retirementRecordBefore === null) retirementLedger.users[retirementUser] = { status: "FAILED", lastError: String(retirementError), failedAt: formatDateTime(new Date()) };
-                    else {
-                        retirementLedger.users[retirementUser] = JSON.parse(retirementRecordBefore);
-                        retirementLedger.users[retirementUser].lastError = String(retirementError);
-                        retirementLedger.users[retirementUser].failedAt = formatDateTime(new Date());
-                    }
-                    if (retirementCollectionRecordBefore === null) retirementLedger.collectionUsers[retirementUser] = { status: "FAILED", lastError: String(retirementError), failedAt: formatDateTime(new Date()) };
-                    else {
-                        retirementLedger.collectionUsers[retirementUser] = JSON.parse(retirementCollectionRecordBefore);
-                        retirementLedger.collectionUsers[retirementUser].lastError = String(retirementError);
-                        retirementLedger.collectionUsers[retirementUser].failedAt = formatDateTime(new Date());
-                    }
-                    debuggerLog("[ERROR : 폐지 펫스킬 보상] " + retirementUser + " - " + retirementError.toString());
-                }
-            }
-            saveJsonFile(petSkillData, petSkillDataPath);
-            saveJsonFile(data, filePath);
-            replier.reply(buildPetSkillRetirementCompensationResultMessage(retirementSummary));
+            if (!(isAdmin(sender) || isMaster(sender))) { replier.reply("❌ 관리자만 사용할 수 있습니다."); return; }
+            replier.reply("종료된 일회성 보상입니다. 보상은 다시 지급하지 않습니다.");
             return;
         }
         var shouldCleanupAllPremiumUsers = ((msg === "/패스목록" || msg === "/구독패스지급") && (isMaster(sender) || isAdmin(sender) || sender === "오픈채팅봇")) ||
@@ -7780,7 +7663,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     }
                     var skillMarketName = skillMarketList[skillMarketIndex - 1];
                     if (isRetiredPetSkill(skillMarketName)) {
-                        replier.reply("❌ 폐지된 펫스킬은 자유시장에 등록할 수 없습니다.\n관리자에게 /펫스킬북보상 처리를 요청해 주세요.");
+                        replier.reply("❌ 폐지된 펫스킬은 자유시장에 등록할 수 없습니다.");
                         return;
                     }
                     var skillMarketStore = initPetSkillUser(petSkillData, sender);
@@ -7925,7 +7808,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     if (buyListing.type === "skill" && isRetiredPetSkill(buyListing.itemName)) {
-                        replier.reply("❌ 폐지된 펫스킬 거래는 구매할 수 없습니다.\n판매자가 거래를 취소한 뒤 관리자에게 /펫스킬북보상 처리를 요청해 주세요.");
+                        replier.reply("❌ 폐지된 펫스킬 거래는 구매할 수 없습니다.\n판매자가 거래를 취소해 주세요.");
                         return;
                     }
                     if (buyListing.seller === sender) {
@@ -32949,7 +32832,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || getStoneBoxOpenRequest(command) !== null || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/교육완료(?:[ \t]|$)/.test(command) ||
-        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
+        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/보상기록정리" || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
         command === "/미니펫컬렉션전체등록" || command === "등록" || command === "ㄴㄴ" || command === "/등록" || command === "/ㄴㄴ" ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
@@ -33148,7 +33031,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
-        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
+        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/보상기록정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
         "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
@@ -35900,6 +35783,15 @@ function requireGmEducationStore(store) {
 function getGmEducationProgress(store, member, allowPending) {
     var id = member && member.serverRaidAccount && member.serverRaidAccount.id;
     var row = id && store.users["$" + id], chapters = row ? row.chapters : [];
+    var compact = member && member.gmEducationReceipt;
+    if (compact !== undefined) {
+        if (!compact || typeof compact !== "object" || Array.isArray(compact) || typeof compact.chapter !== "number" || Math.floor(compact.chapter) !== compact.chapter || compact.chapter < 1 || compact.chapter > getGmEducationChapterCount() || typeof compact.txId !== "string" || !compact.txId || (compact.completedAt !== null && (typeof compact.completedAt !== "string" || !isFinite(Date.parse(compact.completedAt))))) throw new Error("교육 요약 영수증 형식 오류");
+        if (member.gmEducationRewards !== undefined || member.gmEducationRewardTimes !== undefined) throw new Error("교육 영수증 형식이 혼재되어 있습니다.");
+        if (compact.chapter < chapters.length || compact.chapter > chapters.length + (allowPending ? 1 : 0)) throw new Error("교육 완료와 요약 지급 기록 불일치");
+        var lastChapter = chapters[compact.chapter - 1];
+        if (lastChapter && (lastChapter.txId !== compact.txId || (compact.completedAt !== null && lastChapter.completedAt !== compact.completedAt))) throw new Error("교육 요약 영수증 불일치");
+        return chapters.length;
+    }
     var receipts = member && member.gmEducationRewards;
     if (receipts !== undefined && (!Array.isArray(receipts) || receipts.length > getGmEducationChapterCount())) throw new Error("교육 지급 영수증 형식 오류");
     receipts = receipts || [];
@@ -35912,6 +35804,79 @@ function getGmEducationProgress(store, member, allowPending) {
         for (var t = 0; t < times.length; t++) if (times[t] !== null && (typeof times[t] !== "string" || !isFinite(Date.parse(times[t])) || (chapters[t] && chapters[t].completedAt !== times[t]))) throw new Error("교육 확정 시각 영수증 불일치");
     }
     return chapters.length;
+}
+
+// 완료된 보상 원장과 교육 중복 상세만 검증 후 회원 파일에서 정리하는 함수
+function cleanupCompletedRewardRecords(data, petData, petSkillData, educationStore) {
+    if (!data || !data.member || !petData || typeof petData !== "object" || Array.isArray(petData) || !petSkillData || typeof petSkillData !== "object" || Array.isArray(petSkillData)) throw new Error("보상 기록 정리 원본 데이터 오류");
+    requireGmEducationStore(educationStore);
+    var spiritKey = GLOBAL_CONFIG.spiritRetirement.ledgerKey;
+    var skillKey = GLOBAL_CONFIG.rewardRecordCleanup.petSkillLedgerKey;
+    var spirit = data[spiritKey], skills = data[skillKey];
+    var result = { changed: false, spiritRemoved: false, petSkillRemoved: false, educationUsers: 0, removedChars: 0 };
+    if (spirit !== undefined) {
+        if (!spirit || spirit.version !== GLOBAL_CONFIG.spiritRetirement.version || spirit.status !== "COMPLETE") throw new Error("정령 보상이 완료되지 않아 원장을 보존합니다.");
+        for (var petUser in petData) if (Object.prototype.hasOwnProperty.call(petData, petUser) && petData[petUser] && Object.prototype.hasOwnProperty.call(petData[petUser], "elemental")) throw new Error("정령 원본이 남아 있어 보상 원장을 보존합니다.");
+    }
+    if (skills !== undefined) {
+        if (!skills || typeof skills !== "object" || Array.isArray(skills)) throw new Error("펫스킬 보상 원장 형식 오류");
+        var maps = [skills.users, skills.collectionUsers];
+        for (var mapIndex = 0; mapIndex < maps.length; mapIndex++) {
+            var records = maps[mapIndex];
+            if (!records || typeof records !== "object" || Array.isArray(records)) throw new Error("펫스킬 보상 완료 기록이 없어 원장을 보존합니다.");
+            for (var recordedUser in records) if (Object.prototype.hasOwnProperty.call(records, recordedUser) && (!records[recordedUser] || records[recordedUser].status !== "COMPLETE")) throw new Error("미완료 펫스킬 보상 기록이 있어 원장을 보존합니다.");
+        }
+        for (var skillUser in data.member) {
+            if (!Object.prototype.hasOwnProperty.call(data.member, skillUser)) continue;
+            var skillMember = petSkillData[skillUser] || {}, holdings = skillMember.petSkills || {};
+            if ((!skills.users[skillUser] && (hasRetiredPetSkillEntries(holdings.equipped) || hasRetiredPetSkillEntries(holdings.lockedPremium) || hasRetiredPetSkillEntries(holdings.bag))) || (!skills.collectionUsers[skillUser] && hasRetiredPetSkillEntries(skillMember.petSkillCollection))) throw new Error("펫스킬 미처리 회원이 있어 원장을 보존합니다.");
+        }
+    }
+    var educationPlan = []; // 전체 회원 복사 없이 변경할 교육 요약만 준비
+    for (var user in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
+        var member = data.member[user];
+        getGmEducationProgress(educationStore, member);
+        if (member.gmEducationRewards === undefined && member.gmEducationRewardTimes === undefined) continue;
+        var receipts = member.gmEducationRewards || [], compact = null;
+        if (receipts.length > 0) {
+            var educationRow = educationStore.users["$" + member.serverRaidAccount.id];
+            compact = { chapter: receipts.length, txId: receipts[receipts.length - 1], completedAt: educationRow.chapters[receipts.length - 1].completedAt || null };
+        }
+        educationPlan.push({ user: user, receipt: compact });
+    }
+    if (spirit !== undefined) {
+        result.removedChars += JSON.stringify(spiritKey).length + JSON.stringify(spirit).length + 2;
+        delete data[spiritKey]; result.spiritRemoved = true;
+    }
+    if (skills !== undefined) {
+        result.removedChars += JSON.stringify(skillKey).length + JSON.stringify(skills).length + 2;
+        delete data[skillKey]; result.petSkillRemoved = true;
+    }
+    for (var educationIndex = 0; educationIndex < educationPlan.length; educationIndex++) {
+        var plan = educationPlan[educationIndex], target = data.member[plan.user];
+        if (target.gmEducationRewards !== undefined) result.removedChars += JSON.stringify("gmEducationRewards").length + JSON.stringify(target.gmEducationRewards).length + 2;
+        if (target.gmEducationRewardTimes !== undefined) result.removedChars += JSON.stringify("gmEducationRewardTimes").length + JSON.stringify(target.gmEducationRewardTimes).length + 2;
+        delete target.gmEducationRewards; delete target.gmEducationRewardTimes;
+        if (plan.receipt) {
+            target.gmEducationReceipt = plan.receipt;
+            result.removedChars -= JSON.stringify("gmEducationReceipt").length + JSON.stringify(plan.receipt).length + 2;
+        }
+        result.educationUsers++;
+    }
+    result.changed = result.spiritRemoved || result.petSkillRemoved || result.educationUsers > 0;
+    return result;
+}
+
+// 저장된 배열·수량 맵에 보상 대상 폐지 스킬이 남아 있는지 읽기만 하는 함수
+function hasRetiredPetSkillEntries(entries) {
+    if (!entries) return false;
+    for (var key in entries) {
+        if (!Object.prototype.hasOwnProperty.call(entries, key)) continue;
+        var name = normalizePetSkillName(Array.isArray(entries) ? entries[key] : key);
+        if ((name === "초월성장" || name === "나 혼자만 레벨업") && (Array.isArray(entries) || Number(entries[key]) > 0)) return true;
+    }
+    return false;
 }
 
 // 동일 계정·챕터의 재시작 복구에 사용할 영속 요청을 검증하는 함수
@@ -35927,13 +35892,18 @@ function applyGmEducationPending(data, store, pending) {
     if (!account) throw new Error("교육 대상 계정을 찾을 수 없어 복구를 중단했습니다.");
     var member = account.member, count = getGmEducationProgress(store, member, true);
     var row = store.users["$" + pending.accountId], receipts = member.gmEducationRewards || [];
+    var compact = member.gmEducationReceipt;
+    var paidChapter = compact ? compact.chapter : receipts.length; // 회원 가방과 함께 저장된 마지막 지급 챕터
+    var paidTxId = compact ? compact.txId : receipts[pending.chapter - 1];
     var alreadyComplete = count === pending.chapter && row.chapters[count - 1].txId === pending.txId;
     if (!alreadyComplete && count !== pending.chapter - 1) throw new Error("교육 복구 순서 오류");
-    if (receipts.length !== pending.chapter - 1 && receipts.length !== pending.chapter) throw new Error("교육 지급 영수증 순서 오류");
-    var paid = receipts[pending.chapter - 1] === pending.txId;
-    var times = member.gmEducationRewardTimes, completedAt = times && times[pending.chapter - 1] || pending.at;
-    if (paid && pending.completionClock === 1 && (!times || !times[pending.chapter - 1])) throw new Error("교육 최초 확정 시각을 확인할 수 없습니다.");
-    if ((receipts.length === pending.chapter && !paid) || (alreadyComplete && !paid)) throw new Error("교육 복구 지급 키 불일치");
+    if (paidChapter !== pending.chapter - 1 && paidChapter !== pending.chapter) throw new Error("교육 지급 영수증 순서 오류");
+    var paid = paidChapter === pending.chapter && paidTxId === pending.txId;
+    var times = member.gmEducationRewardTimes;
+    var paidAt = compact ? compact.completedAt : times && times[pending.chapter - 1];
+    var completedAt = paidAt || pending.at;
+    if (paid && pending.completionClock === 1 && !paidAt) throw new Error("교육 최초 확정 시각을 확인할 수 없습니다.");
+    if ((paidChapter === pending.chapter && !paid) || (alreadyComplete && !paid)) throw new Error("교육 복구 지급 키 불일치");
     if (alreadyComplete) {
         var completed = row.chapters[count - 1];
         if (completed.gmId !== pending.gmId || completed.gmUser !== pending.gmUser || (completed.completedAt && completed.completedAt !== completedAt)) throw new Error("교육 복구 담당자 불일치");
@@ -35945,16 +35915,18 @@ function applyGmEducationPending(data, store, pending) {
         requireSpiritRetirementCount(held); requireSpiritRetirementCount(held + 1);
         if (!bag) member.bag = bag = {};
         addItemToBag(bag, GLOBAL_CONFIG.gmEducation.rewardItem, 1);
-        if (!times) { times = []; for (var old = 0; old < receipts.length; old++) times.push(null); }
         completedAt = pending.completionClock === 1 ? new Date().toISOString() : pending.at;
-        times.push(completedAt); member.gmEducationRewardTimes = times;
-        receipts.push(pending.txId); member.gmEducationRewards = receipts;
+    }
+    var memberChanged = !paid || !compact;
+    if (memberChanged) {
+        member.gmEducationReceipt = { chapter: pending.chapter, txId: pending.txId, completedAt: alreadyComplete && !row.chapters[pending.chapter - 1].completedAt ? null : completedAt };
+        delete member.gmEducationRewards; delete member.gmEducationRewardTimes;
     }
     if (!alreadyComplete) {
         if (!row) row = store.users["$" + pending.accountId] = { user: account.user, chapters: [] };
         row.chapters.push({ chapter: pending.chapter, txId: pending.txId, gmId: pending.gmId, gmUser: pending.gmUser, completedAt: completedAt });
     }
-    return { memberChanged: !paid, storeChanged: !alreadyComplete, user: account.user };
+    return { memberChanged: memberChanged, storeChanged: !alreadyComplete, user: account.user };
 }
 
 // 정확한 닉네임·숫자 계정용 @닉네임·기존 내부 계정 ID로 대상을 찾는 함수
@@ -49587,76 +49559,6 @@ function requireSpiritRetirementCount(value) {
     return value;
 }
 
-// 원본 정령 등급별 실전 매력으로 전체 보상 계획을 변경 없이 계산하는 함수
-function buildSpiritRetirementPlan(data, petData) {
-    if (!data || !data.member || !petData || typeof petData !== "object" || Array.isArray(petData)) throw new Error("정령 보상 원본 데이터 오류");
-    var config = GLOBAL_CONFIG.spiritRetirement;
-    var plan = { users: [], castleTotal: 0, raidTotal: 0 };
-    var names = Object.keys(data.member);
-    for (var i = 0; i < names.length; i++) {
-        var user = names[i], member = data.member[user];
-        if (!member || typeof member !== "object" || (member.bag !== undefined && (!member.bag || typeof member.bag !== "object" || Array.isArray(member.bag)))) throw new Error("정령 보상 가방 형식 오류");
-        var elemental = petData[user] && petData[user].elemental;
-        if (!elemental) continue;
-        var grade = itemInfoData.elemental[elemental.grade];
-        if (!grade) throw new Error("정령 보상 등급 오류: " + elemental.grade);
-        var upgrade = requireSpiritRetirementCount(elemental.upgrade);
-        var castle = requireSpiritRetirementCount(grade.castleExp + upgrade * grade.castleUpgradeExp); // 기존 캐슬 기본 매력 + 현재 등급의 강화 증가량
-        var raid = requireSpiritRetirementCount(grade.raidExp + upgrade * grade.raidUpgradeExp); // 기존 레이드 기본 매력 + 현재 등급의 강화 증가량
-        var bag = member.bag || {};
-        requireSpiritRetirementCount((bag[config.castleItem] === undefined ? 0 : bag[config.castleItem]) + castle);
-        requireSpiritRetirementCount((bag[config.raidItem] === undefined ? 0 : bag[config.raidItem]) + raid);
-        plan.castleTotal = requireSpiritRetirementCount(plan.castleTotal + castle);
-        plan.raidTotal = requireSpiritRetirementCount(plan.raidTotal + raid);
-        plan.users.push({ user: user, grade: elemental.grade, upgrade: upgrade, castle: castle, raid: raid });
-    }
-    return plan;
-}
-
-// 보상 가방과 전체 완료 기록을 같은 회원 저장 단위에 적용하는 함수
-function applySpiritRetirementPlan(data, plan) {
-    var config = GLOBAL_CONFIG.spiritRetirement;
-    if (data[config.ledgerKey] !== undefined) throw new Error("정령 보상은 한 번만 지급할 수 있습니다.");
-    for (var i = 0; i < plan.users.length; i++) {
-        var row = plan.users[i], member = data.member[row.user];
-        if (!member.bag) member.bag = {};
-        member.bag[config.castleItem] = (member.bag[config.castleItem] || 0) + row.castle;
-        member.bag[config.raidItem] = (member.bag[config.raidItem] || 0) + row.raid;
-    }
-    var names = Object.keys(data.member);
-    for (var j = 0; j < names.length; j++) if (data.member[names[j]].bag) delete data.member[names[j]].bag[config.removedItem];
-    data[config.ledgerKey] = { version: config.version, status: "COMPLETE", completedAt: new Date().toISOString(), backupPath: plan.backupPath, users: plan.users, castleTotal: plan.castleTotal, raidTotal: plan.raidTotal };
-}
-
-// 보상 완료 후에도 남아 있는 정령 원본 필드 수를 읽는 함수
-function countSpiritRetirementSources(petData) {
-    if (!petData || typeof petData !== "object" || Array.isArray(petData)) throw new Error("정령 정리 펫 데이터 형식 오류");
-    var names = Object.keys(petData), count = 0;
-    for (var i = 0; i < names.length; i++) if (petData[names[i]] && Object.prototype.hasOwnProperty.call(petData[names[i]], "elemental")) count++;
-    return count;
-}
-
-// 지급 기록·원본 백업·현재 계정을 대조해 재지급 없이 삭제할 정령만 고르는 함수
-function buildSpiritRetirementCleanupPlan(data, petData, ledger, backup) {
-    var total = countSpiritRetirementSources(petData);
-    if (!ledger || ledger.version !== GLOBAL_CONFIG.spiritRetirement.version || ledger.status !== "COMPLETE" || !Array.isArray(ledger.users)) throw new Error("정령 보상 완료 상세 기록 오류");
-    if (!backup || !backup.memberData || !backup.petData) throw new Error("정령 보상 전 원본 백업을 확인할 수 없습니다.");
-    var expected = buildSpiritRetirementPlan(backup.memberData, backup.petData);
-    if (JSON.stringify(expected.users) !== JSON.stringify(ledger.users) || expected.castleTotal !== ledger.castleTotal || expected.raidTotal !== ledger.raidTotal) throw new Error("정령 보상 기록과 원본 백업이 일치하지 않습니다.");
-    var accounts = buildServerRaidAccountIndex(data), users = [], selected = {};
-    for (var i = 0; i < ledger.users.length; i++) {
-        var row = ledger.users[i], originalMember = backup.memberData.member[row.user];
-        var originalId = originalMember.serverRaidAccount && originalMember.serverRaidAccount.id; // 보상 당시의 변경되지 않는 계정 ID
-        var user = originalId && accounts[originalId] ? accounts[originalId].user : row.user; // ID로 닉변을 추적하고 ID가 없으면 기존 이름을 대조
-        var member = data.member[user], pet = petData[user];
-        if (!member || !pet || !Object.prototype.hasOwnProperty.call(pet, "elemental") || selected["$" + user]) continue;
-        if (originalId && (!member.serverRaidAccount || member.serverRaidAccount.id !== originalId)) continue;
-        if (JSON.stringify(pet.elemental) !== JSON.stringify(backup.petData[row.user].elemental)) continue;
-        users.push(user); selected["$" + user] = true;
-    }
-    return { users: users, remaining: total - users.length };
-}
-
 // 매력 아이템의 정확한 명령과 정수 수량만 해석하는 함수
 function getSpiritCharmOpenRequest(msg) {
     var match = String(msg).match(/^\/(레이드매력오픈|캐슬매력오픈)(?:\s+(\d+))?$/);
@@ -51902,96 +51804,6 @@ function formatPetSkillName(skillName) {
 function isRetiredPetSkill(skillName) {
     var skillData = getPetSkillData(skillName);
     return !!(skillData && skillData.retired === true);
-}
-
-// 폐지 펫스킬 보상 처리 기록 구조를 보장하는 함수
-function ensurePetSkillRetirementCompensationLedger(data) {
-    if (!data.petSkillRetirementCompensation || typeof data.petSkillRetirementCompensation !== "object") {
-        data.petSkillRetirementCompensation = { version: PET_SKILL_RETIREMENT_COMPENSATION_VERSION, users: {} };
-    }
-    var ledger = data.petSkillRetirementCompensation;
-    if (!ledger.users || typeof ledger.users !== "object" || ledger.users instanceof Array) ledger.users = {};
-    if (!ledger.collectionUsers || typeof ledger.collectionUsers !== "object" || ledger.collectionUsers instanceof Array) ledger.collectionUsers = {};
-    ledger.version = PET_SKILL_RETIREMENT_COMPENSATION_VERSION;
-    return ledger;
-}
-
-// 장착·프리미엄 잠금·가방에 보유한 폐지 펫스킬 수량을 계산하는 함수
-function countRetiredPetSkillHoldings(petSkillData, user) {
-    var skills = initPetSkillUser(petSkillData, user);
-    var counts = { transcendence: 0, soloLeveling: 0, equipped: 0, lockedPremium: 0, bag: 0, total: 0 };
-    var countSkill = function (skillName, amount, location) {
-        var normalizedName = normalizePetSkillName(skillName);
-        var safeAmount = Math.max(0, parseInt(amount, 10) || 0);
-        if (normalizedName === "초월성장") counts.transcendence += safeAmount;
-        else if (normalizedName === "나 혼자만 레벨업") counts.soloLeveling += safeAmount;
-        else return;
-        counts[location] += safeAmount;
-        counts.total += safeAmount;
-    };
-    for (var equippedIndex = 0; equippedIndex < skills.equipped.length; equippedIndex++) countSkill(skills.equipped[equippedIndex], 1, "equipped");
-    for (var lockedIndex = 0; lockedIndex < skills.lockedPremium.length; lockedIndex++) countSkill(skills.lockedPremium[lockedIndex], 1, "lockedPremium");
-    for (var bagName in skills.bag) {
-        if (!skills.bag.hasOwnProperty(bagName)) continue;
-        countSkill(bagName, skills.bag[bagName], "bag");
-    }
-    return counts;
-}
-
-// 펫스킬 컬렉션에 등록된 폐지 스킬 수량을 계산하는 함수
-function countRetiredPetSkillCollectionHoldings(petSkillData, user) {
-    var counts = { transcendence: 0, soloLeveling: 0, equipped: 0, lockedPremium: 0, bag: 0, collection: 0, total: 0 };
-    var collection = ensurePetSkillCollection(petSkillData, user);
-    for (var collectionSkillName in collection) {
-        if (!collection.hasOwnProperty(collectionSkillName)) continue;
-        var normalizedName = normalizePetSkillName(collectionSkillName);
-        var safeAmount = Math.max(0, parseInt(collection[collectionSkillName], 10) || 0);
-        if (normalizedName === "초월성장") counts.transcendence += safeAmount;
-        else if (normalizedName === "나 혼자만 레벨업") counts.soloLeveling += safeAmount;
-        else continue;
-        counts.collection += safeAmount;
-        counts.total += safeAmount;
-    }
-    return counts;
-}
-
-// 중단 후 재개 가능한 폐지 펫스킬 보상 처리 기록을 생성하는 함수
-function createPetSkillRetirementCompensationRecord(counts) {
-    return {
-        status: "PENDING",
-        counts: counts,
-        rewardCount: counts.total,
-        startedAt: formatDateTime(new Date()),
-        skillsRemovedAt: "",
-        completedAt: "",
-        lastError: ""
-    };
-}
-
-// 장착·프리미엄 잠금·가방에서 폐지 펫스킬을 제거하는 함수
-function removeRetiredPetSkillHoldings(petSkillData, user) {
-    var skills = initPetSkillUser(petSkillData, user);
-    skills.equipped = skills.equipped.filter(function (skillName) { return !isRetiredPetSkill(skillName); });
-    skills.lockedPremium = skills.lockedPremium.filter(function (skillName) { return !isRetiredPetSkill(skillName); });
-    for (var bagName in skills.bag) {
-        if (!skills.bag.hasOwnProperty(bagName)) continue;
-        if (isRetiredPetSkill(bagName)) delete skills.bag[bagName];
-    }
-}
-
-// 폐지 펫스킬 보상 처리 결과 메시지를 생성하는 함수
-function buildPetSkillRetirementCompensationResultMessage(summary) {
-    return "📙 폐지 펫스킬 보상 처리 결과\n" +
-        "━━━━━━━━━━━━\n" +
-        "보상 지급: " + numberWithCommas(summary.rewardedUsers) + "명\n" +
-        "대상 없음: " + numberWithCommas(summary.noTargetUsers) + "명\n" +
-        "기처리 제외: " + numberWithCommas(summary.skippedUsers) + "명\n" +
-        "처리 실패: " + numberWithCommas(summary.failedUsers) + "명\n" +
-        "━━━━━━━━━━━━\n" +
-        "초월성장 회수: " + numberWithCommas(summary.transcendenceCount) + "개\n" +
-        "나혼자만레벨업 회수: " + numberWithCommas(summary.soloLevelingCount) + "개\n" +
-        "└ 컬렉션 등록분 포함: " + numberWithCommas(summary.collectionCount) + "개\n" +
-        "펫스킬북📙 지급: 총 " + numberWithCommas(summary.rewardCount) + "개";
 }
 
 // 펫 스킬 시스템에서 사용자별 데이터 초기화 및 구조 보장
