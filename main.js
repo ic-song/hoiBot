@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.743"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.744"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1676,7 +1676,9 @@ const GLOBAL_CONFIG = {
         petSkillLedgerKey: "petSkillRetirementCompensation"
     },
     dataCleanup: {
-        confirmationTimeoutMs: 60000
+        confirmationTimeoutMs: 60000,
+        zeroDailyCounterKeys: ["petHomeCommentCnt", "homeAlertOpenCnt", "passHeartGiveCnt", "passDollDrawCnt", "homeLikeCnt", "feedPostCnt", "cntlike", "towerCnt"],
+        completedOnboardingAuxKeys: ["characterCreatedAt", "petNamedAt", "completedAt", "petName"]
     },
     manualReset: {
         timeoutMs: 60000,
@@ -10233,7 +10235,7 @@ replier.reply(
                     return;
                 }
                 if (msg === "/r" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
-                    data.member[sender].cntlike = 0;
+                    delete data.member[sender].cntlike;
                 }
 
                 if (msg === "/선물전달" || /^\/선물전달\s+.+\/\d+$/.test(msg)) {
@@ -21036,17 +21038,15 @@ replier.reply(
                                 if (targetUserl == sender) {
                                     replier.reply("셀프💕 고만...");
                                 } else {
-                                    if (!data.member[sender].cntlike) {
-                                        data.member[sender].cntlike = 0;
-                                    }
-                                    if (data.member[sender].cntlike >= 2) {
+                                    var usedLikes = data.member[sender].cntlike || 0;
+                                    if (usedLikes >= 2) {
                                         replier.reply("좋아요는 하루에 2번까지만 가능합니다. 😅");
                                         return;
                                     }
                                     if (data.member[sender].point >= 8) {
                                         data.member[sender].point -= 8;
                                         data.member[targetUserl].like++;
-                                        data.member[sender].cntlike++;
+                                        data.member[sender].cntlike = Number(usedLikes) + 1;
                                         replier.reply("💕");
                                     } else {
                                         replier.reply("포인트가 부족하여 좋아요를 보낼 수 없습니다. 😥");
@@ -21060,9 +21060,9 @@ replier.reply(
                         }
                     }
                 }
-                if (msg.startsWith("/좋아요사용횟수")) {
-                    const likeCount = data.member[sender].cntlike;
-                    if (data.member[sender].cntlike >= 3) {
+                if (msg === "/좋아요사용횟수") {
+                    const likeCount = data.member[sender].cntlike || 0;
+                    if (likeCount >= 3) {
                         replier.reply("금일 좋아요를 3번 모두 사용했습니다.😅\n내일 다시 사용가능 합니다.");
                     } else {
                         replier.reply("좋아요 사용횟수는 " + likeCount + "번 입니다.\n총 2번까지만 사용가능합니다.");
@@ -23061,17 +23061,14 @@ replier.reply(
                     let message = "시련의탑😈 시즌이 종료되었습니다\n용사님들의 시련의 탑😈 최정상을 정복하여\n오톡세계에 평화가 찾아옵니다 . . .\n고생하셨습니다. ( _ _)";
                     noticeMsg(message);
                     return;
-                } else if (msg == "/시련의탑") {
+                } else if (msg === "/시련의탑") {
                     if (castleSiegeFlag) {
                         return;
                     }
                     let message = ""; // 리턴할 메시지
                     let maxEnter = GLOBAL_CONFIG.daily.trialTowerMax + (autoDailyQuestInternalDepth > 0 ? GLOBAL_CONFIG.daily.autoDailyBonusRuns : 0); // 자동일퀘 추가 보상을 포함한 최대입장
-                    // 카운트가 없으면 0으로 초기화
-                    if (!data.member[sender].towerCnt) {
-                        data.member[sender].towerCnt = 0;
-                    }
-                    if (data.member[sender].towerCnt >= maxEnter && sender != "호이 남") {
+                    var towerUsedCount = data.member[sender].towerCnt || 0; // 미사용 횟수는 저장 없이 0으로 계산
+                    if (towerUsedCount >= maxEnter && sender != "호이 남") {
                         replier.reply("❌ 오늘의 시련의탑 최대 입장 횟수(" + maxEnter + "회)를 초과했습니다.");
                         return;
                     }
@@ -23125,7 +23122,7 @@ replier.reply(
                     } else if (bossObj.isEventFlag) {
                         message += "✨이벤트 보스 등장✨\n [" + bossObj.name + "]이(가) 출몰하였습니다...!!\n\n";
                     }
-                    data.member[sender].towerCnt++;
+                    data.member[sender].towerCnt = Number(towerUsedCount) + 1;
                     let boosterItemName = "시탑 부스터🔮";
                     let boosterItemFlag = false;
                     let useBoosterItemCnt = 0;
@@ -26758,9 +26755,6 @@ replier.reply(
                     }
                     var hadPreviousHomeLikeCnt = data.member[sender].hasOwnProperty("homeLikeCnt");
                     var previousHomeLikeCnt = data.member[sender].homeLikeCnt;
-                    if (!data.member[sender].homeLikeCnt) {
-                        data.member[sender].homeLikeCnt = 0;
-                    }
                     let maxLikeCnt = 2; //최대 2회
                     if (!hasUnlimitedPetHomeHeartUsage(senderName) && (data.member[sender].homeLikeCnt || 0) >= maxLikeCnt) {
                         replier.reply("좋아홈💌은 하루에 2번까지만 가능합니다. 😅");
@@ -32077,6 +32071,7 @@ replier.reply(
                     var cleanupEducationStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
                     var rewardCleanup = cleanupCompletedRewardRecords(data, petData, petSkillData, cleanupEducationStore);
                     var preparedCleanup = compactAdventureQuestPreparedRecords(data, false);
+                    var unusedMemberCleanup = cleanupUnusedMemberFields(data, false);
                     var robberyCleanupConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
                     var robberyCleanupPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.fileName);
                     var robberyAlreadySeparated = data.migrations && data.migrations[robberyCleanupConfig.markerKey] === true;
@@ -32253,6 +32248,7 @@ replier.reply(
                     out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
                     out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
                     out += "퀘스트 준비 기록 " + preparedCleanup.users + "명 압축 / 약 " + numberWithCommas(preparedCleanup.removedChars) + "자 감소\n";
+                    out += "미사용 횟수 " + unusedMemberCleanup.zeroFields + "개 / 가입 완료 보조 정보 " + unusedMemberCleanup.onboardingUsers + "명 정리 · 약 " + numberWithCommas(unusedMemberCleanup.removedChars) + "자 감소\n";
                     out += "\n[강탈 이력 분리]\n";
                     out += robberyMigrationPending ? "✅ 전체 기록 보존 · 추가 이전 " + numberWithCommas(robberyMigration.added) + "건 / " + numberWithCommas(robberyMigration.users.length) + "명\n" : "✅ 이미 분리되어 있어 다시 옮기지 않았습니다.\n";
                     if (memberStorageMigrationResult) {
@@ -32462,6 +32458,46 @@ function getDataCleanupStorePaths() {
     ];
 }
 
+// 숫자 0인 허용 횟수와 가입 완료 계정의 보조 필드만 계획하거나 제거하는 함수
+function cleanupUnusedMemberFields(data, previewOnly) {
+    if (!data || !data.member || typeof data.member !== "object" || Array.isArray(data.member)) throw new Error("회원 보조 정보 정리 원본 오류");
+    var config = GLOBAL_CONFIG.dataCleanup, plans = [];
+    var result = { zeroUsers: 0, zeroFields: 0, onboardingUsers: 0, onboardingFields: 0, removedChars: 0, targets: [] };
+    for (var user in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
+        var member = data.member[user], zeroKeys = [], auxiliary = [];
+        if (!member || typeof member !== "object" || Array.isArray(member)) throw new Error("회원 보조 정보 형식 오류");
+        for (var i = 0; i < config.zeroDailyCounterKeys.length; i++) {
+            var key = config.zeroDailyCounterKeys[i];
+            if (!Object.prototype.hasOwnProperty.call(member, key) || member[key] !== 0) continue;
+            zeroKeys.push(key);
+            result.removedChars += JSON.stringify(key).length + 3; // 키·콜론·숫자 0·구분자 크기
+        }
+        var onboarding = member.adventureOnboarding;
+        if (onboarding && typeof onboarding === "object" && !Array.isArray(onboarding) && onboarding.stage === "COMPLETE") {
+            for (var j = 0; j < config.completedOnboardingAuxKeys.length; j++) {
+                var auxiliaryKey = config.completedOnboardingAuxKeys[j];
+                if (!Object.prototype.hasOwnProperty.call(onboarding, auxiliaryKey) || onboarding[auxiliaryKey] === undefined) continue;
+                auxiliary.push([auxiliaryKey, onboarding[auxiliaryKey]]);
+                result.removedChars += JSON.stringify(auxiliaryKey).length + JSON.stringify(onboarding[auxiliaryKey]).length + 2;
+            }
+        }
+        if (zeroKeys.length) result.zeroUsers++;
+        if (auxiliary.length) result.onboardingUsers++;
+        result.zeroFields += zeroKeys.length; result.onboardingFields += auxiliary.length;
+        if (zeroKeys.length || auxiliary.length) {
+            plans.push({ member: member, zeroKeys: zeroKeys, onboarding: onboarding, auxiliary: auxiliary });
+            result.targets.push([user, zeroKeys, auxiliary]);
+        }
+    }
+    if (!previewOnly) for (var p = 0; p < plans.length; p++) {
+        var plan = plans[p];
+        for (var z = 0; z < plan.zeroKeys.length; z++) delete plan.member[plan.zeroKeys[z]];
+        for (var a = 0; a < plan.auxiliary.length; a++) delete plan.onboarding[plan.auxiliary[a][0]];
+    }
+    return result;
+}
+
 // 삭제·축소 대상만 읽어 건수와 확인용 목록을 계산하고 원본은 변경하지 않는 함수
 function buildDataCleanupPreview(data, guildData, stores) {
     var required = getDataCleanupStorePaths();
@@ -32472,7 +32508,8 @@ function buildDataCleanupPreview(data, guildData, stores) {
     if (stores.placedFurnitureData) requirePlacedFurnitureDataMap(stores.placedFurnitureData);
     var rewards = cleanupCompletedRewardRecords(data, stores.petData, stores.petSkillData, stores.educationStore, true);
     var prepared = compactAdventureQuestPreparedRecords(data, true);
-    var targets = [["rewards", rewards], ["prepared", prepared]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
+    var unused = cleanupUnusedMemberFields(data, true);
+    var targets = [["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
     var zeroCount = 0, zeroUsers = 0, pointUsers = 0, pointFraction = 0; // 제거할 포인트 소수점 합계
     for (var user in data.member) {
         if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
@@ -32519,6 +32556,10 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
         "  보상·교육 기록 약 " + numberWithCommas(rewards.removedChars) + "자 감소\n" +
         "• 퀘스트 준비 기록: " + prepared.users + "명 압축 / 약 " + numberWithCommas(prepared.removedChars) + "자 감소\n" +
+        "• 미사용 일일 횟수: " + unused.zeroFields + "개 / " + unused.zeroUsers + "명\n" +
+        "• 가입 완료 보조 정보: " + unused.onboardingFields + "개 / " + unused.onboardingUsers + "명\n" +
+        "  생성·명명·완료 시각과 초기 펫 이름 사본 정리\n" +
+        "  두 항목 약 " + numberWithCommas(unused.removedChars) + "자 감소 · 진행 중 가입·보상 증거 유지\n" +
         "• 가방 수량 0 항목: " + zeroCount + "개 / " + zeroUsers + "명\n" +
         "• 포인트 소수점: " + pointUsers + "명 / 합계 " + formatPointValue(pointFraction) + "\n" +
         "• 가구 표시용 정보: " + displayCount + "개\n" +
@@ -40751,14 +40792,7 @@ function resetAttendance(petData, data, replier) {
         }
         data.member[user].battle.ticket = 0;
         data.member[user].battle.count = 0;
-        data.member[user].homeLikeCnt = 0;
-        data.member[user].cntlike = 0;
-        data.member[user].petHomeCommentCnt = 0;
-        data.member[user].feedPostCnt = 0;
-        data.member[user].homeAlertOpenCnt = 0;
-        data.member[user].passHeartGiveCnt = 0;
-        data.member[user].passDollDrawCnt = 0;
-        data.member[user].towerCnt = 0;
+        for (var counterIndex = 0; counterIndex < GLOBAL_CONFIG.dataCleanup.zeroDailyCounterKeys.length; counterIndex++) delete data.member[user][GLOBAL_CONFIG.dataCleanup.zeroDailyCounterKeys[counterIndex]];
         if (data.member[user].exploreCnt !== undefined) {
             delete data.member[user].exploreCnt;
         }
@@ -47128,7 +47162,8 @@ function editDailyQuestCountsForTest(data, petData, sender, msg) {
 
     var member = data.member[targetUser]; // 수정 대상 member 데이터
     if (!member.battle) member.battle = {};
-    member.towerCnt = towerCnt;
+    if (towerCnt === 0) delete member.towerCnt;
+    else member.towerCnt = towerCnt;
     member.battle.count = castleCnt;
     member.battle.ticket = Math.min(castleCnt, GLOBAL_CONFIG.daily.castleBattleFree);
     member.exploreCnt = exploreCnt;
