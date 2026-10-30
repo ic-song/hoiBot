@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻"}, // Main과 같은 이벤트 표시 설정
     gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
     manualReset: { commands: ["/댓글초기화","/피드초기화","/펫홈방문초기화","/좋아홈초기화","/인형전체초기화","/서버대전전체초기화","/펫무쌍전체초기화","/캐슬대전초기화","/캐슬대전횟수리셋","/캐슬초기화","/영주수익순위초기화","/펀치순위초기화","/펫탐험전체전적초기화","/시련의탑시즌초기화","/길드전체초기화","/길드영지초기화","/길드게시판초기화","/공헌구매초기화","/다이아전체초기화","/레벨초기화","/좋아리셋","/주간횟수초기화","/미니펫컬렉션초기화","/펜던트장착초기화","/미가입출첵서버초기화","/관리자순위초기화","/인증초기화","/마스터초기화@@@","/피드전체삭제","/글자수전체정리","/필터데이터정리","/데이터정리","/경매초기화","/계삭진행","/계정잠수삭제"] }, // 초기화·운영 정리는 Main에서만 처리
     petHomeVillage: { materialsPerLevel: 10, areaPerLevel: 10, grandPercent: 10, royalPercent: 20, arcanaPercent: 30, maxRegister: 10, confirmationTimeoutMs: 60000, dreamSkillName: "느그 집 마련의 꿈", dreamPercent: 10, royalSkillPerMode: 150000, arcanaSkillPerMode: 500000 }, // 별채 성장·확인 설정
@@ -648,6 +649,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			}
 			applyItemInfoContext(loadJsonFile(itemInfoPath));
 		}
+		if (!runHalloweenInfoEntry("state", ctx)) return;
 		var plainCommands = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
 		if (!msg.startsWith("/") && plainCommands.indexOf(msg) === -1) {
 			return;
@@ -854,8 +856,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 		}
 		if (msg === "/포인트" || msg === "ㅍㅍㅍ") {
 			if (data.member && data.member[sender]) {
+				runHalloweenInfoEntry("view", ctx, data, sender);
+				ctx.halloweenScreen = true;
 				var pointDiamond = data.member[sender].diamond || 0;
 				var pointMessage = getInfoHoiPassPremiumHeader(data, sender) + "[" + checkRank(data, petData, guildData, sender) + "] 님의 포인트\n🅟" + numberWithCommas(data.member[sender].point) + "\n💎: " + numberWithCommas(pointDiamond) + "개";
+				if (ctx.halloweenState && ctx.halloweenState.active) pointMessage += "\n" + getHalloweenCandyLine(ctx, true).trim();
 				var pointExploreData = loadJsonFile(petExplorePath);
 				if (pointExploreData && pointExploreData.chuseokEvent && pointExploreData.chuseokEvent.active === true) pointMessage += "\n🌕: " + numberWithCommas(getInfoChuseokCarrotBalance(data, pointExploreData, sender)) + "개";
 				if (hasInfoPrivateChatPass(data, sender)) {
@@ -870,6 +875,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 			if (data.member[sender]) replier.reply(buildInfoLevelMessage(data, petData, guildData, sender));
 		}
 		if (msg === "/내정보") {
+			ctx.halloweenScreen = true;
 			if (!data.member || !data.member[sender]) {
 				return;
 			}
@@ -1488,6 +1494,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				replier.reply("펫을 먼저 생성해주세요.");
 				return;
 			}
+			ctx.halloweenScreen = true;
 
 			// 이미지/기본값 보정
 			if (petInfo.newimg) petInfo.petimg = petInfo.newimg;
@@ -2114,7 +2121,7 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
 	return {
 		reply: function (message) {
-			return replier.reply(ctx.header(formatNicknameRankMessage(message)));
+			return replier.reply(ctx.header(formatHalloweenMessage(formatNicknameRankMessage(message), ctx)));
 		}
 	};
 }
@@ -3026,6 +3033,103 @@ function getEquippedTierPetSkillExp(petSkillData, user, equippedSkillNames) {
 	return totalExp;
 }
 // 펫스킬 슬롯 개수 계산 함수
+
+
+// 계산된 채크랭크의 외곽 표기를 현재 응답에만 등록하는 함수
+function rememberHalloweenRank(rank) {
+    var ctx = getCurrentContext();
+    if (ctx.halloweenState && ctx.halloweenState.active) {
+        if (!ctx.halloweenRanks) ctx.halloweenRanks = {};
+        ctx.halloweenRanks[formatNicknameRankMessage("[" + rank + "]")] = true;
+    }
+    return rank;
+}
+
+// 원본 닉네임을 건드리지 않고 현재 응답의 장식·최상단 배너를 적용하는 함수
+function formatHalloweenMessage(message, ctx) {
+    if (typeof message !== "string" || !ctx.halloweenState || !ctx.halloweenState.active) return message;
+    var labels = Object.keys(ctx.halloweenRanks || {}), suffix = GLOBAL_CONFIG.halloween.decoration;
+    labels.sort(function (a,b) { return b.length - a.length; });
+    for (var i = 0; i < labels.length; i++) {
+        var label = labels[i];
+        message = message.split(label + suffix).join(label).split(label).join(label + suffix);
+    }
+    if (ctx.halloweenScreen) {
+        message = GLOBAL_CONFIG.halloween.banner + "\n" + message;
+        ctx.halloweenScreen = false;
+    }
+    return message;
+}
+
+// 표시용 계정 ID에서 안전한 이벤트 파일 이름을 만드는 함수
+function getHalloweenAccountName(id) {
+    if (typeof id !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(id)) throw new Error("할로윈 공통 계정 ID 오류");
+    return GLOBAL_CONFIG.halloween.accountPrefix + id + ".json";
+}
+
+// 기존 화면에 덧붙일 사탕 표시 한 줄을 만드는 함수
+function getHalloweenCandyLine(ctx, pointScreen) {
+    if (!ctx.halloweenState || !ctx.halloweenState.active) return "";
+    return (pointScreen ? "🍬: " : "🍬 할로윈 사탕: ") + numberWithCommas(ctx.halloweenBalance || 0) + "개\n";
+}
+
+// Main과 같은 이벤트 수량 검증을 조회 경로에도 적용하는 함수
+function requireHalloweenInteger(value) {
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > 9007199254740991) throw new Error("할로윈 수량 형식 오류");
+    return value;
+}
+// Main과 같은 이벤트 활성 상태 원본을 검증하는 함수
+function requireHalloweenState(state) {
+    if (!state || state.version !== 1 || typeof state.active !== "boolean" || typeof state.lastResetDay !== "string" || !Array.isArray(state.logs)) throw new Error("할로윈 이벤트 원본 형식 오류");
+    requireHalloweenInteger(state.epoch);
+    return state;
+}
+// Main과 같은 이벤트 계정 원본을 검증하는 함수
+function requireHalloweenAccount(account, id) {
+    if (!account || account.version !== 1 || account.id !== id || typeof account.day !== "string" || !Array.isArray(account.purchases) || account.purchases.length !== 6 ||
+        !Array.isArray(account.titles) || !Array.isArray(account.history) || !Array.isArray(account.orders) || !account.requests || typeof account.requests !== "object" || Array.isArray(account.requests)) throw new Error("할로윈 계정 원본 형식 오류");
+    var values = [account.epoch, account.free, account.paid, account.used, account.extra];
+    for (var i = 0; i < values.length; i++) requireHalloweenInteger(values[i]);
+    for (var p = 0; p < account.purchases.length; p++) requireHalloweenInteger(account.purchases[p]);
+    for (var t = 0; t < account.titles.length; t++) if (typeof account.titles[t] !== "number" || account.titles[t] < 0 || account.titles[t] >= 5 || Math.floor(account.titles[t]) !== account.titles[t] || account.titles.indexOf(account.titles[t]) !== t) throw new Error("할로윈 칭호 기록 오류");
+    if (account.run !== null) {
+        var run = account.run;
+        if (!run || typeof run.id !== "string" || typeof run.day !== "string" || !Array.isArray(run.rooms) || run.rooms.length !== 5 || !Array.isArray(run.results) || typeof run.resolved !== "boolean") throw new Error("할로윈 탐험 원본 오류");
+        requireHalloweenInteger(run.epoch); requireHalloweenInteger(run.step); requireHalloweenInteger(run.total);
+        if (run.step >= 5 || run.results.length !== run.step + (run.resolved ? 1 : 0)) throw new Error("할로윈 탐험 진행 오류");
+        for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= 12 || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
+    }
+    requireHalloweenInteger(account.free + account.paid);
+    return account;
+}
+
+// Info 명령 진입점에서 복구 대기와 이벤트 표시용 원본만 읽는 함수
+function runHalloweenInfoEntry(mode, ctx, data, user) {
+    var config = GLOBAL_CONFIG.halloween, pendingPath = ctx.rootPath + config.pendingName;
+    if (mode === "state") {
+        if (!new java.io.File(pendingPath).exists() && new java.io.File(pendingPath + ".rollback").exists()) return false;
+        if (new java.io.File(pendingPath).exists()) {
+            var pending = loadJsonFile(pendingPath);
+            if (!pending || pending.version !== 1 || !Object.prototype.hasOwnProperty.call(pending, "pending")) throw new Error("할로윈 복구 기록 오류");
+            if (pending.pending !== null) return false;
+        }
+        var statePath = ctx.rootPath + config.stateName;
+        ctx.halloweenState = new java.io.File(statePath).exists() ? requireHalloweenState(loadJsonFile(statePath)) : null;
+        return true;
+    }
+    ctx.halloweenBalance = 0;
+    var member = data.member && data.member[user], id = member && member.serverRaidAccount && member.serverRaidAccount.id;
+    if (ctx.halloweenState && ctx.halloweenState.active && id) {
+        var path = ctx.rootPath + getHalloweenAccountName(id);
+        if (new java.io.File(path).exists()) {
+            var account = requireHalloweenAccount(loadJsonFile(path), id);
+            ctx.halloweenBalance = requireHalloweenInteger(account.paid + (account.epoch === ctx.halloweenState.epoch ? account.free : 0));
+        }
+    }
+    return true;
+}
+
+// 펫스킬 슬롯 개수 계산 함수
 function getPetSkillSlotCount(data, petSkillData, user) {
 	var member = data && data.member ? data.member[user] : null;
 	var extra = Math.max(0, parseInt(member && member.petSkillExtraSlots, 10) || 0); // 누적 사용한 확장권 수
@@ -3351,9 +3455,9 @@ function checkRank(data, petData, guildData, user) {
 			userwithrank = "[무쌍⚔️]" + userwithrank;
 		}
 
-		return userwithrank;
+		return rememberHalloweenRank(userwithrank);
 	} else {
-		return userwithrank;
+		return rememberHalloweenRank(userwithrank);
 	}
 }
 /**
