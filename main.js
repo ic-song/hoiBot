@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.728"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.729"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -117,7 +117,7 @@ const PET_SKILL_LIST = [
     { name: "베란다 확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 확장해 장착할 수 있는 가구를 3개 늘려줍니다.\n펫스킬을 해제하면 추가된 가구 슬롯이 회수되며, 해당 슬롯의 가구는 자동으로 장착 해제됩니다.\n펫스킬을 해제하면 펫홈에 장착된 가장 하단에 있는 가구는 가구가방으로 회수됩니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "베란다 대확장", grade: "한정판", limitedEdition: true, openable: false, effect: "펫홈의 베란다를 대확장해 장착할 수 있는 가구를 6개 늘려줍니다.\n베란다 확장📙의 3칸과 중복 적용됩니다.\n펫스킬을 소멸하면 추가된 가구 슬롯이 회수되며, 한도를 초과한 하단 가구는 가구가방으로 돌아갑니다.\n※ /펫스킬오픈으로 획득 불가" },
     { name: "전설의 소매치기", grade: "한정판", limitedEdition: true, openable: false, effect: "/슈킹 아이디 입력 시 50% 확률로 해당 유저의 포인트 🅟1,000,000을 슈킹합니다.\n하루 2회까지 시도할 수 있으며, 동일한 상대에게는 하루 1회만 사용할 수 있습니다.\n실패해도 일일 시도 횟수는 차감되며 포인트는 차감되지 않습니다.\n펫스킬을 해제하면 /슈킹을 사용할 수 없습니다.\n※펫스킬오픈으로 획득 불가" },
-    { name: "광산에서 재벌까지", grade: "한정판", limitedEdition: true, openable: false, showUnopenableRate: true, effect: "하루 10회 [/재벌도전]을 사용할 수 있습니다.\n10% 확률로 다이아상자💎 1개를 획득합니다.\n0.1% 확률로 로또에 당첨되면 다이아상자💎 30개를 획득합니다.\n※ 결과와 관계없이 사용 횟수가 1회 차감됩니다." },
+    { name: "광산에서 재벌까지", grade: "한정판", limitedEdition: true, openable: false, showUnopenableRate: true, effect: "하루 10회 [/재벌도전]을 사용할 수 있습니다.\n15% 확률로 다이아상자💎 1개를 획득합니다.\n0.1% 확률로 로또에 당첨되면 다이아상자💎 50개를 획득합니다.\n※ 결과와 관계없이 사용 횟수가 1회 차감됩니다." },
     { name: "입찰의 귀재", grade: "한정판", limitedEdition: true, openable: false, effect: "호이상점 /입찰 시 입찰 포인트가 10% 할인됩니다.\n\n※ 펫스킬 해제 시 효과도 함께 회수됩니다." },
     { name: "VIP블랙카드", grade: "SS", rate: 0.1, effect: "상점에서 상품 구매 시 30% 할인됩니다.\n※ 쇼핑광📙과 중복되지 않습니다." },
     { name: "청룡언월도", grade: "S", rate: 0.1, raidExp: 1000000, castleExp: 1000000, effect: "삼국지 관우의 전설적인 무기입니다.\n장착 시 레이드매력 100만과 캐슬매력 100만, 총 종합매력 200만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다." },
@@ -1878,9 +1878,9 @@ const GLOBAL_CONFIG = {
         skillName: "광산에서 재벌까지",
         dailyLimit: 10,
         lottoRate: 0.001,
-        successRate: 0.10,
+        successRate: 0.15,
         successReward: 1,
-        lottoReward: 30,
+        lottoReward: 50,
         successMessages: [
             "✨ 곡괭이 끝에서 눈부신 다이아 빛이 번쩍입니다!",
             "💎 숨겨져 있던 다이아 광맥을 정확하게 찾아냈습니다.",
