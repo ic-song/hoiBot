@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.742"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.743"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -32076,6 +32076,7 @@ replier.reply(
                     }
                     var cleanupEducationStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
                     var rewardCleanup = cleanupCompletedRewardRecords(data, petData, petSkillData, cleanupEducationStore);
+                    var preparedCleanup = compactAdventureQuestPreparedRecords(data, false);
                     var robberyCleanupConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
                     var robberyCleanupPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.fileName);
                     var robberyAlreadySeparated = data.migrations && data.migrations[robberyCleanupConfig.markerKey] === true;
@@ -32251,6 +32252,7 @@ replier.reply(
                     out += "\n[보상·교육 기록 정리]\n";
                     out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
                     out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
+                    out += "퀘스트 준비 기록 " + preparedCleanup.users + "명 압축 / 약 " + numberWithCommas(preparedCleanup.removedChars) + "자 감소\n";
                     out += "\n[강탈 이력 분리]\n";
                     out += robberyMigrationPending ? "✅ 전체 기록 보존 · 추가 이전 " + numberWithCommas(robberyMigration.added) + "건 / " + numberWithCommas(robberyMigration.users.length) + "명\n" : "✅ 이미 분리되어 있어 다시 옮기지 않았습니다.\n";
                     if (memberStorageMigrationResult) {
@@ -32469,7 +32471,8 @@ function buildDataCleanupPreview(data, guildData, stores) {
     }
     if (stores.placedFurnitureData) requirePlacedFurnitureDataMap(stores.placedFurnitureData);
     var rewards = cleanupCompletedRewardRecords(data, stores.petData, stores.petSkillData, stores.educationStore, true);
-    var targets = [["rewards", rewards]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
+    var prepared = compactAdventureQuestPreparedRecords(data, true);
+    var targets = [["rewards", rewards], ["prepared", prepared]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
     var zeroCount = 0, zeroUsers = 0, pointUsers = 0, pointFraction = 0; // 제거할 포인트 소수점 합계
     for (var user in data.member) {
         if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
@@ -32515,6 +32518,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
         "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
         "  보상·교육 기록 약 " + numberWithCommas(rewards.removedChars) + "자 감소\n" +
+        "• 퀘스트 준비 기록: " + prepared.users + "명 압축 / 약 " + numberWithCommas(prepared.removedChars) + "자 감소\n" +
         "• 가방 수량 0 항목: " + zeroCount + "개 / " + zeroUsers + "명\n" +
         "• 포인트 소수점: " + pointUsers + "명 / 합계 " + formatPointValue(pointFraction) + "\n" +
         "• 가구 표시용 정보: " + displayCount + "개\n" +
@@ -57208,14 +57212,60 @@ function isAdventureQuestHomeAtMaximum(homeInfo, homeData, user) {
     return !getNextHomeInfoByFloor(homeInfo, homeData[user].floor || 0);
 }
 
+// 구형 단계별 표시와 압축 기록을 합쳐 준비 여부를 읽고 충돌·손상을 거부하는 함수
+function getAdventureQuestPreparedMask(receipts) {
+    var maxStage = GLOBAL_CONFIG.adventureQuest.tutorialMaxStage;
+    if (typeof maxStage !== "number" || Math.floor(maxStage) !== maxStage || maxStage < 1 || maxStage > 53) throw new Error("퀘스트 준비 단계 설정 오류");
+    if (!receipts || typeof receipts !== "object" || Array.isArray(receipts)) throw new Error("퀘스트 준비 기록 형식 오류");
+    var mask = receipts.preparedStages === undefined ? 0 : receipts.preparedStages;
+    if (typeof mask !== "number" || !isFinite(mask) || Math.floor(mask) !== mask || mask < 0 || mask > Math.pow(2, maxStage) - 1) throw new Error("퀘스트 준비 압축 기록 오류");
+    for (var stage = 1; stage <= maxStage; stage++) {
+        var key = "stage" + stage + "Prepared";
+        if (!Object.prototype.hasOwnProperty.call(receipts, key)) continue;
+        var value = receipts[key], bit = Math.pow(2, stage - 1); // 단계별 준비 여부에 대응하는 자리값
+        if (typeof value !== "boolean" || value === false && Math.floor(mask / bit) % 2 === 1) throw new Error("퀘스트 준비 기록 충돌 또는 값 오류");
+        if (value === true && Math.floor(mask / bit) % 2 !== 1) mask += bit;
+    }
+    return mask;
+}
+
+// 전체 준비 기록을 먼저 검증하고 확인된 정리에서만 구형 표시를 숫자로 묶는 함수
+function compactAdventureQuestPreparedRecords(data, previewOnly) {
+    var plans = [], result = { users: 0, records: 0, removedChars: 0, targets: [] };
+    for (var user in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
+        var state = data.member[user].adventureQuest;
+        if (!state || state.receipts === undefined) continue;
+        var receipts = state.receipts, mask = getAdventureQuestPreparedMask(receipts), keys = [], removedChars = 0;
+        for (var stage = 1; stage <= GLOBAL_CONFIG.adventureQuest.tutorialMaxStage; stage++) {
+            var key = "stage" + stage + "Prepared";
+            if (!Object.prototype.hasOwnProperty.call(receipts, key)) continue;
+            keys.push(key);
+            removedChars += JSON.stringify(key).length + JSON.stringify(receipts[key]).length + 2;
+        }
+        if (!keys.length) continue;
+        if (receipts.preparedStages !== undefined) removedChars += JSON.stringify(receipts.preparedStages).length - String(mask).length;
+        else removedChars -= JSON.stringify("preparedStages").length + String(mask).length + 2;
+        plans.push({ receipts: receipts, mask: mask, keys: keys });
+        result.targets.push([user, mask, keys]);
+        result.users++; result.records += keys.length; result.removedChars += removedChars;
+    }
+    if (!previewOnly) for (var i = 0; i < plans.length; i++) {
+        var plan = plans[i];
+        plan.receipts.preparedStages = plan.mask;
+        for (var j = 0; j < plan.keys.length; j++) delete plan.receipts[plan.keys[j]];
+    }
+    return result;
+}
+
 // 단계 진입 준비물과 시작 상태를 최초 한 번만 적용하는 함수
 function prepareAdventureQuestStage(data, user, homeInfo, homeData) {
     var state = getAdventureQuestState(data, user, true);
     var stage = state.currentStage;
     if (stage > GLOBAL_CONFIG.adventureQuest.tutorialMaxStage) return false;
     var changed = false;
-    var receiptKey = "stage" + stage + "Prepared";
-    if (state.receipts[receiptKey] !== true) {
+    var mask = getAdventureQuestPreparedMask(state.receipts), stageBit = Math.pow(2, stage - 1);
+    if (Math.floor(mask / stageBit) % 2 !== 1) {
         state.progress = {};
         state.stageStartedAt = formatDateTime(new Date());
         if (stage === 7) addItem(data, user, "펫먹이🍼", 100000);
@@ -57225,7 +57275,8 @@ function prepareAdventureQuestStage(data, user, homeInfo, homeData) {
             state.progress.maxFloorAtEntry = isAdventureQuestHomeAtMaximum(homeInfo, homeData, user);
         }
         if (stage === 14) addItem(data, user, "홈뱃지 큐브💟", GLOBAL_CONFIG.adventureQuest.homeBadgeCubeCount);
-        state.receipts[receiptKey] = true;
+        state.receipts.preparedStages = mask + stageBit;
+        delete state.receipts["stage" + stage + "Prepared"];
         changed = true;
     }
     return changed;
