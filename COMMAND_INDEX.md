@@ -8481,3 +8481,31 @@ Status: VERIFIED
 - `main.js`·`Info.js`의 `calculateCastleExp`·`calculateRaidExp`는 기존 최초 스킬 확인 위치에서 `getEquippedPetSkillNames`를 한 번 호출한다. 모드 계산의 지역 배열을 하우스 보너스·비티어·티어 매력 함수의 마지막 선택 인자로 전달한다.
 - `getPetHomeFurnitureCharm`·`getEquippedNonTierPetSkillExp`·`getEquippedTierPetSkillExp`는 선택 인자를 생략하면 이전처럼 직접 준비한다. 독립 호출과 매력 계산 순서, 중복 장착의 기존 합산 정책, 별칭, 자료 보정과 조건 검증을 유지한다. 회원 간·명령 간 장착 목록 캐시나 파일 IO는 추가하지 않는다.
 - 검증: `tools/test_calculation_catalog_performance.js`, `tools/test_calculation_catalog_performance_rhino.js`, `tools/calculation_catalog_performance_validation.md`. 전체 소스 범위·결과/상태/예외·실제 Info 응답·인형 난수/지급·DEV·재시작·동시 정렬과 성능을 이전 운영 기준으로 비교한다.
+
+
+# 2026 할로윈 귀신의 집·사탕 상점 (ver_2.732)
+
+Status: VERIFIED
+
+## Commands / Files
+- main.js: /귀신의집, /귀신의집선택 번호, /귀신의집가이드, /할로윈상점, /할로윈구매 번호 갯수, /할로윈칭호, /할로윈입장 수량, MASTER /할로윈시작·/할로윈종료·/할로윈횟수초기화 닉네임. 기존 옛 할로윈 패키지 명령은 별개로 유지한다.
+- Main·Info: checkRank → rememberHalloweenRank, createContextReplier → formatHalloweenMessage. 표시용 rank를 컨텍스트에 등록하고 닫는 대괄호 뒤에 _🎃👻🍬를 한 번 붙인다. 실제 등록 닉네임·공통 계정 ID는 변경하지 않는다.
+- 배너는 /가방·/패키지가방·/펫정보·/내정보·/포인트 정상 화면 맨 위에만 적용한다. 가방 사탕 줄은 기존 재화 영역의 포인트 위(기존 일반 가방에는 포인트 요약이 없어 제목 다음)에, /포인트는 다이아 다음에 추가한다. 기존 allsee·가방번호·GM/프리미엄 헤더 조건은 유지한다.
+
+## Related Helpers / Policy
+- getHalloweenRequest, applyHalloweenCommand, refreshHalloweenAccount, pickHalloweenOutcome, getHalloweenBalance, buildHalloweenRoomMessage, buildHalloweenShopMessage, buildHalloweenCompletionMessage. 고정 대본12장소·36행동·96결과와 정책은 GLOBAL_CONFIG.halloween에 둔다.
+- 매 탐험12장소 중 서로 다른5곳. 선택 결과 즉시 사탕 지급, resolved 상태에서 재선택 불가, /귀신의집으로 다음 방 확인. 완주20개, 비밀방10% → 20/50/150/300개(60/30/9/1%). 완주마다 칭호60/25/10/4.5/0.5% 1회, 중복 대체 보상 없음, 최고 칭호 최초에만 noticeMsg.
+- 기본 입장 일반1·프리미엄총2 → 충전 추가입장 순서. 일반 기본1회 사용·진행없음·추가0일 때만 프리미엄 안내 링크. KST 날짜 변경 때 기본횟수0·이전 미완료 탐험 종료, 같은 날짜 /리셋 반복으로 재충전하지 않는다. 충전 추가입장·사탕·구매 한도는 날짜·개인 초기화 후 보존한다.
+- 상점은 노션6-1 확정 표: 다이아25/100/10묶음, 금고5/50/무제한, 열쇠5/75/무제한, 큐브400/200/1묶음, 황제상품1/35000/1묶음, 도파민1/3000/10묶음. 유료 사탕부터 차감하고 쿠폰·스킬 할인은 적용하지 않는다. 부족·한도 초과는 부분 구매 없이 거부한다.
+
+## Data / Entry Save Flow
+- runHalloweenEntry만 파일 IO를 수행한다. 작은 halloweenEvent.json은 활성 상태·종료정리 epoch·일일 리셋 기준일·MASTER 시작/종료 기록, halloweenAccount_<공통 UUID>.json은 계정별 기본횟수·추가입장·free/paid 잔액·탐험·이벤트 전체 구매량·영구 칭호·지급/사용/관리/주문/중복 영수증을 저장한다. 최초 상태/계정은 신규 기능의 명시적 생성 경로에서만 만든다. 존재하는 잘못된 JSON을 기본값으로 바꾸지 않는다.
+- member.json에는 기존 공통 ID(없는 구회원만 최초1회 보충)와 실제 가방 아이템 차감/지급만 연동한다. 방 이동·보상·칭호마다 회원 파일을 저장하지 않는다. 기본 상태는 비활성이며 운영자가 업로드·컴파일 후 /할로윈시작으로 연다. 예정11월10일 자동 종료는 없다.
+- 복합 변경은 halloweenPending.json의 이전 원문 snapshot → 기존 회원 saveJsonFile / 이벤트·packageLog writeMemberSplitSlot → pending 비우기 순서다. 회원 분리 상세 슬롯을 건드리는 계획은 거부한다. 실패 시 두/세 원문을 즉시 복구하고, 재시작·다음 명령은 회원 로드 전에 미완료 journal을 복구한다. 미완료 journal 중 다른 회원 저장과 Info 부분 조회를 차단한다.
+- mutation은 기존 배타 데이터 잠금에 연결한다. 확장 메시지 ID가 있을 때만 영속 영수증으로 재사용하고, 기본7인수 레거시에서는 같은 buy/ticket/choice 입력을 같은 방에서 2초 이내 반복하면 직전 결과를 재사용한다. 방 상태 자체도 중복 결과 지급을 막는다. 확장 인자를 필수로 요구하지 않는다.
+- 종료는 활성 상태 off·epoch 증가로 무료 잔액/미완료 탐험만 무효화한다. 전체 회원 파일 재작성 없이 이후 계정 접근 때 감사 이력을 남기고 정리한다. 유료 잔액·주문·추가 입장·칭호·구매 한도·같은 날짜 기본횟수는 보존한다. 환급·소멸 최종 정책과 판매 상품 제작은 운영자 범위다.
+- runHalloweenInfoEntry는 복구 대기 중 조회를 보류하고, 기존 파일을 검증해 동일 잔액을 표시한다. DEV/PROD 파일·계정·journal은 각 컨텍스트 root로 분리한다.
+
+## Existing Package Integration
+- 판매상품을 새로 제작하지 않는다. 기존 통합 패키지의 item 보상 이름이 정확히 할로윈 사탕🍬이면 /패키지사용에서 가방 아이템 대신 이벤트 잔액에 지급한다. 기본은 유료 이력, 운영자가 명시한 halloweenSource=free 보상만 무료 이력이다. 별도 사탕 개봉·선물·이체·거래 명령은 없다.
+- usePackageFromBag/applyPackageRewards는 전달받은 이벤트 객체만 변경하고 IO를 하지 않는다. 사탕 상품의 기존 /패키지지급과 /패키지사용 로그도 계정 원장에 보존하며, 회원·이벤트·packageLog를 함께 확정한다. 종료 중 사탕 포함 패키지 사용은 아이템을 소모하지 않는다.

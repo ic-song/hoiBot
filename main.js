@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.731"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.732"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1004,6 +1004,89 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    halloween: { // 2026 할로윈 운영 정책과 고정 대본
+        stateName: "halloweenEvent.json",
+        pendingName: "halloweenPending.json",
+        accountPrefix: "halloweenAccount_",
+        name: "🏚️ 👻유령 호월이의 저주받은 귀신의 집",
+        currencyName: "할로윈 사탕🍬",
+        ticketName: "할로윈 입장권👻(/할로윈입장 숫자)",
+        decoration: "_🎃👻🍬",
+        banner: "🎃👻🍬🎃👻🍬🎃👻🍬🎃👻",
+        premiumLink: "https://hoiland123.tistory.com/648",
+        plannedEnd: "2026년 11월 10일",
+        normalEntries: 1,
+        premiumEntries: 2,
+        roomCount: 5,
+        completionCandy: 20,
+        secretRate: 10,
+        legacyDuplicateMs: 2000,
+        shop: [{"name":"다이아상자💎(/다이아상자오픈)","count":25,"cost":100,"limit":10},{"name":"호이의 봉인금고🔒(/봉인금고오픈 숫자)","count":5,"cost":50,"limit":0},{"name":"해방의 열쇠🗝️(/봉인금고오픈 숫자)","count":5,"cost":75,"limit":0},{"name":"홈뱃지 큐브💟","count":400,"cost":200,"limit":1},{"name":"황제패키지👑[5]+호월신의 가호✨ 3만개","count":1,"cost":35000,"limit":1},{"name":"할로윈도파민패키지🎃","count":1,"cost":3000,"limit":10}],
+        titles: [{"name":"🍬 사탕 냠냠","rate":60},{"name":"👻 겁쟁이 꼬마유령","rate":25},{"name":"🎃 말랑말랑 호박","rate":10},{"name":"🧸 유령집 꼬마악동","rate":4.5},{"name":"👑 말랑말랑 호박왕","rate":0.5}],
+        secret: [{"candy":20,"rate":60,"story":"황금 호박방 입구에서 작은 사탕 봉투를 찾았습니다.","line":"입구에서 만족하자! 안쪽은… 안 보여줄 거야!"},{"candy":50,"rate":30,"story":"황금빛 선반 위에서 묵직한 사탕 주머니를 찾았습니다.","line":"선반 높게 달아놨는데 어떻게 손이 닿았어?!"},{"candy":150,"rate":9,"story":"호박 쿠션을 들자 숨겨진 사탕 저장칸이 활짝 열렸습니다!","line":"거기는 주말 간식 창고야! 이번 주말 어떡해!"},{"candy":300,"rate":1,"story":"황금 호박이 활짝 웃더니 사탕 폭포를 쏟아냈습니다!","line":"내 비상금… 아니 비상 사탕! 한 봉지만 남겨줘!"}],
+        rooms: [
+            { name: "📚 저주받은 도서관", intro: "📚 저주받은 도서관\n\n낡은 책장 사이에서 바스락거리는 소리가 들립니다.\n금지된 마법책 아래로 사탕 포장지가 삐져나와 있습니다.\n\n👻유령 호월이: \"그 책은 건드리지 마… 사탕 숨겨둔 건 절대 아니고!\"", actions: [
+                {"text":"📖 금서를 연다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"책을 펼치자 글자 대신 사탕이 와르르 쏟아졌습니다!","line":"으아악! 그거 내 야식인데! 두 개만 돌려줘!"},{"label":"소득","rate":50,"candy":12,"story":"책갈피 주머니에서 작은 사탕 묶음을 발견했습니다.","line":"으응? 그 페이지는 분명 접어놨는데…"},{"label":"실패","rate":30,"candy":0,"story":"책 속 꼬마유령이 ‘까꿍!’ 하고 튀어나왔습니다. 사탕은 없었습니다.","line":"히히! 이 책 제목은 놀랐지롱이야!"}]},
+                {"text":"🔎 책장을 뒤진다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"책장 뒤에 숨겨진 사탕 보관함을 찾았습니다.","line":"거긴 청소도 안 하는데 어떻게 찾았어!"},{"label":"소득","rate":35,"candy":5,"story":"책 사이에서 사탕 몇 알이 또르르 굴러 나왔습니다.","line":"그건… 독서 간식이야. 조금만 가져가!"},{"label":"실패","rate":10,"candy":0,"story":"찾은 것은 사탕 그림이 그려진 빈 노트뿐입니다.","line":"그림은 맛있어 보이지? 먹지는 마!"}]},
+                {"text":"🚶 몰래 지나간다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"발소리를 죽이고 지나가다 출구 옆 사탕 접시를 챙겼습니다.","line":"조용히 지나가라니까 조용히 챙겨 가네!"},{"label":"실패","rate":20,"candy":0,"story":"바닥이 삐걱 울리자 사탕 접시가 책장 속으로 쏙 들어갔습니다.","line":"쉿! 이 도서관 바닥은 내 편이야!"}]}
+            ] },
+            { name: "🧪 마녀의 실험실", intro: "🧪 마녀의 실험실\n\n보글보글 끓는 솥에서 달콤한 냄새가 납니다.\n항아리와 재료 바구니 사이로 작은 그림자가 움직입니다.\n\n👻유령 호월이: \"오늘의 실험은 사탕 복사! 아직 성공한 적은 없지만!\"", actions: [
+                {"text":"🏺 항아리를 조사한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"항아리 받침 아래에 놓인 작은 사탕 봉투를 찾았습니다.","line":"그건 실험 끝나고 먹을 간식이었는데!"},{"label":"실패","rate":20,"candy":0,"story":"항아리 안에서 비눗방울만 둥실둥실 올라옵니다.","line":"향은 딸기인데 사탕은 아니지롱!"}]},
+                {"text":"🧪 물약을 마신다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"한 모금 마시자 머리 위에서 사탕 구름이 팡 터졌습니다!","line":"성공이다! 아니, 왜 네 머리 위에서만 성공해?!"},{"label":"소득","rate":50,"candy":12,"story":"딸기 향 재채기를 하자 작은 사탕 묶음이 나타났습니다.","line":"에취! 한 번만 더 해봐. 옆에서 기다릴게!"},{"label":"실패","rate":30,"candy":0,"story":"귀가 잠깐 말랑한 호박 모양이 됐습니다. 사탕은 나오지 않았습니다.","line":"푸핫! 사진 찍고 싶은데 유령이라 손이 미끄러져!"}]},
+                {"text":"🧺 재료를 훔친다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"설탕 가루 자루 밑에서 완성된 사탕 꾸러미를 찾았습니다.","line":"그건 재료가 아니라 완제품이잖아!"},{"label":"소득","rate":35,"candy":5,"story":"재료 바구니 구석에 남은 사탕을 챙겼습니다.","line":"양심적으로 조금 가져가네… 그래도 내 건데!"},{"label":"실패","rate":10,"candy":0,"story":"사탕인 줄 알았던 것은 반짝이는 돌멩이였습니다.","line":"그거 씹으면 안 돼! 장식용이야!"}]}
+            ] },
+            { name: "🔐 봉인된 지하금고", intro: "🔐 봉인된 지하금고\n\n차가운 지하실에 커다란 금고가 놓여 있습니다.\n금고 틈에서 사탕 포장지 반짝임이 새어 나옵니다.\n\n👻유령 호월이: \"비밀번호는 절대 안 알려줄 거야! 나도 가끔 까먹지만!\"", actions: [
+                {"text":"🗝️ 열쇠를 찾는다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"화분 밑에서 열쇠를 찾아 작은 사탕 서랍을 열었습니다.","line":"누가 열쇠를 화분 밑에 두래! …내가 뒀구나."},{"label":"소득","rate":35,"candy":5,"story":"열쇠는 못 찾았지만 발판 아래 사탕을 발견했습니다.","line":"그건 열쇠 찾다가 내가 흘린 건데!"},{"label":"실패","rate":10,"candy":0,"story":"찾은 열쇠는 장난감이었습니다. 금고는 꿈쩍도 하지 않습니다.","line":"그 열쇠는 마음의 문만 열려! 아마도!"}]},
+                {"text":"🔎 금고를 조사한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"금고 옆 점검함에서 사탕 몇 알을 찾았습니다.","line":"점검은 고마운데 간식까지 점검하진 마!"},{"label":"실패","rate":20,"candy":0,"story":"금고 틈에는 사탕 포장지만 끼어 있었습니다.","line":"증거는 남겼지만 내용물은 이미 먹었지!"}]},
+                {"text":"🔨 금고를 부순다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"한 번 두드리자 숨겨진 사탕칸이 활짝 열렸습니다!","line":"그게 부서지는 거였어?! 설치비 아까워!"},{"label":"소득","rate":50,"candy":12,"story":"금고가 덜컹거리며 작은 사탕 봉투를 뱉었습니다.","line":"그거 줄 테니까 망치는 내려놔…!"},{"label":"실패","rate":30,"candy":0,"story":"금고에서 ‘메롱!’ 소리만 울렸습니다. 사탕칸은 열리지 않았습니다.","line":"최첨단 놀리기 기능이야! 보안은 덤이고!"}]}
+            ] },
+            { name: "👻 유령의 복도", intro: "👻 유령의 복도\n\n긴 복도 끝에서 하얀 그림자가 까르르 웃습니다.\n바닥에는 사탕이 하나씩 길처럼 놓여 있습니다.\n\n👻유령 호월이: \"나 잡아봐라! 근데 너무 진심으로 뛰진 말고!\"", actions: [
+                {"text":"🏃 도망간다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"출구 쪽으로 달리며 바닥의 작은 사탕 봉투를 챙겼습니다.","line":"도망가는 속도로 사탕은 또 잘 줍네!"},{"label":"실패","rate":20,"candy":0,"story":"급하게 돌았더니 같은 복도로 돌아왔습니다. 챙긴 사탕은 없습니다.","line":"축하해! 복도 한 바퀴 관광 완료!"}]},
+                {"text":"🫣 숨어본다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"커튼 뒤에 숨어 있다가 유령들의 사탕 보관함을 발견했습니다.","line":"그 자리는 내가 숨으려고 비워둔 건데!"},{"label":"소득","rate":35,"candy":5,"story":"의자 밑에 숨으며 떨어진 사탕을 조금 찾았습니다.","line":"거기 먼지 많아! 포장은 꼭 닦아!"},{"label":"실패","rate":10,"candy":0,"story":"숨은 자리에 유령도 함께 숨어 있었습니다. 서로 놀라기만 했습니다.","line":"으악! 네가 왜 거기서 나와!"}]},
+                {"text":"👻 유령을 쫓는다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"도망치던 유령이 사탕 꾸러미를 떨어뜨렸습니다!","line":"그거 두고 온 게 아니라 잠깐 내려놓은 거야!"},{"label":"소득","rate":50,"candy":12,"story":"유령의 주머니에서 떨어진 작은 사탕 묶음을 챙겼습니다.","line":"주머니에 구멍 났어?! 유령 옷도 수선해줘?"},{"label":"실패","rate":30,"candy":0,"story":"유령은 벽을 통과해 사라졌습니다. 사탕도 함께 사라졌습니다.","line":"벽 통과는 기본 옵션이지롱!"}]}
+            ] },
+            { name: "🪞 저주받은 거울방", intro: "🪞 저주받은 거울방\n\n거울 세 개가 서로 다른 표정으로 당신을 비춥니다.\n한 거울 속에는 사탕 접시가 놓여 있습니다.\n\n👻유령 호월이: \"거울아 거울아, 누가 제일 귀엽니? 정답은 나지!\"", actions: [
+                {"text":"🔨 거울을 부순다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"장난감 거울이 종이꽃처럼 펼쳐지며 사탕이 쏟아졌습니다!","line":"그거 이벤트 장식인데! 사탕까지 다 가져가네!"},{"label":"소득","rate":50,"candy":12,"story":"거울 테두리의 작은 칸에서 사탕 묶음이 나왔습니다.","line":"비상 간식은 비상시에만 꺼내는 거라구!"},{"label":"실패","rate":30,"candy":0,"story":"망치가 뽁 소리를 내며 튕겼습니다. 거울 속 얼굴만 메롱합니다.","line":"깨지지 않는 거울! 놀리기는 무제한!"}]},
+                {"text":"🔎 거울을 조사한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"거울 받침 뒤에 숨겨진 사탕 봉투를 찾았습니다.","line":"거울을 보라니까 뒤를 보네!"},{"label":"실패","rate":20,"candy":0,"story":"열심히 살펴봤지만 거울에는 자신의 모습만 보였습니다.","line":"오늘도 잘생겼다! 사탕은 없지만 칭찬은 해줄게!"}]},
+                {"text":"🖐️ 거울을 만진다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"손끝이 거울을 통과해 안쪽 사탕 접시를 꺼냈습니다.","line":"어? 손이 들어가면 안 되는데! 설정 누가 바꿨어!"},{"label":"소득","rate":35,"candy":5,"story":"거울 속 손이 사탕 몇 알을 쥐여줬습니다.","line":"거울 속 나도 너무 마음이 약해!"},{"label":"실패","rate":10,"candy":0,"story":"거울 속 손과 하이파이브만 했습니다. 사탕은 받지 못했습니다.","line":"짝! 우정은 생겼고 사탕은 그대로야!"}]}
+            ] },
+            { name: "🕷️ 거미의 둥지", intro: "🕷️ 거미의 둥지\n\n솜사탕처럼 보이는 거미줄이 천장에 걸려 있습니다.\n작은 거미들이 반짝이는 꾸러미를 지키고 있습니다.\n\n👻유령 호월이: \"저거 솜사탕 아니야! 나도 한 번 속았어!\"", actions: [
+                {"text":"🥚 알집을 연다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"알집처럼 생긴 사탕 포장 꾸러미를 열었습니다.","line":"깜짝 장식인데 알맹이까지 찾았네!"},{"label":"소득","rate":35,"candy":5,"story":"빈 알집 장식 밑에 놓인 사탕을 조금 찾았습니다.","line":"그건 거미들 회식 간식이었는데…"},{"label":"실패","rate":10,"candy":0,"story":"알집 장식에서 종이 거미만 팔랑팔랑 떨어졌습니다.","line":"까꿍! 거미는 가짜고 놀란 표정은 진짜네!"}]},
+                {"text":"🕷️ 거미를 공격한다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"거미가 간지럼을 타며 사탕 꾸러미를 놓쳤습니다!","line":"공격이 아니라 간지럼이잖아! 반칙이야!"},{"label":"소득","rate":50,"candy":12,"story":"깜짝 놀란 거미가 작은 사탕 묶음을 밀어줬습니다.","line":"거미도 간식으로 협상하는구나…"},{"label":"실패","rate":30,"candy":0,"story":"거미가 푹신한 거미줄로 길을 잠깐 막았습니다. 사탕은 못 챙겼습니다.","line":"침착해! 잠깐 끈적할 뿐이야!"}]},
+                {"text":"🔎 보물을 찾는다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"거미줄이 없는 바닥 구석에서 사탕 봉투를 찾았습니다.","line":"안 걸리는 곳만 쏙쏙 다니네!"},{"label":"실패","rate":20,"candy":0,"story":"반짝이는 것은 은색 포장지뿐이었습니다.","line":"빛난다고 전부 사탕은 아니지롱!"}]}
+            ] },
+            { name: "🧛 뱀파이어의 침실", intro: "🧛 뱀파이어의 침실\n\n폭신한 관 모양 침대에서 작은 코골이가 들립니다.\n침대 옆에는 사탕을 닮은 보석들이 놓여 있습니다.\n\n👻유령 호월이: \"쉿… 낮잠 시간이야. 깨우면 간식부터 찾거든!\"", actions: [
+                {"text":"🚶 몰래 지나간다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"침실을 지나며 손님용 사탕 바구니에서 조금 챙겼습니다.","line":"손님용이긴 한데 너무 자연스럽게 가져가네!"},{"label":"실패","rate":20,"candy":0,"story":"문고리가 딸랑 울려 얼른 방을 나왔습니다. 사탕은 놓쳤습니다.","line":"문고리 알람, 오늘도 열일한다!"}]},
+                {"text":"⚰️ 관을 연다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"관 모양 침대의 비밀칸에서 사탕이 와르르 나왔습니다!","line":"낮잠보다 소중한 비밀 간식이었는데!"},{"label":"소득","rate":50,"candy":12,"story":"잠든 뱀파이어가 사탕 묶음을 건네고 다시 잠들었습니다.","line":"더 자겠다고 간식을 내주다니… 인정."},{"label":"실패","rate":30,"candy":0,"story":"뱀파이어가 눈을 뜨고 하품했습니다. 사탕은 품에 꼭 안고 있습니다.","line":"하품 공격이다! 사탕은 안 준대!"}]},
+                {"text":"💎 보석을 훔친다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"보석처럼 반짝이는 사탕 꾸러미를 챙겼습니다.","line":"보석보다 소중한 건데! 한 개만 남겨줘!"},{"label":"소득","rate":35,"candy":5,"story":"보석 접시 밑에 깔린 사탕 몇 알을 찾았습니다.","line":"큰 건 못 가져가도 작은 건 챙겼네!"},{"label":"실패","rate":10,"candy":0,"story":"집어 든 것은 투명한 장식 구슬이었습니다.","line":"그건 사탕 아냐! 다시 내려놔!"}]}
+            ] },
+            { name: "⚰️ 지하 묘지", intro: "⚰️ 지하 묘지\n\n작은 비석들이 리본을 달고 줄지어 서 있습니다.\n발밑 어딘가에서 달그락거리는 소리가 들립니다.\n\n👻유령 호월이: \"여기는 무서운 곳… 인데 오늘은 사탕 파티 장소야!\"", actions: [
+                {"text":"⚰️ 관을 조사한다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"장식 관의 숨은 서랍에서 사탕을 찾았습니다.","line":"그 서랍은 내가 봐도 잘 숨겼는데!"},{"label":"소득","rate":35,"candy":5,"story":"관 뚜껑에 묶인 사탕 몇 알을 챙겼습니다.","line":"리본은 놔두고 가! 다시 써야 해!"},{"label":"실패","rate":10,"candy":0,"story":"관 속에는 푹신한 유령 인형만 누워 있었습니다.","line":"귀엽지? 간식은 이미 내가 챙겼어!"}]},
+                {"text":"🪧 비석을 읽는다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"‘용감한 손님 간식’이라는 안내를 따라 사탕을 받았습니다.","line":"글씨 읽는 사람이 제일 무섭다니까!"},{"label":"실패","rate":20,"candy":0,"story":"비석에는 ‘뒤를 보세요’만 적혀 있었습니다. 뒤에도 사탕은 없습니다.","line":"뒤돌아봤지? 히히, 장난 성공!"}]},
+                {"text":"⛏️ 무덤을 판다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"장식용 흙 아래에서 커다란 사탕 꾸러미가 나왔습니다!","line":"거긴 비밀 저장고였는데! 냄새로 찾았어?!"},{"label":"소득","rate":50,"candy":12,"story":"작은 사탕 주머니를 파냈습니다.","line":"삽질 보람은 있네… 내 사탕이긴 하지만!"},{"label":"실패","rate":30,"candy":0,"story":"아무리 파도 고무 지렁이 장식만 나왔습니다.","line":"땅은 파도 사탕은 안 나올 때가 있지!"}]}
+            ] },
+            { name: "🎃 호박 농장", intro: "🎃 호박 농장\n\n주황빛 호박들 사이에서 황금빛이 반짝입니다.\n호박 잎마다 달콤한 사탕 향기가 맺혀 있습니다.\n\n👻유령 호월이: \"제일 반짝이는 호박? 못 봤는데? 내 뒤도 보지 마!\"", actions: [
+                {"text":"🌟 황금호박을 찾는다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"황금호박 꼭지를 들자 사탕이 분수처럼 쏟아졌습니다!","line":"그건 장식용이라고 우기려고 했는데… 늦었네!"},{"label":"소득","rate":50,"candy":12,"story":"황금빛은 아니지만 사탕이 든 작은 호박을 찾았습니다.","line":"금빛이 아니어도 맛은 똑같아! 아마!"},{"label":"실패","rate":30,"candy":0,"story":"반짝이던 것은 호박에 붙은 금색 스티커였습니다.","line":"스티커는 예쁘지? 사탕은 다른 데 있지롱!"}]},
+                {"text":"🧺 호박을 수확한다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"잘 익은 호박 바구니 밑에서 사탕 꾸러미를 찾았습니다.","line":"농사 보상 치고 너무 달달한데?!"},{"label":"소득","rate":35,"candy":5,"story":"수확을 도운 답례로 사탕 몇 알을 받았습니다.","line":"일손이 빠르네! 간식은 조금만!"},{"label":"실패","rate":10,"candy":0,"story":"들어 올린 호박이 데굴데굴 굴러가 사탕을 찾지 못했습니다.","line":"호박 먼저 잡아줘! 농장이 탈출한다!"}]},
+                {"text":"🔎 호박을 조사한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"호박 잎 아래 작은 사탕 봉투가 놓여 있었습니다.","line":"잎사귀 가림막이 이렇게 쉽게 들키다니!"},{"label":"실패","rate":20,"candy":0,"story":"호박 얼굴이 씨익 웃을 뿐, 사탕은 없었습니다.","line":"웃는 얼굴에 꽝이라 미안하네!"}]}
+            ] },
+            { name: "🍽️ 유령의 식당", intro: "🍽️ 유령의 식당\n\n접시와 숟가락이 공중에서 춤을 추고 있습니다.\n식탁 한가운데에 정체 모를 달콤한 요리가 놓여 있습니다.\n\n👻유령 호월이: \"어서 와! 오늘의 메뉴는 비밀이야. 주방장도 몰라!\"", actions: [
+                {"text":"🍽️ 식탁을 뒤진다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"냅킨 아래에 준비된 작은 사탕 봉투를 찾았습니다.","line":"식전 간식부터 찾다니 준비가 철저하네!"},{"label":"실패","rate":20,"candy":0,"story":"식탁 위에는 빈 접시만 남아 있었습니다.","line":"손님 오기 전에 내가 좀 먹었어… 조금 많이."}]},
+                {"text":"🔎 주방을 조사한다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"찬장 속 디저트용 사탕 꾸러미를 발견했습니다.","line":"주방 출입 금지! 특히 간식 칸은 더 금지!"},{"label":"소득","rate":35,"candy":5,"story":"조리대 위에 남은 사탕 몇 알을 챙겼습니다.","line":"그건 장식용인데… 먹어도 되긴 해!"},{"label":"실패","rate":10,"candy":0,"story":"냄비를 열었더니 달콤한 향기만 피어올랐습니다.","line":"향기까지는 무료 서비스야!"}]},
+                {"text":"🥄 음식을 먹는다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"첫 숟가락을 뜨자 접시에서 사탕이 끝없이 튀어나왔습니다!","line":"무한 리필 아니야! 접시가 고장 난 거야!"},{"label":"소득","rate":50,"candy":12,"story":"디저트 속에서 작은 사탕 묶음을 찾았습니다.","line":"숨겨둔 토핑을 이렇게 잘 찾네!"},{"label":"실패","rate":30,"candy":0,"story":"먹으려던 음식이 유령 모양 풍선으로 변했습니다.","line":"배는 안 부르지만 귀엽잖아!"}]}
+            ] },
+            { name: "🎭 가면 무도회장", intro: "🎭 가면 무도회장\n\n꼬마유령들이 가면을 쓰고 둥실둥실 춤추고 있습니다.\n무대 위 우승 접시에서 사탕이 반짝입니다.\n\n👻유령 호월이: \"춤 못 춰도 괜찮아! 나도 발이 없어서 못 춰!\"", actions: [
+                {"text":"💃 춤을 춘다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"신나는 춤에 꼬마유령들이 박수를 치며 사탕을 건넸습니다.","line":"흥은 인정! 근데 박수 칠 손이 좀 모자라네!"},{"label":"소득","rate":35,"candy":5,"story":"수줍게 흔든 어깨춤에 작은 사탕 응원을 받았습니다.","line":"그 정도 흔들림이면 귀여움 점수는 만점!"},{"label":"실패","rate":10,"candy":0,"story":"박자를 놓쳐 제자리에서 빙글 돌기만 했습니다.","line":"춤인지 길 찾는 건지 모르겠어!"}]},
+                {"text":"🎭 가면을 훔친다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"황금 가면 뒤에서 숨겨진 사탕 꾸러미를 찾았습니다!","line":"그거 내 피날레 소품인데! 사탕도 소품인데!"},{"label":"소득","rate":50,"candy":12,"story":"가면 안쪽 주머니에서 사탕 묶음이 나왔습니다.","line":"가면에 주머니 있는 거 비밀이었어!"},{"label":"실패","rate":30,"candy":0,"story":"가면을 집는 순간 종소리가 울렸습니다. 사탕은 없습니다.","line":"삐빅! 장난꾸러기 한 명 발견!"}]},
+                {"text":"🔎 손님을 조사한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"손님이 인사 선물로 작은 사탕 봉투를 건넸습니다.","line":"나한텐 안 주던데! 인사 연습 좀 해야겠다!"},{"label":"실패","rate":20,"candy":0,"story":"말을 걸었던 손님은 옷걸이에 걸린 가면이었습니다.","line":"대답이 없다고 낯가린다고 생각한 거야?!"}]}
+            ] },
+            { name: "👻유령 호월이의 비밀방", intro: "👻유령 호월이의 비밀방\n\n문에는 ‘절대 들어오지 마세요’라고 적혀 있습니다.\n하지만 안쪽에서는 사탕 봉지를 여는 소리가 들립니다.\n\n👻유령 호월이: \"여긴 사적인 공간이야! 간식 검사 같은 거 안 받아!\"", actions: [
+                {"text":"🔐 금고를 턴다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"쿠션 밑 작은 금고에서 커다란 사탕 꾸러미를 찾았습니다!","line":"쿠션까지 들어보는 건 너무한 거 아니야?!"},{"label":"소득","rate":50,"candy":12,"story":"금고 앞에 둔 작은 사탕 묶음을 챙겼습니다.","line":"그거 줄 테니까 안쪽은 보지 마… 부탁이야!"},{"label":"실패","rate":30,"candy":0,"story":"금고를 열었지만 ‘이미 먹었지롱’ 쪽지만 남아 있었습니다.","line":"보안보다 빠른 건 내 식욕이지!"}]},
+                {"text":"🎁 선물을 찾는다","type":"안전형","results":[{"label":"성공","rate":80,"candy":8,"story":"손님용 선물 봉투에서 사탕 몇 알을 찾았습니다.","line":"손님용 맞아… 표정은 왜 그렇게 신났어!"},{"label":"실패","rate":20,"candy":0,"story":"선물 상자는 예쁜 리본만 든 빈 상자였습니다.","line":"포장이 선물의 절반이랬어! 나머지 절반은 마음!"}]},
+                {"text":"🫣 👻유령 호월이를 속인다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":20,"story":"‘사탕 배달 왔어요!’라는 말에 비밀 서랍이 열렸습니다.","line":"배달이 아니라 수거였잖아! 너무해!"},{"label":"소득","rate":35,"candy":5,"story":"재미있는 농담에 웃다가 놓친 사탕을 챙겼습니다.","line":"웃긴 건 인정하지만 사탕까지 챙길 줄은!"},{"label":"실패","rate":10,"candy":0,"story":"장난을 눈치챈 유령이 사탕 주머니를 꼭 안았습니다.","line":"나도 장난 전문가거든! 오늘은 안 속아!"}]}
+            ] }
+        ]
+    },
     gmEducation: {
         version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", rewardItem: "다이아상자💎(소)",
         rooms: ["교육방", "교육방2", "교육방3"],
@@ -3392,6 +3475,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        runHalloweenEntry("state", { ctx: ctx });
         replier = createContextReplier(replier, ctx);
         var responseStartMs = Date.now();
         var responseTimingRows = [];
@@ -4957,6 +5041,13 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         addResponseTiming("petSkillData.json 로드", commonStepStart);
         commonStepStart = Date.now();
         var guildData = loadJsonFile(guildPath);
+        var halloweenRequest = getHalloweenRequest(msg);
+        if (halloweenRequest) {
+            var halloweenResult = runHalloweenEntry("command", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, room: room, message: msg, request: halloweenRequest, event: serverRaidEvent, now: Date.now() });
+            if (halloweenResult.message) replier.reply(halloweenResult.message);
+            if (halloweenResult.notice) noticeMsg(formatHalloweenMessage(halloweenResult.notice, ctx));
+            return;
+        }
         addResponseTiming("guildData.json 로드", commonStepStart);
         var attendanceNoticeCommandPrefix = getAttendanceNoticeCommandPrefix(msg);
         if (attendanceNoticeCommandPrefix) {
@@ -8285,6 +8376,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
                 if (msg === "/리셋" && (sender == "오픈채팅봇" || sender == "호이 남")) {
+                    runHalloweenEntry("dailyReset", { ctx: ctx, now: Date.now() });
                     var resetMarbleText = new java.io.File(marblePath).exists() ? String(FileStream.read(marblePath, "utf-8")) : null;
                     var resetMarbleStore = resetMarbleText === null ? null : requireGuildMarbleStore(JSON.parse(resetMarbleText));
                     var resetMarbleResult = resetMarbleStore ? resetGuildMarbleGames(resetMarbleStore, { data: data, accounts: buildServerRaidAccountIndex(data) }) : null;
@@ -18481,6 +18573,13 @@ replier.reply(
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = loadJsonFile(packageInfoPath); // 지급 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 지급 로그 데이터
+                    var halloweenPackageGrant = parsePackageGrantCommand(msg);
+                    var halloweenGrantInfo = halloweenPackageGrant && getPackageByListNumber(packageInfoData, halloweenPackageGrant.listNumber);
+                    if (hasHalloweenPackageReward(halloweenGrantInfo)) {
+                        var halloweenGrantResult = runHalloweenEntry("packageGrant", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, target: halloweenPackageGrant.target, room: room, message: msg, packageInfo: packageInfoData, packageLog: packageLogData, event: serverRaidEvent });
+                        replier.reply(halloweenGrantResult.message);
+                        return;
+                    }
                     var packageGrantResult = grantPackageToUser(data, sender, msg, packageInfoData, packageLogData);
                     if (packageGrantResult.ok) {
                         saveJsonFile(data, filePath);
@@ -18512,6 +18611,7 @@ replier.reply(
                         }
                     }
                     var packageInfoData = loadJsonFile(packageInfoPath); // 패키지가방 필터링용 패키지 목록
+                    ctx.halloweenScreen = true;
                     replier.reply(buildUserPackageBagMessage(data, petData, petSkillData, guildData, packageBagTarget, packageInfoData));
                     return;
                 }
@@ -18520,6 +18620,14 @@ replier.reply(
                     if (!data.member || !data.member[sender]) return;
                     var packageInfoData = loadJsonFile(packageInfoPath); // 사용 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 사용 로그 데이터
+                    var halloweenPackageUse = parsePackageUseCommand(msg);
+                    var halloweenPackageBag = getUserPackageBagList(data, sender, packageInfoData);
+                    var halloweenPackageRow = halloweenPackageUse && halloweenPackageBag[halloweenPackageUse.bagNumber - 1];
+                    if (halloweenPackageRow && hasHalloweenPackageReward(halloweenPackageRow.packageInfo)) {
+                        var halloweenUseResult = runHalloweenEntry("packageUse", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, room: room, message: msg, packageInfo: packageInfoData, packageLog: packageLogData, event: serverRaidEvent });
+                        replier.reply(halloweenUseResult.message);
+                        return;
+                    }
                     var packageUseResult = usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData);
                     if (packageUseResult.ok) {
                         saveJsonFile(data, filePath);
@@ -19801,6 +19909,8 @@ replier.reply(
                         if (memberInfo) {
                             let bagItems = memberInfo.bag || {};
                             if (normalizeUniversalCollectionKeyBagItems(bagItems)) saveJsonFile(data, filePath);
+                            runHalloweenEntry("view", { ctx: ctx, data: data, sender: sender });
+                            ctx.halloweenScreen = true;
                             var premiumBagActive = isHoiPassPremiumActive(data, sender);
                             var bagInfo = generateBagOutput(bagItems, !premiumBagActive);
                             let bagOutput = bagInfo.bagOutput;
@@ -19817,10 +19927,11 @@ replier.reply(
 
                                     responseMessage += "(알림)" + data.adv + "\n" + allsee;
                                 }
+                                responseMessage = responseMessage.replace("\n", "\n" + getHalloweenCandyLine(ctx, false));
                                 responseMessage += bagOutput;
                                 replier.reply(responseMessage);
                             } else {
-                                replier.reply("가방이 비어 있습니다.");
+                                replier.reply(getHalloweenCandyLine(ctx, false) + "가방이 비어 있습니다.");
                             }
                         }
                     }
@@ -32681,6 +32792,8 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (command.trim() === "ㅎㅈ") return true;
     if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
+    if (getHalloweenRequest(command)) return true;
+    if (/^\/패키지(?:사용|지급)(?:\s|$)/.test(command)) return true;
     if (command === "/리셋") return true; // 전체 경기 환급·미니게임 초기화를 다른 복합 저장과 직렬화
     if (isDevCommandMessage(msg) && command === "/ㅎㅈ") return true;
     if (getManualResetDirectOperation(command)) return true;
@@ -32806,7 +32919,7 @@ function exitCommandContext(previous) {
 function createContextReplier(replier, ctx) {
     return {
         reply: function (message) {
-            return replier.reply(ctx.header(formatNicknameRankMessage(message)));
+            return replier.reply(ctx.header(formatHalloweenMessage(formatNicknameRankMessage(message), ctx)));
         }
     };
 }
@@ -34406,6 +34519,14 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
         var transactionEntryResult = null;
         var splitOwnTransaction = false;
         try {
+            if (path === resolveActiveDataPath(filePath) && GLOBAL_CONFIG.halloween && !getCurrentContext().halloweenPublishing) {
+                var halloweenSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.halloween.pendingName);
+                if (!new java.io.File(halloweenSavePendingPath).exists() && new java.io.File(halloweenSavePendingPath + ".rollback").exists()) throw new Error("할로윈 게시 복구 대기");
+                if (new java.io.File(halloweenSavePendingPath).exists()) {
+                    var halloweenSavePending = JSON.parse(FileStream.read(halloweenSavePendingPath, "utf-8"));
+                    if (!halloweenSavePending || halloweenSavePending.version !== 1 || !Object.prototype.hasOwnProperty.call(halloweenSavePending, "pending") || halloweenSavePending.pending !== null) throw new Error("할로윈 게시 복구 대기");
+                }
+            }
             // 다른 자동 작업도 미완료 지급을 건너뛰고 회원을 변경할 수 없도록 저장 진입점에서 차단한다.
             if (path === resolveActiveDataPath(filePath) && typeof GLOBAL_CONFIG !== "undefined" && GLOBAL_CONFIG.miniGames && !getCurrentContext().miniGamePublishing) {
                 var miniSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName);
@@ -44501,6 +44622,7 @@ function buildHoiPassPremiumBagMessage(data, petData, guildData, petExploreData,
     return getHoiPassPremiumHeader(data, user) +
         "[" + checkRank(data, petData, guildData, user) + "]의 호패프 전용가방🧳\n" +
         "━━━━━━━━━━━━\n" +
+        getHalloweenCandyLine(getCurrentContext(), false) +
         "🪙: " + pointDisplay + "\n" +
         "💎 다이아: " + numberWithCommas(member.diamond || 0) + "개\n" +
         chuseokCarrotLine +
@@ -48642,7 +48764,8 @@ function parsePackageUseCommand(msg) {
 }
 
 // 패키지 사용 전 보상 타입과 사용 조건 검사 함수
-function validatePackageUse(packageInfo, useCount) {
+function validatePackageUse(packageInfo, useCount, halloween) {
+    if (hasHalloweenPackageReward(packageInfo) && (!halloween || !halloween.state.active)) return "할로윈 이벤트 진행 중에만 이 패키지를 사용할 수 있습니다.";
     if (!packageInfo) return "패키지 정보가 없습니다.";
     if (packageInfo.enabled === false) return "비활성화된 패키지는 사용할 수 없습니다.";
     if (packageInfo.blockCastle && castleSiegeFlag) return "이벤트 진행 중에는 해당 패키지를 사용할 수 없습니다.";
@@ -48663,14 +48786,22 @@ function validatePackageUse(packageInfo, useCount) {
 }
 
 // 패키지 보상 지급 함수
-function applyPackageRewards(data, user, packageInfo, useCount) {
+function applyPackageRewards(data, user, packageInfo, useCount, halloween) {
     var rewards = packageInfo.rewards || []; // 패키지 보상 목록
     var rewardLines = []; // 지급 결과 메시지 라인
     for (var i = 0; i < rewards.length; i++) {
         var reward = rewards[i]; // 지급할 보상 항목
         if (reward.name === GLOBAL_CONFIG.spiritRetirement.removedItem) continue;
         var totalCount = (parseInt(reward.count, 10) || 0) * useCount; // 사용 수량을 곱한 최종 지급량
-        if (reward.type === "item") {
+        if (reward.type === "item" && reward.name === GLOBAL_CONFIG.halloween.currencyName) {
+            if (!halloween || !halloween.state.active) throw new Error("할로윈 사탕 지급 컨텍스트 없음");
+            requireHalloweenInteger(totalCount);
+            var candyField = reward.halloweenSource === "free" ? "free" : "paid";
+            halloween.account[candyField] = requireHalloweenInteger(halloween.account[candyField] + totalCount);
+            requireHalloweenInteger(halloween.account.free + halloween.account.paid);
+            halloween.account.history.push({ kind: "packageCandy", source: candyField, candy: totalCount, packageName: packageInfo.name, at: halloween.at, txId: halloween.txId });
+            rewardLines.push(GLOBAL_CONFIG.halloween.currencyName + " x" + numberWithCommas(totalCount));
+        } else if (reward.type === "item") {
             var packageRewardItemName = normalizeMiniPetRewardBoxItemName(reward.name); // 기존 구성품 이름도 신규 등급명으로 지급
             addItem(data, user, packageRewardItemName, totalCount);
             rewardLines.push(packageRewardItemName + " x" + numberWithCommas(totalCount));
@@ -48684,7 +48815,7 @@ function applyPackageRewards(data, user, packageInfo, useCount) {
 }
 
 // 유저 패키지 사용 처리 함수
-function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData) {
+function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoData, packageLogData, halloween) {
     var parsed = parsePackageUseCommand(msg); // 사용 명령어 파싱 결과
     if (!parsed) return { ok: false, message: "❌ 사용법: /패키지사용 가방번호 갯수" };
     var packageBagList = getUserPackageBagList(data, sender, packageInfoData); // 유저 패키지가방 목록
@@ -48696,7 +48827,7 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
     var packageBagItemName = getPackageBagItemName(packageInfo); // member bag에서 차감할 패키지명
     var beforeCount = selected.count; // 사용 전 보유 수량
     if (parsed.count > beforeCount) return { ok: false, message: "❌ 보유 수량이 부족합니다. (보유: " + numberWithCommas(beforeCount) + "개)" };
-    var validationMessage = validatePackageUse(packageInfo, parsed.count); // 차감 전 사전 검사 결과
+    var validationMessage = validatePackageUse(packageInfo, parsed.count, halloween); // 차감 전 사전 검사 결과
     if (validationMessage) return { ok: false, message: "❌ " + validationMessage };
 
     var afterCount = beforeCount - parsed.count; // 사용 후 보유 수량
@@ -48705,7 +48836,7 @@ function usePackageFromBag(data, petData, guildData, sender, msg, packageInfoDat
     } else {
         delete data.member[sender].bag[packageBagItemName];
     }
-    var rewardLines = applyPackageRewards(data, sender, packageInfo, parsed.count); // 패키지 보상 지급 결과
+    var rewardLines = applyPackageRewards(data, sender, packageInfo, parsed.count, halloween); // 패키지 보상 지급 결과
     packageLogData = appendPackageLog(packageLogData, "USE", packageInfo, sender, parsed.count, sender, beforeCount, afterCount);
     var lines = [];
     lines.push("🎁 패키지 사용 완료!");
@@ -48918,9 +49049,9 @@ function checkRank(data, petData, guildData, user) {
             userwithrank = "[무쌍⚔️]" + userwithrank;
         }
 
-        return userwithrank;
+        return rememberHalloweenRank(userwithrank);
     } else {
-        return userwithrank;
+        return rememberHalloweenRank(userwithrank);
     }
 }
 
@@ -65020,8 +65151,455 @@ function initializeLegacyStartup(startupData) {
     if (prepareRecordRoomArchive(startupRecordBoard)) saveJsonFile(startupRecordBoard, boardPath);
     return { miniContexts: startupMiniWork, raid: startupData.serverRaid && serverRaidHasWork(startupData.serverRaid) ? { generation: startupData.serverRaid.generation, sequence: startupData.serverRaid.sequence } : null };
 }
+
+// ── 할로윈: 파일 IO 없이 전달받은 이벤트·계정 상태만 계산한다. ──
+// 한국시간 일일 이용 기준일을 반환하는 함수
+function getHalloweenDay(now) {
+    return new Date(now + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+// 사탕·횟수 연산에 사용할 음이 아닌 안전한 정수를 검증하는 함수
+function requireHalloweenInteger(value) {
+    if (typeof value !== "number" || !isFinite(value) || value < 0 || Math.floor(value) !== value || value > 9007199254740991) throw new Error("할로윈 수량 형식 오류");
+    return value;
+}
+
+// 처음 시작하는 이벤트의 비활성 상태를 만드는 함수
+function createHalloweenState() {
+    return { version: 1, active: false, epoch: 0, lastResetDay: "", logs: [] };
+}
+
+// 저장된 이벤트 활성·종료 원본을 검증하는 함수
+function requireHalloweenState(state) {
+    if (!state || state.version !== 1 || typeof state.active !== "boolean" || typeof state.lastResetDay !== "string" || !Array.isArray(state.logs)) throw new Error("할로윈 이벤트 원본 형식 오류");
+    requireHalloweenInteger(state.epoch);
+    return state;
+}
+
+// 공통 계정 ID로 독립 보관할 할로윈 계정을 만드는 함수
+function createHalloweenAccount(id, epoch) {
+    return { version: 1, id: id, epoch: epoch, free: 0, paid: 0, day: "", used: 0, extra: 0, run: null, purchases: [0,0,0,0,0,0], titles: [], history: [], orders: [], requests: {}, lastRequest: null };
+}
+
+// 계정별 이벤트 원본과 진행 중 탐험의 형식을 검증하는 함수
+function requireHalloweenAccount(account, id) {
+    if (!account || account.version !== 1 || account.id !== id || typeof account.day !== "string" || !Array.isArray(account.purchases) || account.purchases.length !== 6 ||
+        !Array.isArray(account.titles) || !Array.isArray(account.history) || !Array.isArray(account.orders) || !account.requests || typeof account.requests !== "object" || Array.isArray(account.requests)) throw new Error("할로윈 계정 원본 형식 오류");
+    var values = [account.epoch, account.free, account.paid, account.used, account.extra];
+    for (var i = 0; i < values.length; i++) requireHalloweenInteger(values[i]);
+    for (var p = 0; p < account.purchases.length; p++) requireHalloweenInteger(account.purchases[p]);
+    for (var t = 0; t < account.titles.length; t++) if (typeof account.titles[t] !== "number" || account.titles[t] < 0 || account.titles[t] >= 5 || Math.floor(account.titles[t]) !== account.titles[t] || account.titles.indexOf(account.titles[t]) !== t) throw new Error("할로윈 칭호 기록 오류");
+    if (account.run !== null) {
+        var run = account.run;
+        if (!run || typeof run.id !== "string" || typeof run.day !== "string" || !Array.isArray(run.rooms) || run.rooms.length !== 5 || !Array.isArray(run.results) || typeof run.resolved !== "boolean") throw new Error("할로윈 탐험 원본 오류");
+        requireHalloweenInteger(run.epoch); requireHalloweenInteger(run.step); requireHalloweenInteger(run.total);
+        if (run.step >= 5 || run.results.length !== run.step + (run.resolved ? 1 : 0)) throw new Error("할로윈 탐험 진행 오류");
+        for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= 12 || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
+    }
+    requireHalloweenInteger(account.free + account.paid);
+    return account;
+}
+
+// 종료 정리 세대를 반영한 실제 사용 가능 사탕 잔액을 반환하는 함수
+function getHalloweenBalance(state, account) {
+    return account ? requireHalloweenInteger(account.paid + (account.epoch === state.epoch ? account.free : 0)) : 0;
+}
+
+// 날짜 변경·이벤트 종료로 만료된 무료 잔액과 탐험만 정리하는 함수
+function refreshHalloweenAccount(state, account, now) {
+    var changed = false, day = getHalloweenDay(now);
+    if (account.epoch !== state.epoch) {
+        account.history.push({ kind: "close", at: now, freeRemoved: account.free, epoch: state.epoch });
+        account.free = 0; account.epoch = state.epoch; account.run = null; changed = true;
+    }
+    if (account.day !== day) {
+        if (account.run) account.history.push({ kind: "unfinished", at: now, run: account.run });
+        account.day = day; account.used = 0; account.run = null; changed = true;
+    }
+    return changed;
+}
+
+// 이벤트 명령과 인자를 전체 패턴으로 분류하는 함수
+function getHalloweenRequest(message) {
+    if (message === "/할로윈횟수초기화") return { action: "resetUser", target: "" };
+    var exact = { "/귀신의집":"enter", "/귀신의집가이드":"guide", "/할로윈상점":"shop", "/할로윈칭호":"titles", "/할로윈시작":"start", "/할로윈종료":"end" };
+    if (Object.prototype.hasOwnProperty.call(exact, message)) return { action: exact[message] };
+    var match = String(message).match(/^\/귀신의집선택[ \t]+([1-3])$/);
+    if (match) return { action: "choose", number: Number(match[1]) };
+    match = String(message).match(/^\/할로윈입장[ \t]+(\d+)$/);
+    if (match) return { action: "ticket", count: Number(match[1]) };
+    match = String(message).match(/^\/할로윈구매[ \t]+(\d+)[ \t]+(\d+)$/);
+    if (match) return { action: "buy", number: Number(match[1]), count: Number(match[2]) };
+    match = String(message).match(/^\/할로윈횟수초기화[ \t]+([^\r\n]+)$/);
+    if (match) return { action: "resetUser", target: match[1].trim() };
+    return /^\/(?:귀신의집(?:선택|가이드)?|할로윈(?:상점|칭호|시작|종료|입장|구매|횟수초기화))(?:\s|$)/.test(String(message)) ? { action: "invalid", message: String(message) } : null;
+}
+
+// 확률 합계가 100인 결과 표에서 한 결과만 추첨하는 함수
+function pickHalloweenOutcome(rows) {
+    var roll = Math.random() * 100, sum = 0;
+    for (var i = 0; i < rows.length; i++) { sum += rows[i].rate; if (roll < sum) return i; }
+    throw new Error("할로윈 확률 표 오류");
+}
+
+// 무료 사탕의 지급량과 감사 이력을 함께 반영하는 함수
+function creditHalloweenFree(account, amount, detail) {
+    account.free = requireHalloweenInteger(account.free + amount);
+    account.history.push(detail);
+}
+
+// 기본 일일 입장 한도와 충전 입장 잔여를 표시하는 함수
+function getHalloweenEntryLines(account, premium) {
+    var limit = premium ? GLOBAL_CONFIG.halloween.premiumEntries : GLOBAL_CONFIG.halloween.normalEntries;
+    return "🎟️ 남은 기본 입장: " + Math.max(0, limit - account.used) + "/" + limit + "회\n👻 보유 추가 입장: " + numberWithCommas(account.extra) + "회";
+}
+
+// 표시 중인 방과 고정 선택지를 만드는 함수
+function buildHalloweenRoomMessage(context) {
+    var account = context.account, run = account.run, config = GLOBAL_CONFIG.halloween;
+    var room = config.rooms[run.rooms[run.step]];
+    var out = (context.premium ? "[👑호이패스 프리미엄👑]\n" : "") + config.name + "\n" + context.actor + "님의 할로윈 탐험\n━━━━━━━━━━━━\n";
+    out += "🚪 탐험 진행: " + (run.step + 1) + "/5\n" + getHalloweenEntryLines(account, context.premium) + "\n🍬 이번 탐험 획득: " + numberWithCommas(run.total) + "개\n━━━━━━━━━━━━\n";
+    out += room.intro + "\n━━━━━━━━━━━━\n";
+    for (var i = 0; i < room.actions.length; i++) out += (i + 1) + ". " + room.actions[i].text + "\n";
+    return out + "━━━━━━━━━━━━\n※ 행동 선택: /귀신의집선택 번호";
+}
+
+// 현재 계정의 실제 잔액과 상품별 이벤트 누적 한도를 표시하는 함수
+function buildHalloweenShopMessage(context) {
+    var account = context.account, config = GLOBAL_CONFIG.halloween;
+    var out = "🎃호이월드 할로윈 상점🎃\n" + context.actor + "님\n━━━━━━━━━━━━\n🍬 보유 할로윈 사탕: " + numberWithCommas(getHalloweenBalance(context.state, account)) + "개\n\n구매방법: /할로윈구매 [번호] [갯수]\n【🎃 할로윈 상점 전체보기】" + allsee + "\n";
+    for (var i = 0; i < config.shop.length; i++) {
+        var row = config.shop[i];
+        out += (i + 1) + ". " + row.name + " ×" + row.count + "\n🍬 " + numberWithCommas(row.cost) + "개" + (row.limit ? " · 구매 " + account.purchases[i] + "/" + row.limit + "회" : "") + "\n\n";
+    }
+    return out + "━━━━━━━━━━━━\n※ 갯수는 상품 묶음의 구매 수량입니다.\n※ 구매 한도는 이벤트 전체 계정 기준입니다.\n※ 종료 예정: " + config.plannedEnd;
+}
+
+// 최종 선택 결과와 이미 지급한 보상 합계만 안내하는 함수
+function buildHalloweenCompletionMessage(context, secretIndex, newTitle) {
+    var run = context.account.run, config = GLOBAL_CONFIG.halloween;
+    var out = "🎉 귀신의 집 탐험 완료!\n" + context.actor + "님\n━━━━━━━━━━━━\n";
+    for (var i = 0; i < run.results.length; i++) out += config.rooms[run.rooms[i]].name + ": 🍬 +" + run.results[i].candy + "개\n";
+    var secretCandy = secretIndex >= 0 ? config.secret[secretIndex].candy : 0;
+    out += "━━━━━━━━━━━━\n🍬 방 탐험 보상: " + run.total + "개\n🎁 완주 보너스: +" + config.completionCandy + "개\n";
+    if (secretIndex >= 0) {
+        var secret = config.secret[secretIndex];
+        out += "🌕 비밀방 보상: +" + secretCandy + "개\n🌕 숨겨진 황금 호박방 발견!\n마지막 방을 나서자 황금빛 문이 열렸습니다.\n" + secret.story + "\n👻유령 호월이: \"" + secret.line + "\"\n";
+    }
+    out += "🏆 이번 탐험 총 획득: " + (run.total + config.completionCandy + secretCandy) + "개\n";
+    if (newTitle >= 0) out += "🏅 새 칭호: " + config.titles[newTitle].name + "\n";
+    out += "━━━━━━━━━━━━\n" + getHalloweenEntryLines(context.account, context.premium) + "\n\n👻유령 호월이:\n\"" + (run.total === 0 ? "으으… 빈손은 좀 그렇지. 끝까지 온 선물은 챙겨가!" : "내 사탕… 다음에는 꼭꼭 숨겨둘 거야!") + "\"\n━━━━━━━━━━━━\n※ 다시 탐험: /귀신의집\n※ 사탕 사용: /할로윈상점";
+    return out;
+}
+
+// 읽어 둔 이벤트·회원 데이터에 한 명령을 적용하고 저장 필요 여부를 반환하는 함수
+function applyHalloweenCommand(request, context) {
+    var config = GLOBAL_CONFIG.halloween, state = context.state, account = context.account;
+    var prefix = context.actor + "님\n━━━━━━━━━━━━\n";
+    var result = { changed: false, stateChanged: false, memberChanged: false, message: "" };
+    // 실행자 표시를 붙이고 거절된 요청은 저장 대상으로 만들지 않는 함수
+    function reply(message) { if (message.indexOf("❌") === 0) result.changed = false; result.message = prefix + message; return result; }
+    if (request.action === "invalid") {
+        if (!state.active) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.");
+        if (/^\/할로윈입장(?:\s|$)/.test(request.message || "")) {
+            var ticketHeld = context.data.member[context.sender] && context.data.member[context.sender].bag[config.ticketName] || 0;
+            return reply("👻 할로윈 입장권 사용 안내\n사용법: /할로윈입장 [숫자]\n예시: /할로윈입장 5\n🎟️ 보유 입장권: " + numberWithCommas(ticketHeld) + "개\n※ 사용할 수량을 숫자로 입력해주세요.");
+        }
+        return reply("사용법을 확인해주세요.\n/귀신의집\n/귀신의집선택 1~3\n/할로윈입장 [수량]\n/할로윈구매 [번호] [갯수]\n/할로윈횟수초기화 닉네임");
+    }
+    if (request.action === "start" || request.action === "end" || request.action === "resetUser") {
+        if (!context.master) return reply("❌ MASTER만 사용할 수 있는 명령어입니다.");
+        if (request.action === "start") {
+            if (state.active) return reply("이미 할로윈 이벤트가 진행 중입니다.");
+            state.active = true; state.logs.push({ action: "start", actor: context.sender, at: context.now });
+            result.stateChanged = true;
+            return reply("🎃 할로윈 이벤트를 시작했습니다!\n" + config.name + "\n※ /귀신의집 · /할로윈상점");
+        }
+        if (request.action === "end") {
+            if (!state.active) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.");
+            state.active = false; state.epoch++; state.logs.push({ action: "end", actor: context.sender, at: context.now, epoch: state.epoch });
+            result.stateChanged = true;
+            return reply("🎃 할로윈 이벤트를 종료했습니다.\n무료 사탕은 정리하고 유료 사탕·주문 기록과 획득 칭호는 보존했습니다.");
+        }
+    }
+    if (request.action === "titles") {
+        var titleLines = [];
+        if (account) for (var t = 0; t < account.titles.length; t++) titleLines.push(config.titles[account.titles[t]].name);
+        return reply("🏅 할로윈 한정 칭호\n" + (titleLines.length ? titleLines.join("\n") : "아직 획득한 칭호가 없습니다."));
+    }
+    if (!state.active) return reply(config.name + "\n현재 할로윈 이벤트가 진행 중이 아닙니다.\n\n👻유령 호월이:\n\"지금은 문이 닫혀 있어! 이벤트 안내를 확인해줘!\"");
+    if (request.action === "guide") return reply(config.name + "\n일반 하루 1회 / 프리미엄 총 2회\n기본 입장 → 입장권 추가 입장 순으로 사용해요.\n서로 다른 5곳에서 /귀신의집선택 1~3으로 행동을 골라요.\n다음 방 확인: /귀신의집\n\n안전형: 80% 8개 / 20% 0개\n탐색형: 55% 20개 / 35% 5개 / 10% 0개\n도박형: 20% 60개 / 50% 12개 / 30% 0개\n완주: 20개 추가 + 칭호 무료 추첨 1회\n비밀방 등장 10% → 60% 20개 / 30% 50개 / 9% 150개 / 1% 300개\n\n추가 입장 충전: /할로윈입장 숫자\n사탕 사용: /할로윈상점");
+    if (!account) return reply("❌ 등록된 계정을 확인할 수 없습니다.");
+    result.changed = refreshHalloweenAccount(state, account, context.now);
+    if (request.action === "resetUser") {
+        var beforeUsed = account.used;
+        if (beforeUsed !== 0) {
+            account.used = 0; account.history.push({ kind: "masterReset", actor: context.sender, target: context.target, at: context.now, before: beforeUsed, after: 0 });
+            result.changed = true;
+        }
+        return reply("🎯 대상: " + context.targetActor + "님\n" + (beforeUsed === 0 ? "이미 초기화된 상태입니다." : "🔄 할로윈 탐험 횟수 초기화 완료!\n🎟️ 오늘 사용 횟수: " + beforeUsed + "회 → 0회") + "\n" + getHalloweenEntryLines(account, context.premium) + "\n※ 사탕·구매 기록·추가 입장·진행 중인 탐험은 유지됩니다.");
+    }
+    if (request.action === "shop") { result.message = buildHalloweenShopMessage(context); return result; }
+    if (request.action === "ticket" || request.action === "buy") {
+        var quantity = request.count;
+        if (!isFinite(quantity) || quantity < 1 || Math.floor(quantity) !== quantity || quantity > 9007199254740991) return reply("❌ 수량은 양의 정수로 입력해주세요.");
+        if (request.action === "ticket") {
+            var owned = Number(context.data.member[context.sender].bag[config.ticketName] || 0);
+            if (owned < quantity) return reply("❌ 할로윈 입장권이 부족합니다.\n🎟️ 필요한 입장권: " + numberWithCommas(quantity) + "개\n🎟️ 보유 입장권: " + numberWithCommas(owned) + "개\n🎟️ 부족한 수량: " + numberWithCommas(quantity - owned) + "개");
+            var newExtra = requireHalloweenInteger(account.extra + quantity);
+            removeItem(context.data, context.sender, config.ticketName, quantity); account.extra = newExtra;
+            account.history.push({ kind: "ticket", at: context.now, quantity: quantity, txId: context.txId });
+            result.changed = true; result.memberChanged = true;
+            return reply("👻 할로윈 입장권 사용 완료!\n🎟️ 사용 아이템:\n" + config.ticketName + " ×" + numberWithCommas(quantity) + "\n🏚️ 추가 입장 횟수: +" + numberWithCommas(quantity) + "회\n🎟️ 보유 추가 입장: " + numberWithCommas(account.extra) + "회\n※ /귀신의집 으로 입장할 수 있습니다.");
+        }
+        var index = request.number - 1, product = config.shop[index];
+        if (!product) return reply("❌ 올바른 상품 번호를 입력해주세요.\n사용법: /할로윈구매 [번호] [갯수]");
+        var cost = product.cost * quantity, rewardCount = product.count * quantity;
+        if (!isFinite(cost) || Math.floor(cost) !== cost || cost > 9007199254740991 || rewardCount > 9007199254740991) return reply("❌ 수량이 너무 큽니다.");
+        if (product.limit && quantity > product.limit - account.purchases[index]) return reply("❌ 이벤트 전체 구매 한도를 초과합니다. (구매 " + account.purchases[index] + "/" + product.limit + "회)");
+        if (cost > getHalloweenBalance(state, account)) return reply("❌ 할로윈 사탕이 부족합니다. (보유 " + numberWithCommas(getHalloweenBalance(state, account)) + "개)");
+        var bag = context.data.member[context.sender].bag;
+        requireHalloweenInteger(Number(bag[product.name] || 0) + rewardCount);
+        var paidUsed = Math.min(account.paid, cost); // 사용자 확정: 유료 사탕부터 차감
+        account.paid -= paidUsed; account.free -= cost - paidUsed; account.purchases[index] += quantity;
+        addItem(context.data, context.sender, product.name, rewardCount);
+        account.history.push({ kind: "purchase", product: index + 1, quantity: quantity, paid: paidUsed, free: cost - paidUsed, at: context.now, txId: context.txId });
+        result.changed = true; result.memberChanged = true;
+        return reply("🎃 할로윈 상점 구매 완료!\n🎁 " + product.name + " ×" + numberWithCommas(rewardCount) + "\n🍬 사용 사탕: " + numberWithCommas(cost) + "개\n🍬 남은 사탕: " + numberWithCommas(getHalloweenBalance(state, account)) + "개" + (product.limit ? "\n📦 누적 구매: " + account.purchases[index] + "/" + product.limit + "회" : "") + "\n※ 구매 한도는 이벤트 전체 계정 기준입니다.");
+    }
+    if (request.action === "enter") {
+        if (account.run) {
+            if (account.run.resolved) { account.run.step++; account.run.resolved = false; result.changed = true; }
+            result.message = "진행 중인 탐험을 이어갑니다.\n※ 입장 횟수는 추가 차감되지 않습니다.\n\n" + buildHalloweenRoomMessage(context); return result;
+        }
+        var limit = context.premium ? config.premiumEntries : config.normalEntries;
+        if (account.used >= limit && account.extra === 0) {
+            if (!context.premium && account.used === config.normalEntries) return reply(config.name + "\n🎟️ 오늘의 기본 탐험 1회를 모두 사용했어요!\n\n👑 호이패스 프리미엄은 하루 총 2회!\n프리미엄 이용 시 오늘 1회 더 탐험할 수 있어요.\n\n👻유령 호월이:\n\"벌써 가려고? 사탕 아직 많이 숨겨뒀는데!\"\n━━━━━━━━━━━━\n🔗 호이패스 프리미엄 이용 안내\n" + config.premiumLink);
+            return reply("🎟️ 오늘의 탐험 횟수를 모두 사용했어요!\n다음 일일 초기화 후 다시 입장해주세요.\n👻유령 호월이: \"오늘은 영업 끝! 나도 사탕 다시 숨겨야 해!\"");
+        }
+        var source = account.used < limit ? "daily" : "ticket";
+        if (source === "daily") account.used++; else account.extra--;
+        var pool = [], rooms = [];
+        for (var ri = 0; ri < config.rooms.length; ri++) pool.push(ri);
+        for (var pi = 0; pi < config.roomCount; pi++) rooms.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+        account.run = { id: context.txId, day: account.day, epoch: state.epoch, rooms: rooms, step: 0, resolved: false, results: [], total: 0 };
+        account.history.push({ kind: "entry", runId: context.txId, source: source, rooms: rooms.slice(), at: context.now });
+        result.changed = true; result.message = buildHalloweenRoomMessage(context); return result;
+    }
+    if (request.action === "choose") {
+        var run = account.run;
+        if (!run) return reply("진행 중인 탐험이 없습니다.\n※ 새 탐험: /귀신의집");
+        if (run.resolved) return reply("이미 선택을 완료한 방입니다.\n※ 다음 방 확인: /귀신의집");
+        var action = config.rooms[run.rooms[run.step]].actions[request.number - 1], outcomeIndex = pickHalloweenOutcome(action.results), outcome = action.results[outcomeIndex];
+        run.results.push({ number: request.number, outcome: outcomeIndex, candy: outcome.candy });
+        run.total += outcome.candy; run.resolved = true;
+        creditHalloweenFree(account, outcome.candy, { kind: "room", runId: run.id, room: run.rooms[run.step], number: request.number, outcome: outcomeIndex, candy: outcome.candy, at: context.now, txId: context.txId });
+        result.changed = true;
+        var selectionMessage = prefix + outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + outcome.candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n";
+        if (run.step < config.roomCount - 1) return reply(outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + outcome.candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n🚪 다음 탐험: " + (run.step + 2) + "/5\n※ 다음 방 확인: /귀신의집");
+        var secretIndex = Math.random() * 100 < config.secretRate ? pickHalloweenOutcome(config.secret) : -1;
+        var titleIndex = pickHalloweenOutcome(config.titles), newTitle = account.titles.indexOf(titleIndex) === -1 ? titleIndex : -1;
+        var completion = config.completionCandy + (secretIndex >= 0 ? config.secret[secretIndex].candy : 0);
+        creditHalloweenFree(account, completion, { kind: "complete", runId: run.id, rooms: run.rooms.slice(), results: run.results.slice(), bonus: config.completionCandy, secret: secretIndex, title: titleIndex, at: context.now, txId: context.txId });
+        if (newTitle >= 0) account.titles.push(newTitle);
+        result.message = selectionMessage + "\n" + buildHalloweenCompletionMessage(context, secretIndex, newTitle);
+        if (newTitle === config.titles.length - 1) result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎉 할로윈 전설 칭호 등장!\n\n" + context.actor + "님이\n" + config.titles[newTitle].name + "\n칭호를 획득했습니다!\n━━━━━━━━━━━━\n👻유령 호월이:\n\"으아앙! 그 왕관 내가 쓰려고 했는데!\"\n━━━━━━━━━━━━\n🎃 2026 할로윈 한정 칭호";
+        account.run = null;
+        return result;
+    }
+    return reply("❌ 할로윈 명령어를 확인해주세요.");
+}
+
+
+// 계산된 채크랭크의 외곽 표기를 현재 응답에만 등록하는 함수
+function rememberHalloweenRank(rank) {
+    var ctx = getCurrentContext();
+    if (ctx.halloweenState && ctx.halloweenState.active) {
+        if (!ctx.halloweenRanks) ctx.halloweenRanks = {};
+        ctx.halloweenRanks[formatNicknameRankMessage("[" + rank + "]")] = true;
+    }
+    return rank;
+}
+
+// 원본 닉네임을 건드리지 않고 현재 응답의 장식·최상단 배너를 적용하는 함수
+function formatHalloweenMessage(message, ctx) {
+    if (typeof message !== "string" || !ctx.halloweenState || !ctx.halloweenState.active) return message;
+    var labels = Object.keys(ctx.halloweenRanks || {}), suffix = GLOBAL_CONFIG.halloween.decoration;
+    labels.sort(function (a,b) { return b.length - a.length; });
+    for (var i = 0; i < labels.length; i++) {
+        var label = labels[i];
+        message = message.split(label + suffix).join(label).split(label).join(label + suffix);
+    }
+    if (ctx.halloweenScreen) {
+        message = GLOBAL_CONFIG.halloween.banner + "\n" + message;
+        ctx.halloweenScreen = false;
+    }
+    return message;
+}
+
+// 표시용 계정 ID에서 안전한 이벤트 파일 이름을 만드는 함수
+function getHalloweenAccountName(id) {
+    if (typeof id !== "string" || !/^[A-Za-z0-9_-]{1,128}$/.test(id)) throw new Error("할로윈 공통 계정 ID 오류");
+    return GLOBAL_CONFIG.halloween.accountPrefix + id + ".json";
+}
+
+// 기존 화면에 덧붙일 사탕 표시 한 줄을 만드는 함수
+function getHalloweenCandyLine(ctx, pointScreen) {
+    if (!ctx.halloweenState || !ctx.halloweenState.active) return "";
+    return (pointScreen ? "🍬: " : "🍬 할로윈 사탕: ") + numberWithCommas(ctx.halloweenBalance || 0) + "개\n";
+}
+
+// 명령 진입점에서만 이벤트 파일 읽기·복구·복합 저장을 수행하는 함수
+function runHalloweenEntry(mode, args) {
+    var ctx = args.ctx, config = GLOBAL_CONFIG.halloween, root = ctx.rootPath;
+    var statePath = root + config.stateName, pendingPath = root + config.pendingName;
+    // 복구 journal은 회원을 읽기 전에 처리하여 중간 지급 상태의 다른 명령 실행을 막는다.
+    if (!new java.io.File(pendingPath).exists() && new java.io.File(pendingPath + ".rollback").exists()) {
+        var interruptedPendingText = String(FileStream.read(pendingPath + ".rollback", "utf-8"));
+        var interruptedPending = JSON.parse(interruptedPendingText);
+        if (!interruptedPending || interruptedPending.version !== 1 || !Object.prototype.hasOwnProperty.call(interruptedPending, "pending")) throw new Error("할로윈 복구 journal 오류");
+        writeVerifiedJsonFile(pendingPath, interruptedPendingText, true);
+    }
+    if (new java.io.File(pendingPath).exists()) {
+        var pending = loadJsonFile(pendingPath);
+        if (!pending || pending.version !== 1 || !Object.prototype.hasOwnProperty.call(pending, "pending") || pending.pending !== null && !Array.isArray(pending.pending)) throw new Error("할로윈 복구 기록 오류");
+        if (pending.pending !== null) {
+            for (var pr = 0; pr < pending.pending.length; pr++) {
+                var previous = pending.pending[pr];
+                if (!previous || typeof previous.name !== "string" || !/^(?:member|packageLog|halloweenEvent|halloweenAccount_[A-Za-z0-9_-]{1,128})\.json$/.test(previous.name) || previous.text !== null && typeof previous.text !== "string") throw new Error("할로윈 복구 대상 오류");
+                var previousPath = root + previous.name;
+                if (previous.text === null) {
+                    if (!/^halloween/.test(previous.name)) throw new Error("기존 회원 파일 삭제 복구 금지");
+                    var createdFile = new java.io.File(previousPath);
+                    if (createdFile.exists() && !createdFile.delete()) throw new Error("할로윈 신규 파일 복구 실패");
+                } else { JSON.parse(previous.text); writeVerifiedJsonFile(previousPath, previous.text, true); }
+            }
+            writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+            ctx.halloweenRecovered = true;
+        }
+    }
+    var stateExists = new java.io.File(statePath).exists();
+    var state = stateExists ? requireHalloweenState(loadJsonFile(statePath)) : createHalloweenState();
+    ctx.halloweenState = state;
+    if (mode === "state") return state;
+    if (mode === "dailyReset") {
+        var resetDay = getHalloweenDay(args.now);
+        if (stateExists && state.lastResetDay !== resetDay) {
+            state.lastResetDay = resetDay;
+            state.logs.push({ action: "dailyReset", at: args.now, day: resetDay });
+            writeMemberSplitSlot(statePath, JSON.stringify(state));
+        }
+        return null; // 계정의 실제 날짜 갱신은 다음 이벤트 이용 시 한 번만 수행한다.
+    }
+    var data = args.data, request = args.request, sender = args.sender;
+    if (mode === "view") {
+        ctx.halloweenBalance = 0;
+        var viewMember = data.member && data.member[sender];
+        var viewId = viewMember && viewMember.serverRaidAccount && viewMember.serverRaidAccount.id;
+        if (state.active && viewId) {
+            var viewPath = root + getHalloweenAccountName(viewId);
+            if (new java.io.File(viewPath).exists()) ctx.halloweenBalance = getHalloweenBalance(state, requireHalloweenAccount(loadJsonFile(viewPath), viewId));
+        }
+        return null;
+    }
+    var actor = "[" + checkRank(data, args.petData, args.guildData, sender) + "] "; // 응답 조립에 사용할 대괄호와 뒤 공백
+    var master = isMaster(sender), target = request && request.action === "resetUser" ? request.target : sender;
+    var account = null, accountName = null, accountText = null, accountMemberChanged = false;
+    var needsAccount = request && ["start","end","guide","invalid"].indexOf(request.action) === -1;
+    if (mode === "packageUse" || mode === "packageGrant") { needsAccount = true; target = args.target || sender; }
+    if (request && request.action === "resetUser" && (!master || !state.active)) needsAccount = false;
+    if (needsAccount && data.member && Object.prototype.hasOwnProperty.call(data.member, target)) {
+        var member = data.member[target];
+        if (!member.serverRaidAccount && mode !== "view" && (state.active || mode === "packageGrant")) {
+            member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+            accountMemberChanged = true;
+        }
+        var id = member.serverRaidAccount && member.serverRaidAccount.id;
+        if (id) {
+            accountName = getHalloweenAccountName(id);
+            var accountPath = root + accountName;
+            accountText = new java.io.File(accountPath).exists() ? String(FileStream.read(accountPath, "utf-8")) : null;
+            account = accountText === null ? createHalloweenAccount(id, state.epoch) : requireHalloweenAccount(JSON.parse(accountText), id);
+        }
+    }
+    if (request && request.action === "resetUser" && master && state.active && !account) return { message: actor + "님\n❌ 대상을 확인할 수 없습니다.\n사용방법: /할로윈횟수초기화 닉네임\n예: /할로윈횟수초기화 호이 남" };
+    var now = args.now === undefined ? Date.now() : args.now;
+    var context = { data: data, state: state, account: account, sender: sender, target: target, master: master, actor: actor,
+        targetActor: account ? "[" + checkRank(data, args.petData, args.guildData, target) + "] " : "",
+        premium: account ? isHoiPassPremiumActive(data, target) : false, now: now, txId: String(java.util.UUID.randomUUID()) };
+    var requestId = args.event && !args.event.invalid && typeof args.event.id === "string" ? args.event.id : "";
+    var replayGuard = account && (mode === "packageUse" || mode === "packageGrant" || request && ["buy","ticket","choose"].indexOf(request.action) !== -1);
+    if (replayGuard) {
+        if (requestId && account.requests["$" + requestId]) return { message: account.requests["$" + requestId].reply };
+        var last = account.lastRequest;
+        if (!requestId && last && last.message === args.message && last.room === args.room && now >= last.at && now - last.at < config.legacyDuplicateMs) return { message: last.reply };
+    }
+    var result;
+    if (mode === "packageUse" || mode === "packageGrant") {
+        if (!account) return { message: actor + "님\n❌ 등록된 계정을 확인할 수 없습니다." };
+        if (mode === "packageUse" && !state.active) return { message: actor + "님\n현재 할로윈 이벤트가 진행 중이 아닙니다. 패키지는 소모하지 않았습니다." };
+        refreshHalloweenAccount(state, account, now);
+        if (mode === "packageUse") result = usePackageFromBag(data, args.petData, args.guildData, sender, args.message, args.packageInfo, args.packageLog, { state: state, account: account, at: now, txId: context.txId });
+        else result = grantPackageToUser(data, sender, args.message, args.packageInfo, args.packageLog);
+        result.changed = result.ok === true; result.memberChanged = result.ok === true;
+        result.message = actor + "님\n" + result.message;
+        if (result.ok) account.orders.push({ kind: mode, operator: sender, target: target, at: now, txId: context.txId, command: args.message, log: result.packageLogData.logs[result.packageLogData.logs.length - 1] });
+    } else result = applyHalloweenCommand(request, context);
+    if (result.changed && replayGuard) {
+        var receipt = { message: args.message, room: args.room, at: now, reply: result.message, txId: context.txId };
+        account.lastRequest = receipt;
+        if (requestId) account.requests["$" + requestId] = receipt;
+    }
+    if (!result.changed && !result.stateChanged) return result;
+    result.memberChanged = result.memberChanged || accountMemberChanged;
+    var snapshots = [], accountChanged = result.changed && accountName !== null;
+    if (result.memberChanged) {
+        var memberPlan = typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
+        if (memberPlan && memberPlan.writes.length !== 0) throw new Error("할로윈 처리 중 관련 없는 회원 상세 변경 감지");
+        snapshots.push({ name: "member.json", text: String(FileStream.read(resolveActiveDataPath(filePath), "utf-8")) });
+    }
+    if (accountChanged) { requireHalloweenAccount(account, account.id); snapshots.push({ name: accountName, text: accountText }); }
+    if (result.stateChanged) { requireHalloweenState(state); snapshots.push({ name: config.stateName, text: stateExists ? String(FileStream.read(statePath, "utf-8")) : null }); }
+    if (result.packageLogData && result.ok) snapshots.push({ name: "packageLog.json", text: String(FileStream.read(resolveActiveDataPath(packageLogPath), "utf-8")) });
+    writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: snapshots }), true);
+    try {
+        if (result.memberChanged) {
+            ctx.halloweenPublishing = true;
+            try { saveJsonFile(data, filePath); } finally { delete ctx.halloweenPublishing; }
+        }
+        if (accountChanged) writeMemberSplitSlot(root + accountName, JSON.stringify(account));
+        if (result.stateChanged) writeMemberSplitSlot(statePath, JSON.stringify(state));
+        if (result.packageLogData && result.ok) writeMemberSplitSlot(resolveActiveDataPath(packageLogPath), JSON.stringify(result.packageLogData));
+        writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
+        endDataSaveTransaction(); beginDataSaveTransaction(); // 확정 뒤 응답·알림 실패로 완료된 구매를 취소하지 않는다.
+    } catch (error) {
+        try { rollbackDataSaveTransaction(); }
+        finally { runHalloweenEntry("state", { ctx: ctx }); } // 게시 직후 예외도 두 원문을 즉시 복구한다.
+        throw error;
+    }
+    ctx.halloweenState = state;
+    rememberHalloweenRank(checkRank(data, args.petData, args.guildData, sender));
+    return result;
+}
+
+// 선택한 통합 패키지가 사탕 보상을 포함하는지 사전 판별하는 함수
+function hasHalloweenPackageReward(packageInfo) {
+    var rewards = packageInfo && packageInfo.rewards || [];
+    for (var i = 0; i < rewards.length; i++) if (rewards[i] && rewards[i].type === "item" && rewards[i].name === GLOBAL_CONFIG.halloween.currencyName) return true;
+    return false;
+}
+
 var startupWork = null;
-try { startupWork = initializeLegacyStartup(initData); }
+try {
+    var startupHalloweenContext = createCommandContext(false);
+    runHalloweenEntry("state", { ctx: startupHalloweenContext });
+    if (startupHalloweenContext.halloweenRecovered) {
+        initData = null;
+        initData = loadJsonFile(filePath, "bootstrap");
+    }
+    startupWork = initializeLegacyStartup(initData);
+}
 finally { initData = null; }
 for (var startupWorkIndex = 0; startupWorkIndex < startupWork.miniContexts.length; startupWorkIndex++) scheduleMiniGameWork(startupWork.miniContexts[startupWorkIndex], 1);
 if (startupWork.raid) scheduleServerRaidWork(createCommandContext(false, room8), startupWork.raid.generation, 1, startupWork.raid.sequence);
