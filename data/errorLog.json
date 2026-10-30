@@ -1,1 +1,1 @@
-{"system":"main","error":"Error: Verified JSON file replace failed: /sdcard/호이랜드/member.json","version":"ver_2.665","msg":"/펫탐험자동정산","room":"서버관리자","sender":"오픈채팅봇"}
+{"system":"main","error":"JavaException: java.lang.IndexOutOfBoundsException: Index: 365, Size: 304","version":"ver_2.724","msg":"/리셋","room":"서버관리자","sender":"호이 남"}
