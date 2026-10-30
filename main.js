@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.734"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.735"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -814,7 +814,7 @@ const room6 = "💜3040대친목 반말방🐻 24시 보이스룸💜";
 const room7 = "2030 반말방 | 우리는 청춘이라는 별 아래서✨";
 const room8 = "공성전";
 const room10 = "💫도파민 팡팡💫터지는 30대 어서와😘";
-const room11 = "🍺 3040, 인생 뭐 있어? 오늘도 수다 한 잔";
+const room11 = "🎇3040, 도파민 디스코팡팡🎇";
 const room12 = "🎀30대, 주파수가 맞는 사이🌙";
 const room13 = "😎 2030 어 왔냐? 앉아 반말해🍿";
 const room14 = "🐶30대 반말방💞친목🐩봇,보룸,수다,벙🎤";
@@ -1027,7 +1027,7 @@ const GLOBAL_CONFIG = {
         completionCandy: 20,
         secretRate: 10,
         legacyDuplicateMs: 2000,
-        shop: [{"name":"다이아상자💎(/다이아상자오픈)","count":25,"cost":100,"limit":10},{"name":"호이의 봉인금고🔒(/봉인금고오픈 숫자)","count":5,"cost":50,"limit":0},{"name":"해방의 열쇠🗝️(/봉인금고오픈 숫자)","count":5,"cost":75,"limit":0},{"name":"홈뱃지 큐브💟","count":400,"cost":200,"limit":1},{"name":"황제패키지👑[5]+호월신의 가호✨ 3만개","count":1,"cost":35000,"limit":1},{"name":"할로윈도파민패키지🎃","count":1,"cost":3000,"limit":10}],
+        shop: [{"name":"다이아상자💎(/다이아상자오픈)","count":25,"cost":100,"limit":50},{"name":"호이의 봉인금고🔒(/봉인금고오픈 숫자)","count":5,"cost":50,"limit":0},{"name":"해방의 열쇠🗝️(/봉인금고오픈 숫자)","count":5,"cost":75,"limit":0},{"name":"홈뱃지 큐브💟","count":400,"cost":200,"limit":7},{"name":"황제패키지👑[5]+호월신의 가호✨ 3만개","count":1,"cost":37500,"limit":2},{"name":"할로윈도파민패키지🎃","count":1,"cost":3500,"limit":11}],
         titles: [{"name":"🍬 사탕 냠냠","rate":60},{"name":"👻 겁쟁이 꼬마유령","rate":25},{"name":"🎃 말랑말랑 호박","rate":10},{"name":"🧸 유령집 꼬마악동","rate":4.5},{"name":"👑 말랑말랑 호박왕","rate":0.5}],
         secret: [{"candy":20,"rate":60,"story":"황금 호박방 입구에서 작은 사탕 봉투를 찾았습니다.","line":"입구에서 만족하자! 안쪽은… 안 보여줄 거야!"},{"candy":50,"rate":30,"story":"황금빛 선반 위에서 묵직한 사탕 주머니를 찾았습니다.","line":"선반 높게 달아놨는데 어떻게 손이 닿았어?!"},{"candy":150,"rate":9,"story":"호박 쿠션을 들자 숨겨진 사탕 저장칸이 활짝 열렸습니다!","line":"거기는 주말 간식 창고야! 이번 주말 어떡해!"},{"candy":300,"rate":1,"story":"황금 호박이 활짝 웃더니 사탕 폭포를 쏟아냈습니다!","line":"내 비상금… 아니 비상 사탕! 한 봉지만 남겨줘!"}],
         rooms: [
@@ -65372,7 +65372,7 @@ function applyHalloweenCommand(request, context) {
             var ticketHeld = context.data.member[context.sender] && context.data.member[context.sender].bag[config.ticketName] || 0;
             return reply("👻 할로윈 입장권 사용 안내\n사용법: /할로윈입장 [숫자]\n예시: /할로윈입장 5\n🎟️ 보유 입장권: " + numberWithCommas(ticketHeld) + "개\n※ 사용할 수량을 숫자로 입력해주세요.");
         }
-        return reply("사용법을 확인해주세요.\n/귀신의집\n/귀신의집선택 1~3\n/할로윈입장 [수량]\n/할로윈구매 [번호] [갯수]\n/할로윈횟수초기화 닉네임");
+        return reply("사용법을 확인해주세요.\n/귀신의집\n/귀신의집선택 1~3\n/할로윈입장 [수량]\n/할로윈구매 [번호] [갯수]");
     }
     if (request.action === "start" || request.action === "end" || request.action === "resetUser") {
         if (!context.master) return reply("❌ MASTER만 사용할 수 있는 명령어입니다.");
@@ -65380,12 +65380,14 @@ function applyHalloweenCommand(request, context) {
             if (state.active) return reply("이미 할로윈 이벤트가 진행 중입니다.");
             state.active = true; state.logs.push({ action: "start", actor: context.sender, at: context.now });
             result.stateChanged = true;
+            result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎃 할로윈 이벤트가 시작되었습니다!\n" + config.name + "\n\n🏚️ 탐험: /귀신의집\n🎁 사탕 교환: /할로윈상점\n※ 종료 예정: " + config.plannedEnd;
             return reply("🎃 할로윈 이벤트를 시작했습니다!\n" + config.name + "\n※ /귀신의집 · /할로윈상점");
         }
         if (request.action === "end") {
             if (!state.active) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.");
             state.active = false; state.epoch++; state.logs.push({ action: "end", actor: context.sender, at: context.now, epoch: state.epoch });
             result.stateChanged = true;
+            result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎃 할로윈 이벤트가 종료되었습니다.\n" + config.name + "\n\n귀신의 집 탐험과 할로윈 상점 이용이 종료되었습니다.\n이미 구매한 아이템과 획득한 칭호는 유지됩니다.\n참여해 주셔서 감사합니다!";
             return reply("🎃 할로윈 이벤트를 종료했습니다.\n무료 사탕은 정리하고 유료 사탕·주문 기록과 획득 칭호는 보존했습니다.");
         }
     }
