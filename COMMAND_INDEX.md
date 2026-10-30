@@ -7272,6 +7272,8 @@ Status: VERIFIED
 - `getDataCleanupAction`, `getDataCleanupStorePaths`, `buildDataCleanupPreview`, `getDataCleanupSignature`, `advanceDataCleanupSession`: 확인 응답을 다른 숫자 메뉴보다 먼저 분류하고, 실제 파일 이전·정리 분기 앞에서 확인을 검사한다. 대기에는 SHA-256과 만료 시각만 보관한다.
 - 미리보기에는 완료 보상 원장·교육 축소 예상량·숫자 0 가방·포인트 소수점·가구 표시/빈 항목·회원 목록 외 잔여 식별자·인형 잔여 계정·기록 이전 필요 여부를 표시한다. 인형 원본은 파일별로 읽고 대기 상태에 보관하지 않는다.
 - 퀘스트 준비 기록은 `compactAdventureQuestPreparedRecords(data, true)`로 원본을 바꾸지 않고 압축 계획을 계산한다. 확인 서명에 계획을 포함하고, 확인된 정리 본문에서만 실제 압축하여 기존 `saveJsonFile(data, filePath)`로 저장한다.
+- `cleanupUnusedMemberFields(data, previewOnly)`는 지정한 일일 횟수 8종의 숫자 `0`과 `adventureOnboarding.stage === "COMPLETE"`의 `characterCreatedAt`·`petNamedAt`·`completedAt`·`petName`만 계획·제거한다. 미리보기와 확인 서명에 건수·대상을 포함하고 확인된 기존 회원 저장에 함께 반영한다. 양수 횟수·이용 한도·진행 중 가입·완료 상태·추천인/보상 영수증·실제 펫 이름은 보존한다.
+- 일일 횟수 8종은 `petHomeCommentCnt`·`homeAlertOpenCnt`·`passHeartGiveCnt`·`passDollDrawCnt`·`homeLikeCnt`·`feedPostCnt`·`cntlike`·`towerCnt`다. 조회·한도 계산은 누락값을 0으로 사용하고, 실제 이용 시 횟수를 기록한다. `/리셋`은 8종 키를 제거하고 허용된 `/r`은 `cntlike`만 제거한다. 지난 날짜 채팅 EXP 정리·오늘 채팅 EXP 한도와 기존 리셋 범위는 유지한다.
 - 확인 시 최신 대상을 다시 계산한다. 정리 대상이 달라지면 새 안내 후 재확인하며, 정리와 무관한 채팅 횟수 변경은 확인을 막지 않는다. 미완료 보상·불일치·파일 오류·권한 해제·레이드 진행은 실행하지 않는다.
 - 확인 뒤 기존 단계별 회원/로그·퀘스트 이전이 먼저 필요한 경우 기존처럼 먼저 처리하고 반환한다. 나머지는 새 `/데이터정리` 안내와 확인을 거쳐 진행한다. 최종 정리 본문은 완료 보상 원장 제거·교육 영수증 축소를 기존 정리와 같은 회원 저장에 포함한다. 별도 보상 정리 명령은 두지 않는다.
 
