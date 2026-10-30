@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.732"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.733"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1004,6 +1004,12 @@ var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 �
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    scheduleGuide: { // 조회용 시간표. 실제 시작·정산 타이머를 변경하지 않는다.
+        passPayoutTime: "01:10",
+        petExploreWindow: "08:00 ~ 24:00 (매 정각)",
+        guildTerritoryWindow: "21:30 ~ 21:45",
+        serverRaidStartTime: "22:00"
+    },
     halloween: { // 2026 할로윈 운영 정책과 고정 대본
         stateName: "halloweenEvent.json",
         pendingName: "halloweenPending.json",
@@ -5041,6 +5047,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         addResponseTiming("petSkillData.json 로드", commonStepStart);
         commonStepStart = Date.now();
         var guildData = loadJsonFile(guildPath);
+        if (msg === "/스케줄") {
+            replier.reply(buildDailyScheduleMessage(data, petData, guildData, sender));
+            return;
+        }
         var halloweenRequest = getHalloweenRequest(msg);
         if (halloweenRequest) {
             var halloweenResult = runHalloweenEntry("command", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, room: room, message: msg, request: halloweenRequest, event: serverRaidEvent, now: Date.now() });
@@ -65150,6 +65160,59 @@ function initializeLegacyStartup(startupData) {
     var startupRecordBoard = loadJsonFile(boardPath);
     if (prepareRecordRoomArchive(startupRecordBoard)) saveJsonFile(startupRecordBoard, boardPath);
     return { miniContexts: startupMiniWork, raid: startupData.serverRaid && serverRaidHasWork(startupData.serverRaid) ? { generation: startupData.serverRaid.generation, sequence: startupData.serverRaid.sequence } : null };
+}
+
+// ── 일일 스케줄 안내 ──
+
+// 운영 순위 보상 안내의 시간을 24시간 표기로 변환하는 함수
+function getScheduleGuidePayoutTime(key) {
+    var rows = GLOBAL_CONFIG.rewardPayout.schedules;
+    for (var i = 0; i < rows.length; i++) {
+        if (rows[i].key !== key) continue;
+        var value = String(rows[i].time), match = value.match(/^(오전|오후)\s*(\d{1,2})시\s*(\d{1,2})분$/);
+        if (!match) return value;
+        var hour = Number(match[2]) % 12 + (match[1] === "오후" ? 12 : 0); // 12시의 오전·오후를 포함한 24시간 변환
+        return ("0" + hour).slice(-2) + ":" + ("0" + match[3]).slice(-2);
+    }
+    throw new Error("스케줄 지급 시간 설정 누락: " + key);
+}
+
+// 운영 설정의 보상·진행 시간으로 조회 전용 일일 스케줄 메시지를 만드는 함수
+function buildDailyScheduleMessage(data, petData, guildData, user) {
+    var config = GLOBAL_CONFIG.scheduleGuide;
+    var musou = GLOBAL_CONFIG.petMusou, raid = GLOBAL_CONFIG.serverRaid;
+    var territoryRewards = GLOBAL_CONFIG.guildTerritory.rankRewards;
+    var overallTime = getScheduleGuidePayoutTime("overall"), miniPetTime = getScheduleGuidePayoutTime("miniPet");
+    var out = isHoiPassPremiumActive(data, user) ? "[👑호이패스 프리미엄👑]\n" : "";
+    out += "📅 호이월드 일일 콘텐츠 스케줄\n[" + checkRank(data, petData, guildData, user) + "] 님의 스케줄표\n━━━━━━━━━━━━\n";
+    out += "⏰ 매일 진행되는 콘텐츠 일정과\n🎁 참여 보상·명령어를 확인하세요!\n\n【📅 전체 스케줄 및 보상 보기】" + allsee + "\n";
+    out += "🎁 구독형 패스 지급 매일 " + config.passPayoutTime + " 지급\n━━━━━━━━━━━━\n";
+    out += "⛏️ 펫탐험\n⏰ 시간: " + config.petExploreWindow + "\n🎁 보상: 탐험 지역별 아이템 획득\n📝 지도: /지도\n📝 탐험: /탐 [번호]\n━━━━━━━━━━━━\n";
+    out += "🐹 펫무쌍 대회\n⏰ 시간: " + musou.regularStartTimes.join(" / ");
+    if (musou.ticketEventStartTimes.length > 0) out += " / " + musou.ticketEventStartTimes.join(" / ") + " (추가 회차 운영 시)";
+    out += "\n🎁 공격 보상: 🅟" + formatServerRaidPrize(musou.attackRewardPoint).replace(/ 포인트$/, "");
+    out += "\n🏆 우승 보상: 🅟" + formatServerRaidPrize(musou.winnerRewardPoint).replace(/ 포인트$/, "");
+    out += "\n🚩 깃발 보상: 🅟" + formatServerRaidPrize(musou.realFlagDiscoveryBonusPoint).replace(/ 포인트$/, "") + " 추가\n";
+    out += "📝 참가: /펫무쌍참가\n📝 공격: /펫무쌍공격 [번호]\n━━━━━━━━━━━━\n🏆 일일 순위보상\n";
+    if (overallTime === miniPetTime) out += "⏰ " + overallTime + " · 종합순위 / 미니펫순위\n";
+    else out += "⏰ " + overallTime + " · 종합순위\n⏰ " + miniPetTime + " · 미니펫순위\n";
+    out += "⏰ " + getScheduleGuidePayoutTime("guildRank") + " · 길드순위\n";
+    out += "⏰ " + getScheduleGuidePayoutTime("tier") + " · 티어순위\n🎁 보상: 각 순위별 차등 지급\n📝 /종합순위 · /미니펫순위\n📝 /길드순위 · /티어순위\n━━━━━━━━━━━━\n";
+    out += "🏰 길드영지전\n⏰ 시간: " + config.guildTerritoryWindow + "\n🎁 보상: 영지 점령 및 종료 보상\n";
+    out += "🏆 길드 순위보상: 🅟" + formatServerRaidPrize(territoryRewards[0]).replace(/ 포인트$/, "") + " ~ " + formatServerRaidPrize(territoryRewards[territoryRewards.length - 1]).replace(/ 포인트$/, "") + "\n";
+    out += "📝 준비: /길드영지준비\n📝 공격: /영지공격 [번호]\n📝 현황: /길드영지\n━━━━━━━━━━━━\n";
+    out += "👾 서버 레이드대전\n⏰ 시간: " + config.serverRaidStartTime + " 시작 · 준비 " + (raid.timers.preparationMs / 60000) + "분 후 공격 " + (raid.timers.durationMs / 60000) + "분\n";
+    out += "🎁 공격 보상: 레이드매력의 " + raid.rewards.attackPercent + "% 포인트\n";
+    out += "🏆 서버 순위보상: 🅟" + formatServerRaidPrize(raid.rewards.ranks[0]).replace(/ 포인트$/, "") + " ~ " + formatServerRaidPrize(raid.rewards.ranks[raid.rewards.ranks.length - 1]).replace(/ 포인트$/, "") + "\n";
+    out += "📝 공격: /레이드공격\n📝 남은 횟수: /레이드턴\n📝 현황: /서버대전\n📝 순위: /레이드순위\n━━━━━━━━━━━━\n";
+    out += "🎖️ 길드영지 순위보상\n⏰ 지급 시간: " + getScheduleGuidePayoutTime("territory") + "\n🎁 길드창고 지급 보상\n";
+    for (var rank = 0; rank < territoryRewards.length; rank++) {
+        var rankEnd = rank; // 같은 금액을 받는 연속 순위의 마지막 위치
+        while (rankEnd + 1 < territoryRewards.length && territoryRewards[rankEnd + 1] === territoryRewards[rank]) rankEnd++;
+        out += (rank + 1) + (rankEnd > rank ? "~" + (rankEnd + 1) : "") + "위: 🅟" + formatServerRaidPrize(territoryRewards[rank]).replace(/ 포인트$/, "") + "\n";
+        rank = rankEnd;
+    }
+    return out + "📝 명령어: /영지순위보상\n━━━━━━━━━━━━\n※ 모든 시간은 한국시간 기준입니다.\n※ 실제 지급 및 참여 가능 여부는 각 콘텐츠 조건에 따릅니다.";
 }
 
 // ── 할로윈: 파일 IO 없이 전달받은 이벤트·계정 상태만 계산한다. ──
