@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.738"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.739"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -65399,6 +65399,7 @@ function requireHalloweenAccount(account, id) {
 // 종료 정리 세대를 반영한 실제 사용 가능 사탕 잔액을 반환하는 함수
 function getHalloweenBalance(state, account) {
     if (!account) return 0;
+    if (account.epoch > state.epoch) throw new Error("할로윈 계정과 이벤트 상태의 세대가 일치하지 않습니다.");
     if (account.candy !== undefined) return account.epoch === state.epoch ? requireHalloweenInteger(account.candy) : 0;
     var legacyPaid = state.candyClearEpoch === undefined || account.epoch >= state.candyClearEpoch ? account.paid : 0; // 구 보존 잔액도 새 정책으로 종료한 뒤에는 복원하지 않는다.
     return requireHalloweenInteger(legacyPaid + (account.epoch === state.epoch ? account.free : 0));
@@ -65407,8 +65408,9 @@ function getHalloweenBalance(state, account) {
 // 구 잔액을 단일 사탕으로 전환하고 날짜·리셋·종료로 만료된 진행 상태를 정리하는 함수
 function refreshHalloweenAccount(state, account, now) {
     var changed = false, day = getHalloweenDay(now);
+    var balance = getHalloweenBalance(state, account); // 계정 변경 전에 세대와 현재 유효 잔액을 검증
     if (account.candy === undefined) {
-        account.candy = getHalloweenBalance(state, account);
+        account.candy = balance;
         delete account.free; delete account.paid;
         if (account.epoch !== state.epoch) account.run = null;
         account.epoch = state.epoch; changed = true;
@@ -65542,10 +65544,15 @@ function applyHalloweenCommand(request, context) {
             return reply("🎃 할로윈 이벤트를 시작했습니다!\n" + config.name + "\n※ /귀신의집 · /할로윈상점");
         }
         if (request.action === "end") {
-            var clearedUsers = clearHalloweenBagItems(context.data), wasActive = state.active;
+            var wasActive = state.active;
+            var closeNeeded = wasActive || state.candyClearEpoch !== state.epoch || state.epoch === 0; // 현재 세대의 종료 정리가 끝났는지 판단
+            var nextEpoch = closeNeeded ? requireHalloweenInteger(state.epoch + 1) : state.epoch; // 가방을 변경하기 전에 다음 세대 검증
+            var clearedUsers = clearHalloweenBagItems(context.data);
             if (clearedUsers > 0) { result.changed = true; result.memberChanged = true; }
-            if (!wasActive && state.candyClearEpoch > 0) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다." + (clearedUsers > 0 ? "\n🧹 가방의 할로윈 사탕·입장권을 정리했습니다. (" + clearedUsers + "명)" : ""));
-            state.active = false; state.epoch = requireHalloweenInteger(state.epoch + 1); state.candyClearEpoch = state.epoch;
+            if (!closeNeeded) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다." + (clearedUsers > 0 ? "\n🧹 가방의 할로윈 사탕·입장권을 정리했습니다. (" + clearedUsers + "명)" : ""));
+            state.active = false;
+            state.epoch = nextEpoch;
+            state.candyClearEpoch = nextEpoch;
             state.logs.push({ action: wasActive ? "end" : "endCleanup", actor: context.sender, at: context.now, epoch: state.epoch });
             result.stateChanged = true;
             if (!wasActive) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.\n🧹 남은 사탕 잔액과 가방의 할로윈 사탕·입장권을 정리했습니다.");
@@ -65761,7 +65768,7 @@ function runHalloweenEntry(mode, args) {
         premium: account ? isHoiPassPremiumActive(data, target) : false, now: now, txId: String(java.util.UUID.randomUUID()) };
     var requestId = args.event && !args.event.invalid && typeof args.event.id === "string" ? args.event.id : "";
     var replayGuard = account && (mode === "packageUse" || mode === "packageGrant" || request && ["buy","ticket","choose"].indexOf(request.action) !== -1);
-    if (replayGuard) {
+    if (replayGuard && (state.active || mode === "packageGrant")) { // 종료된 이벤트는 과거 성공 응답 대신 비활성 안내를 반환
         if (requestId && account.requests["$" + requestId]) return { message: account.requests["$" + requestId].reply };
         var last = account.lastRequest;
         if (!requestId && last && last.message === args.message && last.room === args.room && now >= last.at && now - last.at < config.legacyDuplicateMs) return { message: last.reply };
