@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.741"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.742"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -40700,7 +40700,14 @@ function processAttendanceForUser(data, petData, petSkillData, guildData, user) 
 
 // 출석 /리셋 함수
 function resetAttendance(petData, data, replier) {
+    var resetDateKey = getAttendanceKstDateKey(); // 리셋 시작 시점의 한국시간 날짜
     for (let user in data.member) {
+        var chatDaily = data.member[user].chatExperienceDaily;
+        if (chatDaily && typeof chatDaily.date === "string" && chatDaily.date.length === 8 && /^\d{8}$/.test(chatDaily.date) && chatDaily.date < resetDateKey) {
+            var chatYear = Number(chatDaily.date.substring(0, 4)), chatMonth = Number(chatDaily.date.substring(4, 6)), chatDay = Number(chatDaily.date.substring(6, 8));
+            var chatDate = new Date(Date.UTC(chatYear, chatMonth - 1, chatDay)); // 형식만 맞는 잘못된 날짜는 보존
+            if (chatDate.getUTCFullYear() === chatYear && chatDate.getUTCMonth() === chatMonth - 1 && chatDate.getUTCDate() === chatDay) delete data.member[user].chatExperienceDaily;
+        }
         data.member[user].today = 0; // /리셋마다 모든 회원의 새 출석 회차 시작
         if (petData[user]) {
             petData[user].petraid = 0;
