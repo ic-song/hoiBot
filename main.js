@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.730"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.731"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -181,7 +181,7 @@ const PET_SKILL_LIST = [
     { name: "탑 숭배자", grade: "C", rate: 4.3, effect: "/시련의탑 시 10% 확률로 매력 +2 획득" },
     { name: "기도", grade: "C", rate: 1.5, effect: "하루 한 번 호월신에게 기도를 올립니다.\n3% 확률로 호월신이 응답하면 주간상자🌼 1개를 획득합니다.\n※ 신성한 기도📙 및 호월신의 총애📙와 중복 장착할 수 없습니다." },
     { name: "플러팅", grade: "C", rate: 4.5, effect: "@멘션 호출 시 멘트 출력" },
-    { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n최대수치 30개가 되면 33개로 확장됩니다." },
+    { name: "펫스킬 학개론", grade: "C", rate: 4.5, effect: "장착 가능한 펫스킬 공간이 3칸 확장됩니다.\n기본·프리미엄·확장권을 합산하여 최대 100칸까지 적용됩니다." },
     { name: "초월성장", grade: "C", rate: 4.5, openable: false, showUnopenableRate: true, retired: true, collectionEligible: false, effect: "레벨 리뉴얼로 폐지되어 효과가 종료되었습니다.\n※펫스킬오픈으로 획득 불가" },
     { name: "망므", grade: "C", rate: 4.0, heartBonus: 5, equipComment: "이건 내 망므야!", equipCommentNoColon: true, effect: "하루 마음 보내기 가능 횟수가 5회 증가합니다.\n펫스킬을 해제하면 추가된 일일 한도 5회는 회수됩니다." },
     { name: "도깨비 방망이", grade: "C", rate: 4.0, raidExp: 100000, castleExp: 100000, effect: "휘두를 때마다 신비한 힘이 솟아나는 도깨비의 방망이입니다.\n장착 시 레이드매력 10만과 캐슬매력 10만, 총 종합매력 20만을 획득합니다.\n펫스킬을 해제하면 지급된 매력은 회수됩니다.\n※ 종합매력 상승 펫스킬은 중복 착용이 가능합니다." },
@@ -2534,6 +2534,7 @@ blockedNicknameTerms: [
         maxLength: 30 // 타이틀 선물 내용 최대 길이
     },
     petSkill: { // 펫스킬 시스템 설정
+        slots: { maxCount: 100, introBonus: 3, expansionItemName: "펫스킬 슬롯 확장권📜" },
         miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
         oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
@@ -6722,6 +6723,39 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     return;
                 }
 
+                if ((msg === "/펫스킬슬롯오픈" || /^\/펫스킬슬롯오픈\s/.test(msg)) && !/^\/펫스킬슬롯오픈\s+\d+$/.test(msg)) {
+                    replier.reply("※ 사용법: /펫스킬슬롯오픈 [수량]");
+                    return;
+                }
+                if (/^\/펫스킬슬롯오픈\s+\d+$/.test(msg)) {
+                    var slotOpenCount = Number(msg.trim().split(/\s+/)[1]);
+                    if (!isFinite(slotOpenCount) || slotOpenCount < 1 || Math.floor(slotOpenCount) !== slotOpenCount) {
+                        replier.reply("※ 사용법: /펫스킬슬롯오픈 [수량]");
+                        return;
+                    }
+                    var slotConfig = GLOBAL_CONFIG.petSkill.slots;
+                    var slotBefore = getPetSkillSlotDetails(data, petSkillData, sender);
+                    if (slotBefore.total >= slotConfig.maxCount) {
+                        replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n📜 펫스킬 슬롯 확장 안내\n━━━━━━━━━━━\n🧩 현재 장착 가능 공간: " + slotBefore.total + "/" + slotConfig.maxCount + "칸\n🏆 최대 장착 공간에 도달했습니다!\n━━━━━━━━━━━\n※ 펫스킬 슬롯은 최대 " + slotConfig.maxCount + "칸까지 확장할 수 있습니다.");
+                        return;
+                    }
+                    if (slotOpenCount > slotConfig.maxCount - slotBefore.total) {
+                        replier.reply("※ 슬롯은 최대 " + slotConfig.maxCount + "칸까지 확장할 수 있습니다. (현재 " + slotBefore.total + "칸 / 추가 가능 " + (slotConfig.maxCount - slotBefore.total) + "칸)");
+                        return;
+                    }
+                    var slotItemOwned = data.member[sender].bag[slotConfig.expansionItemName] || 0;
+                    if (slotItemOwned < slotOpenCount) {
+                        replier.reply("※ " + slotConfig.expansionItemName + "이 부족합니다. (보유 " + numberWithCommas(slotItemOwned) + "개)");
+                        return;
+                    }
+                    removeItem(data, sender, slotConfig.expansionItemName, slotOpenCount);
+                    data.member[sender].petSkillExtraSlots = slotBefore.extra + slotOpenCount;
+                    saveJsonFile(data, filePath); // 아이템과 영구 슬롯을 같은 회원 저장으로 확정
+                    var slotAfter = getPetSkillSlotCount(data, petSkillData, sender);
+                    replier.reply("[" + checkRank(data, petData, guildData, sender) + "] 님\n✅ 펫스킬 슬롯 확장 완료!\n━━━━━━━━━━━\n📜 사용 아이템: " + slotConfig.expansionItemName + " ×" + slotOpenCount + "\n🧩 기존 장착 공간: " + slotBefore.total + "칸\n🧩 확장 후 공간: " + slotAfter + "칸\n📈 현재 슬롯: " + slotAfter + "/" + slotConfig.maxCount + "칸\n━━━━━━━━━━━\n🎉 펫스킬 장착 공간이 " + slotOpenCount + "칸 증가했습니다!");
+                    return;
+                }
+
                 if (msg === "/호월토벌대오픈") {
                     if (!petData[sender] || !petData[sender].petname) {
                         replier.reply("펫이 없습니다.");
@@ -6872,8 +6906,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         return;
                     }
                     if (skillStore.equipped.length >= skillSlot) {
-                        var maxSlotGuide = PET_SKILL_MAX_EQUIP_SLOT + (hasPetSkill(petSkillData, sender, "펫스킬 학개론") ? 3 : 0) + (isHoiPassPremiumActive(data, sender) ? GLOBAL_CONFIG.supportPass.premium.skillSlotBonus : 0);
-                        replier.reply("❌ 장착 슬롯이 부족합니다.\n펫 친밀도 Lv.100당 1칸, 최대 " + maxSlotGuide + "칸입니다.");
+                        replier.reply("❌ 장착 슬롯이 부족합니다.\n현재 장착 가능 공간: " + skillSlot + "칸\n/펫스킬슬롯오픈 숫자로 최대 " + GLOBAL_CONFIG.petSkill.slots.maxCount + "칸까지 확장할 수 있습니다.");
                         return;
                     }
                     var compat = isPetSkillCompatible(petSkillData, sender, equipName);
@@ -26974,7 +27007,7 @@ replier.reply(
                         replier.reply("❌ 친밀도 처리 중 오류가 발생했습니다.");
                         return;
                     }
-                    var restoredLockedSkillCount = result.levelUps > 0 ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 친밀도 슬롯 증가로 다시 활성화된 잠금 스킬 수
+                    var restoredLockedSkillCount = result.levelUps > 0 ? restoreHoiPassPremiumLockedSkills(data, petSkillData, sender) : 0; // 현재 빈 슬롯에 복구된 기존 잠금 스킬 수
                     if (feedCount >= 100000) recordAdventureQuestAction(data, sender, 7, "feed100000", 0);
 
                     // UI
@@ -32661,7 +32694,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/상점추가\s+[^\r\n]+\s+\d+\s*$/.test(command) ||
         getRaidSealCraftRequest(command) !== null ||
         command === "/포인트잠금" || command === "/모험시작" || command === "/호여!!" || command === "/스타터중복회수 실행" || command === "출발한다" || command === "다음에 한다" ||
-        command === "/호월토벌대오픈" ||
+        command === "/호월토벌대오픈" || /^\/펫스킬슬롯오픈\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈" || /^\/홈뱃지오픈\s+\d+$/.test(command) ||
         /^\/홈뱃지오픈2\s+\d+$/.test(command) ||
         command === "/홈뱃지오픈3" || /^\/홈뱃지오픈3\s+\d+$/.test(command) ||
@@ -44523,19 +44556,6 @@ function revokeHoiPassPremiumBadge(data, activityData, user, operator) {
     return true;
 }
 
-// 프리미엄 종료로 초과된 장착 펫스킬을 효과 없는 잠금 슬롯으로 보관하는 함수
-function lockHoiPassPremiumExtraSkills(data, petSkillData, user) {
-    var skills = initPetSkillUser(petSkillData, user);
-    var lockedCount = 0;
-    while (skills.equipped.length > getPetSkillSlotCount(data, petSkillData, user)) {
-        var skillName = normalizePetSkillName(skills.equipped.pop());
-        if (!skillName) continue;
-        skills.lockedPremium.unshift(skillName);
-        lockedCount++;
-    }
-    return lockedCount;
-}
-
 // 중복 장착 검사 후 빈 슬롯만큼 프리미엄 잠금 펫스킬을 다시 활성화하는 함수
 function restoreHoiPassPremiumLockedSkills(data, petSkillData, user) {
     var skills = initPetSkillUser(petSkillData, user);
@@ -44559,7 +44579,7 @@ function expireHoiPassPremium(data, petSkillData, activityData, user, reason, op
     pass.enabled = false;
     pass.expiredAt = formatDateTime(new Date());
     pass.expireReason = reason || "기간 만료";
-    var lockedSkillCount = lockHoiPassPremiumExtraSkills(data, petSkillData, user);
+    var lockedSkillCount = 0; // 한도가 줄어도 기존 장착과 효과를 보존하고 추가 장착만 제한
     var removedTicketCount = 0;
     if (!hasActiveHoiOrNewbiePass(data, user)) removedTicketCount = removeAllAutoExploreTickets(data, user);
     var badgeRevoked = revokeHoiPassPremiumBadge(data, activityData, user, operator || "시스템");
@@ -52108,19 +52128,19 @@ function findPetSkillOwners(data, petSkillData, skillName) {
     return owners;
 }
 
-// 사용자의 친밀도 레벨에 따라 장착 가능한 펫 스킬 슬롯 개수를 계산하여 반환
-function getPetSkillSlotCount(data, petSkillData, user) {
-    var info = getUserIntimacyInfo(data, user);
-    var level = info && info.level ? info.level : 0;
-    var hasIntro = hasPetSkill(petSkillData, user, "펫스킬 학개론");
-    var premiumSlotBonus = isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.supportPass.premium.skillSlotBonus : 0;
-    var maxSlot = PET_SKILL_MAX_EQUIP_SLOT + (hasIntro ? 3 : 0);
-    var slots = Math.floor(level / 100);
-    slots += hasIntro ? 3 : 0;
+// 기본·학개론·프리미엄·영구 확장권의 슬롯 구성과 합산 한도를 반환하는 함수
+function getPetSkillSlotDetails(data, petSkillData, user) {
+    var member = data && data.member ? data.member[user] : null;
+    var extra = Math.max(0, parseInt(member && member.petSkillExtraSlots, 10) || 0); // 누적 사용한 확장권 수
+    var intro = hasPetSkill(petSkillData, user, "펫스킬 학개론") ? GLOBAL_CONFIG.petSkill.slots.introBonus : 0;
+    var premium = isHoiPassPremiumActive(data, user) ? GLOBAL_CONFIG.supportPass.premium.skillSlotBonus : 0;
+    return { base: PET_SKILL_MAX_EQUIP_SLOT, intro: intro, premium: premium, extra: extra,
+        total: Math.min(GLOBAL_CONFIG.petSkill.slots.maxCount, PET_SKILL_MAX_EQUIP_SLOT + intro + premium + extra) };
+}
 
-    if (slots > maxSlot) slots = maxSlot;
-    if (slots < 0) slots = 0;
-    return slots + premiumSlotBonus;
+// 현재 장착 가능한 펫스킬 슬롯 수를 반환하는 함수
+function getPetSkillSlotCount(data, petSkillData, user) {
+    return getPetSkillSlotDetails(data, petSkillData, user).total;
 }
 
 // 사용자가 특정 펫 스킬을 장착할 수 있는지 여부를 확인하고, 결과와 함께 이유를 반환
@@ -52253,13 +52273,22 @@ function formatSkillBagMessage(data, petData, petSkillData, guildData, user) {
 // 사용자의 장착된 펫 스킬과 가방에 있는 스킬 목록을 포맷팅하여 메시지로 반환
 function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, user) {
     var skills = initPetSkillUser(petSkillData, user);
-    var slot = getPetSkillSlotCount(data, petSkillData, user);
+    var slotDetails = getPetSkillSlotDetails(data, petSkillData, user);
+    var slot = slotDetails.total;
 
-    var msg = "[" + checkRank(data, petData, guildData, user) + "] 님의\n";
+    var msg = slotDetails.premium > 0 ? "[👑호이패스 프리미엄👑]\n" : "";
+    msg += "[" + checkRank(data, petData, guildData, user) + "] 님의\n";
     msg += "🧙‍♂️현재 장착 중인 펫스킬🧙‍♂️[" + skills.equipped.length + "/" + slot + "]\n";
+    msg += "━━━━━━━━━━━\n";
+    msg += "📖 기본 장착 공간: " + slotDetails.base + "칸\n";
+    msg += "📙 펫스킬 학개론: +" + slotDetails.intro + "칸\n";
+    msg += "👑 호이패스 프리미엄: +" + slotDetails.premium + "칸\n";
+    msg += "📜 펫스킬 슬롯 확장권: +" + slotDetails.extra + "칸\n";
+    msg += "🧩 총 장착 가능 공간: " + slot + "/" + GLOBAL_CONFIG.petSkill.slots.maxCount + "칸\n";
     msg += "━━━━━━━━━━━\n";
     msg += "※ 스킬 제거: /펫스킬소멸 [번호]\n";
     msg += "※ 스킬 정보: /펫스킬정보 [스킬이름]\n";
+    msg += "※ 슬롯 확장: /펫스킬슬롯오픈 숫자\n";
     msg += "━━━━━━━━━━━\n" + allsee;
 
     if (skills.equipped.length === 0) {
@@ -52274,7 +52303,7 @@ function formatPetSkillStatusMessage(data, petData, petSkillData, guildData, use
 
     if (skills.lockedPremium.length > 0) {
         msg += "\n🔒 프리미엄 잠금 펫스킬 [" + skills.lockedPremium.length + "개]\n";
-        msg += "※ 프리미엄 재가입 또는 친밀도 레벨로 공간이 늘어나면 다시 활성화됩니다. 현재 효과는 적용되지 않습니다.\n";
+        msg += "※ 프리미엄 재가입 또는 확장권으로 공간이 늘어나면 다시 활성화됩니다. 현재 효과는 적용되지 않습니다.\n";
         for (var lockedIndex = 0; lockedIndex < skills.lockedPremium.length; lockedIndex++) {
             msg += "🔒 " + formatPetSkillName(skills.lockedPremium[lockedIndex]) + "\n";
         }
