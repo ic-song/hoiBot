@@ -8391,7 +8391,8 @@ Status: VERIFIED
 - `getPetSkillSlotDetails` (Main), `getPetSkillSlotCount` (Main·Info), `removeItem`, `saveJsonFile`
 
 ## Data Usage / Save Flow
-- `data.member[sender].bag["펫스킬 슬롯 확장권📜"]`와 `data.member[sender].petSkillExtraSlots`를 함께 변경하고 기존 명령 트랜잭션에서 `member.json`을 한 번 저장한다. 누적값이 없는 기존 회원은 0칸으로 계산하고 일일 리셋은 누적값을 보존한다.
+- 정식 아이템명은 `펫스킬 슬롯 확장권📜(/펫스킬슬롯오픈 숫자)`이다. `data.member[sender].bag`의 해당 수량과 `data.member[sender].petSkillExtraSlots`를 함께 변경하고 기존 명령 트랜잭션에서 `member.json`을 한 번 저장한다. 누적값이 없는 기존 회원은 0칸으로 계산하고 일일 리셋은 누적값을 보존한다.
+- 구 이름 `펫스킬 슬롯 확장권📜`은 기존 `normalizeUniversalCollectionKeyBagItems` 전환 목록으로 신 이름에 합산한다. `/가방`에서는 기존 저장 흐름으로 이전 결과를 보존하고, 슬롯 개봉은 보유량 확인 전에 전환한다. 공통 지급·차감 훅도 구 이름을 신 이름으로 해석해 중복 합산 없이 기존 지급·패키지와 호환한다. helper에는 파일 IO를 추가하지 않는다.
 - 수량은 양의 정수이며 정확히 일치하는 전체 패턴만 실행한다. DEV 명령도 동일한 배타 잠금·회원 저장 경로를 사용한다. 아이템 부족·현재 합산 한도 100칸 초과는 부분 소비 없이 전체 거부한다.
 - `/펫스킬`은 활성 프리미엄 배너와 기본·학개론·프리미엄·확장권·합산 5줄을 표시하며 기존 장착 목록·가방번호·allsee를 유지한다.
 - 프리미엄 종료 시 기존 장착을 새로 잠그거나 소멸하지 않는다. 과거 버전의 `lockedPremium` 기록은 기존 호환성 검사로 빈 슬롯만 복구하며 충돌 기록은 보존한다.

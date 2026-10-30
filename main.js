@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.733"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.734"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -2623,7 +2623,7 @@ blockedNicknameTerms: [
         maxLength: 30 // 타이틀 선물 내용 최대 길이
     },
     petSkill: { // 펫스킬 시스템 설정
-        slots: { maxCount: 100, introBonus: 3, expansionItemName: "펫스킬 슬롯 확장권📜" },
+        slots: { maxCount: 100, introBonus: 3, expansionItemName: "펫스킬 슬롯 확장권📜(/펫스킬슬롯오픈 숫자)", legacyExpansionItemName: "펫스킬 슬롯 확장권📜" },
         miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
         bookItemName: "펫스킬북📙(/펫스킬오픈)",
         oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
@@ -6844,6 +6844,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         replier.reply("※ 슬롯은 최대 " + slotConfig.maxCount + "칸까지 확장할 수 있습니다. (현재 " + slotBefore.total + "칸 / 추가 가능 " + (slotConfig.maxCount - slotBefore.total) + "칸)");
                         return;
                     }
+                    normalizeUniversalCollectionKeyBagItems(data.member[sender].bag);
                     var slotItemOwned = data.member[sender].bag[slotConfig.expansionItemName] || 0;
                     if (slotItemOwned < slotOpenCount) {
                         replier.reply("※ " + slotConfig.expansionItemName + "이 부족합니다. (보유 " + numberWithCommas(slotItemOwned) + "개)");
@@ -42713,7 +42714,7 @@ function normalizePendantTransitionItemName(itemName) {
     return itemName;
 }
 
-// 기존 컬렉션 만능열쇠 이름을 관련 명령어가 포함된 새 이름으로 병합하는 함수
+// 기존 컬렉션 만능열쇠·펫스킬 슬롯 확장권을 사용 명령어가 포함된 정식 이름으로 병합하는 함수
 function normalizeUniversalCollectionKeyBagItems(bag) {
     if (!bag) return false;
     var config = GLOBAL_CONFIG.universalBox;
@@ -42721,7 +42722,8 @@ function normalizeUniversalCollectionKeyBagItems(bag) {
         { oldName: config.legacyPetSkillKeyItemName, newName: config.petSkillKeyItemName },
         { oldName: config.legacyMiniPetKeyItemName, newName: config.miniPetKeyItemName },
         { oldName: config.oldPetSkillKeyItemName, newName: config.petSkillKeyItemName },
-        { oldName: config.oldMiniPetKeyItemName, newName: config.miniPetKeyItemName }
+        { oldName: config.oldMiniPetKeyItemName, newName: config.miniPetKeyItemName },
+        { oldName: GLOBAL_CONFIG.petSkill.slots.legacyExpansionItemName, newName: GLOBAL_CONFIG.petSkill.slots.expansionItemName }
     ];
     var changed = false;
     for (var i = 0; i < mappings.length; i++) {
@@ -42740,6 +42742,7 @@ function normalizeUniversalCollectionKeyBagItems(bag) {
 function normalizePendantTransitionBagItem(bag, itemName) {
     itemName = normalizePendantTransitionItemName(itemName);
     normalizeUniversalCollectionKeyBagItems(bag);
+    if (itemName === GLOBAL_CONFIG.petSkill.slots.legacyExpansionItemName) return GLOBAL_CONFIG.petSkill.slots.expansionItemName;
     if (itemName === GLOBAL_CONFIG.universalBox.legacyPetSkillKeyItemName) return GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
     if (itemName === GLOBAL_CONFIG.universalBox.legacyMiniPetKeyItemName) return GLOBAL_CONFIG.universalBox.miniPetKeyItemName;
     if (itemName === GLOBAL_CONFIG.universalBox.oldPetSkillKeyItemName) return GLOBAL_CONFIG.universalBox.petSkillKeyItemName;
