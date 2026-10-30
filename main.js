@@ -1675,6 +1675,9 @@ const GLOBAL_CONFIG = {
     rewardRecordCleanup: {
         petSkillLedgerKey: "petSkillRetirementCompensation"
     },
+    dataCleanup: {
+        confirmationTimeoutMs: 60000
+    },
     manualReset: {
         timeoutMs: 60000,
         rooms: [room92, testRoom],
@@ -3556,6 +3559,7 @@ const miniPetData = loadJsonFile(miniPetPath);
 
 //메인채팅응답기능
 var manualResetSessions = {}; // 확인 대기는 컴파일 시 소멸하며 디스크에 저장하지 않음
+var dataCleanupSessions = {}; // 환경·사용자·방별 데이터 정리 확인 대기만 메모리에 보관
 var messageFilterCaches = {};
 var miniGameTimers = {};
 var miniGameCatalogCaches = {};
@@ -3613,6 +3617,15 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ" || msg === "/등록한다" || msg === "/등록안한다") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
             if (/^\/(?:ㅁㅂ|ㅁㄱ|ㅁㅌ|ㅎㅈ)$/.test(msg)) msg = msg.substring(1);
         }
+        var dataCleanupKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
+        var dataCleanupAction = getDataCleanupAction(msg, dataCleanupSessions[dataCleanupKey]);
+        if (dataCleanupAction && (!isManualResetRoom(room) || !(isAdmin(sender) || isMaster(sender)))) {
+            delete dataCleanupSessions[dataCleanupKey];
+            if (isManualResetRoom(room)) replier.reply("⛔ 사용 권한이 없습니다.");
+            return;
+        }
+        if (dataCleanupAction) msg = "/데이터정리"; // 확인 숫자가 다른 초기화 메뉴로 전달되지 않도록 정리 흐름으로 고정
+        if (!dataCleanupAction && msg.charAt(0) === "/") delete dataCleanupSessions[dataCleanupKey]; // 다른 명령으로 넘어가면 숫자 확인 대기를 해제
         if (msg.trim() === "ㅎㅈ") msg = "/호월주사위";
         if (/^[ \t]*ㅁㄱ[ \t]*$/.test(msg)) msg = "ㅁㄱ";
         var marbleLandShortcut = msg === "ㅁㄱ";
@@ -3909,6 +3922,42 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         recoverAdventureRecordPending(); // 회원을 읽기 전에 중단된 기록·회원·분리 저장본을 함께 복구
         var memberStorageCleanupAllowed = msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender));
         var data = loadJsonFile(filePath, memberStorageCleanupAllowed ? "migration" : isServerRaidCommand(msg) ? "raid" : undefined);
+        if (dataCleanupAction) {
+            if (!memberStorageCleanupAllowed) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("⛔ 사용 권한이 없습니다."); return; }
+            if (dataCleanupAction === "cancel" || dataCleanupAction === "confirm" && (!dataCleanupSessions[dataCleanupKey] || Date.now() >= dataCleanupSessions[dataCleanupKey].expiresAt)) {
+                replier.reply(advanceDataCleanupSession(dataCleanupAction, dataCleanupKey, null, Date.now()).reply); return;
+            }
+            if (isServerRaidLocked(data)) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("❌ 레이드 진행·정산 중에는 데이터를 정리할 수 없습니다."); return; }
+            var dataCleanupPaths = getDataCleanupStorePaths(), dataCleanupStores = {};
+            try {
+                for (var dataCleanupIndex = 0; dataCleanupIndex < dataCleanupPaths.length; dataCleanupIndex++) {
+                    var dataCleanupEntry = dataCleanupPaths[dataCleanupIndex];
+                    dataCleanupStores[dataCleanupEntry.key] = dataCleanupEntry.optional && !new java.io.File(resolveActiveDataPath(dataCleanupEntry.path)).exists() ? (dataCleanupEntry.key === "educationStore" ? { version: 1, users: {} } : null) : loadJsonFile(dataCleanupEntry.path);
+                }
+                dataCleanupStores.dollResidualNames = [];
+                if (dataCleanupStores.dollIndexData) {
+                    var dataCleanupDollNames = {}, dataCleanupDollIndex = requireDollStore(dataCleanupStores.dollIndexData);
+                    for (var dataCleanupDollSlot = 0; dataCleanupDollSlot < GLOBAL_CONFIG.doll.shardCount; dataCleanupDollSlot++) {
+                        var dataCleanupDollStore = requireDollStore(loadJsonFile(DATA_ROOT_PATH + "dollRecords_" + dataCleanupDollSlot + ".json"));
+                        for (var dataCleanupDollUser in dataCleanupDollStore.users) if (Object.prototype.hasOwnProperty.call(dataCleanupDollStore.users, dataCleanupDollUser) && !data.member[dataCleanupDollUser]) dataCleanupDollNames[dataCleanupDollUser] = true;
+                    }
+                    dataCleanupDollStore = null; // 미리보기에서는 인형 원본을 대기 상태에 보관하지 않음
+                    for (var dataCleanupDollName in dataCleanupDollIndex.users) if (Object.prototype.hasOwnProperty.call(dataCleanupDollIndex.users, dataCleanupDollName) && !data.member[dataCleanupDollName]) dataCleanupDollNames[dataCleanupDollName] = true;
+                    dataCleanupStores.dollResidualNames = Object.keys(dataCleanupDollNames).sort();
+                }
+                var dataCleanupPreview = buildDataCleanupPreview(data, territoryEntryGuildData, dataCleanupStores);
+                var dataCleanupDecision = advanceDataCleanupSession(dataCleanupAction, dataCleanupKey, dataCleanupPreview, Date.now());
+            } catch (dataCleanupPreviewError) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("❌ 정리 대상을 확인하지 못했습니다.\n" + dataCleanupPreviewError.message); return; }
+            dataCleanupStores = null; // 실행 단계에서 큰 원본 객체를 이중 보관하지 않음
+            if (!dataCleanupDecision.execute) {
+                delete manualResetSessions[dataCleanupKey];
+                try { replier.reply(dataCleanupDecision.reply); }
+                catch (dataCleanupReplyError) { delete dataCleanupSessions[dataCleanupKey]; throw dataCleanupReplyError; }
+                return;
+            }
+            ctx.dataCleanupConfirmed = true;
+        }
+        if (msg === "/데이터정리" && !ctx.dataCleanupConfirmed) return;
         var memberStorageMigrationResult = null;
         if (data.migrations && data.migrations[robberyConfig.markerKey] !== undefined && data.migrations[robberyConfig.markerKey] !== true) throw new Error("강탈 기록 분리 표시 오류");
         var memberStorageRepairing = false;
@@ -4516,17 +4565,6 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply(gmSuccess); return;
         }
 
-        if (msg === "/보상기록정리") {
-            if (!(isAdmin(sender) || isMaster(sender))) { replier.reply("❌ 관리자만 사용할 수 있습니다."); return; }
-            var cleanupEducationStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
-            var cleanupPets = loadJsonFile(memberPetPath), cleanupPetSkills = loadJsonFile(petSkillDataPath);
-            var rewardCleanup;
-            try { rewardCleanup = cleanupCompletedRewardRecords(data, cleanupPets, cleanupPetSkills, cleanupEducationStore); }
-            catch (rewardCleanupError) { replier.reply("❌ 보상 기록을 정리하지 않았습니다.\n" + rewardCleanupError.message); return; }
-            if (rewardCleanup.changed) saveJsonFile(data, filePath);
-            replier.reply("🧹 보상 기록 정리 완료\n정령 보상 원장: " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + "\n폐지 펫스킬 보상 원장: " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n교육 기록 축소: " + rewardCleanup.educationUsers + "명\n회원 기록 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n지급된 보상과 교육 실적은 유지됩니다.");
-            return;
-        }
         if (msg === "/정령컨텐츠보상") {
             if (!isMaster(sender)) { replier.reply("❌ MASTER만 사용할 수 있습니다."); return; }
             replier.reply("종료된 일회성 보상입니다. 보상은 다시 지급하지 않습니다.");
@@ -32031,11 +32069,13 @@ replier.reply(
 
                     return;
                 }
-                if (msg === "/데이터정리" && (isAdmin(sender) || isMaster(sender))) {
+                if (msg === "/데이터정리" && ctx.dataCleanupConfirmed && (isAdmin(sender) || isMaster(sender))) {
                     if (!data) {
                         replier.reply("❌ 메인 데이터가 없습니다.");
                         return;
                     }
+                    var cleanupEducationStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
+                    var rewardCleanup = cleanupCompletedRewardRecords(data, petData, petSkillData, cleanupEducationStore);
                     var robberyCleanupConfig = GLOBAL_CONFIG.miniPet.robberyHistory;
                     var robberyCleanupPath = resolveActiveDataPath(DATA_ROOT_PATH + robberyCleanupConfig.fileName);
                     var robberyAlreadySeparated = data.migrations && data.migrations[robberyCleanupConfig.markerKey] === true;
@@ -32208,6 +32248,9 @@ replier.reply(
 
                     var out = "🧹 /데이터정리 완료\n";
                     out += allsee + "\n";
+                    out += "\n[보상·교육 기록 정리]\n";
+                    out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
+                    out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
                     out += "\n[강탈 이력 분리]\n";
                     out += robberyMigrationPending ? "✅ 전체 기록 보존 · 추가 이전 " + numberWithCommas(robberyMigration.added) + "건 / " + numberWithCommas(robberyMigration.users.length) + "명\n" : "✅ 이미 분리되어 있어 다시 옮기지 않았습니다.\n";
                     if (memberStorageMigrationResult) {
@@ -32391,6 +32434,121 @@ function getManualResetSessionKey(sender, room, isGroupChat, isDev) {
     return (isDev ? "DEV:" : "PROD:") + JSON.stringify([sender, room, !!isGroupChat]);
 }
 
+// 정리 대기가 있는 사용자에게만 확인·취소 단축 입력을 연결하는 함수
+function getDataCleanupAction(msg, session) {
+    if (msg === "/데이터정리") return "preview";
+    if (!session) return null;
+    if (msg === "확인" || msg === "1" || msg === "/확인" || msg === "/1") return "confirm";
+    if (msg === "취소" || msg === "2" || msg === "/취소" || msg === "/2") return "cancel";
+    return null;
+}
+
+// 미리보기 진입부에서 읽을 기존 정리 대상 파일 경로만 반환하는 함수
+function getDataCleanupStorePaths() {
+    return [
+        { key: "petData", path: memberPetPath }, { key: "petSkillData", path: petSkillDataPath },
+        { key: "currencyLogData", path: currencyLogPath }, { key: "memberTitleData", path: memberTitlePath },
+        { key: "petTitleData", path: petTitlePath }, { key: "miniPetTitleData", path: miniPetTitlePath },
+        { key: "miniPetCollectionData", path: miniPetCollectionPath }, { key: "trialTowerData", path: trialTowerPath },
+        { key: "homeData", path: homeDataFile }, { key: "placedFurnitureData", path: petHomePlacedFurniturePath, optional: true },
+        { key: "petHomeCommentsData", path: petHomeCommentsFile }, { key: "petHomeActivityData", path: petHomeActivityFile },
+        { key: "petExploreData", path: petExplorePath }, { key: "attendanceLightData", path: attendanceLightPath },
+        { key: "punchRankData", path: punchRankPath }, { key: "freeMarketData", path: freeMarketPath },
+        { key: "boardData", path: boardPath }, { key: "carrotBoardData", path: carrotBoardPath },
+        { key: "packageLogData", path: packageLogPath }, { key: "dollIndexData", path: DATA_ROOT_PATH + "dollIndex.json", optional: true },
+        { key: "educationStore", path: DATA_ROOT_PATH + GLOBAL_CONFIG.gmEducation.fileName, optional: true }
+    ];
+}
+
+// 삭제·축소 대상만 읽어 건수와 확인용 목록을 계산하고 원본은 변경하지 않는 함수
+function buildDataCleanupPreview(data, guildData, stores) {
+    var required = getDataCleanupStorePaths();
+    for (var requiredIndex = 0; requiredIndex < required.length; requiredIndex++) {
+        var entry = required[requiredIndex];
+        if (!entry.optional && (!stores[entry.key] || typeof stores[entry.key] !== "object")) throw new Error("정리 원본을 읽을 수 없습니다: " + entry.key);
+    }
+    if (stores.placedFurnitureData) requirePlacedFurnitureDataMap(stores.placedFurnitureData);
+    var rewards = cleanupCompletedRewardRecords(data, stores.petData, stores.petSkillData, stores.educationStore, true);
+    var targets = [["rewards", rewards]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
+    var zeroCount = 0, zeroUsers = 0, pointUsers = 0, pointFraction = 0; // 제거할 포인트 소수점 합계
+    for (var user in data.member) {
+        if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
+        var member = data.member[user], zeroForUser = 0;
+        if (member.gmEducationRewards !== undefined || member.gmEducationRewardTimes !== undefined) targets.push(["education", user, member.gmEducationRewards, member.gmEducationRewardTimes]);
+        var bag = member.bag || {};
+        for (var item in bag) if (Object.prototype.hasOwnProperty.call(bag, item) && bag[item] === 0) { zeroCount++; zeroForUser++; targets.push(["zero", user, item]); }
+        if (zeroForUser) zeroUsers++;
+        if (typeof member.point === "number" && member.point !== Math.floor(member.point)) {
+            pointUsers++; pointFraction += member.point - Math.floor(member.point);
+            targets.push(["point", user, member.point]);
+        }
+    }
+    for (var homeUser in stores.homeData) {
+        if (!Object.prototype.hasOwnProperty.call(stores.homeData, homeUser) || !stores.homeData[homeUser]) continue;
+        var home = stores.homeData[homeUser], furnitureBag = Array.isArray(home.furnitureBag) ? home.furnitureBag : [];
+        if (!Array.isArray(home.furnitureBag)) { bagShapeCount++; targets.push(["bagShape", homeUser]); }
+        var placed = getPlacedFurnitureList(stores.homeData, stores.placedFurnitureData, homeUser), furnitureLists = [placed, furnitureBag];
+        for (var listIndex = 0; listIndex < furnitureLists.length; listIndex++) {
+            for (var furnitureIndex = 0; furnitureIndex < furnitureLists[listIndex].length; furnitureIndex++) {
+                var furniture = furnitureLists[listIndex][furnitureIndex];
+                if (furniture && furniture.display !== undefined) { displayCount++; targets.push(["display", homeUser, listIndex, furnitureIndex]); }
+                if (listIndex === 1 && furniture == null) { nullCount++; targets.push(["null", homeUser, furnitureIndex]); }
+            }
+        }
+    }
+    var residualNames = Object.keys(collectDeletedAccountNames(data, guildData, stores)).sort();
+    targets.push(["residual", residualNames]);
+    var dollResidualNames = stores.dollResidualNames || [];
+    targets.push(["dollResidual", dollResidualNames]);
+    var spirit = data[GLOBAL_CONFIG.spiritRetirement.ledgerKey], skills = data[GLOBAL_CONFIG.rewardRecordCleanup.petSkillLedgerKey];
+    if (spirit) targets.push(["spirit", spirit.version, spirit.status, spirit.users]);
+    if (skills) targets.push(["skills", skills.version, skills.users, skills.collectionUsers]);
+    var migrations = data.migrations || {}, memberMarker = migrations[MEMBER_STORAGE_SPLIT_CONFIG.key];
+    var memberMigration = !memberMarker || memberMarker.phase !== "COMPLETE" || !!(data.__memberSplitContext && data.__memberSplitContext.residualLogFieldCount);
+    var adventureMigration = migrations[GLOBAL_CONFIG.adventureQuest.history.markerKey] !== true;
+    var robberyUsers = [];
+    for (var petUser in stores.petData) if (Object.prototype.hasOwnProperty.call(stores.petData, petUser) && stores.petData[petUser] && stores.petData[petUser].miniPetRobberyHistory !== undefined) robberyUsers.push(petUser);
+    var robberyMigration = migrations[GLOBAL_CONFIG.miniPet.robberyHistory.markerKey] !== true || robberyUsers.length > 0;
+    targets.push(["migrations", memberMigration, adventureMigration, robberyMigration, robberyUsers.sort()]);
+    var text = "🧹 데이터 정리 대상\n아직 정리하지 않았습니다.\n━━━━━━━━━━━━\n" +
+        "• 정령 보상 원장: " + (rewards.spiritRemoved ? "전체 제거" : "없음") + "\n" +
+        "• 폐지 펫스킬 보상 원장: " + (rewards.petSkillRemoved ? "전체 제거" : "없음") + "\n" +
+        "• 교육 중복 기록: " + rewards.educationUsers + "명 축소\n" +
+        "  보상·교육 기록 약 " + numberWithCommas(rewards.removedChars) + "자 감소\n" +
+        "• 가방 수량 0 항목: " + zeroCount + "개 / " + zeroUsers + "명\n" +
+        "• 포인트 소수점: " + pointUsers + "명 / 합계 " + formatPointValue(pointFraction) + "\n" +
+        "• 가구 표시용 정보: " + displayCount + "개\n" +
+        "• 빈 가구 항목: " + nullCount + "개 / 가구가방 형식 보정 " + bagShapeCount + "명\n" +
+        "• 회원 목록 외 잔여 정보: " + residualNames.length + "개 식별자\n" +
+        "  관련 펫·타이틀·길드·댓글·알림·거래·운영 이력 정리\n" +
+        "• 회원 목록 외 인형 기록: " + dollResidualNames.length + "명\n" +
+        "• 기록 보존·이전: 회원 " + (memberMigration ? "필요" : "완료") + " / 퀘스트 " + (adventureMigration ? "필요" : "완료") + " / 강탈 " + (robberyMigration ? "필요" : "완료") + "\n\n" +
+        "지급된 보상·적용 매력·교육 실적은 유지합니다.\n이전 단계가 필요하면 먼저 처리한 뒤 나머지 정리를 다시 안내합니다.\n" +
+        "━━━━━━━━━━━━\n확인 또는 1: 정리 실행\n취소 또는 2: 취소\n" + (GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs / 1000) + "초 안에 선택해주세요.";
+    if (residualNames.length) text += allsee + "\n[회원 목록 외 잔여 식별자]\n" + residualNames.join("\n") + "\n※ 과거 기록에만 등장한 이름은 자동 삭제 대상으로 보지 않습니다.";
+    return { signature: getDataCleanupSignature(targets), text: text };
+}
+
+// 대기 중에는 원본 목록 대신 정리 대상의 작은 SHA-256 값만 보관하는 함수
+function getDataCleanupSignature(targets) {
+    var digest = java.security.MessageDigest.getInstance("SHA-256");
+    var bytes = digest.digest(new java.lang.String(JSON.stringify(targets)).getBytes("UTF-8")), hex = "";
+    for (var i = 0; i < bytes.length; i++) hex += ("0" + (bytes[i] & 255).toString(16)).slice(-2);
+    return hex;
+}
+
+// 최신 대상과 범위가 일치하는 한 번의 확인만 소비하고 정리 실행을 허용하는 함수
+function advanceDataCleanupSession(action, key, preview, now) {
+    var session = dataCleanupSessions[key];
+    if (action === "cancel") { delete dataCleanupSessions[key]; return { execute: false, reply: "데이터 정리를 취소했습니다." }; }
+    if (action === "confirm" && (!session || now >= session.expiresAt)) { delete dataCleanupSessions[key]; return { execute: false, reply: "정리 확인 시간이 만료되었습니다. /데이터정리부터 다시 진행해주세요." }; }
+    if (!preview) throw new Error("정리 미리보기가 없습니다.");
+    if (action === "confirm" && session.signature === preview.signature) { delete dataCleanupSessions[key]; return { execute: true }; }
+    for (var oldKey in dataCleanupSessions) if (Object.prototype.hasOwnProperty.call(dataCleanupSessions, oldKey) && now >= dataCleanupSessions[oldKey].expiresAt) delete dataCleanupSessions[oldKey];
+    dataCleanupSessions[key] = { signature: preview.signature, expiresAt: now + GLOBAL_CONFIG.dataCleanup.confirmationTimeoutMs };
+    return { execute: false, reply: (action === "confirm" ? "정리 대상이 변경되어 다시 안내합니다. 내용을 확인한 뒤 다시 선택해주세요.\n\n" : "") + preview.text };
+}
+
 // 통합 메뉴 밖에서 실행하는 운영 일괄 정리 명령을 찾는 함수
 function getManualResetDirectOperation(msg) {
     var entries = GLOBAL_CONFIG.manualReset.directOperations;
@@ -32457,7 +32615,7 @@ function advanceManualResetSession(msg, sender, room, isGroupChat, key, memberDa
         }
         if (!choices.length) { delete manualResetSessions[key]; return { reply: "사용할 수 있는 초기화 항목이 없습니다." }; }
         manualResetSessions[key] = { stage: "menu", choices: choices, room: room, isGroupChat: isGroupChat, expiresAt: now + GLOBAL_CONFIG.manualReset.timeoutMs };
-        lines.push("\n60초 안에 번호를 입력해주세요. 취소: 2취소\n정기 리셋·/데이터정리·개인 가방 정리·일회성 이전 명령은 기존 방식으로 유지됩니다.");
+        lines.push("\n60초 안에 번호를 입력해주세요. 취소: 2취소\n정기 리셋·개인 가방 정리·일회성 이전 명령은 기존 방식으로 유지됩니다.\n/데이터정리는 대상 안내 후 확인/1 또는 취소/2로 진행합니다.");
         return { reply: lines.join("\n") };
     }
     if (!session || session.room !== room || session.isGroupChat !== isGroupChat || now >= session.expiresAt) return {};
@@ -32812,7 +32970,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (isDevCommandMessage(msg) && (command === "/등록한다" || command === "/등록안한다")) command = command.substring(1);
     if (isDevCommandMessage(msg) && /^\/(?:\d+(?:[ \t]+[^\r\n]+)?|1삭제|2취소)$/.test(command)) command = command.substring(1);
     if (command === "ㅁㅂ" || command === "ㅁㄱ" || command === "ㅁㅌ" || (isDevCommandMessage(msg) && /^\/(?:ㅁㅂ|ㅁㄱ|ㅁㅌ)$/.test(command))) return true;
-    return /^\/(?:미니게임|밸런스결과|밸런스|호월주사위|금고|금고리셋|금고횟수리셋)(?:\s|$)/.test(command) || /^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(command) || isManualResetInput(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
+    return /^\/(?:미니게임|밸런스결과|밸런스|호월주사위|금고|금고리셋|금고횟수리셋)(?:\s|$)/.test(command) || /^\/(?:길드마블|마블(?:판|가이드|시작|준비취소|준비|모집취소|굴리기|구매|건설|통과|중단확인|중단|참가비))(?:\s|$)/.test(command) || isManualResetInput(command) || /^\/?(?:확인|취소|1|2)$/.test(command) || command === "/필터데이터정리" || /^\/필터(?:추가|제거)(?:[ \t]+[^\r\n]+)?$/.test(command) || isCarrotTradeEntryMessage(command) || !!getCarrotTradeReply(command, isDevCommandMessage(msg)) || command === "/호츈오픈" || /^\/호츈오픈\s+\S+$/.test(command) ||
         /^\/타이틀판매\s+\d+\s*$/.test(command) || /^\/타이틀지정판매\s+\d+~\d+$/.test(command) ||
         command === "/아아" || /^\/아아\s+\d+$/.test(command) ||
         isServerRaidMutationCommand(command) || /^\/서버이동\s+\S(?:.*\S)?$/.test(command) ||
@@ -32832,7 +32990,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
         /^\/길드큐브\s+\d+\s+\d+$/.test(command) ||
         /^\/만능상자오픈\s+\d+$/.test(command) || getStoneBoxOpenRequest(command) !== null || isSealedVaultMutationCommandMessage(command) || command === "/재벌도전" || command === "/기도" ||
         /^\/교육완료(?:[ \t]|$)/.test(command) ||
-        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/보상기록정리" || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
+        /^\/펫스킬가방추가\s+[^,\r\n]+,\s+\S(?:[\s\S]*\S)?$/.test(command) || command === "/펫스킬북보상" || command === "/정령컨텐츠보상" || /^\/(?:레이드|캐슬)매력오픈(?:\s+\d+)?$/.test(command) ||
         command === "/미니펫컬렉션전체등록" || command === "등록" || command === "ㄴㄴ" || command === "/등록" || command === "/ㄴㄴ" ||
         /^\/미니펫컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/미니펫컬렉션등록(?:\s+\d+)+$/.test(command) ||
         /^\/펫스킬컬렉션만능(?:\s+\d+)+$/.test(command) || /^\/펫스킬컬렉션등록(?:\s+\d+)+$/.test(command) ||
@@ -33031,7 +33189,7 @@ function isMatzangOperatorCommandMessage(msg) {
         "/미정", "/미출석가입", "/미가입출첵서버초기화", "/정보", "/미니펫정보",
         "/미출석", "/타이틀목록", "/펫타이틀목록", "/펫주인", "/포인트확인",
         "/패키지리스트", "/패키지추가", "/패키지수정", "/패키지지급", "/패키지알림", "/패키지가방",
-        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/보상기록정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
+        "/데이터백업", "/데이터상태", "/데이터복구", "/데이터정리", "/장착가구동기화", "/봇살리기", "/펫홈활동살리기", "/글자수전체정리",
         "/요청횟수", "/요청설정", "/요청예외명령추가", "/요청예외명령삭제", "/요청예외방추가", "/요청예외방삭제",
         "/계정정지", "/계정정지해제", "/계정정지리스트", "/휴면계정", "/휴면계정리스트", "/휴면해제",
         "/관리자명단", "/관리자추가", "/관리자삭제", "/관리자일당", "/마스터명단", "/마스터추가", "/마스터제거",
@@ -35807,7 +35965,7 @@ function getGmEducationProgress(store, member, allowPending) {
 }
 
 // 완료된 보상 원장과 교육 중복 상세만 검증 후 회원 파일에서 정리하는 함수
-function cleanupCompletedRewardRecords(data, petData, petSkillData, educationStore) {
+function cleanupCompletedRewardRecords(data, petData, petSkillData, educationStore, previewOnly) {
     if (!data || !data.member || !petData || typeof petData !== "object" || Array.isArray(petData) || !petSkillData || typeof petSkillData !== "object" || Array.isArray(petSkillData)) throw new Error("보상 기록 정리 원본 데이터 오류");
     requireGmEducationStore(educationStore);
     var spiritKey = GLOBAL_CONFIG.spiritRetirement.ledgerKey;
@@ -35847,19 +36005,21 @@ function cleanupCompletedRewardRecords(data, petData, petSkillData, educationSto
     }
     if (spirit !== undefined) {
         result.removedChars += JSON.stringify(spiritKey).length + JSON.stringify(spirit).length + 2;
-        delete data[spiritKey]; result.spiritRemoved = true;
+        if (!previewOnly) delete data[spiritKey];
+        result.spiritRemoved = true;
     }
     if (skills !== undefined) {
         result.removedChars += JSON.stringify(skillKey).length + JSON.stringify(skills).length + 2;
-        delete data[skillKey]; result.petSkillRemoved = true;
+        if (!previewOnly) delete data[skillKey];
+        result.petSkillRemoved = true;
     }
     for (var educationIndex = 0; educationIndex < educationPlan.length; educationIndex++) {
         var plan = educationPlan[educationIndex], target = data.member[plan.user];
         if (target.gmEducationRewards !== undefined) result.removedChars += JSON.stringify("gmEducationRewards").length + JSON.stringify(target.gmEducationRewards).length + 2;
         if (target.gmEducationRewardTimes !== undefined) result.removedChars += JSON.stringify("gmEducationRewardTimes").length + JSON.stringify(target.gmEducationRewardTimes).length + 2;
-        delete target.gmEducationRewards; delete target.gmEducationRewardTimes;
+        if (!previewOnly) { delete target.gmEducationRewards; delete target.gmEducationRewardTimes; }
         if (plan.receipt) {
-            target.gmEducationReceipt = plan.receipt;
+            if (!previewOnly) target.gmEducationReceipt = plan.receipt;
             result.removedChars -= JSON.stringify("gmEducationReceipt").length + JSON.stringify(plan.receipt).length + 2;
         }
         result.educationUsers++;
