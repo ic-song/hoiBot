@@ -3120,6 +3120,7 @@ function requireHalloweenAccount(account, id) {
 // 구 잔액과 단일 사탕 잔액에 같은 종료 소멸 기준을 적용하는 함수
 function getHalloweenBalance(state, account) {
     if (!account) return 0;
+    if (account.epoch > state.epoch) throw new Error("할로윈 계정과 이벤트 상태의 세대가 일치하지 않습니다.");
     if (account.candy !== undefined) return account.epoch === state.epoch ? requireHalloweenInteger(account.candy) : 0;
     var legacyPaid = state.candyClearEpoch === undefined || account.epoch >= state.candyClearEpoch ? account.paid : 0;
     return requireHalloweenInteger(legacyPaid + (account.epoch === state.epoch ? account.free : 0));
