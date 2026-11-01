@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.745"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.746"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -6435,9 +6435,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 
                 var moodSkillUsers = msg === "?" ? findPetSkillOwners(data, petSkillData, "기분탓") : [];
                 if (moodSkillUsers.length > 0) {
-                    replier.reply(moodSkillUsers.map(function (user) {
-                        return buildPetSkillMsg(data, petData, guildData, user, "기분탓");
-                    }).join("\n"));
+                    var moodSkillUser = moodSkillUsers[Math.floor(Math.random() * moodSkillUsers.length)]; // 장착자마다 같은 확률로 한 명만 선정
+                    replier.reply("📙 기분탓 | " + moodSkillUser + "\n└ 😏 라고 할뻔~");
                     return;
                 }
                 var instinctSkillUsers = msg === "이쁘다" ? findPetSkillOwners(data, petSkillData, "종의 본능") : [];
