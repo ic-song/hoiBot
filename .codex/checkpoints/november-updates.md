@@ -1,9 +1,9 @@
 # 패키지 월별 지급 실적 개발·검증
 
 - 작업 키: november-updates
-- 작업 상태: 검증 완료
+- 작업 상태: 작업 완료
 - 정리 후보: 아니요
-- 체크포인트 버전: 6
+- 체크포인트 버전: 7
 - 마지막 갱신: 2026-11-01 Asia/Seoul
 - 승인: 패키지 실적 개발·정상/예외 시험. 운영반영 금지. 인형도감은 계속 보류.
 - 위치/브랜치: C:/Users/user/Desktop/hoiBot, feature/package-grant-stats. 최신prod331d0c67에서 패키지 순수 변경만 추출한 단독 브랜치. 이전 WIP는 feature/november-updates, 인형 완성본은 feature/doll-elite-hold 보존.
@@ -15,4 +15,6 @@
 - 검증: Rhino1.7.15 실제 함수·명령분기·검증파일교체 31그룹 통과(정상3회10개, 오입력/권한/미존재/비활성/수량범위,월경계,과거·닉변·탈퇴,읽기전용,공동순위,길이제한,백업/손상,단계별저장실패,할로윈,회원분리,동시MASTER2명). 별도JVM 강제종료/재시작6지점 통과(회원·일반로그·실적·확정완료·이벤트계정·회원교체중). 전체main Rhino컴파일·node --check·UTF8/diff·시험소스지문 검사 통과. data1406개해시 불변.
 - 임시 검증: %TEMP%/hoiBot/package-grant-stats 작업 전용 파일만 사용. 커밋 전 제거하고 위 요약만 보존한다.
 - 운영 경계: origin/feature/prod=331d0c67/ver_2.746 그대로. 운영반영·노션상태/반영일/버전·카카오알림 없음. 추후 운영승인 시 소스브랜치에서 개발자노트/버전을 먼저 갱신해야 한다.
-- 다음 행동: 검증물 정리 후 단독 소스 브랜치 커밋·푸시, 초안 PR 생성. 운영반영은 별도 지시 전 실행하지 않는다.
+- 소스 저장: 588b2b32f5a7bc1f8d32f4fe3d54004cf31a5ab8을 feature/package-grant-stats에 푸시하고 ls-remote 일치 확인. 검증 소스(LF) SHA256=e824c0b6140cf4830999519f004e072eab3768eaebb57392e6be07bb86977e95. 임시 검증물 삭제 완료.
+- 검토 PR: https://github.com/ic-song/hoiBot/pull/213 (draft OPEN, base feature/prod). 패키지만 포함하며 운영 버전 준비는 추후 승인 후 수행.
+- 다음 행동: 승인된 개발·검증 완료. 별도 운영승인 전에는 PR병합·prod푸시·버전/개발자노트·노션완료·카카오알림을 실행하지 않는다.
