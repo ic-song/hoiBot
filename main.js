@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.744"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.745"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1015,6 +1015,7 @@ const GLOBAL_CONFIG = {
         accountPrefix: "halloweenAccount_",
         name: "🏚️ 👻유령 호월이의 저주받은 귀신의 집",
         currencyName: "할로윈 사탕🍬",
+        candyItemName: "할로윈 사탕🍬(/사탕오픈 숫자)",
         ticketName: "할로윈 입장권👻(/할로윈입장 숫자)",
         decoration: "_🎃👻🍬",
         banner: "🎃👻🍬🎃👻🍬🎃👻🍬🎃👻",
@@ -3947,6 +3948,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                     for (var dataCleanupDollName in dataCleanupDollIndex.users) if (Object.prototype.hasOwnProperty.call(dataCleanupDollIndex.users, dataCleanupDollName) && !data.member[dataCleanupDollName]) dataCleanupDollNames[dataCleanupDollName] = true;
                     dataCleanupStores.dollResidualNames = Object.keys(dataCleanupDollNames).sort();
                 }
+                dataCleanupStores.halloweenCandyMigration = runHalloweenEntry("cleanupPreview", { ctx: ctx, data: data, sender: sender });
                 var dataCleanupPreview = buildDataCleanupPreview(data, territoryEntryGuildData, dataCleanupStores);
                 var dataCleanupDecision = advanceDataCleanupSession(dataCleanupAction, dataCleanupKey, dataCleanupPreview, Date.now());
             } catch (dataCleanupPreviewError) { delete dataCleanupSessions[dataCleanupKey]; replier.reply("❌ 정리 대상을 확인하지 못했습니다.\n" + dataCleanupPreviewError.message); return; }
@@ -32068,6 +32070,7 @@ replier.reply(
                         replier.reply("❌ 메인 데이터가 없습니다.");
                         return;
                     }
+                    var halloweenCandyCleanup = runHalloweenEntry("cleanup", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, now: Date.now() });
                     var cleanupEducationStore = new java.io.File(gmEducationPath).exists() ? requireGmEducationStore(loadJsonFile(gmEducationPath)) : { version: 1, users: {} };
                     var rewardCleanup = cleanupCompletedRewardRecords(data, petData, petSkillData, cleanupEducationStore);
                     var preparedCleanup = compactAdventureQuestPreparedRecords(data, false);
@@ -32244,6 +32247,8 @@ replier.reply(
 
                     var out = "🧹 /데이터정리 완료\n";
                     out += allsee + "\n";
+                    out += "\n[할로윈 가방 사탕 전환]\n";
+                    out += halloweenCandyCleanup.inactive ? "이벤트가 종료되어 전환하지 않았습니다.\n" : numberWithCommas(halloweenCandyCleanup.users) + "명 / " + numberWithCommas(halloweenCandyCleanup.candy) + "개를 사탕 재화로 전환했습니다.\n";
                     out += "\n[보상·교육 기록 정리]\n";
                     out += "정령 원장 " + (rewardCleanup.spiritRemoved ? "삭제" : "없음") + " / 폐지 펫스킬 원장 " + (rewardCleanup.petSkillRemoved ? "삭제" : "없음") + "\n";
                     out += "교육 " + rewardCleanup.educationUsers + "명 축소 / 약 " + numberWithCommas(rewardCleanup.removedChars) + "자 감소\n";
@@ -32510,6 +32515,9 @@ function buildDataCleanupPreview(data, guildData, stores) {
     var prepared = compactAdventureQuestPreparedRecords(data, true);
     var unused = cleanupUnusedMemberFields(data, true);
     var targets = [["rewards", rewards], ["prepared", prepared], ["unused", unused]], displayCount = 0, nullCount = 0, bagShapeCount = 0; // 재확인 때 비교할 삭제·축소 대상
+    var candyMigration = stores.halloweenCandyMigration;
+    if (!candyMigration) throw new Error("할로윈 가방 사탕 전환 대상을 확인할 수 없습니다.");
+    targets.push(["halloweenCandy", candyMigration.targets]);
     var zeroCount = 0, zeroUsers = 0, pointUsers = 0, pointFraction = 0; // 제거할 포인트 소수점 합계
     for (var user in data.member) {
         if (!Object.prototype.hasOwnProperty.call(data.member, user)) continue;
@@ -32561,6 +32569,7 @@ function buildDataCleanupPreview(data, guildData, stores) {
         "  생성·명명·완료 시각과 초기 펫 이름 사본 정리\n" +
         "  두 항목 약 " + numberWithCommas(unused.removedChars) + "자 감소 · 진행 중 가입·보상 증거 유지\n" +
         "• 가방 수량 0 항목: " + zeroCount + "개 / " + zeroUsers + "명\n" +
+        "• 할로윈 가방 사탕: " + candyMigration.users + "명 / " + numberWithCommas(candyMigration.candy) + "개" + (candyMigration.inactive ? " · 이벤트 종료로 전환 보류" : " · 재화로 전환 후 가방에서 제거") + "\n" +
         "• 포인트 소수점: " + pointUsers + "명 / 합계 " + formatPointValue(pointFraction) + "\n" +
         "• 가구 표시용 정보: " + displayCount + "개\n" +
         "• 빈 가구 항목: " + nullCount + "개 / 가구가방 형식 보정 " + bagShapeCount + "명\n" +
@@ -65499,11 +65508,13 @@ function getHalloweenRequest(message) {
     if (match) return { action: "choose", number: Number(match[1]) };
     match = String(message).match(/^\/할로윈입장[ \t]+(\d+)$/);
     if (match) return { action: "ticket", count: Number(match[1]) };
+    match = String(message).match(/^\/사탕오픈[ \t]+(\d+)$/);
+    if (match) return { action: "candy", count: Number(match[1]) };
     match = String(message).match(/^\/할로윈구매[ \t]+(\d+)[ \t]+(\d+)$/);
     if (match) return { action: "buy", number: Number(match[1]), count: Number(match[2]) };
     match = String(message).match(/^\/할로윈횟수초기화[ \t]+([^\r\n]+)$/);
     if (match) return { action: "resetUser", target: match[1].trim() };
-    return /^\/(?:귀신의집(?:선택|가이드)?|할로윈(?:상점|칭호|시작|종료|입장|구매|횟수초기화))(?:\s|$)/.test(String(message)) ? { action: "invalid", message: String(message) } : null;
+    return /^\/(?:사탕오픈|귀신의집(?:선택|가이드)?|할로윈(?:상점|칭호|시작|종료|입장|구매|횟수초기화))(?:\s|$)/.test(String(message)) ? { action: "invalid", message: String(message) } : null;
 }
 
 // 확률 합계가 100인 결과 표에서 한 결과만 추첨하는 함수
@@ -65578,6 +65589,7 @@ function clearHalloweenBagItems(data) {
         if (!bag) continue;
         var cleared = false;
         if (Object.prototype.hasOwnProperty.call(bag, config.currencyName)) { delete bag[config.currencyName]; cleared = true; }
+        if (Object.prototype.hasOwnProperty.call(bag, config.candyItemName)) { delete bag[config.candyItemName]; cleared = true; }
         if (Object.prototype.hasOwnProperty.call(bag, config.ticketName)) { delete bag[config.ticketName]; cleared = true; }
         if (cleared) clearedUsers++;
     }
@@ -65593,6 +65605,7 @@ function applyHalloweenCommand(request, context) {
     function reply(message) { if (message.indexOf("❌") === 0) result.changed = false; result.message = prefix + message; return result; }
     if (request.action === "invalid") {
         if (!state.active) return reply("현재 할로윈 이벤트가 진행 중이 아닙니다.");
+        if (/^\/사탕오픈(?:\s|$)/.test(request.message || "")) return reply("🍬 할로윈 사탕 사용 안내\n사용법: /사탕오픈 [숫자]\n예시: /사탕오픈 100\n※ 아이템 1개를 사탕 재화 1개로 전환해요.");
         if (/^\/할로윈입장(?:\s|$)/.test(request.message || "")) {
             var ticketHeld = context.data.member[context.sender] && context.data.member[context.sender].bag[config.ticketName] || 0;
             return reply("👻 할로윈 입장권 사용 안내\n사용법: /할로윈입장 [숫자]\n예시: /할로윈입장 5\n🎟️ 보유 입장권: " + numberWithCommas(ticketHeld) + "개\n※ 사용할 수량을 숫자로 입력해주세요.");
@@ -65643,9 +65656,19 @@ function applyHalloweenCommand(request, context) {
         return reply("🎯 대상: " + context.targetActor + "님\n" + (beforeUsed === 0 ? "이미 초기화된 상태입니다." : "🔄 할로윈 탐험 횟수 초기화 완료!\n🎟️ 오늘 사용 횟수: " + beforeUsed + "회 → 0회") + "\n" + getHalloweenEntryLines(account, context.premium) + "\n※ 사탕·구매 기록·추가 입장·진행 중인 탐험은 유지됩니다.");
     }
     if (request.action === "shop") { result.message = buildHalloweenShopMessage(context); return result; }
-    if (request.action === "ticket" || request.action === "buy") {
+    if (request.action === "ticket" || request.action === "buy" || request.action === "candy") {
         var quantity = request.count;
         if (!isFinite(quantity) || quantity < 1 || Math.floor(quantity) !== quantity || quantity > 9007199254740991) return reply("❌ 수량은 양의 정수로 입력해주세요.");
+        if (request.action === "candy") {
+            var candyBag = context.data.member[context.sender].bag; // 개봉 전 사탕 아이템을 보관하는 기존 가방
+            var candyOwned = candyBag && Object.prototype.hasOwnProperty.call(candyBag, config.candyItemName) ? requireHalloweenInteger(candyBag[config.candyItemName]) : 0;
+            if (candyOwned < quantity) return reply("❌ 할로윈 사탕 아이템이 부족합니다. (보유 " + numberWithCommas(candyOwned) + "개)");
+            requireHalloweenInteger(account.candy + quantity);
+            creditHalloweenCandy(account, quantity, { kind: "candyOpen", candy: quantity, at: context.now, txId: context.txId });
+            removeItem(context.data, context.sender, config.candyItemName, quantity);
+            result.changed = true; result.memberChanged = true;
+            return reply("🍬 할로윈 사탕 전환 완료!\n사용 아이템: " + numberWithCommas(quantity) + "개\n🍬 적립 사탕: +" + numberWithCommas(quantity) + "개\n🍬 보유 사탕: " + numberWithCommas(getHalloweenBalance(state, account)) + "개\n※ /포인트 또는 /할로윈상점에서 확인할 수 있어요.");
+        }
         if (request.action === "ticket") {
             var owned = Number(context.data.member[context.sender].bag[config.ticketName] || 0);
             if (owned < quantity) return reply("❌ 할로윈 입장권이 부족합니다.\n🎟️ 필요한 입장권: " + numberWithCommas(quantity) + "개\n🎟️ 보유 입장권: " + numberWithCommas(owned) + "개\n🎟️ 부족한 수량: " + numberWithCommas(quantity - owned) + "개");
@@ -65796,6 +65819,39 @@ function runHalloweenEntry(mode, args) {
         return null; // 모든 계정 파일을 읽지 않고 다음 이벤트 이용 시 새 리셋 회차를 반영한다.
     }
     var data = args.data, request = args.request, sender = args.sender;
+    var cleanupRows = [], cleanupWrites = [], candyCleanup = null;
+    if (mode === "cleanupPreview" || mode === "cleanup") {
+        if (mode === "cleanup" && (!ctx.dataCleanupConfirmed || !(isAdmin(sender) || isMaster(sender)))) throw new Error("할로윈 가방 사탕 전환 권한·확인 오류");
+        candyCleanup = { users: 0, candy: 0, inactive: !state.active, targets: [[state.active, state.epoch, state.candyClearEpoch]] };
+        var cleanupIds = {}; // 같은 이벤트 계정에 두 회원의 사탕을 덮어쓰지 않도록 검사
+        for (var cleanupUser in data.member) {
+            if (!Object.prototype.hasOwnProperty.call(data.member, cleanupUser)) continue;
+            var cleanupMember = data.member[cleanupUser], cleanupBag = cleanupMember && cleanupMember.bag;
+            if (!cleanupBag || !Object.prototype.hasOwnProperty.call(cleanupBag, config.currencyName)) continue;
+            var cleanupQuantity = requireHalloweenInteger(cleanupBag[config.currencyName]);
+            if (cleanupQuantity === 0) continue;
+            var cleanupId = cleanupMember.serverRaidAccount && cleanupMember.serverRaidAccount.id;
+            var cleanupName = null, cleanupText = null, cleanupAccount = null, cleanupBalance = 0;
+            if (state.active) {
+                if (cleanupMember.serverRaidAccount && !cleanupId) throw new Error("할로윈 공통 계정 ID 오류");
+                if (cleanupId) {
+                    cleanupName = getHalloweenAccountName(cleanupId);
+                    if (Object.prototype.hasOwnProperty.call(cleanupIds, "$" + cleanupId)) throw new Error("할로윈 사탕 전환 계정 ID 중복");
+                    cleanupIds["$" + cleanupId] = true;
+                    var cleanupPath = root + cleanupName;
+                    cleanupText = new java.io.File(cleanupPath).exists() ? String(FileStream.read(cleanupPath, "utf-8")) : null;
+                    cleanupAccount = cleanupText === null ? createHalloweenAccount(cleanupId, state.epoch) : requireHalloweenAccount(JSON.parse(cleanupText), cleanupId);
+                    cleanupBalance = getHalloweenBalance(state, cleanupAccount);
+                }
+                requireHalloweenInteger(cleanupBalance + cleanupQuantity);
+                cleanupRows.push({ user: cleanupUser, id: cleanupId, name: cleanupName, text: cleanupText, account: cleanupAccount, quantity: cleanupQuantity });
+            }
+            candyCleanup.users++;
+            candyCleanup.candy = requireHalloweenInteger(candyCleanup.candy + cleanupQuantity);
+            candyCleanup.targets.push([cleanupUser, cleanupId || null, cleanupQuantity, cleanupBalance]);
+        }
+        if (mode === "cleanupPreview" || !state.active || cleanupRows.length === 0) return candyCleanup;
+    }
     if (mode === "view") {
         ctx.halloweenBalance = 0;
         var viewMember = data.member && data.member[sender];
@@ -65832,14 +65888,30 @@ function runHalloweenEntry(mode, args) {
         targetActor: account ? "[" + checkRank(data, args.petData, args.guildData, target) + "] " : "",
         premium: account ? isHoiPassPremiumActive(data, target) : false, now: now, txId: String(java.util.UUID.randomUUID()) };
     var requestId = args.event && !args.event.invalid && typeof args.event.id === "string" ? args.event.id : "";
-    var replayGuard = account && (mode === "packageUse" || mode === "packageGrant" || request && ["buy","ticket","choose"].indexOf(request.action) !== -1);
+    var replayGuard = account && (mode === "packageUse" || mode === "packageGrant" || request && ["buy","ticket","choose","candy"].indexOf(request.action) !== -1);
     if (replayGuard && (state.active || mode === "packageGrant")) { // 종료된 이벤트는 과거 성공 응답 대신 비활성 안내를 반환
         if (requestId && account.requests["$" + requestId]) return { message: account.requests["$" + requestId].reply };
         var last = account.lastRequest;
         if (!requestId && last && last.message === args.message && last.room === args.room && now >= last.at && now - last.at < config.legacyDuplicateMs) return { message: last.reply };
     }
     var result;
-    if (mode === "packageUse" || mode === "packageGrant") {
+    if (mode === "cleanup") {
+        for (var cleanupIndex = 0; cleanupIndex < cleanupRows.length; cleanupIndex++) {
+            var cleanupRow = cleanupRows[cleanupIndex], cleanupTarget = data.member[cleanupRow.user];
+            if (!cleanupRow.id) {
+                cleanupRow.id = String(java.util.UUID.randomUUID());
+                cleanupRow.name = getHalloweenAccountName(cleanupRow.id);
+                if (new java.io.File(root + cleanupRow.name).exists()) throw new Error("할로윈 신규 계정 파일이 이미 있습니다.");
+                cleanupTarget.serverRaidAccount = { id: cleanupRow.id, period: 0, server: normalizeHoiServerLabel(cleanupTarget.server), latest: null, total: null };
+                cleanupRow.account = createHalloweenAccount(cleanupRow.id, state.epoch);
+            }
+            refreshHalloweenAccount(state, cleanupRow.account, now);
+            creditHalloweenCandy(cleanupRow.account, cleanupRow.quantity, { kind: "bagCandyMigration", candy: cleanupRow.quantity, at: now, txId: context.txId });
+            delete cleanupTarget.bag[config.currencyName];
+            cleanupWrites.push({ name: cleanupRow.name, text: cleanupRow.text, account: cleanupRow.account });
+        }
+        result = { changed: true, memberChanged: true, users: candyCleanup.users, candy: candyCleanup.candy, inactive: false };
+    } else if (mode === "packageUse" || mode === "packageGrant") {
         if (!account) return { message: actor + "님\n❌ 등록된 계정을 확인할 수 없습니다." };
         if (mode === "packageUse" && !state.active) return { message: actor + "님\n현재 할로윈 이벤트가 진행 중이 아닙니다. 패키지는 소모하지 않았습니다." };
         refreshHalloweenAccount(state, account, now);
@@ -65863,6 +65935,11 @@ function runHalloweenEntry(mode, args) {
         snapshots.push({ name: "member.json", text: String(FileStream.read(resolveActiveDataPath(filePath), "utf-8")) });
     }
     if (accountChanged) { requireHalloweenAccount(account, account.id); snapshots.push({ name: accountName, text: accountText }); }
+    for (var cleanupSnapshotIndex = 0; cleanupSnapshotIndex < cleanupWrites.length; cleanupSnapshotIndex++) {
+        var cleanupWrite = cleanupWrites[cleanupSnapshotIndex];
+        requireHalloweenAccount(cleanupWrite.account, cleanupWrite.account.id);
+        snapshots.push({ name: cleanupWrite.name, text: cleanupWrite.text });
+    }
     if (result.stateChanged) { requireHalloweenState(state); snapshots.push({ name: config.stateName, text: stateExists ? String(FileStream.read(statePath, "utf-8")) : null }); }
     if (result.packageLogData && result.ok) snapshots.push({ name: "packageLog.json", text: String(FileStream.read(resolveActiveDataPath(packageLogPath), "utf-8")) });
     writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: snapshots }), true);
@@ -65872,6 +65949,7 @@ function runHalloweenEntry(mode, args) {
             try { saveJsonFile(data, filePath); } finally { delete ctx.halloweenPublishing; }
         }
         if (accountChanged) writeMemberSplitSlot(root + accountName, JSON.stringify(account));
+        for (var cleanupWriteIndex = 0; cleanupWriteIndex < cleanupWrites.length; cleanupWriteIndex++) writeMemberSplitSlot(root + cleanupWrites[cleanupWriteIndex].name, JSON.stringify(cleanupWrites[cleanupWriteIndex].account));
         if (result.stateChanged) writeMemberSplitSlot(statePath, JSON.stringify(state));
         if (result.packageLogData && result.ok) writeMemberSplitSlot(resolveActiveDataPath(packageLogPath), JSON.stringify(result.packageLogData));
         writeVerifiedJsonFile(pendingPath, JSON.stringify({ version: 1, pending: null }), true);
