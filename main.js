@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.749"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.750"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1003,7 +1003,7 @@ const GLOBAL_CONFIG = {
     scheduleGuide: { // 조회용 시간표. 실제 시작·정산 타이머를 변경하지 않는다.
         passPayoutTime: "01:10",
         petExploreWindow: "08:00 ~ 24:00 (매 정각)",
-        guildTerritoryWindow: "21:30 ~ 21:45",
+        guildTerritoryWindow: "21:05 ~ 21:25",
         serverRaidStartTime: "22:00"
     },
     halloween: { // 2026 할로윈 운영 정책과 고정 대본
