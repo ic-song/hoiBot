@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.746"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.749"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3664,7 +3664,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("MAIN 방 제한: " + (GLOBAL_CONFIG.maintenance.testRoomOnly ? "ON · 팻 테스트방만 응답" : "OFF · 일반 채팅방도 응답") + "\n※ 메모리 설정이며 봇 재컴파일 시 기본값 OFF로 돌아갑니다.");
             return;
         }
-        if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists()) runMiniGameEntry("recover", { ctx: ctx, allowRecoveryReview: true });
+        var miniGameAccessRequest = getMiniGameRequest(msg);
+        var deferMiniGameRecovery = miniGameAccessRequest && (miniGameAccessRequest.kind === "vault" || miniGameAccessRequest.kind === "dice"); // 전용 게임은 이용 자격을 확인한 명령 진입점에서 복구
+        if (!deferMiniGameRecovery && (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists())) runMiniGameEntry("recover", { ctx: ctx, allowRecoveryReview: true });
         var resetProbeKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var resetProbeSession = manualResetSessions[resetProbeKey];
         var resetSameScope = resetProbeSession && resetProbeSession.room === room && resetProbeSession.isGroupChat === isGroupChat;
@@ -36175,7 +36177,7 @@ function runMiniGameEntry(mode, args) {
     }
     if ((mode === "auto" || mode === "resetPlan") && !stateExists) return mode === "resetPlan" ? [] : undefined;
     if (mode === "auto") {
-        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName];
+        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName, GLOBAL_CONFIG.packageGrant.pendingName, GLOBAL_CONFIG.rewardPayout.pendingName];
         for (i = 0; i < foreignPendingNames.length; i++) {
             var foreignPath = resolveActiveDataPath(DATA_ROOT_PATH + foreignPendingNames[i]);
             if (new java.io.File(foreignPath + ".rollback").exists() && !new java.io.File(foreignPath).exists()) throw new Error("다른 콘텐츠 게시 복구 대기");
@@ -36562,6 +36564,8 @@ function scheduleMiniGameWork(ctx, delay) {
         var previous = enterCommandContext(ctx), entered = false, retryRecovery = false;
         try {
             dataTransactionLock.lock(); beginDataSaveTransaction(); entered = true;
+            recoverPackageGrantPending();
+            recoverDailyRankingPending();
             runMiniGameEntry("recover", { ctx: ctx });
             runMiniGameEntry("auto", { ctx: ctx });
         } catch (error) { retryRecovery = !(error && error.miniGameRecoveryBlocked); debuggerLog("[미니게임 자동 처리 복구 대기] " + error); }
@@ -45648,6 +45652,8 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
                 var petData = schedule.key === "territory" ? null : loadJsonFile(memberPetPath);
                 var needsCharm = schedule.key === "overall" || schedule.key === "guildRank";
                 var petSkillData = needsCharm ? loadJsonFile(petSkillDataPath) : null, homeData = needsCharm ? loadJsonFile(homeDataFile) : null;
+                if (schedule.key !== "territory" && !petData) throw new Error("순위 산정에 필요한 미니펫 원본을 읽지 못했습니다.");
+                if (needsCharm && (!petSkillData || !homeData)) throw new Error("순위 산정에 필요한 펫스킬·펫홈 원본을 읽지 못했습니다.");
                 var result = applyDailyRankingReward(schedule.key,data,petData,guildData,homeData,petSkillData,sender);
                 if (!result.ok) throw new Error(result.message || "보상 지급을 완료하지 못했습니다.");
                 if (getAttendanceKstDateKey() !== day) throw new Error("날짜가 변경되어 지급 전에 취소했습니다. 새 날짜에 다시 실행해 주세요.");
