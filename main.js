@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.746"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.749"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -988,9 +988,6 @@ USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
 var protectedJsonSaveLocks = {}; // 보호 JSON과 직전 백업 경로별 저장 잠금
-let initData = loadJsonFile(filePath, "bootstrap");
-let Master = initData.master;
-let Admins = getAdminPayoutUsers(initData);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
 var guildTerritoryWarTimers = {}; // 길드 영토전 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 관리 객체 (guildId: timerId)
@@ -1211,6 +1208,7 @@ const GLOBAL_CONFIG = {
             ] }
         ]
     },
+    packageGrant: { fileName: "packageGrantStats.json", pendingName: "packageGrantPending.json", detailMaxLength: 3500, footerReserve: 250 },
     gmEducation: {
         version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", rewardItem: "다이아상자💎(소)",
         rooms: ["교육방", "교육방2", "교육방3"],
@@ -1313,6 +1311,7 @@ const GLOBAL_CONFIG = {
         ]
     },
     miniGames: {
+        premiumInfoUrl: "https://hoiland123.tistory.com/648",
         stateName: "miniGameState.json", pendingName: "miniGamePending.json", archivePrefix: "miniGameArchive_",
         questionFile: "balanceQuestions.json", dialogueFile: "howoriDiceDialogues.json",
         questionCount: 1300, dialogueCount: 200, reasonLimit: 80, messageLimit: 12000,
@@ -2721,6 +2720,8 @@ blockedNicknameTerms: [
         }
     },
     rewardPayout: { // 운영 순위 보상 지급 현황 설정
+        fileName: "dailyRankingPayout.json", pendingName: "dailyRankingPayoutPending.json",
+        basicOperators: ["호이 남", "오픈채팅봇"], guildOperators: ["오픈채팅봇", "호이 남", "감자 여"],
         schedules: [
             { key: "overall", command: "/보상지급", time: "오후 3시 32분", label: "종합순위 보상" },
             { key: "miniPet", command: "/연금지급", time: "오후 3시 32분", label: "미니펫순위 보상" },
@@ -3237,6 +3238,13 @@ blockedNicknameTerms: [
     }
 };
 
+// 중단된 지급의 회원 원문부터 복구한 뒤 최초 권한·캐시를 읽는다.
+recoverPackageGrantPending();
+recoverDailyRankingPending();
+let initData = loadJsonFile(filePath, "bootstrap");
+let Master = initData.master;
+let Admins = getAdminPayoutUsers(initData);
+
 // 미니펫 조합 보상표
 const MINI_PET_COMBINATION_REWARDS = {
     "태초+": [
@@ -3600,7 +3608,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     } else responseDataLock.lock();
     //데이터 검사
     try {
-        if (isServerRaidMutationCommand(msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
+        if (isServerRaidMutationCommand(msg) || isPackageGrantCommand(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || getDailyRankingPayoutRequest(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
         else if (!dataTransactionLock.tryLock()) return;
         responseTransactionAcquired = true;
         beginDataSaveTransaction();
@@ -3608,6 +3616,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        recoverPackageGrantPending(); // 회원·이벤트 파일을 읽기 전에 접수된 지급과 실적을 함께 확정
+        recoverDailyRankingPending();
         runHalloweenEntry("state", { ctx: ctx });
         replier = createContextReplier(replier, ctx);
         var responseStartMs = Date.now();
@@ -3654,7 +3664,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             replier.reply("MAIN 방 제한: " + (GLOBAL_CONFIG.maintenance.testRoomOnly ? "ON · 팻 테스트방만 응답" : "OFF · 일반 채팅방도 응답") + "\n※ 메모리 설정이며 봇 재컴파일 시 기본값 OFF로 돌아갑니다.");
             return;
         }
-        if (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists()) runMiniGameEntry("recover", { ctx: ctx, allowRecoveryReview: true });
+        var miniGameAccessRequest = getMiniGameRequest(msg);
+        var deferMiniGameRecovery = miniGameAccessRequest && (miniGameAccessRequest.kind === "vault" || miniGameAccessRequest.kind === "dice"); // 전용 게임은 이용 자격을 확인한 명령 진입점에서 복구
+        if (!deferMiniGameRecovery && (new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists() || new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName + ".rollback")).exists())) runMiniGameEntry("recover", { ctx: ctx, allowRecoveryReview: true });
         var resetProbeKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var resetProbeSession = manualResetSessions[resetProbeKey];
         var resetSameScope = resetProbeSession && resetProbeSession.room === room && resetProbeSession.isGroupChat === isGroupChat;
@@ -4435,7 +4447,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 replier.reply("⏸️ 미니게임 지급 기록 확인이 필요해요.\n진행·횟수·보상 기록은 보존했으며 중복 지급을 막기 위해 미니게임 처리를 잠시 보류합니다.\n운영자에게 문의해 주세요.");
                 debuggerLog("[미니게임 복구 확인 필요] " + miniGameRecoveryError);
             } finally {
-                if (!ctx.miniGameRecoveryBlocked && !miniGameTimers[ctx.key()] && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists()) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
+                if (!ctx.miniGamePremiumDenied && !ctx.miniGameRecoveryBlocked && !miniGameTimers[ctx.key()] && new java.io.File(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.miniGames.pendingName)).exists()) scheduleMiniGameWork(ctx, GLOBAL_CONFIG.miniGames.retryMs);
             }
             return;
         }
@@ -4493,6 +4505,20 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 } else writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
             }
             replyGuildMarbleSafely(replier, marbleMessage);
+            return;
+        }
+
+        if (msg === "/최종순위보상지급") { runDailyRankingPayoutEntry(ctx, replier, msg, sender); return; }
+
+        var packageStatsRequest = getPackageGrantStatsRequest(msg);
+        if (packageStatsRequest) {
+            if (!isGmEducationOperator(sender, room)) { replier.reply("⛔ MASTER 권한이 필요한 명령어입니다."); return; }
+            if (packageStatsRequest.error) { replier.reply(packageStatsRequest.error); return; }
+            var packageStatsPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName);
+            if (!new java.io.File(packageStatsPath).exists() && (new java.io.File(packageStatsPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(packageStatsPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(packageStatsPath)).exists())) throw new Error("패키지 실적 원본 누락: /데이터복구 packageGrantStats 1로 백업을 확인해 주세요.");
+            var packageStats = new java.io.File(packageStatsPath).exists() ? requirePackageGrantStore(loadJsonFile(packageStatsPath)) : createPackageGrantStore();
+            if (!packageStats.historyImported) importPackageGrantHistory(packageStats, loadJsonFile(packageLogPath), data);
+            replier.reply(buildPackageGrantStatsMessage(packageStats, data, sender, packageStatsRequest));
             return;
         }
 
@@ -9256,7 +9282,10 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 if (msg === "/패스목록" && (isMaster(sender) || isAdmin(sender))) {
                     var supportPassCleanupResult = cleanupExpiredSupportPasses(data);
                     if (supportPassCleanupResult.changed) saveJsonFile(data, filePath);
-                    replier.reply(buildSupportPassListMessage(data, petData, guildData));
+                    var rankingStatusPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.rewardPayout.fileName);
+                    if (!new java.io.File(rankingStatusPath).exists() && (new java.io.File(rankingStatusPath+".rollback").exists() || new java.io.File(getManagedJsonBackupPath(rankingStatusPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(rankingStatusPath)).exists())) throw new Error("순위 지급 완료 원본이 누락되어 확인이 필요합니다.");
+                    var rankingStatusStore = new java.io.File(rankingStatusPath).exists() ? requireDailyRankingStore(loadJsonFile(rankingStatusPath)) : createDailyRankingStore();
+                    replier.reply(buildSupportPassListMessage(data, petData, guildData, rankingStatusStore));
                     return;
                 }
                 if (msg === "/미정" || /^\/미정\s+\S(?:.*\S)?\s*$/.test(msg)) {
@@ -17285,12 +17314,7 @@ replier.reply(
                     return;
                 }
                 if (msg === "/길드영지보상지급" || msg === "/영지순위보상지급") {
-                    var territoryRankReward = runGuildTerritoryRankReward(data, guildData, sender);
-                    replier.reply(territoryRankReward.message);
-                    if (territoryRankReward.ok) {
-                        saveJsonFile(guildData, guildPath);
-                        noticeMsg(territoryRankReward.noticeMessage);
-                    }
+                    runDailyRankingPayoutEntry(ctx, replier, msg, sender);
                     return;
                 }
 
@@ -18622,21 +18646,34 @@ replier.reply(
                     return;
                 }
 
-                if (/^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg)) {
+                if (isPackageGrantCommand(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = loadJsonFile(packageInfoPath); // 지급 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 지급 로그 데이터
-                    var halloweenPackageGrant = parsePackageGrantCommand(msg);
-                    var halloweenGrantInfo = halloweenPackageGrant && getPackageByListNumber(packageInfoData, halloweenPackageGrant.listNumber);
-                    if (hasHalloweenPackageReward(halloweenGrantInfo)) {
-                        var halloweenGrantResult = runHalloweenEntry("packageGrant", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, target: halloweenPackageGrant.target, room: room, message: msg, packageInfo: packageInfoData, packageLog: packageLogData, event: serverRaidEvent });
-                        replier.reply(halloweenGrantResult.message);
+                    var packageStatsPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName);
+                    if (!new java.io.File(packageStatsPath).exists() && (new java.io.File(packageStatsPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(packageStatsPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(packageStatsPath)).exists())) throw new Error("패키지 실적 원본 누락: /데이터복구 packageGrantStats 1로 백업을 확인해 주세요.");
+                    var packageStats = new java.io.File(packageStatsPath).exists() ? requirePackageGrantStore(loadJsonFile(packageStatsPath)) : createPackageGrantStore();
+                    if (!packageStats.historyImported) importPackageGrantHistory(packageStats, packageLogData, data);
+                    if (serverRaidEvent && serverRaidEvent.invalid) throw new Error("패키지 지급 메시지 식별값 오류");
+                    var packageEventId = getServerRaidEventId(serverRaidEvent) || "grant:" + String(java.util.UUID.randomUUID());
+                    var packagePrevious = findPackageGrantRecord(packageStats, packageEventId);
+                    if (packagePrevious) {
+                        if (packagePrevious.operatorId !== getPackageGrantIdentity(data, sender) || packagePrevious.command !== msg) throw new Error("패키지 지급 요청 식별값 충돌");
+                        replier.reply(packagePrevious.reply);
                         return;
                     }
-                    var packageGrantResult = grantPackageToUser(data, sender, msg, packageInfoData, packageLogData);
+                    var packageParsed = parsePackageGrantCommand(msg);
+                    var packageSelected = packageParsed && getPackageByListNumber(packageInfoData, packageParsed.listNumber);
+                    var packageGrantResult = hasHalloweenPackageReward(packageSelected) ?
+                        runHalloweenEntry("packageGrant", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, target: packageParsed.target, room: room, message: msg, packageInfo: packageInfoData, packageLog: packageLogData, event: serverRaidEvent, deferPackageGrant: true }) :
+                        grantPackageToUser(data, sender, msg, packageInfoData, packageLogData);
                     if (packageGrantResult.ok) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(packageGrantResult.packageLogData, packageLogPath);
+                        recordPackageGrant(packageStats, data, sender, packageParsed, packageSelected, packageEventId, msg, packageGrantResult.message, Date.now());
+                        var packagePublication = buildPackageGrantPublication(data, packageGrantResult.packageLogData, packageStats, packageGrantResult.packageGrantFiles || []);
+                        writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName), JSON.stringify(packagePublication), true);
+                        endDataSaveTransaction(); beginDataSaveTransaction(); // 접수된 지급은 재시작 때 같은 내용으로 완결한다.
+                        recoverPackageGrantPending();
+                        endDataSaveTransaction(); beginDataSaveTransaction(); // 응답 전송 실패로 확정 지급을 취소하지 않는다.
                     }
                     replier.reply(packageGrantResult.message);
                     return;
@@ -22098,64 +22135,7 @@ replier.reply(
                     return;
                 }
                 if (msg == "/연금지급" && (sender == "호이 남" || sender == "오픈채팅봇")) {
-                    let result = getMiniPetExpRanking(petData, data, guildData); // 순위 계산
-                    let ranking = result.ranking;
-                    if (!data.member) data.member = {};
-                    let rewardsGiven = 0;
-                    let rewardItem = "펫 강화석⭐";
-                    let rewardMsg =
-                        "🐹[보상알림]\n" +
-                        "미니펫이 휘날리며~ 🐹 흩날리는 미니펫과 함께~ 🐹\n" +
-                        "아름다운 이 거리를 둘이 걸어요~ 🌸\n" +
-                        "🐹🐹🐹🐹🐹🐹🐹🐹🐹🐹🐹\n" +
-                        "미니펫 연금(1-200등) 보상 지급이 완료되었습니다.\n" +
-                        "(/미니펫순위) 참조해주세요🐹\n\n";
-                    for (let i = 0; i < ranking.length; i++) {
-                        let user = ranking[i].user;
-                        let reward = 0;
-                        if (i === 0) reward = 40;
-                        else if (i === 1) reward = 30;
-                        else if (i === 2) reward = 25;
-                        else if (i === 3) reward = 24;
-                        else if (i === 4) reward = 23;
-                        else if (i === 5) reward = 22;
-                        else if (i === 6) reward = 21;
-                        else if (i === 7) reward = 20;
-                        else if (i === 8) reward = 19;
-                        else if (i === 9) reward = 18;
-                        else if (i < 20) reward = 17;
-                        else if (i < 30) reward = 16;
-                        else if (i < 40) reward = 15;
-                        else if (i < 50) reward = 14;
-                        else if (i < 70) reward = 13;
-                        else if (i < 80) reward = 12;
-                        else if (i < 90) reward = 11;
-                        else if (i < 100) reward = 10;
-                        else if (i < 110) reward = 9;
-                        else if (i < 120) reward = 8;
-                        else if (i < 130) reward = 7;
-                        else if (i < 140) reward = 6;
-                        else if (i < 150) reward = 5;
-                        else if (i < 160) reward = 4;
-                        else if (i < 170) reward = 3;
-                        else if (i < 180) reward = 2;
-                        else if (i < 200) reward = 1;
-                        if (reward > 0) {
-                            if (!data.member[user]) data.member[user] = {};
-                            if (!data.member[user].bag) data.member[user].bag = {};
-                            data.member[user].bag[rewardItem] = (data.member[user].bag[rewardItem] || 0) + reward;
-                            rewardsGiven++;
-                            // 메시지 구성
-                            if (i === 10) {
-                                rewardMsg += allsee;
-                            }
-                            rewardMsg += getRankEmoji(i + 1) + checkRank(data, petData, guildData, user) + " 🐹 " + rewardItem + " " + reward + "개 지급\n";
-                        }
-                    }
-                    replier.reply(rewardMsg);
-                    noticeMsg(rewardMsg); // 공지로도 출력
-                    recordDailyRewardPayout(data, "miniPet");
-                    saveJsonFile(data, filePath);
+                    runDailyRankingPayoutEntry(ctx, replier, msg, sender);
                     return;
                 }
                 if (msg === "/펫데이터비교" && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
@@ -22800,222 +22780,11 @@ replier.reply(
                     replier.reply("반지정보 조회는 펜던트 콘텐츠 전환으로 종료되었습니다.");
                     return;
                 } else if (msg === "/티어보상지급" && (sender == "호이 남" || sender == "오픈채팅봇")) {
-                    var tierRewardResult = payTierRankingReward(data, petData, guildData);
-                    replier.reply(tierRewardResult.message);
-                    if (tierRewardResult.ok) {
-                        noticeMsg(tierRewardResult.noticeMessage);
-                        saveJsonFile(data, filePath);
-                    }
+                    runDailyRankingPayoutEntry(ctx, replier, msg, sender);
                     return;
                 } else if (msg == "/보상지급" && (sender == "호이 남" || sender == "오픈채팅봇")) {
-                    // 종합순위보상
-                    let members = data.member;
-                    let homeData = loadJsonFile(homeDataFile);
-                    let sortedUsrs = Object.keys(members)
-                        .filter((key) => petData[key])
-                        .sort((a, b) => {
-                            let A =
-                                (calculateCastleExp(a, data, petData, homeData, petSkillData, false, guildData) || 0) +
-                                (calculateRaidExp(a, data, petData, homeData, petSkillData, false, guildData) || 0) +
-                                calculatePetUpgradeCharm(a, data, petData);
-                            let B =
-                                (calculateCastleExp(b, data, petData, homeData, petSkillData, false, guildData) || 0) +
-                                (calculateRaidExp(b, data, petData, homeData, petSkillData, false, guildData) || 0) +
-                                calculatePetUpgradeCharm(b, data, petData);
-                            return B - A;
-                        });
-                    // 보상 구간 설정
-                    // 보상 구간 설정
-                    let rewardsTarget = {
-                        top1: [],
-                        top2: [],
-                        top3: [],
-                        top4: [],
-                        top5: [],
-                        top6: [],
-                        top7: [],
-                        top8: [],
-                        top9: [],
-                        top10: [],
-                        top11_20: [],
-                        top21_30: [],
-                        top31_40: [],
-                        top41_50: [],
-                        top51_70: [],
-                        top71_100: [],
-                        top101_130: [],
-                        top131_150: []
-                    };
-                    // 보상 목록
-                    let rewards = {
-                        top1: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 70
-                            }
-                        ],
-                        top2: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 60
-                            }
-                        ],
-                        top3: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 55
-                            }
-                        ],
-                        top4: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 45
-                            }
-                        ],
-                        top5: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 40
-                            }
-                        ],
-                        top6: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 37
-                            }
-                        ],
-                        top7: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 34
-                            }
-                        ],
-                        top8: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 31
-                            }
-                        ],
-                        top9: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 27
-                            }
-                        ],
-                        top10: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 23
-                            }
-                        ],
-                        top11_20: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 15
-                            }
-                        ],
-                        top21_30: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 14
-                            }
-                        ],
-                        top31_40: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 13
-                            }
-                        ],
-                        top41_50: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 12
-                            }
-                        ],
-                        top51_70: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 11
-                            }
-                        ],
-                        top71_100: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 10
-                            }
-                        ],
-                        top101_130: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 5
-                            }
-                        ],
-                        top131_150: [
-                            {
-                                itemName: "펫 강화석⭐",
-                                count: 2
-                            }
-                        ]
-                    };
-                    // 사용자 등수에 따른 보상 분배
-                    let userRanks = {};
-                    for (let i = 0; i < sortedUsrs.length; i++) {
-                        let user = sortedUsrs[i];
-                        userRanks[user] = i + 1;
-                        if (i === 0) rewardsTarget.top1.push(user);
-                        else if (i === 1) rewardsTarget.top2.push(user);
-                        else if (i === 2) rewardsTarget.top3.push(user);
-                        else if (i === 3) rewardsTarget.top4.push(user);
-                        else if (i === 4) rewardsTarget.top5.push(user);
-                        else if (i === 5) rewardsTarget.top6.push(user);
-                        else if (i === 6) rewardsTarget.top7.push(user);
-                        else if (i === 7) rewardsTarget.top8.push(user);
-                        else if (i === 8) rewardsTarget.top9.push(user);
-                        else if (i === 9) rewardsTarget.top10.push(user);
-                        else if (i >= 10 && i < 20) rewardsTarget.top11_20.push(user);
-                        else if (i >= 20 && i < 30) rewardsTarget.top21_30.push(user);
-                        else if (i >= 30 && i < 40) rewardsTarget.top31_40.push(user);
-                        else if (i >= 40 && i < 50) rewardsTarget.top41_50.push(user);
-                        else if (i >= 50 && i < 70) rewardsTarget.top51_70.push(user);
-                        else if (i >= 70 && i < 100) rewardsTarget.top71_100.push(user);
-                        else if (i >= 100 && i < 130)
-                            // 추가: 101~130등
-                            rewardsTarget.top101_130.push(user);
-                        else if (i >= 130 && i < 150)
-                            // 추가: 131~150등
-                            rewardsTarget.top131_150.push(user);
-                        else break;
-                    }
-                    let message = "✨✨ 펑! 펑펑! ✨✨💥 펑펑 💥\n💥 펑펑 💥\n🔥 빵! 펑펑펑 🔥\n💥 펑펑 💥✨ 펑 💫 펑펑펑 ✨\n";
-                    message += "[보상알림]\n🔔종합순위 보상 지급이 완료되었습니다.🔔\n(/종합순위) (/종합순위보상) 참조해주세요🐶\n\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\n\n";
-                    let isBelowTop10 = false; // 10위 이후 문구 추가 여부
-                    // 보상 지급 로직 실행 및 메시지 누적
-                    Object.keys(rewardsTarget).forEach((rank) => {
-                        rewardsTarget[rank].forEach((user) => {
-                            rewards[rank].forEach((item) => {
-                                let itemName = item.itemName;
-                                let count = item.count;
-                                let rankNum = userRanks[user]; // 등수 가져오기
-                                // 보상지급
-                                if (!data.member[user].bag) {
-                                    data.member[user].bag = {};
-                                }
-                                if (!data.member[user].bag[itemName]) {
-                                    data.member[user].bag[itemName] = 0;
-                                }
-                                data.member[user].bag[itemName] += count;
-                                // 10위 이후 전체보기
-                                if (!isBelowTop10 && rank === "top10") {
-                                    message += allsee;
-                                    isBelowTop10 = true;
-                                }
-                                message += getRankEmoji(rankNum) + user + "에게 " + itemName + " " + count + "개 지급\n";
-                            });
-                        });
-                    });
-                    recordDailyRewardPayout(data, "overall");
-                    replier.reply(message);
-                    noticeMsg(message);
+                    runDailyRankingPayoutEntry(ctx, replier, msg, sender);
+                    return;
                 }
                 if (msg.startsWith("/시련의탑수정") && (sender == "호이 남" || isOrderLogRoomBot(sender))) {
                     let regex = /^\/시련의탑수정\s+(.+?)\s+(\d+)$/;
@@ -29882,33 +29651,7 @@ replier.reply(
                     return;
                 }
                 if (msg === "/길드보상지급") {
-                    var allowedSenders = ["오픈채팅봇", "호이 남", "감자 여"];
-
-                    if (allowedSenders.indexOf(sender) === -1) {
-                        replier.reply("해당 명령어를 사용할 권한이 없습니다.");
-                        return;
-                    }
-
-                    if (!guildData || !guildData.guilds) {
-                        replier.reply("❌ 등록된 길드가 없습니다.");
-                        return;
-                    }
-
-                    var guildRewardHomeData = loadJsonFile(homeDataFile);
-                    var payoutResult = runGuildRankReward(data, petData, guildData, guildRewardHomeData, petSkillData);
-
-                    if (payoutResult.error === "NO_GUILD") {
-                        replier.reply("❌ 등록된 길드가 없습니다.");
-                        return;
-                    }
-
-                    recordDailyRewardPayout(data, "guildRank");
-                    saveJsonFile(data, filePath);
-                    saveJsonFile(guildData, guildPath);
-
-                    var payoutMessage = buildGuildRankRewardPayoutMessage(payoutResult);
-                    noticeMsg(payoutMessage);
-
+                    runDailyRankingPayoutEntry(ctx, replier, msg, sender);
                     return;
                 }
                 if (msg === "/길드계급표") {
@@ -34254,7 +33997,7 @@ function loadJsonFile(path, memberStoreMode) {
         if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = null;
         return null;
     } catch (e) {
-        if (e.memberStorageFailure || /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(String(new java.io.File(path).getName()))) throw e;
+        if (e.memberStorageFailure || /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(String(new java.io.File(path).getName())) || /^packageGrant(?:Stats(?:_back2?)?|Pending)\.json$/.test(String(new java.io.File(path).getName())) || /^dailyRankingPayout(?:Pending|_back2?)?\.json$/.test(String(new java.io.File(path).getName()))) throw e;
         var errorObj = {
             system: "loadJsonFile",
             path: path,
@@ -34288,6 +34031,8 @@ function getManagedJsonBackupPath(path) {
     if (fileName === "petSkillData.json") backupFileName = "petSkillData_back.json";
     if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back.json";
     if (fileName === "board.json") backupFileName = "board_back.json";
+    if (fileName === "packageGrantStats.json") backupFileName = "packageGrantStats_back.json";
+    if (fileName === "dailyRankingPayout.json") backupFileName = "dailyRankingPayout_back.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -34302,6 +34047,8 @@ function getManagedJsonSecondaryBackupPath(path) {
     if (fileName === "petSkillData.json") backupFileName = "petSkillData_back2.json";
     if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back2.json";
     if (fileName === "board.json") backupFileName = "board_back2.json";
+    if (fileName === "packageGrantStats.json") backupFileName = "packageGrantStats_back2.json";
+    if (fileName === "dailyRankingPayout.json") backupFileName = "dailyRankingPayout_back2.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -34322,7 +34069,8 @@ function getManagedJsonCommandTargets() {
         { key: "member", fileName: "member.json", path: filePath, aliases: ["member", "멤버"] },
         { key: "member_pet", fileName: "member_pet.json", path: memberPetPath, aliases: ["member_pet", "펫"] },
         { key: "petSkillData", fileName: "petSkillData.json", path: petSkillDataPath, aliases: ["petSkillData", "펫스킬"] },
-        { key: "petHomeActivityData", fileName: "petHomeActivityData.json", path: petHomeActivityFile, aliases: ["petHomeActivityData", "펫홈활동"] }
+        { key: "petHomeActivityData", fileName: "petHomeActivityData.json", path: petHomeActivityFile, aliases: ["petHomeActivityData", "펫홈활동"] },
+        { key: "packageGrantStats", fileName: "packageGrantStats.json", path: DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName, aliases: ["packageGrantStats", "패키지실적"] }
     ];
 }
 
@@ -34392,7 +34140,7 @@ function buildManagedJsonStatusMessage() {
 // 파일 단위 수동복구 명령 사용법을 반환하는 함수
 function buildManagedJsonRecoveryUsageMessage() {
     return "사용법: /데이터복구 [파일] [1|2]\n" +
-        "파일: member, member_pet, petSkillData, petHomeActivityData\n" +
+        "파일: member, member_pet, petSkillData, petHomeActivityData, packageGrantStats\n" +
         "예시: /데이터복구 member 1\n" +
         "복구 전 /데이터상태로 백업 상태를 확인해주세요.";
 }
@@ -34434,6 +34182,8 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
 
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
+    if (/^dailyRankingPayout(?:Pending|_back2?)?\.json$/.test(String(new java.io.File(path).getName()))) return true;
+    if (/^packageGrant(?:Stats(?:_back2?)?|Pending)\.json$/.test(String(new java.io.File(path).getName()))) return true;
     if (String(new java.io.File(path).getName()) === "serverRaidNoticeReceipts.json") return true;
     if (/^adventureQuestHistory(?:_legacy|Pending)?\.json$/.test(String(new java.io.File(path).getName()))) return true;
     var fileName = String(new java.io.File(path).getName());
@@ -34450,6 +34200,10 @@ function isProtectedManagedJsonPath(path) {
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
     var splitFileName = String(new java.io.File(path).getName());
+    if (/^dailyRankingPayout(?:_back2?)?\.json$/.test(splitFileName)) return requireDailyRankingStore(parsedData);
+    if (splitFileName === "dailyRankingPayoutPending.json") { validateDailyRankingPending(parsedData); return parsedData; }
+    if (/^packageGrantStats(?:_back2?)?\.json$/.test(splitFileName)) return requirePackageGrantStore(parsedData);
+    if (splitFileName === "packageGrantPending.json") { validatePackageGrantPending(parsedData); return parsedData; }
     if (splitFileName === "serverRaidNoticeReceipts.json") return requireServerRaidNoticeReceipts(parsedData);
     if (/^adventureQuestHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireAdventureRecordStore(parsedData);
     if (splitFileName === "adventureQuestHistoryPending.json") { validateAdventureRecordPending(parsedData); return parsedData; }
@@ -34742,6 +34496,24 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
         var transactionEntryResult = null;
         var splitOwnTransaction = false;
         try {
+            if (path === resolveActiveDataPath(filePath) || path === resolveActiveDataPath(guildPath)) {
+                var rankingSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.rewardPayout.pendingName);
+                if (!new java.io.File(rankingSavePendingPath).exists() && new java.io.File(rankingSavePendingPath+".rollback").exists()) throw new Error("순위 지급 복구 대기");
+                if (new java.io.File(rankingSavePendingPath).exists()) {
+                    var rankingSavePending = parseJsonContent(FileStream.read(rankingSavePendingPath,"utf-8"),rankingSavePendingPath);
+                    validateDailyRankingPending(rankingSavePending);
+                    if (rankingSavePending.pending !== null) throw new Error("순위 지급 복구 대기");
+                }
+            }
+            if (path === resolveActiveDataPath(filePath) && GLOBAL_CONFIG.packageGrant) {
+                var packageSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName);
+                if (!new java.io.File(packageSavePendingPath).exists() && new java.io.File(packageSavePendingPath + ".rollback").exists()) throw new Error("패키지 지급 복구 대기");
+                if (new java.io.File(packageSavePendingPath).exists()) {
+                    var packageSavePending = parseJsonContent(FileStream.read(packageSavePendingPath,"utf-8"),packageSavePendingPath);
+                    validatePackageGrantPending(packageSavePending);
+                    if (packageSavePending.pending !== null) throw new Error("패키지 지급 복구 대기");
+                }
+            }
             if (path === resolveActiveDataPath(filePath) && GLOBAL_CONFIG.halloween && !getCurrentContext().halloweenPublishing) {
                 var halloweenSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.halloween.pendingName);
                 if (!new java.io.File(halloweenSavePendingPath).exists() && new java.io.File(halloweenSavePendingPath + ".rollback").exists()) throw new Error("할로윈 게시 복구 대기");
@@ -36339,6 +36111,11 @@ function getMiniGameBundledCatalog(kind) {
 // 명령·재시작·자동 차례의 저장 진입점에서만 파일을 읽고 확정된 원문을 게시하는 함수
 function runMiniGameEntry(mode, args) {
     var config = GLOBAL_CONFIG.miniGames;
+    if (mode === "command" && (args.request.kind === "vault" || args.request.kind === "dice") && !isHoiPassPremiumActive(args.data, args.sender)) {
+        args.ctx.miniGamePremiumDenied = true;
+        args.replier.reply(buildMiniGamePremiumRequiredMessage(args.request.kind));
+        return; // 차단된 요청은 진행 중인 판·정답·횟수·지급 기록을 읽거나 변경하지 않는다.
+    }
     args.ctx.miniGameRecoveryBlocked = false;
     var statePath = resolveActiveDataPath(DATA_ROOT_PATH + config.stateName), pendingPath = resolveActiveDataPath(DATA_ROOT_PATH + config.pendingName);
     var paths = [pendingPath, statePath], i, restored = false;
@@ -36400,7 +36177,7 @@ function runMiniGameEntry(mode, args) {
     }
     if ((mode === "auto" || mode === "resetPlan") && !stateExists) return mode === "resetPlan" ? [] : undefined;
     if (mode === "auto") {
-        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName];
+        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName, GLOBAL_CONFIG.packageGrant.pendingName, GLOBAL_CONFIG.rewardPayout.pendingName];
         for (i = 0; i < foreignPendingNames.length; i++) {
             var foreignPath = resolveActiveDataPath(DATA_ROOT_PATH + foreignPendingNames[i]);
             if (new java.io.File(foreignPath + ".rollback").exists() && !new java.io.File(foreignPath).exists()) throw new Error("다른 콘텐츠 게시 복구 대기");
@@ -36416,11 +36193,6 @@ function runMiniGameEntry(mode, args) {
     if (mode === "auto") {
         if (!hasMiniGameAutomaticWork(state)) return;
         if (!data) data = loadJsonFile(filePath);
-    }
-    if (mode === "command" && request.kind === "dice" && !isHoiPassPremiumActive(data, args.sender)) {
-        var diceAccount = data.member[args.sender].serverRaidAccount;
-        var startedDice = diceAccount && state.dice.users["$" + diceAccount.id];
-        if (!startedDice || !startedDice.game || startedDice.game.phase === "DONE") { args.replier.reply("🎲 호월이를 이겨라!\n━━━━━━━━━━━━\n호이패스 프리미엄 전용 미니게임입니다.\n👉 /미니게임"); return; }
     }
     var now = Date.now(), day = getVaultRobberyDay(now), archives = {}, archiveChanged = {}, stateOriginal = stateExists && mode !== "resetPlan" ? JSON.stringify(state) : null;
     if (!state.dailyReset) state.dailyReset = { day: state.vault ? state.vault.current.day : state.balance.current ? state.balance.current.day : day, cycle: 0, at: 0 }; // 기존 판의 날짜를 기준으로 첫 /리셋을 기다린다.
@@ -36792,6 +36564,8 @@ function scheduleMiniGameWork(ctx, delay) {
         var previous = enterCommandContext(ctx), entered = false, retryRecovery = false;
         try {
             dataTransactionLock.lock(); beginDataSaveTransaction(); entered = true;
+            recoverPackageGrantPending();
+            recoverDailyRankingPending();
             runMiniGameEntry("recover", { ctx: ctx });
             runMiniGameEntry("auto", { ctx: ctx });
         } catch (error) { retryRecovery = !(error && error.miniGameRecoveryBlocked); debuggerLog("[미니게임 자동 처리 복구 대기] " + error); }
@@ -36833,7 +36607,12 @@ function getMiniGameRequest(msg) {
 
 // 통합 메뉴에는 게임과 실행 명령만 표시하는 함수
 function buildMiniGameMenu() {
-    return "🎮 호이월드 미니게임\n🖐️ 호이는 오늘도 밤을 샙니다.\n━━━━━━━━━━━━\n⚖️ 호월이의 밸런스 게임\n👉 /밸런스\n\n🎲 호월이를 이겨라!(호패프 전용)\n👉 /호월주사위 or ㅎㅈ\n\n🔐 호월이의 금고털이(호패프 +2회)\n👉 /금고\n━━━━━━━━━━━━";
+    return "🎮 호이월드 미니게임\n🖐️ 호이는 오늘도 밤을 샙니다.\n━━━━━━━━━━━━\n⚖️ 호월이의 밸런스 게임\n👉 /밸런스\n\n🎲 호월이를 이겨라!(👑호패프 전용)\n👉 /호월주사위 or ㅎㅈ\n\n🔐 호월이의 금고털이(👑호패프 전용)\n👉 /금고";
+}
+
+// 프리미엄 전용 미니게임의 미가입·만료 안내를 반환하는 함수
+function buildMiniGamePremiumRequiredMessage(kind) {
+    return (kind === "vault" ? "🔐 호월이의 금고털이" : "🎲 호월이를 이겨라!") + "\n━━━━━━━━━━━━\n호이패스 프리미엄 전용 미니게임입니다.\n" + GLOBAL_CONFIG.miniGames.premiumInfoUrl + "\n👉 /미니게임";
 }
 
 // 신규 설치의 진행 파일만 생성하고 게임 자체는 아직 시작하지 않는 함수
@@ -37530,7 +37309,7 @@ function buildVaultRobberyMessage(store, accountId, premium, premiumHeader, nick
     if (!round.hints.length) out += "아직 도전 기록이 없어요.\n첫 힌트를 남겨보세요!\n";
     for (var i = round.hints.length - 1; i >= 0; i--) out += "[" + round.hints[i].name + "] 🔐" + round.hints[i].guess + " → " + (round.hints[i].direction === "UP" ? "UP⬆️" : "DOWN⬇️") + "\n";
     out += "━━━━━━━━━━━━\n📝 /금고 숫자" + winners;
-    if (kind === "view") out += "\n\n📖 금고털이 하는 방법\n🔐 최근 힌트를 보고 현재 범위의 비밀번호를 맞혀보세요!\n⬆️ UP: 입력한 숫자보다 커요.\n⬇️ DOWN: 입력한 숫자보다 작아요.\n🏆 각 금고의 최초 정답자 1명이 고정 상금 전액 획득!\n🎯 일반·일반 호이패스 하루 총 3회\n👑 호이패스 프리미엄 하루 총 5회\n※ 여러 금고 당첨이 가능하며 모든 금고가 개인 횟수를 공유해요.\n⏰ 매일 자정에 금고와 개인 횟수가 초기화돼요.\n※ 모든 방에서 금고와 참여 기록을 공유해요.";
+    if (kind === "view") out += "\n\n📖 금고털이 하는 방법\n🔐 최근 힌트를 보고 현재 범위의 비밀번호를 맞혀보세요!\n⬆️ UP: 입력한 숫자보다 커요.\n⬇️ DOWN: 입력한 숫자보다 작아요.\n🏆 각 금고의 최초 정답자 1명이 고정 상금 전액 획득!\n👑 호이패스 프리미엄 전용 미니게임\n🎯 호이패스 프리미엄 하루 기본 5회\n✨ 추가 도전 횟수는 보유 혜택에 따라 적용돼요.\n※ 여러 금고 당첨이 가능하며 모든 금고가 개인 횟수를 공유해요.\n⏰ 매일 자정에 금고와 개인 횟수가 초기화돼요.\n※ 모든 방에서 금고와 참여 기록을 공유해요.";
     return out;
 }
 
@@ -39222,8 +39001,8 @@ function buildGuildTerritoryRankRewardGuideMessage() {
 }
 
 // 길드영지 순위 보상 지급을 처리하는 함수
-function runGuildTerritoryRankReward(data, guildData, sender) {
-    if (!(isMaster(sender) || isAdmin(sender))) {
+function runGuildTerritoryRankReward(data, guildData, sender, authorizedOperator) {
+    if (authorizedOperator !== true && !(isMaster(sender) || isAdmin(sender))) {
         return { ok: false, message: "❌ 해당 명령어는 관리자만 사용할 수 있습니다.", noticeMessage: "" };
     }
     var rows = buildGuildTerritoryScoreRankingRows(guildData);
@@ -45469,20 +45248,474 @@ function buildUserSupportPassLines(data, user) {
     return lines;
 }
 
+// 기존 미니펫 연금 순위와 보상표를 공통 지급 경로에서 계산하는 함수
+function payMiniPetRankingReward(data, petData, guildData) {
+    let result = getMiniPetExpRanking(petData, data, guildData); // 순위 계산
+    let ranking = result.ranking;
+    if (!data.member) data.member = {};
+    let rewardsGiven = 0;
+    let rewardItem = "펫 강화석⭐";
+    let rewardMsg =
+        "🐹[보상알림]\n" +
+        "미니펫이 휘날리며~ 🐹 흩날리는 미니펫과 함께~ 🐹\n" +
+        "아름다운 이 거리를 둘이 걸어요~ 🌸\n" +
+        "🐹🐹🐹🐹🐹🐹🐹🐹🐹🐹🐹\n" +
+        "미니펫 연금(1-200등) 보상 지급이 완료되었습니다.\n" +
+        "(/미니펫순위) 참조해주세요🐹\n\n";
+    for (let i = 0; i < ranking.length; i++) {
+        let user = ranking[i].user;
+        let reward = 0;
+        if (i === 0) reward = 40;
+        else if (i === 1) reward = 30;
+        else if (i === 2) reward = 25;
+        else if (i === 3) reward = 24;
+        else if (i === 4) reward = 23;
+        else if (i === 5) reward = 22;
+        else if (i === 6) reward = 21;
+        else if (i === 7) reward = 20;
+        else if (i === 8) reward = 19;
+        else if (i === 9) reward = 18;
+        else if (i < 20) reward = 17;
+        else if (i < 30) reward = 16;
+        else if (i < 40) reward = 15;
+        else if (i < 50) reward = 14;
+        else if (i < 70) reward = 13;
+        else if (i < 80) reward = 12;
+        else if (i < 90) reward = 11;
+        else if (i < 100) reward = 10;
+        else if (i < 110) reward = 9;
+        else if (i < 120) reward = 8;
+        else if (i < 130) reward = 7;
+        else if (i < 140) reward = 6;
+        else if (i < 150) reward = 5;
+        else if (i < 160) reward = 4;
+        else if (i < 170) reward = 3;
+        else if (i < 180) reward = 2;
+        else if (i < 200) reward = 1;
+        if (reward > 0) {
+            if (!data.member[user]) data.member[user] = {};
+            if (!data.member[user].bag) data.member[user].bag = {};
+            data.member[user].bag[rewardItem] = (data.member[user].bag[rewardItem] || 0) + reward;
+            rewardsGiven++;
+            // 메시지 구성
+            if (i === 10) {
+                rewardMsg += allsee;
+            }
+            rewardMsg += getRankEmoji(i + 1) + checkRank(data, petData, guildData, user) + " 🐹 " + rewardItem + " " + reward + "개 지급\n";
+        }
+    }
+    return { ok: true, message: rewardMsg, noticeMessage: rewardMsg };
+}
+
+// 기존 종합순위 계산과 보상표를 공통 지급 경로에서 그대로 적용하는 함수
+function payOverallRankingReward(data, petData, guildData, homeData, petSkillData) {
+    // 종합순위보상
+    let members = data.member;
+    let sortedUsrs = Object.keys(members)
+        .filter((key) => petData[key])
+        .sort((a, b) => {
+            let A =
+                (calculateCastleExp(a, data, petData, homeData, petSkillData, false, guildData) || 0) +
+                (calculateRaidExp(a, data, petData, homeData, petSkillData, false, guildData) || 0) +
+                calculatePetUpgradeCharm(a, data, petData);
+            let B =
+                (calculateCastleExp(b, data, petData, homeData, petSkillData, false, guildData) || 0) +
+                (calculateRaidExp(b, data, petData, homeData, petSkillData, false, guildData) || 0) +
+                calculatePetUpgradeCharm(b, data, petData);
+            return B - A;
+        });
+    // 보상 구간 설정
+    // 보상 구간 설정
+    let rewardsTarget = {
+        top1: [],
+        top2: [],
+        top3: [],
+        top4: [],
+        top5: [],
+        top6: [],
+        top7: [],
+        top8: [],
+        top9: [],
+        top10: [],
+        top11_20: [],
+        top21_30: [],
+        top31_40: [],
+        top41_50: [],
+        top51_70: [],
+        top71_100: [],
+        top101_130: [],
+        top131_150: []
+    };
+    // 보상 목록
+    let rewards = {
+        top1: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 70
+            }
+        ],
+        top2: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 60
+            }
+        ],
+        top3: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 55
+            }
+        ],
+        top4: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 45
+            }
+        ],
+        top5: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 40
+            }
+        ],
+        top6: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 37
+            }
+        ],
+        top7: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 34
+            }
+        ],
+        top8: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 31
+            }
+        ],
+        top9: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 27
+            }
+        ],
+        top10: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 23
+            }
+        ],
+        top11_20: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 15
+            }
+        ],
+        top21_30: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 14
+            }
+        ],
+        top31_40: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 13
+            }
+        ],
+        top41_50: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 12
+            }
+        ],
+        top51_70: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 11
+            }
+        ],
+        top71_100: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 10
+            }
+        ],
+        top101_130: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 5
+            }
+        ],
+        top131_150: [
+            {
+                itemName: "펫 강화석⭐",
+                count: 2
+            }
+        ]
+    };
+    // 사용자 등수에 따른 보상 분배
+    let userRanks = {};
+    for (let i = 0; i < sortedUsrs.length; i++) {
+        let user = sortedUsrs[i];
+        userRanks[user] = i + 1;
+        if (i === 0) rewardsTarget.top1.push(user);
+        else if (i === 1) rewardsTarget.top2.push(user);
+        else if (i === 2) rewardsTarget.top3.push(user);
+        else if (i === 3) rewardsTarget.top4.push(user);
+        else if (i === 4) rewardsTarget.top5.push(user);
+        else if (i === 5) rewardsTarget.top6.push(user);
+        else if (i === 6) rewardsTarget.top7.push(user);
+        else if (i === 7) rewardsTarget.top8.push(user);
+        else if (i === 8) rewardsTarget.top9.push(user);
+        else if (i === 9) rewardsTarget.top10.push(user);
+        else if (i >= 10 && i < 20) rewardsTarget.top11_20.push(user);
+        else if (i >= 20 && i < 30) rewardsTarget.top21_30.push(user);
+        else if (i >= 30 && i < 40) rewardsTarget.top31_40.push(user);
+        else if (i >= 40 && i < 50) rewardsTarget.top41_50.push(user);
+        else if (i >= 50 && i < 70) rewardsTarget.top51_70.push(user);
+        else if (i >= 70 && i < 100) rewardsTarget.top71_100.push(user);
+        else if (i >= 100 && i < 130)
+            // 추가: 101~130등
+            rewardsTarget.top101_130.push(user);
+        else if (i >= 130 && i < 150)
+            // 추가: 131~150등
+            rewardsTarget.top131_150.push(user);
+        else break;
+    }
+    let message = "✨✨ 펑! 펑펑! ✨✨💥 펑펑 💥\n💥 펑펑 💥\n🔥 빵! 펑펑펑 🔥\n💥 펑펑 💥✨ 펑 💫 펑펑펑 ✨\n";
+    message += "[보상알림]\n🔔종합순위 보상 지급이 완료되었습니다.🔔\n(/종합순위) (/종합순위보상) 참조해주세요🐶\n\n[하루에 한번 1등~150등 차등으로 보상됩니다.]\n\n";
+    let isBelowTop10 = false; // 10위 이후 문구 추가 여부
+    // 보상 지급 로직 실행 및 메시지 누적
+    Object.keys(rewardsTarget).forEach((rank) => {
+        rewardsTarget[rank].forEach((user) => {
+            rewards[rank].forEach((item) => {
+                let itemName = item.itemName;
+                let count = item.count;
+                let rankNum = userRanks[user]; // 등수 가져오기
+                // 보상지급
+                if (!data.member[user].bag) {
+                    data.member[user].bag = {};
+                }
+                if (!data.member[user].bag[itemName]) {
+                    data.member[user].bag[itemName] = 0;
+                }
+                data.member[user].bag[itemName] += count;
+                // 10위 이후 전체보기
+                if (!isBelowTop10 && rank === "top10") {
+                    message += allsee;
+                    isBelowTop10 = true;
+                }
+                message += getRankEmoji(rankNum) + user + "에게 " + itemName + " " + count + "개 지급\n";
+            });
+        });
+    });
+    return { ok: true, message: message, noticeMessage: message };
+}
+
+// 통합·개별 지급 명령을 기존 보상 종류에 연결하는 함수
+function getDailyRankingPayoutRequest(msg) {
+    if (msg === "/최종순위보상지급") return { all:true };
+    if (msg === "/길드영지보상지급") return { key:"territory" };
+    var rows = GLOBAL_CONFIG.rewardPayout.schedules;
+    for (var i = 0; i < rows.length; i++) if (msg === rows[i].command) return { key:rows[i].key };
+    return null;
+}
+
+// 통합 권한과 개별 명령의 기존 허용 대상을 확인하는 함수
+function isDailyRankingPayoutOperator(sender, request) {
+    if (request.all) return sender === "오픈채팅봇" || isMaster(sender);
+    if (request.key === "territory") return isMaster(sender) || isAdmin(sender);
+    return (request.key === "guildRank" ? GLOBAL_CONFIG.rewardPayout.guildOperators : GLOBAL_CONFIG.rewardPayout.basicOperators).indexOf(sender) !== -1;
+}
+
+// 리셋과 분리해 보존할 날짜별 지급 원본을 만드는 함수
+function createDailyRankingStore() {
+    return { version:1, days:{} };
+}
+
+// 날짜·종류별 실제 지급 완료 기록을 검증하는 함수
+function requireDailyRankingStore(store) {
+    if (!store || store.version !== 1 || !store.days || typeof store.days !== "object" || Array.isArray(store.days)) throw new Error("순위 지급 기록 형식 오류");
+    var schedules = GLOBAL_CONFIG.rewardPayout.schedules, keys = [];
+    for (var k = 0; k < schedules.length; k++) keys.push(schedules[k].key);
+    for (var day in store.days) if (Object.prototype.hasOwnProperty.call(store.days,day)) {
+        var rows = store.days[day];
+        if (!/^\d{8}$/.test(day) || !rows || typeof rows !== "object" || Array.isArray(rows)) throw new Error("순위 지급 날짜 형식 오류");
+        for (var key in rows) if (Object.prototype.hasOwnProperty.call(rows,key)) {
+            var row = rows[key];
+            if (keys.indexOf(key) === -1 || !row || ["DONE","FAILED"].indexOf(row.status) === -1 || typeof row.at !== "string" || !isFinite(Date.parse(row.at))) throw new Error("순위 지급 완료 기록 오류");
+        }
+    }
+    return store;
+}
+
+// 기존 다섯 지급 함수의 실제 보상 계산을 호출하는 함수
+function applyDailyRankingReward(key, data, petData, guildData, homeData, petSkillData, sender) {
+    if (key === "overall") return payOverallRankingReward(data,petData,guildData,homeData,petSkillData);
+    if (key === "miniPet") return payMiniPetRankingReward(data,petData,guildData);
+    if (key === "tier") return payTierRankingReward(data,petData,guildData);
+    if (key === "territory") return runGuildTerritoryRankReward(data,guildData,sender,true);
+    if (key === "guildRank") {
+        var result = runGuildRankReward(data,petData,guildData,homeData,petSkillData);
+        if (result.error) return {ok:false,message:"❌ 등록된 길드가 없습니다."};
+        var message = buildGuildRankRewardPayoutMessage(result);
+        return {ok:true,message:message,noticeMessage:message};
+    }
+    throw new Error("알 수 없는 순위 보상 종류");
+}
+
+// 한 종류의 전체 지급과 완료 기록을 동일한 최종 원문으로 묶는 함수
+function buildDailyRankingPublication(data, guildData, store) {
+    var adventure = data.__adventureRecordContext;
+    if (adventure && JSON.stringify(adventure.store) !== adventure.text) throw new Error("순위 지급 중 저장하지 않은 퀘스트 기록 변경 감지");
+    var plan = buildMemberSplitSavePlan(data), writes = [];
+    if (plan) for (var i = 0; i < plan.writes.length; i++) writes.push({name:String(new java.io.File(plan.writes[i].path).getName()),text:plan.writes[i].text});
+    writes.push({name:"member.json",text:JSON.stringify(plan ? plan.member : data)},{name:"guildData.json",text:JSON.stringify(guildData)},{name:GLOBAL_CONFIG.rewardPayout.fileName,text:JSON.stringify(requireDailyRankingStore(store))});
+    var journal = {version:1,pending:writes};
+    validateDailyRankingPending(journal);
+    return journal;
+}
+
+// 지급 복구 대상과 최종 원문을 쓰기 전에 모두 검증하는 함수
+function validateDailyRankingPending(journal) {
+    if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal,"pending") || journal.pending !== null && !Array.isArray(journal.pending)) throw new Error("순위 지급 복구 형식 오류");
+    if (journal.pending === null) return;
+    var seen = {};
+    for (var i = 0; i < journal.pending.length; i++) {
+        var row = journal.pending[i];
+        if (!row || typeof row.name !== "string" || !/^(?:member|guildData|dailyRankingPayout|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?)\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("순위 지급 복구 대상 오류");
+        seen[row.name] = true;
+        var parsed = parseJsonContent(row.text,row.name);
+        if (row.name === "member.json" && (!parsed || !parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("순위 지급 회원 원문 오류");
+        if (row.name === "guildData.json" && (!parsed || !parsed.guilds || typeof parsed.guilds !== "object" || Array.isArray(parsed.guilds))) throw new Error("순위 지급 길드 원문 오류");
+        if (row.name === GLOBAL_CONFIG.rewardPayout.fileName) requireDailyRankingStore(parsed);
+        if (/^(serverRaidData|memberOperationLogs)/.test(row.name)) requireMemberSplitStore(parsed,row.name.indexOf("serverRaidData") === 0 ? "raid" : "logs");
+    }
+    if (!seen["member.json"] || !seen["guildData.json"] || !seen[GLOBAL_CONFIG.rewardPayout.fileName]) throw new Error("순위 지급 복구 필수 원문 누락");
+}
+
+// 중단된 전체 지급과 완료 상태를 재계산 없이 복구하는 저장 진입 함수
+function recoverDailyRankingPending() {
+    dataTransactionLock.lock();
+    try {
+        var path = resolveActiveDataPath(DATA_ROOT_PATH+GLOBAL_CONFIG.rewardPayout.pendingName), file = new java.io.File(path), rollback = new java.io.File(path+".rollback");
+        if (!file.exists() && rollback.exists()) {
+            validateDailyRankingPending(parseJsonContent(FileStream.read(path+".rollback","utf-8"),path));
+            if (!rollback.renameTo(file)) throw new Error("순위 지급 복구 원문 복원 실패");
+        }
+        if (!file.exists()) return false;
+        var journal = parseJsonContent(FileStream.read(path,"utf-8"),path);
+        validateDailyRankingPending(journal);
+        if (journal.pending === null) return false;
+        for (var i = 0; i < journal.pending.length; i++) {
+            var targetPath = resolveActiveDataPath(DATA_ROOT_PATH+journal.pending[i].name);
+            if (!new java.io.File(targetPath).exists() || String(FileStream.read(targetPath,"utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(targetPath,journal.pending[i].text,false);
+        }
+        writeVerifiedJsonFile(path,JSON.stringify({version:1,pending:null}),true);
+        memberSplitBackupCache = {};
+        return true;
+    } finally { dataTransactionLock.unlock(); }
+}
+
+// 통합·개별·봇 지급에 같은 잠금과 날짜별 확정 기록을 적용하는 저장 진입 함수
+function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
+    var request = getDailyRankingPayoutRequest(msg);
+    if (!request || !isDailyRankingPayoutOperator(sender,request)) { replier.reply("⛔ 권한이 없습니다.\n/최종순위보상지급 명령어는\n오픈채팅봇 또는 MASTER만 사용할 수 있습니다."); return; }
+    var schedules = GLOBAL_CONFIG.rewardPayout.schedules, day = getAttendanceKstDateKey(), outcomes = [], singleMessage = "";
+    var path = resolveActiveDataPath(DATA_ROOT_PATH+GLOBAL_CONFIG.rewardPayout.fileName), pendingPath = resolveActiveDataPath(DATA_ROOT_PATH+GLOBAL_CONFIG.rewardPayout.pendingName);
+    dataTransactionLock.lock();
+    try {
+        recoverDailyRankingPending();
+        for (var i = 0; i < schedules.length; i++) {
+            var schedule = schedules[i];
+            if (!request.all && request.key !== schedule.key) continue;
+            if (getAttendanceKstDateKey() !== day) { outcomes.push("⚠️ "+schedule.label+": 날짜가 변경되어 미완료 · 새 날짜에 다시 실행해 주세요."); continue; }
+            if (!new java.io.File(path).exists() && (new java.io.File(path+".rollback").exists() || new java.io.File(getManagedJsonBackupPath(path)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(path)).exists())) throw new Error("순위 지급 완료 원본이 누락되어 확인이 필요합니다.");
+            var store = new java.io.File(path).exists() ? requireDailyRankingStore(loadJsonFile(path)) : createDailyRankingStore();
+            if (!store.days[day]) store.days[day] = {};
+            var data = loadJsonFile(filePath), guildData = loadJsonFile(guildPath);
+            if (isDailyRewardPayoutDone(data,guildData,schedule.key,store)) {
+                if (!store.days[day][schedule.key] || store.days[day][schedule.key].status !== "DONE") {
+                    store.days[day][schedule.key] = {status:"DONE",at:new Date().toISOString()};
+                    writeVerifiedJsonFile(path,JSON.stringify(store),false);
+                    endDataSaveTransaction(); beginDataSaveTransaction();
+                }
+                outcomes.push("↪️ "+schedule.label+": 금일 지급 완료 (건너뜀)");
+                singleMessage = "금일 "+schedule.label+"은 이미 지급되었습니다. 중복 지급하지 않습니다.";
+                continue;
+            }
+            try {
+                var petData = schedule.key === "territory" ? null : loadJsonFile(memberPetPath);
+                var needsCharm = schedule.key === "overall" || schedule.key === "guildRank";
+                var petSkillData = needsCharm ? loadJsonFile(petSkillDataPath) : null, homeData = needsCharm ? loadJsonFile(homeDataFile) : null;
+                if (schedule.key !== "territory" && !petData) throw new Error("순위 산정에 필요한 미니펫 원본을 읽지 못했습니다.");
+                if (needsCharm && (!petSkillData || !homeData)) throw new Error("순위 산정에 필요한 펫스킬·펫홈 원본을 읽지 못했습니다.");
+                var result = applyDailyRankingReward(schedule.key,data,petData,guildData,homeData,petSkillData,sender);
+                if (!result.ok) throw new Error(result.message || "보상 지급을 완료하지 못했습니다.");
+                if (getAttendanceKstDateKey() !== day) throw new Error("날짜가 변경되어 지급 전에 취소했습니다. 새 날짜에 다시 실행해 주세요.");
+                recordDailyRewardPayout(data,schedule.key,day);
+                if (schedule.key === "tier") data.tierReward.lastPaidDate=day;
+                store.days[day][schedule.key] = {status:"DONE",at:new Date().toISOString()};
+                var journal = buildDailyRankingPublication(data,guildData,store);
+                writeVerifiedJsonFile(pendingPath,JSON.stringify(journal),true);
+                endDataSaveTransaction(); beginDataSaveTransaction();
+                recoverDailyRankingPending();
+                endDataSaveTransaction(); beginDataSaveTransaction();
+                outcomes.push("✅ "+schedule.label+": 이번 실행에 지급 완료");
+                singleMessage = result.message;
+                if (result.noticeMessage) {
+                    try { noticeMsg(result.noticeMessage); }
+                    catch (noticeError) { debuggerLog("[순위 지급 알림 실패] "+noticeError); }
+                }
+            } catch (error) {
+                try { recoverDailyRankingPending(); }
+                catch (recoveryError) {
+                    outcomes.push("⚠️ "+schedule.label+": 저장 복구 대기 · 확인 후 재실행해 주세요.");
+                    singleMessage=outcomes[outcomes.length-1];
+                    if (request.all) for (var wait=i+1;wait<schedules.length;wait++) outcomes.push("⚠️ "+schedules[wait].label+": 이전 항목의 저장 복구 후 재실행 필요");
+                    break;
+                }
+                var confirmed = new java.io.File(path).exists() ? requireDailyRankingStore(loadJsonFile(path)) : createDailyRankingStore();
+                if (confirmed.days[day] && confirmed.days[day][schedule.key] && confirmed.days[day][schedule.key].status === "DONE") {
+                    endDataSaveTransaction(); beginDataSaveTransaction();
+                    outcomes.push("✅ "+schedule.label+": 중단된 저장 복구 완료");
+                    singleMessage=outcomes[outcomes.length-1]; continue;
+                }
+                if (!confirmed.days[day]) confirmed.days[day]={};
+                confirmed.days[day][schedule.key]={status:"FAILED",at:new Date().toISOString()};
+                writeVerifiedJsonFile(path,JSON.stringify(confirmed),false);
+                endDataSaveTransaction(); beginDataSaveTransaction();
+                outcomes.push("⚠️ "+schedule.label+": 미완료 · "+String(error.message || error));
+                singleMessage=outcomes[outcomes.length-1];
+            }
+        }
+        if (!request.all) { replier.reply(singleMessage); return; }
+        var complete=0, skipped=0; // 이번 실행 확정과 기존 완료를 나눠 다섯 종류의 결과를 집계
+        for (var r=0;r<outcomes.length;r++) {if(outcomes[r].indexOf("✅")===0)complete++;if(outcomes[r].indexOf("↪️")===0)skipped++;}
+        replier.reply("🎁 호이월드 최종 순위보상 통합 지급\n━━━━━━━━━━━━\n"+outcomes.join("\n")+"\n━━━━━━━━━━━━\n🏆 처리 결과: 신규·복구 "+complete+"종 / 기완료 "+skipped+"종 / 미완료 "+(schedules.length-complete-skipped)+"종\n🔒 금일 중복 지급 방지 적용");
+    } finally {dataTransactionLock.unlock();}
+}
+
 // 순위 보상 명령의 당일 지급 완료 시각을 기록하는 함수
-function recordDailyRewardPayout(data, rewardKey) {
+function recordDailyRewardPayout(data, rewardKey, paidDay) {
     if (!data.rewardPayoutStatus || typeof data.rewardPayoutStatus !== "object" || data.rewardPayoutStatus instanceof Array) {
         data.rewardPayoutStatus = {};
     }
     data.rewardPayoutStatus[rewardKey] = {
-        lastPaidDate: getCurrentDate(),
+        lastPaidDate: paidDay || getCurrentDate(),
         lastPaidAt: formatDateTime(new Date())
     };
 }
 
 // 순위 보상별 오늘 지급 완료 여부를 확인하는 함수
-function isDailyRewardPayoutDone(data, guildData, rewardKey) {
+function isDailyRewardPayoutDone(data, guildData, rewardKey, store) {
     var today = getCurrentDate();
+    var day = getAttendanceKstDateKey(), row = store && store.days[day] && store.days[day][rewardKey];
+    if (row && row.status === "DONE") return true;
     if (rewardKey === "tier") {
         return !!(data.tierReward && data.tierReward.lastPaidDate === today);
     }
@@ -45495,20 +45728,26 @@ function isDailyRewardPayoutDone(data, guildData, rewardKey) {
 }
 
 // 패스목록에 표시할 당일 순위 보상 지급 현황 줄을 만드는 함수
-function buildDailyRewardPayoutStatusLines(data, guildData) {
+function buildDailyRewardPayoutStatusLines(data, guildData, store) {
     var schedules = GLOBAL_CONFIG.rewardPayout.schedules;
-    var lines = ["《🎁 금일 순위 보상 지급 현황》"];
+    var lines = ["《🎁 금일 순위 보상 지급 현황》"], completedCount=0;
     for (var i = 0; i < schedules.length; i++) {
         var schedule = schedules[i];
-        var paidMark = isDailyRewardPayoutDone(data, guildData, schedule.key) ? "✅" : "❌";
+        var day = getAttendanceKstDateKey(), row = store && store.days[day] && store.days[day][schedule.key];
+        var paidMark = isDailyRewardPayoutDone(data, guildData, schedule.key, store) ? "✅" : row && row.status === "FAILED" ? "⚠️" : "❌";
+        if (paidMark === "✅") completedCount++;
         lines.push(schedule.command + " " + schedule.time + " [" + paidMark + "]");
         lines.push("└ " + schedule.label);
     }
+    lines.push("━━━━━━━━━━━━");
+    if (completedCount === schedules.length) lines.push("✅ 금일 순위보상 5종 지급 완료", "🛠️ 통합 지급: /최종순위보상지급");
+    else lines.push("🎁 통합 순위보상 지급", "🛠️ /최종순위보상지급", "└ 관리자 명령어 한 번으로 위 5종 일괄 지급", "└ 이미 지급된 보상은 중복 지급하지 않음", "└ 사용 권한: 오픈채팅봇, MASTER");
+    lines.push("※ 표기 시각은 기존 지급 안내 시각입니다. 영지순위 확정 이후 실행을 권장해요.");
     return lines;
 }
 
 // 전체 후원패스 목록 메시지를 만드는 함수
-function buildSupportPassListMessage(data, petData, guildData) {
+function buildSupportPassListMessage(data, petData, guildData, rankingStore) {
     var configs = getSupportPassConfigs();
     var lines = ["호월패스 전체목록 안내:", "[원데이패스, 초보패스, 호이패스, 호이패스 프리미엄, 길드공헌패스, 다이아패스, 영지기습패스] / " + allsee, ""];
     for (var i = 0; i < configs.length; i++) {
@@ -45537,7 +45776,7 @@ function buildSupportPassListMessage(data, petData, guildData) {
         lines.push("━━━━━━━━━━━");
         lines.push("");
     }
-    var rewardPayoutLines = buildDailyRewardPayoutStatusLines(data, guildData);
+    var rewardPayoutLines = buildDailyRewardPayoutStatusLines(data, guildData, rankingStore);
     for (var rewardLineIndex = 0; rewardLineIndex < rewardPayoutLines.length; rewardLineIndex++) {
         lines.push(rewardPayoutLines[rewardLineIndex]);
     }
@@ -49017,8 +49256,14 @@ function buildUserPackageBagMessage(data, petData, petSkillData, guildData, send
     return lines.join("\n");
 }
 
+// 공백 포함 이름과 마지막 두 양의 정수 인자만 지급 명령으로 허용하는 함수
+function isPackageGrantCommand(msg) {
+    return /^\/패키지지급[ \t]+[^\r\n]+[ \t]+\d+[ \t]+\d+$/.test(String(msg));
+}
+
 // 패키지 지급 명령어 파싱 함수
 function parsePackageGrantCommand(msg) {
+    if (!isPackageGrantCommand(msg)) return null;
     var body = String(msg || "").replace(/^\/패키지지급\s+/, "").trim(); // 명령어를 제거한 입력 본문
     var parts = body.split(/\s+/); // 뒤에서부터 번호/갯수를 파싱하기 위한 토큰 배열
     if (parts.length < 3) return null;
@@ -49031,6 +49276,209 @@ function parsePackageGrantCommand(msg) {
         listNumber: listNumber,
         count: count
     };
+}
+
+// 패키지 실적의 최초 준비 상태를 반환하는 함수
+function createPackageGrantStore() {
+    return { version: 1, historyImported: false, trackedFrom: null, records: [] };
+}
+
+// 실적 원본의 필수 값과 중복 지급 식별값을 검증하는 함수
+function requirePackageGrantStore(store) {
+    if (!store || store.version !== 1 || typeof store.historyImported !== "boolean" || !Array.isArray(store.records) || store.trackedFrom !== null && (typeof store.trackedFrom !== "string" || !isFinite(Date.parse(store.trackedFrom)))) throw new Error("패키지 실적 파일 형식 오류");
+    var seen = {};
+    for (var i = 0; i < store.records.length; i++) {
+        var row = store.records[i];
+        if (!row || typeof row.id !== "string" || !row.id || seen["$" + row.id] || typeof row.operatorId !== "string" || !row.operatorId || typeof row.operator !== "string" || !row.operator || typeof row.targetId !== "string" || !row.targetId || typeof row.target !== "string" || !row.target || typeof row.packageName !== "string" || !row.packageName || !isSearchAuthenticationCount(row.quantity) || row.quantity < 1 || typeof row.at !== "string" || !/T\d{2}:\d{2}:\d{2}.*(?:Z|[+-]\d{2}:\d{2})$/.test(row.at) || !isFinite(Date.parse(row.at)) || row.listNumber !== null && (!isSearchAuthenticationCount(row.listNumber) || row.listNumber < 1) || row.legacy !== true && (typeof row.command !== "string" || typeof row.reply !== "string" || row.listNumber === null)) throw new Error("패키지 지급 기록 오류");
+        seen["$" + row.id] = true;
+    }
+    return store;
+}
+
+// 현재 계정의 기존 고정 ID 또는 과거 이름 식별값을 반환하는 함수
+function getPackageGrantIdentity(data, user) {
+    var member = data.member && data.member[user];
+    return member && member.serverRaidAccount && member.serverRaidAccount.id ? member.serverRaidAccount.id : "legacy:" + user;
+}
+
+// 보관된 실제 지급 로그만 날짜별 원본 실적으로 한 번 가져오는 함수
+function importPackageGrantHistory(store, logs, data) {
+    assertPackageLogData(logs);
+    if (store.historyImported) return;
+    var seen = {};
+    for (var s = 0; s < store.records.length; s++) seen["$" + store.records[s].id] = true;
+    for (var i = 0; i < logs.logs.length; i++) {
+        var row = logs.logs[i], id = row && "legacy:" + row.id;
+        if (!row || row.type !== "GRANT" || !isSearchAuthenticationCount(row.id) || row.id < 1 || seen["$" + id] || typeof row.by !== "string" || !row.by || typeof row.target !== "string" || !row.target || typeof row.packageName !== "string" || !row.packageName || !isSearchAuthenticationCount(row.count) || row.count < 1 || typeof row.date !== "string" || !/T\d{2}:\d{2}:\d{2}.*(?:Z|[+-]\d{2}:\d{2})$/.test(row.date) || !isFinite(Date.parse(row.date))) continue;
+        store.records.push({ id: id, at: row.date, operatorId: getPackageGrantIdentity(data, row.by), operator: row.by, targetId: getPackageGrantIdentity(data, row.target), target: row.target, packageName: row.packageName, listNumber: null, quantity: row.count, legacy: true });
+        seen["$" + id] = true;
+    }
+    store.historyImported = true;
+    requirePackageGrantStore(store);
+}
+
+// 동일하게 접수된 지급 사건의 기존 완료 기록을 반환하는 함수
+function findPackageGrantRecord(store, id) {
+    for (var i = 0; i < store.records.length; i++) if (store.records[i].id === id) return store.records[i];
+    return null;
+}
+
+// 성공한 지급만 기존 계정 ID와 당시 상품 정보로 한 번 기록하는 함수
+function recordPackageGrant(store, data, sender, parsed, packageInfo, id, command, reply, now) {
+    if (findPackageGrantRecord(store, id)) throw new Error("패키지 실적 중복 기록");
+    var names = [sender, parsed.target];
+    for (var n = 0; n < names.length; n++) {
+        var member = data.member[names[n]];
+        if (member && !member.serverRaidAccount) member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+        if (member && (!member.serverRaidAccount || typeof member.serverRaidAccount.id !== "string" || !member.serverRaidAccount.id)) throw new Error("패키지 담당자·대상 계정 ID 오류");
+    }
+    var operatorId = getPackageGrantIdentity(data, sender), at = new Date(now).toISOString();
+    for (var i = 0; i < store.records.length; i++) if (store.records[i].operatorId === "legacy:" + sender) store.records[i].operatorId = operatorId;
+    if (store.trackedFrom === null) store.trackedFrom = at;
+    store.records.push({ id: id, at: at, operatorId: operatorId, operator: sender, targetId: getPackageGrantIdentity(data, parsed.target), target: parsed.target, packageName: packageInfo.name || getPackageBagItemName(packageInfo), listNumber: parsed.listNumber, quantity: parsed.count, command: command, reply: reply });
+    requirePackageGrantStore(store);
+}
+
+// 패키지 실적의 개인·전체·한국시간 월 지정 입력을 해석하는 함수
+function getPackageGrantStatsRequest(msg) {
+    if (!/^\/패키지실적(?:\s|$)/.test(String(msg))) return null;
+    var match = String(msg).match(/^\/패키지실적(?:[ \t]+([^\r\n]+))?$/);
+    var error = "❌ 사용법: /패키지실적 [전체 또는 담당자 아이디] [YYYY-MM]";
+    if (!match) return { error: error };
+    var input = (match[1] || "").trim(), current = getGmEducationMonthKey(), parts = input.match(/^(?:(.*)[ \t]+)?([^ \t]+)$/), last = parts ? parts[2] : "", month = current;
+    if (/^\d{4}[-/.]/.test(last)) {
+        if (!/^(?!0000)\d{4}-(?:0[1-9]|1[0-2])$/.test(last)) return { error: "❌ 월은 2026-10처럼 YYYY-MM 형식으로 입력해 주세요." };
+        month = last; input = (parts[1] || "").trim();
+    } else if (/(?:^|[ \t])\d{4}[-/.]/.test(input)) return { error: error };
+    if (input === "초기화") return { error: "패키지 실적은 월별로 보존합니다. /패키지실적 전체 YYYY-MM으로 지난 기록을 조회하세요." };
+    return { target: input, all: input === "전체", month: month };
+}
+
+// 지급 확정 시각을 한국시간의 날짜와 시분초로 표시하는 함수
+function formatPackageGrantTime(at) {
+    var date = new Date(Date.parse(at) + 9 * 60 * 60 * 1000);
+    return date.getUTCFullYear() + "-" + ("0" + (date.getUTCMonth() + 1)).slice(-2) + "-" + ("0" + date.getUTCDate()).slice(-2) + " " + ("0" + date.getUTCHours()).slice(-2) + ":" + ("0" + date.getUTCMinutes()).slice(-2) + ":" + ("0" + date.getUTCSeconds()).slice(-2);
+}
+
+// 성공 원본에서 월별 합계·공동 순위·당시 지급 내역을 읽기 전용으로 표시하는 함수
+function buildPackageGrantStatsMessage(store, data, sender, request) {
+    var target = request.target || sender, id = getPackageGrantIdentity(data, target), accounts = buildServerRaidAccountIndex(data), matchingIds = {};
+    if (!request.all && !Object.prototype.hasOwnProperty.call(data.member, target)) {
+        for (var t = 0; t < store.records.length; t++) if (store.records[t].operator === target) matchingIds["$" + store.records[t].operatorId] = store.records[t].operatorId;
+        var found = Object.keys(matchingIds);
+        if (found.length !== 1) return "❌ 해당 담당자 아이디를 찾을 수 없습니다.";
+        id = matchingIds[found[0]];
+    }
+    var heading = (request.all ? "📊 호이월드 패키지 지급 전체 실적" : "📦 [" + target + "] 님의 패키지 지급 실적") + "\n📅 " + request.month.slice(0,4) + "년 " + request.month.slice(5) + "월\n━━━━━━━━━━━━\n";
+    if (request.month > getGmEducationMonthKey()) return heading + "아직 집계가 시작되지 않은 달입니다.";
+    var groups = {}, count = 0, quantity = 0; // 조회 월의 실제 성공 건수와 패키지 수량 합계
+    for (var i = 0; i < store.records.length; i++) {
+        var record = store.records[i];
+        if (getGmEducationMonthKey(record.at) !== request.month || !request.all && record.operatorId !== id) continue;
+        var key = "$" + record.operatorId, account = accounts[record.operatorId];
+        if (!groups[key]) groups[key] = { name: account ? account.user : record.operator, records: [], quantity: 0 };
+        groups[key].records.push(record); groups[key].quantity += record.quantity;
+        count++; quantity += record.quantity;
+        if (!isSearchAuthenticationCount(quantity)) throw new Error("패키지 실적 합계 범위 초과");
+    }
+    var rows = Object.keys(groups).map(function (key) { return groups[key]; });
+    rows.sort(function (a,b) { return b.records.length - a.records.length || a.name.localeCompare(b.name); });
+    var partial = store.trackedFrom === null || request.month <= getGmEducationMonthKey(store.trackedFrom); // 도입 월까지는 과거 보관 로그만 확인 가능한 불완전 집계
+    var summary = heading + (request.all ? "📨 총 지급 횟수: " : "📨 지급 횟수: ") + numberWithCommas(count) + "회\n" + (request.all ? "🎁 총 지급 갯수: " : "🎁 지급 갯수: ") + numberWithCommas(quantity) + "개\n━━━━━━━━━━━━\n";
+    if (partial) summary += "※ 기록 시작 이전은 보관된 지급 로그만 집계해 일부 내역이 없을 수 있어요.\n";
+    if (!count) return summary + (partial ? "확인 가능한 기록 없음" : "해당 월의 패키지 지급 실적이 없습니다.");
+    var full = [], top = [], rankLines = [], rank = 0, shown = 0, omitted = false, omittedRanks = false;
+    for (var r = 0; r < rows.length; r++) {
+        if (!r || rows[r].records.length !== rows[r-1].records.length) rank = r+1;
+        var line = rank + "등 [" + rows[r].name + "] · " + numberWithCommas(rows[r].records.length) + "회 · " + numberWithCommas(rows[r].quantity) + "개";
+        if (request.all && r < 3) top.push(line);
+        if (request.all) rankLines.push(line);
+    }
+    if (request.all) summary += "🏆 담당자 순위 (지급 횟수 기준)\n" + top.join("\n") + "\n━━━━━━━━━━━━\n";
+    summary += "📋 지급 대상·상품·날짜는 전체보기에서 확인하세요.";
+    var detailBudget = Math.max(0,GLOBAL_CONFIG.packageGrant.detailMaxLength-summary.length-allsee.length-GLOBAL_CONFIG.packageGrant.footerReserve); // 전체보기 구분자·합계·생략 안내까지 남긴 본문 길이
+    if (request.all) full.push("📊 전체 담당자 지급 실적");
+    for (var p = 0; p < rankLines.length; p++) {
+        if (full.join("\n\n").length + rankLines[p].length + 2 > detailBudget) { omittedRanks = true; break; }
+        full.push(rankLines[p]);
+    }
+    if (full.join("\n\n").length + 30 <= detailBudget) full.push("━━━━━━━━━━━━", "📋 패키지 지급 상세 기록");
+    for (var g = 0; g < rows.length; g++) {
+        rows[g].records.sort(function(a,b) { return Date.parse(b.at)-Date.parse(a.at) || a.id.localeCompare(b.id); });
+        if (request.all) {
+            var groupLine = "👤 [" + rows[g].name + "] · " + rows[g].records.length + "회 / " + numberWithCommas(rows[g].quantity) + "개";
+            if (full.join("\n\n").length + groupLine.length + 2 > detailBudget) { omitted = true; break; }
+            full.push(groupLine);
+        }
+        for (var d = 0; d < rows[g].records.length; d++) {
+            var item = rows[g].records[d];
+            var detail = formatPackageGrantTime(item.at) + " · [" + item.target + "]\n" + (item.listNumber === null ? "당시 번호 미기록" : item.listNumber + "번") + " · " + item.packageName + " ×" + numberWithCommas(item.quantity);
+            if (full.join("\n\n").length + detail.length + 2 > detailBudget) { omitted = true; break; }
+            full.push(detail); shown++;
+        }
+        if (omitted) break;
+    }
+    if (omitted || omittedRanks) full.push("※ 출력 길이 제한: 상세 " + shown + "/" + count + "건 · 담당자 " + rows.length + "명. 원본 기록은 모두 보존돼요. /패키지실적 담당자 YYYY-MM으로 범위를 좁혀 확인하세요.");
+    full.push("━━━━━━━━━━━━", "합계: " + numberWithCommas(count) + "회 / " + numberWithCommas(quantity) + "개");
+    return summary + "\n" + allsee + full.join("\n\n");
+}
+
+// 회원 분리 저장 계획과 지급·통계를 재시작 후 완결할 게시 원문으로 묶는 함수
+function buildPackageGrantPublication(data, logs, stats, extra) {
+    var adventure = data.__adventureRecordContext;
+    if (adventure && JSON.stringify(adventure.store) !== adventure.text) throw new Error("패키지 지급 중 저장하지 않은 퀘스트 기록 변경 감지");
+    var plan = buildMemberSplitSavePlan(data), writes = [];
+    if (plan) for (var i = 0; i < plan.writes.length; i++) writes.push({ name: String(new java.io.File(plan.writes[i].path).getName()), text: plan.writes[i].text });
+    writes.push({ name: "member.json", text: JSON.stringify(plan ? plan.member : data) });
+    for (var e = 0; e < extra.length; e++) writes.push(extra[e]);
+    writes.push({ name: "packageLog.json", text: JSON.stringify(logs) }, { name: GLOBAL_CONFIG.packageGrant.fileName, text: JSON.stringify(requirePackageGrantStore(stats)) });
+    var publication = { version: 1, pending: writes };
+    validatePackageGrantPending(publication);
+    return publication;
+}
+
+// 지급 게시 원문의 닫힌 파일 목록과 복구 데이터 형식을 검증하는 함수
+function validatePackageGrantPending(journal) {
+    if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal,"pending") || journal.pending !== null && !Array.isArray(journal.pending)) throw new Error("패키지 지급 복구 형식 오류");
+    if (journal.pending === null) return;
+    var seen = {};
+    for (var i = 0; i < journal.pending.length; i++) {
+        var row = journal.pending[i];
+        if (!row || typeof row.name !== "string" || !/^(?:member|packageLog|packageGrantStats|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?|halloweenEvent|halloweenAccount_[A-Za-z0-9_-]{1,128})\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("패키지 지급 복구 대상 오류");
+        seen[row.name] = true;
+        var parsed = parseJsonContent(row.text,row.name);
+        if (row.name === "member.json" && (!parsed || !parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("패키지 지급 회원 원문 오류");
+        if (row.name === GLOBAL_CONFIG.packageGrant.fileName) requirePackageGrantStore(parsed);
+        if (row.name === "packageLog.json") assertPackageLogData(parsed);
+        if (/^halloweenAccount_/.test(row.name)) requireHalloweenAccount(parsed,parsed.id);
+        if (row.name === GLOBAL_CONFIG.halloween.stateName) requireHalloweenState(parsed);
+        if (/^(serverRaidData|memberOperationLogs)/.test(row.name)) requireMemberSplitStore(parsed,row.name.indexOf("serverRaidData") === 0 ? "raid" : "logs");
+    }
+    if (!seen["member.json"] || !seen["packageLog.json"] || !seen[GLOBAL_CONFIG.packageGrant.fileName]) throw new Error("패키지 지급 복구 필수 원문 누락");
+}
+
+// 접수된 지급 게시를 재실행·재지급 없이 동일 원문으로 끝내는 저장 진입 함수
+function recoverPackageGrantPending() {
+    dataTransactionLock.lock();
+    try {
+        var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName), file = new java.io.File(path), rollback = new java.io.File(path + ".rollback");
+        if (!file.exists() && rollback.exists()) {
+            var interrupted = String(FileStream.read(path + ".rollback","utf-8"));
+            validatePackageGrantPending(parseJsonContent(interrupted,path));
+            if (!rollback.renameTo(file)) throw new Error("패키지 지급 복구 파일 복원 실패");
+        }
+        if (!file.exists()) return false;
+        var journal = parseJsonContent(FileStream.read(path,"utf-8"),path);
+        validatePackageGrantPending(journal);
+        if (journal.pending === null) return false;
+        for (var i = 0; i < journal.pending.length; i++) {
+            var targetPath = resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name);
+            if (!new java.io.File(targetPath).exists() || String(FileStream.read(targetPath,"utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(targetPath,journal.pending[i].text,false);
+        }
+        writeVerifiedJsonFile(path,JSON.stringify({ version: 1, pending: null }),true);
+        memberSplitBackupCache = {};
+        return true;
+    } finally { dataTransactionLock.unlock(); }
 }
 
 // 관리자 패키지 지급 처리 함수
@@ -49049,6 +49497,7 @@ function grantPackageToUser(data, sender, msg, packageInfoData, packageLogData) 
 
     var beforeCount = parseInt(data.member[parsed.target].bag[packageBagItemName], 10) || 0; // 지급 전 보유 수량
     var afterCount = beforeCount + parsed.count; // 지급 후 보유 수량
+    if (!isSearchAuthenticationCount(beforeCount) || !isSearchAuthenticationCount(afterCount)) return { ok: false, message: "❌ 패키지 보유 수량의 안전한 처리 범위를 초과했습니다." };
     data.member[parsed.target].bag[packageBagItemName] = afterCount;
 
     packageLogData = appendPackageLog(packageLogData, "GRANT", packageInfo, parsed.target, parsed.count, sender, beforeCount, afterCount);
@@ -65389,7 +65838,7 @@ function buildDailyScheduleMessage(data, petData, guildData, user) {
     if (overallTime === miniPetTime) out += "⏰ " + overallTime + " · 종합순위 / 미니펫순위\n";
     else out += "⏰ " + overallTime + " · 종합순위\n⏰ " + miniPetTime + " · 미니펫순위\n";
     out += "⏰ " + getScheduleGuidePayoutTime("guildRank") + " · 길드순위\n";
-    out += "⏰ " + getScheduleGuidePayoutTime("tier") + " · 티어순위\n🎁 보상: 각 순위별 차등 지급\n📝 /종합순위 · /미니펫순위\n📝 /길드순위 · /티어순위\n━━━━━━━━━━━━\n";
+    out += "⏰ " + getScheduleGuidePayoutTime("tier") + " · 티어순위\n🎁 보상: 각 순위에 따라 차등 지급\n📝 순위 확인: /종합순위 · /미니펫순위\n📝 /길드순위 · /티어순위\n🎁 지급 방식: 관리자가 통합 지급 가능\n🛠️ /최종순위보상지급 (오픈채팅봇·MASTER 전용)\n━━━━━━━━━━━━\n";
     out += "🏰 길드영지전\n⏰ 시간: " + config.guildTerritoryWindow + "\n🎁 보상: 영지 점령 및 종료 보상\n";
     out += "🏆 길드 순위보상: 🅟" + formatServerRaidPrize(territoryRewards[0]).replace(/ 포인트$/, "") + " ~ " + formatServerRaidPrize(territoryRewards[territoryRewards.length - 1]).replace(/ 포인트$/, "") + "\n";
     out += "📝 준비: /길드영지준비\n📝 공격: /영지공격 [번호]\n📝 현황: /길드영지\n━━━━━━━━━━━━\n";
@@ -65397,14 +65846,8 @@ function buildDailyScheduleMessage(data, petData, guildData, user) {
     out += "🎁 공격 보상: 레이드매력의 " + raid.rewards.attackPercent + "% 포인트\n";
     out += "🏆 서버 순위보상: 🅟" + formatServerRaidPrize(raid.rewards.ranks[0]).replace(/ 포인트$/, "") + " ~ " + formatServerRaidPrize(raid.rewards.ranks[raid.rewards.ranks.length - 1]).replace(/ 포인트$/, "") + "\n";
     out += "📝 공격: /레이드공격\n📝 남은 횟수: /레이드턴\n📝 현황: /서버대전\n📝 순위: /레이드순위\n━━━━━━━━━━━━\n";
-    out += "🎖️ 길드영지 순위보상\n⏰ 지급 시간: " + getScheduleGuidePayoutTime("territory") + "\n🎁 길드창고 지급 보상\n";
-    for (var rank = 0; rank < territoryRewards.length; rank++) {
-        var rankEnd = rank; // 같은 금액을 받는 연속 순위의 마지막 위치
-        while (rankEnd + 1 < territoryRewards.length && territoryRewards[rankEnd + 1] === territoryRewards[rank]) rankEnd++;
-        out += (rank + 1) + (rankEnd > rank ? "~" + (rankEnd + 1) : "") + "위: 🅟" + formatServerRaidPrize(territoryRewards[rank]).replace(/ 포인트$/, "") + "\n";
-        rank = rankEnd;
-    }
-    return out + "📝 명령어: /영지순위보상\n━━━━━━━━━━━━\n※ 모든 시간은 한국시간 기준입니다.\n※ 실제 지급 및 참여 가능 여부는 각 콘텐츠 조건에 따릅니다.";
+    out += "🎖️ 길드영지포인트 순위보상\n⏰ 기존 지급 안내: " + getScheduleGuidePayoutTime("territory") + "\n🎁 보상: 기존 길드영지포인트 순위별 보상 유지\n📝 개별 지급: /영지순위보상지급 (관리자용)\n🛠️ 통합 지급: /최종순위보상지급 (오픈채팅봇·MASTER 전용)\n※ 위 통합 명령어는 종합·미니펫·길드·티어·영지 순위보상\n   총 5종을 한 번에 처리합니다.\n";
+    return out + "━━━━━━━━━━━━\n※ 모든 시간은 한국시간 기준입니다.\n※ 실제 지급 및 참여 가능 여부는 각 콘텐츠 조건에 따릅니다.";
 }
 
 // ── 할로윈: 파일 IO 없이 전달받은 이벤트·계정 상태만 계산한다. ──
@@ -65928,6 +66371,12 @@ function runHalloweenEntry(mode, args) {
     if (!result.changed && !result.stateChanged) return result;
     result.memberChanged = result.memberChanged || accountMemberChanged;
     var snapshots = [], accountChanged = result.changed && accountName !== null;
+    if (mode === "packageGrant" && args.deferPackageGrant && result.ok) {
+        requireHalloweenAccount(account,account.id);
+        result.packageGrantFiles = [{ name: accountName, text: JSON.stringify(account) }];
+        if (result.stateChanged) { requireHalloweenState(state); result.packageGrantFiles.push({ name: config.stateName, text: JSON.stringify(state) }); }
+        return result; // 회원·일반 로그·실적과 같은 확정 기록으로 이벤트 계정도 게시한다.
+    }
     if (result.memberChanged) {
         var memberPlan = typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
         if (memberPlan && memberPlan.writes.length !== 0) throw new Error("할로윈 처리 중 관련 없는 회원 상세 변경 감지");

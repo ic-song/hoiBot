@@ -38,12 +38,14 @@ Status: VERIFIED
 
 ## Helpers and behavior
 
+- `runMiniGameEntry`는 프리미엄이 활성화되지 않은 금고 조회/추측과 주사위(ㅎㅈ 포함)를 파일·게임·정답·횟수·보상 처리 전에 `buildMiniGamePremiumRequiredMessage`로 차단한다. 해당 요청의 공통 선행 복구도 미루어 자격 확인 뒤 같은 진입점에서 처리하며, 거절 요청은 후속 자동 작업도 예약하지 않는다. 안내에는 프리미엄 링크와 `/미니게임`을 포함한다. 메뉴는 모든 기존 조회 허용자에게 공개하며 주사위·금고 모두 `(👑호패프 전용)` 표기다. 금고 기본5회와 기존 장착 추가횟수는 유지하며 일반3회 참여 안내만 제거한다.
+
 - 밸런스: `pickMiniGameCycle`, `createMiniGameBalance`, `summarizeMiniGameBalance`, `closeMiniGameBalance`, `buildMiniGameBalanceMessages`, `buildMiniGameBalanceStats`.
 - 전체 방 공용 일일 리셋 회차당 한 문항, 권한이 확인된 `/리셋` 실행 시 마감. 5명 이상·동률 아님이면 다수 선택자 각각 1억 적립. 본인 `/밸런스` 또는 정상 투표에서 미수령만 합산 지급.
 - 밸런스 조회는 투표 전후 모두 `📖 밸런스 게임 하는 방법` 다음 줄에 `명령어:/밸런스 번호 선택이유`를 표시한 뒤 기존 `allsee`와 마감·보상·투표 상태 안내를 출력한다.
 - 공개 이유 목록에는 닉네임·이유만 최신 접수순(최근 등록이 위)으로 출력. 저장된 투표/접수 순서는 바꾸지 않고 조회할 때 역순으로 순회한다. `allsee` 뒤 분할하며 페이지가 나뉘어도 최신순을 유지하고 선택·진행 중 집계는 제외한다. MASTER 결과 조회에만 합산 현황 표시.
 - 주사위: `getMiniGameDiceLimit`, `startMiniGameDice`, `advanceMiniGameDice`, `pickMiniGameDialogue`, `buildMiniGameDiceMessage`.
-- `/호월주사위`와 앞뒤 공백을 제거한 정확한 `ㅎㅈ`는 같은 실행·횟수·배타 잠금을 사용한다. DEV도 같은 단축키를 지원하며 일반 문장·접미는 실행하지 않는다. 새 판은 호이패스 프리미엄 전용 하루 총 4회다. 첫 입력은 양쪽 1차 숫자·멘트 1줄·다음 입력·allsee 안내, 두 번째 입력은 양쪽 1·2차·합계·승부·보상·잔여 판 수를 표시해 정상 진행 총 2메시지다. 자동 추가 굴림은 없다. 승/무/패 3천만/2천만/1천만, 비용 없음. 기존 판은 날짜 변경·프리미엄 만료 후에도 끝낼 수 있다. 신규 시작 자격과 한도는 유지한다.
+- `/호월주사위`와 앞뒤 공백을 제거한 정확한 `ㅎㅈ`는 같은 실행·횟수·배타 잠금을 사용한다. DEV도 같은 단축키를 지원하며 일반 문장·접미는 실행하지 않는다. 새 판은 호이패스 프리미엄 전용 하루 총 4회다. 첫 입력은 양쪽 1차 숫자·멘트 1줄·다음 입력·allsee 안내, 두 번째 입력은 양쪽 1·2차·합계·승부·보상·잔여 판 수를 표시해 정상 진행 총 2메시지다. 자동 추가 굴림은 없다. 승/무/패 3천만/2천만/1천만, 비용 없음. 기존 판은 날짜 변경 뒤에도 유지하지만 프리미엄 만료·미가입 시에는 진행 중인 판도 접근을 차단하며 원본 진행은 보존한다. 새 판 하루 4회와 기존 보상·진행 횟수는 유지한다.
 - ver_2.714: `calculateMiniGameDiceBonus`는 럭키 식스 5천만·역전승 2천만·2/3/5연승 1천만/3천만/1억을 계산한다. 승리만 연승 +1·무승부 유지·패배 0, 6연승 이상 추가 보너스 없음. 두 주사위 화면에 현재 연승과 `buildMiniGameDiceGuide`의 공통 allsee 안내를 표시한다. 상황별 반응은 주사위 난수와 분리해 순환하고 확정 문구를 재사용한다. 최종 숫자·경기 전후 연승·보너스·합계와 보상 원장을 같은 기존 미니게임 게시로 확정하여 재시도/재시작 때 재가산하지 않는다. `requireMiniGameDiceBonus`는 과거 보너스도 원래 숫자로 검증한다. 구버전 완료·지급 대기 경기는 소급 보너스 없이 유지한다. 일일 `/리셋`은 개인 횟수만 0으로 바꾸고 연승·진행 중인 판은 보존한다.
 - 구 `USER1`/`WAIT_USER2`/`USER2`/`RESULT`의 확정 숫자·멘트·횟수·지급 기록을 보존해 다음 정상 입력에서 미완료 숫자만 이어간다. 기존 저장 단계 번호 1→2는 첫 통합 화면, 4→5는 최종 화면에 사용한다. 지급 실패는 최종 화면의 `지급 대기`로 표시하고 자동 정산에서 숫자·횟수를 다시 만들지 않는다. 결과 화면은 프리미엄/메뉴/규칙을 반복하지 않는다.
 - 금고: `getVaultRobberyRequest`, `createVaultRobberyRound`, `startVaultRobberyRound`, `upgradeVaultRobberyStore`, `getVaultRobberyStage`, `openNextVaultRobberyRound`, `resetVaultRobberyRound`, `resolveVaultRobberyUser`, `getVaultRobberySkillBonus`, `getVaultRobberyAttempts`, `applyVaultRobberyGuess`, `buildVaultRobberyMessage`.
@@ -2714,6 +2716,8 @@ Status: VERIFIED
 - `removePackageByCommand`
 - `setPackageEnabledByCommand`
 - `grantPackageToUser`
+- `isPackageGrantCommand`, `createPackageGrantStore`, `requirePackageGrantStore`, `importPackageGrantHistory`, `recordPackageGrant`
+- `getPackageGrantStatsRequest`, `buildPackageGrantStatsMessage`, `buildPackageGrantPublication`, `recoverPackageGrantPending`
 - `buildUserPackageBagMessage`
 - `usePackageFromBag`
 
@@ -2722,6 +2726,8 @@ Status: VERIFIED
 - `GLOBAL_CONFIG.package.maxUseOnce`
 - `packageInfo.json`
 - `packageLog.json`
+- `packageGrantStats.json`: 회원·교육 실적과 분리한 성공 지급 원본(담당자/대상 고정 계정 ID·당시 이름·상품명/번호·수량·시각·사건 ID). 지난달·탈퇴 담당자 이력도 보존한다.
+- `packageGrantPending.json`: 접수한 회원·분리 저장본·패키지 로그·실적·할로윈 계정의 최종 원문. 완료 전 원문을 재적용해 재지급 없이 게시를 완결한다.
 - `data.member[user].bag`
 - `data.member[user].point`
 - `data.petMusou.players[user].maxAttacks`
@@ -2729,7 +2735,9 @@ Status: VERIFIED
 ## Save Flow
 
 - `/패키지추가`, `/패키지수정`, `/패키지제거`, `/패키지리스트제거`, `/패키지활성` mutate and save `packageInfo.json`
-- `/패키지지급` mutates member bag and saves `member.json`, then appends a `GRANT` log to `packageLog.json`
+- `/패키지지급`은 기존 Admin/Master·방 제한과 1~10,000개 제한을 유지한다. 공통 잠금에서 최신 데이터를 읽고 지급 성공 1건을 1회/입력 수량으로 집계한다. 일반·할로윈 포함 패키지 모두 `packageGrantPending.json`을 먼저 확정한 뒤 회원·로그·독립 실적·이벤트 계정 원문을 함께 게시한다. 시작 시 최초 회원 로드 전과 응답 진입 시 중단된 게시를 완료한다. 게시 중 다른 회원 저장은 차단한다.
+- 실적은 최초 성공 시 명시적으로 준비하고, 기존 GRANT 중 시각·담당자·상품명·수량이 확인되는 원본만 한 번 가져온다. 과거 목록번호를 현재 번호로 추정하지 않는다. 조회는 초기 가져오기까지 메모리에서만 처리하며 파일·회원·교육실적을 저장하지 않는다. 기록 시작 월 이전은 불완전할 수 있다는 안내를 표시한다.
+- `packageGrantStats.json`은 기존 검증 교체·동기화 저장과 `_back`/`_back2` 백업을 사용한다. 손상 원본이나 백업이 남은 누락 원본을 빈 값으로 대체하지 않는다. `/데이터상태`, `/데이터복구 packageGrantStats 1|2`로 확인·수동 복구한다. DEV 파일·백업·복구 기록은 DEV 경로로 분리한다.
 - `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
 - `/패키지알림` mutates `data.operationNotices.packageBag` and saves `member.json`
 
@@ -2745,6 +2753,7 @@ Status: VERIFIED
 - `/패키지리스트제거`
 - `/패키지활성`
 - `/패키지지급`
+- `/패키지실적 [전체 또는 담당자 아이디] [YYYY-MM]`
 - `/패키지알림`
 - `/패키지가방`
 - `/패키지가방 [아이디]`
@@ -2759,6 +2768,8 @@ Status: VERIFIED
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
+- `/패키지실적`은 `/교육실적`과 같은 MASTER·교육방 판정을 사용한다. 기본은 자신의 현재 KST 월이며 공백 포함 담당자와 지난달·전체 조회를 지원한다. 지급 횟수/수량을 별도로 표시하고 횟수 동률은 1등·1등·3등, 동률 내 닉네임 정렬, 상단 최대3명·전체보기 당시 상품명/번호/대상/시각·최신순을 제공한다. 출력 제한 시 표시 건수와 원본 전체 건수를 안내한다.
+- 신뢰된 원본 이벤트 ID가 있으면 같은 사건은 기존 응답만 반환한다. 기본 7인수 콜백은 계속 지원하며 ID 없는 별도 메시지는 새 지급으로 처리한다. 내부 UUID만으로 원본 ID 없는 별도 메시지의 재전달을 구별한다고 가정하지 않는다.
 - `/패키지사용`은 기존·신규 패키지 모두 `GLOBAL_CONFIG.package.maxUseOnce` 기준으로 한 번에 최대 1,000개까지 사용한다
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Package edit quick command format: `/패키지수정 리스트번호 보상목록`
@@ -8557,3 +8568,25 @@ Status: VERIFIED
 ## Data / Save Flow
 - 이미 로드한 회원·펫·길드 정보와 운영 상수만 읽는다. 새 helper·분기에 파일IO, 보상지급, 아이템/횟수 변경, 타이머 생성은 없다. 기존 콘텐츠 실행·저장 흐름을 변경하지 않는다.
 - 실제 외부 예약 호출 시각의 실행 확인·운영 단말 업로드/컴파일은 운영자 범위다.
+
+
+# /최종순위보상지급 · 순위 보상 공통 지급
+
+Status: VERIFIED
+
+## Files and helpers
+- `main.js`: `getDailyRankingPayoutRequest`, `isDailyRankingPayoutOperator`, `runDailyRankingPayoutEntry`, `applyDailyRankingReward`, `createDailyRankingStore`, `requireDailyRankingStore`, `buildDailyRankingPublication`, `recoverDailyRankingPending`.
+- 기존 종합·미니펫 인라인을 `payOverallRankingReward`, `payMiniPetRankingReward`로 이동해 개별·통합이 같은 계산을 호출한다. `runGuildRankReward`, `payTierRankingReward`, `runGuildTerritoryRankReward`의 보상표·순위·길드창고 정책을 재사용한다. 채팅 명령 재전송·response 재귀 호출은 하지 않는다.
+
+## Commands and permissions
+- 정확한 `/최종순위보상지급`: 오픈채팅봇 또는 기존 MASTER만 실행. 종합 → 미니펫 → 길드 → 티어 → 영지 5종을 즉시 순서대로 처리하고 기완료는 건너뛴다. 실행 시각을 예약하거나 기존 스케줄을 바꾸지 않는다.
+- 기존 `/보상지급`, `/연금지급`, `/티어보상지급`의 호이/봇, `/길드보상지급`의 호이/봇/감자, `/길드영지보상지급`·`/영지순위보상지급`의 Admin/Master 허용은 유지하며 같은 일일 완료 기록·잠금을 사용한다.
+- `/패스목록`은 기존 5개 시각·완료 표시에 통합 안내를 더하고 실패 시 ⚠️, 전체 완료 안내를 제공한다. `/스케줄`은 일일·영지 순위보상 두 구획만 통합 안내로 변경한다. 두 조회는 보상을 지급하지 않는다.
+
+## Persistence and recovery
+- `dailyRankingPayout.json`: KST 날짜와 종류별 DONE/FAILED 원본. 기존 실제 완료 표시는 중복 지급 없이 가져오며 `/리셋`·회원 완료 표시 정리가 이 파일을 지우지 않는다. 과거 날짜도 보존한다.
+- 각 종류는 전 대상의 보상을 메모리에서 계산한 뒤 회원/분리 슬롯·길드·일일 완료 원문을 `dailyRankingPayoutPending.json`에 먼저 확정한다. 계산 중 실패한 대상의 변경은 공개하지 않는다. 중단되면 새로 추첨·재계산하지 않고 같은 최종 원문을 적용하므로 일부 파일 게시 뒤에도 재지급하지 않는다.
+- 최초 회원 로드 전과 응답 진입에 복구하며 복구 대기 중 회원·길드 저장은 막는다. 손상 원본이나 백업이 남은 누락 파일을 빈 값으로 바꾸지 않는다. 2세대 백업과 DEV 경로 분리를 유지한다.
+- 미니게임 자동 작업도 패키지·순위 지급 원문을 먼저 복구하며, 미복구 원본이 남아 있으면 별도 자동 게시를 진행하지 않는다. 순위 산정에 필요한 미니펫·펫홈·펫스킬 원본이 없으면 해당 종류는 계산·지급하지 않고 실패로 남긴다.
+- 항목별 계산 실패는 실패 상태로 보존한 뒤 나머지를 처리한다. 저장 복구가 지속 실패하면 후속 항목은 대기로 표시하고 새 지급을 중단한다. 알림 실패는 완료 지급을 취소하지 않는다. 계산 중 KST 날짜가 바뀌면 공개 전에 취소하며 새 날짜에 재실행한다.
+- 영지는 기존 동일 순위표 재지급 금지 조건도 유지하므로 그 조건에 걸리면 실제 미완료 사유를 반환한다. 영지 순위 확정 이후 통합 실행을 권장한다.
