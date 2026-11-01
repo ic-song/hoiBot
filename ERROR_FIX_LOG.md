@@ -6,6 +6,17 @@ The source code is always the source of truth. This log is a reusable reference 
 
 ---
 
+## 2026-11-02 - 주문기록방 글자수 전체 정리 무응답
+
+Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/order-log-cleanup, ver_2.751)
+
+- 원인: `getManualResetDirectOperation`으로 찾은 직접 운영 명령이 `isManualResetRoom`의 서버관리자·팻 테스트방 검사에서 조용히 종료됐다. 주문기록방의 기존 MASTER·봇 역할 판정과 정리 본문은 도달하지 못했다. 이전 소스의 해당 공통 분기로 MASTER·오픈채팅봇 모두 무응답을 재현했다.
+- 수정: 정확한 `/글자수전체정리`와 정확한 주문기록방 조합에만 공통 방 제한 예외를 주고 기존 `isMaster` 판정을 적용한다. 등록 MASTER·해당 방의 오픈채팅봇은 허용하며 일반 사용자·MASTER가 아닌 Admin·접미사·다른 방·다른 초기화·확인 메뉴에는 예외를 주지 않는다. 정리 한도·정렬·장착 보존·수량 대조·저장 본문은 변경하지 않았다.
+- 검증: 현재 소스에서 추출한 실제 공통 진입 분기·권한 함수·정리 실행 분기를 Node와 Rhino1.7.15 각각 13그룹으로 확인했다. 다른 방5×역할5×직접 명령5 조합의 기존 판정 일치, 정상 정리·DEV 경로·일반10/프리미엄15/펜던트50·빈 대상/재실행·수량 불일치·로드/저장 예외를 포함한다. 전체 main.js Rhino 컴파일·Node 문법·diff 검사 통과. main.js는 방 예외와 버전 외 이전 운영 소스와 동일하며 운영 데이터는 개발자노트 외 수정하지 않았다. 작업 임시 검증 파일은 커밋 전에 제거한다.
+- 범위: 운영 단말 접근·실제 채팅 실행은 미수행. 기존 feature/bugFix의 미반영 b45affeb를 보존하기 위해 최신 feature/prod에서 별도 수정 브랜치를 만들었다. 기존 LIVE 기획의 본문은 보존한다.
+
+---
+
 ## 2026-10-26 - 영지전 진행 중 일반 명령·단축어·운영자 예외 우회
 
 Status: FIX_IMPLEMENTED_AND_VALIDATED (feature/territory-command-lock, ver_2.711 운영 반영 대상)

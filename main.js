@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.750"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.751"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -3673,8 +3673,9 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (ctx.isDev && (/^\/(?:1삭제|2취소)$/.test(msg) || (resetSameScope && /^\/\d+(?:[ \t]+[^\r\n]+)?$/.test(msg)))) msg = msg.substring(1);
         var resetDirectEntry = getManualResetDirectOperation(msg);
         if (resetDirectEntry) {
-            if (!isManualResetRoom(room)) return;
-            if (!isManualResetEntryAllowed(resetDirectEntry, sender, {}, {})) { replier.reply("⛔ 사용 권한이 없습니다."); return; }
+            var orderLogTextCleanup = msg === "/글자수전체정리" && room === GLOBAL_CONFIG.permissions.orderLogRoom; // 주문기록방의 정확한 직접 정리 명령에만 기존 MASTER·봇 권한 허용
+            if (!isManualResetRoom(room) && !orderLogTextCleanup) return;
+            if (!(orderLogTextCleanup ? isMaster(sender) : isManualResetEntryAllowed(resetDirectEntry, sender, {}, {}))) { replier.reply("⛔ 사용 권한이 없습니다."); return; }
         }
         if (isManualResetInput(msg) && (!/^\d+(?:[ \t]+[^\r\n]+)?$/.test(msg) || resetSameScope)) {
             if (!isManualResetRoom(room)) return;
