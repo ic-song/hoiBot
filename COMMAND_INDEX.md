@@ -2714,6 +2714,8 @@ Status: VERIFIED
 - `removePackageByCommand`
 - `setPackageEnabledByCommand`
 - `grantPackageToUser`
+- `isPackageGrantCommand`, `createPackageGrantStore`, `requirePackageGrantStore`, `importPackageGrantHistory`, `recordPackageGrant`
+- `getPackageGrantStatsRequest`, `buildPackageGrantStatsMessage`, `buildPackageGrantPublication`, `recoverPackageGrantPending`
 - `buildUserPackageBagMessage`
 - `usePackageFromBag`
 
@@ -2722,6 +2724,8 @@ Status: VERIFIED
 - `GLOBAL_CONFIG.package.maxUseOnce`
 - `packageInfo.json`
 - `packageLog.json`
+- `packageGrantStats.json`: 회원·교육 실적과 분리한 성공 지급 원본(담당자/대상 고정 계정 ID·당시 이름·상품명/번호·수량·시각·사건 ID). 지난달·탈퇴 담당자 이력도 보존한다.
+- `packageGrantPending.json`: 접수한 회원·분리 저장본·패키지 로그·실적·할로윈 계정의 최종 원문. 완료 전 원문을 재적용해 재지급 없이 게시를 완결한다.
 - `data.member[user].bag`
 - `data.member[user].point`
 - `data.petMusou.players[user].maxAttacks`
@@ -2729,7 +2733,9 @@ Status: VERIFIED
 ## Save Flow
 
 - `/패키지추가`, `/패키지수정`, `/패키지제거`, `/패키지리스트제거`, `/패키지활성` mutate and save `packageInfo.json`
-- `/패키지지급` mutates member bag and saves `member.json`, then appends a `GRANT` log to `packageLog.json`
+- `/패키지지급`은 기존 Admin/Master·방 제한과 1~10,000개 제한을 유지한다. 공통 잠금에서 최신 데이터를 읽고 지급 성공 1건을 1회/입력 수량으로 집계한다. 일반·할로윈 포함 패키지 모두 `packageGrantPending.json`을 먼저 확정한 뒤 회원·로그·독립 실적·이벤트 계정 원문을 함께 게시한다. 시작 시 최초 회원 로드 전과 응답 진입 시 중단된 게시를 완료한다. 게시 중 다른 회원 저장은 차단한다.
+- 실적은 최초 성공 시 명시적으로 준비하고, 기존 GRANT 중 시각·담당자·상품명·수량이 확인되는 원본만 한 번 가져온다. 과거 목록번호를 현재 번호로 추정하지 않는다. 조회는 초기 가져오기까지 메모리에서만 처리하며 파일·회원·교육실적을 저장하지 않는다. 기록 시작 월 이전은 불완전할 수 있다는 안내를 표시한다.
+- `packageGrantStats.json`은 기존 검증 교체·동기화 저장과 `_back`/`_back2` 백업을 사용한다. 손상 원본이나 백업이 남은 누락 원본을 빈 값으로 대체하지 않는다. `/데이터상태`, `/데이터복구 packageGrantStats 1|2`로 확인·수동 복구한다. DEV 파일·백업·복구 기록은 DEV 경로로 분리한다.
 - `/패키지사용` validates first, then deducts from member bag, applies `item`/`point` rewards, saves `member.json`, and appends a `USE` log to `packageLog.json`
 - `/패키지알림` mutates `data.operationNotices.packageBag` and saves `member.json`
 
@@ -2745,6 +2751,7 @@ Status: VERIFIED
 - `/패키지리스트제거`
 - `/패키지활성`
 - `/패키지지급`
+- `/패키지실적 [전체 또는 담당자 아이디] [YYYY-MM]`
 - `/패키지알림`
 - `/패키지가방`
 - `/패키지가방 [아이디]`
@@ -2759,6 +2766,8 @@ Status: VERIFIED
 - Step flow uses `/패키지추가시작`, then package name, desc, repeated rewards, preview, and `등록`
 - `packageInfo.json` load results are not normalized to an empty list; missing or invalid package data should follow the existing load/error flow
 - `packageLog.json` is also not auto-created during grant/use; missing or invalid log data should follow the existing load/error flow
+- `/패키지실적`은 `/교육실적`과 같은 MASTER·교육방 판정을 사용한다. 기본은 자신의 현재 KST 월이며 공백 포함 담당자와 지난달·전체 조회를 지원한다. 지급 횟수/수량을 별도로 표시하고 횟수 동률은 1등·1등·3등, 동률 내 닉네임 정렬, 상단 최대3명·전체보기 당시 상품명/번호/대상/시각·최신순을 제공한다. 출력 제한 시 표시 건수와 원본 전체 건수를 안내한다.
+- 신뢰된 원본 이벤트 ID가 있으면 같은 사건은 기존 응답만 반환한다. 기본 7인수 콜백은 계속 지원하며 ID 없는 별도 메시지는 새 지급으로 처리한다. 내부 UUID만으로 원본 ID 없는 별도 메시지의 재전달을 구별한다고 가정하지 않는다.
 - `/패키지사용`은 기존·신규 패키지 모두 `GLOBAL_CONFIG.package.maxUseOnce` 기준으로 한 번에 최대 1,000개까지 사용한다
 - New package quick command format: `/패키지추가 패키지명 | 설명 | 보상목록`
 - Package edit quick command format: `/패키지수정 리스트번호 보상목록`

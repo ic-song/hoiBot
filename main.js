@@ -988,9 +988,6 @@ USER_REQUEST_LIMIT = requestMonitorConfig.limit;
 saveJsonFile(requestMonitorConfig, requestMonitorConfigPath);
 //초기 어드민 설정
 var protectedJsonSaveLocks = {}; // 보호 JSON과 직전 백업 경로별 저장 잠금
-let initData = loadJsonFile(filePath, "bootstrap");
-let Master = initData.master;
-let Admins = getAdminPayoutUsers(initData);
 let castleSiegeFlag = false; // 공성전 프래그 (true : 진행중 / false : 미진행중)
 var guildTerritoryWarTimers = {}; // 길드 영토전 타이머 관리 객체 (guildId: timerId)
 var guildTerritoryPendingStartTimers = {};// 길드 영토전 대기 타이머 관리 객체 (guildId: timerId)
@@ -1211,6 +1208,7 @@ const GLOBAL_CONFIG = {
             ] }
         ]
     },
+    packageGrant: { fileName: "packageGrantStats.json", pendingName: "packageGrantPending.json", detailMaxLength: 3500, footerReserve: 250 },
     gmEducation: {
         version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", rewardItem: "다이아상자💎(소)",
         rooms: ["교육방", "교육방2", "교육방3"],
@@ -3237,6 +3235,12 @@ blockedNicknameTerms: [
     }
 };
 
+// 중단된 지급의 회원 원문부터 복구한 뒤 최초 권한·캐시를 읽는다.
+recoverPackageGrantPending();
+let initData = loadJsonFile(filePath, "bootstrap");
+let Master = initData.master;
+let Admins = getAdminPayoutUsers(initData);
+
 // 미니펫 조합 보상표
 const MINI_PET_COMBINATION_REWARDS = {
     "태초+": [
@@ -3600,7 +3604,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     } else responseDataLock.lock();
     //데이터 검사
     try {
-        if (isServerRaidMutationCommand(msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
+        if (isServerRaidMutationCommand(msg) || isPackageGrantCommand(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
         else if (!dataTransactionLock.tryLock()) return;
         responseTransactionAcquired = true;
         beginDataSaveTransaction();
@@ -3608,6 +3612,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        recoverPackageGrantPending(); // 회원·이벤트 파일을 읽기 전에 접수된 지급과 실적을 함께 확정
         runHalloweenEntry("state", { ctx: ctx });
         replier = createContextReplier(replier, ctx);
         var responseStartMs = Date.now();
@@ -4493,6 +4498,18 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 } else writeMemberSplitSlot(marblePath, JSON.stringify(marbleStore));
             }
             replyGuildMarbleSafely(replier, marbleMessage);
+            return;
+        }
+
+        var packageStatsRequest = getPackageGrantStatsRequest(msg);
+        if (packageStatsRequest) {
+            if (!isGmEducationOperator(sender, room)) { replier.reply("⛔ MASTER 권한이 필요한 명령어입니다."); return; }
+            if (packageStatsRequest.error) { replier.reply(packageStatsRequest.error); return; }
+            var packageStatsPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName);
+            if (!new java.io.File(packageStatsPath).exists() && (new java.io.File(packageStatsPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(packageStatsPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(packageStatsPath)).exists())) throw new Error("패키지 실적 원본 누락: /데이터복구 packageGrantStats 1로 백업을 확인해 주세요.");
+            var packageStats = new java.io.File(packageStatsPath).exists() ? requirePackageGrantStore(loadJsonFile(packageStatsPath)) : createPackageGrantStore();
+            if (!packageStats.historyImported) importPackageGrantHistory(packageStats, loadJsonFile(packageLogPath), data);
+            replier.reply(buildPackageGrantStatsMessage(packageStats, data, sender, packageStatsRequest));
             return;
         }
 
@@ -18622,21 +18639,34 @@ replier.reply(
                     return;
                 }
 
-                if (/^\/패키지지급\s+.+\s+\d+\s+\d+$/.test(msg)) {
+                if (isPackageGrantCommand(msg)) {
                     if (!(isAdmin(sender) || isMaster(sender))) return;
                     var packageInfoData = loadJsonFile(packageInfoPath); // 지급 가능한 패키지 목록
                     var packageLogData = loadJsonFile(packageLogPath); // 지급 로그 데이터
-                    var halloweenPackageGrant = parsePackageGrantCommand(msg);
-                    var halloweenGrantInfo = halloweenPackageGrant && getPackageByListNumber(packageInfoData, halloweenPackageGrant.listNumber);
-                    if (hasHalloweenPackageReward(halloweenGrantInfo)) {
-                        var halloweenGrantResult = runHalloweenEntry("packageGrant", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, target: halloweenPackageGrant.target, room: room, message: msg, packageInfo: packageInfoData, packageLog: packageLogData, event: serverRaidEvent });
-                        replier.reply(halloweenGrantResult.message);
+                    var packageStatsPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName);
+                    if (!new java.io.File(packageStatsPath).exists() && (new java.io.File(packageStatsPath + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(packageStatsPath)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(packageStatsPath)).exists())) throw new Error("패키지 실적 원본 누락: /데이터복구 packageGrantStats 1로 백업을 확인해 주세요.");
+                    var packageStats = new java.io.File(packageStatsPath).exists() ? requirePackageGrantStore(loadJsonFile(packageStatsPath)) : createPackageGrantStore();
+                    if (!packageStats.historyImported) importPackageGrantHistory(packageStats, packageLogData, data);
+                    if (serverRaidEvent && serverRaidEvent.invalid) throw new Error("패키지 지급 메시지 식별값 오류");
+                    var packageEventId = getServerRaidEventId(serverRaidEvent) || "grant:" + String(java.util.UUID.randomUUID());
+                    var packagePrevious = findPackageGrantRecord(packageStats, packageEventId);
+                    if (packagePrevious) {
+                        if (packagePrevious.operatorId !== getPackageGrantIdentity(data, sender) || packagePrevious.command !== msg) throw new Error("패키지 지급 요청 식별값 충돌");
+                        replier.reply(packagePrevious.reply);
                         return;
                     }
-                    var packageGrantResult = grantPackageToUser(data, sender, msg, packageInfoData, packageLogData);
+                    var packageParsed = parsePackageGrantCommand(msg);
+                    var packageSelected = packageParsed && getPackageByListNumber(packageInfoData, packageParsed.listNumber);
+                    var packageGrantResult = hasHalloweenPackageReward(packageSelected) ?
+                        runHalloweenEntry("packageGrant", { ctx: ctx, data: data, petData: petData, guildData: guildData, sender: sender, target: packageParsed.target, room: room, message: msg, packageInfo: packageInfoData, packageLog: packageLogData, event: serverRaidEvent, deferPackageGrant: true }) :
+                        grantPackageToUser(data, sender, msg, packageInfoData, packageLogData);
                     if (packageGrantResult.ok) {
-                        saveJsonFile(data, filePath);
-                        saveJsonFile(packageGrantResult.packageLogData, packageLogPath);
+                        recordPackageGrant(packageStats, data, sender, packageParsed, packageSelected, packageEventId, msg, packageGrantResult.message, Date.now());
+                        var packagePublication = buildPackageGrantPublication(data, packageGrantResult.packageLogData, packageStats, packageGrantResult.packageGrantFiles || []);
+                        writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName), JSON.stringify(packagePublication), true);
+                        endDataSaveTransaction(); beginDataSaveTransaction(); // 접수된 지급은 재시작 때 같은 내용으로 완결한다.
+                        recoverPackageGrantPending();
+                        endDataSaveTransaction(); beginDataSaveTransaction(); // 응답 전송 실패로 확정 지급을 취소하지 않는다.
                     }
                     replier.reply(packageGrantResult.message);
                     return;
@@ -34254,7 +34284,7 @@ function loadJsonFile(path, memberStoreMode) {
         if (autoDailyBatch && autoDailyBatch.managedPaths[path]) autoDailyBatch.files[path] = null;
         return null;
     } catch (e) {
-        if (e.memberStorageFailure || /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(String(new java.io.File(path).getName()))) throw e;
+        if (e.memberStorageFailure || /^(serverRaidData|memberOperationLogs)(_next|_back|_back2)?\.json$/.test(String(new java.io.File(path).getName())) || /^packageGrant(?:Stats(?:_back2?)?|Pending)\.json$/.test(String(new java.io.File(path).getName()))) throw e;
         var errorObj = {
             system: "loadJsonFile",
             path: path,
@@ -34288,6 +34318,7 @@ function getManagedJsonBackupPath(path) {
     if (fileName === "petSkillData.json") backupFileName = "petSkillData_back.json";
     if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back.json";
     if (fileName === "board.json") backupFileName = "board_back.json";
+    if (fileName === "packageGrantStats.json") backupFileName = "packageGrantStats_back.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -34302,6 +34333,7 @@ function getManagedJsonSecondaryBackupPath(path) {
     if (fileName === "petSkillData.json") backupFileName = "petSkillData_back2.json";
     if (fileName === "petHomeActivityData.json") backupFileName = "petHomeActivityData_back2.json";
     if (fileName === "board.json") backupFileName = "board_back2.json";
+    if (fileName === "packageGrantStats.json") backupFileName = "packageGrantStats_back2.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -34322,7 +34354,8 @@ function getManagedJsonCommandTargets() {
         { key: "member", fileName: "member.json", path: filePath, aliases: ["member", "멤버"] },
         { key: "member_pet", fileName: "member_pet.json", path: memberPetPath, aliases: ["member_pet", "펫"] },
         { key: "petSkillData", fileName: "petSkillData.json", path: petSkillDataPath, aliases: ["petSkillData", "펫스킬"] },
-        { key: "petHomeActivityData", fileName: "petHomeActivityData.json", path: petHomeActivityFile, aliases: ["petHomeActivityData", "펫홈활동"] }
+        { key: "petHomeActivityData", fileName: "petHomeActivityData.json", path: petHomeActivityFile, aliases: ["petHomeActivityData", "펫홈활동"] },
+        { key: "packageGrantStats", fileName: "packageGrantStats.json", path: DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.fileName, aliases: ["packageGrantStats", "패키지실적"] }
     ];
 }
 
@@ -34392,7 +34425,7 @@ function buildManagedJsonStatusMessage() {
 // 파일 단위 수동복구 명령 사용법을 반환하는 함수
 function buildManagedJsonRecoveryUsageMessage() {
     return "사용법: /데이터복구 [파일] [1|2]\n" +
-        "파일: member, member_pet, petSkillData, petHomeActivityData\n" +
+        "파일: member, member_pet, petSkillData, petHomeActivityData, packageGrantStats\n" +
         "예시: /데이터복구 member 1\n" +
         "복구 전 /데이터상태로 백업 상태를 확인해주세요.";
 }
@@ -34434,6 +34467,7 @@ function notifyManagedJsonRecoveryFailure(path, reason, detail) {
 
 // 자동 직전 백업 원본과 백업 파일에 안전 저장을 적용할지 확인하는 함수
 function isProtectedManagedJsonPath(path) {
+    if (/^packageGrant(?:Stats(?:_back2?)?|Pending)\.json$/.test(String(new java.io.File(path).getName()))) return true;
     if (String(new java.io.File(path).getName()) === "serverRaidNoticeReceipts.json") return true;
     if (/^adventureQuestHistory(?:_legacy|Pending)?\.json$/.test(String(new java.io.File(path).getName()))) return true;
     var fileName = String(new java.io.File(path).getName());
@@ -34450,6 +34484,8 @@ function isProtectedManagedJsonPath(path) {
 function parseManagedJsonContent(jsonText, path) {
     var parsedData = parseJsonContent(jsonText, path);
     var splitFileName = String(new java.io.File(path).getName());
+    if (/^packageGrantStats(?:_back2?)?\.json$/.test(splitFileName)) return requirePackageGrantStore(parsedData);
+    if (splitFileName === "packageGrantPending.json") { validatePackageGrantPending(parsedData); return parsedData; }
     if (splitFileName === "serverRaidNoticeReceipts.json") return requireServerRaidNoticeReceipts(parsedData);
     if (/^adventureQuestHistory(?:_legacy)?\.json$/.test(splitFileName)) return requireAdventureRecordStore(parsedData);
     if (splitFileName === "adventureQuestHistoryPending.json") { validateAdventureRecordPending(parsedData); return parsedData; }
@@ -34742,6 +34778,15 @@ function saveJsonFile(data, path, skipManagedBackup, rollbackSnapshotText) {
         var transactionEntryResult = null;
         var splitOwnTransaction = false;
         try {
+            if (path === resolveActiveDataPath(filePath) && GLOBAL_CONFIG.packageGrant) {
+                var packageSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName);
+                if (!new java.io.File(packageSavePendingPath).exists() && new java.io.File(packageSavePendingPath + ".rollback").exists()) throw new Error("패키지 지급 복구 대기");
+                if (new java.io.File(packageSavePendingPath).exists()) {
+                    var packageSavePending = parseJsonContent(FileStream.read(packageSavePendingPath,"utf-8"),packageSavePendingPath);
+                    validatePackageGrantPending(packageSavePending);
+                    if (packageSavePending.pending !== null) throw new Error("패키지 지급 복구 대기");
+                }
+            }
             if (path === resolveActiveDataPath(filePath) && GLOBAL_CONFIG.halloween && !getCurrentContext().halloweenPublishing) {
                 var halloweenSavePendingPath = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.halloween.pendingName);
                 if (!new java.io.File(halloweenSavePendingPath).exists() && new java.io.File(halloweenSavePendingPath + ".rollback").exists()) throw new Error("할로윈 게시 복구 대기");
@@ -49017,8 +49062,14 @@ function buildUserPackageBagMessage(data, petData, petSkillData, guildData, send
     return lines.join("\n");
 }
 
+// 공백 포함 이름과 마지막 두 양의 정수 인자만 지급 명령으로 허용하는 함수
+function isPackageGrantCommand(msg) {
+    return /^\/패키지지급[ \t]+[^\r\n]+[ \t]+\d+[ \t]+\d+$/.test(String(msg));
+}
+
 // 패키지 지급 명령어 파싱 함수
 function parsePackageGrantCommand(msg) {
+    if (!isPackageGrantCommand(msg)) return null;
     var body = String(msg || "").replace(/^\/패키지지급\s+/, "").trim(); // 명령어를 제거한 입력 본문
     var parts = body.split(/\s+/); // 뒤에서부터 번호/갯수를 파싱하기 위한 토큰 배열
     if (parts.length < 3) return null;
@@ -49031,6 +49082,209 @@ function parsePackageGrantCommand(msg) {
         listNumber: listNumber,
         count: count
     };
+}
+
+// 패키지 실적의 최초 준비 상태를 반환하는 함수
+function createPackageGrantStore() {
+    return { version: 1, historyImported: false, trackedFrom: null, records: [] };
+}
+
+// 실적 원본의 필수 값과 중복 지급 식별값을 검증하는 함수
+function requirePackageGrantStore(store) {
+    if (!store || store.version !== 1 || typeof store.historyImported !== "boolean" || !Array.isArray(store.records) || store.trackedFrom !== null && (typeof store.trackedFrom !== "string" || !isFinite(Date.parse(store.trackedFrom)))) throw new Error("패키지 실적 파일 형식 오류");
+    var seen = {};
+    for (var i = 0; i < store.records.length; i++) {
+        var row = store.records[i];
+        if (!row || typeof row.id !== "string" || !row.id || seen["$" + row.id] || typeof row.operatorId !== "string" || !row.operatorId || typeof row.operator !== "string" || !row.operator || typeof row.targetId !== "string" || !row.targetId || typeof row.target !== "string" || !row.target || typeof row.packageName !== "string" || !row.packageName || !isSearchAuthenticationCount(row.quantity) || row.quantity < 1 || typeof row.at !== "string" || !/T\d{2}:\d{2}:\d{2}.*(?:Z|[+-]\d{2}:\d{2})$/.test(row.at) || !isFinite(Date.parse(row.at)) || row.listNumber !== null && (!isSearchAuthenticationCount(row.listNumber) || row.listNumber < 1) || row.legacy !== true && (typeof row.command !== "string" || typeof row.reply !== "string" || row.listNumber === null)) throw new Error("패키지 지급 기록 오류");
+        seen["$" + row.id] = true;
+    }
+    return store;
+}
+
+// 현재 계정의 기존 고정 ID 또는 과거 이름 식별값을 반환하는 함수
+function getPackageGrantIdentity(data, user) {
+    var member = data.member && data.member[user];
+    return member && member.serverRaidAccount && member.serverRaidAccount.id ? member.serverRaidAccount.id : "legacy:" + user;
+}
+
+// 보관된 실제 지급 로그만 날짜별 원본 실적으로 한 번 가져오는 함수
+function importPackageGrantHistory(store, logs, data) {
+    assertPackageLogData(logs);
+    if (store.historyImported) return;
+    var seen = {};
+    for (var s = 0; s < store.records.length; s++) seen["$" + store.records[s].id] = true;
+    for (var i = 0; i < logs.logs.length; i++) {
+        var row = logs.logs[i], id = row && "legacy:" + row.id;
+        if (!row || row.type !== "GRANT" || !isSearchAuthenticationCount(row.id) || row.id < 1 || seen["$" + id] || typeof row.by !== "string" || !row.by || typeof row.target !== "string" || !row.target || typeof row.packageName !== "string" || !row.packageName || !isSearchAuthenticationCount(row.count) || row.count < 1 || typeof row.date !== "string" || !/T\d{2}:\d{2}:\d{2}.*(?:Z|[+-]\d{2}:\d{2})$/.test(row.date) || !isFinite(Date.parse(row.date))) continue;
+        store.records.push({ id: id, at: row.date, operatorId: getPackageGrantIdentity(data, row.by), operator: row.by, targetId: getPackageGrantIdentity(data, row.target), target: row.target, packageName: row.packageName, listNumber: null, quantity: row.count, legacy: true });
+        seen["$" + id] = true;
+    }
+    store.historyImported = true;
+    requirePackageGrantStore(store);
+}
+
+// 동일하게 접수된 지급 사건의 기존 완료 기록을 반환하는 함수
+function findPackageGrantRecord(store, id) {
+    for (var i = 0; i < store.records.length; i++) if (store.records[i].id === id) return store.records[i];
+    return null;
+}
+
+// 성공한 지급만 기존 계정 ID와 당시 상품 정보로 한 번 기록하는 함수
+function recordPackageGrant(store, data, sender, parsed, packageInfo, id, command, reply, now) {
+    if (findPackageGrantRecord(store, id)) throw new Error("패키지 실적 중복 기록");
+    var names = [sender, parsed.target];
+    for (var n = 0; n < names.length; n++) {
+        var member = data.member[names[n]];
+        if (member && !member.serverRaidAccount) member.serverRaidAccount = { id: String(java.util.UUID.randomUUID()), period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+        if (member && (!member.serverRaidAccount || typeof member.serverRaidAccount.id !== "string" || !member.serverRaidAccount.id)) throw new Error("패키지 담당자·대상 계정 ID 오류");
+    }
+    var operatorId = getPackageGrantIdentity(data, sender), at = new Date(now).toISOString();
+    for (var i = 0; i < store.records.length; i++) if (store.records[i].operatorId === "legacy:" + sender) store.records[i].operatorId = operatorId;
+    if (store.trackedFrom === null) store.trackedFrom = at;
+    store.records.push({ id: id, at: at, operatorId: operatorId, operator: sender, targetId: getPackageGrantIdentity(data, parsed.target), target: parsed.target, packageName: packageInfo.name || getPackageBagItemName(packageInfo), listNumber: parsed.listNumber, quantity: parsed.count, command: command, reply: reply });
+    requirePackageGrantStore(store);
+}
+
+// 패키지 실적의 개인·전체·한국시간 월 지정 입력을 해석하는 함수
+function getPackageGrantStatsRequest(msg) {
+    if (!/^\/패키지실적(?:\s|$)/.test(String(msg))) return null;
+    var match = String(msg).match(/^\/패키지실적(?:[ \t]+([^\r\n]+))?$/);
+    var error = "❌ 사용법: /패키지실적 [전체 또는 담당자 아이디] [YYYY-MM]";
+    if (!match) return { error: error };
+    var input = (match[1] || "").trim(), current = getGmEducationMonthKey(), parts = input.match(/^(?:(.*)[ \t]+)?([^ \t]+)$/), last = parts ? parts[2] : "", month = current;
+    if (/^\d{4}[-/.]/.test(last)) {
+        if (!/^(?!0000)\d{4}-(?:0[1-9]|1[0-2])$/.test(last)) return { error: "❌ 월은 2026-10처럼 YYYY-MM 형식으로 입력해 주세요." };
+        month = last; input = (parts[1] || "").trim();
+    } else if (/(?:^|[ \t])\d{4}[-/.]/.test(input)) return { error: error };
+    if (input === "초기화") return { error: "패키지 실적은 월별로 보존합니다. /패키지실적 전체 YYYY-MM으로 지난 기록을 조회하세요." };
+    return { target: input, all: input === "전체", month: month };
+}
+
+// 지급 확정 시각을 한국시간의 날짜와 시분초로 표시하는 함수
+function formatPackageGrantTime(at) {
+    var date = new Date(Date.parse(at) + 9 * 60 * 60 * 1000);
+    return date.getUTCFullYear() + "-" + ("0" + (date.getUTCMonth() + 1)).slice(-2) + "-" + ("0" + date.getUTCDate()).slice(-2) + " " + ("0" + date.getUTCHours()).slice(-2) + ":" + ("0" + date.getUTCMinutes()).slice(-2) + ":" + ("0" + date.getUTCSeconds()).slice(-2);
+}
+
+// 성공 원본에서 월별 합계·공동 순위·당시 지급 내역을 읽기 전용으로 표시하는 함수
+function buildPackageGrantStatsMessage(store, data, sender, request) {
+    var target = request.target || sender, id = getPackageGrantIdentity(data, target), accounts = buildServerRaidAccountIndex(data), matchingIds = {};
+    if (!request.all && !Object.prototype.hasOwnProperty.call(data.member, target)) {
+        for (var t = 0; t < store.records.length; t++) if (store.records[t].operator === target) matchingIds["$" + store.records[t].operatorId] = store.records[t].operatorId;
+        var found = Object.keys(matchingIds);
+        if (found.length !== 1) return "❌ 해당 담당자 아이디를 찾을 수 없습니다.";
+        id = matchingIds[found[0]];
+    }
+    var heading = (request.all ? "📊 호이월드 패키지 지급 전체 실적" : "📦 [" + target + "] 님의 패키지 지급 실적") + "\n📅 " + request.month.slice(0,4) + "년 " + request.month.slice(5) + "월\n━━━━━━━━━━━━\n";
+    if (request.month > getGmEducationMonthKey()) return heading + "아직 집계가 시작되지 않은 달입니다.";
+    var groups = {}, count = 0, quantity = 0; // 조회 월의 실제 성공 건수와 패키지 수량 합계
+    for (var i = 0; i < store.records.length; i++) {
+        var record = store.records[i];
+        if (getGmEducationMonthKey(record.at) !== request.month || !request.all && record.operatorId !== id) continue;
+        var key = "$" + record.operatorId, account = accounts[record.operatorId];
+        if (!groups[key]) groups[key] = { name: account ? account.user : record.operator, records: [], quantity: 0 };
+        groups[key].records.push(record); groups[key].quantity += record.quantity;
+        count++; quantity += record.quantity;
+        if (!isSearchAuthenticationCount(quantity)) throw new Error("패키지 실적 합계 범위 초과");
+    }
+    var rows = Object.keys(groups).map(function (key) { return groups[key]; });
+    rows.sort(function (a,b) { return b.records.length - a.records.length || a.name.localeCompare(b.name); });
+    var partial = store.trackedFrom === null || request.month <= getGmEducationMonthKey(store.trackedFrom); // 도입 월까지는 과거 보관 로그만 확인 가능한 불완전 집계
+    var summary = heading + (request.all ? "📨 총 지급 횟수: " : "📨 지급 횟수: ") + numberWithCommas(count) + "회\n" + (request.all ? "🎁 총 지급 갯수: " : "🎁 지급 갯수: ") + numberWithCommas(quantity) + "개\n━━━━━━━━━━━━\n";
+    if (partial) summary += "※ 기록 시작 이전은 보관된 지급 로그만 집계해 일부 내역이 없을 수 있어요.\n";
+    if (!count) return summary + (partial ? "확인 가능한 기록 없음" : "해당 월의 패키지 지급 실적이 없습니다.");
+    var full = [], top = [], rankLines = [], rank = 0, shown = 0, omitted = false, omittedRanks = false;
+    for (var r = 0; r < rows.length; r++) {
+        if (!r || rows[r].records.length !== rows[r-1].records.length) rank = r+1;
+        var line = rank + "등 [" + rows[r].name + "] · " + numberWithCommas(rows[r].records.length) + "회 · " + numberWithCommas(rows[r].quantity) + "개";
+        if (request.all && r < 3) top.push(line);
+        if (request.all) rankLines.push(line);
+    }
+    if (request.all) summary += "🏆 담당자 순위 (지급 횟수 기준)\n" + top.join("\n") + "\n━━━━━━━━━━━━\n";
+    summary += "📋 지급 대상·상품·날짜는 전체보기에서 확인하세요.";
+    var detailBudget = Math.max(0,GLOBAL_CONFIG.packageGrant.detailMaxLength-summary.length-allsee.length-GLOBAL_CONFIG.packageGrant.footerReserve); // 전체보기 구분자·합계·생략 안내까지 남긴 본문 길이
+    if (request.all) full.push("📊 전체 담당자 지급 실적");
+    for (var p = 0; p < rankLines.length; p++) {
+        if (full.join("\n\n").length + rankLines[p].length + 2 > detailBudget) { omittedRanks = true; break; }
+        full.push(rankLines[p]);
+    }
+    if (full.join("\n\n").length + 30 <= detailBudget) full.push("━━━━━━━━━━━━", "📋 패키지 지급 상세 기록");
+    for (var g = 0; g < rows.length; g++) {
+        rows[g].records.sort(function(a,b) { return Date.parse(b.at)-Date.parse(a.at) || a.id.localeCompare(b.id); });
+        if (request.all) {
+            var groupLine = "👤 [" + rows[g].name + "] · " + rows[g].records.length + "회 / " + numberWithCommas(rows[g].quantity) + "개";
+            if (full.join("\n\n").length + groupLine.length + 2 > detailBudget) { omitted = true; break; }
+            full.push(groupLine);
+        }
+        for (var d = 0; d < rows[g].records.length; d++) {
+            var item = rows[g].records[d];
+            var detail = formatPackageGrantTime(item.at) + " · [" + item.target + "]\n" + (item.listNumber === null ? "당시 번호 미기록" : item.listNumber + "번") + " · " + item.packageName + " ×" + numberWithCommas(item.quantity);
+            if (full.join("\n\n").length + detail.length + 2 > detailBudget) { omitted = true; break; }
+            full.push(detail); shown++;
+        }
+        if (omitted) break;
+    }
+    if (omitted || omittedRanks) full.push("※ 출력 길이 제한: 상세 " + shown + "/" + count + "건 · 담당자 " + rows.length + "명. 원본 기록은 모두 보존돼요. /패키지실적 담당자 YYYY-MM으로 범위를 좁혀 확인하세요.");
+    full.push("━━━━━━━━━━━━", "합계: " + numberWithCommas(count) + "회 / " + numberWithCommas(quantity) + "개");
+    return summary + "\n" + allsee + full.join("\n\n");
+}
+
+// 회원 분리 저장 계획과 지급·통계를 재시작 후 완결할 게시 원문으로 묶는 함수
+function buildPackageGrantPublication(data, logs, stats, extra) {
+    var adventure = data.__adventureRecordContext;
+    if (adventure && JSON.stringify(adventure.store) !== adventure.text) throw new Error("패키지 지급 중 저장하지 않은 퀘스트 기록 변경 감지");
+    var plan = buildMemberSplitSavePlan(data), writes = [];
+    if (plan) for (var i = 0; i < plan.writes.length; i++) writes.push({ name: String(new java.io.File(plan.writes[i].path).getName()), text: plan.writes[i].text });
+    writes.push({ name: "member.json", text: JSON.stringify(plan ? plan.member : data) });
+    for (var e = 0; e < extra.length; e++) writes.push(extra[e]);
+    writes.push({ name: "packageLog.json", text: JSON.stringify(logs) }, { name: GLOBAL_CONFIG.packageGrant.fileName, text: JSON.stringify(requirePackageGrantStore(stats)) });
+    var publication = { version: 1, pending: writes };
+    validatePackageGrantPending(publication);
+    return publication;
+}
+
+// 지급 게시 원문의 닫힌 파일 목록과 복구 데이터 형식을 검증하는 함수
+function validatePackageGrantPending(journal) {
+    if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal,"pending") || journal.pending !== null && !Array.isArray(journal.pending)) throw new Error("패키지 지급 복구 형식 오류");
+    if (journal.pending === null) return;
+    var seen = {};
+    for (var i = 0; i < journal.pending.length; i++) {
+        var row = journal.pending[i];
+        if (!row || typeof row.name !== "string" || !/^(?:member|packageLog|packageGrantStats|serverRaidData(?:_next)?|memberOperationLogs(?:_next)?|halloweenEvent|halloweenAccount_[A-Za-z0-9_-]{1,128})\.json$/.test(row.name) || seen[row.name] || typeof row.text !== "string") throw new Error("패키지 지급 복구 대상 오류");
+        seen[row.name] = true;
+        var parsed = parseJsonContent(row.text,row.name);
+        if (row.name === "member.json" && (!parsed || !parsed.member || typeof parsed.member !== "object" || Array.isArray(parsed.member))) throw new Error("패키지 지급 회원 원문 오류");
+        if (row.name === GLOBAL_CONFIG.packageGrant.fileName) requirePackageGrantStore(parsed);
+        if (row.name === "packageLog.json") assertPackageLogData(parsed);
+        if (/^halloweenAccount_/.test(row.name)) requireHalloweenAccount(parsed,parsed.id);
+        if (row.name === GLOBAL_CONFIG.halloween.stateName) requireHalloweenState(parsed);
+        if (/^(serverRaidData|memberOperationLogs)/.test(row.name)) requireMemberSplitStore(parsed,row.name.indexOf("serverRaidData") === 0 ? "raid" : "logs");
+    }
+    if (!seen["member.json"] || !seen["packageLog.json"] || !seen[GLOBAL_CONFIG.packageGrant.fileName]) throw new Error("패키지 지급 복구 필수 원문 누락");
+}
+
+// 접수된 지급 게시를 재실행·재지급 없이 동일 원문으로 끝내는 저장 진입 함수
+function recoverPackageGrantPending() {
+    dataTransactionLock.lock();
+    try {
+        var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.packageGrant.pendingName), file = new java.io.File(path), rollback = new java.io.File(path + ".rollback");
+        if (!file.exists() && rollback.exists()) {
+            var interrupted = String(FileStream.read(path + ".rollback","utf-8"));
+            validatePackageGrantPending(parseJsonContent(interrupted,path));
+            if (!rollback.renameTo(file)) throw new Error("패키지 지급 복구 파일 복원 실패");
+        }
+        if (!file.exists()) return false;
+        var journal = parseJsonContent(FileStream.read(path,"utf-8"),path);
+        validatePackageGrantPending(journal);
+        if (journal.pending === null) return false;
+        for (var i = 0; i < journal.pending.length; i++) {
+            var targetPath = resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name);
+            if (!new java.io.File(targetPath).exists() || String(FileStream.read(targetPath,"utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(targetPath,journal.pending[i].text,false);
+        }
+        writeVerifiedJsonFile(path,JSON.stringify({ version: 1, pending: null }),true);
+        memberSplitBackupCache = {};
+        return true;
+    } finally { dataTransactionLock.unlock(); }
 }
 
 // 관리자 패키지 지급 처리 함수
@@ -49049,6 +49303,7 @@ function grantPackageToUser(data, sender, msg, packageInfoData, packageLogData) 
 
     var beforeCount = parseInt(data.member[parsed.target].bag[packageBagItemName], 10) || 0; // 지급 전 보유 수량
     var afterCount = beforeCount + parsed.count; // 지급 후 보유 수량
+    if (!isSearchAuthenticationCount(beforeCount) || !isSearchAuthenticationCount(afterCount)) return { ok: false, message: "❌ 패키지 보유 수량의 안전한 처리 범위를 초과했습니다." };
     data.member[parsed.target].bag[packageBagItemName] = afterCount;
 
     packageLogData = appendPackageLog(packageLogData, "GRANT", packageInfo, parsed.target, parsed.count, sender, beforeCount, afterCount);
@@ -65928,6 +66183,12 @@ function runHalloweenEntry(mode, args) {
     if (!result.changed && !result.stateChanged) return result;
     result.memberChanged = result.memberChanged || accountMemberChanged;
     var snapshots = [], accountChanged = result.changed && accountName !== null;
+    if (mode === "packageGrant" && args.deferPackageGrant && result.ok) {
+        requireHalloweenAccount(account,account.id);
+        result.packageGrantFiles = [{ name: accountName, text: JSON.stringify(account) }];
+        if (result.stateChanged) { requireHalloweenState(state); result.packageGrantFiles.push({ name: config.stateName, text: JSON.stringify(state) }); }
+        return result; // 회원·일반 로그·실적과 같은 확정 기록으로 이벤트 계정도 게시한다.
+    }
     if (result.memberChanged) {
         var memberPlan = typeof MEMBER_STORAGE_SPLIT_CONFIG !== "undefined" ? buildMemberSplitSavePlan(data) : null;
         if (memberPlan && memberPlan.writes.length !== 0) throw new Error("할로윈 처리 중 관련 없는 회원 상세 변경 감지");
