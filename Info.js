@@ -118,7 +118,7 @@ const GLOBAL_CONFIG = {
 		maxLength: 30 // 타이틀 선물 내용 최대 길이
 	},
 	petSkill: { // 펫스킬 시스템 설정
-		slots: { maxCount: 100, introBonus: 3 },
+		slots: { maxCount: 100, introBonus: 3, intimacyLevelsPerSlot: 100 },
 		miniPetSupportCharmRate: 0.5, // 등급 조건부 스킬의 보조 슬롯 반영률
 		bookItemName: "펫스킬북📙(/펫스킬오픈)",
 		oldTraitBookItemName: "펫특성뽑기권🃏(/특성오픈)",
@@ -3166,11 +3166,13 @@ function runHalloweenInfoEntry(mode, ctx, data, user) {
 
 // 펫스킬 슬롯 개수 계산 함수
 function getPetSkillSlotCount(data, petSkillData, user) {
+	var info = getUserIntimacyInfo(data, user);
+	var base = Math.max(0, Math.min(PET_SKILL_MAX_EQUIP_SLOT, Math.floor((info && info.level ? info.level : 0) / GLOBAL_CONFIG.petSkill.slots.intimacyLevelsPerSlot))); // 친밀도 100레벨당 1칸, 기본 최대 30칸
 	var member = data && data.member ? data.member[user] : null;
 	var extra = Math.max(0, parseInt(member && member.petSkillExtraSlots, 10) || 0); // 누적 사용한 확장권 수
 	var intro = hasPetSkill(petSkillData, user, "펫스킬 학개론") ? GLOBAL_CONFIG.petSkill.slots.introBonus : 0;
 	var premiumSlotBonus = isInfoSupportPassActive(data, user, "premium") ? GLOBAL_CONFIG.supportPass.premium.skillSlotBonus : 0;
-	return Math.min(GLOBAL_CONFIG.petSkill.slots.maxCount, PET_SKILL_MAX_EQUIP_SLOT + intro + premiumSlotBonus + extra);
+	return Math.min(GLOBAL_CONFIG.petSkill.slots.maxCount, base + intro + premiumSlotBonus + extra);
 }
 // 숫자 3자리마다 쉼표 추가 함수
 function numberWithCommas(x) {
