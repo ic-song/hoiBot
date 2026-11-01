@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.751"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.756"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1020,16 +1020,22 @@ const GLOBAL_CONFIG = {
         plannedEnd: "2026년 11월 10일",
         normalEntries: 1,
         premiumEntries: 2,
-        roomCount: 3,
+        roomCount: 5,
         legacyRoomCount: 5, // 배포 전 진행 중 탐험의 경로와 기존 결과별 사탕을 보존
         legacyPlaceCount: 12,
-        roomRewards: { "안전형": [14, 0], "탐색형": [33, 9, 0], "도박형": [100, 20, 0] }, // 방당 보상을 높여 3곳의 총평균을 기존 5곳 수준으로 유지
-        completionCandy: 20,
+        rewardVersion: 3, // 신규 5방과 과거 5방·3방의 입장 당시 보상 구분
+        previousRoomCount: 3,
+        previousPlaceCount: 35,
+        previousRoomRewards: { "안전형": [14, 0], "탐색형": [33, 9, 0], "도박형": [100, 20, 0] },
+        previousCompletionCandy: 20,
+        previousSecretCandy: [20, 50, 150, 300],
+        roomRewards: { "안전형": [10, 0], "탐색형": [24, 6, 0], "도박형": [72, 14, 0] }, // 신규 5곳 탐험에 적용하는 행동별 보상
+        completionCandy: 30,
         secretRate: 10,
         legacyDuplicateMs: 2000,
         shop: [{"name":"다이아상자💎(/다이아상자오픈)","count":25,"cost":100,"limit":50},{"name":"호이의 봉인금고🔒(/봉인금고오픈 숫자)","count":5,"cost":50,"limit":0},{"name":"해방의 열쇠🗝️(/봉인금고오픈 숫자)","count":5,"cost":75,"limit":0},{"name":"홈뱃지 큐브💟","count":400,"cost":200,"limit":7},{"name":"황제패키지👑[5]+호월신의 가호✨ 3만개","count":1,"cost":37500,"limit":2},{"name":"할로윈도파민패키지🎃","count":1,"cost":3500,"limit":11}],
         titles: [{"name":"🍬 사탕 냠냠","rate":60},{"name":"👻 겁쟁이 꼬마유령","rate":25},{"name":"🎃 말랑말랑 호박","rate":10},{"name":"🧸 유령집 꼬마악동","rate":4.5},{"name":"👑 말랑말랑 호박왕","rate":0.5}],
-        secret: [{"candy":20,"rate":60,"story":"황금 호박방 입구에서 작은 사탕 봉투를 찾았습니다.","line":"입구에서 만족하자! 안쪽은… 안 보여줄 거야!"},{"candy":50,"rate":30,"story":"황금빛 선반 위에서 묵직한 사탕 주머니를 찾았습니다.","line":"선반 높게 달아놨는데 어떻게 손이 닿았어?!"},{"candy":150,"rate":9,"story":"호박 쿠션을 들자 숨겨진 사탕 저장칸이 활짝 열렸습니다!","line":"거기는 주말 간식 창고야! 이번 주말 어떡해!"},{"candy":300,"rate":1,"story":"황금 호박이 활짝 웃더니 사탕 폭포를 쏟아냈습니다!","line":"내 비상금… 아니 비상 사탕! 한 봉지만 남겨줘!"}],
+        secret: [{"candy":50,"rate":60,"story":"황금 호박방 입구에서 작은 사탕 봉투를 찾았습니다.","line":"입구에서 만족하자! 안쪽은… 안 보여줄 거야!"},{"candy":100,"rate":30,"story":"황금빛 선반 위에서 묵직한 사탕 주머니를 찾았습니다.","line":"선반 높게 달아놨는데 어떻게 손이 닿았어?!"},{"candy":250,"rate":9,"story":"호박 쿠션을 들자 숨겨진 사탕 저장칸이 활짝 열렸습니다!","line":"거기는 주말 간식 창고야! 이번 주말 어떡해!"},{"candy":500,"rate":1,"story":"황금 호박이 활짝 웃더니 사탕 폭포를 쏟아냈습니다!","line":"내 비상금… 아니 비상 사탕! 한 봉지만 남겨줘!"}],
         rooms: [
             { name: "📚 저주받은 도서관", intro: "📚 저주받은 도서관\n\n낡은 책장 사이에서 바스락거리는 소리가 들립니다.\n금지된 마법책 아래로 사탕 포장지가 삐져나와 있습니다.\n\n👻유령 호월이: \"그 책은 건드리지 마… 사탕 숨겨둔 건 절대 아니고!\"", actions: [
                 {"text":"📖 금서를 연다","type":"도박형","results":[{"label":"대박","rate":20,"candy":60,"story":"책을 펼치자 글자 대신 사탕이 와르르 쏟아졌습니다!","line":"으아악! 그거 내 야식인데! 두 개만 돌려줘!"},{"label":"소득","rate":50,"candy":12,"story":"책갈피 주머니에서 작은 사탕 묶음을 발견했습니다.","line":"으응? 그 페이지는 분명 접어놨는데…"},{"label":"실패","rate":30,"candy":0,"story":"책 속 꼬마유령이 ‘까꿍!’ 하고 튀어나왔습니다. 사탕은 없었습니다.","line":"히히! 이 책 제목은 놀랐지롱이야!"}]},
@@ -1205,6 +1211,56 @@ const GLOBAL_CONFIG = {
                 {"text":"🛍️ 닫힌 노점의 상자를 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"story":"상인들이 숨겨둔 시식용 사탕 꾸러미를 찾아냅니다.","line":"시식은 한 알인데 왜 주머니째 가져가?!"},{"label":"소득","rate":35,"story":"탁자 아래 떨어진 사탕 몇 알을 줍습니다.","line":"바닥 시식까지 즐기는 손님이네!"},{"label":"실패","rate":10,"story":"노점에는 가격표만 가득하고 상품은 없습니다.","line":"가격표 보는 건 공짜야! 덕분에 구경 끝!"}]},
                 {"text":"🎐 도깨비 상인에게 예의 바르게 인사한다","type":"안전형","results":[{"label":"성공","rate":80,"story":"상인이 환영 사탕 봉투를 선물합니다.","line":"나도 매일 인사하는데 왜 난 못 받아?!"},{"label":"실패","rate":20,"story":"상인은 깔깔 웃고 장난감 영수증만 건넵니다.","line":"영수증에는 ’꽝’이라고 쓰여 있네! 하하!"}]},
                 {"text":"🎲 도깨비의 비밀 복주머니를 고른다","type":"도박형","results":[{"label":"대박","rate":20,"story":"복주머니가 터지며 황금빛 사탕 꾸러미가 한가득 나타납니다.","line":"그게 1등 복주머니야?! 내 운을 돌려줘!"},{"label":"소득","rate":50,"story":"주머니 속 작은 사탕 묶음을 건집니다.","line":"본전은 챙겼네! 도깨비가 좀 아쉽겠다!"},{"label":"실패","rate":30,"story":"복주머니에서 종이 꽃가루만 팡 터져 나옵니다.","line":"오늘의 당첨 상품은 축하 박수 세 번!"}]}
+            ] },
+            { name: "📞 자정의 전화교환실", intro: "📞 자정의 전화교환실\n\n멈춘 전화기 수십 대가 동시에 울립니다. 검은 전선 사이로 사탕 포장지가 별처럼 반짝이고, 수화기에서는 아직 일어나지 않은 일이 들려옵니다.\n\n👻유령 호월이: “전화는 내가 안 했어! …아, 근데 내 목소리가 왜 들리지?”", actions: [
+                {"text":"📞 바닥에 떨어진 수화기를 정리한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"잘못 놓인 수화기를 제자리에 올리자 교환대 밑에서 사탕 열 개가 또르르 굴러옵니다.","line":"전화 정리 잘하네! 여기 야간 알바로 취직할래?"},{"label":"실패","rate":20,"candy":0,"story":"수화기를 집는 순간 모든 전화벨이 멎고 전선이 발밑에서 꿈틀거립니다. 사탕은 찾지 못했습니다.","line":"으악! 전선이 꼬리가 아니라는 보장 있어?"}]},
+                {"text":"🔎 발신번호 없는 전화를 받는다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"낯선 목소리가 일곱 번째 서랍을 알려 줍니다. 서랍 속 비상 사탕 꾸러미를 찾아냅니다.","line":"전화 사기인 줄 알았는데 진짜 정보였어?!"},{"label":"소득","rate":35,"candy":6,"story":"전화선에 감겨 있던 낡은 사탕 여섯 개를 건집니다. 상대는 웃음만 남기고 끊습니다.","line":"통화료 대신 사탕 주는 전화는 처음인데?"},{"label":"실패","rate":10,"candy":0,"story":"수화기에서 자신의 숨소리만 반복됩니다. 주변 서랍은 텅 비었습니다.","line":"너 방금 네 목소리랑 통화했어. 소름 돋아!"}]},
+                {"text":"☎️ 내일의 나에게 전화를 건다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"미래의 자신이 비밀 번호를 알려 줍니다. 잠긴 분배기가 열리며 사탕이 쏟아집니다.","line":"미래의 너, 엄청 부자네! 오늘 것 좀 나눠 줘!"},{"label":"소득","rate":50,"candy":14,"story":"미래에서 도착한 소포 안에 작은 사탕 뭉치가 들어 있습니다.","line":"미래 택배는 빨리 오네. 배송비는 내가 안 낼래!"},{"label":"실패","rate":30,"candy":0,"story":"연결음 끝에 내일의 자신이 다급하게 전화를 끊습니다. 교환대는 그대로 잠겨 있습니다.","line":"미래의 너도 지금 바쁜가 봐. 나보다 더 바쁘네!"}]}
+            ] },
+            { name: "🎞️ 저주받은 상영관", intro: "🎞️ 저주받은 상영관\n\n텅 빈 좌석에서 박수 소리가 들리고, 낡은 영사기가 저절로 돌아갑니다. 스크린에는 방금 이곳에 들어온 당신의 모습이 비칩니다.\n\n👻유령 호월이: “영화 제목이 「사탕을 뺏긴 호월이」야? 이거 명예훼손 아니야?”", actions: [
+                {"text":"🎞️ 영사기 옆의 낡은 필름통을 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"필름 속 장면을 따라가자 숨겨 둔 매점 창고가 나타납니다. 그 안의 사탕을 챙깁니다.","line":"스포일러가 이렇게 유용할 줄이야!"},{"label":"소득","rate":35,"candy":6,"story":"필름통 바닥에서 사탕 몇 개가 딸랑거리며 나옵니다.","line":"필름보다 간식이 더 좋은 작품이네!"},{"label":"실패","rate":10,"candy":0,"story":"필름이 스스로 되감기고 창고 장면이 지워집니다. 아무것도 건지지 못했습니다.","line":"편집 감독이 너무 엄격하잖아!"}]},
+                {"text":"🎬 스크린 속 주인공에게 손을 내민다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"스크린이 물결처럼 열리고 영화 속 보물 상자가 쏟아져 나옵니다. 사탕을 가득 건집니다.","line":"이 영화 수익률 미쳤다! 속편 당장 찍어!"},{"label":"소득","rate":50,"candy":14,"story":"영화 속 매점 주인이 사탕 한 꾸러미를 밖으로 던져 줍니다.","line":"팝콘보다 사탕이 낫지! 난 찬성이야!"},{"label":"실패","rate":30,"candy":0,"story":"스크린 속 배우가 손을 잡아당기려 하자 영사기가 꺼집니다. 보상은 없습니다.","line":"주인공 체험은 됐고, 관객으로 살자!"}]},
+                {"text":"💡 좌석 아래 비상등을 켠다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"불빛이 켜지자 좌석 밑의 사탕 포장지들이 모습을 드러냅니다.","line":"청소 안 한 극장이 의외로 부자였어!"},{"label":"실패","rate":20,"candy":0,"story":"비상등 대신 눈 모양의 붉은 불이 켜집니다. 빈 좌석이 일제히 접히고 사탕은 보이지 않습니다.","line":"좌석들이 날 노려보는 것 같아. 빨리 가자!"}]}
+            ] },
+            { name: "⚓ 안개 속 유령선", intro: "⚓ 안개 속 유령선\n\n마른 바닥 위에 커다란 배 한 척이 떠 있습니다. 갑판에서는 보이지 않는 선원들이 노래하고, 돛대 끝엔 사탕 자루가 매달려 있습니다.\n\n👻유령 호월이: “배멀미는 안 하는데 귀신멀미는 해. 일단 사탕부터 찾아 줘!”", actions: [
+                {"text":"🏮 밧줄에 등불을 매달아 갑판을 밝힌다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"등불을 보고 돌아온 유령 갈매기가 작은 사탕 상자를 떨어뜨립니다.","line":"갈매기가 배달까지 하네. 별 다섯 개 줄게!"},{"label":"실패","rate":20,"candy":0,"story":"안개가 등불을 삼켜 버립니다. 갑판만 삐걱거리고 아무것도 보이지 않습니다.","line":"불까지 먹는 안개라니 너무 욕심쟁이잖아!"}]},
+                {"text":"📜 선장의 젖은 항해일지를 펼친다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"항해일지 뒤편에 숨겨진 갑판 좌표를 찾아 작은 보급 상자를 발견합니다.","line":"선장님, 항해보다 사탕 관리가 더 중요했군요!"},{"label":"소득","rate":35,"candy":6,"story":"일지 책갈피에 감긴 사탕 여섯 개를 건집니다.","line":"젖었는데 포장은 멀쩡해. 신기하다!"},{"label":"실패","rate":10,"candy":0,"story":"글자가 바닷물처럼 흘러내려 지도는 사라집니다. 남은 것은 빈 표지뿐입니다.","line":"잉크도 수영하러 갔나 봐!"}]},
+                {"text":"🗝️ 해골 선장의 보물함을 강제로 연다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"자물쇠가 부서지자 금화 대신 사탕이 폭포처럼 넘쳐흐릅니다.","line":"해적의 보물은 결국 단 거였어! 완전 내 취향!"},{"label":"소득","rate":50,"candy":14,"story":"보물함 옆의 작은 칸이 열리며 사탕 꾸러미를 얻습니다.","line":"본상은 아니지만 빈손은 아니네!"},{"label":"실패","rate":30,"candy":0,"story":"문어 모양 자물쇠가 촉수를 뻗어 상자를 다시 잠가 버립니다.","line":"저 문어, 경비 교육을 제대로 받았네!"}]}
+            ] },
+            { name: "⚖️ 망자의 재판소", intro: "⚖️ 망자의 재판소\n\n천장에 떠 있는 저울이 혼자 움직입니다. 해골 판사가 방망이를 두드리며 당신에게 사탕 절도 혐의를 읽어 줍니다.\n\n👻유령 호월이: “잠깐! 내가 사탕 먹은 건 맞는데 훔친 건 아니… 아마도?”", actions: [
+                {"text":"🧾 증인석에 주운 영수증을 제출한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"영수증에서 무죄를 입증하는 기록이 나옵니다. 판사가 증인 보상 사탕을 건넵니다.","line":"사탕에도 영수증이 필요하다니 세상이 무섭네!"},{"label":"실패","rate":20,"candy":0,"story":"영수증이 바람에 날아가며 판사가 서류 미비를 선언합니다.","line":"증거가 날아갔어! 진짜 법정 바람 뭐야!"}]},
+                {"text":"🎰 배심원들이 돌리는 운명의 저울을 건드린다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"저울이 크게 기울어 무죄 판결과 함께 압수 사탕 전량을 받습니다.","line":"판사님! 정의는 역시 달콤하군요!"},{"label":"소득","rate":50,"candy":14,"story":"배심원들이 조건부 석방을 선언하며 작은 사탕 봉투를 줍니다.","line":"집행유예에 사탕까지? 이득이다!"},{"label":"실패","rate":30,"candy":0,"story":"저울이 빙글 돌다가 처음 자리로 돌아옵니다. 배심원들은 무표정합니다.","line":"판결은 보류! 나 먼저 도망가도 돼?"}]},
+                {"text":"📚 재판 기록에서 지워진 쪽을 찾는다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"빠진 기록에서 숨겨진 증거품 보관함 번호를 찾아 사탕을 챙깁니다.","line":"기록 열람이 이렇게 맛있는 일이었어?"},{"label":"소득","rate":35,"candy":6,"story":"오래된 문서 사이에 끼워진 사탕을 조금 얻습니다.","line":"증거품이 아니라 간식 책갈피였네!"},{"label":"실패","rate":10,"candy":0,"story":"기록관 유령이 장부를 덮어 버립니다. 남은 증거는 없습니다.","line":"열람 시간 끝났대. 유령 공무원 칼퇴하네!"}]}
+            ] },
+            { name: "🦷 웃는 해골 치과", intro: "🦷 웃는 해골 치과\n\n치과 의자에 앉은 해골이 이빨을 딸깍거리며 웃습니다. 진료 도구 대신 형형색색 사탕이 트레이에 가지런히 놓여 있습니다.\n\n👻유령 호월이: “치과에서 사탕을 나눠 준다고? 이 의사 수상하지만 마음에 든다!”", actions: [
+                {"text":"🦷 황금 이빨 모양 레버를 당긴다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"커다란 턱 모형이 열리고 비밀 사탕 저장고가 드러납니다.","line":"치아 보험 말고 사탕 보험 들고 싶어!"},{"label":"소득","rate":50,"candy":14,"story":"레버 옆 진료 트레이에서 사탕 한 봉투가 튀어나옵니다.","line":"이 정도면 간식 처방 합격이야!"},{"label":"실패","rate":30,"candy":0,"story":"흡입기가 요란하게 돌며 트레이 위 사탕을 전부 빨아들입니다.","line":"저 기계가 환자보다 단 걸 좋아하잖아!"}]},
+                {"text":"🪥 진료대에 놓인 칫솔을 정리한다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"해골 의사가 정리 잘했다며 포장된 사탕을 건네줍니다.","line":"양치도 하고 사탕도 받자! 순서가 이상한가?"},{"label":"실패","rate":20,"candy":0,"story":"칫솔 통에서 장난감 이빨이 튀어 오릅니다. 놀라는 사이 사탕은 사라집니다.","line":"칫솔이 물지는 않겠지? …물었어?!"}]},
+                {"text":"🔎 진료대 아래 잠긴 서랍을 조사한다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"서랍 뒷판이 열리며 의사의 비밀 간식 창고가 나옵니다.","line":"치과 의사가 사탕 숨기는 건 비밀로 하자!"},{"label":"소득","rate":35,"candy":6,"story":"서랍 손잡이 틈에서 작은 민트 사탕을 몇 개 모읍니다.","line":"진료 끝나고 하나씩 먹으라고 숨겼나 봐."},{"label":"실패","rate":10,"candy":0,"story":"서랍 안의 거울이 웃는 해골 얼굴만 비춥니다. 사탕은 없습니다.","line":"저 거울은 치아만 확대해. 너무 무섭다!"}]}
+            ] },
+            { name: "🏫 빗소리 교실", intro: "🏫 빗소리 교실\n\n교실 천장에서는 비가 새는데 바닥은 전혀 젖지 않습니다. 빈 책상 서른 개가 동시에 삐걱이고, 칠판에는 오늘의 숙제가 적혀 있습니다.\n\n👻유령 호월이: “숙제가 「사탕 100개 찾기」면 내가 전교 1등 할 자신 있어!”", actions: [
+                {"text":"📚 비어 있는 책상 속을 하나씩 살핀다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"마지막 책상의 비밀 칸에서 학생들이 숨긴 사탕 꾸러미를 찾습니다.","line":"맨 뒷자리 애들이 간식 관리 전문가였네!"},{"label":"소득","rate":35,"candy":6,"story":"찢어진 공책 사이에서 작은 사탕 몇 개를 건집니다.","line":"필기는 못했어도 간식 준비는 잘했군!"},{"label":"실패","rate":10,"candy":0,"story":"책상들이 스스로 닫히며 손이 닿지 않습니다. 사탕은 없습니다.","line":"책상도 방과 후에는 쉬고 싶나 봐!"}]},
+                {"text":"✏️ 칠판에 자신의 이름을 적는다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"분필 글씨가 반짝이더니 출석 확인 선물 사탕이 떨어집니다.","line":"출석만 해도 간식이라니! 이 학교 최고야!"},{"label":"실패","rate":20,"candy":0,"story":"이름이 혼자 지워지고 칠판엔 결석 표시만 남습니다.","line":"억울하다! 분명 출석했는데!"}]},
+                {"text":"🔔 출석부의 마지막 이름을 크게 부른다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"보이지 않는 반장이 응답하자 천장에서 사탕 비가 쏟아집니다.","line":"반장님! 다음엔 두 배로 출석해 주시면 안 돼요?"},{"label":"소득","rate":50,"candy":14,"story":"교탁 서랍이 열리며 반장이 남긴 사탕 봉투를 받습니다.","line":"대답은 작았지만 선물은 확실하네!"},{"label":"실패","rate":30,"candy":0,"story":"종이 혼자 울리고 모든 의자가 뒤로 밀려납니다. 보상은 없습니다.","line":"전교생이 동시에 하교했어! 우리도 가자!"}]}
+            ] },
+            { name: "🎩 사라지는 마술 무대", intro: "🎩 사라지는 마술 무대\n\n공연이 끝난 무대에 관객의 박수 소리만 남아 있습니다. 공중에 떠 있는 마술 모자 아래로 사탕 조각들이 빛납니다.\n\n👻유령 호월이: “내 특기는 사탕을 3초 만에 없애는 마술이야! 먹어서 없애는 거지만.”", actions: [
+                {"text":"🎁 사람이 사라지는 마술 상자에 들어간다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"상자가 열리자 사탕으로 가득한 비밀 무대가 펼쳐집니다.","line":"이건 마술이 아니라 사탕 순간이동이잖아!"},{"label":"소득","rate":50,"candy":14,"story":"잠깐 다른 무대로 옮겨졌다 돌아오며 사탕 주머니를 챙깁니다.","line":"마술 투어 기념품은 역시 사탕이지!"},{"label":"실패","rate":30,"candy":0,"story":"상자에서 연기만 뿜어져 나옵니다. 돌아온 뒤 손에는 아무것도 없습니다.","line":"어디 갔는지 모르겠는데 빈손으로 돌아왔네!"}]},
+                {"text":"🎩 모자 안의 두 번째 바닥을 찾아본다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"모자 밑 숨은 수납공간에 포장된 사탕이 가득합니다.","line":"토끼 대신 사탕이라니, 이 마술사 실력 좋다!"},{"label":"소득","rate":35,"candy":6,"story":"모자 깃 사이에 걸린 작은 사탕을 모읍니다.","line":"모자에서 간식 냄새가 나는 이유가 있었어."},{"label":"실패","rate":10,"candy":0,"story":"마술 토끼의 그림자가 튀어나와 모자를 빼앗습니다.","line":"토끼가 내 사탕을 지키고 있었어!"}]},
+                {"text":"🎭 무대 뒤 커튼을 조금 걷는다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"커튼 아래 떨어진 공연용 사탕을 줍습니다.","line":"커튼콜보다 사탕콜이 좋네!"},{"label":"실패","rate":20,"candy":0,"story":"커튼 뒤의 장갑들이 혼자 박수 치며 길을 막습니다. 사탕은 보이지 않습니다.","line":"관객이 손만 남았어. 너무 열정적이잖아!"}]}
+            ] },
+            { name: "🐺 그림자 동물원", intro: "🐺 그림자 동물원\n\n울타리 안에는 동물이 없지만 벽에는 거대한 발자국 그림자가 움직입니다. 안내 표지판은 「먹이를 주면 그림자가 대답합니다」라고 경고합니다.\n\n👻유령 호월이: “고양이 그림자는 귀엽겠지? 호랑이만 아니면 좋겠어!”", actions: [
+                {"text":"🔦 유리창에 작은 손전등을 비춘다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"작은 그림자 고양이가 나타나 발치로 사탕 열 개를 밀어 줍니다.","line":"야옹! 역시 고양이는 사탕 찾기도 잘해!"},{"label":"실패","rate":20,"candy":0,"story":"불빛이 커다란 짐승 모양 그림자를 만들고 곧 사라집니다. 사탕은 없습니다.","line":"방금 내 꼬리보다 큰 게 지나갔어!"}]},
+                {"text":"🪧 텅 빈 우리 옆 안내판을 해독한다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"안내판 뒤 사육사 보관함 위치를 찾아 사탕을 건집니다.","line":"동물 간식 말고 유령 간식 창고였네!"},{"label":"소득","rate":35,"candy":6,"story":"훼손된 표지판 아래에서 사탕 몇 개를 발견합니다.","line":"안내문 읽고 받은 보상이라니!"},{"label":"실패","rate":10,"candy":0,"story":"표지판 글씨가 움직여 길을 헷갈리게 만듭니다. 아무것도 찾지 못했습니다.","line":"안내판이 길 안내 대신 장난을 치네!"}]},
+                {"text":"🐾 가장 큰 그림자에게 사탕 먹이를 던진다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"거대한 그림자 늑대가 입을 벌리더니 먹이 대신 사탕 보따리를 돌려줍니다.","line":"늑대가 이렇게 예의 바르다니! 내가 오해했어!"},{"label":"소득","rate":50,"candy":14,"story":"그림자 원숭이들이 울타리 위에서 사탕을 조금 흘려 줍니다.","line":"원숭이들이 팁을 주고 갔어!"},{"label":"실패","rate":30,"candy":0,"story":"그림자가 먹이를 순식간에 삼키고 울타리 뒤로 사라집니다.","line":"식사 속도는 내 라이벌이네. 완패다!"}]}
+            ] },
+            { name: "🛒 사후세계 편의점", intro: "🛒 사후세계 편의점\n\n문에 「영업 중 — 생존자도 환영」이라는 종이가 붙어 있습니다. 상품 가격표에는 돈 대신 한숨, 꿈, 추억 같은 이상한 단위가 적혀 있습니다.\n\n👻유령 호월이: “결제 수단에 사탕은 없어? 나는 사탕만 믿는데!”", actions: [
+                {"text":"🔔 계산대 종을 한 번 울린다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"투명한 점원이 등장해 방문 기념 사탕을 건넵니다.","line":"야간 근무 중인 유령 점원, 친절도 만점!"},{"label":"실패","rate":20,"candy":0,"story":"점원이 「재고 정리 중」 팻말만 내밉니다. 사탕은 받지 못했습니다.","line":"24시간 편의점이라더니 휴식 시간도 있네!"}]},
+                {"text":"🎁 봉인된 자정 한정 랜덤 봉투를 고른다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"당첨 벨이 울리며 봉투에서 대형 사탕 상품이 쏟아집니다.","line":"편의점 1등 당첨! 내 영수증 액자에 걸어 줘!"},{"label":"소득","rate":50,"candy":14,"story":"봉투에 소형 보너스 상품이 들어 있습니다. 사탕을 챙깁니다.","line":"적어도 꽝은 아니네! 야식 성공!"},{"label":"실패","rate":30,"candy":0,"story":"봉투 안에는 하얀 영수증 한 장뿐입니다. 사탕은 없습니다.","line":"영수증이 경품이라니! 너무 잔인하다!"}]},
+                {"text":"🔎 유통기한이 없는 비밀 진열대를 찾는다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"벽장이 열리며 귀신 전용 사탕 진열대가 드러납니다.","line":"유통기한 무한이면 사탕도 무한으로 줘야지!"},{"label":"소득","rate":35,"candy":6,"story":"할인 바구니 구석에서 사탕 몇 개를 찾습니다.","line":"폐기 직전이 아니라 유령 특가였네!"},{"label":"실패","rate":10,"candy":0,"story":"상품들이 스스로 자리를 바꾸며 진열대가 사라집니다.","line":"이 편의점은 상품도 숨바꼭질하네!"}]}
+            ] },
+            { name: "🧠 봉인된 기억 보관소", intro: "🧠 봉인된 기억 보관소\n\n수천 개의 유리병에 누군가의 추억이 빛으로 담겨 있습니다. 가장 깊은 선반에는 「유령 호월이가 잊어버린 사탕 위치」라는 표식이 붙어 있습니다.\n\n👻유령 호월이: “어? 내가 사탕을 어디에 숨겼는지 까먹었거든… 제발 찾지 마! 아니, 찾아 줘!”", actions: [
+                {"text":"📖 호월이의 잃어버린 기록을 펼친다","type":"탐색형","results":[{"label":"성공","rate":55,"candy":24,"story":"기록 속 낙서가 숨은 선반 번호를 가리킵니다. 선반에서 사탕 꾸러미를 찾습니다.","line":"으아! 내가 써 놓고 내가 까먹은 비밀 메모였어!"},{"label":"소득","rate":35,"candy":6,"story":"책갈피에 끼어 있던 작은 사탕을 찾아냅니다.","line":"내 기록은 내용보다 간식이 풍부하네!"},{"label":"실패","rate":10,"candy":0,"story":"글자가 기억 연기처럼 흩어져 책이 백지로 변합니다.","line":"어라? 내가 뭘 쓰려고 했더라?"}]},
+                {"text":"🫙 이름표 없는 유리병을 조심히 닦는다","type":"안전형","results":[{"label":"성공","rate":80,"candy":10,"story":"먼지가 걷히자 유리병 받침 아래에 숨겨진 사탕이 나타납니다.","line":"기억도 청소하고 사탕도 찾고! 일석이조네."},{"label":"실패","rate":20,"candy":0,"story":"병 속 웃음소리가 터져 나오고 이름표만 휙 날아갑니다. 사탕은 없습니다.","line":"누가 내 실수 기억을 재생했어! 부끄러워!"}]},
+                {"text":"💎 가장 오래된 기억 구슬을 깨운다","type":"도박형","results":[{"label":"대박","rate":20,"candy":72,"story":"잠자던 기억들이 펼쳐지며 잊힌 사탕 창고의 봉인이 풀립니다.","line":"헉! 저거 내가 옛날에 숨긴 거야! 내가 왜 까먹었지?"},{"label":"소득","rate":50,"candy":14,"story":"기억 구슬이 빛나며 작은 사탕 비가 내립니다.","line":"내 기억에도 사탕밖에 없나 봐. 다행이다!"},{"label":"실패","rate":30,"candy":0,"story":"구슬 속 장면만 한 번 반복된 뒤 빛이 꺼집니다. 사탕은 얻지 못했습니다.","line":"기억 재생만 되고 사탕은 재생 안 되네!"}]}
             ] }
         ]
     },
@@ -1316,8 +1372,11 @@ const GLOBAL_CONFIG = {
         questionFile: "balanceQuestions.json", dialogueFile: "howoriDiceDialogues.json",
         questionCount: 1300, dialogueCount: 200, reasonLimit: 80, messageLimit: 12000,
         balanceMinimum: 5, dicePremium: 4, hostDelayMs: 800, retryMs: 30000,
-        rewards: { balance: 100000000, win: 30000000, draw: 20000000, loss: 10000000 },
-        diceBonuses: { luckySix: 50000000, comeback: 20000000, streak: { "2": 10000000, "3": 30000000, "5": 100000000 } },
+        rewards: { balance: 100000000, win: 60000000, draw: 40000000, loss: 20000000 },
+        diceBonuses: { luckySix: 100000000, comeback: 40000000, streak: { "2": 20000000, "3": 60000000, "5": 200000000 } },
+        diceRewardVersion: 2,
+        legacyDiceRewards: { win: 30000000, draw: 20000000, loss: 10000000 },
+        legacyDiceBonuses: { luckySix: 50000000, comeback: 20000000, streak: { "2": 10000000, "3": 30000000, "5": 100000000 } },
         diceQuotes: {
             win: ["또 너야?! 이 게임 이름이 호월이 괴롭히기였어?! 😫", "포인트 가져가… 아니, 그렇게 신나게 가져가진 말고! 😤", "운이 좋은 거야. 실력 아니야. 아무튼 아니야! 😠", "나 안 울어. 주사위 가루가 눈에 들어간 거야. 🥲"],
             milestones: { "2": "두 번은 봐준 거야. 진짜로. 😤", "3": "아니, 왜 네 주사위만 말을 잘 듣는데?! 😠", "4": "웃지 마! 나 지금 진지하거든?! 😤", "5": "나 이제 안 봐줘! …아까도 안 봐주긴 했는데! 😭", "6": "너 언제 질 건데! 나도 승리 멘트 준비했단 말이야! 😫" },
@@ -6468,9 +6527,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 }
                 var instinctSkillUsers = msg === "이쁘다" ? findPetSkillOwners(data, petSkillData, "종의 본능") : [];
                 if (instinctSkillUsers.length > 0) {
-                    replier.reply(instinctSkillUsers.map(function (user) {
-                        return buildPetSkillMsg(data, petData, guildData, user, "종의 본능");
-                    }).join("\n"));
+                    var instinctSkillUser = instinctSkillUsers[Math.floor(Math.random() * instinctSkillUsers.length)]; // 기존 장착 회원 중 같은 확률로 한 명만 표시
+                    replier.reply("📙 종의 본능 | " + instinctSkillUser + "\n└ 👀 어디?");
                     return;
                 }
 
@@ -36436,9 +36494,9 @@ function runMiniGameEntry(mode, args) {
             var game = diceUser && diceUser.game;
             if (game && game.phase !== "DONE") {
                 game.room = args.room;
+                game.automatic = true; // 기존 판도 저장된 숫자·보상 기준을 유지하며 이번 요청부터 자동으로 마무리
                 if (game.phase === "WAIT_USER2" && game.outputIndex === 2 && args.requestAt > game.waitUserAt) advanceMiniGameDice(state, game, catalog("dialogues"), now, true);
                 else if (game.phase === "USER1" || game.phase === "USER2") { game.dueAt = now; advanceMiniGameDice(state, game, catalog("dialogues"), now, false); }
-                else if (game.phase === "WAIT_USER2" && game.outputIndex === 2) messages.push("첫 번째 굴림을 확인한 뒤 /호월주사위 or ㅎㅈ를 다시 입력해 주세요.");
             } else if (diceUser && args.requestAt <= diceUser.finishedAt) {
                 diceReplay = true;
                 if (game) messages.push(buildMiniGameDiceMessage(game, 4, isHoiPassPremiumActive(data, args.sender), Math.max(0, getMiniGameDiceLimit(data, args.sender) - diceUser.used)));
@@ -36491,17 +36549,27 @@ function runMiniGameEntry(mode, args) {
         var outputUser = diceOutputUsers[outputKey], outputGame = outputUser.game;
         if (!outputGame || outputGame.phase === "DONE" || mode === "command" && (request.kind !== "dice" || outputUser.accountId !== accountId || diceReplay)) continue;
         var recipient = accounts[outputGame.accountId], premium = recipient && isHoiPassPremiumActive(data, recipient.user);
-        var firstScreen = outputGame.phase === "WAIT_USER2" && outputGame.outputIndex < 2;
-        var finalScreen = outputGame.phase === "RESULT";
-        if (!firstScreen && !finalScreen || mode !== "command" && (firstScreen || !outputGame.paid)) continue;
-        var remaining = recipient ? Math.max(0, getMiniGameDiceLimit(data, recipient.user) - outputUser.used) : 0;
-        var outputText = buildMiniGameDiceMessage(outputGame, firstScreen ? 1 : 4, premium, remaining);
-        if (mode === "command") args.replier.reply(outputText);
-        else createContextReplier({ reply: function (text) { if (Api.replyRoom(outputGame.room, text) === false) throw new Error("주사위 메시지 전송 실패"); } }, args.ctx).reply(outputText);
-        if (firstScreen) { outputGame.outputIndex = 2; outputGame.waitUserAt = Date.now(); }
-        else if (outputGame.paid) { outputGame.outputIndex = 5; outputGame.phase = "DONE"; outputUser.finishedAt = Date.now(); }
-        else outputGame.outputIndex = 4;
-        commit();
+        for (var screenIndex = 0; screenIndex < 2; screenIndex++) {
+            if (outputGame.automatic && outputGame.phase === "WAIT_USER2" && outputGame.outputIndex === 2) {
+                advanceMiniGameDice(state, outputGame, catalog("dialogues"), Date.now(), true);
+                commit(); // 확정 숫자·연승·보상을 먼저 보존하고 같은 원장으로 한 번만 지급
+                try { memberChanged = payMiniGameRewards(state, data, accounts, outputGame.accountId, false, Date.now()).changed; }
+                catch (dicePaymentError) { debuggerLog("[주사위 자동 정산 복구 대기] " + dicePaymentError); }
+                commit();
+            }
+            var firstScreen = outputGame.phase === "WAIT_USER2" && outputGame.outputIndex < 2;
+            var finalScreen = outputGame.phase === "RESULT";
+            if (!firstScreen && !finalScreen || mode !== "command" && (firstScreen && !outputGame.automatic || finalScreen && !outputGame.paid)) break;
+            var remaining = recipient ? Math.max(0, getMiniGameDiceLimit(data, recipient.user) - outputUser.used) : 0;
+            var outputText = buildMiniGameDiceMessage(outputGame, firstScreen ? 1 : 4, premium, remaining);
+            if (mode === "command") args.replier.reply(outputText);
+            else createContextReplier({ reply: function (text) { if (Api.replyRoom(outputGame.room, text) === false) throw new Error("주사위 메시지 전송 실패"); } }, args.ctx).reply(outputText);
+            if (firstScreen) { outputGame.outputIndex = 2; outputGame.waitUserAt = Date.now(); }
+            else if (outputGame.paid) { outputGame.outputIndex = 5; outputGame.phase = "DONE"; outputUser.finishedAt = Date.now(); }
+            else outputGame.outputIndex = 4;
+            commit();
+            if (!firstScreen || !outputGame.automatic) break;
+        }
     }
     // 전체 공지는 지급과 독립적으로 선점 후 전송한다. 불확실한 전송은 자동 중복 발송하지 않는다.
     var notices = [];
@@ -36533,7 +36601,7 @@ function hasMiniGameAutomaticWork(state) {
     }
     for (var diceId in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, diceId)) {
         var game = state.dice.users[diceId].game;
-        if (game && game.phase === "RESULT") return true;
+        if (game && (game.phase === "RESULT" || game.automatic && game.phase !== "DONE")) return true;
     }
     for (var rewardId in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, rewardId) && state.ledger[rewardId].status === "PENDING" && state.ledger[rewardId].kind !== "balance") return true;
     for (var noticeId in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, noticeId) && (state.notices[noticeId].state === "WAITING" || state.notices[noticeId].state === "CLAIMED")) return true;
@@ -36545,7 +36613,7 @@ function getMiniGameWorkDelay(state, now, data, accounts) {
     var delay = GLOBAL_CONFIG.vaultRobbery.dayMs; // 날짜 전환은 자동 시각이 아닌 /리셋에서만 수행
     for (var key in state.dice.users) if (Object.prototype.hasOwnProperty.call(state.dice.users, key)) {
         var game = state.dice.users[key].game;
-        if (game && game.phase === "RESULT") return Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs)); // 검증된 진행은 재시도 대상 하나만 있어도 간격 확정
+        if (game && (game.phase === "RESULT" || game.automatic && game.phase !== "DONE")) return Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs)); // 검증된 진행은 재시도 대상 하나만 있어도 간격 확정
     }
     for (var id in state.ledger) if (Object.prototype.hasOwnProperty.call(state.ledger, id) && state.ledger[id].status === "PENDING" && state.ledger[id].kind !== "balance") return Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs));
     return hasMiniGameAutomaticWork(state) ? Math.max(1, Math.min(delay, GLOBAL_CONFIG.miniGames.retryMs)) : Math.max(1, delay);
@@ -36778,6 +36846,8 @@ function startMiniGameDice(state, id, name, day, now, room, dialogues, limit) {
     user.used++;
     user.game = { id: gameId, accountId: id, day: day, name: name, room: room, phase: "USER1", rolls: [1 + Math.floor(Math.random() * 6)], quotes: [pickMiniGameDialogue(state, dialogues, "start")], outputIndex: 0, dueAt: now, rewardId: null, paid: false };
     user.game.streakBefore = user.streak || 0;
+    user.game.rewardVersion = GLOBAL_CONFIG.miniGames.diceRewardVersion;
+    user.game.automatic = true;
     advanceMiniGameDice(state, user.game, dialogues, now, false);
     return { kind: "started", user: user };
 }
@@ -36809,7 +36879,7 @@ function advanceMiniGameDice(state, game, dialogues, now, userInput) {
             if (state.ledger[game.rewardId]) throw new Error("미니게임 주사위 보상 중복 감지");
             var resultUser = state.dice.users["$" + game.accountId];
             game.streakBefore = game.streakBefore === undefined ? resultUser.streak || 0 : game.streakBefore;
-            game.bonus = calculateMiniGameDiceBonus(game.rolls, game.streakBefore);
+            game.bonus = calculateMiniGameDiceBonus(game.rolls, game.streakBefore, game.rewardVersion === undefined ? 1 : game.rewardVersion);
             resultUser.streak = game.bonus.streakAfter;
             var finalQuotes = GLOBAL_CONFIG.miniGames.diceQuotes;
             if (game.result === "loss" && game.streakBefore > 0) game.finalQuote = pickMiniGameDiceQuote(resultUser, "lastFinalQuote", finalQuotes.loss).replace("{streak}", game.streakBefore);
@@ -36833,7 +36903,7 @@ function pickMiniGameDiceQuote(user, key, options) {
 }
 
 // 확정된 네 주사위와 직전 연승으로 보너스와 새 연승을 계산하는 함수
-function calculateMiniGameDiceBonus(rolls, before) {
+function calculateMiniGameDiceBonus(rolls, before, rewardVersion) {
     requireVaultRobberyInteger(before);
     if (!Array.isArray(rolls) || rolls.length !== 4) throw new Error("주사위 보너스 숫자 개수 오류");
     for (var i = 0; i < rolls.length; i++) if (typeof rolls[i] !== "number" || rolls[i] < 1 || rolls[i] > 6 || Math.floor(rolls[i]) !== rolls[i]) throw new Error("주사위 보너스 숫자 오류");
@@ -36841,17 +36911,25 @@ function calculateMiniGameDiceBonus(rolls, before) {
     var result = delta > 0 ? "win" : delta < 0 ? "loss" : "draw";
     var after = result === "win" ? before + 1 : result === "loss" ? 0 : before;
     requireVaultRobberyInteger(after);
-    var config = GLOBAL_CONFIG.miniGames, base = config.rewards[result];
-    var lucky = rolls[0] === 6 && rolls[2] === 6 ? config.diceBonuses.luckySix : 0;
-    var comeback = result === "win" && rolls[0] < rolls[1] ? config.diceBonuses.comeback : 0;
-    var streak = result === "win" ? config.diceBonuses.streak[String(after)] || 0 : 0;
-    return { version: 1, rolls: rolls.slice(0), before: before, streakAfter: after, result: result, base: base, luckySix: lucky, comeback: comeback, streak: streak, total: base + lucky + comeback + streak };
+    var policy = getMiniGameDiceRewardPolicy(rewardVersion === undefined ? GLOBAL_CONFIG.miniGames.diceRewardVersion : rewardVersion), base = policy.rewards[result];
+    var lucky = rolls[0] === 6 && rolls[2] === 6 ? policy.bonuses.luckySix : 0;
+    var comeback = result === "win" && rolls[0] < rolls[1] ? policy.bonuses.comeback : 0;
+    var streak = result === "win" ? policy.bonuses.streak[String(after)] || 0 : 0;
+    return { version: policy.version, rolls: rolls.slice(0), before: before, streakAfter: after, result: result, base: base, luckySix: lucky, comeback: comeback, streak: streak, total: base + lucky + comeback + streak };
+}
+
+// 입장 당시 주사위 보상 기준을 과거 확정 기록과 구분해 반환하는 함수
+function getMiniGameDiceRewardPolicy(version) {
+    var config = GLOBAL_CONFIG.miniGames;
+    if (version === 1) return { version: 1, rewards: config.legacyDiceRewards, bonuses: config.legacyDiceBonuses };
+    if (version === config.diceRewardVersion) return { version: version, rewards: config.rewards, bonuses: config.diceBonuses };
+    throw new Error("주사위 보상 정책 버전 오류");
 }
 
 // 과거 경기의 보너스 원장도 원래 숫자·연승으로 검증하는 함수
 function requireMiniGameDiceBonus(bonus) {
-    if (!bonus || bonus.version !== 1) throw new Error("주사위 보너스 버전 오류");
-    var expected = calculateMiniGameDiceBonus(bonus.rolls, bonus.before);
+    if (!bonus || [1, GLOBAL_CONFIG.miniGames.diceRewardVersion].indexOf(bonus.version) === -1) throw new Error("주사위 보너스 버전 오류");
+    var expected = calculateMiniGameDiceBonus(bonus.rolls, bonus.before, bonus.version);
     var fields = ["streakAfter", "result", "base", "luckySix", "comeback", "streak", "total"];
     for (var i = 0; i < fields.length; i++) if (bonus[fields[i]] !== expected[fields[i]]) throw new Error("주사위 보너스 기록 오류");
     return bonus;
@@ -36859,7 +36937,7 @@ function requireMiniGameDiceBonus(bonus) {
 
 // 두 주사위 화면이 공유하는 전체보기 게임 안내를 생성하는 함수
 function buildMiniGameDiceGuide() {
-    return "\n📖 게임 안내\n" + allsee + "\n🎲 호월이를 이겨라! 이용 안내\n━━━━━━━━━━━━\n각자 주사위를 두 번 굴려 합계를 비교해요.\n합계가 높으면 승리, 같으면 무승부예요.\n\n👉 /호월주사위 or ㅎㅈ\n두 번 입력하면 한 판이 완료돼요.\n\n🎁 기본 보상\n승리 🅟3,000만 · 무승부 🅟2,000만 · 패배 🅟1,000만\n━━━━━━━━━━━━\n🎰 럭키 식스\n내 주사위가 6 + 6이면 🅟5,000만 추가!\n호월이도 6 + 6이라 무승부가 되어도 받아요.\n🔥 역전승\n첫 굴림은 낮고 최종 합계로 승리하면 🅟2,000만 추가!\n🏆 연승 보너스\n2연승 🅟1,000만 · 3연승 🅟3,000만 · 5연승 🅟1억\n\n승리하면 연승 +1, 무승부는 유지, 패배하면 초기화돼요.\n날짜가 바뀌어도 연승은 이어져요.\n무승부와 같은 경기 재처리로 보너스를 다시 받지 않아요.\n패배 후 새로 연승을 쌓으면 다시 받을 수 있어요.\n6연승 이상은 기록만 이어지고 추가 연승 보상은 없어요.\n동시에 달성한 보너스는 함께 받을 수 있어요.\n━━━━━━━━━━━━\n👑 호이패스 프리미엄 전용\n🎟️ 계정당 하루 " + GLOBAL_CONFIG.miniGames.dicePremium + "판 · 일일 /리셋 시 횟수 초기화\n※ 두 번 입력해도 이용 횟수는 1회만 사용돼요.";
+    return "\n📖 게임 안내\n" + allsee + "\n🎲 호월이를 이겨라! 이용 안내\n━━━━━━━━━━━━\n각자 주사위를 두 번 굴려 합계를 비교해요.\n합계가 높으면 승리, 같으면 무승부예요.\n\n👉 /호월주사위 or ㅎㅈ\n한 번 입력하면 두 번의 굴림이 자동 진행되고 한 판이 완료돼요.\n\n🎁 기본 보상\n승리 🅟6,000만 · 무승부 🅟4,000만 · 패배 🅟2,000만\n━━━━━━━━━━━━\n🎰 럭키 식스\n내 주사위가 6 + 6이면 🅟1억 추가!\n호월이도 6 + 6이라 무승부가 되어도 받아요.\n🔥 역전승\n첫 굴림은 낮고 최종 합계로 승리하면 🅟4,000만 추가!\n🏆 연승 보너스\n2연승 🅟2,000만 · 3연승 🅟6,000만 · 5연승 🅟2억\n\n승리하면 연승 +1, 무승부는 유지, 패배하면 초기화돼요.\n날짜가 바뀌어도 연승은 이어져요.\n무승부와 같은 경기 재처리로 보너스를 다시 받지 않아요.\n패배 후 새로 연승을 쌓으면 다시 받을 수 있어요.\n6연승 이상은 기록만 이어지고 추가 연승 보상은 없어요.\n동시에 달성한 보너스는 함께 받을 수 있어요.\n━━━━━━━━━━━━\n👑 호이패스 프리미엄 전용\n🎟️ 계정당 하루 " + GLOBAL_CONFIG.miniGames.dicePremium + "판 · 일일 /리셋 시 횟수 초기화\n※ 이용 횟수는 한 판에 1회만 사용돼요.";
 }
 
 // 확정된 주사위 단계별 메시지를 숫자 재추첨 없이 구성하는 함수
@@ -36867,9 +36945,10 @@ function buildMiniGameDiceMessage(game, part, premium, remaining) {
     var rolls = game.rolls, bonus = game.bonus;
     var streak = part === 1 ? game.streakBefore || 0 : bonus ? bonus.streakAfter : 0;
     var heading = streak ? "🏆 현재 " + streak + "연승 중!\n" : "";
-    if (part === 1) return "[👑호이패스 프리미엄👑]\n🎮 미니게임 목록: /미니게임\n🎲 호월이를 이겨라! · 첫 번째 굴림\n" + heading + "━━━━━━━━━━━━\n👤 [" + game.name + "]  🎲【 " + rolls[0] + " 】\n🐹 호월이       🎲【 " + rolls[1] + " 】\n\n🐹 “" + (game.firstQuote || game.quotes[2].text) + "”\n━━━━━━━━━━━━\n👉 /호월주사위 or ㅎㅈ\n한 번 더 굴려 승부를 결정하세요!" + buildMiniGameDiceGuide();
+    if (part === 1) return "[👑호이패스 프리미엄👑]\n🎮 미니게임 목록: /미니게임\n🎲 호월이를 이겨라! · 첫 번째 굴림\n" + heading + "━━━━━━━━━━━━\n👤 [" + game.name + "]  🎲【 " + rolls[0] + " 】\n🐹 호월이       🎲【 " + rolls[1] + " 】\n\n🐹 “" + (game.firstQuote || game.quotes[2].text) + "”";
     var result = game.result, label = result === "win" ? "🏆 승리!" : result === "draw" ? "🤝 무승부!" : "🍀 패배! 위로 선물";
-    var out = "🎲 호월이를 이겨라! · 최종 결과\n" + heading + "━━━━━━━━━━━━\n👤 [" + game.name + "]\n🎲【 " + rolls[0] + " 】+【 " + rolls[2] + " 】= 합계 " + (rolls[0] + rolls[2]) + "\n\n🐹 호월이\n🎲【 " + rolls[1] + " 】+【 " + rolls[3] + " 】= 합계 " + (rolls[1] + rolls[3]) + "\n━━━━━━━━━━━━\n" + label + " 🅟" + formatServerRaidPrize(GLOBAL_CONFIG.miniGames.rewards[result]) + (game.paid ? " 지급" : " 지급 대기");
+    var baseReward = bonus ? bonus.base : getMiniGameDiceRewardPolicy(game.rewardVersion === undefined ? 1 : game.rewardVersion).rewards[result]; // 과거 확정 판은 당시 기본 보상 표시
+    var out = "🎲 호월이를 이겨라! · 최종 결과\n" + heading + "━━━━━━━━━━━━\n👤 [" + game.name + "]\n🎲【 " + rolls[0] + " 】+【 " + rolls[2] + " 】= 합계 " + (rolls[0] + rolls[2]) + "\n\n🐹 호월이\n🎲【 " + rolls[1] + " 】+【 " + rolls[3] + " 】= 합계 " + (rolls[1] + rolls[3]) + "\n━━━━━━━━━━━━\n" + label + " 🅟" + formatServerRaidPrize(baseReward) + (game.paid ? " 지급" : " 지급 대기");
     if (bonus && (bonus.luckySix || bonus.comeback || bonus.streak)) {
         if (bonus.luckySix) out += "\n🎰 럭키 식스 보너스: 🅟" + formatServerRaidPrize(bonus.luckySix);
         if (bonus.comeback) out += "\n🔥 역전승 보너스: 🅟" + formatServerRaidPrize(bonus.comeback);
@@ -36887,6 +36966,10 @@ function payMiniGameRewards(state, data, accounts, ownerId, includeBalance, now)
         if (reward.status === "PAID" || ownerId && reward.accountId !== ownerId || reward.kind === "balance" && !includeBalance) continue;
         var target = accounts[reward.accountId];
         if (!target) continue;
+        if (reward.kind === "dice") {
+            var pendingDiceUser = state.dice.users["$" + reward.accountId];
+            if (!pendingDiceUser || !pendingDiceUser.game || pendingDiceUser.game.rewardId !== reward.id) throw new Error("미니게임 지급 판 불일치");
+        }
         var member = data.member[target.user], balanceKey = "$" + target.user;
         var before = Object.prototype.hasOwnProperty.call(balances, balanceKey) ? balances[balanceKey] : member.point;
         var next = before + reward.amount; // 같은 계정의 누적 미수령도 전부 검증한 뒤 지급
@@ -36961,9 +37044,11 @@ function requireMiniGameState(state) {
                 if (game.result !== (delta > 0 ? "win" : delta < 0 ? "loss" : "draw") || game.rewardId !== "dice:" + game.id + ":" + game.accountId || !state.ledger[game.rewardId]) throw new Error("미니게임 주사위 결과 오류");
             }
             if (game.streakBefore !== undefined) requireVaultRobberyInteger(game.streakBefore);
+            if (game.rewardVersion !== undefined) getMiniGameDiceRewardPolicy(game.rewardVersion);
+            if (game.automatic !== undefined && typeof game.automatic !== "boolean") throw new Error("주사위 자동 진행 표시 오류");
             if (game.bonus) {
                 requireMiniGameDiceBonus(game.bonus);
-                if (phase < 3 || game.bonus.result !== game.result || game.bonus.before !== game.streakBefore || game.bonus.streakAfter !== user.streak || JSON.stringify(game.bonus.rolls) !== JSON.stringify(game.rolls)) throw new Error("주사위 연승 확정 오류");
+                if (phase < 3 || game.bonus.version !== (game.rewardVersion === undefined ? 1 : game.rewardVersion) || game.bonus.result !== game.result || game.bonus.before !== game.streakBefore || game.bonus.streakAfter !== user.streak || JSON.stringify(game.bonus.rolls) !== JSON.stringify(game.rolls)) throw new Error("주사위 연승 확정 오류");
             }
         }
     }
@@ -36986,8 +37071,8 @@ function requireMiniGameState(state) {
             if (reward.bonus) {
                 requireMiniGameDiceBonus(reward.bonus);
                 if (reward.amount !== reward.bonus.total) throw new Error("주사위 보너스 원장 금액 오류");
-            } else if (reward.amount !== GLOBAL_CONFIG.miniGames.rewards.win && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.draw && reward.amount !== GLOBAL_CONFIG.miniGames.rewards.loss) throw new Error("미니게임 주사위 보상 금액 오류");
-            if (rewardGame && rewardGame.rewardId === rewardKey && (reward.amount !== (rewardGame.bonus ? rewardGame.bonus.total : GLOBAL_CONFIG.miniGames.rewards[rewardGame.result]) || JSON.stringify(reward.bonus) !== JSON.stringify(rewardGame.bonus) || rewardGame.paid !== (reward.status === "PAID"))) throw new Error("미니게임 주사위 원장 불일치");
+            } else if (reward.amount !== GLOBAL_CONFIG.miniGames.legacyDiceRewards.win && reward.amount !== GLOBAL_CONFIG.miniGames.legacyDiceRewards.draw && reward.amount !== GLOBAL_CONFIG.miniGames.legacyDiceRewards.loss) throw new Error("미니게임 주사위 보상 금액 오류");
+            if (rewardGame && rewardGame.rewardId === rewardKey && (reward.amount !== (rewardGame.bonus ? rewardGame.bonus.total : getMiniGameDiceRewardPolicy(rewardGame.rewardVersion === undefined ? 1 : rewardGame.rewardVersion).rewards[rewardGame.result]) || JSON.stringify(reward.bonus) !== JSON.stringify(rewardGame.bonus) || rewardGame.paid !== (reward.status === "PAID"))) throw new Error("미니게임 주사위 원장 불일치");
         }
     }
     for (var noticeKey in state.notices) if (Object.prototype.hasOwnProperty.call(state.notices, noticeKey)) {
@@ -65885,6 +65970,16 @@ function createHalloweenAccount(id, epoch) {
     return { version: 1, id: id, epoch: epoch, candy: 0, day: "", used: 0, extra: 0, run: null, purchases: [0,0,0,0,0,0], titles: [], history: [], orders: [], requests: {}, lastRequest: null };
 }
 
+// 입장 당시 보상 정책을 구분하여 과거 탐험의 경로·완주·비밀방 보상을 보존하는 함수
+function getHalloweenRunPolicy(run) {
+    var config = GLOBAL_CONFIG.halloween;
+    var version = run.rewardVersion === undefined ? (run.rooms.length === config.previousRoomCount ? 2 : run.rooms.length === config.legacyRoomCount ? 1 : 0) : run.rewardVersion;
+    if (version === 1) return { version: 1, roomCount: config.legacyRoomCount, placeCount: config.legacyPlaceCount, roomRewards: null, completionCandy: config.previousCompletionCandy, secretCandy: config.previousSecretCandy };
+    if (version === 2) return { version: 2, roomCount: config.previousRoomCount, placeCount: config.previousPlaceCount, roomRewards: config.previousRoomRewards, completionCandy: config.previousCompletionCandy, secretCandy: config.previousSecretCandy };
+    if (version === config.rewardVersion) return { version: version, roomCount: config.roomCount, placeCount: config.rooms.length, roomRewards: config.roomRewards, completionCandy: config.completionCandy, secretCandy: config.secret.map(function (row) { return row.candy; }) };
+    throw new Error("할로윈 탐험 보상 기준 오류");
+}
+
 // 계정별 이벤트 원본과 진행 중 탐험의 형식을 검증하는 함수
 function requireHalloweenAccount(account, id) {
     if (!account || account.version !== 1 || account.id !== id || typeof account.day !== "string" || !Array.isArray(account.purchases) || account.purchases.length !== 6 ||
@@ -65904,10 +65999,12 @@ function requireHalloweenAccount(account, id) {
     if (account.run !== null) {
         var run = account.run;
         var config = GLOBAL_CONFIG.halloween;
-        if (!run || typeof run.id !== "string" || typeof run.day !== "string" || !Array.isArray(run.rooms) || (run.rooms.length !== config.roomCount && run.rooms.length !== config.legacyRoomCount) || !Array.isArray(run.results) || typeof run.resolved !== "boolean") throw new Error("할로윈 탐험 원본 오류");
+        if (!run || typeof run.id !== "string" || typeof run.day !== "string" || !Array.isArray(run.rooms) || !Array.isArray(run.results) || typeof run.resolved !== "boolean") throw new Error("할로윈 탐험 원본 오류");
         requireHalloweenInteger(run.epoch); requireHalloweenInteger(run.step); requireHalloweenInteger(run.total);
         if (run.step >= run.rooms.length || run.results.length !== run.step + (run.resolved ? 1 : 0)) throw new Error("할로윈 탐험 진행 오류");
-        var placeCount = run.rooms.length === config.legacyRoomCount ? config.legacyPlaceCount : config.rooms.length; // 구 탐험에는 기존 12곳만 허용
+        var policy = getHalloweenRunPolicy(run); // 표시와 지급에 같은 입장 당시 정책 사용
+        if (run.rooms.length !== policy.roomCount) throw new Error("할로윈 탐험 방 수 오류");
+        var placeCount = policy.placeCount;
         for (var r = 0; r < run.rooms.length; r++) if (typeof run.rooms[r] !== "number" || run.rooms[r] < 0 || run.rooms[r] >= placeCount || Math.floor(run.rooms[r]) !== run.rooms[r] || run.rooms.indexOf(run.rooms[r]) !== r) throw new Error("할로윈 장소 기록 오류");
     }
     return account;
@@ -65990,9 +66087,10 @@ function buildHalloweenRoomMessage(context) {
     return out + "━━━━━━━━━━━━\n※ 행동 선택: /귀신의집선택 번호";
 }
 
-// 시작 당시 경로 길이에 따라 기존 5곳 또는 신규 3곳의 사탕 지급표를 선택하는 함수
+// 시작 당시 보상 정책으로 선택 결과의 사탕 지급량을 반환하는 함수
 function getHalloweenRoomCandy(run, action, outcomeIndex) {
-    return requireHalloweenInteger(run.rooms.length === GLOBAL_CONFIG.halloween.legacyRoomCount ? action.results[outcomeIndex].candy : GLOBAL_CONFIG.halloween.roomRewards[action.type][outcomeIndex]);
+    var policy = getHalloweenRunPolicy(run);
+    return requireHalloweenInteger(policy.roomRewards === null ? action.results[outcomeIndex].candy : policy.roomRewards[action.type][outcomeIndex]);
 }
 
 // 현재 계정의 실제 잔액과 상품별 이벤트 누적 한도를 표시하는 함수
@@ -66008,18 +66106,18 @@ function buildHalloweenShopMessage(context) {
 
 // 최종 선택 결과와 이미 지급한 보상 합계만 안내하는 함수
 function buildHalloweenCompletionMessage(context, secretIndex, newTitle) {
-    var run = context.account.run, config = GLOBAL_CONFIG.halloween;
+    var run = context.account.run, config = GLOBAL_CONFIG.halloween, policy = getHalloweenRunPolicy(run);
     var out = "🎉 귀신의 집 탐험 완료!\n" + context.actor + "님\n━━━━━━━━━━━━\n🏚️ 오늘의 탐험: " + run.rooms.length + "/" + run.rooms.length + "곳 완료\n";
     for (var i = 0; i < run.results.length; i++) out += config.rooms[run.rooms[i]].name + ": 🍬 +" + run.results[i].candy + "개\n";
-    var secretCandy = secretIndex >= 0 ? config.secret[secretIndex].candy : 0;
-    out += "━━━━━━━━━━━━\n🍬 방 탐험 보상: " + run.total + "개\n🎁 완주 보너스: +" + config.completionCandy + "개\n";
+    var secretCandy = secretIndex >= 0 ? policy.secretCandy[secretIndex] : 0;
+    out += "━━━━━━━━━━━━\n🍬 방 탐험 보상: " + run.total + "개\n🎁 완주 보너스: +" + policy.completionCandy + "개\n";
     if (secretIndex >= 0) {
         var secret = config.secret[secretIndex];
         out += "🌕 비밀방 보상: +" + secretCandy + "개\n🌕 숨겨진 황금 호박방 발견!\n마지막 방을 나서자 황금빛 문이 열렸습니다.\n" + secret.story + "\n👻유령 호월이: \"" + secret.line + "\"\n";
     }
-    out += "🏆 이번 탐험 총 획득: " + (run.total + config.completionCandy + secretCandy) + "개\n";
+    out += "🏆 이번 탐험 총 획득: " + (run.total + policy.completionCandy + secretCandy) + "개\n";
     if (newTitle >= 0) out += "🏅 새 칭호: " + config.titles[newTitle].name + "\n";
-    out += "━━━━━━━━━━━━\n" + getHalloweenEntryLines(context.account, context.premium) + "\n\n👻유령 호월이:\n\"" + (run.total === 0 ? "으으… 빈손은 좀 그렇지. 끝까지 온 선물은 챙겨가!" : run.rooms.length === config.roomCount ? "벌써 세 곳을 털었어?! 내 사탕 창고가 위험해!" : "내 사탕… 다음에는 꼭꼭 숨겨둘 거야!") + "\"\n━━━━━━━━━━━━\n※ 다시 탐험: /귀신의집\n※ 사탕 사용: /할로윈상점";
+    out += "━━━━━━━━━━━━\n" + getHalloweenEntryLines(context.account, context.premium) + "\n\n👻유령 호월이:\n\"" + (run.total === 0 ? "으으… 빈손은 좀 그렇지. 끝까지 온 선물은 챙겨가!" : "벌써 " + run.rooms.length + "곳을 털었어?! 내 사탕 창고가 위험해!") + "\"\n━━━━━━━━━━━━\n※ 다시 탐험: /귀신의집\n※ 사탕 사용: /할로윈상점";
     return out;
 }
 
@@ -66087,7 +66185,7 @@ function applyHalloweenCommand(request, context) {
         return reply("🏅 할로윈 한정 칭호\n" + (titleLines.length ? titleLines.join("\n") : "아직 획득한 칭호가 없습니다."));
     }
     if (!state.active) return reply(config.name + "\n현재 할로윈 이벤트가 진행 중이 아닙니다.\n\n👻유령 호월이:\n\"지금은 문이 닫혀 있어! 이벤트 안내를 확인해줘!\"");
-    if (request.action === "guide") return reply(config.name + "\n일반 하루 1회 / 프리미엄 총 2회\n기본 입장 → 입장권 추가 입장 순으로 사용해요.\n전체 " + config.rooms.length + "곳 중 서로 다른 " + config.roomCount + "곳에서 /귀신의집선택 1~3으로 행동을 골라요.\n다음 방 확인: /귀신의집\n\n안전형: 80% " + config.roomRewards["안전형"][0] + "개 / 20% 0개\n탐색형: 55% " + config.roomRewards["탐색형"][0] + "개 / 35% " + config.roomRewards["탐색형"][1] + "개 / 10% 0개\n도박형: 20% " + config.roomRewards["도박형"][0] + "개 / 50% " + config.roomRewards["도박형"][1] + "개 / 30% 0개\n완주: " + config.completionCandy + "개 추가 + 칭호 무료 추첨 1회\n비밀방 등장 10% → 60% 20개 / 30% 50개 / 9% 150개 / 1% 300개\n\n※ 방당 사탕은 늘었지만 탐험 1회 총평균은 기존 " + config.legacyRoomCount + "곳 수준을 유지해요.\n※ 진행 중이던 탐험은 시작 당시 경로와 보상으로 마무리해요.\n추가 입장 충전: /할로윈입장 숫자\n사탕 사용: /할로윈상점");
+    if (request.action === "guide") return reply(config.name + "\n일반 하루 1회 / 프리미엄 총 2회\n기본 입장 → 입장권 추가 입장 순으로 사용해요.\n전체 " + config.rooms.length + "곳 중 서로 다른 " + config.roomCount + "곳에서 /귀신의집선택 1~3으로 행동을 골라요.\n다음 방 확인: /귀신의집\n\n안전형: 80% " + config.roomRewards["안전형"][0] + "개 / 20% 0개\n탐색형: 55% " + config.roomRewards["탐색형"][0] + "개 / 35% " + config.roomRewards["탐색형"][1] + "개 / 10% 0개\n도박형: 20% " + config.roomRewards["도박형"][0] + "개 / 50% " + config.roomRewards["도박형"][1] + "개 / 30% 0개\n완주: " + config.completionCandy + "개 추가 + 칭호 무료 추첨 1회\n비밀방 등장 " + config.secretRate + "% → 60% " + config.secret[0].candy + "개 / 30% " + config.secret[1].candy + "개 / 9% " + config.secret[2].candy + "개 / 1% " + config.secret[3].candy + "개\n※ 진행 중이던 탐험은 시작 당시 경로와 보상으로 마무리해요.\n추가 입장 충전: /할로윈입장 숫자\n사탕 사용: /할로윈상점");
     if (!account) return reply("❌ 등록된 계정을 확인할 수 없습니다.");
     result.changed = refreshHalloweenAccount(state, account, context.now);
     if (request.action === "resetUser") {
@@ -66150,8 +66248,8 @@ function applyHalloweenCommand(request, context) {
         var pool = [], rooms = [];
         for (var ri = 0; ri < config.rooms.length; ri++) pool.push(ri);
         for (var pi = 0; pi < config.roomCount; pi++) rooms.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-        account.run = { id: context.txId, day: account.day, epoch: state.epoch, rooms: rooms, step: 0, resolved: false, results: [], total: 0 };
-        account.history.push({ kind: "entry", runId: context.txId, source: source, rooms: rooms.slice(), at: context.now });
+        account.run = { id: context.txId, day: account.day, epoch: state.epoch, rewardVersion: config.rewardVersion, rooms: rooms, step: 0, resolved: false, results: [], total: 0 };
+        account.history.push({ kind: "entry", runId: context.txId, source: source, rewardVersion: config.rewardVersion, rooms: rooms.slice(), at: context.now });
         result.changed = true; result.message = buildHalloweenRoomMessage(context); return result;
     }
     if (request.action === "choose") {
@@ -66168,8 +66266,9 @@ function applyHalloweenCommand(request, context) {
         if (run.step < run.rooms.length - 1) return reply(outcome.story + "\n\n👻유령 호월이:\n\"" + outcome.line + "\"\n━━━━━━━━━━━━\n🍬 획득 사탕: +" + candy + "개\n🎒 이번 탐험 획득: " + run.total + "개\n🚪 다음 탐험: " + (run.step + 2) + "/" + run.rooms.length + "\n※ 다음 방 확인: /귀신의집");
         var secretIndex = Math.random() * 100 < config.secretRate ? pickHalloweenOutcome(config.secret) : -1;
         var titleIndex = pickHalloweenOutcome(config.titles), newTitle = account.titles.indexOf(titleIndex) === -1 ? titleIndex : -1;
-        var completion = config.completionCandy + (secretIndex >= 0 ? config.secret[secretIndex].candy : 0);
-        creditHalloweenCandy(account, completion, { kind: "complete", runId: run.id, rooms: run.rooms.slice(), results: run.results.slice(), bonus: config.completionCandy, secret: secretIndex, title: titleIndex, at: context.now, txId: context.txId });
+        var policy = getHalloweenRunPolicy(run); // 입장 후 배포되어도 확정된 보상 기준을 변경하지 않는다.
+        var completion = policy.completionCandy + (secretIndex >= 0 ? policy.secretCandy[secretIndex] : 0);
+        creditHalloweenCandy(account, completion, { kind: "complete", runId: run.id, rooms: run.rooms.slice(), results: run.results.slice(), bonus: policy.completionCandy, rewardVersion: policy.version, secret: secretIndex, title: titleIndex, at: context.now, txId: context.txId });
         if (newTitle >= 0) account.titles.push(newTitle);
         result.message = selectionMessage + "\n" + buildHalloweenCompletionMessage(context, secretIndex, newTitle);
         if (newTitle === config.titles.length - 1) result.notice = "[🎃전체알림]\n━━━━━━━━━━━━\n🎉 할로윈 전설 칭호 등장!\n\n" + context.actor + "님이\n" + config.titles[newTitle].name + "\n칭호를 획득했습니다!\n━━━━━━━━━━━━\n👻유령 호월이:\n\"으아앙! 그 왕관 내가 쓰려고 했는데!\"\n━━━━━━━━━━━━\n🎃 2026 할로윈 한정 칭호";
