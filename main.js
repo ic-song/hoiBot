@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.764"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.765"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -66042,7 +66042,7 @@ function buildDailyScheduleMessage(data, petData, guildData, user) {
     if (overallTime === miniPetTime) out += "⏰ " + overallTime + " · 종합순위 / 미니펫순위\n";
     else out += "⏰ " + overallTime + " · 종합순위\n⏰ " + miniPetTime + " · 미니펫순위\n";
     out += "⏰ " + getScheduleGuidePayoutTime("guildRank") + " · 길드순위\n";
-    out += "⏰ " + getScheduleGuidePayoutTime("tier") + " · 티어순위\n🎁 보상: 각 순위에 따라 차등 지급\n📝 순위 확인: /종합순위 · /미니펫순위\n📝 /길드순위 · /티어순위\n🎁 지급 방식: 관리자가 통합 지급 가능\n🛠️ /최종순위보상지급 (오픈채팅봇·MASTER 전용)\n━━━━━━━━━━━━\n";
+    out += "⏰ " + getScheduleGuidePayoutTime("tier") + " · 티어순위\n🎁 보상: 각 순위에 따라 차등 지급\n📝 순위 확인: /종합순위 · /미니펫순위\n📝 /길드순위 · /티어순위\n━━━━━━━━━━━━\n";
     out += "🏰 길드영지전\n⏰ 시간: " + config.guildTerritoryWindow + "\n🎁 보상: 영지 점령 및 종료 보상\n";
     out += "🏆 길드 순위보상: 🅟" + formatServerRaidPrize(territoryRewards[0]).replace(/ 포인트$/, "") + " ~ " + formatServerRaidPrize(territoryRewards[territoryRewards.length - 1]).replace(/ 포인트$/, "") + "\n";
     out += "📝 준비: /길드영지준비\n📝 공격: /영지공격 [번호]\n📝 현황: /길드영지\n━━━━━━━━━━━━\n";
@@ -66050,7 +66050,7 @@ function buildDailyScheduleMessage(data, petData, guildData, user) {
     out += "🎁 공격 보상: 레이드매력의 " + raid.rewards.attackPercent + "% 포인트\n";
     out += "🏆 서버 순위보상: 🅟" + formatServerRaidPrize(raid.rewards.ranks[0]).replace(/ 포인트$/, "") + " ~ " + formatServerRaidPrize(raid.rewards.ranks[raid.rewards.ranks.length - 1]).replace(/ 포인트$/, "") + "\n";
     out += "📝 공격: /레이드공격\n📝 남은 횟수: /레이드턴\n📝 현황: /서버대전\n📝 순위: /레이드순위\n━━━━━━━━━━━━\n";
-    out += "🎖️ 길드영지포인트 순위보상\n⏰ 기존 지급 안내: " + getScheduleGuidePayoutTime("territory") + "\n🎁 보상: 기존 길드영지포인트 순위별 보상 유지\n📝 개별 지급: /영지순위보상지급 (관리자용)\n🛠️ 통합 지급: /최종순위보상지급 (오픈채팅봇·MASTER 전용)\n※ 위 통합 명령어는 종합·미니펫·길드·티어·영지 순위보상\n   총 5종을 한 번에 처리합니다.\n";
+    out += "🎖️ 길드영지포인트 순위보상\n⏰ 기존 지급 안내: " + getScheduleGuidePayoutTime("territory") + "\n🎁 보상: 기존 길드영지포인트 순위별 보상 유지\n";
     return out + "━━━━━━━━━━━━\n※ 모든 시간은 한국시간 기준입니다.\n※ 실제 지급 및 참여 가능 여부는 각 콘텐츠 조건에 따릅니다.";
 }
 
