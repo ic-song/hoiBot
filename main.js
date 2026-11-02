@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.760"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.761"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -998,8 +998,48 @@ var petMusouScheduleTimers = {}; // 펫무쌍 정규·이벤트 시작 시각 �
 var serverRaidWorkTimers = {}; // 서버 레이드대전 준비·정산 작업의 환경별 타이머
 var serverRaidNoticeWorkers = {}; // 환경별 공지 전송 대기·실행을 중복 없이 관리
 var serverRaidNoticeMemberRevisions = {}; // 전송 묶음 안에서 회원 파일이 바뀐 경우에만 상세를 다시 읽기 위한 게시 번호
+var howolDramaSessions = {}; // 확인 화면은 재컴파일 시 취소되며 진행 원본은 보존
+var howolDramaPublishingThread = new java.lang.ThreadLocal();
+
 // 운영 설정값을 한 곳에서 관리하는 전역 설정
 const GLOBAL_CONFIG = {
+    howolDrama: {
+        fileName: "howolDrama.json", pendingName: "howolDramaPending.json", menuTimeoutMs: 300000, eventLimit: 128,
+        workId: "flirting-season-1", title: "💗 플러팅은 책으로 배웠습니다만?", maxScore: 100, boxesPerPoint: 4,
+        retryItem: "호월드라마 재도전권🎬(/드라마재도전 작품번호)", premiumLink: "https://hoiland123.tistory.com/648",
+        scenes: [
+            {"day":1,"dayTitle":"첫눈에 반한 날","place":"단풍카페","image":"https://ibb.co/tTQN3q02","narrative":"가을 오후, 카페에서 처음 만난 봄봄이에게 첫눈에 반한 호월이. 긴장한 나머지 커피를 엎질렀다!","dialogue":"🐱 호월이: “어?! 커피가!”\n💕 봄봄이: “저기요! 괜찮으세요?”","choices":[{"text":"다치지 않았는지 먼저 살핀다","score":3,"reaction":"💕 봄봄이: “괜찮아요. 조심하세요!”"},{"text":"“제 심장도 같이 떨어졌는데요!”","score":1,"reaction":"💕 봄봄이: “네…? 일단 커피부터 닦으세요.”"}]},
+            {"day":1,"dayTitle":"첫눈에 반한 날","place":"은행나무길","image":"https://ibb.co/bMvSgCfy","narrative":"노란 은행잎이 흩날리는 길. 봄봄이를 다시 만난 호월이는 긴장해 말을 더듬는다.","dialogue":"🐱 호월이: “저기… 아까 카페에서…”\n💕 봄봄이: “아, 커피 쏟으신 분!”","choices":[{"text":"“이 은행잎은 운명의 증표예요!”","score":1,"reaction":"💕 봄봄이: “운명이요…? 특이하시네요. ㅎㅎ”"},{"text":"“잠깐 같이 걸어도 될까요?”","score":3,"reaction":"💕 봄봄이: “저도 이쪽으로 가요. 같이 가요.”"}]},
+            {"day":1,"dayTitle":"첫눈에 반한 날","place":"가을분수대","image":"https://ibb.co/qFnSnnqt","narrative":"노을빛 분수대 앞. 헤어지기 전 봄봄이가 먼저 호월이의 이름을 묻는다.","dialogue":"💕 봄봄이: “그러고 보니 이름이 뭐예요?”\n🐱 호월이: “저는…!”","choices":[{"text":"“호월이에요. 이름이 어떻게 되세요?”","score":4,"reaction":"💕 봄봄이: “봄봄이예요. 기억해 주세요!”"},{"text":"“미래 남자친구 이름부터 알아두세요!”","score":1,"reaction":"💕 봄봄이: “아직 처음 봤는데요? ㅋㅋ”"}]},
+            {"day":2,"dayTitle":"연락처를 얻어라!","place":"꽃집","image":"https://ibb.co/S75KMV7f","narrative":"꽃집에서 봄봄이를 만난 호월이는 어떤 꽃을 선물해야 할지 고민한다.","dialogue":"💕 봄봄이: “가을 꽃 정말 예쁘네요.”\n🐱 호월이: “그러게요!”","choices":[{"text":"무작정 거대한 꽃다발을 산다","score":1,"reaction":"💕 봄봄이: “이렇게 큰 건 좀 부담스러운데요?”"},{"text":"좋아하는 꽃을 물어보고 한 송이 고른다","score":3,"reaction":"💕 봄봄이: “제 취향까지 물어봐 주시네요!”"}]},
+            {"day":2,"dayTitle":"연락처를 얻어라!","place":"가을서점","image":"https://ibb.co/TMZ683Fm","narrative":"연애책을 읽던 호월이. 하필 봄봄이에게 그 모습을 들키고 만다.","dialogue":"💕 봄봄이: “연애책 좋아하세요?”\n🐱 호월이: “연구용인데…”","choices":[{"text":"연애책 백 권 읽은 고수라고 자랑한다","score":1,"reaction":"💕 봄봄이: “그런데 실제로는 서투르시네요?”"},{"text":"서툴러서 배우고 있다고 솔직히 말한다","score":3,"reaction":"💕 봄봄이: “솔직해서 귀여우시네요. ㅎㅎ”"}]},
+            {"day":2,"dayTitle":"연락처를 얻어라!","place":"노을버스정류장","image":"https://ibb.co/dwSLQQn3","narrative":"버스가 다가온다. 호월이는 연락처를 물어볼 마지막 기회를 맞는다.","dialogue":"🐱 호월이: “저… 잠깐만요!”\n💕 봄봄이: “네?”","choices":[{"text":"“괜찮다면 연락해도 될까요?”","score":4,"reaction":"💕 봄봄이: “좋아요! 연락 주세요.”"},{"text":"“버스 오기 전에 번호부터 주세요!”","score":1,"reaction":"💕 봄봄이: “그렇게 급하게 말 안 하셔도 돼요.”"}]},
+            {"day":3,"dayTitle":"읽씹인가? 밀당인가?","place":"호월공원","image":"https://ibb.co/xtzZBDHF","narrative":"메시지를 보낸 지 세 시간. 답장이 없어 호월이는 혼자 휴대폰만 바라본다.","dialogue":"🐱 호월이: “내가 너무 이상했나…?”","choices":[{"text":"왜 답이 없냐는 메시지를 계속 보낸다","score":1,"reaction":"🐱 호월이: “아앗! 너무 많이 보냈나?!”"},{"text":"잠시 휴대폰을 내려놓고 기다린다","score":3,"reaction":"🐱 호월이: “그래, 바쁠 수도 있지.”"}]},
+            {"day":3,"dayTitle":"읽씹인가? 밀당인가?","place":"편의점","image":"https://ibb.co/RGbvVC60","narrative":"지친 호월이는 편의점에서 봄봄이가 축제 준비로 바쁘다는 이야기를 듣는다.","dialogue":"🐱 호월이: “아… 바빴구나!”","choices":[{"text":"응원할 간식을 준비한다","score":3,"reaction":"🐱 호월이: “나중에 만나면 건네줘야지.”"},{"text":"답장도 안 하냐고 투덜댄다","score":1,"reaction":"🐱 호월이: “내가 너무 앞서갔나…”"}]},
+            {"day":3,"dayTitle":"읽씹인가? 밀당인가?","place":"억새풀언덕","image":"https://ibb.co/pBj02Gcg","narrative":"억새풀 언덕에서 재회한 두 사람. 봄봄이의 휴대폰은 배터리가 방전됐었다.","dialogue":"💕 봄봄이: “답장 못 해서 미안해.”\n🐱 호월이: “사실 좀 걱정했어.”","choices":[{"text":"일부러 피한 줄 알았다며 화낸다","score":1,"reaction":"💕 봄봄이: “그렇게 생각했어? 미안해.”"},{"text":"무슨 일 생긴 줄 걱정했다고 말한다","score":4,"reaction":"💕 봄봄이: “나 걱정해 줬어? 고마워.”"}]},
+            {"day":4,"dayTitle":"호동이 등장!","place":"테라스카페","image":"https://ibb.co/4ZqsSynZ","narrative":"봄봄이와 있던 호월이 앞에 호동이가 갑자기 나타난다.","dialogue":"😎 호동이: “봄봄아! 오랜만이야.”\n🐱 호월이: “네가 왜 여기 있어?!”","choices":[{"text":"태연하게 인사한다","score":3,"reaction":"💕 봄봄이: “둘이 아는 사이였구나!”"},{"text":"호동이에게 다짜고짜 따진다","score":1,"reaction":"💕 봄봄이: “호월아, 갑자기 왜 그래?”"}]},
+            {"day":4,"dayTitle":"호동이 등장!","place":"국화꽃시장","image":"https://ibb.co/SX4X2hm9","narrative":"호동이가 봄봄이에게 꽃을 선물하려 하자 호월이도 꽃시장으로 달려간다.","dialogue":"😎 호동이: “어떤 꽃 좋아해?”\n🐱 호월이: “나도 궁금한데…”","choices":[{"text":"호동이보다 비싼 꽃만 찾는다","score":1,"reaction":"💕 봄봄이: “두 사람 경쟁하는 거야?”"},{"text":"봄봄이의 취향을 먼저 물어본다","score":3,"reaction":"💕 봄봄이: “내 취향을 기억하려고?”"}]},
+            {"day":4,"dayTitle":"호동이 등장!","place":"강변산책로","image":"https://ibb.co/Xkz8JSCd","narrative":"가을 강변에서 호동이가 호월이에게 라이벌을 선언한다.","dialogue":"😎 호동이: “나도 봄봄이 좋아해.”\n🐱 호월이: “뭐?!”","choices":[{"text":"봄봄이 마음을 존중한다","score":4,"reaction":"💕 봄봄이: “호월이는 생각이 깊네.”"},{"text":"호동이의 단점을 늘어놓는다","score":1,"reaction":"💕 봄봄이: “남의 험담은 별로야.”"}]},
+            {"day":5,"dayTitle":"플러팅 대결","place":"군고구마가게","image":"https://ibb.co/dw702Bf6","narrative":"가을축제의 군고구마 가게. 봄봄이는 뜨거운 고구마를 들고 난감해한다.","dialogue":"💕 봄봄이: “앗, 뜨거워!”\n🐱 호월이: “잠깐!”","choices":[{"text":"“내 마음은 더 뜨거운데?!”","score":1,"reaction":"💕 봄봄이: “일단 손부터 조심해!”"},{"text":"종이봉투로 감싸 건네준다","score":3,"reaction":"💕 봄봄이: “센스 있다! 고마워!”"}]},
+            {"day":5,"dayTitle":"플러팅 대결","place":"인형뽑기부스","image":"https://ibb.co/sdJhDX7s","narrative":"호동이가 커다란 인형을 뽑았다. 호월이는 봄봄이가 바라보던 작은 인형이 떠오른다.","dialogue":"😎 호동이: “어때? 멋지지?”\n🐱 호월이: “나도 도전할래!”","choices":[{"text":"더 큰 인형만 노린다","score":1,"reaction":"💕 봄봄이: “그렇게 큰 건 들고 가기 힘들어!”"},{"text":"봄봄이가 좋아하던 인형에 도전한다","score":3,"reaction":"💕 봄봄이: “좋아하는 인형 기억했구나!”"}]},
+            {"day":5,"dayTitle":"플러팅 대결","place":"가을축제광장","image":"https://ibb.co/DDfmDTff","narrative":"화려한 축제 무대. 호월이는 봄봄이에게 손편지를 준비한다.","dialogue":"🐱 호월이: “내 방식대로 해볼 거야!”","choices":[{"text":"진심을 담은 편지를 건넨다","score":4,"reaction":"💕 봄봄이: “이 편지… 간직할게.”"},{"text":"무대에서 과장된 고백을 외친다","score":1,"reaction":"💕 봄봄이: “사람들 다 보잖아!”"}]},
+            {"day":6,"dayTitle":"첫 데이트 대참사","place":"영화관","image":"https://ibb.co/wZKRp2xm","narrative":"첫 영화 데이트에 호동이까지 나타났다!","dialogue":"🐱 호월이: “너 왜 여기 있어?!”\n😎 호동이: “단톡방 봤는데?”\n💕 봄봄이: “오늘 셋이 보는 거야?”","choices":[{"text":"호동이에게 따진다","score":1,"reaction":"💕 봄봄이: “영화는 보고 싸우자!”"},{"text":"봄봄이에게 상황을 설명한다","score":3,"reaction":"💕 봄봄이: “괜찮아, 재미있게 보내자!”"}]},
+            {"day":6,"dayTitle":"첫 데이트 대참사","place":"단풍오락실","image":"https://ibb.co/zVPcdQP4","narrative":"오락실에서 호월이가 연달아 패배한다. 봄봄이는 웃음을 참는다.","dialogue":"💕 봄봄이: “호월아, 괜찮아? ㅎㅎ”\n🐱 호월이: “한 번만 더!”","choices":[{"text":"실수를 웃어넘긴다","score":3,"reaction":"💕 봄봄이: “너랑 놀면 정말 재밌어!”"},{"text":"이길 때까지 무리하게 도전한다","score":1,"reaction":"💕 봄봄이: “그냥 같이 즐기면 안 돼?”"}]},
+            {"day":6,"dayTitle":"첫 데이트 대참사","place":"야경포장마차","image":"https://ibb.co/4ZKMKY1Q","narrative":"시끌벅적한 하루가 끝나고 두 사람만의 시간이 찾아온다.","dialogue":"💕 봄봄이: “오늘 재미있었어.”\n🐱 호월이: “나도…”","choices":[{"text":"“너랑 있어서 더 좋았어”","score":4,"reaction":"💕 봄봄이: “나도 너랑 있어서 좋았어.”"},{"text":"“호동이만 없었으면 완벽했는데”","score":1,"reaction":"💕 봄봄이: “아직도 호동이 얘기야?”"}]},
+            {"day":7,"dayTitle":"썸이 끝난 걸까?","place":"딸기베이커리","image":"https://ibb.co/LzPxrRyr","narrative":"봄봄이가 호동이에게 선물을 줬다는 소문. 호월이는 불안해진다.","dialogue":"🐱 호월이: “설마… 둘이 정말…?”","choices":[{"text":"봄봄이의 연락을 피한다","score":1,"reaction":"🐱 호월이: “나 혼자 좋아했나…”"},{"text":"소문을 직접 확인한다","score":3,"reaction":"🐱 호월이: “오해하면 안 되지.”"}]},
+            {"day":7,"dayTitle":"썸이 끝난 걸까?","place":"편지우체통","image":"https://ibb.co/VYqrxH0Y","narrative":"봄봄이는 자신을 피하는 호월이에게 서운함을 털어놓는다.","dialogue":"💕 봄봄이: “나한테 서운한 거 있어?”\n🐱 호월이: “그게…”","choices":[{"text":"아무 일 없다고 둘러댄다","score":1,"reaction":"💕 봄봄이: “정말? 그런데 왜 피했어?”"},{"text":"마음이 복잡했다고 솔직히 말한다","score":3,"reaction":"💕 봄봄이: “말해줘서 고마워.”"}]},
+            {"day":7,"dayTitle":"썸이 끝난 걸까?","place":"노을 골목","image":"https://ibb.co/Xr5BMqvD","narrative":"붉은 노을 아래 호월이는 자신의 오해가 봄봄이에게 상처를 줬다는 걸 깨닫는다.","dialogue":"💕 봄봄이: “나 조금 속상했어.”\n🐱 호월이: “미안해…”","choices":[{"text":"농담으로 얼버무린다","score":1,"reaction":"💕 봄봄이: “이번엔 진지하게 말해줘.”"},{"text":"진심으로 사과한다","score":4,"reaction":"💕 봄봄이: “다음엔 혼자 고민하지 마.”"}]},
+            {"day":8,"dayTitle":"비 오는 날의 진심","place":"빗속 산책로","image":"https://ibb.co/fK8HkPB","narrative":"가을비가 내리는 산책로. 봄봄이가 우산 없이 서 있다.","dialogue":"🐱 호월이: “비 맞으면 감기 걸려!”\n💕 봄봄이: “우산 놓고 왔어…”","choices":[{"text":"나도 우산 없다며 멈춰 선다","score":1,"reaction":"💕 봄봄이: “그럼 일단 같이 뛰자!”"},{"text":"비 피할 곳으로 안내한다","score":3,"reaction":"💕 봄봄이: “고마워, 덕분에 살았어!”"}]},
+            {"day":8,"dayTitle":"비 오는 날의 진심","place":"우산 가게","image":"https://ibb.co/7tJPHxq2","narrative":"우산 가게에서 두 사람은 함께 쓸 우산을 고른다.","dialogue":"💕 봄봄이: “어떤 게 좋을까?”\n🐱 호월이: “이건 어때…?”","choices":[{"text":"넉넉한 우산을 고른다","score":3,"reaction":"💕 봄봄이: “너랑 같이 쓰기 딱 좋겠다.”"},{"text":"커다란 하트 우산을 고집한다","score":1,"reaction":"💕 봄봄이: “너무 눈에 띄잖아!”"}]},
+            {"day":8,"dayTitle":"비 오는 날의 진심","place":"가로등 다리","image":"https://ibb.co/Y7xPVCwL","narrative":"비 내리는 가로등 다리. 한 우산 아래 둘의 거리가 조금 가까워졌다.","dialogue":"💕 봄봄이: “왜 나한테 그렇게 잘해줘?”\n🐱 호월이: “그건…”","choices":[{"text":"“연애책에 그렇게 적혀 있어서”","score":1,"reaction":"💕 봄봄이: “아직도 연애책이야? ㅋㅋ”"},{"text":"“네가 소중하니까”","score":4,"reaction":"💕 봄봄이: “그 말, 오래 기억할게.”"}]},
+            {"day":9,"dayTitle":"라이벌의 마지막 고백","place":"호수 선착장","image":"https://ibb.co/27ZZc1St","narrative":"호동이가 봄봄이에게 고백하지만, 봄봄이의 마음은 다른 사람을 향해 있다.","dialogue":"😎 호동이: “내 마음은 진심이야.”\n💕 봄봄이: “미안해. 다른 사람이 있어.”","choices":[{"text":"봄봄이의 선택을 존중한다","score":3,"reaction":"🐱 호월이: “봄봄이 마음이 중요해.”"},{"text":"두 사람의 대화에 끼어든다","score":1,"reaction":"💕 봄봄이: “나도 내 이야기를 해야지.”"}]},
+            {"day":9,"dayTitle":"라이벌의 마지막 고백","place":"붉은 단풍 언덕","image":"https://ibb.co/WpG4VKgf","narrative":"호동이가 호월이에게 마지막 응원을 보낸다.","dialogue":"😎 호동이: “야, 이제 네 차례야.”\n🐱 호월이: “네가 날 응원한다고?”","choices":[{"text":"장난이라고 의심한다","score":1,"reaction":"😎 호동이: “진심이라니까!”"},{"text":"고맙다고 말하고 용기를 낸다","score":3,"reaction":"😎 호동이: “가서 멋지게 고백해라!”"}]},
+            {"day":9,"dayTitle":"라이벌의 마지막 고백","place":"가을밤 정원","image":"https://ibb.co/8nqR3pVS","narrative":"가을밤 정원에서 호월이는 마지막 고백을 준비한다.","dialogue":"🐱 호월이: “책에 적힌 말만 따라 했는데…”","choices":[{"text":"책을 덮고 진심을 말하기로 한다","score":4,"reaction":"🐱 호월이: “이번엔 내 마음을 말할 거야.”"},{"text":"멋진 고백 문장만 외운다","score":1,"reaction":"🐱 호월이: “외운 말이 생각 안 나면?!”"}]},
+            {"day":10,"dayTitle":"우리 오늘부터 1일!","place":"낙엽 꽃길","image":"","narrative":"낙엽이 깔린 꽃길. 호월이는 봄봄이와의 마지막 약속을 준비한다.","dialogue":"🐱 호월이: “오늘은 꼭 말할 거야.”","choices":[{"text":"봄봄이가 좋아하는 작은 꽃을 고른다","score":3,"reaction":"💕 봄봄이: “내가 좋아하는 꽃이네.”"},{"text":"세상에서 가장 큰 꽃 장식을 준비한다","score":1,"reaction":"💕 봄봄이: “이걸 어떻게 들고 왔어?”"}]},
+            {"day":10,"dayTitle":"우리 오늘부터 1일!","place":"소원 나무","image":"https://ibb.co/VW4FcnnJ","narrative":"소원 리본이 걸린 나무 아래. 봄봄이가 호월이의 소원을 묻는다.","dialogue":"💕 봄봄이: “무슨 소원 빌었어?”\n🐱 호월이: “내 소원은…”","choices":[{"text":"너와 오래 행복한 추억을 만드는 것","score":3,"reaction":"💕 봄봄이: “나도 그 소원이 좋아.”"},{"text":"플러팅 100점 달성하는 것","score":1,"reaction":"💕 봄봄이: “끝까지 웃기는구나!”"}]},
+            {"day":10,"dayTitle":"우리 오늘부터 1일!","place":"달빛 전망대","image":"https://ibb.co/N6f3VXy7","narrative":"달빛 전망대. 호월이는 봄봄이에게 마지막 고백을 한다.","dialogue":"🐱 호월이: “봄봄아… 할 말 있어.”\n💕 봄봄이: “응, 듣고 있어.”","choices":[{"text":"“처음부터 좋아했어. 나랑 사귈래?”","score":4,"reaction":"💕 봄봄이: “나도 좋아해. 오늘부터 1일이야!”"},{"text":"“연애책에 따르면 고백할 시간이래!”","score":1,"reaction":"💕 봄봄이: “마지막까지 책 이야기네. 나도 좋아해.”"}]}
+        ]
+    },
     scheduleGuide: { // 조회용 시간표. 실제 시작·정산 타이머를 변경하지 않는다.
         passPayoutTime: "01:10",
         petExploreWindow: "08:00 ~ 24:00 (매 정각)",
@@ -3299,6 +3339,7 @@ blockedNicknameTerms: [
 };
 
 // 중단된 지급의 회원 원문부터 복구한 뒤 최초 권한·캐시를 읽는다.
+recoverHowolDramaPending();
 recoverPackageGrantPending();
 recoverDailyRankingPending();
 let initData = loadJsonFile(filePath, "bootstrap");
@@ -3668,7 +3709,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
     } else responseDataLock.lock();
     //데이터 검사
     try {
-        if (isServerRaidMutationCommand(msg) || isPackageGrantCommand(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || getDailyRankingPayoutRequest(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
+        if (getHowolDramaRequest(responseDiceCommand) || isServerRaidMutationCommand(msg) || isPackageGrantCommand(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || getDailyRankingPayoutRequest(isDevCommandMessage(msg) ? stripDevCommandPrefix(msg) : msg) || msg === "/리셋" || isDevCommandMessage(msg) && stripDevCommandPrefix(msg) === "/리셋") dataTransactionLock.lock();
         else if (!dataTransactionLock.tryLock()) return;
         responseTransactionAcquired = true;
         beginDataSaveTransaction();
@@ -3676,6 +3717,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         ctx = createCommandContext(isDevCommandMessage(msg), room);
         prevCtx = enterCommandContext(ctx);
         commandContextEntered = true;
+        recoverHowolDramaPending();
         recoverPackageGrantPending(); // 회원·이벤트 파일을 읽기 전에 접수된 지급과 실적을 함께 확정
         recoverDailyRankingPending();
         runHalloweenEntry("state", { ctx: ctx });
@@ -3690,6 +3732,11 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
             if (msg === "/ㅊㅊ" || msg === "/ㅍㅍㅍ" || msg === "/등록한다" || msg === "/등록안한다") msg = msg.substring(1); // DEV 전처리가 붙인 슬래시를 제거해 기존 단축어 사용
             if (/^\/(?:ㅁㅂ|ㅁㄱ|ㅁㅌ|ㅎㅈ)$/.test(msg)) msg = msg.substring(1);
         }
+        var dramaSessionKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
+        var dramaEarlyRequest = getHowolDramaRequest(msg);
+        if (dramaEarlyRequest) msg = String(msg).replace(/^[ \t]+|[ \t]+$/g, ""); // 공통 필터·대전 제한에도 실행할 명령과 같은 문자열 전달
+        if (dramaEarlyRequest) { delete manualResetSessions[dramaSessionKey]; delete dataCleanupSessions[dramaSessionKey]; }
+        else if (String(msg).replace(/^[ \t]+/, "").charAt(0) === "/") delete howolDramaSessions[dramaSessionKey];
         var dataCleanupKey = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev);
         var dataCleanupAction = getDataCleanupAction(msg, dataCleanupSessions[dataCleanupKey]);
         if (dataCleanupAction && (!isManualResetRoom(room) || !(isAdmin(sender) || isMaster(sender)))) {
@@ -4183,7 +4230,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
         if (raidLocked && msg === "/펫탐험자동정산") exploreInterval = false; // 차단된 자동 탐험이 다음 허용 명령에서 실행되지 않도록 예약 표시 정리
         // 일반 입력은 기존 작업을 재개하고, 레이드 명령은 운영 권한 검사 뒤 재개한다.
         if (!raidCommand && data && data.serverRaid && serverRaidHasWork(data.serverRaid)) scheduleServerRaidWork(ctx, data.serverRaid.generation, 1, data.serverRaid.sequence);
-        if (raidCommand || (raidLocked && isServerRaidGameInput(data, sender, room, msg) && !isServerRaidAdditionalCommand(msg))) {
+        if (raidCommand || (raidLocked && (isServerRaidGameInput(data, sender, room, msg) || howolDramaSessions[dramaSessionKey] && /^[ \t]*[12][ \t]*$/.test(msg)) && !isServerRaidAdditionalCommand(msg))) {
             if (data.serverRaid && data.serverRaid.storageSummary === true) data = loadJsonFile(filePath, "raid");
             var raidPetData = loadJsonFile(memberPetPath);
             var raidGuildData = loadJsonFile(guildPath);
@@ -4494,6 +4541,8 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                 return;
             }
         }
+
+        if (runHowolDramaEntry(ctx, sender, room, isGroupChat, msg, replier, miniGameRequestAt, serverRaidEvent)) return;
 
         var miniGameRequest = /^\/(?:미니게임|밸런스결과|밸런스|호월주사위|금고|금고리셋|금고횟수리셋)(?:\s|$)/.test(msg) ? getMiniGameRequest(msg) : null;
         if (miniGameRequest) {
@@ -32819,7 +32868,7 @@ function isExclusiveDataMutationCommandMessage(msg) {
     if (command.trim() === "ㅎㅈ") return true;
     if (/^[ \t]*ㅁㄱ[ \t]*$/.test(command)) return true;
     if (isDevCommandMessage(command)) command = stripDevCommandPrefix(command);
-    if (getHalloweenRequest(command)) return true;
+    if (getHalloweenRequest(command) || getHowolDramaRequest(command)) return true;
     if (/^\/패키지(?:사용|지급)(?:\s|$)/.test(command)) return true;
     if (command === "/리셋") return true; // 전체 경기 환급·미니게임 초기화를 다른 복합 저장과 직렬화
     if (isDevCommandMessage(msg) && command === "/ㅎㅈ") return true;
@@ -34011,6 +34060,7 @@ function completeMemberSplitMigration(data, stores, completedAt) {
 
 // 회원 분리 참조와 기존 DEV/PROD 경로를 확인해 JSON을 로드하는 함수
 function loadJsonFile(path, memberStoreMode) {
+    if (resolveActiveDataPath(path) === resolveActiveDataPath(filePath)) assertHowolDramaNoPending();
     var protectedLock = null;
     var transactionLockAcquired = false;
     try {
@@ -34094,6 +34144,7 @@ function getManagedJsonBackupPath(path) {
     if (fileName === "board.json") backupFileName = "board_back.json";
     if (fileName === "packageGrantStats.json") backupFileName = "packageGrantStats_back.json";
     if (fileName === "dailyRankingPayout.json") backupFileName = "dailyRankingPayout_back.json";
+    if (fileName === "howolDrama.json") backupFileName = "howolDrama_back.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -34110,6 +34161,7 @@ function getManagedJsonSecondaryBackupPath(path) {
     if (fileName === "board.json") backupFileName = "board_back2.json";
     if (fileName === "packageGrantStats.json") backupFileName = "packageGrantStats_back2.json";
     if (fileName === "dailyRankingPayout.json") backupFileName = "dailyRankingPayout_back2.json";
+    if (fileName === "howolDrama.json") backupFileName = "howolDrama_back2.json";
     if (!backupFileName) return null;
     return String(new java.io.File(targetFile.getParentFile(), backupFileName).getPath());
 }
@@ -34415,6 +34467,7 @@ function getProtectedJsonSaveLock(path) {
 
 // JSON을 임시 파일에서 검증한 뒤 기존 파일과 교체하는 함수
 function writeVerifiedJsonFile(path, jsonText, skipManagedBackup, verifiedMemberBackup) {
+    if (path === resolveActiveDataPath(filePath)) assertHowolDramaNoPending();
     var lock = getProtectedJsonSaveLock(path);
     var targetFile = new java.io.File(path);
     var tempFile = new java.io.File(path + ".tmp");
@@ -36238,7 +36291,7 @@ function runMiniGameEntry(mode, args) {
     }
     if ((mode === "auto" || mode === "resetPlan") && !stateExists) return mode === "resetPlan" ? [] : undefined;
     if (mode === "auto") {
-        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName, GLOBAL_CONFIG.packageGrant.pendingName, GLOBAL_CONFIG.rewardPayout.pendingName];
+        var foreignPendingNames = ["dollPending.json", GLOBAL_CONFIG.miniPet.robberyHistory.pendingName, GLOBAL_CONFIG.guildMarble.pendingName, GLOBAL_CONFIG.gmEducation.pendingName, GLOBAL_CONFIG.adventureQuest.history.pendingName, GLOBAL_CONFIG.packageGrant.pendingName, GLOBAL_CONFIG.rewardPayout.pendingName, GLOBAL_CONFIG.howolDrama.pendingName];
         for (i = 0; i < foreignPendingNames.length; i++) {
             var foreignPath = resolveActiveDataPath(DATA_ROOT_PATH + foreignPendingNames[i]);
             if (new java.io.File(foreignPath + ".rollback").exists() && !new java.io.File(foreignPath).exists()) throw new Error("다른 콘텐츠 게시 복구 대기");
@@ -36635,6 +36688,7 @@ function scheduleMiniGameWork(ctx, delay) {
         var previous = enterCommandContext(ctx), entered = false, retryRecovery = false;
         try {
             dataTransactionLock.lock(); beginDataSaveTransaction(); entered = true;
+            recoverHowolDramaPending();
             recoverPackageGrantPending();
             recoverDailyRankingPending();
             runMiniGameEntry("recover", { ctx: ctx });
@@ -66599,3 +66653,298 @@ finally { initData = null; }
 for (var startupWorkIndex = 0; startupWorkIndex < startupWork.miniContexts.length; startupWorkIndex++) scheduleMiniGameWork(startupWork.miniContexts[startupWorkIndex], 1);
 if (startupWork.raid) scheduleServerRaidWork(createCommandContext(false, room8), startupWork.raid.generation, 1, startupWork.raid.sequence);
 startupWork = null;
+
+// 호월드라마 명령을 한 줄 전체 일치로 해석하는 함수
+function getHowolDramaRequest(message) {
+    var text = String(message || "").replace(/^[ \t]+|[ \t]+$/g, "");
+    if (text === "/호월드라마") return { kind: "list" };
+    var match = /^\/(드라마시작|드라마재도전)[ \t]+(\d+)$/.exec(text);
+    if (match) return { kind: match[1] === "드라마시작" ? "start" : "retry", work: match[2] };
+    match = /^\/플러팅선택[ \t]+([12])$/.exec(text);
+    if (match) return { kind: "choice", choice: Number(match[1]) };
+    return null;
+}
+
+// 호월드라마의 저장 수치가 유효한 정수인지 확인하는 함수
+function requireHowolDramaInteger(value, max) {
+    if (typeof value !== "number" || !isFinite(value) || Math.floor(value) !== value || value < 0 || value > max) throw new Error("호월드라마 기록 수치 오류");
+    return value;
+}
+
+// 별도 진행 원본의 선택·완주·실지급 기록을 검증하는 함수
+function requireHowolDramaStore(store) {
+    if (!store || store.version !== 1 || !store.users || typeof store.users !== "object" || Array.isArray(store.users)) throw new Error("호월드라마 원본 형식 오류");
+    var config = GLOBAL_CONFIG.howolDrama;
+    for (var uid in store.users) if (Object.prototype.hasOwnProperty.call(store.users, uid)) {
+        var user = store.users[uid];
+        if (!user || !user.works || typeof user.works !== "object" || Array.isArray(user.works)) throw new Error("호월드라마 회원 기록 오류");
+        var record = user.works[config.workId];
+        if (record === undefined) continue;
+        if (!record || typeof record !== "object" || Array.isArray(record)) throw new Error("호월드라마 작품 기록 오류");
+        requireHowolDramaInteger(record.attempt, 9007199254740991);
+        requireHowolDramaInteger(record.next, config.scenes.length);
+        requireHowolDramaInteger(record.score, config.maxScore);
+        requireHowolDramaInteger(record.high, config.maxScore);
+        requireHowolDramaInteger(record.paid, config.maxScore * config.boxesPerPoint);
+        if (record.attempt < 1 || !Array.isArray(record.choices) || record.choices.length !== record.next || !Array.isArray(record.completed) || !Array.isArray(record.events) || record.events.length > config.eventLimit) throw new Error("호월드라마 진행 기록 오류");
+        var score = 0, high = 0, previousAttempt = 0; // 선택 원문과 완료 이력에서 실제 점수·최고 기록 재검산
+        for (var i = 0; i < record.choices.length; i++) {
+            if (record.choices[i] !== 1 && record.choices[i] !== 2) throw new Error("호월드라마 선택 기록 오류");
+            score += config.scenes[i].choices[record.choices[i] - 1].score;
+        }
+        for (var j = 0; j < record.completed.length; j++) {
+            var completion = record.completed[j];
+            if (!completion) throw new Error("호월드라마 완주 기록 오류");
+            requireHowolDramaInteger(completion.attempt, record.attempt);
+            requireHowolDramaInteger(completion.score, config.maxScore);
+            if (completion.attempt <= previousAttempt || completion.score < config.scenes.length || typeof completion.at !== "string") throw new Error("호월드라마 완주 순서 오류");
+            previousAttempt = completion.attempt;
+            high = Math.max(high, completion.score);
+        }
+        for (var e = 0; e < record.events.length; e++) if (typeof record.events[e] !== "string" || !record.events[e]) throw new Error("호월드라마 입력 기록 오류");
+        if (score !== record.score || high !== record.high || record.paid > high * config.boxesPerPoint || record.paid % config.boxesPerPoint !== 0) throw new Error("호월드라마 점수·보상 원본 불일치");
+        if (record.next === config.scenes.length && (!record.completed.length || previousAttempt !== record.attempt || record.completed[record.completed.length - 1].score !== record.score) || record.next < config.scenes.length && previousAttempt === record.attempt) throw new Error("호월드라마 완주 상태 불일치");
+    }
+    return store;
+}
+
+// 두 파일 게시 저널의 대상 이름과 최종 원문을 모두 확인하는 함수
+function validateHowolDramaPending(journal) {
+    if (!journal || journal.version !== 1 || !Object.prototype.hasOwnProperty.call(journal, "pending") || journal.pending !== null && !Array.isArray(journal.pending)) throw new Error("호월드라마 게시 기록 오류");
+    if (journal.pending === null) return;
+    if (journal.pending.length !== 2 || journal.pending[0].name !== "member.json" || journal.pending[1].name !== GLOBAL_CONFIG.howolDrama.fileName) throw new Error("호월드라마 게시 대상 오류");
+    for (var i = 0; i < journal.pending.length; i++) {
+        var row = journal.pending[i];
+        if (typeof row.text !== "string") throw new Error("호월드라마 게시 원문 오류");
+        var data = parseJsonContent(row.text, row.name);
+        if (i === 0 && (!data || !data.member || typeof data.member !== "object" || Array.isArray(data.member))) throw new Error("호월드라마 회원 원문 오류");
+        if (i === 1) requireHowolDramaStore(data);
+    }
+}
+
+// 중단된 재도전권 차감·완주 보상을 같은 원문으로 끝내는 저장 진입 함수
+function recoverHowolDramaPending() {
+    dataTransactionLock.lock();
+    var previousPublishing = howolDramaPublishingThread.get();
+    try {
+        var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.howolDrama.pendingName);
+        var file = new java.io.File(path), rollback = new java.io.File(path + ".rollback");
+        if (!file.exists() && rollback.exists()) {
+            validateHowolDramaPending(parseJsonContent(FileStream.read(path + ".rollback", "utf-8"), path));
+            if (!rollback.renameTo(file)) throw new Error("호월드라마 게시 원문 복원 실패");
+        }
+        if (!file.exists()) return false;
+        var journal = parseJsonContent(FileStream.read(path, "utf-8"), path);
+        validateHowolDramaPending(journal);
+        if (journal.pending === null) return false;
+        howolDramaPublishingThread.set(java.lang.Boolean.TRUE);
+        for (var i = 0; i < journal.pending.length; i++) {
+            var target = resolveActiveDataPath(DATA_ROOT_PATH + journal.pending[i].name);
+            if (!new java.io.File(target).exists() || String(FileStream.read(target, "utf-8")) !== journal.pending[i].text) writeVerifiedJsonFile(target, journal.pending[i].text, false);
+        }
+        writeVerifiedJsonFile(path, JSON.stringify({ version: 1, pending: null }), true);
+        memberSplitBackupCache = {};
+        return true;
+    } finally { howolDramaPublishingThread.set(previousPublishing); dataTransactionLock.unlock(); }
+}
+
+// 진행만 쓰거나 회원 가방과 진행을 저널로 함께 확정하는 저장 진입 함수
+function publishHowolDramaEntry(data, store, memberChanged) {
+    requireHowolDramaStore(store);
+    var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.howolDrama.fileName);
+    endDataSaveTransaction(); beginDataSaveTransaction(); // 이전 조회 스냅샷의 롤백과 확정 원문 게시를 분리
+    if (memberChanged) {
+        var plan = buildMemberSplitSavePlan(data);
+        if (plan && plan.writes.length) throw new Error("호월드라마와 무관한 분리 기록 변경 감지");
+        var journal = { version: 1, pending: [
+            { name: "member.json", text: JSON.stringify(plan ? plan.member : data) },
+            { name: GLOBAL_CONFIG.howolDrama.fileName, text: JSON.stringify(store) }
+        ] };
+        validateHowolDramaPending(journal);
+        writeVerifiedJsonFile(resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.howolDrama.pendingName), JSON.stringify(journal), true);
+        endDataSaveTransaction(); beginDataSaveTransaction();
+        recoverHowolDramaPending();
+    } else writeVerifiedJsonFile(path, JSON.stringify(store), false);
+    endDataSaveTransaction(); beginDataSaveTransaction();
+}
+
+// 현재 작품의 개인 기록만 조회하는 함수
+function getHowolDramaRecord(store, uid) {
+    var user = uid && store.users[uid];
+    return user && user.works[GLOBAL_CONFIG.howolDrama.workId] || null;
+}
+
+// 회원 계정 ID가 없거나 중복된 상태를 분리해서 확인하는 함수
+function getHowolDramaAccountId(data, sender) {
+    var member = data.member[sender];
+    if (!member || member.serverRaidAccount === undefined) return null;
+    var account = member.serverRaidAccount;
+    if (!account || typeof account.id !== "string" || !account.id || !/^[A-Za-z0-9_-]+$/.test(account.id)) throw new Error("호월드라마 공통 계정 ID 확인 필요");
+    if (!findServerRaidAccount(data, account.id)) throw new Error("호월드라마 계정 확인 실패");
+    return account.id;
+}
+
+// 신규·기존 회원의 본편 이용 자격을 기존 프리미엄 판정으로 확인하는 함수
+function getHowolDramaAccessMessage(data, sender) {
+    var member = data.member[sender], state = getAdventureOnboardingMemberState(data, sender);
+    if (!member || !member.agree || state && state.stage !== "COMPLETE") return "먼저 /모험시작을 완료하세요.";
+    if (!isHoiPassPremiumActive(data, sender)) return "🔒 호이패스 프리미엄 전용\n" + GLOBAL_CONFIG.howolDrama.title + "\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 이용 안내\n❌ 프리미엄 회원만 스토리 진행 가능\n🍁 총 10DAY · 30장면\n💎 최종 다이아상자 최대 400개\n━━━━━━━━━━━━\n🔗 호이패스 프리미엄 이용 안내\n" + GLOBAL_CONFIG.howolDrama.premiumLink;
+    return "";
+}
+
+// 가방 수량을 암묵적 문자열 변환 없이 읽는 함수
+function getHowolDramaItemCount(member, item) {
+    if (!member || !member.bag || member.bag[item] === undefined) return 0;
+    return requireHowolDramaInteger(member.bag[item], 9007199254740991);
+}
+
+// 10칸 호감도 하트 게이지를 만드는 함수
+function buildHowolDramaHearts(score) {
+    var red = Math.floor(Math.max(0, Math.min(GLOBAL_CONFIG.howolDrama.maxScore, score)) / 10), cells = [];
+    for (var i = 0; i < 10; i++) cells.push(i < red ? "❤️" : "🤍");
+    return "[" + cells.join("") + "]";
+}
+
+// 작품 상태를 목록과 재도전 안내에 표시하는 함수
+function buildHowolDramaProgress(record) {
+    return !record ? "미시작" : record.next === GLOBAL_CONFIG.howolDrama.scenes.length ? "완주" : "DAY " + ("0" + (Math.floor(record.next / 3) + 1)).slice(-2) + " / 10";
+}
+
+// 최초·이어보기와 자동 다음 장면의 공통 원고를 만드는 함수
+function buildHowolDramaScene(record, sender, full) {
+    var config = GLOBAL_CONFIG.howolDrama, scene = config.scenes[record.next];
+    var lines = [];
+    if (full) lines.push("[👑호이패스 프리미엄👑]", "🎬 호월드라마 | 작품 1", config.title);
+    lines.push("🍁 DAY " + ("0" + scene.day).slice(-2) + " | " + scene.dayTitle);
+    if (scene.image) lines.push(scene.image);
+    if (full) lines.push("━━━━━━━━━━━━", "👤 [" + sender + "] 님의 진행도");
+    lines.push("📍 장소: " + scene.place + " (" + (record.next % 3 + 1) + "/3)");
+    if (full) lines.push("💗 호감도: " + record.score + "/100", buildHowolDramaHearts(record.score));
+    lines.push("━━━━━━━━━━━━", scene.narrative, "", scene.dialogue, "━━━━━━━━━━━━", "【1】 " + scene.choices[0].text, "【2】 " + scene.choices[1].text, "▶ 선택: /플러팅선택 1 또는 /플러팅선택 2");
+    return lines.join("\n");
+}
+
+// 모두가 볼 수 있는 최초 예고편을 만드는 함수
+function buildHowolDramaTrailer(sender) {
+    return "🎬 호월드라마 | 작품 1\n" + GLOBAL_CONFIG.howolDrama.title + "\n🍁 시즌1 · 호월이의 첫사랑\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 시청 안내\n\n🎞️ 【스토리 예고편】\n어느 가을날, 첫눈에 반한 호월이!\n하지만 연애는 책으로만 배웠다?!\n\n🐱 호월이: \"연애? 책으로 다 배웠지!\"\n💕 봄봄이: \"저기... 누구세요?\"\n😎 호동이: \"나도 봄봄이 좋아해!\"\n\n서툰 플러팅과 뜻밖의 라이벌,\n과연 호월이의 첫사랑은 성공할까?\n━━━━━━━━━━━━\n🎁 프리미엄 독점 보상\n💎 호감도 1점당 다이아상자 4개\n🏆 최대 400개 · 엔딩 후 일괄 지급\n━━━━━━━━━━━━\n📖 총 10DAY · 장소 30곳\n📖 하루 제한 없이 자유 진행\n📖 본편 선택: /플러팅선택 1 또는 /플러팅선택 2\n📖 재도전 시 최고점 갱신 차액만 지급\n━━━━━━━━━━━━\n【1】 드라마 시작하기\n【2】 취소\n▶ 1(시작) 또는 2(취소) 입력";
+}
+
+// 최고 기록과 실제 누적 지급을 구분해 완주 결과를 만드는 함수
+function buildHowolDramaEnding(record, sender, added) {
+    var reward = added > 0 ? "🎁 이번 추가 지급: 다이아상자💎 ×" + added + "\n✅ 보상 지급 완료" : "🎁 이번 추가 지급: 0개 · 이전 최고 기록 유지";
+    return GLOBAL_CONFIG.howolDrama.title + "\n🍁 DAY 10 | 해피엔딩!\n━━━━━━━━━━━━\n🌙 장소: 달빛 전망대\n🐱 호월이: \"처음부터 널 좋아했어.\"\n💕 봄봄이: \"나도 너 좋아해.\"\n💋 두 사람은 첫 키스를 나누며 연인이 되었다!\n━━━━━━━━━━━━\n👤 [" + sender + "] 님의 최종 결과\n💗 호감도: " + record.score + "/100\n" + buildHowolDramaHearts(record.score) + "\n🏆 완주 최고 호감도: " + record.high + "/100\n━━━━━━━━━━━━\n" + reward + "\n💎 누적 지급: " + record.paid + "/400개\n━━━━━━━━━━━━\n🎬 시즌1 시청 완료!\n▶ /호월드라마\n🔄 /드라마재도전 1";
+}
+
+// 두 단계 재도전 안내에 실제 진행과 보유권을 표시하는 함수
+function buildHowolDramaRetry(record, sender, tickets, final) {
+    var lines = [final ? "🚨 호월드라마 | 재도전 최종 확인" : "🎬 호월드라마 | 재도전 안내", "👤 [" + sender + "] 님의 재도전", "━━━━━━━━━━━━━━", "【1】 " + GLOBAL_CONFIG.howolDrama.title,
+        "📖 현재 진행: " + buildHowolDramaProgress(record) + (final ? " → DAY 01" : ""), "💗 현재 호감도: " + record.score + (final ? " → 0" : "/100"), "🎬 보유 재도전권: " + tickets + "개" + (final ? " → " + Math.max(0, tickets - 1) + "개 (확정 시)" : ""), "━━━━━━━━━━━━━━",
+        "⚠️ 재도전 시 현재 진행 상황이 초기화됩니다.", "⚠️ DAY 01부터 처음부터 다시 시작합니다.", "⚠️ 완료 전에 초기화하면 이번 미완료 시도의 보상은 0개입니다.", "✔ 이전 완주 최고 기록과 이미 받은 보상은 보존됩니다.", "━━━━━━━━━━━━━━", final ? "【1】 초기화 확정" : "【1】 재도전 진행", "【2】 취소", "▶ 1(" + (final ? "초기화 확정" : "진행") + ") 또는 2(취소) 입력"];
+    return lines.join("\n");
+}
+
+// 표시한 화면의 방·계정·시도를 묶어 다음 입력을 제한하는 함수
+function replyHowolDramaScreen(replier, message, key, stage, uid, record, seen) {
+    delete howolDramaSessions[key];
+    replier.reply(message);
+    howolDramaSessions[key] = { stage: stage, uid: uid, attempt: record ? record.attempt : 0, next: record ? record.next : 0, at: Date.now(), seen: seen || [] };
+}
+
+// 공개 진입·선택·숫자 확인과 별도 진행 저장을 처리하는 명령 진입 함수
+function runHowolDramaEntry(ctx, sender, room, isGroupChat, msg, replier, requestAt, event) {
+    var key = getManualResetSessionKey(sender, room, isGroupChat, ctx.isDev), session = howolDramaSessions[key];
+    var text = String(msg || "").replace(/^[ \t]+|[ \t]+$/g, ""), request = getHowolDramaRequest(text);
+    var numeric = /^(1|2)$/.test(text), now = Date.now();
+    if (!request && !(numeric && session)) return false;
+    if (!request && session.stage !== "story" && now - session.at > GLOBAL_CONFIG.howolDrama.menuTimeoutMs) { delete howolDramaSessions[key]; replier.reply("확인 시간이 지났어요. /드라마시작 1 또는 /드라마재도전 1로 다시 열어 주세요."); return true; }
+    if (session && requestAt <= session.at) return true; // 잠금 대기 중 쌓인 이전 화면 입력을 새 장면에 적용하지 않음
+    var data = loadJsonFile(filePath);
+    if (isAccountSuspended(data, sender)) { delete howolDramaSessions[key]; replier.reply("계정정지 상태입니다 호월고객센터로 문의해주세요"); return true; }
+    var config = GLOBAL_CONFIG.howolDrama, path = resolveActiveDataPath(DATA_ROOT_PATH + config.fileName);
+    if (!new java.io.File(path).exists() && (new java.io.File(path + ".rollback").exists() || new java.io.File(getManagedJsonBackupPath(path)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(path)).exists())) throw new Error("호월드라마 진행 원본 누락: 운영자 확인 필요");
+    var store = new java.io.File(path).exists() ? requireHowolDramaStore(parseJsonContent(FileStream.read(path, "utf-8"), path)) : { version: 1, users: {} };
+    var member = data.member[sender], uid = getHowolDramaAccountId(data, sender), record = getHowolDramaRecord(store, uid);
+    var tickets = getHowolDramaItemCount(member, config.retryItem), seen = session ? session.seen.slice(0) : [];
+    if (event && event.invalid) { replier.reply("입력 식별 정보를 확인할 수 없어요. 진행은 보존했습니다."); return true; }
+    var eventKey = getServerRaidEventId(event);
+    if (eventKey && (seen.indexOf(eventKey) !== -1 || record && record.events.indexOf(eventKey) !== -1)) return true;
+    if (eventKey) { seen.push(eventKey); if (seen.length > config.eventLimit) seen.shift(); }
+    if (request && request.work !== undefined && request.work !== "1") { replier.reply("등록되지 않은 작품이에요. /호월드라마에서 작품 번호를 확인해 주세요."); return true; }
+    if (request && request.kind === "list") {
+        delete howolDramaSessions[key];
+        replier.reply("🎬 호월드라마\n👤 [" + sender + "] 님의 드라마\n🎬 보유 재도전권: " + tickets + "개\n━━━━━━━━━━━━━━\n📖 공용 명령어\n📺 /호월드라마 — 전체 작품 보기\n▶ /드라마시작 작품번호\n🔄 /드라마재도전 작품번호\n" + allsee + "\n📺 호월드라마 작품 목록\n━━━━━━━━━━━━━━\n【1】 " + config.title + "\n🍁 가을 로맨스\n📖 진행: " + buildHowolDramaProgress(record) + "\n━━━━━━━━━━━━━━");
+        return true;
+    }
+    if (request && request.kind === "start" && !record) { replyHowolDramaScreen(replier, buildHowolDramaTrailer(sender), key, "intro", uid, record, seen); return true; }
+    if (numeric && session.stage === "story") { replier.reply("▶ 선택: /플러팅선택 1 또는 /플러팅선택 2"); return true; }
+    if (request && request.kind === "choice" && (!session || session.stage !== "story")) { replier.reply(session ? "현재 확인 화면에서는 숫자 1 또는 2를 입력해 주세요." : "먼저 /드라마시작 1로 현재 장면을 열어 주세요."); return true; }
+    if (numeric && text === "2") { delete howolDramaSessions[key]; replier.reply("드라마 확인을 취소했어요. 기존 진행과 아이템은 그대로예요."); return true; }
+    var access = getHowolDramaAccessMessage(data, sender);
+    if (access) { replier.reply(access); return true; }
+    if (session && (numeric || request && request.kind === "choice") && (session.uid !== uid || session.attempt !== (record ? record.attempt : 0) || session.next !== (record ? record.next : 0))) {
+        delete howolDramaSessions[key]; replier.reply("다른 화면에서 진행이 바뀌었어요. /드라마시작 1로 현재 장면을 다시 열어 주세요."); return true;
+    }
+    if (request && request.kind === "start") {
+        if (record.next === config.scenes.length) { delete howolDramaSessions[key]; replier.reply(buildHowolDramaEnding(record, sender, 0)); }
+        else replyHowolDramaScreen(replier, buildHowolDramaScene(record, sender, true), key, "story", uid, record, seen);
+        return true;
+    }
+    if (request && request.kind === "retry") {
+        if (!record) { replier.reply("아직 시작하지 않은 작품이에요. 먼저 /드라마시작 1을 입력해 주세요."); return true; }
+        if (tickets < 1) { replier.reply("재도전권이 부족해요. 기존 진행은 그대로예요."); return true; }
+        replyHowolDramaScreen(replier, buildHowolDramaRetry(record, sender, tickets, false), key, "retry", uid, record, seen); return true;
+    }
+    if (numeric && session.stage === "retry") { replyHowolDramaScreen(replier, buildHowolDramaRetry(record, sender, tickets, true), key, "retryFinal", uid, record, seen); return true; }
+    var memberChanged = false, prefix = "", added = 0;
+    if (numeric && session.stage === "intro") {
+        if (!uid) {
+            uid = String(java.util.UUID.randomUUID());
+            member.serverRaidAccount = { id: uid, period: 0, server: normalizeHoiServerLabel(member.server), latest: null, total: null };
+            memberChanged = true; // 기존 공통 계정 ID만 보완하며 드라마 필드를 회원에 만들지 않음
+        }
+        if (!store.users[uid]) store.users[uid] = { works: {} };
+        record = { attempt: 1, next: 0, score: 0, choices: [], high: 0, paid: 0, completed: [], events: [] };
+        store.users[uid].works[config.workId] = record;
+    } else if (numeric && session.stage === "retryFinal") {
+        if (tickets < 1) { delete howolDramaSessions[key]; replier.reply("재도전권이 부족해요. 기존 진행은 그대로예요."); return true; }
+        if (record.paid < record.high * config.boxesPerPoint) throw new Error("호월드라마 이전 완주 보상 확인 필요");
+        removeItem(data, sender, config.retryItem, 1);
+        memberChanged = true;
+        record.attempt++; record.next = 0; record.score = 0; record.choices = [];
+        prefix = "🎬 호월드라마 | 재도전 완료\n👤 [" + sender + "] 님\n✅ 현재 진행 초기화 완료\n📖 DAY 01 / 10부터 다시 시작\n💗 호감도: 0/100\n🎬 남은 재도전권: " + (tickets - 1) + "개\n━━━━━━━━━━━━━━\n";
+    } else if (request && request.kind === "choice") {
+        if (!record || record.next >= config.scenes.length) { replier.reply("이미 완주했어요. /드라마재도전 1로 다시 도전할 수 있어요."); return true; }
+        var choice = config.scenes[record.next].choices[request.choice - 1];
+        record.choices.push(request.choice); record.next++; record.score += choice.score;
+        prefix = "💗 호감도 +" + choice.score + " → " + record.score + "/100\n" + choice.reaction + "\n━━━━━━━━━━━━\n";
+        if (record.next === config.scenes.length) {
+            record.completed.push({ attempt: record.attempt, score: record.score, at: new Date(now).toISOString() });
+            record.high = Math.max(record.high, record.score);
+            added = Math.max(0, record.score * config.boxesPerPoint - record.paid);
+            if (added > 0) {
+                var boxes = getHowolDramaItemCount(member, GLOBAL_CONFIG.items.diamondBoxName);
+                requireHowolDramaInteger(boxes + added, 9007199254740991);
+                addItem(data, sender, GLOBAL_CONFIG.items.diamondBoxName, added);
+                if (getHowolDramaItemCount(member, GLOBAL_CONFIG.items.diamondBoxName) !== boxes + added) throw new Error("호월드라마 보상 가방 확인 실패");
+                record.paid += added; memberChanged = true;
+            }
+        }
+    } else return true;
+    if (eventKey) { record.events.push(eventKey); if (record.events.length > config.eventLimit) record.events.shift(); }
+    publishHowolDramaEntry(data, store, memberChanged);
+    if (record.next === config.scenes.length) { delete howolDramaSessions[key]; replier.reply(prefix + buildHowolDramaEnding(record, sender, added)); }
+    else replyHowolDramaScreen(replier, prefix + buildHowolDramaScene(record, sender, !prefix), key, "story", uid, record, seen);
+    return true;
+}
+
+
+// 미확정 드라마 게시가 있을 때 다른 회원 조회·저장을 차단하는 저장 보호 함수
+function assertHowolDramaNoPending() {
+    if (howolDramaPublishingThread.get()) return;
+    var path = resolveActiveDataPath(DATA_ROOT_PATH + GLOBAL_CONFIG.howolDrama.pendingName);
+    if (!new java.io.File(path).exists() && new java.io.File(path + ".rollback").exists()) throw new Error("호월드라마 게시 복구 대기");
+    if (!new java.io.File(path).exists()) return;
+    var journal = parseJsonContent(FileStream.read(path, "utf-8"), path);
+    validateHowolDramaPending(journal);
+    if (journal.pending !== null) throw new Error("호월드라마 게시 복구 대기");
+}

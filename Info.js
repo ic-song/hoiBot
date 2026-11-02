@@ -7,6 +7,7 @@ const room92 = "서버관리자";
 const BASE_CRIT_DAMAGE_MULTIPLIER = 1.7; // 크리티컬 데미지
 const PET_SKILL_MAX_EQUIP_SLOT = 30;
 const GLOBAL_CONFIG = {
+    howolDrama: { pendingName: "howolDramaPending.json" },
     halloween: {"stateName":"halloweenEvent.json","pendingName":"halloweenPending.json","accountPrefix":"halloweenAccount_","decoration":"_🎃👻🍬","banner":"🎃👻🍬🎃👻🍬🎃👻🍬🎃👻","roomCount":3,"placeCount":45,"rewardVersion":4,"expandedRoomCount":5,"previousRoomCount":3,"previousPlaceCount":35,"legacyRoomCount":5,"legacyPlaceCount":12}, // Main과 같은 이벤트 표시·진행 원본 검증 설정
     gmEducation: { version: 1, fileName: "gmEducation.json", pendingName: "gmEducationPending.json", chapterCount: 12 },
     manualReset: { commands: ["/댓글초기화","/피드초기화","/펫홈방문초기화","/좋아홈초기화","/인형전체초기화","/서버대전전체초기화","/펫무쌍전체초기화","/캐슬대전초기화","/캐슬대전횟수리셋","/캐슬초기화","/영주수익순위초기화","/펀치순위초기화","/펫탐험전체전적초기화","/시련의탑시즌초기화","/길드전체초기화","/길드영지초기화","/길드게시판초기화","/공헌구매초기화","/다이아전체초기화","/레벨초기화","/좋아리셋","/주간횟수초기화","/미니펫컬렉션초기화","/펜던트장착초기화","/미가입출첵서버초기화","/관리자순위초기화","/인증초기화","/마스터초기화@@@","/피드전체삭제","/글자수전체정리","/필터데이터정리","/데이터정리","/경매초기화","/계삭진행","/계정잠수삭제"] }, // 초기화·운영 정리는 Main에서만 처리
@@ -648,6 +649,14 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
 				return;
 			}
 			applyItemInfoContext(loadJsonFile(itemInfoPath));
+		}
+		// 회원 가방과 드라마 기록의 원문 게시가 완료되기 전에는 부분 결과를 표시하지 않음
+		var dramaPendingPath = ctx.rootPath + GLOBAL_CONFIG.howolDrama.pendingName;
+		if (!new java.io.File(dramaPendingPath).exists() && new java.io.File(dramaPendingPath + ".rollback").exists()) return;
+		if (new java.io.File(dramaPendingPath).exists()) {
+			var dramaPending = JSON.parse(FileStream.read(dramaPendingPath, "utf-8"));
+			if (!dramaPending || dramaPending.version !== 1 || !Object.prototype.hasOwnProperty.call(dramaPending, "pending") || dramaPending.pending !== null && !Array.isArray(dramaPending.pending)) throw new Error("호월드라마 게시 기록 오류");
+			if (dramaPending.pending !== null) return;
 		}
 		if (!runHalloweenInfoEntry("state", ctx)) return;
 		var plainCommands = ["ㅈㅈㅈ", "ㅍㅍㅍ", "ㅁㅁㅁ"];
