@@ -5,6 +5,14 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## 패스 관리 MASTER 권한
+
+Status: VERIFIED
+
+- `main.js`: 프리미엄 관리(`isHoiPassPremiumAdminCommandMessage`, 추가·삭제·단체추가)와 일반 패스 관리 진입 조건에 기존 `isMaster(sender)` 허용. `processHoiPassPremiumCommand`, `processUserIDCommand` 및 저장·회수 흐름은 그대로 사용.
+- 기존 `Master` 명단과 `isMaster`의 팻 테스트방·서버관리자방·추가 서버관리자방 제한 유지. 개별 닉네임 허용 목록을 추가하지 않음. 기존 호이 남·주문기록방 봇 허용 유지.
+- 일반 패스: 인형·원데이·공헌·초보/초보패스·호이·다이아 패스 추가/삭제. 이미 MASTER를 허용하는 영지패스·패스목록·구독패스지급은 기존 동작 유지.
+
 ## /호월드라마 · /드라마시작 · /드라마재도전 · /플러팅선택
 
 Status: VERIFIED
