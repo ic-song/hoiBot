@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.757"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.760"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -812,7 +812,7 @@ const room5 = "호이월드 커뮤니티[티어 킹 이상 입장가능]";
 const room6 = "💜3040대친목 반말방🐻 24시 보이스룸💜";
 const room7 = "2030 반말방 | 우리는 청춘이라는 별 아래서✨";
 const room8 = "공성전";
-const room10 = "💫도파민 팡팡💫터지는 30대 어서와😘";
+const room10 = "🚨30대 반말방💊도파민 비상사태💥";
 const room11 = "🎇3040, 도파민 디스코팡팡🎇";
 const room12 = "🎀30대, 주파수가 맞는 사이🌙";
 const room13 = "😎 2030 어 왔냐? 앉아 반말해🍿";
@@ -1020,10 +1020,11 @@ const GLOBAL_CONFIG = {
         plannedEnd: "2026년 11월 10일",
         normalEntries: 1,
         premiumEntries: 2,
-        roomCount: 5,
+        roomCount: 3,
         legacyRoomCount: 5, // 배포 전 진행 중 탐험의 경로와 기존 결과별 사탕을 보존
         legacyPlaceCount: 12,
-        rewardVersion: 3, // 신규 5방과 과거 5방·3방의 입장 당시 보상 구분
+        rewardVersion: 4, // 신규 3방과 과거 5방·3방의 입장 당시 보상 구분
+        expandedRoomCount: 5, // v3로 입장한 45곳 중 5방 탐험 보존
         previousRoomCount: 3,
         previousPlaceCount: 35,
         previousRoomRewards: { "안전형": [14, 0], "탐색형": [33, 9, 0], "도박형": [100, 20, 0] },
@@ -8532,6 +8533,7 @@ function response(room, msg, sender, isGroupChat, replier, imageDB, packageName)
                         carrotBoardPath
                     );
                     // 당근게시판 리셋
+                    advanceDailyRankingPayoutCycle(data, Date.now());
                     resetAttendance(petData, data, replier);
                     stopAllIntervals(data);
                     delete data.previnterval;
@@ -39086,6 +39088,40 @@ function buildGuildTerritoryRankRewardGuideMessage() {
     return out;
 }
 
+// 마지막 /리셋 회차의 날짜와 지급 기록 키를 검증해 반환하는 함수
+function getDailyRankingPayoutCycle(data) {
+    var reset = data.rewardPayoutReset;
+    if (reset === undefined) {
+        var initialDay = getAttendanceKstDateKey(); // 최초 호환 회차의 날짜는 한 번만 읽는다.
+        return { day: initialDay, cycle: 0, at: 0, key: initialDay };
+    }
+    if (!reset || typeof reset.day !== "string" || !/^\d{8}$/.test(reset.day) || typeof reset.cycle !== "number" || !isFinite(reset.cycle) || reset.cycle < 0 || Math.floor(reset.cycle) !== reset.cycle || reset.cycle > 9007199254740990 || typeof reset.at !== "number" || !isFinite(reset.at) || reset.at < 0 || Math.floor(reset.at) !== reset.at) throw new Error("순위 보상 리셋 회차 기록 오류");
+    return { day: reset.day, cycle: reset.cycle, at: reset.at, key: reset.day + (reset.cycle ? ":" + reset.cycle : "") };
+}
+
+// 권한이 확인된 /리셋에서 다음 순위 보상 회차를 회원 저장과 함께 확정하는 함수
+function advanceDailyRankingPayoutCycle(data, now) {
+    var previous = getDailyRankingPayoutCycle(data);
+    data.rewardPayoutReset = { day: getAttendanceKstDateKey(), cycle: previous.cycle + 1, at: now };
+    getDailyRankingPayoutCycle(data);
+}
+
+// 리셋 회차 도입 전 길드 지급 기록의 날짜를 읽는 함수
+function getGuildTerritoryRewardPaidDay(guildData) {
+    var reward = guildData && guildData.guildTerritoryReward;
+    if (!reward) return "";
+    var day = reward.lastPaidDate;
+    if (day === undefined) {
+        var match = String(reward.lastPaidAt || "").match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T]|$)/);
+        if (!match) return "";
+        day = match[1] + match[2] + match[3];
+    }
+    if (typeof day !== "string" || !/^\d{8}$/.test(day)) throw new Error("길드영지 보상 지급일 기록 오류");
+    var date = new Date(Date.UTC(Number(day.substring(0,4)), Number(day.substring(4,6)) - 1, Number(day.substring(6,8))));
+    if (date.getUTCFullYear() !== Number(day.substring(0,4)) || date.getUTCMonth() + 1 !== Number(day.substring(4,6)) || date.getUTCDate() !== Number(day.substring(6,8))) throw new Error("길드영지 보상 지급일 기록 오류");
+    return day;
+}
+
 // 길드영지 순위 보상 지급을 처리하는 함수
 function runGuildTerritoryRankReward(data, guildData, sender, authorizedOperator) {
     if (authorizedOperator !== true && !(isMaster(sender) || isAdmin(sender))) {
@@ -39103,8 +39139,14 @@ function runGuildTerritoryRankReward(data, guildData, sender, authorizedOperator
         paidKeyParts.push(rows[k].gid + ":" + rows[k].score);
     }
     var paidKey = paidKeyParts.join("|");
-    if (paidKey && rewardData.lastPaidKey === paidKey) {
+    var cycle = getDailyRankingPayoutCycle(data); // 날짜가 넘어가도 /리셋 전에는 같은 지급 회차
+    if (isDailyRewardPayoutDone(data, guildData, "territory", null)) {
         return { ok: false, message: "❌ 현재 길드영지 순위 보상은 이미 지급되었습니다.", noticeMessage: "" };
+    }
+
+    if (cycle.cycle === 0 && rewardData.lastPaidKey) {
+        var paidDay = getGuildTerritoryRewardPaidDay(guildData); // 구 기록은 실제 첫 /리셋 전까지 날짜로 호환
+        if (!paidDay || paidDay > cycle.day) return { ok: false, message: "❌ 기존 길드영지 보상의 지급일을 확인할 수 없습니다. 지급 기록 확인 후 다시 실행해주세요.", noticeMessage: "" };
     }
 
     var totalPoint = 0;
@@ -39126,6 +39168,8 @@ function runGuildTerritoryRankReward(data, guildData, sender, authorizedOperator
     notice += "보상 기준: /영지순위보상";
 
     rewardData.lastPaidKey = paidKey;
+    rewardData.lastPaidDate = cycle.day;
+    rewardData.lastPaidCycle = cycle.key;
     rewardData.lastPaidAt = formatDateTime(new Date());
     return {
         ok: true,
@@ -45626,11 +45670,12 @@ function createDailyRankingStore() {
 // 날짜·종류별 실제 지급 완료 기록을 검증하는 함수
 function requireDailyRankingStore(store) {
     if (!store || store.version !== 1 || !store.days || typeof store.days !== "object" || Array.isArray(store.days)) throw new Error("순위 지급 기록 형식 오류");
+    if (store.reset !== undefined) getDailyRankingPayoutCycle({ rewardPayoutReset: store.reset });
     var schedules = GLOBAL_CONFIG.rewardPayout.schedules, keys = [];
     for (var k = 0; k < schedules.length; k++) keys.push(schedules[k].key);
     for (var day in store.days) if (Object.prototype.hasOwnProperty.call(store.days,day)) {
         var rows = store.days[day];
-        if (!/^\d{8}$/.test(day) || !rows || typeof rows !== "object" || Array.isArray(rows)) throw new Error("순위 지급 날짜 형식 오류");
+        if (!/^\d{8}(?::[1-9]\d*)?$/.test(day) || !rows || typeof rows !== "object" || Array.isArray(rows)) throw new Error("순위 지급 날짜 형식 오류");
         for (var key in rows) if (Object.prototype.hasOwnProperty.call(rows,key)) {
             var row = rows[key];
             if (keys.indexOf(key) === -1 || !row || ["DONE","FAILED"].indexOf(row.status) === -1 || typeof row.at !== "string" || !isFinite(Date.parse(row.at))) throw new Error("순위 지급 완료 기록 오류");
@@ -45656,6 +45701,7 @@ function applyDailyRankingReward(key, data, petData, guildData, homeData, petSki
 
 // 한 종류의 전체 지급과 완료 기록을 동일한 최종 원문으로 묶는 함수
 function buildDailyRankingPublication(data, guildData, store) {
+    if (data.rewardPayoutReset !== undefined) store.reset = data.rewardPayoutReset; // 회원과 지급 원장에 같은 확정 회차를 보존
     var adventure = data.__adventureRecordContext;
     if (adventure && JSON.stringify(adventure.store) !== adventure.text) throw new Error("순위 지급 중 저장하지 않은 퀘스트 기록 변경 감지");
     var plan = buildMemberSplitSavePlan(data), writes = [];
@@ -45711,7 +45757,7 @@ function recoverDailyRankingPending() {
 function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
     var request = getDailyRankingPayoutRequest(msg);
     if (!request || !isDailyRankingPayoutOperator(sender,request)) { replier.reply("⛔ 권한이 없습니다.\n/최종순위보상지급 명령어는\n오픈채팅봇 또는 MASTER만 사용할 수 있습니다."); return; }
-    var schedules = GLOBAL_CONFIG.rewardPayout.schedules, day = getAttendanceKstDateKey(), outcomes = [], singleMessage = "";
+    var schedules = GLOBAL_CONFIG.rewardPayout.schedules, day = null, outcomes = [], singleMessage = "";
     var path = resolveActiveDataPath(DATA_ROOT_PATH+GLOBAL_CONFIG.rewardPayout.fileName), pendingPath = resolveActiveDataPath(DATA_ROOT_PATH+GLOBAL_CONFIG.rewardPayout.pendingName);
     dataTransactionLock.lock();
     try {
@@ -45719,11 +45765,26 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
         for (var i = 0; i < schedules.length; i++) {
             var schedule = schedules[i];
             if (!request.all && request.key !== schedule.key) continue;
-            if (getAttendanceKstDateKey() !== day) { outcomes.push("⚠️ "+schedule.label+": 날짜가 변경되어 미완료 · 새 날짜에 다시 실행해 주세요."); continue; }
             if (!new java.io.File(path).exists() && (new java.io.File(path+".rollback").exists() || new java.io.File(getManagedJsonBackupPath(path)).exists() || new java.io.File(getManagedJsonSecondaryBackupPath(path)).exists())) throw new Error("순위 지급 완료 원본이 누락되어 확인이 필요합니다.");
             var store = new java.io.File(path).exists() ? requireDailyRankingStore(loadJsonFile(path)) : createDailyRankingStore();
-            if (!store.days[day]) store.days[day] = {};
             var data = loadJsonFile(filePath), guildData = loadJsonFile(guildPath);
+            if (store.reset !== undefined) {
+                if (data.rewardPayoutReset === undefined) throw new Error("순위 보상 /리셋 회차 원본이 누락되어 확인이 필요합니다.");
+                var storedCycle = getDailyRankingPayoutCycle({ rewardPayoutReset: store.reset }), memberCycle = getDailyRankingPayoutCycle(data);
+                if (memberCycle.cycle < storedCycle.cycle || memberCycle.cycle === storedCycle.cycle && (memberCycle.day !== storedCycle.day || memberCycle.at !== storedCycle.at)) throw new Error("회원과 순위 보상의 /리셋 회차가 일치하지 않습니다.");
+            }
+            if (data.rewardPayoutReset === undefined) {
+                var initialCycle = getDailyRankingPayoutCycle(data); // 기존 완료 기록을 보존하며 최초 기준일만 고정
+                data.rewardPayoutReset = { day: initialCycle.day, cycle: 0, at: 0 };
+                writeVerifiedJsonFile(pendingPath, JSON.stringify(buildDailyRankingPublication(data, guildData, store)), true);
+                endDataSaveTransaction(); beginDataSaveTransaction();
+                recoverDailyRankingPending();
+                endDataSaveTransaction(); beginDataSaveTransaction();
+            }
+            var cycle = getDailyRankingPayoutCycle(data);
+            if (day === null) day = cycle.key;
+            if (day !== cycle.key) throw new Error("순위 보상 처리 중 /리셋 회차가 변경되었습니다.");
+            if (!store.days[day]) store.days[day] = {};
             if (isDailyRewardPayoutDone(data,guildData,schedule.key,store)) {
                 if (!store.days[day][schedule.key] || store.days[day][schedule.key].status !== "DONE") {
                     store.days[day][schedule.key] = {status:"DONE",at:new Date().toISOString()};
@@ -45742,9 +45803,9 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
                 if (needsCharm && (!petSkillData || !homeData)) throw new Error("순위 산정에 필요한 펫스킬·펫홈 원본을 읽지 못했습니다.");
                 var result = applyDailyRankingReward(schedule.key,data,petData,guildData,homeData,petSkillData,sender);
                 if (!result.ok) throw new Error(result.message || "보상 지급을 완료하지 못했습니다.");
-                if (getAttendanceKstDateKey() !== day) throw new Error("날짜가 변경되어 지급 전에 취소했습니다. 새 날짜에 다시 실행해 주세요.");
-                recordDailyRewardPayout(data,schedule.key,day);
-                if (schedule.key === "tier") data.tierReward.lastPaidDate=day;
+                if (getDailyRankingPayoutCycle(data).key !== day) throw new Error("/리셋 회차가 변경되어 지급 전에 취소했습니다. 다시 실행해 주세요.");
+                recordDailyRewardPayout(data,schedule.key,cycle.day);
+                if (schedule.key === "tier") { data.tierReward.lastPaidDate=cycle.day; data.tierReward.lastPaidCycle=cycle.key; }
                 store.days[day][schedule.key] = {status:"DONE",at:new Date().toISOString()};
                 var journal = buildDailyRankingPublication(data,guildData,store);
                 writeVerifiedJsonFile(pendingPath,JSON.stringify(journal),true);
@@ -45782,7 +45843,7 @@ function runDailyRankingPayoutEntry(ctx, replier, msg, sender) {
         if (!request.all) { replier.reply(singleMessage); return; }
         var complete=0, skipped=0; // 이번 실행 확정과 기존 완료를 나눠 다섯 종류의 결과를 집계
         for (var r=0;r<outcomes.length;r++) {if(outcomes[r].indexOf("✅")===0)complete++;if(outcomes[r].indexOf("↪️")===0)skipped++;}
-        replier.reply("🎁 호이월드 최종 순위보상 통합 지급\n━━━━━━━━━━━━\n"+outcomes.join("\n")+"\n━━━━━━━━━━━━\n🏆 처리 결과: 신규·복구 "+complete+"종 / 기완료 "+skipped+"종 / 미완료 "+(schedules.length-complete-skipped)+"종\n🔒 금일 중복 지급 방지 적용");
+        replier.reply("🎁 호이월드 최종 순위보상 통합 지급\n━━━━━━━━━━━━\n"+outcomes.join("\n")+"\n━━━━━━━━━━━━\n🏆 처리 결과: 신규·복구 "+complete+"종 / 기완료 "+skipped+"종 / 미완료 "+(schedules.length-complete-skipped)+"종\n🔒 같은 /리셋 회차 중복 지급 방지 적용");
     } finally {dataTransactionLock.unlock();}
 }
 
@@ -45792,34 +45853,34 @@ function recordDailyRewardPayout(data, rewardKey, paidDay) {
         data.rewardPayoutStatus = {};
     }
     data.rewardPayoutStatus[rewardKey] = {
-        lastPaidDate: paidDay || getCurrentDate(),
+        lastPaidDate: paidDay || getDailyRankingPayoutCycle(data).day,
+        lastPaidCycle: getDailyRankingPayoutCycle(data).key,
         lastPaidAt: formatDateTime(new Date())
     };
 }
 
-// 순위 보상별 오늘 지급 완료 여부를 확인하는 함수
+// 순위 보상별 현재 /리셋 회차의 지급 완료 여부를 확인하는 함수
 function isDailyRewardPayoutDone(data, guildData, rewardKey, store) {
-    var today = getCurrentDate();
-    var day = getAttendanceKstDateKey(), row = store && store.days[day] && store.days[day][rewardKey];
+    var cycle = getDailyRankingPayoutCycle(data), row = store && store.days[cycle.key] && store.days[cycle.key][rewardKey];
     if (row && row.status === "DONE") return true;
-    if (rewardKey === "tier") {
-        return !!(data.tierReward && data.tierReward.lastPaidDate === today);
-    }
-    if (rewardKey === "territory") {
-        var territoryPaidAt = guildData && guildData.guildTerritoryReward ? guildData.guildTerritoryReward.lastPaidAt : "";
-        return String(territoryPaidAt || "").substring(0, 10).replace(/-/g, "") === today;
-    }
     var payout = data.rewardPayoutStatus && data.rewardPayoutStatus[rewardKey] ? data.rewardPayoutStatus[rewardKey] : null;
-    return !!(payout && payout.lastPaidDate === today);
+    if (payout && payout.lastPaidCycle === cycle.key) return true;
+    if (rewardKey === "tier" && data.tierReward && data.tierReward.lastPaidCycle === cycle.key) return true;
+    if (rewardKey === "territory" && guildData && guildData.guildTerritoryReward && guildData.guildTerritoryReward.lastPaidCycle === cycle.key) return true;
+    if (cycle.cycle !== 0) return false; // 실제 /리셋 뒤에는 과거 날짜 기록을 새 회차의 지급으로 간주하지 않는다.
+    if (payout && payout.lastPaidCycle === undefined && payout.lastPaidDate === cycle.day) return true;
+    if (rewardKey === "tier") return !!(data.tierReward && data.tierReward.lastPaidCycle === undefined && data.tierReward.lastPaidDate === cycle.day);
+    if (rewardKey === "territory") return getGuildTerritoryRewardPaidDay(guildData) === cycle.day;
+    return false;
 }
 
-// 패스목록에 표시할 당일 순위 보상 지급 현황 줄을 만드는 함수
+// 패스목록에 표시할 현재 /리셋 회차의 순위 보상 현황을 만드는 함수
 function buildDailyRewardPayoutStatusLines(data, guildData, store) {
     var schedules = GLOBAL_CONFIG.rewardPayout.schedules;
     var lines = ["《🎁 금일 순위 보상 지급 현황》"], completedCount=0;
     for (var i = 0; i < schedules.length; i++) {
         var schedule = schedules[i];
-        var day = getAttendanceKstDateKey(), row = store && store.days[day] && store.days[day][schedule.key];
+        var day = getDailyRankingPayoutCycle(data).key, row = store && store.days[day] && store.days[day][schedule.key];
         var paidMark = isDailyRewardPayoutDone(data, guildData, schedule.key, store) ? "✅" : row && row.status === "FAILED" ? "⚠️" : "❌";
         if (paidMark === "✅") completedCount++;
         lines.push(schedule.command + " " + schedule.time + " [" + paidMark + "]");
@@ -45828,7 +45889,7 @@ function buildDailyRewardPayoutStatusLines(data, guildData, store) {
     lines.push("━━━━━━━━━━━━");
     if (completedCount === schedules.length) lines.push("✅ 금일 순위보상 5종 지급 완료", "🛠️ 통합 지급: /최종순위보상지급");
     else lines.push("🎁 통합 순위보상 지급", "🛠️ /최종순위보상지급", "└ 관리자 명령어 한 번으로 위 5종 일괄 지급", "└ 이미 지급된 보상은 중복 지급하지 않음", "└ 사용 권한: 오픈채팅봇, MASTER");
-    lines.push("※ 표기 시각은 기존 지급 안내 시각입니다. 영지순위 확정 이후 실행을 권장해요.");
+    lines.push("※ 표기 시각은 기존 지급 안내 시각입니다. 영지순위 확정 이후 실행을 권장해요.", "※ 지급 완료는 /리셋할 때까지 유지되며 자정에 초기화되지 않아요.");
     return lines;
 }
 
@@ -51411,8 +51472,8 @@ function payTierRankingReward(data, petData, guildData) {
     if (!data || !data.member) return { ok: false, message: "현재 티어순위 데이터가 없어 보상을 지급할 수 없습니다." };
     if (!data.tierReward || typeof data.tierReward !== "object") data.tierReward = {};
 
-    var today = getCurrentDate();
-    if (data.tierReward.lastPaidDate === today) {
+    var cycle = getDailyRankingPayoutCycle(data), today = cycle.day;
+    if (isDailyRewardPayoutDone(data, guildData, "tier", null)) {
         return { ok: false, message: "이미 금일 티어보상이 지급되었습니다.\n중복 지급을 방지하기 위해 지급이 취소됩니다." };
     }
 
@@ -51449,6 +51510,7 @@ function payTierRankingReward(data, petData, guildData) {
     }
 
     data.tierReward.lastPaidDate = today;
+    data.tierReward.lastPaidCycle = cycle.key;
     data.tierReward.lastPaidAt = formatDateTime(new Date());
     data.tierReward.lastPaidCount = limit;
 
@@ -65978,7 +66040,7 @@ function getHalloweenRunPolicy(run) {
     var version = run.rewardVersion === undefined ? (run.rooms.length === config.previousRoomCount ? 2 : run.rooms.length === config.legacyRoomCount ? 1 : 0) : run.rewardVersion;
     if (version === 1) return { version: 1, roomCount: config.legacyRoomCount, placeCount: config.legacyPlaceCount, roomRewards: null, completionCandy: config.previousCompletionCandy, secretCandy: config.previousSecretCandy };
     if (version === 2) return { version: 2, roomCount: config.previousRoomCount, placeCount: config.previousPlaceCount, roomRewards: config.previousRoomRewards, completionCandy: config.previousCompletionCandy, secretCandy: config.previousSecretCandy };
-    if (version === config.rewardVersion) return { version: version, roomCount: config.roomCount, placeCount: config.rooms.length, roomRewards: config.roomRewards, completionCandy: config.completionCandy, secretCandy: config.secret.map(function (row) { return row.candy; }) };
+    if (version === 3 || version === config.rewardVersion) return { version: version, roomCount: version === 3 ? config.expandedRoomCount : config.roomCount, placeCount: config.rooms.length, roomRewards: config.roomRewards, completionCandy: config.completionCandy, secretCandy: config.secret.map(function (row) { return row.candy; }) };
     throw new Error("할로윈 탐험 보상 기준 오류");
 }
 
@@ -66021,9 +66083,9 @@ function getHalloweenBalance(state, account) {
     return requireHalloweenInteger(legacyPaid + (account.epoch === state.epoch ? account.free : 0));
 }
 
-// 구 잔액을 단일 사탕으로 전환하고 날짜·리셋·종료로 만료된 진행 상태를 정리하는 함수
+// 구 잔액을 전환하고 실제 리셋·이벤트 종료로 만료된 진행 상태만 정리하는 함수
 function refreshHalloweenAccount(state, account, now) {
-    var changed = false, day = getHalloweenDay(now);
+    var changed = false, day = state.lastResetDay || account.day || getHalloweenDay(now);
     var balance = getHalloweenBalance(state, account); // 계정 변경 전에 세대와 현재 유효 잔액을 검증
     if (account.candy === undefined) {
         account.candy = balance;
@@ -66034,9 +66096,11 @@ function refreshHalloweenAccount(state, account, now) {
         account.history.push({ kind: "close", at: now, candyRemoved: account.candy, epoch: state.epoch });
         account.candy = 0; account.epoch = state.epoch; account.run = null; changed = true;
     }
-    if (account.day !== day || (account.resetCycle || 0) !== (state.resetCycle || 0)) {
+    if ((account.resetCycle || 0) !== (state.resetCycle || 0)) {
         if (account.run) account.history.push({ kind: "unfinished", at: now, run: account.run });
         account.day = day; account.resetCycle = state.resetCycle || 0; account.used = 0; account.run = null; changed = true;
+    } else if (!account.day) {
+        account.day = day; account.resetCycle = state.resetCycle || 0; changed = true;
     }
     return changed;
 }
@@ -66187,7 +66251,7 @@ function applyHalloweenCommand(request, context) {
         return reply("🏅 할로윈 한정 칭호\n" + (titleLines.length ? titleLines.join("\n") : "아직 획득한 칭호가 없습니다."));
     }
     if (!state.active) return reply(config.name + "\n현재 할로윈 이벤트가 진행 중이 아닙니다.\n\n👻유령 호월이:\n\"지금은 문이 닫혀 있어! 이벤트 안내를 확인해줘!\"");
-    if (request.action === "guide") return reply(config.name + "\n일반 하루 1회 / 프리미엄 총 2회\n기본 입장 → 입장권 추가 입장 순으로 사용해요.\n전체 " + config.rooms.length + "곳 중 서로 다른 " + config.roomCount + "곳에서 /귀신의집선택 1~3으로 행동을 골라요.\n다음 방 확인: /귀신의집\n\n안전형: 80% " + config.roomRewards["안전형"][0] + "개 / 20% 0개\n탐색형: 55% " + config.roomRewards["탐색형"][0] + "개 / 35% " + config.roomRewards["탐색형"][1] + "개 / 10% 0개\n도박형: 20% " + config.roomRewards["도박형"][0] + "개 / 50% " + config.roomRewards["도박형"][1] + "개 / 30% 0개\n완주: " + config.completionCandy + "개 추가 + 칭호 무료 추첨 1회\n비밀방 등장 " + config.secretRate + "% → 60% " + config.secret[0].candy + "개 / 30% " + config.secret[1].candy + "개 / 9% " + config.secret[2].candy + "개 / 1% " + config.secret[3].candy + "개\n※ 진행 중이던 탐험은 시작 당시 경로와 보상으로 마무리해요.\n추가 입장 충전: /할로윈입장 숫자\n사탕 사용: /할로윈상점");
+    if (request.action === "guide") return reply(config.name + "\n일반 하루 1회 / 프리미엄 총 2회\n기본 입장 → 입장권 추가 입장 순으로 사용해요.\n※ 기본 입장은 /리셋 시 초기화되며 자정에는 유지돼요.\n전체 " + config.rooms.length + "곳 중 서로 다른 " + config.roomCount + "곳에서 /귀신의집선택 1~3으로 행동을 골라요.\n다음 방 확인: /귀신의집\n\n안전형: 80% " + config.roomRewards["안전형"][0] + "개 / 20% 0개\n탐색형: 55% " + config.roomRewards["탐색형"][0] + "개 / 35% " + config.roomRewards["탐색형"][1] + "개 / 10% 0개\n도박형: 20% " + config.roomRewards["도박형"][0] + "개 / 50% " + config.roomRewards["도박형"][1] + "개 / 30% 0개\n완주: " + config.completionCandy + "개 추가 + 칭호 무료 추첨 1회\n비밀방 등장 " + config.secretRate + "% → 60% " + config.secret[0].candy + "개 / 30% " + config.secret[1].candy + "개 / 9% " + config.secret[2].candy + "개 / 1% " + config.secret[3].candy + "개\n※ 진행 중이던 탐험은 시작 당시 경로와 보상으로 마무리해요.\n추가 입장 충전: /할로윈입장 숫자\n사탕 사용: /할로윈상점");
     if (!account) return reply("❌ 등록된 계정을 확인할 수 없습니다.");
     result.changed = refreshHalloweenAccount(state, account, context.now);
     if (request.action === "resetUser") {
