@@ -5,6 +5,21 @@ Status: PARTIAL
 This document is an AI-oriented navigation index for command and helper exploration.
 Source of truth is always the current codebase, especially `main.js` and `Info.js`.
 
+## /호월드라마 · /드라마시작 · /드라마재도전 · /플러팅선택
+
+Status: VERIFIED
+
+- 파일: `main.js` (`GLOBAL_CONFIG.howolDrama`, `getHowolDramaRequest`, `runHowolDramaEntry`), `Info.js` (게시 중 조회 보호).
+- 공개 목록 `/호월드라마`, 예고편 `/드라마시작 1`. 등록·모험 시작 완료 및 기존 `isHoiPassPremiumActive`를 통과해야 본편 진행 가능.
+- `/플러팅선택 1|2`: 현재 방에서 연 장면만 진행. 결과·다음 장소 한 번 응답, 30장면 완주 후 차액 지급. 숫자 단독 입력은 본편 선택 불가. 잘못된 인수·누락·추가 문장은 현재 화면과 점수를 유지하며 입력 방법만 안내.
+- `/드라마재도전 1`: 안내 → 숫자1 → 최종 확인 → 숫자1에서 공통 재도전권 1개 소모. 숫자2 취소. 다른 슬래시 명령·5분 경과·재컴파일 시 확인 취소. 기존 초기화/데이터정리 숫자 확인과 소유권 분리.
+- 진행 원본: 환경별 `howolDrama.json`, 공통 `member.serverRaidAccount.id`로 연결. 이번 시도·선택·완주 이력·최고점·실지급 수량·최근 이벤트 ID 저장. 닉네임 변경 호환, 기존 회원의 공통 ID 누락만 최초 시작 확정 시 보완.
+- 회원 파일에 드라마 전용 필드 없음. 일반 장면 선택은 진행 원본만 저장. 완주 보상·재도전권 차감은 `publishHowolDramaEntry` → `howolDramaPending.json` 최종 원문 → `recoverHowolDramaPending`으로 회원 가방과 진행을 함께 게시.
+- 보상: `max(0, 완주점수 × 4 - 실제누적지급)`, 작품/시즌별 최대400. 일일 제한 및 `/리셋`·자정 초기화 없음.
+- 복구: 부팅·명령·미니게임 자동 작업의 회원 조회 전 복구. `assertHowolDramaNoPending`은 미확정 게시 중 다른 회원 조회·저장을 차단. `Info.js`는 복구 완료까지 부분 가방 표시를 보류. 누락/손상된 진행 원본은 새 기록으로 대체하지 않음.
+- 중복: 현재 화면 표시 전 입력·다른 방의 오래된 화면 차단. 확장 콜백이 실제 제공하는 이벤트 ID가 있으면 최근128건 중복 차단. 기본 7인수 콜백만으로 순차 도착한 동일 텍스트의 재전송과 새 메시지를 완전히 구분할 수 없음.
+- 이미지: 기획서의 기존29개 주소 유지. 장면28 미등록 주소는 생략하며 진행·보상 가능. 이미지 URL 검토/보완은 사용자 요청에 따라 개발 이후 진행.
+
 과거 검증 설명에 남아 있는 `tools/test_*`, 검증 보고서·결과 파일 경로는 Git 이력에 보관된 당시 자료를 가리킨다. 해당 파일은 검증 자료 정리 정책에 따라 제거되었으며 현재 실행 가능한 테스트나 최신 검증 보장을 뜻하지 않는다. 새 작업의 검증은 저장소 밖 임시 폴더에서 수행하고 완료 후 삭제한다.
 
 ## How To Read This File
