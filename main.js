@@ -66662,6 +66662,7 @@ function getHowolDramaRequest(message) {
     if (match) return { kind: match[1] === "드라마시작" ? "start" : "retry", work: match[2] };
     match = /^\/플러팅선택[ \t]+([12])$/.exec(text);
     if (match) return { kind: "choice", choice: Number(match[1]) };
+    if (/^\/플러팅선택(?:[ \t\r\n]|$)/.test(text)) return { kind: "choiceGuide" }; // 잘못된 인수는 실행하지 않고 현재 화면의 입력 방법만 안내
     return null;
 }
 
@@ -66876,6 +66877,10 @@ function runHowolDramaEntry(ctx, sender, room, isGroupChat, msg, replier, reques
         return true;
     }
     if (request && request.kind === "start" && !record) { replyHowolDramaScreen(replier, buildHowolDramaTrailer(sender), key, "intro", uid, record, seen); return true; }
+    if (request && request.kind === "choiceGuide") {
+        replier.reply(session && session.stage !== "story" ? "현재 확인 화면에서는 숫자 1 또는 2를 입력해 주세요." : "▶ 선택: /플러팅선택 1 또는 /플러팅선택 2" + (!session || !record ? "\n먼저 /드라마시작 1로 현재 장면을 열어 주세요." : ""));
+        return true;
+    }
     if (numeric && session.stage === "story") { replier.reply("▶ 선택: /플러팅선택 1 또는 /플러팅선택 2"); return true; }
     if (request && request.kind === "choice" && (!session || session.stage !== "story")) { replier.reply(session ? "현재 확인 화면에서는 숫자 1 또는 2를 입력해 주세요." : "먼저 /드라마시작 1로 현재 장면을 열어 주세요."); return true; }
     if (numeric && text === "2") { delete howolDramaSessions[key]; replier.reply("드라마 확인을 취소했어요. 기존 진행과 아이템은 그대로예요."); return true; }

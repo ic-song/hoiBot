@@ -11,7 +11,7 @@ Status: VERIFIED
 
 - 파일: `main.js` (`GLOBAL_CONFIG.howolDrama`, `getHowolDramaRequest`, `runHowolDramaEntry`), `Info.js` (게시 중 조회 보호).
 - 공개 목록 `/호월드라마`, 예고편 `/드라마시작 1`. 등록·모험 시작 완료 및 기존 `isHoiPassPremiumActive`를 통과해야 본편 진행 가능.
-- `/플러팅선택 1|2`: 현재 방에서 연 장면만 진행. 결과·다음 장소 한 번 응답, 30장면 완주 후 차액 지급. 숫자 단독 입력은 본편 선택 불가.
+- `/플러팅선택 1|2`: 현재 방에서 연 장면만 진행. 결과·다음 장소 한 번 응답, 30장면 완주 후 차액 지급. 숫자 단독 입력은 본편 선택 불가. 잘못된 인수·누락·추가 문장은 현재 화면과 점수를 유지하며 입력 방법만 안내.
 - `/드라마재도전 1`: 안내 → 숫자1 → 최종 확인 → 숫자1에서 공통 재도전권 1개 소모. 숫자2 취소. 다른 슬래시 명령·5분 경과·재컴파일 시 확인 취소. 기존 초기화/데이터정리 숫자 확인과 소유권 분리.
 - 진행 원본: 환경별 `howolDrama.json`, 공통 `member.serverRaidAccount.id`로 연결. 이번 시도·선택·완주 이력·최고점·실지급 수량·최근 이벤트 ID 저장. 닉네임 변경 호환, 기존 회원의 공통 ID 누락만 최초 시작 확정 시 보완.
 - 회원 파일에 드라마 전용 필드 없음. 일반 장면 선택은 진행 원본만 저장. 완주 보상·재도전권 차감은 `publishHowolDramaEntry` → `howolDramaPending.json` 최종 원문 → `recoverHowolDramaPending`으로 회원 가방과 진행을 함께 게시.
