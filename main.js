@@ -1,6 +1,6 @@
 // 버전
 Device.acquireWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "봇");
-const HoiBotVersion = "2.761"; // 수정 시 0.001 단위 증가
+const HoiBotVersion = "2.762"; // 수정 시 0.001 단위 증가
 let isDebuggerFlag = false; //
 let userState = {}; // 유저 상태 저장용
 var petHomeVillagePending = {}; // DEV/PROD 계정별 별채 등록 확인 대기
@@ -1035,7 +1035,7 @@ const GLOBAL_CONFIG = {
             {"day":9,"dayTitle":"라이벌의 마지막 고백","place":"호수 선착장","image":"https://ibb.co/27ZZc1St","narrative":"호동이가 봄봄이에게 고백하지만, 봄봄이의 마음은 다른 사람을 향해 있다.","dialogue":"😎 호동이: “내 마음은 진심이야.”\n💕 봄봄이: “미안해. 다른 사람이 있어.”","choices":[{"text":"봄봄이의 선택을 존중한다","score":3,"reaction":"🐱 호월이: “봄봄이 마음이 중요해.”"},{"text":"두 사람의 대화에 끼어든다","score":1,"reaction":"💕 봄봄이: “나도 내 이야기를 해야지.”"}]},
             {"day":9,"dayTitle":"라이벌의 마지막 고백","place":"붉은 단풍 언덕","image":"https://ibb.co/WpG4VKgf","narrative":"호동이가 호월이에게 마지막 응원을 보낸다.","dialogue":"😎 호동이: “야, 이제 네 차례야.”\n🐱 호월이: “네가 날 응원한다고?”","choices":[{"text":"장난이라고 의심한다","score":1,"reaction":"😎 호동이: “진심이라니까!”"},{"text":"고맙다고 말하고 용기를 낸다","score":3,"reaction":"😎 호동이: “가서 멋지게 고백해라!”"}]},
             {"day":9,"dayTitle":"라이벌의 마지막 고백","place":"가을밤 정원","image":"https://ibb.co/8nqR3pVS","narrative":"가을밤 정원에서 호월이는 마지막 고백을 준비한다.","dialogue":"🐱 호월이: “책에 적힌 말만 따라 했는데…”","choices":[{"text":"책을 덮고 진심을 말하기로 한다","score":4,"reaction":"🐱 호월이: “이번엔 내 마음을 말할 거야.”"},{"text":"멋진 고백 문장만 외운다","score":1,"reaction":"🐱 호월이: “외운 말이 생각 안 나면?!”"}]},
-            {"day":10,"dayTitle":"우리 오늘부터 1일!","place":"낙엽 꽃길","image":"","narrative":"낙엽이 깔린 꽃길. 호월이는 봄봄이와의 마지막 약속을 준비한다.","dialogue":"🐱 호월이: “오늘은 꼭 말할 거야.”","choices":[{"text":"봄봄이가 좋아하는 작은 꽃을 고른다","score":3,"reaction":"💕 봄봄이: “내가 좋아하는 꽃이네.”"},{"text":"세상에서 가장 큰 꽃 장식을 준비한다","score":1,"reaction":"💕 봄봄이: “이걸 어떻게 들고 왔어?”"}]},
+            {"day":10,"dayTitle":"우리 오늘부터 1일!","place":"낙엽 꽃길","image":"https://ibb.co/8tQVbSJ","narrative":"낙엽이 깔린 꽃길. 호월이는 봄봄이와의 마지막 약속을 준비한다.","dialogue":"🐱 호월이: “오늘은 꼭 말할 거야.”","choices":[{"text":"봄봄이가 좋아하는 작은 꽃을 고른다","score":3,"reaction":"💕 봄봄이: “내가 좋아하는 꽃이네.”"},{"text":"세상에서 가장 큰 꽃 장식을 준비한다","score":1,"reaction":"💕 봄봄이: “이걸 어떻게 들고 왔어?”"}]},
             {"day":10,"dayTitle":"우리 오늘부터 1일!","place":"소원 나무","image":"https://ibb.co/VW4FcnnJ","narrative":"소원 리본이 걸린 나무 아래. 봄봄이가 호월이의 소원을 묻는다.","dialogue":"💕 봄봄이: “무슨 소원 빌었어?”\n🐱 호월이: “내 소원은…”","choices":[{"text":"너와 오래 행복한 추억을 만드는 것","score":3,"reaction":"💕 봄봄이: “나도 그 소원이 좋아.”"},{"text":"플러팅 100점 달성하는 것","score":1,"reaction":"💕 봄봄이: “끝까지 웃기는구나!”"}]},
             {"day":10,"dayTitle":"우리 오늘부터 1일!","place":"달빛 전망대","image":"https://ibb.co/N6f3VXy7","narrative":"달빛 전망대. 호월이는 봄봄이에게 마지막 고백을 한다.","dialogue":"🐱 호월이: “봄봄아… 할 말 있어.”\n💕 봄봄이: “응, 듣고 있어.”","choices":[{"text":"“처음부터 좋아했어. 나랑 사귈래?”","score":4,"reaction":"💕 봄봄이: “나도 좋아해. 오늘부터 1일이야!”"},{"text":"“연애책에 따르면 고백할 시간이래!”","score":1,"reaction":"💕 봄봄이: “마지막까지 책 이야기네. 나도 좋아해.”"}]}
         ]
